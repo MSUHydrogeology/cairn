@@ -1,7 +1,7 @@
 # The model mapping gets filled on every install path, and something checks it
 
 **Author**: Claude (Strategy)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: required(Internal + Security Review) — the scaffold engine's write path is touched; the Maintainer asked for this change, so "should it exist" is settled
 **Plan review**: required(Internal + Internal Security Review) — the plan edits `bootstrap/_scaffold/` and a script adopters run (see the preflight)
 **Opened**: 2026-10-18
@@ -1132,3 +1132,328 @@ Review pass then reads only those two findings and the withdrawal ledger. SEC-3 
 carried into the plan, and its Internal Security Review checks them.
 
 Untracked path: `dev/.cairn/handoff.lock` -- the gitignored session lock (`.gitignore` line 8). SEC-1 cites it as a path inside a hostile repository, and no checkout carries it.
+
+## Response -- Claude (Strategy) -- 2026-10-18 (to the Security Review)
+
+This answers the Security Review at `3c133398` (reviewed commit `440724b0`). Revision 2
+follows. It is a delta: it names each part of Revision 1 it replaces, and every other part of
+Revision 1 binds unchanged.
+
+**In plain terms.** I accept the verdict. SEC-1 is real and is being repaired on its own, so
+this proposal does not carry it. SEC-2 is a plain ordering mistake: the notice looked for a
+file the upgrade had not yet added. I fixed that, and took the other six as requirements for
+the plan, with one addition of my own (a safeguard for the checker's value scan, below). Two
+Maintainer directions are folded in: no model versions in a mapping, and `lhm` is no longer
+live.
+
+* **[SEC-1]** handled elsewhere. The `seed_gitignore` hole is being fixed as a separate,
+  immediate repair, because it touches every install today. **Disposition: not in this
+  proposal.** Nothing in Revision 1 touches `seed_gitignore`, and Revision 2 adds no claim that
+  it is contained. The plan rebases on that repair: its `_GUARDED_WRITE_FUNCS` and
+  `SECURITY_MUTATIONS.md` entries are already in place by then, and this proposal's edits to
+  those two files add only the capture and `_write_stage` (SEC-8) and correct lines 12-13
+  (SEC-4). Until the repair lands the defect is live and independent of this change.
+* **[SEC-2]** accept. The notice moves to after a successful `--apply` (print when the apply
+  returns 0, then return it), and keeps one call each after the `--plan` and `--stage`
+  reports. It is silent on a plan or stage that will add the stub, because the file is absent
+  then, and prints on the apply that creates it. That is the sequence that gave `lhm` its stub.
+  `cmd_upgrade` was already counted as CHANGED, so the AST accounting does not move. The
+  notice no longer prints above refusals.
+* **[SEC-3]** accept, as a plan requirement. The capture keeps its early guard so nobody answers
+  three questions to be refused, then at write time guards again, writes a temporary file
+  beside the mapping, guards that too, and `os.replace`s it over the mapping. A replace swaps
+  the name and never writes into the old file, so a swapped link, a hard link and a half-written
+  file are closed together. It stays inline, so the AST count is unchanged. S5 names the hard link.
+* **[SEC-4]** accept. "Like every other containment refusal" was wrong: `main` catches two
+  (`cli.py:529`, `:569`), and a linked `dev/.cairn` ends in a traceback and exit 1 inside
+  `write_local_env` today. Revision 2 states the true exit-code story, corrects
+  `SECURITY_MUTATIONS.md:12-13`, keeps the message a constant (never `{exc}`), and requires the
+  test to prove the capture itself refused.
+* **[SEC-5]** accept all three. The residual is named as a class. With PyYAML, every value
+  `safe_load` can return is scanned (dict keys, set members, bytes read as text). The bare row
+  check is anchored at the start of the line. I add one safeguard: the scan visits each object
+  once (keyed on identity). A document of 22 nested aliases loads in milliseconds but walks as
+  16.7 million visits (6 seconds, doubling per level); walked once per object it is 47 visits.
+* **[SEC-6]** accept. The helper checks the file type with `lstat` first and never opens
+  anything but a regular file. The capture treats a file that is not valid text as the helper
+  does: leave it, return, and let the notice say it could not be read.
+* **[SEC-7]** accept. The parity corpus is generated (every line lead, every line break, every
+  position), a mutation is added to S2, and the version gap between an adopter's checker and
+  the current engine is named.
+* **[SEC-8]** accept. I keep the reuse of the write guard on a read and add the regular-file
+  check at the call site. The revisit trigger in `lockfile.py:448-453` has fired (two more
+  read-side callers, and the file-type divergence), and the answer goes into that comment;
+  I allow that one comment-only edit. `_write_stage` joins `_GUARDED_WRITE_FUNCS`.
+* **Vendor-neutrality.** The three shipped texts the review found described but not quoted
+  are now quoted in Revision 2, with the others, and I ran the II-5 pattern plus family
+  words over every quoted shipped block.
+* **Maintainer direction: no versions in a mapping.** Folded in everywhere a mapping is
+  described (Revision 2 > Family, not version). The stub's example block changes. I measured
+  the cost, since Revision 1 argued against touching the stub: confined to the example block,
+  the merge is clean for an untouched stub and for a hand-filled one, and conflicts only
+  where the header was rewritten, by the interactive capture or by hand. `lhm` is such a
+  case (I ran its real base through the merge), so it would see one conflict at its next
+  upgrade. It is a Maintainer question below.
+* **Maintainer direction: `lhm`.** `lhm`'s mapping and Cairn's are both filled, so `lhm` is no
+  longer live. Upgrade coverage still matters: its stub arrived through `upgrade` in June
+  (commit `22413d95`), and any other adopter that upgrades into a tree without the file
+  would get the same silence. SEC-2 is exactly about that run.
+
+## Revision 2 -- Claude -- 2026-10-18 -- delta on Revision 1
+
+**What binds.** Revision 1 binds in full except where a numbered replacement below names a
+part of it; where they differ, Revision 2 wins. Nothing else changes. This is a delta by
+direction, not a restatement; the table in R2.7 is the map from each replacement to the Revision 1
+text it replaces.
+
+**Declarations.** **Review**: required(Internal + Security Review), unchanged. **Plan
+review**: required(Internal + Internal Security Review), unchanged: SEC-3 to SEC-8 become its
+checklist. **Assurance path**: high-assurance, unchanged. SEC-1 is handled by a separate repair
+and is not part of this contract.
+
+### Questions for the Maintainer
+
+Questions 1 to 4 of Revision 1 stand, with defaults as there. One is added.
+
+5. **Accept an edit to the stub's example block, and the upgrade conflict it costs some
+   adopters?** Your direction is that a mapping names a model family, never a version, so
+   the stub's shape example must say so. Revision 1 kept the stub's bytes unchanged because any
+   edit reaches adopters through a three-way merge. I tested it. Confined to the example block,
+   the merge is clean for an untouched stub and for a file filled by hand with its comments
+   kept, and **conflicts only for a file whose header was rewritten**, by the interactive
+   capture or by hand; that adopter resolves it once, at their next upgrade. Cairn's own file
+   has no recoverable base, so it sees a review-only diff either way. **`lhm` would see the one
+   conflict:** I ran its real base, the edited stub and its current file through the merge,
+   and the header it rewrote when it was filled today collides with the edit. Keeping its side
+   resolves it. *Recommended: yes.* The alternative is to say it only in the notice, the prompts and the module doc, which leaves the
+   example an agent copies saying nothing about versions.
+
+### R2.1 The upgrade notice moves (replaces Revision 1 Proposal §1, third call site)
+
+`cmd_upgrade` gets three calls, not one early call. `--plan` and `--stage` print the notice
+after their reports. `--apply` becomes `rc = _apply_upgrade(...)`; print the notice when
+`rc == 0`; return `rc`. A refused or failed upgrade prints nothing. The calls read the live
+file, so a plan or stage that will add the stub is silent (the file is absent) and the apply
+that creates it prints. `cmd_upgrade` was already CHANGED; the AST count stays 4 CHANGED,
+2 NEW.
+
+### R2.2 The capture write (replaces Revision 1 Proposal §4)
+
+Order inside `capture_model_selection_mapping`, all inline:
+
+1. Return early if non-interactive or the path is not a regular file (`is_file()`).
+2. `_assert_safe_write(mapping, target)` (the early guard), before any read, print or prompt.
+3. Read with a strict decode inside a `try`; an unreadable or non-text file is left alone and
+   the function returns `False`, so the notice says it could not be read. Return if already filled.
+4. After the answers: guard again; write a temporary file beside the mapping; guard that file
+   too; copy the mapping's permission bits; `os.replace` it over the mapping; remove the
+   temporary file on any failure.
+
+A refusal at step 2 or 4 raises `ScaffoldSecurityError`; `main` prints one constant line
+("model-selection capture refused (containment)"; never the exception text, which carries
+the link target the tree chose) and returns 2.
+
+**The exit-code story, stated once.** Non-interactive install, any bad mapping path: exit 0,
+the "could not be read" notice, nothing written. Interactive install, a link at or above the
+mapping: exit 2, nothing written, no lockfile; re-running over that tree exits 0 and writes it
+(exercised in review). A link at `dev/.cairn` in a real install stops earlier, inside
+`write_local_env`, with a traceback and exit 1: existing behaviour, not this change.
+`SECURITY_MUTATIONS.md:12-13` ("caught once at the CLI top level (exit 2)") is corrected to
+say `main` catches two refusals and others can end in a traceback.
+
+### R2.3 The notice helper and its texts (replaces Revision 1 Proposal §1, helper and text)
+
+`model_selection_notice_lines(target)` runs `lstat` on the path first. Anything other than a
+regular file, or a refusal from `_assert_safe_write`, an `OSError` or a decode error, returns
+the second variant and opens nothing. Both variants are constants. Shipped text, quoted:
+
+```
+NOTE (model-selection) -- the tier-to-model mapping is not filled in:
+  dev/.cairn/model-selection-mapping.yml still holds the FILL ME stub.
+Until it is filled, `python scripts/check_model_selection.py` fails. Nothing runs
+that check automatically. Ask the Maintainer which model family fills each tier
+(high, medium, low); do not guess. Name the family, never a version: the latest
+release is meant. The stub holds one placeholder row: replace it with one row per
+tier, copying its shape (tier, model, date_verified, task_family, source), and say
+in `source` who assigned the model.
+Schema: dev/modules/model-selection.md, "Mapping-record schema".
+```
+
+```
+NOTE (model-selection) -- could not read dev/.cairn/model-selection-mapping.yml
+(it is a link, sits behind one, is not a plain file, or is not valid text).
+Nothing was changed. Open it yourself, then run
+`python scripts/check_model_selection.py`.
+```
+
+### R2.4 The check (replaces the row and scan sentences of Revision 1 Proposal §3)
+
+* The bare row test is anchored: some scanned line matches `^ *(- +)?(\{ *)?tier *:`
+  (a block row or a flow-style row). A `tier:` inside another value no longer counts.
+* With PyYAML, the scan covers every value `safe_load` returns: strings, dict keys, set
+  members, and bytes decoded as text. It visits each object once, keyed on identity.
+* The checker and the engine keep their separate copies of the line rule; R2.6 pins them.
+
+### R2.5 Family, not version (replaces the matching text in Revision 1 Proposal §1, §2, §5)
+
+The Maintainer's direction, 2026-10-18, as recorded in commit `47b38074`:
+
+> "Versions should not be named here, rather the latest version should be used"
+
+It reaches every place a mapping is described. All texts are vendor-neutral and name no
+real model. The stub's example block (the only stub change; the row and the trailing comments
+stay byte-identical):
+
+```
+# Replace the placeholder row below with your real assignments. Name the model
+# family, never a version: the latest release of that family is meant. Shape:
+#
+#   - tier: high
+#     model: vendor-a/flagship-family
+```
+
+The capture's prompt becomes `<tier> tier -- model family, not a version (blank to skip):`, and
+the header it writes gains the same one-line rule. The II-5 block:
+
+```
+**Model-selection mapping** (only if `model-selection` was installed)
+- [ ] `python scripts/check_model_selection.py` exits 0. If not, ask the Maintainer which
+      model family fills each tier (high, medium, low) and record one row per tier, naming
+      the family and never a version; do not guess.
+```
+
+The fourth allowed match in II-5's vendor-neutrality block: "the filled tier-to-model mapping,
+`dev/.cairn/model-selection-mapping.yml`, which is adopter configuration and may name model
+families by design". The seed, in both presets:
+
+```
+* [seed; id: fill-model-selection-mapping]
+  **Waiting on Maintainer**: fill the model mapping
+  If `dev/.cairn/model-selection-mapping.yml` exists, ask the Maintainer which model
+  family fills each tier (high, medium, low), record one row per tier (the family, never
+  a version), and run `python scripts/check_model_selection.py`. Delete the Waiting line
+  when it passes.
+```
+
+The module doc's new paragraph, in the byte-identical pair:
+
+```
+**Filling the mapping.** The adopter-local mapping is
+`dev/.cairn/model-selection-mapping.yml`: one row per tier you populate (high, medium,
+low), copying the shape of the seeded row. In `model`, name the model family, never a
+version; the latest release of that family is meant, so a new release does not make a row
+stale, and a release that changes which family fits a tier does. Say in `source` who made
+the assignment. `python scripts/check_model_selection.py` exits 0 once no placeholder
+remains and at least one row exists. It checks shape, not truth, and nothing reads
+`date_verified`, so noticing a stale mapping is yours to do. The installing agent runs the
+check at the acceptance step; after that a person does, because nothing runs it
+automatically.
+```
+
+Its sentence "surfaced by an existing routine" (`dev/modules/model-selection.md:156-158`)
+becomes: "Re-rank on a low-frequency housekeeping pass; the `date-verified` stamp lets a
+reader see staleness, and no routine reads it."
+
+### R2.6 Tests (adds to Revision 1 > Tests required)
+
+* `TestNoticeOnEveryInstallPath` gains the **delivering apply**: a tree whose mapping is
+  absent from disk and from the lockfile is planned (silent), staged (silent), then applied
+  (the file appears and the notice prints); a refused apply prints none.
+* `TestCaptureRefusesBeforeAskingAnything` calls `capture_model_selection_mapping` directly with a
+  prompt that fails the test if called, for a linked file and a linked `dev/.cairn`; a second
+  test runs a real install with `local-env.json` and the activation log already in place
+  behind the link and asserts the capture's own constant refusal line and exit 2.
+* `TestCaptureWritesByReplacing`: a hard link at the mapping path to an outside file holding
+  `FILL ME` leaves the outside file byte-identical and the mapping a fresh single-link file; a
+  prompt that swaps the mapping for a link while "answering" is refused at write time.
+* `TestNoticeNeverOpensAnythingButARegularFile`: a named pipe at the path returns the second
+  variant within a timeout. A non-text mapping leaves an interactive install running and
+  prints the second variant.
+* `TestEngineAndCheckerAgreeOnUnfilled` uses a **generated** corpus: every line lead (none,
+  space, tab, no-break space, form feed, byte-order mark) times every break (`\r\n`, `\n`,
+  `\r`, U+0085, U+2028, U+2029) times every position (comment, value, row). The engine and the
+  bare checker agree exactly; the PyYAML checker is never looser than the bare one; and its
+  extra strictness is exactly an explicit list: block scalar, folded plain and quoted values,
+  line continuation, escapes such as `"FILL\x20ME"`, a repeated `mapping:` key, `!!binary` and
+  `!!set`. A nested-alias document completes in a fixed time.
+* A stub test: the example block says family, never a version, and names no real model; the
+  placeholder row is intact (one row, five fields reading `FILL ME`).
+
+S2 adds mutations, each owed to the plan: drop U+2028 from one copy's break set (parity red);
+remove the second guard or swap `os.replace` for `write_text` (the swap and hard-link tests
+red); skip `lstat` (the pipe test times out); drop the visited-set (the alias test times out).
+
+### R2.7 Files (replaces the rows of Revision 1 Proposal §6 that it names)
+
+| Revision 1 row | Revision 2 |
+|---|---|
+| `upgrade.py`: `cmd_upgrade` "after the `--to` check" | three calls, apply after success (R2.1) |
+| `install.py`: capture | atomic write, early return paths, family prompt (R2.2, R2.5) |
+| `test_security_leaf.py`: capture joins `_GUARDED_WRITE_FUNCS` | also `_write_stage`; and whatever the `seed_gitignore` repair added is kept |
+| `SECURITY_MUTATIONS.md`: one row | the capture row, lines 12-13 corrected; the `seed_gitignore` rows belong to its repair |
+| (not touched) `lockfile.py` | one comment-only edit at `:448-453`: the revisit trigger fired; keep the reuse, add the file-type check at the call site |
+| (not touched) the stub | the example block only (R2.5); not frozen, not in the manifest |
+
+Frozen set unchanged at six. AST count unchanged: 4 CHANGED, 2 NEW; a comment edit and a
+data-file edit add none. The plan rebases on the `seed_gitignore` repair before it starts.
+
+### Named residuals (replaces the list in Revision 1 > Named residuals)
+
+* **Staleness:** nothing reads `date_verified` or the re-verification field.
+* **A class, not a case, on the bare path and in the engine:** a value whose `FILL ME` is not
+  spelled out on one non-comment line (a block scalar, a value folded over lines, a
+  continuation, an escape) reads as filled, and so does a repeated `mapping:` key. The engine
+  erring toward "filled" means it never overwrites and may stay quiet. With PyYAML installed the
+  checker catches the class. Each needs a deliberate spelling by someone who could edit the
+  checker anyway, so none carries authority.
+* **A version gap:** an adopter's checker is whatever they last upgraded to, while the engine is
+  current. Between `upgrade --plan` and `--apply`, a hand-filled file can be silent in the new
+  engine and fail the old checker. The apply updates the verbatim checker and closes it.
+* A `FILL ME` in a trailing comment fails; in a leading comment it passes. One tier filled
+  passes, as the module doc allows. Invented but plausible names pass. A profile that removes the
+  module from a moderate preset gets a Waiting row to delete.
+* Non-interactive and interactive installs disagree on a bad mapping path (exit 0 with a notice,
+  and exit 2). Neither writes anything.
+
+### S4 and S5 deltas
+
+**S4.** A hard link or a swapped link at write time: refused by the second guard, or harmless,
+because the replace never writes into the old file. A named pipe: never opened. A non-text
+file: left alone. **S5.** Added to what still wins: a value spelled across lines on the bare
+path (named above) and a link swapped in the last instant before the replace, which narrows the
+window to one rename but does not eliminate it; the threat model remains "no concurrent
+filesystem attacker" (`bootstrap/SAFETY.md`). The hard-link case is closed by construction.
+
+### Scope delta
+
+**Scope delta**: degraded, unchanged from Revision 1: the one removal (the solo-greenfield
+seed, **disposition**: wontfix) still needs your allowance (Question 2). Additions, not
+removals: family wording, the stub example edit, the `upgrade` apply path, the `lockfile.py`
+comment.
+
+### Assurance path
+
+**Assurance path**: high-assurance, unchanged.
+
+### Withdrawn / superseded commitments
+
+* **"The stub's bytes unchanged"** (Revision 1 > What changes for you, "Unchanged"): replaced
+  by the example-block edit (R2.5); the row and trailing comments stay byte-identical.
+* **One early `cmd_upgrade` call after the `--to` check:** replaced by three calls, the apply
+  one after success (R2.1).
+* **The capture "checks once, before the prompts" and writes with `write_text`:** replaced by
+  an early guard, a second guard at write time and an atomic replace (R2.2).
+* **"Like every other containment refusal" (Revision 1 > Proposal §4 and the Response):**
+  withdrawn. `main` catches two refusals, and the table is corrected (R2.2).
+* **"The helper never raises" as the whole of the notice's safety:** supplemented by a file-type
+  check so it also never blocks (R2.3).
+* **"Some scanned line holds a `tier:` key" (bare row test):** replaced by the anchored pattern.
+* **"Every string in the parsed document" (PyYAML scan):** replaced by every value `safe_load`
+  returns, visited once.
+* **"The only surviving differential is a `#`-led line in a multi-line scalar":** replaced by the
+  class in Named residuals.
+* **"The PyYAML checker differs only on the named multi-line cases" (parity test):** replaced by
+  a generated corpus and an explicit list.
+* **"`lockfile.py` not touched":** one comment-only edit.
+
+Nothing else in Revision 1 is withdrawn.
