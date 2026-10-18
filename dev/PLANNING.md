@@ -203,7 +203,17 @@ with the plan's filename stem.
   `test_an_empty_file_carries_no_obligation`,
   `test_the_shipped_copy_makes_claiming_conditional` and
   `test_cairns_own_copy_claims_unconditionally`; the parametrized labels are in
-  that plan's two *Implementation verification* records. A smaller or
+  that plan's two *Implementation verification* records. The
+  maintainer-attention plan (archived 2026-10-18) changes one frozen file,
+  `bootstrap/tests/test_replacement_tools.py` (new bytes at `72254d0e`), and adds
+  5 nodes to its pinned collection (15 pinned, 20 now), dropping none, all in
+  `TestTheBoardReadsHeadersAndJudgesNothing`:
+  `test_maintainer_lists_exactly_what_authors_declared`,
+  `test_a_fence_with_no_declared_wait_is_named_not_listed`,
+  `test_a_mention_of_the_marker_is_not_a_marker`,
+  `test_the_footer_names_what_the_list_cannot_see` and
+  `test_every_value_the_view_prints_is_encoded`; none is parametrized, and the
+  IDs are in that plan's *Implementation verification* record. A smaller or
   differently-named collection at the ceremony is expected for exactly these
   reasons. The AST attestation baseline is separate: re-anchored by the
   Maintainer at `cef67cc0` and `396e001b`, and owed one more, for

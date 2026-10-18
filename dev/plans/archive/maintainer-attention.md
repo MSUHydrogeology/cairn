@@ -1,7 +1,7 @@
 # Plan: maintainer attention — a list of what waits on the Maintainer, and no work left in archived plans
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-maintainer-attention.md`
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits `doctrine/`, the authoring templates, and a tool adopters run
 **Opened**: 2026-10-18
@@ -1439,3 +1439,113 @@ made, not one I can prove. Reviewer and implementer are the same agent type, so
 there is no cross-type distance.
 
 Untracked paths: `dev/measurement/suite-runs.jsonl`, `dev/measurement/suite-cost.md` -- both are gitignored local measurement files (`.gitignore` lines 18-19), so a fresh checkout does not carry them. Declared 2026-10-18 so the citations in the Implementation verification record above resolve on any checkout.
+
+## Archive -- 2026-10-18
+
+`Dispositions: accept x6, wontfix x3, defer x0` — restated over the whole
+record, since sections were appended after *Dispositions*. Status
+`ready-to-archive` -> `archived`; the plan moves to `dev/plans/archive/`.
+
+* **accept — every outcome of Revision 1 that this plan carried.** Delivered in
+  C1 (`72254d0e`), C5 (`42fa6804`), C2 (`c5c2c38f`), C3 (`753f7fed`) and C4
+  (`31d9cefe`), with the Boundary B record at `a2fb2d22`. Boundary B, mode
+  `full`, at `31d9cefe`: 3,384 passed, 0 skipped, xfail or xpass, under Python
+  3.13.13. The code review at `7da5892f` accepted it with followups.
+* **accept — plan review [PR1] to [PR13]**, folded into the operative cells
+  before work began (*Response to plan review*). Two were accepted in part. The
+  near-miss spelling [PR9] declined to detect is covered by the template
+  preamble, the code-review check and the miss tracker, and the code review
+  found no gap there. The other declined half, [PR10]'s sentence in
+  `docs/tool-usage.md`, is the `wontfix` below.
+* **accept — code review [CR1].** Fixed in `7da5892f`: a typed `Untracked paths:`
+  line at the end of the review declares the two gitignored measurement files
+  the Boundary B record cites, so `claim_check` and `check_cairn` pass on a
+  clean checkout.
+* **accept — code review [CR2].** The sentence the review asked for is in the
+  Purpose of `dev/measurement/maintainer-view-misses.md`, written in this
+  archive commit. It gives the proposal's other warning signs (a Waiting line or
+  marker that outlives its answer, the advisory line naming most open plans,
+  `defer` rows piling up) a live home, with the day-one reading of 2 of 2 open
+  plans as the baseline. No code, test or template changed.
+* **accept — chunk M's board note.** `bootstrap/tests/test_replacement_tools.py`
+  is in the gate manifest's `frozen_files`, and its pinned collection gains five
+  nodes (15 pinned, 20 now). The queued re-anchor row on `dev/PLANNING.md` now
+  names the file and the five node IDs, in this archive commit. The row already
+  carries its marked wait (`**Waiting on Maintainer**: run the gate-manifest
+  re-anchor`), so the ceremony stays the row's: Maintainer-only, and not
+  performed here. No file under `bootstrap/_scaffold/` changed in the range, so
+  this plan owes no AST re-anchor.
+* **accept — this plan's own archive follows its own C3 rules.** This commit
+  writes the `CHANGELOG.md` entry, and the plan carries no Waiting line (its
+  header has none). The one wait still open, the re-anchor, is on its marked
+  board row, and `python tools/board.py --maintainer` lists that row.
+* **wontfix — code review [CR3]**, five mutants of `tools/board.py` that the
+  five nodes do not catch (a blockquote, `+` or numbered prefix in a row; a
+  substring status match; a marker in a plan body counting as declared; the
+  footer's count line). Each makes the list longer and none can hide a wait,
+  which is the failure the list exists to prevent. Pinning them edits a frozen
+  test file and costs a fresh full run, for a regression that would show as an
+  extra row. It reaches no adopter (tests are not shipped), blocks no release
+  and needs no Decision. The reviewer's note stands for whoever edits the board
+  next: the open proposal
+  `dev/proposals/2026-10-18-claude-board-as-basis.md` adds reads of plan text to
+  this tool, and a body-marker assertion belongs in that change's own test edit.
+  That proposal does not name it, so this is advice and not owed work.
+* **wontfix — [PR10]'s declined half, a `--maintainer` sentence in
+  `docs/tool-usage.md`.** The Response put it to the Maintainer with a
+  recommendation of no and said nothing waited on the answer; no answer is
+  recorded, so the recommendation stands as the author's call. The page
+  describes the plain board, which did not change, so nothing on it became
+  false, and `docs/` is not installed into an adopter tree. If the Maintainer
+  wants it, `dev/proposals/2026-10-18-claude-board-as-basis.md` edits that same
+  board entry and can describe both flags in one edit.
+* **wontfix — the code review's comprehension note**, that the footer's phrase
+  "plans that mention a fence but declare no wait" is the one place the
+  Maintainer meets the word *fence* without a gloss. The reviewer wrote that it
+  is not a finding, that the line is accurate, and that a rewording is
+  test-safe. It is a gloss on one line of output, not a defect, and misleads
+  no one; a board edit also owes a scoped lockfile finalize, which is not worth
+  paying for wording alone. The next edit to `tools/board.py` can carry it.
+
+The review also accepted three omissions as recorded, and none is a follow-up:
+the row parser matches a marker inside a fenced block or an HTML comment of
+`dev/PLANNING.md` (the wrong answer is an extra listed row, never a missing one,
+and no such block exists); `--archive` is ignored by `--maintainer`, as the plan
+fixed; and the sweep left the third-party probe row and the public-launch
+sequence unmarked, which the reviewer re-read and judged defensible.
+
+**Left to the Maintainer, and not deferred work.** Part B of the proposal, agents
+taking their own review turns, was cut at the Decision and stays with issue #13,
+which has its board row on `dev/PLANNING.md` (deposited at `07bd9950`, before
+this plan opened). It is not this plan's deferral. The day-one reading of the
+advisory line (2 of 2 open plans) should fall to `none` once this plan and
+`verification-practice` are both archived.
+
+**Evidence shipped**: the five nodes in
+`bootstrap/tests/test_replacement_tools.py` (each red at the parent, with 15
+mutations of C1 recorded); `python tools/board.py --maintainer` in
+`tools/board.py` and its identical twin; the tracker
+`dev/measurement/maintainer-view-misses.md`; the doctrine, template and shipped
+board text, with the one-shot counts in the *Implementation verification*
+record; and the Boundary B record at `31d9cefe`, `full`.
+**Evidence deferred**: none was planned. The known omissions in the record (no
+standing pin on the C2 to C4 prose; the fenced-block parse; the ESC-in-a-name
+case skipped on a filesystem that rejects the name) were never planned checks;
+the unpinned mutants are the `wontfix` [CR3] above. **Deferred evidence home**:
+not applicable.
+
+**Fidelity sign-off.** The landed commits C1 to C5 match the accepted
+`## Revision 1` of
+`dev/proposals/archive/2026-10-17-claude-maintainer-attention.md`, as ratified by
+the Decision of 2026-10-18 at `e9043938`. Nothing outside the plan's *Scope*
+changed: the code review checked the union of the five commits against it, and
+the one unplanned edit, a Scope bullet in C5, is declared in the record. *Scope
+delta* stays `preserved`: Part B left at the Decision before this plan opened,
+and nothing accepted was dropped afterwards.
+
+**The lasting truth.** A list a person relies on is only as honest as what it
+admits it cannot see: the footer names pushes and undeclared items, and the
+tracker counts each time that was not enough. A rule about where work may live
+has to bind the plan that states it: this plan's own archive writes its
+changelog line in the same commit, carries no Waiting line, and leaves its one
+open wait on a marked board row.

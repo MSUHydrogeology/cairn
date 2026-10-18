@@ -37,6 +37,30 @@ release is cut, that section is renamed to the version + date
 and a new empty `Unreleased` is started above.
 
 ## Unreleased
+### Added — A list of what waits on the Maintainer, and no work left in archived files
+
+- **`python tools/board.py --maintainer` lists what waits on the Maintainer.**
+  It shows, once each, every proposal at `awaiting-decision`, every plan or
+  change note whose header carries a `**Waiting on Maintainer**:` line, and
+  every `dev/PLANNING.md` row carrying the same marker.  The board still
+  decides nothing: it reports what authors wrote.  Its footer names the plans
+  that mention a step only the Maintainer can release but declare no wait, and
+  says it cannot see pushes.  The plan templates say when to write the line and
+  the code review checks it.  `dev/measurement/maintainer-view-misses.md`
+  records each wait that was missed, and two in 30 days mean declaring by hand
+  is the wrong design.
+- **Nothing still to be done may live only in an archived file.**  Work handed
+  to a plan that is not open yet becomes a board row, a pointer to an archived
+  file is not a home, and each archive commit writes its own changelog entry.
+  A plan that archives carries no Waiting line; a wait still open moves to a
+  marked board row.
+- Agents taking their own review turns was cut from this change and stays with
+  issue #13.
+- The text is in `doctrine/lifecycle.md`, `doctrine/plans.md`, both plan
+  templates and `templates/core/dev/PLANNING.md`, and five tests in
+  `bootstrap/tests/test_replacement_tools.py` pin the new list.  From
+  `dev/plans/archive/maintainer-attention.md`.
+
 ### Changed — Reviews read a commit; a small fix runs the tests that own it
 
 - **A review reads a commit, never a shared working tree.**  The author commits

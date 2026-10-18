@@ -8,7 +8,16 @@ tested rather than trusted. **Two rows in the window mean declaring a wait by
 hand is the wrong design.** That is the design's own falsifier
 (`dev/proposals/archive/2026-10-17-claude-maintainer-attention.md`, "What would
 falsify it"), not only a rate-limit suggestion to adjust doctrine; the gate's
-suggestion is merely how a reader learns it, and it should be read as that.
+suggestion is merely how a reader learns it, and it should be read as that. The
+design has three other warning signs
+(`dev/proposals/archive/2026-10-17-claude-maintainer-attention.md`, "Signals the
+change is wrong") that no row here records, so they are read by use: a Waiting
+line or board-row marker that outlives its answer; the footer's advisory line
+(plans that mention a fenced step but declare no wait) naming most open plans
+for most of their lives, with its first reading, 2 of 2 open plans, as the
+baseline, so that the same cause (a wait declared on a board row, which the
+advisory cannot see) at each of the next two plan archives is the cue to
+redesign the line; and `defer` rows piling up unopened on the board.
 
 **Rate-limit gate connection**: this tracker is the parse target for the
 **adaptive-doctrine rate-limit gate** specified at
