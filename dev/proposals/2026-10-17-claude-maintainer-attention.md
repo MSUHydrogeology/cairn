@@ -1,7 +1,7 @@
 # What waits on the Maintainer: one board view, one turn rule, and no work left in archived plans
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: required(External)
 **Plan review**: required(Internal) — prose, two templates and one small shipped tool; no security surface (see the preflight)
 **Opened**: 2026-10-17
@@ -957,3 +957,32 @@ edits `doctrine/`, the authoring templates, and a tool adopters execute.
 * **"Two in Cairn's archives"**: corrected to one (MA-7).
 * **"Without C, A misses whatever the archives swallowed"**: withdrawn as
   backwards (MA-1).
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-18
+
+**ACCEPTED.** The Maintainer's authorization, quoted **verbatim and visually
+isolated**:
+
+> "Accept A, B, C and D as revised, with every recommended answer, including B’s scope cut and D’s scope delta."
+
+*Scribe's note, separate from the quoted words.* The four proposals of
+2026-10-17 were put to the Maintainer as one batch, labelled A
+(verification practice), B (Maintainer attention), C (neutrality and upgrade
+slots) and D (independent scientific check). This proposal is **B**.
+"Every recommended answer" means the recommended default of each question in
+its newest revision, as put to the Maintainer:
+
+* **Revision 1 binds.**
+* **Q1 -- yes: the scope cut is allowed.** Part B (the status field as turn
+  token) leaves this proposal. Its grouped remainder is deferred to issue #13,
+  kept open as its home, with the revival condition Revision 1 records: a
+  recorded two-agent drive, then a fresh proposal. Its board row is deposited
+  in its own commit after the four Decisions, with this quoted authorization.
+* **Q2 -- yes, only then.** An agent may quote the Maintainer's acceptance as
+  authority to defer work to a later plan only when the accepted text
+  assigned that work to that plan. Anything else goes to the Maintainer in
+  the archive batch.
+* **`Plan review: required(Internal)`** is ratified as declared.
+
+Scribed by Claude (claude-opus-5-5) on the Maintainer's explicit instruction.
+Nothing else lands in this commit.
