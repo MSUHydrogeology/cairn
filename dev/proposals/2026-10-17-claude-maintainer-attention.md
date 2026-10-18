@@ -1,7 +1,7 @@
 # What waits on the Maintainer: one board view, one turn rule, and no work left in archived plans
 
 **Author**: Claude (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: required(External)
 **Plan review**: required(Internal) — prose, two templates and one small shipped tool; no security surface (see the preflight)
 **Opened**: 2026-10-17
@@ -572,3 +572,388 @@ has an instrument behind it.
 * A same-type reviewer: this review has no cross-type distance.
 * The background-watcher exclusion was not weighed beyond agreeing it is out of
   scope.
+
+## Response -- Claude (author) -- 2026-10-17
+
+This answers the External review at `7600e8ae` (reviewed commit `adae4761`).
+Revision 1 follows with the complete current contract.
+
+**In plain terms.** I accept the verdict. Part A now also reads the board file,
+so its list is not empty while things wait on you. It also flags any active
+plan that mentions a fence but declares no wait. Part C keeps its shape, with
+Question 1 tightened. Part B leaves this proposal. That is a scope reduction,
+and only your explicit allowance at the Decision can make it.
+
+* **[MA-1]** accept with modification. I take option 1 together with option 2's
+  footer:
+  * `--maintainer` also reads `dev/PLANNING.md` for the same `**Waiting on
+    Maintainer**:` line, written inside a row;
+  * the footer names every class the list leaves out: pushes, and anything no
+    artifact or row declares;
+  * the plan marks the rows that wait on you today, in one commit authorized by
+    the Decision.
+
+  The modification: the marker goes on a row whose *next move* is yours. A
+  deferral you already authorized is queued work, so it carries none. The
+  Rationale's "without C, A misses whatever the archives swallowed" was
+  backwards, and is withdrawn.
+* **[MA-2]** accept. The status field cannot carry unattended action today:
+  * it has sat wrong on the record (`495c6a7f`, `a516bcdc`);
+  * it names one holder where `required(A + B)` owes two passes;
+  * a work intent is "a courtesy signal, not a lock" (`doctrine/coordination.md`).
+
+  Specifying the four conditions was weighed and rejected (see MA-3). They
+  become B's revival conditions instead.
+* **[MA-3]** accept: B leaves. I cut rather than specify because specifying
+  would leave the weak points standing:
+  * intents stay advisory, so "claim first" still races;
+  * B still answers no recurring failure, so the rate-limit gate still applies;
+  * the live two-agent drive that #13 asks for has not happened yet.
+
+  Nothing in A or C depends on B. I had also missed that B amends two phrases
+  in `doctrine/session-routines.md`: "never a mandate to act" and "orientation,
+  not execution". A future B must name both.
+* **[MA-4]** accept. The condition becomes "the accepted text **assigns** this
+  work to that later plan". The defer line then quotes the assigning sentence
+  as well as the Decision.
+* **[MA-5]** accept: declare *and* check. The header line stays the source of
+  truth. A footer line names each active plan that mentions a fence but declares
+  no wait. My earlier reason for rejecting body reading, unknown spellings, was
+  wrong: the tokens are uniform. What stays rejected is deciding whether a fence
+  *cleared*.
+* **[MA-6]** accept with modification.
+  * **At code review**, the reviewer checks with `git log -p` on the plan that
+    a Waiting line was written for each fenced chunk and deviation request in
+    the range. A miss goes in a named tracker.
+  * **The `defer` batch is exempt.** It cannot be missed silently, because it
+    needs your quoted words.
+  * **A board row's missing marker** has no instrument except you noticing, and
+    the contract now says so, as `AGENTS.md` asks.
+* **[MA-7]** accept, all four:
+  1. The field joins `_FIELDS`, and its value stays under the 48-character cell.
+  2. `doctrine/plans.md` > "Mutability rule" gains the line.
+  3. Cairn's own changelog evidence is one archive; the recurrence rests on LHM.
+  4. Moot with B gone; the missing column stays with IB4.
+
+**Scope not widened.** Every addition is a closure the review specified: MA-1's
+option 1 and footer, MA-5's check, and MA-6's step and named file. Everything
+else narrows: B's removal, and MA-6's `defer` exemption. The status therefore
+moves to `awaiting-decision`.
+
+## Revision 1 -- Claude -- 2026-10-17 -- the complete current contract
+
+**Section inventory.** Every opening section carries forward, from In brief
+through Assurance path. Part B is removed and recorded under Scope delta. No
+other section is absent.
+
+### In brief
+
+Two issues ask *what needs the Maintainer, and where will they see it?* (#27,
+#28). A third (#13) is carried only as a recorded remainder.
+
+1. **A list of what waits on you** (#27). `python tools/board.py --maintainer`
+   shows:
+   * proposals at `awaiting-decision`;
+   * plans that declare a wait;
+   * board rows that declare one.
+
+   The footer names what the list cannot see, and flags any active plan that
+   mentions a fence but declares no wait. The board still decides nothing.
+2. **Nothing still to do may live only in an archived file** (#28). Work handed
+   to an unopened plan gets a board row, and the archive commit writes its own
+   changelog line.
+3. **Part B, agents taking their own turns (#13), leaves this proposal** until a
+   two-agent trial is recorded. That is a scope reduction, and it needs your
+   allowance (Question 1).
+
+### Questions for the Maintainer
+
+1. **Scope delta: may part B leave this proposal, with #13 kept open as its
+   home?**
+   * *What B did:* an agent told "work the board as <role>" took its role's
+     turns, so you would stop relaying commit references.
+   * *What review found:* the status field B relies on has gone stale on the
+     record, cannot name two holders at once, and answers no recurring failure.
+
+   *Recommended: yes.* Your words at the Decision allow it; my removing it does
+   not. If you say no, B returns owing MA-2's four conditions and its own
+   security preflight, and the proposal goes back to `revising`.
+2. **May an agent quote your acceptance as authority to defer work to a later
+   plan, but only when the accepted text assigned that work to that plan?**
+   *Recommended: yes, only then.* Anything else comes to you in the archive
+   batch.
+
+### Context
+
+The terms are as defined in the opening: *header line*, *fence*, *`defer`*.
+
+**What waits on you is scattered (#27).**
+
+* The status field names you only at `awaiting-decision`
+  (`doctrine/lifecycle.md` > "The proposal lifecycle"). A plan at a fence, a
+  `defer` batch, or a deviation request still names someone else.
+* Board rows only you can move sit in `dev/PLANNING.md`, which the board does not
+  read. Examples are the gate-manifest re-anchor and the open "Four deferred
+  Maintainer questions".
+* Pushes appear nowhere.
+
+LHM built an out-of-repository tracker to cope.
+
+**Work can end up only in archived files (#28).** `doctrine/plans.md` >
+"Lasting-truth migration doctrine" already says that an item with no landing
+place outside the plan "is a `defer`, and needs a row". Two gaps remain:
+
+* **Sequencing.** LHM read "sequencing is free" across plans, so work held for
+  unopened plans ended up pointing at an archived proposal. Cairn's never-opened
+  Class C follow-on has the same shape (`dev/PLANNING.md` > Queued, "Four
+  deferred Maintainer questions").
+* **Changelog lines.** Lines get owed to the next goodnight: four times at LHM
+  in one week, and once in Cairn
+  (`dev/plans/archive/interpreter-trust-root-fallback.md`).
+
+### Proposal
+
+#### A. One declared line, read in two places (#27)
+
+* **The line** is `**Waiting on Maintainer**: <what>`, under 48 characters (the
+  board's cell width); the detail stays in the artifact. Whoever holds the item
+  writes it when the next move becomes yours, and deletes it when you answer.
+  * In a **plan or change note**, it is a header line, written at a fenced
+    chunk, a `defer` batch, or a deviation request. `doctrine/plans.md` >
+    "Mutability rule" lists it beside Status. Proposals need no such line,
+    because `awaiting-decision` already names you.
+  * In a **`dev/PLANNING.md` row**, it is a line inside the row, written when
+    the row's next move is yours: a ceremony only you run, a question only you
+    answer, or a go-ahead only you give. A deferral you already authorized
+    carries no marker.
+* **`board.py --maintainer`** lists three kinds of entry: artifacts at
+  `awaiting-decision`, artifacts carrying the line, and rows carrying it. The
+  field joins `_FIELDS`, so the plain board shows it as a column.
+* **Declare and check.** One advisory footer line names each active plan whose
+  body has a fence token but whose header declares no wait: *mentions a fence,
+  declares no wait: open it*. That line is a lexical fact. It says nothing about
+  whether the fence cleared.
+* **The footer names what is not listed:**
+  * pushes, which `git status` shows and which are always yours;
+  * anything no artifact or row declares.
+
+  A missing `dev/PLANNING.md` is named in the footer rather than read as zero
+  rows.
+* **The plan marks today's rows** in one commit, under the Decision's
+  instruction, because `dev/PLANNING.md` is a shared file. They are the
+  gate-manifest re-anchor, the open deferred questions, the stage-reader row's
+  question (3), and any others its sweep finds.
+* **Doctrine.** lifecycle.md's sentence that status alone names the holder gains
+  an exception: inside a plan, the Waiting line names a Maintainer gate.
+
+**The board still decides nothing.** It reads one fixed field, in headers and in
+rows. It checks active plan bodies for two fixed tokens. It never judges whether
+quoted words clear a gate. The docstring, which disclaims that judgment, gains
+one sentence naming the two new reads. The board's one mapping,
+`awaiting-decision` to the Maintainer, is the vocabulary's own definition.
+
+#### C. An archived artifact is a record, not a to-do list (#28)
+
+1. **The rule:** *nothing still to be done may have an archived artifact as its
+   only home.* A live home is one of:
+   * an open proposal or plan that names the item in its own text;
+   * an issue, by number;
+   * a board row.
+
+   A pointer to an archived artifact or an unopened plan is not a live home.
+   The rule lands in `doctrine/lifecycle.md` > "Archive precondition", with a
+   pointer from `dev/plans/_template.md` > Dispositions and one line in the
+   board's restatement (#26).
+2. **Sequencing stays within a live plan.** `doctrine/plans.md` > "Accepted
+   scope is a floor" and `dev/plans/_template.md` > Scope delta gain "between
+   chunks of a live plan".
+   * Work handed to an unopened plan is a `defer` to that work's board row,
+     listing the items.
+   * When the accepted text **assigns** that work to the later plan, quoting
+     that sentence and the Decision is the authorization (Question 2).
+   * LHM's six-plan case and the board's gate-manifest row ("Joined 2026-10-17")
+     meet that bar. A plan that simply fell short does not.
+3. **The archive commit writes the plan's changelog entry.** This is stated in
+   `doctrine/plans.md` > "Lasting-truth migration doctrine" and in the plan
+   template.
+   * `AGENTS.md` already makes an archive a changelog serialization point.
+   * Same-day archives fall under `doctrine/coordination.md` > "Required
+     signal+read for coordination-surface files".
+   * The goodnight still verifies the changelog.
+
+**Left out from #28 (unchanged):**
+
+* *Owed notes routed to `NEXT_SESSION.md`.* The 2026-10-16 queued row makes that
+  file local and untracked; such notes go to a board row.
+* *The `claim_check` soft-flag.* The precondition is documentary by design
+  (`doctrine/lifecycle.md` > "Recording it").
+
+### Rationale
+
+A and C need each other. A's list now reads the board, which is where C sends
+leftover work. C keeps that work out of archived files, which nothing reads.
+Without A, C's rows wait unseen; without C, the list has nothing to find.
+
+**Cost:** about forty lines of board code, five tests, one small tracker, and a
+dozen sentences of prose. **Gain:** one command replaces your memory of what is
+pending, and "was anything left behind?" stops being your question. The new
+mechanism is a flag, a column, a footer and one more file read on an existing
+tool; accepting this is the go-ahead the "build nothing new" rule asks for.
+
+### Alternatives considered
+
+* **Derive gate state from plan bodies alone.** This would have to decide
+  whether a fence *cleared*, and the record has no common way of saying so. Its
+  real merit, catching a forgotten declaration, survives as A's advisory check.
+* **Footer only** (MA-1's option 2). The list would stay empty while rows wait
+  on you, and the footer would send you to read the board yourself. That is the
+  memory work A exists to remove.
+* **A new `awaiting-maintainer` status.** It has three costs:
+  * it hides which chunk is waiting;
+  * it needs transitions in both lifecycle diagrams and in every template;
+  * it spends two transitions per fence on what one line carries.
+* **Do nothing.** You keep reconstructing pending work from memory, and LHM's
+  lost-leftovers failure stays open.
+
+### Documentation / doctrine surface
+
+* **Doctrine:** `doctrine/lifecycle.md` (A's exception, C1); `doctrine/plans.md`
+  (A's Mutability line, C2, C3).
+* **Templates:** `dev/plans/_template.md` and
+  `templates/core/dev/plans/_template.md` (A, C); `templates/core/dev/PLANNING.md`
+  (one line stating the row marker).
+* **Board and tools:** `dev/PLANNING.md` (the marker stated once, today's rows
+  marked, one restatement line); `tools/board.py` and its byte-identical twin
+  `templates/skills/_lib/board.py`; a miss tracker forked from
+  `dev/modules/incident_log_template.md`.
+
+Proposed paths:
+* `dev/measurement/maintainer-view-misses.md` — the miss tracker
+
+With B gone, three files are no longer touched: `doctrine/session-routines.md`,
+`AGENTS.md`, and `templates/core/AGENTS.md`. `doctrine/proposals.md` stays
+untouched, because it defers to lifecycle.md.
+
+#### Doctrine-change rate-limit
+
+This claims recurrence, under `doctrine/rationale.md` > "How the doctrine evolves
+under evidence".
+
+* **C.** The same failure appears at LHM and in Cairn's lost Class C follow-on.
+  Owed changelog lines appear four times at LHM in one week, and once in Cairn.
+* **A.** It corrects a claim that every fenced plan falsifies. That is a
+  standing defect, not an incident.
+
+B's thin case is withdrawn along with B.
+
+### Evidence / verification plan
+
+#### Tests required
+
+Five nodes, in `bootstrap/tests/test_replacement_tools.py` >
+`TestTheBoardReadsHeadersAndJudgesNothing`, each run on a scratch tree:
+
+1. `--maintainer` lists an `awaiting-decision` proposal, a plan carrying the
+   line, and a row carrying it, and nothing else.
+2. A plan with a fence token in its body and no declared wait is named on the
+   advisory line, and not listed as waiting.
+3. A row that only mentions the marker mid-sentence (in backticks) is not
+   listed.
+4. The footer names pushes and undeclared items as unlisted, and names a missing
+   `dev/PLANNING.md`.
+5. Every value, from headers and rows alike, passes through the shared encoder.
+
+The plan maps which tests read the changed prose. Grep finds three candidates:
+`test_scope_reduction_trap.py`, `test_claim_check_module.py`, and
+`test_loop_fidelity_gate.py`. **Boundary B runs full**, because a shipped
+executable template changes.
+
+#### Examples / smoke checks
+
+`python tools/board.py --maintainer` on the live tree once the rows are marked
+(it must not be empty) and on a fixture tree; `python scripts/check_cairn.py`;
+`python scripts/claim_check.py` on each changed document; and
+`python scripts/quality_gate.py --sub neutrality --sub redundancy`.
+
+**What would falsify it:** a miss, meaning something waits on you that
+`--maintainer` did not list. Each miss becomes a row in
+`dev/measurement/maintainer-view-misses.md`, and two in the first month mean
+declaring is the wrong design. How misses are caught:
+
+* **Plans:** at code review, the reviewer checks with `git log -p` on the plan
+  that a Waiting line was written for each fenced chunk and deviation request in
+  the reviewed range.
+* **Board rows:** the only trigger is you noticing, and the contract says so.
+
+#### Security preflight — five questions, answered in writing
+
+N/A: no trust boundary added, moved, or widened.
+
+* **The new read** is `dev/PLANNING.md`, at a fixed path under the repository
+  root. It is the same contributor-editable Markdown as the proposals and plans
+  the board already reads, and it goes through the same `encode_display`
+  encoder. Nothing derives a path or an action from its content.
+* **The fence check** is a substring test on plan text the board already reads.
+* **No subprocess** is added.
+
+### Signals the change is wrong
+
+* **A miss** recorded in the tracker.
+* **Stale lines.** Waiting lines or row markers routinely outlive their answer.
+  That is safe, but it means the instrument is wrong.
+* **A noisy check.** The fence advisory names most active plans for most of
+  their lives, so people stop reading it.
+* **Pile-up.** Sibling-plan `defer` rows accumulate unopened, turning the board
+  into the one-way accumulator lifecycle.md warns against.
+
+### Scope delta
+
+**Scope delta**: lost. One baseline outcome, part B's "the Maintainer leaves the
+relay", is no longer delivered here. A and C are preserved. The remainder is one
+grouped record:
+
+* **Part B, the status field as turn token** (opening Proposal > B), together
+  with its archive-stop question (opening Question 2) and its close-#13 question
+  (opening Question 3).
+  * *Why cut rather than specify:* MA-2's conditions cannot make a work intent a
+    lock, and specifying B does not supply the recurring failure the rate-limit
+    gate asks for (MA-3).
+  * *Revival condition:* a recorded live two-agent drive, as #13 asks. Then a
+    fresh proposal that meets MA-2's four conditions, answers the preflight for
+    B, and names the `doctrine/session-routines.md` phrases it amends.
+  * **disposition**: defer, to issue #13, kept open as B's home.
+
+**This needs your explicit allowance at the Decision, quoted verbatim**
+(Question 1). A reviewer calling B out of scope does not supply that allowance,
+and neither does my removing it. This proposal writes nothing to the issue.
+
+### Assurance path
+
+**Assurance path**: high-assurance. That is mandatory here, because the change
+edits `doctrine/`, the authoring templates, and a tool adopters execute.
+
+### Withdrawn / superseded commitments
+
+* **Part B in full**, moved to the Scope delta record (MA-2, MA-3). That covers
+  the "work the board as <role>" direction, its bright lines, and its edits to
+  doctrine and `AGENTS.md`.
+* **Opening Questions 2 and 3** (archive stops; closing #13). The first moved
+  with B. The second is withdrawn, because #13 stays open as B's home.
+* **Opening Question 1's "names the work"**, replaced by "assigns the work to
+  that later plan" (MA-4).
+* **"The plain board shows the line as a column, as it does for every field"**:
+  false. Replaced by adding the field to `_FIELDS` (MA-7).
+* **"Plan headers are already mutable, like Status"**: overstated. Replaced by
+  the Mutability-rule edit (MA-7).
+* **"Reports only what authors wrote" and "reads no new files"**: replaced. The
+  board now also reads `dev/PLANNING.md` and the fence tokens in plan bodies,
+  and still decides nothing (MA-1, MA-5).
+* **The "unknown fence spellings" rejection of body reading**: withdrawn,
+  because the tokens are uniform (MA-5).
+* **Proposed test 2, which pinned silence**: replaced by the advisory-footer
+  test (MA-5).
+* **"Record each case", which had no instrument**: replaced by the code-review
+  check and the tracker (MA-6).
+* **"Two in Cairn's archives"**: corrected to one (MA-7).
+* **"Without C, A misses whatever the archives swallowed"**: withdrawn as
+  backwards (MA-1).
