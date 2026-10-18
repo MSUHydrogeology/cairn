@@ -228,6 +228,35 @@ with the plan's filename stem.
   > "Accept Revision 2 as written. Defer the install-report fix (F8) to the
   > board. No second review round; External floor waived."
 
+  **Joined 2026-10-18** at the opening of
+  `plans/neutrality-and-upgrade-slots.md` — **planned, not yet changed**: none
+  of the files below has moved, so derive the changed set from the manifest's
+  `frozen_files` keys at ceremony time, and expect a second pass if the
+  ceremony runs before that plan archives. It changes 14 frozen files:
+  `scripts/quality_gate.py`, `scripts/content_scan.py`,
+  `scripts/onboarding_activate.py`, `bootstrap/verify_integrity.py`,
+  `bootstrap/tests/fixtures/skills/README.md`,
+  `bootstrap/tests/test_quality_gate_neutrality.py`,
+  `bootstrap/tests/test_verify_integrity.py`,
+  `templates/modules/team-gated/content_scan.py` and
+  `templates/modules/default-on/_onboarding/{__init__,activation,cli,security,shared,triggers}.py`.
+  The pinned collection moves too: 8 nodes join `test_quality_gate_neutrality.py`
+  (22 pinned), and the new `test_verify_integrity.py` nodes are listed by ID in
+  the plan's *Implementation verification* record at archive.
+  `test_verify_integrity.py` already has 19 collected nodes against 13 pinned:
+  the one listed above and the five of `TestCustomizedSlotDetection`, which no
+  line here names. `bootstrap/verify_integrity.py` is also on the differential
+  oracle's refactor-sensitive roster (`bootstrap/tests/_oracle_activation.py`)
+  and already differs from the gate anchor `bd66a70c`, so the ceremony's
+  sensitive-path check covers it either way. No `bootstrap/_scaffold/` symbol
+  changes, so that plan adds nothing to the AST baseline. It also makes
+  `python scripts/quality_gate.py --sub neutrality` read `fail=0`, the "green"
+  the manifest's recorded gate command already expects of it. Authorization for
+  joining this batch is the Decision accepting that proposal, quoted verbatim:
+
+  > "Accept A, B, C and D as revised, with every recommended answer, including
+  > B’s scope cut and D’s scope delta."
+
   **Waiting on Maintainer**: run the gate-manifest re-anchor
 
 * **F8 — the post-install report asks for work the profile does not make
