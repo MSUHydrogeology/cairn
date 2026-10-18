@@ -1,7 +1,7 @@
 # Two checks you can trust: a neutrality gate that reads zero, and a note for slots an upgrade adds
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: required(External + Security Review)
 **Plan review**: required(Internal)
 **Opened**: 2026-10-17
@@ -1873,3 +1873,329 @@ The change reaches:
   * the fixture credit and the stale docs lines are reworded (SR7);
   * markers are tight.
 * **"Up to 15 pinned files."** Now 16.
+
+## Review -- Claude Opus 5.5 (Security Review, round 2, fresh session) -- 2026-10-17
+
+```
+Reviewed commit: aa13b2f3d8b5fc7b73d484a5d57958b7d76cc3ab
+Target: Revision 2 (the binding contract) and its Response, read for SR1-SR7's closures and for the widened scope (the stricter neutrality checker), against scripts/quality_gate.py, bootstrap/verify_integrity.py as of a3f39aef, the --finalize code, the lockfile helpers and Cairn's own lockfile
+Prior findings: SR1-SR7 (this tier, round 1)
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised (1 blocking, 6 non-blocking)
+**Verdict**: REVISE
+
+Distance: a fresh session of the author's agent type, not a different type. I
+wrote neither the proposal nor an earlier review of it. This is the second
+Security Review round, which the lifecycle allows while the obligation is open.
+It does not clear the obligation yet.
+
+### In plain terms
+
+Revision 2 answers the first Security Review well, and the stricter vendor-name
+check is a good change in its own right. One thing still blocks:
+
+* **The "review before you record" command can show nothing while the record
+  step blesses a planted line.** The command compares the file with its copy at
+  the last commit that touched the lockfile. That works only if the file still
+  matched its record at that commit. On an ordinary first install the adopter
+  fills slots before the first commit, so it did not. I planted a line in
+  `AGENTS.md` that way, telling agents to download and run a remote script. The
+  command printed nothing, `--finalize` recorded the line, and the install check
+  then said OK.
+  The note's own fix-it steps are safe, because they cover only files that match
+  their record now. The problem is adding the command to the existing warning,
+  which fires only for files that have already changed.
+
+The fix is a few sentences and one test, with no new mechanism. The other six
+findings are smaller and can land in the same revision or in the plan. They
+cover three placeholders that drop out of the count silently, a "zero" sentence
+that still says too much, a dropped fallback the ledger does not record, and
+build details.
+
+No new question for the Maintainer.
+
+### The widened scope: the stricter checker
+
+It should happen. It closes two of the four blind spots the first review found,
+adds no exemption, and makes the checker do what Part 1 would otherwise only
+promise. I measured it with a patched copy of `scripts/quality_gate.py` run on a
+`git archive` of the reviewed commit:
+
+* **The count.** It goes from 74 to 81. The 7 new failures are exactly the three
+  `reviewer="Claude (Implementation)"` credits and the four names on line 2 of
+  `templates/skills/_data/vendor_targets.yml`.
+* **It only adds.** All 74 of today's failures are among the 81, and nothing
+  else moved.
+* **No false alarms in data.** The six `.json` and `.txt` files under
+  `templates/` produce no finding. The one near miss, `CLAUDE.md` in
+  `content_scan_roots.txt`, passes because matching is case-sensitive. The four
+  new names hit nothing outside `templates/`.
+* **Removing the comment-line skip hides nothing.** The directive check runs
+  before the token scan and does not change. A directive line that also carries
+  a name now counts twice (+1 today, +2 stricter): two genuine failures on one
+  line, never a masked one.
+* **The plant table reproduces.** Each figure is the change from that gate's
+  baseline:
+
+| Plant | Current gate | Stricter gate |
+|---|---|---|
+| Visible prose | +1 | +1 |
+| Whole-line comment | +0 | +1 |
+| `.txt` | +0 | +1 |
+| `.json` value | +0 | +1 |
+| Lower case | +0 | +0 |
+| `ClaudeCode`, `GPT4o`, `Claude_Code` | +0 | +0 |
+| A zero-width character inside a name | +0 | +0 |
+
+The last two rows are blind spots the narrowed sentence does not name (SR10).
+
+### SR1-SR7: where each stands
+
+* **SR1: resolved**, as above. The leftover wording is SR10.
+* **SR2: partly resolved.**
+  * *No remedy for a failing file* holds by construction, because the note
+    receives only files that match their record.
+  * *The `base_hash` gate* is sound. 27 of 27 base copies match on a fresh
+    install, and 1 of 2 on Cairn's tree, as stated.
+  * *The claims and the ledger* are corrected.
+  * *The review command* does not do what the contract says: SR8.
+* **SR3: resolved.** The exit code is fixed before the note runs, the call is
+  fenced, and per-record failures become counts. Build details are in SR12.
+* **SR4: answered.** Details in SR12.
+* **SR5: answered.** One consequence the ledger misses: SR11.
+* **SR6 and SR7: answered.**
+
+### What I checked
+
+All runs used Python 3.13.13, on a `git archive` of the reviewed commit and on
+scratch `solo-greenfield` installs, all in my scratchpad:
+
+* the gate counts and plants above;
+* the review command against `--finalize`, in four commit histories (SR8);
+* a prototype of the note's rule on a fresh install: 17 listed slots in files
+  that pass, plus 3 in living-state files (SR9);
+* the no-follow, non-blocking open on macOS, against a symlink, a FIFO and a
+  directory (SR12);
+* `_SLOT_BODY_RE` timing on unclosed openers at the cap (SR12);
+* Cairn's own lockfile records for every twin Part 1 edits (SR14).
+
+### Findings
+
+**[SR8] (blocking) The review command can show an empty diff while `--finalize`
+records a planted line.** An adopter following the printed steps can record an
+injected instruction in `AGENTS.md` as trusted. That is the file agents obey
+(`bootstrap/SAFETY.md` Rule 7). This is SR2's harm, now with a tool telling the
+adopter it checked.
+
+The command shows the changes since the lockfile was last *committed*.
+`--finalize` records every change since the file's recorded *hash*. The two
+agree only when the file still held its recorded content at that commit.
+Measured on scratch installs at the reviewed commit, with a slot filled and a
+line planted outside it:
+
+| History | The command shows | `--finalize` records |
+|---|---|---|
+| A. Install committed clean; slot filled and committed later | the fill, exactly | the fill |
+| B. Slot filled (with the marker) and line planted **before the first commit**; everything committed together | **nothing** | the fill and the planted line; `verify_integrity` then says OK |
+| C. Planted line committed with an unrelated scoped finalize of `NOTICE.md`; slot filled later | **the fill only** | the fill and the planted line |
+| D. Lockfile never committed | `fatal: bad revision ''` | — |
+
+So, to the author's question: when the file and the lockfile were not committed
+together, a change committed *after* the lockfile's last commit is shown. A
+change committed *at or before* it is hidden, including one carried in someone
+else's unrelated finalize commit. Case B is an ordinary first install: fill the
+slots the acceptance checklist asks for (`bootstrap/BOOTSTRAP.md:525-527`), then
+commit.
+
+The note's remedy (Part 2 item 5) is safe where it is. It is printed only for
+files that match their record now, which is case A. The defect is item 6. It
+adds the same command to the existing hint, and the hint fires only for files
+that already fail (`bootstrap/verify_integrity.py:136-139`): cases B and C.
+Item 5's heading, "Review everything `--finalize` will record", also states as
+fact what holds only in case A. The S4 and S5 lines that rely on it inherit the
+error.
+
+*Closes when:*
+
+* No printed command is described as showing what `--finalize` will record
+  unless it does.
+  * **The hint.** Default: drop item 6. The hint says plainly that
+    `verify_integrity` keeps only a hash, so it cannot show what changed. The
+    adopter reads the file, or its history (`git log -p -- <path>`), before
+    recording it. One alternative: print the recorded hash and a one-line check
+    that the commit's copy hashes to it, falling back to the whole-file review
+    when it does not.
+  * **Item 5.** It says what its command shows, and why that is complete for a
+    file listed as matching its record. If the lockfile has never been
+    committed, it says to commit the lockfile first.
+* A test reproduces case B: a file already modified when the lockfile was
+  committed, with a marked slot and a line outside it. The printed text must not
+  present the commit diff as the whole change.
+
+**[SR9] (non-blocking) Three of a fresh install's twenty placeholders vanish
+from the count without a word.** A short count then reads as "nearly done" when
+it is not, NU3's failure again. The note reads only records the integrity pass
+accepted. Living-state files (the roadmap, the handoff, the signed agreement)
+are skipped by that pass, not accepted, and the coverage line has no reason for
+them. On a fresh install they hold `dev/NEXT_SESSION.md [next-start]`,
+`dev/PLANNING.md [project-status]` and `dev/collaboration_agreement.md
+[team-roster]`, all with base copies. Revision 1's rule listed them, 20 slots in
+all; Revision 2's lists 17. SR3's narrowing introduced this.
+
+*Closes when* one of these holds:
+
+* the note also reads living-state records, opening them with the same checks
+  as a base copy, since the integrity pass never read them. Their edits never
+  fail the integrity check, so the remedy is "fill it", with no finalize step;
+* or the coverage line counts them as "not checked: living-state file".
+
+Default: read them.
+
+**[SR10] (non-blocking) The narrowed "zero" still says "anywhere", and the
+checker's own comments still misdescribe it.** A reader told that no listed
+name appears anywhere would not expect `ClaudeCode` to pass. On the stricter
+gate, each of these is +0:
+
+* `ClaudeCode`, `GPT4o` and `Claude_Code`. Matching is whole-word, so a name
+  joined to letters, digits or `_` passes.
+* A name with a zero-width character inside it.
+
+Two more limits are unnamed:
+
+* **File types are a list.** Today every shipped type is read, apart from the
+  empty `.gitkeep` files. A new shipped type would be skipped without warning.
+* **It catches accidents, not intent.** Someone hiding a name on purpose gets
+  past it.
+
+*Closes when:*
+
+* The sentence says "as a whole word, in the file types it reads", and S5 adds
+  joined spellings, new file types and deliberate evasion.
+* The one-time search is a case-insensitive *substring* search, so it catches
+  joined forms, and its hits are read by hand.
+* All four places in `scripts/quality_gate.py` that describe the templates scan
+  are corrected, not only `:446`:
+  * `:197-198` and `:252` say templates are scanned only for the
+    directive-forbidden rule;
+  * `:436-438` and `:456-457` say every file under `templates/` is scanned.
+
+  The cleaner fix makes the second claim true: scan every non-binary file under
+  `templates/`. That closes the file-type limit by construction. It is the
+  author's call.
+
+**[SR11] (non-blocking) NU2's fallback was dropped without a ledger line.** An
+adopter who fills a slot, commits, and stops before `--finalize` comes back to a
+tamper warning and no way forward. That is NU2's original defect.
+
+* Revision 1 closed NU2 partly through the marker: "If the record step is
+  skipped, the marker makes the existing `--finalize` hint name the file."
+* SR5 rightly took the marker out of the fill path, so the hint now stays
+  silent. The note says only "resolve the integrity failure above first".
+* Revision 2's loop test also drops Revision 1's step "exits 1, with the hint
+  naming the file".
+
+The ledger records the marker change but not this consequence.
+
+*Closes when* the ledger records the dropped fallback, and the failing-file line
+points to the `bootstrap/UPGRADE.md` section on reviewing and recording your own
+edit. A pointer, not a finalize command, keeps SR2's rule.
+
+**[SR12] (non-blocking) SR3 and SR4 hold in structure; seven details belong in
+the plan.** None weakens the verdict guarantee. Each keeps a malformed input
+from getting around it.
+
+* **What the note receives.** "The bytes ... and nothing else" is not literal.
+  The note also needs the target, the accepted records and the lockfile's
+  tokens. Say so; it still receives nothing that carries the verdict.
+* **One open, one bounded read.**
+  * Check the regular-file property with `fstat` on the same descriptor.
+  * Read at most the cap plus one byte, rather than trusting the size.
+  * Hash, decode and parse those same bytes.
+  * Build the flags inside the fenced call with `getattr(os, "O_NOFOLLOW", 0)`
+    and the like, as `bootstrap/tests/_gate_preflight.py:2361` and
+    `tools/_intent/record_io.py:465` do. A platform lacking a flag then cannot
+    break the module's import. Add `O_NOCTTY`.
+
+  On macOS a symlink is refused (`ELOOP`). A FIFO opens without blocking, and
+  `fstat` rejects it, as it does a directory. Linux behaves the same under
+  POSIX, and Cairn's documented platforms are POSIX (`docs/quickstart.md:23`).
+  The walk that checks no part of the path is a symlink can race, but
+  harmlessly: only bytes matching `base_hash` go further.
+* **The fence.** `except Exception` lets `SystemExit` through. Either the note
+  calls nothing that can raise it, or the fence catches it too.
+* **Per-record failures.** A NUL byte in `base_cache` makes `os.open` raise
+  `ValueError`, which is not a read, type or decode error. As written it escapes
+  to the outer fence, and the whole coverage line is lost. Count any per-record
+  exception as "not checked: unreadable".
+* **Missing no-op comparison cases.** Add:
+  * non-UTF-8 *installed* bytes, in a file that passes integrity;
+  * a non-string token key;
+  * a NUL byte in `base_cache`;
+  * a non-string `base_hash`.
+* **The slow regex, measured.** On unclosed openers, the 256 KiB cap still
+  allows 18.9 s per scan on this machine (1.2 s at 64 KiB). The note scans two
+  texts per record.
+  * Apply the cap to the installed bytes too.
+  * SR4's "a tree can reach `_SLOT_BODY_RE`'s slow case only by also changing
+    the lockfile" is false for the existing hint. `_has_customized_slot` scans
+    every *modified* file, uncapped, inside the integrity loop before the report
+    prints (`bootstrap/verify_integrity.py:134-139`). Either cap that scan as
+    well, so an over-cap file is still reported as modified but not
+    marker-checked, or narrow the sentence and record the residual.
+* **Unprintable names.** `shlex.quote` does not neutralise terminal control
+  bytes. A path or slot name that is not printable ASCII gets no command, only
+  its `ascii()` form.
+
+**[SR13] (non-blocking) Make "the stricter gate can only add failures" a
+recorded check.** The checker is excepted from the comment-only proof, so
+nothing else pins this.
+
+* **The superset check.** It holds today: every one of the old gate's 74
+  failures is among the new gate's 81. Record that check in the plan's
+  evidence.
+* **One more test.** A whole-line directive in `templates/` that also carries a
+  name must yield both failures (measured: +1 today, +2 stricter). That pins
+  that removing the skip hides no directive.
+
+**[SR14] (non-blocking) Name the self-host finalize set, and check it after the
+write.** Scoped `--finalize` skips the dirty-tree guard, and several sessions
+share this tree. Two of the files are trust roots: `tools/session.py`, the
+interpreter binding, and `scripts/content_scan.py`.
+
+* **The 12 to finalize.** These edited twins are attested by Cairn's lockfile
+  today:
+  * `.agents/skills/_data/vendor_targets.yml`
+  * `tools/session.py`
+  * the six `scripts/_onboarding/` modules
+  * `scripts/onboarding_activate.py`
+  * `tools/intent.py`
+  * `scripts/content_scan.py`
+  * `dev/modules/incident_log_template.md`
+* **The 4 to leave alone.** These edited files are already among the 18
+  violations:
+  * `.agents/skills/session-start/SKILL.md`
+  * `dev/modules/documentation-plan.md`
+  * `dev/modules/incident-trackers.md`
+  * `docs/DOCUMENTATION_PLAN.md`
+
+Advancing `hash` changes nothing else. The fork checks read `hash` and on-disk
+bytes, not `base_hash` (`bootstrap/_scaffold/lockfile.py:303-327`).
+
+*Closes when:*
+
+* the plan names these paths;
+* after the write, each advanced `hash` equals the SHA-256 of its template as
+  committed, so a reviewer can confirm it from the commit alone;
+* `verify_integrity` still lists exactly the same 18 files.
+
+### Verdict and what clears the obligation
+
+**REVISE.** The Security Review obligation is **not cleared**. SR8 closes with
+contract sentences and one test, with no engine change. A Security Review pass
+that reads only SR8's closure clears it. SR9-SR14 do not block. SR9's and
+SR11's ledger lines belong in the same revision; the rest can go to the plan.
+
+**No new question for the Maintainer.**
