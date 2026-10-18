@@ -195,20 +195,25 @@ def _run_order_independence(
 # ===========================================================================
 #
 # Scan ``cairn/{doctrine,dimensions,bootstrap,scripts,on-ramp,docs,
-# examples}/`` for vendor / project tokens.  Templates/ is scanned
-# only for the directive-forbidden gate (any directive there is a
-# leak risk).  Three sanctioned-exception directives keep audit
-# trails surfaceable.
+# examples}/`` for vendor / project tokens.  Templates/ is scanned for
+# tokens too, comment lines included (nothing there is exempt), and for
+# the directive-forbidden gate (any directive there is a leak risk).
+# Three sanctioned-exception directives keep audit trails surfaceable
+# outside templates/.  Matching is whole-word and case-sensitive.
 
-# Last updated: 2026-05-28.  Adding a vendor / model name: include
+# Last updated: 2026-10-18.  Adding a vendor / model name: include
 # it here and (when convenient) attach a brief Cairn-side commit
 # message naming the vendor-launch / new-name signal that prompted
-# the update.
+# the update.  Copilot, Windsurf, Cline and OpenCode were added on
+# 2026-10-18: the routing table (templates/skills/_data/vendor_targets.yml)
+# lists them as harnesses a project can use, so shipped text must not
+# name them either.
 _VENDOR_DENYLIST: frozenset[str] = frozenset({
     "Claude", "Codex",
     "Anthropic", "OpenAI", "Google", "DeepMind", "Microsoft", "Meta",
     "Gemini", "GPT", "Llama", "LLaMA",
     "Antigravity", "Cursor",
+    "Copilot", "Windsurf", "Cline", "OpenCode",
 })
 _PROJECT_DENYLIST: frozenset[str] = frozenset({
     "modflow_tools", "LHM",
@@ -249,7 +254,9 @@ def _scan_neutrality_file(
 ) -> list[Finding]:
     """Return the neutrality findings for one file.
 
-    Templates path: scans only for the directive-forbidden rule.
+    Templates path: applies the directive-forbidden rule and scans every
+    line for vendor / project tokens, comment lines included; no
+    exemption applies there.
     Outside templates: scans for unsanctioned vendor / project
     tokens, with line / block / file exemption directives applied.
     """
@@ -274,9 +281,9 @@ def _scan_neutrality_file(
                     "(templates ship to adopters; a leak would propagate)",
                 ))
             # Scan the line for vendor / project tokens -- no exemption
-            # path applies in templates, so any token is a fail.
-            if _is_directive_only_line(line):
-                continue  # directive lines carry no prose tokens
+            # path applies in templates, so any token is a fail.  A
+            # comment-only line is scanned too: a directive there already
+            # fails above, and a name in it would still ship.
             for token in sorted(_ALL_NEUTRALITY_TOKENS):
                 if re.search(rf"\b{re.escape(token)}\b", line):
                     findings.append(Finding(
@@ -433,19 +440,20 @@ def _scan_neutrality_file(
 #: prose and config templates carry vendor / project tokens that
 #: would be real leaks; code legitimately names the reference
 #: deployment in test fixtures, docstrings, and comments and is NOT
-#: scanned.  ``templates/`` is the exception: every file under
-#: ``templates/`` (including .py reference scripts) is scanned for the
-#: directive-forbidden rule, since those files ship to adopter trees
-#: and a leak would propagate.
+#: scanned.  ``templates/`` is the exception: every file of a listed
+#: type under ``templates/`` (including .py reference scripts, and
+#: .json and .txt files) is scanned for vendor / project tokens,
+#: comment lines included, and for the directive-forbidden rule, since
+#: those files ship to adopter trees and a leak would propagate.
 _NEUTRALITY_FILE_SUFFIXES: dict[str, tuple[str, ...]] = {
     "doctrine": (".md",),
     "dimensions": (".md",),
     "on-ramp": (".md",),
     "docs": (".md",),
     "examples": (".md", ".yml", ".yaml"),
-    "bootstrap": (".md",),  # BOOTSTRAP.md, SAFETY.md, etc.  Not bootstrap/tests/
+    "bootstrap": (".md",),  # BOOTSTRAP.md, SAFETY.md, and bootstrap/tests/ .md
     "scripts": (".md",),    # rare; scripts/*.md if any, NOT .py code
-    "templates": (".md", ".yml", ".yaml", ".py", ".toml"),
+    "templates": (".md", ".yml", ".yaml", ".py", ".toml", ".json", ".txt"),
 }
 
 
@@ -453,11 +461,13 @@ def _walk_neutrality_files(repo_root: Path) -> list[Path]:
     """Yield the file paths the neutrality sub-gate scans.
 
     Doctrine + config files in the seven roots are scanned for
-    vendor / project tokens; every file under ``templates/`` is
-    scanned for the directive-forbidden rule (templates ship to
-    adopters).  Code files (``.py``) outside ``templates/`` are NOT
-    scanned -- test fixtures and docstrings legitimately name the
-    reference deployment.
+    vendor / project tokens; every file of a listed type under
+    ``templates/`` is scanned for tokens (comment lines included) and
+    for the directive-forbidden rule (templates ship to adopters).
+    Code files (``.py``) outside ``templates/`` are NOT scanned --
+    test fixtures and docstrings legitimately name the reference
+    deployment.  ``bootstrap/tests/`` is scanned under the
+    ``bootstrap`` root, for ``.md`` files only.
     """
     files: list[Path] = []
     for root, suffixes in _NEUTRALITY_FILE_SUFFIXES.items():

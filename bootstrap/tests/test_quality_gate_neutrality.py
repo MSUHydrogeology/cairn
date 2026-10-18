@@ -317,3 +317,73 @@ class TestExemptionReporting:
         assert any(
             "cite of a real review" in i.message for i in infos
         ), [i.message for i in infos]
+
+
+class TestTemplatesScanComments:
+    """Everything under ``templates/`` ships to adopters, so a vendor name
+    in a comment line is a leak exactly as much as one in prose.  A comment
+    line used to be skipped on the grounds that it carries no prose; that
+    skip hid names credited to reviewers.
+    """
+
+    def test_vendor_name_in_a_whole_line_html_comment_fails(self, qg, tmp_path):
+        (tmp_path / "templates" / "modules").mkdir(parents=True)
+        (tmp_path / "templates" / "modules" / "x.md").write_text(
+            "# A template\n"
+            "<!-- reviewed by Claude -->\n"
+        )
+        fs = _failures(_run(qg, tmp_path))
+        assert any(
+            "Claude" in f.message and f.line == 2 for f in fs
+        ), [(f.line, f.message) for f in fs]
+
+    def test_whole_line_directive_that_names_a_vendor_fails_twice(
+        self, qg, tmp_path,
+    ):
+        (tmp_path / "templates" / "modules").mkdir(parents=True)
+        (tmp_path / "templates" / "modules" / "x.md").write_text(
+            "<!-- vendor-ok: Claude example -->\n"
+        )
+        fs = _failures(_run(qg, tmp_path))
+        assert len(fs) == 2, [(f.line, f.message) for f in fs]
+        assert any("forbidden inside cairn/templates/" in f.message for f in fs)
+        assert any("token `Claude`" in f.message for f in fs)
+
+
+class TestTemplatesScanFileTypes:
+    """The file types read under ``templates/`` are the types the scaffold
+    ships; ``.json`` and ``.txt`` ship, so they are read.
+    """
+
+    def test_vendor_name_in_a_txt_file_fails(self, qg, tmp_path):
+        (tmp_path / "templates" / "core").mkdir(parents=True)
+        (tmp_path / "templates" / "core" / "notes.txt").write_text(
+            "Written with Claude.\n"
+        )
+        fs = _failures(_run(qg, tmp_path))
+        assert any("Claude" in f.message for f in fs), fs
+
+    def test_vendor_name_in_a_json_file_fails(self, qg, tmp_path):
+        (tmp_path / "templates" / "core").mkdir(parents=True)
+        (tmp_path / "templates" / "core" / "policy.json").write_text(
+            '{"reviewer": "Claude"}\n'
+        )
+        fs = _failures(_run(qg, tmp_path))
+        assert any("Claude" in f.message for f in fs), fs
+
+
+class TestTemplatesScanNames:
+    """Tool names that the routing table lists as supported harnesses are
+    names an adopter-facing file must not carry either.
+    """
+
+    @pytest.mark.parametrize("name", ["Copilot", "Windsurf", "Cline", "OpenCode"])
+    def test_added_tool_names_fail_in_a_template(self, qg, tmp_path, name):
+        (tmp_path / "templates" / "modules").mkdir(parents=True)
+        (tmp_path / "templates" / "modules" / "x.md").write_text(
+            f"Works with {name} too.\n"
+        )
+        fs = _failures(_run(qg, tmp_path))
+        assert any(f"`{name}`" in f.message for f in fs), [
+            f.message for f in fs
+        ]
