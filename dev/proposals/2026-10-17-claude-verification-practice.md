@@ -1,7 +1,7 @@
 # Verification practice: what a review reads, how it tests, what unplanned work runs
 
 **Author**: Claude (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: required(External)
 **Plan review**: required(Internal) — the tier the derived plan will declare, decided here where the surface is still visible
 **Opened**: 2026-10-17
@@ -519,3 +519,322 @@ Two qualifications: VP4, and VP2's 429-against-286 mismatch.
 
 I ran no tests and no mutations, and I did not open the plan-template lines that
 item 4 will edit beyond confirming the phrase.
+
+## Response -- Claude (author) -- 2026-10-17
+
+All four findings are accepted. VP2 is closed by adopting the review's strongest
+rejected alternative. Revision 1 below carries the complete current contract.
+
+* **[VP1] accepted.** Item 1 now names the one write a reviewer makes in a shared
+  tree: its own review record, appended to the artifact or created as its own
+  review file, claimed first and committed by explicit path. Everything else that
+  writes stays in a separate copy, as drafted.
+* **[VP2] accepted, by adopting the alternative.** Item 3 no longer builds a
+  parallel tier in Boundary A. Instead, Boundary B's bounded mode reaches a
+  trivial change. B says it governs every implementation, a trivial change
+  included; a trivial change's mapping is its owning tests, and its record is its
+  commit body. The bounded record names test files or nodes, not only counts.
+  Boundary C then needs no new clause: its record check, its Bounding verdict
+  and its six triggers apply as written. The 429-against-286 gap (`6894ed0c`) is
+  why the record names files.
+* **[VP3] accepted.** The fence is now written in words the installed file
+  defines. Both `AGENTS.md` copies define a trust-ceremony surface as "any
+  high-risk surface this file names, or release or security ceremony work". The
+  work covered is named "a trivial change, with no proposal or plan", the shipped
+  proposal template's word for it; no shipped template mentions change notes.
+  Defining the term in Boundary B also repairs B's fence for an adopter's
+  *planned* work, which until now named a surface the adopter's file never
+  defined.
+* **[VP4] accepted.** #17's reopening now rests on the failed premise. The
+  sweep's accepted target was an inner loop of about two minutes
+  (`dev/proposals/archive/2026-08-25-claude-subtraction-sweep.md:95`), and the
+  full suite the boundaries price took 692 s. [EA1] and [EA2] show the practice
+  working without a rule, and [EA2] is mutation evidence, not a set-completeness
+  instance. For #12, the one data-loss event was recovered, so question 3 now
+  asks about the class.
+
+**Why the alternative wins.** Cairn already has one way to run less than the
+full suite, and it is fenced, adjudicated and pinned.
+`test_bounded_boundary_b_contract_reaches_every_surface` guards its fence and
+mode field on five surfaces, and `test_boundary_c_adjudicates_a_bounded_record`
+guards the reviewer's verdict on three. A second scope rule would be one more
+thing to drift. The opening left B untouched because the issue's scope guard
+asked it to. That guard protects B's refusal triggers and "uncertainty resolves
+to full", and neither moves. B gains a statement of which work it governs and a
+definition of a term it already used. Its default stays `full`. The cost is a
+commit body about three lines longer.
+
+**One more alternative, dismissed: reach the sweep's two-minute target.** That
+would dissolve #25 for Cairn only. #25 is about an adopter's suite (LHM's
+"multi-thousand-test suite"), and Cairn's suite speed does not touch it.
+
+**Falsification evidence, measured for this Response.**
+
+* *The search rule, against its own counterexample.* At `2432bf86^`, searching
+  `bootstrap/tests/*.py` for readers of the touched files (`AGENTS.md`, the
+  proposal and plan templates) returns 42 of 121 test files. They include all
+  seven files the repair named, among them the five its author had missed, so
+  the rule would have caught the miss. The cost shows too: for a governing file,
+  the owning set is wide.
+* *The full suite after the recent trivial changes.* The run was at
+  `396e001b`, after `f3c839a7`, `6894ed0c`, `223f6b40` and the AST re-anchor.
+  Run in a `git archive` extraction under Python 3.13.13, it took 660 s and
+  gave 3,201 passed, 17 failed and 18 errors, out of 3,236. I reran those 35
+  nodes in a clone at the same commit, with the gate anchor fetched, and 34
+  passed; they need a git repository, which an extraction lacks. The last one,
+  `bootstrap/tests/test_replacement_tools.py::TestTheBoardReadsHeadersAndJudgesNothing::test_it_lists_the_active_artifacts`,
+  failed because nothing was in flight at that commit. It is a test defect that
+  `4edd7778` has since fixed, and none of the three changes caused it. So at
+  these commits the scoped runs missed nothing, and the claim survives one test.
+  The run does not show that the search rule picks the same sets the authors
+  picked.
+
+**The `check_cairn` flag at line 64 is harmless, and this Response exempts it.**
+The flagged line continues a list item: "row 10 and" / "[EA2]: four legs …".
+`link_check`'s `_REFDEF_RE` (`scripts/link_check.py:76`) reads any line that
+begins `[label]:` as a link definition, so it sees a link to `four`. CommonMark
+does not, because a link definition cannot interrupt a paragraph. Measured with
+`markdown-it-py` 4.0.0: a valid definition on its own line registers
+(`{'EA2': {'href': 'four'}}`), while the same text wrapped inside a list item
+registers nothing and renders as text. The earlier section is not edited.
+Instead, the directive below exempts that one target, and no new line in this
+Response or the revision begins with `[label]:`.
+
+<!-- link-check-allow: four -->
+
+**Scope.** This revision does not widen scope. Every change answers a finding.
+The one move beyond the opening text, amending Boundary B, is the review's own
+named alternative and the satisfier for VP2(a). The status therefore moves to
+`awaiting-decision`.
+
+## Revision 1 -- Claude -- 2026-10-17 -- the complete current contract
+
+The opening **Context** stands, with the VP4 corrections recorded in the ledger
+at the end. Everything below replaces the opening's contract sections.
+
+### Proposal
+
+Four edits, made to both `AGENTS.md` copies in lockstep and to the doctrine
+behind them. The quoted wording is the intent; the plan fixes the bytes.
+
+**1. A review reads a commit (#12).** Added to the Review section and to
+`doctrine/dual-review.md` > "Asynchronous and commit-mediated":
+
+> A review reads a commit, never a shared working tree. The author commits what
+> is to be reviewed before handing it over (locally; committing is not pushing),
+> and the review names that commit. In a working tree it shares with an author,
+> a reviewer makes one write: its own review record, appended to the artifact or
+> created as its own review file, claimed first and committed by explicit path.
+> Nothing else: no other edits, and no `restore`, `checkout`, `stash`, `reset`
+> or `clean`. Anything else that writes, such as a mutation or a scratch
+> install, runs in a separate copy of the reviewed commit (a `git archive`
+> extraction or a separate worktree). A figure is evidence only if it was
+> measured on that commit's bytes.
+
+**2. Mutation for set-completeness, and an honest ledger (#17).** This item is
+unchanged from the opening. It is added to Boundary C and to
+`doctrine/dual-review.md` > "Boundary C", and the ledger rule also goes into the
+ledger shape in `doctrine/plans.md` > "Code review — doctrine".
+
+> When a finding or claim says a value must reach every member of a set (every
+> call site, every rendering path), list the set from the tree, not the diff,
+> and mutate each member; reading the diff does not settle it. A mutation ledger
+> reports each mutant as killed, survived or equivalent, beside an unmutated
+> control run, never as a bare "N of M killed". Equivalence is measured, not
+> argued: a behaviour test through the real entry point passes under the
+> mutation, and where another site is said to recover the value, mutating that
+> site fails. Any equivalence that was not measured is reported as a survivor.
+
+Outside that trigger, mutation stays the reviewer's choice.
+
+**3. Boundary B's bounded mode reaches a trivial change (#25).** In Boundary A,
+in both copies and in `doctrine/plans.md`:
+
+> Run the tests and probes the reviewed plan maps — or, for a trivial change,
+> with no proposal or plan, the tests that own each touched surface, found by
+> searching for what imports or reads the touched files rather than by
+> expectation — plus standing gates for every touched surface. If a substantive
+> surface has no such mapping, run the full suite.
+
+In Boundary B, in the same three places:
+
+> Boundary B governs every implementation, a trivial change included. A trivial
+> change's mapping is the owning tests Boundary A names, and Boundary C's
+> Bounding verdict reviews it afterwards. Its record is its commit body,
+> measured on exactly the bytes being committed: a tree clean apart from the
+> change, or a separate copy holding only it.
+
+B's existing text takes three further edits:
+
+* "Unless the plan's reviewed mapping bounds" becomes "unless the mapping
+  bounds", so the clause covers both kinds of work. The pinned token is only
+  "bounds the change's effects confidently".
+* On `bounded`, the record names "the test files or nodes and the gates run,
+  with counts".
+* The fence's "**trust-ceremony surface**" is defined in place as "any
+  high-risk surface this file names, or release or security ceremony work".
+
+B's default (`full`), its refusal, "uncertainty resolves to `full`" and every
+pinned phrase stay as they are. In `doctrine/dual-review.md` > "Boundary C",
+the opening "for a plan with a valid Boundary B ... record" becomes "for work
+with a valid Boundary B record (a plan's Implementation verification section,
+or a trivial change's commit body)". Boundary C's rule, its Bounding verdict and
+its six triggers do not change.
+
+**4. One term (#25).** Unchanged from the opening. "Substantive surface" means
+anything that is not ordinary prose under the prose-only rule: code, tests,
+executable templates and snippets, fixtures, manifests, and prose a test or
+manifest pins. `doctrine/plans.md` and both plan templates drop "code" from
+"substantive code surface".
+
+### Rationale
+
+* **Each edit writes down a practice the record already shows working.** The
+  engine-advice review is the shared case: the review of a trivial change that
+  needs a record (#25), using an instrument that edits source (#17), run off the
+  shared tree (#12).
+* **There is one scope mechanism, not two.** A trivial change takes the bounded
+  path plans already take: one fence, one record, one independent verdict, all
+  already pinned. On a high-risk surface, bounded mode refuses, so the change
+  runs the full suite once. That fits the risk posture
+  (`doctrine/dual-review.md:124-128`) and the lesson of `2432bf86`.
+* **Mutation is not re-running the author's verification** (`AGENTS.md:73-75`).
+  It tests whether that verification can fail, which is Boundary C's job.
+* **Every rule, and every term it depends on, ships in `AGENTS.md`.** Adopters
+  never receive `doctrine/`: `python bootstrap/scaffold.py --manifest` lists no
+  path under it.
+
+### Alternatives considered
+
+* **A parallel no-plan tier in Boundary A** (the opening's design). Rejected,
+  because it needed its own fence and record, and then two clauses (VP2) to
+  reconnect them to B and C.
+* **Owning tests only, never a full run.** The cheapest option, and what the
+  last two engine fixes did. Rejected on the risk posture and on `2432bf86`: on
+  a high-risk surface, a missed pin reaches every adopter.
+* **Reach the two-minute suite target.** Rejected: it fixes Cairn's cost, not an
+  adopter's, and #25 came from an adopter.
+* **Mutation for every claim that a test pins a fix.** Rejected on the issue's
+  own warning that "mutate everything" is worse than the status quo.
+* **#12 by tooling** (a helper that extracts the commit, or a hook that refuses
+  `git restore`). Deferred: build it if the rule fails in practice.
+* **Do nothing.** #12 stays a live way to lose work, mutation ledgers stay
+  unreported, and Boundary A keeps prescribing a practice nobody follows.
+
+### Documentation / doctrine surface
+
+| Edit | Both `AGENTS.md` copies | Doctrine and templates |
+|---|---|---|
+| 1 | Review | `doctrine/dual-review.md` > "Asynchronous and commit-mediated" |
+| 2 | Boundary C | `doctrine/dual-review.md` > "Boundary C"; `doctrine/plans.md` > "Code review — doctrine" |
+| 3 | Boundaries A and B | `doctrine/plans.md` > "Boundary A" and "Boundary B"; one sentence of `doctrine/dual-review.md` > "Boundary C" |
+| 4 | Boundary A | `doctrine/plans.md` > "Boundary A"; one word in both plan templates |
+
+Not touched: `doctrine/lifecycle.md`, Boundary B's fence list and refusal rule,
+the six fresh-run triggers, and the security preflight.
+
+### Doctrine-change rate-limit
+
+**Applies.** Each item's ground:
+
+* **#17 rests on recurrence**: six instances of one shape in one adopter plan,
+  across five review rounds.
+* **#12 rests on the Maintainer classifying the class as a data-loss surface**
+  (`doctrine/rationale.md:419-428`; question 3). Git cannot bring back an
+  uncommitted file it reverted. The one event (2026-08-18) was recovered from
+  session context. A second event (2026-08-05, evidence read from a shared
+  tree) has the same root but lost no work.
+* **#25 is not incident-driven.** It repairs a contradiction between the
+  section's opener and its fallback.
+
+### Evidence / verification plan
+
+It works if the next trivial change and its review can follow the text
+literally and end up where `6894ed0c` and its review did, with a record that
+names files and carries a Bounding verdict. It is falsified if a reader can
+still derive "run the full suite" for a trivial change on an ordinary surface,
+if an adopter's file leaves the fence undefined, or if a review that follows
+item 1 cannot record itself.
+
+#### Tests required
+
+* `bootstrap/tests/test_verification_boundaries.py` must pass **unedited**. Its
+  bounded-mode pins keep guarding the fence and the mode field on all five
+  surfaces.
+* New pins go in a **new** file, because the existing one is frozen in
+  `bootstrap/tests/fixtures/gate_manifest.json`. Each pin comes with a guard
+  showing it fails when its clause is removed. The pins check that both
+  `AGENTS.md` copies carry:
+  * the review-reads-a-commit rule, with its one-write carve-out;
+  * the ledger clause;
+  * B's reach to a trivial change;
+  * the trust-ceremony definition;
+  * the "substantive surface" definition.
+* Every test that reads a touched file, found by search.
+
+#### Examples / smoke checks
+
+Run `python scripts/claim_check.py` on each edited file, then
+`python scripts/check_cairn.py`, then
+`python scripts/quality_gate.py --sub neutrality --sub redundancy` (no new hit
+on an edited line). Boundary B: `full`.
+
+#### Security preflight
+
+N/A: no trust boundary added, moved, or widened.
+
+### Signals the change is wrong
+
+* A trivial change's record names one test file for a change whose readers span
+  several, or a review finds a pin the record missed.
+* A set-completeness defect ships past a review in which nobody named the set.
+  The trigger would then have to fire on the change itself.
+* Mutation ledgers grow long on changes that make no set-completeness claim, or
+  "equivalent" appears without the test that measured it.
+* Reviewers stop probing, because an isolated copy feels costly.
+
+### Scope delta
+
+**Scope delta**: preserved. Every outcome the opening committed to is still
+delivered; item 3 now reaches its outcome through Boundary B rather than a new
+tier.
+
+### Assurance path
+
+**Assurance path**: high-assurance. The change edits `doctrine/` and a shipped
+template. It touches no executable, no trust root and no install-contract
+artifact.
+
+### Questions for the Maintainer
+
+1. **A trivial change on a high-risk surface runs the full suite once, before
+   its code review. Agreed?** Recommended: **yes**. Here that takes about 12
+   minutes. An adopter runs their own suite, and only on contract surfaces and
+   the surfaces they named as high-risk.
+2. **Mutation is required only when a finding or claim names a set. Agreed?**
+   Recommended: **yes**; elsewhere it stays the reviewer's choice.
+3. **Do you classify the class "a reviewer's write reverts uncommitted work in a
+   shared tree" as a data-loss surface?** Recommended: **yes**. The one incident
+   behind #12 was recovered from session context, so the classification rests on
+   the class, not on a loss that happened. Without it, item 1 waits for a second
+   event, and items 2 to 4 land without it.
+
+### Withdrawn / superseded commitments
+
+* The parallel no-plan tier in Boundary A, with its own fence and record. It is
+  superseded by item 3 (VP2).
+* "Boundary C gains one clause: for trivial-lane work, the commit body's
+  verification line is the record". Superseded: the commit body is now a
+  Boundary B record (VP2).
+* "Boundary B does not change". Withdrawn: B now states which work it governs,
+  names where a trivial change's record goes, lists test files or nodes, and
+  defines a trust-ceremony surface (VP2, VP3).
+* Item 1's unqualified "no edits". Replaced by the one-write carve-out (VP1).
+* The shipped use of "trivial lane". Replaced by "a trivial change, with no
+  proposal or plan" (VP3).
+* Context: "[EA1] and [EA2] meet the triage's own condition for reopening".
+  Withdrawn; the reopening rests on the failed premise (VP4).
+* Context: [EA2] as set-completeness evidence. Corrected to mutation evidence;
+  [EA1] alone is a set-completeness instance (VP4).
+* Rate-limit: #12 as "recurrence of one shape". Demoted; #12 now rests on
+  question 3 (VP4).
