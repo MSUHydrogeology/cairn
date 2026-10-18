@@ -1372,7 +1372,7 @@ Every run used `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13) 
 
 | Tree | Old exit | New exit | Same report | What the note did |
 |---|---|---|---|---|
-| escape bytes (ESC, BEL, newline, right-to-left mark) in a path and a slot name | 0 | 0 | yes | listed it as `'evil\x1b[31mRED...\n...‮RTL.md' slot '\x1b]0;pwned\x07\x1b[2J'`; 0 non-printable note lines |
+| escape bytes (ESC, BEL, newline, right-to-left mark) in a path and a slot name | 0 | 0 | yes | listed it as `'evil\x1b[31mRED...\n...\u202eRTL.md' slot '\x1b]0;pwned\x07\x1b[2J'`; 0 non-printable note lines |
 | escape bytes and `$(...)` in a token value | 0 | 0 | yes | values are never printed |
 | NUL bytes in slot bodies | 0 | 0 | yes | parsed as text |
 | 6,000 nested openers then 6,000 closers, cap-sized | 0 | 0 | yes | 0.09 s |
@@ -1552,6 +1552,8 @@ Also run: `test_security_lint.py` and `test_scaffold_substrate.py`, 29 passed. T
 * **The note's agreement with the engine's marker parsing**, beyond reading the tests that pin it.
 * **Unicode look-alikes in vendor names.** That is the plan's named "hiding a name on purpose" limit.
 * **Other sessions' uncommitted edits** in the shared tree (including `bootstrap/UPGRADE.md`, `tools/session.py` and `templates/skills/_lib/session.py`). I reviewed committed bytes only.
+
+**Erratum (2026-10-18).** Line 1375 of this file, in the first row of the hostile-trees table, held a literal U+202E (right-to-left override) character where the written escape `\u202e` was meant, the form the note printed. A bidirectional control character in a record can reorder what readers see, and `check_cairn.py` flags it, so that one character is now the six characters `\u202e`. No other byte of this section changed.
 
 ## Code review -- Claude Sonnet 5.5 -- 2026-10-18
 
