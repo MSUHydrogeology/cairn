@@ -22,6 +22,17 @@ Two safety properties are load-bearing and are not negotiable defaults:
   harness auto-fires `session-end`, the worst case is a stray reflection file,
   never a roadmap scrub.
 
+**Every write is contained.**  A checkout is data the operator did not write -- a
+link, a folder, a row in the vendor table -- so no write this module makes may
+follow a link or leave the project, whatever those say.  The destination is
+checked first (`_assert_not_linked`), and the write itself cannot follow a link
+(`_write_replacing`, `_create_text_exclusive`), so a link that appears after the
+check is replaced, not followed.  The writes, listed from the tree: the symlink
+probe, the skills fan-out (`_heal_skill_symlink`, `_heal_skill_copy`, the
+`.gitignore` seed), the reflection scaffold and prune, and the handoff lock.
+A race between the check and a write that needs a parent folder swapped for a
+link (only a process already on the machine can do that) is the one gap left.
+
 **This module is a trust root, and that is why it is separate.**
 `_resolve_interpreter` reads an untracked, gitignored, lockfile-uncovered
 binding and the caller then *executes* the path it returns.  It is a strict
@@ -54,6 +65,7 @@ import os
 import re
 import secrets
 import socket
+import stat
 import subprocess
 import sys
 import time
@@ -527,6 +539,99 @@ def _assert_within(path: Path, base: Path) -> None:
         )
 
 
+_LINK_REFUSAL = "refusing to write through a link or outside the project: "
+
+#: Open flags that make the OS refuse a link at the last path component, where
+#: the platform has them; ``O_BINARY`` stops newline translation on Windows.
+_OPEN_NO_LINK = getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
+
+
+def _assert_not_linked(dst: Path, root: Path) -> None:
+    """Fail closed unless writing *dst* stays inside *root* without crossing a link.
+
+    Three checks, all before anything is written: no folder between *root* and
+    *dst* is a link; *dst* itself is not a link (a link to a file inside the
+    project is refused too -- the check does not try to judge where a link ends);
+    and *dst*, with its folder resolved, is inside *root*.  *dst* must be built
+    from *root* (``root / ...``).
+
+    The message holds a fixed sentence and the project-relative name, passed
+    through ``encode_display``: a name in a checkout is not ours to print raw, and
+    where a link points is never printed.  Callers may print the message as is.
+    """
+    root_real = root.resolve()
+    try:
+        rel = dst.relative_to(root)
+    except ValueError:
+        raise LifecycleError(_LINK_REFUSAL + encode_display(str(dst))) from None
+    shown = encode_display(rel.as_posix())
+    folder = root
+    for part in rel.parts[:-1]:
+        folder = folder / part
+        if folder.is_symlink():
+            raise LifecycleError(_LINK_REFUSAL + shown)
+    if dst.is_symlink():
+        raise LifecycleError(_LINK_REFUSAL + shown)
+    try:
+        (dst.parent.resolve() / dst.name).relative_to(root_real)
+    except ValueError:
+        raise LifecycleError(_LINK_REFUSAL + shown) from None
+
+
+def _write_replacing(dst: Path, data: bytes) -> None:
+    """Put *data* at *dst* without ever opening *dst* itself for writing.
+
+    The bytes go to a fresh sibling that is created exclusively, then one rename
+    puts it in place.  ``O_EXCL`` fails on any existing name, links included, and
+    a rename replaces a link instead of following it, so a link that appears
+    after the caller's check is overwritten as a link, never written through.  A
+    hard link is replaced the same way, which leaves the other name's bytes alone.
+    The permission bits of a regular file being replaced are kept.
+    """
+    kept_mode = None
+    try:
+        before = os.lstat(dst)
+        if stat.S_ISREG(before.st_mode):
+            kept_mode = stat.S_IMODE(before.st_mode)
+    except OSError:
+        pass
+    tmp = dst.with_name(".cairn-write-" + secrets.token_hex(8))
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL | _OPEN_NO_LINK, 0o666)
+    try:
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(data)
+        if kept_mode is not None:
+            try:
+                os.chmod(tmp, kept_mode)
+            except OSError:
+                pass
+        os.replace(tmp, dst)
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
+
+def _read_regular_bytes(path: Path) -> bytes:
+    """Read *path*, refusing a link at the last component and anything that is not
+    a regular file (``OSError`` in both cases)."""
+    fd = os.open(path, os.O_RDONLY | _OPEN_NO_LINK)
+    with os.fdopen(fd, "rb") as handle:
+        if not stat.S_ISREG(os.fstat(handle.fileno()).st_mode):
+            raise OSError("not a regular file")
+        return handle.read()
+
+
+def _create_text_exclusive(path: Path, text: str) -> None:
+    """Create *path* with *text*; fail (``FileExistsError``) on any existing name,
+    a link included, instead of writing through it."""
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | _OPEN_NO_LINK, 0o666)
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        handle.write(text)
+
+
 def _has_symlink_component(path: Path) -> bool:
     """True if `path` or any of its parents is a symlink.
 
@@ -737,22 +842,57 @@ def _load_vendor_targets(root: Path) -> List[dict]:
 
 def _skill_symlinks_available(root: Path) -> bool:
     """Probe whether ``os.symlink`` works under *root* (False on Windows
-    without Developer Mode / Administrator -- the copy-fallback trigger)."""
-    probe = root / ".cairn-skill-symlink-probe"
+    without Developer Mode / Administrator -- the copy-fallback trigger).
+
+    The probe name is new on every call.  A fixed name can be taken by a folder
+    the project ships, which made the cleanup fail, read as "no symlinks", and
+    let a project choose the copy path on any operating system."""
+    probe = root / (".cairn-skill-symlink-probe-" + secrets.token_hex(4))
     try:
-        if probe.is_symlink() or probe.exists():
-            probe.unlink()
         os.symlink(".", probe)
-        ok = probe.is_symlink()
-        probe.unlink()
-        return ok
     except (OSError, NotImplementedError):
+        return False
+    try:
+        return probe.is_symlink()
+    finally:
         try:
-            if probe.is_symlink() or probe.exists():
-                probe.unlink()
+            probe.unlink()
         except OSError:
             pass
-        return False
+
+
+#: One folder name in a harness read-path.  Narrow on purpose: the text becomes a
+#: path and a line in ``.gitignore``, and the project chooses it, so nothing with
+#: meaning to a shell, a glob, a comment or a negation, and no newline, gets in.
+_VENDOR_PART_RE = re.compile(r"[A-Za-z0-9._-]+")
+
+
+def _vendor_path_parts(path: str) -> Optional[Tuple[str, ...]]:
+    """The folder names of *path* if it is a safe harness read-path, else ``None``.
+
+    Safe means: relative; at least two names, because the read-path sits inside a
+    harness folder and the "is that harness in use?" test looks at that folder;
+    every name matches `_VENDOR_PART_RE` and is not ``.`` or ``..``; and the path
+    does not enter ``.git`` or the machine-local state folder.  Copy mode puts
+    every canonical file under the row's folder, so a row that named ``.git``
+    would replace ``.git/config``, one that named ``dev/.cairn`` would write the
+    interpreter binding, and one that named the harness folder itself could write
+    its untracked local settings -- places the project's own files must not fill.
+    Names are compared case-insensitively and without trailing dots, because some
+    filesystems treat ``.GIT`` and ``.git.`` as ``.git``.
+    """
+    if not isinstance(path, str) or not path:
+        return None
+    parts = tuple(path.rstrip("/").split("/"))
+    if len(parts) < 2:
+        return None
+    for part in parts:
+        if part in ("", ".", "..") or not _VENDOR_PART_RE.fullmatch(part):
+            return None
+    shown = tuple(part.rstrip(".").casefold() for part in parts)
+    if ".git" in shown or shown[:len(_CAIRN_STATE_DIR)] == _CAIRN_STATE_DIR:
+        return None
+    return parts
 
 
 def _assert_fanout_contained(dst: Path, target: Path) -> None:
@@ -769,13 +909,21 @@ def _assert_fanout_contained(dst: Path, target: Path) -> None:
             break
         if ancestor.is_symlink():
             raise LifecycleError(
-                f"refusing skills fan-out through a symlinked parent: {ancestor}"
+                "refusing skills fan-out through a symlinked parent: "
+                + encode_display(str(ancestor))
             )
     final = dst.parent.resolve() / dst.name
     try:
         final.relative_to(tr)
     except ValueError:
-        raise LifecycleError(f"refusing skills fan-out outside the repo: {final}")
+        raise LifecycleError(
+            "refusing skills fan-out outside the repo: " + encode_display(str(final))
+        )
+
+
+_GITIGNORE_UNREADABLE = (
+    "refusing to change .gitignore: it is not a readable regular UTF-8 text file"
+)
 
 
 def _seed_skill_gitignore(root: Path, entry: str) -> None:
@@ -787,14 +935,38 @@ def _seed_skill_gitignore(root: Path, entry: str) -> None:
     A **directory** ignore is matched ignoring a trailing slash, so an existing
     ``.claude/skills`` and a seeded ``.claude/skills/`` are the same entry -- a
     repo that already ignores the path (either spelling) is left byte-for-byte
-    untouched, so session-start never dirties a tree it just reported clean."""
+    untouched, so session-start never dirties a tree it just reported clean.
+
+    A checkout can make ``.gitignore`` a link to a file that something else runs
+    or reads as configuration (a shell startup file, ``.git/config``), and can
+    choose the text of *entry*.  So *entry* must be a safe read-path
+    (`_vendor_path_parts`), the file must be a plain file and not a link
+    (`_assert_not_linked`), and the new bytes replace it by rename
+    (`_write_replacing`), never an open of the old name.  Existing bytes,
+    including line endings, are kept as they are.  ``LifecycleError`` on any
+    refusal; nothing is written first."""
+    if _vendor_path_parts(entry) is None:
+        raise LifecycleError(
+            "refusing to write an unsafe ignore entry: " + encode_display(entry)
+        )
     gitignore = root / ".gitignore"
-    text = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
+    _assert_not_linked(gitignore, root)
+    try:
+        raw = _read_regular_bytes(gitignore)
+    except FileNotFoundError:
+        raw = b""
+    except OSError:
+        raise LifecycleError(_GITIGNORE_UNREADABLE) from None
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        raise LifecycleError(_GITIGNORE_UNREADABLE) from None
     norm = entry.rstrip("/")
     if norm in {ln.strip().rstrip("/") for ln in text.splitlines()}:
         return
-    prefix = text if (not text or text.endswith("\n")) else text + "\n"
-    gitignore.write_text(prefix + entry + "\n", encoding="utf-8")
+    eol = "\r\n" if "\r\n" in text else "\n"
+    gap = "" if (not text or text.endswith(("\n", "\r"))) else eol
+    _write_replacing(gitignore, (text + gap + entry + eol).encode("utf-8"))
 
 
 def _heal_skill_symlink(dst: Path, canonical: Path) -> str:
@@ -827,30 +999,52 @@ def _heal_skill_copy(dst: Path, canonical: Path, target: Path) -> str:
     canonical is left alone; a **divergent** copy is quarantined to
     ``*.diverged.bak`` (preserved, never destroyed) and regenerated, so the
     active vendor-read path always carries the canonical, already-scanned
-    bytes.  Returns ``current`` / ``copied`` / ``diverged-quarantined``."""
-    import shutil
+    bytes.  Returns ``current`` / ``copied`` / ``diverged-quarantined``.
 
-    quarantined: List[str] = []
-    copied = 0
+    Every destination -- each copy and each quarantine name -- is checked first
+    (`_assert_not_linked`), for the whole set, before the first file is touched,
+    so a refusal leaves nothing half-done.  Each file is then written by
+    `_write_replacing` and moved with `os.replace`, which neither follows a link
+    nor moves a file *into* a folder that happens to hold the quarantine name."""
+    plan: List[Tuple[Path, Path, Optional[Path], bytes]] = []
     for src_file in sorted(canonical.rglob("*")):
         if not src_file.is_file():
             continue
         rel = src_file.relative_to(canonical)
         out = dst / rel
-        _assert_fanout_contained(out, target)
-        if out.is_file():
-            if out.read_bytes() == src_file.read_bytes():
+        _assert_not_linked(out, target)
+        data = src_file.read_bytes()
+        bak: Optional[Path] = None
+        if out.exists():
+            if not out.is_file():
+                raise LifecycleError(
+                    "refusing to replace something that is not a plain file: "
+                    + encode_display(out.relative_to(target).as_posix())
+                )
+            if out.read_bytes() == data:
                 continue  # already current -- idempotent, no rewrite
             bak = out.with_name(out.name + ".diverged.bak")
-            _assert_fanout_contained(bak, target)
-            shutil.move(str(out), str(bak))
-            quarantined.append(str(rel))
+            _assert_not_linked(bak, target)
+            if bak.exists() and not bak.is_file():
+                raise LifecycleError(
+                    "refusing to replace something that is not a plain file: "
+                    + encode_display(bak.relative_to(target).as_posix())
+                )
+        plan.append((rel, out, bak, data))
+
+    quarantined: List[str] = []
+    copied = 0
+    for rel, out, bak, data in plan:
+        if bak is not None:
+            os.replace(out, bak)
+            quarantined.append(rel.as_posix())
         out.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(src_file, out)
+        _write_replacing(out, data)
         copied += 1
     if quarantined:
         _warn(
-            f"copy-fallback divergence under {dst}: {', '.join(quarantined)} "
+            f"copy-fallback divergence under {encode_display(str(dst))}: "
+            f"{encode_display(', '.join(quarantined))} "
             "differed from the canonical .agents/skills/ source; each was "
             "quarantined to *.diverged.bak and the canonical bytes regenerated. "
             "Edit the canonical source, not the generated copy."
@@ -880,8 +1074,11 @@ def _heal_skills_fanout(root: Path) -> List[Tuple[str, str, str]]:
             continue  # alias tier reads .agents/skills directly; manual is documented
         name = str(row.get("target", "?"))
         path = str(row.get("path", ""))
-        if not path or path.startswith("/") or ".." in Path(path).parts:
-            _warn(f"skills self-heal: unsafe vendor path for {name!r}: {path!r}; skipped.")
+        if _vendor_path_parts(path) is None:
+            _warn(
+                "skills self-heal: unsafe vendor path for "
+                f"'{encode_display(name)}': '{encode_display(path)}'; skipped."
+            )
             continue
         dst = root / path
         if not dst.parent.exists():
@@ -890,8 +1087,9 @@ def _heal_skills_fanout(root: Path) -> List[Tuple[str, str, str]]:
         if can_symlink:
             results.append((name, "symlink", _heal_skill_symlink(dst, canonical)))
         else:
-            status = _heal_skill_copy(dst, canonical, root)
+            # the ignore entry first: a refusal there leaves no copies behind
             _seed_skill_gitignore(root, path.rstrip("/") + "/")
+            status = _heal_skill_copy(dst, canonical, root)
             results.append((name, "copy", status))
     return results
 
@@ -1035,6 +1233,7 @@ class HandoffLock:
     def __init__(self, root: Path, agent: str) -> None:
         self.path = _state_dir(root) / "handoff.lock"
         self.agent = agent
+        self._root = root
         self._fd: Optional[int] = None
 
     def _payload(self) -> dict:
@@ -1048,6 +1247,8 @@ class HandoffLock:
         }
 
     def acquire(self) -> "HandoffLock":
+        # a linked dev/ or dev/.cairn would put the lock (and the folder) elsewhere
+        _assert_not_linked(self.path, self._root)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         try:
             self._fd = os.open(
@@ -1098,9 +1299,14 @@ class HandoffLock:
         )
 
     def heartbeat(self) -> None:
-        """Refresh the lease so a long-running handoff is not deemed stale."""
+        """Refresh the lease so a long-running handoff is not deemed stale.
+
+        Written through the descriptor the lock opened exclusively, not through
+        the path, so a link put at the path afterwards cannot redirect it."""
         if self._fd is not None:
-            self.path.write_text(json.dumps(self._payload()), encoding="utf-8")
+            os.lseek(self._fd, 0, os.SEEK_SET)
+            os.ftruncate(self._fd, 0)
+            os.write(self._fd, json.dumps(self._payload()).encode("utf-8"))
 
     def release(self) -> None:
         if self._fd is not None:
@@ -1129,6 +1335,9 @@ def _prune_reflections(root: Path, days: int, *, dry_run: bool) -> List[Path]:
     and any non-dated file are left alone.
     """
     refl_dir = _reflections_dir(root)
+    # a linked reflections folder would have its dated files deleted wherever it
+    # points; refuse before listing, on a dry run too
+    _assert_not_linked(refl_dir, root)
     pruned: List[Path] = []
     if not refl_dir.is_dir():
         return pruned
@@ -1293,6 +1502,7 @@ def _do_reflection(root: Path, dry_run: bool) -> None:
     # concurrent same-agent sessions from clobbering one reflection; the
     # goodnight reader globs <date>-*.md to gather every session.
     target = refl_dir / f"{_today()}-{agent}-{session}.md"
+    _assert_not_linked(target, root)  # no link on the way, none at the file
     _assert_within(target, refl_dir)  # never write outside dev/reflections/
 
     _emit_section("reflection scaffold")
@@ -1311,11 +1521,18 @@ def _do_reflection(root: Path, dry_run: bool) -> None:
             refl_dir.mkdir(parents=True, exist_ok=True)
             _warn(f"created missing reflections directory: "
                   f"{refl_dir.relative_to(root)}")
-        target.write_text(
-            _REFLECTION_SKELETON.format(
-                agent=agent, date=_today(), session=session),
-            encoding="utf-8",
-        )
+        try:
+            _create_text_exclusive(
+                target,
+                _REFLECTION_SKELETON.format(
+                    agent=agent, date=_today(), session=session),
+            )
+        except FileExistsError:
+            _emit(
+                f"reflection already exists: {target.relative_to(root)} "
+                "-- leaving it untouched; edit it directly."
+            )
+            return
         _emit(f"wrote reflection scaffold: {target.relative_to(root)} "
               "-- fill in what you shipped and learned.")
 

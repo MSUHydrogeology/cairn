@@ -518,7 +518,7 @@
     {
       "base_hash": "sha256:1d777babbdfd56f47c6f0619a5763b08afdf24177f8ac9471ff3d255761cbe96",
       "dst": "tools/session.py",
-      "hash": "sha256:f8431fe50ae389db5eee06ce7cde635a971b750d74657cc0050ae143f21eecc7",
+      "hash": "sha256:4f08c74ea8a42e084dbc410d08418f9fcbd34da2edeacab775bf197e26590379",
       "src": "skills/_lib/session.py",
       "verbatim": true
     }
