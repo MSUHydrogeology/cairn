@@ -1,7 +1,7 @@
 # The board as the basis for richer views: a stable JSON output, and a guide to building on it
 
 **Author**: Claude (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: required(Internal) — the Maintainer asked for this change, so "should it exist" is settled, and no high-risk surface is touched
 **Plan review**: required(Internal) — one adopter-run tool, one guide and one test file; no security surface (see the preflight)
 **Opened**: 2026-10-18
@@ -657,3 +657,487 @@ answer it after you see how the page reads with titles only. Question 4 stays
 ### Withdrawal ledger check
 
 No earlier Response exists, so no withdrawal ledger is owed or checked.
+
+## Response -- Claude (Strategy) -- 2026-10-18
+
+This answers the External review at `fe0d093c` (reviewed commit `5bcfa9e1`).
+Revision 1 follows with the complete current contract.
+
+**In plain terms.** I accept the verdict and take the reviewer's alternative. The
+board's data now carries only plain facts that an author wrote or that the file's
+location gives. The "who holds it" lookup moves into the guide as a tested recipe,
+so the board keeps saying nothing about whose move it is, and no doctrine changes.
+The three keys that depended on unwritten code are dropped, except one that is just
+another header line. The "only adds" promise now has a test that can catch a
+break. The External floor on deliberate-lane proposals was **met** by `fe0d093c`,
+not waived. My opening Rationale said I had declared below the floor and asked the
+Decision to ratify or override; that sentence is withdrawn.
+
+* **[F1]** accept, route A. I take the alternative and cannot beat it on the
+  merits. Its cost is real: every view carries an eight-line lookup, and a
+  `jq` consumer rewrites it. That is a smaller price than a doctrine conflict
+  nobody has chosen, and the field can be added later at no version cost.
+  Sub-points:
+  * The opening cited one side of the doctrine's disagreement. Both sides now
+    stand named: `doctrine/lifecycle.md:144-146` ("a reader -- or a board -- can
+    tell from the status alone whose move it is", which the sibling plan's C2
+    rewrites) and `doctrine/session-routines.md:54-56` with
+    `templates/skills/session-start/SKILL.md:43-45` ("The board judges nothing:
+    who holds a row"). That disagreement is older than this proposal. Route A
+    leaves it where it is: the board takes neither side, and the guide's lookup
+    cites `lifecycle.md` as its source.
+  * "The two sentences describe the terminal board" is withdrawn. They say "the
+    board".
+  * The stale-status precedent (`dev/plans/archive/subtraction-sweep.md:10-19`)
+    is accepted. The guide's example prints the raw status beside every group
+    and stamps the page, so a stale status is visible as a stale status.
+  * The example's grouping states its precedence rule, and a test pins it: **a
+    declared wait overrides the status word.** That is why
+    `waiting_on_maintainer` stays (see F2).
+  * "The rate-limit gate would be met by the recurrence" is withdrawn. A hand-kept
+    view going stale is a reason to publish data, not a failure the "judges
+    nothing" sentences caused. With no doctrine edit, the gate is not engaged.
+* **[F2]** accept. `maintainer_waits` and `fences_without_wait` leave `/1`.
+  `fences_without_wait` froze a body-text token test into a key, and an empty list
+  would read "no fences". Both can arrive later, additively, after the sibling's C1
+  is landed and you have used `--maintainer`. `waiting_on_maintainer` stays, and I
+  disagree that it is code-defined: it is one more header line, read like `review`
+  by the same function, and its name and form are bound by the accepted attention
+  proposal (Decision `e9043938`). The plan's first chunk reads the landed C1; if no
+  header line of that name is read there, the key is dropped from `/1` through a
+  recorded deviation, never renamed.
+* **[F3]** accept. A committed `/1` baseline and a subset-semantics test; S2 names
+  the two mutations. `id` uniqueness is stated as not promised, and "same bytes"
+  as holding for one producer version.
+* **[F4]** partly accept. I take the plain route: the page shows titles until
+  authors write the line, there is a numeric signal, and your reading of the
+  page is a success criterion. I decline making Question 1 a yes with a trial now:
+  the plan templates are being edited by three other artifacts, and the reviewer
+  and I agree you should see the titles-only page first.
+* **[F5]** accept. The guide names its triggers (or says there is none), the page
+  shows its stamped commit, and the overclaim "the only cause of the staleness" is
+  withdrawn.
+* **[F6]** accept. The git recipe and the intent join are tested; the roadmap
+  statement is written down. The git recipe covers plans only, because a proposal
+  archives at plan-open or at a Decision, which is a different event.
+* **[F7]** accept. The four places and the Terms sentence are listed, and the
+  symlink rule's scope is stated: it applies in both modes.
+* **[F8]** accept. I re-ran the gate: `fail=74 info=21` at `8e5df0f0`, Python
+  3.13.13. The smoke check compares against that and expects no new finding.
+* **[F9]** accept. The guide is a citation in the form Cairn already uses for
+  files adopters do not receive; `--help` carries it; the guide states how to
+  tell an older board and how to upgrade it. Question 2 stays "no".
+* **[F10]** accept all three. The plan review becomes `required(Internal +
+  Internal Security Review)`; the example uses `sys.executable`; and the figure is
+  7 of 30 rows, recounted, with the script recorded.
+
+**Scope not widened.** Everything added is a closure the review specified: F3's
+baseline, F5's trigger, F6's tests, F7's list, F8's baseline, F9's citation,
+F10's obligation. Everything else narrows. The narrowing is a recorded Scope
+delta that only your Decision can concede. The status therefore moves to
+`awaiting-decision`.
+
+## Revision 1 -- Claude -- 2026-10-18 -- the complete current contract
+
+**Section inventory.** Every opening section carries forward, from In brief through
+Assurance path. `status_holder`, `maintainer_waits` and `fences_without_wait` leave
+the contract and are recorded under Scope delta. No other section is absent.
+
+**Declarations.** **Review**: required(Internal); the External floor was met by
+`fe0d093c`, not waived. **Plan review**: required(Internal + Internal Security
+Review), changed from the opening's required(Internal) (F10); the header line is
+left as opened, because earlier sections are append-only, and this declaration
+binds. **Assurance path**: high-assurance.
+
+Proposed paths:
+* `bootstrap/tests/fixtures/board_json_v1_baseline.json` — the committed `/1` baseline
+* `bootstrap/tests/test_board_json_contract.py::TestGuideLookupMatchesLifecycle` — the guard node for the lookup
+
+### In brief
+
+`python tools/board.py --json` prints every proposal and plan as plain data: what
+its author wrote in the header block and its title, nothing derived. A guide,
+`docs/build-a-board-view.md`, names every field, states what will not change, and
+walks through a short script that builds a web page grouped by who acts next. The
+"who acts next" lookup lives in the guide, tested against the lifecycle doctrine,
+not in the board. Cairn ships no view.
+
+### Questions for the Maintainer
+
+1. **The "who acts next" lookup moves from the board to the guide. Is that
+   acceptable?** *Recommended: yes.* It keeps the board's promise that it decides
+   nothing and avoids a doctrine edit nobody has chosen. This is a recorded
+   reduction in the Scope delta, and only you can allow it. If views drift on the
+   lookup, the field can be added later with no version change.
+2. **Should the proposal and plan templates ask authors for `**In brief**:`?**
+   *Recommended: not now.* Read the page with titles only first. At 30 days I
+   report the share of live rows that carry the line; under half is the signal to
+   say yes.
+3. **Should the guide be copied into every adopter's tree?** *Recommended: no.* It
+   is cited in `--help` in the form Cairn already uses for files adopters do not
+   receive. A new installed file changes the install contract.
+4. **When should the board's data carry what waits on you from `dev/PLANNING.md`
+   rows?** *Recommended: after the sibling's `--maintainer` has been in use for a
+   few weeks.* Until then the page shows artifacts only, and says so on its face.
+
+### Context
+
+Terms and today's facts are as the opening states them, with these corrections.
+The board reads header lines **and the title line**, not "nothing else". The
+sibling plan's `--maintainer` also reads `dev/PLANNING.md` lines. The sibling is in
+plan revision, so nothing here depends on its code except one header line (F2).
+
+The doctrine disagrees with itself about the tool. `doctrine/lifecycle.md:144-146`
+says a board can tell whose move it is from the status. `doctrine/session-routines.md:54-56`
+and `templates/skills/session-start/SKILL.md:43-45` say the board decides nothing
+about who holds a row. That disagreement predates this proposal; this one does not
+take a side in the board. The failure being addressed is unchanged: a hand-kept
+view (the `dev/PLANNING.md` "Active" table in August, the shared web page this
+week) is a second copy that goes stale. `cairn-intent-list/1`
+(`tools/_intent/cli.py:107-113`) is the precedent for a versioned contract, but no
+test in `bootstrap/tests/` pins it, so this proposal supplies its own.
+
+### Proposal
+
+#### The output
+
+`python tools/board.py --json` prints one JSON document; `--archive` adds archived
+artifacts as today. `--json` with `--maintainer` is a usage error.
+
+| Top-level key | Type | Why a view needs it |
+|---|---|---|
+| `schema` | string `"cairn-board/1"` | the fence; present even when empty |
+| `includes_archive` | boolean | so "no archived rows" is not read as "none exist" |
+| `artifacts` | list of records | the board |
+
+| Record key | Type | Source | Why |
+|---|---|---|---|
+| `kind` | string: `"proposal"` or `"plan"` | the directory | grouping |
+| `id` | string | file name without `.md` | the name artifacts are cited by; unique per `kind` |
+| `path` | string | repo-relative, `/` separators | a link target |
+| `archived` | boolean | under `archive/` | done versus in flight |
+| `title` | string or null | first `# ` line above the first `##` | the label when there is no summary |
+| `in_brief` | string or null | `**In brief**:` header line | the one plain sentence; **optional** |
+| `status` | string or null | `**Status**:`, as written | the raw fact |
+| `review`, `plan_review`, `opened`, `source_proposal` | string or null | lines the terminal board prints | unchanged facts |
+| `waiting_on_maintainer` | string or null | `**Waiting on Maintainer**:` header line | a plan can wait on you while its status reads `implementing` |
+
+Every key is a line an author wrote or a fact of where the file sits. **No value is
+derived.** The terminal board is unchanged on a tree with no symlinked artifact.
+
+**What a view does with it.** The guide carries the lookup the lifecycle doctrine
+states, as a table and as a Python mapping in the example, and a test pins both to
+`doctrine/lifecycle.md`. The key is the first word of `status`, matched exactly
+(real headers read `archived — C1-C9 all landed…`):
+
+| Status | Holder |
+|---|---|
+| `awaiting-decision` | Maintainer |
+| `revising`, `revising-plan` | author |
+| `awaiting-review`, `awaiting-plan-review`, `awaiting-code-review` | reviewer |
+| `ready-to-implement`, `implementing`, `revising-code` | implementer |
+| `accepted`, `rejected`, `superseded`, `archived`, `ready-to-archive`, anything else | none named |
+
+**Precedence: a declared wait overrides the status word.** A record with a
+non-null `waiting_on_maintainer` groups under the Maintainer whatever its status
+says. The guide says the lookup is the doctrine's table, not a check that the
+status is current or true, and that "none named" is not "nobody needed".
+
+#### The promise
+
+1. Within `cairn-board/1` the producer **only adds**: new keys on any object, new
+   top-level keys. It never removes or renames a key, changes a key's type, or
+   changes what a key means. Everything in the two tables above is in the baseline.
+2. A breaking change is `cairn-board/2`, announced in `CHANGELOG.md`. The board
+   emits one version, so a consumer built for `/1` meets `/2` as a refusal at the
+   `schema` check.
+3. **Consumers** read `schema`, accept the version they were built for, refuse
+   others, and **ignore keys they do not know**.
+4. Absent is `null`: never `""`, never inferred. A string is what the author wrote,
+   whitespace-trimmed, and is **not escaped for any output**. It is untrusted text
+   any contributor can edit; escaping for a page is the page-builder's job.
+5. Same files, same bytes, **under one producer version**: no timestamp, commit id
+   or machine path; keys sorted; ASCII-only JSON. Row order is **not** promised.
+   `id` is unique within a `kind` today and the pair `(kind, id)` is what a consumer
+   should key on; uniqueness across kinds is not promised.
+6. On any failure nothing goes to standard output and the exit is nonzero, never a
+   partial document. A script that regenerates a page must not overwrite it then.
+7. **Not promised:** the terminal layout, that an optional field is present, or any
+   meaning of free text.
+
+**The test that can catch a break.** `bootstrap/tests/fixtures/board_json_v1_baseline.json`
+commits every `/1` key with its JSON types. The test runs the board on a tree with
+every field written and on one with every field absent, and requires each baseline
+key present with its type (subset semantics). A new key passes only if the guide
+lists it. A diff that removes or retypes a baseline line is a `/2` change and is
+reviewed as one; the test cannot stop someone editing the baseline and the code
+together, and S5 says so.
+
+#### What each candidate became
+
+| # | Candidate | Verdict | Reason |
+|---|---|---|---|
+| 1 | who acts next | **Reshape**: a tested lookup in the guide; no board field | the board stays "decides nothing"; no doctrine edit; the field can be added later, additively. Cost: every view carries about eight lines, and a non-Python consumer rewrites them |
+| 2 | one plain sentence | **Keep, optional** | `in_brief` and `title` are separate; the view writes `in_brief or title`. Header line only |
+| 3 | `--json` | **Keep**: the deliverable | the contract above |
+| 4 | grouping, summary line | **Drop** from the board | presentation belongs in the view; the example shows both |
+| 5 | roadmap rows | **Drop** from `/1` | no wait keys until the sibling's C1 is landed and used. Of 30 top-level bold rows in `dev/PLANNING.md`, 7 carry the status marker (rows matching `^\* \*\*`, marker `*(queued|active|blocked|deferred|completed` on the first line, at `8e5df0f0`), so reading all means retrofitting 23. Revival: Question 4 |
+| 6 | recently finished | **Drop**; tested recipe in the guide | the board runs no git. `git log --diff-filter=A --name-status -- dev/plans/archive` lists plans by archive date |
+| 7 | active work intents | **Drop**; tested recipe in the guide | the intent log is gitignored and local to one working tree, so one commit would print different boards on different machines; a dead session's claim reads "working" forever. The guide joins `intent.py list --format json` to the board on `stem` as a hint, since `stem` is optional |
+
+#### The guide
+
+`docs/build-a-board-view.md`, descriptive layer: it describes the tool and how to
+extend it, and prescribes nothing cross-cutting. It holds:
+
+* the fields, the promise, and the lookup table with its precedence rule;
+* a worked example (about 50 lines of standard-library Python) that runs
+  `[sys.executable, "tools/board.py", "--json"]` with no shell, groups by holder
+  with counts, shows the raw status beside each row, escapes every value with
+  `html.escape`, and stamps the commit it read. The page's footer says that
+  advisories (plans that mention a fence without declaring a wait) are not shown,
+  and to run `python tools/board.py --maintainer` for them;
+* **when it regenerates (F5).** The only triggers are a person running the script
+  (for example as a session-end step) or a post-commit hook the adopter installs;
+  the scaffold never writes `.git/hooks`. With neither, the page is a snapshot and
+  says so by its stamped commit;
+* **what the data supports:** "needs you" (for artifacts), "in flight by holder",
+  "queued" and "done". **"Blocked" and "an agent is working right now" are not
+  derivable.** Roadmap rows and their waits are not in the data; the guide links
+  `dev/PLANNING.md` and the `--maintainer` text instead (F6);
+* two tested recipes: finished plans by date, and the intent join;
+* **reaching and running it (F9).** Adopters do not receive `docs/`. `--help` ends
+  with: "Field reference and worked example: Cairn's own
+  `cairn/docs/build-a-board-view.md` (in the repository you adopted from, not in
+  this tree)", the form modules already use for Cairn-owned docs. The guide says
+  `--json` was added after Cairn 0.3.0, that `python tools/board.py --json` exiting
+  2 with "unrecognized arguments" means an older board, and points to
+  `bootstrap/UPGRADE.md` for the upgrade;
+* a short note that an AI agent can be handed the guide and asked for a richer
+  page from the same output, regenerated rather than hand-edited. No vendor named.
+
+**Why the example lives in the guide, not in `tools/`.** A script in the install
+set is a view generator in the core, which you ruled out, and executable code every
+adopter would carry through the lockfile, upgrades and the security lint. In the
+guide it costs adopters nothing, and a test runs it so it cannot rot.
+
+#### Where it lands
+
+* `tools/board.py` and its byte-identical twin `templates/skills/_lib/board.py` gain
+  `--json`; the `title`, `In brief` and `Waiting on Maintainer` reads; the help
+  citation; and a rule that a symlinked artifact is skipped. **The rule applies in
+  both modes**, because it sits in the shared row reader, so the terminal board
+  changes only on a tree that has symlinked artifacts. "Unchanged" and the
+  byte-identical check hold for trees without them.
+* **Four places say the board reads headers only, and the plan edits each (F7),
+  after the sibling's own edits to them:** the docstring `tools/board.py:7-11`; the
+  help text `:115-116`; the plain-mode footer `:108-109`, which stays byte-identical
+  because plain mode still prints header fields only; and `docs/tool-usage.md:117-120`.
+  The new docstring sentence says the board also reads the title line and, with
+  `--json`, prints no derived value.
+* The lockfile record for `tools/board.py` is reconciled by a scoped finalize of
+  that one path (precedent `2ea3f869`).
+* New: the guide, the test file, the baseline fixture.
+* **Sequencing.** The first implementation chunk starts only from a tree holding
+  maintainer-attention's C1 commit, because both change `board.py`, the twin and the
+  lockfile record.
+* **Frozen files: none.** `frozen_files` in `bootstrap/tests/fixtures/gate_manifest.json`
+  (183 entries) names none of the files above, checked against a known key
+  (`bootstrap/tests/test_replacement_tools.py`). The new tests join the pinned
+  collection and the queued re-anchor row.
+* **AST impact: none.** `bootstrap/_scaffold/` is untouched. **Install contract:
+  unchanged** (same destination, source, mode; the plan diffs `scaffold.py
+  --manifest` before and after).
+
+### Rationale
+
+Cairn already holds every fact the web page shows. What is missing is a way out of
+the tool that does not mean scraping a display format. A derived page cannot
+disagree with the artifacts at the moment it is generated. Whether it is generated
+often enough is a separate cause, handled by a named trigger and a stamped commit.
+
+A contract, not a dump: "only add" costs the producer almost nothing and gives every
+consumer a safe default. The one-way door is removal, so `/1` carries only what an
+author wrote or where the file sits, and each deferred item can arrive later with no
+version bump. **The derived lookup was the draft's own strongest rival**: shipping
+it in the tool saves every view eight lines, but it would make the board answer
+"whose move is it" against two doctrine passages and force an edit nobody has chosen.
+It comes back as a field if views drift on the lookup or a non-Python consumer needs
+it. Cost of this version: about 60 to 80 lines in `board.py` on top of the sibling's
+(an estimate, not a measurement), one guide, one fixture, one contract.
+
+**Review tier.** `required(Internal)`, and the External floor was met by `fe0d093c`.
+
+### Alternatives considered
+
+* **Ship a view** (an `--html` flag or a separate view script). Rejected, per your
+  direction and because a shipped view is one rendering for every team, edited by
+  hand by the first team that disagrees, which brings the drift back.
+* **Put the lookup in the board as `status_holder`.** The opening's choice;
+  rejected by review (F1) for the doctrine conflict and the stale-status failure it
+  invites. Revival condition above.
+* **Let views scrape the terminal output.** Rejected: cells are cut at 48
+  characters, `|` is escaped, and the layout changes freely.
+* **A JSON Schema file beside the guide.** Rejected: a second statement of the
+  contract can disagree with the first; one, pinned to the output, cannot.
+* **Do nothing.** The page keeps going stale and the next copy repeats August.
+
+### Documentation / doctrine surface
+
+| Layer | File | Change |
+|---|---|---|
+| Descriptive | `docs/build-a-board-view.md` (new) | the guide; routed to `docs/` because it describes current behavior and how to extend it (`docs/DOCUMENTATION_PLAN.md`) |
+| Descriptive | `docs/tool-usage.md` | the board entry gains `--json`, a link, and a corrected description |
+| Governing, deliberation | none | no `doctrine/` or `AGENTS.md` change |
+
+No doctrine changes, so the rate-limit gate in `doctrine/rationale.md` is not
+engaged. The guide names no AI vendor or product, and no hosting service from the
+neutrality denylist; the page you use is described there as a shared web page with
+live status.
+
+### Evidence / verification plan
+
+It worked if you open the page the guide's script builds from this tree and can say
+what needs you and what is in flight without opening an artifact (**your reading is
+a success criterion**), and its artifact entries in "needs you" equal the artifact
+lines `board.py --maintainer` lists. It failed if anyone must edit the generated
+file or read the terminal output to get a correct page.
+
+#### Tests required
+
+All in the new `bootstrap/tests/test_board_json_contract.py`, each seen failing
+before the code exists:
+
+* **The `/1` baseline holds (F3):** every baseline key present with its type, on a
+  full tree and on an all-absent tree; absent is `null`, never `""`; a new key
+  passes only if the guide lists it.
+* **The guide and the output agree:** the keys in the guide's tables equal the
+  emitted keys, both ways.
+* **The guide's lookup matches the lifecycle:** every status word in
+  `doctrine/lifecycle.md`'s two diagrams is in the guide's table and in the
+  example's mapping with the holder its node label gives; first-word matching;
+  an unknown status gives "none named"; a declared wait overrides the status.
+* **The guide's examples run:** the view example on a scratch tree whose title
+  holds `<script>` (escaped form, grouped counts, stamp present); the finished-plans
+  recipe in a scratch git repository; the intent join on canned input, with and
+  without `stem`.
+* **Same files, same bytes;** ASCII, sorted keys, schema on an empty tree.
+* **A symlinked artifact is skipped; an unreadable file gives no standard output
+  and a nonzero exit.**
+* **The terminal board is byte-identical** on one tree without symlinks.
+
+Boundary A adds `test_replacement_tools.py`, `test_security_lint.py`,
+`test_skills_upgrade.py`, `test_skills_self_heal.py` and `test_verify_integrity.py`.
+Boundary B is expected **full** (a tool adopters run changes, a lockfile record is
+touched, uncertainty resolves to full).
+
+#### Examples / smoke checks
+
+* `python tools/board.py --json | python -m json.tool` on the live tree.
+* The guide's script on the live tree, then the page opened and read by a person.
+* **`python scripts/quality_gate.py --sub neutrality` is red today:** `fail=74
+  info=21` at `8e5df0f0`, Python 3.13.13. The plan records those two figures before
+  and after and shows no finding in the guide or either board copy. If the accepted
+  neutrality proposal brings the figure to zero first, the baseline is zero.
+* `check_cairn.py`; `claim_check.py` on the guide.
+
+#### Security preflight — five questions, answered in writing
+
+The tool adds no network access, subprocess or deserialization. It adds an output
+other programs read and one file-handling rule; the guide's example runs two
+fixed-argument subprocesses (the board, and `git rev-parse HEAD`), never through a
+shell, and the guide says an adopter wiring it to a hook is adding a subprocess to
+their own tree.
+
+* **S1 — Who supplied it?** Every value comes from artifact files any contributor
+  can edit. No value is derived, so the board makes no claim about whose move it is
+  and authenticates nothing. A symlink could let a file outside `dev/` supply a
+  title; the symlink rule closes that.
+* **S2 — Can it fail?** Mutations, run with results in the plan's record:
+  rename `status` to `state` in code **and** guide (the baseline test goes red);
+  emit `""` for an absent field (red); delete the symlink skip (red); print a
+  partial document before a nonzero exit (red); remove `html.escape` from the
+  example (red); change one lookup entry (the lifecycle test goes red). The lookup
+  test checks against the lifecycle document, not against the code it tests.
+* **S3 — What fires it, over what?** `python -m pytest
+  bootstrap/tests/test_board_json_contract.py` and the Boundary B full run, both
+  started by a person (Cairn has no CI). The baseline test is what ties the
+  guide's promise to the output.
+* **S4 — Which way does it break?** An absent field is `null`, never a guess; a
+  failure gives no output, not a partial board; an unknown `schema` makes the
+  consumer refuse; an older board refuses `--json` with exit 2. The hazard is
+  human: reading "none named" as "nothing to do", which the guide says it is not.
+* **S5 — Who still wins?** A contributor who can edit a header can still put
+  misleading, well-formed text on the board (claim `archived`, omit a
+  `**Waiting on Maintainer**:` line) or put markup or direction-override characters
+  in a title for a page-builder that forgets to escape. The escaping class is closed
+  **by enumeration**, not construction: the board leaves strings raw (the terminal
+  encoder would turn `A | B` into `A \x7c B`, wrong for data), so the duty falls on
+  the page-builder, in the guide and the tested example. And someone who edits the
+  baseline and the code together defeats the baseline test; only review reads that
+  diff.
+
+### Signals the change is wrong
+
+* A consumer needs a field we left out, and adding it means renaming or retyping one.
+* **Authors rarely write `**In brief**:`.** At 30 days, if under half of the live
+  rows carry it, Question 2 becomes a yes; the page shows titles until then.
+* **The stamped commit on the page is older than `HEAD` when you open it, more than
+  once in the first fortnight:** the trigger is not firing, and the guide failed.
+* The page you use is still hand-edited beside the generated one.
+* Two views carry different lookups, or one disagrees with `doctrine/lifecycle.md`:
+  the lookup belongs in the board after all.
+* Requests for an `--html` flag mean the guide is not easy enough; by itself that is
+  not a reason to ship a view.
+
+### Scope delta
+
+**Scope delta**: degraded. Against the opening, this revision removes three units.
+The first is still delivered, by a weaker mechanism; the others are not delivered
+now. Prefer specifying to cutting: specifying `status_holder` needed a doctrine
+decision nobody has made (F1), and specifying the wait keys needed code that does
+not exist (F2). Each removal below needs your allowance at the Decision.
+
+* **`status_holder` in the board's data** (opening Proposal > The holder lookup, and
+  opening Question 4). The outcome "a view can group by who acts next" is delivered
+  by the guide's tested lookup.
+  **disposition**: guard
+  (`bootstrap/tests/test_board_json_contract.py::TestGuideLookupMatchesLifecycle`).
+  Opening Question 4, a terminal column, is moot and is **wontfix**.
+* **`maintainer_waits`, including roadmap-line waits** (opening top-level key, and
+  candidate 5's "rows declaring a wait"). Views compute "needs you" for artifacts
+  from `status` and `waiting_on_maintainer`; roadmap waits stay in the terminal
+  `--maintainer` text. **disposition**: defer, to a later additive key; revival
+  condition in Question 4.
+* **`fences_without_wait`** (opening top-level key). A body-text heuristic whose
+  membership could not be promised; the terminal `--maintainer` footer carries it,
+  and the example's page footer says so. **disposition**: wontfix, with that reason.
+
+### Assurance path
+
+**Assurance path**: high-assurance. Mandatory under the template's own rule:
+`tools/board.py` is executed by every adopter and its output becomes a published
+contract. No other trigger applies: no `doctrine/` change, no install-contract
+change, no engine change.
+
+### Withdrawn / superseded commitments
+
+* **`status_holder`**, its lookup in `board.py`, and opening Question 4: moved to
+  the guide and the Scope delta (F1).
+* **`maintainer_waits` and `fences_without_wait`**: removed from `/1` (F2).
+* **"Both sentences describe the terminal board"**: withdrawn (F1).
+* **"The rate-limit gate would be met by the recurrence above"**: withdrawn; no
+  doctrine edit, so the gate is not engaged (F1).
+* **"I have declared below that floor, for your Decision to ratify or override"**:
+  withdrawn; the floor was met by `fe0d093c` (the Response).
+* **"The second copy was the only cause of the staleness"**: withdrawn as an
+  overstatement (F5).
+* **"Tested recipes"** in the opening commit message: it was premature then and is
+  made true by the F6 tests.
+* **Plan review `required(Internal)`**: replaced by `required(Internal + Internal
+  Security Review)` (F10).
+* **"About 4 of about 30 rows carry the status marker"**: corrected to 7 of 30 (F10).
+* **"Reads these and nothing else"** in Terms: corrected to header lines and the
+  title line (F7).
+* **The example's `python` PATH lookup**: replaced by `sys.executable` (F10).
+* **The cut, per the reviewer's alternative**: wait keys wait for the sibling's C1.
