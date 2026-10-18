@@ -1,42 +1,34 @@
 # model-selection tier-to-model mapping (Cairn model-selection module).
 #
-# This file records the specific models your project assigns to each
-# capability tier (high / medium / low).  Complete the placeholder rows
-# below with your actual model assignments, then verify with:
+# Cairn's own mapping, filled by hand on 2026-10-18 at the Maintainer's
+# instruction. Re-verify with:
 #
 #   python scripts/check_model_selection.py
 #
-# Schema: each row carries model, tier, date_verified, task_family,
-# source (see dev/modules/model-selection.md for the full record schema).
+# Record schema: dev/modules/model-selection.md > "Mapping-record schema".
+# These rows bind tiers by name, not by measurement, and each `source` says
+# so. Re-rank when `re_verification_trigger` fires.
 #
-# The check_model_selection.py fidelity gate **fails non-zero while this
-# file still carries the seeded ``FILL ME`` placeholder** — so a fresh
-# adopter is forced to record their actual tier-to-model mapping before
-# the gate passes (it is forced, not silent: the silent-empty install is
-# the exact failure this module exists to prevent).  The scaffold install
-# itself succeeds (the tree is not blocked); the gate is a standalone
-# adopter fidelity check (`python scripts/check_model_selection.py`, or
-# wired into your CI) that stays red until you replace the placeholder.
-#
-# Replace the placeholder row below with your real assignments. Shape:
-#
-#   - tier: high
-#     model: vendor-a/flagship-model
-#     date_verified: 2025-01-01
-#     task_family: strategy-and-review
-#     source: "internal benchmark Jan 2025"
-#     price_basis: "$15/1M tokens"
-#     re_verification_trigger: major-model-release
-#
-# This file is adopter-local; do not commit vendor names to a shared
-# Cairn repository.
+# Model names here are this repository's own configuration under dev/, which
+# the vendor-neutrality gate does not scan. The shipped stub and the
+# templates stay vendor-neutral.
 
 mapping:
-  - tier: FILL ME           # high / medium / low
-    model: FILL ME          # your assigned model for this tier
-    date_verified: FILL ME  # YYYY-MM-DD
-    task_family: FILL ME
-    source: FILL ME
-
-# Replace the FILL ME placeholders above (add more rows per tier as
-# needed). The gate passes once no FILL ME remains.
+  - tier: high
+    model: "claude-opus-5-5"
+    date_verified: "2026-10-18"
+    task_family: "strategy, proposal authoring, proposal review, Security Review"
+    source: "Maintainer's assignment, 2026-10-18 -- by name, not benchmarked"
+    re_verification_trigger: major-model-release
+  - tier: medium
+    model: "claude-sonnet-5-5"
+    date_verified: "2026-10-18"
+    task_family: "implementation, plan review, code review, routine authoring"
+    source: "Maintainer's assignment, 2026-10-18 -- by name, not benchmarked"
+    re_verification_trigger: major-model-release
+  - tier: low
+    model: "claude-haiku-5-5"
+    date_verified: "2026-10-18"
+    task_family: "trivial edits: typos, wording, link fixes"
+    source: "Maintainer's assignment, 2026-10-18 -- by name, not benchmarked"
+    re_verification_trigger: major-model-release
