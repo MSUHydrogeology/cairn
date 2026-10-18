@@ -2470,6 +2470,20 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                   file=sys.stderr)
             return 2
 
+    # Both writing paths seed .gitignore last (the review surface's entry on
+    # --stage, the new skills' entries on --apply), after their other writes. A
+    # linked .gitignore is refused here, before the first write, so a refused
+    # seed never leaves a staged or applied upgrade behind. seed_gitignore's own
+    # guard is what runs: with no entries it writes nothing. --plan writes
+    # nothing and is not asked.
+    if args.apply or args.stage:
+        try:
+            seed_gitignore(target, (), dry_run=True)
+        except ScaffoldSecurityError as exc:
+            print(f"error: .gitignore seed refused (containment): {exc}",
+                  file=sys.stderr)
+            return 2
+
     # Self-heal (--apply only -- NOT --stage, which is a non-mutating preview
     # that writes solely to the gitignored review surface; and never on the
     # read-only --plan): an already-init-lock'd adopter may carry a populated

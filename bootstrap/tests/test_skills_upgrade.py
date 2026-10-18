@@ -218,6 +218,115 @@ def test_skills_gitignore_seeded_idempotently_on_apply(tmp_path: Path):
     assert gi.read_text().splitlines().count(pre) == 1
 
 
+#: What a hostile checkout could make `.gitignore` point at: a stand-in for a
+#: file elsewhere on the machine that the seed must never append to.
+_OUTSIDE_BYTES = b"# a file that belongs to someone else\nalias ll='ls -l'\n"
+
+
+def _link_gitignore_outside(target: Path, outside: Path) -> None:
+    """Replace the installed ``.gitignore`` with a link to *outside*."""
+    outside.parent.mkdir(parents=True, exist_ok=True)
+    outside.write_bytes(_OUTSIDE_BYTES)
+    (target / ".gitignore").unlink()
+    (target / ".gitignore").symlink_to(outside)
+
+
+def test_stage_over_a_linked_gitignore_refuses_before_staging_anything(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str],
+):
+    """``--stage`` seeds the ignore entry for its review surface as its last
+    step. A linked ``.gitignore`` must stop it before the review surface is
+    written, not after: a stage that exists but could not be ignored invites a
+    broad ``git add`` to commit it."""
+    target = tmp_path.resolve()
+    _install(target)
+    _make_pre_skills(target)
+    outside = tmp_path / "elsewhere" / "startup-file"
+    _link_gitignore_outside(target, outside)
+    lock_path = target / "dev" / ".cairn" / "cairn-lock.yml"
+    lock_before = lock_path.read_bytes()
+    capsys.readouterr()
+
+    rc = s.main(["upgrade", "--target", str(target),
+                 "--cairn-root", str(CAIRN_ROOT), "--stage"])
+
+    err = capsys.readouterr().err
+    assert rc == 2, err
+    assert ".gitignore seed refused (containment)" in err
+    assert "symlinked destination" in err
+    assert not (target / "dev" / ".cairn-upgrade").exists()
+    assert lock_path.read_bytes() == lock_before
+    assert outside.read_bytes() == _OUTSIDE_BYTES
+
+
+def test_apply_over_a_linked_gitignore_refuses_before_applying_anything(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str],
+):
+    """An upgrade that adds skills seeds ``.gitignore`` after the files are
+    swapped in and the lockfile has advanced. A link planted after ``--stage``
+    must stop ``--apply`` before the first of those writes: a refusal that
+    arrives once the upgrade is applied reports a failure for work that
+    happened. The stage is left intact so the apply can be re-run once the
+    link is replaced."""
+    target = tmp_path.resolve()
+    _install(target)
+    _make_pre_skills(target)
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--stage"]) == 0
+    stage_meta = target / "dev" / ".cairn-upgrade" / "stage-metadata.json"
+    stage_before = stage_meta.read_bytes()
+    # The apply's first write is the profile self-heal, which materializes the
+    # committed config from a lockfile profile when the config is absent. Set
+    # that up so a refusal that came after it would show.
+    lock_path = target / "dev" / ".cairn" / "cairn-lock.yml"
+    lock = s.read_lockfile(target)
+    lock["profile"] = {"axes": {
+        "age": "greenfield", "size": "small", "complexity": "simple",
+        "language": "single", "human_team": "solo", "agent_team": "single"}}
+    lock_path.write_text(s._emit_lock_yaml(lock), encoding="utf-8")
+    profile_path = target / "dev" / ".cairn" / "profile.yml"
+    profile_path.unlink(missing_ok=True)
+    outside = tmp_path / "elsewhere" / "startup-file"
+    _link_gitignore_outside(target, outside)
+    lock_before = lock_path.read_bytes()
+    capsys.readouterr()
+
+    rc = s.main(base + ["--apply"])
+
+    err = capsys.readouterr().err
+    assert rc == 2, err
+    assert ".gitignore seed refused (containment)" in err
+    assert "symlinked destination" in err
+    assert not (target / SKILL_START).exists(), "the staged skills were applied"
+    assert not (target / LIFECYCLE).exists(), "the staged skills were applied"
+    assert lock_path.read_bytes() == lock_before, "the lockfile advanced"
+    assert not profile_path.exists(), "the profile self-heal wrote before the refusal"
+    assert stage_meta.read_bytes() == stage_before, "the stage was consumed"
+    assert outside.read_bytes() == _OUTSIDE_BYTES
+
+
+def test_plan_over_a_linked_gitignore_stays_read_only_and_unaffected(
+    tmp_path: Path,
+):
+    """``--plan`` writes nothing, so a linked ``.gitignore`` is not its
+    business."""
+    target = tmp_path.resolve()
+    _install(target)
+    _make_pre_skills(target)
+    outside = tmp_path / "elsewhere" / "startup-file"
+    _link_gitignore_outside(target, outside)
+    lock_path = target / "dev" / ".cairn" / "cairn-lock.yml"
+    lock_before = lock_path.read_bytes()
+
+    rc = s.main(["upgrade", "--target", str(target),
+                 "--cairn-root", str(CAIRN_ROOT), "--plan"])
+
+    assert rc == 0
+    assert not (target / "dev" / ".cairn-upgrade").exists()
+    assert lock_path.read_bytes() == lock_before
+    assert outside.read_bytes() == _OUTSIDE_BYTES
+
+
 def test_verbatim_hand_synced_to_upstream_is_up_to_date():
     """#48 unit: ours == theirs is up-to-date even with a stale lock hash;
     a genuine fork (ours != theirs, hash != lock) is still flagged."""
