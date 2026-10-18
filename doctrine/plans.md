@@ -287,22 +287,25 @@ execution of one broad command as a second opinion.
 Each chunk's acceptance criteria map the changed invariants and public paths to
 their affected tests and standing surface gates. The implementer runs that
 reviewed scope while iterating and adds a newly discovered dependency to the
-plan before relying on it. There is no permanent "fast suite": speed does not
-establish coverage. If a substantive code surface has no reviewed mapping, or
-its effects cannot be bounded confidently, the full project suite is the
+plan before relying on it. A trivial change, with no proposal or plan, maps
+instead to the tests that own each touched surface, found by searching for what
+imports or reads the touched files rather than by expectation, plus that
+surface's standing gates. There is no permanent "fast suite": speed does not
+establish coverage. If a substantive code surface has no such mapping, or its
+effects cannot be bounded confidently, the full project suite is the
 fail-closed fallback.
 
 Work confined to ordinary prose or deliberation records runs the applicable
 claim, link, snippet, schema, and neutrality gates rather than an unrelated
-engine suite. Executable snippets, generated or frozen fixtures, gate
+engine suite, on any surface, a high-risk one included. Executable snippets, generated or frozen fixtures, gate
 manifests, and contracts whose plans name test coverage are not ordinary prose.
 
 ### Boundary B — Integration (one stable record)
 
 After the final implementation commit and before code review, the implementer
 runs against a clean, stable commit using the configured canonical
-interpreter/runtime. The default is the **full project suite**; a plan whose
-**reviewed mapping bounds the change's effects confidently** may instead run
+interpreter/runtime. The default is the **full project suite**; work whose
+**mapping bounds the change's effects confidently** may instead run
 that mapping plus every standing gate for every touched surface. This is the
 same test and the same fail-closed direction Boundary A already uses — the full
 suite is the escalation, not a ceremony paid at every boundary.
@@ -317,9 +320,9 @@ ceremony, which keeps its own exhaustive commands). **Uncertainty resolves to
 
 **The bounding claim is written, then adjudicated.** The record carries
 `**Boundary B mode**: full | bounded`. On `bounded` it must also name the
-touched surfaces, the reviewed mapping and standing gates it ran, why the
-effects are bounded, and the explicit absence of any contract or trust-ceremony
-surface. Boundary C then records `**Bounding**: ACCEPTED | FULL RUN REQUIRED`.
+touched surfaces, the test files or nodes and the standing gates it ran, with
+counts, why the effects are bounded, and the explicit absence of any contract
+or trust-ceremony surface. Boundary C then records `**Bounding**: ACCEPTED | FULL RUN REQUIRED`.
 `FULL RUN REQUIRED` **invalidates** the bounded record, which lands it on
 trigger 1 ("no valid Boundary B record exists") — the six triggers stay six.
 
@@ -330,6 +333,14 @@ the field is present, never that the argument is true, and a green check on the
 question that needed judgement is the clean-pass trap manufactured. What closes
 it is whose signature is on the verdict: an independent reviewer, who captures
 nothing.
+
+**Boundary B governs every implementation, a trivial change included.** A
+trivial change's mapping is the owning tests Boundary A names, and Boundary C's
+Bounding verdict reviews it afterwards. It runs before the commit, not after, on
+exactly the bytes being committed: a tree clean apart from the change, or a
+separate copy holding only it. Its record is its commit body, not a plan
+section, and carries the mode, the interpreter, and on `bounded` every field the
+bounding claim above names.
 
 **An already-open plan keeps the verification contract written in it.** Bounded
 mode becomes available to it only through that plan's own explicit, append-only
@@ -363,8 +374,8 @@ plan: an empty section looks like landed evidence. The record is committed in a
 later plan-only commit, so live `HEAD` may advance without changing the tested
 implementation bytes.
 
-The record is valid only when the tested commit contains the entire reviewed
-range, pre/post `HEAD` both equal the full tested revision, and the tree is clean
+A plan's record is valid only when the tested commit contains the entire
+reviewed range, pre/post `HEAD` both equal the full tested revision, and the tree is clean
 before and after. A later review or record-only commit does not invalidate it.
 A later unrelated implementation commit neither falsifies what the record says
 about its named tree nor gains coverage from it. Any later commit included in

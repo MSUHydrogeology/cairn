@@ -17,6 +17,14 @@ The rules pinned here:
   mutation.** The missing member is a line that is not there, so reading a
   diff cannot see it. The ledger reports every mutant against an unmutated
   control, and an equivalence nobody measured counts as a survivor.
+* **Boundary B governs a trivial change too.** Its mapping is the tests that
+  own what it touched, found by search; it runs before the commit, and its
+  record is its commit body, which the code reviewer's Bounding verdict
+  reviews. No sentence may tie the full-suite fallback to a *reviewed*
+  mapping, which a trivial change never has before it lands: that would send
+  every small fix to the full suite. The fence's trust-ceremony surface is
+  defined in the file that uses it, because the adopter's copy is the only one
+  they receive.
 
 Each obligation is an alternation matched against whitespace-collapsed text, so
 a rewording that keeps the obligation passes and a deletion fails. Node IDs are
@@ -68,6 +76,34 @@ _OBLIGATIONS = {
         r"(not|never) measured is reported as a survivor",
     "mutation-is-otherwise-the-reviewers-choice":
         r"mutation stays the reviewer's choice",
+    # Boundary B reaches a trivial change, and its fence is defined in place.
+    "boundary-b-governs-a-trivial-change":
+        r"[Bb]oundary B governs every implementation, a trivial change included",
+    "a-trivial-change-runs-before-its-commit":
+        r"runs before the commit, not after, on exactly the bytes being committed",
+    "a-trivial-changes-record-is-its-commit-body":
+        r"[Ii]ts record is its commit body",
+    "the-commit-body-carries-mode-and-interpreter":
+        r"carries the mode, the interpreter",
+    "a-plan-appends-its-verification-section":
+        r"[Aa] plan appends the tested SHA",
+    "owning-tests-are-found-by-search":
+        r"found by searching for what imports or reads the touched files",
+    "bounded-record-names-touched-surfaces-and-tests":
+        r"name the touched surfaces, the test files or nodes",
+    "trust-ceremony-surface-is-defined":
+        r"trust-ceremony surface\*{0,2} \(any high-risk surface this file names",
+}
+
+#: label -> pattern that must NOT occur in either copy.
+_FORBIDDEN = {
+    "no-full-run-tied-to-a-reviewed-mapping": r"no reviewed\s+mapping",
+}
+
+#: label -> the old wording each forbidden pattern exists to keep out.
+_FORBIDDEN_EXAMPLES = {
+    "no-full-run-tied-to-a-reviewed-mapping":
+        "If a substantive surface has no reviewed mapping, run the full suite.",
 }
 
 
@@ -105,6 +141,33 @@ def test_removing_the_obligation_is_reported(label: str, rel: str) -> None:
     assert label not in _missing(intact)
     stripped = re.sub(_OBLIGATIONS[label], "", intact)
     assert label in _missing(stripped)
+
+
+def _present_forbidden(text: str) -> list[str]:
+    """Labels of the forbidden phrasings present in *text*."""
+    collapsed = _collapse(text)
+    return [label for label, pattern in _FORBIDDEN.items()
+            if re.search(pattern, collapsed)]
+
+
+@pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
+@pytest.mark.parametrize("label", sorted(_FORBIDDEN))
+def test_agents_md_omits_the_forbidden_phrasing(label: str, rel: str) -> None:
+    assert label not in _present_forbidden(_text(rel)), (
+        f"{rel} ties the full-suite fallback to a reviewed mapping again. A "
+        f"trivial change has no reviewed mapping before it lands, so read "
+        f"literally this sends every small fix to the full suite."
+    )
+
+
+@pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
+@pytest.mark.parametrize("label", sorted(_FORBIDDEN))
+def test_inserting_the_forbidden_phrasing_is_reported(label: str, rel: str) -> None:
+    """The negative pin can fail: put the old wording back and it must fire."""
+    intact = _collapse(_text(rel))
+    assert label not in _present_forbidden(intact)
+    reverted = f"{intact} {_FORBIDDEN_EXAMPLES[label]}"
+    assert label in _present_forbidden(reverted)
 
 
 def test_an_empty_file_carries_no_obligation() -> None:

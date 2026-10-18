@@ -197,30 +197,43 @@ The roster is in `dev/agent_collaboration.md`.
 * **Verification boundaries.** Three jobs; do not pay for the same broad run at
   every one.
   * **A — Iteration (scoped).** During implementation, run the tests and probes
-    the reviewed plan maps, plus standing gates for every touched surface. If a
-    substantive surface has no reviewed mapping, run the full suite.
+    the reviewed plan maps — or, for a trivial change, with no proposal or plan,
+    the tests that own each touched surface, found by searching for what imports
+    or reads the touched files rather than by expectation — plus standing gates
+    for every touched surface. If a substantive surface has no such mapping, run
+    the full suite.
   * **B — Integration (stable evidence).** After the final implementation commit
     and before code review, against a clean unchanged commit under the
     **canonical interpreter (Python 3.13.x)**. Cairn's pair is
     `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests
     --quality-gate-shuffle-seed=0` then
     `python scripts/quality_gate.py --sub neutrality --sub redundancy`.
-    Run the **full suite unless the plan's reviewed mapping bounds the change's
-    effects confidently** — if a substantive surface has no reviewed mapping,
-    or its effects **cannot be bounded confidently**, the full suite runs. **Bounded mode refuses**, and the full suite runs,
-    whenever the change touches a **contract surface** (the install contract,
-    the fidelity or gate manifest, the lockfile schema, the published
-    `scaffold.py --manifest`) or a **trust-ceremony surface**. **Uncertainty
-    resolves to `full`** — the fence is a refusal rule, not a checklist to argue
-    past. Record `**Boundary B mode**: full | bounded`; on `bounded`, name the
-    touched surfaces, the mapping and gates run, why the effects are bounded, and
-    the explicit absence of any contract or trust-ceremony surface.
+    Run the **full suite unless the mapping bounds the change's effects
+    confidently** — if a substantive surface has no such mapping, or its effects
+    **cannot be bounded confidently**, the full suite runs. **Bounded mode refuses**,
+    and the full suite runs, whenever the change touches a **contract surface**
+    (the install contract, the fidelity or gate manifest, the lockfile schema, the
+    published `scaffold.py --manifest`) or a **trust-ceremony surface** (any
+    high-risk surface this file names, or release or security ceremony work).
+    **Uncertainty resolves to `full`** — the fence is a refusal rule, not a
+    checklist to argue past. Record `**Boundary B mode**: full | bounded`; on
+    `bounded`, name the touched surfaces, the test files or nodes and the gates
+    run, with counts, why the effects are bounded, and the explicit absence of
+    any contract or trust-ceremony surface.
+
+    **Boundary B governs every implementation, a trivial change included.** A
+    trivial change's mapping is the owning tests Boundary A names, and Boundary
+    C's Bounding verdict reviews it afterwards. It runs before the commit, not
+    after, on exactly the bytes being committed: a tree clean apart from the
+    change, or a separate copy holding only it. Its record is its commit body,
+    not a plan section, and carries the mode, the interpreter, and on `bounded`
+    every field the record sentence above names.
 
     **An already-open plan keeps the verification contract written in it.**
     Bounded mode reaches it only through that plan's own append-only revision.
 
-    Append the tested SHA/range, interpreter, clean pre/post state, commands,
-    outcomes, timing, non-pass disposition, and known omissions as
+    A plan appends the tested SHA/range, interpreter, clean pre/post state,
+    commands, outcomes, timing, non-pass disposition, and known omissions as
     `## Implementation verification -- <agent> -- YYYY-MM-DD`.
   * **C — Falsification (independent).** The code reviewer verifies that record
     against the reviewed range, then runs independent targeted falsification;
@@ -253,9 +266,9 @@ The roster is in `dev/agent_collaboration.md`.
   the blast radius is bounded by what *reads the file*. Run the applicable
   claim, link, snippet and neutrality gates, plus any test that actually reads
   the changed file — find them, do not assume the set is empty and do not
-  assume it is everything. A prose change to a contract surface does not
-  trigger the full suite unless a test or manifest pins its bytes; check
-  whether one does. Release verification is a separate strict ceremony. Name
+  assume it is everything. A prose change to a contract or high-risk surface
+  does not trigger the full suite unless a test or manifest pins its bytes;
+  check whether one does. Release verification is a separate strict ceremony. Name
   the interpreter alongside every suite figure.
 * **Keep commit bodies concise.** The body is a *snapshot* — what shipped and how
   it was verified — not a restatement of the proposal or plan. Target 15–30
