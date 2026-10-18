@@ -1,7 +1,7 @@
 # Plan: the model mapping on every install path -- a notice where agents install, a check that is right both ways, and a write that cannot escape
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-model-mapping-install-path.md`
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance -- inherited: the change edits the scaffold engine (`bootstrap/_scaffold/`), a script every adopter runs verbatim, and the onboarding seeds written into preset adopters' `dev/PLANNING.md`
 **Opened**: 2026-10-18
@@ -587,3 +587,142 @@ then `check_cairn.py`, and `claim_check.py` on each edited file. Run it from a s
 * **The solo-greenfield seed.** `wontfix`, with the Maintainer's allowance quoted in *Scope delta*.
 * **Whether the combined AST ceremony needs its own marked board row.** The queued row's marker names only the gate-manifest re-anchor. The Maintainer's call; if yes, the archive commit adds the row.
 * **The archive commit writes this plan's `CHANGELOG.md` entry,** and adds the node note, and the AST delta as part of the one combined ceremony, to the queued re-anchor row.
+
+## Plan review -- Claude Sonnet 5.5 (Internal) -- 2026-10-18
+
+```
+Reviewed commit: 20f145eda92c575473a2ccfcf021946086a0186c
+Target: the whole plan as committed (In brief, Source proposal, Scope with its four after-opening answers, Sequence, Acceptance criteria C1-C6, the security findings ledger, Scope delta, Verification with the mutation ledger, Named residuals, Dispositions), read against the accepted proposal (the Decision and scribe's note, Revision 2, Revision 1, the Security Review SEC-1 to SEC-8, the closure pass CL-1 to CL-4), the Maintainer's three additions the Scope quotes, and the engine, checker, stub, fixtures and board code at that commit
+Prior findings: none
+Assurance path: high-assurance (inherited, as the plan declares)
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised -- 12 (2 high, 5 medium, 5 low). **Verdict**: REVISE.
+
+This is the Internal pass of `required(Internal + Internal Security Review)`. The Internal Security Review is a separate pass by another session and is not done here. I make no claim to External distance: everything below strengthens the plan inside its own frame.
+
+**In plain terms.** The plan delivers what the Maintainer accepted, and I found nothing dropped or narrowed without his word. Its numbers check out against the code at `20f145ed`: the exit-code table, the seven frozen files, the AST picture, the lockfile count. The twelve findings are repairs to the plan's text. Two are accepted tests that, as written, cannot be built or cannot see what they claim to see. Three come from the `.gitignore` repair that is being answered right now, which moves the starting bytes the plan counts on. The rest are gaps in what a criterion pins, or claims that say a little more than the plan does.
+
+**How I checked** (all in a detached worktree of `20f145ed` under a scratch folder, removed afterwards, with `/Users/kendal30/conda_envs/lhm/bin/python3.13` and PyYAML 6.0.3; the shared tree was only read):
+
+* **Exit-code table.** I read every row against `bootstrap/_scaffold/cli.py` and `bootstrap/_scaffold/upgrade.py`, and ran two: an install over a linked `.gitignore` (exit 2, the `.gitignore` refusal line) and over a linked `dev/.cairn` (traceback, exit 1). `main` has three `ScaffoldSecurityError` catches (the `.gitignore` preflight, the skills fan-out, the onboarding install), as the plan says. The table is right at this commit.
+* **Frozen files.** `bootstrap/tests/fixtures/gate_manifest.json` holds 183 frozen keys. The control, `bootstrap/tests/test_scaffold.py`, is found frozen. The intersection with the files the plan edits is seven: the six the plan lists plus `bootstrap/tests/fixtures/scaffold_ast_known_new.json`. `test_intents_tool.py` is phase-mutable. The manifest pins 25 nodes in `test_model_selection_stub.py` (one leaves, one changes its fixture, 23 stay) and 37 in `test_upgrade_module_additions.py`. All as the plan says.
+* **AST.** `bootstrap/tests/_ast_attest.py verify` at `20f145ed` reports exactly four CHANGED (`main`, `seed_gitignore`, `_cmd_adopt_module`, `cmd_upgrade`). Changing one statement of `_commit_lock_and_caches` in a scratch copy gives "known-new digest/multiplicity mismatch" for it, and `test_ast_attest.py` stays at the same two failing nodes (2 failed, 28 passed), as the plan says. **With the repair's pending answer** (its working-tree `install.py` copied into a scratch copy) the same verify reports **five** CHANGED: it adds `create_dev_tree` (MM-PR-3).
+* **Lockfile.** `bootstrap/verify_integrity.py` reports 18 violations at `20f145ed`, none a file the plan edits. As the plan says.
+* **Notice constants.** The first text is byte-identical to Revision 2's R2.3; the second differs only by the CL-3 sentence ("That file was not changed"). The seed, in a scratch install with Revision 2's seed text added to `collaborative-team`, renders and `python tools/board.py --maintainer` lists it as `declared`, at line 100 of the installed planning file. As the plan says.
+* **The defect behind the install-record fold-in is real.** A hard link at the lockfile's temporary name, pointing at an outside file, ends up holding the lockfile text after `_commit_lock_and_caches` at `20f145ed`.
+* **Corpus.** I built the generated corpus (6 leads x 6 breaks x 3 positions) and the CL-4 spellings and ran them through the anchored pattern, a widened pattern and PyYAML (MM-PR-1).
+
+**Findings at a glance**
+
+| ID | Severity | One line |
+|---|---|---|
+| MM-PR-1 | High | The 108-file corpus is 6x6x3 and cannot hold the two CL-4 spellings the plan says it holds; the engine never sees them |
+| MM-PR-2 | High | The accepted real-install test for the capture's refusal cannot be built once the repair's `create_dev_tree` guard lands |
+| MM-PR-3 | Medium | The plan pins AST counts (five, "the repair's four") that the repair's answer moves to six / five |
+| MM-PR-4 | Medium | The repair's answer already rewrites the `SECURITY_MUTATIONS.md` paragraph the plan says C4 writes |
+| MM-PR-5 | Medium | C2 says its shipped words are "quoted below"; they are not, and no criterion pins them |
+| MM-PR-6 | Medium | The install record has four more in-place writers; the plan's closure wording can be read as covering them |
+| MM-PR-7 | Medium | P15 drops the repair's fail-early for a folder or pipe named `.gitignore`, which nobody asked for |
+| MM-PR-8 | Low | The `RecursionError` catch is beyond the Decision and is filed as "at the Maintainer's instruction" |
+| MM-PR-9 | Low | The two Maintainer ceremonies touch one frozen file; the plan does not say which goes first |
+| MM-PR-10 | Low | Two accepted details have no criterion that can fail (the capture's docstring; the per-site phrase search) |
+| MM-PR-11 | Low | The two new refusals (the capture's line, the hard-link `.gitignore`) name no remedy |
+| MM-PR-12 | Low | The new `os.open` flags are POSIX-only as written (`O_BINARY`, `fchmod`) |
+
+**MM-PR-1 -- High -- the 108-file corpus cannot hold the two CL-4 spellings the plan says it holds**
+
+* *Evidence.* Plan line 290 says "The corpus holds both CL-4 spellings". Line 294 defines the corpus as leads (6) x breaks (6) x positions (3) = 108, and lines 34 and 340 count 108. Line 515 says mutant M7 is killed by "the two CL-4 spellings in the corpus". These cannot all hold: 6 x 6 x 3 has no axis for how a row is spelled. The closure pass (`dev/proposals/archive/2026-10-18-claude-model-mapping-install-path.md:1617-1631`) required "add both spellings to the corpus", because otherwise "never looser" "passes only because the corpus leaves them out".
+* *Measured.* The anchored pattern misses `- "tier": high`, `- 'tier': high` and `mapping: [{tier: high, model: x}]` (bare exit 1) while PyYAML reads all three as rows (exit 0); a widened pattern accepts all three. So the substance of P3 is right and the three differences it leaves (a one-line list whose first key is not `tier`, a row without a `tier` key, a `tier:` inside another value) are real, in the direction the plan says.
+* *Why it matters.* (a) C3's engine-against-checker parity (line 340) runs on the 108 only, so the engine's copy of the row rule is never compared on these spellings. That is the harm CL-4 named: "the notice wrongly calls the mapping unfilled". (b) The "two explicit lists" (line 294) have no named members, so "a difference outside both lists fails" cannot be written as a test. (c) M7 names no copy; the checker and the engine each carry the rule. (d) Line 294 replaces Revision 2's "the PyYAML checker is never looser than the bare one" with two lists. CL-4's second option allows that, but only when "the reverse direction" is asserted for named members.
+* *Recommended fix.* In C1, define the corpus as two parts and state the total: the 108 generated files, plus a named spelling table with one row per member giving its text, the expected pass or fail of the bare checker, the PyYAML checker and the engine, and its list (stricter with PyYAML: the eight value spellings of line 291; looser with PyYAML: the three above; agreed after widening: the double-quoted key, the single-quoted key, the one-line list starting with `tier`). Say in C3 that the engine criterion runs over the whole set and that `_mapping_is_unfilled` carries the same widened row rule (only C1 says it now). Split M7 into M7a (checker) and M7b (engine). Define the PyYAML row rule in C1 (my reading of Revision 1: `mapping` is a non-empty list; say what a missing `mapping`, a non-list and a list of non-mappings give). Correct "108" in the In brief.
+
+**MM-PR-2 -- High -- the accepted real-install test for the capture's refusal cannot be built once the repair's answer lands**
+
+* *Evidence.* Plan line 355 (and Revision 2's R2.6, which it follows) requires a real interactive install over a tree whose `dev/.cairn` links to a folder that already holds `local-env.json`, the activation log and a stub, "otherwise the install stops earlier, in `write_local_env`". The exit table (line 126) and line 143 say a linked `dev/.cairn` stops in `write_local_env`.
+* *Measured.* At `20f145ed` that fixture does reach the capture (it then stops at the lockfile write, where the real design would have exited 2 at the capture). The repair's pending answer (uncommitted working tree, claimed under `gs-cr-answer`) makes `create_dev_tree` guard every `_DEV_DIRS` entry before its first `mkdir` (`bootstrap/_scaffold/install.py:199-200`), and `dev/.cairn` is one of them. In a scratch copy with that file, the same install stops in `main` -> `create_dev_tree` -> `_assert_safe_write` (traceback, exit 1), before `write_local_env` and before the capture. The accepted test then has no way to reach the code it is meant to prove.
+* *A fixture that works both ways (measured).* Make the mapping file itself the link, pointing at an outside regular file holding `FILL ME`, with a real `dev/.cairn`. `_install_one` skips an existing destination, nothing earlier refuses, and an interactive install reaches the capture (three prompts asked, with a harness that fakes a terminal) with and without the pending answer.
+* *Recommended fix.* In C4 use the linked mapping file for the real-install test and keep the linked `dev/.cairn` for the direct-call test only (`TestCaptureRefusesBeforeAskingAnything`). Keep the assertion on the constant line, which makes a test that stops earlier fail loudly. Reword lines 126, 143 and 355 so they do not name `write_local_env`: "the first write that guards it; a traceback and exit 1 either way". Note in the plan that the accepted fixture was replaced and why, since it is a change to an accepted test (the outcome, a real install proving the capture itself refused, is unchanged).
+
+**MM-PR-3 -- Medium -- the plan pins AST counts the repair's answer moves**
+
+* *Evidence.* The plan states the picture as "the repair's four" and "5 CHANGED, 1 re-keyed, 2 NEW" at lines 28, 93, 169, 171, 234 and 266, and builds criteria on it: "no CHANGED symbol beyond the five" (371), "the five CHANGED stay five" (382), "the same four symbols the repair changed" (401). Line 169 hedges that "no criterion here pins a byte or a line", which is true of bytes and lines but not of counts.
+* *Measured.* With the pending answer, `verify` reports five CHANGED at the base: the four plus `create_dev_tree` (digests `0e8c4e4f41b5bcb8` baseline against `9de03f6ae0c0c469`). The working-tree `dev/PLANNING.md` already says "six CHANGED, one re-keyed and two NEW". A correct implementation of this plan would fail lines 371, 382 and 401 as written, and the plan and the board would disagree.
+* *Recommended fix.* State each criterion as a set difference, not a count: "the CHANGED set at the tested commit equals the CHANGED set at C4's parent plus `capture_model_selection_mapping`; the known-new mismatch set is exactly `{_commit_lock_and_caches}`; the NEW set is exactly the two named". Say in lines 169-171 that the count is derived at ceremony time and is six if the repair's answer has landed. Do the same for line 234's "must derive four changed symbols" (the other plan will meet five or six).
+
+**MM-PR-4 -- Medium -- the repair's answer already rewrites the `SECURITY_MUTATIONS.md` paragraph the plan says C4 writes**
+
+* *Evidence.* Line 141 says the "caught once at the CLI top level (exit 2)" sentence "is false again, so the correction Revision 2 asked for is owed after all ... C4 writes it", and line 364 makes it a criterion. Line 381 says "if the repair's own answer has reworded [the `seed_gitignore`] row by then, this plan edits the row as it stands", but says nothing of the paragraph.
+* *Measured.* The pending working-tree `bootstrap/_scaffold/SECURITY_MUTATIONS.md` replaces that paragraph with the true story (a command turns the error into a plain exit 2 only where it asks first or wraps its own writes; everywhere else a traceback and exit 1, which the oracle pins), listing the three `.gitignore` preflights, the fan-out, onboarding, `--apply`, `--stage` and `--adopt-collisions`. It does not mention the capture. The same answer adds `create_dev_tree` to `_GUARDED_WRITE_FUNCS` in `bootstrap/tests/test_security_leaf.py`, the set C4 also edits. It also adds a second, remedy line to the three `.gitignore` refusals, so the table's "what prints" column (line 123) gains a line while the exit stays 2.
+* *Recommended fix.* Rewrite lines 141 and 364: "the opening paragraph, as the repair's answer left it, gains the capture's own catch (a constant line, exit 2) and nothing else; `_GUARDED_WRITE_FUNCS` gains the two names beside whatever the repair added". Add the remedy line to the table's first row. Add to C4's gate: re-read all three of these at the parent.
+
+**MM-PR-5 -- Medium -- C2's shipped words are "quoted below" but are not, and no criterion pins them**
+
+* *Evidence.* Line 303 says the module pair gains its paragraph and corrected sentence "quoted below". Nothing is quoted below. A search of the plan for the stub's example block, the module paragraph, the replaced sentence, the II-5 block, the fourth allowed match and the seed's body finds none of them; only the two notices (C3) and the seed's Waiting line (line 245) are in the plan. The words live only in Revision 2's R2.5, in an archived proposal.
+* *Why it matters.* The criteria pin keywords ("family", "never a version", the Waiting line's presence), so a paragraph that drops "It checks shape, not truth, and nothing reads `date_verified`" or the corrected "no routine reads it" would pass every C2 test. Those two sentences are the accepted correction of a false statement.
+* *Recommended fix.* Say in C2 that the shipped text is Revision 2's R2.5 verbatim, and either quote the seven blocks in the plan or point at the exact heading. Pin the three load-bearing items by exact string: the Waiting line (`**Waiting on Maintainer**: fill the model mapping`), the module paragraph's "nothing reads `date_verified`" sentence, and the corrected "no routine reads it" sentence. Delete "quoted below" if nothing is quoted.
+
+**MM-PR-6 -- Medium -- the install record has four more in-place writers, and the closure wording can be read as covering them**
+
+* *Evidence.* The fold-in is scoped correctly to `_commit_lock_and_caches`. But the same lockfile, `dev/.cairn/cairn-lock.yml`, is also written in place by `write_install_lockfile` (`bootstrap/_scaffold/install.py:1863`), `_cmd_init_lock` (`bootstrap/_scaffold/upgrade.py:1278`), `_cmd_finalize_lockfile` (`bootstrap/_scaffold/upgrade.py:1904`) and `_apply_upgrade` (`bootstrap/_scaffold/upgrade.py:2221`). Each calls `write_text` after `_assert_safe_write`, which looks at symbolic links and not link counts, so a hard link at the lockfile's own name is written through by all four. Lines 187 and 576 name only "the module-merge conflict side-file" as the case seen, and line 564 (S5) says the hard-link case "is closed by construction ... for the install-record writer". A reader, the Maintainer included, can take "install record" to mean the lockfile.
+* *Recommended fix.* Do not widen scope. Rename "the install-record writer" to `_commit_lock_and_caches` in S5 and the residuals. Name the four lockfile writers in Named residuals beside the side-file. Add them to the one deferral batch the plan already means to put at archive (it needs the Maintainer's quoted word, as the plan says of the side-file).
+
+**MM-PR-7 -- Medium -- P15 drops the repair's fail-early for a folder or pipe named `.gitignore`, which nobody asked for**
+
+* *Evidence.* P15 (line 210), line 378 and the residual at line 577 accept that a folder or pipe named `.gitignore` is "no longer caught by the preflight" and is refused only at the first seeding that writes, "after any earlier writes". P15 says "the Maintainer called the preflight's read a regression" (line 113 calls it "a regression the repair introduced"); no quote supports the first. His quoted words (lines 103-107) answer a question about "a non-UTF-8 `.gitignore` stopping an upgrade". The Security Review (`dev/reviews/2026-10-18-security-review-gitignore-seed-guard.md:402-418`) rates GS-SR-5 informational and says "Fail-earlier is the safer behaviour".
+* *Effect.* Git can carry `.gitignore/x`, so a folder named `.gitignore` is possible. After this change an install over one creates the dev tree and installed files and then dies at the first seed with a traceback and exit 1, the half-install the repair removed, and `--stage` leaves a stage behind.
+* *Recommended fix.* P14 already runs an `lstat` in the preflight for the link count. Add "not a regular file" to that `lstat` (folder, pipe, socket, device): refuse with `ScaffoldSecurityError`, open nothing, decode nothing. Keep the first-write refusal as a backstop. Only the non-UTF-8 case then changes behaviour, which is what was asked. Remove the "Maintainer called it" clause or quote him, and update line 577. Cost: one condition and one test row.
+
+**MM-PR-8 -- Low -- the `RecursionError` catch is beyond the Decision and is filed as "at the Maintainer's instruction"**
+
+* *Evidence.* P8 (line 204) says it "adds two lines beyond the accepted text". Line 457 lists the `RecursionError` catch among "Additions ... each at the Maintainer's instruction, quoted under Scope", but the four answers quoted under Scope (lines 77-115) say nothing about it. Revision 2's R2.4 requires the scan to visit "each object once"; it does not mention `safe_load`'s own recursion limit. The plan leaves the other defects it found while planning (lines 183-190) unfixed and sends them to Dispositions.
+* *Recommended fix.* Uphold the explicit-stack walk (that is R2.4's "once each" and adds no recursion of its own). For the catch, either cut it to the Dispositions with the other found-but-not-fixed items (my lean: no accepted outcome depends on it, and the failure is a traceback on a file the adopter wrote), or keep it and say in the Scope delta that it is the plan's own addition. Do not write "at the Maintainer's instruction". If cut, drop the 5000-deep bullet at line 293.
+
+**MM-PR-9 -- Low -- the two Maintainer ceremonies touch one frozen file; the plan does not say which goes first**
+
+* *Evidence.* The plan correctly counts seven frozen files, six edited by an agent and `scaffold_ast_known_new.json` written by the AST ceremony (lines 149-152); line 149 says "seven" and then "The six", and lines 28 and 266 say "the six frozen files". `scaffold_ast_known_new.json` is in the manifest's frozen keys (control above). If the gate-manifest re-anchor runs first, the AST ceremony then modifies a frozen file and leaves a fresh hold, a second re-anchor for the Maintainer. Neither `bootstrap/AST_BASELINE_RUNBOOK.md` nor `bootstrap/REANCHOR_RUNBOOK.md` mentions the other. I did not read the re-anchor runbook end to end, so the author should confirm the effect.
+* *Recommended fix.* Say in chunk M, and in the note the archive commit adds to the queued row, "run the AST ceremony first, then the gate-manifest re-anchor once, so it records the seventh file's final bytes". Make "seven" and "six" read consistently.
+
+**MM-PR-10 -- Low -- two accepted details have no criterion that can fail**
+
+* (a) Revision 1 section 4 asks that the capture's docstring say it runs at install time and name `--adopt-module` and `upgrade` as notice-only. The current docstring (`bootstrap/_scaffold/install.py:694-695`) says "install / ``--adopt-module`` time", which is the false statement. The plan's order list says only "the docstring". Add a criterion: the docstring no longer says the capture runs at `--adopt-module`, and says the two commands only print the notice.
+* (b) Line 309 says the "family, never a version" sites are "listed from the tree by searching for the phrase". The capture's prompt reads "model family, not a version" (line 363), so a search for "never a version" will not list it, and the header line has no stated wording. Name the eight sites explicitly, as M20 does, and say what the header says.
+
+**MM-PR-11 -- Low -- the two new refusals name no remedy**
+
+* *Evidence.* The capture's refusal is a constant line with no hint (P6, line 201). A person whose mapping is a link by design, such as a shared file in a monorepo, meets exit 2 on every interactive install. The new hard-link `.gitignore` refusal reaches the preflight catch sites; the repair's pending answer adds a remedy line there ("replace the link with a regular file, then re-run"), following the code review's GS-CR6. P14 says nothing about the hard-link case.
+* *Recommended fix.* A fixed sentence is as constant as the prefix and names only the fixed path. Extend the capture's line with a remedy (author's wording; for example "... is a link or sits behind one; replace it with a regular file, or install with --non-interactive and fill it by hand"), and test that it contains the remedy and no tree text. Check that the preflight remedy's words fit a hard link, and add a test row for that wording.
+
+**MM-PR-12 -- Low -- the new `os.open` flags are POSIX-only as written**
+
+* *Evidence.* P13 (line 208) opens with `O_WRONLY | O_CREAT | O_EXCL`, and P14 (line 209) adds `O_NOFOLLOW` and `O_NONBLOCK` "where the platform has them", then copies mode bits. On Windows a descriptor opened without `O_BINARY` translates `\n` to `\r\n` on write, so a base-cache copy written through it would no longer match the template bytes whose hash the lockfile records; `tempfile.mkstemp`, which the capture uses, adds `O_BINARY` itself for this reason. `os.fchmod` does not exist there. The engine already has Windows fallbacks (the symbolic-link probe in `bootstrap/_scaffold/install.py`), although `bootstrap/SAFETY.md:525` records no Windows run.
+* *Recommended fix.* Say in P13 and P14: build the flags with `getattr(os, "O_BINARY", 0)`, `getattr(os, "O_NOFOLLOW", 0)` and `getattr(os, "O_NONBLOCK", 0)`; copy the mode with `os.chmod(path, mode)`; the mode tests skip where the platform has no POSIX modes.
+
+**Answer 1 -- does this plan deliver what the Decision and the three additions accepted, all of it?**
+
+Yes in outcome, with the repairs above. I walked Revision 1's seven numbered changes, Revision 2's R2.1 to R2.7, SEC-1 to SEC-8 and CL-1 to CL-4 against the chunks and found each mapped (the plan's Scope-delta table is accurate). The only removal is the `solo-greenfield` seed, declared with the Maintainer's quoted allowance. Nothing is dropped. What is narrowed or reworded, each with an authority: the second notice's sentence (CL-3), "never looser" replaced by named lists (CL-4's second option, which the plan does not yet deliver fully: MM-PR-1), `--init-lock`, `--finalize` and `--adopt-collisions` staying silent (Revision 1 named `--plan`, `--stage` and `--apply`, and its call site sat after those branches). Two accepted items need repair to be delivered as accepted: the real-install test (MM-PR-2) and the words of C2 (MM-PR-5). Beyond the Decision and the additions there is one item, the `RecursionError` catch (MM-PR-8). The Maintainer's additions land: the install-record fix is designed correctly and reproduced as a real defect (see MM-PR-6 for how far "closed" reaches); GS-SR-3, GS-SR-4 and GS-SR-5 are delivered (with MM-PR-7 on one side effect); one combined AST ceremony is stated (MM-PR-3, MM-PR-9); the build order is respected. His four answers land as checkable criteria: the check skips full-line comments and fails an empty mapping (C1), the seed goes in two presets and not in `solo-greenfield` (C2, M19), the Waiting row is listed by `board.py --maintainer` on a fresh install (C2), and the stub example says family and never a version, with a per-site test (C2 to C4, M20). The sequencing against the four earlier plans is right as far as the shared files go: no file is claimed by a plan that the table does not list, and `neutrality-and-upgrade-slots` leaves `bootstrap/_scaffold/` alone as the table says. Two cells have gone stale since the plan was written and are harmless: `neutrality-and-upgrade-slots` is past its C7, and `board-as-basis` is now `revising-plan` after two reviews, whose coupling to this plan is only the `--maintainer` output and the row grammar the plan already pins loosely.
+
+**Decisions P1 to P15**
+
+* P1 uphold. P2 uphold. P3 uphold (see MM-PR-1 for the corpus). P4 uphold; judging the structure before the rows is also what keeps two pinned nodes green (`test_malformed_message_is_clean`, `test_non_mapping_top_level_fails_3`), so say so in C1.
+* P5 uphold. P6 uphold, with a fixed remedy clause (MM-PR-11). P7 uphold.
+* P8 uphold the walk, overrule the catch (MM-PR-8). P9 uphold. P10 uphold. P11 uphold. P12 uphold.
+* P13 uphold, with the platform flags (MM-PR-12). P14 uphold refusing rather than replacing a hard-linked `.gitignore`: replacing would first copy the outside file's content into a file Git commits, and would silently cut a link someone made on purpose; add "not a regular file" to its `lstat` (MM-PR-7) and a remedy (MM-PR-11).
+* P15 uphold for the decoding half (a non-UTF-8 `.gitignore` no longer stops an apply, bytes kept exactly); overrule dropping the fail-early for a folder or pipe (MM-PR-7).
+
+**Answer 2 -- is there a simpler path to the same outcome?**
+
+No simpler path to the accepted outcomes. The notice, the check and the guarded capture each need the code the plan names, and the plan's own cuts (the seed in two presets, no new top-level symbol beyond the two the notice needs) are already the lighter choices. There is one place where the plan is heavier than it needs to be, offered as a choice and not a finding: three hand-written "exclusive temporary file, write, guard, rename, clean up" sequences (the capture through `mkstemp`; the install-record writer and the `.gitignore` append through `os.open`), each with its own mutants (M14, M15, M24 to M28, M32, M35, M36). A single private helper in `install.py`, which `upgrade.py` already imports from, would create and write the exclusive temporary once; MM-PR-12's flags and the cleanup would then exist in one place. The cost is one more NEW symbol for the AST ceremony and, for the capture, a departure from Revision 2's "all inline" (the Response to SEC-3 chose inline to keep the AST count down). So the capture could stay inline as accepted, with the helper used by the two additions the Maintainer folded in, which carry no such requirement. I would not hold the plan for it. Nothing else here can be cut without dropping an accepted outcome, apart from the `RecursionError` catch (MM-PR-8).
+
+**What I did not cover**
+
+* I did not run the full suite, any mutant of the ledger, or the plan's 202-test measurement. This is a plan review; the ledger and Boundary B belong to C6.
+* The Internal Security Review is a separate pass. I spot-checked the SEC-3 to SEC-8 and CL-1 to CL-4 mapping for delivery, not for adequacy as security controls.
+* I re-ran CL-4's spellings and a prototype of the 108-file corpus, but not the plan's 21-spelling prototype, and I could not check the generator the plan has not yet written. PyYAML 6.0.3 only.
+* I measured the seed in `collaborative-team` only, not `high-rigor-legacy` or the `complexity: simple` strip.
+* I read `board-as-basis` only where it names this plan, not its two reviews in full; a change to the row grammar after its fold could still touch the seed test.
+* The effect of MM-PR-9 (ceremony order) rests on the manifest's frozen list and the board's description, not on a full read of the re-anchor runbook.
+* Windows and other non-macOS platforms; I ran nothing there.
+* I did not check `CHANGELOG.md`, the Dispositions wording at archive, or the neutrality gate against the widened checker `neutrality-and-upgrade-slots` will land first.
