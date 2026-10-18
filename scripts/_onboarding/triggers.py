@@ -18,8 +18,8 @@ import re
 from .security import _assert_safe_dir_for_glob, _assert_safe_read
 
 
-# Per plan 2026-05-28-claude-cairn-progressive-onboarding (Codex
-# External Review P2-3): triggers evaluate against EXPLICIT
+# Per plan 2026-05-28-claude-cairn-progressive-onboarding: triggers
+# evaluate against EXPLICIT
 # deployment state (filesystem + roster + ledger) wherever possible,
 # NOT git archaeology.  The collab-agreement-signing trigger evaluator
 # uses a "first-proposal-archived has fired" precondition recorded in
@@ -38,7 +38,7 @@ from .security import _assert_safe_dir_for_glob, _assert_safe_read
 # cross-type-review detector + the second-agent-type roster scan.
 # Conservative: the patterns are case-insensitive substring matches,
 # common enough to detect real attributions while infrequent enough
-# in plain prose to keep false-positives bounded.  Per Claude
+# in plain prose to keep false-positives bounded.
 # Confirmed against a real deployment:
 # the foldback active-surfacing proposal's I-8 disposition already
 # converged on a broader enumeration; this list reflects that
@@ -72,8 +72,8 @@ def _list_proposal_files(target: Path, *, archived: bool) -> list[Path]:
     root = target / "dev" / "proposals" / sub if sub else target / "dev" / "proposals"
     if not root.is_dir():
         return []
-    # Parent-once containment validation (Antigravity plan-review
-    # P2-2): one full three-check on the glob parent; per-leaf
+    # Parent-once containment validation: one full three-check on
+    # the glob parent; per-leaf
     # ``is_symlink()`` filters out symlinked leaves cheaply.  Equivalent
     # to per-leaf ``_assert_safe_read`` at lower cost.
     _assert_safe_dir_for_glob(root, target)
@@ -216,10 +216,9 @@ def _has_cross_type_review_in_file(text: str) -> bool:
     if author is None:
         return False
     lines = text.splitlines()
-    # Find each review-shape heading.  Per Antigravity External code
-    # review P1-A: extend match from `## Review\b` (which missed
-    # `## Plan review` and `## Code review` shapes) to also accept
-    # `Plan ` / `Code ` qualifiers in the canonical convention.
+    # Find each review-shape heading.  The match covers `## Review\b`
+    # and also the `## Plan review` and `## Code review` shapes
+    # (`Plan ` / `Code ` qualifiers in the canonical convention).
     for i, line in enumerate(lines):
         m = re.match(
             r"^##\s+(?:Plan\s+|Code\s+)?Review\b", line, re.IGNORECASE,
@@ -227,7 +226,7 @@ def _has_cross_type_review_in_file(text: str) -> bool:
         if m is None:
             continue
         # Scan the heading line itself (which often carries the
-        # reviewer attribution like "## Review -- Codex (External)")
+        # reviewer attribution like "## Review -- <agent> (External)")
         # PLUS up to 10 lines into the body for a vendor pattern
         # different from `author`.
         for body_line in lines[i:i + 11]:
@@ -242,7 +241,7 @@ def _has_cross_type_review_anywhere(target: Path) -> bool:
     """File-content scan: any proposal or plan with a cross-type
     Review section fires the trigger.
 
-    Per Antigravity plan-review P2-2 disposition: the glob roots are
+    The glob roots are
     already containment-validated inside ``_list_proposal_files`` +
     ``_list_plan_files`` (one-shot ``_assert_safe_dir_for_glob`` per
     root), and the lister filters symlinked leaves with
@@ -278,7 +277,7 @@ def evaluate_action_triggers(
 ) -> set[str]:
     """Action-trigger evaluators.
 
-    Per Codex External Review P2-3 disposition: triggers observe
+    Triggers observe
     explicit state (filesystem + roster + ledger + file content
     parsing); the ``collab-agreement-signing`` trigger consults the
     activation log to confirm the ``first-proposal-archived``

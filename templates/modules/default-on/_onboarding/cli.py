@@ -233,7 +233,7 @@ def derive_held_task_ids(
     """Held tasks = source-file deferred task ids - log-recorded
     activations.  These are the tasks awaiting their trigger.
 
-    Derived (not persisted) per Codex P2-5: the log is the only
+    Derived (not persisted): the log is the only
     durable state; held / completed are computed each goodnight from
     source + log + PLANNING.
     """
@@ -398,7 +398,7 @@ def _render_onboarding_slot_seed(
 ) -> str:
     """Render the slot body for --seed: identical shape to the
     scaffold-path render (`<!-- preset: <name> -->` + seed blocks),
-    preserving the uniformity contract per Codex P2-4."""
+    preserving the uniformity contract."""
     parts = [f"<!-- preset: {preset_name} -->", ""]
     parts.extend(seed_blocks)
     return "\n".join(parts).rstrip() + "\n"
@@ -502,8 +502,7 @@ def main(argv: list[str] | None = None) -> int:
             )
         except OnboardingSecurityError as exc:
             # Containment refusal: distinct exit code 2 so automation
-            # can tell security failures apart from operational ones
-            # (Antigravity plan-review P3-1 disposition).
+            # can tell security failures apart from operational ones.
             print(f"security error: {exc}", file=sys.stderr)
             return 2
         except OnboardingError as exc:
@@ -515,8 +514,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         outcome = activate(target, dry_run=args.dry_run)
     except OnboardingSecurityError as exc:
-        # Per Antigravity plan-review P3-1: distinct exit code for
-        # containment failures.
+        # Distinct exit code for containment failures, so automation
+        # can tell them apart from operational ones.
         print(f"security error: {exc}", file=sys.stderr)
         return 2
     except OnboardingError as exc:

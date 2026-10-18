@@ -212,9 +212,9 @@ _CAIRN_STATE_DIR = ("dev", ".cairn")
 
 
 #: The canonical lifecycle-skills source (read directly by the alias-tier
-#: harnesses).  Symlink-tier harnesses (today only Claude Code, ``.claude/
-#: skills``) fan out to this dir; the session-start self-heal keeps those
-#: read-paths in sync.
+#: harnesses).  Symlink-tier harnesses (the ``tier: symlink`` rows of the
+#: routing table; today ``.claude/skills``) fan out to this dir; the
+#: session-start self-heal keeps those read-paths in sync.
 _AGENTS_SKILLS_DIR = (".agents", "skills")
 
 
@@ -902,7 +902,7 @@ def cmd_session_start(args: argparse.Namespace) -> int:
     The gather is purely informational -- commits, tree state, threads,
     intents, resolved interpreter.  The one write the routine performs is the
     **skills fan-out self-heal**: it ensures every eligible, in-use
-    symlink-tier read-path (e.g. Claude Code's ``.claude/skills``) points at
+    symlink-tier read-path (e.g. the ``.claude/skills`` link) points at
     the canonical ``.agents/skills/`` source, idempotently and under the
     installer's writer-safety contract (a no-op when already linked; never
     clobbers a divergent target).  The skill body then performs the judgment
@@ -1335,7 +1335,7 @@ def cmd_session_end(args: argparse.Namespace) -> int:
 
     Reflection-only (the safe default, the portable Layer-2 guarantee): scaffold
     the reflection + survey open threads -- both non-destructive, so even if a
-    non-Claude harness ignores `disable-model-invocation` and auto-fires this,
+    harness ignores `disable-model-invocation` and auto-fires this,
     the worst case is a stray reflection file, never a roadmap scrub.
 
     Full handoff (`--handoff`): the mechanizable destructive steps (prune

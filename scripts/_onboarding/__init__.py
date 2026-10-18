@@ -18,13 +18,13 @@ opt-in).
 
 Reads:
 * ``dev/PLANNING.md``'s ``<!-- cairn:slot onboarding-tasks -->`` block
-  for the ``<!-- preset: <name> -->`` metadata comment (Codex P2-4
-  contract: scaffold + ``--seed`` both write this comment so the
+  for the ``<!-- preset: <name> -->`` metadata comment (scaffold +
+  ``--seed`` both write this comment so the
   helper resolves the installed source file uniformly across install
   paths).
 * ``dev/.cairn/onboarding-activated.jsonl`` -- the **tracked**
-  append-only activation log (Codex P2-5 decision: tracked, parallel
-  to ``dev/intents.jsonl`` precedent; edits land at the goodnight
+  append-only activation log (tracked, parallel
+  to the ``dev/intents.jsonl`` precedent; edits land at the goodnight
   serialization point only).
 * ``dev/modules/onboarding/<preset>.md`` -- the installed source file
   carrying ``[trigger: X; id: Y]`` deferred-task list-items and (in

@@ -50,7 +50,7 @@ def _load_engine():
             f"onboarding engine package at {engine_dir} is a symlink or resolves "
             f"outside {tool_dir} — refusing to load (fail-closed)"
         )
-    # Idempotent + poison-free (Codex cross-phase F#4): reuse a FULLY-LOADED
+    # Idempotent + poison-free: reuse a FULLY-LOADED
     # cached canonical package, and on ANY exec failure remove the parent + every
     # canonical child this load registered, so a later retry rebuilds a clean
     # module graph instead of reusing a stale submodule (the mixed-graph the

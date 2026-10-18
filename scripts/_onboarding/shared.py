@@ -16,13 +16,12 @@ from datetime import datetime, timezone
 
 
 #: Default location of the tracked activation log inside the adopter's
-#: deliberation tree.  Per Codex P2-5: tracked, parallel to
+#: deliberation tree.  Tracked, parallel to
 #: dev/intents.jsonl.  The scaffold SEEDS the file empty at install
 #: time (the canonical path); the helper also carries a lazy-mkdir
 #: backstop on ``append_activation_log`` for callers that bypass the
 #: scaffold (existing-adopter --seed paths run against a
-#: scaffold-less tree, etc.).  Per Claude External code review P3-1:
-#: scaffold-seeds is the primary contract; lazy-mkdir is the
+#: scaffold-less tree, etc.).  Scaffold-seeds is the primary contract; lazy-mkdir is the
 #: backstop, not the primary mechanism.
 DEFAULT_LOG_REL = "dev/.cairn/onboarding-activated.jsonl"
 

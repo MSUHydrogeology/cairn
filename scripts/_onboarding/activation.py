@@ -26,7 +26,8 @@ from .slotparse import DeferredTask, find_slot_body
 class ActivationRecord:
     """One line in ``onboarding-activated.jsonl``.
 
-    Schema (Codex P2-5 + the plan's state-file design):
+    Schema (the log is the only durable state; the plan's state-file
+    design):
 
     * ``task-id``: stable id from the source file's
       ``[trigger: X; id: Y]`` header.
@@ -176,11 +177,9 @@ def append_activation_log(
 ) -> None:
     """Atomic-append each record's JSONL line to the log.
 
-    Matches the ``modflow_tools/tools/intent.py`` precedent for true
-    POSIX-atomic append per Claude External code review P2-1 +
-    Antigravity confirmation: ``os.open`` with
-    ``O_WRONLY|O_APPEND|O_CREAT`` + a single ``os.write(fd, bytes)``
-    per record.  This guarantees the kernel performs the seek-to-end
+    Matches the intent log's precedent for true POSIX-atomic append:
+    ``os.open`` with ``O_WRONLY|O_APPEND|O_CREAT`` + a single
+    ``os.write(fd, bytes)`` per record.  This guarantees the kernel performs the seek-to-end
     + write atomically (single line is shorter than ``PIPE_BUF``);
     Python-level line-buffered ``open(... 'a', buffering=1)`` does
     NOT make this contract.  Partial-write detection raises so a
@@ -189,8 +188,8 @@ def append_activation_log(
     Optional ``target`` enables the containment guard.  When supplied
     the ordering is ``mkdir → assert``: the parent directory is
     created first, then ``_assert_safe_write(log_path, target)``
-    runs so ``resolve()`` operates on an existing parent (Antigravity
-    plan-review P2-1 disposition).  Production call sites in
+    runs so ``resolve()`` operates on an existing parent.  Production
+    call sites in
     ``activate()`` always pass ``target``; test fixtures may omit it
     when exercising controlled paths.
     """
@@ -200,7 +199,7 @@ def append_activation_log(
     if target is not None:
         # mkdir → assert ordering: parent now exists, so resolve() in
         # the guard operates on a real directory rather than a
-        # non-existent path (Antigravity plan-review P2-1).
+        # non-existent path.
         _assert_safe_write(log_path, target)
     fd = os.open(
         str(log_path),

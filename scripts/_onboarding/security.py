@@ -33,10 +33,10 @@ class OnboardingSecurityError(OnboardingError):
 
     Inherits ``OnboardingError`` so the CLI's existing catch-all
     surfaces it as a clean user-facing error rather than a raw
-    traceback (Antigravity proposal-review P2-2 disposition).  The
+    traceback.  The
     CLI's ``main()`` handler distinguishes this class from generic
-    ``OnboardingError`` by returning exit code **2** instead of 1
-    (Antigravity plan-review P3-1 disposition), so automation
+    ``OnboardingError`` by returning exit code **2** instead of 1,
+    so automation
     wrappers + diagnostics can tell containment failures apart
     from operational ones.
     """
@@ -53,7 +53,7 @@ class OnboardingSecurityError(OnboardingError):
 #   immediately before every ``read_text`` / ``read_bytes`` against
 #   a target-derived path.
 # * ``_assert_safe_dir_for_glob(d, target)`` -- parent-once
-#   optimization for glob loops (Antigravity plan-review P2-2):
+#   optimization for glob loops:
 #   one full three-check on the parent directory + a cheap
 #   ``is_symlink()`` per leaf, avoiding per-leaf ``resolve()``
 #   overhead on large archives.
@@ -78,9 +78,8 @@ def _assert_safe_write(dst: Path, target: Path) -> None:
        (defense in depth against ``..`` / absolute ``dst``).
 
     The caller is responsible for ensuring ``dst.parent`` exists
-    BEFORE calling (Antigravity plan-review P2-1 disposition:
-    ``mkdir → assert`` so ``resolve()`` operates on an existing
-    parent rather than a non-existent path).
+    BEFORE calling (``mkdir → assert`` so ``resolve()`` operates on
+    an existing parent rather than a non-existent path).
     """
     target_resolved = target.resolve()
 
@@ -157,8 +156,8 @@ def _assert_safe_read(src: Path, target: Path) -> None:
 
 
 def _assert_safe_dir_for_glob(d: Path, target: Path) -> None:
-    """Parent-once optimization for glob loops (Antigravity
-    plan-review P2-2): validate the glob's parent directory in one
+    """Parent-once optimization for glob loops: validate the glob's
+    parent directory in one
     pass, so the loop body can do only ``f.is_symlink()`` per leaf
     (O(1), no ``resolve()``) and still catch every escape vector
     per-leaf ``_assert_safe_read`` would catch.

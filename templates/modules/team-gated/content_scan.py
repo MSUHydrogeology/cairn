@@ -326,7 +326,7 @@ _CAIRN_MARKER_RE = re.compile(
     r"|vendor-ok(?:-begin|-end)?"
     r"|case-study"
     # The claim_check.py document-scoped exemption family (ported into
-    # Cairn 2026-05-28 from modflow_tools).  Same shape: Cairn-owned
+    # Cairn 2026-05-28 from the reference deployment).  Same shape: Cairn-owned
     # directive syntax parsed by the default-on claim_check module.
     r"|claim-check-allow(?:-count)?"
     r")\b",
@@ -544,8 +544,8 @@ def _scan_unicode(lines: list[str], leading_bom: bool):
 # allowance is EXACT-TOKEN and tightly bounded: only a micro-prefixed short
 # Latin run or an ohm-unit shape is cleared, so a mixed-script *credential*
 # token (e.g. a Cyrillic-spoofed 'pаssword' -- Latin+Cyrillic) still flags.
-# A clearing here is a fold-up of the modflow_tools accepted-residual class
-# [sci-unit]; it does not weaken the detector for any non-unit token.
+# A clearing here is a fold-up of the reference deployment's accepted-residual
+# class [sci-unit]; it does not weaken the detector for any non-unit token.
 _MICRO_SIGNS = "µμ"          # MICRO SIGN, GREEK SMALL LETTER MU
 _OHM_SIGNS = "ΩΩ"            # GREEK CAPITAL OMEGA, OHM SIGN
 _SCI_UNIT_RE = re.compile(
