@@ -1,7 +1,7 @@
 # Two checks you can trust: a neutrality gate that reads zero, and a note for slots an upgrade adds
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: required(External + Security Review)
 **Plan review**: required(Internal)
 **Opened**: 2026-10-17
@@ -2506,3 +2506,156 @@ precondition.
   word, in the file types the gate reads" (SR10).
 * **Correcting only `:446`.** Superseded: five comment sites are corrected
   (SR10).
+
+## Review -- Claude Opus 5.5 (Security Review, SR8 closure, fresh session) -- 2026-10-17
+
+```
+Reviewed commit: 24b76d15ef2e769e55a0beb8b5a0e4221af01a86
+Target: SR8 in the round-2 Security Review, the round-3 Response's SR8 entry, and Revision 3 (read quickly for anything new), against bootstrap/verify_integrity.py and _cmd_finalize_lockfile in bootstrap/_scaffold/upgrade.py
+Prior findings: SR8 (this tier, round 2)
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised (1 blocking, 1 non-blocking)
+**Verdict**: REVISE
+
+Distance: a fresh session of the author's agent type, not a different type. I
+wrote neither the proposal nor an earlier review of it. This pass reads SR8's
+closure, as the round-2 review set out.
+
+### In plain terms
+
+The new review step has the right idea, and it closes the case SR8 found. A
+file that was changed before the note runs now gets no command at all. But the
+two git commands the note will print can still show nothing while `--finalize`
+records a planted line:
+
+* **They look in the wrong folder.** Step 4 runs `python bootstrap/scaffold.py
+  ...`, so the adopter's shell sits in the Cairn copy. From there the git
+  commands check Cairn's own `AGENTS.md`, not the project's. I ran the steps
+  that way. Both printed nothing, `--finalize` recorded a line telling agents
+  to download and run a script, and the install check said OK. That is SR8's
+  result again.
+* **They compare against the wrong copy.** Step 1 shows that the committed copy
+  matches the record. But `git diff` compares against git's staging area, not
+  that commit. If whoever fills the slot, often an agent, stages or commits its
+  work, a planted line drops out of the diff.
+
+The fix is four sentence changes and three more test cases, with no new
+mechanism. No new question for the Maintainer.
+
+### SR8: what Revision 3 closes
+
+I used scratch `solo-greenfield` installs of the reviewed commit, under Python
+3.13.13, in my scratchpad. A small script stood in for the note: it admits a
+file only when its bytes hash to its record.
+
+* **SR8's histories get no command.** In case B (fill and plant before the
+  first commit) and case C (plant committed later, with no finalize), the file
+  fails the integrity check. So the note does not list it and prints no diff
+  and no finalize command for it. This holds by construction.
+* **The precondition logic is sound.** If the note has just matched a file to
+  its record and `git status --short` on it prints nothing, the committed copy
+  equals the record. That is true. The commands built on it are SR15.
+
+### Findings
+
+**[SR15] (blocking) The review commands can still show an empty diff while
+`--finalize` records a planted line.** This is SR8's harm by a different route.
+An adopter following the printed steps can record an injected instruction in
+`AGENTS.md` as trusted.
+
+Measured on a target committed clean and listed by the note, with step 1 run
+first and then the slot filled. "Pinned" means a diff against the commit step 1
+saw (`git -C <target> diff <commit> -- <path>`):
+
+| After step 1 | `git diff -- <path>` | `git diff HEAD -- <path>` | Pinned |
+|---|---|---|---|
+| Plant written, not staged (control) | shows it | shows it | shows it |
+| Another writer stages the plant | hidden | shows it | shows it |
+| Another writer commits the plant | hidden | hidden | shows it |
+| The filler commits its fill and the plant | hidden | hidden | shows it |
+| Steps run from the Cairn copy | empty | — | shows it, with `-C` |
+
+In the staged row and the Cairn-copy row I then ran `--finalize`, which records
+the bytes on disk (`bootstrap/_scaffold/upgrade.py:1874`). `verify_integrity`
+then said OK.
+
+The causes:
+
+* **The wrong folder.** `<path>` is relative to the target. The same block's
+  step 4 runs from the Cairn checkout, where `AGENTS.md` also exists and is
+  clean. So step 1 passes without checking anything, and step 3 shows nothing.
+* **The wrong baseline.** The Response says step 1 "showed the committed copy
+  equals" the record. But `git diff -- <path>` compares with the index, which
+  can change after step 1, and a commit moves `HEAD` as well. The filler
+  committing is ordinary, not an attack: Cairn's shipped `AGENTS.md` tells
+  agents to commit their own work (`templates/core/AGENTS.md:131`).
+* **The residual is in the wrong place.** S5 names a change staged "between the
+  note's run and step 1". Step 1 catches that one. The window it misses is after
+  step 1.
+
+Two rarer cases also print nothing at steps 1 and 3: a path git ignores, and a
+file with `skip-worktree` set. Both hide the adopter's own fill too, so step 3
+can tell the adopter to check for that.
+
+*Closes when* Part 2 item 5's first remedy says:
+
+1. Every printed git command names the target: `git -C <target> ...`. Here
+   `<target>` is the absolute path `verify_integrity` resolved, shell-quoted,
+   under the same printable-ASCII rule as paths.
+2. Step 1 pins the baseline. `git -C <target> status --short -- <path>` prints
+   nothing, and `git -C <target> rev-parse HEAD` gives the commit. Step 3 is
+   `git -C <target> diff <that commit> -- <path>`. Step 1 tied that commit's
+   copy to the record, so this diff shows every change since, whether staged,
+   committed or neither.
+3. Step 3 adds: your fill must appear in this diff. If it does not, or if
+   anything you did not write does, read the whole file instead.
+4. S5 names what still wins: a change *committed* to the path between the
+   note's run and step 1, which `git status` cannot see, and any write between
+   step 3 and `--finalize`, which no command closes.
+
+The Case A test adds the staged, committed and filler-commits plants. Each must
+appear in the output of the printed step-3 command, and the printed commands
+must carry `-C` and the absolute target.
+
+One alternative also closes the first window in point 4. The note prints the
+record's hash, and step 1 checks that the commit's copy hashes to it. That is
+the author's call.
+
+**[SR16] (non-blocking) The case B test is aimed right; it should read only the
+note's lines, and check one more thing.** Its core assertion is correct: a file
+that fails the integrity check gets no diff command and no finalize command
+from the note.
+
+* **Scope the "no finalize command" check to the note's lines.** The existing
+  hint prints `--finalize AGENTS.md` for this same file by design, because the
+  file has a marked slot (`bootstrap/verify_integrity.py:182-190`). In case B it
+  does. A check over all of stderr would fail against shipped behaviour, and
+  would invite "fixing" the hint.
+* **Assert instead:**
+  * the note's lines carry no `--finalize`, `git diff` or `git status`;
+  * the whole output carries no `git diff`;
+  * the coverage line counts the file under "failed the integrity check", so it
+    cannot vanish from the count (SR9's harm).
+* **UPGRADE.md.** The new section's `git log -p -- <path>` does not show
+  uncommitted edits. The section should lead with reading the whole file, and
+  say so.
+
+### Anything else new
+
+Nothing else in Revision 3 needs a Security Review:
+
+* the living-state reads use the base-copy checks and print no finalize step;
+* the checker changes only correct its own comments;
+* the self-host list repeats SR14's 12 files.
+
+### Verdict and what clears the obligation
+
+**REVISE.** The Security Review obligation is **not cleared**. SR15 closes with
+the four sentences above and the added Case A cases, with no engine change. A
+Security Review pass that reads only SR15's closure clears it. SR16 can land in
+the same revision or in the plan.
+
+**No new question for the Maintainer.**
