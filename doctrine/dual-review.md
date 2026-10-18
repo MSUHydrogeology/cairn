@@ -315,6 +315,17 @@ for the review's own falsification ledger: changed public paths, negative or
 edge cases, cross-surface assumptions, and claims whose evidence is doubtful.
 Copying the implementation's broad command does not satisfy that ledger.
 
+**When a finding or claim says a value must reach every member of a set**
+(every call site, every rendering path), list the set from the tree, not the
+diff, and mutate each member, in a separate copy; reading the diff does not
+settle it. A mutation ledger reports each mutant as killed, survived or
+equivalent, beside an unmutated control run, never as a bare "N of M killed".
+Equivalence is measured, not argued: a behaviour test through the real entry
+point passes under the mutation, and where another site is said to recover the
+value, mutating that site fails. Any equivalence that was not measured is
+reported as a survivor. Outside that trigger, mutation stays the reviewer's
+choice.
+
 **A Boundary B record may be `full` or `bounded`** (`doctrine/plans.md`). On a
 bounded record the reviewer additionally records
 `**Bounding**: ACCEPTED | FULL RUN REQUIRED`, after challenging at least one

@@ -241,6 +241,17 @@ The roster is in `dev/agent_collaboration.md`.
     record; a **trust ceremony that explicitly requires** one applies; or there
     is a **concrete reason to distrust or falsify** the evidence.
 
+    **When a finding or claim says a value must reach every member of a set**
+    (every call site, every rendering path), list the set from the tree, not the
+    diff, and mutate each member, in a separate copy; reading the diff does not
+    settle it. A mutation ledger reports each mutant as killed, survived or
+    equivalent, beside an unmutated control run, never as a bare "N of M
+    killed". Equivalence is measured, not argued: a behaviour test through the
+    real entry point passes under the mutation, and where another site is said
+    to recover the value, mutating that site fails. Any equivalence that was not
+    measured is reported as a survivor. Outside that trigger, mutation stays the
+    reviewer's choice.
+
   **Prose-only work does not run the suite.** Markdown has no importers: a
   sentence cannot propagate into behaviour the way a changed symbol does, so
   the blast radius is bounded by what *reads the file*. Run the applicable

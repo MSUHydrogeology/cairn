@@ -13,6 +13,10 @@ The rules pinned here:
   anything else that writes runs in a separate copy. A reverted, uncommitted
   file cannot be brought back with git, so this is the rule that prevents lost
   work.
+* **A claim that a value reaches every member of a set is settled by
+  mutation.** The missing member is a line that is not there, so reading a
+  diff cannot see it. The ledger reports every mutant against an unmutated
+  control, and an equivalence nobody measured counts as a survivor.
 
 Each obligation is an alternation matched against whitespace-collapsed text, so
 a rewording that keeps the obligation passes and a deletion fails. Node IDs are
@@ -51,6 +55,19 @@ _OBLIGATIONS = {
         r"separate copy of the reviewed commit",
     "figures-are-measured-on-the-commit":
         r"measured on (that|the reviewed) commit's bytes",
+    # A set claim is settled by mutating every member, and reported in full.
+    "set-claims-are-listed-from-the-tree-and-mutated":
+        r"list the set from the tree, not the diff, and mutate each member",
+    "ledger-reports-each-mutant-against-a-control":
+        r"killed, survived,? or equivalent, beside an unmutated control",
+    "ledger-never-reports-a-bare-count":
+        r"never as a bare \"?N of M",
+    "equivalence-is-measured-not-argued":
+        r"[Ee]quivalence is measured, not argued",
+    "unmeasured-equivalence-is-a-survivor":
+        r"(not|never) measured is reported as a survivor",
+    "mutation-is-otherwise-the-reviewers-choice":
+        r"mutation stays the reviewer's choice",
 }
 
 

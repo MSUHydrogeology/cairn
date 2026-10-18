@@ -889,6 +889,9 @@ confirming second different-agent-type pass. Minimal ledger shape:
 * **Negative / edge-case attempt** — at least one, when applicable.
 * **Verification** — the checks run (or consciously not run, with why).
 * **Residual risk** — what remains unverified.
+* **Mutation**, when a finding or claim names a set: each mutant killed,
+  survived or equivalent beside an unmutated control, never a bare count
+  (`dual-review.md` > "Boundary C").
 
 **End with the coverage line** (`doctrine/dual-review.md` > "The coverage
 line"): **Covered** (the review-sweep lenses swept, with citations) / **Not
