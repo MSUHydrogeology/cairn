@@ -203,7 +203,7 @@ navigate *to* as a starting point.  The UPPERCASE set, repo-wide:
   `SECURITY.md`, `PROVENANCE.md`, `SAFETY.md`.
 * **Domain-governance maps** -- `cairn/bootstrap/BOOTSTRAP.md`,
   `cairn/docs/DOCUMENTATION_PLAN.md`.
-* **Roadmap boards** (once Goal 1 self-hosts `cairn/dev/`) --
+* **Roadmap boards** (self-hosted in `cairn/dev/`) --
   `cairn/dev/PLANNING.md`, `cairn/dev/NEXT_SESSION.md`.
 
 Everything else is lowercase: the methodology doctrine essays
@@ -361,7 +361,7 @@ adopter-facing files; it does not change the four-layer vision.
 
 For the *Cairn-internal* equivalent boundary -- between Cairn's
 published methodology doctrine (`cairn/doctrine/`) and Cairn's
-own future deliberation tree (`cairn/dev/`, Goal 1) -- the same
+own deliberation tree (`cairn/dev/`, Goal 1) -- the same
 routing test applies: methodology doctrine stays in
 `cairn/doctrine/`; in-flight deliberation stays in `cairn/dev/`.
 
