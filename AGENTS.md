@@ -77,6 +77,17 @@ evidence, not to every reader re-running it.
 Review is asynchronous and commit-mediated: a review is a section appended to
 the artifact and committed, not a conversation that leaves no record.
 
+**A review reads a commit, never a shared working tree.** The author commits
+what is to be reviewed before handing it over (locally; committing is not
+pushing), and the review names that commit. In a working tree it shares with
+an author, a reviewer makes one write: its own review record, appended to the
+artifact or created as its own review file, claimed first, and committed by
+explicit path. Nothing else: no other edits, and no `restore`, `checkout`,
+`stash`, `reset` or `clean`. Anything else that writes, such as a mutation or
+a scratch install, runs in a separate copy of the reviewed commit (a
+`git archive` extraction or a separate worktree). A figure is evidence only if
+it was measured on that commit's bytes.
+
 **A plan review is Internal, fresh-context — always.** **Code review is
 External by default** — its job is falsification — and its floor is separate
 and independent: **not the implementing agent.** A plan whose surface

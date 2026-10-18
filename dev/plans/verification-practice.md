@@ -1,7 +1,7 @@
 # Plan: verification practice — a review reads a commit, mutation for set claims, a test scope for small fixes
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-verification-practice.md`
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits `doctrine/` and
 a shipped template.
@@ -35,10 +35,8 @@ Six existing files and one new test file:
 * `doctrine/plans.md`: "Boundary A", "Boundary B" and "Code review — doctrine".
 * `dev/plans/_template.md` and `templates/core/dev/plans/_template.md`: one word
   in the `verification-commands` slot.
-* One new test file holding the new pins.
-
-Proposed paths:
-* `bootstrap/tests/test_review_and_verification_rules_ship.py` — pins the new rules in both `AGENTS.md` copies
+* One new test file holding the new pins,
+  `bootstrap/tests/test_review_and_verification_rules_ship.py`.
 
 **Not touched:** `bootstrap/_scaffold/`, so **no AST impact**; every gate-manifest
 frozen file, including `bootstrap/tests/test_verification_boundaries.py`, which

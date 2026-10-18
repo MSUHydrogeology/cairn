@@ -112,6 +112,20 @@ is deliberate:
   happened in conversation and was never written down did not
   happen.
 
+**A review reads a commit, never a shared working tree.** The author
+commits what is to be reviewed before handing it over (locally;
+committing is not pushing), and the review names that commit. In a
+working tree it shares with an author, a reviewer makes one write: its
+own review record, appended to the artifact or created as its own
+review file, claimed first if the project uses file claims, and
+committed by explicit path. Nothing else: no other edits, and no
+`restore`, `checkout`, `stash`, `reset` or `clean`. Anything else that
+writes, such as a mutation or a scratch install, runs in a separate
+copy of the reviewed commit (a `git archive` extraction or a separate
+worktree). A figure is evidence only if it was measured on that
+commit's bytes. The rule guards against loss that cannot be undone:
+git cannot bring back an uncommitted file that a `restore` reverted.
+
 ## The blocking test, and who ends a loop
 
 Two rules govern when a review finding stops a change and who may close
