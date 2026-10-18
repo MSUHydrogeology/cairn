@@ -1,7 +1,7 @@
 # External is the Maintainer's call: one review stance, with the questions changing by stage
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: required(Internal + Security Review)
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-18
@@ -1476,3 +1476,44 @@ I did not run Search A or Search B, and I did not run the suite beyond the one s
 only. I did not read the `docs/` pages in full. I did not read the 2026-08-27 launcher review
 record. My authority probe is lexical: a privilege phrased without a distance term near an
 authority verb would escape it. The code search covers tracked `.py` and `.sh` files only.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-18
+
+**ACCEPTED.** The Maintainer's authorization, quoted **verbatim and visually
+isolated**:
+
+> "accept both as descried"
+
+*Scribe's note, separate from the quoted words.* "Both" names the board-as-basis
+and review-stance proposals. "As described" refers to the scribe's summary
+the Maintainer was answering, which recorded the Maintainer's answers to each
+question (given in chat, 2026-10-18, partly through a multiple-choice prompt).
+For this proposal they are:
+
+* **Revision 1 binds**, with the Security Review cleared at `11fb067d`. Its six
+  non-blocking findings (SR1 to SR6) are plan requirements.
+* **Q1, capability floors by stage:** proposal review high; plan review medium;
+  code review medium; Security Review high. The Maintainer added: "docstrings
+  cleanup and related should go to low". The scribe recorded, unchallenged,
+  that such an edit can run on low while its review stays at the usual tier
+  wherever it touches a high-risk file.
+* **Q2, header words:** `usual` / `usual + Security Review`, option (a).
+* **Q3, headline:** the rewritten framework-anchor and README wording is
+  accepted as written in Revision 1's "In plain terms", and the name
+  "Dual-Review" and the module id are kept.
+* **Q4, the lens roster:** the Maintainer answered "Everyone should get them". That is
+  carried by its own proposal,
+  `2026-10-18-claude-review-lenses-for-every-install`, opened today. This
+  change ships as written.
+* **Q5, migration:** ratified. Old records keep their wording, and an
+  uncalled `External` label reads as the usual review.
+* **The author's three calls near the Maintainer's line stand**, because none was
+  overruled: External is called per artifact only; the cost-rule downshift stays,
+  scoped; and complex projects get the one review, the named contracts and
+  assumptions, and the scientific check once it lands.
+* **Folded into this plan:** `doctrine/dual-review.md`'s Boundary C opening
+  still names only "a trivial change's commit body". It should also name the
+  no-plan accepted proposal that `941cb34d` added.
+
+Scribed by Claude (claude-opus-5-5) on the Maintainer's explicit instruction.
+Nothing else lands in this commit.
