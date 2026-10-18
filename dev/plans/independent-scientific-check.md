@@ -1,7 +1,7 @@
 # Plan: independent scientific check — one check per scientific change, shown able to fail
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-independent-scientific-check.md`
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits the authoring templates and the axis prose that adopters' bootstrap reads.
 **Opened**: 2026-10-18
@@ -14,6 +14,8 @@ External-repo paths:
 - `dev/proposals/2026-08-27-claude-stor-modflow-flopy-layer.md`
 - `dev/plans/archive/stor-modflow-correctness.md`
 - `dev/plans/archive/2026-10-01-claude-assemble-part-a.md`
+- `dev/proposals/archive/2026-10-01-claude-assemble-full-port.md`
+- `dev/proposals/2026-10-01-claude-assemble-full-port.md`
 
 ## In brief
 
@@ -41,11 +43,14 @@ assumption, or a result the project publishes or acts on, its template asks for
 3. **The error it would catch**: the plausible mistake (a reversed sign, a unit
    slip, a missed warm-up) under which the check fails. At implementation, the
    implementer makes that mistake on purpose and records the failing output.
-4. **When the result is "no effect"** *(added at the Maintainer's instruction;
-   see Scope)*: a check that finds no change is evidence only if it could have
-   found one. The analysis must first detect a known effect of the size that
-   matters (a **positive control**: the same analysis run on a case where the
-   answer is known to be non-zero), or say plainly that it cannot.
+4. **When the check passes by finding nothing** *(added at the Maintainer's
+   instruction; see Scope)*: a check that passes on "no change", "no
+   difference" or "no effect" is evidence only if it could have found a change.
+   The analysis must show it can detect a known effect of the size that matters
+   (a **positive control**: the same analysis run on a case where the answer is
+   known to be non-zero), or say plainly that it cannot. The failing run from
+   answer 3 is that control whenever the mistake it makes produces an effect of
+   that size, so most checks owe no second run.
 
 The plan template then says the check is accepted scope. If it has to be
 replaced, the replacement must fail under the same error. If nothing qualifies,
@@ -60,13 +65,14 @@ installs. This plan repoints those three sentences at the check, which every
 adopter does receive.
 
 **What it does not do.** No `doctrine/` edit, no new axis, no engine change, no
-new review round, and no planted-error scheme. The rule carries no doctrine
+new review round, and no scheme for planting errors. The rule carries no doctrine
 weight; it is template guidance. The doctrine sentence waits on the board.
 
 **Order of work.** First, before any file changes, the wording is tried on two
-past LHM plans. If it would have helped on neither, the plan stops and the
-Maintainer decides. Then the proposal template, the plan template, the three
-promise sentences, and last one full test run.
+past LHM plans, using only the text each proposal had when it was opened. If it
+would have helped on neither, the plan stops and the Maintainer decides. Then the
+two templates (with the one new test), the three promise sentences, and last one
+full test run.
 
 **What the Maintainer does.** Nothing now. At the end, the gate-manifest
 re-anchor you already have queued gains one new test.
@@ -104,8 +110,9 @@ The lens-8 sentence in `doctrine/dual-review.md` is not in this plan's baseline.
   Complexity row of the axis table) and `bootstrap/BOOTSTRAP.md` (the I-2
   paragraph): one sentence each, repointed at the check.
 * One new test file, `bootstrap/tests/test_scientific_check_guidance_ships.py`,
-  holding **one** test (C2, extended in C3).
-* This plan: the C1 record and the Boundary B record are appended to it.
+  holding **one** test (created in C2, given its fourth group in C3).
+* This plan: the C1 record and the Boundary B record are appended to it, and the
+  C2 commit drops the `Proposed paths:` line above once that path resolves.
 * At archive only (see *Dispositions*): the guide star's open-gap entry,
   `CHANGELOG.md`, and two rows of `dev/PLANNING.md`.
 
@@ -118,21 +125,65 @@ so the doctrine rate-limit gate is not the route; if a reviewer thinks it
 reaches the `dimensions/` edit, the Decision ratified the proposal's argument
 from recurrence (two occurrences in LHM's plan records). Descriptive layer: none.
 
-**Added at the Maintainer's instruction: the positive control for "no effect"
-results.** Relayed by the coordinating agent on 2026-10-18. The Maintainer's
-words, verbatim:
+**Added at the Maintainer's instruction: the positive control for a check that
+passes by finding nothing.**
+
+*What was put to the Maintainer.* On 2026-10-18, in chat, the coordinating
+session (Claude, `claude-opus-5-5`) was reviewing a separate concept document of
+the Maintainer's, a research-ecosystem idea called assai, and wrote this, quoted
+verbatim:
+
+> "**A negative result needs a positive control.** Cairn has a rule: before trusting an absence, show that the instrument could have detected it. A 'no effect' record should show the analysis would have found an effect of plausible size. Without that, 'not worth pursuing' outputs, which you rightly accept, can carry false nulls into the record."
+
+Under "What could fold back into Cairn" it listed two items: "Planted errors as a
+way to grade reviewers" and "The positive-control idea from point 5 belongs in
+the scientific-check guidance. That plan is being written right now". It offered
+to pass the positive-control point to this plan's author.
+
+*The Maintainer's answer*, verbatim:
 
 > "Pass the positive control point yes, let's not do planted errors."
 
-*Scribe's note, separate from the quoted words.* The first half adds one bullet
-to the proposal-template block and one clause to its reviewer paragraph (C2). The
-second half, "planted errors", names a separate idea that no artifact takes up,
-so it is out of scope here. This is an **addition** to the accepted scope, not a
-removal; it owes no disposition, and it is recorded in *Scope delta* as an
-addition. It has no occurred incident behind it, so, like the independent-basis
-half of the block, it rests on argument: AGENTS.md already says "Confirm the
-instrument before trusting an absence" for Cairn's own tooling, and this carries
-the same rule into a scientific result.
+*Reading, separate from the quoted words.* "The positive control point" is the
+quoted point 5. "Planted errors" is the other item: grading reviewers by planting
+errors for them to find. The Maintainer declined it, and no artifact takes it up,
+so it is out of scope here. It is **not** the deliberate break in the check block,
+where the implementer makes the change's own plausible mistake on purpose
+(security preflight S2); that is accepted scope. *Provenance.* The chat and the
+concept document are not on file in this repository. The two quotations are the
+coordinating session's own record, relayed to this plan's author on 2026-10-18,
+and are written down here because the plan review could not find the question the
+answer belongs to. This is an **addition** to the accepted scope, not a removal;
+it owes no disposition, and *Scope delta* records it as an addition. It has no
+occurred incident behind it, so, like the independent-basis half of the block, it
+rests on argument: AGENTS.md already says "Confirm the instrument before trusting
+an absence" for Cairn's own tooling, and this carries the same rule into a
+scientific result.
+
+*How the plan settles what the quoted words leave open.*
+
+* **Trigger: the check's pass condition, not the result.** Whether a result is
+  "no effect" is unknown at proposal time, and for a refactor "no change" is the
+  expected pass. What is known at proposal time is whether the check **passes by
+  finding nothing** (no change, no difference, no flow, no effect). The bullet is
+  keyed to that. A published null is a result the project acts on, so the change
+  that reports one is inside the block's gate, has a check, and, if that check
+  passes by finding nothing, this bullet applies to it.
+* **Relation to the deliberate break: one record, not two.** The failing run
+  proves a check *can fail*. For a check that passes by finding nothing, that is
+  already half a positive control. It serves as the control when the mistake it
+  makes produces an effect of the size that matters. A second run is owed only
+  when it does not, for instance when the break is large and the effect to be ruled
+  out is small. Otherwise the bullet asks the author to say plainly that the
+  analysis cannot detect it. A refactor whose pass is "output unchanged" is the
+  same case: perturb an input by the tolerance and show the comparison fails, and
+  that run is both its deliberate break and its control.
+* **Who runs it, and where it is recorded.** At implementation, the implementer
+  records the control with the failing run, in the plan's *Implementation
+  verification* record under its plan-specific acceptance commands. The code
+  reviewer verifies it where one is owed, as it verifies the failing run, and
+  re-runs both when that is cheap. Showing the control already at the proposal,
+  when its data exists then, is allowed and not required.
 
 **Not touched**, each to be checked by `git diff --stat` over the implementation
 range:
@@ -161,10 +212,12 @@ these surfaces and are **not edited**: `test_scaffold.py`,
 `test_core_dev_folders.py`, `test_quickstart_sequence.py`,
 `test_profile_grammar.py`. The new test file adds one node to the pinned
 collection (recorded as an addition, not held), so it joins the gate-manifest
-re-anchor already queued on `dev/PLANNING.md`. **The re-anchor is
-Maintainer-only and supervised; an implementing agent must not perform it.**
-Because no frozen file changes, `dev/PLANNING.md` is not edited when this plan
-opens; the node note is the archive commit's (chunk M).
+re-anchor already queued on `dev/PLANNING.md`. The re-anchor re-globs the test
+folder, so the file freezes at that ceremony, and an edit to it afterwards owes
+another. **The re-anchor is Maintainer-only and supervised; an implementing
+agent must not perform it.** Because no frozen file changes, `dev/PLANNING.md`
+is not edited when this plan opens; the node note is the archive commit's
+(chunk M).
 
 **AST: no engine symbol changes.** No file under `bootstrap/_scaffold/` is
 edited. The AST attestation baseline (`bootstrap/tests/fixtures/scaffold_ast_baseline.json`,
@@ -174,19 +227,18 @@ because of this plan. Derived at `b16f4607` in a clean copy by the method in
 The two are `main` in `bootstrap/_scaffold/cli.py` and `seed_gitignore` in
 `bootstrap/_scaffold/install.py`. That re-anchor is the Maintainer's and is
 owed regardless. Boundary B will therefore show one non-pass that is not this
-plan's; C5 disposes of it by showing the same two symbols, with the same
+plan's; C4 disposes of it by showing the same two symbols, with the same
 hashes, before and after. **The figure is not to be carried forward**: derive it
 again at the parent.
 
 **Lockfile.** Both Cairn template copies already report a hash mismatch in
 `python bootstrap/verify_integrity.py --target .` (18 files at `7f1bcdf0`, the
 two templates among them). They are **not finalized**: that would re-attest
-earlier, unreviewed drift. The set of 18 must be the same before and after each
-template chunk.
+earlier, unreviewed drift. The set of 18 must be the same before and after C2.
 
 **Install contract: unchanged.** The published `scaffold.py --manifest` lists
 destination, source and mode, with no content hashes. No file is added to or
-removed from the install set, so `_CORE_MAPPINGS` is untouched. C2 and C3 show
+removed from the install set, so `_CORE_MAPPINGS` is untouched. C2 shows
 `--manifest` output byte-identical to the parent's.
 
 ### Tests that read the touched files
@@ -224,11 +276,14 @@ twelve. Which of them *assert on template text*:
   that drive a scaffold install and so render the shipped templates. No mapping
   bounds that confidently, which is why Boundary B is full.
 
-Measured on the drafted wording, applied to a clean copy of `7f1bcdf0`: the eight
-files above, plus `test_comprehension_floor.py` (which reads `AGENTS.md`, not
-these templates, and is run as a control), pass **372** with the edit and **372**
-on the unedited control. `check_cairn.py` reports OK on both (180 files), and the
-neutrality leg reports 74 failures on both, none in a file this plan edits.
+Measured on the drafted wording, applied to a clean copy of the plan-review
+commit: the eight files above, plus `test_comprehension_floor.py` (which reads
+`AGENTS.md`, not these templates, and is run as a control), pass **372** with the
+edit and on the unedited control, and **373** with a prototype of the new test
+added. The prototype passes on the edited copy and fails on the unedited one with
+a missing-marker message. `claim_check.py` exits 0 on all seven edited
+documents, and the neutrality leg reports 74 failures on both, none in a file
+this plan edits.
 
 ### Found while planning, not widened
 
@@ -237,22 +292,22 @@ neutrality leg reports 74 failures on both, none in a file this plan edits.
   installing". Both were run: they print the profile, the tokens and the module
   roster and never open a template. The outcome, that an adopter receives the
   block, is delivered more directly by a real install into a scratch tree and a
-  `diff` of the installed region (C2, C3). That is stronger, not weaker, and
+  `diff` of the installed region (C2). That is stronger, not weaker, and
   `--summary` and `--dry-run` still run and are recorded.
 * **How an existing adopter receives the block.** Measured on the drafted
   wording: install from the parent into a scratch tree, fill the
   `documentation-tier-home` slot in both installed templates, commit, then run
   `scaffold.py upgrade --plan` and `--stage` against the edited tree. `--plan`
   reports both templates "locally-modified (merged clean)". The staged file holds
-  the block once, the adopter's slot fill once, and no conflict marker. C2 and C3
-  repeat this on the real commits.
+  the block once, the adopter's slot fill once, and no conflict marker. C2
+  repeats this on the real commit.
 * **Two small wording choices beyond the quoted drafts.** (a) The plan paragraph
   opens "If the proposal names one, it becomes an acceptance criterion". The
   draft's unconditional "It becomes an acceptance criterion" would read as a
   demand on a proposal that wrote N/A. (b) The *Reviewers* paragraph says the
   Maintainer judges "whether this is the right check and the expected value is
   right" at the Decision. That is Revision 1's *Who does what*, which the quoted
-  block draft omits. Neither adds an obligation; both are for the plan reviewer to
+  block draft omits. Neither adds an obligation; both are for the code reviewer to
   strike if they disagree.
 * **The "Hydrology examples" in *Who does what* stay out of the template**
   (Theis, Glover–Balmer, an inversion recovering a synthetic truth, a
@@ -261,6 +316,16 @@ neutrality leg reports 74 failures on both, none in a file this plan edits.
   the change is wrong. The one example the template does carry is the
   streamflow-depletion case that came with the Maintainer's addition, since a
   positive control is the least familiar idea in the block.
+* **The I-2 sentence is worded to what is true.** The first draft said the profile
+  sections "drive ... which changes must name an independent scientific check".
+  The check is gated by the change, not by the profile, and nothing downstream
+  reads those sections to decide. The sentence now says the sections show which
+  changes touch a scientific assumption and so need the check, which is the same
+  claim the complexity text makes ("gated on the change, not on this axis").
+* **`check_cairn.py` is not clean at the parent.** At the time of this revision it
+  reports an issue in another plan (`dev/plans/neutrality-and-upgrade-slots.md`, an
+  imperative-override phrase). Criteria below therefore ask for no issue **in a
+  file this plan edits**, with any other issue recorded and shown unchanged.
 * **`doctrine/rationale.md` still calls scientific-error detection "without the
   Maintainer in the loop" an open problem.** That stays true: the check puts the
   Maintainer in the loop on purpose. No edit.
@@ -272,28 +337,27 @@ neutrality leg reports 74 failures on both, none in a file this plan edits.
 ### Sequencing with the other accepted work
 
 Implementation order: **`neutrality-and-upgrade-slots` (plan C), then this plan**,
-then `model-mapping-install-path`, `board-as-basis`,
-`external-is-a-maintainer-stance`. **This plan rebases on plan C.** Plan C is not
-open yet as this plan is written, so each chunk re-reads the files it edits at
-edit time (`git log -3 -- <file>`). `maintainer-attention` and
-`verification-practice` are archived and their edits are already in the tree:
-`dev/plans/_template.md` and its twin carry the Waiting-line preamble and the
-`verification-commands` slot, both outside the *Acceptance criteria* paragraph
-edited here.
+then `model-mapping-install-path`, `board-as-basis`, and the combined plan
+`review-stance-and-lenses` (for `external-is-a-maintainer-stance` and
+`review-lenses-for-every-install`). **This plan rebases on plan C.** Plan C is
+open as `dev/plans/neutrality-and-upgrade-slots.md`; its file list names none of
+the template or `dimensions/` files this plan edits (read at the plan-review
+commit). Each chunk still re-reads the files it edits at edit time (`git log -3
+-- <file>`). `maintainer-attention` and `verification-practice` are archived and
+their edits are already in the tree: `dev/plans/_template.md` and its twin carry
+the Waiting-line preamble and the `verification-commands` slot, both outside the
+*Acceptance criteria* paragraph edited here.
 
 | Plan | Shared with this plan | Effect |
 |---|---|---|
 | `neutrality-and-upgrade-slots` (before) | **The neutrality checker**: it gets stricter (whole-line HTML comments, `.json` and `.txt` under `templates/`, four more names), and runs in this plan's Boundary B. **`bootstrap/verify_integrity.py`** and `bootstrap/UPGRADE.md`, which this plan does not edit. **`dev/PLANNING.md`** and **`CHANGELOG.md`**, each plan adding to them at its own archive. | The new text names no vendor, comments included, and contains no HTML comment. Plan C's own check that `verify_integrity --target .` still lists 18 files holds here, since both Cairn template copies are on that list already. |
 | `model-mapping-install-path` (after) | **`bootstrap/BOOTSTRAP.md`**: it edits II-5 and the allowed-match list; this plan edits the I-2 paragraph. **`dev/PLANNING.md`** at archive. | Different sections, so a textual rebase only. |
-| `board-as-basis` (after) | **`dev/PLANNING.md`** and **`CHANGELOG.md`** at archive only. | None. |
-| `external-is-a-maintainer-stance` (after) | **Both template pairs** (its External and tier wording), **`dimensions/README.md`** (the same Complexity cell), **`dimensions/complexity.md`** (the Complex position's neighbouring bullet), and **`dev/PLANNING.md`** (the re-anchor row). | That plan rebases on this one. Its rewording of the Complexity cell ("review weight and verification depth") must keep a mention of the check, or the promise site stops naming it. This is noted here for its author; it is not planned here. |
+| `board-as-basis` (after) | **All four template files**: it adds an `**In brief**:` prompt beside each header; this plan edits other regions. **`dev/PLANNING.md`** and **`CHANGELOG.md`** at archive. | Different regions of the same files, so a textual rebase only. This plan's test reads only the block and the paragraph, not the headers. |
+| `review-stance-and-lenses` (after; `dev/plans/review-stance-and-lenses.md`) | **Both template pairs** (the review-tier lines and plan skeletons), **`dimensions/README.md`** (the same Complexity cell), **`dimensions/complexity.md`** (the neighbouring Complex-position bullets), and **`dev/PLANNING.md`**. | That plan rebases on this one and already says the reworded cell must keep naming the check. Here the requirement has a trigger: this plan's test holds the block and the plan paragraph **word for word** and requires `independent scientific check` in all three promise sites. So that plan runs this test, and an edit to either pinned text owes a test edit and, if the re-anchor has run by then, a second re-anchor. It edits neither text. |
 
-`review-lenses-for-every-install` was accepted (`fbf664f0`) after the order above
-was set, and is not in it. It edits the `AGENTS.md` pointer, the review-loop
-document, the `dual-review` module and one doctrine section, and names
-`bootstrap/BOOTSTRAP.md` and the proposal and plan templates as outside its scope,
-so no file is shared. It delivers the existing lenses, lens 8 among them and
-unchanged, to every install; this plan edits no lens text.
+`stewardship-and-reuse` (open, not accepted) edits the plan templates' *Scope*,
+*Dispositions* and deviation sentence, not *Acceptance criteria*, so it shares no
+cell with this plan.
 
 ## Sequence
 
@@ -301,11 +365,10 @@ C1 is a gate: it can stop the plan. Every later chunk lands one commit.
 
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
-| C1 | **Try the wording on two past plans, before any file changes.** A fresh-context agent that is not the implementer drafts the block from the wording below and the proposal text as it stood at its Decision, for two archived LHM plans. The implementer compares each draft with the error later found. Stop if neither would have named a check that fails under that error. | `ready-to-implement` | one commit: the appended `## Retroactive application` record; Status to `implementing` |
-| C2 | **The proposal-template block**, in both copies, with the positive-control bullet; and the new test with its proposal-side groups. | C1 not "neither" | one commit |
-| C3 | **The plan-template paragraph**, in both copies; the same test gains its plan-side groups. | C2 | one commit |
-| C4 | **Repoint the three promise sentences** at the check. | C2 (the block they name must exist) | one commit |
-| C5 | **Boundary B, then the record.** One full run on the finished work, written down. Status to `awaiting-code-review`. | C2–C4 | one commit |
+| C1 | **Try the wording on two past plans, before any file changes.** A fresh-context agent that is not the implementer drafts the block from the wording below and **the proposal as it was first opened**, for two archived LHM plans, with no other access. A second fresh agent scores each draft against a statement of the error later found, written into the record beforehand. Stop if neither would have named a check that fails under that error. | `ready-to-implement` | one commit: the appended `## Retroactive application` record; Status to `implementing` |
+| C2 | **Both templates, and the test.** The proposal-template block (with the "passes by finding nothing" bullet) in both proposal copies; the plan-template paragraph in both plan copies; the new test with its first three groups. | C1 not "neither" | one commit |
+| C3 | **Repoint the three promise sentences** at the check; the test gains its fourth group. | C2 (the block they name must exist) | one commit |
+| C4 | **Boundary B, then the record.** One full run on the finished work, written down. Status to `awaiting-code-review`. | C2, C3 | one commit |
 | M | **MAINTAINER-ONLY — no new ceremony.** The *re-anchor* is the supervised ceremony, run only by the Maintainer, that brings the gate manifest up to date with changed tests (`bootstrap/REANCHOR_RUNBOOK.md`). The new test's node joins the row already queued on `dev/PLANNING.md`, so M needs no Waiting line in this plan: that row declares the wait. **An implementing agent must not perform it.** The agent's part is the board note at archive. | code review cleared | Maintainer |
 
 If C1 ends "neither", the implementer writes `**Waiting on Maintainer**: block
@@ -356,24 +419,29 @@ only about itself:
   warm-up). This is security preflight S2's "Can it fail?", asked of a
   scientific check. At implementation, the implementer makes that mistake on
   purpose and records the check's failing output.
-* **When the result is "no effect".** A check that finds no change is evidence
-  only if it could have found one. Show the same analysis detecting a known
-  effect of the size that matters (a positive control), or say plainly that it
-  cannot. For example, an analysis that reports no streamflow depletion from a
-  pumping well first recovers the depletion of a synthetic well of comparable
-  rate.
+* **When the check passes by finding nothing.** A check that passes on "no
+  change", "no difference" or "no effect" is evidence only if it could have
+  found a change. Show the same analysis detecting a known effect of the size
+  that matters (a positive control), or say plainly that it cannot. The failing
+  run above serves as the control when the mistake it makes produces an effect
+  of that size. At implementation, the implementer records the control with the
+  failing run. For example, an analysis that reports no streamflow depletion
+  from a pumping well first recovers the depletion of a synthetic well of
+  comparable rate.
 
 **Reviewers.** The proposal reviewer challenges whether the basis is really
 independent of the code under review. The code reviewer verifies the recorded
-failing run and the positive-control run, and re-runs them when that is cheap.
-The Maintainer judges at the Decision whether this is the right check and the
-expected value is right. If no independent basis exists, say so; the
-Maintainer weighs that, and it is not a reason to invent one.
+failing run and, where one is owed, the positive control, and re-runs them when
+that is cheap. The Maintainer judges at the Decision whether this is the right
+check and the expected value is right. If no independent basis exists, say so;
+the Maintainer weighs that, and it is not a reason to invent one.
 ```
 
-**C3 — the paragraph.** Inserted in *Acceptance criteria*, directly after the
-paragraph ending "(which gate command fires the check)." and before the
-`acceptance-doc-tooling` slot, keeping the blank lines the file already has:
+**C2 — the paragraph.** Inserted in *Acceptance criteria*, directly after the
+paragraph that begins `A security-touching plan re-answers` (it ends with the
+words "fires the" / "check)." across two lines, so anchor on its first words, not
+on its last sentence) and before the `acceptance-doc-tooling` slot, keeping the
+blank lines the file already has:
 
 ```text
 **An independent scientific check is accepted scope.** If the proposal names
@@ -385,7 +453,7 @@ not settle it. When the check fails for real during implementation, one line
 records whether anything else would have shown the error.
 ```
 
-**C4 — the three promise sentences.** Each replaces the sentence that promises a
+**C3 — the three promise sentences.** Each replaces the sentence that promises a
 "scientific-trust review lens" that no module installs.
 
 `dimensions/complexity.md`, Complex position, in place of the bullet beginning
@@ -408,54 +476,54 @@ the roster."):
 | **Complexity** (`complexity.md`) | simple ↔ complex | Review weight and verification depth — how often External review is mandatory, whether an unexplained "N/A" on the independent scientific check is a review finding. |
 ```
 
-`bootstrap/BOOTSTRAP.md`, I-2. The three lines beginning "Fill the template." end
-"... those drive the legacy-agent and / scientific-trust-reviewer decisions
+`bootstrap/BOOTSTRAP.md`, I-2. The three lines beginning "Fill the template."
+end "... those drive the legacy-agent and / scientific-trust-reviewer decisions
 downstream. If uncertain," and become four:
 
 ```text
 Fill the template. Do not skimp on the scientific-surface and
 documentation-trust sections — those drive the legacy-agent decision,
-and which changes must name an independent scientific check,
-downstream. If uncertain,
+and show which changes touch a scientific assumption and so need the
+proposal template's independent scientific check. If uncertain,
 ```
 
 **The new test** (`bootstrap/tests/test_scientific_check_guidance_ships.py`) has
-**one** function, `test_every_template_copy_carries_the_same_check_guidance`,
+**one** function, `test_the_check_guidance_reaches_every_copy_and_promise_site`,
 following the shape of `test_installed_templates_carry_security_preflight_questions`
-in `test_scaffold.py`: three groups accumulate into one failure list, so every
-group runs every time. Its docstring says why (the two pairs must not drift, and
-a duty deleted from both copies at once must not go unnoticed) and cites no
-finding, chunk or plan row. It reads the four files by path from the repository
-root, the way `test_scope_reduction_trap.py` does.
+in `test_scaffold.py`: the groups accumulate into one failure list, so every
+group runs every time. It holds the two fenced C2 texts above as literals
+(`_PROPOSAL_BLOCK`, `_PLAN_PARAGRAPH`), as the accepted text asks ("holds the
+block and the plan sentence word-for-word"). That pins every word, including the
+ones a clause-level anchor would miss ("only if", "becomes", "written down before
+the result is seen"), at the price of editing the test whenever either text
+changes. Its docstring says why (the two pairs must not drift, and a clause
+deleted from both copies at once must not go unnoticed) and cites no finding,
+chunk or plan row. It reads the files by path from the repository root, the way
+`test_scope_reduction_trap.py` does.
 
-* **Parity.** The proposal block is the lines from the heading line (`###
-  Independent scientific check`, the whole line) up to, not including, the next
-  line that starts `## `. The
-  plan paragraph is the lines from the one starting `**An independent scientific
-  check is accepted scope.**` to the next blank line. Each region's
-  whitespace-collapsed text must be equal between the Cairn copy and the shipped
-  copy. A missing marker or a heading that occurs other than once raises an
-  `AssertionError` naming it, never an empty region (two missing regions would
-  be equal).
-* **Duties.** Each copy must contain every anchor below, as a substring of its
-  whitespace-collapsed region. *Proposal block:* `Gated to a change that touches
-  a scientific assumption`; `N/A: no scientific assumption or result touched`;
-  `What it compares`; `in hand and has been checked`; `does not exist yet`;
-  `Why the expectation is independent`; `analytical or manufactured solution`;
-  `conservation law`; `trusted observation or benchmark`; `independent
-  implementation`; `not of the model's physics`; `domain expert's expectation`;
-  `The error it would catch`; `Can it fail?`; `on purpose`; `records the check's
-  failing output`; `When the result is "no effect"`; `could have found one`;
-  `positive control`; `say plainly that it cannot`; `Reviewers.`; `challenges
-  whether the basis is really independent`; `verifies the recorded failing run
-  and the positive-control run`; `If no independent basis exists, say so`.
-  *Plan paragraph:* `An independent scientific check is accepted scope.`;
-  `acceptance criterion`; `fails under the error the original names`; `scope
-  reduction`; `quoted allowance`; `does not settle it`; `one line records whether
-  anything else would have shown the error`.
-* **Placement.** In each proposal copy the block heading lies after the line
-  that starts `**Prospective only.**`, which is the end of the security-preflight
-  slice, and the block region holds no `cairn:slot` or `cairn:end` marker.
+* **(a) The block.** In each proposal copy the block is the lines from the
+  heading line (`### Independent scientific check`, the whole line) up to, not
+  including, the next line that starts `## `. Its whitespace-collapsed text must
+  equal `_PROPOSAL_BLOCK`'s. Equality, not containment, so a sentence added to one
+  copy is also caught.
+* **(b) The paragraph.** In each plan copy the paragraph is the lines from the one
+  starting `**An independent scientific check is accepted scope.**` to the next
+  blank line. Its whitespace-collapsed text must equal `_PLAN_PARAGRAPH`'s.
+* **(c) Placement.** In each proposal copy the block heading lies after the line
+  that starts `**Prospective only.**`, which ends the security-preflight slice,
+  and the block holds no `cairn:slot` or `cairn:end` marker. In each plan copy the
+  paragraph holds none either.
+* **(d) The promise sites** *(added in C3)*. Each of `dimensions/complexity.md`,
+  `dimensions/README.md` and `bootstrap/BOOTSTRAP.md` contains `independent
+  scientific check` in its whitespace-collapsed text, and `dimensions/complexity.md`
+  contains the sentence `an unexplained "N/A" on a change that touches a computed
+  result is a review finding`. **Presence only, never absence**, so the later plan
+  may reword the Complexity cell without touching this group, provided it keeps
+  naming the check.
+* A heading or lead line that occurs other than once, or a block with no closing
+  `## ` line, raises an `AssertionError` naming it. It never yields an empty
+  region, since two empty regions would be equal. A failure names the copy and the
+  first sentence that differs.
 
 ## Acceptance criteria
 
@@ -464,192 +532,248 @@ red. Every "mutate" step runs in a **throwaway `git worktree`** at the chunk's
 commit, in a fresh, empty folder: the new test and `test_scaffold.py` read the
 files of the tree they sit in, so a scratch copy of one file would never be
 read. Each mutant is reported as killed, survived or equivalent, beside an
-unmutated control run in the same worktree. The files under test are the four
-template copies and the three promise sites, listed from the tree
-(`git ls-files` for `_template.md` under `dev/` and `templates/core/dev/`;
-`git grep` for the old phrases), not from the diff. Doc tooling:
-`python scripts/check_cairn.py` is the prose smoke, and `python
-scripts/claim_check.py <file>` runs on every edited document.
+unmutated control run in the same worktree, and a mutation harness is checked on a
+case known to be live (a deletion made in the wrong place of the file is not a
+survivor, it is a bad mutant). The files under test are the four template copies
+and the three promise sites, listed from the tree (`git ls-files` for
+`_template.md` under `dev/` and `templates/core/dev/`; `git grep` for the old
+phrases), not from the diff. Doc tooling: `python scripts/check_cairn.py` is the
+prose smoke, and `python scripts/claim_check.py <file>` runs on every edited
+document.
 
 ### C1
 
-* **The inputs are fixed first.** Before any draft is read, the record names: the
-  wording (this plan's commit), and, for each plan, the source-proposal commit and
-  the error later found, each with its citation. For
-  `dev/plans/archive/stor-modflow-correctness.md`: the source proposal
-  `dev/proposals/archive/2026-08-27-claude-stor-modflow-flopy-layer.md`, as it
-  stood at its Decision, LHM commit `9dc9acfb` (`git show 9dc9acfb:` plus its
-  unarchived path, `dev/proposals/2026-08-27-claude-stor-modflow-flopy-layer.md`,
-  in the LHM repository); the errors are priming the percolation stack and the
-  RAMP-period shift, found by the External code review at LHM `983d6c58` and
-  fixed at `6dcc0cc5`, plus the check that was lost at plan revision `7a9771f5`
-  after the Internal plan review at `dae97b43` found the reference array had never
-  been saved. *Red when:* the error is chosen after the draft is read.
-* **The second plan is chosen by a rule, in the record, before the exercise.**
-  The rule: an archived LHM plan, newest first, in which a code review or a later
-  record found an error in a **computed result** (not in structure, tests or
-  documents). Candidates to consider first:
-  `dev/plans/archive/2026-10-01-claude-assemble-part-a.md` (code reviews of
-  2026-10-14 and 2026-10-15) and the other 2026-10 LHM plans.
-  The record names the plan, the finding, and why it qualifies. If **no** LHM plan
-  qualifies, the implementer does not substitute one from another repository:
-  that is a deviation request to the Maintainer (Waiting line). *Red when:* the
-  plan is picked for how well the block fits it.
-* **The draft is blind.** A fresh-context agent that is neither the implementer
-  nor a reviewer of this plan receives only the wording above and the proposal
-  text at the named commit, with nothing from the plan, a review, or the code
-  review that followed. Its draft goes into the record **verbatim** before the
-  comparison is written. *Red when:* the brief mentions the error, or the draft is
-  paraphrased.
-* **Each plan gets three plain answers.** (a) Does the drafted check, if its data
-  were in hand, fail under the error later found? (b) Where the record shows a
-  claim about the data that was false or never checked (for
-  `stor-modflow-correctness`, that the run's saved output carried the model's own
-  `unsatStorage`), does the drafted "in hand and has been checked" answer surface
-  it, by saying the data is not confirmed in hand instead of asserting it? Where
-  the record shows no such claim, (b) is "not applicable". (c) Is the basis one the
-  block lists, and independent of the code under review? A plan's verdict is
-  **yes** when (a) is yes and (b) is yes or not applicable, and **no** otherwise,
-  each with its reason in one or two sentences. *Red when:* a verdict has no
-  reason, or "yes" rests on an answer the draft does not support.
-* **The stop rule is exactly the accepted one.** If both verdicts are **no**, the
-  block is judged ritual: the plan stops, and nothing in C2–C5 is committed. If at
-  least one is **yes**, the plan proceeds, and the record says in plain words which
-  plan it was and what the other showed. One "no" is reported to the Maintainer in
-  the record and in the archive commit; it does not stop the plan. *Red when:* the
+* **The inputs are fixed first, as the proposals were first opened.** A block is
+  filled in when a proposal is opened, before any reviewer speaks, so a draft is
+  only a test if it sees that text and nothing later. Before any draft is read, the
+  record names, with commits:
+  * the wording (the "Wording each chunk lands" texts at the commit where C1
+    starts);
+  * for `dev/plans/archive/stor-modflow-correctness.md`: the source proposal
+    `dev/proposals/archive/2026-08-27-claude-stor-modflow-flopy-layer.md` **as
+    opened**, LHM commit `b9d4c59a` (`git show b9d4c59a:` plus its unarchived path
+    `dev/proposals/2026-08-27-claude-stor-modflow-flopy-layer.md`, in the LHM
+    repository; 427 lines, no review in it, no mention of priming, and it already
+    holds the unverified claim that the 137 MB run output "carries the model's own
+    `unsatStorage`"). **Not** the text at its Decision, `9dc9acfb`: that file is
+    1,907 lines and holds two External reviews and four responses, which name the
+    priming and RAMP defects the exercise asks about;
+  * for the second plan, the source proposal as opened and the part this plan
+    implements (see the next bullet).
+  *Red when:* any input is chosen after a draft is read, or the stor-modflow input
+  is the Decision-time text.
+* **The second plan is chosen by a rule, before the exercise.** The rule: among
+  archived LHM plans, newest first **by archive commit date**, the first in which a
+  code review or a later record found an error in a **computed result** (not in
+  structure, tests or documents). Applied at plan review, it picks
+  `dev/plans/archive/2026-10-01-claude-assemble-part-a.md` (archive commit
+  `72ccf3db`, 2026-10-15): its code review CR1 found that the default build writes
+  NaN land-use weights from a 0/0 renormalization when no cell is partly covered.
+  The implementer re-applies the rule and records the result and why it
+  qualifies. Its source proposal is
+  `dev/proposals/archive/2026-10-01-claude-assemble-full-port.md`, as opened at LHM
+  commit `dde80719` (`git show dde80719:` plus its unarchived path
+  `dev/proposals/2026-10-01-claude-assemble-full-port.md`; 360 lines), which
+  covers six plans. The brief names the part this plan implements: plan 1 of 6, the
+  foundation. If **no** LHM plan qualifies, the implementer does not substitute
+  one from another repository: that is a deviation request to the Maintainer
+  (Waiting line). *Red when:* the plan is picked for how well the block fits it.
+* **The draft is blind, and has nothing else to read.** A fresh-context agent that
+  is neither the implementer nor a later scorer receives **two texts and no
+  repository access**: the wording, and the proposal text at the named commit,
+  pasted into the brief. No path into the LHM repository, no error statement, no
+  review. Its draft goes into the record **verbatim** before any scoring. *Red
+  when:* the brief holds anything else, or the draft is paraphrased.
+* **The errors are stated in advance.** Before drafting, the record holds one or
+  two sentences per plan stating the error later found, with its citation. For
+  stor-modflow: the percolation stack was not primed, which offset the
+  domain-mean unsaturated anomaly by about 14.9 kg m⁻² (the full-series mean went
+  from +13.5 to −1.2), and the RAMP-period shift was left out (about −0.15);
+  both were found by the External code review at LHM `983d6c58` and fixed at
+  `6dcc0cc5`, and the reference array the first check relied on had never been
+  saved (found by the Internal plan review at `dae97b43`, withdrawn at `7a9771f5`).
+  For the second plan: the CR1 finding above. *Red when:* a statement is written
+  after a draft is read.
+* **A third agent scores.** A fresh-context agent that is neither the drafter nor
+  the implementer receives each draft verbatim and the matching error statement,
+  and answers two questions, **quoting the draft sentence that carries each
+  "yes"**:
+  * **(A)** Does the draft name a check that fails under that error?
+  * **(B)** Is that a check that could have been run? The draft's data-status
+    statement must either confirm the data in hand and name what was opened, or say
+    the data is not confirmed **and name what would be opened to confirm it** (a
+    file or an array). A stock hedge that names nothing does not count. Where the
+    record shows the draft's data claim to be false or never checked (for
+    stor-modflow, that the run's saved output carried `unsatStorage`), a draft that
+    repeats the claim as "in hand" fails (B).
+
+  A plan's verdict is **yes** when (A) and (B) are both yes. Whether the basis is
+  one the block lists, and independent of the code under review, is recorded for
+  each draft and **not scored**. *Red when:* a "yes" has no quoted sentence, or the
+  scorer is the drafter or the implementer.
+* **The reading of the accepted test is stated, and its effect is reported.** The
+  accepted question is whether an author following the block "would have named a
+  check that fails under the error later found". This plan reads "a check that
+  fails" as a check that can be run, which is why (B) is part of the verdict:
+  without it (A) is "yes" for any draft that repeats the original compare-with-saved-
+  output check, and the exercise could not fail on stor-modflow, the very ritual it
+  exists to detect. The record also reports each plan's verdict on (A) alone, so
+  the Maintainer sees whether (B) decided it. *Red when:* the record gives only the
+  combined verdict.
+* **The stop rule is the accepted one.** If both verdicts are **no**, the block is
+  judged ritual: the plan stops, and nothing in C2–C4 is committed. If at least
+  one is **yes**, the plan proceeds, and the record says in plain words which plan
+  it was and what the other showed. One "no" is reported to the Maintainer in the
+  record and in the archive commit; it does not stop the plan. *Red when:* the
   stop is softened to a warning, or hardened to "either".
 * **The null-result bullet is not claimed as tested.** Neither plan found a
-  false null, so the record says the positive-control bullet has no occurred
-  instance behind it and rests on argument. *Red when:* the record cites either
-  plan as support for it.
+  false null, so the record says the "passes by finding nothing" bullet has no
+  occurred instance behind it and rests on argument. *Red when:* the record cites
+  either plan as support for it.
 * **The record is appended, once.** An H2 `## Retroactive application -- <agent>
-  -- YYYY-MM-DD`, with the six items above. `claim_check` on this plan is clean
-  after it, with the LHM paths on the `External-repo paths:` line. The commit sets
+  -- YYYY-MM-DD`, with the items above. `claim_check` on this plan is clean after
+  it, with the LHM paths on the `External-repo paths:` line. The commit sets
   Status to `implementing`.
 
 ### C2
 
-* **The block is where the wording says, once, in both copies.** `grep -c
-  '^### Independent scientific check$'` prints 1 for each of
+* **The block is where the wording says, once, in both proposal copies.**
+  `grep -c '^### Independent scientific check$'` prints 1 for each of
   `dev/proposals/_template.md` and `templates/core/dev/proposals/_template.md`,
   and the heading sits after the line starting `**Prospective only.**` and before
   `## Signals the change is wrong`. *Red when:* it sits before that line (inside
   the preflight slice) or in a slot.
-* **The preflight slice is unchanged.** Extract the slice from each copy with
-  `_extract_security_preflight` (imported from `test_scaffold.py` in a throwaway
-  snippet) at C2's parent and at C2's commit: the two slices are byte-identical
-  in each copy. *Red when:* the slice grows. This is the "must not swallow the
-  block" property, measured.
-* **The bytes are the reviewed bytes.** The block extracted from each copy is
-  `diff`-identical (exit 0) to the fenced C2 text in this plan. *Red when:* any
-  word differs; the implementer then revises the plan, not the template.
-* **The two copies are the same.** The two extracted blocks `diff` to exit 0.
-* **The duties are all present, including the Maintainer's addition.** Each
-  anchor in the test's proposal list occurs in each copy's block. The bullet
-  `When the result is "no effect"` occurs once per copy, says a check "is
-  evidence only if it could have found one", and the *Reviewers* paragraph names
-  "the positive-control run". *Red when:* the bullet or the reviewer clause is
-  missing from a copy.
-* **The new test is one node.** `pytest --collect-only -q
-  bootstrap/tests/test_scientific_check_guidance_ships.py` lists exactly one
-  test, and it passes at C2 (proposal side). *Red when:* it is parametrized or
-  split.
-* **The test can fail.** In the worktree at C2, with an unmutated control run
-  first (passes): (m1) change one word of the block in the Cairn copy only; (m2)
-  the same in the shipped copy only; (m3) delete the `no effect` bullet from
-  **both** copies; (m4) delete the *Reviewers* paragraph from both; (m5) move the
-  heading above the `**Prospective only.**` line in both; (m6) remove the heading
-  from both. Expected: m1 and m2 killed by parity; m3 and m4 killed by duties
-  while parity stays green; m5 killed by placement while parity and duties stay
-  green; m6 killed with a message naming the missing marker. Any survivor is
-  reported as a survivor. *Red when:* m3 or m4 survives (a duty can leave both
-  copies unnoticed), or m6 passes (an empty region compares equal).
+* **The paragraph is where the wording says, once, in both plan copies.** The line
+  starting `**An independent scientific check is accepted scope.**` occurs once in
+  `dev/plans/_template.md` and in `templates/core/dev/plans/_template.md`, after
+  the paragraph that begins `A security-touching plan re-answers` and before the
+  `acceptance-doc-tooling` slot. *Red when:* it sits inside the slot or above the
+  security-preflight paragraph.
+* **The preflight slice is unchanged.** Extract the slice from each proposal copy
+  with `_extract_security_preflight` (imported from `test_scaffold.py` in a
+  throwaway snippet) at C2's parent and at C2's commit: the two slices are
+  byte-identical in each copy. *Red when:* the slice grows. This is the "must not
+  swallow the block" property, measured.
+* **The bytes are the reviewed bytes, three ways.** After trimming trailing blank
+  lines, the block extracted from each proposal copy and the paragraph extracted
+  from each plan copy are `diff`-identical (exit 0) to the fenced C2 texts in this
+  plan; and the literals in the test, whitespace-collapsed, equal the same fenced
+  texts. *Red when:* any word differs; the implementer then revises the plan, not
+  the template.
+* **The "passes by finding nothing" bullet is whole.** In each proposal copy it
+  occurs once, opens "When the check passes by finding nothing", names the three
+  absences ("no change", "no difference" or "no effect"), says the control is the
+  failing run above when that run's mistake produces an effect of the size that
+  matters, says the implementer records the control with the failing run, and
+  keeps the streamflow example. The *Reviewers* paragraph names the positive
+  control "where one is owed". *Red when:* the bullet is keyed to "the result" and
+  not the check's pass condition, or the owner or the recording place is missing.
+  The test (a) catches each by the literal.
+* **The new test is one node, and it can fail.** `pytest --collect-only -q
+  bootstrap/tests/test_scientific_check_guidance_ships.py` lists exactly one test,
+  and it passes at C2 (groups a to c). In the worktree at C2, with an unmutated
+  control run first (passes), the following are each run and reported:
+  * (m1) change one word of the block in the Cairn proposal copy only; (m2) the
+    same in the shipped copy only; (m3) change one word of the paragraph in one
+    plan copy only; (m4) delete the paragraph from one plan copy;
+  * (m5) delete **each sentence or list item** of the block, in turn, from
+    **both** proposal copies, and (m6) each sentence of the paragraph from **both**
+    plan copies. The set is listed from the fenced texts, not from memory, and each
+    deletion is made inside the block's own region, not at the first occurrence in
+    the file (the words `For every other change, one line` also open a sentence of
+    the security preflight);
+  * (m7) weaken "qualifies only if" to "qualifies if" in both plan copies; (m8)
+    weaken "it becomes" to "it may become" in both plan copies;
+  * (m9) remove the block heading from both proposal copies; (m10) move the
+    heading above the `**Prospective only.**` line in both.
+
+  Expected: every one killed (m4 and m9 by the missing-marker message, m10 by
+  group c). A prototype of the test, run at planning time against an equivalent set
+  of 50 mutants, killed every one once a mutant applied at the wrong place in the
+  file was redone. *Red when:* any survives; a survivor is reported as a survivor.
 * **Existing pins pass unedited.** The eight files named under *Tests that read
   the touched files*, plus `test_comprehension_floor.py`, pass with the same
-  count as the unedited parent (372 at planning time on the drafted wording; the
-  implementer records both figures at the parent and at C2).
-* **No vendor or project name.** The neutrality leg's failure count at C2 is not
-  higher than at the parent, and none is in a file this plan edits. A `grep -n -E
+  count as the unedited parent (372 at planning time; the implementer records both
+  figures at the parent and at C2).
+* **No vendor or project name.** The neutrality leg's `file:line` list at C2 is
+  **identical** to the parent's (a count can match while the set changes), and no
+  line is in a file this plan edits. A `grep -n -E
   'Claude|Codex|Anthropic|OpenAI|Gemini|Cursor|LHM|modflow_tools'` over the added
   lines prints nothing; first run it over a line known to hold one (the instrument
-  check). *Red when:* the pattern finds a known hit on neither run.
+  check). *Red when:* the pattern finds a known hit on neither run, or the lists
+  differ.
 * **The install contract is unchanged.** `python bootstrap/scaffold.py --manifest`
   at C2 and at its parent `diff` to exit 0.
-* **An adopter receives the block.** Install into an empty scratch tree
+* **An adopter receives both texts.** Install into an empty scratch tree
   (`bootstrap/profiles/solo-greenfield.yml`, `--non-interactive --allow-dev`). The
-  installed `dev/proposals/_template.md` holds the block `diff`-identical to the
-  source, with no `{{` inside it. `--summary` and `--dry-run` are also run and
-  recorded; they cannot show content. *Red when:* the installed region differs.
+  installed `dev/proposals/_template.md` holds the block and the installed
+  `dev/plans/_template.md` holds the paragraph, each `diff`-identical to the
+  source, with no `{{` inside either. `--summary` and `--dry-run` are also run and
+  recorded; they cannot show content. *Red when:* an installed region differs.
 * **An existing adopter's upgrade keeps their work.** Install from the parent, fill
-  the `documentation-tier-home` slot, commit, then `upgrade --plan --cairn-root
-  <C2 tree>` and `--stage`: the template is classified "locally-modified (merged
-  clean)", and the staged file holds the block once, the slot fill once, and zero
-  `<<<<<<<` markers. *Red when:* a conflict marker appears or the slot fill is
-  lost.
+  the `documentation-tier-home` slot in both templates, commit, then `upgrade
+  --plan --cairn-root <C2 tree>` and `--stage`: each template is classified
+  "locally-modified (merged clean)", and each staged file holds its new text once,
+  the slot fill once, and zero `<<<<<<<` markers. *Red when:* a conflict marker
+  appears or a slot fill is lost.
 * **The lockfile is left alone.** `python bootstrap/verify_integrity.py --target .`
   reports the same findings at C2 and at its parent (18 at planning time), none
   newly attributable to this chunk; no finalize is run.
-* **The prose gates are clean.** `python scripts/claim_check.py` exits 0 on both
-  copies and `python scripts/check_cairn.py` reports no issues.
+* **The plan template's own pins stand.** `test_scope_reduction_trap.py` and
+  `test_verification_boundaries.py` pass unedited, the plan template still holds no
+  `## Implementation verification` H2, and `grep -nE '^ *([*-] )?\*\*Waiting on
+  Maintainer\*\*' dev/plans/_template.md templates/core/dev/plans/_template.md`
+  prints nothing, as at the parent.
+* **The prose gates are clean where this plan wrote.** `python
+  scripts/claim_check.py` exits 0 on the four template copies, and `python
+  scripts/check_cairn.py` reports no issue in a file this plan edits. Any issue
+  elsewhere (one, in another plan, at the time of this revision) is recorded by
+  file and line and shown unchanged from the parent.
+* **This plan's own header is tidied.** The C2 commit drops the `Proposed paths:`
+  line for the test file, because the path now resolves (the checker flags a
+  stale declaration), and `claim_check` on this plan is clean.
 
 ### C3
 
-* **The paragraph is where the wording says, once, in both copies.** The line
-  starting `**An independent scientific check is accepted scope.**` occurs once in
-  each plan template, after the security-preflight paragraph and before the
-  `acceptance-doc-tooling` slot, and is `diff`-identical (exit 0) to the fenced C3
-  text. *Red when:* it sits inside the slot, or a word differs.
-* **The two copies are the same, and every duty is present.** The anchors in the
-  test's plan list occur in both. *Red when:* "scope reduction" or "quoted
-  allowance" is missing from one copy.
-* **The test grows, and stays one node.** The same function now covers the plan
-  pair; the collection still shows one test. Mutants run in a worktree at C3,
-  beside a control: (m7) change one word in one plan copy only; (m8) delete the
-  `scope reduction` sentence from both; (m9) delete the whole paragraph from one
-  copy; (m10) delete it from both. Expected: m7 and m9 killed by parity, m8 killed
-  by duties with parity green, m10 killed with the missing-marker message.
-  *Red when:* m8 or m10 survives.
-* **The plan template's own pins stand.** `test_scope_reduction_trap.py` and
-  `test_verification_boundaries.py` pass unedited, and the template still holds
-  no `## Implementation verification` H2.
-* **Same smoke as C2 for the plan template.** The installed plan template carries
-  the paragraph; the manifest `diff` is empty; the upgrade stage keeps the slot
-  fill and has no conflict marker; `verify_integrity` lists the same findings.
-* **The header block is untouched.** The template's `**Plan review**:` line, and
-  the absence of any line-initial `**Waiting on Maintainer**` in either plan
-  template, are as at the parent (`grep -nE '^ *([*-] )?\*\*Waiting on
-  Maintainer\*\*' dev/plans/_template.md templates/core/dev/plans/_template.md`
-  prints nothing, as at the parent).
-
-### C4
-
 * **The old promise is gone from all three sites, and the new one is in them.**
   `git grep -n -i 'scientific-trust' -- dimensions bootstrap/BOOTSTRAP.md` prints
-  three lines at the parent (the instrument check) and **nothing** at C4.
+  three lines at the parent (the instrument check) and **nothing** at C3.
   `independent scientific check` occurs in each of the three files. *Red when:*
   any site still names the lens, or any lacks the check.
 * **The complex-project finding is stated.** `dimensions/complexity.md` holds the
   sentence about an unexplained "N/A" on a change that touches a computed result
-  being a review finding, once, in the Complex position. *Red when:* it sits in
-  Simple, or the "gated on the change, not on this axis" sentence is missing.
+  being a review finding, once, in the Complex position, and the "gated on the
+  change, not on this axis" sentence. *Red when:* it sits in Simple, or either
+  sentence is missing.
+* **The I-2 sentence says what is true.** It says the profile sections show which
+  changes touch a scientific assumption, and does not say the profile decides
+  which changes need the check. *Red when:* the sentence says the sections "drive"
+  or "decide" which changes name a check.
 * **No axis, axis value or gate-table row changed.** `git diff -U0` over the three
   files shows exactly three hunks, none inside the I-4 or I-5 tables or the axis
   rubric; `dimensions/README.md`'s edited row has the same number of `|`
   separators as at the parent. *Red when:* a fourth hunk appears or the row's cell
   count changes.
 * **The text is bytes-as-reviewed.** In `git diff -U0`, the added lines of each
-  hunk equal the fenced C4 text exactly, and the removed lines are exactly the
+  hunk equal the fenced C3 text exactly, and the removed lines are exactly the
   old ones named above. *Red when:* a word differs or a hunk removes anything else.
+* **The test's fourth group is live, and stays one node.** The collection still
+  shows one test and it passes at C3. In a worktree at C3, with a control: replace
+  `independent scientific check` by `review` at each of the three sites in turn
+  (3 mutants), and change `review finding` to `note` in `dimensions/complexity.md`;
+  all four are killed by group d. A fifth, restoring the old phrase "scientific-trust
+  review lens" **beside** the check in one site, passes (presence only, by design).
+  *Red when:* a replacement survives, or the fifth is killed.
 * **The line that is not a promise stays.** `templates/modules/team-gated/architecture_review_template.md`
   still carries its own "Scientific Trust" lens line; this plan does not edit it,
   because that module does ship a lens set. *Red when:* the file is in the
   chunk's `git diff --stat`.
-* **Gates.** `test_profile_grammar.py` passes; `check_cairn.py` reports no issues;
-  `claim_check.py` exits 0 on each of the three; the neutrality and redundancy
-  legs are not worse than at the parent; no vendor or project name on any added
-  line (same instrument check as C2).
+* **Gates.** `test_profile_grammar.py` passes; `check_cairn.py` reports no issue in
+  a file this plan edits; `claim_check.py` exits 0 on each of the three; the
+  neutrality `file:line` list is identical to the parent's; no vendor or project
+  name on any added line (same instrument check as C2).
 
-### C5
+### C4
 
 * **The record is complete.** `## Implementation verification -- <agent> --
   YYYY-MM-DD` carries each field *Verification* lists: mode, tested commit,
@@ -657,7 +781,9 @@ scripts/claim_check.py <file>` runs on every edited document.
   exit, outcomes and elapsed, the non-pass disposition, the plan-specific commands,
   and known omissions. It lists the new test's node ID, which matches `pytest
   --collect-only -q` for the added node, and the mutation ledgers of C2 and C3.
-  *Red when:* a field label is absent or the node ID differs.
+  Where the implementation ran a check that passes by finding nothing, its control
+  is recorded here, beside the failing run. *Red when:* a field label is absent or
+  the node ID differs.
 * **The AST non-pass is disposed of, not hidden.** The record shows the AST
   CHANGED set at the tested commit equals the set at the parent (the same symbols,
   the same hashes), and that `git diff --stat` over the implementation range is
@@ -674,15 +800,15 @@ outcome in it maps to a chunk:
 | Accepted outcome | Chunk |
 |---|---|
 | Edit 1: the gated block in both proposal templates, with its three fields, the five bases (the reference-implementation basis with its limit), the data-in-hand statement, the implementer's deliberate break and recorded failing output, and the reviewer duties (including "if no independent basis exists, say so") | C2 |
-| Edit 2: the plan paragraph (accepted scope; a replacement qualifies only if it fails under the original's error; scope reduction and the Maintainer's quoted allowance; "rests on the implementation" does not settle it; one line when the check fails for real) | C3 |
-| Edit 4: the promise repointed at the check alone, at `dimensions/complexity.md`, `dimensions/README.md` and `bootstrap/BOOTSTRAP.md`, with the complex-project "N/A" finding and no axis, value or gate-table change | C4 |
-| Both template pairs match outside their slots; one new test holds the block and the plan sentence word-for-word identical across the twins | C2, C3 |
+| Edit 2: the plan paragraph (accepted scope; a replacement qualifies only if it fails under the original's error; scope reduction and the Maintainer's quoted allowance; "rests on the implementation" does not settle it; one line when the check fails for real) | C2 |
+| Edit 4: the promise repointed at the check alone, at `dimensions/complexity.md`, `dimensions/README.md` and `bootstrap/BOOTSTRAP.md`, with the complex-project "N/A" finding and no axis, value or gate-table change | C3 |
+| Both template pairs match outside their slots; one new test holds the block and the plan sentence word-for-word identical across the twins | C2 (groups a to c) |
 | The falsification test that runs before landing (two plans; stop if neither) | C1 |
-| Done-when gates: claim check, prose integrity, neutrality and redundancy, no vendor named | C2–C5 |
-| Smoke: the block installs | C2, C3 (a real install; see *Found while planning*) |
-| Boundary B full, Python 3.13.x | C5 |
+| Done-when gates: claim check, prose integrity, neutrality and redundancy, no vendor named | C2–C4 |
+| Smoke: the block installs | C2 (a real install; see *Found while planning*) |
+| Boundary B full, Python 3.13.x | C4 |
 | Archive: the guide star's open-gap entry, a CHANGELOG line, the axis revisit added to the third-party probe row | *Dispositions* |
-| The revisit's trigger and falsifiers have a live home; #19 stays open | *Dispositions* |
+| The revisit's trigger, falsifiers and signals have a live home; #19 stays open | *Dispositions* |
 
 **Already conceded, not re-opened here.** Edit 3, the lens-8 doctrine sentence, was
 removed by the proposal's own Scope delta and conceded by the Maintainer's Q1
@@ -691,10 +817,14 @@ independent-scientific-check rule as doctrine (#19)" in `dev/PLANNING.md`, with
 the Decision quoted there. This plan removes nothing further, so it owes no
 `disposition` lines.
 
-**One addition, at the Maintainer's instruction**, recorded under *Scope*: the
-positive control for "no effect" results (the bullet and one reviewer clause, C2;
-its anchors in the test, C2). It adds to the floor and removes nothing. "Planted
-errors" is out of scope.
+**Additions beyond the baseline, none of them a removal.** (1) The positive
+control for a check that passes by finding nothing, at the Maintainer's
+instruction, recorded under *Scope* (the bullet and one reviewer clause, C2; held
+word for word by the test). "Planted errors" is out of scope. (2) The test's
+fourth group, which pins the three promise sentences (C3): the accepted evidence
+names one test, and this is a group inside it, so the node count is unchanged. (3)
+The C1 verdict reads "a check that fails" as a check that can be run, stated in
+C1 and reported beside the plain reading so it cannot hide a result.
 
 ## Verification
 
@@ -706,10 +836,9 @@ scripts/claim_check.py` on each edited document. All tests are in
 | Chunk | Tests and gates |
 |---|---|
 | C1 | `claim_check.py` and `check_cairn.py` on this plan; no pytest |
-| C2 | the new test; `test_scaffold.py` (installed-template and preflight-slice tests); `test_scope_reduction_trap.py`; `test_verification_boundaries.py`; `test_documentation_plan_module.py`; `test_core_dev_folders.py`; `test_quickstart_sequence.py`; `test_claim_check_module.py`; the neutrality and redundancy legs; the two scratch installs and the upgrade probe |
-| C3 | the same set, with the plan-template smoke |
-| C4 | `test_profile_grammar.py`; the prose gates; the neutrality and redundancy legs |
-| C5 | the full suite (below) |
+| C2 | the new test; `test_scaffold.py` (installed-template and preflight-slice tests); `test_scope_reduction_trap.py`; `test_verification_boundaries.py`; `test_documentation_plan_module.py`; `test_core_dev_folders.py`; `test_quickstart_sequence.py`; `test_claim_check_module.py`; the neutrality and redundancy legs; the scratch installs and the upgrade probe |
+| C3 | the new test; `test_profile_grammar.py`; the prose gates; the neutrality and redundancy legs |
+| C4 | the full suite (below) |
 
 **The install family is the reason this is not a confident bound.** Most of the
 suite renders the shipped templates, so Boundary B is the real check.
@@ -727,7 +856,7 @@ suite renders the shipped templates, so Boundary B is the real check.
    gate. This plan adds no name and changes no rule of the gate, but bounded mode
    refuses on the surface.
 
-**How it runs.** After the last implementation chunk (C4), against a clean,
+**How it runs.** After the last implementation chunk (C3), against a clean,
 unchanged commit, under the canonical interpreter
 (`/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.x), from a separate
 `git worktree` at the tested commit (a worktree shares refs, so the gate anchor
@@ -740,8 +869,8 @@ python scripts/check_cairn.py
 python bootstrap/scaffold.py --manifest
 ```
 
-then `claim_check.py` on each edited document, the two scratch installs, the
-upgrade probe, and `verify_integrity --target .` before and after.
+then `claim_check.py` on each edited document, the scratch installs, the upgrade
+probe, and `verify_integrity --target .` before and after.
 
 **Expected non-pass**, each disposed of rather than treated as noise. These are
 the ones known at planning time; **derive the real list from a full run at the
@@ -751,16 +880,26 @@ parent**, in the same way, and do not carry this list forward:
   is red at the parent on two symbols (see *AST*). The record shows the set is
   unchanged by this plan.
 * **The neutrality leg** carries 74 pre-existing failures at `7f1bcdf0`, until plan
-  C lands (it is meant to bring the count to zero). Record the figure at the tested
-  commit and confirm no hit is in a file this plan edits or on a line it added.
+  C lands (it is meant to bring the count to zero). Record the `file:line` list at
+  the tested commit and confirm it equals the parent's, with no hit in a file this
+  plan edits or on a line it added.
+* **`check_cairn.py`** reports an issue in another plan at the time of this
+  revision. Record any such issue by file and line; it is not this plan's.
 * **`test_gate_manifest.py`** has no expected failure: changed frozen bytes do not
   redden it, and no frozen file changes here.
 
-**Known omission.** Nothing standing pins the three promise sentences, because the
-accepted evidence names **one** new test and a second pin file is a larger
-ceremony. They are checked once by C4's counts and again by Boundary C. A later
-edit that restores a lens promise would go unnoticed by the suite; the live risk is
-`external-is-a-maintainer-stance`, which rewords the same Complexity cell next.
+**Known omissions.**
+
+* **The promise sites are pinned for presence only.** The test requires the check
+  to be named at all three sites and the "N/A" finding to be stated in
+  `dimensions/complexity.md`. It does not forbid the old lens phrase from
+  returning, by design: the later plan that rewords the same cell must be free to
+  do so while keeping the check. A lens promise restored beside the check would go
+  unnoticed by the suite; C3's grep and Boundary C look for it once.
+* **The block and the paragraph are pinned word for word.** Any later edit to
+  either owes an edit to the test and, once a re-anchor has frozen the file,
+  another re-anchor. That is the cost of pinning every word, and the reason the
+  sibling plan is told to leave both texts alone.
 
 **Boundary C** is the code reviewer's, run after Boundary B. The points worth
 attacking:
@@ -768,21 +907,28 @@ attacking:
 * **Is the independence real?** Pick one bullet of the five and try to write a
   "check" that satisfies the words and still shares the code's wrong convention.
   If that is easy, the block is a ritual (the F2 sign).
-* **Does the null-result bullet misfire?** It should ask for a positive control
-  only where the result is "no effect". Read it against a tooling change and
-  against a change that finds an effect.
+* **Does the null-result bullet misfire, or duplicate?** It should ask for a
+  control only where the check passes by finding nothing. Read it against a
+  tooling change, against a change whose check finds an effect, and against a
+  refactor whose pass is "output unchanged". For each, is the deliberate break
+  enough, with no second run owed? Where it is not, does the bullet say a second
+  run or a plain "cannot"? And can an implementer tell, from the bullet alone, who
+  records the control and where?
 * **The gate.** Does the opening sentence send a pure-tooling change to N/A, and a
   change that touches a computed result to a check? Both ways, with the proposal's
   own "gate misfires" sign in mind.
 * **Read cold as an adopter.** A solo scientist with one agent has no `doctrine/`,
   no dual-review module, and no second reviewer. Can they follow the block, and the
   plan paragraph, from the shipped templates alone?
-* **The set.** Mutate each of the four copies and each of the three promise sites
-  separately; confirm which gate catches each, and report the ones nothing catches.
+* **The set.** Re-run C2's sentence-by-sentence deletion on the reviewed commit,
+  listing the sentences from the tree, and mutate each of the three promise sites
+  separately; report anything nothing catches.
 * **The upgrade.** Re-run the stage probe on the reviewed commit with an adopter
   who has *edited the block*, not only a slot, and see what the merge does.
-* **The C1 record.** Is each "yes" supported by the blind draft as written, and was
-  the second plan chosen by the rule?
+* **The C1 record.** Is each "yes" supported by a quoted sentence of the blind
+  draft, were the inputs the proposals as opened, and was the second plan chosen
+  by the rule? Does the record show the verdict on (A) alone beside the combined
+  one?
 
 **Security preflight.** N/A: no trust boundary is added, moved or widened. The new
 test reads fixed repository paths and runs no subprocess; the scratch installs and
@@ -807,18 +953,25 @@ this plan:
   home: *the `deliverable` axis is revisited when this row moves, or at the
   Maintainer's call once about ten real (non-N/A) checks exist across two projects.
   Nothing counts them; the Maintainer remembers.* The same row carries, so the
-  falsifiers are not left in an archived file: **F1** every failing check's record
-  names something else that already showed the error; **F2** most bases are "the
-  Maintainer's expectation"; **F3** changes that touched an assumption carry N/A;
-  **F4** recorded failing runs are absent or cannot be reproduced; **F5** failing
-  checks keep coinciding with errors code review also catches (a smaller claim,
-  still worth having); and **F6**, added by this plan with the positive control:
-  no "no effect" result carries a positive control or a plain statement that none
-  exists. "If nothing fails and no later error surfaces, the result is
-  inconclusive, not a pass." That revisit also reads the C1 record.
+  falsifiers and the warning signs are not left in an archived file:
+  * **Falsifiers.** **F1** every failing check's record names something else that
+    already showed the error; **F2** most bases are "the Maintainer's
+    expectation"; **F3** changes that touched an assumption carry N/A; **F4**
+    recorded failing runs are absent or cannot be reproduced; **F5** failing
+    checks keep coinciding with errors code review also catches (a smaller claim,
+    still worth having); and **F6**, added by this plan with the positive control:
+    no check that passes by finding nothing carries a control or a plain statement
+    that none exists. "If nothing fails and no later error surfaces, the result is
+    inconclusive, not a pass."
+  * **Signals the change is wrong**, the proposal's four: checks are written after
+    the code, with the expected value shifting at code review to match the result;
+    a data status reads "in hand" and is not; the gate misfires (N/A on changes
+    that touch results, or a ritual check on tooling); and the block grows
+    discipline sub-lists, which is the axis arriving by accretion.
+  * The revisit also reads the C1 record.
 * **It adds the new test's node ID to the queued re-anchor row** (chunk M), under
-  the same rule as the earlier plans: one node, in an unfrozen new file, dropping
-  none. The ceremony itself stays the Maintainer's.
+  the same rule as the earlier plans: one node, in a new file the re-anchor will
+  freeze, dropping none. The ceremony itself stays the Maintainer's.
 * **It confirms the issues' state** and edits neither: #18 `CLOSED` (done
   2026-10-18), #19 `OPEN`. #18's export-safety affirmation is not touched.
 * **This plan carries no Waiting line at archive**: the open wait, the re-anchor,
@@ -915,3 +1068,52 @@ All in detached copies of `5ee3c9ef` created under my scratch folder (the shared
 * The scientific content of the block, apart from the positive-control bullet, which reads correctly to me (a null result is evidence only with a known-positive run of the same analysis). Whether the five bases are the right five is the Maintainer's, as the Decision records.
 * What the Maintainer was actually asked about the positive control (SC-PR4); that is not on file.
 * `doctrine/` and the rate-limit gate: the plan edits no doctrine, and I did not test the plan's argument that the `dimensions/` edit falls outside the gate.
+
+## Response to plan review -- Claude Sonnet 5.5 (author) -- 2026-10-18
+
+Responds to the Internal plan review at `d7fe5d6a`. **All nine findings are
+accepted; none is rejected.** Two are met by a different shape than the review
+proposed, and the table says so. As the lifecycle asks, the corrections are folded
+into the operative cells (*Scope*, *Sequence*, *Acceptance criteria*,
+*Verification*, *Dispositions*), and this section only points at them. The review
+section above is untouched. Nothing was dropped to make a finding go away: every
+Revision 1 outcome still has a chunk, and the *Scope delta* table is re-mapped to
+the new chunk labels. Status moves to `ready-to-implement`; there is no second
+plan-review round.
+
+| Finding | Disposition | Where it landed |
+|---|---|---|
+| **SC-PR1** The blind draft could read the error | **accept** | *Acceptance criteria* > C1: "The inputs are fixed first, as the proposals were first opened" (stor-modflow now `b9d4c59a`, not `9dc9acfb`; the second plan's proposal as opened at `dde80719`, with the part it implements); "The second plan is chosen by a rule" (newest by archive commit date, which picks `assemble-part-a`; the "consider first" hint is gone); "The draft is blind, and has nothing else to read" (two pasted texts, no repository access). *Sequence* C1 row, *In brief* > Order of work, and the `External-repo paths:` line (two paths added). Facts re-checked in the LHM repository: the opened file is 427 lines with no review and no mention of priming; the Decision-time file is 1,907 lines with two External reviews in it. |
+| **SC-PR2** The verdict is the implementer's to give | **accept, in a third shape** | C1: "The errors are stated in advance" and "A third agent scores" (not the drafter, not the implementer; each "yes" quotes a draft sentence; "not confirmed in hand" counts only if it names what would be opened). Question (c) is recorded and not scored. For (b), the review offered two options: drop it from the verdict, or call it an added condition. I took neither. "A check that fails under the error" is read as a check that can be run, so the data-status test is part of the one accepted question, and C1 requires the record to report each plan's verdict on (A) alone beside the combined one ("The reading of the accepted test is stated, and its effect is reported"). I did not drop it because without it stor-modflow passes for any draft that repeats the original check, which is the ritual the exercise exists to detect. This reading is also listed under *Scope delta* as an addition so the code reviewer or the Maintainer can overrule it. |
+| **SC-PR3** The duties group lets clauses survive | **accept** (the review's simpler alternative) | *Sequence* > "The new test": the test now holds the block and the paragraph as whole literals and compares each copy by **equality**, not clause anchors. That pins every word, including all the survivors the review measured ("Neither the proposed code ...", "a closed budget ...", "written down before the result is seen", "it is not a reason to invent one", "tolerance with its source", "qualifies only if", "it becomes"). It also matches the accepted text, which says the test "holds the block and the plan sentence word-for-word". The thirty-one anchors are gone. C2 > "The new test is one node, and it can fail" now has a mutation ledger over the **set** (each sentence or list item, in both copies), plus the two weakened-word cases. A prototype of the test and an equivalent 50-mutant set was run at planning time: all killed. The review's slip on m9 is corrected (killed by the missing-marker message). |
+| **SC-PR4** The positive control is not fully specified | **accept** | *Scope* > "Added at the Maintainer's instruction": the question the answer belongs to (quoted verbatim, with the coordinating session named as the relayer), what "planted errors" was and that it is declined, that the chat is not on file, and a settled design under "How the plan settles what the quoted words leave open": **trigger** keyed to the check's pass condition ("passes by finding nothing"), not the result; **relation to the deliberate break** (the failing run serves as the control when its mistake produces an effect of the size that matters, so one record; a second run only otherwise; a refactor is the same case); **owner and place** (the implementer records it with the failing run, in the *Implementation verification* record; the code reviewer verifies it). The bullet and the *Reviewers* sentence are rewritten in *Sequence* > "Wording each chunk lands"; *In brief* item 4; C2 criterion "The 'passes by finding nothing' bullet is whole"; *Verification* > Boundary C. |
+| **SC-PR5** The promise sentences stay unpinned | **accept** | *Sequence* > "The new test", group (d), added in C3: presence of `independent scientific check` at all three sites and of the "N/A" finding in `dimensions/complexity.md`; presence only. C3 criterion "The test's fourth group is live, and stays one node". *Verification* > Known omissions rewritten. The sequencing row for `review-stance-and-lenses` now says the requirement has a trigger. |
+| **SC-PR6** The I-2 sentence overclaims | **accept** | *Sequence* > C3 wording (the sentence now says the sections "show which changes touch a scientific assumption and so need the proposal template's independent scientific check"); C3 criterion "The I-2 sentence says what is true"; *Found while planning*. |
+| **SC-PR7** Sequencing out of date; the test's later cost not named | **accept** | *Scope* > "Sequencing with the other accepted work": plan C named as open, `review-stance-and-lenses` named and tabled, the cost of a word-for-word pin named; *Frozen files* paragraph (the file freezes at the re-anchor); *Verification* > Known omissions. |
+| **SC-PR8** Four signals have no home | **accept** | *Dispositions* > the third bullet: the proposal's four "Signals the change is wrong" are listed on the same board row as F1 to F6. |
+| **SC-PR9** Mechanical slips | **accept**, all three | (1) The insertion point is now "the paragraph that begins `A security-touching plan re-answers`" in *Sequence* and in C2's criteria. (2) The neutrality check compares `file:line` lists, not counts (C2, C3, *Verification* > Expected non-pass). (3) The bytes criterion says "after trimming trailing blank lines". |
+
+**The review's three trims.**
+
+* **(a) Fold C3 into C2: accepted.** C2 now ships both template pairs and the test;
+  the install and upgrade probes run once. Former C4 and C5 are now **C3** and
+  **C4**. The review's references to "C3" in SC-PR9 therefore point at C2.
+* **(b) Replace the anchors: accepted**, by holding the whole text (above).
+* **(c) Pin the promise sentences in the same node: accepted** (SC-PR5).
+* **C1 is neither dropped nor shrunk**, as the review recommends. It is made able to
+  fail.
+
+**Found by the author while folding, not raised by the review.**
+
+* **`board-as-basis` shares all four template files.** It adds an `**In brief**:`
+  prompt beside each header. The sequencing table said "None" for it; it now
+  names the files and says the regions differ.
+* **`check_cairn.py` is not clean at the parent**, for an issue in another plan.
+  The criteria in C2, C3 and C4 now ask for no issue in a file this plan edits,
+  with others recorded and shown unchanged.
+* **Creating the test makes the `Proposed paths:` line stale**, which the checker
+  flags. C2 now drops it.
+* **The measured claims were redone on the revised wording**, in a clean copy of
+  the plan-review commit: the existing tests pass 372 with and without the edit,
+  the prototype test makes 373, `claim_check` exits 0 on all seven edited
+  documents, and the neutrality leg is unchanged at 74.
