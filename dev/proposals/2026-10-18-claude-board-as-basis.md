@@ -1,7 +1,7 @@
 # The board as the basis for richer views: a stable JSON output, and a guide to building on it
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: required(Internal) — the Maintainer asked for this change, so "should it exist" is settled, and no high-risk surface is touched
 **Plan review**: required(Internal) — one adopter-run tool, one guide and one test file; no security surface (see the preflight)
 **Opened**: 2026-10-18
@@ -1141,3 +1141,40 @@ change, no engine change.
   title line (F7).
 * **The example's `python` PATH lookup**: replaced by `sys.executable` (F10).
 * **The cut, per the reviewer's alternative**: wait keys wait for the sibling's C1.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-18
+
+**ACCEPTED.** The Maintainer's authorization, quoted **verbatim and visually
+isolated**:
+
+> "accept both as descried"
+
+*Scribe's note, separate from the quoted words.* "Both" names the board-as-basis
+and review-stance proposals. "As described" refers to the scribe's summary
+the Maintainer was answering, which recorded the Maintainer's answers to each
+question (given in chat, 2026-10-18, partly through a multiple-choice prompt).
+For this proposal they are:
+
+* **Revision 1 binds, with these changes the Maintainer made at the Decision**
+  (binding on the plan):
+  * **"What waits on the Maintainer" becomes a recipe in the guide**, not a
+    deferral. In the Maintainer's words: "For the board proposal, I'd put the
+    what waits on my in the recipe, actually instead of deferring it."
+  * **Roadmap rows that declare a wait go into the `/1` data now** (answer to
+    Q4: "Yes, now"), so the recipe can list them.
+  * **The `**In brief**:` prompt goes into the proposal and plan templates now**
+    (answer to Q2: "Yes, add it now").
+* **The fence warning stays in the terminal `--maintainer` view only** (answer:
+  "Terminal view only"). It is not in the data, and not a recipe.
+* **The guide is read in Cairn's published docs**, cited by `board.py --help`,
+  and not copied into installs (answer to Q3).
+* **The "who acts next" lookup lives in the guide** (Q1, accepted as recommended).
+* **The Scope delta is allowed as revised.** `status_holder` becomes a guide
+  recipe, and `fences_without_wait` is wontfix for the data. `maintainer_waits` is
+  no longer deferred: it becomes the guide recipe above.
+* **Review record.** The External-labelled pass at `fe0d093c` is read as the
+  usual review, per the review-stance Decision's migration answer. The
+  Maintainer did not call for an External read.
+
+Scribed by Claude (claude-opus-5-5) on the Maintainer's explicit instruction.
+Nothing else lands in this commit.
