@@ -97,9 +97,10 @@ python bootstrap/verify_integrity.py --target <repo>            # 4. verify
   `--target` at your project.
 * **The slot note.** After it has fixed its result and printed its report,
   `verify_integrity` prints a short advisory to stderr, every line starting
-  `slot note:`. It lists the slots in your project that still hold the
+  `slot note:` (it does not run when the lockfile is missing, unparseable or
+  records no files). It lists the slots in your project that still hold the
   placeholder text Cairn shipped (a *slot* is a section of a file that your
-  project fills in), and it always ends with a coverage line saying how many
+  project fills in), and it always includes a coverage line saying how many
   files it could check and why it could not check the rest. A note with no
   slots listed, plus its coverage line, means *none found among what it could
   check*, never *none exist*. The note never changes the result
