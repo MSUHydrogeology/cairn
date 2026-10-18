@@ -179,6 +179,12 @@ you what changed.
   with a regular file, then re-run. `--plan` writes nothing and is not
   affected. The rule is the same for every link on purpose, so a shared
   `.gitignore` kept by link has to become a real file first.
+* **A linked `dev/` folder is refused too.** The same rule covers the empty
+  `dev/` folders the install creates (`dev/` itself and each folder under it,
+  such as `dev/plans` or `dev/rules`). If any of them is a link, the install
+  stops before creating a single folder, at either end of the link, with a
+  `ScaffoldSecurityError` traceback and exit 1. That refusal prints no
+  remedy line: replace the link with a real folder, then re-run.
 * **The lifecycle skills participate exactly like `core/`.** The canonical
   `.agents/skills/*/SKILL.md` files ride the token-/slot-aware 3-way merge
   (base cache + provenance), and `tools/session.py` follows the verbatim

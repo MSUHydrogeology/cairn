@@ -48,6 +48,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from bootstrap.scaffold import (  # noqa: E402
+    _DEV_DIRS,
     _GITIGNORE_SEEDS,
     _MODULE_MAPPINGS,
     ScaffoldSecurityError,
@@ -1894,7 +1895,10 @@ class TestDevTreeRefusesLinks:
     """``create_dev_tree`` guards every folder it makes, like every other write
     into the target. A link at ``dev/`` (or at a folder below it) would send
     each ``mkdir`` to the other end, so the whole set is checked before the
-    first folder is made."""
+    first folder is made. The refusal is pinned at each folder in turn: a folder
+    with children is also caught by its children's guards, but a leaf folder is
+    caught only by its own, and skipping that one lets the install finish over
+    the link or refuse late, after other folders were already made."""
 
     @staticmethod
     def _target_with_link(tmp_path: Path, link: str) -> tuple[Path, Path]:
@@ -1909,7 +1913,7 @@ class TestDevTreeRefusesLinks:
         link_path.symlink_to(outside, target_is_directory=True)
         return target, outside
 
-    @pytest.mark.parametrize("link", ["dev", "dev/plans"])
+    @pytest.mark.parametrize("link", _DEV_DIRS)
     @pytest.mark.parametrize("dry_run", [False, True], ids=["write", "dry-run"])
     def test_create_dev_tree_refuses_a_linked_folder_and_makes_none(
         self, tmp_path: Path, link: str, dry_run: bool
