@@ -413,14 +413,16 @@ trustworthy is the signature on the commit it names.
   [`bootstrap/AST_BASELINE_RUNBOOK.md`](bootstrap/AST_BASELINE_RUNBOOK.md) —
   derive the expected CHANGED set against the committed baseline rather than
   carrying a figure forward.
-* **The gate manifest goes stale silently — but only for a *changed* file.**
-  A frozen file whose bytes change does **not** redden the suite:
-  `test_gate_manifest.py` self-verifies a freshly produced manifest and never
-  diffs the committed fixture, so a green suite is not evidence that no
-  re-anchor is owed. A frozen file that is **deleted** behaves the opposite way
-  and fails loudly, because the verifier cannot hash a path that is gone. So
-  removal work reddens this file until the re-anchor runs; that is expected, and
-  it is not a reason to treat the failure as noise.
+* **The gate manifest goes stale silently — whether a frozen file changes or is
+  deleted.** Neither reddens the suite: `test_gate_manifest.py` self-verifies a
+  freshly produced manifest and never diffs the committed fixture, and a deleted
+  file simply drops out of the fresh one. So a green suite is not evidence that
+  no re-anchor is owed. Only `python bootstrap/tests/_gate_manifest.py verify`
+  compares the tree with the committed fixture (it reports `FROZEN-MODIFIED`,
+  `FROZEN-MISSING`, `COLLECTION-DROPPED`), and nothing runs it automatically: it
+  runs by hand, in the re-anchor ceremony (`bootstrap/REANCHOR_RUNBOOK.md`).
+  Until then, the queued re-anchor row in `dev/PLANNING.md` is the only record
+  of what is owed.
 * **Commit hygiene.** Always `git commit <paths>`; see *Git and commit workflow*.
 * **Doctrine changes clear the rate-limit gate** — a single incident does not
   justify a doctrine change unless it is the high-risk case.
