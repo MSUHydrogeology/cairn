@@ -1,7 +1,7 @@
 # Plan: neutrality and upgrade slots -- a vendor-name check that reads zero, and a note for slots an upgrade adds
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-neutrality-and-upgrade-slots.md`
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance -- inherited from the proposal: the work widens the neutrality checker, adds code to the lockfile reader adopters run before they trust their scripts (`bootstrap/verify_integrity.py`), and edits comments in two security-relevant scripts (the interpreter binding and the content scanner)
 **Opened**: 2026-10-18
@@ -1104,3 +1104,226 @@ This answers the Internal plan review (`0389a14e`, NU-PR1 to NU-PR9) and the Int
 **Questions for the Maintainer.** None. Every fix stays within the accepted text, and *Dispositions* puts the one `defer` batch (Q2 and its watch, and the stale citations) to the Maintainer at archive-preparation, as the template asks.
 
 **Scope.** Nothing accepted is dropped and *Scope delta* stands at `preserved`; it now names five differences in mechanism instead of four. There is no second plan-review round. Status `revising-plan` -> `ready-to-implement`.
+
+## Implementation verification -- Claude Sonnet 5.5 -- 2026-10-18
+
+**Status**: ready-to-implement -> implementing -> awaiting-code-review. The first edge is `d0647d5f`; this commit is the second.
+
+**Boundary B mode**: `full`. The plan's four reasons stand and none was argued down: fourteen frozen files change and the pinned collection grows; vendor-neutrality, the lockfile reader, the interpreter binding and the content scanner are trust-ceremony surfaces; ten executable templates ship byte for byte; the accepted text says so.
+
+**Tested commit**: `7d528f4d58e2e98c8d4206cd5674c32e310b4da2`
+
+**Reviewed range**: `bb4f710a..7d528f4d`, non-contiguous (other sessions' commits interleave). This plan's commits, in run order:
+
+| Commit | Chunk |
+| --- | --- |
+| `d0647d5f` | Status -> implementing |
+| `1fb06ea6` | C1 -- the stricter checker |
+| `0c9b568c` | C11 -- #16's paragraph |
+| `01d21423` | C2-C4 -- skills, onboarding package, scanner and intent tool (one commit, as the plan allows) |
+| `346eda64` | C5 -- shipped Markdown |
+| `0000c15b` | C6 -- Cairn's own prose (the gate first reads `fail=0` here, `info=42`) |
+| `a1e2bc9d` | C7 -- zero, and the log |
+| `ca7179a6` | C8 -- the note's frame |
+| `67aac1d4` | C10 -- the upgrade guide |
+| `63336156` | C9 -- the listing |
+| `7d528f4d` | C9 follow-up -- one shape table for the opener and closer samples (a defect found while preparing this run: the closer list was `str.replace` of the opener list, so an upper-case closer was never tried) |
+| `d820d856` | C12 cold read -- the guide's slot-note bullet (prose only, after the tested commit) |
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` -- Python 3.13.13 (conda-forge, Clang 19.1.7), pytest 9.0.3, pluggy 1.6.0, macOS. `PYTHONDONTWRITEBYTECODE=1` exported for the suite (the same host dependency the `suite-run-diagnostics` record names).
+
+**Pre-run state**: a fresh `git worktree add --detach` of `7d528f4d` under the session scratchpad; `git status --short` prints nothing. **Post-run state**: the same worktree, `git status --short` prints nothing.
+
+### Starts that are not evidence
+
+Two starts preceded the recorded one. The first (at `63336156`) lacked `PYTHONDONTWRITEBYTECODE=1` and I stopped it at about 5%. The second (same commit, variable set) stopped at about 4% for a reason I did not establish; another session on the same machine was running the same command line at the time. The recorded run is the third start, and it began after the follow-up commit above, so it covers the test bytes that commit carries.
+
+### Command table
+
+| Command | Exit | Outcomes | Elapsed |
+| --- | --- | --- | --- |
+| `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` (run through `python -c "import sys, pytest; sys.exit(pytest.main([...same arguments..., '-p', 'no:cacheprovider', '-q']))"`, which differs from `python -m pytest` only in its process name, after the second start above stopped) | 1 | **3504 passed, 2 failed**, 3 warnings; no skip, xfail or xpass | 841.26 s (0:14:01) |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | neutrality `fail=0 info=56`; redundancy `fail=0 info=0` | 2 s |
+| `python scripts/check_cairn.py` | 0 | OK, 182 Markdown files, no issues | 3 s |
+| `python scripts/claim_check.py <file>` over the 21 documents this plan edits (the plan file is checked in the commit that carries this record) | 0 each | no claim-check flags in any of the 21 | -- |
+| `python scripts/link_check.py bootstrap/UPGRADE.md` | 0 | OK | -- |
+
+`info=56` is 21 (before) + 21 (C6's marked mentions and block) + 14 (token occurrences in C7's six log rows, which sit inside the log's marker block).
+
+### Non-pass disposition
+
+**Two failures, both the AST attestation, both not this plan's.** `test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package` and `::test_ast_gate_passes_over_the_full_scaffold_module_set` report four changed engine symbols. The plan expected two such nodes, and they are the ones that fail. No other test failed, skipped, xfailed or xpassed. `test_security_stack.py::test_a_t4_output_is_bounded`, the load flake, passed.
+
+The CHANGED set, derived by `python bootstrap/tests/_ast_attest.py verify --known-new <known_new> <baseline> bootstrap/_scaffold/*.py` on a `git archive` extraction of each commit:
+
+| Commit | CHANGED symbols |
+| --- | --- |
+| `bb4f710a` (this plan's base) | `_cmd_adopt_module`, `main`, `seed_gitignore` (3) |
+| `3ba6f230` (another session's `.gitignore` repair; the only commit in the range that touches `bootstrap/_scaffold/`) | the same three and `cmd_upgrade` (4) |
+| `63336156` (the tested commit's parent) | the same four |
+| `7d528f4d` (tested) | the same four |
+
+**The base and tested sets are not equal, and the difference is not this plan's:** it is `cmd_upgrade`, which arrived with `3ba6f230`. None of this plan's commits changes a byte under `bootstrap/_scaffold/` or `bootstrap/scaffold.py` (`git show --name-only` over each prints no such path), and `git diff --stat 3ba6f230 7d528f4d -- bootstrap/_scaffold bootstrap/scaffold.py` is empty, so the set is identical from that commit to the tested one. `git diff --stat bb4f710a..7d528f4d -- bootstrap/_scaffold bootstrap/scaffold.py` is not empty for the same reason: it lists `upgrade.py` (+14) and `SECURITY_MUTATIONS.md`, both `3ba6f230`'s. The AST re-anchor stays the Maintainer's.
+
+### Plan-specific acceptance, at the tested commit
+
+* **Neutrality.** `fail=0 info=56`, exit 0. The plants, each alone on a copy of the tested commit's bytes (the unplanted copy reads 0 first):
+
+  | Plant | `fail=` |
+  | --- | --- |
+  | visible prose in a `templates/` `.md` | 1 |
+  | a whole-line HTML comment in `templates/` | 1 |
+  | a `.txt` file in `templates/` | 1 |
+  | a `.json` value in `templates/` | 1 |
+  | `Copilot` (an added name) in `templates/` prose | 1 |
+  | blind spots: lower-case `claude`; `ClaudeCode`; `GPT4o`; `Claude_Code`; a zero-width character inside `Claude` | 0 each |
+
+* **The two probes** (the proposal's smoke checks), with `W4` a detached checkout of `4ad1c115`, `WB` one of the tested commit, `T` a scratch target:
+
+  ```
+  python W4/bootstrap/scaffold.py --config W4/bootstrap/profiles/solo-greenfield.yml --target T --cairn-root W4 --allow-dev
+  # fill slot bodies in T (every slot; or only project-overview and project-conventions in AGENTS.md and team-roster in dev/collaboration_agreement.md)
+  python W4/bootstrap/scaffold.py upgrade --target T --finalize <the filled paths>
+  python WB/bootstrap/scaffold.py upgrade --target T --plan
+  python WB/bootstrap/scaffold.py upgrade --target T --stage
+  python WB/bootstrap/scaffold.py upgrade --target T --apply
+  python WB/bootstrap/verify_integrity.py --target T
+  ```
+
+  *Fully filled* (22 slots in 9 files; the proposal said 23): the note checks 23 slots and lists **exactly one**, `'dev/proposals/_template.md' slot 'assurance-path-triggers'`. *Partly filled* (the three Maintainer-input slots): it lists **17**, `assurance-path-triggers` among them and not singled out. That is the proposal's measured 17 and the accepted Q2 limit, not a defect. Two facts about the harness: one prose conflict in the staged `dev/plans/_template.md` was resolved by keeping both sides; and both probe trees exit 1 for a reason that is not the note's -- the `4ad1c115` install marked its fold-back ledger under `dev/.cairn/` living-state, a path the verifier no longer authorizes, so it reports `illegal living_state opt-out`. The plan-open verifier (`bb4f710a`) reports the same single violation on the same tree.
+* **`python bootstrap/verify_integrity.py --target .`** at the tested commit exits 1 and lists the plan's 18 files, no more and no fewer. Its coverage line: `files in scope 35; checked 1; slots checked 0, listed 0 ...; not checked: no base copy 17, failed the integrity check 16, base hash mismatch 1, unreadable 0`, equal to an independent count over the lockfile (35 non-verbatim records, 2 base copies, 1 matching its `base_hash`, 16 failing).
+* **Old versus new, on the tested commit.** The parent's `verify_integrity.py` (the file at `bb4f710a`, unchanged until C8) beside the new one under another name, same engine: 24 hostile cases, a fresh `solo-greenfield` install (exit 0), that install with a modified `AGENTS.md` (exit 1) and Cairn's own tree (exit 1) -- **27 trees, exit code, stdout and stderr (minus `slot note:` lines) equal for every one**. Blobs: `verify_integrity.py` `4376f4bd`, `test_verify_integrity.py` `607ab83c`. (C8's commit body says its swap test was added after the comparison it quotes; the blob it quotes, `dace9edf`, is the commit's own, so that comparison ran on the committed bytes. The body is wrong on that one point.)
+* **The kernel comparison** (C2). The interpreter-binding script reads **SAME** for `templates/skills/_lib/session.py` and `tools/session.py` against `b13ad7b7` (the ten named functions; the two docstring hits are the only hunks in `cmd_session_start` and `cmd_session_end`), the pair is `cmp`-identical, and `01d21423` is the only commit in the range that touches either.
+* **The one-time name search**, repeated over every added line of `git diff -U0 b13ad7b7..7d528f4d` (same exclusions as C7, same 20 names, case-insensitive substring, control: a scratch `ClaudeCode` line is found): 52 hits, 36 distinct words, read by hand. Beyond C7's list the new words come from other sessions' commits in the range: `dev/reviews/` records (a deliberation record like the excluded `dev/plans/` and `dev/proposals/`; the words are the reviewers' name, `.claude/...` paths, a `/conda_envs/lhm/` interpreter path and a proposal path). Everything else is a routing id or path (`.claude/skills`; the plan stem `2026-05-28-claude-cairn-progressive-onboarding`), a word that merely contains "meta" (`metadata`, `stage_meta`), or a name on a line that now carries a `vendor-ok` marker or sits inside the roster-example block. No joined, lower-case or odd spelling of a name outside a path.
+* **The mutation ledger, on the tested bytes** (a separate copy of the tested commit, control 122 passed before each mutant): **36 mutants, 36 killed, none survived.** C8's 18: note before the report (passing run, failing run); note inside the record loop; `Exception` only (`SystemExit` through); fence removed; `O_NOFOLLOW` dropped; the `fstat` regular-file check dropped; read without the cap; base-directory containment dropped; `base_hash` comparison skipped; non-mapping tokens accepted; non-string token keys and values accepted; per-record handler removed; a verbatim record read; a living-state file read with `Path.read_bytes` (killed by the FIFO case at its 20 s timeout); flush dropped; component-by-component symlink walk dropped; UTF-8 checks dropped. C9's 18: a customized slot listed (the one earlier survivor; killed once a test isolated the marker's own effect); token substitution dropped; `str()` for `ascii()`; a `--finalize` line printed; substitution-length bound dropped; slots paired by a per-name search; warning repeated per entry; warning on a quiet run; warning missing when only a file failed; a blank base slot listed; spacing not normalized; the living line asking for a recording step; the customized marker offered as the way to fill; a pointer to a heading that does not exist; a line claiming an obligation; base slots counted when unpaired; a verbatim record read; a nested opener not abandoning the slot before it.
+* **Linear time, measured.** A cap-sized file of 4,352 closed slots on both sides: 11 ms for the note's pass; the engine-style per-name lookup on the installed side alone, 690 ms; the test's bound is 0.25 s (best of three). Cap-sized unclosed openers: 3 ms, bound 0.1 s.
+* **Not touched.** None of this plan's commits changes `bootstrap/tests/_gate_manifest.py`, `bootstrap/tests/fixtures/gate_manifest.json`, `bootstrap/tests/fixtures/scaffold_ast_baseline.json`, `AGENTS.md`, `templates/core/AGENTS.md` or `scripts/check_model_selection.py`; the only `doctrine/` files they change are `lifecycle-contract.md` and `rationale.md` (markers, no line added) and `consolidation-review.md` (six log rows, nothing outside its marker block). The `_scaffold` paths are covered above.
+* **The guide, read cold against the finished note.** I followed `bootstrap/UPGRADE.md` step 4 and the section *Recording an edit you made* from the file alone, against the note as built. Everything checks except two statements in the "slot note" bullet: it said the coverage line is what the note "always ends with", but the warning and the pointer follow it whenever a slot is listed or a file failed; and it did not say the advisory is skipped when the lockfile is missing, unparseable or records no files (the two fail-closed returns). **Fixed in `d820d856`**, a prose-only commit after the tested commit (the bullet now says "always includes" and names the two fail-closed returns). It changes no code, test, template or fixture byte, so this record stands; claim_check, link_check and check_cairn are clean on the file after it, and the section's eleven required phrases still occur in it.
+
+### Changes for the Maintainer's re-anchor (`bootstrap/REANCHOR_RUNBOOK.md`)
+
+* **Frozen files changed: 14**, read from `bootstrap/tests/fixtures/gate_manifest.json` > `frozen_files` (183 keys) against every file this plan's commits change (control: `bootstrap/verify_integrity.py` is frozen, `README.md` is not): `scripts/quality_gate.py`, `scripts/content_scan.py`, `scripts/onboarding_activate.py`, `bootstrap/verify_integrity.py`, `bootstrap/tests/fixtures/skills/README.md`, `bootstrap/tests/test_quality_gate_neutrality.py`, `bootstrap/tests/test_verify_integrity.py`, `templates/modules/team-gated/content_scan.py`, and `templates/modules/default-on/_onboarding/{__init__,activation,cli,security,shared,triggers}.py`.
+* **Phase-mutable files changed: 2** (a `PHASE-CHANGED` note, never a hold): `templates/modules/team-gated/intent.py`, `templates/modules/default-on/onboarding_activate.py`.
+* **Node-set changes:** `test_quality_gate_neutrality.py` 22 -> 30 collected (+8); `test_verify_integrity.py` 19 -> 122 collected (+103; 13 pinned). All 41 base nodes of the two files are still collected. The 111 added IDs, as `pytest --collect-only -q` prints them at the tested commit:
+
+```
+bootstrap/tests/test_quality_gate_neutrality.py::TestTemplatesScanComments::test_vendor_name_in_a_whole_line_html_comment_fails
+bootstrap/tests/test_quality_gate_neutrality.py::TestTemplatesScanComments::test_whole_line_directive_that_names_a_vendor_fails_twice
+bootstrap/tests/test_quality_gate_neutrality.py::TestTemplatesScanFileTypes::test_vendor_name_in_a_txt_file_fails
+bootstrap/tests/test_quality_gate_neutrality.py::TestTemplatesScanFileTypes::test_vendor_name_in_a_json_file_fails
+bootstrap/tests/test_quality_gate_neutrality.py::TestTemplatesScanNames::test_added_tool_names_fail_in_a_template[Copilot]
+bootstrap/tests/test_quality_gate_neutrality.py::TestTemplatesScanNames::test_added_tool_names_fail_in_a_template[Windsurf]
+bootstrap/tests/test_quality_gate_neutrality.py::TestTemplatesScanNames::test_added_tool_names_fail_in_a_template[Cline]
+bootstrap/tests/test_quality_gate_neutrality.py::TestTemplatesScanNames::test_added_tool_names_fail_in_a_template[OpenCode]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[base_cache-not-a-string]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[base_cache-a-directory]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[base_cache-a-fifo]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[base_cache-a-symlink]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[base_cache-symlinked-parent]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[base_cache-outside-the-target]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[base_cache-outside-base-dir]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[base_cache-nul-byte]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[base-copy-over-the-cap]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[base-copy-not-utf8]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[base_hash-does-not-match]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[base_hash-not-a-string]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[tokens-not-a-mapping]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[tokens-non-string-key]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[tokens-non-string-value]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[installed-not-utf8]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[installed-over-the-cap]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[living-a-fifo]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[living-a-symlink]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[living-symlinked-parent]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[living-a-directory]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[living-over-the-cap]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[living-not-utf8]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[token-value-times-twenty-over-the-cap]
+bootstrap/tests/test_verify_integrity.py::test_the_note_runs_after_the_report_on_a_passing_run
+bootstrap/tests/test_verify_integrity.py::test_the_note_runs_after_the_report_on_a_failing_run
+bootstrap/tests/test_verify_integrity.py::test_a_fail_closed_early_return_never_calls_the_note
+bootstrap/tests/test_verify_integrity.py::test_the_report_comes_before_the_note_in_a_merged_stream
+bootstrap/tests/test_verify_integrity.py::test_the_note_is_handed_nothing_that_could_change_the_verdict
+bootstrap/tests/test_verify_integrity.py::test_an_exception_in_the_note_becomes_one_line_naming_only_its_type
+bootstrap/tests/test_verify_integrity.py::test_a_system_exit_in_the_note_is_fenced_and_the_code_is_kept
+bootstrap/tests/test_verify_integrity.py::test_a_keyboard_interrupt_in_the_note_is_not_swallowed
+bootstrap/tests/test_verify_integrity.py::test_a_record_with_an_unsafe_base_copy_still_fails_on_its_own
+bootstrap/tests/test_verify_integrity.py::test_open_flags_are_built_when_the_note_runs_not_when_the_module_loads
+bootstrap/tests/test_verify_integrity.py::test_one_reader_opens_every_file_the_note_reads
+bootstrap/tests/test_verify_integrity.py::test_a_file_of_exactly_the_cap_is_read_and_one_byte_more_is_not
+bootstrap/tests/test_verify_integrity.py::test_every_file_in_scope_lands_in_exactly_one_bucket
+bootstrap/tests/test_verify_integrity.py::test_the_coverage_line_is_printed_when_nothing_can_be_checked
+bootstrap/tests/test_verify_integrity.py::test_a_verbatim_record_is_neither_opened_nor_counted
+bootstrap/tests/test_verify_integrity.py::test_a_living_state_file_is_read_and_counted_like_any_other
+bootstrap/tests/test_verify_integrity.py::test_a_living_state_flag_outside_the_authorised_set_is_counted_as_failed_and_not_read
+bootstrap/tests/test_verify_integrity.py::test_a_file_swapped_for_a_symlink_after_the_path_walk_is_refused
+bootstrap/tests/test_verify_integrity.py::test_an_unfilled_slot_is_listed
+bootstrap/tests/test_verify_integrity.py::test_a_filled_slot_is_never_listed
+bootstrap/tests/test_verify_integrity.py::test_a_slot_marked_customized_is_not_listed[<!-- cairn:customized -->]
+bootstrap/tests/test_verify_integrity.py::test_a_slot_marked_customized_is_not_listed[<!--cairn:customized-->]
+bootstrap/tests/test_verify_integrity.py::test_a_slot_marked_customized_is_not_listed[<!--  CAIRN:CUSTOMIZED  -->]
+bootstrap/tests/test_verify_integrity.py::test_the_customized_marker_alone_keeps_a_slot_off_the_list[<!-- cairn:customized -->]
+bootstrap/tests/test_verify_integrity.py::test_the_customized_marker_alone_keeps_a_slot_off_the_list[<!--CAIRN:customized-->]
+bootstrap/tests/test_verify_integrity.py::test_a_slot_blank_in_its_base_copy_is_counted_and_gets_no_advice
+bootstrap/tests/test_verify_integrity.py::test_recorded_tokens_are_substituted_and_unknown_ones_left_intact
+bootstrap/tests/test_verify_integrity.py::test_spacing_alone_does_not_make_a_slot_look_filled
+bootstrap/tests/test_verify_integrity.py::test_a_slot_only_the_base_has_is_not_listed
+bootstrap/tests/test_verify_integrity.py::test_unclosed_and_unpaired_markers_list_nothing[<!-- cairn:slot a -->\nPlaceholder.\n]
+bootstrap/tests/test_verify_integrity.py::test_unclosed_and_unpaired_markers_list_nothing[Placeholder.\n<!-- cairn:end a -->\n]
+bootstrap/tests/test_verify_integrity.py::test_unclosed_and_unpaired_markers_list_nothing[<!-- cairn:slot a -->\nPlaceholder.\n<!-- cairn:end b -->\n]
+bootstrap/tests/test_verify_integrity.py::test_unclosed_and_unpaired_markers_list_nothing[<!-- cairn:slot a -->\n<!-- cairn:slot b -->\nPlaceholder.\n<!-- cairn:end a -->\n]
+bootstrap/tests/test_verify_integrity.py::test_an_oversized_substitution_is_refused_before_it_is_built
+bootstrap/tests/test_verify_integrity.py::test_unclosed_openers_in_a_cap_sized_file_cost_linear_time
+bootstrap/tests/test_verify_integrity.py::test_closed_slots_on_both_sides_cost_linear_time
+bootstrap/tests/test_verify_integrity.py::test_the_note_reads_slot_openers_as_the_engine_does[<!-- cairn:slot x -->]
+bootstrap/tests/test_verify_integrity.py::test_the_note_reads_slot_openers_as_the_engine_does[<!--cairn:slot x-->]
+bootstrap/tests/test_verify_integrity.py::test_the_note_reads_slot_openers_as_the_engine_does[<!--  cairn:slot   x  -->]
+bootstrap/tests/test_verify_integrity.py::test_the_note_reads_slot_openers_as_the_engine_does[<!-- CAIRN:SLOT x -->]
+bootstrap/tests/test_verify_integrity.py::test_the_note_reads_slot_openers_as_the_engine_does[<!-- cairn:slot\tx -->]
+bootstrap/tests/test_verify_integrity.py::test_the_note_reads_slot_openers_as_the_engine_does[<!-- cairn:slot x-->]
+bootstrap/tests/test_verify_integrity.py::test_the_note_reads_slot_openers_as_the_engine_does[<!-- cairn:slot -->]
+bootstrap/tests/test_verify_integrity.py::test_the_note_reads_slot_openers_as_the_engine_does[<!-- cairn:slot x y -->]
+bootstrap/tests/test_verify_integrity.py::test_the_note_reads_slot_openers_as_the_engine_does[<!-- cairn:slot x -- >]
+bootstrap/tests/test_verify_integrity.py::test_the_note_reads_slot_openers_as_the_engine_does[<!-- cairn:slotx -->]
+bootstrap/tests/test_verify_integrity.py::test_the_note_reads_slot_closers_as_the_engine_does[<!-- cairn:end x -->]
+bootstrap/tests/test_verify_integrity.py::test_the_note_reads_slot_closers_as_the_engine_does[<!--cairn:end x-->]
+bootstrap/tests/test_verify_integrity.py::test_the_note_reads_slot_closers_as_the_engine_does[<!--  cairn:end   x  -->]
+bootstrap/tests/test_verify_integrity.py::test_the_note_reads_slot_closers_as_the_engine_does[<!-- CAIRN:END x -->]
+bootstrap/tests/test_verify_integrity.py::test_the_note_reads_slot_closers_as_the_engine_does[<!-- cairn:end\tx -->]
+bootstrap/tests/test_verify_integrity.py::test_the_note_reads_slot_closers_as_the_engine_does[<!-- cairn:end x-->]
+bootstrap/tests/test_verify_integrity.py::test_the_note_reads_slot_closers_as_the_engine_does[<!-- cairn:end -->]
+bootstrap/tests/test_verify_integrity.py::test_the_note_reads_slot_closers_as_the_engine_does[<!-- cairn:end x y -->]
+bootstrap/tests/test_verify_integrity.py::test_the_note_reads_slot_closers_as_the_engine_does[<!-- cairn:end x -- >]
+bootstrap/tests/test_verify_integrity.py::test_the_note_reads_slot_closers_as_the_engine_does[<!-- cairn:endx -->]
+bootstrap/tests/test_verify_integrity.py::test_a_name_longer_than_the_bound_is_the_one_marker_the_note_skips
+bootstrap/tests/test_verify_integrity.py::test_the_customized_marker_and_token_patterns_are_the_engines
+bootstrap/tests/test_verify_integrity.py::test_spacing_blankness_and_tokens_follow_the_engine[]
+bootstrap/tests/test_verify_integrity.py::test_spacing_blankness_and_tokens_follow_the_engine[plain]
+bootstrap/tests/test_verify_integrity.py::test_spacing_blankness_and_tokens_follow_the_engine[a\nb]
+bootstrap/tests/test_verify_integrity.py::test_spacing_blankness_and_tokens_follow_the_engine[  a\n\n  b  \n]
+bootstrap/tests/test_verify_integrity.py::test_spacing_blankness_and_tokens_follow_the_engine[a\r\nb\r\n]
+bootstrap/tests/test_verify_integrity.py::test_spacing_blankness_and_tokens_follow_the_engine[a\r\n\r\n b]
+bootstrap/tests/test_verify_integrity.py::test_spacing_blankness_and_tokens_follow_the_engine[\ta\u2028b\x0bc\x0cd\x85e]
+bootstrap/tests/test_verify_integrity.py::test_spacing_blankness_and_tokens_follow_the_engine[\n\n\n]
+bootstrap/tests/test_verify_integrity.py::test_spacing_blankness_and_tokens_follow_the_engine[a \n \n b]
+bootstrap/tests/test_verify_integrity.py::test_the_note_finds_the_slot_bodies_the_engine_finds
+bootstrap/tests/test_verify_integrity.py::test_nothing_the_note_prints_is_outside_printable_ascii
+bootstrap/tests/test_verify_integrity.py::test_no_line_of_the_note_prints_a_command
+bootstrap/tests/test_verify_integrity.py::test_the_warning_and_pointer_print_once_when_a_slot_is_listed
+bootstrap/tests/test_verify_integrity.py::test_the_warning_and_pointer_print_once_when_a_file_failed_and_nothing_is_listed
+bootstrap/tests/test_verify_integrity.py::test_a_run_with_nothing_to_act_on_prints_only_the_coverage_line
+bootstrap/tests/test_verify_integrity.py::test_the_lines_say_what_a_placeholder_is_and_claim_no_obligation
+bootstrap/tests/test_verify_integrity.py::test_the_pointer_names_a_heading_that_exists
+bootstrap/tests/test_verify_integrity.py::test_the_hint_and_the_guide_no_longer_offer_history_as_enough
+bootstrap/tests/test_verify_integrity.py::test_a_placeholder_slot_can_be_listed_filled_recorded_and_stop_being_listed
+bootstrap/tests/test_verify_integrity.py::test_a_first_install_with_a_planted_line_gets_no_command_from_the_note
+bootstrap/tests/test_verify_integrity.py::test_a_placeholder_reworded_by_an_upgrade_reads_as_filled
+```
+
+### Known omissions
+
+* macOS only: Windows and Linux were not run. The reader's flags degrade to 0 where an `os.O_*` name is missing (tested by deleting them), but `O_NONBLOCK` on a FIFO was exercised only here.
+* The probes resolved one prose conflict by keeping both sides; an adopter's hand resolution may differ. They show the note's listing, not an adopter's whole upgrade.
+* Three more future-tense "Goal 1" lines remain in `docs/DOCUMENTATION_PLAN.md` (`:178`, `:207`, `:365`); the plan named six lines and C6 corrected those six.
+* The note has no cap on the number of lines it prints; a base copy with thousands of unfilled slots prints thousands of lines. A changed lockfile and base copy can already steer the note (S5), and the output grants nothing.
+* The suite was run once, at one shuffle seed (`--quality-gate-shuffle-seed=0`), as the plan specifies.
