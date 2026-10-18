@@ -205,9 +205,8 @@ def _run_order_independence(
 # it here and (when convenient) attach a brief Cairn-side commit
 # message naming the vendor-launch / new-name signal that prompted
 # the update.  Copilot, Windsurf, Cline and OpenCode were added on
-# 2026-10-18: the routing table (templates/skills/_data/vendor_targets.yml)
-# lists them as harnesses a project can use, so shipped text must not
-# name them either.
+# 2026-10-18: they are coding-agent tools a project may use, so shipped
+# text must not name them any more than it names the others below.
 _VENDOR_DENYLIST: frozenset[str] = frozenset({
     "Claude", "Codex",
     "Anthropic", "OpenAI", "Google", "DeepMind", "Microsoft", "Meta",

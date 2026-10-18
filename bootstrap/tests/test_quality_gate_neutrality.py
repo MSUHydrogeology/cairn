@@ -387,3 +387,61 @@ class TestTemplatesScanNames:
         assert any(f"`{name}`" in f.message for f in fs), [
             f.message for f in fs
         ]
+
+
+# The names and file types the gate must read, written out here and not read
+# back from the checker: a name or type dropped from the checker's own list
+# would otherwise leave every test green and the gate reading zero, because
+# nothing in the tree uses it any more.
+_LISTED_NAMES = (
+    "Claude", "Codex", "Anthropic", "OpenAI", "Google", "DeepMind",
+    "Microsoft", "Meta", "Gemini", "GPT", "Llama", "LLaMA", "Antigravity",
+    "Cursor", "Copilot", "Windsurf", "Cline", "OpenCode",
+    "modflow_tools", "LHM",
+)
+_TEMPLATE_FILE_TYPES = (".md", ".yml", ".yaml", ".py", ".toml", ".json", ".txt")
+
+
+class TestEveryListedNameAndFileTypeIsRead:
+    @pytest.mark.parametrize("name", _LISTED_NAMES)
+    def test_each_listed_name_fails_alone_in_a_template(self, qg, tmp_path, name):
+        (tmp_path / "templates" / "modules").mkdir(parents=True)
+        (tmp_path / "templates" / "modules" / "x.md").write_text(
+            f"Works with {name} too.\n")
+        fs = _failures(_run(qg, tmp_path))
+        assert any(f"`{name}`" in f.message for f in fs), [f.message for f in fs]
+
+    @pytest.mark.parametrize("suffix", _TEMPLATE_FILE_TYPES)
+    def test_each_listed_file_type_is_read_under_templates(
+        self, qg, tmp_path, suffix,
+    ):
+        (tmp_path / "templates" / "core").mkdir(parents=True)
+        (tmp_path / "templates" / "core" / f"x{suffix}").write_text(
+            "Written with Claude.\n")
+        fs = _failures(_run(qg, tmp_path))
+        assert any("Claude" in f.message for f in fs), [f.message for f in fs]
+
+    def test_every_file_type_the_installer_ships_is_one_the_gate_reads(self, qg):
+        """A new shipped type (a shell-script hook, say) must fail here, not
+        pass the gate unread.  An empty file has nothing to scan."""
+        import subprocess
+        manifest = subprocess.run(
+            [sys.executable, str(CAIRN_ROOT / "bootstrap" / "scaffold.py"),
+             "--manifest"], capture_output=True, text=True, check=True,
+            cwd=CAIRN_ROOT).stdout
+        sources = [line.split("\t")[1] for line in manifest.splitlines()
+                   if line and not line.startswith("#")]
+        assert len(sources) > 50
+        gate_reads = set(qg._NEUTRALITY_FILE_SUFFIXES["templates"])
+        unread = [src for src in sources
+                  if Path(src).suffix not in gate_reads
+                  and (CAIRN_ROOT / "templates" / src).stat().st_size > 0]
+        assert unread == []
+
+    def test_a_listed_name_inside_a_longer_word_is_not_a_hit(self, qg, tmp_path):
+        """The names are matched as whole words, as the gate's stated limits
+        say: `Metadata` and `Clinelike` are English, not tool names."""
+        (tmp_path / "templates" / "modules").mkdir(parents=True)
+        (tmp_path / "templates" / "modules" / "x.md").write_text(
+            "Metadata about a Clinelike, Googled, GPTs-free thing.\n")
+        assert _failures(_run(qg, tmp_path)) == []
