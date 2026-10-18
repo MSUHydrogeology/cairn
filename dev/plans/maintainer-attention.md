@@ -1,7 +1,7 @@
 # Plan: maintainer attention — a list of what waits on the Maintainer, and no work left in archived plans
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-maintainer-attention.md`
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits `doctrine/`, the authoring templates, and a tool adopters run
 **Opened**: 2026-10-18
@@ -1044,3 +1044,108 @@ Two edits go a little past Revision 1's wording, and both answer a finding:
 
 There is no second plan-review round. Status `revising-plan` ->
 `ready-to-implement`.
+
+## Implementation verification -- Claude Sonnet 5.5 -- 2026-10-18
+
+**Boundary B mode**: full. All four refusal grounds in *Verification* held: a frozen
+file's bytes and pinned collection changed (`test_replacement_tools.py`), a tool
+adopters run and two shipped templates were edited, a lockfile record was
+reconciled, and the accepted text says "Boundary B runs full".
+
+**Tested commit**: `31d9cefeccabdf50ad2ee6d7a3cd2a6ff20bfe35` (C4, the last
+implementation commit).
+
+**Reviewed range**: `8e5df0f0af778759bb7c80a28204ce593dd97615` (the plan at
+`ready-to-implement`) to `31d9cefeccabdf50ad2ee6d7a3cd2a6ff20bfe35`. This plan's
+five commits are C1 `72254d0eeae5eef180dbde3ed01303870ecca140`, C5
+`42fa680488c826de0135bd218921167e2b7f67ca`, C2
+`c5c2c38fc1f4e71c839438a149a12de2967e7096`, C3
+`753f7fedfa49fc0ed15a063d07b6a868f130f3da` and C4
+`31d9cefeccabdf50ad2ee6d7a3cd2a6ff20bfe35`, in run order. Other sessions'
+commits sit inside the range; none of them touches a file of this plan (checked
+with `git show --name-only` over the five commits: only the planned files).
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python
+3.13.13.
+
+**Pre-run state**: a detached `git worktree` at the tested commit, outside the
+shared tree; `git rev-parse HEAD` = the tested commit, `git status --short` empty.
+**Post-run state**: same `HEAD`, `git status --short` empty. The worktree shares
+refs, so `refs/cairn/gate-anchor` was present, and other sessions' uncommitted
+files were absent.
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---|---|---|
+| `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` | 0 | 3384 passed; 0 failed, 0 skipped, 0 xfail, 0 xpass; 3 warnings (a deprecation inside a third-party package, `stevedore`) | 1071.91 s (1077 s wall) |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 1 | neutrality fail=74, info=21; redundancy fail=0 | 2 s |
+| `python scripts/check_cairn.py` | 1 | 5 issues in 181 files, all `cited path does not resolve` for two local-only files | 3 s |
+
+**Non-pass disposition.**
+
+* **Neutrality, 74 failures.** The 74 `file:line: token` lines are identical at
+  the plan's parent `8e5df0f0` and at the tested commit (`diff` of the sorted
+  lists exits 0). They fall in 22 files, none of which any of the five commits
+  touched, so no hit is on a line this plan added. No vendor name appears in any
+  added line.
+* **`check_cairn.py`, 5 issues.** The worktree is a clean checkout, so it lacks
+  `dev/measurement/suite-runs.jsonl` and `dev/measurement/suite-cost.md`, which
+  are local-only files (`git ls-files` returns nothing for either) cited by
+  `dev/plans/verification-practice.md` and
+  `dev/reviews/2026-08-27-code-review-c5-c6-removals.md`. Neither file is in this
+  plan's range. The same script in the shared working tree, which holds those
+  files, printed `OK -- 181 Markdown file(s) scanned; no issues` at C4. This
+  plan's own files carry no flag.
+* **`test_gate_manifest.py`** passed, as the plan expected. The frozen file's
+  changed bytes and the five added nodes do not redden it; the re-anchor is
+  chunk M and was not run.
+
+**Plan-specific acceptance commands.** Each ran at the commit named in its row; a
+count is *parent -> tested*.
+
+| Check | Where | Outcome |
+|---|---|---|
+| Five new nodes | tested commit | `pytest --collect-only -q bootstrap/tests/test_replacement_tools.py`: 15 at `8e5df0f0`, 20 now. The five added IDs, all in `TestTheBoardReadsHeadersAndJudgesNothing`: `test_maintainer_lists_exactly_what_authors_declared`, `test_a_fence_with_no_declared_wait_is_named_not_listed`, `test_a_mention_of_the_marker_is_not_a_marker`, `test_the_footer_names_what_the_list_cannot_see`, `test_every_value_the_view_prints_is_encoded` |
+| Red before the code | parent `8e5df0f0`, test file copied in | all five fail with `SystemExit: 2`, `unrecognized arguments: --maintainer`; none on an import error |
+| Mutations, C1 | overlay of C1's files on the parent; node 2 again at `72254d0e` | 15 mutations each turned the intended node red (exact status match, board file unread, sub-bullet unmatched, double listing, empty line dropped, archives read, advisory deleted, `_` files read, empty case silent, substring matcher, missing file silent, header/row/entry-name/advisory-name printed raw). Deleting the advisory at `72254d0e` itself: node 2 red |
+| Plain board unchanged | `--root` = live tree and a scratch tree, with and without `--archive` | parent's `board.py` and the new one: `cmp` exits 0 each time; with a Waiting line added, the column appears (the instrument can fire) |
+| Twins, subprocess, help | C1 and tested commit | `cmp` of the two `board.py` copies exits 0; the subprocess pattern matches `tools/session.py` and prints nothing on `tools/board.py`; `--help` names `--maintainer` and no longer says "header blocks only" |
+| Lockfile | C1 and tested | the C1 lockfile diff is one line (`tools/board.py` `hash`); `verify_integrity --target .` lists the same 18 files before and after C1, C2, C3 and at the tested commit, none for `tools/board.py` |
+| Tracker, C5 | working tree and scratch copies | `evolution_infer.py` lists it among the trackers read (0 rows, 30-day window), exit 0; a copy with two `occurred` rows dated today prints a rate-limit suggestion for `waiting-line-miss`; two class names -> no suggestion; window line removed -> exit 3; `## Incidents` heading removed -> exit 3 by name and `SKIPPED` in discovery |
+| Prose counts, C2 | the commit before C2 | lifecycle "The proposal lifecycle" 0 -> 1, "Mutability rule" 0 -> 1; both templates: preamble holds all 8 terms, `in the header block, beside Status` 2 below the rule, *Code review* `git log -p` / `became the next move` / `is not checked` / `marked board row` 0 -> 1 each; Cairn's copy names the tracker once and the shipped copy says `the project's incident tracker` once; the added lines diff identical across the two templates once the tracker is swapped (a one-word change turns it 1); no line begins with the marker |
+| Prose counts, C3 | the commit before C3 | lifecycle "Archive precondition": `only home`, `is not a live home`, `by number`, `board row` 0 -> 1; plans.md "Accepted scope is a floor": `of a live plan`, `board row listing the items`, `assigns` 0 -> 1; "Lasting-truth migration doctrine": `writes its own changelog entry` 0 -> 1; each template: *Scope delta* three, *Dispositions* `writes its own changelog entry`, `only home`, `carries no Waiting line` 0 -> 1; no changed line of `doctrine/plans.md` contains `NEXT_SESSION` |
+| Pins still read the sentences | throwaway worktree at `753f7fed` | deleting the whole edited sentence from each template and "Sequencing is free; removal is not" from `doctrine/plans.md` turns exactly three nodes red: `dev/plans/_template.md::sequencing between chunks owes nothing`, `templates/core/dev/plans/_template.md::sequencing between chunks owes nothing`, `doctrine/plans.md::sequencing is free, removal is not`. Control: deleting only "Sequencing is free" leaves all 99 green |
+| Fresh install | tested commit, `collaborative-team` preset | the installed `tools/board.py` (identical to the shipped twin) runs inside the scratch tree: exit 0, zero entries, advisory `none`; a line-initial form of the shipped `PLANNING.md` sentence lists itself |
+| Live list, C4 | tested commit | `board.py --maintainer` lists the proposal at `awaiting-decision` and 2 `roadmap` entries (`dev/PLANNING.md:208`, `:500`), equal to the 2 rows marked; the ellipsis count is 0; the statement written line-initially would make it 3 |
+| C4 narrow commit | `31d9cefe` | one file, 17 lines added, none removed; the Decision's authorization appears once, verbatim, in the commit body (`grep -cF` prints 1) |
+| Claim and prose gates | tested commit | `claim_check.py` clean on all eight edited documents; `test_scope_reduction_trap.py` passes (99) at C3 and C4 |
+
+**Day-one figures.** At C1 the advisory named both active plans, as this plan's
+review predicted. It still names this plan at the tested commit, because its
+body says `MAINTAINER-ONLY` in the chunk-M row and a wait declared on a marked
+board row does not suppress it.
+
+**Known omissions.**
+
+* No standing test pins the C2–C4 prose, as *Verification* said; the counts above
+  are one-shot checks, and Boundary C attacks the prose.
+* The `--maintainer` row parser matches a line-initial marker even inside a
+  fenced code block of `dev/PLANNING.md`. The grammar C1 fixes does not mention
+  fences, so it was not widened; no such fence exists today.
+* `--archive` is ignored by `--maintainer` without a message, as the plan fixed;
+  the help text says so.
+* The ESC-in-an-artifact-name part of node 5 is skipped inside the test on a
+  filesystem that rejects the name. It ran here.
+* The sweep marked 2 rows, the two the plan names. It considered and did not mark:
+  the #19 row (its revisit is not yet due), the public-launch sequence (gated
+  behind the third-party probe), and the authorized deferrals whose next move is
+  anyone's. The code reviewer may disagree with a call; the reasons are in the C4
+  commit body.
+* C5's commit also changed one Scope bullet in this plan ("at the path declared
+  below" now names the path), because dropping the `Proposed paths:` line left it
+  pointing at nothing. It is the only edit to an operative cell since
+  implementation began.
+* C2 waited about ten minutes for another session's claim on
+  `doctrine/plans.md` to release, and committed after it did; the hook was not
+  overridden.
+* The re-anchor (chunk M) and any AST re-anchor were not run; no file under
+  `bootstrap/_scaffold/` changed.
