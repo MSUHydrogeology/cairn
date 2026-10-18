@@ -587,9 +587,9 @@ should go to low"), in the `model-selection` pair and `doctrine/roles.md`. It ke
 the word "usual" out, because `usual` is now the header token meaning no Security
 Review. I read the scribe's "its review stays at the usual tier wherever it touches
 a high-risk file" as: a review is never lowered, and a high-risk surface still owes
-its Security Review. The row lowers the writing step only; if the Maintainer meant
-that reviews of cleanup away from high-risk files may also run at low, that is a
-one-line change to this row, and it has to be said in words:
+its Security Review. The row lowers the writing step only. The Maintainer confirmed
+this reading on 2026-10-18, verbatim: "Just keep reviews at the same level always
+unless Security". So no review of cleanup runs at low, on any file:
 
 > **Docstring and comment cleanup, and related edits, may be written at low.**
 > This covers an edit that changes only docstrings, comments and other
@@ -1416,10 +1416,12 @@ check is a reader.
   recommended". The `defer` batch is put as one batch; the Waiting line is written
   in the header block when it is put and deleted when the Maintainer answers.
 * **The ten-review check** (the stance proposal's "reviews read as polish" signal)
-  has one open question, at the top of the Response, with a recommended default. If
-  the answer is yes, a board row is deposited at archive under the same batch with
-  his answer quoted. If he declines, the signal is recorded as dropped and the
-  decision is his.
+  gets its owner. The Maintainer answered the Response's question on 2026-10-18,
+  verbatim: "Yes, we should keep watching." So a board row is deposited at archive
+  in the same batch, with those words quoted. It carries the default the Response
+  describes: the goodnight roadmap-scrub owner counts once ten proposal reviews
+  carry the new header, logs the pattern if it shows, and puts it to the
+  Maintainer, with the other three signals noted on the same row.
 * **This plan carries no Waiting line at archive.** The open wait, the re-anchor, is
   declared on its marked board row.
 
