@@ -41,6 +41,7 @@ python bootstrap/scaffold.py upgrade --target <repo> --plan     # 1. inspect
 python bootstrap/scaffold.py upgrade --target <repo> --stage    # 2. stage
 #    ... review dev/.cairn-upgrade/, resolve any conflict markers ...
 python bootstrap/scaffold.py upgrade --target <repo> --apply    # 3. apply
+python bootstrap/verify_integrity.py --target <repo>            # 4. verify
 ```
 
 * **`--plan`** is **strictly read-only**: it classifies every tracked file
@@ -88,9 +89,65 @@ python bootstrap/scaffold.py upgrade --target <repo> --apply    # 3. apply
   After applying, re-run a clean install (or `--stage`) to refresh the
   lockfile + base cache to the new version.
 
+* **`verify_integrity` (step 4)** checks the tree you now have against the
+  lockfile: it recomputes each recorded file's SHA-256 and exits non-zero on
+  a mismatch. **Only a person following these steps runs it.** `--apply` does
+  not call it and Cairn has no CI that does, so if you skip the step nothing
+  notices. Run it from the Cairn folder you upgraded with, and point
+  `--target` at your project.
+* **The slot note.** After it has fixed its result and printed its report,
+  `verify_integrity` prints a short advisory to stderr, every line starting
+  `slot note:`. It lists the slots in your project that still hold the
+  placeholder text Cairn shipped (a *slot* is a section of a file that your
+  project fills in), and it always ends with a coverage line saying how many
+  files it could check and why it could not check the rest. A note with no
+  slots listed, plus its coverage line, means *none found among what it could
+  check*, never *none exist*. The note never changes the result
+  `verify_integrity` returns, and it reports state, not obligation: it does
+  not say a slot is required. One edge no code can close: the note always
+  writes to stderr, so if stderr is a closed pipe, Python's flush at exit can
+  make the process exit 120 where a passing run used to write nothing there
+  and exit 0.
+* **Known gap.** A placeholder that an upgrade rewords reads as filled: the
+  note compares your slot with the base copy recorded for it, and after an
+  upgrade the base copy holds the new wording while your slot still holds
+  the old.
+
 `--to <ref>` upgrades to a specific Cairn git ref **only when your Cairn
 source is a git checkout** carrying that ref; a packaged release (tarball
 / zip) can upgrade only to the currently-running Cairn tree.
+
+## Recording an edit you made
+
+After you fill a slot, or otherwise edit a file Cairn installed,
+`verify_integrity` reports that file as `modified (hash mismatch)`: the
+lockfile still holds the hash of the file as Cairn wrote it. That is
+expected. Recording the edit is how you tell the lockfile that the new bytes
+are the ones you meant. **Recording attests the whole file, not only your
+slot**, so read before you record.
+
+1. **Read the whole file first.** Open the file inside your project, under
+   the `--target` you passed -- not the same-named file in the Cairn folder
+   you ran the check from. Make sure your own fill is in what you read; if
+   it is not, you are reading the wrong copy. `verify_integrity` keeps only a hash
+   of each file, so nothing it prints can show you what changed: you are the
+   check. Confirm that the only change is yours.
+2. **Know what reading can and cannot catch.** Reading finds a line you know
+   is not yours, such as an instruction to download and run a script. It does
+   not reliably find a small rewording of text Cairn itself shipped, because
+   the check keeps no copy of that text to compare against. Comparing with a
+   copy you trust is an aid, never proof.
+3. **`git log -p -- <path>` is supplementary.** It shows committed history
+   only, never uncommitted edits, so it cannot stand in for reading the file
+   as it is now.
+4. **Then record the file:** `python bootstrap/scaffold.py upgrade --target
+   <repo> --finalize <path>`. This records the whole file, not only your
+   slot. The scoped form (with a path) also skips the dirty-tree guard that a
+   bare `--finalize` applies, so it records whatever is on disk at that
+   moment. Commit the lockfile afterwards.
+
+This section describes the command. It does not claim that any command shows
+you what changed.
 
 ## How the merge protects your customizations
 
