@@ -573,3 +573,396 @@ Evidence: D4 (`:96`) prints the warning and pointer "when the note lists at leas
 * I did not read the proposal's History sections (the External review, its Response, Revisions 1-3's full text) beyond NU1, SR12 and the closures; earlier sections are history, as the brief said.
 * I did not verify that the later plans' proposals ship no text the stricter checker would reject beyond the citations in NU-PR3; I searched them for line citations and for neutrality statements only. The combined review-stance-and-lenses plan was not yet committed.
 * `claim_check.py` is run on this file at commit; I did not run `check_cairn.py`.
+
+## Plan review -- Claude Opus 5.5 (Internal Security Review) -- 2026-10-18
+
+```
+Reviewed commit: b13ad7b72eb502565341c3b19aaf29ff63de2e70
+Target: the whole plan, read for security: the C8-C9 slot note in bootstrap/verify_integrity.py, the C1 checker, the comment-only edits to the session kernel (C2), onboarding package (C3) and content scanner (C4), the frozen-file and re-anchor handling, and the security findings ledger against the proposal's SR1-SR18
+Prior findings: none of this tier on the plan; the proposal's SR1-SR18 are read for how they were carried over, not reopened
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+
+**Model**: claude-opus-5-5
+
+Distance: a fresh session of the author's agent type. I wrote neither the
+proposal, any of its reviews, nor this plan. This pass runs beside the ordinary
+Internal pass and does not repeat its scope-and-simplicity job.
+
+### In plain terms
+
+The plan is safe to build once six things are tightened. None needs a new
+mechanism, an engine change or a Maintainer decision.
+
+* **Every Security Review finding the proposal accepted made it into the
+  plan.** I checked SR1 to SR18 one by one against the plan's criteria; none
+  was lost.
+* **The vendor-name check cannot be fooled by a marker inside `templates/`**,
+  the folder that ships. I built the stricter checker from the plan's
+  description and tried seven ways of hiding a name there with a marker; every
+  one was caught.
+* **One real gap: the new note reads the project's living files** (the roadmap,
+  the handoff, the signed agreement) **straight from disk, and no test feeds
+  them anything hostile.** These are the only files the note reads whose
+  contents no fingerprint vouches for. If one of them were a special file that
+  never finishes reading, a careless implementation would hang the integrity
+  check forever. The plan's design avoids that, but nothing would notice if the
+  code drifted from the design (NU-SR1).
+* **Smaller items:** two shapes of oversized input the plan does not bound
+  (NU-SR2); a check on the interpreter-binding code that will fail by
+  construction as worded (NU-SR3); a promise about the pass-or-fail result that
+  the planned test cannot fully see (NU-SR4); a frozen test file with no "add
+  only, change nothing" rule, plus two ceremony facts the Maintainer should
+  know (NU-SR5); and one sentence the "zero" claim should add (NU-SR6).
+
+### The ledger: SR1-SR18 against the plan
+
+Each finding's closing condition, from the proposal's Security Review passes and
+the Responses and Revisions that answered them, read against the plan's criteria.
+
+| Finding | Closing condition as accepted | Where the plan checks it | Carried over |
+|---|---|---|---|
+| SR1 | stricter scan; three `reviewer=` credits reworded; a search independent of the gate's matcher; plant table; blind spots named | C1 (8 nodes, superset check), C5 (credits), C7 (one-time search, plants), In brief item 1, S5 | yes |
+| SR2 | false claims corrected; no remedy for a failing file; base copy hashed first | C8 (hash gate), C9 (first-install test, no commands) | yes; the remedy itself is superseded by SR15 |
+| SR3 | separate pass after the verdict; accepted records only; never touches `violations`/`skipped`; regular file; errors become counts; modified file with unsafe `base_cache` still exits 1 | C8 (order, receives, fence, verdict comparison, "still fails on its own") | yes, with NU-SR1 and NU-SR4 |
+| SR4 | `base_hash`; containment under `dev/.cairn/base/`; size cap; `ascii()` names | C8 (reader), C9 (printable ASCII) | yes |
+| SR5 | marker only to keep Cairn's text; empty slots counted, not listed | C9 (what is listed, what the lines say) | yes |
+| SR6 | no `nosec`/`noqa`/`pragma`/`type:`/encoding line added or removed | K2(b) with its control | yes |
+| SR7 | two groups reworded, markers tight and declarative, scanner skip stated, `info=` recorded | C6, plan line 113 | yes |
+| SR8 | superseded by SR15 | -- | yes (withdrawn, recorded) |
+| SR9 | living-state files read and counted | C8 living-state bullet, C9 | partly: read and counted, but never fed hostile input (NU-SR1) |
+| SR10 | "whole word, in the file types read"; joined spellings; substring search; five comment sites; decline recorded | In brief, C1, C7, ledger row | yes |
+| SR11 | failing-file line points to UPGRADE.md | D4, D6, C10 | yes |
+| SR12 | the seven build details | C8 (receives, reader, fence, per-record errors, no-op cases), C9 (printable names) | yes |
+| SR13 | superset check; a directive carrying a name fails twice | C1 | yes |
+| SR14 | the 12 and the 4; hashes equal the committed templates'; the 18 unchanged | K4, C7 | yes |
+| SR15 | no printed command | C9 "No commands" | yes |
+| SR16 | Case B scoped to the note's lines; guide leads with reading | C9, C10 | yes |
+| SR17 | which copy; fill present; reading limit in S5 | C10 phrase list, S5 | yes |
+| SR18 | hint and guide agree on history | landed `7c077ddf`; C9 guard | yes (verified: the hint at `bootstrap/verify_integrity.py:182-191` no longer offers history) |
+
+Two notes on translation. Revision 4's loop test says the slot is "filled and
+committed"; C9 drops "committed". That changes nothing a test proves, because
+the scoped `--finalize` records the bytes on disk either way. And C8's 17 no-op
+inputs carry every case SR3 and SR12 named; the gap in NU-SR1 is one SR9
+created later, which none of the passes went back to.
+
+### What I checked
+
+Every run used `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.x) on a
+detached `git worktree` of `b13ad7b7` in my scratchpad, never the shared tree.
+
+* **The stricter checker.** I made C1's three code changes to a scratch copy of
+  `scripts/quality_gate.py` (removed the two-line skip at `:278-279`, added
+  `.json` and `.txt` to the `templates` entry, added the four names). It reads
+  `fail=74 info=21` before and `fail=81 info=21` after, as the plan says.
+* **Hiding a name behind a marker**, each plant alone on that 81 baseline:
+
+  | Plant | fail | info |
+  |---|---|---|
+  | `templates/`: own-line `vendor-ok` above a name | +2 | +0 |
+  | `templates/`: same-line `vendor-ok` on a name | +1 | +0 |
+  | `templates/`: block markers around a name | +3 | +0 |
+  | `templates/`: upper-case `VENDOR-OK` on a name | +1 | +0 |
+  | `templates/`: `case-study` marker above a name | +2 | +0 |
+  | `templates/`: a `.sh` file with a name | +0 | +0 |
+  | `templates/`: an extensionless file with a name | +0 | +0 |
+  | `docs/`: a second name added to a line that carries a marker | +0 | +2 |
+
+  No marker inside `templates/` hides anything. The two `+0` file-type rows are
+  the plan's named limit ("other file types"). The `docs/` row is the marker
+  working as designed; see NU-SR6.
+* **What ships.** All 97 rows of `python bootstrap/scaffold.py --manifest` take
+  their source from under `templates/` (control: a known-absent path is
+  reported). The shipped types are `.md`, `.py`, `.yml`, `.json`, `.txt` and
+  one empty `.gitkeep`, so after C1 the checker reads every shipped type.
+* **The comment-only edits.** Every one of the 33 denylist hits in the ten
+  edited Python templates is a comment or a docstring, by the tokenizer and
+  the parser; none is on line 1 or 2. None of those files reads `__doc__` or
+  `getdoc` (control: the same search finds `__doc__` in three test files).
+  All are mode `100644`. `tools/session.py` and its template are byte-identical
+  today, and `bootstrap/tests/test_session_kernel.py:128` pins that.
+* **The interpreter binding.** `_resolve_interpreter` (`tools/session.py:573-671`)
+  and `encode_display` (`:169-199`) hold no hit. The functions that run the
+  resolved path (`_intent_whoami`, `_surface_intents`, `_prune_intents`,
+  `_run_evolution_infer`) hold none either. Two hits sit in docstrings of
+  functions that obtain or route that path: `:905` in `cmd_session_start` and
+  `:1338` in `cmd_session_end`. NU-SR3.
+* **A FIFO at a living-state path.** On a minimal tree whose lockfile marks
+  `dev/PLANNING.md` living-state, with a FIFO at that path, `verify_integrity`
+  at `b13ad7b7` exits 0 at once, because it never opens living-state files. A
+  plain `Path.read_bytes()` of the same path blocks (killed by a 5 s timeout,
+  exit 124). `os.open` with `O_NONBLOCK|O_NOFOLLOW|O_NOCTTY` returns at once and
+  `fstat` reports it is not a regular file. NU-SR1.
+* **Input size.** Token substitution with the engine's own pattern
+  (`bootstrap/_scaffold/slotmerge.py:37`), and the engine's per-name slot
+  lookup (`_slot_body_in_text`, `:180`) against one marker pass. NU-SR2.
+* **`ascii()` against the terminal encoder.** Over all 1,114,112 code points,
+  `ascii()` never emits a character outside printable ASCII (control: `str()`
+  of an ESC byte fails the same test). `encode_display` escapes 964,756 of
+  them; `ascii()` escapes a superset.
+* **The ceremony.** The gate anchor is `bd66a70c`; five commits since touch
+  `bootstrap/verify_integrity.py`. I recomputed the frozen intersection both
+  from the committed fixture and from `_frozen_files()` at `b13ad7b7`: 14 both
+  ways, the same 14 the plan names. NU-SR5 covers what the count leaves out.
+* **Merged output order and a broken stderr**, on a stand-in that has the
+  plan's shape (report to stdout, note to stderr, fence). NU-SR4.
+
+### The surfaces this pass probed
+
+* **Can the note change pass or fail?** Not through the exit code `verify()`
+  returns, as designed: the code is fixed before the call, the call is the last
+  statement, and the fence catches `Exception` and `SystemExit`. Three gaps
+  remain: a hang on an unhashed living file (NU-SR1), a hang or memory blow-up
+  on a hostile lockfile (NU-SR2), and an edit to the integrity loop that the
+  no-op comparison cannot see (NU-SR4).
+* **Terminal escapes.** The plan uses Python's `ascii()`, not
+  `encode_display`, and that is sound: `ascii()` is not a second escape table,
+  it is stricter on every code point (measured above), and importing the
+  session kernel into the trust anchor would add a non-engine import that
+  `test_scaffold_substrate.py` exists to keep out. Its cost is readability: a
+  non-ASCII path prints escaped. Cairn's shipped paths are ASCII. One sentence
+  in C9 saying why `ascii()` and not `encode_display` would spare the code
+  reviewer the question, given `AGENTS.md`'s "single terminal encoder" rule.
+* **Symlinks and containment.** Sound for base copies: the per-component
+  `lstat` walk, `O_NOFOLLOW` on the leaf, `fstat` on the same descriptor, and a
+  race that only matters for bytes that must still match `base_hash`. Living
+  files have no hash; NU-SR1.
+* **Unbounded reads.** The note's reads are capped. The integrity pass's own
+  read and the lockfile read stay uncapped (shipped behaviour, named in S5's
+  Size line). The note adds two superlinear paths through lockfile-controlled
+  data; NU-SR2.
+* **"Prints no commands."** Holds for the note's own wording, and C9's test
+  pins it. Slot names and paths are tree text: `ascii()` neutralises control
+  bytes but leaves printable words, so a name could spell anything. Every name
+  the note can print comes from a base copy that must match its lockfile
+  `base_hash`, or is a lockfile `dst`. That is S5's "changed lockfile" residual,
+  already named; nothing further is owed.
+* **The kernel.** The plan's edits stay out of `_resolve_interpreter`,
+  `encode_display` and the four functions that run the path. Twins are checked
+  by K3 and by `test_session_kernel.py:128`. The protected-code criterion needs
+  rewording; NU-SR3.
+* **`content_scan.py` and the onboarding package.** K2 is the right instrument.
+  Every hit is a comment or a docstring; K2(a) sees the `_OHM_SIGNS` string
+  constants and the regex pieces around `:329`; K2(b) sees the comments tools
+  obey. C5's before-and-after run of the scanner over the two security modules
+  covers the `reviewer=` change.
+* **The checker (C1).** It cannot be weakened by a marker inside `templates/`
+  (measured above). Outside `templates/` a marker exempts by design, and no
+  shipped file is sourced there. NU-SR6 asks that the "zero" sentence say so.
+* **Frozen files and the oracle roster.** The count of 14 is right. Two things
+  are missing; NU-SR5.
+* **Is this the simplest safe design?** Within the accepted text, yes, with
+  NU-SR4's smaller change to the integrity loop. One simpler design was not
+  weighed by any pass: compare installed slots against the template in the
+  checkout that runs the check, as the fork advisory already does with
+  `trusted_upstream(CAIRN_ROOT)`, instead of against the adopter's base copy.
+  That would remove the whole untrusted base-copy reader. It trades it for a
+  version-skew gap whenever the checkout and the install differ, and it departs
+  from the accepted text (Revision 3 item 2), so adopting it is a deviation for
+  the Maintainer. I do not recommend it now. I record it so the next change to
+  the note can weigh it.
+
+### Findings
+
+**[NU-SR1] (blocking) The only files the note reads that no hash vouches for are
+never fed hostile input.** SR9 made the note read living-state files (the
+roadmap, the handoff, the signed agreement, three configuration files) straight from
+disk, because the integrity pass skips them. Every other byte the note parses
+is either an installed file the integrity pass matched to its record or a base
+copy that must match `base_hash`. Living files match nothing. They are also
+written routinely, by people and agents.
+
+* **Evidence.** C8's 17 no-op inputs (plan line 249) are all about
+  `base_cache`, `base_hash`, `tokens` and installed bytes. The living-state
+  bullet (line 253) is red only when a file is "neither read nor counted". The
+  mutation ledger (line 398) has no living-state mutant. S5's race line (line
+  449) covers `base_cache` only. Measured: with a FIFO at a living-state path,
+  today's check exits 0 at once, because it never opens the path
+  (`bootstrap/verify_integrity.py:133-136`), and a plain read of that path
+  blocks until killed. So a living-state read written as
+  `Path(...).read_bytes()` instead of through the shared reader would pass every
+  listed test and hang the check on such a tree, after the report but before
+  the exit code reaches the caller.
+* **Recommended fix.**
+  * Add living-state cases to the no-op comparison: a FIFO at a living-state
+    path (under a timeout, like the `base_cache` FIFO), a symlinked leaf, a
+    directory, over the cap, and not UTF-8. Each must show it reaches the note,
+    as the 17 do.
+  * Add the mutant "read living-state files without the shared reader", which
+    the FIFO case must kill.
+  * Say which containment the living reads take: the component walk the base
+    copies get, or the integrity loop's `resolve()` containment
+    (`bootstrap/verify_integrity.py:118-121`), which already runs before the
+    living-state skip. Either is safe; the plan should name one and test it.
+  * Extend S5's race line: a living read has no hash to bind it, and the race
+    is harmless because the note prints only names from hash-bound base copies,
+    plus counts.
+
+**[NU-SR2] (non-blocking) Two pathological inputs are not bounded, and the
+planned timing test may be flaky.** The cap bounds what is read. It does not
+bound what substitution builds, or how slots are paired.
+
+* **Token substitution multiplies size.** A base copy at the cap holds up to
+  52,428 `{{a}}` tokens, and `tokens` values come from the lockfile, which is
+  read uncapped (`bootstrap/_scaffold/lockfile.py:279-296`). With the engine's
+  pattern, a 16 KiB value made 819 MiB in 0.4 s; a 1 MiB value would need about
+  51 GiB, a hang or a killed process. D5 rejects only non-mapping and non-string
+  tokens.
+* **Pairing slots by name can be quadratic.** C9's linear test (line 261) times
+  unclosed openers, which only the marker pass sees. Pairing base slots with
+  installed slots is a second step. Done the way the engine's
+  `_slot_body_in_text` does it (`bootstrap/_scaffold/slotmerge.py:180`), one
+  search per name, it grew from 0.13 s to 1.86 s for 4x the slots. One marker
+  pass over the same text took about 6 ms.
+* **The ratio test.** At the cap my unclosed-opener run took 15 ms, and the
+  quarter-size run's time ratio was 6.7, against the plan's limit of 8. A ratio
+  of millisecond timings under a loaded full suite can trip.
+* Both superlinear paths need a lockfile change, which S5 already concedes can
+  steer the note; and the failure runs toward a stuck or failing run, never a
+  false OK. That is why this does not block. But the plan claims the slot
+  parsing stays linear, and it should be linear end to end.
+* **Recommended fix.**
+  * Bound substitution: skip and count as "unreadable" any body whose
+    substituted length would exceed the cap. That length can be computed from
+    the token counts before building the string.
+  * State that pairing uses the one marker pass's name map, and extend the
+    linear test to a cap-sized text of *closed* slots on both sides.
+  * Use an absolute bound, as `test_unclosed_slots_cost_linear_time` does
+    (`bootstrap/tests/test_verify_integrity.py:123-131`), or the best of several
+    runs, instead of a single ratio.
+  * Add a substitution case to the no-op comparison, with a size small enough
+    to run fast.
+
+**[NU-SR3] (non-blocking) C2's protected-code check fails by construction as
+worded.** C2 (plan line 190) requires the `ast.dump` of `_resolve_interpreter`,
+`encode_display` and "every function that executes the path" to be unchanged,
+and says these "sit outside the three hit lines". Two of the three hits are in
+docstrings of functions on that path: `tools/session.py:905` in
+`cmd_session_start`, which calls `_resolve_interpreter` and hands the result to
+`_surface_intents`, and `:1338` in `cmd_session_end`, which reaches
+`_do_full_handoff`. A docstring is part of `ast.dump`. Rewording `:905` in a
+scratch copy made the full dump of `cmd_session_start` read DIFFERENT; the
+docstring-stripped dump read SAME, and every other function on the path read
+SAME both ways. The implementer would face a red check or an improvised reading
+of "executes", on a high-risk surface.
+
+* **Recommended fix.** Name the set: `_resolve_interpreter`,
+  `_probe_interpreter`, `encode_display`, `_intent_whoami`, `_surface_intents`,
+  `_prune_intents`, `_run_evolution_infer`, `_do_full_handoff`,
+  `cmd_session_start`, `cmd_session_end`. Require the full dump to be equal for
+  all but the two that hold a hit. For those two, require the
+  docstring-stripped dump to be equal and each diff hunk to lie inside the
+  docstring's line span. Correct "These sit outside the three hit lines".
+
+**[NU-SR4] (non-blocking) The verdict test cannot see an edit to the integrity
+loop.** C8's comparison runs the new `verify()` with the note and with the note
+replaced by a no-op (line 249). Both runs share the new integrity loop. To hand
+the note "the accepted non-verbatim records with the bytes" and "a count of
+in-scope records that did not pass" (line 247), the loop itself must change. If
+the count is incremented in each failure branch, that is about six edits beside
+`violations.append` and `continue`, the lines that decide the verdict. A
+misplaced edit there changes the verdict in both runs alike, and the comparison
+reads equal.
+
+* **Recommended fix.**
+  * Simplest: change the loop by two added lines only. Append the record and
+    its bytes after the hash matches, and append the record before the
+    living-state `continue`. Derive the failed count after the loop: in-scope
+    records, minus those accepted, minus legitimate living ones. Add a
+    criterion that the loop's diff adds lines and removes or changes none.
+  * Add a differential check: the parent's `verify_integrity.py` and the new
+    one, run on the same trees (the 17 cases, NU-SR1's cases, a fresh install
+    and Cairn's own tree), must give the same exit code, the same stdout, and
+    the same stderr once `slot note:` lines are removed. The throwaway worktree
+    C8 already uses for "red at the parent" can run it.
+* **Two smaller points on the same promise.**
+  * **Flush before the note.** The verdict line goes to stdout, which Python
+    buffers when it is piped; the note goes to stderr, which it does not. In a
+    merged log the note arrives first. Measured on a stand-in with the plan's
+    shape: `2>&1 | head -1` showed `slot note: ...`, and after a
+    `sys.stdout.flush()` before the note it showed the verdict. C8's order test
+    uses captured output, which cannot show this. Flush before the call, and
+    test once through a subprocess with stderr merged.
+  * **A broken stderr.** A run that passes today writes nothing to stderr. With
+    the note it always does, so if stderr is a closed pipe the process exits 120
+    instead of 0. Measured on the stand-in, with and without a guard on the
+    fence's own print. Python's exit-time flush causes it, so no code fix
+    applies. It only ever turns a pass into a failure. The In brief's "cannot
+    change the check's pass or fail result" should say "the result `verify()`
+    returns", and C10's bullet on what the note means can name this edge.
+
+**[NU-SR5] (non-blocking) A frozen test has no "add only" rule, and two ceremony
+facts are missing.** The re-anchor accepts whatever bytes the frozen files hold
+at ceremony time. So the plan's own criteria are the only thing that keeps an
+edit to a frozen test from weakening it.
+
+* **`bootstrap/tests/test_verify_integrity.py` has no "additions only" rule.**
+  C1 requires its test file's diff to be additions only (line 179). C8 and C9
+  say no such thing for this frozen test, whose existing nodes pin the hint
+  (`:81-89`) and the linear scan (`:123-131`). An existing assertion loosened to
+  make room for the note's output would pass the suite. The gate manifest flags
+  only dropped nodes and new skips. The re-anchor would then record it.
+  *Fix*: C8 and C9 require the file's diff to add lines and remove none, and
+  the base's 19 node IDs still to be collected.
+* **Two edited files are phase-mutable, not frozen.** The gate manifest records
+  `templates/modules/team-gated/intent.py` (C4) and
+  `templates/modules/default-on/onboarding_activate.py` (C3) under
+  `phase_mutable` (`bootstrap/tests/_gate_manifest.py:107`). A change to either
+  yields a `PHASE-CHANGED` note, never a hold (`:697`). `intent.py` matches its
+  recorded hash at the base, so C4 makes that note new; `onboarding_activate.py`
+  already differs. Neither the *Frozen files* section nor the board row names
+  them. *Fix*: one sentence in each, so the Maintainer expects the note.
+* **The oracle does not test `verify_integrity`.** The ceremony holds any change
+  to a roster path until the Maintainer's activation scope covers it
+  (`bootstrap/tests/_oracle_activation.py:45`, `:136-197`). But the differential
+  oracle does not run `verify_integrity`: it is single-engine and "covered by
+  the unit suite" (`bootstrap/tests/_oracle.py:197-201`, `:402`). So when the
+  Maintainer authorizes `bootstrap/verify_integrity.py` at the ceremony, the
+  only evidence for C8-C9 is the unit suite and the code review. The plan's
+  "covers it whether or not this plan runs" (line 73) is true of the hold; it
+  should also say what evidence stands behind the authorization.
+
+**[NU-SR6] (non-blocking) "Zero" should say that marked lines outside
+`templates/` are exempt.** The In brief (line 16) says zero means no listed name
+"in the file types the check reads". The check also reads `docs/`, `doctrine/`
+and the fixture README. There a `vendor-ok` marker exempts its whole line or
+block, and a name added there later moves `info=`, not `fail=` (measured above:
+fail +0, info +2). Nothing compares `info=` from one run to the next. This is
+by design, and those files do not ship. But the CHANGELOG entry and the C7 log
+row state zero's limits for good, and they should not overstate them. *Fix*: add
+to the stated limits that outside `templates/` a line or block that carries a
+`vendor-ok` marker is exempt by design, that those files do not ship, and that
+`info=` is the only sign of a name added under a marker.
+
+### Verdict
+
+**REVISE.** NU-SR1 blocks: it is the one place where the note's safety rests
+on an untested assumption about tree bytes no hash vouches for, and the fix is
+test cases and one mutant. NU-SR2 to NU-SR6 tighten criteria and wording and
+can be answered in the same revision. Status moves to `revising-plan`. No
+question for the Maintainer: every fix stays within the accepted text.
+
+### What I did not cover
+
+* **I did not build the note.** Everything about C8-C9 is read from the plan
+  and tested on stand-ins and on the shipped engine's own functions, not on the
+  implementation, which does not exist yet. Boundary C owns that.
+* **I did not run the full suite or any acceptance criterion's command.** They
+  check the implementation; there is none yet.
+* **I did not read the content of the 33 Python rewordings**, which are not
+  written yet; I classified the hit lines they will change.
+* **Windows and other non-POSIX platforms.** The `getattr(os, ..., 0)` flags
+  degrade to 0 there; I took `docs/quickstart.md`'s POSIX scope as given and
+  did not test it.
+* **Unicode look-alikes in names** (a Cyrillic letter inside "Claude") were not
+  planted. They fall under the plan's named "hiding a name on purpose" limit.
+* **The ordinary Internal review's ground**: chunk sizing, sequencing with
+  later plans, prose quality, and whether C9's "Two real trees" figures are
+  right.
+* **The C10 guide text, as an adopter would read it cold.** I checked that its
+  required phrases match SR17, not how it reads.
