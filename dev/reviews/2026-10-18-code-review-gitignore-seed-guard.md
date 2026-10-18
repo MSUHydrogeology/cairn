@@ -360,3 +360,132 @@ sentence to `bootstrap/UPGRADE.md`.
 defect is closed"; its fix is a few lines in one file, tested in a scratch copy.
 GS-CR2 to GS-CR6 can ride that follow-up. The four commits themselves need no
 change.
+
+
+## Verification of the answer -- Claude Sonnet 5.5 -- 2026-10-18
+
+**Scope**: a Boundary C check of the author's answer, commit `b5c7a4bd`
+(GS-CR2 to GS-CR6). It is not a fresh review. GS-CR1, the `session-start` writer,
+is a separate repair that is still in progress, and this pass leaves it alone: it
+**stays open**. The answer changes implementation bytes (`create_dev_tree`, three
+refusal lines, the tests), so the record in the first pass does not cover it.
+
+**Verdict**: **GS-CR2 to GS-CR6 are closed. The answer introduces no defect.** I
+found one new, non-blocking gap in what the tests pin (GS-CR7); the shipped code is
+right.
+
+**In plain terms.** The author did more than ask. I had asked for the install's
+tests to notice a refusal that comes late. The author also fixed the cause: the
+step that makes the `dev/` folders now checks every one of its 13 folders before
+making the first, so a link at `dev/` or anywhere below it stops the install with
+nothing created, on either side of the link. Before the answer, a link at 6 of those
+13 folders let the install create folders at the far end of the link. After it, all
+13 refuse. The refusals that the differential oracle pins are unchanged.
+
+| Finding | State | Evidence |
+|---|---|---|
+| GS-CR2 (Boundary B record) | **closed** | The body carries a full-mode record: Python 3.13.13, 2 failed (the AST pair), 3509 passed, gates exit 0. It was run on `20f145ed` plus one scratch commit, and `b5c7a4bd` sits on later commits that add one more change to a test file (`bootstrap/tests/test_verify_integrity.py`, from another session). I ran the pair on `b5c7a4bd` itself: `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` gave **2 failed, 3509 passed** in 744 s (12 min 24 s), Python 3.13.13, tree clean before and after. The two failures are the AST pair, `test_ast_gate_passes_over_the_full_scaffold_module_set` and `test_committed_baseline_accounted_for_across_the_engine_package`; no skip, xfail or xpass was reported. That is the body's figure exactly. `scripts/quality_gate.py --sub neutrality --sub redundancy` exits 0, 0 failures each. The five AST digests in the body equal the ones I derived by the runbook's Step 1 (CHANGED 5, MISSING 0, DUPLICATE 0, NEW 86). |
+| GS-CR3 (first-write ordering not pinned) | **closed** | My B3b break (dry runs keep the early check, a real install refuses after `create_dev_tree`) now fails 2 tests; it passed the whole suite before. The two install tests compare the whole target tree, files and empty folders. The cause is closed in the writer: `create_dev_tree` (`bootstrap/_scaffold/install.py:188`) checks all 13 folders before its first `mkdir`. See the checks below. One narrower pin gap remains: GS-CR7. |
+| GS-CR4 (`SECURITY_MUTATIONS.md` line 12) | **closed** | The new sentence lists where a command turns the error into exit 2. I checked it against the eight `except ScaffoldSecurityError` sites in `bootstrap/_scaffold/cli.py` and `bootstrap/_scaffold/upgrade.py`: it matches. It says everything else is a traceback with exit 1, which the oracle pins. Measured on `b5c7a4bd`: an install over a dangling `AGENTS.md` link exits 1 with a traceback naming `ScaffoldSecurityError` and 13 paths written first, byte for byte the same figures as on `3ba6f230`. The new Class A row for `create_dev_tree` is accurate. |
+| GS-CR5 (gate-manifest row) | **closed** | The row names the two frozen files, the five AST symbols and 16 unpinned nodes. I collected the three test files: exactly 16 nodes are missing from the pinned collection (8 in `TestGitignoreSeedingRefusesLinks`, 5 in `TestDevTreeRefusesLinks`, 3 in `test_skills_upgrade.py`), and no pinned node in those files stopped collecting. The manifest still holds the pre-repair blob ids. I did not check the row's "eight, not seven" count: at this commit 35 frozen files differ from the manifest once every session's work is counted. |
+| GS-CR6 (refusal names no remedy) | **closed** | The remedy is on all three refusal lines. Removing it at each site fails a test: main's line 3 tests, `--adopt-module`'s 1, `--stage`/`--apply`'s 2. `bootstrap/UPGRADE.md` now has a paragraph that says a linked `.gitignore` is refused wherever it points and what to do. The inventory row records the decision that the stricter rule stays. |
+| **GS-CR7** (new, non-blocking, low) | open | The new guard is pinned at 2 of its 13 folders. See below. |
+
+### What I checked on `b5c7a4bd`
+
+* **A link at every folder `create_dev_tree` makes.** The set is `_DEV_DIRS` (13
+  members, listed from the tree). I planted a link at each member in turn, pointing
+  at an empty folder outside, and ran the real CLI (a subprocess, to see the exit
+  code). Real install: exit 1, a traceback naming `ScaffoldSecurityError`, **0 paths
+  created in the target and 0 at the far end, for all 13**. Install `--dry-run`: exit
+  0 for all 13, as for a dangling `AGENTS.md` link. On `3ba6f230` the same probe
+  created folders at the far end for 6 of the 13 (`dev` received 7), and installs
+  over a link at 4 others finished with exit 0.
+* **The oracle's pinned refusals.** The three `test_oracle*.py` files: 57 passed.
+  `test_oracle_privileged_workflows_preserved` and
+  `test_oracle_gate_does_not_silently_skip_required_scenarios`, which compare the
+  current engine with the gate's baseline engine on the planted-`AGENTS.md`-link
+  scenario, pass and are not skipped. A linked `dev/` raising with exit 1 and a traceback is the same shape as
+  that scenario, which is what the answer intends.
+* **Mutations on `b5c7a4bd`**, each alone in a fresh worktree. Suite: 13 test files
+  that read the touched code (410 tests; the control passes 410).
+
+| Id | Break | Suite | Verdict |
+|---|---|---|---|
+| B3b | my earlier break: real install refuses only after `create_dev_tree` | 2 failed | killed (was: survived) |
+| B3 | `main`'s preflight after `create_dev_tree`, dry runs included | 3 failed | killed |
+| B1 | delete `main`'s preflight | 3 failed | killed |
+| B6 | delete `cmd_upgrade`'s preflight | 2 failed | killed |
+| C4 | bypass the guard at `write_local_env` | 0 failed | equivalent while B1 stands; with B1 gone (C4x) it leaks, install writes through the link, exactly as before the answer |
+| C6 | bypass the guard at the `--stage` seed | 0 failed | equivalent while B6 stands; with B6 gone (C6x) it leaks, as before |
+| D1 | delete the new guard loop | 6 failed | killed; the probe then creates folders at the far end |
+| D2 | guard each folder just before its own `mkdir` | 1 failed | killed (a link at `dev/plans` leaves a partial tree) |
+| D3 | guard only the first folder | 2 failed | killed |
+| D4 | guard skipped when `dry_run=True` | 2 failed | killed by the direct-call tests; the CLI never calls it that way |
+| D5a, D5b, D5c | remedy removed at each refusal line | 3, 1, 2 failed | killed |
+
+* **The new tests can fail.** On the previous engine (`3ba6f230`) with the answer's
+  test files copied in, 12 of 29 nodes fail: the four install and adopt tests that
+  now compare the tree or look for the remedy, the five `TestDevTreeRefusesLinks`
+  nodes, the stage and apply tests, and `test_guarded_write_functions_still_call_a_containment_guard`.
+* **Gates at `b5c7a4bd`**: `scripts/quality_gate.py --sub neutrality --sub redundancy`
+  exits 0, 0 failures each (the neutrality hits I reported in the first pass have
+  since been cleaned up by other sessions).
+
+### [GS-CR7] non-blocking (low) — the new guard is pinned at 2 of its 13 folders
+
+`TestDevTreeRefusesLinks` plants a link at `dev` and at `dev/plans`. Both are
+folders with children, so another member's guard also catches them: the check for
+`dev/plans/archive` sees its parent is a link. I mutated each of the 13 members
+alone (the guard skips that one member; E0 to E12). **All 13 pass the 410 tests.**
+Measured with a link planted at the skipped member:
+
+* the six folders with children (`dev`, `dev/proposals`, `dev/plans`,
+  `dev/strategy`, `dev/upstream`, `dev/modules`): still refused, 0 paths created.
+  Equivalent.
+* four leaf folders (`dev/proposals/archive`, `dev/plans/archive`,
+  `dev/strategy/archive`, `dev/modules/onboarding`): the install **finishes with
+  exit 0** over the linked folder, 86 paths written, nothing written through the
+  link.
+* three leaf folders (`dev/upstream/archive`, `dev/rules`, `dev/.cairn`): refused,
+  but late, by another writer, after 24, 26 and 41 paths were already created.
+
+None of these writes through a link, so there is no hole. The claim "nothing made at
+either end" for a link at a leaf folder rests on the shipped guard alone, and no
+test would notice if a member were dropped from it.
+
+**Fix.** Parametrize `test_create_dev_tree_refuses_a_linked_folder_and_makes_none`
+over `_DEV_DIRS` instead of the two names `["dev", "dev/plans"]`. The helper
+already builds any link path, so it is a one-line change.
+
+### Seen, not raised
+
+* **A dry run does not predict a linked-folder refusal.** `main` returns from the
+  dry-run branch before `create_dev_tree`, so `--dry-run` exits 0 over a linked
+  `dev/` and the real install then exits 1. That is the pinned family's existing
+  behaviour (a dangling `AGENTS.md` link does the same), so I do not ask for a
+  change.
+* **A linked `dev/` subfolder is now refused on a re-install.** Before the answer,
+  an install over a link at four leaf folders finished. This is the deliberate
+  stricter rule. `bootstrap/UPGRADE.md` documents it for `.gitignore` only, and the
+  refusal for a linked `dev/` folder is a bare traceback with no remedy line.
+* **GS-CR1 is untouched, as agreed.** The `session-start` writer is still the one
+  open blocking finding from the first pass.
+
+### What I ran
+
+Python 3.13.13 at `/Users/kendal30/conda_envs/lhm/bin/python3.13`, darwin,
+`PYTHONDONTWRITEBYTECODE=1`. Every write ran in a detached `git worktree` of
+`b5c7a4bd` (or of `3ba6f230` for contrast) in a fresh folder under the session
+scratchpad, removed afterwards; the shared checkout was only read.
+
+* The full pair on a clean worktree of `b5c7a4bd`: 2 failed (the AST pair), 3509 passed, 744 s, Python 3.13.13, clean before and after, gates exit 0.
+* AST Step 1, the two gates, a collection of the three changed test files against
+  the pinned manifest.
+* The 13-member link probe (real install and `--dry-run`) on `b5c7a4bd` and on
+  `3ba6f230`; the oracle files; 15 mutant runs of the answer plus 13 per-member mutants and a
+  control, each in its own worktree.
+* **Not rerun**: the call-site mutants I did not name above (C1 to C3, C5, C7, C8)
+  and the first-pass variants of the `.gitignore` object; the answer's changes do not
+  touch their code. Windows, case-insensitive aliases and a real shell startup file
+  stay uncovered, as in the first pass.
