@@ -6,9 +6,6 @@
 **Assurance path**: high-assurance — inherited: the change edits the authoring templates and the axis prose that adopters' bootstrap reads.
 **Opened**: 2026-10-18
 
-Proposed paths:
-- `bootstrap/tests/test_scientific_check_guidance_ships.py`
-
 External-repo paths:
 - `dev/proposals/archive/2026-08-27-claude-stor-modflow-flopy-layer.md`
 - `dev/proposals/2026-08-27-claude-stor-modflow-flopy-layer.md`

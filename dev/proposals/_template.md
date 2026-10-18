@@ -213,6 +213,52 @@ carries no lexical signature, and no question here finds it.
 **Prospective only.** This accounting applies to active and future artifacts;
 an archived proposal or plan is immutable and is never retro-fitted with it.
 
+### Independent scientific check
+
+*Gated to a change that touches a scientific assumption, or a result the
+project publishes or acts on: a governing equation, a unit or sign convention,
+a boundary condition, a parameter default, a calibration setup, or a coupling
+between models. For every other change, one line — "N/A: no scientific
+assumption or result touched" — is the correct entry.*
+
+Name **one** check that could show the change is wrong about the world, not
+only about itself:
+
+* **What it compares.** The quantity, the expected value, and the tolerance
+  with its source. Say whether the data behind the expected value is in hand
+  and has been checked. If the check depends on data that does not exist yet,
+  say so.
+* **Why the expectation is independent.** Neither the proposed code nor a test
+  written from the same understanding computes it. Its basis is one of these:
+  * an analytical or manufactured solution;
+  * a conservation law chosen against the error this change risks (a closed
+    budget does not catch a wrong input);
+  * a trusted observation or benchmark;
+  * an independent implementation, or the saved output of the model the code
+    reads (independent of the port, not of the model's physics);
+  * a domain expert's expectation, written down before the result is seen.
+* **The error it would catch.** The plausible mistake under which the check
+  fails (a reversed sign, a unit slip, a misplaced boundary, a missed
+  warm-up). This is security preflight S2's "Can it fail?", asked of a
+  scientific check. At implementation, the implementer makes that mistake on
+  purpose and records the check's failing output.
+* **When the check passes by finding nothing.** A check that passes on "no
+  change", "no difference" or "no effect" is evidence only if it could have
+  found a change. Show the same analysis detecting a known effect of the size
+  that matters (a positive control), or say plainly that it cannot. The failing
+  run above serves as the control when the mistake it makes produces an effect
+  of that size. At implementation, the implementer records the control with the
+  failing run. For example, an analysis that reports no streamflow depletion
+  from a pumping well first recovers the depletion of a synthetic well of
+  comparable rate.
+
+**Reviewers.** The proposal reviewer challenges whether the basis is really
+independent of the code under review. The code reviewer verifies the recorded
+failing run and, where one is owed, the positive control, and re-runs them when
+that is cheap. The Maintainer judges at the Decision whether this is the right
+check and the expected value is right. If no independent basis exists, say so;
+the Maintainer weighs that, and it is not a reason to invent one.
+
 ## Signals the change is wrong
 
 What you would expect to see if this turns out to be a mistake. Written now,

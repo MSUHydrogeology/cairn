@@ -115,6 +115,14 @@ questions only where its chunking changes an answer — most often S2
 (which chunk runs the mutation) and S3 (which gate command fires the
 check).
 
+**An independent scientific check is accepted scope.** If the proposal names
+one, it becomes an acceptance criterion. A replacement qualifies only if it
+fails under the error the original names. If nothing qualifies, dropping the
+check is a scope reduction under *Scope delta* and needs the Maintainer's
+quoted allowance. Saying that the result now rests on the implementation does
+not settle it. When the check fails for real during implementation, one line
+records whether anything else would have shown the error.
+
 
   <!-- cairn:slot acceptance-doc-tooling -->
   (Adopter-specific doc-generation tooling — the exact schema source +
