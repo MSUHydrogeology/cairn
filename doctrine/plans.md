@@ -351,7 +351,10 @@ Bounding verdict reviews it afterwards. It runs before the commit, not after, on
 exactly the bytes being committed: a tree clean apart from the change, or a
 separate copy holding only it. Its record is its commit body, not a plan
 section, and carries the mode, the interpreter, and on `bounded` every field the
-bounding claim above names.
+bounding claim above names. An accepted proposal implemented in one commit with
+no plan records its result the same way, in its commit body, and if it ran fewer
+than all the tests, the code reviewer's Bounding verdict rules on whether the
+tests chosen were enough.
 
 **An already-open plan keeps the verification contract written in it.** Bounded
 mode becomes available to it only through that plan's own explicit, append-only
