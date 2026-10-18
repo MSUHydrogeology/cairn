@@ -235,6 +235,10 @@ of edit:
   `ready-to-implement` / `implementing` / `awaiting-code-review` /
   `revising-code` / `ready-to-archive` / `archived`) plus
   the "last update" date.
+* The `**Waiting on Maintainer**: <what>` header line, beside `Status`:
+  written when a plan's next move becomes the Maintainer's (a fenced
+  chunk, a `defer` batch, a deviation request), and deleted when they
+  answer. A change note carries it the same way.
 * Checkboxes / progress indicators in the Sequence section.
 * Commit hashes filled in as commits land.
 * Verification notes (test counts, runtime, tooling output).

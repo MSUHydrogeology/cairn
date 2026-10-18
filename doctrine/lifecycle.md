@@ -143,7 +143,13 @@ flowchart LR
 <!-- retired-vocabulary-ok: this paragraph names the retired flat tokens deliberately, to say where they went and why -->
 **Each status names who holds it next.** That is the point of the
 vocabulary: a reader — or a board — can tell from the status alone
-whose move it is. The earlier flat tokens (`proposed`, `reviewed`,
+whose move it is. **One exception, inside a plan:** its status names an
+author or a reviewer, but a chunk fenced to the Maintainer (marked
+`MAINTAINER-GATED` or `MAINTAINER-ONLY`), a `defer` batch, or a deviation
+request hands the next move to the Maintainer while the status stays put.
+The plan then carries a `**Waiting on Maintainer**: <what>` header line,
+which the board lists. A proposal needs none, because `awaiting-decision`
+already names the Maintainer. The earlier flat tokens (`proposed`, `reviewed`,
 `revised`) named a *phase* and left the owner to be inferred, which
 is why they were retired. They stay readable on archived artifacts
 and in longitudinal metrics, and are refused on an active one.

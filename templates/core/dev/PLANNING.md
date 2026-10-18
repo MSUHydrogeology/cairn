@@ -94,6 +94,13 @@ reaffirmed (e.g. `(May 2026)`). The marker makes the staleness sweep
 memory. Refresh the marker whenever the item is reaffirmed at a
 goodnight scrub.
 
+**Marking a row the Maintainer must move.** When a row's next move is the
+Maintainer's alone (a ceremony only they run, a question only they answer, a
+go-ahead only they give), add a line inside the row of the form
+`**Waiting on Maintainer**: <what>`, under 48 characters, after any leading
+spaces and at most one `* ` or `- `. `python tools/board.py --maintainer`
+then lists the row. Delete the line when they answer.
+
 ## Archive preconditions (proposals and plans)
 
 Before a proposal or plan moves to `archive/`, every

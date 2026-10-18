@@ -44,6 +44,19 @@ accepted scope removed**. Removal counts in both directions: accepted scope is
 a floor, and a reviewer cannot create authority to narrow by calling the
 remainder out of scope.
 
+**The Waiting line.** When a plan's next move becomes the Maintainer's, write
+one header line, `**Waiting on Maintainer**: <what>`, in the header block,
+beside Status, and delete it when they answer. Write it at three moments: work
+reaches a fenced chunk (one marked MAINTAINER-GATED or MAINTAINER-ONLY), you
+put a `defer` batch to the Maintainer, or you make a deviation request. Keep
+`<what>` under 48 characters, the board's cell width; the detail stays in the
+plan. A change note (`dev/plans/<slug>.md`) carries the line the same way. The
+colon sits outside the bold, exactly as shown: with the colon inside the bold
+the board does not read the line. `python tools/board.py --maintainer` lists
+every artifact that carries it. This paragraph sits above the rule, so the line
+is described here and not printed in the header below: a header line the board
+reads would list every new plan as waiting.
+
 ## Forward-reference paths
 
 A path that does not exist yet trips `claim_check`. Declare it instead — the
@@ -85,7 +98,9 @@ slot is a review finding.)
 One row per chunk: what it does, what gates it, roughly what it ships. Mark a
 chunk MAINTAINER-GATED or MAINTAINER-ONLY where approval is actually
 load-bearing — that fence, not a blanket per-commit gate, is where approval
-binds to something specific.
+binds to something specific. When work reaches a fenced chunk, write the
+Waiting line (`**Waiting on Maintainer**: <what>`) in the header block, beside
+Status, and delete it when the Maintainer answers.
 
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
@@ -217,6 +232,9 @@ performing the deposit. An item left only in a plan that then archives is
 invisible to anyone looking for outstanding work, and archived artifacts are
 not scanned by default -- so it is not deferred, it is lost. Present `defer`
 requests as **one batch**; that batching keeps the Maintainer gate affordable.
+When you put the batch to the Maintainer, write the Waiting line
+(`**Waiting on Maintainer**: <what>`) in the header block, beside Status, and
+delete it when they answer.
 
 Record the outcome as a `Dispositions: ...` line so it reconstructs from the
 durable record alone. **An append re-opens the attestation**: this section is
@@ -268,3 +286,10 @@ Prior findings: <ids being closed, or none>
 
 **Bounding**: ACCEPTED | FULL RUN REQUIRED — recorded only after challenging a
 named surface or mapped test, never because the field is present.
+
+**Waiting-line check.** `git log -p` on the plan must show a Waiting line for
+each fenced chunk whose fence became the next move inside the reviewed range,
+and for each deviation request made in it. A fence the range did not reach is
+not checked, and one whose wait is declared on a marked board row is checked
+there. A missing line is a finding, recorded in
+the project's incident tracker.
