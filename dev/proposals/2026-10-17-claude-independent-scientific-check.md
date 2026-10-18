@@ -1,9 +1,9 @@
 # One independent scientific check: the first step on scientific correctness
 
 **Author**: Claude (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: required(External)
-**Plan review**: required(Internal) — prose edits to two authoring templates (each with its self-hosted twin), one doctrine lens, and three kernel sentences; no engine, install-contract or trust-boundary surface
+**Plan review**: required(Internal) — prose edits to two authoring templates (each with its self-hosted twin) and three kernel sentences; no doctrine, engine, install-contract or trust-boundary surface
 **Opened**: 2026-10-17
 
 ## Context
@@ -564,3 +564,439 @@ earlier and more cheaply.
 * **Q2.** Close #18 as a duplicate of #19, not as "met". Three of #18's four
   disciplines and both of its sub-threads remain open.
 * **Q3.** Agreed, once the trigger is named ([SC6]).
+
+## Response -- Claude (author) -- 2026-10-17
+
+Responds to the External review at `acd095ba`. I accept all seven findings.
+For SC3, the path I chose is template guidance, with no doctrine edit. I
+re-read the LHM records the review cites, and each correction holds:
+
+* `stor-modflow-correctness`, lines 564–590, 880–887, 1036–1052,
+  1146–1172 and 1218–1229;
+* `cedar-creek-test-dataset`, lines 1832–1841.
+
+The header's Plan review note is updated to match. Its tier is unchanged.
+
+| Finding | Disposition | Where it lands in Revision 1 |
+|---|---|---|
+| SC1 | accept | Context restated; edits 1 and 2 take satisfiers (a) and (b) |
+| SC2 | accept | reviewer duties move into the block; promise repointed at the check alone; fallback removed |
+| SC3 | accept | case argued on recurrence; the independent-basis half named as argument; whole step lands as template guidance |
+| SC4 | accept | reference-implementation basis added, with its limit |
+| SC5 | accept | implementer records the failing run; reviewer verifies it |
+| SC6 | accept | revisit tied to a tracked row; the count described as remembered |
+| SC7 | accept | argument added for the Maintainer to accept or reject; "worked example" claim withdrawn |
+
+**SC1. The LHM account was wrong, and so was "this sentence answers it".**
+
+* *What I got wrong.* At the withdrawal, the plan already wrote that the term
+  "rests on the faithfulness of the port, not on agreement with the model".
+  That is my edit 2's escape, met in advance.
+* *What the errors were.* They were drift: two accepted Blocker items
+  (priming the stack, the RAMP shift) that implementation left out. They were
+  not a misunderstanding shared by code and tests.
+* *What caught them.* An External code review found them before archive. It
+  was a structural check, working later and at higher cost.
+* *The sign.* I had it backwards. "Pre-fix minus corrected" is +14.75 kg m⁻²,
+  so the fix *lowered* the domain-mean unsaturated anomaly by that amount. The
+  split is +14.91 from priming and −0.15 from the shift. The full-series mean
+  went from +13.5 to −1.2 kg m⁻².
+
+**Walking revised edits 1 and 2 through the record.** Neither edit proves
+the error would have been prevented. Both put the loss in front of the
+Maintainer while the remedy was still cheap: save as v7.3 and re-run. Without
+them, code review would have found the loss later.
+
+* **Edit 1, at the source proposal.** "What it compares" must now say
+  whether the expected value's data is in hand and has been checked. The claim
+  that the output file carries `unsatStorage` was repeated across three
+  responses and checked by nobody (lines 564–570). Writing "in hand, checked"
+  would have meant opening the file, and the file would have shown the
+  variable missing before the Decision.
+* **Edit 2, at plan revision (2026-08-27).** The closed-mass replacement
+  "never exercises real calendar dates" (lines 880–884), so it cannot fail
+  under a priming or calendar error. It therefore does not qualify. The
+  withdrawal becomes a scope reduction that needs the Maintainer's quoted
+  allowance, and the author's one line no longer settles it.
+
+**SC2. Accepted.** I confirmed four facts:
+
+* A rule that lives only in `doctrine/` binds no adopter
+  (`bootstrap/tests/test_scope_reduction_trap.py:3`).
+* The lens copy adopters receive sits in the `dual-review` module
+  (`templates/modules/team-gated/dual-review.md:66`).
+* That module installs only for concurrent multi-type agent teams
+  (`bootstrap/BOOTSTRAP.md:152`).
+* Repointing the promise at lens 8 would have repeated the defect it fixes.
+
+The reviewer duties now sit in the block, which every adopter receives. No
+lens copy is edited, so the three-copy pin and the merge-pending note are not
+needed.
+
+**SC3. Accepted, and the synthesis claim is withdrawn.** The fold-back harvest
+is not the gate's routine boundary.
+
+* *What clears the gate.* Recurrence: stor-modflow (2026-08-27) and
+  cedar-creek (2026-09-29), both recorded in LHM plan records. They support
+  one half of the block: name the error, and show that the check fails under
+  it.
+* *What rests on argument.* The independent-basis half has no occurred
+  incident behind it. It rests on the guide star (lines 223–232) and on the
+  V&V literature.
+* *Why template guidance.* Adopters never receive `doctrine/`, so a doctrine
+  sentence would add weight without reaching anyone. The templates are what
+  actually bind. The recurrence-backed half could clear the gate today, but as
+  doctrine it would reach only module adopters, in three copies. So I defer it
+  together with the rest.
+
+Dropping edit 3 reduces the opening's scope. It is recorded under Scope delta
+for the Maintainer to concede.
+
+**SC4, SC5 and SC6. Accepted.**
+
+* *SC4.* The basis LHM actually lost (the model's own saved state) now has a
+  place in the list.
+* *SC5.* The implementer breaks the code deliberately and records the failing
+  output. The reviewer verifies that record and re-runs it when that is cheap.
+  This follows the shape of S2.
+* *SC6.* The ten-check count spans repositories Cairn's routines do not read,
+  so it is described as what it is: something the Maintainer has to remember.
+
+**SC7. Accepted.** The argument is added below for the Maintainer to accept or
+reject. I also withdraw the claim that the first real use "is the guide star's
+worked example". That move sits behind the gate, and it carries reproduction
+and plain explanation, which this change does not.
+
+**The strongest alternative.** I agree that ungating S2 is a stronger rival
+than the whole axis, and Revision 1 records it that way.
+
+**Status.** The revision removes one edit and adds fields within the same two
+templates, so scope is not widened. Status moves to `awaiting-decision`.
+
+## Revision 1 -- Claude (author) -- 2026-10-17
+
+The complete current contract. It supersedes every section above it.
+
+### Context
+
+Every scientific change answers two questions. *Is it well built?* That is
+structural correctness, and every review Cairn ships asks it. *Is it right
+about the world?* That is scientific correctness, and Cairn has no doctrine
+for it: lens 8 (`doctrine/dual-review.md:386`) asks only that methods be
+"grounded and documented". Issues #18 and #19 ask Cairn to fill the gap. Their
+label G11 was removed by the guide star's 2026-08-11 rewrite, but the gap
+itself survives at lines 278–282 of
+`dev/strategy/2026-05-14-claude-human-ai-team-development-framework.md`.
+
+**Structural review cannot break a shared misunderstanding.**
+
+* *Units.* A recharge array in inches per year, in a model built in feet and
+  days, still closes its budget, because the solver balances what it is given.
+* *Calibration.* In steady state, heads alone often constrain little more
+  than recharge over conductivity. Double both and the fit barely moves.
+* *Signs.* Reverse the stream–aquifer exchange, and a test written from the
+  same reading of the convention still agrees with the code.
+
+In each case code, tests and reviewer agree. "Agreement between agents
+establishes consistency, not correctness" (guide star, line 224). The
+guide star asks for "one well-chosen acceptance check" whose basis lies outside
+the implementation (line 232).
+
+**What has occurred is narrower: twice in LHM, a check that could not fail
+under the error that mattered.**
+
+* **stor-modflow (2026-08-27).** The source proposal's independent check
+  compared the port with the model's own saved `unsatStorage`. Three responses
+  repeated that the array existed, and nobody checked. The Internal plan review
+  found it had never been saved, because it was over MAT v7's 2 GB limit.
+* *What replaced it.* At plan revision, after the Decision, the check gave way
+  to a closed-mass test on synthetic data. The plan stated plainly that the
+  term now "rests on the faithfulness of the port".
+* *What went wrong next.* Implementation then left out two accepted Blocker
+  items: priming the percolation stack, and the RAMP-period shift. The
+  replacement could not fail under either.
+* *What caught it.* An External code review found both before archive. The
+  fix lowered the domain-mean unsaturated anomaly by 14.75 kg m⁻² over 312
+  months: +14.91 from priming and −0.15 from the shift, pre-fix minus
+  corrected. The full-series mean went from +13.5 to −1.2.
+* **cedar-creek (2026-09-29).** A per-member digest check "at first failed
+  none" under mutation, because every test's manifest was internally
+  consistent.
+
+Structural review did catch the drift, but later and at higher cost than the
+lost check would have. The record holds **no** occurred instance of a
+shared-misunderstanding error. That half of this proposal rests on argument.
+
+**What exists today.** Each item was found by a grep, re-run against a known
+hit.
+
+* **The complexity promise is empty.** `dimensions/complexity.md:37` promises
+  a "scientific-trust review lens". No module in the I-5 gate table
+  (`bootstrap/BOOTSTRAP.md:96`) installs one.
+* **Lens 8 rarely reaches adopters.** Adopters never receive `doctrine/`. The
+  lens reaches them only through the `dual-review` module, and that module
+  installs only for concurrent multi-type agent teams
+  (`bootstrap/BOOTSTRAP.md:152`).
+* **S2 covers security only.** S2 (`dev/proposals/_template.md:194`) asks
+  "Can it fail?" of security checks alone.
+* **Nothing else exists yet.** The four disciplines the issues name exist
+  only in LHM's strategy note. The governance axis #19 would reframe is not in
+  `dimensions/`.
+
+### Proposal
+
+**Each scientific change names one independent scientific check.** This is
+template guidance with no doctrine weight. It takes three edits, and the plan
+settles their wording.
+
+1. **Proposal template** (`templates/core/dev/proposals/_template.md` and twin
+   `dev/proposals/_template.md`). Add a gated block under *Evidence /
+   verification plan*. Draft:
+
+   > **Independent scientific check.** *Gated to a change that touches a
+   > scientific assumption, or a result the project publishes or acts on.
+   > That covers a governing equation, a unit or sign convention, a boundary
+   > condition, a parameter default, a calibration setup, or a coupling
+   > between models. Otherwise write "N/A: no scientific assumption or result
+   > touched".* Name **one** check that could show the change is wrong about
+   > the world, not only about itself:
+   >
+   > * **What it compares**: the quantity, the expected value, and the
+   >   tolerance with its source. Say whether the data behind the expected
+   >   value is in hand and has been checked. If the check depends on data
+   >   that does not exist yet, say so.
+   > * **Why the expectation is independent**: neither the proposed code nor
+   >   a test written from the same understanding computes it. Its basis is
+   >   one of these:
+   >   * an analytical or manufactured solution;
+   >   * a conservation law chosen against the error this change risks (a
+   >     closed budget does not catch a wrong input);
+   >   * a trusted observation or benchmark;
+   >   * an independent implementation, or the saved output of the model the
+   >     code reads. That basis is independent of the port, not of the
+   >     model's physics;
+   >   * a domain expert's expectation, written down before the result is
+   >     seen.
+   > * **The error it would catch**: the plausible mistake under which the
+   >   check fails (a reversed sign, a unit slip, a misplaced boundary, a
+   >   missed warm-up). This is security preflight S2's "Can it fail?", asked
+   >   of a scientific check. The implementer makes that mistake on purpose
+   >   and records the check's failing output.
+   >
+   > **Reviewers.** The proposal reviewer challenges whether the basis is
+   > really independent of the code under review. The code reviewer verifies
+   > the recorded failing run, and re-runs it when that is cheap. If no
+   > independent basis exists, say so. The Maintainer weighs that at the
+   > Decision; it is not a reason to invent one.
+
+2. **Plan template** (`templates/core/dev/plans/_template.md` and twin),
+   *Acceptance criteria*. Draft:
+
+   > **An independent scientific check is accepted scope.** It becomes an
+   > acceptance criterion. A replacement qualifies only if it fails under the
+   > error the original names. If nothing qualifies, dropping the check is a
+   > scope reduction under *Scope delta* and needs the Maintainer's quoted
+   > allowance. Saying that the result now rests on the implementation does
+   > not settle it. When the check fails for real during implementation, one
+   > line records whether anything else would have shown the error.
+
+3. **Repoint the promise at the check alone.** The sites are
+   `dimensions/complexity.md:37`, `dimensions/README.md:29` and
+   `bootstrap/BOOTSTRAP.md:65`. On a complex project, an unexplained N/A on a
+   change that touches a computed result is a review finding. No axis, axis
+   value or gate-table row changes.
+
+**Who does what.** The author names the check and says whether its data is in
+hand. The proposal reviewer challenges the basis's independence, and the
+Maintainer judges the check at the Decision, in their own terms. The plan
+carries it as accepted scope. The implementer records the deliberate break, and
+the code reviewer verifies that record. Hydrology examples: a pumping well
+against Theis; stream depletion against Glover–Balmer; an inversion that must
+recover a synthetic truth; a post-processor against the model's own saved
+budget.
+
+**Later work, recorded but not built.** The `deliverable` axis, its four
+disciplines, the governance reframe, and any doctrine statement of this rule
+all wait. The tracked trigger is the outside adoption the guide star requires
+(line 66), whose nearest row is `dev/PLANNING.md:661`, the third-party probe.
+At archive, the plan adds the axis revisit to that row. The Maintainer may also
+call the revisit at about ten real (non-N/A) checks across two projects. No
+routine counts those, because they live in other repositories, so this one is
+remembered. #19 stays open as the reminder.
+
+### Rationale
+
+* **It closes the escape that actually occurred.** A lost check now reaches
+  the Maintainer as a scope reduction. Whether the check's data exists is now
+  stated before the Decision.
+* **It reaches every adopter.** The solo scientist with one agent gets both
+  the author's and the reviewer's duties.
+* **It spends the Maintainer's domain attention on one question:** is this
+  the right check, and is the expected value right?
+* **It is restrained.** It costs one paragraph on a scientific proposal and
+  one line on any other. That keeps it within reach of the serious rival,
+  lighter practice (guide star line 59).
+* **It is not "further expansion".** The guide star's gate (line 66) governs
+  moves that add apparatus. This one adds no layer, module or round. It
+  replaces a false promise with a gated paragraph in two templates that
+  already exist, and the open-gap list (line 282) names it the cheap first
+  step. The Maintainer accepts or rejects this argument.
+
+### Alternatives considered
+
+* **Ungate S2 for every acceptance check** (the strongest alternative). It is
+  one sentence, it reuses a question Cairn already ships, and it would have
+  caught both counted occurrences. It loses on substance. A sign-reversed test
+  can fail under mutation and still share the code's wrong convention. Only an
+  independent basis reaches that. So the block keeps S2 as its third field and
+  says so.
+* **Lens-8 doctrine now, in all three copies, pinned.** It would reach only
+  module adopters. It needs three copies kept in step. It sends an adopter
+  with a customized slot to a merge-pending file on upgrade. And its
+  independent-basis half has no incident behind it. The template carries the
+  same duties to everyone.
+* **The whole `deliverable` axis now.** It would be designed from N=2, which
+  #19 calls "not enough to design the full value set from". None of its
+  disciplines is prototyped. It would also edit the engine's axis table
+  (`bootstrap/_scaffold/config.py:1274`) and the install contract.
+* **Gate the block on complexity.** That drops the check silently on a
+  mis-scored project.
+* **Prove-then-fold in LHM first.** That is right for the domain disciplines.
+  This check carries no domain content to prove, and LHM pilots it at its next
+  upgrade.
+* **A standing domain-review round.** It breaks one-round review, and a solo
+  project cannot staff it.
+* **Do nothing.** The escape stays open, and `dimensions/` keeps promising a
+  lens that nothing installs.
+
+### Documentation / doctrine surface
+
+These are governing-layer edits, routed per `docs/DOCUMENTATION_PLAN.md`: the
+two template pairs, plus prose in one axis position, one matrix row and one
+bootstrap sentence. There is **no `doctrine/` edit**. At archive, the plan
+updates the guide star's open-gap entry (line 278), a CHANGELOG line and the
+`dev/PLANNING.md` row above. The same-day proposal
+`2026-10-17-claude-maintainer-attention` edits other sections of the plan
+template, so whichever plan lands second rebases.
+
+**The rate-limit gate** (`doctrine/rationale.md:405`). The templates carry no
+doctrine weight. The `dimensions/` edit corrects a claim to match what ships,
+and adds no rule. If the gate reaches it anyway, it rests on recurrence: two
+occurrences about five weeks apart in LHM's plan records. That recurrence
+supports the fails-under-the-named-error half. The independent-basis half rests
+on argument alone, so it lands only as guidance.
+
+### Evidence / verification plan
+
+**Done when** four conditions hold:
+
+* both template pairs match outside their slots;
+* the block carries its three fields and the reviewer duties;
+* the three promise sites name the check;
+* `scripts/claim_check.py`, `python scripts/check_cairn.py`, and
+  `python scripts/quality_gate.py --sub neutrality --sub redundancy` pass,
+  with no vendor named in any template.
+
+**A falsification test that runs before landing.** The plan applies the block
+retroactively to `stor-modflow-correctness` and to one other archived LHM
+scientific plan. It records whether an author following the block would have
+named a check that fails under the error later found. If neither would, the
+block is ritual and the plan stops.
+
+**At the revisit**, a short retrospective reads the check blocks, code reviews
+and one-line records. The step is wrong if any of these hold:
+
+* **F1.** Every failing check's record names something else that already
+  showed the error.
+* **F2.** Most bases are "the Maintainer's expectation".
+* **F3.** Changes that touched an assumption carry N/A.
+* **F4.** The recorded failing runs are absent or cannot be reproduced.
+* **F5.** Failing checks keep coinciding with errors that code review also
+  catches. That would mean the block buys time, not coverage: a smaller claim,
+  and still worth having.
+
+If nothing fails and no later error surfaces, the result is inconclusive, not
+a pass.
+
+**Tests required.** Twelve files read the templates, including
+`bootstrap/tests/test_scaffold.py` (whose security-preflight slice must not
+swallow the block) and `test_scope_reduction_trap.py`. `test_profile_grammar.py`
+reads `bootstrap/BOOTSTRAP.md`. The plan maps them by grep. One new test, named
+for the property, holds the block and the plan sentence word-for-word identical
+across the twins. Test bytes change, so **Boundary B runs the full suite**
+under Python 3.13.x.
+
+**Smoke.** `python bootstrap/scaffold.py --summary --config <profile>` and
+`--dry-run` show the block installing.
+
+**Security preflight.** N/A: no trust boundary added, moved, or widened.
+
+### Signals the change is wrong
+
+* **Checks are written after the code.** The expected value shifts at code
+  review to match the result.
+* **The data status reads "in hand" and is not.**
+* **The gate misfires.** N/A appears on changes that touch results, or a
+  ritual check appears on tooling.
+* **The block grows discipline sub-lists.** That is the axis arriving by
+  accretion.
+
+### Scope delta
+
+**Scope delta**: degraded
+
+* **Edit 3, the lens-8 doctrine sentence, is removed.** Its outcome is
+  delivered, and more widely: reviewers are told to challenge the basis and
+  to verify the failing run. What is not delivered is the rule carrying
+  doctrine weight in Cairn's published methodology. I chose cutting over
+  specifying because a doctrine sentence reaches no adopter, and because its
+  independent-basis half has no incident behind it.
+  **disposition**: defer. It moves to the axis revisit, where the records
+  decide, and conceding it is the Maintainer's call.
+
+### Assurance path
+
+**Assurance path**: high-assurance. The change touches the authoring
+templates.
+
+### Questions for the Maintainer
+
+1. **Do you concede the Scope-delta entry,** landing the step as template
+   guidance and deferring the doctrine statement to the axis revisit?
+   *Recommended: yes.* Adopters never read `doctrine/`, and the
+   independent-basis half has no incident behind it yet.
+2. **Is a gated template paragraph outside the guide star's "before any
+   further expansion" gate?** *Recommended: yes.* It replaces a false promise
+   and adds no layer.
+3. **What happens to the issues?** *Recommended:* close #18 as a duplicate of
+   #19, not as met, and keep #19 open for the axis, the disciplines, the
+   governance reframe and the deferred doctrine. #18's export-safety
+   affirmation stays yours either way.
+4. **When do we revisit?** *Recommended:* when the third-party probe row
+   moves, or at your call once about ten real checks exist.
+
+### Withdrawn / superseded commitments
+
+* **Edit 3** (the lens-8 doctrine sentence): withdrawn. The reviewer duties
+  moved into the block (SC2, SC3).
+* **"This sentence answers the LHM incident"**: withdrawn as false (SC1).
+* **The Context's LHM account**: superseded (SC1). That covers the sign, the
+  "moved storage by +14.75" wording, and the framing of drift as a shared
+  failure.
+* **"Structural checks cannot reach it"**: narrowed to shared misunderstanding
+  (SC1).
+* **The synthesis-route rate-limit case**: withdrawn, replaced by recurrence
+  plus stated argument (SC3).
+* **The fallback** (hold lens 8; land edits 1, 2 and 4): withdrawn (SC2).
+* **Repointing the promise at "the check and lens 8"**: superseded by "the
+  check alone" (SC2).
+* **The code reviewer "confirms" the failure**: superseded. The implementer
+  records it, and the reviewer verifies (SC5).
+* **"The first real use is the guide star's worked example"**: withdrawn
+  (SC7).
+* **The ten-check count as a trigger**: superseded. It is now a remembered
+  heuristic, with a tracked row as the trigger (SC6).
+* **The `doctrine/dual-review.md` test mapping**: dropped, since no doctrine
+  file is edited.
+* **Q2's default "close #18 as met"**: superseded by "close as a duplicate of
+  #19".
