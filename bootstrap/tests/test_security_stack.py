@@ -1119,6 +1119,10 @@ def test_a_t4_output_is_bounded(orchb, monkeypatch):
     # the cap DOWN configures the *subject*; the oracle is the returned status
     # and the measured buffer length, neither of which the subject supplies.
     monkeypatch.setattr(orchb, "_TOOL_OUTPUT_CAP_BYTES", 64 * 1024)
+    # Killing the flooder is cleanup, which A-t6 owns. On a loaded machine the
+    # 5 s default grace ran out and the status read "truncated+cleanup-failed",
+    # failing this test for a property it does not test.
+    monkeypatch.setattr(orchb, "_TOOL_KILL_GRACE_S", 60.0)
     run = orchb._run_tool(
         _probe("import sys\n"
                "for _ in range(4096):\n"
