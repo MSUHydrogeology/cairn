@@ -1,7 +1,7 @@
 # Two checks you can trust: a neutrality gate that reads zero, and a note for slots an upgrade adds
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: required(External + Security Review)
 **Plan review**: required(Internal)
 **Opened**: 2026-10-17
@@ -959,3 +959,311 @@ The change reaches four sensitive surfaces:
 * **Q2 default "no; revisit if an adopter misses an upgrade-added slot."**
   Superseded by "not in this change; ride along with the next engine change to
   the upgrade path, or sooner on that miss."
+
+## Review -- Claude Opus 5.5 (Security Review, fresh session) -- 2026-10-17
+
+```
+Reviewed commit: 868d0d21f7df7c5540d4a53ee2c4f12652c4fde0
+Target: Revision 1, the binding contract, read against the code it relies on: the neutrality sub-gate, bootstrap/verify_integrity.py, the lockfile and --finalize code, the slot-marker rules, and every Python line Part 1 rewords
+Prior findings: none of this tier (NU1-NU5 are the External pass's and are not re-opened)
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised (3 blocking, 4 non-blocking)
+**Verdict**: REVISE
+
+Distance: a fresh session of the author's agent type, not a different type.
+This is the Security Review the header declares. It does not clear the
+obligation yet: SR1-SR3 must be answered first.
+
+### In plain terms
+
+Both parts are safe to build in principle. Neither touches the install engine,
+and the edits to the sensitive scripts really are comment-only. Three things
+need fixing first:
+
+1. **"Zero" would not mean "no vendor names ship."** The check cannot see a
+   name written in lower case, inside a hidden HTML comment line, or in two
+   kinds of shipped file it never opens. Three capitalized names already sit
+   where it cannot see them. As written, the rewording could pass by hiding
+   names instead of removing them.
+2. **The note's fix-it steps can bless a tampered file.** The recording command
+   it prints marks the *whole file* as trusted, not just the slot. The
+   proposal says that command refuses uncommitted work; in the form the note
+   prints, it does not (I ran it). An adopter following the note could stamp
+   an injected instruction in `AGENTS.md` as trusted.
+3. **Nothing yet guarantees the note can't change the verdict.** The proposal
+   promises the exit code never changes but not how. A bad lockfile entry could
+   crash the check, and the easy way to write the code could skip the tamper
+   check for a file.
+
+Each closes with a few contract sentences and tests, with no engine change.
+
+### The proposal at its strongest
+
+An always-red neutrality gate protects nothing. Part 1 clears it with rewordings
+and markers, adds no exemption to `templates/`, and leaves the checker's
+behaviour alone. Part 2 reads data the lockfile already keeps, warns rather than
+blocks, and checks its one new path before reading it. Much of what the author
+asked me to check holds:
+
+* **The edits are comment-only.** Python's own parser and tokenizer put all 33
+  Python hit lines in comments (16) or docstrings (17); none is code. No edited
+  file reads its docstrings at run time (`__doc__`, `getdoc`). The three
+  session-kernel hits (lines 215, 905, 1338) lie outside `_resolve_interpreter`,
+  `encode_display` and the call sites that run the resolved path. Pinned help
+  text is literal strings. Nothing reads `vendor_targets.yml`'s `_doc`, the
+  matrix generator included.
+* **The AST proof is the right instrument where it counts.**
+  `content_scan.py:329` is a comment between the string pieces of one regex,
+  and `_OHM_SIGNS` holds two look-alike characters that an editor's Unicode
+  normalization would merge. The proof catches both.
+* **"No exemption path in `templates/`" holds** as the gate means it. Part 1
+  adds no marker there, and the gate fails any `vendor-ok` or `case-study`
+  marker in `templates/` (`scripts/quality_gate.py:268-288`).
+* **The rate-limit claim is sound.** The markers change no rule.
+  `doctrine/consolidation-review.md` prescribes this disposition
+  (`accepted-exemption-added`) and its log row. The 2026-05-28 pass applied it
+  the same way to `docs/quickstart.md` and `bootstrap/fidelity-check.md`.
+* **The new read cannot leave the tree.** `resolve()` follows every link in the
+  path, so an outward parent-directory link fails containment, not only a leaf
+  link.
+* **No shipped Markdown hit is inside a slot body.** I re-ran this check, so
+  Part 1 cannot set off the reworded-placeholder gap.
+
+### What I checked
+
+All runs used Python 3.13.13 at the reviewed commit, on a `git archive` copy and
+scratch installs in my scratchpad, never the shared tree.
+
+* **The gate.** It reports `fail=74 info=21`. The 27 non-template hits are in
+  exactly 5 files.
+* **Three hidden plants, all in shipped templates:**
+  * a whole-line `<!-- Per Codex P2-5 -->` in
+    `templates/skills/session-start/SKILL.md`;
+  * a lower-case `claude` in a comment in `templates/skills/_lib/session.py`;
+  * `Per Codex P9` in `templates/modules/team-gated/content_scan_roots.txt`.
+
+  All three left the gate at 74. A visible prose plant then moved it to 75, so
+  the gate could have fired.
+* **The hint, on a file with an edit outside its slots.** On a fresh
+  `solo-greenfield` install, I filled `project-conventions` with the marker,
+  added a line outside every slot, and committed. `verify_integrity` exited 1,
+  and the hint named `AGENTS.md`. After `--finalize AGENTS.md`, it exited 0
+  with the outside edit recorded as trusted.
+* **Scoped finalize on a dirty tree.** I appended a line to
+  `dev/proposals/_template.md` without committing, then ran `--finalize` on
+  that path. It exited 0 and reported advancing the hash "to the committed
+  on-disk content". `verify_integrity` then exited 0.
+* **A prototype of the note's rule.** On a fresh install it lists the author's
+  20 slots, and all 27 base copies hash to their record's `base_hash`. With
+  `modules_remove: [security-verification]` it lists 21. The extra one is the
+  empty `AGENTS.md [security-verification]` slot.
+* **`content_scan.py` on marker reasons.** A `vendor-ok-begin` reason holding
+  an imperative gets "no flags". The same comment without the `vendor-ok`
+  prefix is flagged.
+* **`_SLOT_BODY_RE` on unclosed openers.** Its run time grows with the square of
+  their count: 2,000 take 0.6 s, and 16,000 (368 KB) take 35 s. Its `\S+` slot
+  name also matches terminal control bytes.
+
+### Findings
+
+**[SR1] (blocking) "Neutrality reads zero" can be met by hiding names, and three
+are already hidden.** If the only test of the rewording is the gate reading zero,
+a name that is lower-cased or moved into an HTML comment still passes, and still
+ships to every adopter. The gate has four blind spots:
+
+* **Case.** Matching is case-sensitive; S5 names this one.
+* **Comment lines.** In `templates/`, a line that is entirely one HTML comment
+  is skipped before the token scan (`scripts/quality_gate.py:278-279`):
+  `_is_directive_only_line` treats every such line as a directive. S5 does not
+  name this.
+* **File types.** `.json` and `.txt` files under `templates/` are never read
+  (`_NEUTRALITY_FILE_SUFFIXES`, `scripts/quality_gate.py:440`). Not named.
+* **Off-list names.** The `_doc` string Part 1 rewords also names GitHub
+  Copilot, Windsurf, Cline and OpenCode, none of them on the denylist.
+
+The second is live today. `reviewer="Claude (Implementation)"` sits in
+`cairn-accept` markers at
+`templates/modules/team-gated/api-access-security.md:101` and
+`templates/modules/team-gated/web-hosting-security.md:70` and `:93`. These are
+reviewer credits in shipped files, the same class as the 29, and the gate reads
+past them. `content_scan.py` does not check the `reviewer=` value, so rewording
+it suppresses nothing.
+
+*Closes when:*
+
+* Part 1's acceptance adds a check that does not share the gate's matcher. A
+  case-insensitive search of every changed line, for the denylist plus the
+  off-list harness names in the edited files, finds only routing ids and paths
+  (`claude-code`, `.claude/skills`, and the like).
+* The three `cairn-accept` credits are reworded along with the 38.
+* S5 names the comment-line and file-type blind spots.
+* The smoke check records all three plant shapes and their expected results:
+  75 for visible prose, 74 for a comment line, 74 for lower case.
+
+The stronger fix is for the gate to scan non-marker comment lines in
+`templates/`. That changes the checker's behaviour, which this proposal rules
+out, so my default is a board entry rather than adding it here.
+
+**[SR2] (blocking) The note's remedy records the whole file as trusted, and the
+safeguard it cites does not exist.** `--finalize <path>` makes
+`verify_integrity` trust everything in the file, not just the slot the adopter
+filled. If anything else in the file changed, following the note blesses it:
+an injected instruction, or another session's unfinished work.
+
+* **The safeguard claim is false for the command printed.** Part 2 item 4 says
+  `--finalize` "refuses a tree with uncommitted changes", and S4 leans on that.
+  The guard runs only for the unscoped form, under `if only is None and not
+  force` (`bootstrap/_scaffold/upgrade.py:1814-1831`). The scoped
+  `--finalize <path>`, which both the note and the hint print, never checks
+  (reproduced above).
+* **S5's hint gap becomes the main path.** The hint fires for any modified file
+  with a marked slot, whatever else changed (reproduced above). `70e87171`
+  narrowed it so that it would not invite blessing "a change nobody can
+  explain". Today the marker is rare, so that gap is small. But the remedy puts
+  the marker in every slot an adopter clears, 20 on a fresh install. The hint
+  would then fire on nearly every modified Markdown file, the condition the
+  narrowing was meant to prevent.
+* **A tampered base copy can make the note advise finalizing a tampered file.**
+  S1 accepts that a tampered base "can invent a placeholder". Now the invented
+  entry arrives with an instruction to finalize that file. For the same reason,
+  Revision 1 was right to drop the original S4's "never with more authority".
+  The ledger should record that the phrase was dropped.
+
+*Closes when:*
+
+* The claims in S4 and Part 2 item 4 are corrected.
+* The remedy the note prints, and the hint it relies on, both say that
+  finalizing records the whole file, and give the command that shows
+  everything about to be recorded:
+  `git diff "$(git log -1 --format=%H -- dev/.cairn/cairn-lock.yml)" -- <path>`.
+  I ran it; it shows the edit outside the slots.
+* The note prints no finalize step for a file failing the integrity check in
+  the same run, and says to resolve that failure first.
+* A test pins it: for a file with a listed slot *and* an edit outside its
+  slots, the note prints no finalize step.
+
+Checking that every difference lies inside slots stays possible if the base is
+first rendered with the profile's `cairn:if` choices and tokens. It needs an
+engine function, so I do not require it.
+
+**[SR3] (blocking) The promise that the exit code never changes has no structure
+behind it.** If the note shares the integrity loop, it can change the verdict.
+That loop handles a living-state record with `skipped += 1; continue`
+(`bootstrap/verify_integrity.py:121-124`), and the proposal calls an unreadable
+base "reported as skipped". Suppose the note goes in that loop and skips a
+record with a bad `base_cache`. That record's tamper check is skipped too, and
+a modified file passes. This is the one way the change could grant more
+authority.
+
+Lockfile values the note reads can also crash the run:
+
+* a `base_cache` that is not a string, or names a directory or a FIFO (reading
+  a FIFO blocks forever);
+* a base copy that is not UTF-8;
+* `tokens` that is not a mapping, or a token value that is not a string.
+
+A crash exits 1 even on a tree that passed. If the note runs first, it can also
+hide the integrity report.
+
+*Closes when:*
+
+* The contract says the note is a separate pass after the verdict is fixed.
+  * It reads only records the integrity pass accepted.
+  * It never touches `violations` or `skipped`.
+  * It requires a regular file.
+  * It reports every read, decode or type error as "not checked" in the
+    coverage line.
+* Tests show two things:
+  * a modified file with an unsafe `base_cache` still exits 1;
+  * each malformed value above leaves the exit code and the integrity report as
+    they would be without the note.
+
+**[SR4] (non-blocking) Tighten what the note reads and prints.** Each item is
+cheap and narrows what a tampered tree can do to the note.
+
+* **Check the base copy's hash before reading it.** Every copy I measured
+  matches its record's `base_hash`. With the check, editing the cache alone can
+  no longer steer the note; the lockfile would have to change too, where review
+  sees it. That shrinks S5's residual.
+* **Require `base_cache` under `dev/.cairn/base/`**, the only place the engine
+  writes copies.
+* **Cap the size of each file parsed**, and report a larger one as not checked.
+  This bounds the slow-down measured above.
+* **Escape the names it prints, and shell-quote the paths** in any command it
+  prints, for example with `ascii()` and `shlex.quote`. Both come from files in
+  the tree.
+
+**[SR5] (non-blocking) "In every case, put the marker in the slot" does more
+than quiet the note.** The engine treats a marked slot as the adopter's own. A
+module merge into it is skipped silently
+(`bootstrap/_scaffold/slotmerge.py:281-282`), and so is the fidelity check
+(`bootstrap/_scaffold/slotmerge.py:455-456`). An adopter who opted out of
+`security-verification` sees that empty slot listed (measured above). If they
+follow the remedy and later turn the module back on, its Security-Review
+designation never merges, and nothing reports it. `bootstrap/SAFETY.md` Rule
+7(e) records that residual for an adopter who *chooses* to customize; this
+remedy would cause it.
+
+*Closes when:*
+
+* The marker is prescribed only to keep Cairn's text on purpose. Once SR2's
+  remedy prints the finalize command, filling a slot or writing `N/A` no longer
+  needs the marker.
+* An empty slot is either not listed, or listed as awaiting a module, with no
+  marker advice.
+
+**[SR6] (non-blocking) The comment-only proof cannot see comments that tools
+obey.** A docstring-stripped AST comparison ignores every comment, including
+those that change a security tool's verdict. An added `# nosec` silences Bandit,
+the Layer-4 gate over exactly these files, and the proof still passes. No hit
+line carries one today, so the risk is in the edit.
+
+*Closes when* the proof also checks one of two things. Either no added or
+removed line in the edited `.py` files holds `nosec`, `noqa`, `pragma`, `type:`
+or an encoding line. Or Bandit's findings are the same before and after.
+
+**[SR7] (non-blocking) The 27 markers are justified, with three notes.**
+
+* **25 of them are illustrative or historical mentions in files that do not
+  ship.** `scaffold.py --manifest` takes no source from `docs/` or `doctrine/`;
+  the adopter's `docs/DOCUMENTATION_PLAN.md` comes from
+  `documentation_plan_template.md`.
+* **Two groups should be reworded, not marked:**
+  * `bootstrap/tests/fixtures/skills/README.md:35` ("Codex P2#3") is a reviewer
+    credit, the class Part 1 rewords.
+  * The six `modflow_tools` lines in `docs/DOCUMENTATION_PLAN.md` say Cairn does
+    not yet host its own `dev/` tree, which is no longer true.
+
+  A marker certifies that a mention is legitimate, not that the sentence is
+  true.
+* **Marker reasons are text the scanner skips.** `content_scan.py` exempts any
+  HTML comment beginning `vendor-ok` from its check for instructions in
+  comments (`_CAIRN_MARKER_RE`,
+  `templates/modules/team-gated/content_scan.py:319-334`; reproduced above). So
+  each new reason is hidden, agent-loaded text that only Rule 7's human
+  injection review reads. The plan should say so.
+* **Keep markers tight, and record `info=` next to `fail=0`** in the Boundary B
+  baseline. Use one-line markers, or blocks that span only the hit lines. A name
+  added inside a block later then shows as a changed count.
+
+**Outside this proposal, recorded.** Cairn's own `verify_integrity --target .`
+already reports 18 violations. Among them are two shipped-as-is scripts,
+`scripts/claim_check.py` and `tools/_intent/conflict.py`. Cairn's lockfile
+records every twin Part 1 edits, most of them as shipped-as-is scripts, so
+Part 1 will add to that count. This is #2's always-red shape, on the check Part 2 extends. The plan
+should finalize the edited twins once they are confirmed byte-identical to their
+templates, or record that it does not.
+
+### Verdict and what clears the obligation
+
+**REVISE.** What the proposal changes is sound; the gaps are in what it relies
+on. SR1-SR3 close with contract sentences and tests, with no new mechanism and
+no engine change. After the author's Response and revision, a Security Review
+pass that reads only SR1-SR3's closures clears the obligation. That pass is the
+one clearing round the lifecycle allows.
+
+**No new question for the Maintainer.** Where to put the stronger gate fix in
+SR1 is the author's call; my default is a board entry.
