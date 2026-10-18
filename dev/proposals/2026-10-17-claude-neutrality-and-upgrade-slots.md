@@ -1,7 +1,7 @@
 # Two checks you can trust: a neutrality gate that reads zero, and a note for slots an upgrade adds
 
 **Author**: Claude (Strategy)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: required(External + Security Review)
 **Plan review**: required(Internal)
 **Opened**: 2026-10-17
@@ -2199,3 +2199,310 @@ that reads only SR8's closure clears it. SR9-SR14 do not block. SR9's and
 SR11's ledger lines belong in the same revision; the rest can go to the plan.
 
 **No new question for the Maintainer.**
+
+## Response -- Claude (author) -- 2026-10-17 (to the round-2 Security Review)
+
+SR8 is accepted, and so is every non-blocking finding except one, which is
+partly accepted (SR10's cleaner fix). The code moved since Revision 2, and
+Revision 3 is written against it. `b6b69c52` rewrote the existing hint and the
+slot scan:
+
+* **The hint** now says the check "keeps only a hash, not the text, so it cannot
+  show you what changed". It tells the adopter to read the whole file, or its
+  history since install, before `--finalize`.
+* **The slot scan.** `_has_customized_slot` now makes one linear pass over
+  `_MARKER_RE`, with a bounded slot name. `_SLOT_BODY_RE`, which Revision 2's
+  note reused, no longer exists.
+
+**SR8: accepted.** Revision 2's review command compared the file against the
+lockfile's last commit, and the review showed that commit can postdate the
+change. I drop the command everywhere.
+
+* **The existing hint (item 6) is withdrawn.** `b6b69c52` already applied the
+  review's default there.
+* **The note's remedy (item 5) is replaced** by a command whose coverage holds
+  under a precondition the adopter can check. The note lists only files whose
+  bytes match their record at that moment. So:
+  * if `git status --short -- <path>` prints nothing, the working copy equals
+    the committed one, and both equal the record;
+  * after the edit, `git diff -- <path>` shows the working copy against that
+    record, which is exactly what `--finalize` will record;
+  * if the status line prints anything, the remedy says to read the whole file
+    instead.
+
+  The command no longer depends on when the lockfile was committed. Its one
+  assumption is that nobody staged a change to that path in between, and the
+  status check reveals a staged change.
+* **New test for the review's case B.** The case is a first install with a slot
+  filled and a line planted before the first commit. The test asserts that the
+  note does not list the file (it fails integrity), that the note prints no
+  diff or finalize command for it, and that the note's line points to the
+  UPGRADE.md section below.
+
+**SR9: accepted, with the review's default.** The note also reads living-state
+records the integrity pass skipped. It opens them with the same checks as a
+base copy, because nothing has read them yet. Their remedy is "fill it", with
+no finalize step, since edits to them never fail the integrity check.
+
+**SR10: partly accepted.**
+
+* **Accepted.** The claim becomes "no listed name as a whole word, in the file
+  types the gate reads". S5 adds joined spellings (`ClaudeCode`, `GPT4o`,
+  `Claude_Code`), zero-width characters, new file types and deliberate evasion.
+  The one-time search becomes case-insensitive and substring-based, with every
+  hit read by hand. All five comment sites in `scripts/quality_gate.py`
+  (`:197-198`, `:252`, `:436-438`, `:446`, `:456-457`) are corrected.
+* **Declined: scanning every non-binary file under `templates/`.** The gate
+  walks the filesystem, not git. There are 23 untracked `.pyc` files under
+  `templates/` today, so "every file" would read build artefacts. Restricting
+  it to tracked files would make the checker depend on git. The type list stays
+  (now with `.json` and `.txt`), and new types are a named blind spot.
+
+**SR11: accepted.**
+
+* **Ledger.** It now records that taking the marker out of the fill path dropped
+  Revision 1's fallback, where the hint named the file.
+* **Failing-file line.** It points to a new `bootstrap/UPGRADE.md` section on
+  reviewing and recording your own edit, never to a command.
+
+**SR12: accepted.**
+
+* **What the note receives.** The target, the accepted and living-state
+  records, the bytes the integrity pass read, and the lockfile's tokens. None of
+  these carries the verdict.
+* **How it reads.**
+  * One open per file, with its flags built inside the fence via
+    `getattr(os, ..., 0)` and `O_NOCTTY` added.
+  * `fstat` on that same descriptor.
+  * A bounded read of the cap plus one byte, applied to installed bytes as well.
+  * Hashing, decoding and parsing all use those same bytes.
+* **Slots** are parsed with one linear marker pass, as `_has_customized_slot`
+  now does.
+* **The fence** catches `SystemExit` too.
+* **Per-record errors.** Any exception for a single record is counted as "not
+  checked: unreadable".
+* **No-op comparison cases.** The four the review added are included.
+* **Unprintable names.** A name or path that is not printable ASCII gets only
+  its `ascii()` form and no command.
+* **Withdrawn.** Revision 2's sentence about reaching the slow regex case is
+  withdrawn, since the regex is gone.
+
+**SR13: accepted.**
+
+* **The superset check** (every old failure is among the new) goes into the
+  evidence.
+* **A test pins** that a whole-line directive carrying a name yields both
+  failures.
+
+**SR14: accepted.** The plan finalizes exactly the 12 twins the review names and
+leaves its 4 alone. After the write, each advanced `hash` must equal the
+SHA-256 of its template as committed. `verify_integrity --target .` must still
+list the same 18 files.
+
+**Status.** No scope widens. The Security Review obligation stays open for a
+pass that reads SR8's closure, so Status returns to `awaiting-review`. No
+Maintainer question changes.
+
+## Revision 3 -- Claude (author) -- 2026-10-17 -- delta against Revision 2
+
+Revision 2 stands as the complete current contract. **Only the parts named below
+are replaced.** Every other section and sentence of Revision 2 stands unchanged.
+
+### Replaces: In plain terms, item 1's "Zero will mean" sentence
+
+**Zero will mean** that no listed vendor or project name appears as a whole
+word, in its normal capitals, in the file types the gate reads under its scan
+roots. **It will not cover** lower-case or joined spellings (`ClaudeCode`), names
+broken by invisible characters, names not on the list, file types not on the
+list, or deliberate hiding. A one-time search covers those for this change.
+
+### Replaces: Proposal, Part 1 item 1, the checker
+
+The checker gets four changes, in `scripts/quality_gate.py`:
+
+* **Comment lines.** In `templates/` it scans whole-line HTML comments for
+  tokens. A `vendor-ok` or `case-study` directive there still fails as well.
+* **File types.** It reads `.json` and `.txt`.
+* **Names.** Copilot, Windsurf, Cline and OpenCode join the denylist.
+* **Its own comments.** It describes its `templates/` scan accurately at
+  `:197-198`, `:252`, `:436-438`, `:446` and `:456-457`.
+
+No exemption is added. These changes can only add failures. The type list stays
+a list: the gate walks the filesystem, which holds 23 untracked `.pyc` files
+under `templates/` today.
+
+### Replaces: Proposal, Part 2 items 1 to 7
+
+1. **A separate pass, after the verdict.**
+   * `verify()` first prints the integrity report as it does today, then fixes
+     the exit code.
+   * Only after that does it call the note, passing the target, the records the
+     integrity pass accepted together with the bytes it already read, the
+     legitimate living-state records, and the lockfile's tokens. Nothing passed
+     carries `violations`, `skipped` or the exit code.
+   * The call is fenced, and the fence catches `SystemExit` too. Any exception
+     prints one "slot note not run" line, and the exit code returned is the one
+     fixed before the call.
+   * Inside the note, any exception for a single record counts that record as
+     "not checked: unreadable".
+2. **What it reads, and how.** The note opens each base copy, and each
+   living-state file, once. The open flags are built inside the fence with
+   `getattr(os, ..., 0)`: no-follow, non-blocking, `O_NOCTTY`. The file is
+   accepted only if `fstat` on that descriptor shows a regular file, and a read
+   of at most the cap plus one byte (256 KiB) stays within the cap. Hashing,
+   decoding and parsing all use those same bytes. Installed bytes the integrity
+   pass already read obey the same cap.
+
+   A base copy is used only if all of these hold:
+   * its path is under `dev/.cairn/base/` inside the target, with no symlinked
+     part;
+   * its bytes decode as UTF-8;
+   * its bytes hash to a string `base_hash` on the record.
+
+   Token values are used only from a string-to-string `tokens` mapping.
+3. **What it lists.** A slot is listed when its body is unchanged from the base
+   copy's, after spacing is normalized and tokens substituted. A slot carrying
+   `<!-- cairn:customized -->` is not listed. A slot that is also empty in the
+   base copy is counted "empty: filled when its module is installed".
+
+   Slots are found with one linear pass over the markers, using the bounded name
+   pattern of `_MARKER_RE` (`b6b69c52`). A test pins the pass, the token pattern
+   and the spacing rule to the engine's.
+4. **One coverage line, always printed.** It gives the slots and files checked,
+   the number listed, and the empty slots awaiting a module. It also counts the
+   files not checked, by reason:
+   * no base copy;
+   * failed the integrity check;
+   * base hash mismatch;
+   * unreadable.
+
+   Living-state files are counted like any other file.
+5. **The remedy.**
+   * **For a slot in a file the integrity pass accepted:**
+     1. Confirm `git status --short -- <path>` prints nothing.
+     2. Fill the slot, or write `N/A: <reason>`.
+     3. `git diff -- <path>` now shows everything `--finalize` will record. The
+        note matched this file to its record moments ago, and step 1 showed the
+        committed copy equals it.
+     4. Commit, run `python bootstrap/scaffold.py upgrade --target <repo>
+        --finalize <path>`, then commit the lockfile.
+
+     If step 1 prints anything, read the whole file instead. Finalizing records
+     the whole file. To keep Cairn's text on purpose, add
+     `<!-- cairn:customized -->` inside the slot instead of filling it.
+   * **For a living-state file:** fill it. There is no finalize step.
+   * **Paths** are shell-quoted. A path or slot name that is not printable ASCII
+     is shown only in its `ascii()` form, with no command.
+6. **Withdrawn.** The existing hint is left as `b6b69c52` wrote it.
+7. **`bootstrap/UPGRADE.md` changes.**
+   * It gains step 4: run `verify_integrity` after `--apply`. Only a person
+     following the steps runs it.
+   * It explains the note's meaning.
+   * It records the known gap: a placeholder that an upgrade rewords reads as
+     filled.
+   * It gains a section, *Recording an edit you made*. The section says that
+     `verify_integrity` keeps only a hash, that `--finalize` records the whole
+     file, and that the scoped form skips the dirty-tree guard. It also says how
+     to review first: read the file, or `git log -p -- <path>` since install.
+   * The note's line for a failing file points to that section and prints no
+     command.
+
+### Replaces: the Self-hosted lockfile sentence in Part 1 item 8
+
+The edited twins that Cairn's lockfile attests today are scoped-finalized. There
+are 12:
+
+* `.agents/skills/_data/vendor_targets.yml`
+* `tools/session.py`
+* the six `scripts/_onboarding/` modules
+* `scripts/onboarding_activate.py`
+* `tools/intent.py`
+* `scripts/content_scan.py`
+* `dev/modules/incident_log_template.md`
+
+The 4 edited files already among Cairn's 18 violations are left alone:
+
+* `.agents/skills/session-start/SKILL.md`
+* `dev/modules/documentation-plan.md`
+* `dev/modules/incident-trackers.md`
+* `docs/DOCUMENTATION_PLAN.md`
+
+After the write, each advanced `hash` equals the SHA-256 of its template as
+committed, and `verify_integrity --target .` lists the same 18 files.
+
+### Adds to: Tests required
+
+* **`bootstrap/tests/test_verify_integrity.py`:**
+  * **Case B, the first install.** A file was already modified when the
+    lockfile was committed, and it holds a marked slot plus a line outside the
+    slots. Expected:
+    * the note does not list the file, and prints no diff or finalize command
+      for it;
+    * its line points to the UPGRADE.md section.
+  * **Case A, the listed path.** After the remedy's step 1, a line planted by
+    another writer appears in `git diff -- <path>`.
+  * **Living state.** A living-state file's placeholder slot is listed with no
+    finalize step.
+  * **No-op comparison cases**, added:
+    * non-UTF-8 installed bytes in a file that passes integrity;
+    * a non-string token key;
+    * a NUL byte in `base_cache`;
+    * a non-string `base_hash`;
+    * `SystemExit` raised inside the note.
+  * **A non-printable path** is shown in its `ascii()` form, with no command.
+* **`bootstrap/tests/test_quality_gate_neutrality.py`:** a whole-line directive
+  in `templates/` that also carries a name yields both failures.
+
+The loop test's step 3 now runs `git diff -- <path>` after confirming the status
+precondition.
+
+### Adds to: Examples / smoke checks
+
+* **The superset check.** Every failure the current gate reports is among the
+  stricter gate's (74 within 81 today).
+* **The one-time search** is case-insensitive and substring-based. Every hit is
+  read by hand, and each must be a routing id or a path.
+
+### Replaces: Security preflight S4's last point, and S5
+
+* **S4, last point.** `--finalize <path>` records the whole file and skips the
+  dirty-tree guard. The note therefore gives a remedy only for a file it has
+  just matched to its record, with a review command whose coverage depends on a
+  precondition the adopter checks. Every other file gets a pointer to the
+  UPGRADE.md section and no command.
+* **S5 — Who still wins?**
+  * **Spellings the gate cannot see.** Lower-case and joined spellings,
+    invisible characters, unlisted names, unlisted file types, and anyone hiding
+    a name on purpose. These are closed by enumeration only. The one-time search
+    covers only this change's lines.
+  * **A changed lockfile.** Anyone who changes the lockfile together with a base
+    copy can steer the note.
+  * **A staged change.** Anyone who stages a change to the path between the
+    note's run and step 1 defeats the review, if step 1's output goes unread.
+  * **Skipped review.** An adopter who finalizes without reviewing.
+  * **The hint's reach.** The hint still names any modified file with a marked
+    slot. Since `b6b69c52` it says plainly that it cannot show what changed.
+
+### Withdrawn / superseded commitments
+
+* **The review command**
+  `git diff "$(git log -1 --format=%H -- dev/.cairn/cairn-lock.yml)" -- <path>`,
+  and the claim that it shows what `--finalize` records. Withdrawn: it can hide
+  changes made at or before the lockfile's last commit (SR8). Superseded by the
+  `git status` / `git diff -- <path>` remedy.
+* **Part 2 item 6, adding the command to the hint.** Withdrawn (SR8).
+* **Revision 1's fallback.** It said that if the record step is skipped, the
+  marker makes the hint name the file. Dropped when the marker left the fill
+  path (Revision 2, SR5). The failing-file line now points to UPGRADE.md instead
+  (SR11).
+* **The note reads slots with `_SLOT_BODY_RE`.** Superseded by a linear marker
+  pass, since `b6b69c52` removed that regex.
+* **"A tree can reach `_SLOT_BODY_RE`'s slow case only by also changing the
+  lockfile."** Withdrawn: the regex is gone, and the existing hint's scan is now
+  linear (SR12).
+* **Living-state files** were neither read nor counted. Superseded: they are read
+  and counted (SR9).
+* **"Anywhere in a scanned file"** in the zero claim. Superseded by "as a whole
+  word, in the file types the gate reads" (SR10).
+* **Correcting only `:446`.** Superseded: five comment sites are corrected
+  (SR10).
