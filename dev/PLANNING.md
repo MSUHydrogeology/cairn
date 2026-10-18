@@ -205,6 +205,8 @@ with the plan's filename stem.
   > "Accept Revision 2 as written. Defer the install-report fix (F8) to the
   > board. No second review round; External floor waived."
 
+  **Waiting on Maintainer**: run the gate-manifest re-anchor
+
 * **F8 — the post-install report asks for work the profile does not make
   live.** Deferred 2026-10-01 at the Decision on
   `proposals/2026-08-20-claude-adopter-path-consolidation.md` (Revision 2 >
@@ -494,6 +496,8 @@ the routing map sends to forge issues row by row rather than to a bulk decline.
   Cairn's own corpus because a subject matches `^Review\b` across a hyphen —
   that one reaches adopters and is described in the archived plan's archive
   record.
+
+  **Waiting on Maintainer**: question (3): is the narrowing worth it?
 * **Adopter-entry doc-refresh follow-ups** *(deferred, Jun 2026)* — the
   doc-refresh + prose↔runtime drift-gate shipped (plan
   `adopter-entry-doc-refresh`, archived; from the 2026-06-12
@@ -566,6 +570,13 @@ reaffirmed (e.g. `(May 2026)`). The marker makes the staleness sweep
 memory. Refresh the marker whenever the item is reaffirmed at a
 goodnight scrub.
 
+**Marking a row the Maintainer must move.** When a row's next move is the
+Maintainer's alone (a ceremony only they run, a question only they answer, a
+go-ahead only they give), add a line inside the row of the form
+`**Waiting on Maintainer**: <what>`, under 48 characters, after any leading
+spaces and at most one `* ` or `- `. `python tools/board.py --maintainer`
+then lists the row. Delete the line when they answer.
+
 ## Archive preconditions (proposals and plans)
 
 Before a proposal or plan moves to `archive/`, every
@@ -618,6 +629,12 @@ On a **solo profile**, where author and Maintainer are the same
 person, the `defer` gate collapses to a written justification to
 oneself: weaker, but not vacuous — it is on the record at a
 serialization point.
+
+**Archived files are records, not to-do lists.** Nothing still to be done may
+have an archived file as its **only home**: a live home is an open proposal or
+plan that names the item, an issue by number, or a board row, and a pointer to
+an archived file or to a plan not yet open is not one
+(`doctrine/lifecycle.md` > "Archive precondition").
 
 This precondition is **documentary, not mechanical**: a reviewer
 opening the artifact at archive-preparation is the enforcer.
