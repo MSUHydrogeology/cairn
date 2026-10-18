@@ -330,42 +330,56 @@ with the plan's filename stem.
   **That plan also changes the engine, so the AST baseline is owed a correction,
   and the Maintainer chose one combined ceremony, later** (2026-10-18, chat:
   "One combined ceremony later"). There is no separate re-anchor for the
-  `.gitignore` repair. One run, after that plan archives, covers: the repair's
-  five CHANGED functions (`main`, `seed_gitignore`, `_cmd_adopt_module`,
-  `cmd_upgrade`, `create_dev_tree`); the plan's own delta, which is `capture_model_selection_mapping`
-  (newly CHANGED), `main`, `_cmd_adopt_module`, `cmd_upgrade` and `seed_gitignore`
-  (changed again), and `_commit_lock_and_caches`, which `scaffold_ast_known_new.json` pins by
-  digest, so the ceremony sees it as REKEYED and traces it to the plan's C4
-  commit; and two new top-level functions, `_mapping_is_unfilled` and
-  `model_selection_notice_lines`, for the ceremony to pin. At the end that is six
-  CHANGED, one re-keyed and two NEW; derive the set at ceremony time
-  (`bootstrap/AST_BASELINE_RUNBOOK.md`). None is in `_UPDATE_ALLOWLIST`, so the
-  correction is the Maintainer's own. `bootstrap/_scaffold/` is on the
-  differential oracle's sensitive roster, and the plan also edits a comment in
-  `lockfile.py`, which adds that file to the changed sensitive paths.
-  Authorization for joining this batch is the Decision accepting the proposal,
-  quoted verbatim:
+  `.gitignore` repair. One run, after that plan archives, covers the repair's
+  CHANGED functions and the plan's own delta. **Run it before the gate-manifest
+  re-anchor, not after:** it writes the frozen
+  `bootstrap/tests/fixtures/scaffold_ast_known_new.json`, so a re-anchor run first
+  would record that file's old bytes and the AST correction would leave a fresh
+  hold. The plan's chunk M gives the steps, from
+  `bootstrap/AST_BASELINE_RUNBOOK.md`: nothing is pre-filled by an agent, the
+  ceremony derives every figure from the code with a dry run first, and it stops
+  on any difference from the declared sets. The plan's delta, as names and not
+  counts (derive the sets at ceremony time): newly CHANGED are
+  `capture_model_selection_mapping`, `write_install_lockfile`, `_cmd_init_lock`,
+  `_cmd_finalize_lockfile`, `_apply_upgrade` and `read_lockfile`; `main`,
+  `_cmd_adopt_module`, `cmd_upgrade` and `seed_gitignore` change again;
+  `_commit_lock_and_caches`, which `scaffold_ast_known_new.json` pins by digest,
+  is REKEYED and traces to the plan's C4 commit; and five top-level functions are
+  NEW for the ceremony to pin: `_mapping_is_unfilled` and
+  `model_selection_notice_lines` (`install.py`), `_read_regular_bytes`,
+  `_stage_exclusive` and `_write_by_replacing` (`security.py`). None is in
+  `_UPDATE_ALLOWLIST`, so the correction is the Maintainer's own.
+  `bootstrap/_scaffold/` is on the differential oracle's sensitive roster, and
+  the plan also touches `security.py` and `lockfile.py`, which adds those files to
+  the changed sensitive paths. Authorization for joining this batch is the
+  Decision accepting the proposal, quoted verbatim:
 
   > "accept as answered"
 
-  The install-record fix (`_commit_lock_and_caches`) was added to that plan at the
-  Maintainer's instruction after it opened. The option he chose, quoted verbatim:
+  Four things were added to that plan at the Maintainer's instruction after it
+  opened. His answers, quoted verbatim, each to a question put in chat:
 
   > "Fold into this plan (Recommended)"
 
-  The three small `.gitignore` points from the Security Review of the
-  `.gitignore` repair (the race inside `seed_gitignore`, a hard-linked
-  `.gitignore`, and the preflight's read) were added the same way. His answer,
-  quoted verbatim:
+  (the install-record committer, `_commit_lock_and_caches`),
 
   > "Yes, fix the .gitignore points"
 
-  They add no frozen file and no new symbol: `seed_gitignore` is already CHANGED
-  and changes again. Their tests go in `bootstrap/tests/test_intents_tool.py`,
-  which the manifest lists as phase-mutable, so the ceremony gives a
-  `PHASE-CHANGED` note for it and never a hold. The `.gitignore` repair is still
-  in code review and may change the same functions again, so derive the AST set
-  at ceremony time.
+  (the three small `.gitignore` points from the Security Review of the
+  `.gitignore` repair: the race inside `seed_gitignore`, a hard-linked
+  `.gitignore`, and the preflight's read), and
+
+  > "Yes, fold them into the plan"
+
+  (the four other functions that write the lockfile in place, and the lockfile
+  reader that follows links). The tests for all of these go in files already on
+  the frozen list (`bootstrap/tests/test_security_leaf.py` and
+  `bootstrap/tests/test_upgrade_module_additions.py`) or in
+  `bootstrap/tests/test_intents_tool.py`, which the manifest lists as
+  phase-mutable, so the ceremony gives a `PHASE-CHANGED` note for it and never a
+  hold. No new frozen test file is added. The `.gitignore` repair is still in
+  code review and may change the same functions again, so derive the AST set at
+  ceremony time.
 
   **Joined 2026-10-18** at the code-review answer for the `.gitignore` seed guard
   (commits `b8a402c6` through `3ba6f230`, review
@@ -400,7 +414,7 @@ with the plan's filename stem.
     `_cmd_adopt_module` (`92290a6b95389cc2`), `cmd_upgrade`
     (`d98eff085ea46b43`) and `create_dev_tree` (digest in the answer commit's
     body). The first four are on the combined list above; `create_dev_tree` is
-    the one new name, so the combined set is the six counted above. None is in
+    the one new name, so it joins that combined set. None is in
     `_UPDATE_ALLOWLIST`. Derive the digests at ceremony time; these are the
     baseline's, not the new ones.
 
