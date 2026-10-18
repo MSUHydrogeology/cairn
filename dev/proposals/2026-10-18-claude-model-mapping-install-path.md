@@ -1,7 +1,7 @@
 # The model mapping gets filled on every install path, and something checks it
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: required(Internal + Security Review) — the scaffold engine's write path is touched; the Maintainer asked for this change, so "should it exist" is settled
 **Plan review**: required(Internal + Internal Security Review) — the plan edits `bootstrap/_scaffold/` and a script adopters run (see the preflight)
 **Opened**: 2026-10-18
@@ -1636,3 +1636,36 @@ I ran no suite and no test node. I did not review the `seed_gitignore` repair (`
 did not re-run the earlier rounds' probes or the author's three-way merge measurements for the
 stub edit. Probes ran in a scratch folder on macOS. Nothing in this tree was written except
 this section and the status line.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-18
+
+**ACCEPTED.** The Maintainer's authorization, quoted **verbatim and visually
+isolated**:
+
+> "accept as answered"
+
+*Scribe's note, separate from the quoted words.* "As answered" refers to the
+Maintainer's answers to the proposal's questions, given in chat on 2026-10-18
+through a multiple-choice prompt. Each was the recommended option:
+
+* **Q1, check rules:** "Yes to both". The check skips full-line comments, and a
+  mapping with no rows fails.
+* **Q2, Scope delta:** "Allow two presets". The seed goes in
+  `collaborative-team` and `high-rigor-legacy` only. `solo-greenfield` is
+  wontfix, for the reason given in Revision 1's Scope delta.
+* **Q3, Waiting row:** "Yes". Fresh installs from those two presets seed the
+  `**Waiting on Maintainer**` row.
+* **Q5, stub example:** "Yes, edit it". The example block says to name a model
+  family, never a version. That costs one upgrade conflict where an adopter's
+  header was rewritten. `lhm` is one; keeping its side resolves it.
+* **Q4, onboarding prompts in goodnight:** not put to the Maintainer as a
+  choice. The scribe's message proposed leaving it out of this change, as a
+  separate board item (the recommended default), and the Maintainer's reply
+  raised no objection. It is not part of this contract.
+
+Revision 2 binds, over Revision 1 where they differ. The closure Security
+pass's notes CL-1 to CL-4 (`0f61d81f`) go to the plan's Internal Security
+Review, together with SEC-3 to SEC-8.
+
+Scribed by Claude (claude-opus-5-5) on the Maintainer's explicit instruction.
+Nothing else lands in this commit.
