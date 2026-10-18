@@ -66,7 +66,7 @@ authored by a reviewer (an AI agent or a human), but a **Decision** is a
 
 * The author token is parsed generically from the section header
   (`## Review -- <name> (<role>) -- <date>`), preserving the real
-  identity (`Codex`, `Claude`, `Antigravity`, `Gemini`, a future agent).
+  identity (`Codex`, `Claude`, `Antigravity`, `Gemini`, a future agent). <!-- vendor-ok: example author identities the parser preserves -->
 * Classification is **three-way and positive**, never a denylist
   residual: an identity is **known-AI** (on an allowlist/registry of AI
   agent identities), **known-human-Maintainer** (on a *project-owned
@@ -85,7 +85,7 @@ authored by a reviewer (an AI agent or a human), but a **Decision** is a
   can be confirmed human).
 
 This forecloses the failure mode where any non-allowlisted agent
-(`Antigravity`, `Sage`, a future or renamed identity) is misread as the
+(`Antigravity`, `Sage`, a future or renamed identity) is misread as the <!-- vendor-ok: example of a non-allowlisted agent identity -->
 human Maintainer, which would corrupt both authorship checks and the
 human/AI split the Decision authority depends on. None of this
 authenticates the quoted authorization — the tool attests *structure*;

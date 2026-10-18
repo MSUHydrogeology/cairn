@@ -67,7 +67,7 @@ stated as *features*. They are better understood as one
 interface layer — a "waist" — between two layers that change at
 very different rates. Below the waist: the adopter's project stack
 (Fortran, R, Rust, JavaScript, Python). Above it: the AI tooling
-acting on the deliberation record (Claude, Codex, Cursor). The
+acting on the deliberation record (Claude, Codex, Cursor). The <!-- vendor-ok: example AI tools named in the layered description -->
 waist itself — plain markdown in a git history — is the durable
 asset, kept deliberately minimal so neither the tool layer above
 nor the language layer below can capture it. Beck's contribution

@@ -12,7 +12,7 @@ fails the build if the committed matrix drifts from the generator output.
 A target's **level** is `claimed-pending-fixture` until a fixture actually
 exercises install + invoke on that harness and promotes it to `native-tested`.
 **Cairn has no CI**, and no automated trigger of any kind can drive a
-proprietary external harness (Claude Code, Cursor, ...), so:
+proprietary external harness (Claude Code, Cursor, ...), so: <!-- vendor-ok: fixture README names the harnesses its levels describe -->
 
 * The **mechanism** tiers are **suite-proven** here and in
   `test_skills_fanout.py` / `test_skills_install.py`: alias (canonical
@@ -28,14 +28,14 @@ proprietary external harness (Claude Code, Cursor, ...), so:
 
 ## v1 cut (II4b)
 
-* **Claude Code** ships first as the intended `native-tested` target (it
+* **Claude Code** ships first as the intended `native-tested` target (it <!-- vendor-ok: fixture README names the harness whose level it tracks -->
   **declares** `disable-model-invocation`, so its auto-suppress is
   `declared-flag` until a fixture/transcript proves the harness actually
-  suppresses model-invocation -- only then does it become `native-tested`,
-  Codex P2#3); it reads the symlinked `.claude/skills/` -> canonical.
+  suppresses model-invocation -- only then does it become `native-tested`);
+  it reads the symlinked `.claude/skills/` -> canonical.
 * Other SKILL.md-native targets ship `native-claimed-unverified` until their
   fixture lands.
-* Different-format targets (e.g. Cursor `.mdc`) ship `manual-fallback` with a
+* Different-format targets (e.g. Cursor `.mdc`) ship `manual-fallback` with a <!-- vendor-ok: fixture README names an example of a different-format harness -->
   `mitigated` auto-suppress (anti-semantic description only), pending an
   automated compile path proven out by a fixture.
 

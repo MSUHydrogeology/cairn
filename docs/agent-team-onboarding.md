@@ -31,6 +31,7 @@ tier suffix; the form matters less than the consistency).
 
 Example (collaborative-team profile):
 
+<!-- vendor-ok-begin: the roster example shows real model names in the slot's expected format -->
 ```markdown
 <!-- cairn:slot team-roster -->
 * Anthony (Maintainer)
@@ -38,6 +39,7 @@ Example (collaborative-team profile):
 * Codex GPT-5 -- reviewer (External cross-type)   # newly added
 <!-- cairn:end team-roster -->
 ```
+<!-- vendor-ok-end -->
 
 Commit the roster edit. The team-roster slot is the explicit
 state the goodnight activation helper reads to surface the
@@ -62,9 +64,9 @@ pinned version) keeps every trailer accurate with no doc
 maintenance, and leaves git history attributing each commit to the
 model that produced it. The examples below are illustrative
 snapshots -- substitute whatever model you are currently running:
-* `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`
-* `Co-Authored-By: Codex GPT-5 <noreply@openai.com>`
-* `Co-Authored-By: Antigravity GPT-5 <noreply@google.com>`
+* `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>` <!-- vendor-ok: illustrative trailer example naming a real model -->
+* `Co-Authored-By: Codex GPT-5 <noreply@openai.com>` <!-- vendor-ok: illustrative trailer example naming a real model -->
+* `Co-Authored-By: Antigravity GPT-5 <noreply@google.com>` <!-- vendor-ok: illustrative trailer example naming a real model -->
 
 Configure the trailer in the agent's commit-template (the
 mechanism varies by harness; the standing convention is that the

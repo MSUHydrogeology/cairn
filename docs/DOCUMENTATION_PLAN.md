@@ -22,12 +22,12 @@ adopter's installed tree (adopter-relative paths).  Drift is
 **bidirectional under maintainer review** at the goodnight
 Cairn-foldback step.
 
-For the deliberation behind this file see the accepted modflow_tools-
-side fold-back proposal (the proposal lives there because Cairn does
-not yet self-host its own `dev/` tree -- Cairn 0.3 Goal 1).  The
-reference-deployment source procedure is modflow_tools'
-`docs/DOCUMENTATION_PLAN.md` (frozen May 2026 after the whole-repo
-four-layer extension).
+For the deliberation behind this file see the accepted fold-back
+proposal, which was written in the reference deployment and is not in
+Cairn's own `dev/proposals/archive/` (Cairn keeps its own record in
+`dev/` -- Cairn 0.3 Goal 1).  The reference-deployment source
+procedure is that deployment's `docs/DOCUMENTATION_PLAN.md` (frozen
+May 2026 after the whole-repo four-layer extension).
 
 ## The documentation vision -- four layers
 
@@ -98,15 +98,14 @@ it is about the project's *becoming* -- aspiration, decisions in
 progress, and the method of deciding -- **not** about the
 software as it exists today.
 
-**Cairn's own `dev/` tree is Goal 1 of the 0.3 milestone** (not
-yet self-hosted as of this writing).  Cairn's own deliberation
-artifacts about its design currently live as modflow_tools-side
-proposals + plans (`dev/proposals/archive/2026-05-XX-claude-cairn-
-*.md`).  When Goal 1 lands, Cairn migrates to its own self-hosted
-`cairn/dev/` tree; this file's worked examples are written
-as-if-Goal-1 (the deliberation-layer worked examples reference
-`cairn/dev/proposals/` and `cairn/dev/plans/` even though those
-surfaces are forthcoming).
+**Cairn's own `dev/` tree is in place** (it was Goal 1 of the 0.3
+milestone).  Cairn's own deliberation artifacts about its design
+live there: proposals under `dev/proposals/` (decided ones in
+`dev/proposals/archive/`) and plans under `dev/plans/`.  The
+fold-back proposal behind this file stays in the reference
+deployment.  This file's worked examples reference
+`cairn/dev/proposals/` and `cairn/dev/plans/`, which exist today
+as the deliberation layer's two working directories.
 
 Cairn ships `cairn/templates/core/dev/` as the **template** an
 adopter installs into their own tree; that is the *adopter-side*
@@ -146,9 +145,9 @@ question -- *what is it doing?*
   `cairn/bootstrap/BOOTSTRAP.md`, `cairn/bootstrap/fidelity-
   check.md`, this file in `cairn/docs/`).
 * **Deliberating what to build, or how the team decides** -> the
-  **deliberation layer**, `cairn/dev/` (Goal 1 substrate -- until
-  Goal 1 lands, deliberation lives as modflow_tools-side
-  fold-back proposals).
+  **deliberation layer**, `cairn/dev/` (Goal 1 substrate; the
+  fold-back proposal behind this file is in the reference
+  deployment).
 * **Describing the methodology as it exists today** -> the
   **descriptive layer**, `cairn/docs/` -- including local how-to
   for extending or maintaining a specific surface, which stays in
@@ -411,12 +410,12 @@ do not auto-propagate.
 
 ## Cross-references
 
-* **Reference deployment**: modflow_tools'
+* **Reference deployment**: that deployment's
   `docs/DOCUMENTATION_PLAN.md` is the source-of-truth port
   reference (frozen May 2026 after the whole-repo four-layer
   extension).  Cairn-side foldback proposal:
   `2026-05-28-claude-cairn-foldback-documentation-plan` (lives
-  as modflow_tools-side until Goal 1 self-hosts `cairn/dev/`).
+  in the reference deployment, not in `cairn/dev/`).
 * **Module substrate**: `cairn/templates/modules/default-on/
   documentation-plan.md` (the module doctrine) +
   `cairn/templates/modules/default-on/documentation_plan_template.md`
