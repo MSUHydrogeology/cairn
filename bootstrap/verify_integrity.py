@@ -28,7 +28,9 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
 import re
+import stat
 import sys
 from pathlib import Path
 
@@ -80,6 +82,162 @@ def _has_customized_slot(text: str) -> bool:
     return False
 
 
+#: The most the slot note reads from any one file, in bytes.
+_NOTE_CAP = 256 * 1024
+
+#: Where base copies live, relative to the target.  A record whose
+#: ``base_cache`` points anywhere else is not read.
+_BASE_CACHE_PARTS = ("dev", ".cairn", "base")
+
+#: The reasons a file in scope is not checked, in the order the coverage line
+#: reports them.
+_NOT_CHECKED = (
+    "no base copy", "failed the integrity check", "base hash mismatch",
+    "unreadable",
+)
+
+
+class _Unreadable(Exception):
+    """A file the slot note will not use.  It carries no message: paths and
+    names in this check are tree-controlled text."""
+
+
+def _read_bounded(target: Path, rel: object, under: tuple[str, ...] = ()) -> bytes:
+    """The bytes of one file under *target*, or ``_Unreadable``.
+
+    The one way the slot note opens a file.  *rel* must be a relative path
+    with no ``..`` and no NUL, lying under *under* when that is given, and
+    no part of it from *target* down may be a symlink.  The file is opened
+    once, without following a link and without blocking, and read through
+    that descriptor only if it is a regular file; at most the cap plus one
+    byte is read, so a file larger than the cap is refused rather than
+    truncated.  The open flags are built here, not at import time, so a
+    platform that lacks one of them still imports the module.
+    """
+    if not isinstance(rel, str) or not rel or "\x00" in rel:
+        raise _Unreadable
+    path = Path(rel)
+    if path.is_absolute() or ".." in path.parts or not path.parts:
+        raise _Unreadable
+    if under and path.parts[:len(under)] != under:
+        raise _Unreadable
+    current = str(target)
+    for part in path.parts:
+        current = os.path.join(current, part)
+        if stat.S_ISLNK(os.lstat(current).st_mode):
+            raise _Unreadable
+    flags = os.O_RDONLY
+    for name in ("O_NOFOLLOW", "O_NONBLOCK", "O_NOCTTY", "O_BINARY"):
+        flags |= getattr(os, name, 0)
+    fd = os.open(current, flags)
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            raise _Unreadable
+        chunks: list[bytes] = []
+        total = 0
+        while total <= _NOTE_CAP:
+            chunk = os.read(fd, _NOTE_CAP + 1 - total)
+            if not chunk:
+                break
+            chunks.append(chunk)
+            total += len(chunk)
+    finally:
+        os.close(fd)
+    if total > _NOTE_CAP:
+        raise _Unreadable
+    return b"".join(chunks)
+
+
+def _usable_tokens(tokens: object) -> dict | None:
+    """The lockfile's token mapping if it is a string-to-string mapping, else
+    ``None``.  An unusable mapping is never read as "no tokens": that would
+    make every templated slot look filled."""
+    if tokens is None:
+        return {}
+    if not isinstance(tokens, dict):
+        return None
+    if not all(isinstance(k, str) and isinstance(v, str)
+               for k, v in tokens.items()):
+        return None
+    return tokens
+
+
+def _note_bucket(target: Path, rec: dict, installed: bytes | None,
+                 tokens: dict | None) -> str:
+    """Where one in-scope file lands: ``"checked"``, or one of the reasons in
+    ``_NOT_CHECKED``.  Any exception for a single record counts that record as
+    unreadable and never reaches the rest of the note."""
+    try:
+        base_rel = rec.get("base_cache")
+        if base_rel is None:
+            return "no base copy"
+        base_bytes = _read_bounded(target, base_rel, _BASE_CACHE_PARTS)
+        recorded = rec.get("base_hash")
+        if not (isinstance(recorded, str) and recorded
+                == "sha256:" + hashlib.sha256(base_bytes).hexdigest()):
+            return "base hash mismatch"
+        if tokens is None:
+            return "unreadable"
+        if installed is None:
+            installed = _read_bounded(target, rec.get("dst"))
+        elif len(installed) > _NOTE_CAP:
+            return "unreadable"
+        base_bytes.decode("utf-8")
+        installed.decode("utf-8")
+        return "checked"
+    except Exception:
+        return "unreadable"
+
+
+def _slot_note(target: Path, accepted: list, living: list, tokens: object,
+               failed: int) -> None:
+    """Advisory note on the slots an install still holds in Cairn's text.
+
+    It runs after the verdict is fixed and the report is printed, reads
+    nothing the integrity pass did not accept (plus the legitimate
+    living-state files), and writes to stderr only.  It receives the accepted
+    non-verbatim records with the bytes the integrity pass already read, the
+    legitimate living-state records, the lockfile's tokens, and how many
+    in-scope records did not pass -- never the violation list, the skipped
+    count or the exit code, so it has nothing to change them with.
+    """
+    usable = _usable_tokens(tokens)
+    counts = dict.fromkeys(("checked",) + _NOT_CHECKED, 0)
+    counts["failed the integrity check"] = (
+        failed if isinstance(failed, int) and failed > 0 else 0)
+    for rec, installed in accepted:
+        counts[_note_bucket(target, rec, installed, usable)] += 1
+    for rec in living:
+        if not rec.get("verbatim"):
+            counts[_note_bucket(target, rec, None, usable)] += 1
+    print(
+        f"slot note: files in scope {sum(counts.values())}; "
+        f"checked {counts['checked']}; slots checked 0, listed 0, "
+        f"empty (filled when its module is installed) 0; not checked: "
+        + ", ".join(f"{name} {counts[name]}" for name in _NOT_CHECKED),
+        file=sys.stderr)
+
+
+def _run_slot_note(target: Path, files: list, accepted: list, living: list,
+                   tokens: object) -> None:
+    """Run the note inside a fence.  An exception, ``SystemExit`` included,
+    becomes one line naming its type -- never its message, which can carry
+    text from the tree.  ``KeyboardInterrupt`` is not caught.  The caller's
+    exit code was fixed before this runs and is returned unchanged."""
+    try:
+        sys.stdout.flush()
+        failed = (sum(1 for r in files if not r.get("verbatim"))
+                  - len(accepted)
+                  - sum(1 for r in living if not r.get("verbatim")))
+        _slot_note(target, accepted, living, tokens, failed)
+    except (Exception, SystemExit) as exc:
+        name = re.sub(r"[^A-Za-z0-9_]", "?", type(exc).__name__)
+        try:
+            print(f"slot note: not run ({name})", file=sys.stderr)
+        except Exception:
+            return
+
+
 def verify(target: Path) -> int:
     lock = read_lockfile(target)
     if lock is None:
@@ -95,6 +253,8 @@ def verify(target: Path) -> int:
 
     violations: list[str] = []
     customized: list[str] = []
+    accepted: list[tuple[dict, bytes]] = []
+    living: list[dict] = []
     skipped = 0
     target_resolved = target.resolve()
     for rec in files:
@@ -133,6 +293,7 @@ def verify(target: Path) -> int:
         if rec.get("living_state"):
             if dst_rel in _LIVING_STATE_DSTS:
                 skipped += 1
+                living.append(rec)
                 continue
             violations.append(
                 f"  illegal living_state opt-out: {dst_rel} is not an "
@@ -149,6 +310,8 @@ def verify(target: Path) -> int:
             violations.append(f"  modified (hash mismatch): {dst_rel}")
             if _has_customized_slot(on_disk.decode("utf-8", errors="replace")):
                 customized.append(dst_rel)
+        elif not rec.get("verbatim"):
+            accepted.append((rec, on_disk))
 
     # Advisory (rollup #4): a verbatim facade forked from upstream whose engine
     # package is installed-but-dormant passes the hash check above (on-disk ==
@@ -189,12 +352,14 @@ def verify(target: Path) -> int:
                   "record it: python bootstrap/scaffold.py "
                   "upgrade --target <repo> --finalize " + " ".join(customized),
                   file=sys.stderr)
+        _run_slot_note(target, files, accepted, living, lock.get("tokens"))
         return 1
     checked = len(files) - skipped
     extra = (f" ({skipped} adopter-authored living-state file(s) tracked for "
              f"upgrade but excluded from the tamper check)" if skipped else "")
     print(f"verify_integrity: OK -- {checked} recorded file(s) match "
           f"{_LOCKFILE_REL}{extra}.")
+    _run_slot_note(target, files, accepted, living, lock.get("tokens"))
     return 0
 
 
