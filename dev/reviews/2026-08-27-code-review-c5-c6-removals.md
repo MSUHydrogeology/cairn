@@ -578,3 +578,7 @@ Both corrected before commit; the checker earned that one.
 * **Finding 3's falsification covered three test modules, not the full suite.**
   I established by tree-wide grep that no other test mentions the string, which
   is why I did not spend a second 8-minute run to prove the same thing.
+
+---
+
+Untracked paths: `dev/measurement/suite-runs.jsonl`, `dev/measurement/suite-cost.md` -- both are gitignored local measurement files (`.gitignore` lines 18-19), so a fresh checkout does not carry them. Added 2026-10-18 so the citations above resolve on any checkout.
