@@ -726,3 +726,187 @@ No simpler path to the accepted outcomes. The notice, the check and the guarded 
 * The effect of MM-PR-9 (ceremony order) rests on the manifest's frozen list and the board's description, not on a full read of the re-anchor runbook.
 * Windows and other non-macOS platforms; I ran nothing there.
 * I did not check `CHANGELOG.md`, the Dispositions wording at archive, or the neutrality gate against the widened checker `neutrality-and-upgrade-slots` will land first.
+
+## Plan review -- Claude Opus 5.5 (Internal Security Review) -- 2026-10-18
+
+```
+Reviewed commit: 20f145eda92c575473a2ccfcf021946086a0186c
+Target: the whole plan, read for its security treatment: Scope (and the answers folded after opening), What the exit codes are now, Frozen files, AST and the oracle, P1-P15, the C1-C6 and M criteria, The security findings ledger, Verification (mutation ledger, Boundary C, security preflight), Named residuals
+Prior findings: carried in, checked for coverage, not closed here -- SEC-3 to SEC-8 and CL-1 to CL-4 (dev/proposals/archive/2026-10-18-claude-model-mapping-install-path.md); GS-SR-3 to GS-SR-5 (dev/reviews/2026-10-18-security-review-gitignore-seed-guard.md)
+Assurance path: high-assurance -- inherited (the scaffold engine)
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+
+**Model**: claude-opus-5-5
+
+A fresh session, asked by the coordinating session to fill this plan's `+ Internal Security Review` obligation and nothing else. A separate fresh session wrote the ordinary Internal pass at the same time (committed as `d13bd2ac` while I worked); I wrote these findings without reading it. Its closing list, which I saw when appending, also raises the ceremony order (its MM-PR-9). MM-SR-3 carries the same fact because it bears on whether the ceremony is safe. I read the plan at the commit above, the accepted proposal's Security Review and closure pass, the `.gitignore` repair's Security Review, `bootstrap/SAFETY.md`, `bootstrap/_scaffold/SECURITY_MUTATIONS.md`, `bootstrap/AST_BASELINE_RUNBOOK.md` and the engine at that commit. Every probe ran in a detached worktree of `20f145ed` in a fresh scratch folder, under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13, PyYAML 6.0.3), on macOS. The plan's code does not exist yet, so where I tested one of its designs I wrote a stand-in from the plan's words, and I say so each time.
+
+### In plain words
+
+**Verdict: REVISE.** The plan is the right shape. Every finding it inherited becomes a criterion or a named disposition, and its main mechanism held up when I attacked it: write a fresh temporary file, then swap it in by renaming. In 6,000 racing calls against a stand-in of the new `.gitignore` code, nothing outside the project was written and no outside bytes were copied in. Three things should change before code is written:
+
+1. **Copying the old file's permissions can give another user your account (MM-SR-1, blocks).** The plan copies the old `.gitignore`'s "mode bits" onto the new file. On a shared machine, another user who can write the project folder can leave a `.gitignore` that is a program carrying the mark "run as this file's owner" (the setuid bit). Today Cairn appends to that file, and it stays theirs. Under the plan, Cairn writes a new file that belongs to *you*, keeps their program's bytes, and copies the mark. On Linux they can then run it as you. The fix is one mask: copy only the read and write permissions.
+2. **A 900-byte mapping file can freeze the check (MM-SR-2).** A YAML shortcut called a merge key lets each line double the work. The plan says depth and aliasing cannot blow the check up; this does, inside the YAML reader, before the plan's protection runs. The fix is to refuse merge keys, which no mapping needs.
+3. **The Maintainer's AST ceremony has no safe tool named (MM-SR-3).** No existing command can make this correction. The last time one was made, the Maintainer ran a script an agent kept outside the repository. This plan hands the Maintainer agent-computed fingerprints "for the Maintainer's use", and does not say the ceremony runs before the gate-manifest re-anchor. The plan should say how the ceremony works out its own figures, stops on a surprise, and dry-runs.
+
+The other seven are small; each can be folded or answered.
+
+| ID | Severity | Blocks `ready-to-implement`? | In short |
+|---|---|---|---|
+| MM-SR-1 | high, on shared machines | **yes** | copied mode bits carry setuid onto a file the installer now owns; set by path, they follow a swapped link |
+| MM-SR-2 | medium | fold in this revision | a merge-key chain hangs the checker; P8's claim is false |
+| MM-SR-3 | medium | fold in this revision (plan text only) | Chunk M: no instrument, agent-computed digests, a hard-coded set, no order with the gate-manifest re-anchor |
+| MM-SR-4 | low | no | the hard-link `.gitignore` refusal's text is unspecified, and the hint in flight is wrong for it |
+| MM-SR-5 | low | no | one descriptor-based reader for all three files, with the repository's own flag set; `O_BINARY` on the writes |
+| MM-SR-6 | low | no | the line rule finds rows that are not rows; one member of that class is listed |
+| MM-SR-7 | low | no | the checker's new lines must never print a parsed value |
+| MM-SR-8 | low | no | the real-install refusal fixture stops earlier once the repair's `dev/` guard lands |
+| MM-SR-9 | low | no | replacing `.gitignore` overrides a read-only file and changes its owner |
+| MM-SR-10 | low | no | three stale ledger and residual sentences; GS-SR-3's `SAFETY.md` note has no disposition |
+
+### Answers to the five questions
+
+**1. Coverage.** Every inherited item is a checkable criterion or a named disposition, checked against the source text rather than the plan's summary of it:
+
+* SEC-3: the capture's order, both guards and the replace (C4), and S5;
+* CL-1: `mkstemp`, the planted-names test, M15;
+* SEC-4 and CL-2: the re-derived exit-code table, the constant line, the direct-call and real-install tests, the stated asymmetry;
+* SEC-5 and CL-4: every value type scanned, the widened row pattern, both CL-4 spellings in the corpus, the class named;
+* SEC-6 and CL-3: `lstat` first, the missing file silent and first, the wording;
+* SEC-7: the generated corpus, M8, the version gap;
+* SEC-8: the `lockfile.py` comment, `_write_stage` pinned;
+* GS-SR-3: the `O_NOFOLLOW` read, the rename write, three stand-ins, the race probe repeated;
+* GS-SR-4: refused, through four entry points;
+* GS-SR-5: no read in the preflight, bytes kept.
+
+Nothing is lost in substance. Three sentences are stale, and GS-SR-3's second recommendation, that `SAFETY.md` say what a won race does, has no disposition (MM-SR-10).
+
+**2. The three exclusive-temp writers.** The mechanism is sound; the mode bits are not.
+
+* **Today's defects are real at `20f145ed`.** A hard link at `cairn-lock.yml.tmp` left the outside file holding the lockfile text, and afterwards the project's lockfile *was* that outside file (link count 2). A hard-linked `.gitignore` got `new-entry` appended to the outside file. A non-UTF-8 `.gitignore` stopped the no-entry preflight with `UnicodeDecodeError`.
+* **The design holds under the race.** A stand-in of P14/P15, written from the plan's words, faced the Security Review's racing thread: 3,000 calls with `.gitignore` flipping between a file and a symbolic link, and 3,000 with it flipping to a hard link. The outside file was unchanged both times, and 0 writes carried outside bytes.
+* **Planted names cannot redirect, block or clobber.** `O_CREAT | O_EXCL` refused all six planted kinds at the temporary's name (hard link, symbolic link, dangling link, named pipe, folder, socket), each with errno 17. Python's `mkstemp` already uses `O_EXCL | O_NOFOLLOW` and retries on a collision. The reader `O_RDONLY | O_NOFOLLOW | O_NONBLOCK` opened a pipe and a folder at once (then `fstat` refuses them), refused a link and a dangling link with errno 62, and refused a socket with errno 102.
+* **Refuse rather than replace a hard-linked `.gitignore` (P14): agreed.** The line is whether old content is copied. The `.gitignore` append keeps the old bytes, so replacing would copy an outside file into a file Git commits. The capture and the install record write wholly new content, so replacing is safe there. The plan's split follows that line.
+* **The mode bits: not sound as written** (MM-SR-1).
+* **Cleanup on failure** is sound if it removes only names this call created. A name that failed `O_EXCL` is not ours. Removing it would be harmless, because unlinking a name never follows it, but the criterion should say "only what this call created".
+* **fsync.** None of the three writers flushes before the rename. That is no worse than today, since an in-place write has the same crash window, so it is not a finding. One `os.fsync(fd)` before closing each temporary would make a crash leave the old file rather than an empty one. Optional.
+* **Rename semantics.** A replace inside one folder is atomic on POSIX. A link swapped onto a *parent* folder between the guard and the rename cannot carry the rename into someone else's folder. The rename needs the temporary file to be in that folder, and only someone who can already write there could put it there. So S5's "narrows the window to one rename" is conservative. What a parent swap can still do is make `mkstemp` create a new temporary in a folder the swapper picks, holding mapping or lockfile text (neither secret); the guard on the temporary then refuses, and a leftover may remain. Stated, not raised.
+* **A link swapped in between read and write.** For `.gitignore`, nothing leaks (above). For the capture, a swap between the early guard and the read can make it read an outside file. Nothing from that file is printed or written; the only signal is whether the prompts appear. The install record reads only the existing lockfile, through a reader outside this plan (*What I did not cover*).
+* **The simplest design** would be one shared "write by replacing" helper, as GS-SR-3 suggested, rather than three inline variants. The plan's choice, which adds no symbol, is acceptable because each variant has its own red-then-green tests and mutants. Either is safe once MM-SR-1 and MM-SR-5 are folded.
+
+**3. The notice and the checker on an untrusted mapping.**
+
+* **Terminal injection.** The notice prints two constants and nothing from the tree, and C3 pins that with a control-sequence fixture. Today's checker is clean too: four crafted files produced no ESC or BEL byte on either stream. They held a `\e]0;...\a` escape near a parse error, a tag spelled with `%1B`, a raw ESC, and a bidi override. PyYAML refuses raw control characters and prints tags with `repr`. Only the bidi override (U+202E) passed through, inside the error snippet, which is cosmetic. But a *parsed value* can hold ESC and BEL, through YAML's `\e` and `\a` escapes, so the new messages must never print one (MM-SR-7).
+* **Deep nesting.** Confirmed: `safe_load` raises `RecursionError` at 600 nested flow sequences or flow mappings, and at 100,000, in under a second; 400 loads. P8's catch is right.
+* **YAML bombs.** Not closed: merge keys blow up `safe_load` itself (MM-SR-2).
+* **Parity.** The line rule is looser than the YAML rule on purpose, for the named value class. It is also looser in a row class of which the plan lists one member (MM-SR-6). The corpus cannot show either, because it generates neither; only the explicit lists can hold them.
+
+**4. Exit codes and the oracle.** The pins stay honest. I read `bootstrap/tests/_oracle.py`:
+
+* the fresh-install scenario compares trees and ignores standard output;
+* the privileged scenarios install `solo-greenfield`, which never selects the module;
+* the containment scenario plants a linked `AGENTS.md` and stops in `_install_one`, a path this plan does not touch;
+* the new `.gitignore` bytes equal today's for a UTF-8 file (the stand-in writes the old bytes plus the same block);
+* the capture's new catch runs only on an interactive install, which the oracle never runs.
+
+**New refusal lines.** The capture's is constant (P6). The hard-link `.gitignore` refusal goes through the existing preflight catches, which print a prefix and the exception text. The plan does not say what that text is, and the hint the repair's answer is adding ("replace the link with a regular file") is wrong for a hard link, which *is* a regular file (MM-SR-4). The other new refusals, from the descriptor checks while seeding, end in a traceback with exit 1, or behind the `--apply` and `--stage` catches with exit 2. Python prints the path there with `repr`, so no control byte reaches the terminal.
+
+**5. The AST and frozen-file ceremony.** The arithmetic is right, measured. I took a scratch copy of `20f145ed`, changed one line in the capture and one in `_commit_lock_and_caches`, and added the two functions. The verifier reported `CHANGED 5`, the known-new digest mismatch for `_commit_lock_and_caches`, and both new functions as not pinned. The real-tree check fails in the same two `test_ast_attest.py` nodes as today, because both pass the known-new manifest. But the plan does not leave the Maintainer a ceremony that is safe to perform (MM-SR-3).
+
+### Findings
+
+#### MM-SR-1 -- high on shared machines, blocks: copying the old file's mode bits carries setuid onto a file the installer now owns, and copying them by path follows a swapped link
+
+**Plain:** a file's "mode" holds more than who may read and write it. It can also carry a mark that says "when this file is run, run it as its owner" (setuid). Today Cairn appends to the existing `.gitignore`, so the file keeps its owner. The plan swaps in a new file, which belongs to whoever ran Cairn, and copies the old mode onto it. If someone else made the old file, the result is their content, your ownership, and their mark.
+
+* **What the plan says.** P14 (`dev/plans/model-mapping-install-path.md:209`) "sets the old file's mode bits on it when one existed". C4 (`:379`) says "the new file keeps the old file's mode bits (`0o640` stays `0o640`)". The capture (`:352`) copies "the old file's mode bits". Neither says which bits, or how they are set. The usual ways, `stat.S_IMODE(st.st_mode)` and `shutil.copymode`, both include the setuid, setgid and sticky bits.
+* **Probe 1, no race needed.** A stand-in of P14 that sets the mode through the descriptor, from the read's `fstat`. The old `.gitignore` was a copy of a program, with mode `0o4755`. After one seed call there was a new file (a new inode), still mode `0o4755`, owned by the user who ran the seed, holding the program's bytes with the ignore line appended. On this Mac the program then would not run: code signing killed it (exit 137). An ELF program with bytes appended still runs on Linux. I did not test Linux.
+* **So, on a shared Linux machine,** such as a lab server with a group-writable project folder: another user makes `.gitignore` their own file, holding a program, and marks it `4755`, as anyone may do to their own file. You run install, `--stage`, `--adopt-module`, or an `--apply` that adds skills. The seed replaces the file with one you own, setuid, with their program in it. They run it, and it runs as you. Today the same file stays theirs. Git cannot carry a setuid bit, so this needs someone already on the machine: the premise the plan's hard-link fixes already accept.
+* **Probe 2, the race.** The same stand-in, with the temporary file swapped for a link to a "victim" file (mode `0o600`) after the write and before the mode is set. Set by path (`os.chmod`), the victim became `0o664`, although the guard then refused the replace. Set by descriptor (`os.fchmod`), it stayed `0o600`. P14 sets the mode before its guard, and the capture after its guard; neither order protects a path-based call.
+* **Recommended fix.** Set the mode with `os.fchmod` on the temporary's own descriptor, before closing it. Take the bits from the `fstat` of the descriptor that was read (for the capture, from the stat of the regular file it read), masked to read and write: `stat.S_IMODE(st.st_mode) & 0o666`. A `.gitignore` or a mapping never needs an execute or setuid bit, and `0o640` still stays `0o640`. Criteria: an old file with mode `0o4755` yields a new file with no setuid, setgid, sticky or execute bit; a stand-in that swaps the temporary for a link before the mode is set leaves the victim's mode unchanged and the replace refused. Mutants: drop the mask; set the mode by path. That stand-in also kills a mutant that drops the guard on the temporary file, which no criterion pins today. The capture's content is not the old file's, so the mask there is defence in depth. P13's install-record writer creates with `0o666` under the umask and copies nothing, so it is unaffected.
+
+#### MM-SR-2 -- medium: a 900-byte mapping freezes the checker through YAML merge keys, and P8 says that cannot happen
+
+**Plain:** YAML has a shortcut, `<<:`, that copies one mapping into another. Each line of a chain can copy the line before it twice, so the work doubles with every line, and the checker's YAML step never finishes. No mapping needs the shortcut.
+
+* **What the plan says.** P8 (`:203`): the loader "walks the loaded value with an explicit stack, visiting each object once, so neither depth nor aliasing can blow it up". C1 (`:293`) tests a 22-level alias document. The walk is safe, but the blowup happens before it, inside `yaml.safe_load` (`scripts/check_model_selection.py:88`), which builds merged mappings eagerly.
+* **Probe** (PyYAML 6.0.3). The file is `l0: &l0 {k0: 1}`, then `l{i}: &l{i} {<<: [*l{i-1}, *l{i-1}], k{i}: 1}` for each line, plus one real row. Load time by chain length: 20 lines (747 bytes) 1.45 s; 22 lines 5.2 s and 254 MB; 24 lines (895 bytes) 21.1 s and 772 MB. The cost doubles with each line. Today's checker on the 24-line file was still running when killed at 10 s (exit 124). A loader that refuses merge keys rejected the same file in 4 ms.
+* **Why it matters here.** It is pre-existing, since today's structural step loads the same way, and it only denies service. But this plan rewrites that step and claims the property, and the check is what II-5 and the seeded row tell an agent to run, possibly in a project it does not trust.
+* **Recommended fix.** Load with a `yaml.SafeLoader` subclass whose `flatten_mapping` raises a `ConstructorError` on any merge key and otherwise defers to the base, so such a file exits 3, "not valid YAML", before anything is built. Correct P8's sentence. Criterion: the 24-line chain exits 3 within a fixed time (a subprocess with a timeout of a few seconds); without the refusal it times out. Mutant: drop the refusal. Refusing anchors and aliases altogether would also work, and would make the visited set unnecessary, but it changes more behaviour than the accepted text asked for.
+
+#### MM-SR-3 -- medium: Chunk M names no safe way to perform the AST correction, and hands the Maintainer agent-computed digests
+
+**Plain:** the AST correction rewrites the fingerprints that prove the engine's code is the code that was reviewed. A safe correction works out the new fingerprints itself, from the code as it stands, and stops if anything moved that nobody declared. The plan does not say how this one is done.
+
+* **No existing tool does it.** `update-symbol`, the runbook's only writer, refuses every symbol outside `_UPDATE_ALLOWLIST` (`bootstrap/AST_BASELINE_RUNBOOK.md:21-34`), and nothing generates the known-new file (`:78`). All eight symbols here are outside the list, so the Maintainer either edits two JSON files by hand or runs a script.
+* **The last such correction ran a script that never entered the repository.** `lockfile-provenance-fields` Chunk G (`3cb85ca`, `c3d5bd98`) used `reanchor_lockfile_provenance_fields.py`, kept in an agent's scratch folder; its code review confirmed the script never entered the tree (`dev/plans/archive/lockfile-provenance-fields.md:1245`). The digests it wrote were whatever that agent's code computed, and no reviewer read that code. With Chunk M silent, that precedent is the default.
+* **The plan supplies the figures.** C6 (`:398`) records, "for the Maintainer's use", the CHANGED set, the new symbols' digests and the re-keyed digest. The runbook says never to carry such figures forward (`AST_BASELINE_RUNBOOK.md:38`, `:122`).
+* **The set is hard-coded, and already moving.** Chunk M (`:266`), C6 (`:401`) and the board row (`dev/PLANNING.md:334` at `20f145ed`) name "the repair's four CHANGED functions". The repair's answer, uncommitted in the shared tree as I write, adds guards to `create_dev_tree`, which is baselined. That set would become five.
+* **The order with the gate-manifest re-anchor is not stated.** `bootstrap/tests/fixtures/scaffold_ast_known_new.json` is a frozen file in `bootstrap/tests/fixtures/gate_manifest.json` (checked by script), and the AST ceremony writes it. If the gate-manifest re-anchor the board is waiting on (`dev/PLANNING.md:370`) runs first, the AST ceremony then changes a frozen file. `test_gate_manifest.py` does not notice that, and a second re-anchor is owed.
+* **Recommended fix (plan text only).** Chunk M states the steps, in order:
+  1. Confirm that `bootstrap/_scaffold/` at the ceremony commit is byte-identical to the code-reviewed tested commit, and trace any difference first.
+  2. Derive CHANGED, REKEYED, DROPPED and NEW fresh with `_ast_attest`'s own `_merge_current` and `_classify` (runbook Steps 1 and 2). Stop unless they equal the declared sets taken from the reviewed records, the repair's and this plan's, each traced to its commit.
+  3. Write with a tool that computes every digest from the live tree and contains none, prints each key's old and new value in a dry run, refuses on any key not declared, and is committed and code-reviewed before the Maintainer runs it. Or name the by-hand procedure instead.
+  4. Verify with `--known-new`, confirm the baseline count did not grow, and commit both fixtures by path.
+  5. Only then run the gate-manifest re-anchor, so it records the post-ceremony `scaffold_ast_known_new.json`.
+
+  C6 labels its digests "a cross-check the ceremony's own derivation must equal, never an input". Chunk M and the board row say "the symbols the repair changed, derived at the ceremony", not "four".
+
+#### MM-SR-4 -- low: the hard-link `.gitignore` refusal prints an unspecified line, and the hint being added is wrong for it
+
+* **The text is unspecified.** C4 (`:373`) asserts "exit 2 with the `.gitignore` refusal line"; P14 says what is refused, not what the message says. At `20f145ed` the three preflight catches (`bootstrap/_scaffold/cli.py:457` and two in `upgrade.py`) print a prefix and the exception text.
+* **The hint is wrong for a hard link.** The repair's answer, uncommitted, appends "replace the link with a regular file, then re-run." A hard-linked `.gitignore` already is a regular file. The advice will baffle the one person who meets it, and a refusal that reads as nonsense invites working around it.
+* **Open errors differ by kind.** The descriptor open fails with errno 62 for a link and 102 for a socket on this Mac, and with other numbers elsewhere. If only `ELOOP` becomes the refusal, a socket ends in a raw `OSError`.
+* **Recommended fix.** State the hard-link message and pin it in C4: fixed text naming `.gitignore` and the reason, with a fix that is true for a hard link ("make it a file of its own: copy it to a new name, then move that over it"). State that every error from the descriptor open, except "no such file", becomes the refusal.
+
+#### MM-SR-5 -- low: use one descriptor-based reader for all three files, with the repository's own flag set
+
+* **Three readers, three recipes.** The notice helper (C3, `:335`) runs `lstat`, guards, then reads by path. The capture (`:350`) reads by path. `seed_gitignore` (P14) opens with `O_NOFOLLOW | O_NONBLOCK`. The repository already has a reviewed recipe: `_read_bounded` in `bootstrap/verify_integrity.py:115-157` opens with `O_NOFOLLOW | O_NONBLOCK | O_NOCTTY | O_BINARY`, built at call time, and reads through the descriptor only when `fstat` says it holds a regular file.
+* **Why it matters.** With that recipe, the helper's "never opens anything but a regular file" holds by construction. With check-then-open it does not: a pipe swapped in between the `lstat` and the read would hang the install the notice exists to inform. That needs someone changing files during the run, so it is low.
+* **`O_BINARY` on the writes.** The raw `os.open` creations in P13 and P14 leave out `O_BINARY`. On Windows `os.open` defaults to text mode, so `os.write` turns each newline into a carriage return and a newline. That would alter the base-cache bytes, which must equal upstream, and break P15's byte-exactness. `mkstemp` adds `O_BINARY` itself. Not measured, since I have no Windows host; the engine's copy-mode fallback for hosts without symbolic links shows it does not rule Windows out.
+* **Recommended fix.** The three reads use the `_read_bounded` flag set and `fstat` on the descriptor. The creations in P13 and P14 add `getattr(os, "O_BINARY", 0)`.
+
+#### MM-SR-6 -- low: the line rule finds rows that are not rows, and the plan lists one member of that class
+
+* **The divergence.** The bare checker and the engine accept a `tier:` line anywhere outside a comment; PyYAML looks inside `mapping`. With a stand-in of the rule P3 describes (the author's prototype is not committed), three files with `mapping: []` passed the line rule and failed the YAML rule. One had a row under another key, one a row inside a block scalar, and one a row inside a quoted value spread over lines. The engine would stay silent on each of them.
+* **The plan lists one member.** It names only "a repeated empty `mapping:` key" (C1, `:291`; Named residuals, `:569`). The generated corpus cannot produce the others, so "a difference outside both lists fails" (`:294`) never meets them.
+* **Severity.** Each needs a deliberate spelling by someone who could edit the checker anyway, so no authority is at stake. But the plan's title promises a check that is right both ways.
+* **Recommended fix.** Name the class in Named residuals ("a row-shaped line that is not an item of `mapping`"), and add those three files to the explicit stricter-with-PyYAML list.
+
+#### MM-SR-7 -- low: the checker's new lines must never print a parsed value
+
+* **The gap.** The value scan and the no-row check add failure messages. The plan says the no-row message "does not say `FILL ME`" (`:289`), but not what either message prints. A parsed value can hold ESC and BEL: `"\e]0;PWNED\a\e[2J"` loads as `'\x1b]0;PWNED\x07\x1b[2J'`. Printing it would send control sequences to the terminal of whoever runs the check. Today's checker never prints a value.
+* **Recommended fix.** A criterion that both new messages are fixed text plus the mapping's path. Its fixture is a `FILL ME` value carrying `\e` and `\a` escapes, and it asserts no ESC or BEL byte on standard output or standard error.
+
+#### MM-SR-8 -- low: the real-install refusal fixture stops earlier once the repair's `dev/` guard lands
+
+* **Today the fixture works.** C4 (`:355`) proves the capture itself refused by installing over a linked `dev/.cairn` that already holds the files every earlier step needs. Probed at `20f145ed`, an interactive install over that tree reaches the capture.
+* **After the repair's answer it will not.** With the repair's uncommitted `create_dev_tree` guard applied to a scratch copy, the same install stops in `create_dev_tree` with a traceback (`dev/.cairn` is in `_DEV_DIRS`), and the capture is never reached.
+* **A fixture that works in both.** A mapping that is itself a link to an outside file reached the capture in both copies, because `_install_one` skips an existing destination before its guard.
+* **Recommended fix.** Use the linked mapping file for the real-install case, and keep the linked `dev/.cairn` in the direct-call test. The distinctive-name and no-lockfile assertions carry over unchanged.
+
+#### MM-SR-9 -- low: replacing `.gitignore` overrides a read-only file and changes its owner
+
+* **Probed.** A rename needs write permission on the folder, not on the file. Over a `.gitignore` with mode `0o444`, today's seed fails with `PermissionError`; the stand-in of P14 replaced the file and kept `0o444`. The new file also belongs to the installer, takes a group chosen by the folder and the system rather than the old file's, and loses the old file's extended attributes.
+* **Not listed.** C4's "Behaviour that must not change" (`:379`) names none of these. None writes outside the project, but a person who made `.gitignore` read-only to stop tools editing it is overridden without a word.
+* **Recommended fix.** Either open the old file with `O_RDWR` rather than `O_RDONLY`, so a file you may not write is refused as before and is still never written through, or name the three changes among P14's residuals.
+
+#### MM-SR-10 -- low: three stale sentences, and one recommendation with no disposition
+
+* **The ledger contradicts C4.** The ledger row for SEC-1 (`:412`) says "C4 leaves the `seed_gitignore` row alone", and the capture's inventory bullet (`:364`) says "The `seed_gitignore` row is untouched". The `.gitignore` inventory bullet (`:381`) rewrites that row. SEC-1's "makes no containment claim about it" no longer holds either, because C4 changes `seed_gitignore`'s containment.
+* **S5 is incomplete.** S5 (`:564`) says the hard-link case is closed "for the capture and for the install-record writer". The `.gitignore` append is closed too, by refusal.
+* **One recommendation has no disposition.** GS-SR-3 also recommended that `bootstrap/SAFETY.md`'s accepted "small TOCTOU window" say what a won race does: it overwrites. The plan neither does that nor defers it. After this plan, three writers no longer have the window, and the rest still overwrite on a win.
+* **Recommended fix.** Correct the three sentences, and give the `SAFETY.md` point a disposition: fold one sentence, or defer it at archive with the other deferrals.
+
+### What I did not cover
+
+* **Linux and Windows.** Everything ran on macOS (APFS). MM-SR-1's escalation depends on Linux running an ELF with bytes appended, which I did not run. MM-SR-5's Windows point comes from the documented `os.open` default, not from a run.
+* **The plan's own code.** None exists yet. P14/P15 and the bare row rule were tested as stand-ins written from the plan's words.
+* **The ordinary Internal pass's ground**: wording, sequencing, the seeds, the board's row grammar, the stub merge, the presets. I did not read that pass's findings.
+* **The full suite.** I ran no test node. The AST figures come from `_ast_attest`'s own functions, run on a scratch copy.
+* **The lockfile reader.** `read_lockfile` (`bootstrap/_scaffold/lockfile.py:279`), which `_commit_lock_and_caches` calls first, follows a link and would open a pipe. It is pre-existing, outside this plan, and needs someone on the machine. Noted, not raised.
+* **A full sweep of in-place engine writes for the hard-link class.** The plan also says none was made.
+* **The repair's answer in flight** (the `create_dev_tree` guard, the refusal hint). I read it from the shared tree's uncommitted diff, only to see what will move under this plan.
