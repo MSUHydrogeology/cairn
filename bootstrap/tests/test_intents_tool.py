@@ -328,6 +328,43 @@ class TestGitignoreSeedingRefusesLinks:
         assert (target / ".gitignore").is_symlink()
         assert not (target / "AGENTS.md").exists()
 
+    def test_adopt_module_refuses_before_recording_anything(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Adoption seeds ``.gitignore`` as its last step, after the lockfile
+        and the module's files are written. A linked ``.gitignore`` must stop
+        it before the first of those writes: a lockfile that records a module
+        whose seed was refused is a half-done adoption nobody asked for."""
+        target = tmp_path / "tgt"
+        target.mkdir()
+        assert self._install(target) == 0
+        outside = tmp_path / "elsewhere" / "startup-file"
+        outside.parent.mkdir()
+        outside.write_bytes(_OUTSIDE_BYTES)
+        (target / ".gitignore").unlink()
+        (target / ".gitignore").symlink_to(outside)
+        lock_path = target / "dev" / ".cairn" / "cairn-lock.yml"
+        lock_before = lock_path.read_bytes()
+        module = "architecture-review"  # opt-in; not in the roster installed above
+        module_files = [target / sp.dst for sp in _MODULE_MAPPINGS[module]]
+        assert not any(f.exists() for f in module_files)
+        capsys.readouterr()
+
+        rc = main(["upgrade", "--target", str(target),
+                   "--cairn-root", str(CAIRN_ROOT), "--adopt-module", module])
+
+        err = capsys.readouterr().err
+        assert rc == 2, err
+        assert ".gitignore seed refused (containment)" in err
+        assert "symlinked destination" in err
+        assert outside.read_bytes() == _OUTSIDE_BYTES
+        assert lock_path.read_bytes() == lock_before, (
+            "the lockfile was rewritten before the seed was refused"
+        )
+        assert not any(f.exists() for f in module_files), (
+            "the module's files were installed before the seed was refused"
+        )
+
     def test_dry_run_install_predicts_the_refusal(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:

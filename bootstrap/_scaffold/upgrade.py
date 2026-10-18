@@ -1525,6 +1525,17 @@ def _cmd_adopt_module(
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
+    # The .gitignore seed is the last step, after the lockfile is committed. A
+    # linked .gitignore is refused here, before the first write, so a refused
+    # seed never leaves the module recorded. seed_gitignore's own guard is what
+    # runs: with no entries it writes nothing.
+    try:
+        seed_gitignore(target, (), dry_run=True)
+    except ScaffoldSecurityError as exc:
+        print(f"error: .gitignore seed refused (containment): {exc}",
+              file=sys.stderr)
+        return 2
+
     # D1 step 4 -- ONLY THEN the spec loop, which creates destination files.
     lock_dsts = {rec["dst"] for rec in lock.get("files", [])}
     spec_dsts = {sp.dst for sp in _MODULE_MAPPINGS[name]}
