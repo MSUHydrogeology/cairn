@@ -1119,3 +1119,154 @@ plan-review round.
   the plan-review commit: the existing tests pass 372 with and without the edit,
   the prototype test makes 373, `claim_check` exits 0 on all seven edited
   documents, and the neutrality leg is unchanged at 74.
+
+## Retroactive application -- Claude Sonnet 5.5 (implementer) -- 2026-10-18
+
+**In plain terms.** C1 tries the new wording on two past LHM plans, with a blind
+drafter and a separate scorer, before anything ships. This first part of the
+record fixes what the drafter will be shown and what the scorer will judge
+against. It is committed **before any draft exists**, so no input can be
+chosen after seeing one. Nothing has been drafted or scored yet. The drafts
+(verbatim), the scores, the verdicts and the stop-rule outcome are appended
+under this same heading in later commits: one section, written in more than one
+commit, because the inputs have to be on the record first.
+
+### Where C1 starts
+
+C1 starts at commit `396c13d6` (Status to `implementing`, 2026-10-18). The
+wording is read at that commit.
+
+### The inputs, fixed
+
+**1. The wording.** The fenced text under "C2 — the block" in *Wording each
+chunk lands*: lines 395 to 439 of this plan at `396c13d6`, 45 lines, starting
+`### Independent scientific check`. Its content is identical at `cca86a86`, and
+at `89f82f3f` (where the plan review was folded in; the line numbers there
+differ). SHA-256 of the 45 lines, as a plain file:
+`327d0b175cafb40e43dc421a0894403edfa4e44854e4e1f1871200fa55c6f947`.
+The other fenced texts in that section (the plan-template paragraph, the three
+promise sentences, the test description) are **not** given to the drafter: they
+concern what an author does at plan time or in the repository, not what a
+proposal author fills in, and withholding them can only give the drafter less.
+The block cites "security preflight S2", which is not in the drafter's two
+texts; that is how the wording was reviewed and it is left as is.
+
+**2. The stor-modflow source proposal, as first opened.** LHM commit
+`b9d4c59a` (2026-08-27 09:15, "proposal-open", the commit that created the
+file; the first review of it is `99317e5a` at 09:36). Taken with `git show
+b9d4c59a:dev/proposals/2026-08-27-claude-stor-modflow-flopy-layer.md` in the LHM
+repository, read only. 427 lines (the plan expected 427); SHA-256
+`6971f5191097e17df6940dfde5a424921aa7f062b247770d111afb8e4e4cc46b`. Checked on
+the text:
+* **No review of it.** Its headings are Context, Proposed paths, Proposal
+  (sections 1 to 10), Rationale, Alternatives, Evidence, Signals; its header says
+  "Plan review: not required". Its Context paragraph recounts reviews of the
+  *earlier* STOR implementation (lines 22 to 31) and lists five defects of the
+  hand-rolled MODFLOW handling; none is about priming.
+* **No mention of priming.** Searched case-insensitively for `prim`, `spin`,
+  `cold`, `warm`, `burn`, `equilib` and `initial state/condition`. The only hits
+  are "primitive" (line 89), "burned" (line 345, figurative) and, for `steady`,
+  the stress-period flag (line 59). Section 5 (lines 152 to 168) says to carry
+  a rolling `maxDelay`-deep stack "which is what `unsaturated_zone_module.m`
+  does" and says nothing about filling it first. The instrument was checked:
+  the same search for `unsaturated` finds 8 lines.
+* **One mention of RAMP, in a different role.** Line 148 (section 4, on the date
+  axis) says pairing by containment "removes the need to guess at the RAMP
+  virtual period". It is not about the unsaturated store, so it does not state
+  the shift that was later found missing, but the drafter will see the word.
+* **The unverified data claim is present.** Lines 172 to 173: the OUTS file
+  "carries the model's own `unsatStorage`".
+
+**3. The assemble-full-port source proposal, as first opened.** LHM commit
+`dde80719` (2026-10-01 11:11, "proposal: assemble-full-port -- opened
+(awaiting-review)", the commit that created the file; its reviews are
+`b427e221` and `5c7597f3`, later). Taken with `git show
+dde80719:dev/proposals/2026-10-01-claude-assemble-full-port.md`, read only. 360
+lines (the plan expected 360); SHA-256
+`3f36d81bea2f946b3e93399f3f3845bc53e5550a1b9049568a3464e9d39c795f`. Status
+`awaiting-review`; no review section in it. The part this plan implements, as
+the drafter's brief will name it, in this one sentence: *The plan you are
+drafting for implements Part A of this proposal ("The stage's foundation", A1 to
+A3). It is plan 1 of 6 for the whole proposal.*
+
+**What each brief holds, and nothing else.** Stor-modflow drafter: input 1 and
+input 2. Assemble drafter: input 1, input 3 and the sentence above. No path into
+the LHM repository, no error statement, no review.
+
+### The second plan, by the rule
+
+The rule (C1): among archived LHM plans, newest first **by archive commit date**,
+the first in which a code review or a later record found an error in a
+**computed result**.
+
+* **Applied.** For each of the 46 files in LHM's `dev/plans/archive/` (at `master`
+  `d3b5bd0f`), the commit where it first appears at its archive path
+  (`git log --diff-filter=AR -M`), sorted by committer date. The newest is
+  `assemble-part-a`, archived at `72ccf3db` (2026-10-15 12:12). The next is
+  `cedar-creek-test-dataset` (`5e038956`, 2026-10-14 15:17). A search of all
+  branches (`git log --all`) finds no archive commit later than `72ccf3db`.
+* **It qualifies.** Its first code review (`4782e001`, 2026-10-14) raised **CR1**,
+  blocking: in the default (production) LAND build, when no model cell counts as
+  truly partly covered by land use, the fill for uncovered cells is
+  `sum(weights[partial]) / numPartial`, which is 0/0, so the land-use weights
+  written for those cells are NaN, stored as the file's missing-data code, with
+  only a `RuntimeWarning`. That is an error in a computed result (an array the
+  model reads), not in structure, tests or documents. The reviewer's probe P2
+  showed it on Cedar Creek with the partial threshold patched so no cell counted
+  as partial: the build completed and the weights held 200 missing entries (20
+  cells by 10 types). The fix is `5b6676af`; the second code review (`87fd7e2e`,
+  2026-10-15) closed it, with 8 mutations caught.
+* **Result: the rule picks `assemble-part-a`, as the plan expected.** The rule
+  stops at the first plan that qualifies, so no older plan was read.
+
+### The errors, stated before any draft
+
+These are the statements the scorer will be given beside each draft. Each was
+checked against the LHM commits it cites.
+
+**Stor-modflow** (`dev/plans/archive/stor-modflow-correctness.md`): *The
+unsaturated-zone store was computed from a percolation stack that was never
+primed, so the model's own 365-day warm-up pass (`unsaturated_zone_module.m`
+lines 296 to 352) had no counterpart, which offset the domain-mean unsaturated
+anomaly by about 14.9 kg m-2 for the rest of the series (the full-series mean
+was +13.5 before the fix and -1.2 after), and the model's RAMP virtual-period
+shift was left out (about -0.15 kg m-2); the External code review found both at
+LHM `983d6c58` (findings P20 and P21), and they were fixed in code at `0b2ca707`
+and recorded with the decomposition at `6dcc0cc5`. Separately, the reference
+array the first check relied on, `unsatStorage` in the run's OUTS file, had never
+been saved (the run log says "Variable 'unsatStorage' was not saved", the array
+being 2.80 GB, over the 2 GB limit of the file format used); the Internal plan
+review found this at `dae97b43` (P1) and the check was withdrawn at `7a9771f5`.*
+
+**Assemble part A** (`dev/plans/archive/2026-10-01-claude-assemble-part-a.md`):
+*In the default LAND build, when no model cell counts as truly partly covered by
+land use, the fill for uncovered cells is 0/0, so the build wrote NaN
+(missing-data) land-use weights for every uncovered cell, with only a warning
+(200 missing entries on Cedar Creek when its partial threshold was patched so none
+counted as partial; Cedar as run has 13 truly partial cells and was unaffected).
+The first code review found it as CR1 (blocking) at LHM `4782e001`; it was
+fixed at `5b6676af` and closed at the second review, `87fd7e2e`.*
+
+### Noted before drafting, not scored
+
+* **One citation corrected against the plan's wording.** The plan says the
+  priming and RAMP defects were "fixed at `6dcc0cc5`". That commit is the
+  author's response that records the fix; the code change is `0b2ca707`
+  (`6dcc0cc5` says "[P20]-[P24] fixed in 0b2ca707"). The statement cites both.
+  The figures in the plan (14.9, +13.5 to -1.2, -0.15) match `6dcc0cc5`: priming
+  alone +14.91, RAMP shift alone -0.15, full-series mean +13.5 before and -1.2
+  after.
+* **How CR1 came to be reachable.** The rule that emptied the "partial" set
+  (a 1e-4 shortfall threshold, ledger row L25) was added to the plan on
+  2026-10-14, at `15978a3f`, after the proposal was opened on 2026-10-01. The
+  proposal as opened says nothing about partial cells or a fill value. So a draft
+  made from it cannot name the 0/0 itself; a "yes" on question (A) for this plan
+  would need a check that fails whenever the land-use weights contain a missing
+  value, on a region without partial cells. This is recorded so the verdict is
+  read with it. It is not a reason to pick another plan: the plan was picked by
+  the rule, and the rule is not to be tuned to how well the block fits.
+* **The stor-modflow plan implements the first of two plans** from its proposal
+  (sections 1 to 7 and items from an earlier proposal; the helper-extraction plan
+  takes sections 8 to 10), by the Decision's sequencing, which postdates the
+  opened text. The opened text has all ten sections and names no split, and
+  neither input here names one, so the drafter drafts for the proposal as written.
