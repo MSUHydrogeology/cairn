@@ -80,6 +80,9 @@ def test_a_filled_customized_slot_is_pointed_at_finalize(
     err = capsys.readouterr().err
     assert "--finalize AGENTS.md" in err
     assert "VENDOR.md" not in err.split("--finalize", 1)[1]
+    # --finalize records the whole file, and the marker says nothing about
+    # text outside the slot, so the hint must ask for that check first.
+    assert "nothing outside its slots changed" in err
 
     assert main(["upgrade", "--target", str(tmp_path), "--cairn-root",
                  str(CAIRN_ROOT), "--finalize", "AGENTS.md"]) == 0

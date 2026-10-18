@@ -164,11 +164,15 @@ def verify(target: Path) -> int:
             # Named only for files with a slot marked customized: a filled
             # slot is an expected edit, and --finalize is how it is recorded.
             # Suggesting it for any other mismatch would invite an adopter to
-            # bless a change nobody can explain.
+            # bless a change nobody can explain.  --finalize records the whole
+            # file and the marker vouches only for its slot, so the adopter
+            # checks the rest before recording it.
             print("A modified file with a slot marked "
                   "`<!-- cairn:customized -->` is usually a slot you filled "
-                  "on purpose. If so, record it: python bootstrap/scaffold.py "
-                  "upgrade --target <repo> --finalize " + " ".join(customized),
+                  "on purpose. Check that nothing outside its slots changed "
+                  "(--finalize records the whole file), then record it: "
+                  "python bootstrap/scaffold.py upgrade --target <repo> "
+                  "--finalize " + " ".join(customized),
                   file=sys.stderr)
         return 1
     checked = len(files) - skipped
