@@ -45,16 +45,14 @@ from bootstrap._scaffold.lockfile import (  # noqa: E402  (trust anchor: narrowe
 from bootstrap._scaffold.install import trusted_upstream  # noqa: E402  (fork-advisory comparison source)
 
 
-#: A ``cairn:slot`` body, and the marker an adopter adds inside one they
-#: filled (``bootstrap/BOOTSTRAP.md``).  Both match the way the merge engine
-#: reads them (``bootstrap/_scaffold/slotmerge.py``); they are inlined so this
-#: trust check imports nothing from the engine beyond the lockfile reader.
-_SLOT_BODY_RE = re.compile(
-    r"<!--\s*cairn:slot\s+(\S+)\s*-->(.*?)<!--\s*cairn:end\s+\1\s*-->",
-    re.IGNORECASE | re.DOTALL,
-)
-_CUSTOMIZED_MARKER_RE = re.compile(
-    r"<!--\s*cairn:customized\s*-->", re.IGNORECASE,
+#: The slot markers and the customized marker an adopter adds inside a slot
+#: they filled (``bootstrap/BOOTSTRAP.md``), matched the way the merge engine
+#: reads them (``bootstrap/_scaffold/slotmerge.py``).  Inlined, so this trust
+#: check imports nothing from the engine beyond the lockfile reader.  The slot
+#: name is bounded so a crafted file cannot make a match backtrack far.
+_MARKER_RE = re.compile(
+    r"<!--\s*cairn:(?:(slot|end)\s+(\S{1,200}?)|(customized))\s*-->",
+    re.IGNORECASE,
 )
 
 
@@ -63,9 +61,23 @@ def _has_customized_slot(text: str) -> bool:
 
     Only a marker inside a slot counts: a file that quotes the marker in
     prose has no filled slot, so its edit is not one ``--finalize`` explains.
+    One pass over the markers: a modified file is untrusted input, and
+    scanning ahead for each opener's end made a file of unclosed slots cost
+    quadratic time.
     """
-    return any(_CUSTOMIZED_MARKER_RE.search(m.group(2))
-               for m in _SLOT_BODY_RE.finditer(text))
+    open_name: str | None = None
+    marked = False
+    for m in _MARKER_RE.finditer(text):
+        kind, name, customized = m.groups()
+        if customized:
+            marked = marked or open_name is not None
+        elif kind.lower() == "slot":
+            open_name, marked = name.lower(), False
+        elif open_name is not None and name.lower() == open_name:
+            if marked:
+                return True
+            open_name = None
+    return False
 
 
 def verify(target: Path) -> int:
@@ -169,10 +181,12 @@ def verify(target: Path) -> int:
             # checks the rest before recording it.
             print("A modified file with a slot marked "
                   "`<!-- cairn:customized -->` is usually a slot you filled "
-                  "on purpose. Check that nothing outside its slots changed "
-                  "(--finalize records the whole file), then record it: "
-                  "python bootstrap/scaffold.py upgrade --target <repo> "
-                  "--finalize " + " ".join(customized),
+                  "on purpose. This check keeps only a hash, not the text, so "
+                  "it cannot show you what changed: read the whole file, or "
+                  "its history since install, and confirm that nothing "
+                  "outside its slots changed (--finalize records the whole "
+                  "file). Then record it: python bootstrap/scaffold.py "
+                  "upgrade --target <repo> --finalize " + " ".join(customized),
                   file=sys.stderr)
         return 1
     checked = len(files) - skipped

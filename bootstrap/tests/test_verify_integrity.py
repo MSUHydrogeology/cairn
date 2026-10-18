@@ -81,8 +81,10 @@ def test_a_filled_customized_slot_is_pointed_at_finalize(
     assert "--finalize AGENTS.md" in err
     assert "VENDOR.md" not in err.split("--finalize", 1)[1]
     # --finalize records the whole file, and the marker says nothing about
-    # text outside the slot, so the hint must ask for that check first.
+    # text outside the slot, so the hint must ask for that check first --
+    # and say this tool cannot do it, since it keeps only a hash.
     assert "nothing outside its slots changed" in err
+    assert "keeps only a hash" in err
 
     assert main(["upgrade", "--target", str(tmp_path), "--cairn-root",
                  str(CAIRN_ROOT), "--finalize", "AGENTS.md"]) == 0
@@ -90,6 +92,41 @@ def test_a_filled_customized_slot_is_pointed_at_finalize(
         "\nThe `<!-- cairn:customized -->` marker, quoted.\n", ""),
         encoding="utf-8")
     assert verify_integrity.verify(tmp_path) == 0
+
+
+class TestCustomizedSlotDetection:
+    """Which files earn the --finalize hint: a marker inside a slot body,
+    never one quoted outside a slot or left in a slot that has closed."""
+
+    def test_a_marker_inside_a_slot_counts(self) -> None:
+        text = ("<!-- cairn:slot a -->\n<!--CAIRN:customized-->\nours\n"
+                "<!-- cairn:end a -->\n")
+        assert verify_integrity._has_customized_slot(text)
+
+    def test_a_marker_outside_every_slot_does_not(self) -> None:
+        text = ("The `<!-- cairn:customized -->` marker, quoted.\n"
+                "<!-- cairn:slot a -->\n\n<!-- cairn:end a -->\n")
+        assert not verify_integrity._has_customized_slot(text)
+
+    def test_a_marker_after_its_slot_closed_does_not(self) -> None:
+        text = ("<!-- cairn:slot a -->\n<!-- cairn:end a -->\n"
+                "<!-- cairn:customized -->\n")
+        assert not verify_integrity._has_customized_slot(text)
+
+    def test_a_stray_end_does_not_reopen_a_closed_slot(self) -> None:
+        text = ("<!-- cairn:slot a -->\n<!-- cairn:end a -->\n"
+                "<!-- cairn:customized -->\n<!-- cairn:end a -->\n")
+        assert not verify_integrity._has_customized_slot(text)
+
+    def test_unclosed_slots_cost_linear_time(self) -> None:
+        """A modified file is attacker-shaped input. Scanning to the end of
+        the file once per unclosed opener made 88 KB take seconds, so a
+        crafted file could stall the trust check."""
+        import time
+        text = "<!-- cairn:slot a -->\n" * 20000      # about 440 KB
+        start = time.perf_counter()
+        assert not verify_integrity._has_customized_slot(text)
+        assert time.perf_counter() - start < 2.0
 
 
 def test_missing_file_fails_closed(tmp_path: Path) -> None:
