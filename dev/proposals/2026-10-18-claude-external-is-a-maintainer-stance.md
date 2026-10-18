@@ -1,7 +1,7 @@
 # External is the Maintainer's call: one review stance, with the questions changing by stage
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: required(Internal + Security Review)
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-18
@@ -1219,3 +1219,260 @@ engine package is untouched, so there is no AST impact. A Security Review is owe
 * "`Diversity within tier` stays as a recommendation" and "recommended wherever it can be staffed": superseded by section 4.
 * The migration row about a pin on "An External code review is an escalation": overtaken; what landed was the absence.
 * The length note and the per-file document and test tables: moved to the plan.
+
+## Review -- Claude Opus 5.5 (Security Review, fresh session) -- 2026-10-18
+
+```
+Reviewed commit: 7caca1cfe6b4e0f5dab724763fdfaea51071a549
+Target: Revision 1 (the binding contract), its Security preflight S1-S5, and the six items the author named for this pass
+Prior findings: none at this tier; the standard review's ES3 is why this pass is owed
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: ACCEPT
+
+**The Security Review obligation on this proposal is cleared.** Nothing blocks. The six
+findings below are all non-blocking. Each one names a sentence or a sequence that the plan
+must carry, and the plan's own `required(Internal + Internal Security Review)` pass is where
+they are checked.
+
+**In plain terms.** Today two rules give a more distant review a privilege, and this change
+deletes both of them. After it, no record can use the word External, or a forged Maintainer
+quote, to skip a review. That holds only if the plan writes it down, and Revision 1 does not
+say it yet (SR1). The rest is getting details exactly right: two test wordings that must stay
+literal (SR2); a test deletion that nothing will flag, and a re-anchor whose timing is unfenced
+(SR3); one word, "family", that changed meaning this week (SR4); the re-anchor runbook, which
+is a standing call by this proposal's own definition (SR5); and a vendor-name gate that is
+already red, so a bare pass/fail reading cannot catch a new leak (SR6).
+
+Measured at 7caca1cf and at the working tree on 059a823f, whose four intervening commits touch
+none of the measured files. Interpreter: `/Users/kendal30/conda_envs/lhm/bin/python3.13`.
+
+**Foundations**
+
+* **Should it happen as framed, on security grounds?** Yes. It removes the two existing
+  privileges of a more distant pass, and it adds no parser, subprocess, file write or network
+  path. Evidence: SR1's probe and the code search under *Checked and confirmed*.
+* **Best alternative.** Authenticate the `**Called by**` quote, for example by requiring a
+  Maintainer-signed commit. I reject it. Once SR1's sentence lands, the quote buys nothing that
+  a scribed Decision's unsigned quote does not already risk, and signing is a ceremony cost on
+  every called read.
+* **What would show it wrong.** After the plan lands, any rule where a pass's External label or
+  `Called by` line changes what else is owed. The test is to re-run a paragraph search for a
+  distance term near *waive / exempt / satisfy / clear / substitute / skip / instead of* over
+  the governing paths (my probe: 18 hits today, the two privileges among them).
+
+### Findings
+
+**SR1 -- non-blocking. A `Called by` quote must authorize the read it heads, and nothing
+else.**
+After this change an External label gives nothing away, but Revision 1's operative text does
+not yet say so. I searched the governing and shipped paths paragraph by paragraph. Exactly two
+rules give a more distant pass a privilege today:
+
+* The archive precondition. A clean final code review clears archive with "a falsification
+  ledger **or** a confirming second different-agent-type pass" (`doctrine/plans.md:914-918`,
+  `templates/modules/team-gated/dual-review.md:132-133`, `dev/modules/dual-review.md:131-132`).
+  The second branch lets distance stand in for evidence.
+* "Tier ordering": "`External` satisfies a required `Internal`" (`doctrine/plans.md:788-791`).
+  This is schema text left over from the removed planner.
+
+Revision 1 strikes both (section 1, section 4 table), and no code branches on the word. So the
+S4 and S5 claim ("adds a read and waives none") is true after the plan, but only by omission.
+Section 2 never says that a called read is *in addition to* the usual review, and line 984 says
+"a try-to-kill brief narrows the pass to that". S5 concedes that a forged or mis-relayed quote
+still succeeds. Such a quote could then carry a narrowing brief, or a waiver such as "no
+Security Review needed", inside a *reviewer's* pass. No Maintainer authorization has lived in a
+reviewer's pass before.
+
+*Recommend*: the shipped sentence in `templates/core/AGENTS.md` and both templates says four
+things:
+
+1. A called read is additional to the stage's usual review and never replaces it.
+2. Its brief may add focus, but it removes no owed answer and discharges no Security Review.
+3. Any other authority in the quoted words (a waiver, a scope change) takes effect only where
+   Maintainer authorizations already live: a Decision block, or a plan fence.
+4. It never takes effect from a `Called by` line.
+
+*Closes when* the plan quotes that sentence and the new test pins it as an obligation.
+
+**SR2 -- non-blocking. The retired test's two wordings carry over only if they stay
+literal.**
+The planned patterns catch both old sentences, but the obvious way to make the new test pass
+would quietly drop one of them. The retired literals are "external tier (currently filled by
+fresh-session same-vendor review)" and "fresh-session external review tier reproducible"
+(`bootstrap/tests/test_onboarding_review_tiers.py:40-43`). Search A's
+`external[ -](tier|review|...)` matches both.
+
+The trap is a credit line in one preset: "Per Codex External Review P2-3"
+(`templates/onboarding/solo-greenfield.md:92`). `external[ -]review` matches it too. If the
+implementer drops `review` from the preset patterns to clear that line, wording 2 goes
+unmatched, because "external review tier" does not contain "external tier". The retired test
+also globs `templates/onboarding/*.md` (line 57), while the model test reads a fixed list, so a
+preset added later would escape the new test.
+
+*Recommend*:
+
+* Carry the two wordings as literal forbidden examples, each with its own non-vacuity control,
+  the way `_FORBIDDEN_EXAMPLES` does in `bootstrap/tests/test_review_and_verification_rules_ship.py:142`.
+* Glob the presets, and include the `dev/modules/onboarding/` copies.
+
+On S2: that model's in-memory mutation controls can fail and are the right shape. Its "strip
+every match" control (line 197 there) takes its mutation from the pattern under test, though.
+Per S2, say so. The literal-example control is the one that fails independently.
+
+*Closes when* the plan's test design names the two literals, the glob and both controls.
+
+**SR3 -- non-blocking. The deletion is silent in the suite, and the timing of the re-anchor is
+unfenced.**
+Deleting the frozen test turns nothing red, so only the board will remind anyone that a
+re-anchor is owed. And a re-anchor run at the wrong moment freezes a test that is not
+finished. I measured on a scratch extraction of HEAD with
+`test_onboarding_review_tiers.py` deleted:
+
+* `pytest bootstrap/tests/test_gate_manifest.py`: **21 passed** (71 s, Python 3.13).
+* `python bootstrap/tests/_gate_manifest.py verify --no-collect`:
+  `FROZEN-MISSING: bootstrap/tests/test_onboarding_review_tiers.py`.
+
+The verifier sees the deletion, which is the positive control; the suite does not. Every
+`_MANIFEST_REL` use in the test files builds a synthetic repository, and none reads the
+committed fixture. `AGENTS.md:417-420` says a deleted frozen file "fails loudly" and "reddens
+this file". The opening proposal relied on that (lines 391-392). Revision 1 does not repeat the
+claim, and the plan must not rely on it either.
+
+The timing window: the queued row (`dev/PLANNING.md:156-180`) derives the changed set "at
+ceremony time", so whatever is tracked at that moment gets pinned.
+
+* If the ceremony runs before this plan, `test_review_and_verification_rules_ship.py` freezes
+  with the "escalation" text that this change rewords.
+* If it runs mid-plan, the new test freezes unfinished.
+
+In both cases the later edit is `FROZEN-MODIFIED`, which the suite also does not flag.
+
+*Recommend*:
+
+* Land the final bytes of both tests, and the deletion, in one chunk immediately before the
+  plan's MAINTAINER-ONLY re-anchor chunk.
+* At the next serialization point, add one line to the re-anchor row naming this pending
+  deletion and the two test files.
+* State that if the batch runs first, this change owes its own re-anchor.
+
+The `AGENTS.md` sentence needs its own correction, separate from this change.
+
+*Closes when* the plan carries that chunk order and the board line is deposited.
+
+**SR4 -- non-blocking. The downshift carve-out is not a loophole, but "family" no longer means
+what the rule needs.**
+No agent can use the cost rule to pick a more distant reviewer, because the checker is the
+orchestrator itself. But Cairn's own configuration now uses "family" for Opus, Sonnet and
+Haiku. A careless rewrite would therefore let a bigger model of the same make count as
+"different", and the shared-blind-spot protection that the Response keeps the rule for would
+vanish.
+
+Revision 1 names the checker as "the orchestrator's check" and says it is not a lifecycle
+review (section 4 table). So the condition limits which cheap leaf model may be used. It does
+not decide who staffs a proposal, plan or code review. The vocabulary is the problem:
+
+* `dev/.cairn/model-selection-mapping.yml:9-10` (from `47b38074`, the same day) says "Models
+  are named by family", and its rows are Opus, Sonnet and Haiku.
+* Revision 1's summary (lines 901-902) says "a stronger, different-family model checks the
+  output". It drops "architecturally diverse", which both
+  `templates/modules/team-gated/model-selection.md:117-118` and `doctrine/roles.md:213-214`
+  carry.
+
+*Recommend*: the carve-out says three things.
+
+1. "A different model architecture", never "family" alone.
+2. The check is never filed as a lifecycle review pass, and never counted toward one.
+3. It sits under the data-governance gate (`doctrine/roles.md:218-219`). With the orchestrator
+   as checker, an architecturally diverse cheap leaf means sending the context packet to a
+   second vendor.
+
+*Closes when* the plan quotes the carve-out sentence.
+
+**SR5 -- non-blocking. The re-anchor runbook stays Maintainer-only; name it as the one standing
+call that survives.**
+The author's argument holds: the Maintainer runs the ceremony and commissions its review, so no
+agent selects. But by this proposal's own definition that requirement is a standing call, and
+the plan should say so rather than leave a contradiction.
+
+What holds:
+
+* The ceremony is Maintainer-only (`bootstrap/REANCHOR_RUNBOOK.md:9-15`).
+* The Maintainer checks the launcher digest against the review record (line 48).
+* Revision 1 touches none of the runbook, `bootstrap/reanchor.sh`,
+  `bootstrap/reanchor-launcher.template.sh` or `bootstrap/tests/_gate_reanchor.py`.
+
+What conflicts: Revision 1 defines a call that covers artifacts not yet written as a standing
+call, and a standing call is a floor (section 2, lines 970-972). The runbook's "External
+Security review" (lines 36, 48, 282 and 372) covers every future launcher. That has two
+effects:
+
+* Section 4's after-check sorts each hit into five categories, and none fits this one, so the
+  implementer would have to misfile it.
+* The word changes meaning underneath the runbook. When it was written on 2026-08-27, "External"
+  meant a different agent type. After this change it means "the Maintainer called it", and the
+  runbook states no distance. That is acceptable, because the Maintainer staffs this review.
+
+*Recommend*: one doctrine sentence naming the launcher review as the one standing Maintainer
+call that survives, set by the ceremony's own record, with the Maintainer choosing the reader
+each time. Add a sixth after-check category for it. Leave the runbook itself untouched.
+
+*Closes when* both are in the plan.
+
+**SR6 -- non-blocking. The neutrality gate is already red, so "it passes" cannot be the
+check.**
+The vendor-name gate already fails on files this change edits, so a new vendor name would hide
+among the old failures unless the plan compares before and after.
+`python scripts/quality_gate.py --sub neutrality` exits 1 with **74** FAIL lines at HEAD.
+Several are in this change's edit set:
+
+* `doctrine/rationale.md:70` (3 lines)
+* `doctrine/lifecycle-contract.md` (5)
+* `docs/agent-team-onboarding.md` (8)
+* `templates/onboarding/solo-greenfield.md:92` (1)
+
+Revision 1's smoke check names the command but gives no pass criterion. The proposed wording
+itself is clean. I scanned the anchor sentence, the README lines, section 2 and the calls list
+(lines 857-912 and 965-986) in a scratch tree, beside a control line holding a denylisted
+token. Only the control failed.
+
+*Recommend*: the plan records the FAIL lines for each edited file at its base commit, and
+requires no new line afterwards. Rewording the `solo-greenfield.md:92` credit line would clear
+one of those failures and SR2's collision together. The file is edited anyway, so this is the
+author's option.
+
+*Closes when* the plan states the baseline-diff criterion.
+
+### Checked and confirmed
+
+* **No code branches on External.** I searched `tools/`, `scripts/`, `templates/skills/` and
+  `bootstrap/_scaffold/`. Here is what each one does with the word:
+  * `tools/audit_report.py` counts headings and risk fields.
+  * `tools/board.py` prints the fields as written.
+  * The onboarding `first-cross-type-review` trigger matches a vendor name, not the word.
+  * `scripts/gen_legacy_passes.py` is a one-off report.
+  * `scripts/correct_pinned_digests.py` cites an External Security Review as the provenance of
+    its refusal, and makes nothing depend on a label.
+* No transition in `doctrine/lifecycle.md`, `doctrine/lifecycle-contract.md` or
+  `doctrine/proposals.md` depends on External.
+* **Fidelity manifest: the prose-only claim holds.** The file's only reader is
+  `bootstrap/tests/test_scaffold.py:890-900`. It pins three substrings (`optional_templates:`,
+  `CONTRIBUTING.md`, `human_team`). No code reads the `roles:` sample
+  (`bootstrap/fidelity-check.md:162-167`), and no fixture or lock pins the file's bytes.
+* **Gate manifest: the author's figures reproduce.** 183 files are pinned; 24 differ, 0 are
+  missing, and 1 is unpinned (`test_review_and_verification_rules_ship.py`).
+  `test_onboarding_review_tiers.py` holds 5 nodes and 1 frozen entry.
+* **Rule 7 scanning.** `scripts/check_cairn.py` with explicit paths bypasses the default
+  filter, so the `dev/modules/` copies are content-scanned when the plan names them.
+* `scripts/claim_check.py` on this file before this pass: no flags.
+
+### What this pass did not cover
+
+I did not run Search A or Search B, and I did not run the suite beyond the one scratch run of
+`test_gate_manifest.py`. The new test does not exist yet, so its controls are judged by design
+only. I did not read the `docs/` pages in full. I did not read the 2026-08-27 launcher review
+record. My authority probe is lexical: a privilege phrased without a distance term near an
+authority verb would escape it. The code search covers tracked `.py` and `.sh` files only.
