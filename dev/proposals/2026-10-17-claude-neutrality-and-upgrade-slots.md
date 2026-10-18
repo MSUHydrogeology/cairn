@@ -1,7 +1,7 @@
 # Two checks you can trust: a neutrality gate that reads zero, and a note for slots an upgrade adds
 
 **Author**: Claude (Strategy)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: required(External + Security Review)
 **Plan review**: required(Internal)
 **Opened**: 2026-10-17
@@ -2659,3 +2659,149 @@ Security Review pass that reads only SR15's closure clears it. SR16 can land in
 the same revision or in the plan.
 
 **No new question for the Maintainer.**
+
+## Response -- Claude (author) -- 2026-10-17 (to the SR8-closure Security pass)
+
+**SR15: accepted, by removing the cause rather than patching it.** This is the
+third round in which a printed command recipe was the weak point: SR2, SR8, and
+now SR15. Each fix added a precondition, and each precondition opened a new
+gap: first the wrong comparison point, then the wrong folder, then the wrong
+baseline.
+
+The four-sentence fix would close the cases measured here. It would still leave
+two windows the review names itself, and any recipe whose correctness depends
+on the adopter's shell, git state and timing is one more round of the same
+shape. The underlying fact does not change: `verify_integrity` keeps only a
+hash, so no command it prints can know what changed.
+
+Revision 4 therefore takes the class out. **The note prints no git command and
+no finalize command.** For each placeholder slot it lists the file and the slot,
+and says how to fill it. It then states, once per run, the same hash-only
+warning the existing hint gives (`b6b69c52`), and points at the UPGRADE.md
+section on recording your own edit. That section explains the review in prose:
+read the whole file, and check that your fill is the only change.
+
+The note can no longer lead anyone into blessing a planted line, because it
+prints nothing to run. What remains in S5 is short and true.
+
+**What this gives up, and why I accept it.** NU2's closure asked that each entry
+end with the finalize command. Revision 4 keeps NU2's purpose, an adopter who
+fills a slot always has a way back to a passing check, and drops its letter. The
+way back is now a pointer to the documented recording step, not a printed
+command. The loop test still proves the way back works. The Security Review's
+three findings show that printing the command is where the risk was.
+
+**SR16: accepted.**
+
+* The case B test reads only the note's lines. They must carry no
+  `--finalize`, no `git diff` and no `git status`.
+* The whole output must carry no `git diff`.
+* The coverage line must count the file under "failed the integrity check".
+* The existing hint's own `--finalize` line is shipped behaviour and is out of
+  this test's scope.
+* The UPGRADE.md section leads with reading the whole file. It says that
+  `git log -p -- <path>` shows committed history only, never uncommitted edits.
+
+No scope widens, and no Maintainer question changes. The Security Review
+obligation stays open for a pass that reads SR15's closure, so Status returns
+to `awaiting-review`.
+
+## Revision 4 -- Claude (author) -- 2026-10-17 -- delta against Revision 3
+
+Revisions 2 and 3 stand as the current contract. **Only the parts named below
+are replaced.** Everything else stands unchanged.
+
+### Replaces: Revision 3, Part 2 item 5 (the remedy)
+
+The note prints **no git command and no finalize command**, for any file.
+
+* **A placeholder slot in a file the integrity pass accepted** prints its file
+  and slot, both in `ascii()` form, and how to fill it:
+  * write the content, or `N/A: <reason>`;
+  * or, to keep Cairn's text on purpose, add `<!-- cairn:customized -->` inside
+    the slot.
+* **A placeholder slot in a living-state file** prints "fill it". These files
+  need no recording step.
+* **A file that failed the integrity check** is counted under that reason in the
+  coverage line. It gets no remedy.
+
+Once per run, after the list, the note prints the hash-only warning in the
+existing hint's words (`b6b69c52`): this check keeps only a hash, not the text,
+so it cannot show you what changed. It adds that before recording, you should
+read the whole file and confirm your edit is the only change. It then points to
+`bootstrap/UPGRADE.md` > *Recording an edit you made*.
+
+### Replaces: Revision 3, Part 2 item 7's description of the new UPGRADE.md section
+
+*Recording an edit you made* says the following:
+
+* **Read the whole file first,** and confirm that the only change is yours.
+  `verify_integrity` keeps only a hash, so nothing it prints can show what
+  changed.
+* **`git log -p -- <path>` is a supplementary aid.** It shows committed history
+  only, never uncommitted edits.
+* **Then record the file** with `python bootstrap/scaffold.py upgrade --target
+  <repo> --finalize <path>`. This command records the whole file, not only your
+  slot. The scoped form also skips the dirty-tree guard.
+
+The section describes the command; it does not claim that any command shows the
+change.
+
+### Replaces: tests that relied on printed commands
+
+**Removed.** Revision 3's Case A test (the `git status` / `git diff` steps) is
+removed, along with the step-3 diff check in the loop test.
+
+**`bootstrap/tests/test_verify_integrity.py` instead pins the following.**
+
+* **No commands in the note.** For listed, living-state and failing files alike,
+  the note's lines carry no `git` command and no `--finalize`. The warning and
+  the UPGRADE.md pointer appear exactly once.
+* **Case B (SR16).** The case is a first install whose file has a marked slot
+  and a planted line outside it. The test checks:
+  * the note's lines carry no `--finalize`, no `git diff` and no `git status`;
+  * the whole output carries no `git diff`;
+  * the coverage line counts the file under "failed the integrity check".
+
+  The existing hint's `--finalize` line is not asserted against.
+* **The loop.**
+  1. A slot is listed.
+  2. It is filled and committed.
+  3. `verify_integrity` exits 1, and the file is counted as having failed the
+     integrity check.
+  4. The test records the file as the UPGRADE.md section describes.
+  5. `verify_integrity` exits 0, and the slot is no longer listed.
+
+### Replaces: Revision 3's S4 last point and S5
+
+* **S4, last point.** The note prints nothing to run. Recording stays the
+  adopter's own act, after reading the whole file. So no output of the note can
+  direct a recording.
+* **S5 — Who still wins?**
+  * **Neutrality spellings the gate cannot see.** These are the blind spots
+    Revision 3 named: lower-case and joined spellings, invisible characters,
+    unlisted names and file types, and deliberate hiding. Only the one-time
+    search covers this change.
+  * **A changed lockfile.** Anyone who changes the lockfile together with a base
+    copy can steer the note's list. The note grants nothing.
+  * **An adopter who records without reading the whole file.**
+  * **The existing hint.** It still prints a `--finalize` command for a modified
+    file with a marked slot, while saying it cannot show what changed
+    (`b6b69c52`). That is shipped behaviour this proposal does not change.
+
+### Withdrawn / superseded commitments
+
+* **Revision 3's remedy steps** (`git status --short`, `git diff -- <path>`,
+  then commit and `--finalize`). Withdrawn (SR15): any printed recipe depends on
+  the adopter's folder, staging state and timing.
+* **"Paths are shell-quoted" in commands the note prints.** Withdrawn: the note
+  prints no commands. Names and paths are still shown in `ascii()` form.
+* **NU2's closure as a printed finalize command.** Superseded by a pointer to
+  the documented recording step. NU2's purpose, a way back to a passing check,
+  is kept and pinned by the loop test.
+* **Revision 3's Case A test, and the loop test's diff step.** Withdrawn with
+  the commands.
+* **Revision 3's S4 last point and S5.** Superseded as above.
+* **The UPGRADE.md section offering `git log -p` as the review.** Superseded: it
+  leads with reading the whole file and says `git log -p` misses uncommitted
+  edits (SR16).
