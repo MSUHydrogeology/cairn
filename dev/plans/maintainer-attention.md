@@ -51,10 +51,7 @@ Part B is not in this plan's baseline.
   * *Sequence*, *Scope delta*, *Dispositions* and *Code review*.
 * `templates/core/dev/PLANNING.md`: one line.
 * `dev/PLANNING.md`: one commit.
-* One new tracker, at the path declared below.
-
-Proposed paths:
-* `dev/measurement/maintainer-view-misses.md` — the miss tracker (C5)
+* One new tracker, `dev/measurement/maintainer-view-misses.md` (C5).
 
 **Not touched**, each checked by `git diff --stat` over the implementation
 range:
