@@ -1,7 +1,7 @@
 # Verification practice: what a review reads, how it tests, what unplanned work runs
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: required(External)
 **Plan review**: required(Internal) — the tier the derived plan will declare, decided here where the surface is still visible
 **Opened**: 2026-10-17
@@ -838,3 +838,31 @@ artifact.
   [EA1] alone is a set-completeness instance (VP4).
 * Rate-limit: #12 as "recurrence of one shape". Demoted; #12 now rests on
   question 3 (VP4).
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-18
+
+**ACCEPTED.** The Maintainer's authorization, quoted **verbatim and visually
+isolated**:
+
+> "Accept A, B, C and D as revised, with every recommended answer, including B’s scope cut and D’s scope delta."
+
+*Scribe's note, separate from the quoted words.* The four proposals of
+2026-10-17 were put to the Maintainer as one batch, labelled A
+(verification practice), B (Maintainer attention), C (neutrality and upgrade
+slots) and D (independent scientific check). This proposal is **A**.
+"Every recommended answer" means the recommended default of each question in
+its newest revision, as put to the Maintainer:
+
+* **Revision 1 binds.**
+* **Q1 -- yes.** A trivial change on a high-risk surface runs the full suite
+  once, before its code review.
+* **Q2 -- yes.** Mutation is required only when a finding or claim names a
+  set; elsewhere it stays the reviewer's choice.
+* **Q3 -- yes.** The class "a reviewer's write reverts uncommitted work in a
+  shared tree" is classified as a data-loss surface. The one incident behind
+  #12 was recovered, so the classification rests on the class. Item 1 lands
+  with the rest.
+* **`Plan review: required(Internal)`** is ratified as declared.
+
+Scribed by Claude (claude-opus-5-5) on the Maintainer's explicit instruction.
+Nothing else lands in this commit.
