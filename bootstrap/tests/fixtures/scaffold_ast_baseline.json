@@ -616,7 +616,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_adopt_module": {
-    "digest": "e94a89ec4083cd40",
+    "digest": "92290a6b95389cc2",
     "span": [
       1417,
       1589
@@ -840,7 +840,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_slot_is_empty": {
-    "digest": "83c59bce008f85c1",
+    "digest": "d6ea0b0e19ceb4c7",
     "span": [
       266,
       270
