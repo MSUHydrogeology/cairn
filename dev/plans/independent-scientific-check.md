@@ -336,10 +336,12 @@ this plan edits.
 
 ### Sequencing with the other accepted work
 
-Implementation order: **`neutrality-and-upgrade-slots` (plan C), then this plan**,
-then `model-mapping-install-path`, `board-as-basis`, and the combined plan
-`review-stance-and-lenses` (for `external-is-a-maintainer-stance` and
-`review-lenses-for-every-install`). **This plan rebases on plan C.** Plan C is
+Implementation order, as the Maintainer set it on 2026-10-18:
+**`neutrality-and-upgrade-slots` (plan C), then this plan**, then the combined
+plan `review-stance-and-lenses` (for `external-is-a-maintainer-stance` and
+`review-lenses-for-every-install`), then `board-as-basis`, then
+`model-mapping-install-path`, then `stewardship-and-reuse`. **This plan rebases
+on plan C.** Plan C is
 open as `dev/plans/neutrality-and-upgrade-slots.md`; its file list names none of
 the template or `dimensions/` files this plan edits (read at the plan-review
 commit). Each chunk still re-reads the files it edits at edit time (`git log -3
