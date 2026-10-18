@@ -291,6 +291,23 @@ with the plan's filename stem.
 
   > "I accept all five of your recommendations. Accept as recommended"
 
+  **Joined 2026-10-18** at the opening of `plans/board-as-basis.md` —
+  **planned, not yet changed**: that plan changes **no existing frozen file**.
+  It adds two files that match the gate manifest's frozen patterns,
+  bootstrap/tests/test_board_json_contract.py and
+  bootstrap/tests/fixtures/board_json_v1_baseline.json. Until the ceremony the
+  verifier reports each as `FROZEN-NEW`, which is allowed, and the suite stays
+  green; at the ceremony both freeze, when it re-globs `bootstrap/tests/**/*.py`
+  and `bootstrap/tests/fixtures/**/*`. **Both must be final first**: an edit to
+  either after the ceremony owes a second re-anchor. The pinned collection grows
+  by the test file's nodes, listed by ID in the plan's *Implementation
+  verification* record. No `bootstrap/_scaffold/` symbol changes, so the AST
+  baseline gains nothing from it. Authorization for joining this batch is the
+  Decision accepting the proposal, quoted verbatim (the same words as above,
+  which accepted two proposals at once):
+
+  > "accept both as descried"
+
   **Waiting on Maintainer**: run the gate-manifest re-anchor
 
 * **F8 — the post-install report asks for work the profile does not make
