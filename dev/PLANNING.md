@@ -503,38 +503,6 @@ the routing map sends to forge issues row by row rather than to a bulk decline.
   trivial path); (b) extend the `verify:` count guard to **other
   adopter-facing counts** beyond the quickstart's two. Each → its own
   proposal when revived.
-* **Four deferred Maintainer questions** *(deferred 2026-08-03, Maintainer-instructed
-  to record)* — set aside during the 2026-08-03 Decision round with an explicit "don't
-  forget them". Recorded here rather than left in a chat log, because a deferred item
-  with no durable home is exactly how the `SECURITY_MUTATIONS.md` Class C security
-  follow-on was lost for two months.
-  1. **[BND-2] The Class C orphan.** Both `release-authenticity` and `fork-advisory-semantics`
-     declined the never-opened Class C follow-on, with reasons, and neither claims it.
-     Recommendation on the record in both: ratify it as its own proposal and extend the
-     `identity-not-name` archive condition to cover it.
-  2. **[REC-3] Is the `Touches` header line mutable?** `Status` already is treated as mutable.
-     Append-only protects what was believed at open time, but a stale `Touches` line
-     breaks the discovery index siblings grep against. Raised by `fork-advisory-semantics`
-     finding I5; the author declined to decide it alone.
-  3. **[REL-5] An `AGENTS.md` governing-layer edit** proposed inside `gate-claims-vs-enforcement`
-     — extending the rule from "name the trigger" to "name the trigger *and check what it
-     checks*", on the argument that a purely lexical rule would not have caught the
-     `PROVENANCE.md` instance. Outside Theme 3 and outside the brief that produced it.
-  4. ~~**`AGENTS.md` line 337 is a broken pointer**~~ — **RESOLVED 2026-08-03**,
-     trivial-class as this entry anticipated. The pointer sent agents to
-     `bootstrap/REANCHOR_RUNBOOK.md` to re-anchor the AST baseline; that runbook has zero
-     mentions of `ast_attest` or `scaffold_ast_baseline` and governs a different gate.
-     Demonstrated to propagate: it seeded four freshly-drafted proposals on 2026-08-03
-     before reconciliation caught two — the last of them, `yaml-parser-divergence`,
-     inherited it and was caught at External review (finding E4b). `AGENTS.md` now names
-     the applicable ceremony inline: a Maintainer-run, dry-run-verified direct correction
-     an implementing agent does not perform, precedent `c3d5bd9`.
-     **[TRU-4] Residual, deliberately not closed:** there is still no runbook for the AST
-     re-anchor — verified, zero Markdown files under `bootstrap/`, `docs/` or `doctrine/`
-     mention `ast_attest` or `scaffold_ast_baseline`. The procedure lives only as
-     precedent and as prose inside two plans. Whether it earns a runbook of its own is a
-     live question; the pointer is no longer *wrong*, it is merely inline.
-
 *(Otherwise empty at adoption — native proposals populate this board. The
 Cairn roadmap migrated 2026-06-12 from modflow_tools — queued items,
 deferred follow-ups, and the release path — lives at the **bottom** of this
