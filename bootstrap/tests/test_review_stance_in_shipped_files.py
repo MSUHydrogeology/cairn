@@ -43,11 +43,11 @@ obligation passes and a deletion fails. Node IDs are the obligation labels,
 never the patterns, so rewording a pattern renames nothing. Patterns are
 literals, not derived from the files they check.
 
-**Controls.** Every check that reports a loss has a control run on the unmutated
-file first: the whole file must be clean before a deliberate break is expected to
-make one named check fail. A break is made by deleting a sentence located by a
-literal that is not the obligation's own pattern, so the control does not take
-its mutation from the pattern under test.
+**Controls.** The independently located deletion probes first require the
+unmutated file to be clean. The negative-pattern examples test one representative
+file per pattern set; separate real-file checks cover every carrier. Removing a
+pattern by applying that same pattern is not a useful control, so no such test
+is counted as falsification.
 
 Run from the Cairn repo root:
     python -m pytest bootstrap/tests/test_review_stance_in_shipped_files.py
@@ -399,22 +399,6 @@ def test_plan_review_never_has_a_second_round(rel: str) -> None:
 
 
 @pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
-@pytest.mark.parametrize("label", sorted(_STANCE_OBLIGATIONS))
-def test_removing_the_obligation_is_reported(label: str, rel: str) -> None:
-    """The check above can fail: strip every match and it must report the loss.
-
-    The control comes first: the unmutated section must carry every obligation,
-    or a reported loss proves nothing about this one.
-    """
-    section = _review_section(rel)
-    assert _missing(section, _STANCE_OBLIGATIONS) == [], (
-        f"{rel}: the unmutated Review section is missing obligations, so this "
-        f"control cannot show that {label!r} is checked.")
-    stripped = re.sub(_STANCE_OBLIGATIONS[label], "", _normalize(section))
-    assert label in _missing(stripped, _STANCE_OBLIGATIONS)
-
-
-@pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
 def test_the_stance_sits_in_the_review_section_only_once(rel: str) -> None:
     """The three stage questions are stated once, in Review, not repeated."""
     text = _normalize(_text(rel))
@@ -436,16 +420,6 @@ def test_loop_document_roster_carries_the_obligation(label: str, rel: str) -> No
     )
 
 
-@pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
-@pytest.mark.parametrize("label", sorted(_ROSTER_OBLIGATIONS))
-def test_removing_a_roster_obligation_is_reported(label: str, rel: str) -> None:
-    roster = _section(_text(rel), "Team roles")
-    assert _missing(roster, _ROSTER_OBLIGATIONS) == [], (
-        f"{rel}: the unmutated roster is missing obligations; no control.")
-    stripped = re.sub(_ROSTER_OBLIGATIONS[label], "", _normalize(roster))
-    assert label in _missing(stripped, _ROSTER_OBLIGATIONS)
-
-
 # --------------------------------------------------------------------------
 # The old vocabulary stays out of the four carrier files.
 # --------------------------------------------------------------------------
@@ -456,19 +430,11 @@ def test_carrier_omits_the_old_vocabulary(rel: str) -> None:
     assert not found, f"{rel} {_FORBIDDEN_REASON} Found: {found}"
 
 
-@pytest.mark.parametrize("rel", _CARRIER_FILES, ids=_FILE_IDS.get)
-@pytest.mark.parametrize("label", sorted(_FORBIDDEN))
-def test_inserting_the_old_wording_is_reported(label: str, rel: str) -> None:
-    """The check above can fail: put the old wording back and it must fire.
-
-    The control comes first: the unmutated file must be clean, so the label
-    that fires is the one inserted and not a leftover.
-    """
-    intact = _text(rel)
-    assert _present(intact, _FORBIDDEN) == [], (
-        f"{rel}: the unmutated file already carries old wording; no control.")
-    assert label in _present(f"{intact}\n\n{_FORBIDDEN_EXAMPLES[label]}\n",
-                             _FORBIDDEN)
+def test_carrier_forbidden_patterns_recognize_their_examples() -> None:
+    intact = _text(SHIPPED_AGENTS)
+    assert _present(intact, _FORBIDDEN) == []
+    for label, example in _FORBIDDEN_EXAMPLES.items():
+        assert label in _present(f"{intact}\n\n{example}\n", _FORBIDDEN), label
 
 
 @pytest.mark.parametrize("variant", [
@@ -513,14 +479,11 @@ def test_module_omits_the_old_vocabulary(rel: str) -> None:
         f"more distant pass never stands in for a falsification ledger.")
 
 
-@pytest.mark.parametrize("rel", _MODULE_FILES, ids=_FILE_IDS.get)
-@pytest.mark.parametrize("label", sorted(_MODULE_FORBIDDEN))
-def test_inserting_old_wording_into_the_module_is_reported(label: str, rel: str) -> None:
-    intact = _text(rel)
-    assert _present(intact, _MODULE_FORBIDDEN) == [], (
-        f"{rel}: the unmutated module already carries old wording; no control.")
-    assert label in _present(f"{intact}\n\n{_MODULE_FORBIDDEN_EXAMPLES[label]}\n",
-                             _MODULE_FORBIDDEN)
+def test_module_forbidden_patterns_recognize_their_examples() -> None:
+    intact = _text(SHIPPED_MODULE)
+    assert _present(intact, _MODULE_FORBIDDEN) == []
+    for label, example in _MODULE_FORBIDDEN_EXAMPLES.items():
+        assert label in _present(f"{intact}\n\n{example}\n", _MODULE_FORBIDDEN), label
 
 
 _MODULE_CASES = [(rel, label) for rel in _MODULE_FILES
@@ -532,15 +495,6 @@ _MODULE_CASE_IDS = [f"{label}-{_FILE_IDS[rel]}" for rel, label in _MODULE_CASES]
 def test_module_says_what_it_is_for(rel: str, label: str) -> None:
     assert label not in _missing(_text(rel), _MODULE_OBLIGATIONS), (
         f"{rel} no longer carries {label!r}.")
-
-
-@pytest.mark.parametrize("rel,label", _MODULE_CASES, ids=_MODULE_CASE_IDS)
-def test_removing_a_module_statement_is_reported(rel: str, label: str) -> None:
-    text = _text(rel)
-    assert _missing(text, _MODULE_OBLIGATIONS) == [], (
-        f"{rel}: the unmutated module is missing statements; no control.")
-    stripped = re.sub(_MODULE_OBLIGATIONS[label], "", _normalize(text))
-    assert label in _missing(stripped, _MODULE_OBLIGATIONS)
 
 
 # --------------------------------------------------------------------------
@@ -709,31 +663,18 @@ def test_template_review_section_carries_the_obligation(rel: str, label: str) ->
         f"AGENTS.md alone is not where either looks.")
 
 
-@pytest.mark.parametrize("rel,label", _TEMPLATE_CASES, ids=_TEMPLATE_CASE_IDS)
-def test_removing_a_template_obligation_is_reported(rel: str, label: str) -> None:
-    obligations = _template_obligations(rel)
-    review = _section(_text(rel), "Review")
-    assert _missing(review, obligations) == [], (
-        f"{rel}: the unmutated Review section is missing obligations; no control.")
-    stripped = re.sub(obligations[label], "", _normalize(review))
-    assert label in _missing(stripped, obligations)
-
-
 @pytest.mark.parametrize("rel", _TEMPLATE_FILES, ids=_FILE_IDS.get)
 def test_template_omits_the_old_vocabulary(rel: str) -> None:
     found = _present(_text(rel), _TEMPLATE_FORBIDDEN)
     assert not found, f"{rel} {_FORBIDDEN_REASON} Found: {found}"
 
 
-@pytest.mark.parametrize("rel", _TEMPLATE_FILES, ids=_FILE_IDS.get)
-@pytest.mark.parametrize("label", sorted(_TEMPLATE_FORBIDDEN))
-def test_inserting_the_old_wording_into_a_template_is_reported(
-        label: str, rel: str) -> None:
-    intact = _text(rel)
-    assert _present(intact, _TEMPLATE_FORBIDDEN) == [], (
-        f"{rel}: the unmutated template already carries old wording; no control.")
-    mutant = f"{intact}\n\n{_TEMPLATE_FORBIDDEN_EXAMPLES[label]}\n"
-    assert label in _present(mutant, _TEMPLATE_FORBIDDEN)
+def test_template_forbidden_patterns_recognize_their_examples() -> None:
+    intact = _text(SHIPPED_PROPOSAL)
+    assert _present(intact, _TEMPLATE_FORBIDDEN) == []
+    for label, example in _TEMPLATE_FORBIDDEN_EXAMPLES.items():
+        assert label in _present(f"{intact}\n\n{example}\n",
+                                 _TEMPLATE_FORBIDDEN), label
 
 
 @pytest.mark.parametrize("rel", _PROPOSAL_TEMPLATES, ids=_FILE_IDS.get)
@@ -1058,31 +999,17 @@ def test_shipped_text_carries_the_obligation(rel: str, label: str) -> None:
         f"the doctrine holds the same rule but adopters never see doctrine/.")
 
 
-@pytest.mark.parametrize("rel,label", _REST_CASES, ids=_REST_CASE_IDS)
-def test_removing_a_shipped_text_obligation_is_reported(rel: str, label: str) -> None:
-    obligations = _rest_obligations(rel)
-    text = _text(rel)
-    assert _missing(text, obligations) == [], (
-        f"{rel}: the unmutated file is missing obligations; no control.")
-    stripped = re.sub(obligations[label], "", _normalize(text))
-    assert label in _missing(stripped, obligations)
-
-
 @pytest.mark.parametrize("rel", _REST_FILES, ids=_REST_IDS.get)
 def test_shipped_text_omits_the_old_wording(rel: str) -> None:
     found = _present(_text(rel), _REST_FORBIDDEN)
     assert not found, f"{rel} {_FORBIDDEN_REASON} Found: {found}"
 
 
-@pytest.mark.parametrize("rel", _REST_FILES, ids=_REST_IDS.get)
-@pytest.mark.parametrize("label", sorted(_REST_FORBIDDEN))
-def test_inserting_old_wording_into_shipped_text_is_reported(
-        label: str, rel: str) -> None:
-    intact = _text(rel)
-    assert _present(intact, _REST_FORBIDDEN) == [], (
-        f"{rel}: the unmutated file already carries old wording; no control.")
-    assert label in _present(f"{intact}\n\n{_REST_FORBIDDEN_EXAMPLES[label]}\n",
-                             _REST_FORBIDDEN)
+def test_shipped_text_forbidden_patterns_recognize_their_examples() -> None:
+    intact = _text(SHIPPED_MODEL)
+    assert _present(intact, _REST_FORBIDDEN) == []
+    for label, example in _REST_FORBIDDEN_EXAMPLES.items():
+        assert label in _present(f"{intact}\n\n{example}\n", _REST_FORBIDDEN), label
 
 
 def test_the_model_selection_pair_is_byte_identical() -> None:
@@ -1315,17 +1242,6 @@ def test_doctrine_carries_the_statement(label: str) -> None:
         f"{rel} no longer carries {label!r}.")
 
 
-@pytest.mark.parametrize("label", sorted(_DOCTRINE_OBLIGATIONS))
-def test_removing_a_doctrine_statement_is_reported(label: str) -> None:
-    rel, pattern = _DOCTRINE_OBLIGATIONS[label]
-    text = _doctrine_text(rel)
-    for other, (other_rel, other_pattern) in _DOCTRINE_OBLIGATIONS.items():
-        if other_rel == rel:
-            assert re.search(other_pattern, text), (
-                f"{rel}: the unmutated file lacks {other!r}; no control.")
-    assert not re.search(pattern, re.sub(pattern, "", text))
-
-
 @pytest.mark.parametrize("label", sorted(_DOCTRINE_FORBIDDEN))
 def test_doctrine_omits_the_retired_privilege(label: str) -> None:
     rel, pattern, _example = _DOCTRINE_FORBIDDEN[label]
@@ -1477,15 +1393,11 @@ def test_dimensions_omit_the_old_wording(rel: str) -> None:
     assert not found, f"{rel} {_FORBIDDEN_REASON} Found: {found}"
 
 
-@pytest.mark.parametrize("rel", _DIM_FILES, ids=_DIM_IDS.get)
-@pytest.mark.parametrize("label", sorted(_DIM_FORBIDDEN))
-def test_inserting_old_wording_into_a_dimensions_page_is_reported(
-        label: str, rel: str) -> None:
-    intact = _text(rel)
-    assert _present(intact, _DIM_FORBIDDEN) == [], (
-        f"{rel}: the unmutated page already carries old wording; no control.")
-    assert label in _present(f"{intact}\n\n{_DIM_FORBIDDEN_EXAMPLES[label]}\n",
-                             _DIM_FORBIDDEN)
+def test_dimensions_forbidden_patterns_recognize_their_examples() -> None:
+    intact = _text(_DIM_FILES[0])
+    assert _present(intact, _DIM_FORBIDDEN) == []
+    for label, example in _DIM_FORBIDDEN_EXAMPLES.items():
+        assert label in _present(f"{intact}\n\n{example}\n", _DIM_FORBIDDEN), label
 
 
 _DIM_CASES = [(rel, label) for rel in _DIM_OBLIGATIONS
@@ -1497,16 +1409,6 @@ _DIM_CASE_IDS = [f"{label}-{_DIM_IDS[rel]}" for rel, label in _DIM_CASES]
 def test_dimensions_page_carries_the_obligation(rel: str, label: str) -> None:
     assert label not in _missing(_text(rel), _DIM_OBLIGATIONS[rel]), (
         f"{rel} no longer carries {label!r}.")
-
-
-@pytest.mark.parametrize("rel,label", _DIM_CASES, ids=_DIM_CASE_IDS)
-def test_removing_a_dimensions_obligation_is_reported(rel: str, label: str) -> None:
-    obligations = _DIM_OBLIGATIONS[rel]
-    text = _text(rel)
-    assert _missing(text, obligations) == [], (
-        f"{rel}: the unmutated page is missing obligations; no control.")
-    stripped = re.sub(obligations[label], "", _normalize(text))
-    assert label in _missing(stripped, obligations)
 
 
 def test_the_complexity_cell_still_names_the_scientific_check() -> None:
@@ -1743,15 +1645,11 @@ def test_descriptive_page_omits_the_old_wording(rel: str) -> None:
     assert not found, f"{rel} {_FORBIDDEN_REASON} Found: {found}"
 
 
-@pytest.mark.parametrize("rel", _DESCRIPTIVE_FILES, ids=_DESC_IDS.get)
-@pytest.mark.parametrize("label", sorted(_DESC_FORBIDDEN))
-def test_inserting_old_wording_into_a_descriptive_page_is_reported(
-        label: str, rel: str) -> None:
-    intact = _text(rel)
-    assert _present(intact, _DESC_FORBIDDEN) == [], (
-        f"{rel}: the unmutated page already carries old wording; no control.")
-    assert label in _present(f"{intact}\n\n{_DESC_FORBIDDEN_EXAMPLES[label]}\n",
-                             _DESC_FORBIDDEN)
+def test_descriptive_forbidden_patterns_recognize_their_examples() -> None:
+    intact = _text(_DESCRIPTIVE_FILES[0])
+    assert _present(intact, _DESC_FORBIDDEN) == []
+    for label, example in _DESC_FORBIDDEN_EXAMPLES.items():
+        assert label in _present(f"{intact}\n\n{example}\n", _DESC_FORBIDDEN), label
 
 
 _DESC_CASES = [(rel, label) for rel in _DESC_OBLIGATIONS
@@ -1765,16 +1663,6 @@ def test_descriptive_page_carries_the_obligation(rel: str, label: str) -> None:
         f"{rel} no longer carries {label!r}.")
 
 
-@pytest.mark.parametrize("rel,label", _DESC_CASES, ids=_DESC_CASE_IDS)
-def test_removing_a_descriptive_obligation_is_reported(rel: str, label: str) -> None:
-    obligations = _DESC_OBLIGATIONS[rel]
-    text = _text(rel)
-    assert _missing(text, obligations) == [], (
-        f"{rel}: the unmutated page is missing obligations; no control.")
-    assert label in _missing(re.sub(obligations[label], "", _normalize(text)),
-                             obligations)
-
-
 @pytest.mark.parametrize("page,copy", [(DOCS_ONBOARDING, INSTALLED_ONBOARDING),
                                        (DOCS_TOUR, INSTALLED_TOUR)])
 def test_an_installed_onboarding_copy_equals_its_page(page: str, copy: str) -> None:
@@ -1782,6 +1670,18 @@ def test_an_installed_onboarding_copy_equals_its_page(page: str, copy: str) -> N
     assert _text(page) == _text(copy), (
         f"{copy} differs from {page}; they are one document in two places.")
     assert _present(_text(page), _DESC_FORBIDDEN) == []
+
+
+def test_an_empty_carrier_satisfies_no_obligation_pattern() -> None:
+    """A pattern matching an empty file would make its carrier pin vacuous."""
+    groups = (
+        _STANCE_OBLIGATIONS, _ROSTER_OBLIGATIONS, _MODULE_OBLIGATIONS,
+        _PROPOSAL_TEMPLATE_OBLIGATIONS, _PLAN_TEMPLATE_OBLIGATIONS,
+        _MODEL_OBLIGATIONS, *_FILE_OBLIGATIONS.values(),
+        *_DIM_OBLIGATIONS.values(), *_DESC_OBLIGATIONS.values(),
+    )
+    for obligations in groups:
+        assert set(_missing("", obligations)) == set(obligations), obligations
 
 
 def test_a_copy_that_drifts_from_its_page_is_reported() -> None:

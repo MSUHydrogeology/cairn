@@ -193,16 +193,6 @@ def test_agents_md_carries_the_obligation(label: str, rel: str) -> None:
     )
 
 
-@pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
-@pytest.mark.parametrize("label", sorted(_OBLIGATIONS))
-def test_removing_the_obligation_is_reported(label: str, rel: str) -> None:
-    """The pin above can fail: strip every match and it must report the loss."""
-    intact = _collapse(_text(rel))
-    assert label not in _missing(intact)
-    stripped = re.sub(_OBLIGATIONS[label], "", intact)
-    assert label in _missing(stripped)
-
-
 def _present_forbidden(text: str) -> list[str]:
     """Labels of the forbidden phrasings present in *text*."""
     collapsed = _collapse(text)
@@ -218,14 +208,12 @@ def test_agents_md_omits_the_forbidden_phrasing(label: str, rel: str) -> None:
     )
 
 
-@pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
-@pytest.mark.parametrize("label", sorted(_FORBIDDEN))
-def test_inserting_the_forbidden_phrasing_is_reported(label: str, rel: str) -> None:
-    """The negative pin can fail: put the old wording back and it must fire."""
-    intact = _collapse(_text(rel))
-    assert label not in _present_forbidden(intact)
-    reverted = f"{intact} {_FORBIDDEN_EXAMPLES[label]}"
-    assert label in _present_forbidden(reverted)
+def test_forbidden_patterns_recognize_their_examples() -> None:
+    """One example per pattern; the real-file pins separately cover both copies."""
+    intact = _collapse(_text(SHIPPED))
+    assert _present_forbidden(intact) == []
+    for label, example in _FORBIDDEN_EXAMPLES.items():
+        assert label in _present_forbidden(f"{intact} {example}"), label
 
 
 @pytest.mark.parametrize("variant", [
