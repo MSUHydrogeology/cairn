@@ -2868,3 +2868,80 @@ the coordinating session's record of what the Maintainer wrote, relayed to me on
 * **After it,** the code reviewer re-checks only that sentence and its test, and
   the plan archives. The archive duties recorded in the Response, as corrected in
   the sections that follow, still hold.
+
+## C1 recorded as the evidence for the sentence change -- Claude Sonnet 5.5 (implementer) -- 2026-10-19
+
+**In plain terms.** The Maintainer's instruction (recorded above) turns the C1
+exercise from a go/no-go gate into evidence for one change to the template. This
+is that evidence, short, with the hashes that are already on file. The long
+verbatim records above stand and are not repeated.
+
+**What C1 was.** The block's wording was tried on two past LHM plans. For each, a
+blind drafter wrote the block from the wording and the proposal as it was first
+opened, and a separate scorer asked (A) does the draft name a check that fails
+under the error found later, and (B) could that check have been run, meaning does
+its data-status statement either confirm the data was opened or say it was not
+and name what would be opened.
+
+| Draft | (A) alone | (B) | Combined | What it got right | What it missed |
+|---|---|---|---|---|---|
+| assemble part A (`212fc76e4a9f`) | no | yes | no | A sound analytical check of the grid-averaging change that needs no outside data, independent of the code, with what it had not opened said plainly | Aimed at a different risk than the one that later bit (the fill for uncovered land-use cells), which the proposal as opened never mentions |
+| stor-modflow, first run (`06ff7a020870`), under a brief that told the drafter to name what it would open | yes | yes | yes | Compared the recomputed store with the model's saved array; listed what was unchecked and named the file to open; said which half of the proposal the check does not reach | The array it relies on was never saved; the warm-up was not named as a target |
+| stor-modflow, re-run (`bef1a783ce3c`), under a brief without that sentence | yes | no | no | The same check; named the file; required a shape and orientation assertion before any residual is read | Answered the data question "In hand but not checked", which repeats the false claim as in hand |
+
+**What it shows.** Two things, and only these:
+* The first run showed that a sentence telling the author to name what they would
+  open to confirm unchecked data produces the wanted behaviour: the draft admitted
+  what it had not checked and named the file.
+* The re-run showed that the template's own wording at the time ("in hand and has
+  been checked") did not: the same author, given the same inputs without that
+  sentence, wrote "In hand but not checked".
+
+That is why the sentence in the block's first bullet now reads "Say whether you
+have opened the data and confirmed it holds what the check needs; if not, name
+what you would open to confirm it." (commit `02adb81f`).
+
+**The residual, plainly.** n = 2 plans, one drafter and one scorer for each, and
+the two scorers read nearly the same kind of data statement differently. The new
+sentence has not itself been tried by a blind run; the code reviewer re-checks it
+and its test. C1 is **no evidence on the independent-basis half** of the block,
+and none that the block yields a check that catches the priming error. The
+"passes by finding nothing" bullet still rests on argument; neither plan found a
+false null.
+
+**The hashes, already on file in the sections above** (first twelve hex digits;
+the full values are in those sections):
+
+| What | SHA-256 |
+|---|---|
+| the wording given to the drafters (the block as it stood) | `327d0b175caf` |
+| stor-modflow proposal as opened (LHM `b9d4c59a`) | `6971f5191097` |
+| assemble-full-port proposal as opened (LHM `dde80719`) | `3f36d81bea2f` |
+| stor-modflow draft, first run | `06ff7a020870` |
+| stor-modflow draft, re-run | `bef1a783ce3c` |
+| assemble part A draft | `212fc76e4a9f` |
+| scorer output, first | `6d0ff759a17c` |
+| scorer output, re-run | `c735e8d62813` |
+| error statements (stor-modflow, assemble) | `3f73dac2e025`, `eeeae7a17aa4` |
+| briefs (stor-modflow, assemble, scorer, stor-modflow re-run) | `2ab39e8efa50`, `6e1a6eb60188`, `43f273d91f5f`, `d2b91c209f26` |
+
+### The archive wording, replaced
+
+This replaces the interim wording in "The suggested archive wording, corrected"
+above, which was written for a stop that the Maintainer's instruction has
+superseded. The second archive duty (name the author-as-expert mode under
+falsifier F2 on the revisit row) is unchanged.
+
+> C1 was a go/no-go exercise on two past LHM plans: one blind drafter and one
+> separate scorer for each, n = 2, and two scorers who disagreed on one call.
+> Assemble part A: a sound check aimed at a different risk than the one that
+> later bit. Stor-modflow: with a drafter brief that told the drafter to name what
+> it would open to confirm any data it could not check, the draft passed the data
+> test; with a brief that did not, the draft wrote "In hand but not checked" and
+> failed it. So the template's own data prompt did not produce the wanted
+> behaviour, and that sentence did. By the Maintainer's instruction (2026-10-19)
+> the sentence is now in the template, and C1 is the evidence for that change and
+> for nothing more: it is no evidence on the independent-basis half, and none
+> that the block yields a check that catches the priming error. The stop rule's
+> literal outcome (both plans no, block judged ritual) was superseded by that
+> instruction.
