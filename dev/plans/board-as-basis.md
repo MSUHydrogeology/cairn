@@ -1,7 +1,7 @@
 # Plan: the board as the basis for richer views -- a data output, and a guide to building on it
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-board-as-basis.md`
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance -- inherited from the proposal: `tools/board.py` is run by every adopter and its output becomes a published contract
 **Opened**: 2026-10-18
@@ -1434,4 +1434,60 @@ This answers the Internal Security Review (`2e9cf490`, BB-SR1 to BB-SR10) and th
 
 * Full-suite execution (`CAIRN_FULL_SUITE=1`) is omitted per `AGENTS.md` (`12be58d9`) and explicit Maintainer instruction; `**Certified by**: pending` awaits the Maintainer's next certifying run.
 * Chunk M's Maintainer reading of `/tmp/cairn-board-view.html` is open (`**Waiting on Maintainer**: read the generated board page`); per *Sequence*, C6 and code review proceed while archive waits on the Maintainer's answer.
+
+## Code review -- Antigravity (Gemini 3.8 Flash, fresh session) -- 2026-10-19
+
+```
+Reviewed commit: 4f08957dd120d35d33c635652822ac2b1366130e
+Target: C1-C6 (commits 94fd8cc7, f1b61e46, b332e727, b2a17203, 47bfece2, 4f08957d)
+Prior findings: none
+```
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes; `tools/board.py` and its twin enforce symlink refusal, non-regular entry rejection, full `cairn-board/1` schema compliance against the frozen-baseline fixture, and byte-for-byte terminal output identity with pre-C1 parent `a6306e00` -- `tools/board.py:102-137`; `bootstrap/tests/test_board_json_contract.py::TestTerminalBoardIsUnchanged`; `bootstrap/tests/fixtures/board_json_v1_baseline.json`.
+2. **Best alternative.** The implemented design is minimal and contained: path components strictly below root are inspected before following links, `_header_fields` is reused across all modes, the waits logic is single-sourced in the guide's example block, and template prompts avoid single-token names that trip scaffold token scanners -- `tools/board.py:111-137`; `docs/build-a-board-view.md:152`; `templates/core/dev/plans/_template.md:144`.
+3. **What would show it wrong.** A symlink being followed or leaking external data, a non-regular entry causing a hang or silent drop, a discrepancy between `--maintainer` and `waiting_on_maintainer`, or an unfilled token failing scaffold profile installations -- see the falsification ledger below.
+
+**Bounding**: ACCEPTED
+
+*Bounding rationale*: Challenged mapped tests and named surfaces across C1–C6:
+* Re-ran mapped scoped suite (`test_board_json_contract.py`, `test_replacement_tools.py`, `test_notice_install.py`, `test_verify_integrity.py`, `test_security_lint.py`, `test_intents_tool.py`, `test_cairn_prefix_links.py`): 314 passed in 15.87s.
+* Verified twin byte identity (`cmp tools/board.py templates/skills/_lib/board.py`) exits 0.
+* Stated omission: certifying full suite (`CAIRN_FULL_SUITE=1`) deferred to Maintainer certifying run per `AGENTS.md` (`12be58d9`) and cited as `**Certified by**: pending`.
+* Stated omission: Chunk M Maintainer reading of `/tmp/cairn-board-view.html` is open with `**Waiting on Maintainer**: read the generated board page` recorded in the header.
+
+**Waiting-line check.** Chunk M is fenced (`MAINTAINER-ONLY`). Commit `4f08957d` set `**Waiting on Maintainer**: read the generated board page` in the header block upon reaching chunk M; the line is present and checked.
+
+### Falsification ledger
+
+1. **C1 (Refusal of symlinks and non-regular entries)**:
+   * **Outside symlink**: Linked `outside_link.md` pointing outside repo was skipped, recorded in `skipped_symlinks` and terminal skip line.
+   * **Dangling symlink**: Linked `dangling_link.md` pointing to non-existent target was skipped without traceback or silent drop.
+   * **Folder symlink**: Linked directory `dev/proposals` pointing outside repo was skipped as `dev/proposals`; no sub-files read.
+   * **Non-regular files**: Folder named `x.md` inside `dev/plans/` and FIFO named pipe `fifo.md` (via `os.mkfifo`) both failed loudly with exit code 1, stderr `board: error: cannot read ... (not a regular file)`, and zero stdout bytes without hanging.
+2. **C2 (JSON data mode and terminal preservation)**:
+   * `--json` matches `bootstrap/tests/fixtures/board_json_v1_baseline.json` across all top-level, artifact record, and roadmap wait keys/types.
+   * Compared terminal output across all 4 modes (plain, `--archive`, `--maintainer`, `--maintainer --archive`) between `a6306e00:tools/board.py` and `4f08957d:tools/board.py` on both the live tree and golden test tree: 100% byte-for-byte identical.
+3. **C3/C4 (Recipe agreement with `--maintainer`)**:
+   * Evaluated `waiting_on_maintainer(doc)` from `docs/build-a-board-view.md` against live `board.py --json` output and compared with `tools/board.py --maintainer`. All entries matched (`plan board-as-basis`, `roadmap dev/PLANNING.md:495`, `roadmap dev/PLANNING.md:837`), and all 25 test edge-case trees in `TestWaitsRecipeAgreesWithMaintainerView` passed.
+4. **C5 (Template prompts and scaffold compatibility)**:
+   * Verified `find_unfilled_tokens` returns `[]` on all 4 proposal/plan templates (`dev/` and `templates/core/`).
+   * Executed `bootstrap/scaffold.py` installing all 3 shipped profiles (`collaborative-team.yml`, `solo-greenfield.yml`, `high-rigor-legacy.yml`) into scratch targets. All installs completed clean with zero unfilled token warnings, and `verify_integrity.py` passed with exit code 0.
+5. **Mutation ledger (executed in detached worktree at 4f08957d)**:
+   * Control run: 25 passed (`rc=0`).
+   * `M1` (C1: remove symlink check in `_check_source`): killed (`rc=1`) by `TestSymlinkedSourcesAreNotRead`.
+   * `M2` (C1: remove non-regular file check for file sources): killed (`rc=1`) by `test_non_regular_entries_fail_loudly_without_hanging`.
+   * `M3` (C2: drop `skipped_symlinks` key from emitted JSON): killed (`rc=1`) by `TestSchemaOneBaselineHolds`.
+   * `M4` (C2: emit `None` instead of `""` for blank Waiting line): killed (`rc=1`) by `test_all_record_values_and_absent_vs_blank_and_headerless_files`.
+   * `M5` (C4: drop blank wait lines in `waiting_on_maintainer` recipe): killed (`rc=1`) by `test_waits_recipe_matches_maintainer_view_across_all_shapes`.
+   * `M6` (C4: remove HTML escaping in `render_page` / `_clean`): killed (`rc=1`) by `test_view_example_renders_groups_escaping_footer_and_preserves_page_on_failure`.
+   * `M7` (C5: rename `**In brief**:` to `**In-brief**:` in `templates/core/dev/plans/_template.md`): killed (`rc=1`) by `TestTemplatesAskForTheLineTheBoardReads`.
+   * `M8` (Equivalence: change `r"^ *(?:[*-] )?"` to `r"^[ ]*(?:[*-] )?"` in `_ROW_BULLET_RE`): survived (`rc=0`), measured equivalent across all entry points.
+
+### Findings
+
+No defects found.
+
+**Coverage -- Covered:** claims #1-#9; `tools/board.py` and `templates/skills/_lib/board.py` (C1, C2); `bootstrap/tests/test_board_json_contract.py` and `bootstrap/tests/fixtures/board_json_v1_baseline.json` (C1-C5); `docs/build-a-board-view.md` and `docs/tool-usage.md` (C3, C4); all 4 proposal/plan templates (C5); scaffold installs of all 3 profiles; 8 mutations with control run. **Not covered / low confidence:** no full suite executed (`CAIRN_FULL_SUITE=1` omitted, pending Maintainer certifying run); no git tag/release cut ceremony performed; Chunk M Maintainer human reading of `/tmp/cairn-board-view.html` is open awaiting Maintainer response.
 
