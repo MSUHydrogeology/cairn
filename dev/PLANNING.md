@@ -418,6 +418,16 @@ with the plan's filename stem.
     `_UPDATE_ALLOWLIST`. Derive the digests at ceremony time; these are the
     baseline's, not the new ones.
 
+  **Joined 2026-10-19** at the repository rename to `MSUHydrogeology/cairn`.
+  `bootstrap/tests/test_lockfile_provenance.py` is a frozen file whose bytes
+  changed: its asserted `repository-code` URL now names the new slug. No node is
+  added or dropped, and no engine symbol changes.
+
+  **Timing, superseded 2026-10-19.** Where the paragraphs above say the AST
+  ceremony waits for one combined run after `model-mapping-install-path`
+  archives, the Release path's "Revised 2026-10-19" block supersedes them: both
+  re-anchors run at the 0.4 cut.
+
   **Waiting on Maintainer**: run the gate-manifest re-anchor
 
 * **F8 — the post-install report asks for work the profile does not make

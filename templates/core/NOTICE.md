@@ -3,7 +3,7 @@ header on any shipped tool you redistribute. That's the whole obligation —
 nothing here touches the license of your own code.
 
 <!-- cairn-accept: suspicious-url reason="Literal Cairn source-repo URL, the P1 licensing-compliance obligation this file exists to carry" reviewer="agent" date=2026-07-22 -->
-Source: <https://github.com/MSUHydrogeology/cairn-scientist-ai-teams>
+Source: <https://github.com/MSUHydrogeology/cairn>
 
 ## Code (MIT)
 
@@ -41,7 +41,7 @@ share or adapt this material, attribution looks like:
 > Cairn: An Adaptable Framework for Scientist-AI Research Software
 > Teams, by Anthony Kendall, licensed under CC BY 4.0.
 > <!-- cairn-accept: suspicious-url reason="Literal Cairn source-repo URL, verbatim CC BY 4.0 attribution example from LICENSE-CC-BY.md" reviewer="agent" date=2026-07-22 -->
-> <https://github.com/MSUHydrogeology/cairn-scientist-ai-teams>
+> <https://github.com/MSUHydrogeology/cairn>
 
 ## Brand mark (CC BY-ND 4.0)
 

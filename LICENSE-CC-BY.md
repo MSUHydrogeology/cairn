@@ -61,7 +61,7 @@ license, and a link to the source. Example:
 
 > Cairn: An Adaptable Framework for Scientist-AI Research Software
 > Teams, by Anthony Kendall, licensed under CC BY 4.0.
-> <https://github.com/MSUHydrogeology/cairn-scientist-ai-teams>
+> <https://github.com/MSUHydrogeology/cairn>
 
 See [`CITATION.cff`](CITATION.cff) for the citation metadata once
 a Zenodo DOI is issued.

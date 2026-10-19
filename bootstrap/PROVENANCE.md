@@ -100,7 +100,7 @@ instantiation.
 
 | # | Channel (generic) | Current instantiation | Independent of | **Not** independent of |
 |---|---|---|---|---|
-| 1 | the git forge account that owns the repository, and its published SSH **signing**-key set | the GitHub account owning `MSUHydrogeology/cairn-scientist-ai-teams` | the tag, the tarball, the DOI archive — served by the forge from its own host, not from any release artifact | the forge account itself; whoever holds that account holds this channel |
+| 1 | the git forge account that owns the repository, and its published SSH **signing**-key set | the GitHub account owning `MSUHydrogeology/cairn` | the tag, the tarball, the DOI archive — served by the forge from its own host, not from any release artifact | the forge account itself; whoever holds that account holds this channel |
 | 2 | the maintainer's research-identity registry record | the ORCID record published in [`CITATION.cff`](../CITATION.cff) (`orcid:` field) | the forge entirely — different provider, different login, different operator | the maintainer's own credential hygiene |
 | 3 | the per-version archival deposition for each release | the Zenodo deposition minted for each release tag | later edits — a Zenodo version record is immutable once published, so the fingerprint recorded beside `v0.4.0` stays recorded | the archive account |
 

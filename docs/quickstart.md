@@ -58,7 +58,7 @@ gives the real route.
 <!-- cairn-accept: suspicious-url reason="Literal Cairn clone URL the adopter needs to copy" reviewer="Claude" date=2026-05-28 -->
 ```bash
 # Anywhere you keep code:
-git clone https://github.com/MSUHydrogeology/cairn-scientist-ai-teams.git cairn
+git clone https://github.com/MSUHydrogeology/cairn.git cairn
 cd cairn
 export CAIRN="$(pwd)"   # the rest of this recipe refers to $CAIRN
 ```

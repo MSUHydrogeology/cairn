@@ -29,7 +29,7 @@ for exactly that.
 ## 1. The adopter's field measurement
 
 Reported on
-[issue #6](https://github.com/MSUHydrogeology/cairn-scientist-ai-teams/issues/6),
+[issue #6](https://github.com/MSUHydrogeology/cairn/issues/6),
 measured by the adopter on a scientific Python library in a conda environment.
 **Recorded exactly as reported**, and attributed to them, so field evidence
 built by hand does not evaporate into a closed issue.

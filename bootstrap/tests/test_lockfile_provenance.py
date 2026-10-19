@@ -99,7 +99,7 @@ def test_cairn_provenance_accepts_scalar_license(tmp_path):
 def test_cairn_provenance_on_cairns_own_citation_cff():
     # Regression against the live shape of Cairn's own CITATION.cff.
     repo, licenses = _cairn_provenance(CAIRN_ROOT)
-    assert repo == "https://github.com/MSUHydrogeology/cairn-scientist-ai-teams"
+    assert repo == "https://github.com/MSUHydrogeology/cairn"
     assert licenses == ["CC-BY-4.0", "MIT"]
 
 
