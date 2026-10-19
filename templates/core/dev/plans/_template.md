@@ -40,6 +40,9 @@ accepted scope removed**. Removal counts in both directions: accepted scope is
 a floor, and a reviewer cannot create authority to narrow by calling the
 remainder out of scope.
 
+A defect fix made under "Fixing an easy problem you meet"
+(`AGENTS.md` > "Git and commit workflow") is not new scope.
+
 **The Waiting line.** When a plan's next move becomes the Maintainer's, write
 one header line, `**Waiting on Maintainer**: <what>`, in the header block,
 beside Status, and delete it when they answer. Write it at three moments: work

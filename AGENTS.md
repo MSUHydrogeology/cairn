@@ -198,7 +198,8 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
     scribing guard-rail below.
   * **A deviation from the approved plan** — new scope, a struck chunk revived,
     a contract the review never saw, an acceptance criterion you cannot meet,
-    **or accepted scope removed**.
+    **or accepted scope removed**. A defect fix under "Fixing an easy problem
+    you meet" below is not new scope.
 
     **Removal counts as a deviation, in both directions.** Accepted scope is a
     **floor**: sequencing may move work between chunks, but dropping an outcome
@@ -222,6 +223,20 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
   running after its replacement was built, and it has cost real work. If an
   incident argues for tightening, tighten *the plan's fences* or *what a review
   must show*, which is where approval binds to something specific.
+* **Fixing an easy problem you meet.** A defect breaks a promise already in the file,
+  its docstring, tests or governing text; a note, issue or review comment does not create that promise.
+  A cheap fix in a file the work already edits may restore only that promise, with its own test
+  in the independently reviewed range, whether or not there is an accepted proposal or plan.
+  It adds no file, function, option or public name and changes only the defect's lines and its test.
+  A plan's fence still wins; removing accepted scope remains a deviation; there is no date cutoff.
+  **Rule text** tells a reader what to do or what a check, contract or acceptance criterion requires;
+  changing it still takes the Maintainer's word, never this permission.
+  Record `Defect fix: <promise> -> <file> -- test <path::node> -- changes no rule text` in the commit body;
+  the code reviewer checks the promise, existing file scope, test and no-rule-change claim.
+  A known cheap defect left unfixed needs one of the plan template's three deferral reasons.
+  **What cheap means.** Count person-steps, not machine time: high-risk, contract or hash-pinned surfaces,
+  Maintainer-only steps, a Security Review, new proposal or decision make a fix not cheap;
+  uncertainty about needing one also means not cheap; prescribed test runtime alone never does.
 * **Scribing a Decision.** An explicitly-instructed agent may scribe and commit
   the Maintainer's Decision, bounded by three rules: **quote the authorization
   verbatim and visually isolated** in both the `## Decision` block and the
@@ -408,6 +423,12 @@ Identify what the content is *doing* — prescription, deliberation, description
 and route by layer.
 
 ## Project-specific conventions
+
+**Local cost-bar examples.** A one-line engine change still needs a proposal
+and Security Review, and an AST correction beyond self-service is Maintainer-run;
+a frozen-file edit owes the gate-manifest ceremony. Prescribed test runtime
+is machine time, not a reason to defer. Ordinary prose no test or manifest
+pins is the cheap case when no other person-step is required.
 
 **Durable artifacts stand without the deliberation that produced them.** A test
 name, a comment, a docstring outlives the plan chunk and the review finding that

@@ -601,6 +601,8 @@ recommendations binding, the opposite of the calibration intended.
 This adds no new approval ceremony. The Decision and the existing deviation gate
 are already the authority points; doctrine only has to say that reduction is one
 of the things they govern, alongside new scope and a revived struck chunk.
+A defect fix made under "Fixing an easy problem you meet" in `AGENTS.md` is
+not new scope; that rule does not authorize removing an accepted outcome.
 
 ### The grouped scope-remainder record
 

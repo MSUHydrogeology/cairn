@@ -504,6 +504,19 @@ implementer cannot meet.
 
 ---
 
+### Defect fixes inside the existing work
+
+A defect fix made under "Fixing an easy problem you meet" in `AGENTS.md` is
+not new scope. That operational rule is the authority; an issue or a review
+note cannot manufacture a promise or authorize changing a rule. The code
+reviewer lists `Defect fix:` lines in the reviewed range and checks each
+against the promise, the existing file scope, its test and the stated fence.
+There is no date cutoff. A growing total approaching a chunk's worth is a
+warning to inspect scope, not a hard quota or permission earned by staying
+below one. Findings on the plan's own change still land as sharpening fixes.
+
+---
+
 ## Forward-reference paths — `Proposed paths:` marker doctrine
 
 A plan typically cites paths it *plans to create* during chunk
