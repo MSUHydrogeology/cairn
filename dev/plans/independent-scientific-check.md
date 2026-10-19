@@ -2,7 +2,6 @@
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-independent-scientific-check.md`
 **Status**: revising-code
-**Waiting on Maintainer**: block judged ritual; plan stopped
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits the authoring templates and the axis prose that adopters' bootstrap reads.
 **Opened**: 2026-10-18
@@ -2826,3 +2825,46 @@ gate and not a measurement of how often the block helps.
 
 I have taken neither step. The Status line is unchanged. The Waiting line, as C1
 prescribes, is in the header block beside Status.
+
+## Decision on the C1 outcome -- the Maintainer's instruction, scribed by Claude Sonnet 5.5 (implementer) -- 2026-10-19
+
+**In plain terms.** The re-score said no, so by the plan's stop rule the block
+was judged ritual and the plan stopped. The Maintainer has decided otherwise: the
+go/no-go exercise is not data to package. It is evidence for one change to the
+template, and the plan goes on with that change. The block is kept and sharpened,
+not dropped. This section records his words and what they do; the change itself,
+the evidence summary and the archive wording follow in their own commits.
+
+**Provenance.** The chat is not on file in this repository. The words below are
+the coordinating session's record of what the Maintainer wrote, relayed to me on
+2026-10-19, as with his earlier answers recorded in this plan.
+
+**His words, verbatim (chat, 2026-10-19):**
+
+> "This doesn't really seem worth packaging data for, unless it will be used in the future"
+>
+> "But rather evidence for a change to Cairn"
+
+**The coordinating session's confirming question, verbatim:**
+
+> "Here's my reading of what you said: the go/no-go test isn't data to keep or ship. It's evidence, and what it shows is that the template's data prompt should say what my brief said. So: change the template sentence (option 2), and record C1 in the plan as the evidence for that change, as a short summary (verdicts, what each draft got right, the hashes), not more verbatim material. Is that right?"
+
+**His choice:** "Yes, do that". That option read:
+
+> "The data prompt becomes 'Say whether you have opened the data and confirmed it holds what the check needs; if not, name what you would open to confirm it.' C1 is recorded as the evidence for that change. The code reviewer re-checks the one sentence and its test, and then the plan archives."
+
+**What this does.**
+* **It supersedes the stop rule's outcome.** C1's rule said that with both plans
+  no the block is judged ritual and the plan stops. By the Maintainer's
+  instruction the block is kept and sharpened instead. The C1 record above stands
+  as written; this section overrides only its consequence.
+* **The Waiting line is deleted.** He has answered.
+* **C2 to C4 stay as committed,** unpushed. Nothing is reverted.
+* **One sentence of the block's data prompt changes,** in both proposal
+  templates, the plan's fixed wording and the test's pinned text, and C1 is
+  recorded as the evidence for it.
+* **Scope delta.** This is an **addition** to the accepted scope, made at the
+  Maintainer's instruction. It removes nothing, so it owes no *disposition*.
+* **After it,** the code reviewer re-checks only that sentence and its test, and
+  the plan archives. The archive duties recorded in the Response, as corrected in
+  the sections that follow, still hold.
