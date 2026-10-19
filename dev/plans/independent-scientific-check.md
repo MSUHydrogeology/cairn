@@ -1,7 +1,7 @@
 # Plan: independent scientific check — one check per scientific change, shown able to fail
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-independent-scientific-check.md`
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits the authoring templates and the axis prose that adopters' bootstrap reads.
 **Opened**: 2026-10-18
@@ -3064,3 +3064,102 @@ not exist yet, say so.") deleted.
 * No full-suite run at the base for this change (see above).
 * The first and second records' omissions still hold, including that the
   gate-manifest and AST re-anchors are the Maintainer's.
+
+## Verification of the decision -- Claude Sonnet 5.5 -- 2026-10-19
+
+```
+Reviewed commit: 02adb81f9e12b991999b9e576b99d1462c39d3d0
+Target: the one-sentence change to the block's data prompt (d2730303..02adb81f) and its test; the C1 evidence summary (d759c140); the third Boundary B record (81751536). Narrow by the Maintainer's instruction: nothing else is re-reviewed.
+Prior findings: SC-VR1 and SC-VR2 are read for their recorded outcomes only (below); the rest of the earlier findings were closed in the verification above
+```
+
+**Obligation**: Narrow re-check of the one sentence and its test (the Maintainer's "the code reviewer re-checks the one sentence and its test, and then the plan archives")
+**Tier**: Internal
+**Bounding**: not owed. The third record is a `full` run of a one-sentence change; I read it and did not re-run the suite (the machine is oversubscribed and I was asked not to). The only tests I ran are this plan's own test file.
+**Findings**: raised (0 blocking, 1 low, resolved in this section)
+**Verdict**: CLEAN -> `ready-to-archive`. The sentence is right, identical in every place it lives, and the test sees it. The C1 evidence summary needs two phrases softened and one missing caveat added; I supply the corrected archive wording below, and the archive commit uses it.
+**Model**: claude-sonnet-5-5
+
+Distance: a fresh session of the implementer's agent type (Claude Sonnet 5.5), the same reviewer as the two passes above. I wrote none of the change. Internal, not External. Interpreter: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13, in detached worktrees of `02adb81f` and `d2730303` in a fresh folder of my own (removed at the end). `git diff` on this plan file was empty when I claimed it and again before I appended.
+
+### In plain terms
+
+**The sentence is correct and everywhere the same.** It reads, in both proposal templates, the test's pinned block and the plan's fixed wording, exactly as the Maintainer chose it. I reverted it in one copy, dropped its second clause, and weakened "opened" and two other words: the test caught all eight, naming the right copy, with the unmutated control passing before and after.
+
+**The C1 evidence summary is honest about the "no" and about its limits, with two places that say more than the evidence does.** It does not drop the no: the table shows it, and the archive wording says the stop rule's literal outcome was superseded. It states n = 2, the scorer disagreement and that the new sentence is untested blind. But it calls the re-run's drafter "the same author" (it was a different fresh agent), and its archive wording says the old prompt "did not produce the wanted behaviour, and that sentence did" as if shown, from one draft per side. Also the archive wording leaves out "untested blind". I give a corrected wording below.
+
+### 1. The sentence, in every place it lives
+
+The Maintainer's sentence: "Say whether you have opened the data and confirmed it holds what the check needs; if not, name what you would open to confirm it." I compared it, whitespace-collapsed, with the next sentence ("If the check depends on data that does not exist yet, say so.") kept after it.
+
+| Where | The sentence | The old "is in hand" wording |
+|---|---|---|
+| `dev/proposals/_template.md`, at the tested commit and at `81751536` | once | gone |
+| `templates/core/dev/proposals/_template.md`, both commits | once | gone |
+| the pinned block in `bootstrap/tests/test_scientific_check_guidance_ships.py` | once | gone |
+| this plan's fenced C2 wording (at `81751536`) | once | gone |
+
+The whole block is byte-equal to the plan's fenced C2 text in both copies and in the test's literal. No commit after `02adb81f` touches either template or the test, so the head's templates are the tested ones. The change is exactly one sentence rewritten in four files (the three above and the plan's fence): 12 lines in, 12 out.
+
+### 2. The test sees it
+
+Run on this plan's test file only, in a worktree at `02adb81f`, each mutant restored by `git checkout` and the tree checked clean:
+
+| Mutant | Result |
+|---|---|
+| control (unmutated), before and after | passes |
+| the old "in hand and has been checked" sentence put back, shipped copy only | killed, names the shipped copy |
+| the same, Cairn copy only | killed, names the Cairn copy |
+| the clause "; if not, name what you would open to confirm it" dropped, both copies | killed |
+| the same, shipped copy only | killed |
+| "opened" weakened to "looked at", both copies | killed |
+| the same, Cairn copy only | killed |
+| "confirmed it holds" weakened to "think it holds", shipped copy only | killed |
+| "would open" to "might open", both copies | killed |
+
+Eight of eight killed, each with "the block differs from the reviewed text; expected 'Say whether you have opened the data...'". This is a spot check on the sentence, as asked, not a sweep.
+
+**The sentence reaches an existing adopter.** One probe beyond the narrow brief, because I raised the `needs-value` finding: I installed from `d2730303` (`solo-greenfield`), filled the `documentation-tier-home` slot in the proposal template, committed, and ran `upgrade --plan` and `--stage` against the tested tree. The proposal template is "locally-modified (merged clean)" (no `needs-value`); the staged merge holds the new sentence once, the old wording not at all, the block once, the adopter's fill once and no conflict marker. That closes SC-VR2 in fact, as the Response records.
+
+### 3. The C1 evidence summary
+
+* **It does not drop the "no".** The table lists the re-run as (A) yes, (B) no, combined no, and assemble part A as no. The verdicts match the two scorers' outputs. The replaced archive wording ends: "The stop rule's literal outcome (both plans no, block judged ritual) was superseded by that instruction." The Decision section records the Maintainer's words and the deleted Waiting line.
+* **Its numbers and hashes are right.** Every 12-digit prefix in its hash table is on file in the plan or recomputes. Two do not appear anywhere else in the plan, the error-statement hashes (`3f73dac2e025`, `eeeae7a17aa4`), although the text says all the hashes are "already on file in the sections above". I recomputed both from the error-statement files: they are correct, and the files' text equals the statements committed before any draft. The sentence "already on file" is simply untrue for those two, and harmless.
+* **The residual is stated, in the summary and not fully in the archive wording.** The summary says n = 2 plans with one drafter and one scorer each, that the two scorers read nearly the same kind of data statement differently, that the new sentence has not itself been tried by a blind run, that C1 is no evidence on the independent-basis half or the priming error, and that the "passes by finding nothing" bullet rests on argument. The archive wording carries n = 2 and the disagreement, **not** "untested blind".
+* **Two places say more than the evidence does.**
+  1. "The same author, given the same inputs without that sentence" (the second bullet under *What it shows*). The re-run drafter was a different fresh agent; the two drafts are two samples, not one author twice.
+  2. "So the template's own data prompt did not produce the wanted behaviour, and that sentence did" (the archive wording). That is a causal reading from one draft per side, written by different agents and scored by two scorers who split. The re-run draft also did say the data was not checked and did name the OUTS file; what the scorer failed it on was the words "In hand". The better-supported contrast is narrower: the first draft asked whether the saved array existed at all ("Not checked: that the variable exists") and said "To confirm. Open OUTS"; the re-run took the array's existence from the proposal's reference to an earlier accepted proposal and planned to check its shape and orientation. The new sentence ("confirmed it holds what the check needs") is aimed at exactly that difference, and "in hand" is the ambiguous phrase the re-run's label shows. That is a fair reason for the Maintainer's change. It is not a measurement.
+
+**SC-VD1 -- Low -- The archive wording overstates a causal link and omits "untested blind".** Resolved here, not by a revision. The wording below replaces the one under "The archive wording, replaced" and is the one the archive commit and the board row use. It credits the evidence for what it shows and no more.
+
+> C1 was a go/no-go exercise on two past LHM plans: one blind drafter and one separate scorer for each, so n = 2, and the two scorers read similar data statements differently. Assemble part A: a sound check aimed at a different risk than the one that later bit. Stor-modflow, first draft (the drafter's brief told it to name what it would open to confirm any data it could not check): it asked whether the saved array existed at all, named the file to open, and passed the data question. Stor-modflow, second draft (a fresh drafter, the same inputs, a brief without that instruction): it took the array's existence from the proposal, planned a shape and orientation check before any residual was read, labelled the data "In hand but not checked", and failed the data question. Two single drafts by different agents cannot separate the brief from chance, but they point at the same weak spot: the template's old wording ("in hand and has been checked") left room to write "in hand". By the Maintainer's instruction (2026-10-19) that sentence is now "Say whether you have opened the data and confirmed it holds what the check needs; if not, name what you would open to confirm it." The new sentence has not itself been tried by a blind run. C1 is the evidence for that change and for nothing more: none on the independent-basis half of the block, and none that the block yields a check that catches the priming error. Under the stop rule as written both plans were no and the block would have been judged ritual; the Maintainer's instruction superseded that outcome.
+
+The second archive duty (name the author-as-expert mode under falsifier F2 on the revisit row) is unchanged and still to do at archive.
+
+### 4. The third Boundary B record, read
+
+I read it and did not run the suite. What I checked without running tests:
+
+* **Range and bytes.** The base `d2730303` is the tested commit's parent. The range is one commit and four paths (the two proposal templates, the test and this plan). The later commits `d759c140` and `81751536` change only this plan. `git diff --stat d2730303..02adb81f` over `doctrine`, `AGENTS.md`, `templates/modules`, `docs`, `scripts`, `tools`, `dev/.cairn`, `dev/PLANNING.md`, `CHANGELOG.md`, `dimensions`, `bootstrap/BOOTSTRAP.md`, both plan templates, `bootstrap/_scaffold`, `bootstrap/tests/fixtures` and `bootstrap/verify_integrity.py` is empty.
+* **Frozen files.** The range's paths and the 183 `frozen_files` keys do not intersect (control: `bootstrap/tests/test_scaffold.py` is a key; the new test is not).
+* **Vendor names.** The 9 added lines in the templates and the test contain none; the control line is found.
+* **Consistency.** 5832 passed plus 2 failed is the 5834 nodes it reports at both commits; the two failures are the same two AST tests named in the earlier records; the node ID is unchanged; the Waiting line the earlier stop wrote is gone from the header (the Decision section says so and the diff history shows its deletion).
+* **The seven AST symbols.** The record says the first record's five plus `_emit_skill_copy_fallback` and `_symlinks_available`, both present at the base. I confirmed both are defined in the engine at `d2730303`, and that the range does not touch the engine, so the set cannot differ between base and tested. I did not re-derive the hashes; that needs the run.
+* **Not checked by running.** The 5832 / 2 figure, the base's AST file, the collection count, the gates and the manifest. The record's own omission (no full run at the base) is sound for a one-sentence change with named, identical failures.
+* **`check_cairn.py` note.** The record is right that three of its seven issues are citations in this plan of a folder that exists only in a tree that has run Python. One of them is in my previous section. I do not repeat the citation here.
+
+### Findings
+
+SC-VD1 above is the only one, low, and is resolved by the corrected wording. Nothing blocks.
+
+### Observations (no finding)
+
+* **The sentence presumes there is data.** For a check that needs none (the assemble draft's analytic fixture), an author writes "no data needed" and the sentence has nothing to open. The following sentence ("If the check depends on data that does not exist yet, say so") does not cover "needs none", but the assemble draft handled it unprompted ("It needs no external data"), so I would not edit pinned text for it.
+* **The plan's *In brief* paragraph still describes the old prompt** ("whether the data behind the expected value is actually in hand and has been looked at"). Operative cells append, not revise, once execution has begun, so I leave it. The archive commit's changelog line and board row should describe the new sentence, not that paraphrase.
+
+### What I did not cover
+
+* I did not run the full suite, the base's AST file, the collection or the gates, as asked; the Boundary B figures are read, with the git-level checks above.
+* I did not re-review anything outside the sentence, its test and the two records. SC-VR1 is closed by the re-run and the Maintainer's decision as recorded; I verified none of the C1 re-run's internals beyond the verdict table and the hashes.
+* The Maintainer's words are as the Response and Decision sections quote them; I cannot see the chat.
+* The new sentence has not been tried by a blind run, and neither have I tried it. Whether it fixes the behaviour it is aimed at is untested, as the record says.
