@@ -70,8 +70,8 @@ _PROMISE_SITES = (
 )
 _CHECK_NAME = "independent scientific check"
 _COMPLEXITY_FINDING = (
-    'an unexplained "N/A" on a change that touches a computed result '
-    "is a review finding"
+    'an unexplained "N/A" on a change that touches a scientific assumption '
+    "or a result the project publishes or acts on is a review finding"
 )
 
 _BLOCK_HEADING = "### Independent scientific check"
@@ -257,8 +257,10 @@ def test_the_check_guidance_reaches_every_copy_and_promise_site() -> None:
         security-touching paragraph and before the doc-tooling slot; neither
         holds a slot marker or sits inside a slot;
     (d) the three promise sites each name the check, and the Complex position
-        says an unexplained "N/A" on a change that touches a computed result
-        is a review finding. Presence only.
+        says an unexplained "N/A" on a change that touches a scientific
+        assumption or a result the project publishes or acts on is a review
+        finding, which is the block's own gate. Presence only, and letter case
+        is ignored.
 
     Not pinned, on purpose: text added as its own paragraph beside the pinned
     ones (the pinned text is closed, its neighbourhood is not), and where the
@@ -398,13 +400,13 @@ def test_the_check_guidance_reaches_every_copy_and_promise_site() -> None:
 
     for rel in _PROMISE_SITES:
         try:
-            text = _collapse("\n".join(_read(rel)))
+            text = _collapse("\n".join(_read(rel))).lower()
         except OSError as exc:
             failures.append(f"(d) {rel}: cannot be read: {exc}")
             continue
-        if _CHECK_NAME not in text:
+        if _CHECK_NAME.lower() not in text:
             failures.append(f"(d) {rel}: does not name the {_CHECK_NAME!r}")
-        if rel == _PROMISE_SITES[0] and _COMPLEXITY_FINDING not in text:
+        if rel == _PROMISE_SITES[0] and _COMPLEXITY_FINDING.lower() not in text:
             failures.append(
                 f"(d) {rel}: does not say that {_COMPLEXITY_FINDING!r}"
             )

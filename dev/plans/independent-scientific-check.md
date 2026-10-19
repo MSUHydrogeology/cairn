@@ -460,11 +460,12 @@ records whether anything else would have shown the error.
 
 ```text
 * The proposal template's **independent scientific check** is expected
-  of every change that touches a scientific assumption or a published
-  result: one check whose expected value neither the code nor its
-  tests compute, shown to fail under the mistake it names. The block
-  is gated on the change, not on this axis. Here, an unexplained "N/A"
-  on a change that touches a computed result is a review finding.
+  of every change that touches a scientific assumption or a result the
+  project publishes or acts on: one check whose expected value neither
+  the code nor its tests compute, shown to fail under the mistake it
+  names. The block is gated on the change, not on this axis. Here, an
+  unexplained "N/A" on a change that touches a scientific assumption or
+  a result the project publishes or acts on is a review finding.
 ```
 
 `dimensions/README.md`, the Complexity row of the axis table. The one line
@@ -482,8 +483,10 @@ downstream. If uncertain," and become four:
 ```text
 Fill the template. Do not skimp on the scientific-surface and
 documentation-trust sections — those drive the legacy-agent decision,
-and show which changes touch a scientific assumption and so need the
-proposal template's independent scientific check. If uncertain,
+and the scientific-surface section shows which changes touch a
+scientific assumption or a result the project publishes or acts on, and
+so need the proposal template's independent scientific check. If
+uncertain,
 ```
 
 **The new test** (`bootstrap/tests/test_scientific_check_guidance_ships.py`) has
@@ -515,8 +518,9 @@ chunk or plan row. It reads the files by path from the repository root, the way
 * **(d) The promise sites** *(added in C3)*. Each of `dimensions/complexity.md`,
   `dimensions/README.md` and `bootstrap/BOOTSTRAP.md` contains `independent
   scientific check` in its whitespace-collapsed text, and `dimensions/complexity.md`
-  contains the sentence `an unexplained "N/A" on a change that touches a computed
-  result is a review finding`. **Presence only, never absence**, so the later plan
+  contains the sentence `an unexplained "N/A" on a change that touches a
+  scientific assumption or a result the project publishes or acts on is a review
+  finding`. **Presence only, never absence**, so the later plan
   may reword the Complexity cell without touching this group, provided it keeps
   naming the check.
 * A heading or lead line that occurs other than once, or a block with no closing
@@ -740,8 +744,9 @@ document.
   `independent scientific check` occurs in each of the three files. *Red when:*
   any site still names the lens, or any lacks the check.
 * **The complex-project finding is stated.** `dimensions/complexity.md` holds the
-  sentence about an unexplained "N/A" on a change that touches a computed result
-  being a review finding, once, in the Complex position, and the "gated on the
+  sentence about an unexplained "N/A" on a change that touches a scientific
+  assumption or a result the project publishes or acts on being a review finding,
+  once, in the Complex position, and the "gated on the
   change, not on this axis" sentence. *Red when:* it sits in Simple, or either
   sentence is missing.
 * **The I-2 sentence says what is true.** It says the profile sections show which
