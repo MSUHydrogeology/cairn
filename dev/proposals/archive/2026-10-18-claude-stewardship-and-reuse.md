@@ -1,7 +1,7 @@
 # Fix easy problems where you find them, and look before you build
 
 **Author**: Claude (Strategy)
-**Status**: accepted
+**Status**: archived
 **Review**: required(Internal)
 **Plan review**: required(Internal)
 **Opened**: 2026-10-18
@@ -1428,3 +1428,22 @@ Revision 1). Read against it, the changes are binding on the plan:
 
 Scribed by Claude (claude-opus-5-5) on the Maintainer's explicit instruction.
 Nothing else lands in this commit.
+
+
+## Plan opened -- Codex -- 2026-10-19
+
+Accepted scope transfers to `dev/plans/stewardship-and-reuse.md`, opened at
+`awaiting-plan-review`. Revision 1 as narrowed by the Decision is its contract.
+The Maintainer allowed opening before the review-stance archive in chat,
+answering the explicit opening-order question:
+
+> Open now; keep implementation gated
+
+Implementation still waits for the combined plan's archive. This is a timing
+allowance, not a new Decision or permission to implement. Earlier sections
+remain unchanged apart from the lifecycle Status header.
+
+**Dispositions:** accepted implementation and its checks transferred to the
+live plan; no additional deferred item. The review's two historical module
+line citations were already out of bounds before this move and are recorded
+as inherited checker flags; the historical review is not rewritten.
