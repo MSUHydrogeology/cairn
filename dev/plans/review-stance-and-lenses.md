@@ -2,7 +2,6 @@
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-external-is-a-maintainer-stance.md` (accepted `58f30d6c`) and `dev/proposals/archive/2026-10-18-claude-review-lenses-for-every-install.md` (accepted `fbf664f0`)
 **Status**: implementing
-**Waiting on Maintainer**: a 3rd expected flag in C7b
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance — inherited: the change edits `doctrine/`, the governing `AGENTS.md` every adopter receives, the authoring templates and a framework anchor.
 **Opened**: 2026-10-18
@@ -1143,7 +1142,7 @@ control (`AGENTS.md` > Boundary C).
   copy; then the citation rule; then the ledger. The six C1 and C7 mutants are
   re-run at the final state and reported as one ledger (killed, survived,
   equivalent). *Red when:* any survives.
-* **Expected checker flags.** `python scripts/check_cairn.py` with the two
+* **Expected checker flags (amended: three, see *Deviation request* at the end).** `python scripts/check_cairn.py` with the two
   archived source proposals named explicitly reports exactly two new line-bound
   flags at C7, the module citations in the stance proposal's Security Review
   (module lines 132-133 and 131-132, in files that are now about 84 lines), and
@@ -2217,3 +2216,36 @@ they name now sits in the review-loop document).
 Untracked paths: `bootstrap/tests/test_onboarding_review_tiers.py` -- deleted by
 C7a, so a fresh checkout does not carry it; this plan cites it throughout as the
 frozen file whose removal the re-anchor must handle.
+
+### Allowance -- Anthony Kendall (Maintainer), relayed by the coordinator -- 2026-10-19
+
+The Maintainer answered the deviation request above. The question he was shown
+and the option he chose, quoted verbatim and set apart:
+
+> "The combined review plan's C7 thins the dual-review module, as accepted. One
+> acceptance check expected exactly two 'stale line citation' flags in archived
+> proposals afterwards, but a third appears: an archived review that cites the
+> module's old line numbers. No archived file can be edited (append-only), so the
+> criterion can't be met as written. How should the implementer proceed?"
+
+> "Accept a 3rd expected flag (Recommended)" -- "Same kind as the other two: an
+> archived record pointing at module lines that the accepted thinning removes. No
+> archive is edited, and C7 and C8 finish as planned."
+
+**The amended criterion.** C7's *Expected checker flags* now reads: `python
+scripts/check_cairn.py` with the two archived source proposals named explicitly
+reports exactly **three** new line-bound flags at C7 and nothing else new: the two
+module citations in the stance proposal's Security Review (module lines 132-133
+and 131-132) and the lenses proposal's Internal review (line 313, module lines
+136-144), all in files that are now 59 lines. They are expected and recorded;
+the records are append-only and are not edited. It is red when a flag appears
+that is not these three. Everything else in C7 stands. The original cell above is
+left as written, with a pointer to this amendment, because the plan's operative
+cells are append-only once implementation has begun.
+
+**Signals the plan defines, recorded here so the code reviewer can weigh them
+(neither is a failure).** `AGENTS.md` grew by 49 lines per copy against the
+40-line ceiling (the quoted called-read text alone is 28 lines). And
+`check_module_body_coverage.py` reads 11 missing topics against 8 at the base,
+because three doctrine headings the module used to repeat now live in the
+review-loop document.
