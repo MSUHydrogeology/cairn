@@ -511,3 +511,177 @@ this review changes a file the commit touched.
 * Vendor-row probes (`.venv/bin`, `.venv/bin/python`, `dev/reflections`) on both
   kernels and on the proposed fix; the second pruner against a linked folder; the
   survivor measurements.
+
+
+## Verification of the answer -- Claude Sonnet 5.5 -- 2026-10-19
+
+**Scope**: a Boundary C check of the answer, commit `83b144f9` (SW-CR1 to SW-CR8,
+with the Security Review's low items), and a check of `a95b9b31` (the fix for a
+committed interpreter binding) for ordinary defects and regressions only. Its
+security depth belongs to the Security Reviewer and I did not test it. This is not a
+fresh review. Fresh session; the same agent type as the author, so the distance is a
+fresh context. Internal; I do not claim External standing.
+**Bytes**: the kernel twins, the pruner twins and both test files are byte-identical
+at HEAD (`d2730303`) to `83b144f9`. The twins are identical to each other in both
+pairs, and the two lockfile hash lines (`tools/session.py`, `tools/prune_reflections.py`)
+equal the files' sha256.
+**Interpreter**: Python 3.13.13 at `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+`PYTHONDONTWRITEBYTECODE=1`, darwin. Every run was in a detached worktree of the
+commit under test, in a uniquely named scratch folder, removed afterwards. The three
+full runs were nearly done and the 54-break sweep had just finished when the
+shared-lock rule arrived; I let them finish and ran nothing heavy after it. Load on
+the machine was above 20 during the runs, so the times are long (about 1100 s against
+726 s recorded).
+
+**Verdict**: **All eight findings are closed. The answer introduces no blocking
+defect, and I found none in `a95b9b31`.** Three new low findings (SW-CR9 to SW-CR11),
+none blocking.
+
+**In plain terms.** I re-ran every route I had used to break the first commit, on the
+answer. A vendor row can no longer replace the user's `.venv/bin/python` link or fill
+their `.venv/bin` folder; the second pruner refuses a linked reflections folder and
+deletes nothing; a read-only `.gitignore` is refused with the line to add, and one that
+already holds the entry is left alone; the ten message sites, the heartbeat, the temp
+name and the named pipe are all pinned now. All 14 hostile-clone cases are still clean,
+and a fresh `solo-greenfield` install prints the same text as before except the
+read-only case, which changed on purpose. Both recorded test figures reproduce. The
+three new items are small: a legitimate-looking vendor row with another last name is
+called "unsafe" without a reason, the pruner can still be steered by an operator's own
+`--dir ...`, and the read-only refusal's remedy words are not pinned.
+
+### One line per finding
+
+| Finding | State | Evidence |
+|---|---|---|
+| SW-CR1 (vendor last name) | **closed** | `.venv/bin/python` row, link mode: the user's link is unchanged (still points at the interpreter). `.venv/bin` row, copy mode: `python` keeps the user's bytes, no `.diverged.bak`, no `.venv/bin/` line in `.gitignore`. `dev/reflections` row: the user's link is unchanged. All three print the existing "unsafe vendor path ... skipped" warning, exit 0. With the rule removed (LAST) 17 tests fail. Rows that must keep working still do: `.opencode/skills`, `.github/copilot/skills`, `.claude/skills/`. |
+| SW-CR2 (second pruner) | **closed** | The outside-deletion probe now exits 2 with nothing deleted, on a real run and on `--dry-run`; the same for a link at `dev` and a link back into the project, and with the script run through a link above the project. Ordinary use is unchanged (default folder, relative `--dir`, absolute `--dir` from another folder); a folder the operator names outside the project is pruned as before. Breaks: call deleted (P1), link on the way unseen (P3), innermost-first boundary (P4), skipped on dry run (P5), exit 1 instead of 2 (P6) all killed. One residue is SW-CR10. |
+| SW-CR3 (docs, wording) | **closed** | Each refusal now names the first link and the fix ("`dev/reflections` is a link; replace it with a real folder inside the project"; checked in C3 to C9). "Nothing to fan out" no longer follows a refusal (MSG2 killed). `bootstrap/UPGRADE.md` has two new bullets and `bootstrap/SAFETY.md` one sentence; each matches what I measured. A copy-side refusal still leaves the `.gitignore` entry already seeded (the fix list did not ask for that to change). |
+| SW-CR4 (read-only `.gitignore`) | **closed** | Read-only, entry absent: exit 0, a warning that gives the exact line to add, file and mode untouched, nothing copied. Read-only, entry present with or without the slash: no refusal, copy proceeds. Absent file, empty read-only file, and a writable file behave as before; link mode never reaches it. Removing the check (RO1) fails a test; checking when the file is absent (RO2) fails 16; checking when the entry is already there (RO3) fails one. The wording of the remedy is not pinned (SW-CR11). |
+| SW-CR5 (message encoding) | **closed** | I replaced each of the 21 `encode_display(` calls in the kernel by `str(`, one at a time: 21 of 21 killed (the first pass left six message sites unpinned). Measured with an escape byte in the name at each former survivor (outside-project, copy destination, quarantine name, divergence warning, unsafe vendor path, unsafe entry) and at the new lock-refusal and reclaim lines: no raw escape reaches the terminal. |
+| SW-CR6 (heartbeat) | **closed** | Dropping the rewind (H9b) or the truncate (H9c) now fails `test_the_heartbeat_leaves_a_whole_current_payload_each_time`. Measured: after a long agent name then a short one, the lock file is valid JSON (137 bytes). |
+| SW-CR7 (random temp name) | **closed** | A fixed name (H3) fails `test_each_write_gets_its_own_random_temporary_name`. Measured: two writes used `.cairn-write-766fc733…` and `.cairn-write-a3147237…` (16 hex digits each), and a file at the old fixed name no longer disturbs the copy-mode fan-out. |
+| SW-CR8 (named pipe) | **closed** | A pipe at `.gitignore` is refused in 0.07 s (it hung before). Dropping the non-blocking open (H8nb) fails a test; dropping both regular-file checks (H8ab) fails a test; dropping the device and inode comparison (H8ino) fails two. Each of the two checks alone (H8a, H8b) passes the suite because the other recovers the case; the pair is what is killed, which is the measurement. |
+
+### `.opencode/skill` (singular) is now skipped: is that acceptable?
+
+**Yes, today; with one cost that SW-CR9 asks to soften.** Measured on the answer: a
+row `.opencode/skill` is skipped with "unsafe vendor path for 'x': '.opencode/skill';
+skipped." in link mode and in copy mode, exit 0, nothing made, while `.opencode/skills`
+(plural) and `.github/copilot/skills` work. The shipped table has one link-tier row
+(`.claude/skills`), so no shipped or adopter row is affected, and the skip is loud and
+names the row. The rule is also written down for adopters in `bootstrap/UPGRADE.md`. What it
+costs is the table's own promise: the table says a vendor refresh is a row edit and
+never a redesign, but a harness whose folder is not called `skills` now needs a kernel
+change, in two files plus a lockfile line. That is the right trade for a rule that
+closes SW-CR1 in one line, as long as the person adding such a row is told. They are
+not (SW-CR9).
+
+### Boundary B records, against the committed bytes
+
+| Record | Tree I built | Mine | Their figure |
+|---|---|---|---|
+| `a95b9b31` (binding) | detached worktree of `f949e342` with the commit's four files, committed as a private snapshot so the frozen-file self-checks see a clean tree | 4448 passed, 3 failed; the third, `test_security_stack.py::test_a_t4_output_is_bounded`, is a load failure (its own comment says the 5 s grace can run out on a loaded machine; the status read "truncated+cleanup-failed"). It passes alone in 0.2 s twice, which makes **4449 passed, 2 failed**. The two are `test_ast_attest.py::test_ast_gate_passes_over_the_full_scaffold_module_set` and `test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package`. | 4449 passed, 2 failed, 829 s |
+| `83b144f9` (answer) | detached worktree of `a95b9b31` with the commit's eight files, committed as a private snapshot | **4508 passed, 2 failed** (the same AST pair), 1080 s, no skip, xfail or xpass | 4508 passed, 2 failed, 726 s |
+| `83b144f9` itself | detached worktree of the commit | **5832 passed, 2 failed** (the same AST pair), 1092 s, tree clean; the larger count is the commits between the two bases | not recorded |
+
+`scripts/quality_gate.py --sub neutrality --sub redundancy` on `83b144f9`: exit 0,
+neutrality fail=0, redundancy fail=0. All three trees were clean before and after. The
+snapshot commits were made only in my private worktrees (they are unreferenced objects
+once the worktrees go). One frozen file changed, `templates/modules/default-on/prune_reflections.py`
+(the manifest still pins blob `bf4d5f75`, the file is `d0d397ed`); no test reddens, and
+the commit says the Maintainer re-anchors, which is right.
+
+### The sweep and the probes
+
+* **Break ledger on the answer**: 54 breaks (33 named, plus the 21 encoder calls),
+  each in a fresh worktree with both twins of the file edited together, against 280
+  tests (the eight files that read or import the kernel or the pruner); control 280
+  passed. **48 killed, 6 survived**: H8a and H8b (each alone equivalent, see SW-CR8;
+  the pair is killed), P2 (pruner guard after the listing: probes identical to the
+  control, since listing deletes nothing and the guard still precedes every deletion;
+  equivalent), P7 (root taken unresolved: the root is already resolved when it is
+  built, so equivalent; probes identical), S2 (a lone carriage return, unchanged,
+  not a finding, see below) and RO4 (SW-CR11). The guard sites G1 to G6 are still
+  each killed by a test written for them (7, 4, 1, 1, 2 and 2 failures).
+* **Hostile clones** (C1 to C14 as in the first pass): all clean on `83b144f9`; the
+  refusals now name the link. G2, G4 and G6 still leak in the real command when
+  deleted, as before.
+* **Normal adopters**: fresh `solo-greenfield` install with the installer and kernel of
+  `7e6a14e5`, and again with those of `83b144f9`, then the same ten flows and the `.gitignore` variants. Output is
+  identical, byte for byte, except the read-only `.gitignore` line (now a refusal with
+  the remedy). The binding gate leaves a normal install alone: the binding is
+  untracked, still reported "from local-env.json", and no untrusted-binding warning
+  appears. It asks git once per `session-start` (one `git ls-files`); average
+  `session-start` time rose from 0.15 s to 0.20 s on the loaded machine, which is noise-level.
+* **`a95b9b31`, ordinary checks only**: `_resolve_interpreter`, `_binding_untrusted`,
+  `_warn_untrusted_once`, `_probe_interpreter`, `encode_display` and the other helpers
+  are AST-identical between `a95b9b31` and `83b144f9`, as the answer says. The
+  17 new binding tests are in the 280 and pass in the control; they drive the real
+  command from a fresh clone. The repository's own `dev/.cairn/local-env.json` is
+  untracked and ignored, so the dogfooded tree is not affected. I found no ordinary defect.
+
+## New findings
+
+### [SW-CR9] non-blocking (low) -- a vendor row with another last name is called "unsafe" and nothing says why, or where to change it
+
+`_vendor_path_parts` (`tools/session.py:995`) now requires the last name to be
+`skills`. The skip warning (`tools/session.py:1228`) still reads "unsafe vendor path
+for 'x': '.opencode/skill'; skipped.", which calls a plausible row an attack and does
+not name the rule. The table's own note (the `_doc` field of
+`templates/skills/_data/vendor_targets.yml`) still says a vendor refresh is a row edit
+and says nothing of the rule; it is written only in `bootstrap/UPGRADE.md`. And the
+installer applies the older, looser test (`bootstrap/_scaffold/install.py:727`), so a
+row like `.opencode/skill` would be installed as a link and then skipped by the kernel
+at every `session-start`, never repaired, with a warning each time. Nothing shipped is
+affected today.
+
+**Fix.** Say the rule in the warning ("a vendor row must name a folder called 'skills'
+inside another folder") and in one sentence of the `_doc` field; when a real harness
+with another name is added, widen the rule to a named set in the same commit as the row.
+
+### [SW-CR10] non-blocking (low, optional) -- the pruner's guard is blind to a `..` after a link in an operator's own `--dir`
+
+`_refuse_linked_directory` (`tools/prune_reflections.py:70`) normalises the folder
+lexically (`os.path.abspath`, `:78`) before it walks for links, so `--dir
+dev/reflections/..` becomes `dev`, which is not a link, while the operating system
+follows the link and then goes up one level. Measured with `dev/reflections` linked to a
+folder inside an outside folder: the command exited 0 and deleted the older dated file
+in the outside folder. Only an operator can cause this (no shipped skill or document
+passes `--dir`; the default folder has no `..`), and the commit says a folder the
+operator names is theirs; this is the one spelling that is inside the project and still
+leaves it.
+
+**Fix.** Refuse a `--dir` that contains a `..` part, or compare the real location of
+the folder (`os.path.realpath`) with where the walk says it is and refuse when it is
+outside the project but spelled inside it. One test.
+
+### [SW-CR11] non-blocking (low) -- the remedy words of the read-only refusal are not pinned
+
+`_GITIGNORE_READ_ONLY` (`tools/session.py:1055`) ends "make it writable, or add this
+line yourself: ". With that phrase cut out (RO4) all 280 tests pass; the one test
+(`bootstrap/tests/test_session_writes_contained.py:859`) matches only "read-only", so the
+message could lose its remedy and nothing would say so. The behaviour is right today.
+
+**Fix.** In that test, also assert the refusal text names the line to add (the entry) and
+the words "writable".
+
+## Seen, not raised
+
+* **A lone carriage return as the last byte of `.gitignore`** (S2) still leaves the
+  entry glued to the previous line for git. Unchanged, not asked for, exotic.
+* **A copy-side refusal leaves the seeded `.gitignore` entry.** By design (the seed comes
+  first so a refusal there copies nothing) and benign; I mention it because the first
+  pass did.
+* **`a95b9b31` costs a git call per `session-start`** and falls back, with a warning, in
+  a folder where git cannot run. That is its stated design.
+
+## What I did not cover (this pass)
+
+* The security depth of `a95b9b31`: the link, tracked-name, case and git-failure
+  routes. The Security Reviewer has them.
+* Windows, and the `O_NOFOLLOW`-less path of `_read_regular_bytes` on a real Windows
+  host; the tests simulate the missing flag. The answer says that platform has not been run.
+* The first-pass breaks I did not repeat (the layered combinations, the symlink-probe
+  and ordering breaks); the answer's own ledger covers them and the six guard sites were
+  re-broken above.
+* A fresh full run of everything at HEAD: the figures above are for the commit's bytes.
