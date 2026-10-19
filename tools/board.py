@@ -16,7 +16,8 @@ waiting on the Maintainer, and names the plans that mention a fence but declare
 nothing; it never decides whether a wait is over.
 
 The artifact is authoritative; this view is derived and says so. It is
-read-only and mutates nothing.
+read-only and mutates nothing. A symbolic link is never read and is named in
+the output.
 
 Usage:
 
@@ -30,6 +31,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import re
+import stat
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -56,6 +58,15 @@ _AWAITING_DECISION_RE = re.compile(r"^awaiting-decision(?![A-Za-z0-9_])")
 
 #: Leading spaces and at most one list bullet, ahead of a board row's marker.
 _ROW_BULLET_RE = re.compile(r"^ *(?:[*-] )?")
+
+
+class _BoardSourceError(Exception):
+    """Raised when a board source cannot be read as a regular file or folder."""
+
+    def __init__(self, rel: str, reason: str) -> None:
+        super().__init__(f"{rel}: {reason}")
+        self.rel = rel
+        self.reason = reason
 
 
 def _repo_root() -> Path:
@@ -85,6 +96,44 @@ def _encode(limit: int = 48):
     return cell
 
 
+def _check_source(root: Path, rel: str, expect: str,
+                  skipped: List[str]) -> Optional[Path]:
+    """Examine each component of `rel` below `root` before following any link.
+
+    Gives one of three answers: a symbolic link (recorded once in `skipped` by
+    its highest linked component, returns `None`), a regular file or real
+    folder (returns its `Path`), or anything else (raises `_BoardSourceError`,
+    except for `dev/PLANNING.md` where a non-regular entry returns `None`).
+    """
+    parts = Path(rel).parts
+    for idx in range(len(parts)):
+        sub_rel = "/".join(parts[:idx + 1])
+        cur = root.joinpath(*parts[:idx + 1])
+        if cur.is_symlink():
+            if sub_rel not in skipped:
+                skipped.append(sub_rel)
+            return None
+        try:
+            mode = cur.lstat().st_mode
+        except FileNotFoundError:
+            return None
+        except OSError as exc:
+            raise _BoardSourceError(sub_rel, "cannot stat") from exc
+        if idx < len(parts) - 1:
+            if not stat.S_ISDIR(mode):
+                raise _BoardSourceError(sub_rel, "not a directory")
+        elif expect == "dir":
+            if not stat.S_ISDIR(mode):
+                raise _BoardSourceError(sub_rel, "not a directory")
+        elif expect == "planning":
+            if not stat.S_ISREG(mode):
+                return None
+        else:
+            if not stat.S_ISREG(mode):
+                raise _BoardSourceError(sub_rel, "not a regular file")
+    return root.joinpath(*parts)
+
+
 def _header_fields(text: str) -> Dict[str, str]:
     """The `**Field**: value` lines above the first `##` heading."""
     out: Dict[str, str] = {}
@@ -97,25 +146,44 @@ def _header_fields(text: str) -> Dict[str, str]:
     return out
 
 
-def _artifacts(root: Path, include_archive: bool):
+def _artifacts(root: Path, include_archive: bool,
+               skipped: Optional[List[str]] = None):
     """`(kind, path, text)` for each proposal and plan, in print order."""
+    seen_skipped = skipped if skipped is not None else []
     for kind, rel in (("proposal", "dev/proposals"), ("plan", "dev/plans")):
-        base = root / rel
-        if not base.is_dir():
+        base = _check_source(root, rel, "dir", seen_skipped)
+        if base is None:
             continue
-        globs = [base.glob("*.md")]
-        if include_archive and (base / "archive").is_dir():
-            globs.append((base / "archive").glob("*.md"))
-        for group in globs:
-            for path in sorted(group):
-                if path.name.startswith("_"):
+        folders = [(rel, base)]
+        if include_archive:
+            arch_rel = f"{rel}/archive"
+            arch = _check_source(root, arch_rel, "dir", seen_skipped)
+            if arch is not None:
+                folders.append((arch_rel, arch))
+        for folder_rel, folder in folders:
+            try:
+                names = sorted(
+                    entry.name for entry in folder.iterdir()
+                    if entry.name.endswith(".md") and not entry.name.startswith("_")
+                )
+            except OSError as exc:
+                raise _BoardSourceError(folder_rel, "cannot list directory") from exc
+            for name in names:
+                leaf_rel = f"{folder_rel}/{name}"
+                path = _check_source(root, leaf_rel, "file", seen_skipped)
+                if path is None:
                     continue
-                yield kind, path, path.read_text(encoding="utf-8")
+                try:
+                    text = path.read_text(encoding="utf-8")
+                except (OSError, UnicodeError) as exc:
+                    raise _BoardSourceError(leaf_rel, "cannot read UTF-8 text") from exc
+                yield kind, path, text
 
 
-def _rows(root: Path, include_archive: bool) -> List[Dict[str, str]]:
+def _rows(root: Path, include_archive: bool,
+          skipped: Optional[List[str]] = None) -> List[Dict[str, str]]:
     rows: List[Dict[str, str]] = []
-    for kind, path, text in _artifacts(root, include_archive):
+    for kind, path, text in _artifacts(root, include_archive, skipped):
         fields = _header_fields(text)
         if not fields:
             continue
@@ -139,7 +207,8 @@ def _waiting(root: Path) -> Dict[str, object]:
     """
     entries: List[Dict[str, str]] = []
     fence_only: List[str] = []
-    for kind, path, text in _artifacts(root, include_archive=False):
+    skipped: List[str] = []
+    for kind, path, text in _artifacts(root, include_archive=False, skipped=skipped):
         fields = _header_fields(text)
         declared = _WAIT in fields
         decision = bool(_AWAITING_DECISION_RE.match(fields.get("Status", "")))
@@ -149,10 +218,14 @@ def _waiting(root: Path) -> Dict[str, object]:
                             "text": fields.get(_WAIT, "")})
         if kind == "plan" and not declared and any(w in text for w in _FENCE_WORDS):
             fence_only.append(path.stem)
-    planning = root / "dev" / "PLANNING.md"
-    has_planning = planning.is_file()
+    planning = _check_source(root, "dev/PLANNING.md", "planning", skipped)
+    has_planning = planning is not None
+    planning_skipped = "dev" in skipped or "dev/PLANNING.md" in skipped
     if has_planning:
-        lines = planning.read_text(encoding="utf-8").splitlines()
+        try:
+            lines = planning.read_text(encoding="utf-8").splitlines()
+        except (OSError, UnicodeError) as exc:
+            raise _BoardSourceError("dev/PLANNING.md", "cannot read UTF-8 text") from exc
         for number, line in enumerate(lines, 1):
             m = _HEADER_FIELD_RE.match(_ROW_BULLET_RE.sub("", line, count=1).strip())
             if m and m.group("name").strip() == _WAIT:
@@ -161,10 +234,12 @@ def _waiting(root: Path) -> Dict[str, object]:
                                 "reason": "declared",
                                 "text": m.group("value").strip()})
     return {"entries": entries, "fence_only": fence_only,
-            "has_planning": has_planning}
+            "has_planning": has_planning, "planning_skipped": planning_skipped,
+            "skipped": skipped}
 
 
-def _render(rows: List[Dict[str, str]], encode) -> str:
+def _render(rows: List[Dict[str, str]], encode,
+            skipped: Optional[List[str]] = None) -> str:
     cols = ["kind", "artifact"] + [f for f in _FIELDS
                                    if any(r.get(f) for r in rows)] + ["archived"]
     if not any(r.get("archived") for r in rows):
@@ -174,6 +249,8 @@ def _render(rows: List[Dict[str, str]], encode) -> str:
         lines.append("board: " + " | ".join(encode(r.get(c, "")) for c in cols))
     lines.append(f"board: {len(rows)} row(s). Derived from header blocks; the "
                  f"artifact is authoritative.")
+    for rel in skipped or ():
+        lines.append(f"board: skipped (symbolic link, not read): {encode(rel)}")
     return "\n".join(lines)
 
 
@@ -190,8 +267,10 @@ def _render_waiting(found: Dict[str, object], encode) -> str:
                  f"wait (open each): {names}")
     lines.append("board: not listed -- pushes (git status shows them) and "
                  "anything no artifact or row declares.")
-    if not found["has_planning"]:
+    if not found["has_planning"] and not found.get("planning_skipped"):
         lines.append("board: dev/PLANNING.md is missing -- no board rows were read.")
+    for rel in found.get("skipped", ()):
+        lines.append(f"board: skipped (symbolic link, not read): {encode(rel)}")
     return "\n".join(lines)
 
 
@@ -211,12 +290,19 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--root", default=None, help="Repository root.")
     args = parser.parse_args(argv)
     root = Path(args.root).resolve() if args.root else _repo_root()
-    if args.maintainer:
-        print(_render_waiting(_waiting(root), _encode()))
+    encode = _encode()
+    try:
+        if args.maintainer:
+            print(_render_waiting(_waiting(root), encode))
+            return 0
+        skipped: List[str] = []
+        rows = _rows(root, args.archive, skipped)
+        print(_render(rows, encode, skipped))
         return 0
-    rows = _rows(root, args.archive)
-    print(_render(rows, _encode()))
-    return 0
+    except _BoardSourceError as exc:
+        print(f"board: error: cannot read {encode(exc.rel)} ({exc.reason})",
+              file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":  # pragma: no cover

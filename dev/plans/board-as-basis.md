@@ -9,10 +9,7 @@
 
 Proposed paths:
 - `docs/build-a-board-view.md`
-- `bootstrap/tests/test_board_json_contract.py`
 - `bootstrap/tests/fixtures/board_json_v1_baseline.json`
-- `bootstrap/tests/test_board_json_contract.py::TestGuideLookupMatchesLifecycle`
-- `bootstrap/tests/test_board_json_contract.py::TestWaitsRecipeAgreesWithMaintainerView`
 
 ## In brief
 
