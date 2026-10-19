@@ -1,7 +1,7 @@
 # Plan: Fix easy defects and reuse what already exists
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-stewardship-and-reuse.md`
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-19
@@ -357,3 +357,26 @@ Observations across the nine lenses:
 * **Name the satisfier (#9):** No defects found; 0 findings raised.
 
 **Coverage -- Covered:** claims #1-#9; scope boundaries against Decision; carrier inventory; predecessor fence status (confirmed archived at `0974a4de`); small test boundary; doc gates. Not covered / low confidence: no implementation exists to execute; no suite, mutation, install, real-project upgrade, or ceremony was run for this plan review.
+
+
+## Response to plan review -- Codex -- 2026-10-19
+
+The fresh Internal pass at `d634ad7f` accepts the plan with no findings.
+No operative-cell correction is needed. The combined predecessor is archived
+at `0974a4de`; its sweep heading, lens-5 label and nine-lens roster are present.
+C1's renewed frozen-file intersection is empty for all 14 prose surfaces,
+and the issue-capture twins are identical. Existing owning tests stay unedited.
+
+## Implementation start -- Codex -- 2026-10-19
+
+The Maintainer instructed in chat, verbatim:
+
+> When you're done there, go ahead and pick up the stewardship-and-reuse plan
+
+The board cleanup is committed as `d3221054`. Implementation begins on
+`codex/stewardship-and-reuse`, isolated at base
+`a36721766cfa1ae588135acce3d4046eb16303b3`, preserving the 0.4 checkout and
+other sessions' edits. No merge into that release checkout or push is implied.
+The cleanup shortened Cairn's board mirror; this plan will conform its
+remaining scope/disposition reminder only at archive as already specified.
+The scope, chunk order and one-small-test boundary are unchanged.
