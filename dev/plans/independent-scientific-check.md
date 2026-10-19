@@ -1,7 +1,7 @@
 # Plan: independent scientific check — one check per scientific change, shown able to fail
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-independent-scientific-check.md`
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits the authoring templates and the axis prose that adopters' bootstrap reads.
 **Opened**: 2026-10-18
@@ -1719,3 +1719,185 @@ the mutation ledgers above are the proof that it can fail.
   their own chunk**, and were repeated at the tested commit where the tested
   commit differs from the chunk's (C3). The nine pin files were run alone at C2
   and are inside the full suite at the tested commit.
+
+## Code review -- Claude Sonnet 5.5 -- 2026-10-18
+
+```
+Reviewed commit: 531084a1f638ad54f5e8d9e7a543411ad89c0f2a
+Target: this plan's implementation range 33df0cb8..531084a1 (C2 27feca34, C3 531084a1, the tested commit) read against its parent 33df0cb8; the C1 record (0ac2b567, 4d9d632c, 33df0cb8); and the Boundary B record (2764eccd, which changes only this plan). Other sessions' commits in between are not read.
+Prior findings: none
+```
+
+**Obligation**: Code review (the floor: not the implementing agent)
+**Tier**: Internal
+**Bounding**: not owed. Boundary B ran in `full` mode, and the field adjudicates a `bounded` record. I reproduced the full run on the tested commit (below). A fresh full run **is** owed after the revision, because SC-CR1 changes test bytes and SC-CR3 to SC-CR4, if taken, change executable template and test bytes.
+**Findings**: raised (0 blocking, 1 medium, 5 low)
+**Verdict**: REVISE -> `revising-code`. No answer the plan promised is wrong today. SC-CR1 is worth doing now because the new test is not yet frozen by the Maintainer's re-anchor, and an edit made after that ceremony owes a second one. The other five are for the author to take or answer with a reason.
+**Model**: claude-sonnet-5-5
+
+Distance: a fresh session of the implementer's agent type (Claude Sonnet 5.5). I wrote none of the code, the record, the plan or its reviews, and I am not the implementer. This is the Internal code review, whose job is falsification. It is not External: I ask whether the work meets the plan, not whether the plan should have been made. Interpreter for every figure: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13, in detached `git worktree`s of `531084a1` and `33df0cb8` in a fresh folder of my own (removed at the end). `git diff` on this plan file was empty when I claimed it and again just before I appended.
+
+### In plain terms
+
+**The work does what the plan said, and the recorded test run holds up.** I ran the full suite again on the tested commit and got the same numbers: 3510 passed, 2 failed, the same two AST tests that are red before this work too. The check text sits in the right place in all four template copies, byte for byte; an adopter who installs gets it; an adopter who has edited it keeps their edits on upgrade, or is shown a conflict, never silently overwritten.
+
+**The new test is strong on words and weak on everything else.** I deleted every one of the 534 words of the two pinned texts, one at a time, in both copies, plus every sentence, and the test caught all of them. But it cannot see how the text is laid out or where it sits: flatten the list of five bases, delete one blank line, or move the block or the plan paragraph under a different heading, and the whole suite stays green (SC-CR1, medium). That matters because the test is the only lasting guard, and the cheap moment to strengthen it ends when the file is frozen.
+
+**C1 stands, but read the "yes" with its caveat.** Every input was fixed before any draft; the scorer's quotes are real; the stop rule was applied as written. The stor-modflow "yes" is correct by the plan's rules and rests on a reference array that had never been saved. What the block showed there is that it made a blind author flag the false data claim, not that it produced a check that catches the priming error (SC-CR6).
+
+Five smaller findings follow: a missing guard on one of the five bases, a hydrology point on the positive-control example, three wording mismatches in the promise sentences, the C1 briefs not being on file, and a sentence the archive commit should carry.
+
+### The Boundary B record, checked against the tested commit
+
+* **Right bytes.** The range is two commits (C2, C3), nine paths: the four templates, the three promise sites, the new test and this plan. `git diff --stat` over `bootstrap/_scaffold`, `bootstrap/tests/fixtures`, `bootstrap/verify_integrity.py`, `scripts`, `tools`, `doctrine`, `templates/modules`, `docs`, `AGENTS.md`, `dev/PLANNING.md`, `CHANGELOG.md` and `dev/.cairn` is empty. The range's changed paths and the manifest's 183 `frozen_files` keys do not intersect (control: `bootstrap/tests/test_scaffold.py` is a key).
+* **3510 passed, 2 failed: reproduced.** `CAIRN_FULL_SUITE=1 ... --quality-gate-shuffle-seed=0 -rsfExX`, a fresh worktree of `531084a1`, clean before and after (0 lines of `git status --short`): **2 failed, 3510 passed, 3 warnings in 650.7 s**, 0 skipped, 0 xfail, 0 xpass. The two failures are `test_ast_attest.py::test_ast_gate_passes_over_the_full_scaffold_module_set` and `...::test_committed_baseline_accounted_for_across_the_engine_package`.
+* **The same two at the base.** At `33df0cb8` the AST file gives 2 failed, 28 passed, the same two tests, and the failure text is identical once the worktree path and memory addresses are removed. The run's CHANGED list names the same five symbols with the same baseline and current hashes as the record (`_cmd_adopt_module`, `cmd_upgrade`, `create_dev_tree`, `main`, `seed_gitignore`). The engine bytes are identical across the range, so the set cannot differ.
+* **One node added, and only one.** `pytest --collect-only -q bootstrap/tests` lists 3511 nodes at the base and 3512 at the tested commit; the difference is exactly `bootstrap/tests/test_scientific_check_guidance_ships.py::test_the_check_guidance_reaches_every_copy_and_promise_site`, the node ID in the record. That matches 3509 + 2 and 3510 + 2. I did not re-run the base's full suite; the collection difference and the AST file are what I checked there.
+* **Gates.** Neutrality `fail=0 info=56` and redundancy `fail=0 info=0`, output identical to the base's after removing the worktree path. Instrument check: a vendor name put into the shipped proposal template turns the neutrality leg to `fail=1`, naming the line. `check_cairn.py` OK (182 files). `claim_check.py` exits 0 on the four templates and the three promise sites. `scaffold.py --manifest` is byte-identical to the base's (98 lines). A `grep -E 'Claude|Codex|Anthropic|OpenAI|Gemini|Cursor|LHM|modflow_tools'` over every added line in the range prints nothing, and prints a hit on a line known to hold `Cursor`.
+* **The test's own text.** Its docstring carries no finding id, chunk letter or plan row (searched), and the test is named for the property it pins.
+
+### The set, listed from the tree
+
+The copies that must carry the guidance, from `git ls-files` and `git grep`, not from the diff: two proposal templates (`dev/proposals/_template.md`, `templates/core/dev/proposals/_template.md`), two plan templates, and three promise sites. No other file in the tree holds the `**Prospective only.**` line or the `A security-touching plan re-answers` sentence, so there is no third copy to miss. `git grep -i 'scientific[- ]trust'` outside archives finds only the module template the plan deliberately leaves (`templates/modules/team-gated/architecture_review_template.md`) and a mention in another open plan. Each promise site holds the phrase `independent scientific check` exactly once, so a replace-all in one site is as precise as a single-spot edit.
+
+### Falsification ledger
+
+A *mutant* is one deliberate break, made to see whether any check notices. It is *killed* if some check fails on it, *survived* if every check still passes, and *equivalent* only if measured to change no behaviour; I report an unmeasured equivalence as a survivor. Every mutant ran the **real** `pytest` on the **real** files in a worktree at `531084a1`, restored with `git checkout` and confirmed clean after each. My harness is my own, not the implementer's; it refuses to run outside my folder, and asserts that every mutant changed the files it meant to. Each run is beside an unmutated control that passed (six controls, before and after each of three drivers).
+
+| Family | Mutants | Killed | Survived |
+|---|---|---|---|
+| Delete each sentence or list item of the block (27 pieces, listed from the tree), in both copies, the first copy only, the second only | 81 | 81 | 0 |
+| The same for the plan paragraph (5 pieces) | 15 | 15 | 0 |
+| Delete **each word** of the block (453), both copies at once | 453 | 453 | 0 |
+| Delete **each word** of the plan paragraph (81), both copies at once | 81 | 81 | 0 |
+| Markup and characters: indent the block by four spaces, `*` to `-`, a zero-width space, a Cyrillic `a`, an HTML comment inside the block, bold removed from the paragraph lead or from `one`, a sentence appended to one paragraph, the block moved above `**Prospective only.**` (two positions) | 10 | 10 | 0 |
+| Promise sites: the phrase replaced at each of three sites; each site reverted to its pre-C3 text; `review finding` to `note`; the finding sentence deleted; `a computed result` to `any computed result`; `the independent` to `the Independent` | 10 | 10 | 0 |
+| **Layout and place (below)** | 23 | 0 | **23** |
+
+Total: 673 mutants, 650 killed, 23 survived. The positive-control bullet's 106 words and the *Reviewers* paragraph's 77 words, including `where one is owed`, are all among the killed. The first five rows say that the claim in the test's docstring is true: a clause deleted from both copies at once is noticed.
+
+**The 23 survivors.** None is an error today; each is a way for the text to change that nothing notices.
+
+| Survivor | What it does to the reader |
+|---|---|
+| S1: de-indent the five bases to top level (both proposal copies) | Not equivalent. Rendered with a CommonMark renderer, the nested list becomes one flat list (2 `<ul>` become 1) |
+| S2.3: remove the blank line before `**Reviewers.**` | Not equivalent. Rendered, the *Reviewers* paragraph becomes part of the last bullet (the positive-control bullet) |
+| S2.0, S2.1, S2.2, S2.4: remove each of the other four blank lines | Not rendered; reported as survivors. The block's last blank line and the one after the heading are likely harmless |
+| S5: one space replaced by a non-breaking space | Prints the same. Harmless survivor |
+| S10: a new sentence added as its **own paragraph** straight after the plan paragraph | By design (outside the pinned paragraph); noted so nobody thinks the paragraph is closed against additions |
+| P1 x4: the whole block moved under `## Signals the change is wrong` (before `## Scope delta`), before `## Assurance path`, before `## Review`, before `## Decision` | The block stays word-perfect and sits after `**Prospective only.**`, so the test passes. C2's own criterion says it sits directly before `## Signals the change is wrong` |
+| P2 x7: the plan paragraph moved above the security-touching paragraph, before `## Source proposal`, before `## Scope`, `## Scope delta`, `## Verification`, `## Dispositions`, `## Plan review` | Passes. C2's criterion says it sits after the security-touching paragraph, with "Red when ... above" it |
+| D4: the check bullet moved from the Complex position to the Simple position | By design (presence only) |
+| D5, D6: the I-2 sentence put back to the old lens promise with the phrase planted elsewhere; or reworded to the overclaim "decide which changes must name" | By design (presence only); C3's "says what is true" criterion is held once at C3, not by the test |
+| D9: the old lens phrase restored beside the check in the README row | By design, as the plan says |
+
+**Does anything else catch them?** The nine pin files named in the plan, the new test and `check_cairn.py`, run on seven of the layout survivors one at a time: 373 passed every time, `check_cairn.py` exit 0 every time. Then I applied six together (S1, S2.3, the block under *Signals*, the paragraph before *Verification*, D4, D6) and ran the **full suite** on that tree: **2 failed, 3510 passed**, the same two AST tests and the same count as the unmutated run. Nothing in the suite sees them.
+
+### The upgrade probe: an adopter who edited the check itself
+
+The implementer's probe covered an adopter who filled a slot. I asked what the merge does when the adopter changed the check text. I installed from the tested tree (`solo-greenfield`, `--non-interactive --allow-dev`) into fresh scratch repositories, edited the installed template, committed, and upgraded with `upgrade --plan` and `--stage` to a simulated next release: a copy of `531084a1` in which I changed three short phrases of the block and the paragraph (my own edits, not a real later plan).
+
+| Adopter edit | `--plan` says | The staged copy |
+|---|---|---|
+| none (control) | no conflict | unchanged |
+| a block line the release does not touch | locally-modified (merged clean) | classified only; I did not read the staged file |
+| the same line the release changes | **conflict** | one conflict region; the adopter's line on the `ours` side, the release's on `theirs`; `--apply` refuses: "staged file ... still has conflict markers" |
+| the whole block replaced by "N/A" | **conflict** | one region; the adopter's N/A against the whole new block |
+| a plan-paragraph line the release does not touch | merged clean | classified only |
+| the same plan-paragraph line | **conflict** | one region, both versions shown |
+| first receipt, from the base tree: the adopter had hand-written their own scientific-check section in the same spot | **conflict** | one region, both kept |
+| the same, but in another place | merged clean | one block, the adopter's section kept, no marker |
+
+An edit is never lost and never overwritten silently; where the two overlap, the merge stops and says so. This is the engine behaving as designed and needs nothing from this plan.
+
+### C1, the go/no-go exercise
+
+* **Inputs fixed before the drafts: yes.** The order is `396c13d6` (17:49:02), `0ac2b567` (17:51:45, the inputs, the rule applied and the error statements), drafts extracted 17:54 (the record's time), `4d9d632c` (17:56:10, the drafts), `33df0cb8` (17:58:51, the scores). I recomputed every hash the record states and each matches: the 45-line wording (327d0b17...), the stor-modflow proposal at LHM `b9d4c59a` (427 lines, the commit that creates the file, 6971f519...), the assemble proposal at `dde80719` (360 lines, 3f36d81b...), both drafts and the scorer's output (taken from the fenced text in this plan). **The shipped block is byte-equal to those 45 lines** (the input the record names for the drafters), in both proposal copies, and so includes the positive-control bullet.
+* **The opened texts hold no review and no mention of the defect.** I searched the stor-modflow text for `prim`, `warm`, `spin`, `cold start` and `ramp`: the only hits are the one RAMP mention on the date axis the record already names and the word "primitive". The draft's phrase "the accepted proposal" is the opened text's own reference to an earlier accepted proposal, so it is not a leak.
+* **The second plan was chosen by the rule.** I re-applied it in LHM: of 46 archived plan files, the newest by archive commit is the assemble Part A plan (`72ccf3db`, 2026-10-15 12:12), then the Cedar Creek plan (2026-10-14 15:17). Its first code review's CR1 is the 0/0 fill that writes missing-data weights. I also read the stor-modflow error statement against the commits it cites: the "not saved" message and the 2.80 GB figure are in `dae97b43`, and the +14.91, +13.5 and -1.2 figures in `6dcc0cc5`.
+* **Blind: attested, not shown.** The record says so itself: the briefs are the coordinating session's account and the implementer did not see them. I cannot see them either, so I tested the drafts instead. Every concrete fact in both drafts (file name, 137 MB, 798 x 647, 312 months, 26-deep stack, 1358 periods, `matlabParity`, `cell_statistics`, the Cedar mention) is in the text as opened, and neither draft contains any of the words only the later reviews use. That is consistent with blindness and cannot prove it. See SC-CR5.
+* **The scorer was separate, and every "yes" has a real quote.** I checked each quoted sentence by string search against the draft it names: all are verbatim. The record also gives the (A)-alone column beside the combined verdict, as C1 demands.
+* **The stop rule was applied as written.** Stop only if both are "no"; one is "yes"; the "no" is reported; neither softened to a warning nor hardened to "either".
+* **The (B) call, which I would have made the same way.** The draft's bullet is headed "Data in hand", but its text says nobody has recorded opening the file, lists "that the variable exists" as not checked, and names the file to open. That is the plan's "not confirmed, and names what would be opened" branch; reading the text over the label is right. I would not call it narrow. It is the case the rule was written for: the exercise could have failed this draft (it is exactly the compare-with-saved-output shape the plan feared) and the draft passed because the block's own data-status prompt made its author write the doubt.
+* **Where I would press instead: (A), and what the "yes" shows.** (A) is "yes" only on the condition that the array exists, and it did not. Asked what error it would catch, the draft names a different mistake (a hard-coded one-day stress period), says it cannot source a tolerance, and after "Open OUTS" offers no fallback basis for the unsaturated store. So the honest reading of the stor-modflow "yes" is the implementer's caveat, sharpened: the block would have exposed the false data claim earlier, and the author would then have owed "no independent basis exists, say so", which the block allows. It would not by itself have produced a check that catches priming. That is worth having, and it is a smaller thing than "the block yields a check that catches the error". The assemble "no" is as the record says: a good check for the change the proposal describes, aimed at a different risk than the one that later bit.
+* **My overall view.** The exercise was run properly and the plan was right to continue. It is weak positive evidence for the block's data-status prompt and no evidence yet for the independent-basis half, which the record already says. The archive commit should say that in the same sentence as the "no" (SC-CR6).
+
+### The two judgment calls beyond the spec
+
+* **The drafters saw only the C2 block.** C1 says "the wording (the 'Wording each chunk lands' texts ...)", plural. The implementer gave the proposal-template block alone and said so before any draft existed, with a reason. I judge it within the plan and the more faithful test: a proposal author fills in the proposal template and never sees the plan paragraph, the promise sentences or the test description, and the plan's own *In brief* says the wording is tried "using only the text each proposal had when it was opened". Withholding the rest can only give the drafter less, and the draft quality does not suggest it was short of anything. No finding.
+* **Slot containment, and three extra mutants.** The plan's group (c) says the block and paragraph "hold no marker". The implementer added a check that neither sits *inside* a slot (`_inside_a_slot`), and mutants m11 to m13 (wrapped in a slot, the paragraph moved into the doc-tooling slot, a sentence added). That is the plan's own "Red when: ... in a slot" made executable, adds no node, and cannot go red on any layout the plan allows. The controls show no false red from it. Within the plan; the extra mutants only strengthen the ledger. No finding.
+
+### The positive-control addition
+
+* **Exactly as fixed.** The shipped bullet is the plan's fenced text, byte for byte (the same comparison as above). It opens "When the check passes by finding nothing", names the three absences ("no change", "no difference", "no effect"), says the failing run is the control when its mistake produces an effect of that size, says the implementer records the control with the failing run, and keeps the streamflow example. The *Reviewers* paragraph says the code reviewer verifies the control "where one is owed". The word "planted" appears nowhere in the shipped text, as the Maintainer's "let's not do planted errors" requires.
+* **Pinned.** All 106 words of the bullet and 77 of the *Reviewers* paragraph are among the 453 single-word deletions, every one killed, and every sentence-level deletion that touches the bullet is killed in each copy. Its placement and layout fall under SC-CR1 like the rest of the block.
+* **Read against the three cases the plan names.** A tooling change goes to the gate's N/A before the bullet matters. A change whose check finds an effect is outside the bullet, which is keyed to the check's pass condition ("passes on no change") and not the result. A refactor whose pass is "output unchanged" is the bullet's own case: the failing run (perturb an input by the tolerance) is both the deliberate break and the control, so no second run is owed, and the bullet says who records it and with what. I found no misfire. One hydrology point on its example is SC-CR3.
+
+### The plan's other Boundary C questions
+
+* **Is the independence real?** I tried the five bases in turn. Four carry a guard in their own words: the conservation basis ("a closed budget does not catch a wrong input"), the independent implementation or saved output ("independent of the port, not of the model's physics"), the analytical or manufactured solution, and the "trusted" observation. The fifth, "a domain expert's expectation, written down before the result is seen", guards the timing and not who the expert is (SC-CR2).
+* **The gate.** The opening sentence sends a pure tooling change to N/A and a change that touches a governing equation, unit, sign convention, boundary condition, parameter default, calibration or coupling to a check, in both directions, and the N/A line it prescribes is worded so it can be written truthfully. Data-processing steps whose output becomes model input are not named in the list; the assemble draft treated one as in-gate. That is a reading the block permits, not a gap I would fix. The Complex-position sentence is wider than the gate (SC-CR4).
+* **Read cold as an adopter.** A solo scientist with one agent and no `doctrine/` can follow the block and the paragraph from the shipped templates: the only outside reference is "security preflight S2", which sits in the same template about forty lines above, and *Scope delta* is a heading in the plan template. The one thing they cannot tell is whether the "domain expert" may be the agent (SC-CR2).
+
+### Findings
+
+None blocks. SC-CR1 should be taken before the re-anchor; the rest are the author's call.
+
+#### SC-CR1 -- Medium -- The test pins words, not layout or place, and nothing else does either
+
+**Plain.** The test proves every word of the two texts is present in all four copies. It does not prove the list is still a nested list, that the *Reviewers* paragraph is still its own paragraph, or that the block and the paragraph still sit where the plan put them. Each of those can break with the suite green.
+
+**Precision.** (1) Whitespace is collapsed before comparing (the plan fixed that), so S1 and S2.3 survive and, rendered, change the page: the five bases flatten, and *Reviewers* is swallowed into the last bullet. (2) Group (c) checks that the block is *after* `**Prospective only.**` and that neither text is *inside a slot*, as the plan specified. C2's acceptance criteria, which the implementer held once by a line search, also say the block sits before `## Signals the change is wrong` and the paragraph after the security-touching paragraph, with "Red when" conditions for the opposite. The test holds neither: P1 (four places) and P2 (seven places) survive, including the block under the *Signals* heading and the paragraph under *Verification*. (3) The full suite on six of these together is unchanged (3510 passed, the same two AST failures). (4) The docstring says "It also pins where the text sits"; that is true of the block's lower bound and the slot rule, and not of the rest. (5) The test is not yet in the gate manifest. The re-anchor will freeze it, and every edit after that owes another re-anchor, so this is the cheap moment.
+
+**Closes when** the test also holds: (a) no `## ` line between the `**Prospective only.**` line and the block heading, and the next `## ` line after the block is `## Signals the change is wrong`; (b) in each plan copy, the nearest `## ` line above the paragraph is `## Acceptance criteria`, and the paragraph comes after the line starting `A security-touching plan re-answers`; (c) beside the collapsed words, the *shape* of each region: for every blank line and every line that starts a list item, its position in the sequence, indent width and marker, leaving line wrapping free. S1, S2.3, the four P1 and the seven P2 mutants then die (re-run them: the harness is a few lines per mutant). It stays one node. If the author would rather not, the docstring must say exactly what is and is not pinned, and the *Known omissions* paragraph must name layout and place, with the reason.
+
+#### SC-CR2 -- Low -- "A domain expert's expectation" has no guard against the author being the expert
+
+**Plain.** Four of the five bases say what stops them being circular. The fifth does not say that the expert is someone other than whoever wrote the code. With one human and one agent, the agent can write "I expect about 0.003 ft/d" from the same reading of the units as its code, before running anything, and meet every word of the basis.
+
+**Precision.** This is the Boundary C independence attack, tried on each basis; the expert basis is the soft one. The lead sentence ("a test written from the same understanding") excludes it if the reader applies it, and the Maintainer's Decision-time judgment and falsifier F2 ("most bases are the Maintainer's expectation") both watch for it, so it is not a hole, only the place a ritual check would enter.
+
+**Recommended.** Do not edit the accepted text for this alone. Add to the revisit row's F2 (in *Dispositions*) the exact mode to look for: "the expert is the author of the change, or the agent". If the author is revising the block text anyway for SC-CR3, add "someone other than the author of the change" in the same commit; it costs one clause in each of the three places the text lives.
+
+#### SC-CR3 -- Low -- The positive-control example matches the rate, but detectability depends on more
+
+**Plain.** The example says an analysis that reports no streamflow depletion from a pumping well should first recover "the depletion of a synthetic well of comparable rate". Whether a depletion is detectable depends on the well's distance from the stream, how long it pumps, the streambed conductance and the noise in what is measured, not on the rate alone. A synthetic well of the same rate placed closer, or pumped longer, shows a larger effect than the real one, and the control would pass while the real, smaller effect would be missed.
+
+**Precision.** The bullet's rule is sound ("a known effect of the size that matters"); the example under-specifies how to reach that size. This is the Maintainer's home ground, so it is put as a plain question with a default: **leave as is, or change the example?** Recommended default: change "a synthetic well of comparable rate" to "a synthetic well at the real well's rate, distance from the stream and pumping schedule". The edit is the same three places as any wording change (both proposal templates, the test's block literal, this plan's fenced text), made in one commit, and the full run after the revision covers it.
+
+#### SC-CR4 -- Low -- Three triggers for one gate in the promise sentences, and the test's phrase match is case-sensitive
+
+**Plain.** The block's gate is "a scientific assumption, or a result the project publishes or acts on", and its N/A line says no "scientific assumption or result touched". `dimensions/complexity.md` says "a scientific assumption or a published result", and then pins "an unexplained "N/A" on a change that touches a computed result is a review finding". A project that computes an intermediate it neither publishes nor acts on may truthfully write N/A under the block, while the Complex position reads that as a finding. "Unexplained" softens it; a reviewer still cannot tell which reading governs.
+
+**Precision.** (1) The pinned sentence is wider than the gate it enforces. (2) The `bootstrap/BOOTSTRAP.md` I-2 sentence says "those" (the scientific-surface *and* documentation-trust sections) "show which changes touch a scientific assumption"; only the first does. (3) Group (d) tests `independent scientific check` as an exact lower-case string (D8): a harmless rewrite that starts a sentence with "Independent scientific check" turns it red, and the sibling plan that rewords the same Complexity cell is now implementing.
+
+**Recommended.** Align the pinned sentence to the block ("... on a change that touches a result the project publishes or acts on is a review finding") and change `_COMPLEXITY_FINDING` in the same commit; make group (d) compare lower-cased text; in I-2, say "the scientific-surface section shows ...". Only the first two edit pinned bytes.
+
+#### SC-CR5 -- Low -- The C1 briefs are not on file
+
+**Plain.** C1 asked that the drafter and scorer get two pasted texts and no repository access. They got a read tool, two files in a folder, and an instruction. The record discloses that, and counts three tool calls per drafter and five for the scorer. The briefs themselves, and who confirmed them, rest on the coordinating session's account.
+
+**Precision.** My own leak test (every concrete fact in the drafts is in the opened text; none of the later reviews' vocabulary appears) found nothing, so I do not think the result is wrong. But blindness is the property C1 exists for, and a reader a year on can only take it on trust.
+
+**Recommended.** If the coordinating session still holds the three briefs, append them (or their SHA-256) to the record; if not, one line saying so. No re-run.
+
+#### SC-CR6 -- Low -- The archive duty carries the "no" and not the caveat on the "yes"
+
+**Plain.** C1 says the one "no" is repeated to the Maintainer in the archive commit, and *Dispositions* says the revisit also reads the C1 record. Neither repeats the caveat that the stor-modflow "yes" rests on a reference array that had never been saved.
+
+**Recommended.** Add one sentence to *Dispositions*' archive bullet: the archive commit and the board row also say that stor-modflow's "yes" rested on an array that was never saved, so what the block showed there is that its data-status prompt made a blind author flag the false claim, not that it yielded a check that catches the priming error. Otherwise a later reader takes the one "yes" as support for the independent-basis half.
+
+### Waiting-line check
+
+`git log -p` on this plan over `396c13d6^..2764eccd` adds no `**Waiting on Maintainer**` line (the only match is a table cell describing the template check). The one fenced chunk, M (the re-anchor), is not reached by this range, and its wait is declared on the marked board row, as the chunk says. The range makes no deviation request: the narrowed wording and the extra mutants are within the plan, as above.
+
+### What I did not cover
+
+* I did not read the coordinating session's transcripts, so the drafter and scorer briefs are unseen (SC-CR5).
+* I did not re-run the base's full suite; I checked its AST file, its collection and its gates, and took its 3509 from the record. I did not re-run the exercise, or judge the drafts beyond the scorer's two questions.
+* Rendering was measured with one CommonMark renderer for S1 and S2.3 only; the other layout survivors are reported as survivors, not as equivalent or harmful.
+* The next release in the upgrade probe is my own small edit, not a real later plan, and I read the staged file for four of the eight rows only. I did not run the combined survivors through every install-family test one at a time; the full-suite run on six together is the evidence.
+* I read the error statements against the LHM commits for the figures and the missing array (and the assemble CR1), not the full reviews in LHM, and not the run output.
+* I did not try Windows line endings, or a template read by a different Markdown tool than CommonMark.
+* The scientific content: I read the positive-control bullet and its example as a hydrogeologist would (SC-CR3). Whether the five bases are the right five, and the Complex-position policy, are the Maintainer's.
+* The gate-manifest re-anchor and the AST re-anchor: not run, and not mine to run.
