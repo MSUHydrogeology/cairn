@@ -77,7 +77,6 @@ from .lockfile import _BASE_CACHE_REL, _LOCKFILE_REL
 from .install import (
     InstallResult,
     _FORGE_REFERENCE_DIRS,
-    _MODEL_SELECTION_MAPPING_REL,
     _ONBOARDING_PRESETS,
     capability_install_notice_lines,
     capture_model_selection_mapping,
@@ -91,6 +90,7 @@ from .install import (
     install_onboarding,
     install_optional,
     install_skills,
+    model_selection_notice_lines,
     print_report,
     run_module_merge_pass,
     seed_gitignore,
@@ -456,8 +456,13 @@ def main(argv: list[str] | None = None) -> int:
     try:
         seed_gitignore(target, (), dry_run=True)
     except ScaffoldSecurityError as exc:
+        remedy = (
+            "replace the link with a regular file, then re-run"
+            if "symlinked" in str(exc)
+            else "make .gitignore a regular file of its own, then re-run"
+        )
         print(f"error: .gitignore seed refused (containment): {exc}\n"
-              "  replace the link with a regular file, then re-run.",
+              f"  {remedy}.",
               file=sys.stderr)
         return 2
 
@@ -664,16 +669,22 @@ def main(argv: list[str] | None = None) -> int:
     # mapping is the filled one. Never blocks the install.
     if "model-selection" in modules:
         try:
-            wrote = capture_model_selection_mapping(
+            capture_model_selection_mapping(
                 target, interactive=not non_interactive)
+        except ScaffoldSecurityError:
+            print(
+                "error: model-selection capture refused (containment): "
+                "dev/.cairn/model-selection-mapping.yml is a link or sits behind one. "
+                "Replace it with a regular file, or install with --non-interactive "
+                "and fill it by hand.",
+                file=sys.stderr,
+            )
+            return 2
         except KeyboardInterrupt:
-            wrote = False
             print("\n  model-selection: capture interrupted; FILL ME stub kept.",
                   file=sys.stderr)
-        if not wrote and not non_interactive:
-            print("  model-selection: kept the FILL ME stub -- fill "
-                  f"{_MODEL_SELECTION_MAPPING_REL} and run "
-                  "`python scripts/check_model_selection.py`.", file=sys.stderr)
+        for line in model_selection_notice_lines(target):
+            print(line)
 
     # Capability install notice (call site 2 of 2): the
     # capability install notice, printed post-install beside the

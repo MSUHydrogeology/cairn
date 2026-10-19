@@ -249,7 +249,10 @@ now single-sourced in `_onboarding/security.py` after the onboarding-split,
 share the same consciously-accepted window under the same threat model; the
 session kernel `tools/session.py` has it too, for a parent folder swapped for a
 link between its `_assert_not_linked` check and a write -- the last name is not
-exposed, because its writes are an exclusive temp file and a rename); and
+exposed, because its writes are an exclusive temp file and a rename); the
+model-selection capture, lockfile writers and `.gitignore` append now use the
+same replacement pattern, so a won race at the last name overwrites rather
+than appends, while a swapped parent remains in the accepted window; and
 (2) `check_cairn.py`'s `importlib.exec_module` of sibling tools from
 **fixed, script-relative** paths (a deliberate dogfood composition, not a
 dynamic-exec vector). See `../SECURITY.md` for the public statement.

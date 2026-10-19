@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import builtins
 import importlib.util
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -32,8 +33,11 @@ _STUB_SRC = _TEAM_GATED / "model_selection_mapping_stub.yml"
 sys.path.insert(0, str(CAIRN_ROOT))
 from bootstrap.scaffold import _MODULE_MAPPINGS, main as scaffold_main  # noqa: E402
 from bootstrap._scaffold.install import (  # noqa: E402
+    _mapping_is_unfilled,
     capture_model_selection_mapping,
+    model_selection_notice_lines,
 )
+from bootstrap._scaffold.security import ScaffoldSecurityError  # noqa: E402
 
 pytestmark = pytest.mark.skipif(
     not TEMPLATES_ROOT.exists(), reason="Cairn templates not available"
@@ -743,6 +747,7 @@ class TestEngineAndCheckerAgreeOnUnfilled:
             assert actual_rc == expected_rc, (
                 f"{case_id}: expected bare rc {expected_rc}, got {actual_rc}"
             )
+            assert _mapping_is_unfilled(text) == (expected_rc == 1), case_id
 
     def test_named_spelling_table_on_bare_and_yaml_checker(
         self, tmp_path: Path, checker, monkeypatch
@@ -758,6 +763,7 @@ class TestEngineAndCheckerAgreeOnUnfilled:
             assert yaml_rc == expected_yaml, (
                 f"{name}: expected yaml rc {expected_yaml}, got {yaml_rc}"
             )
+            assert _mapping_is_unfilled(text) == _eng, name
             if category == "stricter_with_yaml":
                 assert bare_rc == 0 and yaml_rc == 1, name
             elif category == "looser_with_yaml":
@@ -932,3 +938,133 @@ class TestInteractiveCapture:
         assert _scaffold(tmp_path) == 0
         mapping = tmp_path / "dev" / ".cairn" / "model-selection-mapping.yml"
         assert mapping.is_file() and "FILL ME" in mapping.read_text()
+
+
+class TestNoticeOnEveryInstallPath:
+    def test_missing_filled_and_stub(self, tmp_path: Path, capsys) -> None:
+        assert model_selection_notice_lines(tmp_path) == []
+        mapping = _seed_stub(tmp_path)
+        notice = "\n".join(model_selection_notice_lines(tmp_path))
+        assert "NOTE (model-selection)" in notice
+        assert "Name the family, never a version" in notice
+        mapping.write_text("mapping:\n  - tier: high\n    model: vendor/family\n")
+        assert model_selection_notice_lines(tmp_path) == []
+
+    def test_noninteractive_install_prints_notice(self, tmp_path: Path, capsys) -> None:
+        assert _scaffold(tmp_path) == 0
+        assert "NOTE (model-selection)" in capsys.readouterr().out
+
+    def test_plan_stage_and_apply_print_after_success(self, tmp_path: Path, capsys) -> None:
+        assert _scaffold(tmp_path) == 0
+        capsys.readouterr()
+        base = ["upgrade", "--target", str(tmp_path),
+                "--cairn-root", str(CAIRN_ROOT)]
+        for action in ("--plan", "--stage", "--apply"):
+            assert scaffold_main(base + [action]) == 0
+            out = capsys.readouterr().out
+            assert "NOTE (model-selection)" in out, action
+            assert out.rstrip().endswith("Mapping-record schema\"."), action
+
+    def test_other_module_does_not_print_notice(self, tmp_path: Path, capsys) -> None:
+        cfg = tmp_path / "profile.yml"
+        cfg.write_text(
+            "project_name: Demo\ntest_command: pytest\npreset: solo-greenfield\n",
+            encoding="utf-8",
+        )
+        assert scaffold_main([
+            "--config", str(cfg), "--target", str(tmp_path),
+            "--cairn-root", str(CAIRN_ROOT), "--allow-dev",
+        ]) == 0
+        assert "NOTE (model-selection)" not in capsys.readouterr().out
+        assert scaffold_main([
+            "upgrade", "--target", str(tmp_path), "--cairn-root",
+            str(CAIRN_ROOT), "--plan",
+        ]) == 0
+        assert "NOTE (model-selection)" not in capsys.readouterr().out
+
+    def test_refused_apply_prints_no_notice(self, tmp_path: Path, capsys) -> None:
+        assert _scaffold(tmp_path) == 0
+        capsys.readouterr()
+        assert scaffold_main([
+            "upgrade", "--target", str(tmp_path), "--cairn-root",
+            str(CAIRN_ROOT), "--apply",
+        ]) != 0
+        assert "NOTE (model-selection)" not in capsys.readouterr().out
+
+    def test_adopting_mapping_module_prints_notice(self, tmp_path: Path, capsys) -> None:
+        cfg = tmp_path / "profile.yml"
+        cfg.write_text(
+            "project_name: Demo\ntest_command: pytest\npreset: solo-greenfield\n",
+            encoding="utf-8",
+        )
+        assert scaffold_main([
+            "--config", str(cfg), "--target", str(tmp_path),
+            "--cairn-root", str(CAIRN_ROOT), "--allow-dev",
+        ]) == 0
+        capsys.readouterr()
+        assert scaffold_main([
+            "upgrade", "--target", str(tmp_path), "--cairn-root",
+            str(CAIRN_ROOT), "--adopt-module", "model-selection",
+        ]) == 0
+        out = capsys.readouterr().out
+        assert "Adopted module 'model-selection'" in out
+        assert "NOTE (model-selection)" in out
+
+
+class TestNoticeTextIgnoresFileContent:
+    def test_unfilled_content_is_not_echoed(self, tmp_path: Path) -> None:
+        mapping = _seed_stub(tmp_path)
+        first = model_selection_notice_lines(tmp_path)
+        mapping.write_text("mapping:\n  - tier: high\n    model: FILL ME\x1b\x07\n")
+        assert model_selection_notice_lines(tmp_path) == first
+
+    def test_unreadable_shapes_have_one_fixed_text(self, tmp_path: Path) -> None:
+        mapping = _seed_stub(tmp_path)
+        mapping.write_bytes(b"\xff")
+        unreadable = model_selection_notice_lines(tmp_path)
+        assert "could not read" in unreadable[0]
+        mapping.unlink()
+        mapping.symlink_to(tmp_path / "distinctive-target")
+        assert model_selection_notice_lines(tmp_path) == unreadable
+        mapping.unlink()
+        mapping.mkdir()
+        assert model_selection_notice_lines(tmp_path) == unreadable
+
+
+class TestCaptureWritesByReplacing:
+    def test_hardlinked_mapping_does_not_change_other_name(self, tmp_path: Path) -> None:
+        mapping = _seed_stub(tmp_path)
+        victim = tmp_path / "other-name"
+        os.link(mapping, victim)
+        before = victim.read_bytes()
+        answers = iter(["vendor/family", "", "", "", "", ""])
+        assert capture_model_selection_mapping(
+            tmp_path, prompt=lambda _: next(answers), today="2026-01-01"
+        )
+        assert victim.read_bytes() == before
+        assert mapping.stat().st_nlink == 1
+
+    def test_linked_mapping_refused_before_prompt(self, tmp_path: Path, capsys) -> None:
+        mapping = _seed_stub(tmp_path)
+        victim = tmp_path / "victim"
+        victim.write_bytes(mapping.read_bytes())
+        mapping.unlink()
+        mapping.symlink_to(victim)
+        with pytest.raises(ScaffoldSecurityError):
+            capture_model_selection_mapping(
+                tmp_path, prompt=lambda _: pytest.fail("prompt reached")
+            )
+        assert capsys.readouterr().out == ""
+        assert b"FILL ME" in victim.read_bytes()
+
+    def test_link_swapped_during_answers_refused(self, tmp_path: Path) -> None:
+        mapping = _seed_stub(tmp_path)
+        victim = tmp_path / "victim"
+        victim.write_bytes(b"outside")
+        def swap(_prompt: str) -> str:
+            mapping.unlink()
+            mapping.symlink_to(victim)
+            return "vendor/family"
+        with pytest.raises(ScaffoldSecurityError):
+            capture_model_selection_mapping(tmp_path, prompt=swap)
+        assert victim.read_bytes() == b"outside"

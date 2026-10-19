@@ -21,6 +21,8 @@ file's real path is confirmed within the Cairn root before it executes.
 from __future__ import annotations
 
 import re
+import os
+import stat
 import sys
 from pathlib import Path
 from typing import Any, Callable
@@ -38,6 +40,8 @@ from .security import (
     ScaffoldSecurityError,
     _assert_fanout_contained,
     _assert_safe_write,
+    _read_regular_bytes,
+    _write_by_replacing,
 )
 from .slotmerge import (
     ModuleMergeResult,
@@ -233,16 +237,33 @@ def seed_gitignore(
     """
     gitignore = target / ".gitignore"
     _assert_safe_write(gitignore, target)
-    text = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
-    existing = {ln.strip() for ln in text.splitlines()}
-    to_add = [e for e in entries if e not in existing]
+    try:
+        info = gitignore.lstat()
+    except FileNotFoundError:
+        info = None
+    except OSError as exc:
+        raise ScaffoldSecurityError("refusing to inspect .gitignore") from exc
+    if info is not None:
+        if not stat.S_ISREG(info.st_mode):
+            raise ScaffoldSecurityError(".gitignore is not a plain file")
+        if info.st_nlink != 1:
+            raise ScaffoldSecurityError(
+                ".gitignore has other names (its link count is above 1); "
+                "make it a file of its own, by copying it to a new name and "
+                "moving that over .gitignore"
+            )
+    if not entries:
+        return []
+    raw = _read_regular_bytes(gitignore, single_link=True) or b""
+    existing = {ln.strip() for ln in raw.splitlines()}
+    to_add = [e for e in entries if e.encode("utf-8") not in existing]
     if not to_add or dry_run:
         return to_add
-    prefix = text
-    if prefix and not prefix.endswith("\n"):
-        prefix += "\n"
-    block = "\n".join(to_add) + "\n"
-    gitignore.write_text(prefix + block, encoding="utf-8")
+    if info is not None and not os.access(gitignore, os.W_OK):
+        raise ScaffoldSecurityError(".gitignore is not writable")
+    prefix = raw + (b"\n" if raw and not raw.endswith(b"\n") else b"")
+    block = ("\n".join(to_add) + "\n").encode("utf-8")
+    _write_by_replacing(gitignore, prefix + block, target)
     return to_add
 
 
@@ -794,6 +815,60 @@ _MODEL_SELECTION_MAPPING_REL = "dev/.cairn/model-selection-mapping.yml"
 _MODEL_SELECTION_TIERS = ("high", "medium", "low")
 
 
+def _mapping_is_unfilled(text: str) -> bool:
+    """Match the checker's stdlib line scan and bare-path row requirement.
+
+    A parsed YAML value can reveal more than the line scan; the installed
+    checker performs that optional validation when PyYAML is available.
+    """
+    lines = re.split(r"\r\n|[\n\r\x85\u2028\u2029]", text)
+    lines = [line for line in lines if not line.lstrip(" ").startswith("#")]
+    if any(re.search(r"\bFILL ME\b", line) for line in lines):
+        return True
+    row = re.compile(
+        r'^ *(?:mapping *: *\[ *|- +)?(?:\{ *)?(?:"tier"|\'tier\'|tier) *:'
+    )
+    return not any(row.search(line) for line in lines)
+
+
+def model_selection_notice_lines(target: Path) -> list[str]:
+    """Return a fixed install/upgrade notice for an unfilled or unreadable mapping."""
+    mapping = target / _MODEL_SELECTION_MAPPING_REL
+    unreadable = [
+        "NOTE (model-selection) -- could not read dev/.cairn/model-selection-mapping.yml",
+        "(it is a link, sits behind one, is not a plain file, or is not valid text).",
+        "That file was not changed. Open it yourself, then run",
+        "`python scripts/check_model_selection.py`.",
+    ]
+    try:
+        mapping.lstat()
+    except FileNotFoundError:
+        return []
+    except OSError:
+        return unreadable
+    try:
+        _assert_safe_write(mapping, target)
+        raw = _read_regular_bytes(mapping)
+        if raw is None:
+            return []
+        text = raw.decode("utf-8", errors="strict")
+    except (ScaffoldSecurityError, OSError, UnicodeError):
+        return unreadable
+    if not _mapping_is_unfilled(text):
+        return []
+    return [
+        "NOTE (model-selection) -- the tier-to-model mapping is not filled in:",
+        "  dev/.cairn/model-selection-mapping.yml still holds the FILL ME stub.",
+        "Until it is filled, `python scripts/check_model_selection.py` fails. Nothing runs",
+        "that check automatically. Ask the Maintainer which model family fills each tier",
+        "(high, medium, low); do not guess. Name the family, never a version: the latest",
+        "release is meant. The stub holds one placeholder row: replace it with one row per",
+        "tier, copying its shape (tier, model, date_verified, task_family, source), and say",
+        "in `source` who assigned the model.",
+        'Schema: dev/modules/model-selection.md, "Mapping-record schema".',
+    ]
+
+
 def _yaml_dq(value: str) -> str:
     """A YAML double-quoted scalar for adopter free text (a ``:`` or ``#`` in a
     model name / source would otherwise break the bare-scalar emit)."""
@@ -807,9 +882,10 @@ def capture_model_selection_mapping(
     interactive: bool = True,
     today: str | None = None,
 ) -> bool:
-    """Interactively fill the seeded model-selection mapping stub at install /
-    ``--adopt-module`` time, so the fidelity gate ships **green** instead of
-    red-on-``FILL ME``.
+    """Interactively fill the seeded model-selection mapping at install time.
+
+    ``--adopt-module`` and ``upgrade`` only print the unfilled notice; they do
+    not prompt. The standalone fidelity check remains the acceptance step.
 
     Returns ``True`` when a filled mapping was written; ``False`` when the
     ``FILL ME`` stub is left in place -- the non-interactive / CI fallback (the
@@ -822,8 +898,14 @@ def capture_model_selection_mapping(
     mapping = target / _MODEL_SELECTION_MAPPING_REL
     if not interactive or not mapping.is_file():
         return False
-    if "FILL ME" not in mapping.read_text(encoding="utf-8"):
-        return False  # already filled -- never clobber a real mapping
+    _assert_safe_write(mapping, target)
+    try:
+        raw = _read_regular_bytes(mapping)
+        text = raw.decode("utf-8", errors="strict") if raw is not None else ""
+    except (ScaffoldSecurityError, OSError, UnicodeError):
+        return False
+    if not _mapping_is_unfilled(text):
+        return False
     if today is None:
         import datetime
         today = datetime.date.today().isoformat()
@@ -845,7 +927,9 @@ def capture_model_selection_mapping(
     rows: list[dict[str, str]] = []
     for tier in _MODEL_SELECTION_TIERS:
         try:
-            model = prompt(f"  {tier} tier -- model (blank to skip): ").strip()
+            model = prompt(
+                f"  {tier} tier -- model family, not a version (blank to skip): "
+            ).strip()
         except EOFError:
             break
         if not model:
@@ -864,6 +948,7 @@ def capture_model_selection_mapping(
         "# model-selection tier-to-model mapping (Cairn model-selection "
         "module).",
         "# Captured interactively at install; edit freely. Re-verify with:",
+        "# Name the model family, never a version: the latest release of that family is meant.",
         "#   python scripts/check_model_selection.py",
         "# Adopter-local: do not commit vendor names to a shared Cairn repo.",
         "",
@@ -877,7 +962,9 @@ def capture_model_selection_mapping(
             f"    task_family: {_yaml_dq(r['task_family'])}",
             f"    source: {_yaml_dq(r['source'])}",
         ]
-    mapping.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    _write_by_replacing(
+        mapping, ("\n".join(lines) + "\n").encode("utf-8"), target
+    )
     print(f"  model-selection: wrote {len(rows)} tier mapping(s) to "
           f"{_MODEL_SELECTION_MAPPING_REL}.")
     return True
@@ -1976,5 +2063,5 @@ def write_install_lockfile(
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     _assert_safe_write(lock_path, target)
     lock_path.parent.mkdir(parents=True, exist_ok=True)
-    lock_path.write_text(_emit_lock_yaml(lock), encoding="utf-8")
+    _write_by_replacing(lock_path, _emit_lock_yaml(lock).encode("utf-8"), target)
     return lock

@@ -16,6 +16,7 @@ Run from the cairn repo root:
 from __future__ import annotations
 
 import sys
+import os
 from pathlib import Path
 
 import pytest
@@ -87,6 +88,117 @@ def _make_pre_split(target: Path, *, keep_on_disk: tuple[str, ...] = ()) -> None
         p = target / dst
         if p.exists():
             p.unlink()
+
+
+class TestLockfileWritersWriteByReplacing:
+    def test_install_does_not_write_through_a_hardlink(self, tmp_path: Path):
+        target = tmp_path / "target"
+        target.mkdir()
+        lock = target / s._LOCKFILE_REL
+        lock.parent.mkdir(parents=True)
+        victim = tmp_path / "victim"
+        victim.write_bytes(b"junk")
+        os.link(victim, lock)
+        _install(target)
+        assert victim.read_bytes() == b"junk"
+        assert lock.stat().st_nlink == 1
+        assert s.read_lockfile(target) is not None
+
+    def test_init_lock_does_not_write_through_a_hardlink(self, tmp_path: Path):
+        target = tmp_path.resolve()
+        _install(target)
+        lock = target / s._LOCKFILE_REL
+        lock.unlink()
+        profile = target / "dev/.cairn/profile.yml"
+        profile.write_text(
+            "project_name: Demo\ntest_command: pytest\nage: greenfield\n"
+            "size: small\ncomplexity: simple\nlanguage: single\n"
+            "human_team: solo\nagent_team: single\n", encoding="utf-8"
+        )
+        victim = tmp_path / "victim-init"
+        victim.write_bytes(b"junk")
+        os.link(victim, lock)
+        assert s.main(["upgrade", "--target", str(target), "--init-lock",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        assert victim.read_bytes() == b"junk"
+        assert lock.stat().st_nlink == 1
+
+    def test_finalize_does_not_write_through_a_hardlink(self, tmp_path: Path):
+        target = tmp_path.resolve()
+        _install(target)
+        lock = target / s._LOCKFILE_REL
+        victim = tmp_path / "victim-finalize"
+        victim.write_bytes(lock.read_bytes())
+        lock.unlink()
+        os.link(victim, lock)
+        before = victim.read_bytes()
+        assert s.main(["upgrade", "--target", str(target), "--finalize",
+                       "AGENTS.md", "--cairn-root", str(CAIRN_ROOT)]) == 0
+        assert victim.read_bytes() == before
+        assert lock.stat().st_nlink == 1
+
+    def test_apply_does_not_write_through_a_hardlink(self, tmp_path: Path):
+        target = tmp_path.resolve()
+        _install(target)
+        _make_pre_split(target)
+        base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+        assert s.main(base + ["--stage"]) == 0
+        lock = target / s._LOCKFILE_REL
+        victim = tmp_path / "victim-apply"
+        victim.write_bytes(lock.read_bytes())
+        lock.unlink()
+        os.link(victim, lock)
+        before = victim.read_bytes()
+        assert s.main(base + ["--apply"]) == 0
+        assert victim.read_bytes() == before
+        assert lock.stat().st_nlink == 1
+
+
+class TestLockfileReaderRefusesAnythingButARegularFile:
+    def test_absent_junk_valid_link_and_pipe(self, tmp_path: Path):
+        from bootstrap._scaffold.security import ScaffoldSecurityError
+        lock = tmp_path / s._LOCKFILE_REL
+        lock.parent.mkdir(parents=True)
+        assert s.read_lockfile(tmp_path) is None
+        lock.write_bytes(b"junk")
+        assert s.read_lockfile(tmp_path) is None
+        lock.write_text(s._emit_lock_yaml({"schema": 1}), encoding="utf-8")
+        assert s.read_lockfile(tmp_path) == {"schema": 1}
+        real = tmp_path / "real"
+        real.write_bytes(lock.read_bytes())
+        lock.unlink()
+        lock.symlink_to(real)
+        with pytest.raises(ScaffoldSecurityError):
+            s.read_lockfile(tmp_path)
+        lock.unlink()
+        if hasattr(os, "mkfifo"):
+            os.mkfifo(lock)
+            with pytest.raises(ScaffoldSecurityError):
+                s.read_lockfile(tmp_path)
+
+
+class TestLockCommitWritesThroughExclusiveTemporaries:
+    def test_old_fixed_names_cannot_redirect_commit(self, tmp_path: Path):
+        from bootstrap._scaffold.upgrade import _commit_lock_and_caches
+        target = tmp_path / "target"
+        target.mkdir()
+        _install(target)
+        lock = target / s._LOCKFILE_REL
+        cache = target / "dev/.cairn/base/new-template.txt"
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        victim = tmp_path / "victim"
+        victim.write_bytes(b"outside")
+        old_names = [
+            lock.with_name(lock.name + ".tmp"),
+            cache.with_name(cache.name + ".tmp"),
+        ]
+        for name in old_names:
+            os.link(victim, name)
+        _commit_lock_and_caches(target, s.read_lockfile(target), [(cache, b"new")])
+        assert victim.read_bytes() == b"outside"
+        assert cache.read_bytes() == b"new"
+        assert all(name.exists() for name in old_names)
+        assert s.read_lockfile(target) is not None
 
 
 # ---------------------------------------------------------------------------
@@ -709,8 +821,7 @@ def test_lockconflict_destination_is_distinct_and_not_adoptable(tmp_path: Path):
 
 
 def test_adopt_collisions_refuses_symlinked_lockfile(tmp_path: Path):
-    # The lockfile authority write is guarded; a symlinked lockfile is refused
-    # (containment), exit 2, with no mutation.
+    # The descriptor reader refuses a linked lockfile before adoption can act.
     target = tmp_path.resolve()
     collide = _PKG_DSTS[1]
     base = _staged_collision(target, collide)
@@ -721,8 +832,10 @@ def test_adopt_collisions_refuses_symlinked_lockfile(tmp_path: Path):
     lockf.unlink()
     lockf.symlink_to(real.name)
 
-    assert s.main(base + ["--adopt-collisions"] + auth) == 2
-    assert not any(r["dst"] == collide for r in s.read_lockfile(target)["files"])
+    before = real.read_bytes()
+    with pytest.raises(s.ScaffoldSecurityError):
+        s.main(base + ["--adopt-collisions"] + auth)
+    assert real.read_bytes() == before
 
 
 def test_adopt_collisions_refuses_to_ref(tmp_path: Path):

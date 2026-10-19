@@ -45,7 +45,12 @@ from .config import (
     strip_conditional_regions,
     superseded_local_surfaces,
 )
-from .security import _assert_safe_write, ScaffoldSecurityError
+from .security import (
+    _assert_safe_write,
+    _stage_exclusive,
+    _write_by_replacing,
+    ScaffoldSecurityError,
+)
 from .merge import SlotError, merge_file
 from .slotmerge import substitute_tokens
 from .lockfile import (
@@ -69,6 +74,7 @@ from .lockfile import (
 from .install import (
     _lock_file_list,
     fan_out_skills,
+    model_selection_notice_lines,
     seed_gitignore,
     trusted_upstream,
 )
@@ -1403,7 +1409,7 @@ def _cmd_init_lock(
     lock_path = target / _LOCKFILE_REL
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     lock_path.parent.mkdir(parents=True, exist_ok=True)
-    lock_path.write_text(_emit_lock_yaml(lock), encoding="utf-8")
+    _write_by_replacing(lock_path, _emit_lock_yaml(lock).encode("utf-8"), target)
     print(f"Wrote migrated {_LOCKFILE_REL} ({len(records)} files).")
     print(f"  verbatim scripts (hash-tracked): "
           f"{len(classification['verbatim'])}")
@@ -1496,23 +1502,34 @@ def _commit_lock_and_caches(
     _assert_safe_write(lock_path, target)
     # Stage every write to a temp sibling first -- nothing live touched yet, so a
     # failure here leaves everything unchanged (nothing has been replaced).
-    pending: list[tuple[Path, Path]] = []
-    for cache_path, raw in cache_writes:
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = cache_path.with_name(cache_path.name + ".tmp")
-        _assert_safe_write(tmp, target)
-        tmp.write_bytes(raw)
-        pending.append((tmp, cache_path))
-    lock_path.parent.mkdir(parents=True, exist_ok=True)
-    lock_tmp = lock_path.with_name(lock_path.name + ".tmp")
-    _assert_safe_write(lock_tmp, target)
-    lock_tmp.write_text(_emit_lock_yaml(lock), encoding="utf-8")
-    # Commit: create the new caches (none replaces a live ancestor), then the
-    # lockfile LAST (atomic). A failure on the lockfile swap leaves only orphan
-    # new caches + the unchanged old lockfile -> coherent prior authority.
-    for tmp, final in pending:
-        os.replace(tmp, final)
-    os.replace(lock_tmp, lock_path)
+    pending: list[tuple[Path, Path, tuple[int, int]]] = []
+    try:
+        for cache_path, raw in cache_writes:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            staged = _stage_exclusive(cache_path, raw, target)
+            info = staged.stat(follow_symlinks=False)
+            pending.append((staged, cache_path, (info.st_dev, info.st_ino)))
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        staged = _stage_exclusive(
+            lock_path, _emit_lock_yaml(lock).encode("utf-8"), target
+        )
+        info = staged.stat(follow_symlinks=False)
+        pending.append((staged, lock_path, (info.st_dev, info.st_ino)))
+        # No live cache is replaced; the lockfile moves last.
+        for tmp, final, identity in pending:
+            _assert_safe_write(final, target)
+            info = tmp.stat(follow_symlinks=False)
+            if (info.st_dev, info.st_ino) != identity:
+                raise ScaffoldSecurityError("staged file changed before replacement")
+            os.replace(tmp, final)
+    finally:
+        for tmp, _final, identity in pending:
+            try:
+                info = tmp.stat(follow_symlinks=False)
+                if (info.st_dev, info.st_ino) == identity:
+                    tmp.unlink()
+            except FileNotFoundError:
+                pass
 
 
 def _superseded_surface_note(
@@ -1660,8 +1677,13 @@ def _cmd_adopt_module(
     try:
         seed_gitignore(target, (), dry_run=True)
     except ScaffoldSecurityError as exc:
+        remedy = (
+            "replace the link with a regular file, then re-run"
+            if "symlinked" in str(exc)
+            else "make .gitignore a regular file of its own, then re-run"
+        )
         print(f"error: .gitignore seed refused (containment): {exc}\n"
-              "  replace the link with a regular file, then re-run.",
+              f"  {remedy}.",
               file=sys.stderr)
         return 2
 
@@ -1750,6 +1772,9 @@ def _cmd_adopt_module(
         if skipped else "")
     print(f"Adopted module {name!r}: recorded {len(added)} file(s) in "
           f"{_LOCKFILE_REL}{skip_note}{note}.")
+    if name == "model-selection":
+        for line in model_selection_notice_lines(target):
+            print(line)
     sup_note = _superseded_surface_note(target, name, exclude=spec_dsts)
     if sup_note:
         print(sup_note, file=sys.stderr)
@@ -2030,7 +2055,9 @@ def _cmd_finalize_lockfile(
                   file=sys.stderr)
             return 1
     (target / _LOCKFILE_REL).parent.mkdir(parents=True, exist_ok=True)
-    (target / _LOCKFILE_REL).write_text(_emit_lock_yaml(lock), encoding="utf-8")
+    _write_by_replacing(
+        target / _LOCKFILE_REL, _emit_lock_yaml(lock).encode("utf-8"), target
+    )
     scope = "" if only is None else f" (scoped to {len(matched)} path(s))"
     print(f"Finalized {_LOCKFILE_REL}: advanced {changed} hash(es){scope} to the "
           f"committed on-disk content. `verify_integrity` now attests this tree "
@@ -2352,7 +2379,9 @@ def _apply_upgrade(
         new_files.append(rec)
     new_lock["files"] = new_files
     (target / _LOCKFILE_REL).parent.mkdir(parents=True, exist_ok=True)
-    (target / _LOCKFILE_REL).write_text(_emit_lock_yaml(new_lock), encoding="utf-8")
+    _write_by_replacing(
+        target / _LOCKFILE_REL, _emit_lock_yaml(new_lock).encode("utf-8"), target
+    )
 
     # #47: a newly-added skill needs its vendor fan-out (e.g. .claude/skills ->
     # the canonical .agents/skills) + its machine-state .gitignore seeds, just
@@ -2626,8 +2655,13 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
         try:
             seed_gitignore(target, (), dry_run=True)
         except ScaffoldSecurityError as exc:
+            remedy = (
+                "replace the link with a regular file, then re-run"
+                if "symlinked" in str(exc)
+                else "make .gitignore a regular file of its own, then re-run"
+            )
             print(f"error: .gitignore seed refused (containment): {exc}\n"
-                  "  replace the link with a regular file, then re-run.",
+                  f"  {remedy}.",
                   file=sys.stderr)
             return 2
 
@@ -2642,13 +2676,17 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
 
     if args.apply:
         try:
-            return _apply_upgrade(target, lock, cairn_root, templates_root,
-                                  ack_review_only=args.ack_review_only,
-                                  force=args.force)
+            result = _apply_upgrade(target, lock, cairn_root, templates_root,
+                                    ack_review_only=args.ack_review_only,
+                                    force=args.force)
         except ScaffoldSecurityError as exc:
             print(f"error: upgrade --apply refused (containment): {exc}",
                   file=sys.stderr)
             return 2
+        if result == 0:
+            for line in model_selection_notice_lines(target):
+                print(line)
+        return result
 
     plans, structural = _compute_upgrade(
         target, cairn_root, templates_root, lock, args.to)
@@ -2691,6 +2729,8 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                 + "\n    ".join(_collide), file=sys.stderr)
         print(f"\nStaged under {_STAGING_REL}/ . Resolve any conflicts, then "
               "`upgrade --apply --target <repo>`.")
+        for line in model_selection_notice_lines(target):
+            print(line)
         return 0
 
     # Default: --plan (strictly read-only).
@@ -2703,4 +2743,6 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
               f"`.ours`/`.theirs` pair under {_STAGING_REL}/review-only/) and "
               "get the ready-to-paste `--adopt-collisions` authorization bound to "
               "the exact bytes you review.")
+    for line in model_selection_notice_lines(target):
+        print(line)
     return 0

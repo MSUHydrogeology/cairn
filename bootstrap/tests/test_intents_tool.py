@@ -255,6 +255,36 @@ _OUTSIDE_BYTES = b"# a file that belongs to someone else\nalias ll='ls -l'\n"
 _REMEDY = "replace the link with a regular file, then re-run"
 
 
+class TestGitignoreSeedWritesByReplacing:
+    def test_hardlink_refused_before_any_read(self, tmp_path: Path) -> None:
+        victim = tmp_path / "victim"
+        victim.write_bytes(b"outside\n")
+        os.link(victim, tmp_path / ".gitignore")
+        with pytest.raises(ScaffoldSecurityError, match="file of its own"):
+            seed_gitignore(tmp_path, (), dry_run=True)
+        assert victim.read_bytes() == b"outside\n"
+
+    def test_non_utf8_bytes_preserved_and_preflight_does_not_read(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        from bootstrap._scaffold import install as I
+        ignore = tmp_path / ".gitignore"
+        ignore.write_bytes(b"\xff\xfe\nold\n")
+        with monkeypatch.context() as mp:
+            mp.setattr(I, "_read_regular_bytes", lambda *_a, **_kw: pytest.fail("read"))
+            assert seed_gitignore(tmp_path, (), dry_run=True) == []
+        assert seed_gitignore(tmp_path, ("new",)) == ["new"]
+        assert ignore.read_bytes() == b"\xff\xfe\nold\nnew\n"
+        assert seed_gitignore(tmp_path, ("new",)) == []
+
+    def test_pipe_refused_before_open(self, tmp_path: Path) -> None:
+        if not hasattr(os, "mkfifo"):
+            pytest.skip("named pipes unavailable")
+        os.mkfifo(tmp_path / ".gitignore")
+        with pytest.raises(ScaffoldSecurityError, match="plain file"):
+            seed_gitignore(tmp_path, (), dry_run=True)
+
+
 def _tree(root: Path) -> list[str]:
     """Every path under *root* -- files, folders and links, none followed --
     so "nothing was written" can mean no file and no empty folder either."""

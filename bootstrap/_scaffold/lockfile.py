@@ -41,7 +41,7 @@ from .config import PresetError  # the secret-token guard raises this (downward 
 # growing a second, unreviewed copy inside this near-leaf; the
 # layering assertion in bootstrap/tests/test_lockfile_module.py admits exactly
 # {config, security} because of this line.
-from .security import ScaffoldSecurityError, _assert_safe_write
+from .security import ScaffoldSecurityError, _assert_safe_write, _read_regular_bytes
 
 
 _LOCKFILE_REL = "dev/.cairn/cairn-lock.yml"        # tracked machinery (in .cairn/ with its kin)
@@ -283,15 +283,16 @@ def read_lockfile(target: Path) -> dict[str, Any] | None:
     :func:`_emit_lock_yaml` writes)."""
     import json
     p = target / _LOCKFILE_REL
-    if not p.exists():
+    raw = _read_regular_bytes(p)
+    if raw is None:
         return None
-    body = "\n".join(
-        ln for ln in p.read_text(encoding="utf-8").splitlines()
-        if not ln.lstrip().startswith("#")
-    )
     try:
+        body = "\n".join(
+            ln for ln in raw.decode("utf-8").splitlines()
+            if not ln.lstrip().startswith("#")
+        )
         data = json.loads(body)
-    except ValueError:
+    except (ValueError, UnicodeError):
         return None
     return data if isinstance(data, dict) else None
 
