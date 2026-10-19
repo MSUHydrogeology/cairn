@@ -48,6 +48,16 @@ for what it signs. That is a different thing from AI used as a tool inside the
 work, and conflating the two is how "an agent reviewed it" comes to mean less
 than it should.
 
+## The team
+
+Agents propose, review, implement, and advise; they do not decide.
+
+<!-- cairn:slot team-roster -->
+(The bootstrap records the team here: the maintainer; the human
+contributors and their roles; the agents and their types.
+Refreshed when the team changes.)
+<!-- cairn:end team-roster -->
+
 ## Collaboration stance
 
 Agents are participants, not oracles. Disagreement is expected and is recorded
@@ -185,6 +195,9 @@ the baseline, so declining it is not a reduction and owes no record
 scope-reduction trap").
 
 ## Surfacing judgment calls to the Maintainer
+
+Acceptance, rejection, and supersession are the Maintainer's call. An agent
+unsure whether something is a decision surfaces it rather than assuming.
 
 Most calls are the agent's to make. Escalate when the answer would change what
 gets built and cannot be resolved from the artifact, the code, or a sensible

@@ -37,6 +37,26 @@ for what it signs. That is a different thing from AI used as a tool inside the
 work, and conflating the two is how "an agent reviewed it" comes to mean less
 than it should.
 
+## The team
+
+Cairn is built by the **Human Maintainer** and one or more **AI agents**.
+The Maintainer holds the project's direction, its priorities, and final
+decision authority. Agents propose, review, implement, and advise; they do
+not make the Decision.
+
+* **Human Maintainer — Anthony Kendall** (MSU Hydrogeology). Holds
+  product direction, priorities, and final Decision authority. The sole
+  human contributor (the human-team axis is `solo`).
+* **Agent contributors — a concurrent, multi-type roster.** More than
+  one agent *type* works the tree. Agents propose, review, implement, and
+  advise; they do not make the Decision. Specific agent types and models
+  are named in the deliberation record (each Review / Response names its
+  reviewer for attribution) and mapped to capability tiers in
+  `dev/.cairn/model-selection-mapping.yml` — not pinned in this
+  vendor-neutral file, so the roster can evolve without amending it.
+
+Refreshed when the team changes.
+
 ## Collaboration stance
 
 Agents are participants, not oracles. Disagreement is expected and is recorded
@@ -175,12 +195,26 @@ scope-reduction trap").
 
 ## Surfacing judgment calls to the Maintainer
 
-Most calls are the agent's to make. Escalate when the answer would change what
-gets built and cannot be resolved from the artifact, the code, or a sensible
-default — and when you do, bring a **recommendation, not a survey**. State the
-question in plain language, give the option you would take and why, and say
-what it costs to be wrong. A menu of five options with no recommendation moves
-the work to the Maintainer rather than unblocking it.
+**The Maintainer decides — and the list is finite.** Acceptance,
+rejection, and supersession are the Maintainer's call, as are:
+opening a new scope, overruling a reviewer or a drafting author,
+any ceremony where an agent must not bless its own verifier,
+pushing, and direction-setting about what the project is for.
+**Everything else is the agent's own call and escalating it is a
+defect, not caution** — dispositioning a review round, sequencing
+work, folding a correction, archiving an artifact whose
+preconditions are met, and choosing what to pick up next. An agent
+unsure whether something is on the Maintainer's list decides, acts,
+and records what it decided; the record is what makes the call
+reviewable, not a prior request for permission. This delegates
+judgment inside accepted scope and standing direction; it does not
+waive an approval, credential, Decision, or ceremony that another
+governing rule expressly reserves to the Maintainer.
+
+When a call is on that list, bring a **recommendation, not a survey**. State
+the question in plain language, give the option you would take and why, and
+say what it costs to be wrong. A menu of five options with no recommendation
+moves the work to the Maintainer rather than unblocking it.
 
 **After a review stalls, the author decides and defends.** Two passes that
 disagree do not escalate by themselves; the author resolves them in the record

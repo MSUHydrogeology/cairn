@@ -151,7 +151,7 @@ _STANCE_OBLIGATIONS = {
         r"A call that covers artifacts not yet written is a standing floor.{0,80}"
         r"a standing floor returns only by proposal",
     "a-roster-you-set-is-not-a-call":
-        r"A roster the Maintainer sets in dev/collaboration_agreement\.md.{0,80}"
+        r"A roster the Maintainer sets \(which agent types work the tree\).{0,80}"
         r"is the team's shape, not a call: it adds no read and upgrades none",
     "distance-is-information-and-the-staffing-reviewer-follows-the-brief-and-says-so":
         r"Distance is information, not a rule.{0,200}The staffing reviewer "

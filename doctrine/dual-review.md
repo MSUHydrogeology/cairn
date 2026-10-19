@@ -56,8 +56,8 @@ reasoning behind it.
 
 * **Per artifact only.** A call that covers artifacts not yet written is a
   standing floor, and a standing floor returns only by proposal. A roster
-  the Maintainer sets in `dev/collaboration_agreement.md` (which agent types
-  work the tree) is the team's shape, not a call: it adds no read and
+  the Maintainer sets (which agent types work the tree) is the team's shape,
+  not a call: it adds no read and
   upgrades none.
 * **Distance is information, not a rule.** A different agent type has
   different failure modes and a person has different knowledge. The
