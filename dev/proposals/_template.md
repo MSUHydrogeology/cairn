@@ -61,16 +61,61 @@ Two rules are bright-line:
 
 ## Review
 
-**Internal review** strengthens the change within the structure proposed.
-**External review** evaluates that structure from outside, and owes a verdict on
-whether the change should happen at all, the strongest rejected alternative, and
-what would falsify it. Both are **stances**: a fresh session is the floor for
-each, and no tier requires a different agent type. Reviews are **attributed and
-self-committed**: a review you did not write is not yours to sign, and an
-independent read is only independent if its author is its committer.
+**One stance at every stage.** A review is by a fresh reviewer who did not
+write the work, on the work's side: it makes the work better by questioning
+its foundations, and it answers in writing. No agent picks a kind of review.
+A proposal review asks three questions:
 
-A high-risk surface takes a Security Review. Declare the tier in the header;
-`required(A + B)` means one pass per clause, each naming its own obligation.
+* **Should this happen as framed?** Should this exist as framed? Is there a
+  better design, doing nothing included?
+* **What is the best alternative?** The strongest, doing nothing included.
+* **What would show it wrong?** What would make the author withdraw.
+
+Each pass opens with a **Foundations** block of three lines, one answer per
+question, each ending in the file, test, line or command that backs it.
+**Improve means recommend**: the reviewer proposes the better version ("don't do
+this" and "do it differently" count) and the author decides. **There is no
+quota of findings.** "No defects found" is allowed only with the three answers
+evidenced and the gaps named.
+Reviews are **attributed and self-committed**: a review you did not write is not
+yours to sign, and an independent read is only independent if its author is its
+committer.
+
+**More distance is the Maintainer's call, and only theirs.**
+
+* **What it is.** An *External read* is a review the Maintainer asked for on one
+  named artifact that exists now, in chat or inside a Decision, outside the usual
+  procedure. A call that covers artifacts not yet written is a standing floor (a
+  rule that applies without being asked), and a standing floor returns only by
+  proposal. A roster the Maintainer sets in `dev/collaboration_agreement.md`
+  (which agent types work the tree) is the team's shape, not a call: it adds no
+  read and upgrades none. Distance is information, not a rule: a different agent
+  type has different failure modes and a person has different knowledge. The
+  staffing reviewer follows the Maintainer's brief, answers the same three
+  questions from that distance, and says so.
+* **How it is recorded.** The pass carries `**Called by**: Maintainer -- Decision
+  at <commit>` (or `-- chat, <date>`, with `, relayed by <who>` where it was
+  relayed), followed by the Maintainer's words, verbatim and set apart. The same
+  words go in the commit message, as for a scribed Decision. `**Tier**: External`
+  is valid only with that line, and a pass headed External without it is read as
+  the usual review.
+* **What an agent never does.** Declare External as a required review in a
+  header, say a change needs one, recommend more distance, head a pass External
+  on its own, or start one without those words. It may name a risk and a gap in
+  its coverage line.
+* **What a called read never does to the other reviews.** It adds to the usual
+  review and replaces nothing. Its brief may add focus; it removes no owed
+  answer, and it discharges no Security Review by its distance or its brief (a
+  pass clears a Security Review only by being one). Any other authority in the
+  quoted words, such as a waiver or a change of scope, takes effect only where
+  Maintainer authorizations already live, a Decision block or a plan's fence,
+  and never from a `Called by` line. Nothing checks the quote mechanically, in
+  the pass or in the commit message: the next reviewer and the Maintainer at the
+  Decision are the check.
+
+**A high-risk surface takes a Security Review.** `usual + Security Review` in a
+header means two passes: the usual pass and a Security Review pass that names its
+own obligation. The usual pass never clears the second.
 
 ## Forward-reference paths
 
@@ -84,7 +129,7 @@ line each. Drop a line once its path resolves.
 
 **Author**: {{agent or human}}
 **Status**: awaiting-review
-**Review**: {{required(Internal) | required(External) | required(Internal + Security Review)}}
+**Review**: {{usual | usual + Security Review}}
 **Plan review**: {{required(Internal) | required(Internal + Internal Security Review)}} — the tier the derived plan will declare, decided here where the surface is still visible
 **Opened**: {{YYYY-MM-DD}}
 
@@ -326,9 +371,22 @@ Prior findings: <ids being closed, or none>
 Assurance path: <the declared path>
 ```
 
-**Tier**: {{Internal | External | Security Review}}
+**Tier**: {{usual | Security Review}}
 **Findings**: {{raised | none}}
 **Verdict**: {{ACCEPT | REVISE}}
+
+*On a read the Maintainer called, replace the Tier line with these two, and set
+the Maintainer's words beneath them, verbatim and apart:*
+
+**Tier**: External
+**Called by**: Maintainer -- Decision at <commit>
+
+**Foundations** (the proposal row; one line per answer, each ending in the file,
+test, line or command that backs it):
+
+1. **Should this happen as framed?** {{should this exist as framed, and is there a better design, doing nothing included}} -- {{evidence}}
+2. **Best alternative.** {{the strongest, doing nothing included}} -- {{evidence}}
+3. **What would show it wrong.** {{what would make the author withdraw}} -- {{evidence}}
 
 Lead with the strongest version of what the proposal is trying to do, then the
 findings. Mark each blocking or non-blocking, and say what evidence would close

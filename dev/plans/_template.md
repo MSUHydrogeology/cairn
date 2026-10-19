@@ -32,10 +32,6 @@ disposition table that *points at* them — a second copy of a cell is
 immediately a second answer to the same question.
 Once execution of a chunk begins, changes append instead.
 
-**A plan review is Internal, fresh-context, and one round.** The fold carries
-the plan to `ready-to-implement`; there is no second plan-review pass. Code
-review's floor is separate and independent: not the implementing agent.
-
 **Deviating from an accepted plan takes the Maintainer's word** — new scope, a
 contract review never saw, an acceptance criterion you cannot meet, **or
 accepted scope removed**. Removal counts in both directions: accepted scope is
@@ -54,6 +50,75 @@ the board does not read the line. `python tools/board.py --maintainer` lists
 every artifact that carries it. This paragraph sits above the rule, so the line
 is described here and not printed in the header below: a header line the board
 reads would list every new plan as waiting.
+
+## Review
+
+**One stance at every stage.** A review is by a fresh reviewer who did not
+write the work, on the work's side: it makes the work better by questioning
+its foundations, and it answers in writing. No agent picks a kind of review.
+A plan review is fresh-context and one round: the fold carries the plan to
+`ready-to-implement`, and there is no second plan-review pass. Plan review and
+code review each ask three questions:
+
+* **Plan review.** *Should this happen as framed?* The Decision settled the
+  premise. Does the plan deliver it? *Best alternative:* a simpler path to the
+  same outcomes. *What would show it wrong:* the result showing it cannot
+  deliver.
+* **Code review.** *Should this happen as framed?* Does it really do what it
+  claims? Try to break it, in order to fix it. *Best alternative:* a simpler or
+  safer build, if any. *What would show it wrong:* the input or run that breaks
+  it, and what was tried; Answer 3 points at the falsification ledger rather
+  than restating it.
+
+Each pass opens with a **Foundations** block of three lines, one answer per
+question, each ending in the file, test, line or command that backs it.
+**Improve means recommend**: the reviewer proposes the better version ("don't do
+this" and "do it differently" count) and the author decides. **There is no
+quota of findings.** "No defects found" is allowed only with the three answers
+evidenced and the gaps named.
+
+Code review's job is falsification, and its floor is **not the implementing
+agent**. It never reopens the Decision (what to build is settled; how it was
+built, and what breaks it, is the question). A clean code review shows a
+falsification ledger (`dev/agent_collaboration.md` > "The review sweep").
+
+**More distance is the Maintainer's call, and only theirs.**
+
+* **What it is.** An *External read* is a review the Maintainer asked for on one
+  named artifact that exists now, in chat or inside a Decision, outside the usual
+  procedure. A call that covers artifacts not yet written is a standing floor (a
+  rule that applies without being asked), and a standing floor returns only by
+  proposal. A roster the Maintainer sets in `dev/collaboration_agreement.md`
+  (which agent types work the tree) is the team's shape, not a call: it adds no
+  read and upgrades none. Distance is information, not a rule: a different agent
+  type has different failure modes and a person has different knowledge. The
+  staffing reviewer follows the Maintainer's brief, answers the same three
+  questions from that distance, and says so.
+* **How it is recorded.** The pass carries `**Called by**: Maintainer -- Decision
+  at <commit>` (or `-- chat, <date>`, with `, relayed by <who>` where it was
+  relayed), followed by the Maintainer's words, verbatim and set apart. The same
+  words go in the commit message, as for a scribed Decision. `**Tier**: External`
+  is valid only with that line, and a pass headed External without it is read as
+  the usual review.
+* **What an agent never does.** Declare External as a required review in a
+  header, say a change needs one, recommend more distance, head a pass External
+  on its own, or start one without those words. It may name a risk and a gap in
+  its coverage line.
+* **What a called read never does to the other reviews.** It adds to the usual
+  review and replaces nothing. Its brief may add focus; it removes no owed
+  answer, and it discharges no Security Review by its distance or its brief (a
+  pass clears a Security Review only by being one). Any other authority in the
+  quoted words, such as a waiver or a change of scope, takes effect only where
+  Maintainer authorizations already live, a Decision block or a plan's fence,
+  and never from a `Called by` line. Nothing checks the quote mechanically, in
+  the pass or in the commit message: the next reviewer and the Maintainer at the
+  Decision are the check.
+
+A plan whose surface calls for security treatment declares `Plan review:
+required(Internal + Internal Security Review)`. Only an appended `## Plan review`
+pass whose `**Obligation**` line matches clears it, never an ordinary Internal
+pass. No tool reads that line: the next reviewer, the code reviewer and the
+Maintainer check it.
 
 ## Forward-reference paths
 
@@ -297,23 +362,43 @@ Assurance path: <the plan's declared path>
 **Tier**: <Internal | Internal Security Review>
 **Findings**: <raised | none>
 
+*On a read the Maintainer called, add these two lines, with the Maintainer's
+words beneath them, verbatim and apart:*
+
+**Tier**: External
+**Called by**: Maintainer -- Decision at <commit>
+
+**Foundations** (the plan row; one line per answer, each ending in the file,
+test, line or command that backs it):
+
+1. **Should this happen as framed?** <the Decision settled the premise; does the plan deliver it> -- <evidence>
+2. **Best alternative.** <a simpler path to the same outcomes> -- <evidence>
+3. **What would show it wrong.** <the result showing it cannot deliver> -- <evidence>
+
 An H3 inside another pass does not count as a pass of its own — a heading at
 the left margin is what the checker reads.
 
 ## Code review -- <reviewer> -- <YYYY-MM-DD>
 
-Floor: a same-type agent in an independent context, not the implementing agent.
-Self-committed by its author; blocking findings move the plan to
-`revising-code`, and the implementer's answer carries it to `ready-to-archive`.
-A second code-review pass runs only when the revision introduced new defects,
-never to re-confirm that the first round's findings were addressed. Same basis
-block, with the range made explicit:
+Code review's floor is not the implementing agent; a fresh session clears it. It
+never reopens the Decision. Self-committed by its author; blocking findings move
+the plan to `revising-code`, and the implementer's answer carries it to
+`ready-to-archive`. A second code-review pass runs only when the revision
+introduced new defects, never to re-confirm that the first round's findings were
+addressed. Same basis block, with the range made explicit:
 
 ```
 Reviewed commit: <full commit id>
 Target: <the code range this pass reviewed>
 Prior findings: <ids being closed, or none>
 ```
+
+**Foundations** (the code row; one line per answer, each ending in the file,
+test, line or command that backs it):
+
+1. **Should this happen as framed?** <does it really do what it claims; try to break it, in order to fix it> -- <evidence>
+2. **Best alternative.** <a simpler or safer build, if any> -- <evidence>
+3. **What would show it wrong.** <the input or run that breaks it, and what was tried> -- see the falsification ledger (`dev/agent_collaboration.md` > "The review sweep")
 
 **Bounding**: ACCEPTED | FULL RUN REQUIRED — recorded only after challenging a
 named surface or mapped test, never because the field is present.

@@ -25,6 +25,13 @@ What is pinned, and why:
   copies of the dual-review module may keep their remaining wording, but not the
   clause that lets a more distant pass stand in for a falsification ledger.
 
+* **The authoring templates carry it too.** An author reads the proposal or
+  plan template while writing, and a reviewer reads the pass skeleton while
+  reviewing, so each template states the stance, the questions for its kind of
+  artifact, the called-read rules and (for plans) the security obligation, and
+  its header and skeleton offer only the values the stance allows: `usual` and
+  `usual + Security Review`; External only beside a line saying who called it.
+
 Each obligation is an alternation matched against text with emphasis and code
 markers removed and whitespace collapsed, so a rewording that keeps the
 obligation passes and a deletion fails. Node IDs are the obligation labels,
@@ -58,7 +65,15 @@ OWN_LOOP = "dev/agent_collaboration.md"
 SHIPPED_MODULE = "templates/modules/team-gated/dual-review.md"
 OWN_MODULE = "dev/modules/dual-review.md"
 
+SHIPPED_PROPOSAL = "templates/core/dev/proposals/_template.md"
+OWN_PROPOSAL = "dev/proposals/_template.md"
+SHIPPED_PLAN = "templates/core/dev/plans/_template.md"
+OWN_PLAN = "dev/plans/_template.md"
+
 _AGENTS_FILES = (SHIPPED_AGENTS, OWN_AGENTS)
+_PROPOSAL_TEMPLATES = (SHIPPED_PROPOSAL, OWN_PROPOSAL)
+_PLAN_TEMPLATES = (SHIPPED_PLAN, OWN_PLAN)
+_TEMPLATE_FILES = _PROPOSAL_TEMPLATES + _PLAN_TEMPLATES
 _LOOP_FILES = (SHIPPED_LOOP, OWN_LOOP)
 _MODULE_FILES = (SHIPPED_MODULE, OWN_MODULE)
 _CARRIER_FILES = _AGENTS_FILES + _LOOP_FILES
@@ -66,6 +81,8 @@ _FILE_IDS = {
     SHIPPED_AGENTS: "shipped-agents", OWN_AGENTS: "own-agents",
     SHIPPED_LOOP: "shipped-loop", OWN_LOOP: "own-loop",
     SHIPPED_MODULE: "shipped-module", OWN_MODULE: "own-module",
+    SHIPPED_PROPOSAL: "shipped-proposal", OWN_PROPOSAL: "own-proposal",
+    SHIPPED_PLAN: "shipped-plan", OWN_PLAN: "own-plan",
 }
 
 #: label -> pattern, for the `## Review` section of both `AGENTS.md` copies.
@@ -505,3 +522,248 @@ def test_adding_required_external_to_a_carrier_is_reported(rel: str) -> None:
     assert _present(intact, _FORBIDDEN) == []
     mutant = f"{intact}\n\nPlan review: required(External)\n"
     assert _present(mutant, _FORBIDDEN) == ["required-external-in-a-header"]
+
+
+# --------------------------------------------------------------------------
+# The authoring templates: the proposal and plan templates, each with Cairn's
+# own copy. They are read while writing and while reviewing.
+# --------------------------------------------------------------------------
+
+#: Labels every template carries, taken from the stance obligations above:
+#: the stance, the foundations block, and the whole called-read statement.
+_COMMON_TEMPLATE_LABELS = (
+    "one-stance-at-every-stage",
+    "a-fresh-reviewer-on-the-works-side",
+    "foundations-block-three-answers-each-with-its-evidence",
+    "improve-means-recommend",
+    "no-quota-of-findings",
+    "a-clean-pass-needs-evidenced-answers-and-named-gaps",
+    "external-means-the-maintainer-called-it",
+    "a-call-names-one-artifact-that-exists-now",
+    "a-standing-call-is-a-floor-and-returns-only-by-proposal",
+    "a-roster-you-set-is-not-a-call",
+    "distance-is-information-and-the-staffing-reviewer-follows-the-brief-and-says-so",
+    "called-by-carries-the-maintainers-words-verbatim",
+    "called-by-quote-is-repeated-in-the-commit-body",
+    "called-by-names-where-the-words-live",
+    "tier-external-needs-called-by-else-read-as-the-usual-review",
+    "no-agent-declares-external-required-or-recommends-distance",
+    "a-called-read-adds-and-replaces-nothing",
+    "a-called-brief-adds-focus-and-removes-no-owed-answer",
+    "a-called-read-discharges-no-security-review-by-distance-or-brief",
+    "other-authority-lives-in-a-decision-or-a-plan-fence",
+    "a-called-by-line-never-confers-authority",
+    "nothing-checks-the-quote-a-reader-does",
+)
+_PROPOSAL_ONLY_LABELS = (
+    "a-high-risk-surface-takes-a-security-review",
+    "usual-plus-security-review-is-two-passes-and-the-usual-pass-never-clears-the-second",
+)
+_PLAN_ONLY_LABELS = (
+    "code-review-floor-is-not-the-implementing-agent",
+    "code-review-never-reopens-the-decision",
+    "a-clean-code-review-shows-a-falsification-ledger",
+    "a-plan-security-obligation-is-cleared-only-by-a-matching-obligation-line",
+    "no-tool-reads-the-obligation-line-a-reader-does",
+)
+
+_PROPOSAL_TEMPLATE_OBLIGATIONS = {
+    **{k: _STANCE_OBLIGATIONS[k]
+       for k in _COMMON_TEMPLATE_LABELS + _PROPOSAL_ONLY_LABELS},
+    "a-proposal-review-asks-whether-it-should-exist-as-framed":
+        r"Should this happen as framed\? Should this exist as framed\? Is there "
+        r"a better design, doing nothing included\?",
+}
+_PLAN_TEMPLATE_OBLIGATIONS = {
+    **{k: _STANCE_OBLIGATIONS[k]
+       for k in _COMMON_TEMPLATE_LABELS + _PLAN_ONLY_LABELS},
+    "a-plan-review-asks-whether-the-plan-delivers-the-decision":
+        r"Should this happen as framed\? The Decision settled the premise\. "
+        r"Does the plan deliver it\?",
+    "a-code-review-asks-whether-it-does-what-it-claims":
+        r"Should this happen as framed\? Does it really do what it claims\? "
+        r"Try to break it, in order to fix it",
+}
+
+#: The old two-stance description of a review, which the templates used to open
+#: with. The shared vocabulary patterns above cover the External wording.
+_TEMPLATE_FORBIDDEN = {
+    **_FORBIDDEN,
+    "internal-review-strengthens-the-change":
+        r"internal review strengthens",
+    "a-same-type-agent-in-an-independent-context-clears-the-floor":
+        r"a same-type agent in an independent context",
+    "a-plan-review-is-internal":
+        r"a plan review is internal",
+}
+_TEMPLATE_FORBIDDEN_EXAMPLES = {
+    **_FORBIDDEN_EXAMPLES,
+    "internal-review-strengthens-the-change":
+        "Internal review strengthens the change within the structure proposed.",
+    "a-same-type-agent-in-an-independent-context-clears-the-floor":
+        "Floor: a same-type agent in an independent context.",
+    "a-plan-review-is-internal": "A plan review is Internal, fresh-context.",
+}
+
+
+def _template_obligations(rel: str) -> dict[str, str]:
+    return (_PROPOSAL_TEMPLATE_OBLIGATIONS if rel in _PROPOSAL_TEMPLATES
+            else _PLAN_TEMPLATE_OBLIGATIONS)
+
+
+_TEMPLATE_CASES = [
+    (rel, label) for rel in _TEMPLATE_FILES
+    for label in sorted(_template_obligations(rel))
+]
+_TEMPLATE_CASE_IDS = [f"{label}-{_FILE_IDS[rel]}" for rel, label in _TEMPLATE_CASES]
+
+
+def _section_from(text: str, heading_prefix: str) -> str:
+    """The body of the `## <heading_prefix>...` section, to the next `## `."""
+    match = re.search(rf"^## {re.escape(heading_prefix)}[^\n]*$(.*?)(?=^## |\Z)",
+                      text, re.M | re.S)
+    assert match, f"no '## {heading_prefix}' section"
+    return match.group(1)
+
+
+def _lines_starting(text: str, prefix: str) -> list[str]:
+    return [line.strip() for line in text.splitlines()
+            if line.strip().startswith(prefix)]
+
+
+@pytest.mark.parametrize("rel,label", _TEMPLATE_CASES, ids=_TEMPLATE_CASE_IDS)
+def test_template_review_section_carries_the_obligation(rel: str, label: str) -> None:
+    obligations = _template_obligations(rel)
+    review = _section(_text(rel), "Review")
+    assert label not in _missing(review, obligations), (
+        f"{rel} no longer carries {label!r} in its Review section. An author "
+        f"reads this template while writing, and a reviewer while reviewing; "
+        f"AGENTS.md alone is not where either looks.")
+
+
+@pytest.mark.parametrize("rel,label", _TEMPLATE_CASES, ids=_TEMPLATE_CASE_IDS)
+def test_removing_a_template_obligation_is_reported(rel: str, label: str) -> None:
+    obligations = _template_obligations(rel)
+    review = _section(_text(rel), "Review")
+    assert _missing(review, obligations) == [], (
+        f"{rel}: the unmutated Review section is missing obligations; no control.")
+    stripped = re.sub(obligations[label], "", _normalize(review))
+    assert label in _missing(stripped, obligations)
+
+
+@pytest.mark.parametrize("rel", _TEMPLATE_FILES, ids=_FILE_IDS.get)
+def test_template_omits_the_old_vocabulary(rel: str) -> None:
+    found = _present(_text(rel), _TEMPLATE_FORBIDDEN)
+    assert not found, f"{rel} {_FORBIDDEN_REASON} Found: {found}"
+
+
+@pytest.mark.parametrize("rel", _TEMPLATE_FILES, ids=_FILE_IDS.get)
+@pytest.mark.parametrize("label", sorted(_TEMPLATE_FORBIDDEN))
+def test_inserting_the_old_wording_into_a_template_is_reported(
+        label: str, rel: str) -> None:
+    intact = _text(rel)
+    assert _present(intact, _TEMPLATE_FORBIDDEN) == [], (
+        f"{rel}: the unmutated template already carries old wording; no control.")
+    mutant = f"{intact}\n\n{_TEMPLATE_FORBIDDEN_EXAMPLES[label]}\n"
+    assert label in _present(mutant, _TEMPLATE_FORBIDDEN)
+
+
+@pytest.mark.parametrize("rel", _PROPOSAL_TEMPLATES, ids=_FILE_IDS.get)
+def test_proposal_header_offers_only_usual_values(rel: str) -> None:
+    """The Review line records the one decision it still carries.
+
+    `usual` and `usual + Security Review` only. A header that offered a kind of
+    review would let an agent pick one; the word `standard` is not used because
+    it already names the lifecycle's lane.
+    """
+    text = _text(rel)
+    review_lines = _lines_starting(text, "**Review**:")
+    assert review_lines == ["**Review**: {{usual | usual + Security Review}}"]
+    tier_lines = [l for l in _lines_starting(text, "**Tier**:")
+                  if "External" not in l]
+    assert tier_lines == ["**Tier**: {{usual | Security Review}}"]
+    assert not any("standard" in l.lower() for l in review_lines + tier_lines)
+    # The Plan review line keeps the tokens it has always been ruled by.
+    assert _lines_starting(text, "**Plan review**:")[0].startswith(
+        "**Plan review**: {{required(Internal) | required(Internal + "
+        "Internal Security Review)}}")
+
+
+@pytest.mark.parametrize("rel", _PLAN_TEMPLATES, ids=_FILE_IDS.get)
+def test_plan_templates_keep_their_ruled_review_tokens(rel: str) -> None:
+    text = _text(rel)
+    assert _lines_starting(text, "**Plan review**:") == [
+        "**Plan review**: {{required(Internal) | required(Internal + "
+        "Internal Security Review)}}"]
+    assert "**Tier**: <Internal | Internal Security Review>" in text
+    assert not any("standard" in l.lower()
+                   for l in _lines_starting(text, "**Tier**:"))
+
+
+@pytest.mark.parametrize("rel", _TEMPLATE_FILES, ids=_FILE_IDS.get)
+def test_a_template_offers_external_only_beside_called_by(rel: str) -> None:
+    lines = [l.strip() for l in _text(rel).splitlines()]
+    external = [i for i, l in enumerate(lines) if l == "**Tier**: External"]
+    assert external, f"{rel} shows no way to record a called read"
+    for i in external:
+        following = next((l for l in lines[i + 1:] if l), "")
+        assert following == "**Called by**: Maintainer -- Decision at <commit>", (
+            f"{rel}: a Tier: External line is not followed by the Called by "
+            f"line that says where the Maintainer's words live.")
+
+
+@pytest.mark.parametrize("rel", _PROPOSAL_TEMPLATES, ids=_FILE_IDS.get)
+def test_proposal_pass_skeleton_asks_the_proposal_questions(rel: str) -> None:
+    skeleton = _normalize(_section_from(_text(rel), "Review --"))
+    assert re.search(r"Should this happen as framed\? \{\{should this exist as "
+                     r"framed", skeleton)
+    assert "Best alternative." in skeleton
+    assert "What would show it wrong." in skeleton
+
+
+@pytest.mark.parametrize("rel", _PLAN_TEMPLATES, ids=_FILE_IDS.get)
+def test_plan_pass_skeletons_ask_the_plan_and_code_questions(rel: str) -> None:
+    text = _text(rel)
+    plan = _normalize(_section_from(text, "Plan review --"))
+    assert re.search(r"Should this happen as framed\? <the Decision settled "
+                     r"the premise; does the plan deliver it>", plan)
+    code = _normalize(_section_from(text, "Code review --"))
+    assert re.search(r"Should this happen as framed\? <does it really do what "
+                     r"it claims; try to break it, in order to fix it>", code)
+    assert "see the falsification ledger" in code
+    assert re.search(r"floor is not the implementing agent", code), (
+        f"{rel}: the Code review skeleton lost the floor.")
+
+
+@pytest.mark.parametrize("rel", _TEMPLATE_FILES, ids=_FILE_IDS.get)
+def test_a_template_has_no_coverage_line_stanza(rel: str) -> None:
+    """The coverage line is defined once, in the review-loop document.
+
+    A scaffold that restated it would be a second definition to keep in step.
+    """
+    assert "Not covered" not in _text(rel)
+    assert "Foundations" in _text(rel), "control: the template is the right file"
+
+
+# Mutants: delete one sentence from one template and a named check goes red.
+
+@pytest.mark.parametrize("rel", _PROPOSAL_TEMPLATES, ids=_FILE_IDS.get)
+def test_deleting_the_two_pass_sentence_from_a_proposal_template_is_reported(
+        rel: str) -> None:
+    review = _section(_text(rel), "Review")
+    obligations = _PROPOSAL_TEMPLATE_OBLIGATIONS
+    assert _missing(review, obligations) == []
+    mutant = _delete_sentence(review, "means two passes")
+    assert "usual-plus-security-review-is-two-passes-and-the-usual-pass-never-clears-the-second" \
+        in _missing(mutant, obligations)
+
+
+@pytest.mark.parametrize("rel", _PLAN_TEMPLATES, ids=_FILE_IDS.get)
+def test_deleting_the_obligation_sentence_from_a_plan_template_is_reported(
+        rel: str) -> None:
+    review = _section(_text(rel), "Review")
+    obligations = _PLAN_TEMPLATE_OBLIGATIONS
+    assert _missing(review, obligations) == []
+    mutant = _delete_sentence(review, "calls for security treatment declares")
+    assert "a-plan-security-obligation-is-cleared-only-by-a-matching-obligation-line" \
+        in _missing(mutant, obligations)
