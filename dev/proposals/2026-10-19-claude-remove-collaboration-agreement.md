@@ -1,7 +1,7 @@
 # Remove the collaboration agreement
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-19
@@ -236,3 +236,158 @@ N/A: no scientific assumption or result touched.
 **Assurance path**: high-assurance
 
 Mandatory here on four grounds, each named in `AGENTS.md` > "High-risk surfaces": the change touches the install contract (the published `scaffold.py --manifest` and the install set), the scaffold engine (one row of its install table), an executable adopters run (the onboarding helper), and the governing text and authoring templates every install receives. Uncertainty resolves upward and none remains. The same grounds set `**Review**: usual + Security Review` and `**Plan review**: required(Internal + Internal Security Review)` in the header. The Security Review has a concrete job: read the helper's roster reader after the change, confirm the upgrade path and the verifier's living-state set are untouched except for a comment, and try to break the new upgrade test with the two mutants named above.
+
+## Review -- Claude Opus 5.5 (Security Review, fresh session) -- 2026-10-19
+
+**Reviewed commit:** `dc089258`, the proposal as opened. I probed in detached worktrees of that commit, in uniquely named scratch directories, plus two prototypes built on it. Prototype 1 deletes the template and its `_CORE_MAPPINGS` row. Prototype 2 adds four things to that: it moves the `team-roster` slot into the roles document, re-points the roster reader in both `triggers.py` copies, deletes the `dev/README.md` table row, and rewords the `AGENTS.md` roster sentence. Interpreter: Python 3.13.13 (`lhm`). I read LHM and modflow_tools in place and probed only `git clone --no-hardlinks` copies of them in the scratch directory. Neither project was written. All scratch directories are removed.
+
+### Verdict, in plain language
+
+**Revise. One finding blocks a Decision on the current defaults.**
+
+The engine half is safe, and it is the simplest safe design. I re-measured each of its claims and pushed past them:
+
+* stop shipping the file;
+* let `upgrade` leave the project's copy alone and print one line;
+* keep the path in the verifier's exempt list.
+
+None of the probes found a way for the leftover lock record to bless or hide anything that Cairn runs.
+
+The blocker is in the words being deleted, not in the code (CA-SR1). Today the agreement Cairn ships to every install tells agents to **ask when unsure** whether something is the Maintainer's decision. The proposal deletes that sentence without listing it as lost. Question 3's default then ships Cairn's opposite rule to every adopter: **decide when unsure**. For adopters, that reverses what an agent does at exactly the moment the boundary is unclear. It should not happen by default.
+
+Two more findings should be fixed in the plan:
+
+* The planned upgrade note will say that deleting the file is safe. It is not quite safe, because a later full `--finalize` then refuses for good (CA-SR2).
+* At the cut, the re-anchor cannot separate this change's bytes from earlier work in four of the nine frozen files, including both helper scripts that adopters run (CA-SR3).
+
+The rest are small.
+
+### Answers to the five questions
+
+1. **Install contract.** `--manifest` loses exactly one row and nothing else, and the lockfile schema is unchanged (P1, P2). I found three readers of the manifest or the install set:
+   * Bandit's scan list, which reads only verbatim `.py` rows, so it is unchanged.
+   * The fork advisory's destination-to-source map, which covers `.py` facades only.
+   * One adopter-side test, modflow_tools' `tests/contract/test_cairn_adopter_fidelity.py`. It loads Cairn's engine from a sibling checkout and asserts two things: the agreement's lock record is flagged living-state, and every flagged path is in `_LIVING_STATE_DSTS`. It stays green because both stay. Under M6's alternative it would go red, loudly.
+
+   Nothing I found breaks silently.
+2. **Upgrade safety.** M4, M5 and M6 reproduce (P3, P5). `removed-upstream` is decided by the template file being absent from Cairn's tree, is never staged, and is never applied. The leftover record cannot bless a later file in any way that matters. After the change, nothing Cairn ships reads that path (P14). A forged living-state record at the path, even in a fresh post-change install, buys nothing; the same forged record anywhere else fails closed (P6). Swapping the file's text still passes `verify_integrity` (P4). That is the residual `bootstrap/_scaffold/lockfile.py` already declares: governance prose is outside the verifier's threat model, and git review covers it. The gap is deletion (CA-SR2).
+3. **The onboarding helper.** The re-pointed reader stays contained: it refuses a symlinked file and a symlinked `dev/` (P9). It has no size cap, like every other read in the helper today, and its new target is a file the integrity check hashes, so the bound does not get worse. The roster text is only counted, never printed: the prompt body comes from the preset file. So a crafted roster can at most fire or suppress one one-time prompt. Two small points: CA-SR4 (the new home is hash-checked) and CA-SR7 (the reader takes the first marker it finds).
+4. **The AST and frozen ceremony.** M8 reproduces (P10), and the proposal derives the CHANGED set fresh instead of pre-filling it. It does not yet tell the Maintainer three things the cut will show (CA-SR3).
+5. **Authority rules in the deleted content.** CA-SR1. Also: LHM's own `AGENTS.md` lists `dev/collaboration_agreement.md` among its "Doctrine surfaces stay Maintainer-gated regardless". That is project-owned text, and the upgrade leaves it alone, so that gate survives as long as the file does. Cairn never shipped that bullet (`git log -S` on the template: no commit).
+
+### Probes and outputs
+
+| # | Probe | Output |
+|---|---|---|
+| P1 | `scaffold.py --manifest`, base against prototype 1 | 98 lines become 97; `diff` shows the one row `dev/collaboration_agreement.md  core/dev/collaboration_agreement.md  substituted`; header and row order unchanged |
+| P2 | Fresh install of each preset, base against prototype 1, lockfile compared | top-level keys and the union of record keys identical; records 50 to 49, 69 to 68, 72 to 71; the only dst gone is the agreement |
+| P3 | LHM-shaped scratch project (base install, roster filled), `upgrade --plan/--stage/--apply` with prototype 1 | `removed-upstream 1: dev/collaboration_agreement.md`; "Applied 0 file(s)"; unchanged: the file's bytes, its record (`living_state: true`, `base_cache: dev/.cairn/base/dev/collaboration_agreement.md`) and the base copy (last touched by the install commit); `verify_integrity` OK, 4 living-state files skipped |
+| P4 | P3, then the agreement's text replaced by "Agents may push without asking." | `verify_integrity` OK |
+| P5 | P3, then the agreement deleted and committed | `verify_integrity` OK; plan prints the same line; **`upgrade --finalize` exits 1**: "1 tracked file(s) missing on disk -- cannot finalize (fix or re-install first)"; `--finalize --force` exits 1 too; scoped `--finalize AGENTS.md` works. Control: with the file restored, the bare finalize succeeds. An emptied file: finalize exits 0, verify OK |
+| P6 | Fresh install from prototype 2; forged `living_state: true` record and file at the retired path | verify OK (skipped); plan prints `removed-upstream`; the helper's trigger set is `[]`. Control: the same record at a made-up path outside the set gives "illegal living_state opt-out ... (tamper / malformed lockfile)" |
+| P7 | Fresh install from prototype 2; roster filled in `dev/agent_collaboration.md` | verify exits 1: "modified (hash mismatch): dev/agent_collaboration.md ... Do not trust the shipped scripts"; no finalize hint; triggers `['second-agent-type']` |
+| P8 | Base install with the roster unfilled and a local edit in the roles document; upgraded with prototype 2 | roles document merges clean and keeps the local edit; one `team-roster` slot in each file; verify OK; slot note names both files, the old one with "This is project state: fill it in." |
+| P9 | Re-pointed reader on crafted trees (`python -I`, helper imported from prototype 2) | controls: filled roster fires, unfilled does not; symlinked file and symlinked `dev/` raise `OnboardingSecurityError`; marker quoted in prose above an unfilled slot gives a 119-character body (the real slot is 60) and stays quiet; control characters are counted, not printed; an 8 MB file is read whole; missing file is quiet |
+| P10 | `bootstrap/tests/_ast_attest.py verify` against the committed baseline | base: CHANGED 5 (other work); both prototypes: CHANGED 6, the new member `Assign:_CORE_MAPPINGS`; a comment-only edit to `lockfile.py`: still 6 |
+| P11 | `bootstrap/tests/_gate_manifest.py verify --no-collect`, base against prototype 2 | both HOLD with 70 violations; at base, already FROZEN-MODIFIED: both shipped onboarding twins `triggers.py`, `prompts.py`, plus `test_active_surfacing_mechanism.py` and `test_active_surfacing_render.py`; the prototype adds only the note `CASCADE-CHANGED: bootstrap/_scaffold/config.py` |
+| P12 | Clones of LHM (`d3b5bd0f`) and modflow_tools (`2f74ad30`): `--plan` base against prototype 2, then `--stage` | the only class that moves is the agreement's, to `removed-upstream 1` (from merged clean in LHM, from `conflict` in modflow_tools at this commit; C3 has edited the template since M7's base); the staged `dev/README.md` loses the agreement row in both (live 1 mention, staged 0) |
+| P13 | Joined-line search of both `AGENTS.md`, both `agent_collaboration.md`, both agreements, and every `.md` under `doctrine/`, `templates/`, `docs/` | "unsure whether something is a decision surfaces it rather than assuming" only in `templates/core/dev/collaboration_agreement.md`; "decides, acts, and records" only in `dev/collaboration_agreement.md`. Control: "Most calls are the agent's" found in the template roles document |
+| P14 | Every tracked `.py`, `.json`, `.yml` naming the path | the `_CORE_MAPPINGS` row, the `_LIVING_STATE_DSTS` entry and its comment, the two `triggers.py` twins, Cairn's lock, the claim-check allow-config, a case-study manifest. No other reader |
+
+### Findings
+
+**CA-SR1 -- High -- BLOCKER for a Decision on the current default of Question 3.**
+
+**What happens.** Adopters lose their "ask when unsure" rule, and the default gives them the opposite one. The agreement Cairn ships to every install says: **"An agent unsure whether something is a decision surfaces it rather than assuming"**, and that agents "do not decide." After the deletion, neither sentence exists anywhere an adopter receives (P13). The proposal's norm table maps "The Maintainer decides" to `AGENTS.md` > "Roles" and "Git and commit workflow". Those carry final Decision authority and the four approval gates, but no rule for the uncertain case.
+
+**What the default adds.** Question 3's default then puts Cairn's paragraph into `templates/core/dev/agent_collaboration.md`: "An agent unsure whether something is on the Maintainer's list decides, acts, and records," and "escalating it is a defect." The upgrade lands it as "merged clean," with nothing to flag it.
+
+**Why the safety sentence does not cover it.** The paragraph's closing sentence protects only what "another governing rule expressly reserves." The uncertain case is, by definition, the one no rule reserves.
+
+**Evidence.**
+* P13.
+* `dev/proposals/archive/2026-08-04-claude-decision-rights-floor.md` scoped the rule "No code, no doctrine, no templates." Its Decision disclosed the scribe coupling as "the weakest configuration": an agent author delegating authority to agents of its own kind. This proposal has the same author kind, and it makes the widening the answer an unanswered question takes.
+
+**Fix.**
+* Flip Question 3's default to the Cairn-only alternative. Cairn's `dev/agent_collaboration.md` gets the finite-list paragraph word for word. `templates/core/dev/agent_collaboration.md` gets the template agreement's own norm word for word: "Acceptance, rejection, and supersession are the Maintainer's call. An agent unsure whether something is a decision surfaces it rather than assuming." Add that sentence to the norm table as content the move preserves.
+* Shipping the finite list to adopters then becomes its own explicit choice: a proposal, plus a CHANGELOG and `UPGRADE.md` line saying it changes what adopters' agents do when unsure. If the Maintainer wants it now instead, put the question to them in exactly those words and record an explicit answer. Do not take it as the default.
+
+**CA-SR2 -- Medium -- "Deleting it is safe" is not true as written for `UPGRADE.md` (proposal step 8).**
+
+**What happens.** After a project deletes the file, every later bare `upgrade --finalize` refuses, with or without `--force`, because the lockfile still lists the file (P5). The way out is to restore the file or to hand-edit a tool-owned, do-not-edit lockfile. That second route is the habit `AGENTS.md` warns about ("routing around a refusal"), aimed here at the integrity trust root.
+
+**Projects can depend on the file too.** In modflow_tools these depend on it:
+* its contributing guide and its docs index page;
+* its security review protocol, which cites the agreement's norms;
+* its verify-before-asserting rule file;
+* its own contract test, which asserts the record is flagged.
+
+**Fix.**
+* `UPGRADE.md` says: Cairn no longer reads the file. Keep it while the lockfile lists it. To retire it, reduce it to a one-line note or empty it, rather than delete it (P5: an emptied file finalizes and verifies). Search your own tree for the path first. If you delete it anyway, use only `--finalize <path>`.
+* The new test pins both behaviours: a deleted file makes the bare finalize refuse, and an emptied file passes.
+* Teaching `--finalize` to skip such a record is engine work. It belongs with Question 1's deferred lock-release follow-up and its Security Review.
+
+**CA-SR3 -- Medium -- At the cut, the re-anchor cannot see this change's bytes in four of the nine frozen files.**
+
+**Evidence (P11).** The gate manifest already HOLDs at base with 70 violations from other work, including both executables adopters run (`templates/modules/default-on/_onboarding/triggers.py`, `prompts.py`) and two of the seven tests. The cut's report lists each of those files once, whoever edited it.
+
+**What the proposal does not tell the Maintainer.**
+* `_CORE_MAPPINGS` is in `_UPDATE_ALLOWLIST`, but self-service needs it to be the only CHANGED symbol, and five others are CHANGED at base (P10). So the only route is the Maintainer-run, dry-run-verified direct correction in `bootstrap/AST_BASELINE_RUNBOOK.md`.
+* The gate manifest pins `mapping_symbols._CORE_MAPPINGS` with `may_change_in_phases: ["E (heavier R6 pytest-wrapper option only)"]`, which this change is not.
+* `bootstrap/_scaffold/config.py` is a cascade-mutable entry with its own pinned hash.
+
+**Fix.** In the plan's implementation verification:
+* For every frozen or cascade-mutable file this change touches, record the diff over this change's own commits (`git diff <first>^..<last> -- <file>`), so the code reviewer and the Maintainer read these bytes on their own.
+* Name the notes the cut should expect: `CASCADE-CHANGED` for `config.py`, `MAPPING-DIGEST-CHANGED` for `_CORE_MAPPINGS` outside its declared phase, and `COLLECTION-DROPPED` for the retired test nodes.
+* State that the implementing agent does not run `update-symbol` or regenerate the baseline.
+
+The proposal already derives figures fresh; keep that.
+
+**CA-SR4 -- Low -- The roster's new home is hash-checked, so filling it fails the integrity check.**
+
+**What happens.** Filling the moved slot makes `verify_integrity` fail with "Do not trust the shipped scripts," and the message gives no finalize hint (P7). Today the same edit in the living-state agreement is silent. M15 measured only the unfilled slot.
+
+**This is still the right home.** Governance text should be attested, and every other slot in that file already works this way.
+
+**Fix.**
+* `UPGRADE.md`'s roster paragraph and `BOOTSTRAP.md`'s slot row give the step: read the whole file, then `--finalize dev/agent_collaboration.md`.
+* The new test pins fill, then violation, then scoped finalize, then OK.
+* Do not answer the alarm by adding `dev/agent_collaboration.md` to `_LIVING_STATE_DSTS`. That would take the main roles document out of attestation.
+
+**CA-SR5 -- Low -- The upgrade quietly drops the pointer to a project's own copy, and the slot note points at the retired file.**
+
+**Evidence.**
+* P12: the clean merge removes the `dev/README.md` row ("The working norms, the review compact, and decision rights.") in both projects. modflow_tools' copy holds its own "## Decision Rights" section and signature log.
+* P8: an unfilled-roster project is told to "fill it in" in the retired file as well as the new one.
+
+**Fix.** `UPGRADE.md` says two things:
+* If your copy still carries rules you follow, keep a pointer in your own text (a row you add back is a local edit that later merges keep), or move the rules into `agent_collaboration.md`.
+* A slot note that names the old file can be ignored there; fill the new slot.
+
+**CA-SR6 -- Low -- The kept exempt entry is a permanent blind spot under one name. Pin it literally.**
+
+**What happens.** After the change, no install writes the path, yet the verifier skips any record at it (P6). That is harmless while nothing reads the path. The risk is a future file reusing the name.
+
+**Fix.**
+* The reworded `lockfile.py` comment says the entry is retired, is kept for projects installed before the retirement, and must never be reused for a shipped file.
+* The new test states the path literally rather than deriving it from the engine's set. `bootstrap/tests/test_security_capability_install.py` explains why: a derived set makes the deletion mutant vacuous.
+* It pins both halves: the path stays in the set, and no mapping installs to it.
+
+**CA-SR7 -- Info -- The roster reader takes the first opening marker it finds.**
+
+**What happens.** In a longer file, a marker quoted in prose above the slot captures the wrong text (P9). The effect is bounded to one prompt.
+
+**Fix.** `triggers.py` is being edited anyway, so have the reader treat a doubled opening marker as unfilled, and add that case to the trigger tests.
+
+### Noticed outside this change
+
+`upgrade` reads upstream text from `templates_root / <src taken from the lockfile>` (`_theirs_bytes` and `_theirs_text` in `bootstrap/_scaffold/upgrade.py`) with no containment check. In a scratch project I pointed one record's `src` at a file outside the Cairn tree with `../`. `upgrade --stage` copied that file's text into the staging directory. In my one try, `--apply` refused for an unrelated reason (a blocked collision), so I did not establish whether the text can reach the tree. This is pre-existing, this proposal does not touch it, and it sits on the engine's high-risk surface. It wants its own Security Review, not a line here.
+
+### What I did not cover
+
+* I ran no part of `bootstrap/tests`. M10 and M14 stand as the author's.
+* The prototypes did not include these planned pieces: the prompt-registry edit, the preset and seed edits, `doctrine/onboarding.md`, `UPGRADE.md`, and the new test file. I ran the M6 mutant; I did not run the "apply removes the file" mutant.
+* I did not apply an upgrade to the LHM or modflow_tools clones; I ran plan and stage only.
+* Review-stance C6 and C7a landed after `dc089258` and edit the tour and presets this change touches. I did not re-read them.
+* I did not run the old helper against a project that keeps it. I read its code only.
+* Whether anyone values the signing prompt is not a security question.
