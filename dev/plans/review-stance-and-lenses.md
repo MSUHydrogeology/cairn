@@ -4654,3 +4654,15 @@ separately recorded citation debt.
 The README test changes invalidate reuse of the earlier full-run record for
 the updated tree. A fresh full integration run for this follow-up is owed before
 its verification is complete; the scoped checks alone do not clear C8.
+
+### README follow-up verification disposition -- 2026-10-19
+
+The Maintainer superseded the preceding full-rerun requirement for this README
+follow-up in chat:
+
+> We just don't need a complete verification of this sort
+
+The full run was stopped at the Maintainer's request and is not passing
+integration evidence. The 1,844 passing focused tests and document checks are
+sufficient for this follow-up; no full rerun is outstanding for it. This does
+not change the rest of the plan's verification or re-anchor obligations.
