@@ -2,6 +2,7 @@
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-independent-scientific-check.md`
 **Status**: revising-code
+**Waiting on Maintainer**: block judged ritual; plan stopped
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits the authoring templates and the axis prose that adopters' bootstrap reads.
 **Opened**: 2026-10-18
@@ -2737,3 +2738,91 @@ This change touches a unit convention (length and time units taken from the mode
   * A budget-closure check is not available: the run saves no storage term (recon, Alternative 3), and a closed budget would not catch a wrong input anyway.
   * A domain expert could write down the expected range of the groundwater storage anomaly before the build completes. I have no such value and do not supply one. The Maintainer weighs this gap at the Decision.
 ```
+
+### The re-score, verbatim
+
+**The scorer** (the coordinating session's account; I did not see the briefing).
+A fresh Sonnet agent: not the implementer, not any drafter, and not the first
+scorer. Its brief was identical to the first scorer's except for the folder it
+reads, which held the re-run draft, byte-identical copies of the assemble draft
+and both error statements (each copy's SHA-256 equal to its original's). It made
+5 tool calls: four reads and the hand-back. As before, blindness rests on the
+instruction and on that observed count, not on a sandbox. The coordinating session
+extracted its output byte for byte (11 lines, SHA-256
+`c735e8d62813edfc6d2523a9728e697c21fd80b673a2e54a121aa76678cb1147`); I
+recomputed the hash and line count and they match. The text between the fences is
+that output, with no fence of its own.
+
+```text
+#### Draft 1 (stor-modflow)
+- **(A):** yes. The error is an unprimed percolation stack, with no counterpart to the model's 365-day warm-up and no RAMP shift. That offsets the domain-mean unsaturated anomaly by about 14.9 kg m-2. The check compares the recomputed storage per cell and per month, and as a domain total, against the model's own `unsatStorage`, which does include the warm-up. A uniform offset of that size is far above the rounding floor the draft names, so the comparison would fail with the error in place. The check is also not tied to the draft's three listed "plausible mistakes", which do not include the warm-up. Quoted: "The check fails if the recomputation does not reproduce the model's own unsaturated storage."
+- **(B):** no. The error statement says `unsatStorage` "had never been saved" in the OUTS file (2.80 GB, over the 2 GB limit of the file format used), and the Internal plan review found this. The draft's data claim is therefore false. The draft repeats it as "In hand but not checked." It does name the OUTS file and promises an assertion on its shape and orientation before any residual is read. But it still asserts the array is in hand, and it takes "carries `unsatStorage`" from the accepted proposal's §3 without opening anything. Under the stated rule, repeating a false claim as "in hand" fails (B). No sentence qualifies.
+- **Verdict:** no.
+- **Basis (not scored):** the saved output of the model the code reads (the MATLAB module's `unsatStorage` in OUTS). It is independent of the Python port, as the draft says, but not of the model's physics or input files. The array it relies on never existed.
+
+#### Draft 2 (assemble-part-a)
+- **(A):** no. The error is in the land-use weights. When no model cell counts as partly covered, the fill for uncovered cells is 0/0, so the build wrote NaN land-use weights. It appeared with a patched partial threshold on Cedar Creek. The check never touches that path. It runs `cell_statistics` on a synthetic continuous linear field (11 × 11 fine cells, 4 × 4 coarse cells, aligned) and looks for a half-cell row shift of about 1.5 value units. There are no land-use categories, no partial-coverage threshold and no uncovered-cell fill. The partial-coverage threshold is never varied, so the NaN fill is never reached. The check would pass with the error in place. No sentence qualifies.
+- **(B):** yes. The data claim is not contradicted by the error statement. The check needs no external data, and the draft says what is unopened and that the plan opens it first. Quoted: "It needs no external data. The expected values are worked out by hand from the grid numbers and committed in the test before the helper is run against it." and "I have not opened `helper/zonal.py` or its tests under `tests/helper/`." and "The plan opens those first."
+- **Verdict:** no. (B) is satisfied, but (A) fails.
+- **Basis (not scored):** an analytical solution (the mean of a linear field over a rectangle equals its value at the centroid). It is independent of the code under review. The draft names one shared assumption, that row 0 is the northern edge, and says the fixture states that convention itself.
+```
+
+### The verdicts, and the stop rule applied as the plan states it
+
+| Plan | (A) alone: a check that fails under the error | (B): could it have been run | Combined verdict |
+|---|---|---|---|
+| assemble part A | no | yes | **no** |
+| stor-modflow, first draft (set aside: made under a brief that helped) | yes | yes, narrowly | yes, set aside |
+| stor-modflow, re-run (neutral brief) | **yes** | **no** | **no** |
+
+The first scorer's rows are as recorded above. The re-run scorer quotes no
+sentence for a "yes" on (B), and none is owed for a "no". Its "yes" on (A) quotes
+"The check fails if the recomputation does not reproduce the model's own
+unsaturated storage.", which is in the re-draft word for word.
+
+**The stop rule, as C1 states it.** "If both verdicts are **no**, the block is
+judged ritual: the plan stops, and nothing in C2 to C4 is committed. If at least
+one is **yes**, the plan proceeds." The pair to which it is now applied is
+{assemble part A: no, stor-modflow re-run: no}. Both are no. **The block is judged
+ritual under the plan's reading, and the plan stops.** The stop was neither
+softened to a warning nor hardened to "either".
+
+**What that leaves, said plainly.** The rule says nothing in C2 to C4 is
+committed. They are committed, because the earlier verdict said continue, and they
+are not pushed. I have reverted nothing and started no archive. What happens to
+those commits is the Maintainer's. The interim archive wording above is moot
+unless he overrules the reading.
+
+### Two facts for the Maintainer, recorded and not argued
+
+1. **(A) alone.** The stor-modflow re-run has (A) **yes**. The accepted
+   proposal's stop test asked whether an author following the block "would have
+   named a check that fails under the error later found". That is (A). The plan
+   added (B) by interpretation, so that stor-modflow could fail by repeating the
+   saved-output check on data that was not there, and listed that reading under
+   *Scope delta* as an addition "so the code reviewer or the Maintainer can
+   overrule it". On (A) alone the re-run is yes, and C1 would continue.
+2. **The two scorers read nearly the same kind of data statement differently.**
+   The first scorer gave (B) **yes** to the first draft's "This proposal's recon
+   table has no OUTS row, so nobody has recorded opening it." and its "To confirm.
+   Open OUTS...". The re-run scorer gave (B) **no** to the re-draft's "In hand but
+   not checked.", because of the words "in hand". The re-draft also names the OUTS
+   file, says nothing in the proposal records the variable's shape, units, time
+   axis or orientation, and requires "An integration assertion on OUTS's shape and
+   orientation" before any residual is read. The two scorers had the same brief.
+   The first draft was written under a drafter brief that had pointed at the pass
+   condition; the re-draft was written under one that had not.
+
+One drafter and one scorer per plan, two plans; the plan called this a go/no-go
+gate and not a measurement of how often the block helps.
+
+### What the Maintainer decides
+
+* Whether the block is judged ritual on the plan's reading ((A) and (B)
+  together), which stops the plan, and what then happens to C2 to C4: committed,
+  not pushed, with their tests and records.
+* Or whether the (B) reading is overruled, in which case (A) alone applies and
+  C1 would continue.
+
+I have taken neither step. The Status line is unchanged. The Waiting line, as C1
+prescribes, is in the header block beside Status.
