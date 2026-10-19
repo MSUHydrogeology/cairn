@@ -2107,3 +2107,81 @@ The static test passed all three. The whole file failed each: (1) 3 failures (th
 * **The rest of the revision**: the checker's tests, the `_doc` string and the two `docs/DOCUMENTATION_PLAN.md` lines. Closing NU-CR2 to NU-CR8 is the code reviewer's job.
 * **The "duplicate slot" upgrade error at the tested commit.** It comes from other plans' template changes and another agent is diagnosing it. Nothing in the code this pass read touches it.
 * **Other sessions' uncommitted edits** in the shared tree. I read committed bytes only.
+
+## Verification of the revision -- Claude Sonnet 5.5 -- 2026-10-19
+
+```
+Reviewed commit: 03c36a4b (the second implementation verification); the implementation bytes are the tested commit f949e342fcaa8e0206a550175822a7d1f5305ef0
+Target: the revision cf102f2c, 36ea62c1, 41895ddc, b72d0308, f949e342, plus the prose commits f9e1d572, c504fca8 and 03c36a4b, read against afbb1f23 (what the code review read) and bb4f710a (the plan's parent)
+Prior findings: NU-CR1 to NU-CR8 (327f7734). The Security verification (a003bd4e, NU-CSR7 to NU-CSR10) was read, not repeated.
+```
+
+**Obligation**: Code review, verification of the revision (not a fresh review)
+**Tier**: Internal
+**Bounding**: not owed. Boundary B ran in `full` mode.
+**Findings**: NU-CR1 to NU-CR8 all closed. No defect of my own found at medium or above. One information note (NU-CR9). I corroborate the Security verification's NU-CSR7 and NU-CSR8 and add nothing to them.
+**Verdict**: VERIFIED for my eight findings. **Status stays `revising-code`**: the Security verification is not clean (NU-CSR7 and NU-CSR8, both low, both a few lines), and the rule is to move to `ready-to-archive` only if both are.
+
+Distance: a fresh session of the implementer's agent type (Claude Sonnet 5.5); the same session that wrote the code review above. I did not write the revision. Every figure comes from uniquely named detached worktrees and extractions of my own; the interpreter is `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13).
+
+### In plain terms
+
+All eight findings are fixed, and I re-ran the measurements that found them. The pipe idiom that failed 40 times in 40 now fails 0 in 40. Every mutant that survived last time now dies. The test run on the tested commit reproduces: 4432 passed, 2 failed, the two AST nodes that are not this plan's.
+
+The revision is not finished, but only because of two small things the Security Reviewer found in the same code. One is a side effect of the fix for my first finding (NU-CSR8): when the check's *standard output* cannot be written, the fix also silences the error stream, so Python's one-line explanation of the 120 exit is lost. The exit code is still 120; only the reason is hidden. The other (NU-CSR7) is a line break in a lockfile version string that still reaches the screen through the forked-facade advisory. I reproduced both. They need a few lines, one more fresh full run, and no new Security Review if only those lines change.
+
+### The eight findings
+
+| Finding | Closed? | What I ran |
+|---|---|---|
+| NU-CR1 | yes | `... 2>&1 \| grep -q "verify_integrity: OK"` under `pipefail`, 40 runs on a fresh `solo-greenfield` install: `afbb1f23` fails 40, `f949e342` fails **0**. Stderr reader gone, passing tree: 120 before, **0** now; failing tree 120 in both; stdout reader gone: unchanged. Four mutants of the fence (no redirect; redirect for every exception; redirect stdout instead; helper does nothing) all killed |
+| NU-CR2 | yes | `..` dropped, containment weakened to the first component, and weakened to a string prefix: all three killed by the four new path cases. Dropping `is_absolute`, the NUL check, the empty-path check or the string check still survives and is still equivalent (each is backed by the prefix check, the per-record handler or the record loop) |
+| NU-CR3 | yes | reading the whole file and checking the size after: killed by the test that records every `os.read` request; `<` for `<=` in the loop: killed by the short-read test; cap instead of cap plus one: killed |
+| NU-CR4 | yes | null or absent `tokens` made unusable, last duplicate slot winning, living-state `verbatim` read, the budget at `>=`: all four killed. `O_NOCTTY` and `O_BINARY` still survive and no test can reach them here; the record lists them as such |
+| NU-CR5 | yes | my 29 checker mutants (each of 20 names, each of 7 file types, no word boundary, the comment skip put back), control 59 passed: **29 killed, 0 survived** (it was 11 and 18 before) |
+| NU-CR6 | yes | routing table rows equal once `_doc` is removed; the sentence now reads "Further harnesses are documented future data-row adds."; the template and its twin are `cmp`-identical; the finalize commit changes one `hash` line and it equals the twin's SHA-256; the checker's comment no longer points at the table |
+| NU-CR7 | yes | `docs/DOCUMENTATION_PLAN.md:206` and `:364` reworded; every remaining "Goal 1" is a label or true; `claim_check` clean |
+| NU-CR8 | yes | recorded as `accept` in *Dispositions*; behaviour unchanged (5,000 slots: 0.21 s, no raw byte) |
+
+Mutants this pass: **34** against the revised install check (28 killed; 6 survived, all of them the two unreachable flags and the four equivalents above) and **29** against the checker (29 killed).
+
+### The Boundary B record, checked against f949e342
+
+* **4432 passed, 2 failed: reproduced.** A fresh worktree of `f949e342`, `CAIRN_FULL_SUITE=1`, `--quality-gate-shuffle-seed=0`, `PYTHONDONTWRITEBYTECODE=1`, clean before: **2 failed, 4432 passed, 3 warnings in 978 s.** The failures are the two `test_ast_attest.py` nodes the record names; no skip, xfail or xpass.
+* **AST set.** Five CHANGED symbols (`_cmd_adopt_module`, `cmd_upgrade`, `create_dev_tree`, `main`, `seed_gitignore`), as recorded. `git diff afbb1f23 f949e342 -- bootstrap/_scaffold bootstrap/scaffold.py` is empty, and none of the revision's five commits names an engine path.
+* **Gates.** Neutrality `fail=0 info=56`, redundancy `fail=0 info=0`. `check_cairn.py` reports one issue in a clean worktree, a `tools/__pycache__` citation in another session's review record (as the record says; the shared tree reads OK). `claim_check.py` clean on the guide and on `docs/DOCUMENTATION_PLAN.md`; `link_check.py` OK; `verify_integrity.py --target .` lists the plan's 18 files.
+* **Node IDs.** `pytest --collect-only` before and after: the 60 added since the first record are exactly the record's list, and none of the earlier 152 is gone (59 collected in the neutrality file, 153 in the install-check file).
+* **Frozen and not-touched.** The revision's nine files include four frozen ones (`scripts/quality_gate.py`, `bootstrap/verify_integrity.py` and the two test files) and no phase-mutable one; none of the not-touched paths appears.
+* **Add-only, with its one exception.** Against the plan's base, `bootstrap/verify_integrity.py` loses nine lines, all message text in failure branches (the report-escaping change `f949e342`); no `continue`, count or `return` is among them. Both frozen test files lose none against the plan's opening commit. Three lines of the first record's own tests were edited since `afbb1f23`: a static reader test now ignores a write-only `os.open` of the null device, and two samples are spelled with `\u` escapes (same strings).
+* **No coordinates in durable text.** The added code, comments, test names and docstrings carry no finding or chunk id.
+
+### Old against new, and the report escaping
+
+* **22 hostile shapes and a control, the plan base's verifier against the revision** (same engine): a 100,000-character `base_cache`, the base folder itself, a list, a `..` climb; `tokens` a list, null, absent, one 300 KiB value; a duplicate record; an installed file of 300 KiB and one that is not UTF-8; 5,000 unfilled slots; 3,000 slots each a 200 KB token in one file; FIFOs, a socket, a folder, a symlink, two 5 GiB sparse files and a symlinked base folder; a failing run. Exit code, stdout and stderr (minus note lines) equal in all; raw non-printable bytes in the output: 0. The 3,000-slot case, which would have built 600 MB of strings in the first pass, now returns in 0.17 s.
+* **11 crafted-path trees** (an escape sequence, a bell, a right-to-left override and a Cyrillic letter at each report site, plus the hint's list, a non-string hash, and a clean path with a space): exit code and stdout equal; the new stderr equals the old with each unsafe character replaced by its written escape; raw bytes in the old report 0 to 14, in the new 0. A clean report is unchanged to the byte, including the advisory text, which is ASCII.
+* **Real trees unchanged.** A fresh install: 27 files, 22 slots checked, 20 listed. Cairn's own tree: 35 in scope, 1 checked, 17 no base copy, 16 failed, 1 hash mismatch.
+
+### The two probes, and the implementer's open item
+
+Plan C's own probes are **not affected**. I ran them with `b72d0308`'s scaffolding for the upgrade step and `f949e342`'s `verify_integrity.py` for the verify step: a fully filled `4ad1c115` install lists exactly one upgrade-added slot, `assurance-path-triggers` (plus three living-state slots I left unfilled); the partly filled one lists 18 (the record's 17 plus the unfilled `team-roster`). The code under test is this plan's, which is unchanged between `f949e342` and `03c36a4b`. What breaks is only running that old install's upgrade step with a newer checkout's scaffolding and templates: on a fresh, unfilled `4ad1c115` install, `03c36a4b`'s scaffolding plans `dev/proposals/_template.md` as `needs-value` (the same install planned with `b72d0308` shows no such line). I did not reproduce the "duplicate slot name" error on a filled install at the newer checkout and did not diagnose either; both come from other plans' template changes after `b72d0308`, as the record says.
+
+### Corroborated, not mine
+
+* **NU-CSR8.** Passing tree, stdout reader gone: `afbb1f23` exits 120 and stderr says `BrokenPipeError: [Errno 32] Broken pipe`; `f949e342` exits 120 with stderr empty. The cause is the stdout flush sitting inside the fence at `bootstrap/verify_integrity.py:362`, so an `OSError` from stdout also fires the stderr redirect. This is a side effect of the fix for NU-CR1; NU-CR1 itself stays closed.
+* **NU-CSR7.** At the function level: `_plain_lines` of the engine's advisory with a line break and a forged `verify_integrity: OK -- ...` line in the skew text still returns the forged line on its own line. I did not rebuild the whole forked-facade tree; the Security Reviewer did.
+
+### NU-CR9 -- Info -- A non-ASCII file name in the hint can no longer be pasted
+
+`_plain` escapes any non-ASCII character, so a modified file named with an accented letter now appears in the `--finalize` hint as `r\xe9sum\xe9.md` where the plan's base printed it raw (measured). Cairn's own shipped paths are ASCII, so only an adopter-added non-ASCII path in the lockfile is affected, and the hint then names a path `--finalize` will not find. No fix required; if the author is already editing the hint's line, listing such a path quoted with the real name beside the escaped one would do.
+
+### What the next revision needs
+
+NU-CSR7 and NU-CSR8 (a few lines and their tests, as the Security verification recommends) and a fresh full Boundary B on the new bytes. A second code-review pass is owed only if that revision introduces new defects; the mutants for the two fixes (the advisory formatted from the raw finding; stdout flushed inside the fence) are ten minutes of work for whoever wants them checked.
+
+### What I did not cover
+
+* **Linux and Windows.** macOS only.
+* **NU-CSR7 end to end,** NU-CSR1 and NU-CSR2's memory and duplicate-record timings, the stdout-file-cannot-grow case: the Security verification's, not repeated.
+* **The implementer's 96-mutant ledger.** I ran 63 of my own, aimed at the findings.
+* **The engine's own copy of the advisory printed by `upgrade`.** The Maintainer's second question, outside this plan.
+* **Other sessions' uncommitted edits** in the shared tree. I read committed bytes only.
