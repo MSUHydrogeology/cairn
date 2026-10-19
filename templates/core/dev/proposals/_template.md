@@ -232,9 +232,9 @@ Name **one** check that could show the change is wrong about the world, not
 only about itself:
 
 * **What it compares.** The quantity, the expected value, and the tolerance
-  with its source. Say whether the data behind the expected value is in hand
-  and has been checked. If the check depends on data that does not exist yet,
-  say so.
+  with its source. Say whether you have opened the data and confirmed it holds
+  what the check needs; if not, name what you would open to confirm it. If the
+  check depends on data that does not exist yet, say so.
 * **Why the expectation is independent.** Neither the proposed code nor a test
   written from the same understanding computes it. Its basis is one of these:
   * an analytical or manufactured solution;
