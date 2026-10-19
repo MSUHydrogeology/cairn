@@ -237,6 +237,9 @@ invariant and public path, name the exact affected test node/file and every
 standing non-test gate for the touched surface. Run that scope while iterating.
 There is no permanent fast tier; if a substantive surface has no reviewed
 mapping or cannot be bounded confidently, run the configured full suite.
+**The full suite runs only as a certifying run** (`AGENTS.md` > Verification
+boundaries): this plan's own records are scoped and carry
+`**Certified by**: <commit>`, or `pending` until a certifying run covers them.
 
 After the final implementation commit, Boundary B runs once against a clean,
 unchanged commit under the project's canonical interpreter/runtime. The default

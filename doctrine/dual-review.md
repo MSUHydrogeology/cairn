@@ -363,6 +363,13 @@ mutation, and where another site is said to recover the value, mutating that
 site fails. Any equivalence that was not measured is reported as a survivor.
 Outside that trigger, mutation stays the reviewer's choice.
 
+**The reviewer never runs the full suite.** The full suite runs only as a
+certifying run, once per integration point (`doctrine/plans.md`). A record's
+full-suite evidence is the certifying run that contains the change's final
+commit, cited as `**Certified by**`. A fresh full run that a trigger below
+requires is the next certifying run, not the reviewer's own, and until it lands
+the change stays uncertified.
+
 **A Boundary B record may be `full` or `bounded`** (`doctrine/plans.md`). On a
 bounded record the reviewer additionally records
 `**Bounding**: ACCEPTED | FULL RUN REQUIRED`, after challenging at least one

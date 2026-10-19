@@ -254,12 +254,35 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
   routine, explicit instruction).
 * **Verification boundaries.** Three jobs; do not pay for the same broad run at
   every one.
+  * **The full suite runs only as a certifying run.** A full run is evidence
+    about a *tree*, not about one change, so it is paid for once per integration
+    point, never per change and never per revision. Wherever this section says
+    the full suite runs, a record is `full`, or a fresh full run is required,
+    that evidence comes from the next **certifying run** that contains the
+    change's final commit. It never comes from a run the implementer or a
+    reviewer makes for one change. A certifying run is the configured full suite
+    and every standing gate, on a clean committed tree under the configured
+    interpreter/runtime, and it is made only:
+    * before a push;
+    * before any ceremony that re-pins the project's gates;
+    * before a release cut;
+    * when the Maintainer asks for one.
+
+    One green run at commit `T` certifies every change at or before `T`. A
+    record cites it as `**Certified by**: <T>`, or as `pending` until one
+    exists. Nobody uses the suite's full-run override for any other reason. If a
+    certifying run fails, bisect the range since the last certified commit. The
+    change that broke it goes back to its owner, and nothing is pushed until the
+    tree certifies. This holds for already-open plans too: where a plan's own
+    text asks for a full Boundary B, a scoped record plus the certifying run
+    satisfies it.
   * **A — Iteration (scoped).** During implementation, run the tests and probes
     the reviewed plan maps — or, for a trivial change, with no proposal or plan,
     the tests that own each touched surface, found by searching for what imports
     or reads the touched files rather than by expectation — plus standing gates
-    for every touched surface. If a substantive surface has no such mapping, run
-    the full suite. A **substantive surface** is anything that is not ordinary
+    for every touched surface. If a substantive surface has no such mapping,
+    search for its owners the same way; if none can be found, say so in the
+    record, and the certifying run covers it. A **substantive surface** is anything that is not ordinary
     prose under the prose-only rule below: code, tests, executable templates and
     snippets, fixtures, manifests, and prose a test or manifest pins.
   * **B — Integration (stable evidence).** After the final implementation commit
@@ -269,7 +292,9 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
     verification slot; a change with no plan names them in its commit body,
     taking them from the plan template's slot or the project's conventions.
     This file does not hard-code either, because the command that is right
-    here is wrong in the next repository.
+    here is wrong in the next repository. Where this paragraph says the full
+    suite runs, read it as "the certifying run covers it" (above): the change's
+    own record is scoped, with `**Certified by**: pending`.
     Run the **full suite unless the mapping bounds the change's effects
     confidently** — if a substantive surface has no such mapping, or its effects
     **cannot be bounded confidently**, the full suite runs. **Bounded mode refuses**,
@@ -306,7 +331,9 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
     bounded record the reviewer records
     `**Bounding**: ACCEPTED | FULL RUN REQUIRED` after challenging at least one
     named surface, mapped test, or stated omission — never "the field is
-    present". A fresh full run is required when: **no valid Boundary B record exists**;
+    present". **The reviewer never runs the full suite.** A required fresh full
+    run is the next certifying run, and until it lands the change stays
+    uncertified. A fresh full run is required when: **no valid Boundary B record exists**;
     an **unrecorded cross-surface dependency** appears; the run reports a
     **skip, xfail, or xpass** the record does not dispose of; **review
     sharpening changes implementation, tests, executable templates, or**

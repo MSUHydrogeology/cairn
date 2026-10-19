@@ -407,11 +407,13 @@ def _refuse_broad_run_if_warranted(session) -> None:
     raise pytest.UsageError(
         f"Refusing a broad run: this invocation collected {len(session.items)} "
         f"test(s) across {span} files (limit {BROAD_RUN_FILE_THRESHOLD}).\n"
-        f"Run the tests your change actually maps to, or set "
-        f"{FULL_SUITE_ENV}={FULL_SUITE_VALUE} to allow the full suite "
-        f"deliberately.\n"
-        f"If you are verifying someone else's work, the run belongs to "
-        f"whoever asked for it -- report back rather than running it here."
+        f"Run the tests your change actually maps to.\n"
+        f"The full suite runs only as a certifying run: before a push, before "
+        f"the Maintainer's re-anchor ceremony, before a release cut, or when "
+        f"the Maintainer asks (AGENTS.md > Verification boundaries). Record "
+        f"'Certified by: pending' and let that run cover your change.\n"
+        f"If you are verifying someone else's work, never run it -- report "
+        f"back instead."
     )
 
 

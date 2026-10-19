@@ -298,6 +298,21 @@ establish coverage. If a substantive surface has no such mapping, or its
 effects cannot be bounded confidently, the full project suite is the
 fail-closed fallback.
 
+**The full suite runs only as a certifying run.** A full run is evidence about
+a tree, not about one change, so it is paid for once per integration point,
+never per change and never per revision. Wherever this document says the full
+suite runs, a record is `full`, or a fresh full run is required, that evidence
+comes from the next certifying run that contains the change's final commit. It
+never comes from a run the implementer or a reviewer makes for one change. A
+certifying run is the full suite and standing gates on a clean committed tree,
+made only before a push, before a ceremony that re-pins the gates, before a
+release cut, or when the Maintainer asks for one. One green run at commit `T`
+certifies every change at or before `T`. A record cites it as
+`**Certified by**: <T>`, or as `pending` until one exists. If a certifying run
+fails, the range since the last certified commit is bisected, and the change
+that broke it goes back to its owner. Nothing is pushed until the tree
+certifies.
+
 Work confined to ordinary prose or deliberation records runs the applicable
 claim, link, snippet, schema, and neutrality gates rather than an unrelated
 engine suite, on any surface, a high-risk one included. When a search finds no

@@ -249,17 +249,50 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
   routine, explicit instruction).
 * **Verification boundaries.** Three jobs; do not pay for the same broad run at
   every one.
+  * **The full suite runs only as a certifying run.** A full run is evidence
+    about a *tree*, not about one change, so it is paid for once per integration
+    point, never per change and never per revision. Wherever this section says
+    the full suite runs, a record is `full`, or a fresh full run is required,
+    that evidence comes from the next **certifying run** that contains the
+    change's final commit. It never comes from a run the implementer or a
+    reviewer makes for one change. A certifying run is Cairn's pair (Boundary B,
+    below) on a clean committed tree under the canonical interpreter, and it is
+    made only:
+    * before a push;
+    * before the Maintainer's re-anchor ceremony;
+    * before a release cut;
+    * when the Maintainer asks for one.
+
+    One green run at commit `T` certifies every change at or before `T`. A
+    record cites it as `**Certified by**: <T>`, or as `pending` until one
+    exists. **Nobody sets `CAIRN_FULL_SUITE=1` for any other reason**: not at
+    Boundary A, not for a Boundary B record, not to reproduce another agent's
+    record, and not for a mutation sweep. The broad-run guard refuses without
+    it, and that refusal is this rule working. If a certifying run fails, bisect
+    the range since the last certified commit. The change that broke it goes
+    back to its owner, and nothing is pushed until the tree certifies. This
+    holds for already-open plans too: where a plan's own text asks for a full
+    Boundary B, a scoped record plus the certifying run satisfies it.
+  * **The suite has a budget.** A test pins a property in one node.
+    Parametrizing over every word, line or file of a text does not test a
+    property, and a mutation ledger breaks the claims under review, not every
+    token. If a certifying run takes longer than 10 minutes on the canonical
+    machine with nothing else running, the next goodnight scrub queues a
+    consolidation row.
   * **A — Iteration (scoped).** During implementation, run the tests and probes
     the reviewed plan maps — or, for a trivial change, with no proposal or plan,
     the tests that own each touched surface, found by searching for what imports
     or reads the touched files rather than by expectation — plus standing gates
-    for every touched surface. If a substantive surface has no such mapping, run
-    the full suite. A **substantive surface** is anything that is not ordinary
+    for every touched surface. If a substantive surface has no such mapping,
+    search for its owners the same way; if none can be found, say so in the
+    record, and the certifying run covers it. A **substantive surface** is anything that is not ordinary
     prose under the prose-only rule below: code, tests, executable templates and
     snippets, fixtures, manifests, and prose a test or manifest pins.
   * **B — Integration (stable evidence).** After the final implementation commit
     and before code review, against a clean unchanged commit under the
-    **canonical interpreter (Python 3.13.x)**. Cairn's pair is
+    **canonical interpreter (Python 3.13.x)**. Where this paragraph says the
+    full suite runs, read it as "the certifying run covers it" (above): the
+    change's own record is scoped, with `**Certified by**: pending`. Cairn's pair is
     `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests
     --quality-gate-shuffle-seed=0` then
     `python scripts/quality_gate.py --sub neutrality --sub redundancy`.
@@ -299,7 +332,9 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
     bounded record the reviewer records
     `**Bounding**: ACCEPTED | FULL RUN REQUIRED` after challenging at least one
     named surface, mapped test, or stated omission — never "the field is
-    present". A fresh full run is required when: **no valid Boundary B record exists**;
+    present". **The reviewer never runs the full suite.** A required fresh full
+    run is the next certifying run, and until it lands the change stays
+    uncertified. A fresh full run is required when: **no valid Boundary B record exists**;
     an **unrecorded cross-surface dependency** appears; the run reports a
     **skip, xfail, or xpass** that the record does not dispose of; **review
     sharpening changes implementation, tests, executable templates, or**
