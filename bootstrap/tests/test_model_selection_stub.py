@@ -15,6 +15,7 @@ Run from the cairn repo root::
 from __future__ import annotations
 
 import builtins
+import io
 import importlib.util
 import os
 import subprocess
@@ -1068,3 +1069,35 @@ class TestCaptureWritesByReplacing:
         with pytest.raises(ScaffoldSecurityError):
             capture_model_selection_mapping(tmp_path, prompt=swap)
         assert victim.read_bytes() == b"outside"
+
+    def test_real_interactive_install_refuses_link_without_leaking_target(
+        self, tmp_path: Path, monkeypatch, capsys
+    ) -> None:
+        from bootstrap._scaffold import cli
+
+        class Terminal(io.StringIO):
+            def isatty(self) -> bool:
+                return True
+
+        monkeypatch.setattr(cli.sys, "stdin", Terminal())
+        cfg = tmp_path / "profile.yml"
+        cfg.write_text(
+            "project_name: Demo\ntest_command: pytest\nmodules:\n"
+            "  - model-selection\n", encoding="utf-8"
+        )
+        mapping = tmp_path / "dev/.cairn/model-selection-mapping.yml"
+        mapping.parent.mkdir(parents=True)
+        victim = tmp_path / "distinctive-outside-file"
+        victim.write_bytes(_STUB_SRC.read_bytes())
+        mapping.symlink_to(victim)
+        before = victim.read_bytes()
+        assert scaffold_main([
+            "--config", str(cfg), "--target", str(tmp_path),
+            "--cairn-root", str(CAIRN_ROOT), "--allow-dev",
+        ]) == 2
+        captured = capsys.readouterr()
+        assert "error: model-selection capture refused (containment)" in captured.err
+        assert "Replace it with a regular file" in captured.err
+        assert "distinctive-outside-file" not in captured.err
+        assert victim.read_bytes() == before
+        assert not (tmp_path / "dev/.cairn/cairn-lock.yml").exists()
