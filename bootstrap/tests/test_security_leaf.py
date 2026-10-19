@@ -140,6 +140,35 @@ class TestWriteByReplacing:
         assert dst.read_bytes() == b"old"
         assert list(tmp_path.glob("*.tmp")) == []
 
+    def test_swapped_temp_cannot_change_victim_mode(self, tmp_path, monkeypatch):
+        from bootstrap._scaffold import security as S
+        if not hasattr(os, "fchmod"):
+            pytest.skip("descriptor mode setting unavailable")
+        target = tmp_path / "target"
+        target.mkdir()
+        dst = target / "file"
+        dst.write_bytes(b"old")
+        dst.chmod(0o640)
+        victim = tmp_path / "victim"
+        victim.write_bytes(b"outside")
+        victim.chmod(0o600)
+        monkeypatch.setattr(S.secrets, "token_hex", lambda _: "fixed")
+        staged = target / "file.fixed.tmp"
+        real_fchmod = S.os.fchmod
+
+        def swap_then_chmod(fd, mode):
+            staged.unlink()
+            staged.symlink_to(victim)
+            real_fchmod(fd, mode)
+
+        monkeypatch.setattr(S.os, "fchmod", swap_then_chmod)
+        with pytest.raises(S.ScaffoldSecurityError):
+            S._write_by_replacing(dst, b"new", target)
+        assert dst.read_bytes() == b"old"
+        assert victim.read_bytes() == b"outside"
+        assert stat.S_IMODE(victim.stat().st_mode) == 0o600
+        assert staged.is_symlink()
+
 
 def _guard_calls_by_function() -> dict[str, set[str]]:
     """Map ``{function_name: {guard names it calls}}`` across the engine package."""
