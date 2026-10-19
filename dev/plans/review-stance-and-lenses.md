@@ -2249,3 +2249,7 @@ cells are append-only once implementation has begun.
 `check_module_body_coverage.py` reads 11 missing topics against 8 at the base,
 because three doctrine headings the module used to repeat now live in the
 review-loop document.
+
+Untracked paths: `templates/modules/team-gated/dual-review.md:136-144` -- the old
+module's ledger lines, quoted in the deviation request above; the thinned module
+has 59 lines, so the range no longer exists.

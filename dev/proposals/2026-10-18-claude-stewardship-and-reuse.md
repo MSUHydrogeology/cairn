@@ -693,6 +693,10 @@ Read at `f804f3b7` unless noted.
 * **The frozen-file counts.** 32, 6, 4, 3 and 1, reproduced from `bootstrap/tests/fixtures/gate_manifest.json` > `frozen_files`. No frozen file, and no test, script or tool, contains any phrase this proposal removes or rewrites: `defer-OK`, `genuinely one-line`, `Capture vs`, `scope, not size`, `There is no required order`, `Every deferred item is recorded`, `trivial one-line bar`. Control: the same search finds `accepted scope is a floor` pinned in the gate manifest.
 * **The August figures.** 59 items in 1,002 lines (`dev/proposals/archive/2026-08-04-claude-deferral-discipline.md:24-25`); finding I9 is at `:711`.
 
+Untracked paths: `templates/modules/team-gated/dual-review.md:58-60`, `dev/modules/dual-review.md:57-59` --
+the review-stance plan's chunk C7b thinned the module; lens 5 now sits in
+`dev/agent_collaboration.md` under "The review sweep", so these line ranges no longer exist.
+
 ### Answers to the proposal's five questions
 
 1. **What counts as cheap.** Agree on counting ceremony, not lines, and on "doubt means not cheap" for the named surfaces. Two changes first (SW1). Drop the full-run sentence. Use two bars: "about a chunk's worth" for the plan's own findings, and the fix-shaped test for the exception.

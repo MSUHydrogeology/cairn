@@ -371,6 +371,9 @@ string. Those test **names** are Chunk D's problem and are gated there.
 | `bootstrap/tests/test_security_lint.py` | 10 | 0 |
 | `bootstrap/tests/test_onboarding_review_tiers.py` | 9 | 0 |
 
+Untracked paths: `bootstrap/tests/test_onboarding_review_tiers.py` -- deleted by the
+review-stance plan's chunk C7a; the table above records it as it stood.
+
 Nothing kept — every coordinate here traced to a closed round, and in every case
 the descriptive name was already sitting beside it (`S4 content-scan` →
 `content-scan`; `# --- P1: the NOTICE.md install path` → `# --- The NOTICE.md
