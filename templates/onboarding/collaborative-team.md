@@ -60,9 +60,9 @@ candidates upstream early, rather than letting the practice lapse.
 <!-- cairn:if agent_team in concurrent-multi-type -->
 * [seed; id: read-dual-review-module]
   Read `dev/modules/dual-review.md`. The collaborative-team
-  preset installs the dual-review module by default; the
-  External-tier review now has structural independence from
-  the start.
+  preset installs the dual-review module by default; it carries
+  the guidance for staffing a read the Maintainer calls from a
+  different agent type, which this team can now staff.
 <!-- cairn:endif -->
 
 * [seed; id: walk-dev-tour]
@@ -82,9 +82,10 @@ candidates upstream early, rather than letting the practice lapse.
 * [seed; id: sign-collab-agreement-day-one]
   Convene the team + agents in your first session and fill the
   `team-roster` slot in `dev/collaboration_agreement.md`. The
-  roster is what makes Dual-Review's External tier
-  structurally meaningful; teams without an explicit roster
-  fall back to fresh-session same-vendor review, which the
+  roster records who is who, so every review names its
+  reviewer and a read the Maintainer calls from a different
+  agent type can be staffed; a team without an explicit roster
+  has reviews no one can attribute, which the
   collaborative-team profile is sized past.
 
 * [trigger: first-proposal-archived; id: post-first-proposal-team]
@@ -95,10 +96,9 @@ candidates upstream early, rather than letting the practice lapse.
 
 * [trigger: first-cross-type-review; id: post-first-cross-type]
   Your first cross-agent-type review just shipped. That's the
-  Dual-Review apparatus delivering on its structural-independence
-  promise. Coordinate the next few proposals to keep
-  cross-type-review the default; same-vendor review is now
-  the backup, not the baseline.
+  distance a different agent type brings, recorded in the file.
+  Ask for it again when you want more distance on a piece of
+  work; a fresh session remains the usual review.
 
 * [seed; id: walk-foldback-protocol]
   The fold-back practice: when the team improves the method
@@ -116,16 +116,16 @@ The two active-surfacing rows the collaborative-team preset emits:
 
 Convene your team + agents. Negotiate roles + decision-rights.
 Fill the team-roster slot of `dev/collaboration_agreement.md`
-together; the explicit roster is what makes the Dual-Review
-External tier structurally meaningful for a multi-agent team.
-Without it, External-tier review falls back to fresh-session
-same-vendor, which the collaborative-team shape is sized past.
+together; the explicit roster records who is who, so every
+review names its reviewer and a read the Maintainer calls from a
+different agent type can be staffed. Without it, reviews cannot
+be attributed, which the collaborative-team shape is sized past.
 
 ### Row 2 -- second-agent-type spin-up prompt
 
 Your collaborative-team profile expects multi-agent operation;
-the second agent type fills the External-review tier with
-structural independence the same-vendor lens cannot. Walk
+the second agent type makes a more distant read available whenever
+the Maintainer asks for one. Walk
 `dev/modules/onboarding/agent-team-onboarding.md`; the team's existing roster +
 intent-claim discipline already cover the coordination
 preconditions, so spin-up is faster than a fresh start.

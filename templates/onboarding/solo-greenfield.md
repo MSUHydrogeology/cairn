@@ -69,14 +69,15 @@ no multi-agent coordination, no legacy-tree pre-pass.
   slot in `dev/collaboration_agreement.md` with your name + your
   agent's identifier. No multi-party negotiation needed --
   you're the team -- but the explicit roster matters for the
-  cross-agent-type review tier when you add a second agent later.
+  later review: it records who is who, so every review names its
+  reviewer when you add a second agent.
 
 * [trigger: second-agent-type; id: spin-up-second-agent]
-  You're at the point where a second agent type would meaningfully
-  strengthen Dual-Review. The External floor is already filled by
-  the human Maintainer's read; a second agent type adds a
-  structurally-independent agent to both tiers and eases how much
-  falls on you alone. Walk
+  You're at the point where a second agent type would be useful.
+  Fresh sessions of your agent already do every review, and you can
+  read any piece of work yourself; a second agent type makes a
+  different model's read available whenever you ask for one, and
+  eases how much falls on you alone. Walk
   `dev/modules/onboarding/agent-team-onboarding.md` for the spin-up
   checklist.
 
@@ -99,18 +100,18 @@ given below:
 Fill in your own name + your agent's identifier in the team-roster
 slot of `dev/collaboration_agreement.md`. No multi-party
 negotiation needed; you're the team. The roster makes the
-fresh-session Internal review tier reproducible -- real value, not
-a formality (the second session of your agent reviewing its own
-prior work catches what the first session missed); the External
-floor is filled by the human Maintainer's read.
+fresh-session review reproducible -- real value, not a formality
+(the second session of your agent reviewing its own prior work
+catches what the first session missed); and you can read any piece
+of work yourself whenever you want more distance.
 
 ### Row 2 -- second-agent-type spin-up prompt
 
 Your solo deployment has matured to a point where a second agent
-type would meaningfully strengthen Dual-Review. The External floor
-is already filled by the human Maintainer's read; a second agent
-type adds a structurally-independent agent option to both tiers
-and eases how much falls on you alone. Walk
+type would be useful. Fresh sessions of your agent already do every
+review, and you can read any piece of work yourself; a second agent
+type makes a different model's read available whenever you ask for
+one, and eases how much falls on you alone. Walk
 `dev/modules/onboarding/agent-team-onboarding.md` for the spin-up
 checklist; the second agent's capability tier should match the
-work Dual-Review carries.
+work it will do.

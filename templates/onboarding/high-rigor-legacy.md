@@ -59,7 +59,7 @@ goes live.
   Read `dev/modules/security-review.md`. The high-rigor-legacy
   preset installs the security-review module by default; legacy
   codebases carry security boundaries that the
-  proposal-lifecycle's normal review tier does not necessarily
+  proposal-lifecycle's normal review does not necessarily
   surface. Security-review is the explicit channel for that
   class of finding.
 
@@ -110,10 +110,11 @@ goes live.
 
 * [trigger: first-cross-type-review; id: post-first-cross-type-legacy]
   Your first cross-agent-type review just shipped. For
-  high-rigor-legacy this is foundational -- the Dual-Review
-  External tier is the structural check that legacy domain
-  knowledge alone cannot supply. Make cross-type-review the
-  default going forward.
+  high-rigor-legacy a different agent type's read is useful
+  distance -- a check that legacy domain knowledge alone cannot
+  supply. Ask for it again whenever the Maintainer wants that
+  distance on a protected change; the usual review stays a fresh
+  session.
 
 * [seed; id: walk-foldback-protocol]
   The fold-back practice: when the method itself improves, not
@@ -132,18 +133,19 @@ The two active-surfacing rows the high-rigor-legacy preset emits:
 ### Row 1 -- collab-agreement-signing prompt
 
 Confirm the existing maintainer's authority is reflected in the
-team-roster slot of `dev/collaboration_agreement.md`. Negotiate
-review-tier floor for protected changes. Multi-stakeholder fill
+team-roster slot of `dev/collaboration_agreement.md`. Name which
+changes are protected (see the high-risk surfaces in `AGENTS.md`).
+Multi-stakeholder fill
 is the expected shape; the team-roster slot is the surface
 where pre-existing power structure gets made explicit to the
 Cairn apparatus.
 
 ### Row 2 -- second-agent-type spin-up prompt
 
-Your high-rigor-legacy profile's review rigor depends on
-multi-agent staffing. Walk `dev/modules/onboarding/agent-team-onboarding.md`; the
+Your high-rigor-legacy profile benefits from multi-agent
+staffing. Walk `dev/modules/onboarding/agent-team-onboarding.md`; the
 second agent type's capability tier should be calibrated against
-your security-review module's bar -- a strong second agent
-strengthens the External-tier review's structural independence
-for the security-boundary class of finding that legacy
-codebases carry.
+your security-review module's bar -- a strong second agent gives
+the Maintainer a more distant read to call for, on the
+security-boundary class of finding that legacy codebases
+carry.

@@ -1703,3 +1703,103 @@ def test_a_copy_that_drifts_from_its_page_is_reported() -> None:
     page = _text(DOCS_ONBOARDING)
     assert page == _text(INSTALLED_ONBOARDING), "control: the pair is equal"
     assert page != page + " "
+
+
+# --------------------------------------------------------------------------
+# The onboarding presets and their installed copies. No preset may say that
+# someone "fills" or "staffs" a review tier, and the two wordings an earlier,
+# narrower guard existed to keep out stay out as literals. The earlier guard
+# counted exactly three staffed paragraphs in one preset, which stopped being
+# a property worth pinning once there is no tier to staff.
+# --------------------------------------------------------------------------
+
+PRESET_DIRS = ("templates/onboarding", "dev/modules/onboarding")
+SHIPPED_PRESETS = ("templates/onboarding/solo-greenfield.md",
+                   "templates/onboarding/collaborative-team.md",
+                   "templates/onboarding/high-rigor-legacy.md")
+
+
+def _preset_files() -> list[str]:
+    """Every markdown file under the two preset folders, found by glob.
+
+    A preset added later is therefore scanned without editing this list. The
+    installed folder also holds the two onboarding pages that ship to every
+    install, so those are scanned too.
+    """
+    found: list[str] = []
+    for d in PRESET_DIRS:
+        found.extend(path.relative_to(CAIRN_ROOT).as_posix()
+                     for path in sorted((CAIRN_ROOT / d).glob("*.md")))
+    return found
+
+
+#: The two wordings the retired guard kept out of the solo preset, as literals.
+_RETIRED_LITERALS = {
+    "an-external-tier-currently-filled-by-a-fresh-session":
+        "external tier (currently filled by fresh-session same-vendor review)",
+    "a-fresh-session-external-review-tier":
+        "fresh-session external review tier reproducible",
+}
+#: The full historic sentences the literals came out of. They are fixed strings,
+#: not derived from the literals above, so inserting them into a real copy
+#: tests the literals without taking the mutation from the pattern under test.
+_RETIRED_SENTENCES = {
+    "an-external-tier-currently-filled-by-a-fresh-session":
+        "This strengthens Dual-Review's External tier (currently filled by "
+        "fresh-session same-vendor review).",
+    "a-fresh-session-external-review-tier":
+        "The roster makes the fresh-session External review tier reproducible "
+        "(the second session of your agent reviewing its own prior work).",
+}
+#: A sentence that names the review honestly and must not be flagged: it is the
+#: shape the rewritten solo preset uses.
+_CORRECT_SENTENCE = ("The roster makes the fresh-session review reproducible "
+                     "-- real value, not a formality")
+
+
+def _preset_flags(text: str) -> list[str]:
+    flat = _normalize(text).lower()
+    flags = _present(text, _FORBIDDEN)
+    flags += [label for label, literal in _RETIRED_LITERALS.items()
+              if literal in flat]
+    return flags
+
+
+def test_the_preset_glob_holds_every_shipped_preset() -> None:
+    files = _preset_files()
+    assert files, "the preset folders hold no markdown; the glob scans nothing"
+    for preset in SHIPPED_PRESETS:
+        assert preset in files, f"{preset} is missing from the preset glob"
+    assert "dev/modules/onboarding/collaborative-team.md" in files
+    assert DOCS_ONBOARDING.replace("docs/", "dev/modules/onboarding/") in files
+
+
+@pytest.mark.parametrize("rel", _preset_files(), ids=lambda r: r.replace("/", "-"))
+def test_a_preset_names_no_review_tier_anyone_fills(rel: str) -> None:
+    found = _preset_flags(_text(rel))
+    assert not found, f"{rel} {_FORBIDDEN_REASON} Found: {found}"
+
+
+@pytest.mark.parametrize("label", sorted(_RETIRED_LITERALS))
+def test_each_retired_literal_matches_its_historic_sentence(label: str) -> None:
+    """The literal is not vacuous: the sentence it came from contains it."""
+    assert _preset_flags(_text(SHIPPED_PRESETS[0])) == []
+    assert _RETIRED_LITERALS[label] in _normalize(_RETIRED_SENTENCES[label]).lower()
+
+
+@pytest.mark.parametrize("rel", SHIPPED_PRESETS, ids=lambda r: r.split("/")[-1])
+@pytest.mark.parametrize("label", sorted(_RETIRED_LITERALS))
+def test_putting_a_retired_sentence_back_in_a_preset_is_reported(
+        label: str, rel: str) -> None:
+    """The control uses the whole historic sentence, not the literal's own text."""
+    intact = _text(rel)
+    assert _preset_flags(intact) == [], (
+        f"{rel}: the unmutated preset is already flagged; no control.")
+    assert label in _preset_flags(f"{intact}\n\n{_RETIRED_SENTENCES[label]}\n")
+
+
+def test_a_correctly_worded_sentence_is_not_flagged() -> None:
+    """The guard has no false positive on the shape the solo preset now uses."""
+    solo = _normalize(_text(SHIPPED_PRESETS[0]))
+    assert _CORRECT_SENTENCE in solo, "control: the sentence is in the preset"
+    assert _preset_flags(_CORRECT_SENTENCE) == []
