@@ -1,7 +1,7 @@
 # Plan: neutrality and upgrade slots -- a vendor-name check that reads zero, and a note for slots an upgrade adds
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-neutrality-and-upgrade-slots.md`
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance -- inherited from the proposal: the work widens the neutrality checker, adds code to the lockfile reader adopters run before they trust their scripts (`bootstrap/verify_integrity.py`), and edits comments in two security-relevant scripts (the interpreter binding and the content scanner)
 **Opened**: 2026-10-18
@@ -1920,3 +1920,190 @@ bootstrap/tests/test_verify_integrity.py::test_an_ascii_control_character_is_esc
 * `upgrade` prints the forked-facade advisory through the engine's formatter, whose source-version line carries the lockfile's `cairn_version` raw. `verify_integrity` now escapes the advisory on the way out; the engine is untouched, and escaping it for `upgrade` is the engine repair the Maintainer's second question refers to.
 * The note's line count is uncapped (NU-CR8, `accept`).
 * The probes were not run end to end at the tested commit, for the reason given above.
+
+## Security verification of the revision -- Claude Opus 5.5 -- 2026-10-19
+
+```
+Reviewed commit: f949e342fcaa8e0206a550175822a7d1f5305ef0 (the tested commit of the second implementation verification, 03c36a4b)
+Target: the revision's security-relevant changes, read against afbb1f23 (what the first Security Review read) and bb4f710a (the plan's parent): the fence's stderr redirect (NU-CR1, cf102f2c), the escaping of the existing report (f949e342, at the Maintainer's instruction), and the fixes for NU-CSR1 to NU-CSR3
+Prior findings: NU-CSR1 to NU-CSR6 (e73b1572); NU-CR1 (327f7734) where it touches the fence
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review (verification of the revision)
+**Tier**: Internal Security Review
+**Findings**: raised (4; none blocking)
+
+**Model**: claude-opus-5-5
+
+Distance: a fresh session, the same author as the Security Review section above (`e73b1572`). I am not the implementer, and I wrote none of the revision.
+
+### In plain terms
+
+**The revision is safe and the obligation clears.** Two small fixes are still worth making before archive. Neither can change pass or fail.
+
+* **The fence change cannot change pass or fail.** In every case I tried, the exit code matches the parent's, except in the case the change was built for: a passing check whose stderr reader has gone now exits 0 (it was 120). A failing check still fails, every time. The report and the `--finalize` hint print before the fence runs, so nothing the redirect does can hide them.
+* **It can hide one real message** (NU-CSR8). Sometimes *stdout* cannot be written: the disk is full, or its reader has gone. The check still exits 120, but the redirect now throws away Python's one-line explanation of why. Before the revision that line appeared.
+* **The escaping works at all ten fields, with one exception.** At every report site I tried 15 kinds of unsafe character, a lone surrogate, and a line break carrying a forged "OK" line. The parent printed up to 50 raw bytes per tree, and forged lines at eight sites. The revision prints none, except at one site.
+* **That site is the forked-facade advisory** (NU-CSR7). A line break inside the lockfile's `cairn_version` still prints as a real line break. So a crafted lockfile can add whole lines: a fake `verify_integrity: OK`, and a fake "Then record it: ... --finalize scripts/evil.py" printed just above the genuine report that names that same file as tampered. The parent does the same, and it needs a lockfile change, but it is exactly the kind of printed command SR15 removed from the note.
+* **`_plain` is sound for the terminal.** It never emits anything but printable ASCII, over all 1,114,112 code points, and it makes look-alike letters visible. Its output cannot be read back, though: a real escape character and the same escape typed as plain text print identically (NU-CSR10, information only).
+* **The static test holds, but is narrower than its docstring** (NU-CSR9, information only). It caught none of the three regressions I planted; the per-site behaviour tests caught all three.
+* **NU-CSR1 to NU-CSR3 are closed**, re-measured with the probes from the first pass.
+
+Status moves to `revising-code` for NU-CSR7 and NU-CSR8. Each is a few lines. I tried both on a scratch copy, and all 153 tests stayed green, which also shows that no test pins either one yet. A changed implementation byte voids the second Boundary B record, so a fresh run is owed. No further Security Review is owed if the revision touches only those lines and their tests.
+
+### What I ran
+
+* **Setup.** Every run used `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13) on macOS. The trees were detached `git worktree`s of `f949e342` and `bb4f710a` in a fresh, uniquely named scratch folder, plus `git archive` extractions for mutants; the shared tree got only this claim and this section.
+* **Side by side.** The parent's verifier ran beside the revision's, on the same engine. I read the blobs `verify_integrity.py` `ba0b9375` and its test file `98afff98`.
+* **Real trees.** A fresh `solo-greenfield` install (passing) and a copy with a planted line in `AGENTS.md` (failing).
+
+**1. The fence** (NU-CR1; `bootstrap/verify_integrity.py:336-374`).
+
+| Case | Parent | Revision |
+|---|---|---|
+| passing; stderr reader gone before launch | 0 | 0 |
+| failing; stderr reader gone before launch | 120 | 120 |
+| passing; 40 runs of `2>&1 \| grep -q "verify_integrity: OK"` (the check's own exit code) | 0 in 40 of 40 | 0 in 40 of 40 |
+| failing; 40 runs of `2>&1 \| grep -q "integrity violation"` | 1 in 40 of 40 | 1 in 40 of 40 |
+| passing; stdout reader gone | 120; stderr: `Exception ignored on flushing sys.stdout:` and `BrokenPipeError: [Errno 32] Broken pipe` | 120; stderr empty |
+| passing; stdout a file that cannot grow (`ulimit -f 0`) | 120; stderr: the same line and `OSError: [Errno 27] File too large` | 120; stderr empty |
+| failing; stdout reader gone, or a file that cannot grow | 1; full report on stderr | 1; full report on stderr |
+
+**Why the fence cannot change pass or fail.**
+
+* It runs after `verify()` has fixed its return value and printed the report.
+* `_stop_writing_to_stderr` only repoints descriptor 2. The 0 or 1 is `verify()`'s return; the redirect only stops Python's exit-time flush from replacing it with 120.
+* On a failing run whose stderr reader has gone, the report's own write fails first, outside the fence, so the run exits non-zero (120), as in the parent.
+
+The redirect is process-wide. For the command line that is harmless, because nothing writes afterwards. For an in-process caller of `verify()` it would also silence that caller's stderr; only tests call it that way today.
+
+My mutants (each in a fresh extraction, against the 153-test file): redirect on every exception, killed; redirect before the note runs, killed; no redirect, killed.
+
+**2. The report's escaping** (`f949e342`).
+
+*Print sites, listed from the tree.* I walked the AST for every `print`, `_say` and `violations.append` call:
+
+| Line | Where | Lockfile-derived text | Through |
+|---|---|---|---|
+| 420 | malformed record | the whole record | `ascii()` |
+| 424, 433, 452, 459, 464 | unsafe dst, dst escapes, illegal living_state, missing, modified | `dst_rel` | `_plain` |
+| 428 | malformed hash | `dst_rel`; the recorded hash | `_plain`; `ascii()` |
+| 509 | the hint's `--finalize` list | each customized `dst_rel` | `_plain`, inside a string join |
+| 483 | the forked-facade advisory | `cairn_version` (as the skew line); the facade's `dst` and engine folder | `_plain_lines`; `dst` and engine are also `!r` in the engine's formatter |
+| 321 | the note's listed slots | the path and the slot name | `ascii()` |
+| 395, 532 | fail-closed and usage messages | none: `target` is the command-line argument | not escaped |
+| 401, 488, 516, 323-333, 372 | counts, constants, the fence's type name | none | none needed |
+
+Every lockfile-derived value goes through an encoder. The `--target` path is printed raw in two messages, but it is the operator's own argument, not lockfile text, and so outside the Maintainer's instruction.
+
+*Crafted text at every site.* 9 sites, three strings each:
+
+* EVIL: an ESC colour sequence, BEL, backspace, CR, tab, DEL, the one-byte CSI U+009B, a right-to-left override, a left-to-right isolate, a zero-width joiner, a byte-order mark, and a Cyrillic and a fullwidth letter.
+* FORGE: a line break followed by a forged `verify_integrity: OK -- 47 recorded file(s) match ...` line.
+* SURR: a lone surrogate, at the sites that need no file of that name.
+
+For each, I counted raw unsafe bytes on stderr (below 0x20 apart from line feed, or 0x7F and above) and lines beginning `verify_integrity: OK`, with note lines removed.
+
+| Site | Parent: raw bytes (EVIL) / forged lines (FORGE) | Revision |
+|---|---|---|
+| malformed record | 5 / 0 | 0 / 0 |
+| unsafe dst | 25 / 1 | 0 / 0 |
+| malformed hash | 30 / 1 | 0 / 0 |
+| dst escapes | 25 / 1 | 0 / 0 |
+| illegal living_state | 25 / 1 | 0 / 0 |
+| missing | 25 / 1 | 0 / 0 |
+| modified | 25 / 1 | 0 / 0 |
+| the hint's `--finalize` list | 50 / 2 | 0 / 0 |
+| the forked-facade advisory (`cairn_version`) | 25 / 1 | 0 / **1** (NU-CSR7) |
+
+Exit codes were equal in every run. SURR gave 0 raw bytes in both and no crash, because Python's stderr already backslash-escapes a surrogate.
+
+*`_plain` itself.*
+
+* For every code point c, `_plain("x" + c + "y")` holds only printable ASCII: 0 exceptions.
+* Look-alike letters show: `\u0410GENTS.md` (Cyrillic A), `\uff21GENTS.md` (fullwidth A).
+* `ascii()`'s choice of quote is stripped correctly: `both \' "\x07`.
+* A path holding a real ESC and a path holding the four typed characters `\x1b` both print `a\x1bb.md`. The same is true for 1,114,014 code points: each prints the same as its own escape typed as text (NU-CSR10).
+
+*The static test.* It passes on the tested bytes (153 passed). I planted three regressions, each in a fresh extraction:
+
+1. a new report line printing the resolved path `{dst}`;
+2. the hint's list back to `" ".join(customized)`;
+3. the advisory printed without `_plain_lines`.
+
+The static test passed all three. The whole file failed each: (1) 3 failures (the dst-escapes and living-state site tests), (2) 1 (finalize-hint), (3) 1 (forked-facade-advisory). NU-CSR9.
+
+**3. NU-CSR1 to NU-CSR3, re-measured with the first pass's probes.**
+
+| Finding | Probe | First pass (`afbb1f23`) | Revision (`f949e342`) | Mutant |
+|---|---|---|---|---|
+| NU-CSR1 | 50 files, each with 4,800 near-cap token slots | 21.2 s | 0.56 s, every file "unreadable" (parent 0.08 s) | "budget never spent": killed by `many-slots-each-near-the-cap-in-one-file` |
+| NU-CSR1 | one file pair under 20 duplicate records | 8.4 s | 0.26 s (parent 0.10 s) | |
+| NU-CSR2 | twelve 40 MB hash-matching files, peak memory | 536 MB | 117 MB (parent 116 MB) | "kept whole": killed by `test_the_note_is_handed_no_more_of_a_file_than_it_can_use` |
+| NU-CSR3 | drop the `..` check | survived | | killed by `base_cache-dotdot-out-of-the-project` |
+
+* **A residual.** At 1,000 duplicate records the revision takes 10.2 s, against 0.23 s for the parent. That is about 10 ms of Python parsing per cap-sized record, linear in the record count. The parent has the same lever (it hashes a duplicated file once per record), so this is not new in kind. I recommend nothing.
+* **Two more mutants.** `_plain` without its `isascii()` test was killed by the look-alike test; without its `isprintable()` test, by the ASCII-control test. In all, 8 mutants this pass, 8 killed.
+* **NU-CSR4 to NU-CSR6** landed as the Response says.
+  * The guide no longer says "no code can close". It says the exit code is unchanged when stderr's reader has gone, which is true, as measured.
+  * The docstring says "no command of its own".
+  * *Dispositions* adds file and folder names to zero's limits.
+  * `test_every_file_type_the_installer_ships_is_one_the_gate_reads` exists.
+
+### Findings
+
+**[NU-CSR7] (Low, non-blocking; fix before archive) The forked-facade advisory still lets a line break from the lockfile through.**
+
+* **Evidence.**
+  * `_plain_lines` (`bootstrap/verify_integrity.py:387-389`) escapes each line of the advisory, but keeps every line break, including one that came from the lockfile.
+  * The engine puts the lockfile's `cairn_version` into the advisory raw, as the source-version skew line: `bootstrap/_scaffold/lockfile.py:485` builds it, and `:612` prints it.
+  * The facade's `dst` and engine folder print with `!r`, and the other fields come from the trusted checkout. So `cairn_version` is the one lockfile value that reaches the advisory raw.
+  * The probe tree has three parts: a facade finding (a verbatim `tools/intent.py` whose `base_hash` differs, with `tools/_intent/` installed); a tampered `scripts/evil.py`; and a `cairn_version` of `0.1`, a line break, `verify_integrity: OK -- 47 recorded file(s) match dev/.cairn/cairn-lock.yml.`, another line break, and the hint's own wording ending `--finalize scripts/evil.py`.
+  * Parent and revision both print the forged OK line and the forged hint, just above the genuine report that names `scripts/evil.py` as modified.
+  * The suite's advisory case puts escape characters in `cairn_version` but no line break, which is why it passes.
+* **Why it does not block.** It is old behaviour, and it needs a lockfile change, which review sees; whoever can change the lockfile can already record the tampered file's hash. But it is the printed-command harm SR15 removed from the note. And the second implementation verification says the advisory "is escaped on the way out", which is not yet true for line breaks.
+* **Recommended fix.**
+  * Escape the finding's text fields before the engine formats them: `shown = {k: _plain(v) if isinstance(v, str) else v for k, v in finding.items()}`, then pass `shown` to the formatter. Printable-ASCII fields come through unchanged, so a clean advisory prints exactly as before.
+  * On a scratch copy this printed 0 forged lines, with all 153 tests green.
+  * Add the line-break case to the advisory's site test: it must print as one line, with the break as its written escape. Add the mutant "format the raw finding".
+
+**[NU-CSR8] (Low, non-blocking) The redirect also fires when stdout fails, and then hides Python's only explanation.**
+
+* **Evidence.**
+  * `sys.stdout.flush()` sits inside the fence's `try` (`:362`). So an `OSError` from stdout reaches the same `except` as one from stderr, and redirects descriptor 2 (`:368-369`).
+  * `test_stderr_is_silenced_only_after_a_write_to_it_failed` checks by exception type, not by which stream failed.
+  * Measured on a passing tree, with stdout's reader gone or stdout a file that cannot grow: the parent exits 120, and stderr names the cause (`Exception ignored on flushing sys.stdout:` with `BrokenPipeError`, or `OSError: [Errno 27] File too large`). The revision exits 120 with stderr empty.
+  * The exit code still signals failure, so pass and fail are unchanged. But a person sees a failed check with no reason given.
+  * The second record names this edge only as "stderr is silenced as well". The lost message is the cost.
+* **Recommended fix.**
+  * Flush stdout in its own `try`, before the fence's `try` (`try: sys.stdout.flush()` / `except Exception: pass`), so only the note's own writes to stderr can trigger the redirect.
+  * On a scratch copy, Python's message came back in both cases, the exit stayed 120, the merged-stream order and the closed-stderr exit 0 still held, and all 153 tests stayed green.
+  * Add a test: a passing run whose stdout reader has gone still leaves a message on stderr.
+
+**[NU-CSR9] (Info) The static encoder test is narrower than its docstring.**
+
+* **Evidence.**
+  * `test_every_lockfile_value_the_report_prints_goes_through_one_encoder` looks only at f-string fields inside `verify()` that mention one of four names: `dst_rel`, `recorded`, `rec` and `customized`.
+  * Its docstring says "a site added later cannot print raw".
+  * It passed all three planted regressions: a new f-string field naming the resolved path `dst`, the hint's list as a plain string join, and the advisory without its encoder.
+  * The per-site behaviour tests caught each one, but they cover only the nine sites that exist. A raw site added in a new branch would rest on the static test alone.
+* **Recommended fix.** Make the test deny by default. Every f-string field in `verify()` must be either a call to `_plain` or `ascii`, or one of a short named list of safe values (`_LOCKFILE_REL`, `target`, `len(violations)`, `checked`, `extra`, `sorted(_LIVING_STATE_DSTS)`). Every non-constant argument to `print` must be such a call or such an f-string. Or scope the docstring to what the test actually checks.
+
+**[NU-CSR10] (Info) `_plain`'s output cannot be read back.**
+
+* **Evidence.**
+  * Printable ASCII passes unchanged, backslashes included. So a path holding a real ESC and a path holding the four typed characters `\x1b` both print `a\x1bb.md`.
+  * The same holds for 1,114,014 of the 1,114,112 code points, compared with their own escape typed as text.
+  * No raw character reaches the terminal either way, so this is about what a reader can tell apart, not about safety.
+  * The note's quoted `ascii()` does not have the problem, because `ascii()` doubles a backslash.
+* **Recommended fix (optional).** Send any text that contains a backslash through `ascii()` as well: add `and "\\" not in text` to `_plain`'s test. Cairn's paths are POSIX, so no clean report changes.
+
+### What I did not cover
+
+* **Linux and Windows.** I ran on macOS only.
+* **The full suite.** I ran `test_verify_integrity.py` (153) on the tested bytes and on scratch copies; Boundary B is the implementer's.
+* **The engine's own copy of the advisory**, which `upgrade` prints without escaping. That is the engine repair the Maintainer's second question names, outside this plan. NU-CSR7's probe applies to it unchanged.
+* **The rest of the revision**: the checker's tests, the `_doc` string and the two `docs/DOCUMENTATION_PLAN.md` lines. Closing NU-CR2 to NU-CR8 is the code reviewer's job.
+* **The "duplicate slot" upgrade error at the tested commit.** It comes from other plans' template changes and another agent is diagnosing it. Nothing in the code this pass read touches it.
+* **Other sessions' uncommitted edits** in the shared tree. I read committed bytes only.
