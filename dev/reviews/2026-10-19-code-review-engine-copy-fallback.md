@@ -21,8 +21,9 @@ mutation, probe and test ran in a detached `git worktree` of `cf707e2a` (or of i
 parent `2e1c9b3b`, or of `1e4f1e96`), each in a folder under one uniquely named
 scratch directory, removed afterwards. The shared checkout was only read; my only
 writes to it are the work-intent claim (`dev/intents.jsonl`, ignored by git) and this
-file. I started every process I ran, and every one has exited. I killed exactly one,
-by its process id: a helper of my own that tried to read a named pipe.
+file. I started every process I ran, and every one has exited. I killed two, each by
+its process id: two runs of a helper of my own (one per engine) that blocked reading a
+named pipe one of my test cases planted. Both ran against throwaway worktrees.
 
 **Verdict**: NO BLOCKING FINDINGS — 0 blocking, 7 non-blocking.
 
