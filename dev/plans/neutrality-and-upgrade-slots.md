@@ -2185,3 +2185,26 @@ NU-CSR7 and NU-CSR8 (a few lines and their tests, as the Security verification r
 * **The implementer's 96-mutant ledger.** I ran 63 of my own, aimed at the findings.
 * **The engine's own copy of the advisory printed by `upgrade`.** The Maintainer's second question, outside this plan.
 * **Other sessions' uncommitted edits** in the shared tree. I read committed bytes only.
+
+## Correction to the second implementation verification -- Claude Sonnet 5.5 -- 2026-10-19
+
+The second implementation verification above says the two upgrade results at the tested commit, `needs-value` for `dev/proposals/_template.md` and `error` for `dev/plans/_template.md`, "follow other sessions' template changes after `b72d0308`". That was one cause named for two, and one of them was wrong. An independent diagnosis found two different causes, and I confirmed both. The record above is left as it was.
+
+* **`needs-value` was real, and not this plan's.** A stray `{{evidence}}` in the proposal template, from the review-stance plan's C2 (`b5b049d0`), is a token the old install never recorded. The engine could not fill it, so it held the file back and the slot never arrived. That plan fixed it in `5c77c11b`.
+* **The "duplicate slot" error was an artifact of my probe script, not of any template.** My fill regex replaced each slot body, including the two spaces of indentation before the `cairn:end` marker of `acceptance-doc-tooling`, which sits inside a list item. Losing the indent made an edit into a conflict hunk that carried a stale copy of the old slot block, and the script's keep-both resolution then wrote the slot out twice. It reproduces at `b72d0308` as well; I did not notice because that run's plan output did not name the file. With the indent kept, `dev/plans/_template.md` merges clean (0 conflict hunks).
+* **Both probes now run end to end.** With the fill keeping the indent, the upgrade and the verify both run at the current `HEAD` (`ab086789`, which carries `5c77c11b`): the fully filled tree lists **exactly one** slot, `'dev/proposals/_template.md' slot 'assurance-path-triggers'` (23 slots checked), and the partly filled tree lists **17**, that slot among them. The exit code 1 of both probe trees is the old install's `illegal living_state opt-out` for its fold-back ledger, as before.
+* **The probes' earlier results hold.** The code reviewer confirmed them, and the "listed exactly one" and "17" results were right whenever the fill kept the indent; the two results I reported at the tested commit (0 and 16) came from the script's artifact, not from the note.
+
+## Response to the verifications -- Claude Sonnet 5.5 (author) -- 2026-10-19
+
+This answers the code reviewer's verification (`14f4403d`: NU-CR1 to NU-CR8 closed, one information note) and the Security Reviewer's (`a003bd4e`: cleared, NU-CSR7 to NU-CSR10). The revision is one commit, `ab086789`, in `bootstrap/verify_integrity.py` and its test file; the engine is untouched.
+
+| Finding | Disposition | Where |
+| --- | --- | --- |
+| NU-CSR7 a line break from the lockfile forges a report line through the advisory | **accepted, fixed** | every string field of the finding is encoded with `_plain` before the engine formats it; `_plain_lines` is gone. A `cairn_version` holding a line break, a forged `verify_integrity: OK` line and a forged `--finalize` hint prints as one line with the breaks written out. Red before; the raw finding, unencoded fields, and only-`dst` mutants killed. |
+| NU-CSR8 the redirect also fires when stdout fails and hides Python's reason | **accepted, fixed** | stdout is flushed in its own `contextlib.suppress(Exception)` before the fence. A passing run whose stdout reader has gone exits 120 with `BrokenPipeError` on stderr again; the stderr-gone case still exits 0. Both are tests; the flush put back inside the fence, dropped, and not suppressed are killed. |
+| NU-CSR9 the static test is narrower than its docstring | **accepted, the first option** | deny by default: every piece of every message `verify()` prints or adds to the violations must be constant text, a value on a short safe list, or a call to `_plain` or `ascii`; the advisory must be formatted from `shown`. The three regressions the Security Reviewer planted, and two more, each make that test alone fail. |
+| NU-CSR10 `_plain`'s output cannot be read back | **accepted, cheap** | text with a backslash takes the `ascii()` road: a real ESC prints `\x1b`, the four typed characters print `\\x1b`. No clean POSIX report changes. Test and mutant. |
+| NU-CR9 a non-ASCII file name prints escaped in the `--finalize` hint, so it cannot be pasted | **accepted as is** | recorded: shipped paths are ASCII, and making a homoglyph visible is the point. |
+
+The correction above is the answer to the Security Reviewer's note that another agent was diagnosing the upgrade results. Status stays `revising-code` until the next commit carries the fresh record.
