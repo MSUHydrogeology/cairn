@@ -6,7 +6,23 @@
 
 Fails non-zero (exit code 1) if the adopter-local tier-to-model mapping
 file (``dev/.cairn/model-selection-mapping.yml``) still contains the
-unfilled ``FILL ME`` sentinel from the scaffold-seeded stub.
+unfilled ``FILL ME`` sentinel on a non-comment line or in a parsed YAML
+value, or if it has no mapping rows.
+
+Full-line comments (lines whose first non-space character is ``#``, after
+splitting on YAML 1.1 line breaks) are skipped so explanatory header and
+example comments in the seeded stub do not cause a filled mapping to fail.
+Trailing comments on value lines are still scanned.
+
+When PyYAML is available, the parsed document is also walked once per
+object (strings, dictionary keys, set members, and bytes decoded as text)
+for ``FILL ME``, YAML merge keys (``<<``) are refused, and ``mapping``
+must be a non-empty list.  When PyYAML is not installed, structural
+validation is skipped and the bare line scan requires at least one
+non-comment row line.  On that bare path, a value whose ``FILL ME`` is
+not spelled out on one non-comment line (such as a block scalar, a value
+folded over lines, a line continuation, an escape, or a tag) reads as
+filled, and so does a row-shaped line that is not an item of ``mapping``.
 
 This is the machine gate for the model-selection module's core requirement:
 the mapping MUST be filled before the capability-floor question is
@@ -20,9 +36,12 @@ Usage::
 
 Exit codes::
 
-    0  -- mapping file exists, contains no ``FILL ME`` sentinel, and (when
-          PyYAML is available) parses as a non-empty YAML mapping
-    1  -- mapping file exists but still contains ``FILL ME`` (needs filling)
+    0  -- mapping file exists, contains no ``FILL ME`` sentinel outside
+          full-line comments, has at least one row, and (when PyYAML is
+          available) parses as a valid YAML mapping with a non-empty
+          ``mapping`` list
+    1  -- mapping file exists but still contains ``FILL ME`` or has no rows
+          (needs filling)
     2  -- mapping file is missing (not yet seeded; scaffold may not have run)
     3  -- mapping is filled but is **not structurally valid YAML** (PyYAML
           present): the pass-the-gate-then-crash-the-loader gap.  When PyYAML
@@ -52,27 +71,100 @@ import re
 import sys
 from pathlib import Path
 
-#: The sentinel string the scaffold stub contains.  The check is a
-#: whole-file scan (case-sensitive, as a literal phrase), not just a
-#: YAML-key check -- a partially-filled mapping that still carries one
-#: ``FILL ME`` placeholder fails just as cleanly as a fully unfilled one.
+#: The sentinel string the scaffold stub contains.  The line scan skips
+#: full-line comments (leading spaces then ``#``) and checks every other
+#: line for this case-sensitive phrase, so a partially-filled mapping or a
+#: trailing comment carrying ``FILL ME`` still fails cleanly.
 _FILL_ME_RE = re.compile(r"\bFILL ME\b")
+
+#: YAML 1.1 line breaks: CRLF, LF, CR, NEL (U+0085), LS (U+2028), PS (U+2029).
+#: Form feed and vertical tab are not YAML line breaks.
+_LINE_SPLIT_RE = re.compile(r"\r\n|[\n\r\x85\u2028\u2029]")
+
+#: Bare-path row pattern: anchored at line start (after spaces), matching a
+#: block row, a flow item, a single- or double-quoted ``tier`` key, or a
+#: one-line ``mapping: [{tier: ...}]`` list whose first key is ``tier``.
+_ROW_LINE_RE = re.compile(
+    r'^ *(?:mapping *: *\[ *|- +)?(?:\{ *)?(?:"tier"|\'tier\'|tier) *:'
+)
 
 _DEFAULT_MAPPING_REL = "dev/.cairn/model-selection-mapping.yml"
 
 
-def _structural_validate(
-    text: str, mapping_path: Path, *, quiet: bool = False
-) -> int:
-    """Structurally validate the (already ``FILL ME``-free) mapping as YAML.
+def _non_comment_lines(text: str) -> list[str]:
+    """Split *text* on YAML 1.1 line breaks and drop full-line comments
+    (only ASCII space before ``#`` makes a comment)."""
+    return [
+        line
+        for line in _LINE_SPLIT_RE.split(text)
+        if not line.lstrip(" ").startswith("#")
+    ]
 
-    Returns 0 when the mapping parses as a **non-empty YAML mapping**, OR when
-    PyYAML is not installed -- structural validation is a *bonus*, not a hard
-    dependency, so a dependency-bare adopter / CI degrades to the sentinel-only
-    check rather than crashing with a raw ``ModuleNotFoundError`` (rollup #3b /
-    External review).  Returns 3 when PyYAML is present and the file is not valid
-    YAML, or does not parse as a non-empty top-level mapping -- the
-    pass-the-gate-then-crash-the-loader gap the sentinel scan alone misses.
+
+def _value_contains_fill_me(root: object) -> bool:
+    """Walk *root* with an explicit stack, visiting each object at most once
+    by identity.  Scans strings, dictionary keys and values, list/tuple/set
+    members, and bytes decoded as UTF-8 text."""
+    stack: list[object] = [root]
+    visited: set[int] = set()
+    while stack:
+        node = stack.pop()
+        obj_id = id(node)
+        if obj_id in visited:
+            continue
+        visited.add(obj_id)
+        if isinstance(node, str):
+            if _FILL_ME_RE.search(node):
+                return True
+        elif isinstance(node, (bytes, bytearray)):
+            if _FILL_ME_RE.search(node.decode("utf-8", errors="replace")):
+                return True
+        elif isinstance(node, dict):
+            for k, v in node.items():
+                stack.append(v)
+                stack.append(k)
+        elif isinstance(node, (list, tuple, set, frozenset)):
+            stack.extend(node)
+    return False
+
+
+def _print_fill_me_failure(mapping_path: Path, *, quiet: bool) -> None:
+    if not quiet:
+        print(
+            f"check_model_selection: FAIL -- {mapping_path} still contains "
+            "\"FILL ME\" placeholder(s).\n"
+            "  Fill the tier-to-model mapping before relying on the "
+            "model-selection module.  See `dev/modules/model-selection.md` "
+            "for the record schema.",
+            file=sys.stderr,
+        )
+
+
+def _print_no_rows_failure(mapping_path: Path, *, quiet: bool) -> None:
+    if not quiet:
+        print(
+            f"check_model_selection: FAIL -- {mapping_path} has no rows "
+            "under `mapping`.\n"
+            "  Record at least one tier-to-model row before relying on the "
+            "model-selection module.  See `dev/modules/model-selection.md` "
+            "for the record schema.",
+            file=sys.stderr,
+        )
+
+
+def _structural_validate(
+    text: str,
+    non_comment: list[str],
+    mapping_path: Path,
+    *,
+    quiet: bool = False,
+) -> int:
+    """Structurally validate the mapping as YAML when PyYAML is available,
+    scanning every parsed value for ``FILL ME`` and checking that ``mapping``
+    is a non-empty list.
+
+    When PyYAML is not installed, structural validation is skipped with a note
+    and the bare row-line check decides whether at least one row is present.
     """
     try:
         import yaml  # optional: a bonus structural check, never a hard dep
@@ -83,9 +175,38 @@ def _structural_validate(
                 "PyYAML not installed (the FILL ME sentinel check still ran).",
                 file=sys.stderr,
             )
+        if not any(_ROW_LINE_RE.search(line) for line in non_comment):
+            _print_no_rows_failure(mapping_path, quiet=quiet)
+            return 1
         return 0
+
+    class _NoMergeSafeLoader(yaml.SafeLoader):
+        def flatten_mapping(self, node: object) -> None:
+            for key_node, _ in getattr(node, "value", ()):
+                if getattr(key_node, "tag", None) == "tag:yaml.org,2002:merge":
+                    raise yaml.constructor.ConstructorError(
+                        None,
+                        None,
+                        "YAML merge keys ('<<') are not permitted in a "
+                        "model-selection mapping",
+                        None,
+                    )
+            super().flatten_mapping(node)
+
     try:
-        data = yaml.safe_load(text)
+        loader = _NoMergeSafeLoader(text)
+        try:
+            data = loader.get_single_data()
+        finally:
+            loader.dispose()
+    except RecursionError:
+        if not quiet:
+            print(
+                f"check_model_selection: FAIL -- {mapping_path} is filled but "
+                "is not valid YAML: maximum nesting depth exceeded.",
+                file=sys.stderr,
+            )
+        return 3
     except yaml.YAMLError as exc:
         if not quiet:
             print(
@@ -103,12 +224,20 @@ def _structural_validate(
                 file=sys.stderr,
             )
         return 3
+    if _value_contains_fill_me(data):
+        _print_fill_me_failure(mapping_path, quiet=quiet)
+        return 1
+    rows = data.get("mapping")
+    if not isinstance(rows, list) or not rows:
+        _print_no_rows_failure(mapping_path, quiet=quiet)
+        return 1
     return 0
 
 
 def check_mapping(mapping_path: Path, *, quiet: bool = False) -> int:
-    """Check *mapping_path* for the ``FILL ME`` sentinel, then (when PyYAML is
-    available) for structural YAML validity.
+    """Check *mapping_path* for the ``FILL ME`` sentinel on non-comment lines,
+    then (when PyYAML is available) for structural YAML validity, parsed-value
+    ``FILL ME`` placeholders, and at least one row under ``mapping``.
 
     Returns the exit code (0 = pass, 1 = needs filling, 2 = missing,
     3 = filled-but-malformed-YAML).  Prints a diagnostic unless *quiet* is True.
@@ -124,19 +253,14 @@ def check_mapping(mapping_path: Path, *, quiet: bool = False) -> int:
         return 2
 
     text = mapping_path.read_text(encoding="utf-8", errors="replace")
-    if _FILL_ME_RE.search(text):
-        if not quiet:
-            print(
-                f"check_model_selection: FAIL -- {mapping_path} still contains "
-                "\"FILL ME\" placeholder(s).\n"
-                "  Fill the tier-to-model mapping before relying on the "
-                "model-selection module.  See `dev/modules/model-selection.md` "
-                "for the record schema.",
-                file=sys.stderr,
-            )
+    non_comment = _non_comment_lines(text)
+    if any(_FILL_ME_RE.search(line) for line in non_comment):
+        _print_fill_me_failure(mapping_path, quiet=quiet)
         return 1
 
-    structural_rc = _structural_validate(text, mapping_path, quiet=quiet)
+    structural_rc = _structural_validate(
+        text, non_comment, mapping_path, quiet=quiet
+    )
     if structural_rc != 0:
         return structural_rc
 
@@ -150,7 +274,7 @@ def main(argv: list[str] | None = None) -> int:
         prog="check_model_selection",
         description=(
             "Fidelity check: fail non-zero if the model-selection mapping "
-            "still contains 'FILL ME' placeholder(s)."
+            "still contains 'FILL ME' placeholder(s) or has no rows."
         ),
     )
     parser.add_argument(

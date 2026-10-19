@@ -14,7 +14,9 @@ Run from the cairn repo root::
 """
 from __future__ import annotations
 
+import builtins
 import importlib.util
+import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -47,6 +49,19 @@ def _load_checker(name: str = "_cairn_check_model_sel_under_test") -> ModuleType
     sys.modules[name] = module
     spec.loader.exec_module(module)
     return module
+
+
+def _run_bare_checker(checker: ModuleType, mapping: Path, monkeypatch) -> int:
+    real_import = builtins.__import__
+
+    def _no_yaml(name, *args, **kwargs):
+        if name == "yaml":
+            raise ImportError("simulated: PyYAML not installed")
+        return real_import(name, *args, **kwargs)
+
+    with monkeypatch.context() as mp:
+        mp.setattr(builtins, "__import__", _no_yaml)
+        return checker.check_mapping(mapping, quiet=True)
 
 
 def _scaffold(target: Path) -> int:
@@ -189,29 +204,6 @@ class TestFidelityCheck:
         rc = checker.check_mapping(mapping, quiet=True)
         assert rc == 1, f"Partial fill with FILL ME should fail; got {rc}"
 
-    def test_fill_me_in_comment_fails(self, tmp_path: Path, checker) -> None:
-        """Even a FILL ME in a comment triggers the gate.
-
-        This is intentional: the gate scans the whole file to catch any
-        remaining placeholder, including commented-out examples the adopter
-        left in.  An adopter who cleans up the comments will also pass.
-        """
-        mapping = tmp_path / "model-selection-mapping.yml"
-        mapping.write_text(
-            "# TODO: FILL ME -- add medium-tier model here\n"
-            "mapping:\n"
-            "  - tier: high\n"
-            "    model: vendor-a/flagship\n"
-            "    date_verified: 2025-01-01\n"
-            "    task_family: strategy\n"
-            "    source: benchmark-jan-2025\n"
-        )
-        rc = checker.check_mapping(mapping, quiet=True)
-        assert rc == 1, (
-            "A FILL ME in a comment should still fail; "
-            "the adopter must clean up placeholders."
-        )
-
     def test_cli_failure_message_mentions_fill_me(
         self, tmp_path: Path, checker, capsys
     ) -> None:
@@ -238,6 +230,544 @@ class TestFidelityCheck:
         assert rc == 0
         err = capsys.readouterr().err
         assert err == ""
+
+
+# ---------------------------------------------------------------------------
+# Full-line comments are not placeholders
+# ---------------------------------------------------------------------------
+
+class TestCommentsAreNotPlaceholders:
+    """Full-line comments (leading spaces then ``#``) are skipped so the seeded
+    stub's explanatory comments do not fail a hand-filled mapping, while
+    trailing comments and value lines still fail."""
+
+    @pytest.fixture(scope="class")
+    def checker(self) -> ModuleType:
+        return _load_checker()
+
+    def test_hand_filled_stub_with_comments_kept_passes(
+        self, tmp_path: Path, checker, monkeypatch
+    ) -> None:
+        stub_text = _STUB_SRC.read_text(encoding="utf-8")
+        filled = (
+            stub_text.replace("tier: FILL ME", "tier: high")
+            .replace("model: FILL ME", "model: vendor-a/flagship-family")
+            .replace("date_verified: FILL ME", "date_verified: 2026-10-18")
+            .replace("task_family: FILL ME", "task_family: strategy")
+            .replace("source: FILL ME", "source: maintainer")
+        )
+        assert "# " in filled and "FILL ME" in filled
+        mapping = tmp_path / "model-selection-mapping.yml"
+        mapping.write_text(filled, encoding="utf-8")
+        assert checker.check_mapping(mapping, quiet=True) == 0
+        assert _run_bare_checker(checker, mapping, monkeypatch) == 0
+
+    def test_shipped_stub_fails(
+        self, tmp_path: Path, checker, monkeypatch
+    ) -> None:
+        mapping = tmp_path / "model-selection-mapping.yml"
+        mapping.write_text(_STUB_SRC.read_text(encoding="utf-8"), encoding="utf-8")
+        assert checker.check_mapping(mapping, quiet=True) == 1
+        assert _run_bare_checker(checker, mapping, monkeypatch) == 1
+
+    def test_trailing_comment_with_fill_me_on_value_line_fails(
+        self, tmp_path: Path, checker, monkeypatch
+    ) -> None:
+        mapping = tmp_path / "model-selection-mapping.yml"
+        mapping.write_text(
+            "mapping:\n"
+            "  - tier: high\n"
+            "    model: vendor-a/flagship  # FILL ME\n",
+            encoding="utf-8",
+        )
+        assert checker.check_mapping(mapping, quiet=True) == 1
+        assert _run_bare_checker(checker, mapping, monkeypatch) == 1
+
+    def test_todo_fill_me_full_line_comment_above_filled_rows_passes(
+        self, tmp_path: Path, checker, monkeypatch
+    ) -> None:
+        """The check attests shape, not intent: a full-line ``# TODO: FILL ME``
+        comment above filled rows passes because full-line comments are skipped
+        so the stub's own header comments can remain in place."""
+        mapping = tmp_path / "model-selection-mapping.yml"
+        mapping.write_text(
+            "# TODO: FILL ME -- add medium-tier model here\n"
+            "mapping:\n"
+            "  - tier: high\n"
+            "    model: vendor-a/flagship-family\n"
+            "    date_verified: 2026-10-18\n"
+            "    task_family: strategy\n"
+            "    source: maintainer\n",
+            encoding="utf-8",
+        )
+        assert checker.check_mapping(mapping, quiet=True) == 0
+        assert _run_bare_checker(checker, mapping, monkeypatch) == 0
+
+
+# ---------------------------------------------------------------------------
+# Row requirement
+# ---------------------------------------------------------------------------
+
+class TestAMappingNeedsAtLeastOneRow:
+    @pytest.fixture(scope="class")
+    def checker(self) -> ModuleType:
+        return _load_checker()
+
+    def test_empty_mapping_list_with_comments_fails_on_both_paths(
+        self, tmp_path: Path, checker, monkeypatch, capsys
+    ) -> None:
+        mapping = tmp_path / "model-selection-mapping.yml"
+        mapping.write_text(
+            "# Header comment\n"
+            "mapping: []\n",
+            encoding="utf-8",
+        )
+        assert checker.check_mapping(mapping, quiet=False) == 1
+        err_yaml = capsys.readouterr().err
+        assert "no rows" in err_yaml
+        assert "FILL ME" not in err_yaml
+
+        assert _run_bare_checker(checker, mapping, monkeypatch) == 1
+
+    def test_comments_only_file_exits_1_bare_and_3_with_yaml(
+        self, tmp_path: Path, checker, monkeypatch
+    ) -> None:
+        mapping = tmp_path / "model-selection-mapping.yml"
+        mapping.write_text("# Only comments here\n", encoding="utf-8")
+        assert checker.check_mapping(mapping, quiet=True) == 3
+        assert _run_bare_checker(checker, mapping, monkeypatch) == 1
+
+    @pytest.mark.parametrize(
+        "body",
+        [
+            "other_key: 1\n",
+            "mapping: not-a-list\n",
+            "mapping: {}\n",
+        ],
+    )
+    def test_missing_or_non_list_mapping_exits_1_with_yaml(
+        self, tmp_path: Path, checker, body: str
+    ) -> None:
+        mapping = tmp_path / "model-selection-mapping.yml"
+        mapping.write_text(body, encoding="utf-8")
+        assert checker.check_mapping(mapping, quiet=True) == 1
+
+
+# ---------------------------------------------------------------------------
+# Parsed values scanned when PyYAML is present
+# ---------------------------------------------------------------------------
+
+class TestParsedValuesAreScannedWhenYamlIsPresent:
+    @pytest.fixture(scope="class")
+    def checker(self) -> ModuleType:
+        return _load_checker()
+
+    @pytest.mark.parametrize(
+        "body",
+        [
+            "mapping:\n  - tier: high\n    model: |\n      # FILL ME\n",
+            "mapping:\n  - tier: high\n    model: FILL\n      ME\n",
+            'mapping:\n  - tier: high\n    model: "FILL\n      ME"\n',
+            'mapping:\n  - tier: high\n    model: "FILL \\\n      ME"\n',
+            'mapping:\n  - tier: high\n    model: "FILL\\x20ME"\n',
+            "mapping:\n  - tier: high\n    model: !!binary RklMTCBNRQ==\n",
+            'mapping:\n  - tier: high\n    extra: !!set {"FILL\\x20ME"}\n',
+            'mapping:\n  - tier: high\n    "FILL\\x20ME": vendor-a/flagship\n',
+        ],
+    )
+    def test_parsed_value_carrying_fill_me_fails(
+        self, tmp_path: Path, checker, body: str
+    ) -> None:
+        mapping = tmp_path / "model-selection-mapping.yml"
+        mapping.write_text(body, encoding="utf-8")
+        assert checker.check_mapping(mapping, quiet=True) == 1
+
+
+# ---------------------------------------------------------------------------
+# Merge keys refused and depth / aliasing bounds
+# ---------------------------------------------------------------------------
+
+class TestMergeKeysAreRefused:
+    @pytest.fixture(scope="class")
+    def checker(self) -> ModuleType:
+        return _load_checker()
+
+    def test_merge_key_chain_exits_3_within_timeout(self, tmp_path: Path) -> None:
+        lines = ["l0: &l0 {k0: 1}"]
+        for i in range(1, 25):
+            prev = f"*l{i - 1}"
+            lines.append(f"l{i}: &l{i} {{<<: [{prev}, {prev}], k{i}: 1}}")
+        lines.append("mapping:\n  - tier: high\n    model: vendor-a/flagship\n")
+        mapping = tmp_path / "model-selection-mapping.yml"
+        mapping.write_text("\n".join(lines), encoding="utf-8")
+
+        proc = subprocess.run(
+            [sys.executable, str(_CHECKER_SRC), "--mapping", str(mapping)],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+        assert proc.returncode == 3
+        assert "not valid YAML" in proc.stderr
+
+
+class TestValueScanVisitsEachObjectOnce:
+    def test_nested_alias_document_completes_quickly(self, tmp_path: Path) -> None:
+        lines = ['a0: &a0 ["vendor-a/flagship", "vendor-a/flagship"]']
+        for i in range(1, 23):
+            prev = f"*a{i - 1}"
+            lines.append(f"a{i}: &a{i} [{prev}, {prev}]")
+        lines.append("mapping:\n  - tier: high\n    model: vendor-a/flagship\n")
+        mapping = tmp_path / "model-selection-mapping.yml"
+        mapping.write_text("\n".join(lines), encoding="utf-8")
+
+        proc = subprocess.run(
+            [sys.executable, str(_CHECKER_SRC), "--mapping", str(mapping)],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+        assert proc.returncode == 0
+
+    def test_deep_flow_sequence_exits_3_without_traceback(
+        self, tmp_path: Path, capsys
+    ) -> None:
+        checker = _load_checker()
+        mapping = tmp_path / "model-selection-mapping.yml"
+        mapping.write_text(
+            "mapping:\n  - tier: high\n    extra: " + ("[" * 5000) + ("]" * 5000) + "\n",
+            encoding="utf-8",
+        )
+        rc = checker.main(["--mapping", str(mapping)])
+        assert rc == 3
+        err = capsys.readouterr().err
+        assert "not valid YAML" in err
+        assert "Traceback" not in err
+
+
+# ---------------------------------------------------------------------------
+# Checker messages carry no parsed value
+# ---------------------------------------------------------------------------
+
+class TestCheckerMessagesCarryNoParsedValue:
+    def test_escape_sequences_in_values_never_reach_output(
+        self, tmp_path: Path, capsys
+    ) -> None:
+        checker = _load_checker()
+        mapping = tmp_path / "model-selection-mapping.yml"
+        mapping.write_text(
+            'mapping:\n  - tier: high\n    model: "\\e]0;PWNED\\aFILL\\x20ME"\n',
+            encoding="utf-8",
+        )
+        assert checker.main(["--mapping", str(mapping)]) == 1
+        captured = capsys.readouterr()
+        assert "\x1b" not in captured.out and "\x1b" not in captured.err
+        assert "\x07" not in captured.out and "\x07" not in captured.err
+
+        no_row = tmp_path / "no-row.yml"
+        no_row.write_text(
+            'mapping: []\nnote: "\\e]0;PWNED\\a"\n',
+            encoding="utf-8",
+        )
+        assert checker.main(["--mapping", str(no_row)]) == 1
+        captured_no_row = capsys.readouterr()
+        assert "\x1b" not in captured_no_row.out and "\x1b" not in captured_no_row.err
+        assert "\x07" not in captured_no_row.out and "\x07" not in captured_no_row.err
+        assert "FILL ME" not in captured_no_row.err
+
+
+# ---------------------------------------------------------------------------
+# Bare-path residual and docstring
+# ---------------------------------------------------------------------------
+
+class TestBarePathResidualIsPinned:
+    def test_docstring_names_bare_path_residual_classes(self) -> None:
+        doc = _load_checker().__doc__ or ""
+        assert "not spelled out on one non-comment line" in doc
+        assert "row-shaped line that is not an item" in doc
+
+    def test_copies_are_byte_identical(self) -> None:
+        installed = CAIRN_ROOT / "scripts" / "check_model_selection.py"
+        assert _CHECKER_SRC.read_bytes() == installed.read_bytes()
+
+
+# ---------------------------------------------------------------------------
+# Repository's own mapping passes
+# ---------------------------------------------------------------------------
+
+class TestThisRepositorysMappingIsFilled:
+    def test_cairn_mapping_passes_with_and_without_pyyaml(
+        self, monkeypatch
+    ) -> None:
+        checker = _load_checker()
+        repo_mapping = CAIRN_ROOT / "dev" / ".cairn" / "model-selection-mapping.yml"
+        assert checker.check_mapping(repo_mapping, quiet=True) == 0
+        assert _run_bare_checker(checker, repo_mapping, monkeypatch) == 0
+
+
+# ---------------------------------------------------------------------------
+# Corpus and named spelling table
+# ---------------------------------------------------------------------------
+
+_LEADS: tuple[tuple[str, str], ...] = (
+    ("none", ""),
+    ("space", "  "),
+    ("tab", "\t"),
+    ("nbsp", "\u00a0"),
+    ("ff", "\x0c"),
+    ("bom", "\ufeff"),
+)
+
+_BREAKS: tuple[tuple[str, str], ...] = (
+    ("crlf", "\r\n"),
+    ("lf", "\n"),
+    ("cr", "\r"),
+    ("nel", "\x85"),
+    ("ls", "\u2028"),
+    ("ps", "\u2029"),
+)
+
+_POSITIONS: tuple[str, ...] = ("comment", "value", "row")
+
+
+def _build_generated_corpus() -> list[tuple[str, str, int]]:
+    """Build 108 files: 6 leads x 6 breaks x 3 positions.
+    Returns (case_id, text, expected_bare_rc) tuples."""
+    cases: list[tuple[str, str, int]] = []
+    for lead_name, lead in _LEADS:
+        for brk_name, brk in _BREAKS:
+            for pos in _POSITIONS:
+                if pos == "comment":
+                    text = (
+                        f"{lead}# FILL ME{brk}"
+                        f"mapping:{brk}"
+                        f"  - tier: high{brk}"
+                        f"    model: vendor-a/flagship{brk}"
+                    )
+                    # Only empty or ASCII spaces before '#' makes a comment.
+                    expected_rc = 0 if lead in ("", "  ") else 1
+                elif pos == "value":
+                    text = (
+                        f"# header{brk}"
+                        f"mapping:{brk}"
+                        f"  - tier: high{brk}"
+                        f"{lead}model: FILL ME{brk}"
+                    )
+                    expected_rc = 1
+                else:
+                    text = (
+                        f"# header{brk}"
+                        f"mapping:{brk}"
+                        f"{lead}- tier: high{brk}"
+                        f"    model: vendor-a/flagship{brk}"
+                    )
+                    # Only empty or ASCII spaces before '- tier:' matches row regex.
+                    expected_rc = 0 if lead in ("", "  ") else 1
+                cases.append((f"{lead_name}-{brk_name}-{pos}", text, expected_rc))
+    assert len(cases) == 108
+    return cases
+
+
+#: Named spelling table: (name, text, bare_rc, yaml_rc, engine_unfilled, category).
+_NAMED_SPELLINGS: tuple[tuple[str, str, int, int, bool, str], ...] = (
+    (
+        "block-scalar-hash-fill-me",
+        "mapping:\n  - tier: high\n    model: |\n      # FILL ME\n",
+        0,
+        1,
+        False,
+        "stricter_with_yaml",
+    ),
+    (
+        "folded-plain-fill-me",
+        "mapping:\n  - tier: high\n    model: FILL\n      ME\n",
+        0,
+        1,
+        False,
+        "stricter_with_yaml",
+    ),
+    (
+        "folded-quoted-fill-me",
+        'mapping:\n  - tier: high\n    model: "FILL\n      ME"\n',
+        0,
+        1,
+        False,
+        "stricter_with_yaml",
+    ),
+    (
+        "line-continuation-fill-me",
+        'mapping:\n  - tier: high\n    model: "FILL \\\n      ME"\n',
+        0,
+        1,
+        False,
+        "stricter_with_yaml",
+    ),
+    (
+        "hex-escape-fill-me",
+        'mapping:\n  - tier: high\n    model: "FILL\\x20ME"\n',
+        0,
+        1,
+        False,
+        "stricter_with_yaml",
+    ),
+    (
+        "repeated-empty-mapping-key",
+        "mapping:\n  - tier: high\n    model: vendor-a/flagship\nmapping: []\n",
+        0,
+        1,
+        False,
+        "stricter_with_yaml",
+    ),
+    (
+        "binary-tag-fill-me",
+        "mapping:\n  - tier: high\n    model: !!binary RklMTCBNRQ==\n",
+        0,
+        1,
+        False,
+        "stricter_with_yaml",
+    ),
+    (
+        "set-tag-fill-me",
+        'mapping:\n  - tier: high\n    extra: !!set {"FILL\\x20ME"}\n',
+        0,
+        1,
+        False,
+        "stricter_with_yaml",
+    ),
+    (
+        "row-under-other-key",
+        "mapping: []\nother:\n  - tier: high\n",
+        0,
+        1,
+        False,
+        "stricter_with_yaml",
+    ),
+    (
+        "row-inside-block-scalar",
+        "mapping: []\nnote: |\n  - tier: high\n",
+        0,
+        1,
+        False,
+        "stricter_with_yaml",
+    ),
+    (
+        "row-inside-multiline-quoted-value",
+        'mapping: []\nnote: "hello\n  - tier: high"\n',
+        0,
+        1,
+        False,
+        "stricter_with_yaml",
+    ),
+    (
+        "one-line-list-first-key-not-tier",
+        "mapping: [{model: vendor-a/flagship, tier: high}]\n",
+        1,
+        0,
+        True,
+        "looser_with_yaml",
+    ),
+    (
+        "mapping-item-without-tier-key",
+        "mapping:\n  - model: vendor-a/flagship\n",
+        1,
+        0,
+        True,
+        "looser_with_yaml",
+    ),
+    (
+        "list-of-non-mappings",
+        "mapping:\n  - vendor-a/flagship\n",
+        1,
+        0,
+        True,
+        "looser_with_yaml",
+    ),
+    (
+        "tier-colon-inside-another-value",
+        'mapping:\n  - model: "tier: high"\n',
+        1,
+        0,
+        True,
+        "looser_with_yaml",
+    ),
+    (
+        "double-quoted-tier-key",
+        'mapping:\n  - "tier": high\n    model: vendor-a/flagship\n',
+        0,
+        0,
+        False,
+        "agreed_after_widening",
+    ),
+    (
+        "single-quoted-tier-key",
+        "mapping:\n  - 'tier': high\n    model: vendor-a/flagship\n",
+        0,
+        0,
+        False,
+        "agreed_after_widening",
+    ),
+    (
+        "one-line-list-starting-with-tier",
+        "mapping: [{tier: high, model: vendor-a/flagship}]\n",
+        0,
+        0,
+        False,
+        "agreed_after_widening",
+    ),
+    (
+        "comments-only-file",
+        "# only a comment\n",
+        1,
+        3,
+        True,
+        "comments_only",
+    ),
+)
+
+
+class TestEngineAndCheckerAgreeOnUnfilled:
+    @pytest.fixture(scope="class")
+    def checker(self) -> ModuleType:
+        return _load_checker()
+
+    def test_generated_108_corpus_on_bare_checker(
+        self, tmp_path: Path, checker, monkeypatch
+    ) -> None:
+        corpus = _build_generated_corpus()
+        for case_id, text, expected_rc in corpus:
+            mapping = tmp_path / f"{case_id}.yml"
+            mapping.write_bytes(text.encode("utf-8"))
+            actual_rc = _run_bare_checker(checker, mapping, monkeypatch)
+            assert actual_rc == expected_rc, (
+                f"{case_id}: expected bare rc {expected_rc}, got {actual_rc}"
+            )
+
+    def test_named_spelling_table_on_bare_and_yaml_checker(
+        self, tmp_path: Path, checker, monkeypatch
+    ) -> None:
+        for name, text, expected_bare, expected_yaml, _eng, category in _NAMED_SPELLINGS:
+            mapping = tmp_path / f"{name}.yml"
+            mapping.write_text(text, encoding="utf-8")
+            bare_rc = _run_bare_checker(checker, mapping, monkeypatch)
+            yaml_rc = checker.check_mapping(mapping, quiet=True)
+            assert bare_rc == expected_bare, (
+                f"{name}: expected bare rc {expected_bare}, got {bare_rc}"
+            )
+            assert yaml_rc == expected_yaml, (
+                f"{name}: expected yaml rc {expected_yaml}, got {yaml_rc}"
+            )
+            if category == "stricter_with_yaml":
+                assert bare_rc == 0 and yaml_rc == 1, name
+            elif category == "looser_with_yaml":
+                assert bare_rc == 1 and yaml_rc == 0, name
+            elif category == "agreed_after_widening":
+                assert bare_rc == 0 and yaml_rc == 0, name
+            elif category == "comments_only":
+                assert bare_rc == 1 and yaml_rc == 3, name
+            else:
+                pytest.fail(f"unexpected category {category} for {name}")
 
 
 # ---------------------------------------------------------------------------
@@ -304,8 +834,6 @@ class TestStructuralValidity:
         """With PyYAML unavailable, structural validation is skipped (a clean
         note, not a ModuleNotFoundError traceback) and the sentinel-only result
         stands -- the gate never crashes a dependency-bare CI."""
-        import builtins
-
         real_import = builtins.__import__
 
         def _no_yaml(name, *args, **kwargs):
@@ -319,7 +847,7 @@ class TestStructuralValidity:
         # A filled mapping that is ALSO malformed YAML: with PyYAML absent the
         # structural check is skipped, so this still PASSES (sentinel-only) --
         # proving the dependency is genuinely optional, not silently enforced.
-        mapping.write_text("mapping: [unclosed\n")
+        mapping.write_text("mapping: [unclosed\n  - tier: high\n")
         rc = checker.check_mapping(mapping, quiet=False)
         assert rc == 0, "PyYAML-absent must degrade to sentinel-only pass"
         err = capsys.readouterr().err
