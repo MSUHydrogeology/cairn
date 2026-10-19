@@ -1753,3 +1753,29 @@ This answers the Security Review (`e73b1572`, NU-CSR1 to NU-CSR6, cleared) and t
 **Held, not touched.** Both reviewers noted that the *existing* integrity report (`bootstrap/verify_integrity.py` around `:382-419`, and the hint's `--finalize` list) prints lockfile paths unescaped. That predates this plan and its fix is new scope; it is with the Maintainer. Nothing in this revision touches those lines.
 
 **Scope.** Nothing accepted is dropped and *Scope delta* stands at `preserved`. The C10 criterion that named the exit-120 edge is superseded by NU-CR1: the guide no longer names it. No Maintainer question. Status `revising-code` -> `awaiting-code-review` in the commit that carries the record below; the code reviewer verifies this answer, and a Security Reviewer reads the fence change.
+
+## Response to code review -- addendum at the Maintainer's instruction -- Claude Sonnet 5.5 (author) -- 2026-10-19
+
+The Response above held one item: both reviews noted that the *existing* integrity report prints paths read from the lockfile without escaping them. The Maintainer has answered. Both pieces are quoted verbatim as the coordinator relayed them.
+
+His answer, in chat on 2026-10-19:
+
+> "Yes to both questions"
+
+The question as put to him:
+
+> "Both reviewers noticed that `verify_integrity`'s existing report prints file paths from the lockfile without escaping them, so a crafted path could put control characters on your terminal. That's been true since before plan C, but plan C is editing that same file right now. Should the fix join plan C's revision? I recommend yes. It's a few lines in a file already open, and the Security reviewer reading the revision would cover it. The alternative is a separate small repair later."
+
+He saw it restated last as: "Should `verify_integrity`'s unescaped lockfile paths be fixed in plan C's revision?" The second question in "both" is a separate engine repair and is not part of this plan.
+
+| Finding | Disposition | Where |
+| --- | --- | --- |
+| Both reviews, *Observed outside this change*: the existing report prints lockfile paths, and the hint's `--finalize` list, unescaped | **accepted, at the Maintainer's instruction; fixed in `f949e342`** (this replaces "Held, not touched" above) | `bootstrap/verify_integrity.py`: `_plain` leaves printable ASCII exactly as it was and sends anything else through `ascii()`, the encoder the slot note uses, without its quotes; `_plain_lines` does the same line by line. Ten fields in nine statements, listed from the source: the malformed-record dictionary, unsafe dst, malformed hash (the path and the recorded value), dst escapes, illegal living_state, missing, modified, the hint's path list, and the forked-facade advisory. A clean report is unchanged to the byte. |
+
+**What this adds, and what it sets aside.**
+
+* *The add-only rule.* C8 and C9 required that the diff to `bootstrap/verify_integrity.py` against C8's parent remove or change no line. This is the one place that rule is set aside, at the Maintainer's instruction: nine existing statements change, all of them message text inside the failure branches. Every `continue`, every count and both `return` statements are untouched, and the verdict does not change: the old-versus-new comparison adds the nine crafted-path trees, and for each the exit code and stdout are equal and the new stderr equals the old with each unsafe character replaced by its written escape (raw control characters in the old report: 1 to 8 per tree; in the new: 0).
+* *The forked-facade advisory.* Its text is built by the engine (`bootstrap/_scaffold/lockfile.py`), and its source-version line prints the lockfile's `cairn_version` raw. The engine is not touched. The advisory is escaped on the way out of `verify_integrity`, so this check's output is safe. `upgrade` prints the same advisory through the same formatter without that step; escaping it there is an engine change and belongs to the second question, not to this plan.
+* *Tests*, red before the change: a crafted path holding an escape sequence, a bell, a bidirectional override and a Cyrillic letter, taken to each of the nine sites, must print as exactly the written escapes in the form a clean path prints in; a clean report with a space in a path is unchanged; a printable homoglyph and a bare ASCII escape sequence are each escaped; and a static test lists every lockfile-derived f-string field in `verify()` from the source and requires each to be `_plain` or `ascii`. Mutants: the encoding removed at each of the ten fields, and the encoder as the identity, with its quotes kept, testing only "printable", testing only "ASCII", and the line wrapper without newlines: 15, all killed (two survived at first and each now has a node).
+
+No question remains for the Maintainer. Status stays `revising-code` until the next commit carries the fresh record.
