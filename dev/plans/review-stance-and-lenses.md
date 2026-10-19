@@ -4621,3 +4621,36 @@ which and why.
 **Search C, `README.md` end state.** The six places equal the accepted wording (the stance test pins each);
 the remaining `independen` hits (the problem statement, "someone independent checks", an
 independent adoption, an independent correctness probe) are generic uses and stay.
+
+## Scope delta -- README presentation -- Maintainer instruction, 2026-10-19
+
+The Maintainer requested a new README presentation in chat, verbatim:
+
+> Can you re-work the Cairn README page, it's focus on an external, independently-structured AI agent/human is too strong. It also could use some de-AI-ification.
+
+This replaces the README-only exact-copy and figure-placement requirements in
+Q3/C6. The front page may remove the repeated reviewer-distance pitch, journal
+analogy and review figure, and lead with research-software work, recorded
+decisions and session continuity. The framework anchor, review rules and other
+C6 surfaces are unchanged. No scientific or review outcome is removed.
+
+The README tests now check the retained contract: a fresh non-author reviewer,
+same-tool fresh-session sufficiency, the Maintainer's choice of additional
+distance, and recorded review authorship/evidence. Deletion controls must fail;
+equivalent wording must pass. They no longer pin repeated marketing sentences
+or require this figure on this page. The figure itself remains accessible and
+tested, without changing its bytes.
+
+This is a presentation follow-up, not a completed integration run or code-review
+clearance. C8 and the queued gate-manifest re-anchor still apply, including the
+changed test file and test-node set. The plan's status is not advanced here.
+
+The plan's claim checker still reports the historical range quoted under
+"Left open by this plan" above. That paragraph already says the range was
+removed; it is not a claim that the current file has those lines. This follow-up
+does not edit the quotation, suppress the check, or resolve the source proposal's
+separately recorded citation debt.
+
+The README test changes invalidate reuse of the earlier full-run record for
+the updated tree. A fresh full integration run for this follow-up is owed before
+its verification is complete; the scoped checks alone do not clear C8.

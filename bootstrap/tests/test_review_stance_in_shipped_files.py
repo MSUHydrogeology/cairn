@@ -1508,10 +1508,9 @@ def test_putting_an_external_example_back_in_the_upgrade_guide_is_reported() -> 
 
 
 # --------------------------------------------------------------------------
-# The headline: the README, the figure, and the descriptive pages. The README
-# and the framework anchor promise the same thing in the same words, so a
-# visitor who reads either learns that review is by someone who did not write
-# the work, and that more distance is something the maintainer asks for.
+# The README and descriptive pages explain the review contract. Presentation
+# may change without requiring a repeated sales pitch or a particular figure;
+# readers must still learn who reviews and who chooses any additional read.
 # --------------------------------------------------------------------------
 
 README = "README.md"
@@ -1533,41 +1532,41 @@ _DESCRIPTIVE_FILES = (
 _DESC_IDS = {rel: re.sub(r"[^a-z0-9]+", "-", rel.lower()).strip("-")
              for rel in _DESCRIPTIVE_FILES}
 
-#: The README's six places, in the words the maintainer accepted.
-_README_SPANS = {
-    "line-ten-says-a-fresh-session-by-default-and-more-on-request":
-        "read by someone who did not write it — a fresh AI session by default, "
-        "a different model or a person whenever you ask —",
-    "the-referee-row-says-a-reviewer-who-did-not-write-the-work":
-        "| Independent referees who don't know you | A review by someone who did "
-        "not write the work; a **different** AI model, or a person, whenever the "
-        "maintainer asks |",
-    "the-conflict-of-interest-row-says-the-record-names-the-reviewer":
-        "| Conflict-of-interest rules | Every review names its reviewer, so how "
-        "far they stood from the author is on the record |",
-    "the-distance-sentence-says-distance-is-easier-to-record":
-        "Distance is easier to record — the file names the reviewer, and \"a "
-        "different model architecture\" is a brighter line than \"no recent "
-        "co-authorship,\" when you want that line.",
-    "the-what-you-get-bullet-says-the-reviewer-is-not-the-author":
-        "- **The reviewer is not the author, and you can see who they were.** "
-        "Every review is by a fresh reviewer, who must answer in writing "
-        "whether the work should exist as framed and what would show it wrong. "
-        "A different AI model, or a person, reads it too whenever you ask. Who "
-        "reviewed what is written down in your repository, not claimed.",
-    "the-figure-text-says-one-review-at-every-stage":
-        "One review at every stage: a reviewer who did not write the work "
-        "questions its foundations and answers in writing. A different model, "
-        "or a person, adds more distance whenever the maintainer asks.",
-    "the-one-agent-paragraph-says-a-fresh-session-is-your-reviewer":
-        "**This works with one agent.** If you have a single AI tool, a fresh "
-        "session of it is your reviewer at every stage. A second model, or a "
-        "second person, is there whenever you want more distance. You do not "
-        "need a team to start.",
-    "the-lead-in-sentence-before-the-distance-sentence-stays":
-        "Two things differ, and both favour the code case.",
-    "the-sentence-after-the-distance-sentence-stays":
-        "And review happens **before the work is done**",
+#: Pin the contract, not its location, repetition count, or exact prose.
+_README_OBLIGATIONS = {
+    "reviewer-is-fresh-and-not-the-author":
+        r"fresh reviewer who did not write the work|"
+        r"reviewer who did not author the change, working in a fresh session",
+    "a-fresh-session-of-the-same-tool-is-enough":
+        r"A fresh session of the same AI tool is sufficient|"
+        r"The same tool can review in a fresh session",
+    "the-maintainer-chooses-additional-distance":
+        r"The Maintainer can request another model or a person for a particular review|"
+        r"An additional model or human review is the Maintainer's choice",
+    "review-author-and-evidence-are-recorded":
+        r"Each review records who wrote it and the evidence it considered|"
+        r"Reviews name their author and the evidence reviewed",
+}
+
+#: Literal sentences locate independent deletion controls and alternate wording.
+#: Do not derive either from the obligation regex under test.
+_README_WORDING_VARIANTS = {
+    "reviewer-is-fresh-and-not-the-author": (
+        "Review is by a fresh reviewer who did not write the work.",
+        "Review is by a reviewer who did not author the change, working in a fresh session.",
+    ),
+    "a-fresh-session-of-the-same-tool-is-enough": (
+        "A fresh session of the same AI tool is sufficient.",
+        "The same tool can review in a fresh session.",
+    ),
+    "the-maintainer-chooses-additional-distance": (
+        "The Maintainer can request another model or a person for a particular review.",
+        "An additional model or human review is the Maintainer's choice.",
+    ),
+    "review-author-and-evidence-are-recorded": (
+        "Each review records who wrote it and the evidence it considered.",
+        "Reviews name their author and the evidence reviewed.",
+    ),
 }
 
 #: Wording the descriptive pages must not carry: a review that has to come from
@@ -1654,33 +1653,42 @@ _DESC_OBLIGATIONS = {
 }
 
 
-@pytest.mark.parametrize("label", sorted(_README_SPANS))
-def test_readme_carries_the_accepted_wording(label: str) -> None:
-    assert _normalize(_README_SPANS[label]) in _normalize(_text(README)), (
-        f"README.md differs from the accepted wording at {label!r}. These "
-        f"places promise what the framework anchor promises; they move together.")
+@pytest.mark.parametrize("label", sorted(_README_OBLIGATIONS))
+def test_readme_explains_the_review_contract(label: str) -> None:
+    assert label not in _missing(_text(README), _README_OBLIGATIONS), (
+        f"README.md no longer explains {label!r}.")
 
 
-@pytest.mark.parametrize("label", sorted(_README_SPANS))
-def test_a_reworded_readme_span_is_reported(label: str) -> None:
-    span = _normalize(_README_SPANS[label])
+@pytest.mark.parametrize("label", sorted(_README_OBLIGATIONS))
+def test_removing_a_readme_review_rule_is_detected(label: str) -> None:
+    readme = _text(README)
+    assert not _missing(readme, _README_OBLIGATIONS), "unmutated control"
+    sentence, _ = _README_WORDING_VARIANTS[label]
+    mutant = _delete_sentence(readme, sentence)
+    assert mutant != readme
+    assert label in _missing(mutant, _README_OBLIGATIONS)
+
+
+@pytest.mark.parametrize("label", sorted(_README_OBLIGATIONS))
+def test_equivalent_readme_wording_preserves_the_rule(label: str) -> None:
     readme = _normalize(_text(README))
-    assert span in readme, "control: the unmutated README carries the span"
-    assert span.replace("a", "A", 1) not in readme.replace(span, "")
+    assert not _missing(readme, _README_OBLIGATIONS), "unmutated control"
+    sentence, alternative = _README_WORDING_VARIANTS[label]
+    assert readme.count(sentence) == 1, "literal sentence control"
+    rewritten = readme.replace(sentence, alternative)
+    assert rewritten != readme
+    assert not _missing(rewritten, _README_OBLIGATIONS)
 
 
-def test_the_readme_alt_text_equals_the_figures_accessible_title() -> None:
+def test_the_review_figure_keeps_an_accessible_conclusion() -> None:
     import xml.etree.ElementTree as ET
-    alt = re.search(r"!\[([^\]]*)\]\(docs/assets/dual-review-independence\.svg\)",
-                    _text(README))
-    assert alt, "README no longer embeds the figure"
     root = ET.fromstring(_text(FIGURE))
     ns = "{http://www.w3.org/2000/svg}"
     title = " ".join(root.find(ns + "title").text.split())
     desc = " ".join(root.find(ns + "desc").text.split())
-    assert " ".join(alt.group(1).split()) == title
-    assert title == " ".join(_README_SPANS[
-        "the-figure-text-says-one-review-at-every-stage"].split())
+    assert root.get("aria-labelledby") == "fig-title fig-desc"
+    assert title.startswith("One review at every stage:")
+    assert "reviewer who did not write the work" in title
     assert desc.startswith(title), "the description opens with the figure text"
 
 
