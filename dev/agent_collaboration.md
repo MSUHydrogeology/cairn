@@ -15,20 +15,21 @@ ask.
   Decision authority. The one role that is not interchangeable.
 * **Strategy** — surveys the landscape, frames problems, drafts proposals.
 * **Implementation** — carries an accepted proposal through its plan.
-* **Internal Reviewer** — strengthens the change *within* the structure
-  proposed: catches problems, sharpens the argument, surfaces what the author
-  missed.
-* **External Reviewer** — evaluates that structure *from outside*: whether the
-  change should happen at all, the strongest rejected alternative, and what
-  would falsify it.
-* **Security Review** — the same adversarial read, aimed at a high-risk
-  surface, and run as a parallel lens rather than a second stop.
-
-Tiers are **stances**, not staffing classes — a fresh session is every
-review's floor and no tier requires a different agent type. Full definitions,
-and what each review owes, in `doctrine/dual-review.md`.
+* **Reviewer** — a fresh reviewer who did not write the work, on the work's
+  side: it questions the work's foundations and answers the stage's three
+  questions in writing (`AGENTS.md` > "Review"). After the review it also gives
+  the Maintainer a **neutral briefing** that lays out the decision space without
+  steering it.
+* **Security Review** — an adversarial read aimed at a high-risk surface, run as
+  a parallel lens rather than a second stop.
 * **User Agent** — exercises Cairn from an adopter's position and files what
   it hits.
+
+A fresh session is every review's floor, and no review requires a different
+agent type. How far a reviewer stood from the author is read from its
+attribution, and the Maintainer may ask for more distance (`AGENTS.md` >
+"Review"). Full definitions, and what each review owes, in
+`doctrine/dual-review.md`.
 
 **The AI surface is bimodal.** These roles are filled by **agent-side AI** — a
 model acting as a named participant, with a role, a record, and accountability
@@ -59,6 +60,95 @@ findings reads as a verdict, and an author defends rather than thinks.
 
 A finding is **blocking** or **non-blocking**, and says what evidence would
 close it. "This is too large" is not a finding.
+
+## The review sweep
+
+A review that finds nothing on a *complex* change is treated with skepticism,
+not relief: a reviewer who reads to confirm that the change works will find that
+it does. Read as if a hidden bug exists, and probe for it. The standing form of
+that discipline is a **fixed, change-agnostic roster of nine lenses**. A lens is
+**where the evidence for a review's three answers comes from** (`AGENTS.md` >
+"Review"), not a second checklist: the most common first-pass miss is not a
+wrong judgment but an *unswept category*. The nine:
+
+1. **Claims** — probe every load-bearing claim against the *current* tree
+   ("exists / works / is available / is atomic / fails closed"). A **forward**
+   claim ("will exist", "will support") gets the *same* probe as a
+   present-tense one: run the check, never accept it on assertion.
+2. **Production path exercised by tests** — the public entry point is tested
+   *through*, not just a helper or a stub of the very thing that breaks.
+3. **Design completeness** — preconditions, invariants, edge cases (empty /
+   None / zero / single / N≫1 / mismatched units or CRS) and failure modes are
+   stated, not left implicit.
+4. **Silent failure / fail-closed** — guards raise loudly rather than degrading
+   or returning empty; they cover all configs and stages; any fail-open path is
+   intentional, not accidental.
+5. **Cross-document consistency** — scan the governing docs, the roadmap, and
+   code, tests and doctrine for an orphaned reference to old or deferred
+   behavior, or an existing tool or path the change should use or update.
+6. **Drift** — docs, examples, changelog, and commit claims match the behavior
+   that actually shipped.
+7. **Lifecycle / process placement** — for a doctrine or process change: *who*
+   runs this, *when*, in *which* ceremony or serialization point; the change has
+   a home in the lifecycle, not just a rule.
+8. **Domain / scientific validity & scope** — methods are grounded and
+   documented; scope has not quietly expanded; each new abstraction earns its
+   existence.
+9. **Name the satisfier** — every finding states the test / guard / doc /
+   scope-cut / explicit `wontfix` that would close it. A finding with no
+   satisfier is an observation, not yet a finding. At archive each satisfier
+   maps onto a disposition: test or guard → `guard`; doc or scope-cut →
+   `accept`; wontfix → `wontfix`. A finding whose satisfier is none of the
+   five — real work that must happen, but not in this artifact — is the `defer`
+   case, and `defer` is the Maintainer's call. **`scope-cut` means claim
+   correction, and nothing else**; removing accepted work is a scope
+   reduction, which only the Maintainer may concede (below).
+
+**The sweep applies to the reviews the lifecycle calls for** — proposal, plan
+and code review. A trivial change with no review owes none.
+
+**Falsifiable coverage, not "checked."** A lens a review cites is credible only
+if it names the file path, test node, line or command output that backs it
+("#2: `tests/foo.py::test_bar` calls the public entry"). A bare "#2:
+checked" is an *incomplete* review, not a pass.
+
+**End with a two-part coverage line** — not a verdict, a map of what the pass
+did and did not cover:
+
+* **Covered** — the lenses swept, each with its citation.
+* **Not covered / low confidence** — the negative space: "did not exercise the
+  scientific math", "could not run the sibling-repo test". A covered-only line
+  manufactures false comfort.
+
+The line does not end in a recommendation for more review. Report the risk and
+the gap; the Maintainer reads the negative space and may ask any reader for
+anything.
+
+**The sweep is a floor, never a downgrade of a declared tier.** It names the
+minimum breadth to cover and report; a review the lifecycle declared `required`
+still runs in full. A project adds its own probes after the nine — units,
+coordinate systems, numerical edges, resource limits — for the checks its
+high-risk surfaces demand.
+
+**A clean code review shows a falsification ledger.** Approving by assertion
+clears nothing. A pre-archive code review that approves carries a ledger of five
+items:
+
+* **Surfaces probed** — what was actively examined or tried to break.
+* **A negative or edge-case attempt** — at least one, where one applies: the
+  boundary, empty or out-of-range input actually tried, and what was checked to
+  fail closed.
+* **Verification** — the commands run, with results; or an explicit statement of
+  what was not run and why.
+* **Residual risk** — what remains unverified.
+* **Mutation, when a claim names a set** (every call site, every rendering path)
+  — the set is listed from the tree, not the diff, and each member is mutated in
+  a separate copy. Each mutant is reported killed, survived or equivalent beside
+  an unmutated control run, never as a bare count (`AGENTS.md` > "Verification
+  boundaries").
+
+A reviewer who tried to break the change and reports honestly that they could
+not has cleared the gate; a reviewer who only read it has not.
 
 **The clean pass has a mirror: the scope-reduction trap.** Narrowing is
 the path of least resistance in review — it costs the reviewer nothing,

@@ -60,19 +60,64 @@ Details are in the two `_template.md` files.
 
 ## Review
 
-* **Internal review** helps a change land — it strengthens the change *within*
-  the structure proposed.
-* **External review** makes a change prove it should land — it evaluates that
-  structure *from outside*, and owes a verdict on whether the change should
-  happen at all, the strongest rejected alternative, and what would falsify it.
-  A pass carrying only sharpenings-within-the-frame did Internal work whatever
-  its heading says.
+**One stance at every stage.** A review is by a fresh reviewer who did not
+write the work, on the work's side: it makes the work better by questioning
+its foundations, and it answers in writing. No agent picks a kind of review.
+The stage sets three questions:
 
-**A tier is a stance, not a staffing class.** Every review's floor is a fresh
-session; **no tier requires a different agent type — External and Security
-Review included.** A different type is the strongest distance available and is
-recommended wherever it can be staffed; which distance a review actually had is
-read from its attribution.
+| Stage | Should it happen as framed? (code: does it do what it claims?) | Best alternative | What would show it wrong |
+|---|---|---|---|
+| Proposal | Should this exist as framed? Is there a better design, doing nothing included? | The strongest, doing nothing included | What would make the author withdraw |
+| Plan | The Decision settled the premise. Does the plan deliver it? | A simpler path to the same outcomes | The result showing it cannot deliver |
+| Code | Does it really do what it claims? Try to break it, in order to fix it. | A simpler or safer build, if any | The input or run that breaks it, and what was tried |
+
+Each pass opens with a **Foundations** block of three lines, one answer per
+question, each ending in the file, test, line or command that backs it. For
+code review, Answer 3 points at the falsification ledger rather than restating
+it. **Improve means recommend**: the reviewer proposes the better version
+("don't do this" and "do it differently" count) and the author decides. **There
+is no quota of findings.** "No defects found" is allowed only with the three
+answers evidenced and the gaps named.
+
+**Every review shows its evidence.** The three answers a review owes rest on
+the nine standing lenses in `dev/agent_collaboration.md` > "The review sweep".
+A lens a review cites names the file, test, line or command that backs it (a
+bare "checked" is an incomplete review), and the coverage line that ends the
+review says what the pass did not cover. A reviewer who recommends narrowing
+the work states what is lost and why the narrower change still reaches the
+cause; only the Maintainer concedes a loss.
+
+**More distance is the Maintainer's call, and only theirs.**
+
+* **What it is.** An *External read* is a review the Maintainer asked for on one
+  named artifact that exists now, in chat or inside a Decision, outside the usual
+  procedure. A call that covers artifacts not yet written is a standing floor (a
+  rule that applies without being asked), and a standing floor returns only by
+  proposal. A roster the Maintainer sets in `dev/collaboration_agreement.md`
+  (which agent types work the tree) is the team's shape, not a call: it adds no
+  read and upgrades none. Distance is information, not a rule: a different agent
+  type has different failure modes and a person has different knowledge. The
+  staffing reviewer follows the Maintainer's brief, answers the same three
+  questions from that distance, and says so.
+* **How it is recorded.** The pass carries `**Called by**: Maintainer -- Decision
+  at <commit>` (or `-- chat, <date>`, with `, relayed by <who>` where it was
+  relayed), followed by the Maintainer's words, verbatim and set apart. The same
+  words go in the commit message, as for a scribed Decision. `**Tier**: External`
+  is valid only with that line, and a pass headed External without it is read as
+  the usual review.
+* **What an agent never does.** Declare External as a required review in a
+  header, say a change needs one, recommend more distance, head a pass External
+  on its own, or start one without those words. It may name a risk and a gap in
+  its coverage line.
+* **What a called read never does to the other reviews.** It adds to the usual
+  review and replaces nothing. Its brief may add focus; it removes no owed
+  answer, and it discharges no Security Review by its distance or its brief (a
+  pass clears a Security Review only by being one). Any other authority in the
+  quoted words, such as a waiver or a change of scope, takes effect only where
+  Maintainer authorizations already live, a Decision block or a plan's fence,
+  and never from a `Called by` line. Nothing checks the quote mechanically, in
+  the pass or in the commit message: the next reviewer and the Maintainer at the
+  Decision are the check.
 
 **A reviewer reasons through what is proposed; they are not a second
 implementer.** Verification belongs to the implementation and its recorded
@@ -96,14 +141,18 @@ reviewed commit, in a fresh, empty folder every time: a detached
 just read files. A figure is evidence only if it was measured on that
 commit's bytes.
 
-**A plan review is Internal, fresh-context — always.** Code review's job is
-falsification, and its floor is separate and independent:
-**not the implementing agent.** **An External code review is an escalation**
-for implementation risk the proposal review did not resolve, never the default.
-A plan whose surface calls for security treatment declares
-`Plan review: required(Internal + Internal Security Review)`, satisfied only by
-an appended `## Plan review` pass whose `**Obligation**` line matches — never by
-an ordinary Internal pass, and never by a heading the checker cannot parse.
+**A plan review is fresh-context — always.** Code review's job is falsification,
+and its floor is **not the implementing agent**. It never reopens the Decision
+(what to build is settled; how it was built, and what breaks it, is the
+question). A clean code review shows a falsification ledger.
+
+**A high-risk surface takes a Security Review.** `usual + Security Review` in a
+header means two passes: the usual pass and a Security Review pass that names its
+own obligation. The usual pass never clears the second. A plan whose surface
+calls for security treatment declares `Plan review: required(Internal + Internal
+Security Review)`. Only an appended `## Plan review` pass whose `**Obligation**`
+line matches clears it, never an ordinary Internal pass. No tool reads that line:
+the next reviewer, the code reviewer and the Maintainer check it.
 
 **Reviews are attributed and self-committed.** No agent writes or commits a
 review attributed to another. The attribution *is* the record's integrity: a
@@ -138,9 +187,9 @@ place it can change.
 
 Work is organized by **roles**, not people. The **Human Maintainer** holds final
 Decision authority and is the one role that is not interchangeable. Other roles
-(Strategy, Implementation, the reviewer tiers) are frames any capable agent
-fills; name your role before substantive work, and if it is not explicit, ask.
-The roster is in `dev/agent_collaboration.md`.
+(Strategy, Implementation, the Reviewer, Security Review) are frames any
+capable agent fills; name your role before substantive work, and if it is not
+explicit, ask. The roster is in `dev/agent_collaboration.md`.
 
 ## Git and commit workflow
 
@@ -170,12 +219,12 @@ The roster is in `dev/agent_collaboration.md`.
   **Why this is stated positively.** The rule it replaces — *never commit
   without explicit approval* — predates Cairn and was the reaction that led to
   building it. That hazard is now answered by the apparatus itself: a proposal,
-  a review across structural independence, an accepted plan with per-chunk
+  a fresh reviewer at every stage, an accepted plan with per-chunk
   acceptance criteria, and fences where a human is genuinely needed. A blanket
   per-commit gate on top of all that is the earlier, cruder instrument left
   running after its replacement was built, and it has cost real work. If an
-  incident argues for tightening, tighten *the plan's fences* or the review
-  tier, which is where approval binds to something specific.
+  incident argues for tightening, tighten *the plan's fences* or *what a review
+  must show*, which is where approval binds to something specific.
 * **Scribing a Decision.** An explicitly-instructed agent may scribe and commit
   the Maintainer's Decision, bounded by three rules: **quote the authorization
   verbatim and visually isolated** in both the `## Decision` block and the

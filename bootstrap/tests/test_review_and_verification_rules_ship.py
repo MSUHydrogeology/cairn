@@ -37,10 +37,11 @@ The rules pinned here:
   ordinary prose, and that includes prose a test or manifest pins. A narrower
   "code" reading misses exactly the template rewrite whose pinned prose broke
   tests its author never ran.
-* **Code review is not External by default.** An External code review is an
-  escalation for risk that proposal review did not resolve. The usual
-  procedure may be reworded, so this is pinned as an absence: the claim must
-  not come back in either copy, in any capitalisation or line wrapping.
+* **Code review is not External by default.** More distance on a review is
+  the Maintainer's call on one named artifact, never a default and never
+  something an agent applies. The usual procedure may be reworded, so this is
+  pinned as an absence: the claim must not come back in either copy, in any
+  capitalisation or line wrapping.
 
 Each obligation is an alternation matched against whitespace-collapsed text, so
 a rewording that keeps the obligation passes and a deletion fails. Node IDs are
@@ -160,9 +161,9 @@ _FORBIDDEN_REASONS = {
         "trivial change has no plan, so it could never qualify and every "
         "small fix would run the full suite."),
     "code-review-is-not-external-by-default": (
-        "says code review is External by default again. An External code "
-        "review is an escalation for implementation risk that proposal "
-        "review did not resolve; as the default it adds a pass to every plan."),
+        "says code review is External by default again. More distance on a "
+        "review is the Maintainer's call on one named artifact, not a default "
+        "an agent applies; as the default it adds a pass to every plan."),
 }
 
 

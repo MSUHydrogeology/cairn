@@ -6,10 +6,6 @@
 **Assurance path**: high-assurance — inherited: the change edits `doctrine/`, the governing `AGENTS.md` every adopter receives, the authoring templates and a framework anchor.
 **Opened**: 2026-10-18
 
-Proposed paths:
-- `bootstrap/tests/test_review_stance_in_shipped_files.py`
-- `bootstrap/tests/test_review_sweep_ships.py`
-
 ## In brief
 
 **Two accepted changes, built as one plan.**

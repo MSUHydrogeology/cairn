@@ -128,9 +128,8 @@ Merged into `dev/agent_collaboration.md`:
 > **A clean code review must show its work.** A pre-archive code
 > review that approves does not clear the gate by *asserting*
 > approval — a bare "unconditional approval" clears nothing. It
-> either carries a **falsification ledger** or is confirmed by a
-> second independent different-agent-type pass. The ledger is a
-> lightweight four-part record:
+> carries a **falsification ledger**. The ledger is a lightweight
+> four-part record:
 >
 > * **Probed edge cases** — the boundary / empty / out-of-range
 >   inputs actually tried.
