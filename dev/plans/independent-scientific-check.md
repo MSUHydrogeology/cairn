@@ -2527,3 +2527,147 @@ A single re-draft is a sample of one, as the first was. The plan accepted that (
 * I did not run the base's full suite; I checked its AST file, collection and gates.
 * The Maintainer's chat answer on the control example is as the Response quotes it; I cannot see the chat.
 * Last round's other omissions still hold: rendering was measured for the survivors I named, not for every whitespace variant, and the scientific content beyond the positive-control bullet is the Maintainer's.
+
+## Retroactive application, the stor-modflow draft to be redone -- Claude Sonnet 5.5 (implementer) -- 2026-10-19
+
+This continues the C1 record under `## Retroactive application` above, which is
+not edited. It is appended here because the sections after that record have been
+written since.
+
+**In plain terms.** The verification of the revision found a flaw in how C1 was
+run, and the coordinating session is fixing it by running the stor-modflow draft
+again. The flaw: the drafters' briefs told them to say what they could not check
+and to name what they would open to confirm it. That is the very thing question
+(B) rewards. So the stor-modflow "yes" was not a fair test of the block, and I set
+it aside. This section records the new brief and why. **It is written before the
+new draft exists.** Nothing is scored. C1's outcome is therefore **open** until
+the new draft is scored, and I will not treat it as settled. If the new draft
+says yes, C1 stands; if it says no, both plans are no and the plan stops (see the
+stop rule below).
+
+### Why the first stor-modflow result is set aside
+
+* **What the briefs did.** The first stor-modflow drafter's brief (on file in the
+  Response, SHA-256 `2ab39e8e…0a7a`) said: if you would want to check
+  something, the data behind it for example, you cannot; "Say so in the section,
+  as its instructions ask, and name what you would open to confirm it." The
+  block's own instruction is "Say whether the data behind the expected value is
+  in hand and has been checked. If the check depends on data that does not exist
+  yet, say so." It does not ask for a name or a file to open, and the brief
+  credited that sentence to the block.
+* **Why it decides the result.** The scorer's rubric passes (B) for a draft that
+  says the data is not confirmed **and names what would be opened**. A drafter
+  who followed the brief therefore passed (B) by construction; the only way to
+  fail was to claim the data was in hand against the brief's own instruction.
+  C1 added (B) so that stor-modflow could fail; with that brief it could not.
+* **What I said before, corrected.** The Response said the pass "owes part of its
+  form to the brief". The verification reads it as the whole form, and I agree.
+  With the brief as written, the exercise cannot tell the block's data prompt from
+  the brief's. The stor-modflow "yes" is then (A) alone, and (A) is "yes" only on
+  the condition that the reference array had existed, which it never did. It is no
+  evidence about the block's data-status prompt, for or against.
+* **What stays on file.** The first stor-modflow draft, its score, the verdicts
+  and the stop-rule application above are kept exactly as written, and are
+  labelled here as **made under a brief that helped**. The assemble part A draft,
+  its brief and its "no" are untouched: the same nudge could only have helped it.
+* **The stop rule, as applied then.** It was applied correctly to the record it
+  was given (one yes, one no). That record was not a fair run of the test the plan
+  designed. This section re-opens that question; it does not change the earlier
+  text.
+
+### The re-run brief, on file before the draft exists
+
+Sent by the coordinating session to a fresh drafter. The coordinating session's
+account is that the drafter is fresh and that the inputs are the same as the first
+run's; I have not seen the drafter. The brief is below verbatim, with no fence of
+its own (15 lines). SHA-256:
+`d2b91c209f2615fd512ca325f91ac6ef4dea6095120f81bff137383954f51944`.
+
+```text
+You are the author of a scientific-software proposal, filling in one section of it. This is a blind exercise. **You may read exactly two files, and nothing else.** Read them with the Read tool:
+
+1. `/private/tmp/claude-501/-Users-kendal30-Code-cairn/79ada448-b159-4255-b0ea-444b74328be1/scratchpad/c1-inputs/wording-independent-scientific-check-block.md`: the instructions for a section called "Independent scientific check".
+2. `/private/tmp/claude-501/-Users-kendal30-Code-cairn/79ada448-b159-4255-b0ea-444b74328be1/scratchpad/c1-inputs/stor-modflow-proposal-as-opened.md`: your proposal, exactly as you opened it.
+
+**Rules:**
+- Do not read, search or list any other file or directory.
+- Do not run commands.
+- Do not use the web.
+- Work only from those two texts.
+- If the instructions ask for something you cannot do from these two texts, say so in the section.
+
+**Task.** Following the section's instructions exactly, write the "Independent scientific check" section for this proposal, as its author would at the moment the proposal was opened. Be concrete: the quantity, the expected value and tolerance with its source, whether the data behind it is in hand, why the expectation is independent, the plausible mistake under which the check would fail, and the positive-control clause if your check passes by finding nothing. If you judge that no independent basis exists, say so plainly. Don't invent one.
+
+**Reply** with only the filled section, in Markdown, starting with its `### Independent scientific check` heading. Add no commentary before or after it.
+```
+
+* **Against the first brief, one rule differs.** `diff` of the two files shows a
+  single changed line, the last rule, which read "If you would want to check
+  something, the data behind it for example, you cannot. Say so in the section, as
+  its instructions ask, and name what you would open to confirm it." and now
+  reads "If the instructions ask for something you cannot do from these two texts,
+  say so in the section." Every other line, the two file paths included, is the
+  same.
+* **It carries none of the nudge.** Searched case-insensitively for `name`,
+  `open` and `confirm`: the first brief holds `name` and `confirm` once each and
+  `open` four times; the re-run holds `name` and `confirm` not at all, and `open`
+  only in "exactly as you opened it" and "at the moment the proposal was opened",
+  which are about the proposal. The task paragraph still asks "whether the data
+  behind it is in hand", as in the first brief and as the block's own wording
+  does; that is the data-status prompt under test and was left in on purpose.
+* **The inputs are the same bytes.** I recomputed their SHA-256 today: the wording
+  `327d0b175cafb40e43dc421a0894403edfa4e44854e4e1f1871200fa55c6f947` and the
+  stor-modflow proposal as opened
+  `6971f5191097e17df6940dfde5a424921aa7f062b247770d111afb8e4e4cc46b`, as recorded
+  in the C1 inputs above.
+* **Next, by the coordinating session's plan.** The draft goes into this record
+  verbatim before any scoring; a fresh scorer then gets the same scorer brief and
+  the same two error statements; the result is appended here; and the stop rule is
+  applied to {assemble part A: no, stor-modflow re-run}. **Yes** on both (A) and
+  (B): C1 stands, and the archive sentence says the yes came from a re-run after
+  the first brief was found to help. **No**: both plans are no, the block is
+  judged ritual, I write `**Waiting on Maintainer**: block judged ritual; plan
+  stopped` beside Status and stop, and the Maintainer decides what happens to C2
+  to C4, which are committed and not pushed.
+
+### The suggested archive wording, corrected
+
+The Response's first archive duty suggested a sentence that said the block's
+data-status prompt, "with that help", made a blind author flag the false data
+claim, and that this was weak positive evidence for the prompt. **That sentence is
+withdrawn.** It credited the block for a result the brief produced. The
+replacement below does not credit the prompt for the first "yes". It is interim:
+its last sentence is completed from the re-run's record once the re-run is scored.
+
+> C1 ran on two past LHM plans. Assemble part A said no: its draft was a good
+> check for the change the proposal described, aimed at a different risk than the
+> one that later bit (the fill for uncovered land-use cells), which the proposal
+> as opened never mentioned. Stor-modflow's first draft said yes, and that result
+> was set aside: the drafters' briefs had told them to name what they would open
+> to confirm any data they could not check, which is the pass condition of the
+> data-status question, so the yes showed only that a drafter can follow a brief.
+> It is no evidence about the block's data-status prompt, for or against. The
+> stor-modflow draft was redone once with a brief that did not carry that
+> sentence. *(Complete from the re-run's record: its verdict on (A) alone and
+> combined, and the stop rule's result. If it is yes, add: the yes came from a
+> re-run after the first brief was found to help; it is weak positive evidence
+> for the data-status prompt and none yet for the independent-basis half, and it
+> is not evidence that the block yields a check that catches the priming error.
+> If it is no, the block is judged ritual and this archive wording is moot.)*
+
+The second archive duty (name the author-as-expert mode under falsifier F2 on the
+revisit row) is unchanged and still to do at archive.
+
+### The upgrade regression is fixed elsewhere
+
+The second Boundary B record reported that an existing adopter's proposal template
+stopped at `needs-value` on upgrade, because of `{{evidence}}` tokens added by the
+review-stance-and-lenses plan's second chunk. The verification asked for it to
+have a live home. It has been fixed by that plan at `5c77c11b` ("no one-word
+placeholder the engine cannot fill in the proposal template"): the three tokens
+became `<evidence>`, and guard tests scan every shipped template and Cairn's
+authoring copies against the engine's own token rules. I checked it today: an
+install from `c504fca8`, planned against the current head `8ccb8836`, lists no
+`needs-value` file, and the new test and `test_profile_grammar` pass there (46
+passed). This plan's block therefore reaches existing adopters again, and the item
+needs no further home.
