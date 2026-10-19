@@ -265,6 +265,10 @@ with the plan's filename stem.
   > "Accept A, B, C and D as revised, with every recommended answer, including
   > B’s scope cut and D’s scope delta."
 
+  Untracked paths: `bootstrap/tests/test_onboarding_review_tiers.py` -- deleted
+  by the review-stance plan's chunk C7, so a fresh checkout does not carry it;
+  the paragraph below cites it as the record of what the re-anchor must handle.
+
   **Joined 2026-10-18** at the opening of
   `plans/review-stance-and-lenses.md` — **planned, not yet changed**: derive the
   changed set from the manifest's `frozen_files` keys at ceremony time. That
