@@ -80,16 +80,15 @@ def _scaffold_solo(target: Path) -> int:
 
 
 class TestPriorityOrder:
-    def test_collab_agreement_wins_over_second_agent_type(
+    def test_surviving_prompt_is_selected(
         self, helper: ModuleType,
     ) -> None:
-        """When both rows fire in one goodnight, the higher-priority row
-        is the one prompt shown."""
+        """The remaining trigger still selects its active prompt."""
         chosen = helper.select_active_prompt_to_fire(
-            {"collab-agreement-signing", "second-agent-type"},
+            {"second-agent-type"},
             log_records=[],
         )
-        assert chosen == "collab-agreement-signing"
+        assert chosen == "second-agent-type"
 
     def test_no_triggers_returns_none(self, helper: ModuleType) -> None:
         chosen = helper.select_active_prompt_to_fire(set(), log_records=[])
@@ -114,19 +113,21 @@ class TestIdempotency:
     def test_prior_emission_in_log_suppresses_re_fire(
         self, helper: ModuleType,
     ) -> None:
+        assert helper.select_active_prompt_to_fire(
+            {"second-agent-type"}, log_records=[],
+        ) == "second-agent-type"
         log = [
             helper.ActivationRecord(
-                "active-surface:collab-agreement-signing",
+                "active-surface:second-agent-type",
                 "2026-05-29T00:00:00Z", "agent-1", "solo-greenfield",
-                "active-surface:collab-agreement-signing",
+                "active-surface:second-agent-type",
             ),
         ]
         chosen = helper.select_active_prompt_to_fire(
-            {"collab-agreement-signing", "second-agent-type"},
+            {"second-agent-type"},
             log_records=log,
         )
-        # Collab-agreement was emitted before; the next row is chosen.
-        assert chosen == "second-agent-type"
+        assert chosen is None
 
     def test_all_emitted_returns_none(self, helper: ModuleType) -> None:
         log = [
@@ -157,11 +158,8 @@ class TestTaskCap:
         eligible activations: activates only MAX; the
         overflow lands in `deferred_over_cap`."""
         assert _scaffold_solo(tmp_path) == 0
-        # Solo-greenfield ships 3 trigger-gated deferred tasks (the
-        # fold-back walkthrough moved to a day-one seed, so it no
-        # longer contributes a 4th). Append a 4th deferred task to
-        # the installed source file directly so 4 eligible
-        # activations still compete for the cap of 3.
+        # Append two tasks so the two surviving trigger-gated tasks plus
+        # these stand-ins exceed the three-task cap.
         source_path = (
             tmp_path / "dev" / "modules" / "onboarding"
             / "solo-greenfield.md"
@@ -169,22 +167,21 @@ class TestTaskCap:
         source_path.write_text(
             source_path.read_text(encoding="utf-8")
             + "\n* [trigger: second-agent-type; id: extra-cap-test-task]\n"
-              "  Extra deferred task so 4 activations compete for the "
-              "3-task cap.\n"
+              "  One extra deferred task.\n"
+              "\n* [trigger: second-agent-type; id: another-cap-test-task]\n"
+              "  Another extra deferred task.\n"
         )
         outcome = helper.activate(
             tmp_path,
             by_agent="claude-test",
             fired_triggers_override={
                 "first-proposal-archived",
-                "collab-agreement-signing",
                 "second-agent-type",
             },
         )
+        assert len(outcome.pending) + len(outcome.deferred_over_cap) == 4
         assert len(outcome.pending) == helper.MAX_NEW_TASKS_PER_GOODNIGHT
-        assert len(outcome.deferred_over_cap) == (
-            4 - helper.MAX_NEW_TASKS_PER_GOODNIGHT
-        )
+        assert len(outcome.deferred_over_cap) == 1
 
 
 # ---------------------------------------------------------------------------
@@ -204,10 +201,10 @@ class TestActivatePromptEmission:
             by_agent="claude-test",
             fired_triggers_override={
                 "first-proposal-archived",
-                "collab-agreement-signing",
+                "second-agent-type",
             },
         )
-        assert outcome.active_prompt_row == "collab-agreement-signing"
+        assert outcome.active_prompt_row == "second-agent-type"
         assert outcome.active_prompt_body is not None
         assert len(outcome.active_prompt_body) > 20
 
@@ -217,20 +214,21 @@ class TestActivatePromptEmission:
         """Re-running activate after the first emission does not
         re-fire the same prompt (idempotency via the log marker)."""
         assert _scaffold_solo(tmp_path) == 0
-        helper.activate(
+        first = helper.activate(
             tmp_path,
             by_agent="claude-test",
             fired_triggers_override={
                 "first-proposal-archived",
-                "collab-agreement-signing",
+                "second-agent-type",
             },
         )
+        assert first.active_prompt_row == "second-agent-type"
         outcome_2 = helper.activate(
             tmp_path,
             by_agent="claude-test",
             fired_triggers_override={
                 "first-proposal-archived",
-                "collab-agreement-signing",
+                "second-agent-type",
             },
         )
         assert outcome_2.active_prompt_row is None

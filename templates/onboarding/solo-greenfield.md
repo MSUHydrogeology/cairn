@@ -19,8 +19,7 @@ unambiguously:
   matching).
 * Active-surfacing prompt metadata blocks at the end -- per-row
   prompt content the activation helper emits to the terminal
-  when the row's trigger fires (the three named rows; P1.10b fills
-  per-preset prompt content).
+  when the row's trigger fires.
 
 The `solo-greenfield` preset assumes the lightest shape: one
 human Maintainer + one AI agent on a new or near-new codebase.
@@ -63,15 +62,6 @@ no multi-agent coordination, no legacy-tree pre-pass.
   proposals) and `reflections/` (the daily handoff channel) carry
   deliberation surfaces beyond the proposal / plan lifecycle.
 
-* [trigger: collab-agreement-signing; id: sign-collab-agreement]
-  Your deployment has accreted enough activity to warrant
-  signing the collaboration agreement. Fill the `team-roster`
-  slot in `dev/collaboration_agreement.md` with your name + your
-  agent's identifier. No multi-party negotiation needed --
-  you're the team -- but the explicit roster matters for the
-  later review: it records who is who, so every review names its
-  reviewer when you add a second agent.
-
 * [trigger: second-agent-type; id: spin-up-second-agent]
   You're at the point where a second agent type would be useful.
   Fresh sessions of your agent already do every review, and you can
@@ -92,20 +82,9 @@ no multi-agent coordination, no legacy-tree pre-pass.
 
 Each active-surfacing row carries per-preset prompt content that
 the activation helper emits to the terminal when the row's
-trigger fires. The two rows for the `solo-greenfield` shape are
-given below:
+trigger fires. The `solo-greenfield` shape has one row:
 
-### Row 1 -- collab-agreement-signing prompt
-
-Fill in your own name + your agent's identifier in the team-roster
-slot of `dev/collaboration_agreement.md`. No multi-party
-negotiation needed; you're the team. The roster makes the
-fresh-session review reproducible -- real value, not a formality
-(the second session of your agent reviewing its own prior work
-catches what the first session missed); and you can read any piece
-of work yourself whenever you want more distance.
-
-### Row 2 -- second-agent-type spin-up prompt
+### Row 1 -- second-agent-type spin-up prompt
 
 Your solo deployment has matured to a point where a second agent
 type would be useful. Fresh sessions of your agent already do every

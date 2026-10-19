@@ -18,18 +18,13 @@ import re
 from .security import _assert_safe_dir_for_glob, _assert_safe_read
 
 
-# Per plan 2026-05-28-claude-cairn-progressive-onboarding: triggers
-# evaluate against EXPLICIT
-# deployment state (filesystem + roster + ledger) wherever possible,
-# NOT git archaeology.  The collab-agreement-signing trigger evaluator
-# uses a "first-proposal-archived has fired" precondition recorded in
-# the activation log -- the log IS the explicit state for prior
-# trigger fires.
+# Triggers evaluate explicit deployment state (filesystem, roster and
+# committed records), not git archaeology.
 #
 # The triggers observe the adopter's actual work: first-proposal-opened,
 # first-proposal-archived, first-plan-opened, first-plan-archived,
-# first-changelog-entry, second-agent-type, first-cross-type-review,
-# collab-agreement-signing.  Nothing here classifies a tree by adoption
+# first-changelog-entry, second-agent-type, first-cross-type-review.
+# Nothing here classifies a tree by adoption
 # stage: an adopter reads the doctrine or installs it with a profile, and
 # the triggers watch what they do.
 
@@ -134,18 +129,20 @@ def _unreleased_changelog_has_content(target: Path) -> bool:
 def _read_team_roster_body(target: Path) -> str | None:
     """Return the text BETWEEN ``<!-- cairn:slot team-roster -->`` +
     ``<!-- cairn:end team-roster -->`` in
-    ``dev/collaboration_agreement.md``.  None if the file or slot is
+    ``dev/agent_collaboration.md``. None if the file or slot is
     missing.
     """
-    coll = target / "dev" / "collaboration_agreement.md"
-    if not coll.is_file():
+    roster_file = target / "dev" / "agent_collaboration.md"
+    if not roster_file.is_file():
         return None
-    _assert_safe_read(coll, target)
-    text = coll.read_text(encoding="utf-8")
+    _assert_safe_read(roster_file, target)
+    text = roster_file.read_text(encoding="utf-8")
     open_marker = "<!-- cairn:slot team-roster -->"
     close_marker = "<!-- cairn:end team-roster -->"
     o = text.find(open_marker)
     if o < 0:
+        return None
+    if text.find(open_marker, o + len(open_marker)) >= 0:
         return None
     c = text.find(close_marker, o + len(open_marker))
     if c < 0:
@@ -277,11 +274,8 @@ def evaluate_action_triggers(
 ) -> set[str]:
     """Action-trigger evaluators.
 
-    Triggers observe
-    explicit state (filesystem + roster + ledger + file content
-    parsing); the ``collab-agreement-signing`` trigger consults the
-    activation log to confirm the ``first-proposal-archived``
-    precondition has fired.
+    Triggers observe explicit state (filesystem, roster and file content).
+    ``log_records`` remains in the signature for existing callers.
 
     Triggers fired:
 
@@ -298,9 +292,6 @@ def evaluate_action_triggers(
     * ``first-cross-type-review`` -- file-content scan finds a
       proposal/plan with a Review section attributed to a vendor
       different from the file's author.
-    * ``collab-agreement-signing`` -- roster slot is unfilled AND
-      ``first-proposal-archived`` has fired (recorded in the
-      activation log).
     """
     out: set[str] = set()
 
@@ -317,26 +308,12 @@ def evaluate_action_triggers(
         out.add("first-changelog-entry")
 
     roster_body = _read_team_roster_body(target)
-    roster_unfilled = roster_body is None or _team_roster_is_unfilled(
-        roster_body
-    )
-    if roster_body and not roster_unfilled:
+    if roster_body and not _team_roster_is_unfilled(roster_body):
         if _count_distinct_agents_in_roster(roster_body) >= 2:
             out.add("second-agent-type")
 
     if _has_cross_type_review_anywhere(target):
         out.add("first-cross-type-review")
-
-    # collab-agreement-signing: roster unfilled AND
-    # first-proposal-archived has previously fired (in the log).
-    if log_records is not None and roster_unfilled:
-        prior_fired_triggers = {r.trigger for r in log_records}
-        # The trigger ALSO requires first-proposal-archived to have
-        # fired CURRENTLY (covering the case where the log doesn't
-        # yet have it but the state does).
-        first_archived_now = "first-proposal-archived" in out
-        if "first-proposal-archived" in prior_fired_triggers or first_archived_now:
-            out.add("collab-agreement-signing")
 
     return out
 
@@ -348,7 +325,6 @@ def evaluate_triggers(
     """Every trigger that fires for *target*.
 
     The single entry point the activation run calls.  ``log_records`` is
-    forwarded to the action-trigger family for the
-    ``collab-agreement-signing`` precondition check.
+    forwarded to the action-trigger family for caller compatibility.
     """
     return evaluate_action_triggers(target, log_records=log_records)

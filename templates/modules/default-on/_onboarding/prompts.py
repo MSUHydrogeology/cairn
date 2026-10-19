@@ -21,7 +21,6 @@ import re
 #: one place.
 _ACTIVE_SURFACING_ROWS: tuple[tuple[str, str], ...] = (
     # (row-name, firing-trigger)
-    ("collab-agreement-signing", "collab-agreement-signing"),
     ("second-agent-type", "second-agent-type"),
 )
 
@@ -41,7 +40,7 @@ MAX_NEW_TASKS_PER_GOODNIGHT = 3
 #: compared to the row name under `_fold_for_match` below.
 #:
 #: The `Row N -- ` prefix is load-bearing, not decoration: without it
-#: `### Notes on collab-agreement-signing` matches as readily as the
+#: `### Notes on second-agent-type` matches as readily as the
 #: real prompt heading.  Keep the two-hyphen separator required.
 _ROW_HEADING_RE = re.compile(
     r"\A###\s+Row\s+\d+\s+--\s+(?P<label>.*)\Z",

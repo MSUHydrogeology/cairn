@@ -102,7 +102,7 @@ def test_unconditional_collaborative_team_renders_every_seed(tmp_path: Path) -> 
         "install-work-intent-hooks",
         "read-dual-review-module",
         "agent-team-onboarding",
-        "sign-collab-agreement-day-one",
+        "fill-team-roster-day-one",
     ):
         assert f"id: {seed_id}" in slot, f"expected seed {seed_id} at canonical axes"
 

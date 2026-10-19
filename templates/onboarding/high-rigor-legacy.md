@@ -49,7 +49,7 @@ goes live.
 
 * [seed; id: confirm-maintainer-authority]
   Confirm the existing project maintainer's authority is
-  reflected in `dev/collaboration_agreement.md`'s `team-roster`
+  reflected in `dev/agent_collaboration.md`'s `team-roster`
   slot. The legacy-codebase shape almost always has a de-facto
   Maintainer whose authority pre-dates the Cairn adoption; the
   apparatus should match the existing power structure, not
@@ -128,19 +128,9 @@ goes live.
 
 ## Active-surfacing prompt content (per-preset)
 
-The two active-surfacing rows the high-rigor-legacy preset emits:
+The active-surfacing row the high-rigor-legacy preset emits:
 
-### Row 1 -- collab-agreement-signing prompt
-
-Confirm the existing maintainer's authority is reflected in the
-team-roster slot of `dev/collaboration_agreement.md`. Name which
-changes are protected (see the high-risk surfaces in `AGENTS.md`).
-Multi-stakeholder fill
-is the expected shape; the team-roster slot is the surface
-where pre-existing power structure gets made explicit to the
-Cairn apparatus.
-
-### Row 2 -- second-agent-type spin-up prompt
+### Row 1 -- second-agent-type spin-up prompt
 
 Your high-rigor-legacy profile benefits from multi-agent
 staffing. Walk `dev/modules/onboarding/agent-team-onboarding.md`; the

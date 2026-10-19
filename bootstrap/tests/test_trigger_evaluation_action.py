@@ -1,17 +1,7 @@
-"""Tests for action-trigger evaluators.
+"""Tests for action triggers over explicit project state.
 
-Plan: 2026-05-28-claude-cairn-progressive-onboarding.
-
-Per Codex External Review P2-3: action triggers observe **explicit**
-deployment state (filesystem + roster slot + ledger + file-content
-parsing) wherever possible, NOT git archaeology.  The
-``collab-agreement-signing`` trigger explicitly named in P2-3
-consults the activation log to confirm the
-``first-proposal-archived`` precondition has previously fired.
-
-Each trigger gets positive + negative fixture tests; the
-``collab-agreement-signing`` trigger gets four fixtures per the
-spec.
+The roster reader must use the roles document and refuse linked paths before
+reading; the removed signing trigger must not return.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_trigger_evaluation_action.py
@@ -69,12 +59,12 @@ def _write_template_files(tmp_path: Path) -> None:
     (tmp_path / "dev" / "plans" / "_template.md").write_text("# t\n")
 
 
-def _write_collab_agreement(
+def _write_team_roster(
     tmp_path: Path, roster_body: str,
 ) -> None:
-    coll = tmp_path / "dev" / "collaboration_agreement.md"
-    coll.write_text(
-        "# Collaboration agreement\n"
+    roles = tmp_path / "dev" / "agent_collaboration.md"
+    roles.write_text(
+        "# Agent collaboration\n"
         "\n"
         "<!-- cairn:slot team-roster -->\n"
         f"{roster_body}\n"
@@ -183,7 +173,7 @@ class TestSecondAgentTypeTrigger:
         self, helper: ModuleType, tmp_path: Path,
     ) -> None:
         _empty_dev_tree(tmp_path)
-        _write_collab_agreement(
+        _write_team_roster(
             tmp_path,
             "* Anthony (Maintainer)\n"
             "* Claude Opus 4.7 -- author\n"
@@ -196,7 +186,7 @@ class TestSecondAgentTypeTrigger:
         self, helper: ModuleType, tmp_path: Path,
     ) -> None:
         _empty_dev_tree(tmp_path)
-        _write_collab_agreement(
+        _write_team_roster(
             tmp_path,
             "* Anthony (Maintainer)\n"
             "* Claude Opus 4.7 -- author + reviewer\n",
@@ -208,7 +198,7 @@ class TestSecondAgentTypeTrigger:
         self, helper: ModuleType, tmp_path: Path,
     ) -> None:
         _empty_dev_tree(tmp_path)
-        _write_collab_agreement(
+        _write_team_roster(
             tmp_path,
             "(The bootstrap records the team here...)",
         )
@@ -256,73 +246,44 @@ class TestCrossTypeReviewTrigger:
 
 
 # ---------------------------------------------------------------------------
-# collab-agreement-signing (4 fixtures)
+# Roster boundaries
 # ---------------------------------------------------------------------------
 
 
-class TestCollabAgreementSigningTrigger:
-    def test_positive_roster_unfilled_and_proposal_archived(
-        self, helper: ModuleType, tmp_path: Path,
-    ) -> None:
-        """Roster unfilled + first-proposal-archived just fired (in
-        the current state) -> trigger fires."""
+class TestRosterReadBoundaries:
+    def test_missing_roster_does_not_fire(self, helper: ModuleType, tmp_path: Path) -> None:
         _empty_dev_tree(tmp_path)
-        _write_collab_agreement(
-            tmp_path, "(The bootstrap records the team here...)",
-        )
-        (tmp_path / "dev" / "proposals" / "archive" / "x.md").write_text("#\n")
-        fired = helper.evaluate_action_triggers(tmp_path, log_records=[])
-        assert "collab-agreement-signing" in fired
+        assert "second-agent-type" not in helper.evaluate_action_triggers(tmp_path)
 
-    def test_positive_roster_unfilled_and_prior_log_fired(
+    def test_doubled_opening_marker_does_not_fire(
         self, helper: ModuleType, tmp_path: Path,
     ) -> None:
-        """Roster unfilled + log carries a prior `first-proposal-
-        archived` activation -> trigger fires (the log is the
-        explicit-state-of-prior-fires record)."""
         _empty_dev_tree(tmp_path)
-        _write_collab_agreement(
-            tmp_path, "(The bootstrap records the team here...)",
-        )
-        # No proposal in archive at the moment; the log has it.
-        prior_log = [
-            helper.ActivationRecord(
-                "post-first-proposal",
-                "2026-05-29T00:00:00Z", "agent-1", "solo-greenfield",
-                "first-proposal-archived",
-            ),
-        ]
-        fired = helper.evaluate_action_triggers(
-            tmp_path, log_records=prior_log,
-        )
-        assert "collab-agreement-signing" in fired
-
-    def test_negative_roster_filled(
-        self, helper: ModuleType, tmp_path: Path,
-    ) -> None:
-        """Roster filled -> trigger suppressed even if proposal
-        archive has fired."""
-        _empty_dev_tree(tmp_path)
-        _write_collab_agreement(
+        _write_team_roster(
             tmp_path,
-            "* Anthony (Maintainer)\n* Claude Opus 4.7 -- author\n",
+            "* Claude Opus -- author\n* Codex GPT -- reviewer\n"
+            "<!-- cairn:slot team-roster -->\n",
         )
-        (tmp_path / "dev" / "proposals" / "archive" / "x.md").write_text("#\n")
-        fired = helper.evaluate_action_triggers(tmp_path, log_records=[])
-        assert "collab-agreement-signing" not in fired
+        assert "second-agent-type" not in helper.evaluate_action_triggers(tmp_path)
 
-    def test_negative_proposal_never_archived(
-        self, helper: ModuleType, tmp_path: Path,
+    @pytest.mark.parametrize("linked_part", ["leaf", "parent"])
+    def test_linked_roster_path_is_refused_before_read(
+        self, helper: ModuleType, tmp_path: Path, linked_part: str,
     ) -> None:
-        """Roster unfilled BUT first-proposal-archived has never fired
-        -> trigger suppressed (deployment hasn't earned the prompt)."""
-        _empty_dev_tree(tmp_path)
-        _write_collab_agreement(
-            tmp_path, "(The bootstrap records the team here...)",
-        )
-        # No archived proposals; empty log.
-        fired = helper.evaluate_action_triggers(tmp_path, log_records=[])
-        assert "collab-agreement-signing" not in fired
+        project = tmp_path / "project"
+        outside = tmp_path / "outside"
+        project.mkdir()
+        (outside / "dev").mkdir(parents=True)
+        _write_team_roster(outside, "* Claude Opus\n* Codex GPT\n")
+        if linked_part == "leaf":
+            (project / "dev").mkdir()
+            (project / "dev" / "agent_collaboration.md").symlink_to(
+                outside / "dev" / "agent_collaboration.md"
+            )
+        else:
+            (project / "dev").symlink_to(outside / "dev", target_is_directory=True)
+        with pytest.raises(helper.OnboardingSecurityError):
+            helper.evaluate_action_triggers(project)
 
 
 # ---------------------------------------------------------------------------
@@ -338,7 +299,7 @@ class TestMixedAction:
         with proposals, plans, and a changelog entry. Several
         triggers should fire together."""
         _empty_dev_tree(tmp_path)
-        _write_collab_agreement(
+        _write_team_roster(
             tmp_path,
             "* Anthony (Maintainer)\n"
             "* Claude Opus 4.7 -- author + reviewer\n"
@@ -358,5 +319,4 @@ class TestMixedAction:
         assert "first-changelog-entry" in fired
         assert "second-agent-type" in fired
         assert "first-cross-type-review" in fired
-        # Roster is FILLED, so collab-agreement-signing must NOT fire.
         assert "collab-agreement-signing" not in fired

@@ -17,14 +17,14 @@ want it.
   vendor, or a sufficiently different model architecture from the
   first; an aspirational "future second agent" is not a
   prerequisite -- this doc applies when the agent is here).
-* The team-roster slot in `dev/collaboration_agreement.md` filled
+* The team-roster slot in `dev/agent_collaboration.md` filled
   with the existing agent(s) so the new addition has a place to
   attach.
 
 ## Step 1 -- update the team-roster slot
 
 Add the new agent's identifier to
-`dev/collaboration_agreement.md`'s `<!-- cairn:slot team-roster
+`dev/agent_collaboration.md`'s `<!-- cairn:slot team-roster
 -->` block. Use the canonical-id form your team has chosen for
 the existing agents (vendor + model name + optional capability
 tier suffix; the form matters less than the consistency).

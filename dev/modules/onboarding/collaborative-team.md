@@ -73,9 +73,9 @@ candidates upstream early, rather than letting the practice lapse.
   shape; the agent-team-onboarding doc carries the
   baseline configuration the team uses.
 
-* [seed; id: sign-collab-agreement-day-one]
+* [seed; id: fill-team-roster-day-one]
   Convene the team + agents in your first session and fill the
-  `team-roster` slot in `dev/collaboration_agreement.md`. The
+  `team-roster` slot in `dev/agent_collaboration.md`. The
   roster records who is who, so every review names its
   reviewer and a read the Maintainer calls from a different
   agent type can be staffed; a team without an explicit roster
@@ -104,18 +104,9 @@ candidates upstream early, rather than letting the practice lapse.
 
 ## Active-surfacing prompt content (per-preset)
 
-The two active-surfacing rows the collaborative-team preset emits:
+The active-surfacing row the collaborative-team preset emits:
 
-### Row 1 -- collab-agreement-signing prompt
-
-Convene your team + agents. Negotiate roles + decision-rights.
-Fill the team-roster slot of `dev/collaboration_agreement.md`
-together; the explicit roster records who is who, so every
-review names its reviewer and a read the Maintainer calls from a
-different agent type can be staffed. Without it, reviews cannot
-be attributed, which the collaborative-team shape is sized past.
-
-### Row 2 -- second-agent-type spin-up prompt
+### Row 1 -- second-agent-type spin-up prompt
 
 Your collaborative-team profile expects multi-agent operation;
 the second agent type makes a more distant read available whenever

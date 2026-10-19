@@ -101,21 +101,32 @@ def test_the_row_registry_is_not_empty(helper: ModuleType) -> None:
 def test_each_row_renders_a_distinct_body(
     helper: ModuleType, preset: str,
 ) -> None:
-    """Two rows must never resolve to the same heading.
+    """The surviving row and a prefix-named stand-in render differently.
 
     The matcher accepts a label that begins with the row name, so a row
     whose name is a prefix of another row's label would capture that
     row's body and still look healthy to a non-empty check.
     """
-    bodies = {
-        row: helper.render_active_surfacing_prompt(_preset_text(preset), row)
-        for row in ROWS
-    }
-    rendered = [b for b in bodies.values() if b is not None]
-    assert len(set(rendered)) == len(rendered), (
-        f"two rows share a body in preset={preset}: "
-        f"{ {r: (b or '')[:40] for r, b in bodies.items()} }"
+    source = _preset_text(preset)
+    real_heading = "### Row 1 -- second-agent-type spin-up prompt"
+    standin_heading = "### Row 0 -- second-agent prompt"
+    assert real_heading in source
+    trial = source.replace(
+        real_heading,
+        f"{standin_heading}\n\nStand-in body for a prefix row.\n\n{real_heading}",
+        1,
     )
+    rows = (*ROWS, "second-agent")
+    bodies = [helper.render_active_surfacing_prompt(trial, row) for row in rows]
+    assert all(body is not None for body in bodies)
+    assert len(set(bodies)) == len(bodies), f"two rows share a body in {preset}"
+    # This changed heading makes both rows select the stand-in. The distinct
+    # body assertion above must be capable of turning red on a bad fixture.
+    broken = trial.replace(standin_heading, real_heading, 1)
+    broken_bodies = [
+        helper.render_active_surfacing_prompt(broken, row) for row in rows
+    ]
+    assert len(set(broken_bodies)) < len(broken_bodies)
 
 # ---------------------------------------------------------------------------
 # Every row x preset combination renders a non-empty body
@@ -155,38 +166,32 @@ class TestPerPresetDistinguishingLanguage:
     preset-distinguishing language named in the plan + doctrine.
     Surfaces drift between preset content + the spec."""
 
-    def test_solo_greenfield_collab_agreement_says_you_are_team(
+    def test_solo_greenfield_prompt_names_solo_deployment(
         self, helper: ModuleType,
     ) -> None:
         body = helper.render_active_surfacing_prompt(
-            _preset_text("solo-greenfield"), "collab-agreement-signing",
+            _preset_text("solo-greenfield"), "second-agent-type",
         )
         assert body is not None
-        # The solo-greenfield variant frames the team-roster fill as
-        # "no multi-party negotiation -- you're the team."
         lowered = body.lower()
-        assert "you're the team" in lowered or "your own name" in lowered
+        assert "your solo deployment" in lowered
 
-    def test_collaborative_team_collab_agreement_invokes_negotiation(
+    def test_collaborative_team_prompt_names_expected_multi_agent_shape(
         self, helper: ModuleType,
     ) -> None:
         body = helper.render_active_surfacing_prompt(
-            _preset_text("collaborative-team"), "collab-agreement-signing",
+            _preset_text("collaborative-team"), "second-agent-type",
         )
         assert body is not None
         lowered = body.lower()
-        # Multi-party negotiation language is the collaborative-team
-        # marker.
-        assert "negotiate" in lowered
+        assert "collaborative-team profile expects multi-agent" in lowered
 
-    def test_high_rigor_legacy_collab_agreement_confirms_existing_maintainer(
+    def test_high_rigor_legacy_prompt_names_security_staffing(
         self, helper: ModuleType,
     ) -> None:
         body = helper.render_active_surfacing_prompt(
-            _preset_text("high-rigor-legacy"), "collab-agreement-signing",
+            _preset_text("high-rigor-legacy"), "second-agent-type",
         )
         assert body is not None
         lowered = body.lower()
-        # Existing-maintainer authority confirmation is the
-        # high-rigor-legacy marker.
-        assert "existing maintainer" in lowered or "pre-existing" in lowered
+        assert "security-review module's bar" in lowered
