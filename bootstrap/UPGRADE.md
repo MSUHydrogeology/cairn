@@ -195,7 +195,10 @@ you what changed.
   `session-start` carries on. A row in `.agents/skills/_data/vendor_targets.yml`
   must name a folder called `skills`, inside another folder, outside `.git` and
   `dev/.cairn`, using letters, digits, dots, dashes and underscores only; any
-  other row is skipped with a warning.
+  other row is skipped with a warning that names the rule. The installer's own
+  check of a row is looser (any relative path without `..`), so a row the
+  installer accepts can still be skipped here; that mismatch is known and the
+  installer is unchanged.
 * **A committed interpreter binding is not used.** `dev/.cairn/local-env.json`
   belongs to one machine and is meant to be ignored by git. If git tracks it, or
   it sits behind a link, or git cannot be asked, `session-start` and

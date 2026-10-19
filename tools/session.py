@@ -42,8 +42,8 @@ binding and the caller then *executes* the path it returns.  It is a strict
 shape validator -- absoluteness, schema, symlink-freedom, the executable bit --
 and deliberately not an authenticator: it establishes nothing about Python
 identity or provenance.  One check on where the file came from comes after those:
-a binding that git tracks, or that sits behind a link, or that git cannot be
-asked about, is not used (see `_binding_untrusted`).  Changes to its schema,
+a binding that git tracks, or that sits behind a link or inside a submodule, or
+that git cannot be asked about, is not used (see `_binding_untrusted`).  Changes to its schema,
 validation order, fallback disposition, warning visibility, or subprocess use
 take a Security Review.
 
@@ -75,6 +75,7 @@ import stat
 import subprocess
 import sys
 import time
+import unicodedata
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -723,6 +724,12 @@ _BINDING_LINKED = (
     "interpreter.  To fix it: replace the link with a real folder and file "
     "(delete dev/.cairn/local-env.json, then re-run the Cairn scaffold install)."
 )
+_BINDING_IN_SUBMODULE = (
+    "dev/.cairn/local-env.json is inside a submodule, which is another "
+    "repository's files, so it was not used: this run uses the current "
+    "interpreter.  To fix it: keep the binding outside the submodule (delete "
+    "dev/.cairn/local-env.json, then re-run the Cairn scaffold install)."
+)
 _BINDING_UNVERIFIED = (
     "could not ask git whether dev/.cairn/local-env.json is tracked, so it was "
     "not used: this run uses the current interpreter.  Check that git works in "
@@ -731,6 +738,39 @@ _BINDING_UNVERIFIED = (
 
 #: How long the question to git may take before it counts as "could not ask".
 _BINDING_GIT_TIMEOUT_SECONDS = 30
+
+_BINDING_RELATIVE = "/".join(_CAIRN_STATE_DIR + ("local-env.json",))
+
+
+def _canonical_caseless(text: str) -> str:
+    """Fold *text* the way a case- and normalization-insensitive volume does
+    (Unicode "canonical caseless matching"): decompose, fold case, decompose,
+    fold case, decompose.  ``\u017f`` (long s) becomes ``s`` and a composed letter
+    equals its decomposed form -- two spellings git keeps apart and such a volume
+    opens as one file.  Compatibility look-alikes (full-width letters) are
+    deliberately not folded: no volume treats them as the same name."""
+    if text.isascii():
+        return text.lower()
+    folded = unicodedata.normalize("NFD", text)
+    folded = unicodedata.normalize("NFD", folded.casefold())
+    return unicodedata.normalize("NFD", folded.casefold())
+
+
+def _binding_git_env() -> dict:
+    """The environment for the one question put to git about the binding.
+
+    The module's own git environment with **every** ``GIT_*`` variable removed
+    and the two it sets itself put back.  A caller's ``GIT_DIR``,
+    ``GIT_WORK_TREE`` or ``GIT_INDEX_FILE`` would point git at another
+    repository or index, and ``GIT_LITERAL_PATHSPECS`` and its kin change how
+    paths match; stripping the whole family (rather than a list of today's
+    names) means a variable added to git later cannot redirect the question
+    either.  Git then finds the repository from the working folder alone.
+    """
+    env = {k: v for k, v in _git_env().items() if not k.upper().startswith("GIT_")}
+    env["GIT_PAGER"] = "cat"
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    return env
 
 
 def _binding_untrusted(root: Path, cfg: Path) -> Optional[str]:
@@ -745,27 +785,29 @@ def _binding_untrusted(root: Path, cfg: Path) -> Optional[str]:
 
     * a folder on the way, or the file, is a link -- git lists nothing beyond a
       link, so a tracked folder behind a tracked link would look untracked;
-    * git has it in its index (any spelling of the name: ``icase``, because on a
-      volume that ignores case a project can track it as ``DEV/.CAIRN/...``); or
-    * git cannot answer -- not installed, an error, no answer in time.  An
-      unanswered question is not an answer of "no".
+    * git's index has an entry that a case- and normalization-insensitive
+      volume would open as the same file (`_canonical_caseless`).  Git's own
+      case-insensitive matching is ASCII-only, so the whole index is read and
+      compared here; or
+    * an entry of the index is a submodule that holds the binding's path -- the
+      files inside are another repository's, which this question cannot see; or
+    * git cannot answer -- not installed, an error, no answer in time, output
+      it does not understand.  An unanswered question is not an answer of "no".
 
-    The question is a fixed argument list (no shell) run in *root* with the
-    module's own git environment (no pager, no prompt); the path is a constant,
-    after ``--``, and ``literal`` turns off pathspec magic in it.
+    The question is one fixed argument list (no shell), run in *root* with
+    `_binding_git_env()`, stdin closed, a time limit.
     """
     try:
         _assert_not_linked(cfg, root)
     except LifecycleError:
         return _BINDING_LINKED
-    relative = "/".join(_CAIRN_STATE_DIR + ("local-env.json",))
     try:
         proc = subprocess.run(
-            ["git", "ls-files", "-z", "--cached", "--", ":(literal,icase)" + relative],
+            ["git", "ls-files", "-z", "--cached", "--stage"],
             cwd=str(root),
             capture_output=True,
             check=False,
-            env=_git_env(),
+            env=_binding_git_env(),
             stdin=subprocess.DEVNULL,
             timeout=_BINDING_GIT_TIMEOUT_SECONDS,
         )
@@ -773,7 +815,19 @@ def _binding_untrusted(root: Path, cfg: Path) -> Optional[str]:
         return _BINDING_UNVERIFIED
     if proc.returncode != 0:
         return _BINDING_UNVERIFIED
-    return _BINDING_TRACKED if proc.stdout else None
+    target = _canonical_caseless(_BINDING_RELATIVE)
+    for record in proc.stdout.split(b"\0"):
+        if not record:
+            continue
+        head, tab, raw_path = record.partition(b"\t")
+        if not tab or not head:
+            return _BINDING_UNVERIFIED
+        folded = _canonical_caseless(raw_path.decode("utf-8", "replace"))
+        if folded == target:
+            return _BINDING_TRACKED
+        if head.split(b" ", 1)[0] == b"160000" and target.startswith(folded + "/"):
+            return _BINDING_IN_SUBMODULE
+    return None
 
 
 _UNTRUSTED_WARNED = False
@@ -810,7 +864,8 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
 
     **Where the file came from is checked last.**  A binding that passed every
     shape check is still not used if `_binding_untrusted` says so (git tracks it,
-    it sits behind a link, or git cannot be asked): the run goes on with the
+    it sits behind a link or inside a submodule, or git cannot be asked): the
+    run goes on with the
     current interpreter, source ``"fallback-untrusted"``, and a warning that
     names the fix.  The shape checks, their order and their refusals are
     unchanged, and nothing is run before this check.
@@ -833,12 +888,13 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
     cfg = _state_dir(root) / "local-env.json"
     if not cfg.is_file():
         return sys.executable, "fallback"
+    shown_cfg = encode_display(str(cfg))   # a folder name may be someone else's choice
 
     try:
         data = json.loads(cfg.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise LifecycleError(
-            f"{cfg} is not readable JSON: {exc}.  It must be "
+            f"{shown_cfg} is not readable JSON: {encode_display(str(exc))}.  It must be "
             '{{"interpreter": "/abs/path/to/python"}}.'
         ) from exc
 
@@ -846,11 +902,11 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
     # accept extra attacker-controlled fields (review-crispness, finding 4).
     if not isinstance(data, dict) or set(data) != {"interpreter"}:
         raise LifecycleError(
-            f'{cfg} must be a JSON object with exactly one key, "interpreter".'
+            f'{shown_cfg} must be a JSON object with exactly one key, "interpreter".'
         )
     value = data["interpreter"]
     if not isinstance(value, str) or not value.strip():
-        raise LifecycleError(f'{cfg}: "interpreter" must be a non-empty string.')
+        raise LifecycleError(f'{shown_cfg}: "interpreter" must be a non-empty string.')
     # Reject NUL / control characters only.  We invoke as an explicit argv list
     # (never a shell), so shell metacharacters in a path are inert, and spaces
     # are legitimate in real filesystem paths (`My Drive`, OneDrive, profile
@@ -860,38 +916,42 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
     # warning -- not "caught" by any fatal check.
     if any(ord(ch) < 0x20 or ch == "\x7f" for ch in value):
         raise LifecycleError(
-            f'{cfg}: "interpreter" must not contain control characters.'
+            f'{shown_cfg}: "interpreter" must not contain control characters.'
         )
     interp = Path(value)
+    # `value` is the binding's own text and only C0 controls and DEL were
+    # rejected above, so everything printed from it goes through the encoder
+    shown_interp = encode_display(str(interp))
     if not interp.is_absolute():
-        raise LifecycleError(f'{cfg}: "interpreter" must be an absolute path.')
+        raise LifecycleError(f'{shown_cfg}: "interpreter" must be an absolute path.')
     if ".." in interp.parts:
         raise LifecycleError(
-            f'{cfg}: "interpreter" must not contain a parent-traversal '
-            f"(..) segment: {interp}.  {_REBIND_REMEDY}"
+            f'{shown_cfg}: "interpreter" must not contain a parent-traversal '
+            f"(..) segment: {shown_interp}.  {_REBIND_REMEDY}"
         )
     try:
         shape = _probe_interpreter(interp)
     except OSError as exc:                     # EACCES / ELOOP / ENAMETOOLONG
         raise LifecycleError(
-            f'{cfg}: "interpreter" could not be inspected ({exc}): {interp}.  '
+            f'{shown_cfg}: "interpreter" could not be inspected '
+            f'({encode_display(str(exc))}): {shown_interp}.  '
             f"Refusing rather than guessing.  {_REBIND_REMEDY}"
         ) from exc
     if shape == "symlinked":
         raise LifecycleError(
-            f'{cfg}: "interpreter" must not be reached through a symlink '
+            f'{shown_cfg}: "interpreter" must not be reached through a symlink '
             f"(leaf or parent).  {_REBIND_REMEDY}"
         )
     if shape == "absent":
         _warn_stale_once(
-            f'{cfg}: recorded interpreter "{interp}" no longer exists -- your '
+            f'{shown_cfg}: recorded interpreter "{shown_interp}" no longer exists -- your '
             f"environment was likely rebuilt.  Using the current interpreter "
             f"({sys.executable}) for this run.  {_REBIND_REMEDY}"
         )
         return sys.executable, "fallback-stale"
     if not interp.is_file() or not os.access(interp, os.X_OK):
         raise LifecycleError(
-            f'{cfg}: "interpreter" is not an executable file: {interp}.  '
+            f'{shown_cfg}: "interpreter" is not an executable file: {shown_interp}.  '
             f"{_REBIND_REMEDY}"
         )
     untrusted = _binding_untrusted(root, cfg)
@@ -1226,7 +1286,10 @@ def _heal_skills_fanout(root: Path) -> List[Tuple[str, str, str]]:
         if _vendor_path_parts(path) is None:
             _warn(
                 "skills self-heal: unsafe vendor path for "
-                f"'{encode_display(name)}': '{encode_display(path)}'; skipped."
+                f"'{encode_display(name)}': '{encode_display(path)}'; skipped (a symlink-tier "
+                "row's path needs at least two folders, the last one named skills, none "
+                "named .git, none under dev/.cairn, and only letters, digits, dots, dashes "
+                "and underscores)."
             )
             continue
         dst = root / path
@@ -1320,7 +1383,7 @@ def cmd_session_start(args: argparse.Namespace) -> int:
 
     # Make the (otherwise hidden) interpreter trust root visible.
     _emit_section("resolved project interpreter")
-    _emit(f"interpreter: {interpreter}  (from {interp_source})")
+    _emit(f"interpreter: {encode_display(interpreter)}  (from {interp_source})")
     if interp_source == "fallback":
         _warn(
             "no dev/.cairn/local-env.json -- using the current interpreter; "

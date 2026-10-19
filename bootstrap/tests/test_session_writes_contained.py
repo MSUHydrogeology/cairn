@@ -782,7 +782,20 @@ def test_a_vendor_row_cannot_replace_or_fill_a_folder_that_is_not_a_skills_folde
     assert list(elsewhere.iterdir()) == []
     assert sorted(str(p.relative_to(root)) for p in root.rglob("*") if ".agents" not in p.parts) == before
     assert not (root / ".gitignore").exists()
-    assert "unsafe vendor path" in capsys.readouterr().err
+    err = capsys.readouterr().err
+    assert "unsafe vendor path" in err
+    # the warning says what the rule is, so a row that looks fine is not a mystery
+    assert "the last one named skills" in err and "only letters, digits, dots, dashes" in err
+
+
+def test_the_routing_table_notes_state_the_row_rule():
+    """The table's own `_doc` says what the session helper requires of a row; both
+    copies (the template and the installed one) carry the sentence."""
+    paths = [CAIRN_ROOT / "templates" / "skills" / "_data" / "vendor_targets.yml",
+             CAIRN_ROOT / ".agents" / "skills" / "_data" / "vendor_targets.yml"]
+    assert paths[0].read_bytes() == paths[1].read_bytes()
+    note = json.loads(paths[0].read_text(encoding="utf-8"))["_doc"]
+    assert "the last one named skills" in note and "skipped with a warning" in note
 
 
 def test_a_cloned_vendor_table_cannot_replace_the_users_virtual_environment(tmp_path):
@@ -861,8 +874,10 @@ def test_a_read_only_gitignore_is_refused_not_replaced(tmp_path):
     gitignore = root / ".gitignore"
     gitignore.write_text("*.log\n", encoding="utf-8")
     gitignore.chmod(0o444)
-    with pytest.raises(lifecycle.LifecycleError, match="read-only"):
+    with pytest.raises(lifecycle.LifecycleError, match="read-only") as caught:
         lifecycle._seed_skill_gitignore(root, ".claude/skills/")
+    assert "make it writable" in str(caught.value)
+    assert "add this line yourself: .claude/skills/" in str(caught.value)
     assert gitignore.read_bytes() == b"*.log\n"
     assert (gitignore.stat().st_mode & 0o777) == 0o444
     # an entry that is already there needs no write, so nothing to refuse
@@ -1370,6 +1385,31 @@ def test_a_linked_folder_the_operator_names_outside_the_project_is_not_second_gu
     tool._REPO_ROOT = project
     assert [path.name for path in tool.prune_reflections(chosen, keep=1)] == [old[0].name]
     assert not old[0].exists() and old[1].exists()
+
+
+def test_the_pruner_refuses_a_parent_reference_that_follows_a_link(tmp_path):
+    """`dev/reflections/..` looks like `dev` once the `..` is folded away, but the
+    operating system opens the parent of wherever the link leads."""
+    tool = _load_prune_tool()
+    outer = tmp_path.resolve() / "outer"
+    (outer / "notes").mkdir(parents=True)
+    kept = _old_reflections(outer)          # the dated files sit above the link's target
+    project = tmp_path.resolve() / "proj"
+    (project / "dev").mkdir(parents=True)
+    os.symlink(outer / "notes", project / "dev" / "reflections")
+    tool._REPO_ROOT = project
+    with pytest.raises(tool.RefusedDirectory, match="leads somewhere"):
+        tool.prune_reflections(project / "dev" / "reflections" / "..", keep=1)
+    assert all(path.exists() for path in kept)
+
+
+def test_a_parent_reference_that_does_not_cross_a_link_is_fine(tmp_path):
+    tool = _load_prune_tool()
+    project = tmp_path.resolve() / "proj"
+    (project / "dev" / "reflections").mkdir(parents=True)
+    old = _old_reflections(project / "dev")
+    tool._REPO_ROOT = project
+    assert [p.name for p in tool.prune_reflections(project / "dev" / "reflections" / "..", keep=1)] == [old[0].name]
 
 
 def test_the_pruner_still_prunes_an_ordinary_reflections_folder(tmp_path):

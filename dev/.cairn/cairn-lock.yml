@@ -8,7 +8,7 @@
     {
       "base_hash": "sha256:bce2a0098bbd2b5bf60f8010af382e45e02135f165102cff75d2d8cb1b4fd574",
       "dst": ".agents/skills/_data/vendor_targets.yml",
-      "hash": "sha256:1ee15651ff81fcb37a29004c72519c9c34d73c96377364feae8db61ae066fe3f",
+      "hash": "sha256:71e6048740f657f6d0db048d630ebe4756e74d7b7f9b12dc9425ab8a8205499d",
       "src": "skills/_data/vendor_targets.yml",
       "verbatim": true
     },
@@ -511,14 +511,14 @@
     {
       "base_hash": "sha256:55c29379b44cfaabdcdab4c7179f0c0489cbba92bced0387698736455fcc150c",
       "dst": "tools/prune_reflections.py",
-      "hash": "sha256:1d43586c60b3f3f3427ba7cb06a2244ceaa36861415720ff294d5158811d9f98",
+      "hash": "sha256:2464d9e6239bf421fda5849ecd351b09fc6d0856e027ab39628d4d645a1758ef",
       "src": "modules/default-on/prune_reflections.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:1d777babbdfd56f47c6f0619a5763b08afdf24177f8ac9471ff3d255761cbe96",
       "dst": "tools/session.py",
-      "hash": "sha256:178173b8e105eb8f78d63e076fca08fc78f49c2c3d9d042e0fa35d207f7ffdc1",
+      "hash": "sha256:17ac9b636947e562a7a4e4e03ed84c4b34af51be1554ef944150279628d308ab",
       "src": "skills/_lib/session.py",
       "verbatim": true
     }

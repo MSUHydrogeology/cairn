@@ -90,6 +90,14 @@ def _refuse_linked_directory(directory: Path) -> None:
                     f'refusing to prune through a link: {name!r} is a link; '
                     f'replace it with a real folder inside the project'
                 )
+        # `abspath` folded any `..` away before the walk above, so a `..` that
+        # follows a link ("dev/reflections/..") looks like "dev" there.  The folder
+        # the operating system opens must be the one the walk saw.
+        if os.path.realpath(directory) != os.path.join(root, *below.parts):
+            raise RefusedDirectory(
+                'refusing to prune: the folder leads somewhere other than where '
+                'it is written (a link, or ".." after a link); name the real folder'
+            )
         return
 
 
