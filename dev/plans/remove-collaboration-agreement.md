@@ -1,7 +1,7 @@
 # Plan: Remove the collaboration agreement
 
 **Source proposal**: `dev/proposals/2026-10-19-claude-remove-collaboration-agreement.md`
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-19
 **In brief**: Cairn will stop installing its collaboration agreement while keeping each project's copy and the team guidance that still matters.
@@ -279,3 +279,208 @@ silently treated as implemented. The existing project's repeating
 `removed-upstream` line is accepted behavior under Q1. Archive only after
 code review and the board/changelog serialization, without performing a
 re-anchor in this plan.
+
+## Plan review -- Codex (Internal, fresh session) -- 2026-10-19
+
+```
+Reviewed commit: 013ae14893e87b42769279533944e03d59085705
+Target: the complete plan against the accepted proposal's Revision 1 and Decision, and the committed implementation/document/test surfaces
+Prior findings: none; read CA1-CA6, CA-SR1-CA-SR7 and the author's Response as source requirements, not findings being cleared by this pass
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**:
+
+1. **Should this happen as framed?** The design delivers all four Decision answers: report and preserve the old copy, retain roster and second-agent prompt, preserve the two adopter sentences while keeping Cairn's list local, and wait for the review-stance archive before landing ahead of model-mapping C2. Correct the lifecycle omission before implementation -- source proposal, Decision Q1-Q4; this plan, Scope and Sequence; `dev/plans/_template.md:18`.
+2. **Best alternative.** Keep the three implementation chunks and existing report-only upgrade mechanism; add the missing verification and explicit archive handoff rather than new deletion or lock-release behavior -- `bootstrap/_scaffold/upgrade.py`, `_ADVANCING_KINDS`, `_compute_upgrade` and `_apply_upgrade`; this plan, C1-C4.
+3. **What would show it wrong.** Losing an old project's file, reversing adopters' unsure-case rule, or allowing the ceremony to freeze a test without the promised replacement blob would contradict the accepted contract -- source proposal, Revision 1 steps 3-5 and "What the cut will show"; `dev/PLANNING.md`, agreement-removal Joined paragraph.
+
+The strongest part of this plan is its restraint: remove a delivery row while
+preserving project-owned governance, and move the unique words before deleting
+their home. The two-sentence adopter rule and Cairn-only list are deliberately
+different, as the Decision requires. The anti-vacuity criteria for idempotency,
+the task cap and rendered bodies answer the proposal reviews concretely.
+
+### CA-PR1 -- Medium, blocking -- Archive the accepted source proposal
+
+The opening commit changes only this plan and `dev/PLANNING.md` (`git show
+--stat 013ae148`). Its source remains at the active proposal path with Status
+`accepted`; the plan also points there. The template requires opening a plan
+to archive its source in the same commit (`dev/plans/_template.md:18`). The
+missed transition leaves two active lifecycle records for the same work and
+is not an authorized exception to that rule.
+
+**Satisfier:** correct the source-proposal archive in a separate lifecycle
+correction commit before implementation, preserving its prior sections and
+updating live references, including this plan's Source proposal line. Record
+that it repairs the missed opening transition; do not rewrite the opening
+commit or change the Decision. This review itself appends only to the plan.
+
+### CA-PR2 -- Low, non-blocking -- Make the replacement-blob handoff executable as an archive task
+
+The plan says the old blob record "will be superseded" at code review, and
+C4 asks for frozen-file diffs and collection changes, but its archive
+instruction only closes the removal row and onboarding seed. Revision 1's
+"The blob-id record" specifically requires the re-anchor board paragraph to
+carry the new blob id and say it replaces the earlier one. The existing
+Joined paragraph on `dev/PLANNING.md` promises replacement but contains no
+final blob. The predecessor's M row likewise asks the ceremony to confirm
+exact bytes (`dev/plans/review-stance-and-lenses.md:431`). The source contract
+still binds; make its final action explicit so it is not lost at archive.
+
+**Satisfier:** add an archive criterion to obtain the test's blob with
+`git ls-tree <code-reviewed-commit> -- bootstrap/tests/test_review_stance_in_shipped_files.py`,
+put that id and commit in the existing Joined paragraph, and state that it
+replaces the predecessor's record for this file only. This records evidence;
+it does not perform either re-anchor.
+
+### CA-PR3 -- Low, non-blocking -- Put the final changelog entry at archive
+
+C3 currently writes the changelog, while Dispositions refers generally to
+board/changelog serialization. `AGENTS.md` limits shared communication edits
+to serialization points, and `dev/plans/_template.md`, Dispositions, says the
+archive commit writes its own changelog entry. Revision 1 requires an entry
+but does not require it in C3.
+
+**Satisfier:** keep the upgrade guide in C3 and assign the final changelog
+entry explicitly to the archive commit, beside the board cleanup and blob
+handoff. No accepted output is removed.
+
+### CA-PR4 -- Medium, blocking -- Complete the document-reader mapping
+
+The scoped run in Verification is narrower than the actual readers of the
+changed governing documents. For example, the committed
+`bootstrap/tests/test_documentation_plan_module.py` reads both the shipped
+documentation-plan template and `docs/DOCUMENTATION_PLAN.md`, while
+`bootstrap/tests/test_comprehension_floor.py` and
+`bootstrap/tests/test_verification_boundaries.py` read the `AGENTS.md` pair.
+`bootstrap/tests/test_scientific_check_guidance_ships.py` reads all four
+authoring templates. None appears in this plan's mapping, although the
+source proposal's Revision 1 measurement N7 already names all four.
+Passing them on an earlier prototype does not verify the final bytes.
+
+**Satisfier:** add those owning test files or the exact nodes that read the
+touched surfaces to Boundary A and the scoped stable run. Re-run the reader
+search over the full touched-file list before the fold, distinguishing real
+repository readers from tests that only construct similarly named scratch
+fixtures. Keep the certifying run pending; this finding asks for the missing
+scoped owners, not a full suite.
+
+**Coverage -- Covered:** claims and drift (#1, #6): the committed search
+`git grep -n -i -E 'collaboration[_ -]agreement|collab[_-]agreement|sign-collab|team-roster|External Review Norms' 013ae148`
+finds the mapping, template and trigger as positive controls, then the live
+surfaces listed in Scope; no additional live retirement surface was found
+in that search. Production-path coverage and completeness (#2, #3):
+`bootstrap/tests/test_manifest.py::TestInstallManifest::test_manifest_matches_actual_install`,
+`bootstrap/tests/test_trigger_evaluation_action.py::TestSecondAgentTypeTrigger`,
+and C2-C3's proposed controls. Fail-closed (#4): the separate Security Review
+below examines the reader and verifier. Cross-document consistency and
+lifecycle (#5, #7): Decision Q1-Q4, the plan template's source-archive rule,
+the predecessor's M row, and the model-mapping plan's C2 write set. Scope and
+domain (#8): the two decision-rights deferrals have a live home in
+`dev/PLANNING.md`, "Decision-rights questions left by the agreement removal";
+scientific validity is N/A because no result or method changes. Satisfiers
+(#9): each finding above names its closing artifact/action.
+**Not covered / low confidence:** no implementation exists to execute; no
+suite, mutation, install, real-project upgrade, or ceremony was run for this
+plan review. The earlier proposal prototypes remain their authors' evidence.
+Later commits through `4f08957d` add review records and board-as-basis evidence;
+`git diff 013ae148 HEAD -- dev/plans/remove-collaboration-agreement.md` was empty
+before this append. Other sessions' work was left alone.
+
+## Plan review -- Codex (Internal Security Review, fresh session) -- 2026-10-19
+
+```
+Reviewed commit: 013ae14893e87b42769279533944e03d59085705
+Target: the contained roster read, retired-path integrity policy, report-only upgrade preservation, adopter authority wording, and security verification mapping
+Prior findings: none; CA-SR1-CA-SR7 are accepted source requirements, not a second proposal-review round
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**:
+
+1. **Should this happen as framed?** The trust boundaries are sound as planned: retain the literal retired exemption without granting the roles document one, keep removals report-only, and preserve adopters' unsure-case sentence. The mapped checks do not yet cover the changed reader's containment call or the standing scan -- `bootstrap/_scaffold/lockfile.py`, `_LIVING_STATE_DSTS`; `bootstrap/verify_integrity.py`, living-state branch; this plan, Verification.
+2. **Best alternative.** Preserve the existing containment primitive and add direct reader refusals plus the existing static gate to the scoped mapping; no new parser, exemption or upgrade operation is needed -- `scripts/_onboarding/triggers.py:134`; `scripts/_onboarding/security.py:117`; `bootstrap/tests/test_security_lint.py::test_no_blocking_security_findings`.
+3. **What would show it wrong.** A symlinked roster being consumed, a restored mapping inheriting the retired exemption, or an apply modifying the old file would break the stated security boundaries; map the first alongside the already-planned literal no-reuse and destructive-apply controls -- this plan, C3 acceptance and Boundary B controlled breaks; `bootstrap/tests/test_onboarding_activation_helper.py::TestContainmentGuards`.
+
+This is a separate security pass by the same fresh reviewer. The repository
+requires separate passes with matching Obligation lines; it does not require
+different people or agent sessions for the two lenses (`AGENTS.md`, Review;
+`dev/agent_collaboration.md`, Team roles). Neither pass is attributed to the
+plan author or treated as a Maintainer-called External read.
+
+### CA-PS1 -- Medium, blocking -- Test containment through the moved roster reader
+
+The reader currently checks `_assert_safe_read` immediately before reading
+the roster (`scripts/_onboarding/triggers.py:140`). Its guard rejects both a
+symlinked leaf and a symlinked parent (`scripts/_onboarding/security.py:127`).
+The plan moves that read and promises containment, but C2 only specifies
+ordinary, missing, unfilled and doubled-marker rosters. Its mapping omits
+`bootstrap/tests/test_onboarding_activation_helper.py`; that file's existing
+`TestContainmentGuards` tests call the guard directly, so even adding those
+tests would not catch a reader that forgot to call it. The mapped
+`TestSecondAgentTypeTrigger` fixtures write ordinary files. This is a
+verification gap, not evidence of an implemented vulnerability.
+
+**Satisfier:** in the already-edited trigger test file, add cases through
+`evaluate_action_triggers` for a symlinked `dev/agent_collaboration.md` and
+for a symlinked `dev/`, with a real two-agent roster as the ordinary-file
+control. Require `OnboardingSecurityError` before roster content is read,
+rather than accepting an empty trigger set. Map these cases and the existing
+guard tests into C2 and Boundary B. A targeted removal of this reader's guard
+call should fail the new cases; run that controlled break in a separate copy,
+beside its control. This preserves the current guard rather than enlarging
+the implementation.
+
+### CA-PS2 -- Medium, blocking -- Include the standing Bandit gate
+
+The plan edits the scaffold package and both shipped onboarding helpers,
+but its mapping and Boundary B command list contain only the neutrality and
+redundancy static legs. Neither dispatches Bandit (`scripts/quality_gate.py`,
+`_SUB_GATES` and `run_gates`). The existing owner is
+`bootstrap/tests/test_security_lint.py::test_no_blocking_security_findings`;
+its `_run_bandit` scans the targets from `bootstrap/security_check.py::scan_targets`,
+which explicitly includes the whole scaffold package and the always-on
+onboarding engine. `AGENTS.md`, Verification boundaries A, requires standing
+gates for every touched surface. Deferring the full certifying suite does
+not defer this applicable scoped gate.
+
+**Satisfier:** add that exact pytest node (or an equivalent direct scan with
+the same target, severity and allowlist semantics) to the reviewed mapping
+and scoped stable run under the canonical interpreter. Record any missing
+Bandit skip as a non-pass with its disposition. Do not run the release
+orchestrator or set the full-suite switch to satisfy this finding.
+
+**Coverage -- Covered:** claims and production paths (#1, #2):
+`bootstrap/_scaffold/upgrade.py`, `_ADVANCING_KINDS` excludes removals,
+`_compute_upgrade` emits `removed-upstream` for absent upstream sources, and
+stage/apply select advancing kinds; the new contract test must pin file,
+record and cached-base bytes. Completeness and fail-closed (#3, #4):
+`scripts/_onboarding/triggers.py`, `_read_team_roster_body` and the guard in
+`security.py`; `bootstrap/verify_integrity.py` skips only enumerated
+living-state destinations; `_cmd_finalize_lockfile` checks missing files
+before its living-state skip, supporting the keep-or-empty advice.
+Consistency and drift (#5, #6): the shipped agreement's two sentences versus
+Revision 1 steps 4-5 and C1; the upgrade note must retain the source's own-tree
+search, README pointer loss and scoped-finalize guidance. Lifecycle and
+scope (#7, #8): C1 waits for the predecessor archive, the whole change lands
+before model-mapping C2, and fixtures remain Maintainer-only; no scientific
+or credential behavior is added. Satisfiers (#9): CA-PS1 and CA-PS2 name the
+precise checks that close them.
+**Not covered / low confidence:** no future implementation or security
+mutation was executed; no full suite, external project, AST baseline or
+gate-manifest fixture was changed or re-anchored. The existing roster parser
+is heuristic and reads the whole file; this plan does not claim to solve
+those pre-existing limits. Both required plan-review passes are recorded;
+their findings await the author's fold and response, without a second
+plan-review round.
