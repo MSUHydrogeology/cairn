@@ -941,8 +941,8 @@ class TestUnrecognizedKeyRefusal:
         """(b) The record is one the TEST writes, never one the
         dispatcher wrote -- the check is not verified by the artifact it
         judges. Recorded gap, not covered here:
-        bootstrap/verify_integrity.py:63-111 ignores the same key shape on
-        the same record shape."""
+        verify() in bootstrap/verify_integrity.py ignores the same key shape
+        on the same record shape."""
         module_id = "widget-security"
         entry, records = _setup_clean_leg(tmp_path, module_id=module_id)
         records[entry.runner_repository_path]["principal"] = "root"

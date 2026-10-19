@@ -125,8 +125,8 @@ _ARGV_MODES: frozenset[tuple[str, ...]] = frozenset({
 #: ``base_hash`` are the optional ones ``write_install_lockfile`` may add.
 #: Any OTHER key on a record this dispatcher reads is refused -- DEGRADED,
 #: naming the key -- never ignored. Recorded gap, not closed here:
-#: ``bootstrap/verify_integrity.py:63-111`` reads the same record shape with
-#: ``rec.get(...)`` and ignores an unrecognized key; that half is a
+#: ``verify()`` in ``bootstrap/verify_integrity.py`` reads the same record
+#: shape with ``rec.get(...)`` and ignores an unrecognized key; that half is a
 #: lasting truth neither plan in this pair closes (see this module's shipped
 #: doctrine).
 _ALLOWED_RECORD_KEYS: frozenset[str] = frozenset({
