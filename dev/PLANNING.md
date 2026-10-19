@@ -76,9 +76,9 @@ live in `doctrine/dual-review.md` and are not restated here.
 **The `repin` tool remains the next build** — the successor to the blocked
 digest corrector, designed in
 [`strategy/2026-08-28-claude-repin-revitalization.md`](strategy/2026-08-28-claude-repin-revitalization.md).
-Its route changes under the new doctrine: the External round is recommended,
-not required, so it no longer waits on a second agent type. Until it lands,
-corrections continue by hand.
+It needs the ordinary fresh review; an outside read happens only if the
+Maintainer calls one on that artifact. Until `repin` lands, corrections
+continue by hand.
 
 *(Refreshed at each goodnight scrub.)*
 <!-- cairn:end project-status -->
@@ -313,6 +313,21 @@ with the plan's filename stem.
   one plan and adds the second test:
 
   > "I accept all five of your recommendations. Accept as recommended"
+
+  **Finalized 2026-10-19 at archive preparation.** The reviewed repair commit
+  is `6fd6687f`. The three new or newly frozen test files are
+  `test_review_stance_in_shipped_files.py` (blob `0064d10e1e2059e054928ce392022648194768e8`, 469 nodes),
+  `test_review_sweep_ships.py` (blob `fa71104f443d3181eaf9bf710ae43e7b2b3eae51`, 192 nodes), and
+  `test_review_and_verification_rules_ship.py` (blob `5bb130d370259096d57b3c06cce0addc27830279`, 68 nodes).
+  The repair also changed three existing frozen files:
+  `bootstrap/_scaffold/config.py` (comments only; no changed AST symbol),
+  `bootstrap/tests/test_presets.py` (34 final nodes), and
+  `bootstrap/tests/test_scope_reduction_trap.py` (89 final nodes). The
+  ceremony must derive the final changed set and verify these bytes rather
+  than rely on the earlier three-file estimate. The frozen deleted test and
+  its five dropped nodes remain as named above. The certifying full suite and
+  re-anchors wait for the 0.4 cut; the re-anchors themselves are
+  Maintainer-only.
 
   **Joined 2026-10-18** at the opening of `plans/board-as-basis.md`, **changed 2026-10-19** and archived as `plans/archive/board-as-basis.md`: that plan changes **no existing frozen file**. It adds two files that match the gate manifest's frozen patterns, `bootstrap/tests/test_board_json_contract.py` and `bootstrap/tests/fixtures/board_json_v1_baseline.json`. Until the ceremony the verifier reports each as `FROZEN-NEW`, which is allowed, and the suite stays green; at the ceremony both freeze, when it re-globs `bootstrap/tests/**/*.py` and `bootstrap/tests/fixtures/**/*`. **Both must be final first**: an edit to either after the ceremony owes a second re-anchor. The pinned collection grows by the test file's 25 nodes (dropping none), all in `bootstrap/tests/test_board_json_contract.py`: `TestTerminalBoardIsUnchanged` (1 node: `test_terminal_modes_match_parent_golden_output`), `TestSymlinkedSourcesAreNotRead` (3 nodes: `test_symlinked_sources_are_skipped_and_named_in_all_modes`, `test_symlinked_root_or_parent_above_root_is_read_normally`, `test_non_regular_entries_fail_loudly_without_hanging`), `TestBoardLoadsOnlyItsOwnEncoder` (1 node: `test_planted_session_module_under_root_is_never_executed`), `TestSchemaOneBaselineHolds` (1 node: `test_schema_one_baseline_keys_and_types_hold`), `TestRecordFactsComeFromWhereTheFileSits` (2 nodes: `test_header_lines_cannot_forge_location_or_schema_fields`, `test_all_record_values_and_absent_vs_blank_and_headerless_files`), `TestOutputIsDeterministic` (1 node: `test_archives_unique_path_key_and_deterministic_ascii_json`), `TestRoadmapWaitsAndSkippedSymlinksInJson` (2 nodes: `test_roadmap_waits_match_maintainer_and_share_one_reader`, `test_json_failures_and_usage_errors_write_nothing_to_stdout`), `TestGuideAndOutputAgree` (2 nodes: `test_guide_opening_section_is_plain_prose_and_defines_terms`, `test_guide_field_tables_and_standing_phrases_match_output_and_baseline`), `TestGuideLookupMatchesLifecycle` (2 nodes: `test_guide_lookup_table_matches_lifecycle_diagrams`, `test_view_example_lookup_matches_guide_table_and_lifecycle`), `TestFenceStaysInTheTerminalView` (1 node: `test_fence_mentions_only_point_to_terminal_view_and_no_code_block_computes_one`), `TestHelpCitesTheGuide` (1 node: `test_help_cites_cairn_guide_path_and_token_resolves`), `TestGuideIsNotInstalled` (1 node: `test_guide_is_absent_from_scaffold_manifest`), `TestWaitsRecipeAgreesWithMaintainerView` (1 node: `test_waits_recipe_matches_maintainer_view_across_all_shapes`), `TestViewExample` (2 nodes: `test_view_example_structure_lookup_and_ast`, `test_view_example_renders_groups_escaping_footer_and_preserves_page_on_failure`), `TestFinishedPlansRecipe` (1 node: `test_finished_plans_recipe_uses_author_date_and_excludes_proposals_and_edits`), `TestIntentJoinRecipe` (1 node: `test_intent_join_matches_by_stem_only_and_canned_shape_matches_real_tool`), `TestTemplatesAskForTheLineTheBoardReads` (2 nodes: `test_proposal_templates_carry_in_brief_below_the_rule`, `test_plan_templates_carry_in_brief_below_the_rule_and_keep_waiting_above_it`). No `bootstrap/_scaffold/` symbol changes, so the AST baseline gains nothing from it. Authorization for joining this batch is the Decision accepting the proposal, quoted verbatim (the same words as above, which accepted two proposals at once):
 
@@ -1056,6 +1071,19 @@ near the top of this file.
   drift through parallel registries.
 
 ### Deferred follow-ups (durable home)
+
+* **Watch whether the new review header turns reviews into polish**
+  *(deferred at archive of `review-stance-and-lenses`, 2026-10-19)* — after ten
+  proposal reviews use the header, the goodnight roadmap-scrub owner counts
+  whether reviewers tested the premise and a real alternative, rather than
+  only polishing wording. Log the pattern and put a concerning result to the
+  Maintainer; also look for agent-selected outside reads, thin evidence lines,
+  and lost scope-reduction challenges. This observation cannot be made yet.
+  Maintainer authorizations, verbatim:
+
+  > "Yes, we should keep watching."
+
+  > "Keep the monitoring row (Recommended)"
 
 * **Decision-rights questions left by the agreement removal** *(registered
   2026-10-19 at the opening of `plans/remove-collaboration-agreement.md`)* —

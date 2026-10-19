@@ -1,7 +1,7 @@
 # Plan: review stance and lenses — one review at every stage, and the lenses in every install
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-external-is-a-maintainer-stance.md` (accepted `58f30d6c`) and `dev/proposals/archive/2026-10-18-claude-review-lenses-for-every-install.md` (accepted `fbf664f0`)
-**Status**: revising-code
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance — inherited: the change edits `doctrine/`, the governing `AGENTS.md` every adopter receives, the authoring templates and a framework anchor.
 **Opened**: 2026-10-18
@@ -4959,3 +4959,68 @@ That one follow-up retains a live roadmap row at archive. No other actionable
 follow-up is deferred. Re-run the tests owning the four edited sources, the
 lockfile and the changed pins, plus claim/link/snippet and neutrality gates,
 on the final committed revision. The full certifying run stays pending.
+
+## Archive note -- Codex -- 2026-10-19
+
+The code-review revision is `2a9fa399`; its follow-up repair is `6fd6687f`.
+The repair fixed the broken Security Review scanner reference in both copies,
+removed stale tier comments, removed the duplicate scope trap from both
+optional module copies, and advanced only their two installed lock records.
+`bootstrap/UPGRADE.md` now carries the four adopter rehearsal outcomes. The
+Changelog names them too. Search B remains a **human read**, not a machine
+guarantee: before later edits to the six governing/template carriers, rerun
+the command and classification in this plan's verification record. The
+phrase pins cannot rule out every differently worded selecting rule.
+
+**Final scoped verification on the committed bytes.** Detached clean checkout
+of `6fd6687f`, before and after: 1,176 targeted tests passed in 28.11 s,
+zero failed, skipped, xfailed or xpassed. Interpreter:
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13). The test set was
+`test_review_stance_in_shipped_files.py`, `test_review_sweep_ships.py`,
+`test_scope_reduction_trap.py`, `test_presets.py`, `test_scaffold.py`,
+`test_security_stack.py`, `test_verify_integrity.py`,
+`test_lockfile_module.py`, `test_config_module.py`, and
+`test_security_lint.py`. Neutrality `fail=0, info=56`; redundancy
+`fail=0, info=0`; six edited Markdown files passed link checking; 357
+documents passed snippet sync. Claim checks on the edited Markdown files
+had no new flags. The two module pairs are byte-identical. The body-coverage
+probe still reports **11 missing old heading names**, against 8 at the base:
+the three added names are relocations under other headings, not three lost
+rules. Its exit 1 is a signal, not reported as a pass.
+
+**Certified by**: pending. No full certifying suite was run. The AST baseline
+test reports two pre-existing failures from unrelated changed/new engine
+functions; this repair changed only comments in `config.py`, no function AST.
+The gate-manifest and AST re-anchors remain for the Maintainer's combined
+0.4 ceremony. The six expected archived-proposal reference flags, and the
+separate live stewardship-proposal citation, remain named in the preceding
+Response; none is claimed clean. No adopter apply or release security
+ceremony was run in this final repair pass.
+
+The gate-manifest handoff on the roadmap names the final blobs and node
+counts for the three new/newly frozen test files (469, 192, 68) and adds the
+repair's existing frozen files: `bootstrap/_scaffold/config.py`,
+`bootstrap/tests/test_presets.py` (34 nodes), and
+`bootstrap/tests/test_scope_reduction_trap.py` (89 nodes). Its deleted frozen
+test still drops five nodes. The ceremony derives the changed set anew.
+
+## Dispositions -- archive preparation -- Codex -- 2026-10-19
+
+**Dispositions:** `accept` — broken `content_scan.py` reference fixed in the
+two Security Review module copies; `accept` — the two false External-tier
+comments corrected; `accept` — the optional module's duplicate scope trap
+removed in both copies, with pins and dimension description updated;
+`defer` — after ten proposal reviews use the new header, the goodnight
+roadmap-scrub owner checks whether reviews have become mere polish. This has
+the live row in `dev/PLANNING.md`, authorized by the Maintainer's exact words
+“Yes, we should keep watching.” and “Keep the monitoring row (Recommended)”.
+These dispositions supersede the earlier archive-preparation list: no
+actionable repair is left as a board deferral. The LHM `AGENTS.md` conflict
+keeps its local doctrine-gating bullet and the new upstream sentence; LHM's
+loop document keeps the shipped sweep and local domain probes without a
+second ledger; modflow_tools keeps its wholly local collaboration agreement.
+Clean merges may retain old review-tier vocabulary, so the upgrade guide asks
+adopters to inspect their merged text. The body-coverage count of 11 names
+relocated headings, not 11 missing rules. The six archived-proposal checker
+flags are permanent history, not suppressed; the separate stewardship
+citation has its live proposal as home. There is no Waiting line.

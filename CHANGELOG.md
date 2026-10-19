@@ -38,6 +38,21 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Changed — One review stance and an evidence sweep in every install
+
+- **Every Cairn install now gives each review the same evidence questions.**
+  The nine review lenses and falsification ledger moved into the installed
+  review-loop document. The ordinary review is by a fresh non-author; an
+  additional outside read happens only when the Maintainer calls it for one
+  named artifact. In upgrade rehearsals, keep LHM's local `AGENTS.md` bullet
+  beside the new upstream sentence; combine the shipped loop sweep with LHM's
+  domain probes without a second ledger; and keep modflow_tools' wholly local
+  agreement file. Clean merges can retain old review-tier wording, so inspect
+  merged text. The body-coverage tool reports 11 relocated headings, not 11
+  lost rules. The plan and adopter guide give the details
+  ([review-stance plan](dev/plans/archive/review-stance-and-lenses.md),
+  [upgrade guide](bootstrap/UPGRADE.md)).
+
 ### Added — The board as data: JSON output, view guide, and summary-line prompts
 
 - **`python tools/board.py --json` prints the board as plain data (contract `cairn-board/1`).**
