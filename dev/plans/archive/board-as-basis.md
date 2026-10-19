@@ -1,11 +1,10 @@
 # Plan: the board as the basis for richer views -- a data output, and a guide to building on it
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-board-as-basis.md`
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance -- inherited from the proposal: `tools/board.py` is run by every adopter and its output becomes a published contract
 **Opened**: 2026-10-18
-**Waiting on Maintainer**: read the generated board page
 **In brief**: `python tools/board.py --json` prints every proposal and plan as plain data, plus the roadmap rows that wait on you; a guide in Cairn's docs shows how to turn that into a page that is regenerated, never hand-kept; the proposal and plan templates ask for a one-sentence summary; Cairn ships no page.
 
 ## In brief
@@ -526,6 +525,21 @@ then `python scripts/check_cairn.py`, and `python scripts/claim_check.py` and `p
 * **A reading that asks for more.** If the Maintainer's answer at M asks for a field the data lacks, that is a new additive key and a deviation request, not a silent addition.
 * **Open-flag hardening of the leaf read** (`O_NOFOLLOW`, `O_NONBLOCK`, `fstat`): `wontfix`, for the reason in D15. Nothing reaches an adopter.
 * Any `defer` that arises is put to the Maintainer as **one batch** at archive-preparation, with the Waiting line, and needs the Decision's words quoted verbatim. None is known now.
+* **Chunk M reading**: accept. Maintainer assessment recorded verbatim: "Oh, I think that the .html file was just fine." (chat, 2026-10-19).
+
+**Dispositions**:
+* `status_holder` -> guard (`bootstrap/tests/test_board_json_contract.py::TestGuideLookupMatchesLifecycle`); terminal column wontfix (moot)
+* `maintainer_waits` -> guard (`bootstrap/tests/test_board_json_contract.py::TestWaitsRecipeAgreesWithMaintainerView`)
+* `fences_without_wait` -> wontfix (Decision: "Terminal view only")
+* Gate-manifest re-anchor -> defer -> `dev/PLANNING.md` > "Re-anchor the gate manifest" (queued row updated at archive: 25 new test nodes in `bootstrap/tests/test_board_json_contract.py` joining, none dropped; 2 new frozen files `bootstrap/tests/test_board_json_contract.py` and `bootstrap/tests/fixtures/board_json_v1_baseline.json`)
+* Roadmap rows without wait marker -> wontfix / documented in `docs/build-a-board-view.md`
+* Signal: consumer needs field left out -> guard (`TestSchemaOneBaselineHolds`)
+* Signal: authors rarely write summary line -> guard (`TestViewExample`)
+* Signal: stale stamp on page -> wontfix (judgment)
+* Signal: page still hand-edited / `--html` requests -> wontfix (guidance)
+* Signal: view lookups disagree with lifecycle -> guard (`TestGuideLookupMatchesLifecycle`)
+* Open-flag hardening of leaf read -> wontfix (D15)
+* Chunk M reading -> accept (Maintainer assessment recorded verbatim)
 
 ## Plan review -- Claude Opus 5.5 (Internal Security Review) -- 2026-10-18
 
@@ -1408,7 +1422,9 @@ This answers the Internal Security Review (`2e9cf490`, BB-SR1 to BB-SR10) and th
   * `waiting_on_maintainer(doc)` on the live tree at `47bfece2`: 2 declared roadmap items (`dev/PLANNING.md:454`, `dev/PLANNING.md:794`), 0 caveats (`roadmap_read: true`, `skipped_symlinks: []`).
   * `finished_plans(root)` on the live tree at `47bfece2`: `55` archived plans (`55 == 55` committed files under `dev/plans/archive/`).
   * Generated page saved at `/tmp/cairn-board-view.html` from commit `47bfece22690913bb309934fcd13d05b806c29c0`: group counts `Maintainer (2)`, `author (0)`, `reviewer (1)`, `implementer (2)`, `none named (3)`; footer reports `1 of 6 live rows carry an In brief line.`
-  * **Chunk M reading**: awaiting Maintainer response (`**Waiting on Maintainer**: read the generated board page` set in the header; `/tmp/cairn-board-view.html` generated from `47bfece22690913bb309934fcd13d05b806c29c0`).
+  * **Chunk M reading**: Maintainer assessment recorded verbatim per chunk M contract:
+    > "Oh, I think that the .html file was just fine."
+    (chat, 2026-10-19; generated from commit `47bfece22690913bb309934fcd13d05b806c29c0` at `/tmp/cairn-board-view.html`). Fenced chunk M cleared.
 
 **Mutation ledger summary (81 mutants across C1–C5, each run in a detached `git worktree` beside an unmutated `rc=0` control run)**:
 
@@ -1433,7 +1449,7 @@ This answers the Internal Security Review (`2e9cf490`, BB-SR1 to BB-SR10) and th
 **Known omissions**:
 
 * Full-suite execution (`CAIRN_FULL_SUITE=1`) is omitted per `AGENTS.md` (`12be58d9`) and explicit Maintainer instruction; `**Certified by**: pending` awaits the Maintainer's next certifying run.
-* Chunk M's Maintainer reading of `/tmp/cairn-board-view.html` is open (`**Waiting on Maintainer**: read the generated board page`); per *Sequence*, C6 and code review proceed while archive waits on the Maintainer's answer.
+* Chunk M's Maintainer reading of `/tmp/cairn-board-view.html` is complete and recorded above; the `Waiting on Maintainer` line is removed.
 
 ## Code review -- Antigravity (Gemini 3.8 Flash, fresh session) -- 2026-10-19
 

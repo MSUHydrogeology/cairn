@@ -37,6 +37,39 @@ release is cut, that section is renamed to the version + date
 and a new empty `Unreleased` is started above.
 
 ## Unreleased
+
+### Added — The board as data: JSON output, view guide, and summary-line prompts
+
+- **`python tools/board.py --json` prints the board as plain data (contract `cairn-board/1`).**
+  Every live and archived proposal and plan is emitted with the header fields its author
+  wrote (`status`, `review`, `plan_review`, `opened`, `source_proposal`,
+  `waiting_on_maintainer`, `in_brief`), its `title`, and its repository-relative `path` as the
+  unique key. The output derives no values and makes no judgments. It also includes marked wait rows
+  from `dev/PLANNING.md` (`roadmap_waits`), a `roadmap_read` boolean, and a sorted list of
+  `skipped_symlinks`. The schema promises additive evolution only within `cairn-board/1`; any
+  breaking change will increment to `cairn-board/2` announced in this changelog.
+- **The board refuses symbolic links and non-regular entries.** Path components strictly below
+  the repository root are examined with `is_symlink()` and `lstat()` before following links.
+  Symlinked proposals, plans, folders, and roadmap files are skipped and reported in the
+  data and on terminal stderr; non-regular files (such as named pipes) fail loudly rather
+  than hanging. On a tree without symbolic links, terminal outputs (`plain`, `--archive`,
+  `--maintainer`) remain byte-for-byte unchanged. An adopter who keeps `dev/` or a folder
+  under it as a symbolic link will find after upgrading that the board reads nothing from it
+  and prints a skip line.
+- **A guide shows how to build views without Cairn shipping a page.**
+  `docs/build-a-board-view.md` documents all schema fields, states the seven contract promises,
+  and provides a standard-library Python example that builds a grouped HTML dashboard with
+  context escaping and commit stamping. It includes tested recipes for listing what waits on the
+  Maintainer (agreeing with `tools/board.py --maintainer`), listing finished plans by date, and
+  joining intent claims. The guide is published in Cairn's own documentation, cited by
+  `board.py --help`, and is not installed into adopter trees.
+- **The proposal and plan templates prompt authors for an `In brief` summary line.**
+  All four templates (`dev/proposals/_template.md`, `dev/plans/_template.md`, and their
+  `templates/core/` counterparts) gain an `**In brief**: {{one plain sentence: what changes and why it matters}}`
+  header line and guidance paragraph. The board reads that physical line into `in_brief` so
+  generated views display the summary in place of the title.
+- Sourced from [`dev/plans/archive/board-as-basis.md`](dev/plans/archive/board-as-basis.md)
+  and [`docs/build-a-board-view.md`](docs/build-a-board-view.md).
 ### Added — One independent scientific check for a change that touches a scientific result
 
 - **The proposal template asks for one independent scientific check.**  A new
