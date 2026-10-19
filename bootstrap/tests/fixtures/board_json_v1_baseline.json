@@ -1,0 +1,53 @@
+{
+  "artifact_record": {
+    "archived": "boolean",
+    "id": "string",
+    "in_brief": [
+      "string",
+      "null"
+    ],
+    "kind": "string",
+    "opened": [
+      "string",
+      "null"
+    ],
+    "path": "string",
+    "plan_review": [
+      "string",
+      "null"
+    ],
+    "review": [
+      "string",
+      "null"
+    ],
+    "source_proposal": [
+      "string",
+      "null"
+    ],
+    "status": [
+      "string",
+      "null"
+    ],
+    "title": [
+      "string",
+      "null"
+    ],
+    "waiting_on_maintainer": [
+      "string",
+      "null"
+    ]
+  },
+  "roadmap_wait": {
+    "line": "integer",
+    "text": "string"
+  },
+  "schema": "cairn-board/1",
+  "top_level": {
+    "artifacts": "array",
+    "includes_archive": "boolean",
+    "roadmap_read": "boolean",
+    "roadmap_waits": "array",
+    "schema": "string",
+    "skipped_symlinks": "array"
+  }
+}

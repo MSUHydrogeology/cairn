@@ -712,3 +712,480 @@ class TestBoardLoadsOnlyItsOwnEncoder:
                 "board: skipped (symbolic link, not read): dev/plans/linked.md"
                 in captured.out.splitlines()
             )
+
+
+import json
+
+BASELINE_PATH = (
+    CAIRN_ROOT / "bootstrap" / "tests" / "fixtures" / "board_json_v1_baseline.json"
+)
+
+
+def _json_type_name(val: object) -> str:
+    if val is None:
+        return "null"
+    if isinstance(val, bool):
+        return "boolean"
+    if isinstance(val, int):
+        return "integer"
+    if isinstance(val, str):
+        return "string"
+    if isinstance(val, list):
+        return "array"
+    if isinstance(val, dict):
+        return "object"
+    return type(val).__name__
+
+
+def _matches_type(val: object, spec: str | list[str]) -> bool:
+    actual = _json_type_name(val)
+    if isinstance(spec, list):
+        return actual in spec
+    return actual == spec
+
+
+def _run_json(root: Path, capsys: pytest.CaptureFixture[str], *extra: str) -> dict:
+    rc = board.main(["--json", *extra, "--root", str(root)])
+    captured = capsys.readouterr()
+    assert rc == 0, f"rc={rc}, err={captured.err}"
+    assert captured.err == ""
+    return json.loads(captured.out)
+
+
+class TestSchemaOneBaselineHolds:
+    """The emitted JSON document matches the committed `cairn-board/1` baseline
+    keys and types on both populated and minimal trees, with no derived or fence
+    keys."""
+
+    def test_schema_one_baseline_keys_and_types_hold(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Every baseline top-level, artifact-record and roadmap-wait key is
+        present with its committed JSON type on both a full tree and an
+        absent-fields tree; booleans are distinguished from integers; and no
+        derived or fence key is emitted."""
+        baseline = json.loads(BASELINE_PATH.read_text(encoding="utf-8"))
+        assert baseline["schema"] == "cairn-board/1"
+
+        full_tree = tmp_path / "full"
+        _write(
+            full_tree,
+            "dev/proposals/2026-01-01-prop.md",
+            "# Proposal title\n\n"
+            "**Status**: awaiting-review\n"
+            "**Review**: usual\n"
+            "**Plan review**: required(Internal)\n"
+            "**Opened**: 2026-01-01\n"
+            "**Source proposal**: none\n"
+            "**In brief**: Summary sentence.\n"
+            "**Waiting on Maintainer**: decide\n\n"
+            "## Body\n",
+        )
+        _write(
+            full_tree,
+            "dev/plans/archive/old-plan.md",
+            "# Old plan\n\n"
+            "**Status**: archived\n"
+            "**Review**: usual\n"
+            "**Plan review**: required(Internal)\n"
+            "**Opened**: 2026-01-01\n"
+            "**Source proposal**: `dev/proposals/archive/p.md`\n"
+            "**In brief**: Done.\n"
+            "**Waiting on Maintainer**: none\n\n"
+            "## Body\n",
+        )
+        _write(
+            full_tree,
+            "dev/PLANNING.md",
+            "# Board\n\n* **Waiting on Maintainer**: roadmap item\n",
+        )
+        outside = _write(tmp_path / "ext", "x.md", "# Ext\n")
+        (full_tree / "dev" / "plans" / "skip.md").symlink_to(outside)
+
+        full_doc = _run_json(full_tree, capsys, "--archive")
+        assert full_doc["schema"] == "cairn-board/1"
+        for key, spec in baseline["top_level"].items():
+            assert key in full_doc, f"missing top-level key {key!r}"
+            assert _matches_type(full_doc[key], spec), (
+                f"top-level {key!r}: got {_json_type_name(full_doc[key])}, expected {spec}"
+            )
+        assert len(full_doc["artifacts"]) == 2
+        for rec in full_doc["artifacts"]:
+            for key, spec in baseline["artifact_record"].items():
+                assert key in rec, f"missing record key {key!r}"
+                assert _matches_type(rec[key], spec), (
+                    f"record {key!r}: got {_json_type_name(rec[key])}, expected {spec}"
+                )
+                if isinstance(spec, list):
+                    assert _json_type_name(rec[key]) == "string"
+        assert len(full_doc["roadmap_waits"]) == 1
+        for rw in full_doc["roadmap_waits"]:
+            for key, spec in baseline["roadmap_wait"].items():
+                assert key in rw, f"missing roadmap_wait key {key!r}"
+                assert _matches_type(rw[key], spec), (
+                    f"roadmap_wait {key!r}: got {_json_type_name(rw[key])}, expected {spec}"
+                )
+
+        # Absent-fields tree: no title line and no header lines.
+        empty_tree = tmp_path / "empty_fields"
+        _write(empty_tree, "dev/plans/bare.md", "Plain text only.\n\n## Section\n")
+        empty_doc = _run_json(empty_tree, capsys)
+        for key, spec in baseline["top_level"].items():
+            assert key in empty_doc
+            assert _matches_type(empty_doc[key], spec)
+        assert len(empty_doc["artifacts"]) == 1
+        bare_rec = empty_doc["artifacts"][0]
+        for key, spec in baseline["artifact_record"].items():
+            assert key in bare_rec
+            assert _matches_type(bare_rec[key], spec)
+            if isinstance(spec, list):
+                assert bare_rec[key] is None
+
+        # No derived or fence keys at any level:
+        all_keys = set(full_doc.keys())
+        for rec in full_doc["artifacts"]:
+            all_keys.update(rec.keys())
+        for rw in full_doc["roadmap_waits"]:
+            all_keys.update(rw.keys())
+        for forbidden in ("fence", "holder", "maintainer_waits"):
+            assert not any(forbidden in k for k in all_keys), all_keys
+
+
+class TestRecordFactsComeFromWhereTheFileSits:
+    """Location-derived keys (`kind`, `id`, `path`, `archived`), `title`, and
+    top-level metadata cannot be forged from header lines inside an artifact."""
+
+    def test_header_lines_cannot_forge_location_or_schema_fields(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Header lines named after location keys, schema keys or uncontracted
+        fields never overwrite `kind`, `id`, `path`, `archived`, `title`,
+        `schema` or `includes_archive`, and repeated fields use last-wins."""
+        baseline = json.loads(BASELINE_PATH.read_text(encoding="utf-8"))
+        _write(
+            tmp_path,
+            "dev/plans/real-plan.md",
+            "# Authentic Title\n\n"
+            "**Kind**: proposal\n"
+            "**Id**: forged\n"
+            "**Path**: javascript:alert(1)\n"
+            "**Archived**: yes\n"
+            "**Schema**: cairn-board/2\n"
+            "**Title**: forged-title\n"
+            "**Includes archive**: true\n"
+            "**Assurance path**: high-assurance\n"
+            "**Status**: first-status\n"
+            "**Status**: awaiting-decision\n\n"
+            "## Body\n",
+        )
+        doc = _run_json(tmp_path, capsys)
+        assert doc["schema"] == "cairn-board/1"
+        assert doc["includes_archive"] is False
+        assert len(doc["artifacts"]) == 1
+        rec = doc["artifacts"][0]
+        assert set(rec.keys()) == set(baseline["artifact_record"].keys())
+        assert rec["kind"] == "plan"
+        assert rec["id"] == "real-plan"
+        assert rec["path"] == "dev/plans/real-plan.md"
+        assert rec["archived"] is False
+        assert rec["title"] == "Authentic Title"
+        assert rec["status"] == "awaiting-decision"
+
+    def test_all_record_values_and_absent_vs_blank_and_headerless_files(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Each field comes from above the first `## ` heading, unescaped; absent
+        is `None` while a present blank line is `""`; `title` and `in_brief`
+        never stand in for each other; and a header-less artifact is included in
+        `--json` while omitted from the plain board."""
+        _write(
+            tmp_path,
+            "dev/proposals/2026-01-01-complete.md",
+            "# First Title | Raw\n"
+            "# Second Title Ignored\n\n"
+            "**Status**: awaiting-review\n"
+            "**Review**: usual + Security Review\n"
+            "**Plan review**: required(Internal)\n"
+            "**Opened**: 2026-01-01\n"
+            "**Source proposal**: `dev/proposals/archive/p.md`\n"
+            "**In brief**: Plain summary | unescaped.\n"
+            "**Waiting on Maintainer**: check A | B\n\n"
+            "## First heading\n"
+            "# Heading below section\n"
+            "**Status**: below-heading-ignored\n"
+            "**Opened**: 1999-01-01\n",
+        )
+        _write(
+            tmp_path,
+            "dev/plans/blanks.md",
+            "**Status**: implementing\n"
+            "**In brief**:\n"
+            "**Waiting on Maintainer**:   \n\n"
+            "## Section\n"
+            "# Late title\n"
+            "**Review**: below-heading\n",
+        )
+        _write(
+            tmp_path,
+            "dev/plans/headerless.md",
+            "# Only A Title\n\nNo bold header lines here.\n\n## Section\n",
+        )
+
+        doc = _run_json(tmp_path, capsys)
+        by_id = {r["id"]: r for r in doc["artifacts"]}
+        assert set(by_id.keys()) == {"2026-01-01-complete", "blanks", "headerless"}
+
+        comp = by_id["2026-01-01-complete"]
+        assert comp == {
+            "archived": False,
+            "id": "2026-01-01-complete",
+            "in_brief": "Plain summary | unescaped.",
+            "kind": "proposal",
+            "opened": "2026-01-01",
+            "path": "dev/proposals/2026-01-01-complete.md",
+            "plan_review": "required(Internal)",
+            "review": "usual + Security Review",
+            "source_proposal": "`dev/proposals/archive/p.md`",
+            "status": "awaiting-review",
+            "title": "First Title | Raw",
+            "waiting_on_maintainer": "check A | B",
+        }
+
+        blanks = by_id["blanks"]
+        assert blanks["title"] is None
+        assert blanks["in_brief"] == ""
+        assert blanks["waiting_on_maintainer"] == ""
+        assert blanks["review"] is None
+        assert blanks["opened"] is None
+
+        hdrless = by_id["headerless"]
+        assert hdrless["title"] == "Only A Title"
+        for k in (
+            "in_brief",
+            "status",
+            "review",
+            "plan_review",
+            "opened",
+            "source_proposal",
+            "waiting_on_maintainer",
+        ):
+            assert hdrless[k] is None
+
+        # Plain board still omits headerless.md:
+        assert board.main(["--root", str(tmp_path)]) == 0
+        plain_out = capsys.readouterr().out
+        assert "headerless" not in plain_out
+
+
+class TestOutputIsDeterministic:
+    """The JSON output is deterministic, pure ASCII with sorted keys, and keys
+    records uniquely by `path` across live and archived files."""
+
+    def test_archives_unique_path_key_and_deterministic_ascii_json(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Live and archived files sharing a stem both appear under `--archive`
+        with distinct `path`; two runs on identical content in different roots
+        produce identical ASCII bytes with sorted keys; and an empty root still
+        emits `schema: cairn-board/1`."""
+        root_a = tmp_path / "root_a"
+        root_b = tmp_path / "root_b"
+        for r in (root_a, root_b):
+            _write(
+                r,
+                "dev/plans/shared-name.md",
+                "# Live Café \u2014 Δ\n\n**Status**: implementing\n\n## Body\n",
+            )
+            _write(
+                r,
+                "dev/plans/archive/shared-name.md",
+                "# Archived Plan\n\n**Status**: archived\n\n## Body\n",
+            )
+            _write(r, "dev/PLANNING.md", "# Board\n")
+
+        doc_live = _run_json(root_a, capsys)
+        assert doc_live["includes_archive"] is False
+        assert [a["path"] for a in doc_live["artifacts"]] == [
+            "dev/plans/shared-name.md"
+        ]
+        assert all(a["archived"] is False for a in doc_live["artifacts"])
+
+        assert board.main(["--json", "--archive", "--root", str(root_a)]) == 0
+        out_a1 = capsys.readouterr().out
+        assert board.main(["--json", "--archive", "--root", str(root_a)]) == 0
+        out_a2 = capsys.readouterr().out
+        assert board.main(["--json", "--archive", "--root", str(root_b)]) == 0
+        out_b = capsys.readouterr().out
+
+        assert out_a1 == out_a2 == out_b
+        assert out_a1.isascii()
+
+        parsed = json.loads(out_a1)
+        reserialized = (
+            json.dumps(parsed, ensure_ascii=True, indent=2, sort_keys=True) + "\n"
+        )
+        assert out_a1 == reserialized
+        assert parsed["includes_archive"] is True
+        paths = [a["path"] for a in parsed["artifacts"]]
+        assert paths == [
+            "dev/plans/archive/shared-name.md",
+            "dev/plans/shared-name.md",
+        ]
+        assert parsed["artifacts"][1]["title"] == "Live Café \u2014 Δ"
+
+        # Empty tree with no dev/ directory:
+        no_dev = tmp_path / "no_dev"
+        no_dev.mkdir()
+        empty_doc = _run_json(no_dev, capsys)
+        assert empty_doc == {
+            "artifacts": [],
+            "includes_archive": False,
+            "roadmap_read": False,
+            "roadmap_waits": [],
+            "schema": "cairn-board/1",
+            "skipped_symlinks": [],
+        }
+
+
+class TestRoadmapWaitsAndSkippedSymlinksInJson:
+    """`roadmap_waits`, `roadmap_read` and `skipped_symlinks` in `--json` share
+    one reader with `--maintainer`, and failures write nothing to stdout."""
+
+    def test_roadmap_waits_match_maintainer_and_share_one_reader(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """`roadmap_waits` on the golden tree matches `--maintainer`'s roadmap
+        entries in line numbers and text; blank wait rows produce `""`; missing
+        and linked roadmap files set `roadmap_read: False`; and `skipped_symlinks`
+        matches the terminal skip lines on all ten symlink trees."""
+        main_tree = tmp_path / "main"
+        _build_golden_main_tree(main_tree)
+        _write(
+            main_tree,
+            "dev/PLANNING.md",
+            (main_tree / "dev" / "PLANNING.md").read_text(encoding="utf-8")
+            + "* **Waiting on Maintainer**:\n",
+        )
+        doc = _run_json(main_tree, capsys)
+        assert doc["roadmap_read"] is True
+
+        assert board.main(["--maintainer", "--root", str(main_tree)]) == 0
+        maint_lines = capsys.readouterr().out.splitlines()
+        maint_roadmap = []
+        for line in maint_lines[1:]:
+            cells = line.removeprefix("board: ").split(" | ", 3)
+            if len(cells) == 4 and cells[0] == "roadmap":
+                _, art, _, txt = cells
+                line_no = int(art.split(":", 1)[1])
+                maint_roadmap.append({"line": line_no, "text": txt})
+        assert doc["roadmap_waits"] == maint_roadmap
+        assert doc["roadmap_waits"][-1]["text"] == ""
+
+        # Present dev/PLANNING.md with no wait rows:
+        quiet_tree = tmp_path / "quiet"
+        _write(quiet_tree, "dev/PLANNING.md", "# Planning\n\nNo waits here.\n")
+        quiet_doc = _run_json(quiet_tree, capsys)
+        assert quiet_doc["roadmap_read"] is True
+        assert quiet_doc["roadmap_waits"] == []
+
+        # Ten symlink trees:
+        for name, root, expected_skips, planning_skipped in _build_ten_symlink_trees(
+            tmp_path / "links"
+        ):
+            extra = ("--archive",) if name == "archive_linked" else ()
+            link_doc = _run_json(root, capsys, *extra)
+            assert link_doc["skipped_symlinks"] == sorted(expected_skips), name
+            if planning_skipped:
+                assert link_doc["roadmap_read"] is False, name
+            else:
+                assert link_doc["roadmap_read"] is True, name
+
+    def test_json_failures_and_usage_errors_write_nothing_to_stdout(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Non-UTF-8 files, directories named `x.md`, and named pipes exit 1 in
+        `--json` with empty stdout and one `ascii()`-encoded stderr line without
+        loading `tools/session.py`; `--json --maintainer` exits 2 with empty
+        stdout; and `--help` cites `cairn/docs/build-a-board-view.md`."""
+        board_src = (CAIRN_ROOT / "tools" / "board.py").read_text(encoding="utf-8")
+        assert (
+            "ascii() is used instead of the terminal encoder so that --json loads no other file"
+            in board_src
+        )
+
+        # 1. Non-UTF-8 artifact:
+        bad_art = tmp_path / "bad_art"
+        (bad_art / "dev" / "plans").mkdir(parents=True)
+        (bad_art / "dev" / "plans" / "broken.md").write_bytes(b"\xff\xfeinvalid")
+        rc = board.main(["--json", "--root", str(bad_art)])
+        captured = capsys.readouterr()
+        assert rc == 1
+        assert captured.out == ""
+        assert len(captured.err.splitlines()) == 1
+        assert "'dev/plans/broken.md'" in captured.err
+
+        # 2. Non-UTF-8 dev/PLANNING.md:
+        bad_plan = tmp_path / "bad_plan"
+        (bad_plan / "dev").mkdir(parents=True)
+        (bad_plan / "dev" / "PLANNING.md").write_bytes(b"\xff\xfeinvalid")
+        rc = board.main(["--json", "--root", str(bad_plan)])
+        captured = capsys.readouterr()
+        assert rc == 1
+        assert captured.out == ""
+        assert len(captured.err.splitlines()) == 1
+        assert "'dev/PLANNING.md'" in captured.err
+
+        # 3. Directory named x.md (even after a valid artifact):
+        dir_md = tmp_path / "dir_md"
+        _write(dir_md, "dev/plans/a_first.md", "# A\n\n**Status**: implementing\n")
+        (dir_md / "dev" / "plans" / "x.md").mkdir(parents=True)
+        rc = board.main(["--json", "--root", str(dir_md)])
+        captured = capsys.readouterr()
+        assert rc == 1
+        assert captured.out == ""
+        assert len(captured.err.splitlines()) == 1
+        assert "'dev/plans/x.md'" in captured.err
+
+        # 4. Named pipe x.md:
+        if hasattr(os, "mkfifo"):
+            fifo_root = tmp_path / "fifo_json"
+            (fifo_root / "dev" / "plans").mkdir(parents=True)
+            os.mkfifo(fifo_root / "dev" / "plans" / "x.md")
+            proc = subprocess.run(
+                [
+                    sys.executable,
+                    str(CAIRN_ROOT / "tools" / "board.py"),
+                    "--json",
+                    "--root",
+                    str(fifo_root),
+                ],
+                capture_output=True,
+                text=True,
+                timeout=3,
+                check=False,
+            )
+            assert proc.returncode == 1
+            assert proc.stdout == ""
+            assert len(proc.stderr.splitlines()) == 1
+            assert "'dev/plans/x.md'" in proc.stderr
+
+        # 5. --json --maintainer exits 2 with empty stdout:
+        with pytest.raises(SystemExit) as excinfo:
+            board.main(["--json", "--maintainer", "--root", str(tmp_path)])
+        assert excinfo.value.code == 2
+        captured = capsys.readouterr()
+        assert captured.out == ""
+
+        # 6. --help text:
+        with pytest.raises(SystemExit) as help_exc:
+            board.main(["--help"])
+        assert help_exc.value.code == 0
+        help_out = capsys.readouterr().out
+        assert "header blocks and nothing else" not in help_out
+        assert "header blocks only" not in help_out
+        normalized_help = " ".join(help_out.split())
+        assert (
+            "JSON form: --json prints the board as data (schema cairn-board/1). "
+            "Field reference and worked example: Cairn's own cairn/docs/build-a-board-view.md "
+            "(in the repository you adopted from, not in this tree)."
+        ) in normalized_help

@@ -9,7 +9,6 @@
 
 Proposed paths:
 - `docs/build-a-board-view.md`
-- `bootstrap/tests/fixtures/board_json_v1_baseline.json`
 
 ## In brief
 
