@@ -1,7 +1,7 @@
 # Plan: review stance and lenses — one review at every stage, and the lenses in every install
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-external-is-a-maintainer-stance.md` (accepted `58f30d6c`) and `dev/proposals/archive/2026-10-18-claude-review-lenses-for-every-install.md` (accepted `fbf664f0`)
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance — inherited: the change edits `doctrine/`, the governing `AGENTS.md` every adopter receives, the authoring templates and a framework anchor.
 **Opened**: 2026-10-18
@@ -4688,3 +4688,191 @@ The full run was stopped at the Maintainer's request and is not passing
 integration evidence. The 1,844 passing focused tests and document checks are
 sufficient for this follow-up; no full rerun is outstanding for it. This does
 not change the rest of the plan's verification or re-anchor obligations.
+
+## Code review -- Claude Sonnet 5.5 -- 2026-10-19
+
+```
+Reviewed commit: 555d2f78096c3afa3e715acb968086095c30451a
+Target: the plan's implementation range 92421911..fd66c988 (nine chunk commits: b69a9887, b5b049d0, 08c946a6, e4b4dbb5, ac7d92f3, 2e1c9b3b, 467ddcbd, 5c77c11b, fd66c988) with the shipped text and the three test files as they stand at 555d2f78, which adds the Maintainer-instructed README follow-up (dffc13d1, another session; read for its test group only). Read against the plan's Acceptance criteria, its Security Review findings RS-SR1 to RS-SR4, its Deviation request and the Allowance. The revised record (966c8e94) and the later template edits (47bfece2, board-as-basis) were read at 6c8b8eff.
+Prior findings: none (RS-SR1 to RS-SR8 and RS-PR1 to RS-PR11 were folded before implementation; RS-SR1 to RS-SR4 are re-checked below against the shipped text)
+```
+
+**Obligation**: Code review (the floor: not the implementing agent)
+**Tier**: usual -- a fresh session; not a Security Review, and not a called read
+**Bounding**: not owed. The record is `full`, and this field adjudicates a `bounded` record. I did not run the full suite (`AGENTS.md` > "Verification boundaries"); the next certifying run supplies it, and the revision asked for below changes test bytes, so that run must come after it. `**Certified by**: pending`.
+**Findings**: raised (1 blocking, for timing; 7 non-blocking, all low)
+**Verdict**: REVISE -> `revising-code`. The work does what the plan said, and I could not break any of the four protective rules by deleting or reversing the sentences the plan pinned. What I found are sentences the plan did not pin, a few leftover words, and wording a scientist would stumble on. RS-CR1 blocks only because the three test files freeze at the Maintainer's re-anchor once code review is done, and after that every added pin costs a ceremony. The rest are the author's call.
+**Model**: claude-sonnet-5-5
+
+Distance: a fresh session of the implementer's agent type (Claude Sonnet 5.5). I wrote none of the code, the plan, the proposals or the earlier reviews, and I am not the implementer. This is the usual code review. It reads the Security Review's four rules as part of falsification; it is not a Security Review and clears none (the plan declared none for code review).
+
+**Foundations** (the code row; one line per answer, each ending in the file, test, line or command that backs it):
+
+1. **Should this happen as framed?** Yes, it does what it claims: every fresh install of all three profiles carries the nine lenses, the citation rule, the coverage line and the five-item ledger once, in `dev/agent_collaboration.md`, with the pointer in `AGENTS.md`; the phrasing search finds 2 files at the reviewed commit, both exempt for a stated reason; the upgrade stages for LHM and modflow_tools flag every conflict and `--apply` refuses until they are resolved -- see "What I checked" below and `bootstrap/tests/test_review_sweep_ships.py`.
+2. **Best alternative.** The same outcomes with less text to keep in step: one copy of the 28-line called-read block (not six) and about 600 test nodes (not 2,036). The six copies are what the Security Review asked for, so I recommend keeping them and consolidating the tests only -- 2,036 nodes in `bootstrap/tests/test_review_stance_in_shipped_files.py` and `bootstrap/tests/test_review_sweep_ships.py`, 1,407 of them `test_inserting_*` or `test_removing_*` controls (RS-CR6).
+3. **What would show it wrong.** A pinned sentence that survives its own deletion, or a shipped sentence that selects distance. Every sentence the plan pinned was killed when deleted or reversed; the survivors are sentences it did not pin (RS-CR1, RS-CR5) -- see the falsification ledger below.
+
+### In plain terms
+
+* **The four protective rules hold.** Only a Security Review clears a Security Review; "not the implementing agent" is in both plan templates; no shipped sentence lets an agent pick or call an outside read; a review is never lowered below its stage's floor; the Maintainer's quote goes in the commit body. For each I deleted or reversed the pinned sentence in every copy, in a scratch copy of the commit: 90 of 98 runs turned a named test red. The 8 that did not are two small details of rule 1 (RS-CR1).
+* **"Written once" holds.** In fresh `solo-greenfield`, `collaborative-team` and `high-rigor-legacy` installs each lens, the citation rule, the coverage line and the ledger items sit in exactly one file.
+* **Upgrade works, with three things the upgrade note should say.** Every conflict marker sits in a file the plan lists as a conflict. LHM gains one conflict (a one-line collision in `AGENTS.md`); modflow_tools gains one (its whole agreement file). Clean merges also leave an adopter's own old words ("Internal / External review", "review tiers") in place, unflagged (RS-CR7).
+* **The two signals do not matter much.** `AGENTS.md` grew by 49 lines against a 40-line ceiling; the 11 missing topics are relocations under other names. Details below.
+* **What I would fix before the tests freeze:** a handful of unpinned rule-carrying sentences (RS-CR1), one leftover label that makes a second agent "External cross-type" in a shipped example (RS-CR2), and a few words a scientist would trip on (RS-CR4).
+
+### What I checked, against the shipped text
+
+**1. The four protective rules (RS-SR1 to RS-SR4).** Set listed from the tree (`git ls-files`, not the diff): both `AGENTS.md` copies, the two proposal templates, the two plan templates, the two `model-selection` copies, the two loop documents. Each row is one rule, the sentence that carries it, the nodes that pin it, and what happened when I broke it.
+
+| Rule | Carried by | Pinned by | Broken how | Result |
+|---|---|---|---|---|
+| Only a Security Review clears a Security Review | the two-pass sentence (`AGENTS.md` x2, proposal templates x2); the obligation sentence (`AGENTS.md` x2, plan templates x2); "discharges no Security Review" (all six) | labels `usual-plus-security-review-is-two-passes...`, `a-plan-security-obligation-is-cleared-only-by-a-matching-obligation-line`, `a-called-read-discharges-no-security-review-by-distance-or-brief`, `a-high-risk-surface-takes-a-security-review` | reversed or deleted, each in each copy (18 runs) | 18 killed |
+| ... and its two details | the parenthetical "a pass clears a Security Review only by being one" (all six); the `**Obligation**:` line of the plan pass skeleton (plan templates x2) | none | deleted (6 + 2 runs) | **8 survived**, also against a 2,457-test broader set (RS-CR1) |
+| "Not the implementing agent" | `AGENTS.md` x2; both plan templates, in the preamble **and** the Code review skeleton; `model-selection` x2 | `code-review-floor-is-not-the-implementing-agent`, the skeleton node, `code-review-floor-is-medium-and-not-the-implementing-agent` | reversed, one place at a time (8 runs) | 8 killed |
+| No sentence lets an agent select or call an outside read | the never-list, the definition, the `Tier: External` rule (all six); the `Called by` line under every skeleton (four templates) | `no-agent-declares-external-required-or-recommends-distance`, `external-means-the-maintainer-called-it`, `tier-external-needs-called-by-else-read-as-the-usual-review`, `test_a_template_offers_external_only_beside_called_by` | deleted or reversed (28 runs) | 28 killed |
+| A review is never lowered below its stage's floor | the cleanup row, the role rows and the bright-line list (`model-selection` x2); "a floor, never a downgrade" and the coverage-line rule (loop documents x2) | the nine `_MODEL_OBLIGATIONS` floor labels, the sweep labels | code review to low, proposal review to medium, "lowers no review" deleted, bright line made downshiftable (18 runs) | 18 killed |
+| The `Called by` quote goes in the commit body | "The same words go in the commit message" (all six) | `called-by-quote-is-repeated-in-the-commit-body`, `called-by-carries-the-maintainers-words-verbatim`, `nothing-checks-the-quote-a-reader-does` | deleted, softened to "a summary", and turned into "a hook checks the quote" (18 runs) | 18 killed |
+
+Also attacked by hand, in a scratch copy: a new preset file holding "A human fills the External tier." turns three nodes red (the preset glob, the completeness walk, and its exemption control); putting `templates/core/AGENTS.md` into the completeness exemption table turns three nodes red (`test_no_file_an_adopter_receives_is_exempt` among them). A `Called by` quote that carries a waiver cannot be caught by text and the shipped text says so; the sentence "Any other authority ... never from a `Called by` line" is pinned and was killed on deletion.
+
+**2. Written once.** Fresh installs of the three profiles, `dev/.cairn/base` (the engine's upgrade cache) left out: the heading "The review sweep", the nine lens items, "Falsifiable coverage", "Not covered / low confidence", the five ledger items and "a hidden bug exists" each appear in `dev/agent_collaboration.md` only, in all three. `AGENTS.md` holds the pointer, the stance and the called-read block, once each. Over the source tree outside archives the lens labels appear only in the two loop documents (the shipped one and Cairn's twin, identical apart from slots and the claim paragraph), the plan, and one citation in the stewardship proposal. The installed `dual-review` module (59 lines) carries none of them. Breaking it: deleting lens 4 from the shipped loop document reddens one install node per profile (3); deleting the evidence pointer from the shipped `AGENTS.md` reddens four per profile (12).
+**Exception, by design:** the scope-reduction trap is in both the loop document and the module's merged block. The plan deferred retiring the module's copy to a board row (lenses proposal, "Not in this proposal"); the row is not yet deposited (the plan's *Dispositions* puts it at archive).
+
+**3. The upgrade rehearsal** (read-only: `git archive HEAD dev AGENTS.md CLAUDE.md` of each repository's committed tree into a fresh folder, `upgrade --plan` and `--stage` from the base and from the reviewed commit; before and after, each repository's HEAD, `git status --porcelain --ignored` hash, reflog tip and stash count were identical).
+
+| | LHM, base | LHM, reviewed | modflow_tools, base | modflow_tools, reviewed |
+|---|---|---|---|---|
+| conflict files (hunks) | loop document (1), `dev/upstream/README.md` (1) | loop document (1), **`AGENTS.md` (1)**, `dev/upstream/README.md` (1) | `dev/PLANNING.md` (1) | `dev/PLANNING.md` (1), **`dev/collaboration_agreement.md` (1)** |
+| `dev/modules/dual-review.md` | replaced cleanly | replaced cleanly (thinned module) | replaced cleanly | replaced cleanly |
+
+These match the record. Beyond it:
+
+* **No marker is unflagged.** Over the whole staged tree, the files holding `<<<<<<<` are exactly the files the plan classes `conflict`, none other. `upgrade --apply` on a scratch copy of the LHM stage stops with "staged file AGENTS.md still has conflict markers" (exit 1) and writes none.
+* **Reads coherently where it merges clean.** In both staged `AGENTS.md` and both plan and proposal templates the stance, the called-read block and the sweep each appear once; no "External tier" or "External review" survives in a merged shared file.
+* **LHM's loop document stays doubled until resolved,** as the plan predicted: the shipped sweep and ledger sit above LHM's own clean-pass list, four-part ledger and briefs, which are all one conflict region against nothing upstream. The advice (take the shipped sweep, keep the domain probes, drop the duplicate ledger and clean-pass statement) reads right against the staged file.
+* **modflow_tools' agreement conflicts across its whole body** (207 lines of its own against the template's 50), because it rewrote the file and the plan changed one sentence in it. Keep the local file; nothing is lost.
+* **Clean merges leave the adopter's own old vocabulary in place.** In the staged LHM loop document: "Security Review, and External Review sit at the high-capability tier; ... and Internal Review accept the standard tier" (its own `role-roster-additions` text). In modflow_tools': "Internal / External review | Reviewer (commits own findings)" and "the review tiers in the `dual-review` module" -- the last now points at a module with no tiers. Nothing flags these (RS-CR7).
+
+**4. The two signals the record names.**
+
+* **`AGENTS.md` +49 lines against a 40-line ceiling: it does not matter enough to hold the plan.** I measured 443 -> 492 (Cairn's) and 419 -> 468 (shipped) at the commit that wrote it. 28 of the 49 are the called-read block, and a solo adopter never uses it; but they are the rules the Security Review asked to sit in `AGENTS.md` and the four templates, so I would not shorten them. Costing attention, not correctness. If the file has to shrink later, the first two bullets ("what it is", "how it is recorded") could move to the loop document and leave the two protective bullets; that is a plan change, not part of this revision.
+* **`check_module_body_coverage.py` 11 against 8: it does not matter functionally.** The probe matches the doctrine's `##` headings by text in the module and the loop document. The three added are relocations under other names (checked): "Structural independence" is now `AGENTS.md` "Distance is information, not a rule" and the loop document's roster sentence; "Code review -- the implementation side" is the ledger and the code-review paragraph; "Review expectations -- the clean-pass trap" is the review sweep. "Two tiers, two purposes" became "One stance, three stages", which lives in `AGENTS.md` where the probe does not look. The other eight were missing at the base. The probe's own text calls its output "a prompt for the 6a judgment, not a gate" (`bootstrap/fidelity-check.md`). One cost: every adopter's fidelity check will now print 11; the archive note should say so in one line.
+
+**5. Plain language.** The new Review text in the shipped `AGENTS.md` mostly reads plainly: the stance paragraph, the three-question table, "Improve means recommend", "There is no quota of findings" and the two-pass rule are clear to a scientist. Five snags, listed in RS-CR4 with rewrites. The densest paragraph is the first bullet of the called-read block.
+
+**6. Other claims re-measured at the reviewed commit** (each against a known-present case first):
+
+* Search A (the plan's pattern, its roots, archives out): base 35 files (control: both `AGENTS.md` copies); reviewed 2 files, 2 hits, both in the stance test's exemption table (`doctrine/lifecycle-contract.md`, `doctrine/onboarding.md`). Search B: 27 files, 42 paragraphs (the record's 26 and 41, plus one noise hit from the later README sentence "ask for a human decision where one is required"). Search D 11 / 16 and the authority probe 8 / 10, as recorded. Both old privileges are gone ("Tier ordering" 0 hits; the module clause killed in the mutation run).
+* `scaffold.py --manifest`: byte-identical to the base (`cmp`). Neutrality `fail=0` (`info=56`), redundancy `fail=0`. `verify_integrity.py --target .` 18 violations, the same files as the base, none of the three module copies among them. `cairn:slot` counts unchanged in all eight files. The deleted frozen test costs the verifier exactly one `FROZEN-MISSING` and five `COLLECTION-DROPPED`, as the plan said, while the suite stays green. No commit of the range touches `bootstrap/_scaffold/`, `bootstrap/REANCHOR_RUNBOOK.md`, `bootstrap/reanchor.sh`, `bootstrap/tests/_gate_reanchor.py`, `scripts/check_model_selection.py` or `dev/.cairn/model-selection-mapping.yml`; the three lockfile edits are single records.
+* `check_cairn.py` with the two archived proposals named reports 6 flags: the 3 the Allowance names (module lines 132-133 and 131-132, and 136-144) and 3 about the deleted test (RS-CR8). `claim_check.py` on the plan was clean at the start of this review.
+* Scoped runs, Python 3.13.13, clean worktrees: the three plan test files 2,161 passed; with 14 further owning files 2,480 passed; the mapped owner set (22 files) 500 passed; at 6c8b8eff (after the board-as-basis template edits) the three files plus `test_scaffold.py` and `test_quickstart_sequence.py` 2,236 passed. The README follow-up's test group: 5 of 5 deletions or reversals of its retained-contract statements killed, control 1,844 passed (the record's figure).
+* The blob ids of the three test files at the reviewed commit, for the archive note: `test_review_and_verification_rules_ship.py` `fd948b657af4978d872aeb2eb674f5e43fd37983`; `test_review_stance_in_shipped_files.py` `673d0d42d4c806354ec181c33416b1518c4de57f` (changed by dffc13d1, so differs from the record's `a7ae88e5...`); `test_review_sweep_ships.py` `80815dbbba19620a54b6fca75e363c73d8ec263c`. A revision that touches a test changes the first two.
+
+### Falsification ledger
+
+A *mutant* is one deliberate break, made to see whether any check notices. *Killed*: some check fails on it. *Survived*: every check still passes. I measured no equivalent: any mutant that did not fail a check is reported as a survivor. Every run edited one real file in a detached scratch worktree of the reviewed commit, ran the named test files, and restored the file from git; the worktree was clean after each sweep.
+
+| Family | Mutants (runs) | Killed | Survived | Control before / after |
+|---|---|---|---|---|
+| The four protective rules, pinned sentences and two details (table above) | 27 (98) | 90 | 8 | 2,161 passed / 2,161 |
+| Evasive rewordings of unpinned sentences, and added sentences that select distance or privilege a pass, without the retired words | 13 (44) | 0 | 44 | 2,161 / 2,161 |
+| Every lens (9), every ledger item (5), the citation rule, the scope sentence, the "Covered" half, the project-probes sentence, the "tried to break it and could not" sentence, the pointer paragraph and its two clauses, plan-review freshness (2) | 24 (48) | 44 | 4 | 2,036 / 2,036 |
+| README retained-contract statements | 5 (5) | 5 | 0 | 1,844 / 1,844 |
+| Six survivors re-run against a 17-file broader set (control 2,480 passed / 2,480) | 6 (6) | 0 | 6 | -- |
+| Install group: lens 4 deleted from the shipped loop document; evidence pointer deleted from the shipped `AGENTS.md` | 2 | 2 (3 and 12 nodes red, one set per profile) | 0 | 93 / 93 |
+
+Total of the first five rows: 75 mutants, 201 runs, 139 killed, 62 survived. The survivors, by what they are:
+
+* **Details of a pinned rule** (RS-CR1): the parenthetical "a pass clears a Security Review only by being one" in all six copies; the `**Obligation**:` line of the plan pass skeleton in both plan templates.
+* **Unpinned sentences that carry a rule on their own** (RS-CR1): "A plan review is fresh-context" (`AGENTS.md`, plan templates) and "Plan review never has a second round"; "No agent picks a kind of review." in all six copies; "It may name a risk and a gap in its coverage line." in all six.
+* **Detail, harmless** (not a finding): "in chat or inside a Decision" reversed to include "a reviewer's judgment" in all six copies (the sentence stays contradicted by pinned text next to it); the `, relayed by <who>` clause deleted in all six.
+* **A new sentence that selects distance or privileges a pass, in words the patterns do not know** (RS-CR5): "A change to the engine should be reviewed by a different model architecture." inserted into `AGENTS.md` x2, all four templates and both loop documents (8 runs); "A Security Review is read by a second agent type before it counts." into `AGENTS.md` x2 and the four templates (6 runs). The first also passes the 17-file broader set.
+
+### Findings
+
+#### RS-CR1 -- Medium, blocking for timing -- Rule-carrying sentences with no pin
+
+**Plain.** The plan pinned the core sentence of each protective rule, and all of those hold. Seven nearby sentences, each of which carries part of a rule, can be deleted or reversed and nothing goes red. Two of them are the only place their rule is written in a template.
+
+**Evidence.** (a) The plan pass skeleton's `**Obligation**:` line, deleted from both plan templates: survives. It is the line the rule "only an appended `## Plan review` pass whose `**Obligation**` line matches clears it" reads, and the skeleton is the only place a reviewer is told to write it. (b) The parenthetical "(a pass clears a Security Review only by being one)", deleted in the six copies: survives, also against the 17-file set. (c) "A plan review is fresh-context" (`AGENTS.md` line 139 and its shipped twin), "A plan review is fresh-context and one round" (plan templates) and "Plan review never has a second round" (`AGENTS.md` line 37): reversed or deleted, survive. (d) "No agent picks a kind of review." (`AGENTS.md` line 61, and the four templates) and "It may name a risk and a gap in its coverage line." (`AGENTS.md` line 106, and the templates): reversed, survive. Their pinned neighbours (the never-list) stay in place, so a reversal would make the text contradict itself, not drop a rule; (a) and (c) would drop one.
+
+**Why now.** The three test files freeze at the Maintainer's re-anchor after this review. A pin added later owes another re-anchor; a pin added in this revision does not.
+
+**Recommended.** One revision, test bytes and nothing shipped: (a) a node asserting both plan templates' pass skeletons hold `**Obligation**:` before `**Tier**:`; (b) run the pattern of `a-called-read-discharges-no-security-review-by-distance-or-brief` through "only by being one"; (c) add labels for the plan-review freshness sentence (`AGENTS.md` x2, plan templates x2) and "never has a second round" (`AGENTS.md` x2); (d) add labels for the two sentences of item (d). **Closes when** each of those mutants re-run turns a named node red beside a green control.
+
+#### RS-CR2 -- Low -- A shipped roster example still calls a second agent "External cross-type"
+
+**Plain.** The onboarding page tells an adopter to add a second agent to the team roster, and its example line reads `Codex GPT-5 -- reviewer (External cross-type)`. That says a roster entry makes someone the External reviewer, which is the opposite of the rule that a roster is not a call.
+
+**Evidence.** `docs/agent-team-onboarding.md` line 39 and its byte copy `dev/modules/onboarding/agent-team-onboarding.md` line 39; both ship to every install that picks a preset. Neither Search A nor Search B sees it (no selection verb near "External"), so the plan's classification and the completeness walk both miss it.
+
+**Recommended.** Write `reviewer` on that line in both files in one commit (a stance-test node requires the pair to stay `cmp`-equal). **Closes when** `grep -rn "External cross-type" docs dev/modules` finds nothing.
+
+#### RS-CR3 -- Low -- The pass skeletons disagree on how to record a called read
+
+**Plain.** The proposal templates say "replace the Tier line with these two"; the plan templates say "add these two lines", so a plan pass would carry two `**Tier**:` lines, one `Internal` and one `External`. Separately, the two-pass sentence says a Security Review pass "names its own obligation", but the proposal skeleton has no field for it (its Security Review passes in the archive use `**Tier**: Security Review`, so nothing is broken today).
+
+**Evidence.** The paragraph under the Plan review skeleton in both plan templates ("add these two lines") against the same paragraph in both proposal templates ("replace the Tier line with these two").
+
+**Recommended.** Say "replace the Tier line" in the plan templates too, keeping the `**Obligation**:` line; and either drop "names its own obligation" from the proposal sentence or say it means `**Tier**: Security Review`. `test_a_template_offers_external_only_beside_called_by` still holds. **Closes when** the two skeletons read alike.
+
+#### RS-CR4 -- Low -- Five snags in the plain-language read
+
+**Plain.** For a hydrologist reading `AGENTS.md` cold:
+1. **"Falsification ledger"** is used in the Review section (`AGENTS.md` lines 72 and 142) before and without a definition; it is defined only in the loop document. Add a clause: "(the record of what the reviewer tried to break, and what happened)".
+2. **"A call that covers artifacts not yet written is a standing floor (a rule that applies without being asked), and a standing floor returns only by proposal"** and **"it adds no read and upgrades none"** are the hardest sentences in the section; "floor" also means a capability floor and a fresh-session floor in the same files. Suggested: "A call that covers work not yet written is a standing rule, and a standing rule is added only by a proposal" and "it does not by itself call for an outside read". Both phrases are pinned and need their patterns edited with them.
+3. **`Internal`** survives only as a token to type in `Plan review: required(Internal + Internal Security Review)`; with "Internal review" gone from the shipped text nothing says what it means. One clause: "(`Internal` is the ordinary plan review)".
+4. The loop document's **"never a downgrade of a declared tier"** is the only "tier" left in the review text, and a header no longer declares one; pinned by a sweep label. Suggested: "never a downgrade of a review the header declared".
+5. The glossary calls the idea a **"Called read"**, but `AGENTS.md`, the templates and the `Tier: External` line call it an "External read"; searching the glossary for "External" finds nothing. Add "(also written External)" to the glossary entry.
+
+**Recommended default.** Take 1, 3 and 5 (a clause each); take 2 and 4 if the author is editing those patterns for RS-CR1 anyway. **Closes when** the sentences read so and the pins follow.
+
+#### RS-CR5 -- Low -- The pins catch the old words, not new ones
+
+**Plain.** The tests keep the retired phrasings out. They cannot tell that a new sentence in other words selects an outside read or privileges a pass. This is the nature of a phrase pin, not a defect of this one, but "tests green" must not be read as "no sentence selects distance".
+
+**Evidence.** The 14 runs of the two added sentences (ledger above) pass all 2,161 tests, and one copy passes 2,480. The evidence that no shipped sentence selects distance is the Search B classification, which I re-ran (27 files, 42 paragraphs, each read; all kept as the called-read definition, a staffing fact, the cost-rule carve-out, a ruled token, or noise), plus the review any edit to these six files gets.
+
+**Recommended.** One sentence in the stance test's docstring and one in the archive note saying the guard is phrase-level, and that Search B (the script text is in the record) is re-run before any later edit to the six files. Words only. **Closes when** both say so.
+
+#### RS-CR6 -- Low -- Test size: 2,036 nodes where about 600 would pin the same properties
+
+**Plain.** `AGENTS.md` (committed today, after these tests) says a test pins one property in one node and that parametrizing over every file of a text does not test a property. 1,407 of the two new files' 2,036 nodes are controls named `test_inserting_*` (1,143) and `test_removing_*` (264). The `test_removing_*` nodes strip the pattern under test from the text and assert the same pattern is gone, so they cannot fail; the `test_inserting_*` nodes cross every label with every file, but the file only adds the clean-copy check that a per-file node already makes. The suite takes 7 seconds, so cost is not the issue. The issue is that the re-anchor pins these node ids: each later wording change that renames a label then owes a ceremony.
+
+**Evidence.** `pytest --collect-only -q` on the two files: 1,844 and 192 nodes; counts by function name as above. In the 139 killed runs, the first node to fail was never a `test_inserting_*` or `test_removing_*` node; it was always a `..._carries_the_obligation`, `..._omits_the_old_vocabulary` or similar per-property node (I ran each sweep with stop-at-first-failure, so this is the first failure only).
+
+**Recommended default.** While RS-CR1 has the files open: drop the `test_removing_*` family and collapse each `test_inserting_*` family to one node per label against one text, keeping the per-file "omits the old wording" nodes. That removes about 1,400 nodes and loses no property. If the author prefers not to touch the tests more than RS-CR1 needs, accept and let the goodnight scrub queue the consolidation row. Not blocking.
+
+#### RS-CR7 -- Low -- The upgrade note must carry what the rehearsal found
+
+**Plain.** The plan's archive commit writes the adopters' upgrade note. The rehearsal says it should hold four things: (1) LHM's `AGENTS.md` conflicts in one line because the sentence ending "Why this is stated positively" changed next to a bullet LHM added; take the upstream sentence and keep LHM's bullet. (2) LHM's loop document: take the shipped sweep, keep the domain probes, drop the duplicate ledger and clean-pass statement (the plan's advice, confirmed). (3) modflow_tools' `dev/collaboration_agreement.md` conflicts across its whole body because the agreement is its own text; keep the local file. (4) A clean merge can leave your own text that still says "Internal / External review", "review tiers" or "External Review sits at the high-capability tier"; nothing flags it. Suggested line: `grep -n -i "internal\|external\|review tier" dev/agent_collaboration.md AGENTS.md dev/collaboration_agreement.md`, and reword what it finds as one review at every stage. Also one line that the body-coverage probe now prints 11 for `dual-review` and why.
+
+**Evidence.** The staged trees and plans above. **Closes when** the archive commit's `CHANGELOG.md` entry and *Dispositions* say these four things.
+
+#### RS-CR8 -- Low -- The Allowance covers one flag; three more are new and permanent
+
+**Plain.** The amended criterion says `check_cairn.py` over the two archived proposals reports exactly three new line-bound flags at C7 and nothing else new. It reports six. The three it names are the module citations. The other three come from deleting `bootstrap/tests/test_onboarding_review_tiers.py` (stance proposal lines 390, 418 and 1306: two unresolved paths and one line citation into a file that is gone). The deviation request mentions them only in the clause "three flags, all about the deleted test". The Maintainer's quoted Allowance is for "a 3rd expected flag".
+
+**Recommended.** The archive note and *Dispositions* list all six as expected, and the three about the deleted test as permanent, because the archives are append-only and no marker can clear a line citation. **Closes when** the six are named there.
+
+### Notes (no finding)
+
+* `docs/assets/dual-review-independence.svg` is no longer embedded in the README after the Maintainer's presentation instruction; only the licence file, the documentation plan and its test mention it. The plan says it "remains accessible and tested". Whether to keep an unembedded figure is the Maintainer's.
+* The record was revised after I fixed the reviewed commit (966c8e94: the full run became "information, not a certification", the scoped run is the record, `Certified by: pending`). I read the revision; it does not change any claim I tested.
+* `bootstrap/tests/test_review_and_verification_rules_ship.py`, the unpinned third file, was reworded by C1 with its node ids unchanged and still turns red on "Code review is External by default." (a mutant in `test_review_stance_in_shipped_files.py` exercises the same phrase).
+
+### Waiting-line check
+
+`git log -p` on this plan over 92421911..555d2f78 shows one `**Waiting on Maintainer**` line added with the deviation request (96d967b4) and removed when the Maintainer answered (8ccb8836). The one fenced chunk, M (the re-anchor), is not reached by this range, and its wait is declared on the marked board row in `dev/PLANNING.md`. No finding.
+
+### What I did not cover
+
+* I did not run the full suite or reproduce the record's 14-minute run; the certifying run owns it, and it is pending. My broadest run was 2,480 tests.
+* I did not read the README prose or review `dffc13d1` (another session, on the Maintainer's instruction); only its test group's controls (5 of 5 killed).
+* I did not read the doctrine rewrite (C4), the dimensions pages (C5) or the descriptive pages (C6) line by line. I checked them through the searches, the greps in the plan's criteria (all zero: "narrows the pass", "Tier ordering", the three dangling headings, the two checker names, "adversarial premise"), the tests, and the passages the searches surfaced. I mutated none of them, and none of the presets.
+* The mutation sweeps broke sentences, not words; how loose each pattern is at word level I did not measure (the prior code review of plan D did, for its test).
+* The rehearsal used the two repositories' committed trees (`dev/`, `AGENTS.md`, `CLAUDE.md` only), so the skills, scripts and tools files read as missing, as in the record. I tested `--apply` only for its refusal on unresolved conflicts, not for an apply after resolution, and did not try an adopter with a hand-edited template.
+* Search B's "kept" classification is a reader's judgment. I re-read each hit that touches a review or a role and agree; the noise files I did not reread.
+* The AST attestation and gate-manifest re-anchors: not run, and not mine. The verifier output I read is the one line pair for the retired test.
+* I did not try Windows line endings, or a template read by a different Markdown tool.
+* I stopped when the coordinator asked me to wrap up. I did not re-read the plan's history beyond its acceptance criteria, the Security Review findings and the Implementation verification record, and I opened no new line of inquiry after the ledger.
