@@ -2671,3 +2671,69 @@ install from `c504fca8`, planned against the current head `8ccb8836`, lists no
 `needs-value` file, and the new test and `test_profile_grammar` pass there (46
 passed). This plan's block therefore reaches existing adopters again, and the item
 needs no further home.
+
+### The stor-modflow re-draft, verbatim
+
+The re-run brief above was committed (`67529e35`) before this draft existed. The
+draft is in. **Nothing is scored.** A fresh scorer, given the same scorer brief,
+scores it next; its output, the verdicts on (A) alone and combined, and the stop
+rule's result are appended below in a later commit.
+
+**The facts** (the coordinating session's account; I did not see the briefing):
+* The drafter is a fresh Sonnet agent: not the implementer, not the first
+  drafters, not any scorer.
+* It was given the same two input files as the first stor-modflow run (the
+  wording and the proposal as opened; their SHA-256 are recomputed above and equal
+  the recorded ones) and the re-run brief recorded above.
+* It made 3 tool calls: the two reads and the hand-back. As before, blindness
+  rests on the instruction and on that observed count, not on a sandbox.
+* The coordinating session extracted the draft byte for byte from the drafter's
+  hand-back into a file of 39 lines, SHA-256
+  `bef1a783ce3c2889fc7f1e4bb8c996e4edfffd881ad71084b381121545af951b`. I
+  recomputed the hash and the line count; they match.
+* The text between the fences below is that file. It contains no fence of its
+  own, and its headings are inside the fence and are not headings of this plan.
+* This is the neutral-brief draft. The first stor-modflow draft (made under the
+  brief that helped) stays on file above, labelled as such.
+
+```text
+### Independent scientific check
+
+This change touches a unit convention (length and time units taken from the model's DIS file), a parameter source (`vk`, and `Sy` and `Ss`), and a result the project publishes (the storage product). The check applies. I name one check below. It covers the unsaturated-zone half of the proposal only, and I say what it leaves uncovered.
+
+* **What it compares.**
+  * **Quantity.** Unsaturated-zone water as recomputed by the Python code after §5 (the PERC percolation grids passed through the delay, with `vk` from layer 1). It is compared with the model's own `unsatStorage` in `OUTS_newBC_v5-2000-2025_20260219.mat`, for run `newBC/v5-2000-2025`.
+  * **How.** Compare per surface cell and per month, and also as a domain total. A domain total alone could hide cell-level errors that cancel.
+  * **Expected value.** The `unsatStorage` values in OUTS, after any unit or orientation conversion is checked.
+  * **Tolerance.** I have none, and no source for one. The proposal's only threshold is "does not shrink materially." That is relative to the current implementation, which has never completed a build because it needs ~78 GB, so that baseline may not exist. It is not a tolerance either way.
+    * The one floor I can name is the rounding left by PERC's integer quantization and OUTS's stored precision. Those numbers are in the files, not in either text I was given.
+    * Anything above that floor is a judgment about the science. I ask the Maintainer to write the tolerance down before the first comparison is seen, and I won't supply a number here.
+  * **Data in hand, and checked?** In hand but not checked.
+    * The proposal gives OUTS's size (137 MB). It takes "carries `unsatStorage`" from the accepted proposal's §3.
+    * Nothing in this proposal records the variable's shape, units, time axis, or orientation, or that this OUTS comes from the same model state as the OUTF and PERC files. The recon table has no OUTS row.
+    * This run has already hit inverted dimensions and a MAT v7.3 reader that never fired. An integration assertion on OUTS's shape and orientation comes before any residual is read.
+
+* **Why the expectation is independent.** The basis is the saved output of the model the code reads. MATLAB's `unsaturated_zone_module.m` wrote `unsatStorage`; neither the proposed Python nor a test from the same understanding computes it. It is independent of the port, not of the model's physics.
+  * If the MATLAB module's physics is wrong, this check still passes.
+  * Both sides read the same PERC and UPW files, so a wrong input file would not be caught either.
+  * It also won't settle whether `vka` is a conductivity or a ratio, if the module and the port read it the same way. It tests whether the port reproduces the model, not whether the model is right about the world. I know of no independent unsaturated-zone observation behind this run.
+
+* **The error it would catch.** The check fails if the recomputation does not reproduce the model's own unsaturated storage. The plausible mistakes, all in §5 and the units work in §2, are:
+  * The delay uses the hardcoded 1-day stress-period length instead of the period's real length (`perlen` is 1, 5 or 7).
+  * `vk` is a scalar mean over all three layers, inactive cells included, instead of layer 1 regridded.
+  * A length-unit slip, for example feet read as metres.
+
+  At implementation the implementer makes the first mistake on purpose, then each of the others, and records the failing residual for each. I expect the hardcoded-1.0 mistake to matter a lot:
+  * The recon shows 9 497 daily grids over 1 358 stress periods, about 7 days per period on average, so 1.0 is probably wrong for most of the run.
+  * I have not seen how `perlen` enters the delay, so that is an expectation to be measured, not a result.
+
+* **When the check passes by finding nothing.** It does: a small residual means "no difference found." So it is evidence only if the same comparison shows a known error.
+  * The deliberate mistakes above are the control, if they push the residual out of tolerance. The implementer records the correct code's residual and each injected mistake's residual side by side, per cell and as a domain total.
+  * If a mistake stays inside tolerance on the domain total but not per cell, the per-cell comparison is the check, and that is recorded.
+  * If a mistake stays inside tolerance on both, the check cannot see that mistake, and the record says so.
+
+* **What this check does not cover.** I identify no independent basis for the groundwater-side changes (§3 overhang fix, §4 head-to-month pairing, heads-to-storage-change).
+  * Their invariants in the Evidence section are geometry or arithmetic over objects built by the same understanding, so they test the code, not the world.
+  * A budget-closure check is not available: the run saves no storage term (recon, Alternative 3), and a closed budget would not catch a wrong input anyway.
+  * A domain expert could write down the expected range of the groundwater storage anomaly before the build completes. I have no such value and do not supply one. The Maintainer weighs this gap at the Decision.
+```
