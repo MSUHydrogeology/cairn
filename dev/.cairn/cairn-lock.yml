@@ -511,14 +511,14 @@
     {
       "base_hash": "sha256:55c29379b44cfaabdcdab4c7179f0c0489cbba92bced0387698736455fcc150c",
       "dst": "tools/prune_reflections.py",
-      "hash": "sha256:55c29379b44cfaabdcdab4c7179f0c0489cbba92bced0387698736455fcc150c",
+      "hash": "sha256:1d43586c60b3f3f3427ba7cb06a2244ceaa36861415720ff294d5158811d9f98",
       "src": "modules/default-on/prune_reflections.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:1d777babbdfd56f47c6f0619a5763b08afdf24177f8ac9471ff3d255761cbe96",
       "dst": "tools/session.py",
-      "hash": "sha256:dd9ec2c7e908b05952fab96aadc9e73ca910a4b1ee6f7a94dee31018a827bcae",
+      "hash": "sha256:178173b8e105eb8f78d63e076fca08fc78f49c2c3d9d042e0fa35d207f7ffdc1",
       "src": "skills/_lib/session.py",
       "verbatim": true
     }

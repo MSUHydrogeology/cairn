@@ -246,7 +246,10 @@ the scaffold engine's `_assert_safe_write` containment check and the write
 identity preserved across the split; the onboarding helper's own
 `_assert_safe_write` / `_assert_safe_read` / `_assert_safe_dir_for_glob` guards,
 now single-sourced in `_onboarding/security.py` after the onboarding-split,
-share the same consciously-accepted window under the same threat model); and
+share the same consciously-accepted window under the same threat model; the
+session kernel `tools/session.py` has it too, for a parent folder swapped for a
+link between its `_assert_not_linked` check and a write -- the last name is not
+exposed, because its writes are an exclusive temp file and a rename); and
 (2) `check_cairn.py`'s `importlib.exec_module` of sibling tools from
 **fixed, script-relative** paths (a deliberate dogfood composition, not a
 dynamic-exec vector). See `../SECURITY.md` for the public statement.

@@ -32,6 +32,9 @@ probe, the skills fan-out (`_heal_skill_symlink`, `_heal_skill_copy`, the
 `.gitignore` seed), the reflection scaffold and prune, and the handoff lock.
 A race between the check and a write that needs a parent folder swapped for a
 link (only a process already on the machine can do that) is the one gap left.
+Where the platform has no `O_NOFOLLOW` (Windows), `_read_regular_bytes` compares
+the file it opened with the one it checked, by device and inode, instead of
+relying on the flag; that platform has not been run.
 
 **This module is a trust root, and that is why it is separate.**
 `_resolve_interpreter` reads an untracked, gitignored, lockfile-uncovered
@@ -542,7 +545,16 @@ def _assert_within(path: Path, base: Path) -> None:
         )
 
 
-_LINK_REFUSAL = "refusing to write through a link or outside the project: "
+_LINK_REFUSAL = "refusing to write through a link: "
+_OUTSIDE_REFUSAL = "refusing to write outside the project: "
+
+
+def _link_refusal(name: str, replace_with: str) -> str:
+    """The refusal for a link at *name* (project-relative): which one it is, and
+    what to do about it.  The name is passed through ``encode_display``."""
+    return (f"{_LINK_REFUSAL}{encode_display(name)} is a link; replace it with a "
+            f"real {replace_with} inside the project")
+
 
 #: Open flags that make the OS refuse a link at the last path component, where
 #: the platform has them; ``O_BINARY`` stops newline translation on Windows.
@@ -558,27 +570,28 @@ def _assert_not_linked(dst: Path, root: Path) -> None:
     and *dst*, with its folder resolved, is inside *root*.  *dst* must be built
     from *root* (``root / ...``).
 
-    The message holds a fixed sentence and the project-relative name, passed
-    through ``encode_display``: a name in a checkout is not ours to print raw, and
-    where a link points is never printed.  Callers may print the message as is.
+    The message names the first link it finds (the project-relative name, passed
+    through ``encode_display``) and what to replace it with: a name in a checkout
+    is not ours to print raw, and where a link points is never printed.  Callers
+    may print the message as is.
     """
     root_real = root.resolve()
     try:
         rel = dst.relative_to(root)
     except ValueError:
-        raise LifecycleError(_LINK_REFUSAL + encode_display(str(dst))) from None
-    shown = encode_display(rel.as_posix())
+        raise LifecycleError(_OUTSIDE_REFUSAL + encode_display(str(dst))) from None
     folder = root
     for part in rel.parts[:-1]:
         folder = folder / part
         if folder.is_symlink():
-            raise LifecycleError(_LINK_REFUSAL + shown)
+            raise LifecycleError(
+                _link_refusal(folder.relative_to(root).as_posix(), "folder"))
     if dst.is_symlink():
-        raise LifecycleError(_LINK_REFUSAL + shown)
+        raise LifecycleError(_link_refusal(rel.as_posix(), "file or folder"))
     try:
         (dst.parent.resolve() / dst.name).relative_to(root_real)
     except ValueError:
-        raise LifecycleError(_LINK_REFUSAL + shown) from None
+        raise LifecycleError(_OUTSIDE_REFUSAL + encode_display(rel.as_posix())) from None
 
 
 def _write_replacing(dst: Path, data: bytes) -> None:
@@ -603,11 +616,14 @@ def _write_replacing(dst: Path, data: bytes) -> None:
     try:
         with os.fdopen(fd, "wb") as handle:
             handle.write(data)
-        if kept_mode is not None:
-            try:
-                os.chmod(tmp, kept_mode)
-            except OSError:
-                pass
+            if kept_mode is not None and hasattr(os, "fchmod"):
+                # on the open descriptor, not by name: a name can be swapped for
+                # a link, a descriptor cannot
+                handle.flush()
+                try:
+                    os.fchmod(handle.fileno(), kept_mode)
+                except OSError:
+                    pass
         os.replace(tmp, dst)
     except BaseException:
         try:
@@ -619,11 +635,23 @@ def _write_replacing(dst: Path, data: bytes) -> None:
 
 def _read_regular_bytes(path: Path) -> bytes:
     """Read *path*, refusing a link at the last component and anything that is not
-    a regular file (``OSError`` in both cases)."""
-    fd = os.open(path, os.O_RDONLY | _OPEN_NO_LINK)
+    a regular file (``OSError`` in both cases; a missing file raises
+    ``FileNotFoundError``).
+
+    The name is looked at first (``lstat`` does not follow a link), the file is
+    opened without following a link and without waiting for a writer (a named
+    pipe would otherwise hang the open), and the opened file must be the one that
+    was looked at, by device and inode.  That last comparison is what holds where
+    the platform has no ``O_NOFOLLOW``."""
+    before = os.lstat(path)
+    if not stat.S_ISREG(before.st_mode):
+        raise OSError("not a regular file")
+    fd = os.open(path, os.O_RDONLY | _OPEN_NO_LINK | getattr(os, "O_NONBLOCK", 0))
     with os.fdopen(fd, "rb") as handle:
-        if not stat.S_ISREG(os.fstat(handle.fileno()).st_mode):
-            raise OSError("not a regular file")
+        opened = os.fstat(handle.fileno())
+        if (not stat.S_ISREG(opened.st_mode)
+                or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)):
+            raise OSError("not the file that was checked")
         return handle.read()
 
 
@@ -969,19 +997,22 @@ def _vendor_path_parts(path: str) -> Optional[Tuple[str, ...]]:
 
     Safe means: relative; at least two names, because the read-path sits inside a
     harness folder and the "is that harness in use?" test looks at that folder;
-    every name matches `_VENDOR_PART_RE` and is not ``.`` or ``..``; and the path
-    does not enter ``.git`` or the machine-local state folder.  Copy mode puts
-    every canonical file under the row's folder, so a row that named ``.git``
-    would replace ``.git/config``, one that named ``dev/.cairn`` would write the
-    interpreter binding, and one that named the harness folder itself could write
-    its untracked local settings -- places the project's own files must not fill.
-    Names are compared case-insensitively and without trailing dots, because some
-    filesystems treat ``.GIT`` and ``.git.`` as ``.git``.
+    the last name is ``skills`` -- a row names a harness's folder of skills, and a
+    row that named anything else (the user's ``.venv/bin/python`` link, their
+    ``dev/reflections`` link) would have it replaced by a link or, in copy mode,
+    filled with the project's files; every name matches `_VENDOR_PART_RE` and is
+    not ``.`` or ``..``; and the path does not enter ``.git`` or the
+    machine-local state folder.  Copy mode puts every canonical file under the
+    row's folder, so a row that named ``.git`` would replace ``.git/config`` and
+    one that named ``dev/.cairn`` would write the interpreter binding -- places
+    the project's own files must not fill.  Names are compared
+    case-insensitively and without trailing dots, because some filesystems treat
+    ``.GIT`` and ``.git.`` as ``.git``.
     """
     if not isinstance(path, str) or not path:
         return None
     parts = tuple(path.rstrip("/").split("/"))
-    if len(parts) < 2:
+    if len(parts) < 2 or parts[-1] != "skills":
         return None
     for part in parts:
         if part in ("", ".", "..") or not _VENDOR_PART_RE.fullmatch(part):
@@ -1021,6 +1052,10 @@ def _assert_fanout_contained(dst: Path, target: Path) -> None:
 _GITIGNORE_UNREADABLE = (
     "refusing to change .gitignore: it is not a readable regular UTF-8 text file"
 )
+_GITIGNORE_READ_ONLY = (
+    "refusing to change .gitignore: it is read-only, which is the owner's mark "
+    "that no tool should edit it; make it writable, or add this line yourself: "
+)
 
 
 def _seed_skill_gitignore(root: Path, entry: str) -> None:
@@ -1038,7 +1073,7 @@ def _seed_skill_gitignore(root: Path, entry: str) -> None:
     or reads as configuration (a shell startup file, ``.git/config``), and can
     choose the text of *entry*.  So *entry* must be a safe read-path
     (`_vendor_path_parts`), the file must be a plain file and not a link
-    (`_assert_not_linked`), and the new bytes replace it by rename
+    (`_assert_not_linked`) and writable, and the new bytes replace it by rename
     (`_write_replacing`), never an open of the old name.  Existing bytes,
     including line endings, are kept as they are.  ``LifecycleError`` on any
     refusal; nothing is written first."""
@@ -1048,10 +1083,12 @@ def _seed_skill_gitignore(root: Path, entry: str) -> None:
         )
     gitignore = root / ".gitignore"
     _assert_not_linked(gitignore, root)
+    existed = True
     try:
         raw = _read_regular_bytes(gitignore)
     except FileNotFoundError:
         raw = b""
+        existed = False
     except OSError:
         raise LifecycleError(_GITIGNORE_UNREADABLE) from None
     try:
@@ -1061,6 +1098,11 @@ def _seed_skill_gitignore(root: Path, entry: str) -> None:
     norm = entry.rstrip("/")
     if norm in {ln.strip().rstrip("/") for ln in text.splitlines()}:
         return
+    if existed and not os.access(gitignore, os.W_OK):
+        # a rename needs only a writable folder, so it would replace the file
+        # anyway; the owner's read-only mark is respected instead
+        # `entry` passed `_vendor_path_parts` above: letters, digits and `._-/` only
+        raise LifecycleError(_GITIGNORE_READ_ONLY + entry)
     eol = "\r\n" if "\r\n" in text else "\n"
     gap = "" if (not text or text.endswith(("\n", "\r"))) else eol
     _write_replacing(gitignore, (text + gap + entry + eol).encode("utf-8"))
@@ -1110,6 +1152,16 @@ def _heal_skill_copy(dst: Path, canonical: Path, target: Path) -> str:
         rel = src_file.relative_to(canonical)
         out = dst / rel
         _assert_not_linked(out, target)
+        for folder in out.parents:
+            # `exists()` is False under a file, so without this a file where a
+            # folder must go passes the plan and fails halfway through the writes
+            if folder.exists() and not folder.is_dir():
+                raise LifecycleError(
+                    "refusing to use something that is not a folder as a folder: "
+                    + encode_display(folder.relative_to(target).as_posix())
+                )
+            if folder == dst:
+                break
         data = src_file.read_bytes()
         bak: Optional[Path] = None
         if out.exists():
@@ -1178,7 +1230,7 @@ def _heal_skills_fanout(root: Path) -> List[Tuple[str, str, str]]:
             )
             continue
         dst = root / path
-        if not dst.parent.exists():
+        if not dst.parent.is_dir():
             continue  # harness not in use here -- light detection, no empty dirs
         _assert_fanout_contained(dst, root)
         if can_symlink:
@@ -1219,8 +1271,10 @@ def cmd_session_start(args: argparse.Namespace) -> int:
         healed = _heal_skills_fanout(root)
     except LifecycleError as exc:
         _warn(f"skills self-heal refused: {exc}")
-        healed = []
-    if not healed:
+        healed = None
+    if healed is None:
+        pass  # the refusal above is the whole story; "nothing to fan out" would contradict it
+    elif not healed:
         _emit("no symlink-tier harness in use here (nothing to fan out).")
     elif all(st in ("already-linked", "current") for _n, _t, st in healed):
         _emit("symlink-tier skills read-paths already current (no change).")
@@ -1377,7 +1431,7 @@ class HandoffLock:
             # The only sanctioned reclaim: proof of death AND an expired lease.
             _warn(
                 f"reclaiming a stale handoff lock (dead pid {holder_pid}, agent "
-                f"{agent}, lease expired)."
+                f"{encode_display(str(agent))}, lease expired)."
             )
             try:
                 self.path.unlink()
@@ -1389,8 +1443,9 @@ class HandoffLock:
             return
 
         raise LifecycleError(
-            f"a full handoff is already in progress (agent {agent}, pid "
-            f"{holder_pid} on {holder_host}) -- refusing a concurrent handoff to "
+            f"a full handoff is already in progress (agent "
+            f"{encode_display(str(agent))}, pid {encode_display(str(holder_pid))} on "
+            f"{encode_display(str(holder_host))}) -- refusing a concurrent handoff to "
             "protect the single-owner roadmap-scrub invariant. If you are "
             f"certain the holder is dead, remove {self.path} manually and retry."
         )
@@ -1452,7 +1507,8 @@ def _prune_reflections(root: Path, days: int, *, dry_run: bool) -> List[Path]:
                 try:
                     path.unlink()
                 except OSError as exc:
-                    _warn(f"could not prune {path.name}: {exc}")
+                    _warn(f"could not prune {encode_display(path.name)}: "
+                          f"{encode_display(str(exc))}")
     return pruned
 
 
@@ -1682,7 +1738,7 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
     # Always emit the mutation manifest before any real run.
     _emit_section("full-handoff mutation manifest")
     would_prune = _prune_reflections(root, grace, dry_run=True)
-    names = ", ".join(p.name for p in would_prune) or "(none)"
+    names = encode_display(", ".join(p.name for p in would_prune)) or "(none)"
     _emit(f"would prune {len(would_prune)} reflection(s) older than {grace}d: "
           f"{names}")
     _emit("would surface active intents (read-only) if installed")

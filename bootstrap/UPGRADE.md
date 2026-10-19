@@ -184,6 +184,27 @@ you what changed.
   stops before creating a single folder, at either end of the link, with a
   `ScaffoldSecurityError` traceback and exit 1. That refusal prints no
   remedy line: replace the link with a real folder, then re-run.
+* **The session helper refuses links and unsafe table rows.** `tools/session.py`
+  (`session-start`, `session-end`) never writes through a link or outside the
+  project. If `dev/`, `dev/reflections` or `dev/.cairn` is a link, `session-end`
+  stops with exit 1 and a one-line note that names the link and says to replace
+  it with a real folder; the full handoff refuses before it prunes anything, and
+  `tools/prune_reflections.py` refuses the same way (exit 2). On a machine that
+  cannot make links, the copy fallback also stops, with a note, if `.gitignore`
+  is a link or is read-only (add the line yourself, or make the file writable);
+  `session-start` carries on. A row in `.agents/skills/_data/vendor_targets.yml`
+  must name a folder called `skills`, inside another folder, outside `.git` and
+  `dev/.cairn`, using letters, digits, dots, dashes and underscores only; any
+  other row is skipped with a warning.
+* **A committed interpreter binding is not used.** `dev/.cairn/local-env.json`
+  belongs to one machine and is meant to be ignored by git. If git tracks it, or
+  it sits behind a link, or git cannot be asked, `session-start` and
+  `session-end` do not run the program it names: they use the current
+  interpreter, say so on stderr, and name the fix. The fix is `git rm
+  dev/.cairn/local-env.json` (which deletes the file too), add it to
+  `.gitignore`, commit, then re-run the install to write a binding for this
+  machine. Checking out a branch that tracks the file replaces your own ignored
+  binding without a word; this check is what notices.
 * **The lifecycle skills participate exactly like `core/`.** The canonical
   `.agents/skills/*/SKILL.md` files ride the token-/slot-aware 3-way merge
   (base cache + provenance), and `tools/session.py` follows the verbatim

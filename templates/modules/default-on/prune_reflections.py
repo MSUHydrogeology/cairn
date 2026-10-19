@@ -17,7 +17,12 @@ a strict delete-filter rather than a retyped shell one-liner:
 * it deletes **only** files whose name matches the pinned reflection filename
   grammar (``<date>-<HHMMSS>-<agent>-<role>.md``);
 * it never touches ``README.md``, directories, symlinks, or any non-matching
-  file.
+  file;
+* it refuses a reflections folder that is, or sits under, a link inside the
+  project: a checkout can make ``dev/reflections`` a link to a folder elsewhere,
+  and the prune would delete that folder's dated files.  A folder the operator
+  names with ``--dir`` outside the project is the operator's choice and is not
+  second-guessed.
 
 Note: the ``tools/session.py`` session-end full-handoff path runs its own
 simpler date-cutoff reflection prune.  This standalone script is the
@@ -38,6 +43,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import os
 import re
 import sys
 from pathlib import Path
@@ -55,6 +61,36 @@ DEFAULT_KEEP = 30
 _REFLECTION_RE = re.compile(
     r'^(\d{4}-\d{2}-\d{2})-\d{6}-[a-z0-9]+(?:-[a-z0-9]+)+\.md$'
 )
+
+
+class RefusedDirectory(Exception):
+    """The reflections folder is, or sits under, a link inside the project."""
+
+
+def _refuse_linked_directory(directory: Path) -> None:
+    """Raise `RefusedDirectory` when *directory* is a link, or has a link between
+    the project root and itself.
+
+    The root is found by what a spelling of the path resolves to, outermost
+    first, so a link back into the project cannot hide the boundary; a folder
+    that is not inside the project by any spelling is not checked.
+    """
+    candidate = Path(os.path.abspath(directory))
+    root = _REPO_ROOT.resolve()
+    for boundary in reversed([candidate, *candidate.parents]):
+        if boundary.resolve() != root:
+            continue
+        below = candidate.relative_to(boundary)
+        walked = boundary
+        for part in below.parts:
+            walked = walked / part
+            if walked.is_symlink():
+                name = walked.relative_to(boundary).as_posix()
+                raise RefusedDirectory(
+                    f'refusing to prune through a link: {name!r} is a link; '
+                    f'replace it with a real folder inside the project'
+                )
+        return
 
 
 def reflection_dates(directory: Path) -> dict[str, list[Path]]:
@@ -95,7 +131,8 @@ def prune_reflections(
     files actually deleted -- or, with ``dry_run``, the files that *would* be
     deleted.  A doomed file that cannot be unlinked is skipped with a stderr
     note and left out of the returned list, rather than aborting the prune
-    mid-loop.
+    mid-loop.  Raises `RefusedDirectory` before any listing or deletion when
+    the folder is, or sits under, a link inside the project.
 
     Raises ``ValueError`` when *keep* is not positive: a non-positive window
     keeps zero dates and would prune *every* reflection, so the helper fails
@@ -106,6 +143,7 @@ def prune_reflections(
             f'keep must be >= 1 (got {keep}); a non-positive window '
             f'would prune every reflection'
         )
+    _refuse_linked_directory(directory)  # before listing, on a dry run too
     by_date = reflection_dates(directory)
     kept_dates = set(sorted(by_date, reverse=True)[:keep])
     doomed = sorted(
@@ -162,7 +200,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    deleted = prune_reflections(args.dir, keep=args.keep, dry_run=args.dry_run)
+    try:
+        deleted = prune_reflections(args.dir, keep=args.keep, dry_run=args.dry_run)
+    except RefusedDirectory as exc:
+        print(f'prune_reflections: {exc}', file=sys.stderr)
+        return 2
     verb = 'would prune' if args.dry_run else 'pruned'
     print(
         f'prune_reflections: {verb} {len(deleted)} reflection '

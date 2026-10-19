@@ -21,7 +21,10 @@ import ast
 import importlib.util
 import json
 import os
+import re
+import shutil
 import subprocess
+import sys
 from pathlib import Path
 from types import ModuleType
 
@@ -123,22 +126,22 @@ _CLAUDE_ROW = {"target": "claude-code", "tier": "symlink", "path": ".claude/skil
 _HOSTILE_VENDOR_PATHS = {
     "substitution": "$(touch MARKER)/skills",
     "backticks": "`touch MARKER`/skills",
-    "semicolon": ".claude/skills; touch MARKER",
-    "newline": ".claude/skills\ntouch MARKER",
-    "carriage-return": ".claude/skills\rtouch MARKER",
+    "semicolon": ".claude;touch/skills",
+    "newline": ".claude\ntouch MARKER/skills",
+    "carriage-return": ".claude\rtouch MARKER/skills",
     "config-stanza": "zz\n[core]\nfsmonitor = touch MARKER\n#/skills",
-    "space": ".claude/sk ills",
-    "glob": ".claude/*",
+    "space": ".cl aude/skills",
+    "glob": ".cl*/skills",
     "negation": "!.claude/skills",
     "comment": "#.claude/skills",
-    "backslash": ".claude\\skills",
-    "escape-byte": ".claude/\x1b[31mskills",
+    "backslash": ".cl\\aude/skills",
+    "escape-byte": ".claude\x1b[31m/skills",
     "current-dir": "./.claude/skills",
     "empty-part": ".claude//skills",
     "project-root": ".",
-    "newline-only": ".claude/a\nb",
-    "carriage-return-only": ".claude/a\rb",
-    "trailing-newline": ".claude/skills\n",
+    "newline-only": ".claude/a\nb/skills",
+    "carriage-return-only": ".claude/a\rb/skills",
+    "leading-newline": "\n.claude/skills",
     "harness-folder-itself": ".claude",
     "one-name": "skills",
 }
@@ -170,8 +173,8 @@ def test_the_gitignore_writer_itself_refuses_a_hostile_entry(tmp_path, name):
 
 @pytest.mark.parametrize(
     "path",
-    [".git", ".claude/.GIT", ".git/hooks", ".claude/.git.", ".claude/.git", "dev/.cairn",
-     "Dev/.Cairn", "dev/.cairn/x", ".claude"],
+    [".git", ".claude", ".git/skills", ".claude/.GIT/skills", ".claude/.git./skills",
+     ".claude/.git/skills", "dev/.cairn/skills", "Dev/.Cairn/skills", "dev/.cairn./skills"],
 )
 def test_a_vendor_row_cannot_aim_the_copy_at_a_place_the_project_must_not_fill(
     tmp_path, monkeypatch, capsys, path
@@ -742,3 +745,650 @@ def test_every_shipped_file_that_names_gitignore_as_a_path_is_accounted_for():
         "a shipped file now names .gitignore as a path (or one stopped): "
         f"{sorted(found ^ set(_GITIGNORE_PATH_LITERAL_FILES))}"
     )
+
+
+# --- a vendor row names a skills folder, and nothing else ----------------------
+
+
+@pytest.mark.parametrize(
+    "path",
+    [".venv/bin/python", ".venv/bin", "dev/reflections", ".claude/commands",
+     ".claude/skills-extra", ".claude/skill", ".claude/skills/nested", ".claude/myskills"],
+)
+@pytest.mark.parametrize("copy_mode", [False, True], ids=["links", "copies"])
+def test_a_vendor_row_cannot_replace_or_fill_a_folder_that_is_not_a_skills_folder(
+    tmp_path, monkeypatch, capsys, path, copy_mode
+):
+    """A row is a harness's read-path for skills.  One that names the user's own
+    virtual-environment link or reflections link would have it replaced (links) or
+    filled with the project's bytes (copies)."""
+    root = _project(tmp_path, monkeypatch, rows=[{**_CLAUDE_ROW, "path": path}], copy_mode=copy_mode)
+    elsewhere = tmp_path.resolve() / "users-own-folder"
+    elsewhere.mkdir()
+    (root / ".venv" / "bin").mkdir(parents=True)
+    os.symlink(sys.executable, root / ".venv" / "bin" / "python")
+    (root / "dev").mkdir(exist_ok=True)
+    os.symlink(elsewhere, root / "dev" / "reflections")
+    (root / ".claude" / "commands").mkdir()
+    (root / ".claude" / "skills-extra").mkdir()
+    (root / ".claude" / "skill").mkdir()
+    (root / ".claude" / "myskills").mkdir()
+    (root / ".claude" / "skills").mkdir(exist_ok=True)
+    (root / ".agents" / "skills" / "python").write_text("the project's bytes\n", encoding="utf-8")
+    links = {p: os.readlink(p) for p in (root / ".venv" / "bin" / "python", root / "dev" / "reflections")}
+    before = sorted(str(p.relative_to(root)) for p in root.rglob("*") if ".agents" not in p.parts)
+    assert lifecycle._heal_skills_fanout(root) == []
+    assert {p: os.readlink(p) for p in links} == links
+    assert list(elsewhere.iterdir()) == []
+    assert sorted(str(p.relative_to(root)) for p in root.rglob("*") if ".agents" not in p.parts) == before
+    assert not (root / ".gitignore").exists()
+    assert "unsafe vendor path" in capsys.readouterr().err
+
+
+def test_a_cloned_vendor_table_cannot_replace_the_users_virtual_environment(tmp_path):
+    """Through the real command, from a clone: a table row for `.venv/bin/python`
+    leaves the user's own link alone and the real row still works."""
+    src = _adopter_tree(tmp_path.resolve() / "src")
+    (src / ".agents" / "skills" / "_data" / "vendor_targets.yml").write_text(
+        json.dumps({"targets": [_CLAUDE_ROW, {**_CLAUDE_ROW, "target": "venv", "path": ".venv/bin/python"}]}),
+        encoding="utf-8",
+    )
+    (src / ".claude").mkdir()
+    (src / ".claude" / "keep").write_text("x", encoding="utf-8")
+    (src / "tools").mkdir()
+    shutil.copy(MODULE_PATH, src / "tools" / "session.py")
+    _commit_all(src)
+    clone = tmp_path.resolve() / "clone"
+    subprocess.run(["git", "clone", "-q", str(src), str(clone)], check=True, capture_output=True)
+    (clone / ".venv" / "bin").mkdir(parents=True)
+    os.symlink(sys.executable, clone / ".venv" / "bin" / "python")
+    done = subprocess.run(
+        [sys.executable, "tools/session.py", "session-start"], cwd=str(clone),
+        capture_output=True, text=True, timeout=120,
+        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    assert done.returncode == 0
+    assert os.readlink(clone / ".venv" / "bin" / "python") == sys.executable
+    assert "unsafe vendor path" in done.stderr
+    assert (clone / ".claude" / "skills").is_symlink()  # the real row was healed
+
+
+# --- what the refusals say -----------------------------------------------------
+
+
+def test_a_refused_folder_link_is_named_with_the_fix(tmp_path, monkeypatch, capsys):
+    root, notes = _linked_reflections(tmp_path)
+    _init_repo(root)
+    monkeypatch.chdir(root)
+    monkeypatch.setenv("CAIRN_AGENT", "tester")
+    monkeypatch.setenv("CAIRN_SESSION", "abc12345")
+    assert lifecycle.main(["session-end"]) == 1
+    err = capsys.readouterr().err
+    assert "dev/reflections is a link" in err
+    assert "replace it with a real folder" in err
+    assert "2020-01-02" not in err  # the destination file is not what is named
+
+
+def test_a_refused_file_link_is_named_with_the_fix(tmp_path):
+    root = tmp_path.resolve() / "proj"
+    root.mkdir()
+    os.symlink(tmp_path.resolve() / "elsewhere", root / ".gitignore")
+    with pytest.raises(lifecycle.LifecycleError) as caught:
+        lifecycle._assert_not_linked(root / ".gitignore", root)
+    assert ".gitignore is a link" in str(caught.value)
+    assert "replace it with a real file" in str(caught.value)
+
+
+def test_after_a_refused_copy_session_start_does_not_claim_there_was_nothing_to_do(
+    tmp_path, monkeypatch, capsys
+):
+    root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
+    _init_repo(root)
+    os.symlink(tmp_path.resolve() / "elsewhere", root / ".gitignore")
+    monkeypatch.chdir(root)
+    assert lifecycle.main(["session-start"]) == 0
+    out, err = capsys.readouterr()
+    assert "self-heal refused" in err
+    assert "nothing to fan out" not in out
+
+
+# --- a read-only .gitignore is the owner's "not by a tool" ----------------------
+
+
+@pytest.mark.skipif(getattr(os, "geteuid", lambda: 1)() == 0, reason="root ignores permission bits")
+def test_a_read_only_gitignore_is_refused_not_replaced(tmp_path):
+    root = tmp_path.resolve()
+    gitignore = root / ".gitignore"
+    gitignore.write_text("*.log\n", encoding="utf-8")
+    gitignore.chmod(0o444)
+    with pytest.raises(lifecycle.LifecycleError, match="read-only"):
+        lifecycle._seed_skill_gitignore(root, ".claude/skills/")
+    assert gitignore.read_bytes() == b"*.log\n"
+    assert (gitignore.stat().st_mode & 0o777) == 0o444
+    # an entry that is already there needs no write, so nothing to refuse
+    gitignore.chmod(0o644)
+    gitignore.write_text(".claude/skills/\n", encoding="utf-8")
+    gitignore.chmod(0o444)
+    lifecycle._seed_skill_gitignore(root, ".claude/skills/")
+    assert gitignore.read_bytes() == b".claude/skills/\n"
+
+
+# --- a file where a folder must go, and a harness folder that is a file ----------
+
+
+def test_a_file_where_a_copy_folder_must_go_is_refused_before_anything_is_copied(
+    tmp_path, monkeypatch
+):
+    root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
+    skills = root / ".claude" / "skills"
+    skills.mkdir()
+    (skills / "session-start").write_text("a file, not a folder\n", encoding="utf-8")
+    with pytest.raises(lifecycle.LifecycleError, match="not a folder"):
+        lifecycle._heal_skills_fanout(root)
+    assert not (skills / "_data").exists()  # sorts before `session-start`
+    assert (skills / "session-start").is_file()
+
+
+def test_a_file_further_up_the_copy_path_is_refused_too(tmp_path, monkeypatch):
+    root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
+    deeper = root / ".agents" / "skills" / "nested" / "deeper"
+    deeper.mkdir(parents=True)
+    (deeper / "SKILL.md").write_text("x", encoding="utf-8")
+    skills = root / ".claude" / "skills"
+    skills.mkdir()
+    (skills / "nested").write_text("a file, two folders above the copy\n", encoding="utf-8")
+    with pytest.raises(lifecycle.LifecycleError, match="not a folder"):
+        lifecycle._heal_skills_fanout(root)
+    assert not (skills / "_data").exists()  # sorts first; nothing was copied
+
+
+def test_session_start_goes_on_when_a_copy_folder_is_blocked(tmp_path, monkeypatch, capsys):
+    root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
+    _init_repo(root)
+    skills = root / ".claude" / "skills"
+    skills.mkdir()
+    (skills / "session-start").write_text("x", encoding="utf-8")
+    monkeypatch.chdir(root)
+    assert lifecycle.main(["session-start"]) == 0
+    assert "self-heal refused" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("copy_mode", [False, True], ids=["links", "copies"])
+def test_a_plain_file_where_the_harness_folder_should_be_means_the_harness_is_not_in_use(
+    tmp_path, monkeypatch, copy_mode
+):
+    root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW], copy_mode=copy_mode)
+    shutil.rmtree(root / ".claude")
+    (root / ".claude").write_text("a file named like the folder\n", encoding="utf-8")
+    assert lifecycle._heal_skills_fanout(root) == []
+    assert (root / ".claude").read_text(encoding="utf-8") == "a file named like the folder\n"
+
+
+# --- the write helpers, again -----------------------------------------------------
+
+
+def test_the_temporary_file_mode_is_set_on_the_open_descriptor_not_by_name(tmp_path, monkeypatch):
+    if not hasattr(os, "fchmod"):
+        pytest.skip("this platform has no fchmod")
+    root = tmp_path.resolve()
+    target = root / "target"
+    target.write_bytes(b"old\n")
+    target.chmod(0o640)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("the mode was set by name, which follows a link")
+
+    monkeypatch.setattr(lifecycle.os, "chmod", forbidden)
+    lifecycle._write_replacing(target, b"new\n")
+    assert target.read_bytes() == b"new\n"
+    assert (target.stat().st_mode & 0o777) == 0o640
+
+
+def test_each_write_gets_its_own_random_temporary_name(tmp_path, monkeypatch):
+    root = tmp_path.resolve()
+    seen = []
+    real_open = lifecycle.os.open
+
+    def spy(path, *args, **kwargs):
+        if Path(path).name.startswith(".cairn-write-"):
+            seen.append(Path(path).name)
+        return real_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(lifecycle.os, "open", spy)
+    lifecycle._write_replacing(root / "a", b"1")
+    lifecycle._write_replacing(root / "a", b"2")
+    assert len(seen) == 2 and seen[0] != seen[1]
+    assert all(re.fullmatch(r"\.cairn-write-[0-9a-f]{16}", name) for name in seen)
+
+
+def test_the_heartbeat_leaves_a_whole_current_payload_each_time(tmp_path):
+    root = tmp_path.resolve() / "proj"
+    (root / "dev" / ".cairn").mkdir(parents=True)
+    lock = lifecycle.HandoffLock(root, "an-agent-name-that-is-fairly-long-indeed")
+    lock.acquire()
+    try:
+        lock_file = root / "dev" / ".cairn" / "handoff.lock"
+        first = json.loads(lock_file.read_text(encoding="utf-8"))
+        lock.agent = "short"
+        lock.heartbeat()
+        second = json.loads(lock_file.read_text(encoding="utf-8"))  # valid JSON, no leftovers
+    finally:
+        lock.release()
+    assert second["agent"] == "short" and second["pid"] == first["pid"]
+    assert second["heartbeat_at"] >= first["heartbeat_at"]
+
+
+def test_a_named_pipe_where_gitignore_should_be_is_refused_not_waited_on(tmp_path):
+    if not hasattr(os, "mkfifo"):
+        pytest.skip("no named pipes here")
+    root = tmp_path.resolve()
+    os.mkfifo(root / ".gitignore")
+    result = _call_with_timeout(lifecycle._seed_skill_gitignore, root, ".claude/skills/")
+    assert isinstance(result, lifecycle.LifecycleError)
+
+
+def test_a_named_pipe_swapped_in_just_before_the_read_is_refused_not_waited_on(
+    tmp_path, monkeypatch
+):
+    """The check has passed; the name becomes a pipe before the file is opened.
+    Opening a pipe for reading waits for a writer, so the open must not wait."""
+    if not hasattr(os, "mkfifo"):
+        pytest.skip("no named pipes here")
+    root = tmp_path.resolve()
+    (root / ".gitignore").write_text("*.log\n", encoding="utf-8")
+    real_open = lifecycle.os.open
+
+    def swap_then_open(path, flags, *args, **kwargs):
+        if Path(path).name == ".gitignore" and not (flags & (os.O_WRONLY | os.O_RDWR)):
+            Path(path).unlink()
+            os.mkfifo(path)
+        return real_open(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(lifecycle.os, "open", swap_then_open)
+    result = _call_with_timeout(lifecycle._seed_skill_gitignore, root, ".claude/skills/")
+    assert isinstance(result, lifecycle.LifecycleError)
+
+
+def _call_with_timeout(function, *args, seconds: float = 5.0):
+    """Run `function` in a thread; return what it raised.  A call that is still
+    waiting after `seconds` fails the test (and is released so it does not leak)."""
+    import threading
+
+    box = {}
+
+    def runner():
+        try:
+            function(*args)
+            box["raised"] = None
+        except BaseException as exc:  # the test inspects the exception itself
+            box["raised"] = exc
+
+    thread = threading.Thread(target=runner, daemon=True)
+    thread.start()
+    thread.join(seconds)
+    if thread.is_alive():
+        for path in Path(args[0]).glob(".gitignore"):
+            try:
+                fd = os.open(path, os.O_WRONLY | getattr(os, "O_NONBLOCK", 0))
+                os.close(fd)
+            except OSError:
+                pass
+        thread.join(2)
+        pytest.fail(f"{function.__name__} was still waiting after {seconds} s")
+    return box["raised"]
+
+
+@pytest.mark.parametrize("swap", ["a link", "another file"])
+def test_without_a_no_follow_flag_the_read_still_refuses_a_file_swapped_in_after_the_check(
+    tmp_path, monkeypatch, swap
+):
+    """Where the platform has no `O_NOFOLLOW` (Windows), the read compares the file
+    it opened with the file that was checked, by device and inode."""
+    root = tmp_path.resolve() / "proj"
+    root.mkdir()
+    stand_in = _stand_in(tmp_path)
+    (root / ".gitignore").write_text("*.log\n", encoding="utf-8")
+    monkeypatch.setattr(lifecycle, "_OPEN_NO_LINK", 0)
+    real_open = lifecycle.os.open
+    swapped = []
+
+    def swap_then_open(path, flags, *args, **kwargs):
+        if Path(path).name == ".gitignore" and not (flags & (os.O_WRONLY | os.O_RDWR)) and not swapped:
+            swapped.append(True)
+            Path(path).unlink()
+            if swap == "a link":
+                os.symlink(stand_in, path)
+            else:
+                Path(path).write_text("*.tmp\n", encoding="utf-8")
+        return real_open(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(lifecycle.os, "open", swap_then_open)
+    with pytest.raises(lifecycle.LifecycleError):
+        lifecycle._seed_skill_gitignore(root, ".claude/skills/")
+    assert swapped
+    assert stand_in.read_text(encoding="utf-8") == _STAND_IN_TEXT
+    text = (root / ".gitignore").read_text(encoding="utf-8")
+    assert ".claude/skills/" not in text
+
+
+# --- no message carries raw control bytes from project data -----------------------
+
+_ESC = "\x1b]0;PWNED\x07"
+
+
+def _text_of(call, *args):
+    with pytest.raises(lifecycle.LifecycleError) as caught:
+        call(*args)
+    return str(caught.value)
+
+
+def _bare_project(tmp_path):
+    root = tmp_path.resolve() / "proj"
+    (root / "real").mkdir(parents=True)
+    return root
+
+
+def _site_guard_folder_link(tmp_path, monkeypatch, capsys):
+    root = _bare_project(tmp_path)
+    os.symlink("real", root / ("n" + _ESC))
+    return _text_of(lifecycle._assert_not_linked, root / ("n" + _ESC) / "x.md", root)
+
+
+def _site_guard_file_link(tmp_path, monkeypatch, capsys):
+    root = _bare_project(tmp_path)
+    os.symlink("real", root / ("n" + _ESC + ".md"))
+    return _text_of(lifecycle._assert_not_linked, root / ("n" + _ESC + ".md"), root)
+
+
+def _site_guard_outside(tmp_path, monkeypatch, capsys):
+    root = _bare_project(tmp_path)
+    return _text_of(lifecycle._assert_not_linked, root / ".." / ("n" + _ESC), root)
+
+
+def _site_guard_not_under_root(tmp_path, monkeypatch, capsys):
+    root = _bare_project(tmp_path)
+    return _text_of(lifecycle._assert_not_linked, tmp_path.resolve() / ("n" + _ESC), root)
+
+
+def _site_fanout_parent_link(tmp_path, monkeypatch, capsys):
+    root = _bare_project(tmp_path)
+    os.symlink("real", root / ("n" + _ESC))
+    return _text_of(lifecycle._assert_fanout_contained, root / ("n" + _ESC) / "skills", root)
+
+
+def _site_fanout_outside(tmp_path, monkeypatch, capsys):
+    root = _bare_project(tmp_path)
+    return _text_of(lifecycle._assert_fanout_contained, root / ".." / ("n" + _ESC), root)
+
+
+def _site_unsafe_entry(tmp_path, monkeypatch, capsys):
+    return _text_of(lifecycle._seed_skill_gitignore, tmp_path.resolve(), _ESC + "/skills/")
+
+
+def _site_not_a_plain_file(tmp_path, monkeypatch, capsys):
+    root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
+    (root / ".agents" / "skills" / "session-start" / ("f" + _ESC)).write_text("x", encoding="utf-8")
+    (root / ".claude" / "skills" / "session-start" / ("f" + _ESC)).mkdir(parents=True)
+    return _text_of(lifecycle._heal_skills_fanout, root)
+
+
+def _site_quarantine_not_a_plain_file(tmp_path, monkeypatch, capsys):
+    root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
+    name = "f" + _ESC
+    (root / ".agents" / "skills" / "session-start" / name).write_text("canonical", encoding="utf-8")
+    folder = root / ".claude" / "skills" / "session-start"
+    folder.mkdir(parents=True)
+    (folder / name).write_text("a local edit", encoding="utf-8")
+    (folder / (name + ".diverged.bak")).mkdir()
+    return _text_of(lifecycle._heal_skills_fanout, root)
+
+
+def _site_not_a_folder(tmp_path, monkeypatch, capsys):
+    root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
+    name = "d" + _ESC
+    (root / ".agents" / "skills" / name).mkdir()
+    (root / ".agents" / "skills" / name / "SKILL.md").write_text("x", encoding="utf-8")
+    (root / ".claude" / "skills").mkdir()
+    (root / ".claude" / "skills" / name).write_text("a file", encoding="utf-8")
+    return _text_of(lifecycle._heal_skills_fanout, root)
+
+
+def _site_divergence_warning(tmp_path, monkeypatch, capsys):
+    root = _project(tmp_path, monkeypatch, rows=[_CLAUDE_ROW])
+    name = "f" + _ESC
+    (root / ".agents" / "skills" / "session-start" / name).write_text("canonical", encoding="utf-8")
+    folder = root / ".claude" / "skills" / "session-start"
+    folder.mkdir(parents=True)
+    (folder / name).write_text("a local edit", encoding="utf-8")
+    lifecycle._heal_skills_fanout(root)
+    return capsys.readouterr().err
+
+
+def _site_divergence_warning_in_a_folder_named_with_escapes(tmp_path, monkeypatch, capsys):
+    """The folder the copy sits in is printed too; the project's own folder name
+    is data when someone else chose it (a clone's default folder name)."""
+    holder = tmp_path.resolve() / ("p" + _ESC)
+    holder.mkdir()
+    root = _adopter_tree(holder / "proj")
+    (root / ".claude" / "skills" / "session-start").mkdir(parents=True)
+    (root / ".claude" / "skills" / "session-start" / "SKILL.md").write_text("a local edit", encoding="utf-8")
+    monkeypatch.setattr(lifecycle, "_skill_symlinks_available", lambda _r: False)
+    lifecycle._heal_skills_fanout(root)
+    return capsys.readouterr().err
+
+
+def _site_unsafe_vendor_path_warning(tmp_path, monkeypatch, capsys):
+    root = _project(tmp_path, monkeypatch, rows=[{**_CLAUDE_ROW, "target": "t" + _ESC, "path": "p" + _ESC + "/skills"}])
+    lifecycle._heal_skills_fanout(root)
+    return capsys.readouterr().err
+
+
+def _site_handoff_manifest(tmp_path, monkeypatch, capsys):
+    root = tmp_path.resolve() / "proj"
+    (root / "dev" / "reflections").mkdir(parents=True)
+    (root / "dev" / "reflections" / ("2020-01-01-" + _ESC + ".md")).write_text("x", encoding="utf-8")
+    _init_repo(root)
+    monkeypatch.chdir(root)
+    monkeypatch.setenv("CAIRN_AGENT", "tester")
+    monkeypatch.setenv("CAIRN_SESSION", "abc12345")
+    assert lifecycle.main(["session-end", "--handoff", "--dry-run"]) == 0
+    return capsys.readouterr().out
+
+
+def _lock_file(root: Path, **fields) -> None:
+    folder = lifecycle._state_dir(root)
+    folder.mkdir(parents=True)
+    payload = {"pid": 1, "host": "elsewhere", "agent": "x", "acquired_at": 0.0, "heartbeat_at": 0.0}
+    payload.update(fields)
+    (folder / "handoff.lock").write_text(json.dumps(payload), encoding="utf-8")
+
+
+def _site_lock_refusal(tmp_path, monkeypatch, capsys):
+    root = tmp_path.resolve() / "proj"
+    root.mkdir()
+    _lock_file(root, pid=_ESC, host=_ESC, agent=_ESC)
+    return _text_of(lifecycle.HandoffLock(root, "owner").acquire)
+
+
+def _site_lock_reclaim_warning(tmp_path, monkeypatch, capsys):
+    import socket
+
+    root = tmp_path.resolve() / "proj"
+    root.mkdir()
+    dead = subprocess.Popen([sys.executable, "-c", "pass"])
+    dead.wait()
+    _lock_file(root, pid=dead.pid, host=socket.gethostname(), agent=_ESC)
+    lock = lifecycle.HandoffLock(root, "owner")
+    lock.acquire()
+    lock.release()
+    return capsys.readouterr().err
+
+
+def _site_prune_warning(tmp_path, monkeypatch, capsys):
+    root = tmp_path.resolve() / "proj"
+    folder = root / "dev" / "reflections"
+    folder.mkdir(parents=True)
+    (folder / ("2020-01-01-" + _ESC + ".md")).write_text("x", encoding="utf-8")
+    real_unlink = Path.unlink
+
+    def failing(self, *args, **kwargs):
+        if self.name.startswith("2020-01-01-"):
+            raise OSError("cannot remove " + self.name)
+        return real_unlink(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", failing)
+    lifecycle._prune_reflections(root, 14, dry_run=False)
+    return capsys.readouterr().err
+
+
+_MESSAGE_SITES = {
+    "guard-folder-link": _site_guard_folder_link,
+    "guard-file-link": _site_guard_file_link,
+    "guard-outside": _site_guard_outside,
+    "guard-not-under-root": _site_guard_not_under_root,
+    "fan-out-parent-link": _site_fanout_parent_link,
+    "fan-out-outside": _site_fanout_outside,
+    "unsafe-ignore-entry": _site_unsafe_entry,
+    "copy-not-a-plain-file": _site_not_a_plain_file,
+    "quarantine-not-a-plain-file": _site_quarantine_not_a_plain_file,
+    "copy-folder-is-a-file": _site_not_a_folder,
+    "divergence-warning": _site_divergence_warning,
+    "divergence-warning-folder-name": _site_divergence_warning_in_a_folder_named_with_escapes,
+    "unsafe-vendor-path-warning": _site_unsafe_vendor_path_warning,
+    "handoff-manifest": _site_handoff_manifest,
+    "lock-refusal": _site_lock_refusal,
+    "lock-reclaim-warning": _site_lock_reclaim_warning,
+    "prune-warning": _site_prune_warning,
+}
+
+
+@pytest.mark.parametrize("site", sorted(_MESSAGE_SITES))
+def test_no_message_site_puts_raw_control_bytes_from_project_data_on_the_terminal(
+    tmp_path, monkeypatch, capsys, site
+):
+    text = _MESSAGE_SITES[site](tmp_path, monkeypatch, capsys)
+    assert text.strip(), "the site printed nothing"
+    assert "\x1b" not in text and "\x07" not in text
+    assert "\\x1b" in text  # shown escaped, so the reader can still see something was there
+
+
+# --- the second reflection pruner ---------------------------------------------------
+
+PRUNE_TOOL = CAIRN_ROOT / "templates" / "modules" / "default-on" / "prune_reflections.py"
+PRUNE_TOOL_INSTALLED = CAIRN_ROOT / "tools" / "prune_reflections.py"
+
+
+def _load_prune_tool(path: Path = PRUNE_TOOL):
+    spec = importlib.util.spec_from_file_location("cairn_prune_reflections_contained", path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_the_two_copies_of_the_reflection_pruner_are_identical():
+    assert PRUNE_TOOL.read_bytes() == PRUNE_TOOL_INSTALLED.read_bytes()
+
+
+def _old_reflections(folder: Path) -> list:
+    names = ["2020-01-01-101010-claude-reviewer.md", "2020-01-02-101010-claude-reviewer.md"]
+    for name in names:
+        (folder / name).write_text("mine\n", encoding="utf-8")
+    return [folder / name for name in names]
+
+
+@pytest.mark.parametrize("dry_run", [False, True])
+def test_the_pruner_never_deletes_through_a_linked_reflections_folder(tmp_path, dry_run):
+    tool = _load_prune_tool()
+    notes = tmp_path.resolve() / "notes"
+    notes.mkdir()
+    kept = _old_reflections(notes)
+    project = tmp_path.resolve() / "proj"
+    (project / "dev").mkdir(parents=True)
+    os.symlink(notes, project / "dev" / "reflections")
+    tool._REPO_ROOT = project
+    with pytest.raises(tool.RefusedDirectory, match="link"):
+        tool.prune_reflections(project / "dev" / "reflections", keep=1, dry_run=dry_run)
+    assert all(path.read_text(encoding="utf-8") == "mine\n" for path in kept)
+
+
+def test_the_pruner_never_deletes_through_a_linked_parent_of_the_folder(tmp_path):
+    tool = _load_prune_tool()
+    elsewhere = tmp_path.resolve() / "elsewhere"
+    (elsewhere / "reflections").mkdir(parents=True)
+    kept = _old_reflections(elsewhere / "reflections")
+    project = tmp_path.resolve() / "proj"
+    project.mkdir()
+    os.symlink(elsewhere, project / "dev")
+    tool._REPO_ROOT = project
+    with pytest.raises(tool.RefusedDirectory):
+        tool.prune_reflections(project / "dev" / "reflections", keep=1)
+    assert all(path.exists() for path in kept)
+
+
+def test_the_pruner_command_exits_with_a_plain_refusal_for_a_linked_folder(tmp_path):
+    notes = tmp_path.resolve() / "notes"
+    notes.mkdir()
+    kept = _old_reflections(notes)
+    project = tmp_path.resolve() / "proj"
+    (project / "tools").mkdir(parents=True)
+    (project / "dev").mkdir()
+    shutil.copy(PRUNE_TOOL, project / "tools" / "prune_reflections.py")
+    os.symlink(notes, project / "dev" / "reflections")
+    done = subprocess.run(
+        [sys.executable, "tools/prune_reflections.py", "--keep", "1"], cwd=str(project),
+        capture_output=True, text=True, timeout=60, env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    assert done.returncode == 2 and "link" in done.stderr and "Traceback" not in done.stderr
+    assert all(path.exists() for path in kept)
+
+
+def test_the_pruner_finds_a_link_below_the_outermost_spelling_of_the_project(tmp_path):
+    """A link back into the project must not hide the project's boundary: the link
+    itself is inside the project and is refused."""
+    tool = _load_prune_tool()
+    project = tmp_path.resolve() / "proj"
+    folder = project / "dev" / "reflections"
+    folder.mkdir(parents=True)
+    kept = _old_reflections(folder)
+    os.symlink(project, project / "loop")
+    tool._REPO_ROOT = project
+    with pytest.raises(tool.RefusedDirectory, match="loop"):
+        tool.prune_reflections(project / "loop" / "dev" / "reflections", keep=1)
+    assert all(path.exists() for path in kept)
+
+
+def test_a_linked_folder_the_operator_names_outside_the_project_is_not_second_guessed(tmp_path):
+    tool = _load_prune_tool()
+    project = tmp_path.resolve() / "proj"
+    project.mkdir()
+    real = tmp_path.resolve() / "real-notes"
+    real.mkdir()
+    old = _old_reflections(real)
+    chosen = tmp_path.resolve() / "chosen-link"
+    os.symlink(real, chosen)
+    tool._REPO_ROOT = project
+    assert [path.name for path in tool.prune_reflections(chosen, keep=1)] == [old[0].name]
+    assert not old[0].exists() and old[1].exists()
+
+
+def test_the_pruner_still_prunes_an_ordinary_reflections_folder(tmp_path):
+    tool = _load_prune_tool()
+    project = tmp_path.resolve() / "proj"
+    folder = project / "dev" / "reflections"
+    folder.mkdir(parents=True)
+    old = _old_reflections(folder)
+    tool._REPO_ROOT = project
+    assert tool.prune_reflections(folder, keep=1) == [old[0]]
+    assert not old[0].exists() and old[1].exists()
+
+
+def test_a_folder_the_operator_names_outside_the_project_is_the_operators_choice(tmp_path):
+    tool = _load_prune_tool()
+    project = tmp_path.resolve() / "proj"
+    project.mkdir()
+    folder = tmp_path.resolve() / "chosen"
+    folder.mkdir()
+    old = _old_reflections(folder)
+    tool._REPO_ROOT = project
+    assert tool.prune_reflections(folder, keep=1) == [old[0]]
