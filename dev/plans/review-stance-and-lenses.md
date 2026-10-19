@@ -1,7 +1,7 @@
 # Plan: review stance and lenses — one review at every stage, and the lenses in every install
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-external-is-a-maintainer-stance.md` (accepted `58f30d6c`) and `dev/proposals/archive/2026-10-18-claude-review-lenses-for-every-install.md` (accepted `fbf664f0`)
-**Status**: ready-to-archive
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance — inherited: the change edits `doctrine/`, the governing `AGENTS.md` every adopter receives, the authoring templates and a framework anchor.
 **Opened**: 2026-10-18
@@ -4931,3 +4931,31 @@ line range at line 1306; in the lenses proposal, the module line range at line
   stewardship flag are named above; none is reported as a pass. The three
   review-stance test files' final blobs and node counts are derived at archive
   from the code-reviewed commit, because this revision changed two of them.
+
+## Scope delta -- fix the archive follow-ups -- Maintainer chat, 2026-10-19
+
+At archive preparation the Maintainer changed the disposition of the three
+actionable follow-ups. Their instruction, verbatim:
+
+> Can you just fix it? Same with the other follow-ups
+
+Therefore this revision fixes, before archive: the broken `content_scan.py`
+link in both Security Review module copies; the false External-tier comments
+in the scaffold config and its preset test; and the duplicate scope-cut,
+scope-reduction-trap and outcome-test paragraphs in both optional Dual-Review
+module copies, with their old module-only pins and dimension description
+updated. The universal review-loop document keeps the trap and its tests.
+The engine change is comment-only; `_TEAM_STAFFING_GATES` behavior stays as
+accepted. The installed module's lock record is refreshed through scoped
+finalize, not hand-edited. This is an authorized addition to the reviewed
+plan, not a request for the reviewer to infer permission from a disposition.
+
+The ten-review observation cannot be completed before ten proposal reviews
+use the new header. The Maintainer's separate answer, verbatim, is:
+
+> Keep the monitoring row (Recommended)
+
+That one follow-up retains a live roadmap row at archive. No other actionable
+follow-up is deferred. Re-run the tests owning the four edited sources, the
+lockfile and the changed pins, plus claim/link/snippet and neutrality gates,
+on the final committed revision. The full certifying run stays pending.
