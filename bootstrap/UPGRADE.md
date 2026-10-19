@@ -209,10 +209,17 @@ you what changed.
   `.agents/skills/*/SKILL.md` files ride the token-/slot-aware 3-way merge
   (base cache + provenance), and `tools/session.py` follows the verbatim
   hash policy above. The gitignored vendor fan-out copies (where symlinks
-  are unavailable) are **regenerated** from the canonical source on upgrade,
-  with a divergence guard that **warns rather than clobbers** a copy you
-  edited in place — the canonical `.agents/skills/` source is the one to
-  edit. (The bullet above is the *already-tracked* case; if your lockfile
+  are unavailable) are **regenerated** from the canonical source on upgrade. A
+  copy you edited in place is **moved aside** to `<file>.diverged.bak` (your
+  edit is kept there) and regenerated, with a warning — the canonical
+  `.agents/skills/` source is the one to edit. The install and the upgrade
+  **refuse, and write nothing**, if a copy's name (or its `.diverged.bak` name)
+  is a link or sits under one, is a folder, or has a file where a folder must
+  go. The message names the path relative to the project; remove or move that
+  item, then run `python tools/session.py session-start` (or install again). An
+  `upgrade --apply` that meets this still finishes the upgrade and prints the
+  refusal as a warning, because running the upgrade again does not redo the
+  fan-out. (The bullet above is the *already-tracked* case; if your lockfile
   predates the skills, see the next section — they are acquired, not skipped.)
 
 ## New core-like files (and skills) added upstream

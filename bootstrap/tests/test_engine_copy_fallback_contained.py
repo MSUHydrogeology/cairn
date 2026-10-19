@@ -57,13 +57,31 @@ _LONG_AGO_NS = 946_684_800 * 10**9
 _CLAUDE_ROW = {"target": "claude-code", "tier": "symlink", "path": ".claude/skills"}
 
 
-@pytest.fixture(autouse=True)
-def _links_must_work(tmp_path):
+def _needs_symlinks(directory: Path) -> None:
     try:
-        os.symlink(".", tmp_path / "can-link")
+        os.symlink(".", directory / "can-link")
     except (OSError, NotImplementedError):
         pytest.skip("symlinks are not available here")
-    (tmp_path / "can-link").unlink()
+    (directory / "can-link").unlink()
+
+
+def _hard_link(existing: Path, new: Path) -> None:
+    try:
+        os.link(existing, new)
+    except (OSError, NotImplementedError):
+        pytest.skip("hard links are not available here")
+
+
+@pytest.fixture()
+def links_work(tmp_path):
+    _needs_symlinks(tmp_path)
+
+
+#: For the tests that plant a link.  The ones that do not (a folder or file in the
+#: wrong place, the divergence warning, a failed rename, the probe's name and its
+#: no-links answer) run everywhere, and a machine that cannot make links is the
+#: one where the copy path is the normal one.
+needs_links = pytest.mark.usefixtures("links_work")
 
 
 def _world(tmp_path: Path) -> tuple[Path, Path, Path]:
@@ -204,6 +222,7 @@ _HOSTILE = {
 # --- data alone, through the real command line --------------------------------
 
 
+@needs_links
 def test_a_folder_at_the_old_probe_name_does_not_make_the_install_copy(tmp_path):
     target, _outside, profile = _world(tmp_path)
     folder = target / _OLD_PROBE_NAME
@@ -219,6 +238,7 @@ def test_a_folder_at_the_old_probe_name_does_not_make_the_install_copy(tmp_path)
     assert (folder / "keep").read_text(encoding="utf-8") == "a committed file"
 
 
+@needs_links
 @pytest.mark.parametrize("shape", _HOSTILE, ids=list(_HOSTILE))
 def test_hostile_project_data_alone_cannot_make_the_install_write_outside(
     tmp_path, shape
@@ -255,6 +275,7 @@ def _install_in_copy_mode(target: Path, profile: Path, capsys) -> tuple[int, str
     return code, capsys.readouterr().err
 
 
+@needs_links
 @pytest.mark.parametrize("shape", _HOSTILE, ids=list(_HOSTILE))
 def test_copy_mode_refuses_before_writing_anything_and_touches_nothing_outside(
     tmp_path, copy_mode, capsys, shape
@@ -275,6 +296,7 @@ def test_copy_mode_refuses_before_writing_anything_and_touches_nothing_outside(
     )
 
 
+@needs_links
 @pytest.mark.parametrize("linked", ["harness-folder", "skills-folder"])
 def test_a_linked_folder_above_the_link_to_make_is_refused_before_the_link_is_made(
     tmp_path, linked
@@ -299,6 +321,7 @@ def test_a_linked_folder_above_the_link_to_make_is_refused_before_the_link_is_ma
     assert list(outside.iterdir()) == [], "a link was made at the far end of a link"
 
 
+@needs_links
 def test_a_refusal_is_fixed_words_a_project_relative_name_and_a_remedy(
     tmp_path, copy_mode, capsys
 ):
@@ -310,13 +333,18 @@ def test_a_refusal_is_fixed_words_a_project_relative_name_and_a_remedy(
     assert code == 2
     assert ("refusing to write skill copies through a link or outside the "
             "project: .claude/skills/session-start/SKILL.md") in err
-    assert "remove that link" in err and "then re-run" in err
+    assert "remove that link" in err
+    # not "re-run": an upgrade that adds the skills does not redo the fan-out when
+    # run again; session-start does, and so does installing again
+    assert "re-run" not in err.split("skills fan-out refused", 1)[1]
+    assert "python tools/session.py session-start` (or install again)" in err
     # where the link points is the project's data, and an absolute path is not ours to print
     refusal = err.split("skills fan-out refused", 1)[1]
     assert str(outside) not in refusal
     assert str(target) not in refusal
 
 
+@needs_links
 def test_a_refusal_puts_no_raw_control_bytes_on_the_terminal(tmp_path, copy_mode, capsys):
     target, outside, profile = _world(tmp_path)
     awkward = "\x1b]0;retitled\x07.md"
@@ -355,7 +383,9 @@ def test_something_that_is_not_a_plain_file_is_refused_and_nothing_is_copied(
     code, err = _install_in_copy_mode(target, profile, capsys)
 
     assert code == 2, err
-    assert "skills fan-out refused" in err and "then re-run" in err
+    assert "skills fan-out refused" in err
+    assert "move or remove it" in err
+    assert "python tools/session.py session-start` (or install again)" in err
     assert "Traceback" not in err
     assert _snapshot(target / ".claude") == harness_before
     assert _snapshot(outside) == {}
@@ -423,6 +453,7 @@ def _repo(tmp_path: Path) -> Path:
     return root
 
 
+@needs_links
 def test_a_link_in_the_last_name_refuses_before_the_first_copy(tmp_path):
     repo = _repo(tmp_path)
     nowhere = tmp_path.resolve() / "outside" / "not-created-yet"
@@ -441,6 +472,7 @@ def test_a_link_in_the_last_name_refuses_before_the_first_copy(tmp_path):
     assert not (repo / ".claude" / "skills" / "session-end").exists()
 
 
+@needs_links
 def test_a_link_swapped_in_at_a_copy_name_after_its_check_is_replaced_not_followed(
     tmp_path, monkeypatch
 ):
@@ -461,6 +493,7 @@ def test_a_link_swapped_in_at_a_copy_name_after_its_check_is_replaced_not_follow
     assert not copy.is_symlink() and copy.read_text(encoding="utf-8") == "start\n"
 
 
+@needs_links
 def test_a_link_swapped_in_at_the_quarantine_name_after_its_check_is_replaced_not_followed(
     tmp_path, monkeypatch
 ):
@@ -489,21 +522,46 @@ def test_a_link_swapped_in_at_the_quarantine_name_after_its_check_is_replaced_no
     assert not bak.is_symlink() and bak.read_text(encoding="utf-8") == "a local edit\n"
 
 
-def test_a_link_at_the_temporary_name_is_not_written_through(tmp_path, monkeypatch):
-    """The temporary file is created exclusively, so even a name someone could
-    guess (made guessable here) fails instead of writing through a link."""
+@pytest.mark.parametrize("planted", ["symbolic-link", "hard-link", "regular-file"])
+def test_anything_at_the_temporary_name_is_refused_not_written_into(
+    tmp_path, monkeypatch, planted
+):
+    """The temporary file is created exclusively, so a name someone could guess
+    (made guessable here) fails instead of being opened.  Exclusive creation is
+    what refuses a hard link or a plain file there; the no-follow flag alone
+    refuses only a symbolic link, so each shape is planted in turn."""
+    if planted == "symbolic-link":
+        _needs_symlinks(tmp_path)
     repo = _repo(tmp_path)
-    nowhere = tmp_path.resolve() / "outside" / "not-created-yet"
-    nowhere.parent.mkdir()
+    outside = tmp_path.resolve() / "outside"
+    outside.mkdir()
+    target_file = outside / "someone-elses.txt"
+    original = "someone else's bytes, longer than the skill\n"
     monkeypatch.setattr(secrets, "token_hex", lambda _n=None: "guessed")
     skill = repo / ".claude" / "skills" / "session-start"
     skill.mkdir(parents=True)
-    os.symlink(nowhere, skill / ".cairn-write-guessed")
+    temporary = skill / ".cairn-write-guessed"
+    if planted == "symbolic-link":
+        os.symlink(outside / "not-created-yet", temporary)
+        target_file = outside / "not-created-yet"
+    elif planted == "hard-link":
+        target_file.write_text(original, encoding="utf-8")
+        _hard_link(target_file, temporary)
+    else:
+        temporary.write_text(original, encoding="utf-8")
+        target_file = temporary
 
     with pytest.raises(OSError):
         INS.fan_out_skills(TEMPLATES_ROOT, repo, targets=[_CLAUDE_ROW], allow_symlinks=False)
 
-    assert not nowhere.exists()
+    if planted == "symbolic-link":
+        assert not target_file.exists()
+    else:
+        assert target_file.read_text(encoding="utf-8") == original, (
+            "the copy was written into a file that was already at the temporary name"
+        )
+    assert not (skill / "SKILL.md").exists() or (skill / "SKILL.md").read_text(
+        encoding="utf-8") == "start\n"
 
 
 def test_a_hard_link_to_an_outside_file_is_replaced_not_written_into(tmp_path):
@@ -513,7 +571,7 @@ def test_a_hard_link_to_an_outside_file_is_replaced_not_written_into(tmp_path):
     keep.write_text("someone else's bytes\n", encoding="utf-8")
     skill = repo / ".claude" / "skills" / "session-start"
     skill.mkdir(parents=True)
-    os.link(keep, skill / "SKILL.md")
+    _hard_link(keep, skill / "SKILL.md")
 
     rows = INS.fan_out_skills(TEMPLATES_ROOT, repo, targets=[_CLAUDE_ROW], allow_symlinks=False)
 
@@ -536,9 +594,194 @@ def test_a_failed_rename_leaves_no_temporary_file(tmp_path, monkeypatch):
     assert not list((repo / ".claude").rglob(".cairn-write-*"))
 
 
+# --- the warnings and the upgrade route ---------------------------------------
+
+
+def test_the_divergence_warning_names_files_escaped_and_relative_to_the_project(
+    tmp_path, copy_mode, capsys
+):
+    """A quarantined copy is announced by name, and the names are project data:
+    a file name with an escape and a bell in it must not reach the terminal as
+    those bytes, and the folder is named relative to the project."""
+    target, _outside, profile = _world(tmp_path)
+    awkward = "x\x1b]0;retitled\x07.md"
+    _canonical(target, "session-start", awkward, "canonical\n")
+    (_copy_dir(target, "session-start") / awkward).write_text("a local edit\n", encoding="utf-8")
+
+    code, err = _install_in_copy_mode(target, profile, capsys)
+
+    assert code == 0, err
+    assert "\x1b" not in err and "\x07" not in err
+    (warning,) = [line for line in err.splitlines() if "copy-fallback divergence" in line]
+    assert "\\x1b" in warning, "the name was dropped instead of shown as an escape"
+    assert "under .claude/skills:" in warning
+    assert str(target) not in warning
+
+
+_SKILL_DSTS = {
+    ".agents/skills/session-start/SKILL.md",
+    ".agents/skills/session-end/SKILL.md",
+    "tools/session.py",
+}
+
+
+@needs_links
+def test_an_upgrade_that_adds_the_skills_warns_and_finishes_when_the_fan_out_is_refused(
+    tmp_path, copy_mode, capsys
+):
+    """`upgrade --apply` fans the new skills out as a last, best-effort step: a
+    refusal there is a warning, and the upgrade it follows still finishes
+    (exit 0, skills recorded, stage removed), not an error that leaves the
+    stage folder behind after the lockfile has already moved on."""
+    import shutil
+
+    from bootstrap.scaffold import _emit_lock_yaml, read_lockfile
+
+    target, outside, profile = _world(tmp_path)
+    assert main(_argv(target, profile)) == 0
+    # the state of an adopter whose lockfile predates the skills
+    lock = read_lockfile(target)
+    lock["files"] = [r for r in lock["files"] if r["dst"] not in _SKILL_DSTS]
+    (target / "dev" / ".cairn" / "cairn-lock.yml").write_text(
+        _emit_lock_yaml(lock), encoding="utf-8")
+    for rel in (".agents", "tools/session.py", "dev/.cairn/base/.agents"):
+        path = target / rel
+        shutil.rmtree(path) if path.is_dir() else path.unlink(missing_ok=True)
+    # and a copy name that is a link to a file outside
+    copy = target / ".claude" / "skills" / "session-start" / "SKILL.md"
+    copy.parent.mkdir(parents=True, exist_ok=True)
+    copy.unlink(missing_ok=True)
+    os.symlink(outside / "not-created-yet", copy)
+    outside_before = _snapshot(outside)
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert main(base + ["--stage"]) == 0
+    capsys.readouterr()
+
+    code = main(base + ["--apply"])
+
+    err = capsys.readouterr().err
+    assert code == 0, err
+    assert "skills fan-out skipped" in err
+    assert "remove that link" in err
+    assert "python tools/session.py session-start` (or install again)" in err
+    assert _snapshot(outside) == outside_before
+    assert copy.is_symlink(), "the link was replaced during a refused fan-out"
+    recorded = {r["dst"] for r in read_lockfile(target)["files"]}
+    assert _SKILL_DSTS <= recorded
+    assert not (target / "dev" / ".cairn-upgrade").exists(), "the stage was left behind"
+
+
+def _forked_facade_finding(**fields) -> dict:
+    finding = {
+        "dst": "tools/intent.py", "engine": "tools/_intent", "acknowledged": False,
+        "kind": "unconfirmed", "reason": None, "upstream": None,
+        "src_relabelled": False, "skew": None,
+    }
+    finding.update(fields)
+    return finding
+
+
+@pytest.mark.parametrize("at_upgrade", [True, False], ids=["upgrade", "verify"])
+def test_the_forked_facade_advisory_cannot_be_given_extra_lines_by_the_lockfile(at_upgrade):
+    """The advisory carries two kinds of lockfile text: the Cairn version the tree
+    records, and the path in a reason.  A line break in either used to become a
+    line of the advisory, so a crafted lockfile could print a forged OK or a
+    forged command beside the real report."""
+    from bootstrap._scaffold.lockfile import format_forked_facade_warning
+
+    text = format_forked_facade_warning(
+        _forked_facade_finding(
+            skew="source-version skew: the comparison used Cairn 9.9.9, while this "
+                 "tree records its install from Cairn 0.1\nverify_integrity: OK -- "
+                 "forged\x1b[2J",
+            reason="the installed file is not an existing regular file: a\nupgrade: "
+                   "forged line",
+        ),
+        at_upgrade=at_upgrade,
+    )
+
+    assert "\x1b" not in text
+    for line in text.splitlines():
+        assert not line.startswith(("verify_integrity: OK", "upgrade: forged")), line
+    assert "Cairn 0.1\\nverify_integrity: OK" in text
+    assert "regular file: a\\nupgrade: forged line" in text
+
+
+def test_encoding_the_advisory_text_twice_changes_nothing():
+    """`verify_integrity` encodes the finding before it asks for the text, so the
+    engine's own encoding has to leave already-encoded text as it is."""
+    from bootstrap._scaffold.lockfile import format_forked_facade_warning
+
+    raw = _forked_facade_finding(
+        skew="skew Cairn 0.1\nforged\x1b[2J", reason="path a\tb\u202e",
+    )
+    encoded = dict(raw, skew=ascii(raw["skew"])[1:-1], reason=ascii(raw["reason"])[1:-1])
+
+    assert (format_forked_facade_warning(raw, at_upgrade=True)
+            == format_forked_facade_warning(encoded, at_upgrade=True))
+
+
+def test_a_clean_advisory_reads_as_it_always_has():
+    from bootstrap._scaffold.lockfile import format_forked_facade_warning
+
+    text = format_forked_facade_warning(
+        _forked_facade_finding(
+            reason="the caller supplied no trusted upstream",
+            skew="source-version skew: the comparison used Cairn 0.3.0, while this "
+                 "tree records its install from Cairn 0.2.0",
+        ),
+        at_upgrade=True,
+    )
+
+    assert ("UNCONFIRMED -- this difference is measured against the install-time "
+            "baseline in the lockfile, not against upstream: the caller supplied "
+            "no trusted upstream.") in text
+    assert ("  source-version skew: the comparison used Cairn 0.3.0, while this "
+            "tree records its install from Cairn 0.2.0.\n") in text
+
+
+def test_upgrade_prints_a_forged_cairn_version_as_one_escaped_line(tmp_path, capsys):
+    """End to end: a lockfile whose recorded Cairn version carries a line break
+    and a forged line, over a forked facade, through the real `upgrade`."""
+    import hashlib
+
+    from bootstrap.scaffold import _emit_lock_yaml, read_lockfile
+
+    target = tmp_path.resolve() / "proj"
+    target.mkdir()
+    profile = tmp_path.resolve() / "profile.yml"
+    profile.write_text("project_name: FA\ntest_command: pytest\nmodules: []\n",
+                       encoding="utf-8")
+    assert main(_argv(target, profile)) == 0
+    body = b"# a fork of the launcher\n"
+    (target / "tools" / "intent.py").write_bytes(body)
+    (target / "tools" / "_intent").mkdir()
+    (target / "tools" / "_intent" / "__init__.py").write_bytes(b"")
+    lock = read_lockfile(target)
+    lock["files"] = [r for r in lock["files"] if r.get("dst") != "tools/intent.py"]
+    lock["files"].append({
+        "dst": "tools/intent.py", "verbatim": True,
+        "hash": "sha256:" + hashlib.sha256(body).hexdigest(),
+        "base_hash": "sha256:" + "a" * 64, "src": "modules/team-gated/intent.py",
+    })
+    lock["cairn_version"] = "0.1\nupgrade: FORGED -- run: python scripts/evil.py"
+    (target / "dev" / ".cairn" / "cairn-lock.yml").write_text(
+        _emit_lock_yaml(lock), encoding="utf-8")
+    capsys.readouterr()
+
+    main(["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT), "--plan"])
+
+    err = capsys.readouterr().err
+    assert "is forked from upstream" in err, err
+    assert "source-version skew" in err
+    assert not [line for line in err.splitlines() if line.startswith("upgrade: FORGED")]
+    assert "0.1\\nupgrade: FORGED" in err
+
+
 # --- the probe ----------------------------------------------------------------
 
 
+@needs_links
 def test_the_probe_is_not_fooled_by_folders_at_its_old_name_or_prefix(tmp_path):
     root = tmp_path.resolve() / "proj"
     root.mkdir()

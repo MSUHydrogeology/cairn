@@ -561,26 +561,42 @@ def _emit_skill_copy_fallback(
     and each folder on the way must be a folder or free.  Each copy is then
     written to a new sibling created exclusively and renamed into place, and a
     quarantine is ``os.replace``: a rename replaces a link that appeared after
-    the check instead of following it.  (A parent folder swapped for a link in
-    that gap needs a process already running on the machine -- the window
-    ``bootstrap/SAFETY.md`` accepts.)  A file that already holds the canonical
+    the check instead of following it.  A file that already holds the canonical
     bytes is left as it is.
+
+    Two windows remain, and each needs a process already running on the machine
+    (the model ``bootstrap/SAFETY.md`` accepts): a parent folder swapped for a
+    link between the check and the write, which can put the copy (or a
+    temporary file) outside the project; and the new temporary file swapped for
+    a link between its write and the rename, which puts that link at the copy's
+    name.  Nothing is written outside in the second case, and the next install
+    refuses the link.
 
     Raises :class:`ScaffoldSecurityError`: fixed words, the project-relative
     name (escaped, since it is data from the project), and what to do about it.
-    Where a link points is never printed."""
+    Where a link points is never printed.  The divergence warning names the
+    quarantined files the same way."""
     import os
     import secrets
+
+    def esc(name: str) -> str:
+        return ascii(name)[1:-1]
 
     def shown(path: Path) -> str:
         try:
             name = path.relative_to(target).as_posix()
         except ValueError:
             name = path.name
-        return ascii(name)[1:-1]
+        return esc(name)
 
     def refuse(reason: str, path: Path, remedy: str) -> ScaffoldSecurityError:
-        return ScaffoldSecurityError(f"{reason}: {shown(path)}\n  {remedy}, then re-run.")
+        # not "then re-run": an upgrade that adds the skills does not redo the
+        # fan-out when run again, but session-start (and a fresh install) does
+        return ScaffoldSecurityError(
+            f"{reason}: {shown(path)}\n  {remedy}, then run "
+            "`python tools/session.py session-start` (or install again) to copy "
+            "the skills."
+        )
 
     def check(path: Path) -> None:
         try:
@@ -635,7 +651,7 @@ def _emit_skill_copy_fallback(
             # a rename replaces a link at the new name; shutil.move would move
             # the file into the folder that link names
             os.replace(out, bak)
-            quarantined.append(str(rel))
+            quarantined.append(esc(rel.as_posix()))
         out.parent.mkdir(parents=True, exist_ok=True)
         tmp = out.with_name(".cairn-write-" + secrets.token_hex(8))
         fd = os.open(tmp, flags, 0o666)
@@ -651,7 +667,7 @@ def _emit_skill_copy_fallback(
             raise
     if quarantined:
         print(
-            f"  [warn] copy-fallback divergence under {dst}: "
+            f"  [warn] copy-fallback divergence under {shown(dst)}: "
             f"{', '.join(quarantined)} differed from the canonical "
             ".agents/skills/ source. Each was quarantined to "
             "*.diverged.bak and the canonical bytes regenerated as the active "

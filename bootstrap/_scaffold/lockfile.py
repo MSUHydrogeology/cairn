@@ -581,11 +581,29 @@ def format_forked_facade_warning(
     to guess which comparison produced it, plus the two annotations (source-
     version skew, relabelled ``src``) when they are present. Reads every field
     with ``.get`` so a caller holding a bare ``{"dst", "engine",
-    "acknowledged"}`` finding still renders (as ``unconfirmed``)."""
+    "acknowledged"}`` finding still renders (as ``unconfirmed``).
+
+    **Text that came from the lockfile is encoded before it is printed.** The
+    skew line carries the lockfile's own ``cairn_version``, and a reason can
+    carry a record's path; a line break or control byte in either would
+    otherwise reach the terminal as written and let a crafted lockfile add whole
+    lines to this advisory (a forged ``OK``, a forged command).  Printable ASCII
+    passes through unchanged, so a clean advisory reads as it always has, and the
+    encoding is safe to apply twice (``verify_integrity`` encodes its findings
+    too).  ``dst`` and ``engine`` are printed with ``!r``, which escapes them;
+    the compared-against root and ref come from the running checkout, not the
+    lockfile."""
+    def plain(value: Any) -> Any:
+        if isinstance(value, str) and not (value.isascii() and value.isprintable()):
+            return ascii(value)[1:-1]
+        return value
+
     where = "upgrade" if at_upgrade else "verify_integrity"
     dst = finding.get("dst")
     engine = finding.get("engine")
     compared = finding.get("upstream")
+    reason = plain(finding.get("reason"))
+    skew = plain(finding.get("skew"))
 
     if finding.get("kind") == "differs-from-upstream":
         head = (
@@ -603,13 +621,13 @@ def format_forked_facade_warning(
         detail = (
             "  UNCONFIRMED -- this difference is measured against the "
             "install-time baseline in the lockfile, not against upstream: "
-            f"{finding.get('reason') or 'no comparison was possible'}.\n"
+            f"{reason or 'no comparison was possible'}.\n"
         )
         if compared:
             detail += f"  The upstream that would have decided it: {compared}.\n"
 
-    if finding.get("skew"):
-        detail += f"  {finding['skew']}.\n"
+    if skew:
+        detail += f"  {skew}.\n"
     if finding.get("src_relabelled"):
         detail += (
             "  This record's own \"src\" does not name the upstream template "
