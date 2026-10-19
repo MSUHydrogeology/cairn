@@ -123,14 +123,141 @@ def _cairn_is_git(cairn_root: Path) -> bool:
     return r.returncode == 0 and r.stdout.strip() == "true"
 
 
+def _lockfile_refusal(what: str) -> ScaffoldSecurityError:
+    """The refusal for a lockfile (project data) that names what it may not:
+    one line of fact -- fixed words, plus the record's own text only when
+    escaped and cut -- and one line saying what to do about it."""
+    return ScaffoldSecurityError(
+        f"{what}\n"
+        "  The lockfile is project data. Look at that record in "
+        "dev/.cairn/cairn-lock.yml (`git log -p` on it shows who changed it), "
+        "restore it from a copy you trust, then re-run.")
+
+
+def _contained_lockfile_path(
+    root: Path, value: object, field: str, tree: str, record: int | None = None,
+) -> Path:
+    """``root / value`` for a path the lockfile names, or
+    :class:`ScaffoldSecurityError` unless it stays inside *root*.
+
+    The lockfile is project data, and a cloned repository can carry one that
+    somebody else wrote: ``src`` is read from Cairn's own templates, ``dst`` and
+    ``base_cache`` from the project, and none of them may lead out of its tree.
+    Two checks, in this order, both before anything is read:
+
+    1. *shape* -- a non-empty string that is a relative POSIX name: no
+       ``..`` part, no absolute or drive form, no backslash, and nothing
+       unprintable in it (control characters of either range, line and
+       paragraph separators, bidirectional and other format characters): a name
+       is printed in reports, so an escape sequence or a line break in one
+       would reach the operator's terminal;
+    2. *containment* -- the name, with every link on the way followed, must
+       still lie under *root*.  A link that stays inside is fine -- this judges
+       where a read ends up, not whether a link is present.  (Writes are
+       stricter and go through :func:`_assert_safe_write`: no link at all.)
+
+    Returns the joined path, unresolved, for the caller to read.  The refusal
+    carries fixed words and the escaped, cut-short name -- never where a link
+    points -- so it cannot be made to say what a file outside holds."""
+    if isinstance(value, str):
+        cut = ascii(value[:80])
+        shown = cut[:100] + ("..." if len(value) > 80 or len(cut) > 100 else "")
+    else:
+        shown = f"<{type(value).__name__}>"
+    where = f"record {record}: " if record is not None else ""
+
+    def refuse(why: str) -> ScaffoldSecurityError:
+        return _lockfile_refusal(f"{where}the lockfile's {field!r} {why}: {shown}")
+
+    shape = f"is not a plain relative file name inside {tree}"
+    if not isinstance(value, str) or not value:
+        raise refuse(shape)
+    if not value.isprintable():
+        raise refuse(shape)
+    rel = Path(value)
+    if (value.startswith("/") or "\\" in value or ":" in value.split("/", 1)[0]
+            or rel.is_absolute() or ".." in rel.parts or not rel.parts):
+        raise refuse(shape)
+    joined = root / rel
+    try:
+        joined.resolve().relative_to(root.resolve())
+    except (OSError, RuntimeError, ValueError):
+        raise refuse(f"leads outside {tree}") from None
+    return joined
+
+
+def _check_lockfile_paths(
+    lock: dict[str, Any], target: Path, templates_root: Path,
+) -> None:
+    """Refuse a lockfile that names a path outside its tree, before anything
+    acts on it.  Every file record's ``src`` (read from *templates_root*),
+    ``dst`` and ``base_cache`` (both read from *target*) goes through
+    :func:`_contained_lockfile_path`.
+
+    A field a record does not carry is left to the code that needs it; this
+    judges what is there and invents no requirement.  Run once, at the top of
+    ``cmd_upgrade``, so that no later step -- report, stage, apply, finalize,
+    adoption -- ever sees a name it would have to trust."""
+    files = lock.get("files")
+    if files is None:
+        return
+    if not isinstance(files, list):
+        raise _lockfile_refusal("the lockfile's 'files' is not a list of records")
+    for number, rec in enumerate(files, start=1):
+        if not isinstance(rec, dict):
+            raise _lockfile_refusal(f"record {number}: the lockfile's record is not an object")
+        if rec.get("src") is not None:
+            _contained_lockfile_path(
+                templates_root, rec["src"], "src", "the Cairn source tree", number)
+        if rec.get("dst") is not None:
+            _contained_lockfile_path(
+                target, rec["dst"], "dst", "the project", number)
+        if rec.get("base_cache") is not None:
+            _contained_lockfile_path(
+                target, rec["base_cache"], "base_cache", "the project", number)
+
+
+def _assert_stage_has_no_links(stage: Path, target: Path) -> None:
+    """Refuse a staged upgrade that holds a link, or sits behind one.
+
+    ``--stage`` writes plain files and folders only, so a link anywhere in the
+    review area was put there by someone else -- and ``--apply`` reads the
+    staged copy through it and writes what it finds over a project file or into
+    the saved ancestors.  The review area is project data too: a repository
+    that carries the (normally ignored) folder carries whatever is in it.  The
+    refusal names nothing it found."""
+    import os
+    linked = False
+    try:
+        _assert_safe_write(stage, target)   # the folder itself, and every one above it
+    except ScaffoldSecurityError:
+        linked = True
+    else:
+        for folder, folders, files in os.walk(stage, followlinks=False):
+            if any(os.path.islink(os.path.join(folder, name)) for name in folders + files):
+                linked = True
+                break
+    if linked:
+        raise ScaffoldSecurityError(
+            f"the staged upgrade under {_STAGING_REL}/ holds a link, or sits "
+            "behind one; it is not applied.\n"
+            f"  `upgrade --stage` writes plain files only. Remove {_STAGING_REL}/ "
+            "(it is rebuilt by `upgrade --stage`), then re-run.")
+
+
 def _theirs_text(
     cairn_root: Path, templates_root: Path, src_rel: str, to_ref: str | None,
 ) -> str | None:
     """The upstream template for *src_rel* at the target version: the
     currently-running tree (``to_ref is None``) or, **git-checkout-only**
-    (P-4), ``git show <to_ref>:templates/<src_rel>``.  None if absent."""
+    (P-4), ``git show <to_ref>:templates/<src_rel>``.  None if absent.
+
+    *src_rel* usually comes from the project's lockfile, so it is checked
+    (:func:`_contained_lockfile_path`) before anything is read: it must lie
+    inside *templates_root*, or :class:`ScaffoldSecurityError`."""
+    p = _contained_lockfile_path(
+        templates_root, src_rel, "src", "the Cairn source tree")
     if to_ref is None:
-        p = templates_root / src_rel
         return p.read_text(encoding="utf-8") if p.exists() else None
     import subprocess
     try:
@@ -147,8 +274,9 @@ def _theirs_text(
 def _theirs_bytes(
     cairn_root: Path, templates_root: Path, src_rel: str, to_ref: str | None,
 ) -> bytes | None:
+    p = _contained_lockfile_path(
+        templates_root, src_rel, "src", "the Cairn source tree")
     if to_ref is None:
-        p = templates_root / src_rel
         return p.read_bytes() if p.exists() else None
     text = _theirs_text(cairn_root, templates_root, src_rel, to_ref)
     return text.encode("utf-8") if text is not None else None
@@ -1994,6 +2122,7 @@ def _apply_upgrade(
     import json
     import shutil
     stage = target / _STAGING_REL
+    _assert_stage_has_no_links(stage, target)
     meta_path = stage / _STAGE_META
     if not meta_path.exists():
         print("error: no staged upgrade found; run `upgrade --stage` first.",
@@ -2212,8 +2341,12 @@ def _apply_upgrade(
                "verbatim": bool(info.get("verbatim")),
                "hash": "sha256:" + _sha256_hex((target / dst).read_bytes())}
         if info.get("base_cache"):
-            rec["base_cache"] = info["base_cache"]
-            cache_abs = target / info["base_cache"]
+            # The cache's name is derived from the destination, as
+            # ``_compute_upgrade`` derives it when it plans the add -- never
+            # read back from the staged record, which a repository can carry
+            # and which could otherwise name a file outside the project.
+            rec["base_cache"] = f"{_BASE_CACHE_REL}/{dst}"
+            cache_abs = target / rec["base_cache"]
             if cache_abs.exists():
                 rec["base_hash"] = "sha256:" + _sha256_hex(cache_abs.read_bytes())
         new_files.append(rec)
@@ -2419,6 +2552,18 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     for _ff in forked_facade_findings(target, lock, upstream=_upstream):
         print(format_forked_facade_warning(_ff, at_upgrade=True),
               file=sys.stderr, end="")
+
+    # The lockfile is project data: refuse one that names a path outside its tree
+    # before the report, stage, apply, finalize or adoption reads, prints or acts
+    # on a name from it.  The advisory above runs first on purpose: it reads
+    # names only through its own contained reader, prints them escaped, and takes
+    # its comparison bytes from the engine's own registry -- so a lockfile that
+    # is about to be refused still cannot hide a forked facade.
+    try:
+        _check_lockfile_paths(lock, target, templates_root)
+    except ScaffoldSecurityError as exc:
+        print(f"error: upgrade refused (containment): {exc}", file=sys.stderr)
+        return 2
 
     if args.finalize:
         only = set(args.finalize_paths) if args.finalize_paths else None

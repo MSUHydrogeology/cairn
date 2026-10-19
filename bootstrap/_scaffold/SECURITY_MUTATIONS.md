@@ -19,6 +19,9 @@ and `--apply`, `--stage` and `--adopt-collisions` around their own writes.
 Anywhere else it propagates as a traceback with exit 1, which the differential
 oracle pins for an install over a planted link.
 
+Reads are guarded too, where the name being read comes from project data: see
+**Class D** below. Its refusals are a plain exit 2 from `upgrade` itself.
+
 This inventory was taken **before** the Stage-1 motion and is **regression-pinned**
 by the `bootstrap/tests/test_security_leaf.py` regression
 `test_guarded_write_functions_still_call_a_containment_guard`, which AST-scans the
@@ -42,7 +45,7 @@ destination before any `mkdir` / `write_*` / `shutil` write:
 | `_cmd_adopt_module` | `_assert_safe_write` | a single added module's files (missing-dst install); the base-cache + lockfile writes route through `_commit_lock_and_caches`. A `seed_gitignore` dry run before the first write refuses a linked `.gitignore` (exit 2) ahead of the lockfile commit |
 | `_cmd_adopt_collisions` | `_assert_safe_write` | the adopted collision's destination (containment re-check; never written); the base-cache + lockfile writes route through `_commit_lock_and_caches`. Resolves the adoptable occupied-destination collisions in **either** tier — module-internal (`new-module-blocked`) **and** core/always-on (`new-core-blocked`, side-door parity R5) — via the shared `_record_fork_entry` (`base_hash = upstream`, R2) |
 | `_commit_lock_and_caches` | `_assert_safe_write` | the base-template caches **and** `cairn-lock.yml` itself — preflighted for ALL writes, then temp-staged + atomically replaced, lockfile last (adopt-as-fork R4: the lockfile authority write was previously unguarded in `_cmd_adopt_module`) |
-| `_apply_upgrade` | `_assert_safe_write` | the swapped-in upgraded files (incl. `new-core` / `new-module` additions, which share the swap loop). `cmd_upgrade` refuses a linked `.gitignore` (a `seed_gitignore` dry run, exit 2) before this runs, since an apply that adds skills seeds `.gitignore` after the swap |
+| `_apply_upgrade` | `_assert_safe_write` | the swapped-in upgraded files (incl. `new-core` / `new-module` additions, which share the swap loop). `cmd_upgrade` refuses a linked `.gitignore` (a `seed_gitignore` dry run, exit 2) before this runs, since an apply that adds skills seeds `.gitignore` after the swap. It also reads the staged copies, and refuses a review area that holds or sits behind a link before reading any of them (`_assert_stage_has_no_links`, Class D) |
 | `merge_module_into_slot` | `_assert_safe_write` | a module-merge slot write + its conflict side-file (final Security Review P1 #1) |
 | `_write_stage` | `_assert_safe_write` | every staged-file / new-base / review-only destination, validated up-front for ALL plans (External Security review F1). `cmd_upgrade` refuses a linked `.gitignore` (a `seed_gitignore` dry run, exit 2) before this runs, since the stage seeds the review surface's ignore entry last |
 | `seed_gitignore` | `_assert_safe_write` | the appended lines in `<target>/.gitignore`. A fixed path is **not** contained by construction: a checkout can make `.gitignore` a link to a file outside the tree, and the appended lines would land there. The guard runs before the read, and on `--dry-run` too, so a dry run never promises a seed the install refuses. A link is refused wherever it points, inside the tree or out: the stricter rule, "never write through a link", stays, because following an in-tree link would mean judging the final destination of a link chain in this one function. An adopter who keeps a shared `.gitignore` by link replaces the link with a regular file; every refusal says so. `main`, `upgrade --adopt-module`, `--stage` and `--apply` run the same check before their first write, so an install, dry run, adoption, stage or apply over a linked `.gitignore` stops with exit 2 and nothing written; `--plan` writes nothing and is not asked. The `--stage` and `--apply` check is unconditional, though an apply seeds only when it adds skills: a stage always seeds, so an adopter with a linked `.gitignore` cannot reach `--apply` through the normal flow anyway |
@@ -83,6 +86,45 @@ facade-without-engine surface, and are listed so the inventory stays complete:
   the copy path above on any operating system. Creating a link never follows one and
   fails on any name already taken, so the probe can touch only the link it made. No
   guard is called: the name is fresh, directly under the install root.
+
+## Class D — guarded reads of project data (the read side)
+
+`upgrade` reads three paths out of every lockfile record, and the lockfile is
+project data: a cloned repository can carry one somebody else wrote. A name that
+leads out of its tree made `upgrade --stage` copy any file the user could read
+into the review area, and `--apply` write that text into a tracked project file.
+Each read is guarded **before** it happens; none of these functions writes, so
+none is in the Class A write set. They are pinned by
+`bootstrap/tests/test_upgrade_lockfile_path_containment.py` (call present, and
+ahead of the function's first read), because the Class A set above lives in a
+gate-frozen test and names write guards only.
+
+| Function | Guard | Reads |
+|---|---|---|
+| `_contained_lockfile_path` | itself the guard: a non-empty relative POSIX name (no `..`, no absolute or drive form, no backslash, nothing unprintable in it -- `str.isprintable()`), then the name with every link on the way followed must still lie under its root | returns the joined path; raises `ScaffoldSecurityError` in fixed words with the escaped, cut name and a remedy line, never where a link points |
+| `_check_lockfile_paths` | `_contained_lockfile_path` for `src` (root: `templates/`), `dst` and `base_cache` (root: the project) of **every** record | called once, in `cmd_upgrade` right after the lockfile is read and the forked-facade advisory has run (the advisory reads names only through its own contained reader and prints them escaped, so a lockfile about to be refused cannot hide a forked facade), so the report, `--stage`, `--apply`, `--finalize` and `--adopt-collisions` never see a name they would have to trust. `cmd_upgrade` turns the refusal into a plain exit 2 and writes nothing. A field a record does not carry is not required |
+| `_theirs_text`, `_theirs_bytes` | `_contained_lockfile_path` as the first statement | the upstream template: `templates/<src>`, or `git show <ref>:templates/<src>`. The primitive is guarded as well as the command, so a caller that builds a `src` some other way cannot read outside `templates/` |
+| `_assert_stage_has_no_links` | `_assert_safe_write` on the review area, then a walk that refuses any link inside it | `_apply_upgrade`: the staged copies and new-base copies. A repository can carry the (normally ignored) review area, and `--apply` read a staged copy through a planted link |
+
+*Read versus write.* A read judges where the name **ends up**: a link that stays
+inside the project is not refused. A write still refuses any link at the name or
+above it (`_assert_safe_write`). The review area is the exception, because
+nothing legitimate ever puts a link there.
+
+*Terminal.* `dst` is printed in the upgrade report, so a control character in a
+lockfile name would be typed at the operator's terminal. The shape check refuses
+any unprintable character (both control ranges, line and paragraph separators,
+format characters), and the refusal prints the name escaped and cut to 100
+characters.
+
+*Not covered, stated.* A name the engine builds itself -- the renamed vendor
+wrapper (`CLAUDE.md` for `VENDOR.md`) -- is not in the lockfile and is read
+through whatever the project made it; its content reaches a write only through
+`_write_stage`, which refuses a linked destination. The name of the saved
+ancestor that `--apply` records for a newly added file is derived from the
+destination (as `_compute_upgrade` derives it), not read back from the staged
+record, so a hand-built review area cannot make the apply read or record a path
+outside the project.
 
 ## Class C — documented follow-up gaps (the deferred single-write-capability redesign, RR6/SR6)
 
