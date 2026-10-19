@@ -6,8 +6,10 @@ disk. The guards are the Stage-1 leaf `bootstrap/_scaffold/security.py`:
 
 - **`_assert_safe_write(dst, target)`** — ordinary writes; refuses a symlinked
   destination, a symlinked parent, or a path resolving outside `target`.
-- **`_assert_fanout_contained(dst, target)`** — the skills fan-out; like the
-  above but permits `dst` itself to be the (re)created symlink.
+- **`_assert_fanout_contained(dst, target)`** — the skills fan-out's vendor folder;
+  like the above but permits `dst` itself to be the (re)created symlink. The files
+  copied *under* that folder in copy mode do not use it: they use
+  `_assert_safe_write`, which refuses a link at the name itself.
 
 Both raise the single **`ScaffoldSecurityError`** identity. The guard raises it;
 a command turns it into a plain exit 2 only where it asks first or wraps its own
@@ -35,7 +37,7 @@ destination before any `mkdir` / `write_*` / `shutil` write:
 | `create_dev_tree` | `_assert_safe_write` | the empty `dev/` folder set. `mkdir(parents=True)` follows a link, so every destination is checked before the first `mkdir`: a linked `dev/`, or a linked folder below it, refuses with nothing created at either end |
 | `install_onboarding` | `_assert_safe_write` | the always-on launcher + `_onboarding/` engine (installed FROM `_ALWAYS_ON_MAPPINGS`, the SSOT `install_manifest`/`scan_targets` also consume), activation log, PLANNING slot, preset source, onboarding docs. **Fail-closed before any write** on an incomplete launcher+engine completeness group (`assert_always_on_complete`, R4) |
 | `write_install_lockfile` | `_assert_safe_write` | base-template cache, `cairn-lock.yml`. **Refuses (returns `None`)** before any write on an incomplete always-on completeness group (R4 — a partial group must not yield a lockfile tracking only the present members) |
-| `_emit_skill_copy_fallback` | `_assert_fanout_contained` | regenerated canonical skill copy, diverged-copy quarantine |
+| `_emit_skill_copy_fallback` | `_assert_safe_write` | regenerated canonical skill copy, diverged-copy quarantine. A copy name is not contained by construction: a checkout can plant a link at it (a dangling one creates a file outside the tree), a link at the quarantine name (`shutil.move` moves a file *into* the folder it names) or a link to a file that already holds the canonical bytes (the copy rewrites it in place). Every copy and quarantine name is guarded for the whole set, and anything but a free name or a plain file at a name, or a file where a folder must go, is refused, all before the first write, so a refusal leaves nothing half-done. Each copy is written to a new exclusive sibling and renamed into place, and the quarantine is `os.replace`, so a link that appears after the check is replaced, not followed. A refusal is fixed words, the escaped project-relative name and a remedy line, never where a link points. A parent folder swapped for a link between check and write is the accepted engine window (`bootstrap/SAFETY.md`) |
 | `fan_out_skills` | `_assert_fanout_contained` | vendor fan-out destination |
 | `_cmd_adopt_module` | `_assert_safe_write` | a single added module's files (missing-dst install); the base-cache + lockfile writes route through `_commit_lock_and_caches`. A `seed_gitignore` dry run before the first write refuses a linked `.gitignore` (exit 2) ahead of the lockfile commit |
 | `_cmd_adopt_collisions` | `_assert_safe_write` | the adopted collision's destination (containment re-check; never written); the base-cache + lockfile writes route through `_commit_lock_and_caches`. Resolves the adoptable occupied-destination collisions in **either** tier — module-internal (`new-module-blocked`) **and** core/always-on (`new-core-blocked`, side-door parity R5) — via the shared `_record_fork_entry` (`base_hash = upstream`, R2) |
@@ -76,7 +78,11 @@ facade-without-engine surface, and are listed so the inventory stays complete:
 - **`_emit_skill_symlink`**: its destination is guarded by
   `_assert_fanout_contained` at the `fan_out_skills` call site before it runs.
 - **`_symlinks_available`**: writes/removes only a probe symlink it creates and
-  immediately unlinks; fail-soft, no caller-controlled path.
+  immediately unlinks; fail-soft. The name is new on every call. A fixed name let a
+  committed folder make the cleanup fail, which read as "no symlinks" and so chose
+  the copy path above on any operating system. Creating a link never follows one and
+  fails on any name already taken, so the probe can touch only the link it made. No
+  guard is called: the name is fresh, directly under the install root.
 
 ## Class C — documented follow-up gaps (the deferred single-write-capability redesign, RR6/SR6)
 

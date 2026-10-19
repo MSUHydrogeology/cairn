@@ -484,19 +484,28 @@ def render_compatibility_matrix(templates_root: Path) -> str:
 
 def _symlinks_available(target: Path) -> bool:
     """Probe whether ``os.symlink`` works in *target* (False on Windows without
-    Developer Mode / Administrator -- the copy-fallback trigger)."""
-    import os
+    Developer Mode / Administrator -- the copy-fallback trigger).
 
-    probe = target / ".cairn-symlink-probe"
+    The probe name is new on every call.  A fixed name can be taken by a folder
+    (or a link) the project ships; the cleanup then failed, the failure read as
+    "no symlinks", and a project could choose the copy path on any operating
+    system.  Creating a link never follows one and fails on any name that is
+    already taken, so the probe can only ever touch the link it made itself."""
+    import os
+    import secrets
+
+    probe = target / (".cairn-symlink-probe-" + secrets.token_hex(8))
     try:
-        if probe.is_symlink() or probe.exists():
-            probe.unlink()
         os.symlink(".", probe)
-        ok = probe.is_symlink()
-        probe.unlink()
-        return ok
     except (OSError, NotImplementedError):
         return False
+    try:
+        return probe.is_symlink()
+    finally:
+        try:
+            probe.unlink()
+        except OSError:
+            pass
 
 
 def _emit_skill_symlink(dst: Path, canonical: Path) -> str:
@@ -538,25 +547,108 @@ def _emit_skill_copy_fallback(
     aside to ``<file>.diverged.bak`` -- the stray bytes are preserved for
     recovery, never silently destroyed) and then **regenerated from canonical**,
     so the active vendor-read path always carries the safe, already-scanned
-    canonical bytes.  The divergence is still surfaced loudly."""
-    import shutil
+    canonical bytes.  The divergence is still surfaced loudly.
 
-    quarantined: list[str] = []
+    **Every write stays inside *target* and never follows a link.**  The target
+    may already hold data nobody reviewed -- a link at a copy name, a link where
+    a quarantine name would go -- and ``shutil.copyfile`` opens its destination
+    (so it follows a link) while ``shutil.move`` moves a file *into* a folder
+    that a link names.  So every destination, each copy and each quarantine
+    name, is checked first, for the whole set, before the first file is
+    touched, and a refusal leaves nothing half-done.  The check is
+    :func:`_assert_safe_write` (no link at the name or above it, nothing outside
+    *target*), plus: where a name is written it must be free or a plain file,
+    and each folder on the way must be a folder or free.  Each copy is then
+    written to a new sibling created exclusively and renamed into place, and a
+    quarantine is ``os.replace``: a rename replaces a link that appeared after
+    the check instead of following it.  (A parent folder swapped for a link in
+    that gap needs a process already running on the machine -- the window
+    ``bootstrap/SAFETY.md`` accepts.)  A file that already holds the canonical
+    bytes is left as it is.
+
+    Raises :class:`ScaffoldSecurityError`: fixed words, the project-relative
+    name (escaped, since it is data from the project), and what to do about it.
+    Where a link points is never printed."""
+    import os
+    import secrets
+
+    def shown(path: Path) -> str:
+        try:
+            name = path.relative_to(target).as_posix()
+        except ValueError:
+            name = path.name
+        return ascii(name)[1:-1]
+
+    def refuse(reason: str, path: Path, remedy: str) -> ScaffoldSecurityError:
+        return ScaffoldSecurityError(f"{reason}: {shown(path)}\n  {remedy}, then re-run.")
+
+    def check(path: Path) -> None:
+        try:
+            _assert_safe_write(path, target)
+        except ScaffoldSecurityError:
+            raise refuse(
+                "refusing to write skill copies through a link or outside the "
+                "project", path, "remove that link (or the linked folder above it)",
+            ) from None
+
+    plan: list[tuple[Path, Path, Path | None, bytes]] = []
     for src_file in sorted(canonical.rglob("*")):
         if not src_file.is_file():
             continue
         rel = src_file.relative_to(canonical)
         out = dst / rel
-        _assert_fanout_contained(out, target)
-        if out.is_file() and out.read_bytes() != src_file.read_bytes():
-            # Quarantine the stray bytes (preserve, don't destroy), then
-            # regenerate the canonical bytes as the active read-path.
+        check(out)
+        for folder in out.parents:
+            if folder == target:
+                break
+            if folder.exists() and not folder.is_dir():
+                raise refuse(
+                    "refusing to copy skills: a file is where a folder must go",
+                    folder, "move or remove it",
+                )
+        data = src_file.read_bytes()
+        bak: Path | None = None
+        if out.exists():
+            if not out.is_file():
+                raise refuse(
+                    "refusing to replace something that is not a plain file",
+                    out, "move or remove it",
+                )
+            if out.read_bytes() == data:
+                continue  # already current: no rewrite
             bak = out.with_name(out.name + ".diverged.bak")
-            _assert_fanout_contained(bak, target)
-            shutil.move(str(out), str(bak))
+            check(bak)
+            if bak.exists() and not bak.is_file():
+                raise refuse(
+                    "refusing to replace something that is not a plain file",
+                    bak, "move or remove it",
+                )
+        plan.append((rel, out, bak, data))
+
+    flags = (
+        os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
+    )
+    quarantined: list[str] = []
+    for rel, out, bak, data in plan:
+        if bak is not None:
+            # a rename replaces a link at the new name; shutil.move would move
+            # the file into the folder that link names
+            os.replace(out, bak)
             quarantined.append(str(rel))
         out.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(src_file, out)
+        tmp = out.with_name(".cairn-write-" + secrets.token_hex(8))
+        fd = os.open(tmp, flags, 0o666)
+        try:
+            with os.fdopen(fd, "wb") as handle:
+                handle.write(data)
+            os.replace(tmp, out)
+        except BaseException:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+            raise
     if quarantined:
         print(
             f"  [warn] copy-fallback divergence under {dst}: "
