@@ -1,7 +1,7 @@
 # Remove the collaboration agreement
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-19
@@ -847,3 +847,37 @@ Mandatory here on four grounds, each named in `AGENTS.md` > "High-risk surfaces"
 * **"AST CHANGED 5 at base, 6 on the prototype" (M8) and the 47-live-files count:** superseded by the re-derived figures at `67529e35` (7 and 8; 45 live files). Both are pointers, not criteria.
 * **"A project that upgrades ... must copy its roster across by hand; `UPGRADE.md` says so":** replaced by the same sentence plus the integrity consequence and the scoped finalize.
 * **The unqualified sentence "The living-state set ... its comment is reworded to say the entry is kept for projects that installed before the retirement":** superseded by the stronger wording (retired, never reused for a shipped file) and the literal pin.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-19
+
+**ACCEPTED.** The Maintainer's authorization, quoted **verbatim and visually
+isolated**:
+
+> "Please scribe my acceptance as recommended."
+
+*Scribe's note, separate from the quoted words.* "As recommended" refers to
+Revision 1's four Questions for the Maintainer, as the scribe put them to him in
+chat on 2026-10-19 with these defaults. Each takes its default:
+
+* **Q1, an existing project's copy on upgrade:** it stays, and `upgrade --plan`
+  prints one `removed-upstream` line. `bootstrap/UPGRADE.md` tells projects to
+  empty the file rather than delete it.
+* **Q2:** the team roster and the "add a second agent type" prompt are kept.
+  The roster moves to its own *The team* section in `dev/agent_collaboration.md`.
+  The signing prompt, its seed task and its trigger retire.
+* **Q3, Cairn's "short fixed list" rule:** it stays in Cairn's copy only. The
+  shipped roles document keeps the shipped agreement's two sentences word for
+  word. Shipping the rule to adopters would need its own proposal. The Scope
+  delta's one deferred unit stands on this answer.
+* **Q4, the order of the plans:** this plan opens when `review-stance-and-lenses`
+  reaches `awaiting-code-review`. Implementation starts when that plan
+  archives, and the work lands before `model-mapping-install-path` starts its
+  C2. The scribe told the Maintainer that this sets a start gate for the agent
+  building `model-mapping-install-path`, and gave him the line to add to that
+  agent's brief.
+
+Revision 1 binds. This change is in the 0.4 cut (Release path, "Revised
+2026-10-19", in `dev/PLANNING.md`).
+
+Scribed by Claude (claude-opus-5-5) on the Maintainer's explicit instruction.
+Nothing else lands in this commit.
