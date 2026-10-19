@@ -7,9 +7,6 @@
 **Opened**: 2026-10-18
 **In brief**: `python tools/board.py --json` prints every proposal and plan as plain data, plus the roadmap rows that wait on you; a guide in Cairn's docs shows how to turn that into a page that is regenerated, never hand-kept; the proposal and plan templates ask for a one-sentence summary; Cairn ships no page.
 
-Proposed paths:
-- `docs/build-a-board-view.md`
-
 ## In brief
 
 The **board** is the table `python tools/board.py` prints: one row for every open proposal and plan. For two days you have used a shared web page that shows the same facts. It is far easier to read, and it went stale several times a day because someone copies the facts into it by hand. This plan lets that page be rebuilt from Cairn's own files whenever you like, without Cairn shipping a page of its own.

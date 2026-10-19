@@ -114,13 +114,12 @@ editing it.
 
 ## tools/board.py — see what is actually in flight *(default-on)*
 
-**What it does.** Reads the header block of every proposal and plan under `dev/`
-and prints one row each: kind, artifact, status, the Review and Plan review lines, when it opened,
-and its source proposal. It reports what the artifacts say and makes no
-judgments — the artifact is authoritative, and this is a view of it.
+**What it does.** Reads the header block and the title line of every proposal and plan under `dev/` (and, under `--maintainer` and `--json`, the `dev/PLANNING.md` rows that declare a wait) and prints one row each: kind, artifact, status, the Review and Plan review lines, when it opened, its source proposal, and any declared `Waiting on Maintainer` line. `--json` prints the board as plain JSON data (`cairn-board/1`) so you can build a richer view without scraping the terminal table; see [`docs/build-a-board-view.md`](build-a-board-view.md). It reports what the artifacts say, refuses symbolic links, and makes no judgments — the artifact is authoritative, and this is a view of it.
 
 ```bash
 python tools/board.py
+python tools/board.py --maintainer
+python tools/board.py --json
 ```
 
 **What to do.** Run it instead of maintaining a hand-written "currently active"

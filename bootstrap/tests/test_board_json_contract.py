@@ -850,6 +850,36 @@ class TestSchemaOneBaselineHolds:
         for forbidden in ("fence", "holder", "maintainer_waits"):
             assert not any(forbidden in k for k in all_keys), all_keys
 
+        if (CAIRN_ROOT / "docs" / "build-a-board-view.md").is_file():
+            gtext = (CAIRN_ROOT / "docs" / "build-a-board-view.md").read_text(
+                encoding="utf-8"
+            )
+            g_top = {
+                k.strip("`")
+                for k, _ in _parse_markdown_table(
+                    _guide_section(gtext, "### Top-level keys")
+                )
+            }
+            g_art = {
+                k.strip("`")
+                for k, _ in _parse_markdown_table(
+                    _guide_section(gtext, "### Artifact records")
+                )
+            }
+            g_rw = {
+                k.strip("`")
+                for k, _ in _parse_markdown_table(
+                    _guide_section(gtext, "### Roadmap waits")
+                )
+            }
+            assert set(full_doc.keys()) - set(baseline["top_level"].keys()) <= g_top
+            for rec in full_doc["artifacts"]:
+                assert (
+                    set(rec.keys()) - set(baseline["artifact_record"].keys()) <= g_art
+                )
+            for rw in full_doc["roadmap_waits"]:
+                assert set(rw.keys()) - set(baseline["roadmap_wait"].keys()) <= g_rw
+
 
 class TestRecordFactsComeFromWhereTheFileSits:
     """Location-derived keys (`kind`, `id`, `path`, `archived`), `title`, and
@@ -1189,3 +1219,263 @@ class TestRoadmapWaitsAndSkippedSymlinksInJson:
             "Field reference and worked example: Cairn's own cairn/docs/build-a-board-view.md "
             "(in the repository you adopted from, not in this tree)."
         ) in normalized_help
+
+
+import re
+
+GUIDE_PATH = CAIRN_ROOT / "docs" / "build-a-board-view.md"
+LIFECYCLE_PATH = CAIRN_ROOT / "doctrine" / "lifecycle.md"
+
+
+def _guide_section(text: str, heading: str) -> str:
+    """Return the content of `heading` (`## ...` or `### ...`) up to the next
+    heading of the same or higher level."""
+    level = len(heading) - len(heading.lstrip("#"))
+    lines = text.splitlines()
+    start = None
+    for idx, line in enumerate(lines):
+        if line.strip() == heading:
+            start = idx + 1
+            break
+    assert start is not None, f"heading {heading!r} not found"
+    out: list[str] = []
+    for line in lines[start:]:
+        if line.startswith("#"):
+            hashes = len(line) - len(line.lstrip("#"))
+            if hashes <= level and line[hashes:hashes + 1] == " ":
+                break
+        out.append(line)
+    return "\n".join(out)
+
+
+def _parse_markdown_table(section_text: str) -> list[tuple[str, str]]:
+    """Return `(col1, col2)` from a Markdown table in `section_text`."""
+    rows: list[tuple[str, str]] = []
+    for line in section_text.splitlines():
+        s = line.strip()
+        if not s.startswith("|") or not s.endswith("|"):
+            continue
+        cells = [c.strip() for c in s.strip("|").split("|")]
+        if len(cells) < 2:
+            continue
+        if all(set(c) <= {"-", ":"} and c for c in cells):
+            continue
+        rows.append((cells[0], cells[1]))
+    assert len(rows) >= 2, f"no table rows found in:\n{section_text}"
+    return rows[1:]
+
+
+def _normalize_guide_type(type_cell: str) -> str | list[str]:
+    cleaned = type_cell.strip("`").strip()
+    if " or " in cleaned:
+        return [part.strip() for part in cleaned.split(" or ")]
+    return cleaned
+
+
+class TestGuideAndOutputAgree:
+    """`docs/build-a-board-view.md` opens in plain prose, its three field tables
+    match the emitted JSON keys and baseline types in both directions, and its
+    promise and trust sections carry the required standing phrases."""
+
+    def test_guide_opening_section_is_plain_prose_and_defines_terms(self) -> None:
+        """The first `## ` section after the title contains no table and no
+        fenced code block, states that Cairn ships no view and pages are
+        regenerated rather than hand-kept, and defines both `view` and `JSON`
+        in the first sentence where each appears."""
+        text = GUIDE_PATH.read_text(encoding="utf-8")
+        lines = text.splitlines()
+        first_h2 = next(i for i, l in enumerate(lines) if l.startswith("## "))
+        heading = lines[first_h2].strip()
+        sec = _guide_section(text, heading)
+        assert "```" not in sec
+        assert not any(l.strip().startswith("|") for l in sec.splitlines())
+        collapsed = " ".join(sec.split())
+        assert "regenerated" in collapsed and "never hand-kept" in collapsed
+        sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", collapsed) if s.strip()]
+        view_sent = next(s for s in sentences if "view" in s.lower())
+        json_sent = next(s for s in sentences if "json" in s.lower())
+        assert "web page" in view_sent.lower() or "table" in view_sent.lower()
+        assert "plain-text" in json_sent.lower() or "data format" in json_sent.lower()
+
+    def test_guide_field_tables_and_standing_phrases_match_output_and_baseline(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """The key sets and types under `### Top-level keys`, `### Artifact records`
+        and `### Roadmap waits` equal the emitted key sets and the baseline
+        fixture's types, and the standing phrases in `## What will not change`
+        and `## What the data can and cannot show` are present."""
+        text = GUIDE_PATH.read_text(encoding="utf-8")
+        baseline = json.loads(BASELINE_PATH.read_text(encoding="utf-8"))
+
+        for heading, base_section in (
+            ("### Top-level keys", "top_level"),
+            ("### Artifact records", "artifact_record"),
+            ("### Roadmap waits", "roadmap_wait"),
+        ):
+            rows = _parse_markdown_table(_guide_section(text, heading))
+            table_map = {
+                col1.strip("`"): _normalize_guide_type(col2) for col1, col2 in rows
+            }
+            assert table_map == baseline[base_section], (
+                f"{heading} mismatch: guide={table_map}, baseline={baseline[base_section]}"
+            )
+
+        # Compare against live emitted keys on a populated tree:
+        _write(
+            tmp_path,
+            "dev/plans/p.md",
+            "# Plan\n\n**Status**: implementing\n\n## Body\n",
+        )
+        _write(
+            tmp_path,
+            "dev/PLANNING.md",
+            "# Board\n\n* **Waiting on Maintainer**: row\n",
+        )
+        doc = _run_json(tmp_path, capsys)
+        top_rows = _parse_markdown_table(_guide_section(text, "### Top-level keys"))
+        art_rows = _parse_markdown_table(_guide_section(text, "### Artifact records"))
+        rw_rows = _parse_markdown_table(_guide_section(text, "### Roadmap waits"))
+        assert set(doc.keys()) == {k.strip("`") for k, _ in top_rows}
+        assert set(doc["artifacts"][0].keys()) == {k.strip("`") for k, _ in art_rows}
+        assert set(doc["roadmap_waits"][0].keys()) == {k.strip("`") for k, _ in rw_rows}
+
+        # Standing phrases in ## What will not change:
+        promise_sec = " ".join(_guide_section(text, "## What will not change").split())
+        for phrase in (
+            "ignore keys",
+            "cairn-board/2",
+            "CHANGELOG.md",
+            "live records only",
+            "must not overwrite",
+            "length",
+        ):
+            assert phrase in promise_sec, f"missing promise phrase {phrase!r}"
+
+        # Standing phrases in ## What the data can and cannot show:
+        cannot_sec = " ".join(
+            _guide_section(text, "## What the data can and cannot show").split()
+        )
+        for phrase in (
+            "never an approval record",
+            "not that a Decision",
+            "skipped_symlinks",
+        ):
+            assert phrase in cannot_sec, f"missing safety phrase {phrase!r}"
+
+
+def _lifecycle_diagram_holders() -> tuple[dict[str, str], list[str]]:
+    """Parse `doctrine/lifecycle.md` node labels per D11."""
+    text = LIFECYCLE_PATH.read_text(encoding="utf-8")
+    raw_labels = re.findall(r'\["([^"]+)"\]', text)
+    mapping: dict[str, str] = {}
+    for lbl in raw_labels:
+        if "<br/>" in lbl:
+            word, rest = lbl.split("<br/>", 1)
+        else:
+            word, rest = lbl, ""
+        word = word.strip()
+        holder = "none named"
+        for role in ("Maintainer", "author", "reviewer", "implementer"):
+            if role.lower() in rest.lower():
+                holder = role
+                break
+        mapping[word] = holder
+    return mapping, raw_labels
+
+
+class TestGuideLookupMatchesLifecycle:
+    """The lookup table in `docs/build-a-board-view.md` agrees with the two
+    lifecycle diagrams in `doctrine/lifecycle.md`."""
+
+    def test_guide_lookup_table_matches_lifecycle_diagrams(self) -> None:
+        """Every status word in `doctrine/lifecycle.md`'s diagrams appears in
+        `### The lookup` with the holder its label gives; the catch-all row names
+        the retired words `proposed`, `reviewed` and `revised` and maps to
+        `none named`; and no extra status word is listed."""
+        diagram_map, raw_labels = _lifecycle_diagram_holders()
+        assert len(diagram_map) >= 14, f"unexpectedly few labels: {raw_labels}"
+
+        guide_text = GUIDE_PATH.read_text(encoding="utf-8")
+        rows = _parse_markdown_table(_guide_section(guide_text, "### The lookup"))
+        last_col1, last_col2 = rows[-1]
+        assert (
+            last_col1
+            == "anything else, including the retired words `proposed`, `reviewed` and `revised`"
+        ), f"unexpected catch-all row: {last_col1!r} (labels: {raw_labels})"
+        assert last_col2.strip("`") == "none named"
+
+        guide_map = {
+            col1.strip("`"): col2.strip("`") for col1, col2 in rows[:-1]
+        }
+        assert guide_map == diagram_map, (
+            f"guide lookup {guide_map} != lifecycle diagrams {diagram_map} "
+            f"(read labels: {raw_labels})"
+        )
+
+        # First-word matching and unknown/retired fallback:
+        def lookup_status(raw_status: str) -> str:
+            m = re.match(r"^[a-z-]+", raw_status)
+            first = m.group(0) if m else ""
+            return guide_map.get(first, last_col2.strip("`"))
+
+        assert lookup_status("archived -- C1-C9 all landed") == "none named"
+        for retired in ("proposed", "reviewed", "revised", "unknown-state"):
+            assert lookup_status(retired) == "none named"
+
+
+class TestFenceStaysInTheTerminalView:
+    """The fence warning stays in `board.py --maintainer` only; the guide only
+    points to the terminal view and no code block computes a fence check."""
+
+    def test_fence_mentions_only_point_to_terminal_view_and_no_code_block_computes_one(
+        self,
+    ) -> None:
+        text = GUIDE_PATH.read_text(encoding="utf-8")
+        fenced_blocks = re.findall(r"```[^\n]*\n(.*?)```", text, flags=re.DOTALL)
+        for block in fenced_blocks:
+            for forbidden in ("MAINTAINER-GATED", "MAINTAINER-ONLY", "fences_without_wait"):
+                assert forbidden not in block, (
+                    f"fenced code block must not compute {forbidden!r}"
+                )
+            for line in block.splitlines():
+                if "fence" in line.lower():
+                    assert "--maintainer" in line, (
+                        f"code line mentioning fence must only point to --maintainer: {line!r}"
+                    )
+        paragraphs = [p.strip() for p in text.split("\n\n") if "fence" in p.lower()]
+        assert len(paragraphs) >= 1
+        for p in paragraphs:
+            assert "--maintainer" in p, (
+                f"fence mention must point to --maintainer: {p!r}"
+            )
+
+
+class TestHelpCitesTheGuide:
+    """`board.py --help` cites `cairn/docs/build-a-board-view.md` and the cited
+    path resolves in Cairn's tree."""
+
+    def test_help_cites_cairn_guide_path_and_token_resolves(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        with pytest.raises(SystemExit) as excinfo:
+            board.main(["--help"])
+        assert excinfo.value.code == 0
+        help_out = capsys.readouterr().out
+        assert "cairn/docs/build-a-board-view.md" in help_out
+        assert "not in this tree" in help_out
+        rel = "cairn/docs/build-a-board-view.md".removeprefix("cairn/")
+        assert (CAIRN_ROOT / rel).is_file()
+
+
+class TestGuideIsNotInstalled:
+    """`docs/build-a-board-view.md` is documentation in Cairn's own repository
+    and is never copied into adopter installs."""
+
+    def test_guide_is_absent_from_scaffold_manifest(self) -> None:
+        proc = subprocess.run(
+            [sys.executable, str(CAIRN_ROOT / "bootstrap" / "scaffold.py"), "--manifest"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        assert "build-a-board-view" not in proc.stdout
