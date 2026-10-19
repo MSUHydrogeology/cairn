@@ -1421,7 +1421,7 @@ check is a reader.
 * **This plan carries no Waiting line at archive.** The open wait, the re-anchor, is
   declared on its marked board row.
 * **Left open by this plan.** `dev/proposals/2026-10-18-claude-stewardship-and-reuse.md:689` cites lens 5 at
-  `templates/modules/team-gated/dual-review.md:58-60`, a range the accepted thinning removes. The
+  lines 58 to 60 of `templates/modules/team-gated/dual-review.md`, a range the accepted thinning removes. The
   additions-only marker maintenance (`f3abb787`) cannot clear a line-range citation, and the proposal
   is another author's append-only record, so I did not reword it. Its plan, which writes against the
   lenses' final home, rewords the bullet or the Maintainer asks for an erratum. `check_cairn.py` reports it.
@@ -2272,6 +2272,12 @@ has 59 lines, so the range no longer exists.
   high-risk surfaces in shipped prose); no mapping bounds 57 test files that render
   the shipped templates; both accepted proposals say `full`; the lockfile is touched
   by two scoped finalizes. Uncertainty resolves to `full`.
+  **How it is met.** By the Maintainer's instruction of 2026-10-19 the full suite runs only as a
+  certifying run, once per integration point (before a push, before his re-anchor ceremony, before
+  the release cut, or when he asks), and one green run at a commit certifies every change at or
+  before it. So where this plan asks for a full Boundary B, this scoped record plus that later
+  certifying run satisfies it. This record lists what was run; it certifies nothing beyond that.
+* **Certified by**: pending (the coordinator's certifying run).
 * **Tested commit**: `fd66c988fff3250ac113943ee981fee2e511edb1` (C7b, the last commit
   that changes test bytes). Commits after it are prose only: one claim-marker maintenance
   commit (`f3abb787`, additions only) and this record.
@@ -2343,7 +2349,7 @@ has 59 lines, so the range no longer exists.
 
 | Command | Exit | Outcomes | Elapsed |
 |---|---|---|---|
-| `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0 -p no:cacheprovider -q -rfEsxX` | 1 | **5773 passed, 2 failed**, 0 skipped, 0 xfail, 0 xpass, 3 warnings | 855.02 s (0:14:15) |
+| `python -m pytest <the 50 owning and mapped test files>`, two batches of 25 (the broad-run guard allows 40 files), each under the shared run lock, no full-suite variable | 0, 0 | **3450 passed**, 0 failed, 0 skipped, 0 xfail, 0 xpass (batch A 2929 in 39.61 s; batch B 521 in 69.61 s) | 109 s of test time; 191 s with queueing |
 | `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | neutrality `fail=0` (`info=56`); redundancy `fail=0` | 2 s |
 | `python scripts/check_cairn.py` (whole tree, defaults) | 1 | 7 issues in 188 files at the tested commit: **3 caused by this plan** (the deleted test cited in a measurement record; this plan's own quotation of the old module range; the stewardship proposal's lens-5 line numbers) and 4 `tools/__pycache__` citations in other sessions' records. Clean (182 files) at the base. On master after `f3abb787` and this commit: **1 left**, the stewardship proposal's bullet (see Dispositions) | 4 s |
 | `python scripts/check_cairn.py <the 58 edited .md paths>` | 1 | 2 issues: `dev/modules/security-review.md:181` (a broken link that predates this plan, see Dispositions) and this plan's own quotation of the old module range, which a claim marker cannot clear (a marker exempts a path, not a line range into a file that exists); this commit rewords that one phrase in the plan's own deviation request | 3 s |
@@ -2354,17 +2360,25 @@ has 59 lines, so the range no longer exists.
 | `python bootstrap/tests/_ast_attest.py verify <baseline> bootstrap/_scaffold/*.py --known-new <known-new>` | 1 | base 5 symbols CHANGED, tested 7; none is this plan's (see AST) | <1 s |
 | `python bootstrap/tests/_gate_manifest.py verify` | 1 | HOLD 449 at the base, 495 here; six of the 46 new lines are the retired test (see Frozen) | 7 s |
 
+**The 50 files of the scoped run, with node counts at the tested commit** (the union of every chunk's owning
+and mapped files from *Verification*; `test_onboarding_review_tiers` is gone with its test): `test_review_stance_in_shipped_files` 1850, `test_review_sweep_ships` 192, `test_review_and_verification_rules_ship` 125, `test_verification_boundaries` 40, `test_comprehension_floor` 10, `test_scope_reduction_trap` 99, `test_loop_fidelity_gate` 8, `test_documentation_plan_module` 15, `test_quickstart_sequence` 8, `test_scaffold` 67, `test_profiles_smoke` 15, `test_presets` 34, `test_onboarding_seed_roster` 7, `test_cairn_prefix_links` 3, `test_check_cairn_content` 4, `test_quality_gate_neutrality` 59, `test_manifest` 9, `test_module_roster` 1, `test_module_merge` 15, `test_merge_module` 6, `test_upgrade` 106, `test_lockfile_module` 7, `test_verify_integrity` 161, `test_claim_check_module` 78, `test_core_dev_folders` 10, `test_incident_trackers_module` 10, `test_install_module` 10, `test_session_routines` 26, `test_trigger_evaluation_action` 18, `test_replacement_tools` 20, `test_scientific_check_guidance_ships` 1, `test_model_selection_stub` 25, `test_upgrade_module` 10, `test_profile_grammar` 45, `test_security_stack` 131, `test_skills_install` 5, `test_skills_fanout` 9, `test_skills_upgrade` 11, `test_skills_self_heal` 11, `test_skill_contract` 6, `test_session_failsafe` 28, `test_first_session_report` 3, `test_onboarding_activation_helper` 31, `test_deferred_task_store` 6, `test_doc_governance` 27, `test_link_check_exclusions` 18, `test_onboarding_slot_substitution` 28, `test_active_surfacing_render` 13, `test_active_surfacing_mechanism` 8, `test_gate_manifest` 21.
+
 **Non-pass disposition.**
 
-* `test_ast_attest.py::test_ast_gate_passes_over_the_full_scaffold_module_set` and
-  `::test_committed_baseline_accounted_for_across_the_engine_package` fail. The AST
-  baseline is red at the base for five engine symbols, and a later commit by another
-  session adds two more (below). **No `bootstrap/_scaffold/` file is edited by any commit of
-  mine.** The baseline's re-anchor is the Maintainer's and is owed whatever this plan does.
+* The scoped run had no failure, skip, xfail or xpass. `test_ast_attest.py` is not among the owning or
+  mapped files (no engine file is edited), so the scoped set does not run it. The AST gate is red at
+  the base for five engine symbols and for seven at the tested commit (below); **no
+  `bootstrap/_scaffold/` file is edited by any commit of mine.** Its re-anchor is the Maintainer's and
+  is owed whatever this plan does. The certifying run will show those two nodes red until then.
 * `scripts/check_cairn.py` and `claim_check` findings are dispositioned in the table.
-* No skip, xfail or xpass appeared. `test_a_t4_output_is_bounded` passed (no load flake).
 * The verifier, `verify_integrity` and the body-coverage probe exit 1 for reasons named in
   their rows; none is a new failure of this plan except the body-coverage count (a signal).
+
+**One full run, made before the instruction, kept as information and not offered as certification.** I ran the
+whole suite once at the tested commit in a clean worktree, with `--quality-gate-shuffle-seed=0`, before the
+Maintainer's instruction arrived: **5773 passed, 2 failed, 0 skipped, in 855.02 s (0:14:15)**. The two
+failures are the AST nodes above and no others; `test_a_t4_output_is_bounded` passed. It was red, so it
+certifies nothing, and I have not repeated it.
 
 **AST set, at the base and at the tested commit** (same command, each in its own worktree).
 Base `92421911` (5): `_cmd_adopt_module` and `cmd_upgrade` in `upgrade.py`; `create_dev_tree`,
@@ -4534,8 +4548,16 @@ bootstrap/tests/test_review_sweep_ships.py::test_restoring_the_ledger_into_the_m
 
 ### Known omissions
 
-I did not re-run the whole suite after the two prose commits that follow the tested commit (`f3abb787`'s
-additions-only claim markers, and this record); neither changes a test, template or fixture byte.
+No full-suite run is offered as certification; the certifying run is pending (**Certified by**: pending). The
+scoped run was made at the tested commit only; it was not repeated after the prose commits that follow it
+(`f3abb787`'s additions-only claim markers, and this record), which change no test, template or fixture byte.
+The mutation ledger ran the two new test files (2042 nodes) per mutant; its driver set the broad-run variable
+although scoped files do not need it, before the instruction, and it is not repeated.
+**After the tested commit, another session changed files this plan lists** (`dffc13d1`, on the Maintainer's own
+README instruction, recorded in the *Scope delta -- README presentation* section it appended): `README.md`
+and the README group of `test_review_stance_in_shipped_files.py`. The node IDs, node count and blob id of that
+test at the code-reviewed commit therefore differ from the tested-commit values recorded here; the values
+here are correct for `fd66c988`, and the archive note records them again at the code-reviewed commit.
 I did not mutate the code reviewer's set claims member by member (Boundary C). The adopter rehearsal used the
 committed trees of both repositories, not their working trees, and ran no `--apply`. Plan D and plan C's
 own `revising-code` commits that land after the tested commit are not in the tested tree.
