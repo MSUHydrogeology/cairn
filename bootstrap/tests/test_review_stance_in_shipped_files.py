@@ -25,6 +25,11 @@ What is pinned, and why:
   copies of the dual-review module may keep their remaining wording, but not the
   clause that lets a more distant pass stand in for a falsification ledger.
 
+The phrase pins below cannot detect every possible new sentence that grants
+review authority. The broader Search B classification in the plan is a human
+read to repeat when these carrier files change; green phrase pins alone do not
+prove that no differently worded rule was added.
+
 * **The authoring templates carry it too.** An author reads the proposal or
   plan template while writing, and a reviewer reads the pass skeleton while
   reviewing, so each template states the stance, the questions for its kind of
@@ -92,6 +97,8 @@ _STANCE_OBLIGATIONS = {
         r"One stance at every stage",
     "a-fresh-reviewer-on-the-works-side":
         r"fresh reviewer who did not write the work, on the work's side",
+    "no-agent-picks-a-kind-of-review":
+        r"No agent picks a kind of review",
     "the-stage-sets-three-questions":
         r"Should this exist as framed\? Is there a better design, doing "
         r"nothing included\?.*?The Decision settled the premise\. Does the "
@@ -114,6 +121,8 @@ _STANCE_OBLIGATIONS = {
         r"never reopens the Decision",
     "a-clean-code-review-shows-a-falsification-ledger":
         r"A clean code review shows a falsification ledger",
+    "plan-review-is-fresh-context":
+        r"A plan review is fresh-context",
     # A narrowing is a scope change, whoever recommends it.
     "a-narrowing-is-a-scope-change-only-the-maintainer-concedes":
         r"recommends narrowing the work states what is lost and why the "
@@ -163,12 +172,15 @@ _STANCE_OBLIGATIONS = {
         r"Declare External as a required review in a header, say a change "
         r"needs one, recommend more distance, head a pass External on its "
         r"own, or start one without those words",
+    "an-agent-may-name-a-risk-and-coverage-gap":
+        r"It may name a risk and a gap in its coverage line",
     "a-called-read-adds-and-replaces-nothing":
         r"It adds to the usual review and replaces nothing",
     "a-called-brief-adds-focus-and-removes-no-owed-answer":
         r"Its brief may add focus; it removes no owed answer",
     "a-called-read-discharges-no-security-review-by-distance-or-brief":
-        r"discharges no Security Review by its distance or its brief",
+        r"discharges no Security Review by its distance or its brief "
+        r"\(a pass clears a Security Review only by being one\)",
     "other-authority-lives-in-a-decision-or-a-plan-fence":
         r"takes effect only where Maintainer authorizations already live, a "
         r"Decision block or a plan's fence",
@@ -380,6 +392,13 @@ def test_review_section_carries_the_obligation(label: str, rel: str) -> None:
 
 
 @pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
+def test_plan_review_never_has_a_second_round(rel: str) -> None:
+    """This rule lives in Lifecycle, outside the Review section."""
+    lifecycle = _section(_text(rel), "The lifecycle")
+    assert "Plan review never has a second round." in _normalize(lifecycle)
+
+
+@pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
 @pytest.mark.parametrize("label", sorted(_STANCE_OBLIGATIONS))
 def test_removing_the_obligation_is_reported(label: str, rel: str) -> None:
     """The check above can fail: strip every match and it must report the loss.
@@ -580,6 +599,7 @@ def test_adding_required_external_to_a_carrier_is_reported(rel: str) -> None:
 _COMMON_TEMPLATE_LABELS = (
     "one-stance-at-every-stage",
     "a-fresh-reviewer-on-the-works-side",
+    "no-agent-picks-a-kind-of-review",
     "foundations-block-three-answers-each-with-its-evidence",
     "improve-means-recommend",
     "no-quota-of-findings",
@@ -594,6 +614,7 @@ _COMMON_TEMPLATE_LABELS = (
     "called-by-names-where-the-words-live",
     "tier-external-needs-called-by-else-read-as-the-usual-review",
     "no-agent-declares-external-required-or-recommends-distance",
+    "an-agent-may-name-a-risk-and-coverage-gap",
     "a-called-read-adds-and-replaces-nothing",
     "a-called-brief-adds-focus-and-removes-no-owed-answer",
     "a-called-read-discharges-no-security-review-by-distance-or-brief",
@@ -606,6 +627,7 @@ _PROPOSAL_ONLY_LABELS = (
     "usual-plus-security-review-is-two-passes-and-the-usual-pass-never-clears-the-second",
 )
 _PLAN_ONLY_LABELS = (
+    "plan-review-is-fresh-context",
     "code-review-floor-is-not-the-implementing-agent",
     "code-review-never-reopens-the-decision",
     "a-clean-code-review-shows-a-falsification-ledger",
@@ -744,6 +766,15 @@ def test_plan_templates_keep_their_ruled_review_tokens(rel: str) -> None:
     assert "**Tier**: <Internal | Internal Security Review>" in text
     assert not any("standard" in l.lower()
                    for l in _lines_starting(text, "**Tier**:"))
+
+
+@pytest.mark.parametrize("rel", _PLAN_TEMPLATES, ids=_FILE_IDS.get)
+def test_plan_review_skeleton_names_its_security_obligation(rel: str) -> None:
+    skeleton = _section_from(_text(rel), "Plan review --")
+    lines = [line.strip() for line in skeleton.splitlines()]
+    assert "**Obligation**: <the one clause this pass clears>" in lines
+    assert lines.index("**Obligation**: <the one clause this pass clears>") \
+        < lines.index("**Tier**: <Internal | Internal Security Review>")
 
 
 @pytest.mark.parametrize("rel", _TEMPLATE_FILES, ids=_FILE_IDS.get)
