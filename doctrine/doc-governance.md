@@ -61,8 +61,8 @@ bucket decides its home.
 
 3. **The deliberation and decision process → `agent_collaboration.md`.**
    How the team *decides*: the role roster, the proposal → review →
-   decision lifecycle, the review tiers and structural-independence
-   floors, the session handoff routines — the deeper *why* behind the
+   decision lifecycle, the review stance and how distance is recorded,
+   the session handoff routines — the deeper *why* behind the
    operational rules.
 
 `AGENTS.md` holds buckets 1 and 2 because they are what an agent must

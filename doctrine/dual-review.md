@@ -1,102 +1,155 @@
 # The Dual-Review model
 
 Cairn's most distinctive practice is its review model. A change
-does not ship because its author is confident; it ships because it
-has been **reviewed across structural independence** and the
-reasoning held up. The model has two tiers, and which tier a
-change needs scales with the team (`dimensions/`) and the change's
-risk.
+does not ship because its author is confident; it ships because a
+fresh reviewer who did not write it has questioned its foundations,
+in writing, and the reasoning held up. There is **one review stance
+at every stage**. What changes from stage to stage is the questions
+it asks, not the kind of reviewer: nobody picks a kind of review.
 
-## Two tiers, two purposes
+## One stance, three stages
 
-* **Internal review** — *helps a change land.* A second reading
-  from a constructive stance: catch problems, sharpen the
-  argument, surface what the author missed. The Internal reviewer
-  wants the change to succeed and is improving it toward that.
-* **External review** — *makes a change prove it should land.* An
-  adversarial-but-friendly reading: the change must justify
-  itself. The External reviewer's job is to make confidence prove
-  itself — to look for the reason this should *not* ship, and to
-  report honestly when there is none.
+Every review has one stance: **on the work's side, making it better
+by questioning its foundations.** The reviewer is a fresh one who did
+not write the work, and no agent chooses a stance, so there is no tier
+to select. The stage sets the questions, and they are **required
+answers, not a mood**; without that, "wants it better" drifts into
+polishing something that should not exist.
 
-The two are not redundant. Internal review improves a change;
-External review tests whether it should exist. A change can be
-well-improved and still wrong.
+| Stage | Should it happen as framed? (code: does it do what it claims?) | Best alternative | What would show it wrong |
+|---|---|---|---|
+| Proposal | Should this exist as framed? Is there a better design, doing nothing included? | The strongest, doing nothing included | What would make the author withdraw |
+| Plan | The Decision settled the premise. Does the plan deliver it? | A simpler path to the same outcomes | The result showing it cannot deliver |
+| Code | Does it really do what it claims? Try to break it, in order to fix it. | A simpler or safer build, if any | The input or run that breaks it, and what was tried; for code review this points at the falsification ledger rather than restating it |
 
-**A tier is a stance, not a staffing class.** It says what the reviewer is
-incentivized to do, so any agent can be asked for either — which is what makes
-both requirable by every adopter.
+**What "outside the frame" means depends on the artifact.** For a
+proposal it is the design and the problem statement. For an
+implementation it is *should this have been built this way, and what
+breaks it* — never *should this exist*, which the Decision settled and
+which a reviewer never reopens.
 
-**The difference is visible in what each produces.** An Internal review works
-inside the frame: sharpenings tied to what is proposed. An External review owes
-what a constructive read would not —
+**Each pass opens with a `**Foundations**` block** of three lines, one
+answer per question, each ending in the file, test, line or command
+that backs it. A bare "yes" with nothing behind it is the "checked"
+failure the sweep already names. The nine lenses (below) are where the
+evidence for the three answers comes from, not a second checklist.
 
-* a verdict on whether the change should happen **at all**, engaging the
-  do-nothing option;
-* the strongest form of at least one rejected alternative;
-* what would **falsify** it: the observation that would make the author withdraw.
+**Improve means recommend.** The reviewer proposes the better version;
+"don't do this" and "do it differently" count. The author decides, and a
+narrowing the reviewer recommends is still a scope change under the
+outcome test (the scope-reduction trap, below): only the Maintainer
+concedes a loss.
 
-An External review carrying only sharpenings-within-the-frame has done Internal
-work, whoever held it and whatever its heading says. The test reads off the
-artifact, not the reviewer — which is how a stance is arranged rather than
-merely intended.
+**There is no quota of findings.** "No defects found" is allowed only
+with the three answers evidenced and the negative space named. A review
+that works through the lenses, tries to break the thing and cannot has
+done its job; a review that manufactures a finding to look thorough has
+not.
 
-**What "outside the frame" means depends on the artifact.** For a proposal it is
-the design and the problem statement. For an implementation it is *should this
-have been built this way, and what breaks it* — never *should this exist*, which
-the Decision settled and which a reviewer never reopens.
+### More distance is the Maintainer's call
+
+An **External read** is a review the Maintainer asked for on one named
+artifact that exists now, in chat or inside a Decision, outside the
+usual procedure. The Maintainer sets the distance or the brief. `AGENTS.md`
+> "Review" carries the rule in the form an adopter receives; this is the
+reasoning behind it.
+
+* **Per artifact only.** A call that covers artifacts not yet written is a
+  standing floor, and a standing floor returns only by proposal. A roster
+  the Maintainer sets in `dev/collaboration_agreement.md` (which agent types
+  work the tree) is the team's shape, not a call: it adds no read and
+  upgrades none.
+* **Distance is information, not a rule.** A different agent type has
+  different failure modes and a person has different knowledge. The
+  staffing reviewer follows the Maintainer's brief, answers the same three
+  questions from that distance, and says so.
+* **It is recorded.** The pass carries `**Called by**: Maintainer -- Decision
+  at <commit>` (or `-- chat, <date>`, with `, relayed by <who>`), followed by
+  the Maintainer's words, verbatim and set apart; the same words go in the
+  commit message, as for a scribed Decision. `**Tier**: External` is valid
+  only with that line, and a pass headed External without it is read as the
+  usual review.
+* **An agent never selects it.** No agent declares External as a required
+  review in a header, says a change needs one, recommends more distance,
+  heads a pass External on its own, or starts one without those words. It
+  may name a risk and a gap in its coverage line.
+* **It adds and replaces nothing.** A called read adds to the usual review
+  and removes no owed answer. It discharges no Security Review by its
+  distance or its brief: a pass clears a Security Review only by being one.
+  Any other authority in the quoted words, such as a waiver or a change of
+  scope, takes effect only where Maintainer authorizations already live, a
+  Decision block or a plan's fence, never from a `Called by` line. Nothing
+  checks the quote mechanically; the next reviewer and the Maintainer at
+  the Decision are the check.
+
+**One standing call survives, and it is the Maintainer's.** The re-anchor
+ceremony (`bootstrap/REANCHOR_RUNBOOK.md`) requires its launcher to be read by
+an External Security review. The ceremony's own record sets that requirement,
+the Maintainer chooses the reader each time, and no agent selects or
+substitutes for it. That review's record carries `**Called by**` with the
+Maintainer's commissioning words, and it is a Security Review: it clears the
+launcher obligation by being one, not by its distance. Nothing else in the
+procedure works this way.
+
+**Legacy records keep their wording.** An archived record keeps its
+`External` tokens and passes. A legacy `(External)` label on a pass nobody
+called is read as the usual review, and legacy header tokens are read, never
+rewritten and never warned.
 
 ## Structural independence
 
 A review is worth what the reviewer's reasoning does not share with the
-author's. Cairn does not rely on a reviewer *intending* to be independent; it
-arranges independence two ways — by the **brief** the tier sets, and by the
-**distance** the reviewer happens to have:
+author's. Cairn does not rely on a reviewer *intending* to be independent;
+it records who the reviewer was, so a reader can weigh how far their
+reasoning stood from the author's. Independence is **recorded, not
+required**:
 
-* **A fresh session.** The same agent type with no shared context — the mental
-  model is rebuilt from the artifacts, not carried over. **Every review's
-  floor.**
+* **A fresh session.** The same agent type with no shared context — the
+  mental model is rebuilt from the artifacts, not carried over. **Every
+  review's floor.**
 * **A different agent type.** A different architecture has different failure
-  modes and does not silently inherit the author's. The strongest readily
-  available distance, and **recommended wherever it can be staffed.**
+  modes and does not silently inherit the author's. Available whenever the
+  Maintainer asks for it.
 * **A human.** The Maintainer or another contributor.
-* **Domain rotation.** On a team of domain-specialized agents, a reviewer from
-  a *different* domain — independence by rotation rather than by model type.
+* **Domain rotation.** On a team of domain-specialized agents, a reviewer
+  from a *different* domain can be the one reviewer; this is a staffing
+  fact about who is available, not a read added.
 
-**No tier requires a different agent type — not External, not Security Review,
-not code review.** Only `agent_team: concurrent-multi-type` can staff one, so a
-requirement is dead vocabulary for most adopters and a demand on the Maintainer
-for the rest; the one act nobody else can perform is the Decision, and a tier
-that spends their attention as a reviewer spends it at the worst moment. A
-required tier answered by a skim is worse than no requirement, because the
-record then asserts an independence the change never received. Applied to
-Security Review it is worse still: an adopter who cannot staff a second type
-could never perform one at all, which lowers their security practice to zero
-rather than raising it.
+**No review requires a different agent type — not a proposal review, not a
+Security Review, not code review.** Only `agent_team: concurrent-multi-type`
+can staff one, so a requirement is dead vocabulary for most adopters and a
+demand on the Maintainer for the rest; the one act nobody else can perform is
+the Decision, and a rule that spends their attention as a reviewer spends it at
+the worst moment. A required distance answered by a skim is worse than no
+requirement, because the record then asserts a distance the change never
+received. Applied to Security Review it is worse still: an adopter who cannot
+staff a second type could never perform one at all, which lowers their
+security practice to zero rather than raising it.
 
 **Distance is recorded, not required.** A review names its reviewer in its own
 attribution; that is where a reader weighs how far the reasoning stood from the
 author's. Code review keeps its own floor — **not the implementing agent.**
 
-### What the record actually shows
+### What the record showed
 
-The different-agent-type read was Cairn's External floor for most of the
-project's life, and the case made here for it was never measurable: with the
-floor in force, **every** External review was cross-type and every same-type
-review was Internal, so stance and reviewer type are perfectly confounded in
-the record and no comparison exists. The requirement removed its own control
-group.
+Until this model, the different-agent-type read was Cairn's floor for
+most of the project's life, and the case made for it was never
+measurable: with the floor in force, **every** such review was cross-type
+and every same-type review was the other kind, so the reviewer's type and
+the review's stance were perfectly confounded in the record and no
+comparison exists. The requirement removed its own control group.
 
 What the record does show, across the review sections in `dev/proposals/`:
-same-type Internal passes raise **more** blocking findings per review than
-cross-type External ones and run several times longer, while the tiers differ
-sharply in *verdict* rate. That is a difference in **stance**, not in defect
-density — which is why the tiers are defined by stance below, and why type is
-recommended rather than required.
+same-type passes raised **more** blocking findings per review than
+cross-type ones and ran several times longer, while the two stances then in
+use differed sharply in *verdict* rate. That is a difference in **stance**,
+not in defect density, which is why the stage questions, and not the
+reviewer's type, carry the verdict.
 
 One portable lesson survives from the cross-type reads and is worth keeping:
 **green unit tests do not clear a review** — exercise the real call chain and
 real config, not the unit contracts the author already trusted.
+
 ## Asynchronous and commit-mediated
 
 A review is not a live conversation. It is a **section appended to
@@ -198,91 +251,67 @@ The Decision closes the phase. Later critique becomes a new proposal.
 
 ## Plan review is Internal, always
 
-A plan review is an **Internal, fresh-context review — always**.
-Standard or security-flavored, the reviewer is a fresh session of the
-same agent type, never a mandated different-type round. External plan
-review does not exist as a tier, a requirement, a recommendation slot,
-or an escalation target. **External independence lives at the
-proposal; Internal freshness lives at the plan and at code review; the
-Maintainer decides** whether to spend anything more, per artifact,
-never by tier.
+A plan review is a **fresh-context review, always**, and it runs one
+round. Standard or security-flavored, the reviewer is a fresh session
+of the same agent type; no plan review is a mandated different-type
+round, a recommendation slot, or an escalation target. **Freshness
+lives at every stage; the Maintainer decides** whether to spend
+anything more, per artifact, never by tier.
 
 **A plan whose surface or triggers call for security treatment**
 declares `Plan review: required(Internal + Internal Security Review)`
 — a **distinct obligation**, not a lens annotation on the ordinary
-Internal tier. It is satisfied **only** by an appended `## Plan
+pass. It is cleared **only** by an appended `## Plan
 review -- <reviewer> -- <date>` pass whose `**Obligation**: Internal
 Security Review` line matches it exactly, authored by a fresh-context
-same-agent-type session acting in the Security Review role (the
-role's high-capability floor and the security-review protocol,
-including its trust-boundary checklist, apply unchanged), and it is
-**not** satisfied by an ordinary Internal review record however
-clean: an ordinary Internal pass against a plan carrying this
-obligation reports it **unmet**; only the appended, obligation-bound
-pass clears it. **The heading text is not the binding.** `## Plan
-review` is the only heading `_pass_headings` recognizes as a pass at
-all; a record titled `## Security review (...)` instead carries no
-mechanical weight and is not even a record boundary for the parser
--- the obligation is bound by the `**Obligation**:` field inside an
-ordinary Plan-review pass, never by what the heading calls itself.
-This reuses the `+` grammar `normalize_required_obligations` already
-reads as two distinct obligations and two distinct passes
-(`doctrine/plans.md` > "Normalizing the required tier") — no new
-parser branch is invented for it.
+session acting in the Security Review role (the role's
+high-capability floor and the security-review protocol, including its
+trust-boundary checklist, apply unchanged), and it is **not** cleared
+by an ordinary Internal review record however clean: an ordinary
+Internal pass against a plan carrying this obligation reports it
+**unmet**; only the appended, obligation-bound pass clears it. **The
+heading text is not the binding.** A record titled `## Security
+review (...)` instead is not a pass at all — the obligation is bound
+by the `**Obligation**:` field inside an ordinary Plan-review pass,
+never by what the heading calls itself. **No tool reads that line:**
+the next reviewer, the code reviewer and the Maintainer check it.
 
-**What survives this abolition, unmoved:**
+**What stays unmoved:**
 
-* **The External floor on deliberate-lane proposal review.** The
-  proposal is where different-agent-type independence pays, because
-  the design is still movable there.
-* **The code-review floor.** Unchanged and independent: **not the
-  implementing agent** — a same-type agent in an independent context
-  clears it (see "Code review — the implementation side" below).
+* **The code-review floor.** Independent: **not the implementing
+  agent** — a same-type agent in an independent context clears it (see
+  "Code review — the implementation side" below).
 * **Security Reviews wherever they attach** — to a proposal, a plan,
   or code — on their own standing trigger, outside the plan-review
   allocation entirely. A high-risk surface named in `AGENTS.md` takes
   a Security Review on its own trigger, and a plan may fence a chunk
-  to a named authorization; this abolition does not touch either
-  mechanism.
-* **Assurance path does not change the plan-review tier.** High
-  assurance continues to govern verification, Security Review,
-  scientific review, protected-surface handling, risk acceptance and
-  ceremonies; it never buys, or owes, a different-agent-type plan
-  round.
+  to a named authorization; this rule touches neither mechanism.
+* **Assurance path does not change the plan review.** High assurance
+  continues to govern verification, Security Review, scientific review,
+  protected-surface handling, risk acceptance and ceremonies; it never
+  buys, or owes, a different-agent-type read.
 * **The Maintainer's option to ask any reader for anything.** Nothing
-  places a review beyond the Maintainer's reach; what retires is the
-  *automatic*, reviewer-triggered escalation to a mandated
-  different-agent-type plan round — never the Maintainer's own choice
-  to spend one.
+  places a review beyond the Maintainer's reach; what a reviewer may not
+  do is prescribe more distance on their own, and the Maintainer's own
+  call is the one route to it.
 
 **For a scientific assumption, a destructive migration, or a
 governing-doctrine / lifecycle-enforcement change**, the fresh-context
-Internal reviewer's judgement is the whole structural guarantee a plan
-gets before implementation — there is no tier a plan can acquire from its
-topic or its assurance path that buys a different-agent-type read, and no
-second plan-review round. The Maintainer may still ask any reader for
+reviewer's judgement is the whole guarantee a plan gets before
+implementation — nothing a plan acquires from its topic or its
+assurance path buys a different-agent-type read, and there is no second
+plan-review round. The Maintainer may still ask any reader for
 anything; that is their choice to spend, not a reviewer's to prescribe.
 
-**Type-scoped removal, not vocabulary deletion.** `External` remains
-valid vocabulary where it survives: **proposal** reviews and
-**archived** records, including longitudinal metrics. Only the
-**plan-tier** meaning retires. A legacy plan whose header still
-declares the retired external plan-review tier, or a proposal still
-carrying the retired proposal-side readiness-finding field, is
-warned, never silently rewritten; the Maintainer re-declares the
-plan's tier at its next transition. Archived records carrying either
-legacy token remain readable history and draw no warnings.
-
-**What a checker reaches, and what stays review's job.** A tool can
-bind the security-obligation record: that the classifier (the declared
-`+ Internal Security Review` clause) and the satisfier (the appended
-review record) have different authors, so no artifact clears its own
-obligation, and that an ordinary Internal pass against that obligation
-reports it **unmet**. It cannot verify that the Security-Review-role
-session was genuinely fresh-context, or that the review's substance
-actually covered the trust boundary — those remain review's job, not a
-checker's, exactly as the Internal-review floor's freshness was never
-mechanically verifiable either.
+**What review reaches, and what no tool does.** Nothing mechanical
+binds the security-obligation record; the lifecycle planner that once
+read it was retired in August 2026. Reviewers do: that the classifier
+(the declared `+ Internal Security Review` clause) and the satisfier
+(the appended review record) have different authors, so no artifact
+clears its own obligation; that an ordinary Internal pass against that
+obligation reports it **unmet**; that the Security-Review-role session
+was genuinely fresh-context; and that the review's substance covered
+the trust boundary.
 
 ## Code review — the implementation side
 
@@ -293,26 +322,26 @@ line that stops a fast implementation from closing its own loop.
 Code review's floor is **not the implementing agent** — freshly written code is
 hard to spot mistakes in for someone carrying the same reasoning patterns. That
 is the whole floor: a same-type agent in an independent context clears it, and
-so does a different agent type or a human. **An External or Security code review
-is an explicit escalation**, taken for implementation risk that proposal review
-did not resolve, and it is neither a default nor something a routing change
-silently upgrades into.
+so does a different agent type or a human. It never reopens the Decision, and
+a routing change never silently adds a reviewer. A Security Review attaches
+on its own trigger, as for any stage; it is not a code-review escalation.
 
 The *entry*-side counterpart is the **plan-review precondition**
 (`lifecycle.md`): a review-required plan does not start implementation
-until its plan-review section lands. The `Plan review: required(<tier>)`
-line names the tier, and for a plan the tier is **always Internal** —
-the only tier there is (see "Plan review is Internal, always" above).
-A plan whose surface calls for security treatment declares the
-`+ Internal Security Review` obligation there; nothing upgrades a
-plan review to External.
+until its plan-review section lands. The `Plan review: required(<obligation>)`
+line is ruled by the tokens `Internal` and `Internal + Internal Security
+Review` (see "Plan review is Internal, always" above). A plan whose surface
+calls for security treatment declares the `+ Internal Security Review`
+obligation there; nothing upgrades a plan review to a mandated
+different-agent-type read.
 
 ### Boundary C — Falsification (targeted, after broad verification)
 
 Independent review does not mean independently repeating every command the
 implementer ran. For work with a valid Boundary B record (`doctrine/plans.md`:
-a plan's Implementation verification section, or a trivial change's commit
-body, whose tested revision is that commit and whose clean state is a tree
+a plan's Implementation verification section, a trivial change's commit body,
+or the commit body of an accepted proposal implemented in one commit with no
+plan, whose tested revision is that commit and whose clean state is a tree
 clean apart from the change), the reviewer first checks that the full tested
 revision and reviewed range cover the implementation under review, that the
 named paths and interpreter/runtime are credible, and that clean pre/post state
@@ -369,18 +398,21 @@ A review that finds zero issues — or only minor style nits — on a
 *complex* change should be treated with skepticism, not relief. The
 clean pass is a known failure mode: a reviewer who reads to *confirm*
 the change works will find that it does. The discipline is to read as
-if a hidden bug exists and probe for it.
+if a hidden bug exists and probe for it. The thin clean pass deserves
+the skepticism; a clean pass whose three answers are evidenced and
+whose gaps are named does not.
 
 The standing form of that discipline is the **review sweep** — a fixed
 roster of lenses every reviewer works through and **reports coverage
-on**. It exists because the most common first-pass miss is not a wrong
-judgment but an *unswept category*: the reviewer applied a narrow lens
-and never looked at a whole class of failure, and a later reviewer
-catches it not by being smarter but by sweeping a category the first
-skipped. A shared roster makes the breadth explicit and lets one pass
-cover it — so an independent later pass is spent on genuine
-independence (a different prior), not on a category the first simply
-did not look at.
+on**, each lens being **where the evidence for the review's three
+answers comes from**, not a second checklist. It exists because the
+most common first-pass miss is not a wrong judgment but an *unswept
+category*: the reviewer applied a narrow lens and never looked at a
+whole class of failure, and a later reader catches it not by being
+smarter but by sweeping a category the first skipped. A shared roster
+makes the breadth explicit and lets one pass cover it, so a later
+reader's attention goes to what the first could not see, not to a
+category the first simply did not look at.
 
 **The sweep is generic and change-agnostic** — the same roster every
 time, never a change-specific list of "what to push on." That
@@ -615,7 +647,7 @@ cover:
   (the file / test-node / line / command that backs it).
 * **Not covered / low confidence** — the negative space: "did not
   exercise the scientific math", "could not run the sibling-repo test",
-  "same-type reviewer — no cross-type independence on this pass." A
+  "no run against real data, only the fixtures." A
   covered-only line manufactures false comfort; the *negative* space is
   what the Maintainer most needs at Decision.
 
@@ -636,9 +668,10 @@ required(Internal + Internal Security Review)` line runs regardless —
 
 ## Briefs to reviewers — don't telegraph the lens
 
-When handing work to a reviewer — especially the cross-agent-type
-External review the independence floor calls for — brief on *facts*,
-not *judgment*. A page or so, not several.
+When handing work to a reviewer — including a read the Maintainer has
+called from more distance — brief on *facts*, not *judgment*. A page or
+so, not several. A brief may state the stage's three questions: they are
+the same for every artifact at that stage, so they do not telegraph a lens.
 
 **Include**: what shipped, where (commits + file paths), the
 reviewer's deliverable, how to run the tests, and procedural
@@ -666,16 +699,16 @@ of a briefing agent seeding *what to find*. Keep the brief on facts;
 the sweep is the reviewer's own standing instrument, not a lens you
 handed them.
 
-The same applies to Internal-review handoffs and to any task brief at
+The same applies to any review handoff and to any task brief at
 session start (an implementing agent picking up a plan): over-detailed
 framing pushes the recipient toward executing your plan instead of
 thinking independently. Short is honest.
 
 ## Restricted verification surfaces
 
-Every review tier above assumes the reviewer can, in principle,
+Every review above assumes the reviewer can, in principle,
 *run* what they review. When a reviewer **cannot execute** a
-surface, the review is weaker in practice than its tier suggests:
+surface, the review is weaker in practice than it appears:
 the reviewer can read the change but cannot confirm its behavior.
 The constraint is not about a second programming language — it is
 any **asymmetrical execution environment**:
@@ -705,8 +738,8 @@ The mechanism:
   exists for a surface, a behavior change to it carries
   `verification owner = the Maintainer` and **cannot be
   autonomously verified** — the change waits on the human who can
-  run it. This is honest about the review tier rather than
-  pretending the structural floor was met.
+  run it. This is honest about the review rather than
+  pretending the floor was met.
 
 The multi-language instance of this discipline — each language's
 native harness, the named cross-language seams — lives in the
@@ -720,18 +753,20 @@ module.
 
 The Dual-Review model is a faithful instantiation of **scientific
 peer review** — and, on the openness and independence axes, a more
-rigorous one: the review is recorded in full, in the open, and the
-independence is structural rather than declared. For a
+rigorous one: the review is recorded in full, in the open, and who
+reviewed is recorded rather than claimed. For a
 scientific-software audience this is the practice that most
 clearly carries the methodology's claim — that software built this
 way earns trust the way a result does.
 
 ## Adaptation
 
-Review *tiers* are roles any contributor can fill (`roles.md`);
-the review *apparatus* is team-gated (`dimensions/`). A solo,
-single-agent team runs the kernel's review — the same agent in a
-fresh session — and reserves heavier scrutiny for genuinely
-contract-touching changes. A team with two agent types, or
-multiple humans, runs the full Dual-Review model. The bootstrap
-never installs more review apparatus than the team can staff.
+The review role is one any contributor can fill (`roles.md`).
+**Every install receives the review sweep and the scope-reduction trap**:
+they are in the review-loop document the kernel installs, and they are no
+longer team-gated. A solo, single-agent team runs the one review with its
+nine lenses and its trap, and reserves heavier scrutiny for genuinely
+contract-touching changes. What stays team-gated is staffing guidance
+(`dimensions/`): a team with two agent types, or multiple humans, installs
+the `dual-review` module for how to staff a read the Maintainer has called.
+The bootstrap never installs more review apparatus than the team can staff.

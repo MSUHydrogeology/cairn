@@ -148,24 +148,20 @@ flowchart TD
 |---|---|---|
 | → **awaiting-plan-review** | author | the plan-open commit creates the plan **and** archives the source proposal (the source proposal moves to `archive/` in this commit); the plan carries the mandatory `Plan review:` line. A `not required(<rationale>)` plan opens instead at `ready-to-implement`, or at `implementing` when the opening commit carries the implementation evidence. |
 | awaiting-plan-review → **revising-plan** | author | plan-review findings are folded into the plan's operative cells; the fold carries the plan to `ready-to-implement` (next row). Plan review has one round, never a second. |
-| → **ready-to-implement** → **implementing** | author | for a review-required plan, a plan-review section **at or above the declared tier** has landed and the plan-open and first-implementation commits are **distinct**; for a `not required` plan, execution may combine with plan-open (fast multi-stage). |
+| → **ready-to-implement** → **implementing** | author | for a review-required plan, a plan-review section **matching the declared obligation** has landed and the plan-open and first-implementation commits are **distinct**; for a `not required` plan, execution may combine with plan-open (fast multi-stage). |
 
-**The plan-review tier is Internal, always.** A plan review is a
-fresh-context Internal pass, the only tier there is; a different-agent-
-type plan round is not a tier the checker recognizes as required. A
-plan whose surface calls for security treatment declares `Plan review:
-required(Internal + Internal Security Review)`, an obligation the
-checker reads as **two** distinct passes (`normalize_required_obligations`),
-satisfied only by a second `## Plan review` pass whose `**Obligation**:
-Internal Security Review` line matches it — never by a record headed
-`## Security review (...)`, which the checker does not read as a pass
-at all; an ordinary Internal pass against that declaration reports the
-obligation **unmet**. Code review's floor is unchanged and independent
-of this: **not the implementing agent**. A plan whose header still
-declares the retired external tier is warned, not silently rewritten;
-the Maintainer re-declares its tier at the plan's next transition. Full
-contract in [`dual-review.md`](dual-review.md) > "Plan review is
-Internal, always".
+**The plan review is a fresh-context, one-round pass, always.** A plan
+whose surface calls for security treatment declares `Plan review:
+required(Internal + Internal Security Review)`, an obligation of **two**
+distinct passes, cleared only by a second `## Plan review` pass whose
+`**Obligation**: Internal Security Review` line matches it — never by a
+record headed `## Security review (...)`, which is not a pass at all; an
+ordinary Internal pass against that declaration leaves the obligation
+**unmet**. No tool reads that line: reviewers and the Maintainer do. Code
+review's floor is unchanged and independent of this: **not the implementing
+agent**. History: a plan whose header still declares the retired external
+tier is read as written, never rewritten or warned. Full contract in
+[`dual-review.md`](dual-review.md) > "Plan review is Internal, always".
 | implementing → **awaiting-code-review** → **revising-code** | a reviewer, then the implementer | a code-review pass section is appended (append-only); the reviewer is **never** the implementing agent. Findings move the plan to `revising-code`; the implementer's answer carries it to `ready-to-archive`, and back to `awaiting-code-review` **only when the revision introduced new defects**. |
 | awaiting-code-review *or* revising-code → **ready-to-archive** → **archived** | author | **the plan-archive precondition holds: a code review has occurred** (the archive commit is distinct from the implementing commits); **and** every explicitly-deferred follow-up carries a recorded disposition in an auditable `Dispositions: …` block (the older `Follow-ups migrated to: …` spelling stays valid), presented as one batch at archive-preparation, with any `defer` carrying the Maintainer's quoted authorization; the loop-fidelity sign-off names the implementing commit and the governing Revised section. |
 
@@ -198,7 +194,7 @@ guesses a transition legal to be helpful.
 
 This contract is the executable face of the lifecycle, which is part of
 Cairn's **invariant kernel** ([`lifecycle.md`](lifecycle.md) >
-"Adaptation"). What scales with the team is the *review tier* applied
+"Adaptation"). What scales with the team is the *staffing* of the review applied
 within it (see [`dual-review.md`](dual-review.md)), not the state machine.
 The read-only checker that reads against this contract is an **optional
 aid, outside the minimum mechanized kernel**: a team without a Python

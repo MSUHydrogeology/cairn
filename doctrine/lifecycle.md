@@ -295,7 +295,7 @@ gate, an agent slides from plan-open straight into implementation and the
 warranted review never happens.
 
 The gate is **explicit, not remembered**: every plan (and its source
-proposal) carries a mandatory **`Plan review: required(<tier>) | not
+proposal) carries a mandatory **`Plan review: required(<obligation>) | not
 required(<rationale>)`** line. The author states it; the Maintainer
 ratifies; there is **no silent default** either way. When `required`, the
 plan opens in **`awaiting-plan-review`** and its plan-open and
@@ -304,15 +304,14 @@ front-run the review); it reaches `ready-to-implement` only once the
 review section lands. When `not required`, the rationale is on the record and the
 plan may combine plan-open with first implementation (fast multi-stage).
 
-The review *tier* follows the review-tier / structural-independence framing in
-`dual-review.md`, and it is **always Internal**: a plan review is a
-fresh-context Internal pass, the only tier there is — a
-different-agent-type plan round does not exist as a tier, a
-requirement, or an escalation target. A plan whose surface calls for
-security treatment declares the obligation as `required(Internal +
-Internal Security Review)`, satisfied only by an appended `## Security
-review (Internal)` record; see `dual-review.md` > "Plan review is
-Internal, always".
+The plan review follows the one-stance framing in `dual-review.md`, and it
+is **always a fresh-context, one-round pass**: a read from a different agent
+type is never a requirement or an escalation target. A plan whose surface
+calls for security treatment declares the obligation as `required(Internal +
+Internal Security Review)`, cleared only by an appended `## Plan review` pass
+whose `**Obligation**` line matches it, never by an ordinary pass and never
+by a record merely titled `## Security review (...)`; see `dual-review.md` >
+"Plan review is Internal, always".
 
 ### Fast multi-stage
 

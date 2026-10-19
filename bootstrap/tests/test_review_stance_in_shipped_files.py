@@ -1076,3 +1076,235 @@ def test_a_sample_roster_with_an_old_role_is_reported() -> None:
     assert _fidelity_roles() == roster
     assert roster + ["External Reviewer"] != _fidelity_roles()
 
+
+# --------------------------------------------------------------------------
+# The doctrine. Adopters never receive `doctrine/`, but the anchor, the
+# standing call, the capability floors and the two privileges the old model
+# carried are held here so the reasoning cannot drift from the shipped text.
+# --------------------------------------------------------------------------
+
+DOCTRINE_DUAL_REVIEW = "doctrine/dual-review.md"
+DOCTRINE_PLANS = "doctrine/plans.md"
+DOCTRINE_ROLES = "doctrine/roles.md"
+DOCTRINE_RATIONALE = "doctrine/rationale.md"
+DOCTRINE_LIFECYCLE = "doctrine/lifecycle.md"
+
+#: The framework anchor's wording, as the Maintainer accepted it.
+_ANCHOR_4 = (
+    "The Dual-Review model. One review stance at every stage: a fresh "
+    "reviewer, who did not write the work, on the work's side, who makes it "
+    "better by questioning its foundations and answers in writing — should it "
+    "exist as framed, what is the best alternative, what would show it wrong — "
+    "executed asynchronously and commit-mediated (dual-review.md). It is a "
+    "specialized variant of multi-agent debate (anchor 5) and a faithful "
+    "instantiation of scientific peer review (anchor 6). Its sharpest point: "
+    "independence is recorded, not claimed — every review names its reviewer, "
+    "so how far that reviewer stood from the author is visible, and a "
+    "different model architecture or a person is available whenever the "
+    "Maintainer asks for more distance."
+)
+
+#: label -> (file, pattern): statements the doctrine must carry.
+_DOCTRINE_OBLIGATIONS = {
+    "one-standing-call-survives-and-it-is-the-maintainers": (
+        DOCTRINE_DUAL_REVIEW,
+        r"One standing call survives, and it is the Maintainer's\. The re-anchor "
+        r"ceremony \(bootstrap/REANCHOR_RUNBOOK\.md\) requires its launcher to be "
+        r"read by an External Security review\. The ceremony's own record sets "
+        r"that requirement, the Maintainer chooses the reader each time, and no "
+        r"agent selects or substitutes for it\. That review's record carries "
+        r"Called by with the Maintainer's commissioning words, and it is a "
+        r"Security Review: it clears the launcher obligation by being one, not "
+        r"by its distance\. Nothing else in the procedure works this way"),
+    "boundary-c-names-the-no-plan-accepted-proposal": (
+        DOCTRINE_DUAL_REVIEW,
+        r"a plan's Implementation verification section, a trivial change's "
+        r"commit body, or the commit body of an accepted proposal implemented "
+        r"in one commit with no plan"),
+    "the-stage-questions-are-in-the-doctrine": (
+        DOCTRINE_DUAL_REVIEW,
+        r"Should this exist as framed\? Is there a better design, doing nothing "
+        r"included\?.*?The Decision settled the premise\. Does the plan deliver "
+        r"it\?.*?Does it really do what it claims\? Try to break it, in order "
+        r"to fix it"),
+    "a-clean-pass-with-evidenced-answers-does-not-deserve-skepticism": (
+        DOCTRINE_DUAL_REVIEW,
+        r"The thin clean pass deserves the skepticism; a clean pass whose three "
+        r"answers are evidenced and whose gaps are named does not"),
+    "the-sweep-and-the-trap-are-no-longer-team-gated": (
+        DOCTRINE_DUAL_REVIEW,
+        r"Every install receives the review sweep and the scope-reduction trap"
+        r".{0,200}no longer team-gated"),
+    "a-brief-may-state-the-stage-questions": (
+        DOCTRINE_DUAL_REVIEW,
+        r"A brief may state the stage's three questions"),
+    "no-tool-reads-the-obligation-line": (
+        DOCTRINE_DUAL_REVIEW,
+        r"No tool reads that line: the next reviewer, the code reviewer and the "
+        r"Maintainer check it"),
+    "the-cost-rule-check-is-not-a-review": (
+        DOCTRINE_ROLES,
+        r"The cost rule's check is not a review\. An orchestrator may run a "
+        r"sub-agent's generative step on a cheaper model only when the model "
+        r"that checks the output is at a tier strictly above it and is a "
+        r"different model architecture; a stronger model from the same maker "
+        r"is not one\. The check is the orchestrator's\. It is never filed as "
+        r"a proposal, plan or code review pass and never counts toward one, "
+        r"and no lifecycle review requires a different architecture\. Sending "
+        r"the context packet to a second maker's model crosses the "
+        r"data-governance gate below, so that gate applies first"),
+    "cleanup-may-be-written-at-low-and-no-review-is-lowered": (
+        DOCTRINE_ROLES,
+        r"Docstring and comment cleanup, and related edits, may be written at "
+        r"low\..*?Nothing in this row lowers a review or removes a Security "
+        r"Review"),
+    "the-plan-obligation-is-cleared-only-by-a-matching-obligation-line": (
+        DOCTRINE_LIFECYCLE,
+        r"cleared only by an appended ## Plan review pass whose Obligation line "
+        r"matches it, never by an ordinary pass"),
+}
+
+#: label -> (file, pattern, a string the pattern exists to keep out). The first
+#: three are the privileges the old model carried: a more distant pass standing
+#: in for evidence, and a more distant pass satisfying a required review.
+_DOCTRINE_FORBIDDEN = {
+    "a-confirming-second-different-agent-type-pass-clears-a-gate": (
+        DOCTRINE_PLANS, r"confirming second different-agent-type pass",
+        "Clears the gate with a falsification ledger or a confirming second "
+        "different-agent-type pass."),
+    "tier-ordering-lets-external-satisfy-a-required-internal": (
+        DOCTRINE_PLANS, r"Tier ordering",
+        "Tier ordering. Total order External > Internal."),
+    "an-external-pass-satisfies-a-required-internal": (
+        DOCTRINE_PLANS, r"External satisfies a required",
+        "External satisfies a required Internal; Internal does not satisfy "
+        "a required External."),
+    "the-external-floor-lives-at-the-proposal": (
+        DOCTRINE_DUAL_REVIEW, r"external floor",
+        "The External floor on deliberate-lane proposal review."),
+    "external-independence-lives-at-the-proposal": (
+        DOCTRINE_DUAL_REVIEW, r"external independence",
+        "External independence lives at the proposal."),
+    "a-brief-narrows-the-pass": (
+        DOCTRINE_DUAL_REVIEW, r"narrows the pass",
+        "A try-to-kill brief narrows the pass to that."),
+    "escalate-to-the-external-review-tier": (
+        DOCTRINE_PLANS, r"escalate to the external",
+        "Escalate to the External-review tier for scientific risk."),
+    "recommended-wherever-it-can-be-staffed": (
+        DOCTRINE_DUAL_REVIEW, r"recommended wherever it can be staffed",
+        "A different agent type is recommended wherever it can be staffed."),
+    "adversarial-premise-checking-in-the-bright-line-list": (
+        DOCTRINE_ROLES, r"adversarial premise",
+        "Bright-line work: Security Review, adversarial premise-checking."),
+    "a-security-review-internal-record-satisfies-a-plan-obligation": (
+        DOCTRINE_LIFECYCLE,
+        r"satisfied only by an appended (## )?Security review \(Internal\)",
+        "Satisfied only by an appended ## Security review (Internal) record."),
+}
+
+#: Files whose text a reader meets as live guidance, for the two repo-wide
+#: greps below. Archives, records and the changelog are history.
+_LIVE_ROOT_FILES = (SHIPPED_AGENTS, OWN_AGENTS, SHIPPED_LOOP, OWN_LOOP,
+                    SHIPPED_AGREEMENT, OWN_AGREEMENT)
+_LIVE_ROOT_DIRS = ("doctrine", "templates", "dev/modules", "docs", "dimensions")
+
+
+def _live_files() -> list[str]:
+    found = set(_LIVE_ROOT_FILES)
+    for d in _LIVE_ROOT_DIRS:
+        for path in (CAIRN_ROOT / d).rglob("*.md"):
+            rel = path.relative_to(CAIRN_ROOT).as_posix()
+            if "archive" not in rel.split("/"):
+                found.add(rel)
+    return sorted(found)
+
+
+#: Headings that used to be cited and no longer exist anywhere; and the names
+#: of a checker that was retired and so cannot be credited with reading a line.
+_DANGLING = r"External Review Norms|Stage-to-role matrix|Review Expectations"
+_RETIRED_CHECKER = (r"_pass_headings|normalize_required_obligations|"
+                    r"the checker cannot parse")
+
+
+def _doctrine_text(rel: str) -> str:
+    return _normalize(_text(rel))
+
+
+@pytest.mark.parametrize("label", sorted(_DOCTRINE_OBLIGATIONS))
+def test_doctrine_carries_the_statement(label: str) -> None:
+    rel, pattern = _DOCTRINE_OBLIGATIONS[label]
+    assert re.search(pattern, _doctrine_text(rel)), (
+        f"{rel} no longer carries {label!r}.")
+
+
+@pytest.mark.parametrize("label", sorted(_DOCTRINE_OBLIGATIONS))
+def test_removing_a_doctrine_statement_is_reported(label: str) -> None:
+    rel, pattern = _DOCTRINE_OBLIGATIONS[label]
+    text = _doctrine_text(rel)
+    for other, (other_rel, other_pattern) in _DOCTRINE_OBLIGATIONS.items():
+        if other_rel == rel:
+            assert re.search(other_pattern, text), (
+                f"{rel}: the unmutated file lacks {other!r}; no control.")
+    assert not re.search(pattern, re.sub(pattern, "", text))
+
+
+@pytest.mark.parametrize("label", sorted(_DOCTRINE_FORBIDDEN))
+def test_doctrine_omits_the_retired_privilege(label: str) -> None:
+    rel, pattern, _example = _DOCTRINE_FORBIDDEN[label]
+    assert not re.search(pattern, _doctrine_text(rel), re.IGNORECASE), (
+        f"{rel} carries {label!r}. A more distant pass may inform a decision; "
+        f"it may not stand in for evidence or satisfy a required review.")
+
+
+@pytest.mark.parametrize("label", sorted(_DOCTRINE_FORBIDDEN))
+def test_putting_a_retired_privilege_back_is_reported(label: str) -> None:
+    rel, pattern, example = _DOCTRINE_FORBIDDEN[label]
+    intact = _doctrine_text(rel)
+    for other, (other_rel, other_pattern, _) in _DOCTRINE_FORBIDDEN.items():
+        if other_rel == rel:
+            assert not re.search(other_pattern, intact, re.IGNORECASE), (
+                f"{rel}: the unmutated file already carries {other!r}.")
+    assert re.search(pattern, f"{intact} {_normalize(example)}", re.IGNORECASE)
+
+
+def test_the_anchor_equals_the_approved_wording() -> None:
+    text = _doctrine_text(DOCTRINE_RATIONALE)
+    start = text.index("The Dual-Review model. One review stance")
+    end = text.index("Stigmergy as a deliberate choice", start)
+    assert text[start:end].strip() == _ANCHOR_4, (
+        "framework anchor 4 differs from the wording the Maintainer accepted.")
+
+
+def test_a_reworded_anchor_is_reported() -> None:
+    assert _ANCHOR_4.replace("recorded, not claimed", "recorded and claimed") \
+        != _ANCHOR_4
+    text = _doctrine_text(DOCTRINE_RATIONALE)
+    assert _ANCHOR_4 in text, "control: the unmutated anchor is present"
+    assert _ANCHOR_4.replace("recorded, not claimed", "recorded and claimed") \
+        not in text
+
+
+def test_the_two_trap_headings_are_adjacent_and_in_order() -> None:
+    headings = re.findall(r"(?m)^## (.+)$", _text(DOCTRINE_DUAL_REVIEW))
+    clean = "Review expectations — the clean-pass trap"
+    trap = "Review expectations — the scope-reduction trap"
+    assert clean in headings and trap in headings
+    assert headings.index(trap) == headings.index(clean) + 1
+
+
+def test_no_live_document_cites_a_heading_that_does_not_exist() -> None:
+    hits = [rel for rel in _live_files()
+            if re.search(_DANGLING, _text(rel))]
+    assert hits == [], f"dangling heading cited in {hits}"
+    # Confirm the instrument: it reads above zero where the headings are quoted.
+    assert re.search(_DANGLING, "see External Review Norms")
+
+
+def test_no_live_document_credits_a_checker_that_does_not_exist() -> None:
+    hits = [rel for rel in _live_files()
+            if re.search(_RETIRED_CHECKER, _text(rel))]
+    assert hits == [], (
+        f"{hits} name a checker that was retired. Nothing mechanical reads the "
+        f"obligation line; the next reviewer and the Maintainer do.")
+    assert re.search(_RETIRED_CHECKER, "the _pass_headings parser")

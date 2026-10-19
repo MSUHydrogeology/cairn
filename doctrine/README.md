@@ -17,7 +17,7 @@ understand the method; copy `templates/` to adopt it.
 |------|-------------------------|
 | `README.md` (this file) | How is doctrine organized; what is the documentation model? |
 | `lifecycle.md` | How does a change move from idea to shipped — the proposal and plan lifecycles? |
-| `dual-review.md` | How is a change reviewed — the two-tier model and structural independence? |
+| `dual-review.md` | How is a change reviewed — one stance at every stage, and how distance is recorded? |
 | `roles.md` | Who does what — the role roster and how it scales with the team? |
 | `collaboration-stance.md` | How do the team's agents engage each other — the collaborative-skeptic conduct stance? |
 | `coordination.md` | How do concurrent contributors coordinate without colliding? |

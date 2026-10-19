@@ -7,8 +7,8 @@ This page covers the doctrine specific to **proposal artifacts**
 concepts — the Registered Report analogy, why the record exists,
 the claim-marker maintenance exception, deferred-follow-up revival,
 roadmap management, and archive preconditions — live in
-`doctrine/lifecycle.md`.  Review-tier and structural-independence
-doctrine lives in `doctrine/dual-review.md`.  Doctrine-evolution
+`doctrine/lifecycle.md`.  The review stance and how distance is
+recorded live in `doctrine/dual-review.md`.  Doctrine-evolution
 gate doctrine lives in `doctrine/rationale.md`.
 
 ---
@@ -190,8 +190,8 @@ sequencing, or deferred follow-ups — it opens a plan; see
 
 **The plan-review decision is part of accepting a non-trivial
 change**, not an afterthought at plan-open. For non-trivial work the
-`**Plan review**` metadata line states the anticipated plan-review
-tier — `required(Internal)`, `required(Internal + Internal Security
+`**Plan review**` metadata line states the anticipated plan
+review — `required(Internal)`, `required(Internal + Internal Security
 Review)` for a security-sensitive surface, or `not
 required(<rationale>)`, with **no silent default; a missing line is a
 review finding, like an unfilled slot**. The author states it (they
@@ -558,14 +558,14 @@ reviewer's, per the comparison in `doctrine/dual-review.md`.
 
 ## Plan review — the derived plan's tier
 
-A proposal's `**Plan review**:` header field states the anticipated tier
-for its non-trivial work's derived plan, and that tier is **always
-Internal** — `required(Internal)`, `required(Internal + Internal
-Security Review)` for a security-sensitive surface, or `not
-required(<rationale>)`. A plan review is a fresh-context Internal
-pass, the only tier there is; there is no different-agent-type plan
-round to earn, recommend, or inherit, so a proposal reviewer records no
-plan-tier finding at all. Full contract:
+A proposal's `**Plan review**:` header field states the anticipated
+plan review for its non-trivial work's derived plan, and it is **always
+one of the ruled tokens** — `required(Internal)`, `required(Internal +
+Internal Security Review)` for a security-sensitive surface, or `not
+required(<rationale>)`. A plan review is a fresh-context pass; there is
+no mandated read from a different agent type to earn, recommend, or
+inherit, so a proposal reviewer records no plan-review finding at all.
+Full contract:
 `doctrine/dual-review.md` > "Plan review is Internal, always".
 
 ## Scope reduction — the pre-Decision obligation

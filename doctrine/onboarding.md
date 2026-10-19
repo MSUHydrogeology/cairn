@@ -300,7 +300,7 @@ The apparatus assumes you can hand a *fresh* agent session the context it
 needs to act in the right frame. That hand-off is vendor-neutral doctrine:
 
 * **Name the role first.** Open the session by stating its role (Strategy, a
-  Domain, Legacy, a Reviewer tier -- see `doctrine/roles.md` > "When to
+  Domain, Legacy, the Reviewer -- see `doctrine/roles.md` > "When to
   dispatch which role"). The role determines the artifact; an unframed
   session defaults to whatever the prompt's verb implies, which is often the
   wrong frame.

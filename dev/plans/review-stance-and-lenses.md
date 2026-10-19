@@ -2006,3 +2006,171 @@ rows the accepted text already assigns to this plan.
 of it. The corrections add: sixteen labels, four statements, Search D with four
 files, the provenance line, the checker-name conformance, the blob-id record, and
 the sequential-start rule.
+
+## Search classification -- Claude Sonnet 5.5 (implementer) -- 2026-10-19
+
+The classification the plan owes at C4. It lists every hit of Searches A and B, the
+old-description search (D) and the authority probe, grouped by file with a count, a
+category and what happens to it. It is written by a script that stops on any
+file with a hit and no entry, so no group is left out, and the counts below are the
+tool's own. The tree is `HEAD` after C3 plus the C4 edits.
+
+**Instrument.** Python 3.13.13. The script text for Search B and the authority probe
+(Searches A and D use the plan's patterns as written):
+
+```python
+# Roots: AGENTS.md, README.md, doctrine/, templates/, dev/{proposals,plans}/_template.md,
+# dev/agent_collaboration.md, dev/collaboration_agreement.md, dev/modules/, docs/,
+# dimensions/, bootstrap/{fidelity-check,UPGRADE,REANCHOR_RUNBOOK}.md, on-ramp/;
+# .md .yml .svg; archives excluded. Markup characters (* _ ` >) stripped, whitespace collapsed.
+SEARCH_A = re.compile(r"required\(external|external[ -](floor|tier|review|reviewer|independence|stance|code review)"
+                      r"|declared-external|a human fills|different-agent-type (pass|round)"
+                      r"|escalate to the external|External Review Norms", re.I)
+DIST = (r"(external|different (agent|model|vendor)|another (agent|model) type|second agent type"
+        r"|model famil\w*|architectur\w* +diverse|diverse (a different|cross-(agent-)?type)"
+        r"|structural(ly)? independen\w*|a human|human or|or a person)")
+SEL  = (r"(reserved|mandatory|require(d|s)?|escalat\w*|pick|choose|need(s)?|warrant(s)?"
+        r"|only when|preferred|recommended|floor|wants|calls for)")
+SEARCH_B = re.compile(rf"{DIST}.{{0,120}}{SEL}|{SEL}.{{0,120}}{DIST}", re.I)   # per paragraph, either order
+SEARCH_D = re.compile(r"two[- ]tiers?|two review tiers|single tier|structural(ly)?[- ]independen"
+                      r"|Internal (tier|review|pass|Reviewer)", re.I)         # paragraphs A does not match
+AUTH     = (r"(waive\w*|exempt\w*|satisf\w*|clear\w*|substitut\w*|skip\w*|instead of"
+            r"|replac\w*|discharg\w*|confirm\w*)")
+PROBE    = re.compile(rf"{DIST}.{{0,120}}{AUTH}|{AUTH}.{{0,120}}{DIST}", re.I)  # per paragraph
+# A paragraph is a run of lines between blank lines (a bare '>' line counts as blank).
+```
+
+**Calibration, measured at `f804f3b7`** (the plan's reference commit): Search A 35 files,
+102 hits (the plan's figure); Search D 29 files, 57 hits (the plan's figure); Search B
+30 files, 64 hits (the plan reports 61, which it says it did not reconcile); the authority
+probe 11 files, 13 hits (the plan reports 17 in 11 files; the file count agrees, the hit
+count does not, and the plan says the count is not the criterion). Control: both
+`AGENTS.md` copies match Search A at the parent of C1.
+
+**Categories.** The seven of the plan: *Maintainer-called definition*, *staffing fact*,
+*credit comment*, *marked history reference*, *noise*, *standing launcher-review call*,
+*cost-rule carve-out*. Search D adds *stale description* and *ruled plan-review token*.
+*Selection rule (to strike)* marks the paragraphs a later chunk removes; it is not a
+resting place, and the end-state addendum appended after C7 shows none left.
+
+**Search A, the phrasing** -- 17 files, 56 hits.
+
+| File | Hits | Category | Disposition |
+|---|---|---|---|
+| `bootstrap/UPGRADE.md` | 2 | stale planner text, External rows | fix in C5 (Internal examples) |
+| `dev/modules/dual-review.md` | 9 | selection rule (to strike) | fix in C7 (struck; module thinned) |
+| `dev/modules/onboarding/agent-team-onboarding.md` | 3 | stale description | fix in C6 (page and byte copy together) |
+| `dev/modules/onboarding/collaborative-team.md` | 5 | selection rule (to strike) | fix in C7 (presets reworded) |
+| `dimensions/README.md` | 2 | selection rule (to strike) | fix in C5 |
+| `dimensions/agent-team.md` | 2 | selection rule (to strike) | fix in C5 |
+| `dimensions/complexity.md` | 2 | selection rule (to strike) | fix in C5 |
+| `dimensions/human-team.md` | 1 | selection rule (to strike) | fix in C5 |
+| `docs/agent-team-onboarding.md` | 3 | stale description | fix in C6 (page and byte copy together) |
+| `docs/assets/dual-review-independence.svg` | 4 | stale description | fix in C6 |
+| `docs/glossary.md` | 2 | stale description | fix in C6 |
+| `doctrine/lifecycle-contract.md` | 1 | marked history reference | kept: the sentence is prefixed 'History:' |
+| `doctrine/onboarding.md` | 1 | credit comment | kept: 'per the round-1 External-Review disposition' credits an earlier review |
+| `templates/modules/team-gated/dual-review.md` | 9 | selection rule (to strike) | fix in C7 (struck; module thinned) |
+| `templates/onboarding/collaborative-team.md` | 5 | selection rule (to strike) | fix in C7 (presets reworded) |
+| `templates/onboarding/high-rigor-legacy.md` | 2 | selection rule (to strike) | fix in C7 (presets reworded) |
+| `templates/onboarding/solo-greenfield.md` | 3 | selection rule (to strike) | fix in C7 (presets reworded) |
+
+**Search B, the act of selecting** -- 32 files, 54 hits.
+
+| File | Hits | Category | Disposition |
+|---|---|---|---|
+| `AGENTS.md` | 2 | Maintainer-called definition / staffing fact | kept: the called-read paragraph; 'Why this is stated positively' names 'a human' as the fence, a staffing fact |
+| `bootstrap/UPGRADE.md` | 1 | stale planner text | fix in C5 |
+| `dev/agent_collaboration.md` | 1 | staffing fact | kept: 'no review requires a different agent type' |
+| `dev/modules/claim-check.md` | 1 | noise | kept: 'external' means outside the repo or the checker, or 'a different agent' means the next session |
+| `dev/modules/dual-review.md` | 3 | selection rule (to strike) | fix in C7 (struck; module thinned) |
+| `dev/modules/model-selection.md` | 2 | cost-rule carve-out | kept: the cost rule's check, which is not a review (the carve-out paragraph) |
+| `dev/plans/_template.md` | 1 | Maintainer-called definition / staffing fact | kept: the called-read paragraph; 'Why this is stated positively' names 'a human' as the fence, a staffing fact |
+| `dev/proposals/_template.md` | 1 | Maintainer-called definition / staffing fact | kept: the called-read paragraph; 'Why this is stated positively' names 'a human' as the fence, a staffing fact |
+| `dimensions/README.md` | 1 | selection rule (to strike) | fix in C5 |
+| `dimensions/agent-team.md` | 1 | selection rule (to strike) | fix in C5 |
+| `dimensions/complexity.md` | 2 | selection rule (to strike) | fix in C5 |
+| `dimensions/human-team.md` | 1 | staffing fact | kept: 'one designated Maintainer' is a staffing fact; reread in C5 |
+| `docs/assets/dual-review-independence.svg` | 1 | stale description | fix in C6 |
+| `docs/glossary.md` | 1 | stale description | fix in C6 |
+| `doctrine/doc-governance.md` | 1 | noise | kept: 'external' means outside the repo or the checker, or 'a different agent' means the next session |
+| `doctrine/dual-review.md` | 5 | Maintainer-called definition / standing launcher-review call / staffing fact | reworded in C4: per-artifact call, the surviving launcher-review call, 'no review requires a different agent type', 'a fresh session is the floor' |
+| `doctrine/lifecycle.md` | 2 | noise | kept: 'external' means outside the repo or the checker, or 'a different agent' means the next session |
+| `doctrine/plans.md` | 4 | staffing fact / stale planner text | reworded in C4: denials of a mandated different-agent-type read; the 'Normalizing' paragraph is retired-planner text, kept |
+| `doctrine/proposals.md` | 1 | ruled plan-review token | reworded in C4: the ruled Plan review tokens |
+| `doctrine/roles.md` | 3 | Maintainer-called definition / cost-rule carve-out | reworded in C4: distance is on request; the cost rule's check is not a review |
+| `doctrine/runtime-contract.md` | 2 | noise | kept: 'external' means outside the repo or the checker, or 'a different agent' means the next session |
+| `doctrine/session-routines.md` | 1 | noise | kept: 'external' means outside the repo or the checker, or 'a different agent' means the next session |
+| `on-ramp/README.md` | 1 | stale description | fix in C6 (entry layer; not in the proposals' list, found by the search) |
+| `templates/core/AGENTS.md` | 2 | Maintainer-called definition / staffing fact | kept: the called-read paragraph; 'Why this is stated positively' names 'a human' as the fence, a staffing fact |
+| `templates/core/dev/agent_collaboration.md` | 1 | staffing fact | kept: 'no review requires a different agent type' |
+| `templates/core/dev/plans/_template.md` | 1 | Maintainer-called definition / staffing fact | kept: the called-read paragraph; 'Why this is stated positively' names 'a human' as the fence, a staffing fact |
+| `templates/core/dev/proposals/_template.md` | 1 | Maintainer-called definition / staffing fact | kept: the called-read paragraph; 'Why this is stated positively' names 'a human' as the fence, a staffing fact |
+| `templates/core/dev/upstream/README.md` | 1 | noise | kept: 'external' means outside the repo or the checker, or 'a different agent' means the next session |
+| `templates/modules/default-on/claim-check.md` | 1 | noise | kept: 'external' means outside the repo or the checker, or 'a different agent' means the next session |
+| `templates/modules/team-gated/dual-review.md` | 3 | selection rule (to strike) | fix in C7 (struck; module thinned) |
+| `templates/modules/team-gated/model-selection.md` | 2 | cost-rule carve-out | kept: the cost rule's check, which is not a review (the carve-out paragraph) |
+| `templates/onboarding/solo-greenfield.md` | 3 | selection rule (to strike) | fix in C7 |
+
+**Search D, the old description** -- 23 files, 37 hits.
+
+| File | Hits | Category | Disposition |
+|---|---|---|---|
+| `AGENTS.md` | 2 | ruled plan-review token / staffing fact | kept: 'usual + Security Review', 'Internal Security Review' tokens; the attribution sentence 'a structurally-independent read is only independent if its author is its committer' |
+| `README.md` | 2 | stale description | fix in C6 |
+| `bootstrap/UPGRADE.md` | 1 | stale planner text | fix in C5 |
+| `dev/agent_collaboration.md` | 1 | staffing fact | kept: the same attribution sentence |
+| `dev/modules/dual-review.md` | 2 | stale description | fix in C7 |
+| `dev/modules/onboarding/collaborative-team.md` | 1 | noise | kept: the 'first-cross-type-review' trigger matches a vendor name in a review heading, not the word |
+| `dev/plans/_template.md` | 1 | ruled plan-review token | kept: the plan-security obligation sentence |
+| `dimensions/README.md` | 1 | stale description | fix in C5 |
+| `docs/DOCUMENTATION_PLAN.md` | 1 | stale description | fix in C6 |
+| `docs/assets/dual-review-independence.svg` | 4 | stale description | fix in C6 |
+| `docs/getting-started.md` | 1 | stale description | fix in C6 |
+| `docs/glossary.md` | 3 | stale description | fix in C6 |
+| `docs/vision.md` | 2 | stale description | fix in C6 |
+| `docs/workflow-role.md` | 1 | stale description | fix in C6 |
+| `doctrine/dual-review.md` | 3 | ruled plan-review token / history | reworded in C4: the heading 'Structural independence' stays (it now says independence is recorded, not required); the ruled tokens; the retired lifecycle planner |
+| `doctrine/onboarding.md` | 1 | noise | kept: a docs page cited by name |
+| `doctrine/plans.md` | 2 | ruled plan-review token / noise | kept: 'Assurance path does not change the plan review'; Boundary B reuse text |
+| `templates/core/AGENTS.md` | 2 | ruled plan-review token / staffing fact | kept: 'usual + Security Review', 'Internal Security Review' tokens; the attribution sentence 'a structurally-independent read is only independent if its author is its committer' |
+| `templates/core/dev/agent_collaboration.md` | 1 | staffing fact | kept: the same attribution sentence |
+| `templates/core/dev/plans/_template.md` | 1 | ruled plan-review token | kept: the plan-security obligation sentence |
+| `templates/modules/default-on/documentation_plan_template.md` | 1 | noise | kept: 'the adopter's AGENTS.md' routing text; 'Internal' there means the repo's own layer |
+| `templates/modules/team-gated/dual-review.md` | 2 | stale description | fix in C7 |
+| `templates/onboarding/collaborative-team.md` | 1 | noise | kept: the 'first-cross-type-review' trigger matches a vendor name in a review heading, not the word |
+
+**authority probe** -- 9 files, 11 hits.
+
+| File | Hits | Category | Disposition |
+|---|---|---|---|
+| `bootstrap/REANCHOR_RUNBOOK.md` | 2 | standing launcher-review call / noise | kept, byte-identical: the runbook is a ceremony document |
+| `dev/modules/claim-check.md` | 1 | noise | kept: 'clear' is about flags or markers, 'external' is about scope |
+| `dev/modules/doc-drift-prevention.md` | 1 | noise | kept: 'clear' is about flags or markers, 'external' is about scope |
+| `docs/quickstart.md` | 1 | stale description | fix in C6 ('a second reviewer' is offered as a requirement-shaped step) |
+| `doctrine/dual-review.md` | 2 | Maintainer-called definition / staffing fact | reworded in C4: neither privilege remains; the code-review floor is cleared by a same-type fresh session |
+| `doctrine/lifecycle.md` | 1 | noise | kept: 'clear' is about flags or markers, 'external' is about scope |
+| `templates/codebase-readiness-report.md` | 1 | noise | kept: 'clear' is about flags or markers, 'external' is about scope |
+| `templates/modules/default-on/claim-check.md` | 1 | noise | kept: 'clear' is about flags or markers, 'external' is about scope |
+| `templates/modules/team-gated/doc-drift-prevention.md` | 1 | noise | kept: 'clear' is about flags or markers, 'external' is about scope |
+
+
+**Search C, a plain read** (`doctrine/rationale.md`, `doctrine/lifecycle.md`, `README.md`).
+`rationale.md`: line 84 "independently" is noise; line 238 ("turned reviewer independence
+into a structural, checkable tier") was a stale description and now reads "turned review
+into a recorded, checkable step"; anchor 4 (lines 365 to 373) is replaced with the
+accepted wording. `lifecycle.md`: line 189 `External-repo` is noise; line 282 "independent
+eye" is generic and stays; line 307 named the wrong satisfier for a plan obligation and
+now agrees with `doctrine/plans.md`; line 364 "delivery is independent" is noise.
+`README.md` is read in C6.
+
+**Files read and changed or not.** `doctrine/proposals.md` and `doctrine/lifecycle.md`
+changed only where a search reached them: three phrases in `proposals.md` (the review
+"tier" wording and the pointer sentence) and the satisfier paragraph and the `required(<tier>)`
+token in `lifecycle.md`. `on-ramp/README.md` is not in the proposals' list and is
+classified here as a stale description; it is fixed in C6, where the other entry-layer
+pages are.
+
+**The pre-existing flag.** `python scripts/check_cairn.py dev/modules/security-review.md`
+reports one broken link (`content_scan.py`, line 181) at the parent of C1 as well. It is
+not in a line this plan touches, and is left for the Maintainer's board.

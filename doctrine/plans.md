@@ -7,8 +7,8 @@ This page covers the doctrine specific to **plan artifacts**
 Report analogy, why the record exists, the claim-marker maintenance
 exception, deferred-follow-up revival, roadmap management, and
 archive preconditions — live in `doctrine/lifecycle.md`.
-Review-tier and structural-independence doctrine lives in
-`doctrine/dual-review.md`.  Proposal-lifecycle doctrine (triage,
+The review stance, the stage questions and how distance is recorded
+live in `doctrine/dual-review.md`.  Proposal-lifecycle doctrine (triage,
 file moves, Response grammars) lives in `doctrine/proposals.md`.
 
 **The standard lane's change note also lives at `dev/plans/<slug>.md`**,
@@ -128,10 +128,8 @@ the loop is closed." Bundling plan-archive into the implementing
 commit hides whether code review actually occurred.
 
 Code review's reviewer is **not the implementing agent** — that is the floor,
-and a same-type agent in an independent context clears it. **External or
-Security code review is an explicit escalation** for implementation risk the
-proposal review did not resolve; it is not a default, and no change to the
-plan-review allocation silently upgrades a code review into one. Trivial
+and a same-type agent in an independent context clears it. No change to the
+plan-review allocation silently adds a reviewer to a code review. Trivial
 accepts skip the plan entirely (per the triage rule below) and
 therefore do not encounter this precondition.
 
@@ -145,7 +143,7 @@ plan-review section has landed.** The plan-archive gate guards
 *review-before-close*; this gate guards *review-before-implement*.
 
 The gate is **explicit, not remembered**: the `**Plan review**` metadata
-line above is mandatory — `required(<tier>)` or `not required(<rationale>)`,
+line above is mandatory — `required(<obligation>)` or `not required(<rationale>)`,
 with **no silent default**. The author states it; the Maintainer ratifies.
 When `required`, the plan opens in **`awaiting-plan-review`** and reaches
 `ready-to-implement` only after a dated `## Plan review` section lands: the review
@@ -167,10 +165,11 @@ an agent's memory (the recurring plan-review-skip failure mode). The
 plan header's `Plan review:` line makes the gate legible to a cold
 reader; a static plan-review lint is the mechanical backstop (a
 `required` plan past `awaiting-plan-review` must carry a dated review
-subsection). The review *tier* is **always Internal** — see
-`doctrine/dual-review.md` > "Plan review is Internal, always" for the
-full statement, including the `+ Internal Security Review` obligation
-a security-sensitive plan declares.
+subsection). The plan review is **always a fresh-context, one-round
+review**, ruled by the tokens `Internal` and `Internal + Internal Security
+Review` — see `doctrine/dual-review.md` > "Plan review is Internal, always"
+for the full statement, including the `+ Internal Security Review`
+obligation a security-sensitive plan declares.
 
 ---
 
@@ -612,26 +611,25 @@ ignored.
 
 ## Plan review — doctrine and format
 
-*An Internal review pass on the plan itself, before implementation
+*A fresh-context review pass on the plan itself, before implementation
 commits land.  Mirrors the proposal Review/Response cycle but adapted
 to the plan's execution-artifact nature: **findings are append-only;
 chunk-table cell edits that accepted findings motivate are inline,
 with a documenting Sharpening subsection.** See the Mutability rule
 above for the full inline-vs-append split.*
 
-### Internal, always — the plan review has one tier
+### Internal, always — the plan review is one fresh-context pass
 
-**A plan review is Internal, fresh-context — always.** External plan
-review does not exist as a tier, a requirement, a recommendation slot,
-or an escalation target; there is nothing to inherit or invalidate,
-because there is only one tier to declare. The External floor lives at
-the deliberate lane's proposal review, where the design is still
-movable; a plan that only translates already-reviewed decisions does
-not pay for a second cross-type read of the same design.
+**A plan review is fresh-context — always.** No plan review is a
+mandated read from a different agent type, a recommendation slot, or an
+escalation target; there is nothing to inherit or invalidate, because
+there is one review to declare. A plan that only translates
+already-reviewed decisions does not pay for a second read of the same
+design.
 
 Two consequences worth stating plainly:
 
-* **Assurance path does not change the plan-review tier.** High
+* **Assurance path does not change the plan review.** High
   assurance keeps governing verification, Security Review, scientific
   review, protected-surface handling, risk acceptance and ceremonies;
   it does not buy, or owe, a different-agent-type plan round.
@@ -650,7 +648,7 @@ Two consequences worth stating plainly:
 * **Maintainer-requested** ("I'd like a review or two before this moves
   forward").
 * **Plan revised mid-flight** — when a discovery-driven revision
-  materially expands scope or adds chunks, an Internal review pass on
+  materially expands scope or adds chunks, a review pass on
   the revised plan is worth running before chunks land.
 * **Scope is large or load-bearing** — many chunks, multiple modules,
   scientific / architectural risk that the proposal review didn't fully
@@ -660,25 +658,25 @@ Two consequences worth stating plainly:
   spec) is expensive.
 
 Skip plan review when the plan is small, derived directly from a
-proposal that itself went through Internal review, and the implementing
+proposal that itself went through review, and the implementing
 chunks are straightforward. Trivial accepts that skip the plan entirely
 (per the Plan triage rule above) also skip plan review.
 
 ### Reviewer identity
 
-**Internal-review floor** — same-agent-fresh-session is sufficient, and
-it is also the ceiling: the plan is a deliberation artifact (parallel
-to the proposal Review section's tier), not implementing code, and a
-plan review never escalates to a different-agent-type round. The
-Code-review floor below (**not the implementing agent**) applies to
-*implementation* review, not here.
+**The plan review's floor** — a fresh session is sufficient, and it is
+also the ceiling a reviewer may prescribe: the plan is a deliberation
+artifact (parallel to the proposal Review section), not implementing code,
+and a plan review never escalates, by a reviewer's choice, to a read from
+a different agent type. The Code-review floor below (**not the
+implementing agent**) applies to *implementation* review, not here.
 
 A plan whose surface or triggers call for security treatment declares
 the `+ Internal Security Review` obligation (see "Internal, always"
-above) — still a fresh-context same-agent-type session, in the
-Security Review role, never a different agent type. The Maintainer may
-still choose to ask any additional reader for a plan; that choice is
-never a tier and is never inferred from the plan's size or subject.
+above) — still a fresh-context session in the Security Review role, and
+no different agent type is required. The Maintainer may still choose to
+ask any additional reader for a plan; that choice is never a tier and is
+never inferred from the plan's size or subject.
 
 ### Format
 
@@ -692,16 +690,16 @@ itself, which contradicted the `##` required above; practice followed the
 ```
 ## Plan review -- <reviewer> -- YYYY-MM-DD
 
-**Tier**: <Internal|External>
+**Tier**: <Internal|Internal Security Review>
 **Findings**: <none|raised>
 
 **Model**: <model or tier when known; "unknown" if not>
 
 <one-paragraph orientation: who asked, what triggered the pass>
 
-**Structural-independence stance.**  Author / revision-author /
-reviewer identities; tier choice (Internal-review floor
-sufficient because <reason>).
+**Reviewer and author.**  Author / revision-author /
+reviewer identities, so a reader can see how far the reviewer stood from
+the author.
 
 **Verification done before drafting:**
 
@@ -762,7 +760,7 @@ contract.
 full-line anchored:
 
 ```
-**Tier**: <Internal|External>
+**Tier**: <Internal|Internal Security Review>
 **Findings**: <none|raised>
 ```
 
@@ -788,12 +786,6 @@ in fact a different agent type but declares `Internal` has declared
 it cannot know whether the named reviewer performed the pass, and it
 does not claim to.
 
-**Tier ordering.** Total order `External > Internal`; a pass satisfies
-the floor iff `declared >= required`. `External` satisfies a required
-`Internal`; `Internal` does not satisfy a required `External`. There is
-no third tier and no `Maintainer` tier — a human review declares
-`External`.
-
 **Normalizing the required tier.** Read from the **first parenthesised
 group only** of the header's `**Plan review**:` field: match
 `required(...)`, strip `*`, `_` and backticks, take the first alphabetic
@@ -804,9 +796,9 @@ comparison, so `required(**Internal**, security lens)` and
 `required(Internal + Internal Security Review)` both resolve to
 `internal`. Negations fail closed: `required(not Internal)` is a
 violation, not an Internal requirement. A plan's `Plan review:` field
-resolving to `external` is the legacy case (`doctrine/dual-review.md` >
-"Plan review is Internal, always"): recognized so it can be warned and
-re-declared, never accepted as a live requirement.
+resolving to `external` is a legacy token (`doctrine/dual-review.md` >
+"Plan review is Internal, always"): read as written and never accepted
+as a live requirement.
 
 **Disposition pairing is positional, and either house form counts.**
 When a pass declares `**Findings**: raised`, a disposition must follow
@@ -897,7 +889,7 @@ Inline plan revisions driven by *implementation discovery* — e.g., the
 implementing agent realizes the original plan's chunk shape was
 incomplete — do NOT require a `## Plan review` section. No review
 happened; the audit trail lives in the revision commit's message + the
-git diff. Use this section only when an actual Internal review pass
+git diff. Use this section only when an actual review pass
 occurred.
 
 ---
@@ -908,17 +900,17 @@ occurred.
 `**Model**: <model or tier when known>` immediately below the section
 header (or below a `### Code review -- <reviewer> -- YYYY-MM-DD`
 sub-heading if used). The reviewer is typically NOT the implementing
-agent (Internal Reviewer or External Reviewer norms apply, same as
+agent (the one Reviewer role applies, same as
 the proposal Review section). Findings as a numbered list with
 `accept (commit <sha>)` / `guard (<path>::<node>)` / `defer` /
 `wontfix` dispositions.
 Sharpening fixes land as follow-up commits before the plan archives.
 
 **A clean code review carries a falsification ledger.** Per
-`dev/agent_collaboration.md` > "Review Expectations", a **final
+`dev/agent_collaboration.md` > "The review sweep", a **final
 pre-archive** code review with **no P1/P2 findings** clears the
-plan-archive precondition only with a falsification ledger **or** a
-confirming second different-agent-type pass. Minimal ledger shape:
+plan-archive precondition only with a falsification ledger. The
+ledger has five items, defined once, in that document:
 
 * **Surfaces probed** — what was actively examined / tried-to-break.
 * **Negative / edge-case attempt** — at least one, when applicable.
@@ -936,18 +928,16 @@ review this composes with the falsification ledger above — the ledger *is* the
 "Covered" evidence, and the negative space is the residual the Maintainer
 reads at archive.
 
-**Reviewer identity** (per the structural-independence tier rule, see
-`dev/collaboration_agreement.md` > "External Review Norms" and
-`dev/agent_collaboration.md` > "Stage-to-role matrix"): the "not the
-implementing agent" default is the FLOOR for code review — stricter
-than the Internal-review tier's same-agent-fresh-session allowance.
-Rationale: proposal review surfaces intellectual flaws in ideas; code
-review surfaces implementation regression risk where the implementer's
-just-written code is harder to spot mistakes in cold by someone with
-the same underlying reasoning patterns. Escalate to the External-review
-tier (different agent type or human) when the implementation carries
-scientific or architectural risk not fully resolved during proposal
-review.
+**Reviewer identity**: the "not the implementing agent" default is
+the FLOOR for code review — stricter than the plan review's
+fresh-session allowance. Rationale: proposal review surfaces
+intellectual flaws in ideas; code review surfaces implementation
+regression risk where the implementer's just-written code is harder to
+spot mistakes in cold by someone with the same underlying reasoning
+patterns. If the implementation carries scientific or architectural risk
+not fully resolved during proposal review, the reviewer says so in the
+coverage line and the Maintainer decides whether to ask for more
+distance; the reviewer does not prescribe it.
 
 This section is append-only once a reviewer has added findings.
 

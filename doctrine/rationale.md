@@ -235,7 +235,7 @@ Four converging literatures ground the principle:
 
 Cairn's contribution is to make the comprehension floor a
 **reviewable property of the lifecycle** — the same move that
-turned reviewer independence into a structural, checkable tier.
+turned review into a recorded, checkable step.
 "Did the human actually understand what they decided?" is a
 first-class question, not an afterthought.
 
@@ -361,16 +361,18 @@ named-but-uncommon corner of it.
   post-hoc *metric p-hacking* the way pre-registration defends a
   study against it.
 
-* **The Dual-Review model.** Two-tier review — Internal to help a
-  change land, External to make it prove it should — executed
-  across **structural independence**, asynchronously and
-  commit-mediated (`dual-review.md`). It is a specialized variant
-  of multi-agent debate (anchor 5) with role-asymmetric stances,
-  and a faithful instantiation of scientific peer review
-  (anchor 6). Its sharpest point: structural independence — a
-  different model architecture — is a *more enforceable*
-  conflict-of-interest criterion than the institutional
-  independence that journal peer review relies on.
+* **The Dual-Review model.** One review stance at every stage: a fresh
+  reviewer, who did not write the work, on the work's side, who makes
+  it better by questioning its foundations and answers in writing —
+  should it exist as framed, what is the best alternative, what would
+  show it wrong — executed asynchronously and commit-mediated
+  (`dual-review.md`). It is a specialized variant of multi-agent debate
+  (anchor 5) and a faithful instantiation of scientific peer review
+  (anchor 6). Its sharpest point: independence is *recorded, not
+  claimed* — every review names its reviewer, so how far that reviewer
+  stood from the author is visible, and a different model architecture
+  or a person is available whenever the Maintainer asks for more
+  distance.
 
 * **Stigmergy as a deliberate choice.** Cairn coordinates through
   persistent `dev/` artifacts (the stigmergy lineage of anchor 5)

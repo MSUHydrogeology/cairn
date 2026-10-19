@@ -50,8 +50,8 @@ The pass has four moves:
    ```
 
    One row per active proposal and plan: its kind and name, then the
-   header fields its author wrote — status, review tier, plan-review tier,
-   opened date, source proposal. The board judges nothing: who holds a row,
+   header fields its author wrote — status, the Review line, the Plan
+   review line, opened date, source proposal. The board judges nothing: who holds a row,
    what blocks it, and whether a review cleared are read from the artifact
    itself, never inferred from an empty column.
    **Run the board, choose the row you need, then read that artifact and
@@ -190,10 +190,9 @@ structural, not discretionary:
    doc-only change that touches its surface, and a role left silent by
    omission reads as an oversight rather than a decision.
 3. **Agent-dispatch tier.** Whether the next step wants a same-agent-type
-   read or a cross-agent-type one — aligned with any review tier the
-   task carries (a declared-External **proposal** review wants a
-   cross-type dispatch; a plan review is always Internal, same-type
-   fresh-session).
+   read or a cross-agent-type one. A review follows what the Maintainer
+   asked for on that artifact, else a same-type fresh session; an agent
+   does not pick a cross-type dispatch for a review on its own say.
 4. **Reading order.** The two or three artifacts to read first, in
    order, *after* the session-start re-anchor — the durable surfaces
    that carry the load-bearing context, not an exhaustive list.
