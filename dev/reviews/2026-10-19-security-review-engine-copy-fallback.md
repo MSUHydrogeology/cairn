@@ -382,3 +382,111 @@ CLI ever takes one. No change is owed by this repair.
   myself, and left ordinary falsification to the code review.
 * **Reads.** The copy path still reads through links inside `.agents/skills/`
   (SW-SR-8, informational, unchanged).
+
+## Verification of the answer -- Claude Opus 5.5 -- 2026-10-19
+
+**Reads**: `80c54552` ("Answer the engine copy-fallback reviews"), against its
+parent `6c436a9f`. A detached worktree of `80c54552` in a fresh, uniquely named
+scratchpad folder; `git archive` copies of `80c54552` for the mutants and one of
+the parent for controls; all removed when done. Python 3.13.13. Scoped runs
+only, no full suite (doctrine `12be58d9`).
+
+**Verdict**: **CF-SR-1 to CF-SR-4 are closed.** CF-SR-5 needed no change and
+none was made. The new `format_forked_facade_warning` encoding is complete for
+every lockfile field it prints and idempotent. A crafted lockfile can no longer
+forge a line through `upgrade --plan` (10 fields probed). One new
+informational finding (CF-SR-6), not blocking.
+
+**Scoped tests at `80c54552`**: `test_engine_copy_fallback_contained.py` 42
+passed, `test_fork_advisory.py` 37, `test_lockfile_module.py` 7,
+`test_lockfile_provenance.py` 13, `test_module_merge_lockfile.py` 13,
+`test_upgrade_lockfile_path_containment.py` 71: **183 passed, 0 failed**.
+
+### The four findings
+
+| finding | evidence at `80c54552` | status |
+|---|---|---|
+| CF-SR-1 divergence warning raw | Through the CLI, links impossible, a canonical file and a differing copy both named `ESC]0;RETITLED BEL ESC[2J.md`: exit 0, **0 ESC and 0 BEL on stderr**. The line reads `copy-fallback divergence under .claude/skills: session-start/\x1b]0;RETITLED\x07\x1b[2J.md`. It is project-relative and escaped. Mutants: names back to `str(rel)`, killed; folder back to absolute `{dst}`, killed (both by `test_the_divergence_warning_names_files_escaped_and_relative_to_the_project`). | **closed** |
+| CF-SR-2 `O_EXCL` load-bearing | Mutants on the two owning files (79 tests; control 79 passed): **no `O_EXCL`: killed** (2 failed, `test_anything_at_the_temporary_name_is_refused_not_written_into[hard-link]` and `[regular-file]`); no `O_NOFOLLOW`: 79 passed, the equivalent one, as the answer now records; neither: killed (3 failed). | **closed** |
+| CF-SR-3 second window unnamed | The docstring and the `SECURITY_MUTATIONS.md` row now name both windows: the temporary file swapped for a link lands that link at the copy name, nothing is written outside, and the next install refuses it. Matches R2. | **closed** |
+| CF-SR-4 "then re-run" | The upgrade route now prints "...then run `python tools/session.py session-start` (or install again) to copy the skills." I followed it: a pre-skills tree, `upgrade --stage` / `--apply` with links impossible over a dangling link at `.claude/skills/session-start/SKILL.md` (exit 0, nothing outside, the warning above). Then I removed the link and ran `session-start`, links impossible: exit 0, and the three copies appeared. | **closed** |
+
+A note on my own earlier upgrade probe, not a finding. It removed only the
+three skill records from the lockfile, as `test_skills_upgrade.py`'s helper
+does, so `.agents/skills/_data/vendor_targets.yml` was never restored. Without
+that table, `session-start` reports "no symlink-tier harness in use" and copies
+nothing. The remedy check above removes every skills record, as a real
+pre-skills tree would have none. My Q1 results stand: that probe still reached
+the fan-out.
+
+### The forked-facade advisory encoding (`bootstrap/_scaffold/lockfile.py`)
+
+**Every field it prints**, traced to its source in `forked_facade_findings`:
+
+| field | source | printed as |
+|---|---|---|
+| `dst` | the lockfile record | `!r`: escaped |
+| `engine` | derived from `dst` (`<dir>/_<stem>`) | `!r`: escaped |
+| `reason` | fixed text, plus `_guarded_read`'s reason (a record path, a guard or `OSError` message) | `plain()`: encoded (new) |
+| `skew` | the lockfile's `cairn_version` and the checkout's version | `plain()`: encoded (new) |
+| `upstream` ("Compared against …") | the resolved `--cairn-root` templates path and `_cairn_version` of that checkout's `CITATION.cff` | raw. It is not lockfile text, so the lockfile cannot reach it. `--to` sets it to none. |
+| `src_relabelled` | a boolean; the text is fixed | fixed |
+
+So the encoding is complete for lockfile text.
+
+**Idempotent, as claimed.** `plain()` returns printable ASCII unchanged and
+anything else through `ascii()`, whose output is printable ASCII, so a second
+pass changes nothing. I fuzzed 20,000 random pairs (`skew`, `reason`) over an
+alphabet of line breaks, CR, tab, ESC, BEL, DEL, NEL, U+2028, U+202E, C1 CSI,
+backslashes and quotes:
+
+* the engine's output is identical when its fields are pre-encoded (0 differ);
+* `verify_integrity._plain`'s escape passes through unaltered (0 altered), so it
+  is not doubled;
+* no control byte and no extra line reached the text on either route (0).
+
+The same fuzz on the parent engine leaks in 27,824 checks, which confirms the
+instrument.
+
+**Can a crafted lockfile forge a line through `upgrade --plan`?** No. Each case
+installs, adds a forked facade so the advisory fires, then writes
+`\nFORGED: OK -- run …\x1b[2J` into one lockfile field and runs the real
+`upgrade --plan`. The parent engine was the control.
+
+| field crafted | parent `6c436a9f` | `80c54552` |
+|---|---|---|
+| `cairn_version` | **1 forged line, 1 raw ESC** | 0, 0 |
+| `cairn_commit`, `cairn_source`, `profile.preset`, `tokens.project_name`, an unknown key | 0, 0 | 0, 0 |
+| facade `src`, another record's `dst`, a `base_cache` | refused, exit 2, name escaped | refused, exit 2, name escaped |
+| a facade `dst` carrying the text, with its engine folder present so the advisory names it | 0, 0 (`!r`), then refused, exit 2 | 0, 0, then refused, exit 2 |
+
+Neither `stdout` nor `stderr` held a line starting with the forged text, and
+`verify_integrity` over the crafted-dst tree printed none either.
+
+### New finding
+
+**CF-SR-6 — informational: the two encoders differ on a backslash.**
+`verify_integrity._plain` sends any text with a backslash through `ascii()`, so
+a real line break (`\n`) and the two typed characters `\n` print differently.
+The engine's `plain()` leaves printable ASCII alone, backslashes included. That
+is what makes it idempotent over `verify_integrity`'s output. But on the
+`upgrade` route a `cairn_version` holding the typed characters `\n` prints the
+same as one holding a real line break (measured: identical text). No line is
+forged and no control byte reaches the terminal; a reader just cannot tell the
+two apart in the upgrade advisory. **Optional:** if that distinction matters
+here too, let the engine apply `_plain`'s backslash rule, and have
+`verify_integrity` pass the finding's `skew` and `reason` raw so they are
+encoded once.
+
+### What I did not cover
+
+* Windows, Linux, and the full suite, as before. Boundary B for `80c54552` is
+  the implementer's, reported to the coordinator.
+* The answers to the code review's findings (CF-CR1 to CF-CR7). I checked only
+  where they overlap mine; the `UPGRADE.md` wording and the reworked
+  `needs_links` test markers I did not review.
+* The AST change set, briefly: across all 263 engine symbols, parent against
+  `80c54552`, exactly `_emit_skill_copy_fallback` (`29ef25b1a8aba93d` →
+  `fa4da6192cf48ae2`) and `format_forked_facade_warning` (`a508f3c7ba8d7232` →
+  `297f1daa42a82205`) moved, as the commit says. CHANGED goes from 10 to 11, and
+  no fixture is touched. The re-anchor stays the Maintainer's.
