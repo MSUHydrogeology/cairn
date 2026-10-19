@@ -391,3 +391,188 @@ The proposal already derives figures fresh; keep that.
 * Review-stance C6 and C7a landed after `dc089258` and edit the tour and presets this change touches. I did not re-read them.
 * I did not run the old helper against a project that keeps it. I read its code only.
 * Whether anyone values the signing prompt is not a security question.
+
+## Review -- Claude Opus 5.5 (Internal) -- 2026-10-19
+
+```
+Reviewed commit: dc0892588ab902fc0f48b174239f8edaef89c5b1
+Target: the whole proposal, weighted to the surface list, the content that must survive, the upgrade default, the retired onboarding pieces and sequencing
+Prior findings: none (written after the Security Review at 57ebfc13, which I read; where we found the same thing I say so and add only what is new)
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. Your two decisions settle that it happens, and this framing (stop shipping, leave the project's copy, re-home the one unique rule, retire only the signing prompt) is the least-engine way to do it. My prototype of the engine and onboarding half installed all three presets with exit 0, no agreement file, no lock record and a working helper -- R4 below, scratch installs from a detached worktree of `dc089258`.
+2. **Best alternative.** Doing nothing contradicts both decisions. The strongest real alternative is the proposal's own Question 2 alternative: retire the roster and the whole prompt feature, which removes the last reason to parse a roster in shipped code. It is rightly deferred, not wrong -- `templates/modules/default-on/_onboarding/prompts.py` (161 lines) and the two surfacing test files (428 lines) are its cost.
+3. **What would show it wrong.** A project silently losing text it relies on. That is partly true today, and fixable in words: an upgraded modflow_tools loses the `dev/README.md` row that points at its 229-line copy, and adopters lose "surfaces it rather than assuming" (CA-SR5, CA-SR1) -- R7 below, `upgrade --stage` on a `--no-hardlinks` clone of modflow_tools at `2f74ad30`.
+
+### Verdict in brief
+
+**Revise, then decide.** The proposal should exist, and its shape is right. Nothing I found argues for a different design of the engine half or the upgrade default.
+
+Three things need an answer before you decide:
+
+* **Question 3 is not ready.** I agree with the Security Review (CA-SR1) that shipping the "decide when unsure" rule to every adopter must be your explicit answer, not a default. And wherever the rule lands, it sits next to a sentence that says "escalate when ...", and the proposal does not say how the two read together (CA2).
+* **Two tests would quietly stop testing.** The checks that a prompt shown once is not shown again would still pass, but would test nothing (CA1).
+* **The order of work changed after the proposal was written.** Later on 2026-10-19 you put `model-mapping-install-path` into 0.4. It edits the same two presets, the same frozen test and the same lockfile code as this change (CA4).
+
+The rest is small. The moved roster needs two sentences changed (CA3). The file list has drifted by a few files (CA5). And the Security Review's "deleting the file breaks a later `--finalize`" also applies to Cairn's own tree (CA6).
+
+### Steelman
+
+The proposal carries out a decision you made twice, and it spends almost no engine doing it. It reads the tree instead of the board row, and finds the row wrong in both directions. It finds the one rule that only Cairn's copy holds. It refuses to delete text a project wrote. It keeps the verifier's exempt list, because it measured that removing the path makes every upgraded project fail with a "tamper" message (M6). Its order of work, after the review-stance plan, rests on a measured collision (M14), not a guess. The strongest version of it fits in one sentence: stop shipping a file, keep everything a project wrote, and lose no rule. Most of what follows tightens the last clause.
+
+### What I measured
+
+All in a detached worktree of `dc089258`, in a uniquely named scratch directory, on Python 3.13.13 (`lhm`); every scratch directory is removed. LHM and modflow_tools were read in place. Only a `--no-hardlinks` clone of modflow_tools was probed, and neither project was written.
+
+| # | Measurement | Result |
+|---|---|---|
+| R1 | The proposal's search pattern, at three commits | 69 files at `c504fca8`, 67 at `08c946a6`, 68 at `dc089258`: the proposal itself added, `doctrine/dual-review.md` added (by review-stance C4), `doctrine/plans.md` gone. Control: the template, `scripts/_onboarding/triggers.py` and `bootstrap/_scaffold/config.py` all match. The same 68 files at `57ebfc13` |
+| R2 | My own passes: whole-word `agreement`; the spellings `CollabAgreement`, `AGREEMENT` and `_agreement`; the paraphrases "the agreement", "working agreement", "signature log", "team roster" and "roster slot" | nothing live that the proposal missed, apart from CA5's items. `scripts/_onboarding/__init__.py` re-exports the roster helpers without naming the path; both helpers survive the change |
+| R3 | Onboarding prototype: the registry row, the trigger block, the Row 1 section in the three presets and the installed preset copy, and the solo task, in both twins | the five onboarding test files the proposal names: 56 passed at base; 8 failed and 45 passed on the prototype. Mutant results in CA1 |
+| R4 | Full prototype: R3, plus the template and its `_CORE_MAPPINGS` row deleted, the slot moved into the roles document, and the reader re-pointed | fresh installs of all three presets exit 0, with no agreement, no lock record and only the usual provenance warning; `onboarding_activate.py --dry-run` exits 0. The 15 affected test files: 46 failed, 1,587 passed, each failure in a file the proposal names; the one node it does not anticipate is `TestTaskCap` (CA1). The other onboarding and activation test files are green apart from one node (CA4c) |
+| R5 | A project with two agent types in its agreement roster, upgraded through the full prototype | before: `second-agent-type` fires. After plan, stage and apply, the roles document gains the slot with Cairn's text, no trigger fires, and one slot note appears. After filling the new slot, `second-agent-type` fires. The next `--plan` repeats `removed-upstream 1: dev/collaboration_agreement.md` |
+| R6 | A fresh collaborative-team install, after `git rm dev/collaboration_agreement.md` and a commit | `verify_integrity` OK, but its slot note now reads `unreadable 1` (0 with the file present); bare `upgrade --finalize` exits 1; `--finalize dev/agent_collaboration.md` exits 0 (CA6) |
+| R7 | The modflow_tools clone, with the `dev/README.md` row and the `CONTRIBUTING.md` bullet also removed from the templates | `dev/README.md` classes as "locally-modified (merged clean)"; the staged copy names the agreement 0 times, the live copy once |
+
+### Findings
+
+**CA1 -- Medium -- non-blocking for the Decision; the Response corrects the claim.**
+**Two tests would stay green and stop testing anything.**
+
+*Plain.* Two tests check that a prompt shown once is not shown again. Both use the signing prompt as their example. Once it is gone, they still pass, but they no longer reach the check.
+
+*Evidence.*
+* The proposal says "The idempotency and cap tests keep their meaning" (line 178).
+* `bootstrap/tests/test_active_surfacing_mechanism.py:114` (`test_prior_emission_in_log_suppresses_re_fire`) and `:214` (`test_active_prompt_not_re_emitted_on_second_run`) both drive `collab-agreement-signing`.
+* A mutant is a deliberate break, made to see whether any test notices. Mine deletes the two-line "already emitted" check in `select_active_prompt_to_fire` (`templates/modules/default-on/_onboarding/prompts.py:145-146`). Each run sits beside an unmutated control.
+
+| Node | Base + mutant | R3 prototype + mutant |
+|---|---|---|
+| `TestIdempotency::test_prior_emission_in_log_suppresses_re_fire` | killed | **survived** |
+| `TestIdempotency::test_all_emitted_returns_none` | killed | killed |
+| `TestActivatePromptEmission::test_active_prompt_not_re_emitted_on_second_run` | killed | **survived** |
+
+The second survivor is the only one of the three that goes through `activate()`, the real entry point.
+
+Two more nodes the proposal does not list:
+* `TestTaskCap::test_max_three_tasks_per_goodnight` (`:153`) goes **red**. It needs four tasks competing for a cap of three, and the solo preset loses one of them.
+* `test_each_row_renders_a_distinct_body` (`bootstrap/tests/test_active_surfacing_render.py:101`) passes with one row only because there is nothing to compare.
+
+*Fix.*
+* Name all four nodes under *Tests required*.
+* Rewrite the two idempotency tests on `second-agent-type`, set through `fired_triggers_override`.
+* Give the distinctness test the same stand-in second row the priority test gets.
+* Carry the mutant above into the plan's ledger, expected to be killed by the `activate()` node.
+
+**CA2 -- Medium -- blocking for the Decision on Question 3, together with CA-SR1.**
+**The "short fixed list" lands next to two texts that pull the other way.**
+
+*Plain.* The rule says: if a call is not on the list, decide it, and asking is a defect. The section it moves into opens by saying escalate "when the answer would change what gets built" and cannot be resolved. Most ordinary calls change what gets built. An agent that is unsure, which is exactly the case the rule was written for, reads that sentence first and asks. The doctrine section with the same name goes further: queue about one call in five and wait for direction.
+
+*Evidence.*
+* The "Escalate when ..." sentence: `dev/agent_collaboration.md:178-183` and `templates/core/dev/agent_collaboration.md:189-194`.
+* `doctrine/lifecycle.md:448-481`: "the ~20%" of calls, and "Wait for direction".
+* The rule's own origin names this failure: a rule with a reason to escalate and "no cost for escalating wrongly" makes an uncertain agent escalate (`dev/proposals/archive/2026-08-04-claude-decision-rights-floor.md:22`).
+* The proposal moves the paragraph in word for word (line 118) and changes nothing around it.
+* No test pins the Surfacing text. A search of `bootstrap/tests` and `scripts` for its sentences finds nothing, while the same search over the tree finds the heading in both copies. So reordering costs nothing in tests.
+
+*Fix.*
+* Keep the accepted paragraph's words, and put it **first** in the section.
+* Reword the existing first paragraph so it serves the list, for example "When a call is on that list, bring a recommendation, not a survey ...".
+* Quote the merged section in the Response, so you read the result before you decide, not after.
+* For `doctrine/lifecycle.md`, either conform it under the rate-limit gate (the grounds are your 2026-08-04 direction), or leave it and put the difference on the board. Say which.
+* If Question 3 goes Cairn-only (CA-SR1's fix), all of this applies to Cairn's copy only.
+
+**CA3 -- Low -- non-blocking.**
+**Cairn's own roster cannot move word for word.**
+
+*Plain.* Cairn's filled roster says agents "do not decide", and calls itself part of "this vendor-neutral agreement". In its new home both are wrong: the same file will say that everything off the list is the agent's call, and the agreement will be gone.
+
+*Evidence.*
+* `dev/collaboration_agreement.md:20-27` at `dc089258`.
+* `bootstrap/tests/test_review_stance_in_shipped_files.py:859-861` pins "... advise; they do not decide" as an obligation of Cairn's copy.
+* The proposal says "Cairn's own filled roster moves with it" (line 122).
+* The 2026-08-04 review raised the same tension between "agents do not decide" and the new rule (the archived proposal, line 145).
+
+*Fix.*
+* On the move, reword the two sentences: for example "they do not make the Decision", and drop "in this vendor-neutral agreement, so the roster can evolve without amending it".
+* Say in the plan whether that pinned obligation moves to `dev/agent_collaboration.md` with the new words, or retires with a reason.
+* Give the slot a one-line lead-in that tells it apart from the `role-roster-additions` slot just above it (`templates/core/dev/agent_collaboration.md:38-43`). One lists which roles exist; the other lists who fills them.
+
+**CA4 -- Medium -- non-blocking for the Decision; the Response sets the order.**
+**Sequencing has two gaps, and the 0.4 cut changed after the proposal was written.**
+
+*(a) A recorded checksum the ceremony will not match.* A blob id is the checksum git keeps for a file's exact bytes.
+* At its archive, the review-stance plan records the blob id of `bootstrap/tests/test_review_stance_in_shipped_files.py` and asks the re-anchor to confirm it pins those bytes (`dev/plans/review-stance-and-lenses.md:211-213`, and the M row at `:431`, at `dc089258`).
+* This change edits that file after the archive (line 185; M14). The ceremony would then find bytes that do not match the recorded id.
+* *Fix:* this plan's paragraph on the re-anchor row records the file's new blob id at this change's code-reviewed commit, and says it replaces the earlier id for that one file.
+
+*(b) A second plan now shares files with this one.*
+* Since `42e41c84`, after the reviewed commit, `model-mapping-install-path` is in the cut. It edits `templates/onboarding/collaborative-team.md` and `templates/onboarding/high-rigor-legacy.md`, the frozen `bootstrap/tests/test_onboarding_seed_roster.py`, `bootstrap/BOOTSTRAP.md`, a comment in `bootstrap/_scaffold/lockfile.py`, Cairn's lockfile, and `_cmd_finalize_lockfile` (`dev/plans/model-mapping-install-path.md:71-73` and `:169`).
+* Its start gate lets it run at the same time as this change, and you have handed its implementation to a separate agent.
+* The proposal's overlap check (line 111) covers only `neutrality-and-upgrade-slots` and `independent-scientific-check`.
+* *Fix:* extend the check, and set one order for the shared files. I would put this change's implementation either wholly before that plan's C2, or after that plan reaches `awaiting-code-review`. Either way both plans re-read the shared files at edit time, and the single ceremony at the cut sees each frozen file's final bytes.
+
+*(c) A better design: open the plan earlier.*
+* Open this plan when review-stance reaches `awaiting-code-review`, not at its archive. Its C7 is the last chunk that changes text or tests, and C8 changes only the plan (`dev/plans/review-stance-and-lenses.md:429-430`). Plan review can then run beside that plan's code review. Implementation still starts at the archive.
+* On my R3 prototype, `test_onboarding_review_tiers.py::test_solo_greenfield_external_tier_paragraphs_name_their_staffing` goes red. Review-stance C7 deletes that file, which confirms that implementation itself must wait.
+
+**CA5 -- Low -- non-blocking.**
+**The surface list has drifted (R1, R2).**
+
+* `doctrine/dual-review.md:57-61`, added by review-stance C4 (`e4b4dbb5`), cites the path in the roster sentence. That makes seven copies of the sentence, not six (lines 19 and 75), and one of them is in doctrine.
+* `bootstrap/tests/fixtures/gate_manifest.json` is counted among the 47 live files but sits in no group. It is the Maintainer's, rewritten at the re-anchor; say so.
+* "The signature log" in `templates/core/dev/measurement/README.md:15` is not an unrelated ledger. The changelog called it "the forthcoming signature log" (`CHANGELOG.md:1162`) in the same release that added the agreement's opt-in signature log (`CHANGELOG.md:1263-1266`). Cairn's own `dev/measurement/README.md:15` carries the same line, and the proposal does not name it.
+
+*Fix.*
+* Add `doctrine/dual-review.md` to group 2. It is one reworded sentence, and the rate-limit reading is the same as for the other six.
+* Name the gate manifest's owner.
+* Drop "the signature log" from both measurement READMEs.
+* Have the plan's opening commit re-run the pinned search and list what changed from this table.
+
+**CA6 -- Low -- non-blocking.**
+**CA-SR2 also applies to Cairn's own tree.**
+
+I reproduced CA-SR2 on my own scratch install (R6). Two things to add:
+* **Cairn's own tree.** The proposal deletes Cairn's copy and keeps its lock record (group 1 and step 2). In a scratch worktree of `dc089258` with Cairn's copy deleted, `upgrade --finalize --force` exits 1 with "1 tracked file(s) missing on disk".
+* **A lasting count.** After a project deletes the file, every `verify_integrity` run prints `unreadable 1` in its slot note.
+
+The cause is order. `_cmd_finalize_lockfile` checks "missing on disk" before it skips living-state records (`bootstrap/_scaffold/upgrade.py:1872-1875`), and `verify_integrity` does the reverse (`bootstrap/verify_integrity.py:447` before `:459`), both at `dc089258`.
+
+*Fix.*
+* The plan says what Cairn does about its own tree. I searched `docs/release-process.md`, the bootstrap runbooks, `templates/skills`, `.agents`, `tools` and `scripts`, and found no step that runs a bare `--finalize` on Cairn's tree. So deleting Cairn's copy, and recording that a bare finalize refuses there until the deferred lock release lands, is a defensible call. The alternative is to empty the file, as CA-SR2 advises adopters.
+* Do not reorder that check in this change: `_cmd_finalize_lockfile` is in `model-mapping-install-path`'s write set (CA4b).
+
+### Answers to the four Maintainer questions
+
+1. **Upgrade default: agree, leave and flag.** I measured the repeat: after plan, stage and apply, the next `--plan` prints `removed-upstream 1: dev/collaboration_agreement.md` again (R5).
+   * **No cheap way to acknowledge it exists today.** `--ack-review-only` lasts one run and covers a different kind of file. `--finalize` cannot release a record. Deleting the file does not silence the line, and it breaks a later bare finalize (CA-SR2, CA6). Emptying the file keeps the line too.
+   * **The narrowest real fix:** when a file is gone from disk and Cairn no longer ships it, the next apply forgets its record and its base copy. The project's own committed deletion is the acknowledgment, and the tool never removes text. It would end the repeat, the finalize refusal and the `unreadable 1` together.
+   * It is still engine work with a Security Review. For one line in a report a project reads once per upgrade, after 0.4 is the right time. For 0.4, use CA-SR2's wording in `UPGRADE.md`.
+2. **Roster and second-agent prompt: agree, keep both for 0.4**, with CA1, CA3 and CA-SR4 folded in.
+   * R5 shows the moved slot working end to end: quiet until filled, and firing once two agent types are listed.
+   * One thing to weigh in the follow-up: the surviving prompt, as review-stance C7a (`467ddcbd`) left it, says a second agent type "would be useful", yet it fires only once the roster already lists two. If it stays, its words should fit its trigger.
+3. **The short fixed list: not as a default.** I agree with CA-SR1.
+   * If you ask me: Cairn-only for 0.4, with the template keeping "surfaces it rather than assuming".
+   * **What that narrower choice loses:** adopters do not get the floor in 0.4. They never had it, so nothing they have today is lost, and the removal still drops no rule from either copy.
+   * If you choose to ship it now, CA2's reordering applies to the template too, and `UPGRADE.md` should tell a project like LHM two things: its own copy still carries the older, opposite sentence (lines 43-45 of LHM's agreement), and which of the two governs.
+4. **If review-stance slips: agree with the default**, with two corrections to the question.
+   * The cut is defined by its list (`dev/PLANNING.md`, Release path, "Revised 2026-10-19", item 1), and that list includes both review-stance and this change. So "slips past the cut" can only mean you choose to cut before review-stance archives. This change then moves to the next release, and nothing breaks.
+   * The likelier delay is now the overlap with `model-mapping-install-path` (CA4b), not review-stance itself.
+
+### What I did not cover
+
+* I did not run the full suite. I ran named test files on the prototypes (R3, R4) and one mutant (CA1).
+* My prototypes left out the group-2 pointer edits (apart from the `dev/README.md` row and the `CONTRIBUTING.md` bullet in R7), `UPGRADE.md`, `doctrine/onboarding.md`, the seed retargets and the new test file.
+* I did not re-measure the AST fingerprint or the gate manifest; the Security Review's P10 and P11 did.
+* I staged an upgrade on the modflow_tools clone but did not apply it. I read LHM's copy and did not probe LHM.
+* I did not check M11's `check_cairn.py` counts.
+* I read the review-stance commits that landed after `dc089258` (C6, C7a, C7b) only through the R1 search at `57ebfc13` and the solo preset's surviving prompt.
+* Security questions are the Security Review's (`57ebfc13`). I used its findings and did not re-derive them.
