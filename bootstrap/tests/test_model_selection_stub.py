@@ -1101,3 +1101,80 @@ class TestCaptureWritesByReplacing:
         assert "distinctive-outside-file" not in captured.err
         assert victim.read_bytes() == before
         assert not (tmp_path / "dev/.cairn/cairn-lock.yml").exists()
+
+
+class TestStubExampleNamesAFamilyNotAVersion:
+    def test_example_and_placeholder_row(self) -> None:
+        text = _STUB_SRC.read_text(encoding="utf-8")
+        example = text.split("# Replace the placeholder row below", 1)[1]
+        example = example.split("# This file is adopter-local", 1)[0]
+        plain_example = " ".join(
+            line.removeprefix("# ").strip() for line in example.splitlines()
+        )
+        assert "Name the model family, never a version" in plain_example
+        assert "model: vendor-a/flagship-family" in plain_example
+        row = text.split("mapping:\n", 1)[1].split("\n\n", 1)[0]
+        assert row.count("FILL ME") == 5
+        assert row.count("- tier:") == 1
+
+
+class TestAcceptanceChecklistNamesTheMappingCheck:
+    def test_item_and_fourth_allowed_class(self) -> None:
+        text = (CAIRN_ROOT / "bootstrap/BOOTSTRAP.md").read_text(encoding="utf-8")
+        assert "**Model-selection mapping** (only if `model-selection` was installed)" in text
+        assert "`python scripts/check_model_selection.py` exits 0" in text
+        assert "the family and never a version; do not guess" in text
+        assert "Four classes of match are **expected and allowed**" in text
+        assert "the filled tier-to-model mapping" in text
+
+
+class TestShippedWordsArePinnedByExactString:
+    def test_module_twins_name_staleness_and_the_human_trigger(self) -> None:
+        template = (_TEAM_GATED / "model-selection.md").read_bytes()
+        installed = (CAIRN_ROOT / "dev/modules/model-selection.md").read_bytes()
+        assert installed == template
+        text = " ".join(template.decode("utf-8").split())
+        assert "nothing reads `date_verified`" in text
+        assert "no routine reads it" in text
+        assert "surfaced by an existing routine" not in text
+        assert "after that a person does, because nothing runs it automatically" in text
+
+    @pytest.mark.parametrize("preset", ("collaborative-team", "high-rigor-legacy"))
+    def test_waiting_line_in_both_presets(self, preset: str) -> None:
+        text = (TEMPLATES_ROOT / "onboarding" / f"{preset}.md").read_text(
+            encoding="utf-8"
+        )
+        assert "**Waiting on Maintainer**: fill the model mapping" in text
+        assert "id: fill-model-selection-mapping" in text
+
+
+class TestFamilyNotVersionReachesEverySite:
+    def test_all_model_mapping_sites(self) -> None:
+        files = {
+            "stub": _STUB_SRC,
+            "bootstrap": CAIRN_ROOT / "bootstrap/BOOTSTRAP.md",
+            "collaborative": TEMPLATES_ROOT / "onboarding/collaborative-team.md",
+            "legacy": TEMPLATES_ROOT / "onboarding/high-rigor-legacy.md",
+            "module": _TEAM_GATED / "model-selection.md",
+            "engine": CAIRN_ROOT / "bootstrap/_scaffold/install.py",
+        }
+        normalized = {
+            name: " ".join(
+                path.read_text(encoding="utf-8")
+                .replace("# ", "" if name == "stub" else "# ")
+                .split()
+            )
+            for name, path in files.items()
+        }
+        expected = (
+            ("stub", "Name the model family, never a version"),
+            ("engine", "Name the family, never a version"),
+            ("engine", "model family, not a version"),
+            ("engine", "# Name the model family, never a version"),
+            ("bootstrap", "the family and never a version"),
+            ("collaborative", "(the family, never a version)"),
+            ("legacy", "(the family, never a version)"),
+            ("module", "name the model family, never a version"),
+        )
+        for name, phrase in expected:
+            assert phrase in normalized[name], (name, phrase)

@@ -176,9 +176,19 @@ calls, and by most tooling defaults each silently inherits the orchestrator's
 > and record it in the adopter-local mapping (the case study), never in this
 > doctrine. Each mapping row carries: `model`, `tier`, `date-verified`,
 > `task-family`, `source/benchmark`, `accepted-quality-threshold`, `price-basis`,
-> `re-verification-trigger`. Re-rank on a low-frequency housekeeping pass
-> surfaced by an existing routine — the `date-verified` stamp makes staleness
-> visible; no bespoke vendor-release watcher is needed.
+> `re-verification-trigger`. Re-rank on a low-frequency housekeeping pass;
+> the `date-verified` stamp lets a reader see staleness, and no routine reads it.
+
+**Filling the mapping.** The adopter-local mapping is
+`dev/.cairn/model-selection-mapping.yml`: one row per tier you populate (high, medium,
+low), copying the shape of the seeded row. In `model`, name the model family, never a
+version; the latest release of that family is meant, so a new release does not make a row
+stale, and a release that changes which family fits a tier does. Say in `source` who made
+the assignment. `python scripts/check_model_selection.py` exits 0 once no placeholder
+remains and at least one row exists. It checks shape, not truth, and nothing reads
+`date_verified`, so noticing a stale mapping is yours to do. The installing agent runs the
+check at the acceptance step; after that a person does, because nothing runs it
+automatically.
 
 ## Notes on the gating
 

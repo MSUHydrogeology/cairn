@@ -543,7 +543,7 @@ complete.
         <target>/AGENTS.md <target>/dev/ \
         --exclude-dir=proposals --exclude-dir=plans
       ```
-      Three classes of match are **expected and allowed**, not
+      Four classes of match are **expected and allowed**, not
       findings — which is why the lint is scoped, not blanket:
       * **deliberation-artifact content** under `dev/proposals/` and
         `dev/plans/` — a Review / Response / Decision *names its
@@ -555,6 +555,9 @@ complete.
       * a **vendor-addendum file reference** (`CLAUDE.md`) — the
         sanctioned home for tool-specific habits, which imports
         `AGENTS.md`.
+      * the filled tier-to-model mapping,
+        `dev/.cairn/model-selection-mapping.yml`, which is adopter
+        configuration and may name model families by design.
       Any *other* match in content (not a quoted example) is a finding:
       replace with "the agent", the role name, or a vendor-addendum
       reference. The addendum file itself must not contaminate the
@@ -569,6 +572,11 @@ complete.
       `cairn/case-studies/` only).  The grep recipe above stays as the
       conceptual reference for adopter-side ad-hoc checks; the
       `quality_gate.py` sub-gate is the durable pre-cut gate.
+
+**Model-selection mapping** (only if `model-selection` was installed)
+- [ ] `python scripts/check_model_selection.py` exits 0. If not, ask the Maintainer which
+      model family fills each tier (high, medium, low) and record one row per tier, naming
+      the family and never a version; do not guess.
 
 **Dogfood gate (see Step II-6)**
 - [ ] At least one real change has gone through the installed

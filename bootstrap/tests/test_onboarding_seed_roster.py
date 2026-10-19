@@ -20,6 +20,7 @@ Run from the cairn repo root:
 from __future__ import annotations
 
 import sys
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -32,7 +33,10 @@ from bootstrap._scaffold.lockfile import read_lockfile  # noqa: E402
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
-def _scaffold(target: Path, *, preset: str, agent_team: str | None = None) -> int:
+def _scaffold(
+    target: Path, *, preset: str, agent_team: str | None = None,
+    complexity: str | None = None, remove_model_selection: bool = False,
+) -> int:
     cfg = target / "profile.yml"
     lines = [
         "project_name: OnboardingRosterTest",
@@ -41,6 +45,10 @@ def _scaffold(target: Path, *, preset: str, agent_team: str | None = None) -> in
     ]
     if agent_team is not None:
         lines.append(f"agent_team: {agent_team}")
+    if complexity is not None:
+        lines.append(f"complexity: {complexity}")
+    if remove_model_selection:
+        lines.extend(("modules_remove:", "  - model-selection"))
     cfg.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return main([
         "--config", str(cfg), "--target", str(target),
@@ -53,6 +61,39 @@ def _seed_slot(target: Path) -> str:
     start = text.index("<!-- preset:")
     end = text.index("<!-- cairn:end onboarding-tasks -->")
     return text[start:end]
+
+
+class TestModelMappingWaitingSeed:
+    @pytest.mark.parametrize("preset", ("collaborative-team", "high-rigor-legacy"))
+    def test_seed_renders_and_board_lists_it(self, tmp_path: Path, preset: str) -> None:
+        assert _scaffold(tmp_path, preset=preset) == 0
+        slot = _seed_slot(tmp_path)
+        assert "id: fill-model-selection-mapping" in slot
+        assert "**Waiting on Maintainer**: fill the model mapping" in slot
+        assert read_lockfile(tmp_path) is not None
+        board = subprocess.run(
+            [sys.executable, str(CAIRN_ROOT / "tools/board.py"),
+             "--maintainer", "--root", str(tmp_path)],
+            capture_output=True, text=True, check=False,
+        )
+        assert board.returncode == 0, board.stderr
+        assert "fill the model mapping" in board.stdout
+
+    @pytest.mark.parametrize("preset", ("collaborative-team", "high-rigor-legacy"))
+    def test_simple_profile_strips_seed(self, tmp_path: Path, preset: str) -> None:
+        assert _scaffold(tmp_path, preset=preset, complexity="simple") == 0
+        assert "fill-model-selection-mapping" not in _seed_slot(tmp_path)
+
+    def test_solo_preset_has_no_seed(self, tmp_path: Path) -> None:
+        assert _scaffold(tmp_path, preset="solo-greenfield") == 0
+        assert "fill-model-selection-mapping" not in _seed_slot(tmp_path)
+
+    def test_explicit_module_removal_keeps_guarded_reminder(self, tmp_path: Path) -> None:
+        assert _scaffold(
+            tmp_path, preset="collaborative-team", remove_model_selection=True
+        ) == 0
+        assert "fill-model-selection-mapping" in _seed_slot(tmp_path)
+        assert not (tmp_path / "dev/.cairn/model-selection-mapping.yml").exists()
 
 
 # --- (a) agent_team: single -- unstaffs both coordination-tiers + dual-review

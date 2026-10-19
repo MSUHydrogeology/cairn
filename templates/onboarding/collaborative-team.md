@@ -108,6 +108,15 @@ candidates upstream early, rather than letting the practice lapse.
   team-handoff owner files, coordinating with the team first to
   avoid duplicate Cairn issues.
 
+<!-- cairn:if complexity in moderate,complex -->
+* [seed; id: fill-model-selection-mapping]
+  **Waiting on Maintainer**: fill the model mapping
+  If `dev/.cairn/model-selection-mapping.yml` exists, ask the Maintainer which model
+  family fills each tier (high, medium, low), record one row per tier (the family, never
+  a version), and run `python scripts/check_model_selection.py`. Delete the Waiting line
+  when it passes.
+<!-- cairn:endif -->
+
 ## Active-surfacing prompt content (per-preset)
 
 The active-surfacing row the collaborative-team preset emits:

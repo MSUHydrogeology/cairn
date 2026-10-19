@@ -18,10 +18,11 @@
 # adopter fidelity check (`python scripts/check_model_selection.py`, or
 # wired into your CI) that stays red until you replace the placeholder.
 #
-# Replace the placeholder row below with your real assignments. Shape:
+# Replace the placeholder row below with your real assignments. Name the model
+# family, never a version: the latest release of that family is meant. Shape:
 #
 #   - tier: high
-#     model: vendor-a/flagship-model
+#     model: vendor-a/flagship-family
 #     date_verified: 2025-01-01
 #     task_family: strategy-and-review
 #     source: "internal benchmark Jan 2025"

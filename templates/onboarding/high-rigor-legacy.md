@@ -126,6 +126,15 @@ goes live.
   scripts/content_scan.py` over the drafted filing body and walk
   the security-review checklist before it leaves the deployment.
 
+<!-- cairn:if complexity in moderate,complex -->
+* [seed; id: fill-model-selection-mapping]
+  **Waiting on Maintainer**: fill the model mapping
+  If `dev/.cairn/model-selection-mapping.yml` exists, ask the Maintainer which model
+  family fills each tier (high, medium, low), record one row per tier (the family, never
+  a version), and run `python scripts/check_model_selection.py`. Delete the Waiting line
+  when it passes.
+<!-- cairn:endif -->
+
 ## Active-surfacing prompt content (per-preset)
 
 The active-surfacing row the high-rigor-legacy preset emits:
