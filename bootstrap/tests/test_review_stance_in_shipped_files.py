@@ -420,6 +420,19 @@ def test_loop_document_roster_carries_the_obligation(label: str, rel: str) -> No
     )
 
 
+def test_team_roster_has_its_own_section_without_adding_roles() -> None:
+    own = _section(_text(OWN_LOOP), "The team")
+    shipped = _section(_text(SHIPPED_LOOP), "The team")
+    own_flat = _normalize(own)
+    assert "More than one agent type works the tree" in own_flat
+    assert "they do not make the Decision" in own_flat
+    assert "collaboration_agreement.md" not in own
+    assert "<!-- cairn:slot team-roster -->" in shipped
+    assert "The bootstrap records the team here" in shipped
+    assert "<!-- cairn:end team-roster -->" in shipped
+    assert "team-roster" not in _section(_text(SHIPPED_LOOP), "Team roles")
+
+
 # --------------------------------------------------------------------------
 # The old vocabulary stays out of the four carrier files.
 # --------------------------------------------------------------------------
@@ -788,14 +801,12 @@ def test_deleting_the_obligation_sentence_from_a_plan_template_is_reported(
 
 
 # --------------------------------------------------------------------------
-# The rest of the shipped text: the collaboration agreement, the capability
-# floors, the security-review module, the legacy profile, the session-start
+# The rest of the shipped text: the capability floors, the security-review
+# module, the legacy profile, the session-start
 # skill, the fidelity manifest's sample roster, and two pages that describe
 # the review module and a contributor's review duty.
 # --------------------------------------------------------------------------
 
-SHIPPED_AGREEMENT = "templates/core/dev/collaboration_agreement.md"
-OWN_AGREEMENT = "dev/collaboration_agreement.md"
 SHIPPED_MODEL = "templates/modules/team-gated/model-selection.md"
 OWN_MODEL = "dev/modules/model-selection.md"
 SHIPPED_SECURITY = "templates/modules/team-gated/security-review.md"
@@ -808,12 +819,11 @@ MODULES_README = "templates/modules/README.md"
 CONTRIBUTING = "templates/optional/CONTRIBUTING.md"
 
 _REST_FILES = (
-    SHIPPED_AGREEMENT, OWN_AGREEMENT, SHIPPED_MODEL, OWN_MODEL, SHIPPED_SECURITY,
+    SHIPPED_MODEL, OWN_MODEL, SHIPPED_SECURITY,
     OWN_SECURITY, LEGACY_PROFILE, SHIPPED_SKILL, OWN_SKILL, FIDELITY,
     MODULES_README, CONTRIBUTING,
 )
 _REST_IDS = {
-    SHIPPED_AGREEMENT: "shipped-agreement", OWN_AGREEMENT: "own-agreement",
     SHIPPED_MODEL: "shipped-model", OWN_MODEL: "own-model",
     SHIPPED_SECURITY: "shipped-security", OWN_SECURITY: "own-security",
     LEGACY_PROFILE: "legacy-profile", SHIPPED_SKILL: "shipped-skill",
@@ -867,17 +877,6 @@ _REST_FORBIDDEN_EXAMPLES = {
 }
 
 _FILE_OBLIGATIONS = {
-    SHIPPED_AGREEMENT: {
-        "review-honesty-questions-foundations":
-            r"A reviewer improves a change by questioning its foundations",
-    },
-    OWN_AGREEMENT: {
-        "review-honesty-questions-foundations":
-            r"A reviewer improves a change by questioning its foundations",
-        "the-roster-slot-states-the-teams-shape-only":
-            r"More than one agent type works the tree\. Agents propose, review, "
-            r"implement, and advise; they do not decide",
-    },
     SHIPPED_MODEL: {},  # the capability-floor obligations are checked below
     OWN_MODEL: {},
     SHIPPED_SECURITY: {
@@ -1209,8 +1208,7 @@ _DOCTRINE_FORBIDDEN = {
 
 #: Files whose text a reader meets as live guidance, for the two repo-wide
 #: greps below. Archives, records and the changelog are history.
-_LIVE_ROOT_FILES = (SHIPPED_AGENTS, OWN_AGENTS, SHIPPED_LOOP, OWN_LOOP,
-                    SHIPPED_AGREEMENT, OWN_AGREEMENT)
+_LIVE_ROOT_FILES = (SHIPPED_AGENTS, OWN_AGENTS, SHIPPED_LOOP, OWN_LOOP)
 _LIVE_ROOT_DIRS = ("doctrine", "templates", "dev/modules", "docs", "dimensions")
 
 
@@ -1864,7 +1862,7 @@ def test_a_one_word_placeholder_in_an_authoring_template_is_reported(rel: str) -
 _SEARCH_A_ROOT_FILES = (
     "AGENTS.md", "README.md", "dev/proposals/_template.md",
     "dev/plans/_template.md", "dev/agent_collaboration.md",
-    "dev/collaboration_agreement.md", "bootstrap/fidelity-check.md",
+    "bootstrap/fidelity-check.md",
     "bootstrap/UPGRADE.md", "bootstrap/REANCHOR_RUNBOOK.md",
 )
 _SEARCH_A_ROOT_DIRS = ("doctrine", "templates", "dev/modules", "docs",

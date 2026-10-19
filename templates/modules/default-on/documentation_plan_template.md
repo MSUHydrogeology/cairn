@@ -79,8 +79,7 @@ at the docs root, deployment's choice), the **roadmap boards**
 (`dev/PLANNING.md`, `dev/NEXT_SESSION.md`), the **deliberation
 record** (`dev/proposals/`, `dev/plans/`, `dev/strategy/`,
 `dev/.cairn/`), and the **process doctrine** governing the
-deliberation itself (`dev/collaboration_agreement.md`,
-`dev/agent_collaboration.md`, optional security or architecture
+deliberation itself (`dev/agent_collaboration.md`, optional security or architecture
 review protocols).  The layer's defining property: it is about
 the project's *becoming* -- aspiration, decisions in progress,
 and the method of deciding -- **not** about the software as it

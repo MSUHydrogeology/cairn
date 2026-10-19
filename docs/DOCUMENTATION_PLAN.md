@@ -92,8 +92,7 @@ how something is built or organized**.  The layer has two ranges:
 The project **charter**, the **roadmap boards**, the
 **deliberation record** (proposals, plans, strategy, upstream),
 and the **process doctrine** governing the deliberation itself
-(`collaboration_agreement.md`, `agent_collaboration.md`,
-`security_review_protocols.md`).  The layer's defining property:
+(`agent_collaboration.md`, `security_review_protocols.md`). The layer's defining property:
 it is about the project's *becoming* -- aspiration, decisions in
 progress, and the method of deciding -- **not** about the
 software as it exists today.

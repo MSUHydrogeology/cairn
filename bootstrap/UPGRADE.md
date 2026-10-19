@@ -43,6 +43,37 @@ The module-body-coverage probe now lists 11 unmatched old heading names for
 `dual-review` (8 before this change); the three added names moved under other
 headings rather than losing their rules.
 
+## A file Cairn stopped shipping: `dev/collaboration_agreement.md`
+
+From 0.4, Cairn no longer installs this file, and no installed Cairn helper
+reads it. If your project already has it, `upgrade --plan` reports
+`removed-upstream 1: dev/collaboration_agreement.md`. The line is
+informational and repeats on later plans: plan, stage and apply leave your
+file, its lockfile record and its cached base copy untouched.
+
+The file is yours now. Keep it while your lockfile lists it. To retire its
+contents, reduce it to a one-line note or empty it; **do not delete the
+file**. Deletion makes a bare `upgrade --finalize` refuse with "tracked
+file(s) missing on disk", even with `--force`, and makes the integrity
+check report it unreadable. If you have already deleted it, restore an
+empty file at that path. A scoped `--finalize <path>` can record edits to
+other tracked files without sweeping the missing file, but does not erase
+its record.
+
+Before changing your copy, search your own tree for references to it.
+Your `AGENTS.md`, `dev/README.md`, tests or local guidance may still cite
+it. Cairn's `dev/README.md` row is removed by the merge; if your copy
+still holds rules you follow, restore a local pointer or move the rules
+to `dev/agent_collaboration.md`.
+
+The `team-roster` slot now lives in `dev/agent_collaboration.md` under
+*The team*. Copy your roster across by hand. Filling the slot makes
+`verify_integrity` report that roles document as modified; read the whole
+file, then record the expected edit with
+`python bootstrap/scaffold.py upgrade --target <repo> --finalize dev/agent_collaboration.md`.
+A slot note that still names the old file can be ignored; fill the new
+slot. Until then the second-agent prompt stays quiet.
+
 ## The two on-disk artifacts the install leaves
 
 Installing (or upgrading) writes two **tracked** artifacts into your

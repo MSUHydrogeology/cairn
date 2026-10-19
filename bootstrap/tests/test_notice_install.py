@@ -181,20 +181,9 @@ def test_notice_is_a_core_mapping():
 
 def test_notice_appears_in_manifest_data_row_count():
     rows = install_manifest(modules=None)
-    assert len(rows) == 97, (
-        f"expected 115 manifest rows (94 + NOTICE.md + portable-security-"
-        f"sweeps' three + security-verification's two + api-web-security-"
-        f"modules' fourteen + metrics-events-not-prose's one), found "
-        f"{len(rows)} "
-        f"-- if this moved intentionally, update this test. Moved 95 -> 98 "
-        f"by portable-security-sweeps Chunk A: the module registers its "
-        f"doctrine, its runner and its policy as one group, and the install "
-        f"contract grew by exactly three additive rows. Moved 98 -> 100 by "
-        f"security-verification-activation Chunk A: the module registers "
-        f"its doctrine + its verbatim dispatcher as one group, two "
-        f"additive rows. Moved 114 -> 115 by metrics-events-not-prose "
-        f"Chunk 4, which registers one new InstallSpec row "
-        f"(events.py -> tools/_lifecycle_metrics/events.py)."
+    assert len(rows) == 96, (
+        f"expected 96 manifest rows after retiring the collaboration agreement; "
+        f"found {len(rows)}. Investigate any install-contract change."
     )
 
 

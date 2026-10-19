@@ -74,16 +74,12 @@ _LOCK_SCHEMA = 1
 #: would *launder* a real apparatus swap -- the very thing the check defends --
 #: so ``--finalize`` stays an explicit, deliberate re-attestation.)
 #:
-#: **Conscious tradeoff (governance prose).**  ``dev/collaboration_agreement.md``
-#: is the most delicate member: a signed agreement can govern review rights,
-#: commit permissions, and trust boundaries, so excluding it from tamper
-#: attestation is a real (accepted) tradeoff -- tampering with governance *prose*
-#: is **outside ``verify_integrity``'s threat model** (which covers a swapped
-#: *executable*) and is caught by git review + history, not by the
-#: apparatus-integrity gate.  **This boundary is enforced by the verifier**, not
-#: trusted from the lockfile: ``verify_integrity`` honors ``living_state`` only
-#: for a ``dst`` in this set, and fails closed on any other record that asserts
-#: it (so a modified script cannot hide by flipping the flag).
+#: The retired ``dev/collaboration_agreement.md`` remains here only for
+#: projects that installed it earlier. Their copy is project-owned living
+#: state; this path must never be reused for a shipped file. The verifier
+#: honors ``living_state`` only for a ``dst`` in this authoritative set and
+#: fails closed on any other record that asserts it, so a changed script
+#: cannot hide by flipping its lockfile flag.
 _LIVING_STATE_DSTS: frozenset[str] = frozenset({
     "dev/PLANNING.md",
     "dev/NEXT_SESSION.md",

@@ -11,6 +11,8 @@
   "exemptions": {
     "CHANGELOG.md": {
       "paths": [
+        "dev/collaboration_agreement.md",
+        "templates/core/dev/collaboration_agreement.md",
         "bootstrap/tests/test_lifecycle_cli.py",
         "bootstrap/tests/test_lifecycle_contract.py",
         "dev/.cairn/agent-identities.json",
@@ -44,6 +46,11 @@
         "docs/developer/vision.md",
         "docs/developer/style.md",
         "docs/style.md"
+      ]
+    },
+    "bootstrap/UPGRADE.md": {
+      "paths": [
+        "dev/collaboration_agreement.md"
       ]
     },
     "bootstrap/REANCHOR_RUNBOOK.md": {
@@ -218,11 +225,6 @@
         "dev/readiness-report.md",
         "dev/readiness-report-summary.md",
         "dev/readiness-report-decision.md"
-      ]
-    },
-    "templates/core/dev/collaboration_agreement.md": {
-      "paths": [
-        "dev/measurement/pilot-activation.md"
       ]
     },
     "templates/modules/default-on/claim-check.md": {

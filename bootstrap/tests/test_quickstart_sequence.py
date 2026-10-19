@@ -194,7 +194,6 @@ class TestLayerAStepsOneThroughThree:
             "dev/README.md",
             "dev/PLANNING.md",
             "dev/NEXT_SESSION.md",
-            "dev/collaboration_agreement.md",
             "dev/agent_collaboration.md",
             "dev/proposals/_template.md",
             "dev/plans/_template.md",
@@ -207,6 +206,7 @@ class TestLayerAStepsOneThroughThree:
             assert (repo / relative).exists(), (
                 f"quickstart Step 3 should install {relative}; not present after run"
             )
+        assert not (repo / "dev" / "collaboration_agreement.md").exists()
         # Drift-gate -- close the prose<->runtime loop (the 2026-06-12
         # adopter-friction audit). NO hardcoded count lives here: the
         # quickstart's two load-bearing numbers are read FROM the doc and

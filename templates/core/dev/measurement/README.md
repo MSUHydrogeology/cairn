@@ -12,7 +12,7 @@ them.
   exact filename and format are owned by the metrics tooling, not fixed by this
   convention: reserve the slot, not the name.*
 * **Operational ledgers that feed the metrics** — the collision log, the
-  handoff-hazard log, the signature log: records of process incidents kept so
+  handoff-hazard log: records of process incidents kept so
   the team can measure and correlate them over time.
 * **Machine-appended operational ledgers, and the readers that render them** —
   the same slot, for records a *tool* appends rather than a person: one line

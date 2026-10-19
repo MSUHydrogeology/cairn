@@ -493,7 +493,7 @@ module supplies them):
   development environment, high-risk surfaces, operational
   pitfalls. This is judgment work; a reasoning agent and the
   Maintainer write it together.
-* `team-roster` in `dev/collaboration_agreement.md` — the team
+* `team-roster` in `dev/agent_collaboration.md` — the team
   members and their roles.
 
 ### II-5 Verify (R-F acceptance gate)
@@ -506,8 +506,7 @@ complete.
 - [ ] `dev/README.md` is present.
 - [ ] `dev/proposals/_template.md` and `dev/plans/_template.md`
       are present.
-- [ ] `dev/collaboration_agreement.md` and
-      `dev/agent_collaboration.md` are present.
+- [ ] `dev/agent_collaboration.md` is present.
 - [ ] `dev/PLANNING.md` and `dev/NEXT_SESSION.md` are present.
 - [ ] Each selected module file is present under `dev/modules/`.
 - [ ] `dev/proposals/`, `dev/proposals/archive/`, `dev/plans/`,
@@ -664,7 +663,7 @@ The scaffold fills these **inline tokens** from the profile config
 
 | Token | File(s) | Description |
 |-------|---------|-------------|
-| `{{project_name}}` | `AGENTS.md`, `dev/README.md`, `dev/collaboration_agreement.md`, `dev/agent_collaboration.md` | The project's display name |
+| `{{project_name}}` | `AGENTS.md`, `dev/README.md`, `dev/agent_collaboration.md` | The project's display name |
 | `{{test_command}}` | `AGENTS.md` | The command to run the test suite |
 | `{{claim_check_command}}` | `dev/modules/claim-check.md` (when the claim-check module is installed) | The command to run the write-time claim checker |
 | `{{metrics_command}}` | a module doc (when the lifecycle-metrics module is installed) | The command to run the lifecycle-metrics extractor |
@@ -693,7 +692,7 @@ Block slots (judgment work, left for the agent and Maintainer):
 | `claim-check` | `AGENTS.md` | The `claim-check` module's verify-before-asserting note (or `N/A` if not installed) |
 | `reflections` | `dev/agent_collaboration.md` | The `reflections` module's per-agent handoff content (or `N/A`) |
 | `lifecycle-metrics` | `dev/agent_collaboration.md` | The `lifecycle-metrics` module's extractor note (or `N/A`) |
-| `team-roster` | `dev/collaboration_agreement.md` | The team members and their roles |
+| `team-roster` | `dev/agent_collaboration.md` | The team members and their roles |
 
 ---
 

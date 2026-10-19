@@ -306,25 +306,12 @@ chunk 5.3) is still outstanding, awaiting a consenting third-party
 scientific repository that did not contribute to the doctrine." This blocks
 0.4 and has no trigger other than successfully enrolling that third party.
 
-**Required before 0.4 ships (not blocked on an external party, but
-unactioned):**
-The Maintainer decided on 2026-06-12 that Cairn no longer needs a
-collaboration agreement as a concept — and that decision has not yet been
-executed anywhere, over two months later. It requires retiring
-`templates/core/dev/collaboration_agreement.md` (confirmed still present)
-and re-homing or dropping every surface that currently points at it: the
-`AGENTS.md` required-reading link, the `dev/agent_collaboration.md` /
-`dev/README.md` pointers, the onboarding-tour step, `doctrine/plans.md`'s
-citation of the External Review Norms it currently carries (those norms
-need a new home if the file goes), the scaffold's expected-folder wiring,
-and the bootstrap test suite. This is genuinely cross-cutting (doctrine +
-templates + scaffold + tests) and was called out at the time as needing its
-own proposal rather than a quick edit. Worth flagging: Cairn's *own*
-current onboarding tasks still actively reference
-`dev/collaboration_agreement.md` (a seed task asks a team to fill its
-`team-roster` slot), and Cairn's own copy of the file
-(`dev/collaboration_agreement.md`) is also still present — so this decision
-has had no effect on Cairn's own tree either, yet.
+**Required before 0.4 ships (not blocked on an external party):**
+The Maintainer's agreement-removal decision has an accepted proposal and
+the implementation plan `remove-collaboration-agreement`. It retires the
+shipped agreement, moves the roster into the roles document and keeps a
+project's old copy on upgrade. The plan's code review and 0.4 re-anchor
+ceremony remain the completion checks; this older draft is not the work list.
 
 **Non-blocking polish, queued for 0.4:**
 Two related follow-ups on adopter-facing documentation:

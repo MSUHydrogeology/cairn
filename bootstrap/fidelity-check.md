@@ -140,7 +140,6 @@ modules:
     - dev/README.md
     - dev/PLANNING.md
     - dev/NEXT_SESSION.md
-    - dev/collaboration_agreement.md
     - dev/agent_collaboration.md
     - dev/proposals/_template.md
     - dev/plans/_template.md
@@ -184,7 +183,7 @@ slots:
   - file: dev/agent_collaboration.md
     slot: coordination-additions
     status: filled
-  - file: dev/collaboration_agreement.md
+  - file: dev/agent_collaboration.md
     slot: team-roster
     status: filled
 

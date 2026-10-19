@@ -21,8 +21,8 @@ rather than restating them, so there is a single source for each rule.
   to human and AI contributors alike.
 * **`dev/README.md`** — the entry point to the `dev/` coordination tree
   (the method: proposals, plans, reviews).
-* **`dev/collaboration_agreement.md`** — the working norms and decision
-  rights.
+* **`dev/agent_collaboration.md`** — the team roles, review loop and
+  coordination guidance.
 
 ## How a change lands
 

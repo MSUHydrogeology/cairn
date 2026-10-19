@@ -78,7 +78,7 @@ install writes.
   non-empty (any text between the heading and the next
   release header).
 * `second-agent-type` -- the team-roster slot in
-  `dev/collaboration_agreement.md` lists at least two distinct
+  `dev/agent_collaboration.md` lists at least two distinct
   agent identifiers. **Explicit-state observation** (the
   Maintainer's roster fill is the signal), NOT git-trailer
   archaeology -- per the round-1 External-Review disposition.
@@ -88,13 +88,6 @@ install writes.
   `dev/proposals/**/*.md` + `dev/plans/**/*.md` -- a flavor of
   explicit-state observation (the file content IS the explicit
   state; not git archaeology of trailers).
-* `collab-agreement-signing` -- the team-roster slot in
-  `dev/collaboration_agreement.md` is unfilled (template default
-  text OR empty between the slot tags) AND
-  `first-proposal-archived` has previously fired. Once the
-  roster is filled, the trigger's activation is recorded in
-  `activated.jsonl`, so subsequent partial edits to the roster
-  do not re-fire the prompt.
 
 ### Component 3 -- Hybrid surfacing (passive + active)
 
@@ -106,11 +99,8 @@ works for ordinary roadmap items.
 
 **Active surfacing** (for important transitions): a small named
 set of transitions also gets **terminal-output prompts** at the
-goodnight activation run. The two named rows:
-
-1. **Collab-agreement signing** -- fires on the
-   `collab-agreement-signing` trigger above.
-2. **Second-agent-type spin-up** -- fires on `second-agent-type`.
+goodnight activation run. The remaining named row is
+**second-agent-type spin-up**, which fires on `second-agent-type`.
 
 Each row carries **per-preset prompt content** authored in the
 preset file's active-surfacing-prompt-content blocks. The
@@ -204,9 +194,7 @@ next morning doesn't surface a wall of text:
   in one cycle defer to the next goodnight, in priority order.
 * **≤3 newly-inserted onboarding tasks per goodnight.** Overflow
   defers identically.
-* **Priority order** (highest first):
-  1. `collab-agreement-signing`
-  2. `second-agent-type` spin-up
+* **Priority order** (highest first): `second-agent-type` spin-up.
 
 The priority order is **v1-fixed**; adopter-tunable priority
 becomes a v1.x candidate (see "Capability-pull follow-ups" below).

@@ -186,7 +186,7 @@ class TestLivingStateF1:
     After an edit, verify_integrity WILL fail for these files because their
     hash has changed -- unless the adopter runs `upgrade --finalize` to
     advance the recorded hash.  This is the same behaviour as AGENTS.md,
-    dev/collaboration_agreement.md, etc.
+    dev/agent_collaboration.md, etc.
 
     What this test actually asserts: a fresh install verifies clean
     (the out-of-box state is consistent), confirming the lockfile records
