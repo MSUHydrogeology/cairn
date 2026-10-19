@@ -331,9 +331,9 @@ the Maintainer's words beneath them, verbatim and apart:*
 **Foundations** (the proposal row; one line per answer, each ending in the file,
 test, line or command that backs it):
 
-1. **Should this happen as framed?** {{should this exist as framed, and is there a better design, doing nothing included}} -- {{evidence}}
-2. **Best alternative.** {{the strongest, doing nothing included}} -- {{evidence}}
-3. **What would show it wrong.** {{what would make the author withdraw}} -- {{evidence}}
+1. **Should this happen as framed?** {{should this exist as framed, and is there a better design, doing nothing included}} -- <evidence>
+2. **Best alternative.** {{the strongest, doing nothing included}} -- <evidence>
+3. **What would show it wrong.** {{what would make the author withdraw}} -- <evidence>
 
 Lead with the strongest version of what the proposal is trying to do, then the
 findings. Mark each blocking or non-blocking, and say what evidence would close

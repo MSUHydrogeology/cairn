@@ -412,3 +412,37 @@ def test_adding_a_sixth_ledger_item_is_reported(rel: str) -> None:
     assert len(re.findall(r"ledger of five items", _normalize(text))) == 1
     mutant = text + "\n\nA ledger of five items, in a shorter form.\n"
     assert len(re.findall(r"ledger of five items", _normalize(mutant))) == 2
+
+
+# --------------------------------------------------------------------------
+# A fresh install must not leave a one-word `{{placeholder}}` the engine does
+# not recognise: the next upgrade would plan the file as needing a value.
+# --------------------------------------------------------------------------
+
+def _installed_text_files(root: Path) -> list[Path]:
+    return sorted(p for p in root.rglob("*")
+                  if p.is_file() and p.suffix in {".md", ".yml", ".txt"}
+                  and ".git" not in p.parts)
+
+
+@pytest.mark.parametrize("profile", PROFILES, ids=lambda p: p.stem)
+def test_an_install_leaves_no_placeholder_the_engine_cannot_fill(
+        installs: dict[str, Path], profile: Path) -> None:
+    sys.path.insert(0, str(CAIRN_ROOT))
+    from bootstrap._scaffold.config import KNOWN_TOKENS
+    from bootstrap._scaffold.slotmerge import find_unfilled_tokens
+    root = installs[profile.stem]
+    files = _installed_text_files(root)
+    assert any(f.name == "agent_collaboration.md" for f in files), (
+        "control: the installed tree was read")
+    bad = {}
+    for path in files:
+        left = set(find_unfilled_tokens(path.read_text(encoding="utf-8",
+                                                       errors="replace")))
+        left -= set(KNOWN_TOKENS)
+        if left:
+            bad[path.relative_to(root).as_posix()] = sorted(left)
+    assert not bad, (
+        f"a {profile.stem} install carries one-word placeholders the engine "
+        f"cannot fill: {bad}. An upgrade plans each such file as needing a "
+        f"value and never advances it.")

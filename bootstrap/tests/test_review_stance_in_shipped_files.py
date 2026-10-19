@@ -1803,3 +1803,65 @@ def test_a_correctly_worded_sentence_is_not_flagged() -> None:
     solo = _normalize(_text(SHIPPED_PRESETS[0]))
     assert _CORRECT_SENTENCE in solo, "control: the sentence is in the preset"
     assert _preset_flags(_CORRECT_SENTENCE) == []
+
+
+# --------------------------------------------------------------------------
+# A placeholder written as one word between double braces is an install token
+# to the engine. An upgrade plans a file that carries one the install never
+# recorded as "needs a value", and the file never advances. So a mergeable
+# template may carry such a placeholder only if it is a token the engine fills
+# or one it knowingly leaves for the document's author. Prose placeholders in a
+# template use angle brackets, or braces around more than one word.
+# --------------------------------------------------------------------------
+
+def _engine_token_rules():
+    import sys
+    sys.path.insert(0, str(CAIRN_ROOT))
+    from bootstrap._scaffold.config import KNOWN_TOKENS
+    from bootstrap._scaffold.slotmerge import find_unfilled_tokens
+    return KNOWN_TOKENS, find_unfilled_tokens
+
+
+def _mergeable_template_files() -> list[str]:
+    """Every core template, plus Cairn's own copies of the two authoring ones."""
+    core = sorted(p.relative_to(CAIRN_ROOT).as_posix()
+                  for p in (CAIRN_ROOT / "templates" / "core").rglob("*")
+                  if p.is_file() and p.suffix in {".md", ".yml", ".txt"})
+    return core + [OWN_PROPOSAL, OWN_PLAN]
+
+
+def _unknown_install_tokens(text: str) -> set[str]:
+    known, unfilled = _engine_token_rules()
+    return set(unfilled(text)) - set(known)
+
+
+@pytest.mark.parametrize("rel", _mergeable_template_files(),
+                         ids=lambda r: r.replace("/", "-"))
+def test_a_mergeable_template_has_no_one_word_placeholder_the_engine_cannot_fill(
+        rel: str) -> None:
+    left = _unknown_install_tokens(_text(rel))
+    assert not left, (
+        f"{rel} carries {sorted(left)} between double braces. The engine reads "
+        f"a one-word placeholder as an install token, so every adopter's "
+        f"upgrade plans this file as needing a value and never advances it. "
+        f"Write an angle-bracket placeholder instead.")
+
+
+def test_the_mergeable_template_list_covers_the_authoring_templates() -> None:
+    files = _mergeable_template_files()
+    for rel in (SHIPPED_PROPOSAL, SHIPPED_PLAN, SHIPPED_AGENTS, SHIPPED_LOOP,
+                OWN_PROPOSAL, OWN_PLAN):
+        assert rel in files, f"{rel} is not scanned for one-word placeholders"
+    assert len(files) > 10
+
+
+@pytest.mark.parametrize("rel", _TEMPLATE_FILES, ids=_FILE_IDS.get)
+def test_a_one_word_placeholder_in_an_authoring_template_is_reported(rel: str) -> None:
+    """The guard can fail, and is not tripped by what the engine allows."""
+    intact = _text(rel)
+    assert _unknown_install_tokens(intact) == set(), (
+        f"{rel}: the unmutated template already carries one; no control.")
+    assert _unknown_install_tokens(f"{intact}\n1. Answer -- {{{{evidence}}}}\n") \
+        == {"evidence"}
+    allowed = "\n## Review -- {{reviewer}} -- {{YYYY-MM-DD}}\n{{project_name}}\n"
+    assert _unknown_install_tokens(f"{intact}{allowed}") == set()
