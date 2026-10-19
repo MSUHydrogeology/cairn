@@ -1,10 +1,11 @@
 # Plan: the board as the basis for richer views -- a data output, and a guide to building on it
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-board-as-basis.md`
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance -- inherited from the proposal: `tools/board.py` is run by every adopter and its output becomes a published contract
 **Opened**: 2026-10-18
+**Waiting on Maintainer**: read the generated board page
 **In brief**: `python tools/board.py --json` prints every proposal and plan as plain data, plus the roadmap rows that wait on you; a guide in Cairn's docs shows how to turn that into a page that is regenerated, never hand-kept; the proposal and plan templates ask for a one-sentence summary; Cairn ships no page.
 
 ## In brief
@@ -1337,3 +1338,100 @@ This answers the Internal Security Review (`2e9cf490`, BB-SR1 to BB-SR10) and th
 | **BB-PR8** prose pins and host-dependent nodes will freeze into one test file | accept | *Reading these criteria*: phrase counts are one-shot except ten named promise and safety phrases; scratch repositories isolate git configuration; *C3*: the `v0.3.0` check goes in the commit body, not a node; *C4*: the finished-plans recipe reports the author date and the test sets both dates; *C6* and *Boundary B*: the new test file is run once from another working directory |
 
 **Also changed, not from a numbered finding.** In *Dispositions* the two watch items that nothing fixes (a stale stamp; a hand-edited page or `--html` requests) were marked `accept`, which the template defines as "fixed in scope"; the Internal pass flagged the wording. They are now `wontfix`, each with its rationale. *Sequencing with the other plans* no longer carries statuses that go stale; they are read at each chunk's start. The header Status is `ready-to-implement`. There is no second round of plan review.
+
+## Implementation verification -- Claude Opus 5.5 -- 2026-10-19
+
+**Boundary B mode**: bounded (scoped under the `12be58d9` certifying-run rule; full suite deferred to the Maintainer's next certifying run)
+**Certified by**: pending
+**Tested commit**: `47bfece22690913bb309934fcd13d05b806c29c0`
+**Reviewed range**: `a6306e00..47bfece2` (commits `a6306e00`, `94fd8cc7`, `f1b61e46`, `b332e727`, `b2a17203`, `47bfece2`)
+**Interpreter/runtime**: Python 3.13.12 (`/Users/kendal30/conda_envs/lhm/bin/python3.13`), pytest 8.4.2, macOS (`PYTHONDONTWRITEBYTECODE=1`, detached `git worktree` at `47bfece2`)
+**Pre-run state**: clean (`git status --short` empty in the detached `git worktree`)
+**Post-run state**: clean (`git status --short` empty in the detached `git worktree`)
+
+**Touched surfaces and why the scoped run covers them (pending the certifying run)**:
+
+* `tools/board.py` and `templates/skills/_lib/board.py` (C1, C2), plus one scoped lockfile hash update (`dev/.cairn/cairn-lock.yml`). Covered by `bootstrap/tests/test_board_json_contract.py` (25 nodes), `bootstrap/tests/test_replacement_tools.py` (unedited), `bootstrap/tests/test_notice_install.py`, `bootstrap/tests/test_security_lint.py`, `bootstrap/tests/test_security_check.py`, `bootstrap/tests/test_skills_self_heal.py`, `bootstrap/tests/test_skills_upgrade.py`, `bootstrap/tests/test_verify_integrity.py`, and `bootstrap/tests/test_cairn_prefix_links.py`.
+* `bootstrap/tests/fixtures/board_json_v1_baseline.json` (C2) and `docs/build-a-board-view.md` + `docs/tool-usage.md` (C3, C4). Covered by `bootstrap/tests/test_board_json_contract.py`, `bootstrap/tests/test_cairn_prefix_links.py`, `bootstrap/tests/test_doc_governance.py`, `bootstrap/tests/test_check_cairn_content.py`, `bootstrap/tests/test_check_cairn_counts.py`, `bootstrap/tests/test_link_check_exclusions.py`, `bootstrap/tests/test_quality_gate_neutrality.py`, and `bootstrap/tests/test_intents_tool.py`.
+* `dev/proposals/_template.md`, `templates/core/dev/proposals/_template.md`, `dev/plans/_template.md`, `templates/core/dev/plans/_template.md` (C5). Covered by `bootstrap/tests/test_board_json_contract.py` (`TestTemplatesAskForTheLineTheBoardReads`) and all 15 template-reading test files found across `bootstrap/tests/` (`test_scope_reduction_trap.py`, `test_scaffold.py`, `test_documentation_plan_module.py`, `test_claim_check_module.py`, `test_quickstart_sequence.py`, `test_review_stance_in_shipped_files.py`, `test_certifying_run_rule.py`, `test_scientific_check_guidance_ships.py`, `test_core_dev_folders.py`, `test_incident_trackers_module.py`, `test_install_module.py`, `test_session_routines.py`, `test_trigger_evaluation_action.py`, `test_verification_boundaries.py`, plus `test_doc_governance.py`). Because `tools/board.py` is a verbatim installed tool, the four templates are rendered by scaffold installs, and two new frozen-pattern files (`bootstrap/tests/test_board_json_contract.py`, `bootstrap/tests/fixtures/board_json_v1_baseline.json`) join the 0.4 re-anchor batch, the full-suite requirement is satisfied by the next Maintainer certifying run (`**Certified by**: pending`) per `AGENTS.md` (`12be58d9`).
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---|---|---|
+| `PYTHONDONTWRITEBYTECODE=1 python -m pytest -q --quality-gate-shuffle-seed=0` over the 29 mapped test files (`test_board_json_contract.py`, `test_replacement_tools.py`, `test_notice_install.py`, `test_security_lint.py`, `test_security_check.py`, `test_skills_self_heal.py`, `test_skills_upgrade.py`, `test_verify_integrity.py`, `test_cairn_prefix_links.py`, `test_doc_governance.py`, `test_check_cairn_content.py`, `test_check_cairn_counts.py`, `test_link_check_exclusions.py`, `test_quality_gate_neutrality.py`, `test_intents_tool.py`, `test_scope_reduction_trap.py`, `test_scaffold.py`, `test_documentation_plan_module.py`, `test_claim_check_module.py`, `test_quickstart_sequence.py`, `test_review_stance_in_shipped_files.py`, `test_certifying_run_rule.py`, `test_scientific_check_guidance_ships.py`, `test_core_dev_folders.py`, `test_incident_trackers_module.py`, `test_install_module.py`, `test_session_routines.py`, `test_trigger_evaluation_action.py`, `test_verification_boundaries.py`) | 0 | 2,843 passed, 0 failed, 0 skipped, 3 warnings | 59.37s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | `[neutrality] fail=0 info=56` (unchanged from `a6306e00` baseline `fail=0 info=56`); `[redundancy] fail=0 info=0` | 1.20s |
+| `python scripts/link_check.py docs/build-a-board-view.md docs/tool-usage.md dev/proposals/_template.md templates/core/dev/proposals/_template.md dev/plans/_template.md templates/core/dev/plans/_template.md` | 0 | `OK -- 6 Markdown file(s) scanned; no issues` | 0.12s |
+| `python scripts/claim_check.py <each of the 6 edited docs and dev/plans/board-as-basis.md>` | 0 | `OK, no claim-check flags` on all 7 files | 0.35s |
+| `python scripts/verify_counts.py docs/tool-usage.md` | 0 | `1 ok, 0 failed, 0 skipped` (`claim_check_watch_file_lines = 1704`) | 0.08s |
+| `cd /tmp && PYTHONDONTWRITEBYTECODE=1 python -m pytest -q <worktree>/bootstrap/tests/test_board_json_contract.py` | 0 | 25 passed in 1.65s (non-repo working directory) | 2.08s |
+
+**Non-pass disposition**:
+
+* Zero skips, zero xfails, zero xpasses, and zero failures in the 29-file scoped Boundary B pytest run (`2,843 passed`).
+* `bootstrap/tests/test_ast_attest.py` (probed separately at `a6306e00` and `47bfece2`): `2 failed, 28 passed` identically at both commits for earlier work (`neutrality-and-upgrade-slots` / `independent-scientific-check` / `review-stance-and-lenses`) awaiting the single combined 0.4 re-anchor ceremony. Zero bytes under `bootstrap/_scaffold/` or `bootstrap/scaffold.py` changed in this plan.
+
+**Collected node IDs of `bootstrap/tests/test_board_json_contract.py` (`pytest --collect-only -q`, 25 nodes)**:
+
+1. `bootstrap/tests/test_board_json_contract.py::TestTerminalBoardIsUnchanged::test_terminal_modes_match_parent_golden_output`
+2. `bootstrap/tests/test_board_json_contract.py::TestSymlinkedSourcesAreNotRead::test_symlinked_sources_are_skipped_and_named_in_all_modes`
+3. `bootstrap/tests/test_board_json_contract.py::TestSymlinkedSourcesAreNotRead::test_symlinked_root_or_parent_above_root_is_read_normally`
+4. `bootstrap/tests/test_board_json_contract.py::TestSymlinkedSourcesAreNotRead::test_non_regular_entries_fail_loudly_without_hanging`
+5. `bootstrap/tests/test_board_json_contract.py::TestBoardLoadsOnlyItsOwnEncoder::test_planted_session_module_under_root_is_never_executed`
+6. `bootstrap/tests/test_board_json_contract.py::TestSchemaOneBaselineHolds::test_schema_one_baseline_keys_and_types_hold`
+7. `bootstrap/tests/test_board_json_contract.py::TestRecordFactsComeFromWhereTheFileSits::test_header_lines_cannot_forge_location_or_schema_fields`
+8. `bootstrap/tests/test_board_json_contract.py::TestRecordFactsComeFromWhereTheFileSits::test_all_record_values_and_absent_vs_blank_and_headerless_files`
+9. `bootstrap/tests/test_board_json_contract.py::TestOutputIsDeterministic::test_archives_unique_path_key_and_deterministic_ascii_json`
+10. `bootstrap/tests/test_board_json_contract.py::TestRoadmapWaitsAndSkippedSymlinksInJson::test_roadmap_waits_match_maintainer_and_share_one_reader`
+11. `bootstrap/tests/test_board_json_contract.py::TestRoadmapWaitsAndSkippedSymlinksInJson::test_json_failures_and_usage_errors_write_nothing_to_stdout`
+12. `bootstrap/tests/test_board_json_contract.py::TestGuideAndOutputAgree::test_guide_opening_section_is_plain_prose_and_defines_terms`
+13. `bootstrap/tests/test_board_json_contract.py::TestGuideAndOutputAgree::test_guide_field_tables_and_standing_phrases_match_output_and_baseline`
+14. `bootstrap/tests/test_board_json_contract.py::TestGuideLookupMatchesLifecycle::test_guide_lookup_table_matches_lifecycle_diagrams`
+15. `bootstrap/tests/test_board_json_contract.py::TestGuideLookupMatchesLifecycle::test_view_example_lookup_matches_guide_table_and_lifecycle`
+16. `bootstrap/tests/test_board_json_contract.py::TestFenceStaysInTheTerminalView::test_fence_mentions_only_point_to_terminal_view_and_no_code_block_computes_one`
+17. `bootstrap/tests/test_board_json_contract.py::TestHelpCitesTheGuide::test_help_cites_cairn_guide_path_and_token_resolves`
+18. `bootstrap/tests/test_board_json_contract.py::TestGuideIsNotInstalled::test_guide_is_absent_from_scaffold_manifest`
+19. `bootstrap/tests/test_board_json_contract.py::TestWaitsRecipeAgreesWithMaintainerView::test_waits_recipe_matches_maintainer_view_across_all_shapes`
+20. `bootstrap/tests/test_board_json_contract.py::TestViewExample::test_view_example_structure_lookup_and_ast`
+21. `bootstrap/tests/test_board_json_contract.py::TestViewExample::test_view_example_renders_groups_escaping_footer_and_preserves_page_on_failure`
+22. `bootstrap/tests/test_board_json_contract.py::TestFinishedPlansRecipe::test_finished_plans_recipe_uses_author_date_and_excludes_proposals_and_edits`
+23. `bootstrap/tests/test_board_json_contract.py::TestIntentJoinRecipe::test_intent_join_matches_by_stem_only_and_canned_shape_matches_real_tool`
+24. `bootstrap/tests/test_board_json_contract.py::TestTemplatesAskForTheLineTheBoardReads::test_proposal_templates_carry_in_brief_below_the_rule`
+25. `bootstrap/tests/test_board_json_contract.py::TestTemplatesAskForTheLineTheBoardReads::test_plan_templates_carry_in_brief_below_the_rule_and_keep_waiting_above_it`
+
+**Plan-specific acceptance commands**:
+
+* **Old-versus-new comparison of the terminal board**: `git show a6306e00:tools/board.py` placed beside `tools/board.py` at `47bfece2` and run across all four terminal modes (`plain`, `--archive`, `--maintainer`, `--maintainer --archive`) on both the live tree and C1's golden tree: byte-identical (`cmp` exits 0 on all runs).
+* **Not-touched list**: `git diff-tree --no-commit-id --name-only -r <commit> -- bootstrap/_scaffold bootstrap/scaffold.py doctrine AGENTS.md templates/core/AGENTS.md tools/session.py bootstrap/UPGRADE.md bootstrap/tests/test_replacement_tools.py bootstrap/tests/fixtures/gate_manifest.json` across all commits of this plan (`a6306e00`, `94fd8cc7`, `f1b61e46`, `b332e727`, `b2a17203`, `47bfece2`): empty. No existing frozen file was edited; the only paths matching frozen patterns are the two new files (`bootstrap/tests/test_board_json_contract.py`, `bootstrap/tests/fixtures/board_json_v1_baseline.json`).
+* **Manifest diff**: `python bootstrap/scaffold.py --manifest` at `a6306e00` and `47bfece2` are byte-identical (78 lines; zero occurrences of `build-a-board-view`).
+* **Twins and lockfile**: `cmp tools/board.py templates/skills/_lib/board.py` exits 0; `dev/.cairn/cairn-lock.yml` record for `tools/board.py` equals `sha256:203c5919db24aa195e5cf9a1fdd30c52be4a3d2cd2b7d03c27118df6dd1bfa34`; `python bootstrap/verify_integrity.py --target .` lists the same 18 modified files as at `a6306e00` and does not list `tools/board.py`.
+* **Worked example (`view-example`) and recipe counts at `47bfece2`**:
+  * `view-example` tagged block length: `101` lines (within the 110-line cap).
+  * `waiting_on_maintainer(doc)` on the live tree at `47bfece2`: 2 declared roadmap items (`dev/PLANNING.md:454`, `dev/PLANNING.md:794`), 0 caveats (`roadmap_read: true`, `skipped_symlinks: []`).
+  * `finished_plans(root)` on the live tree at `47bfece2`: `55` archived plans (`55 == 55` committed files under `dev/plans/archive/`).
+  * Generated page saved at `/tmp/cairn-board-view.html` from commit `47bfece22690913bb309934fcd13d05b806c29c0`: group counts `Maintainer (2)`, `author (0)`, `reviewer (1)`, `implementer (2)`, `none named (3)`; footer reports `1 of 6 live rows carry an In brief line.`
+  * **Chunk M reading**: awaiting Maintainer response (`**Waiting on Maintainer**: read the generated board page` set in the header; `/tmp/cairn-board-view.html` generated from `47bfece22690913bb309934fcd13d05b806c29c0`).
+
+**Mutation ledger summary (81 mutants across C1–C5, each run in a detached `git worktree` beside an unmutated `rc=0` control run)**:
+
+* **C1 (23 mutants — 21 killed, 2 measured equivalent)**:
+  * Golden-tree breaks `M1`–`M12` + two footer rewordings (`M13`, `M14`): all 14 killed (`rc=1`) by `TestTerminalBoardIsUnchanged` (and `M13` also by `test_replacement_tools.py`).
+  * Equivalence checks `E1` (tab after bullet before marker) and `E2` (double bullet before marker): both measured equivalent (`rc=0`) through the real entry point because `_waiting` strips whitespace and leading `-*` after removing the outer bullet.
+  * Link/regular-file/encoder breaks `M15`–`M21` (drop artifact link check; check only leaf/`dev/proposals`/`dev/plans` skipping `dev` and `archive`; `if not base.is_dir(): continue` before link check; drop `dev/PLANNING.md` link check; check parent folders above `--root`; read leaf before `lstat`; load encoder from `--root`): all 7 killed (`rc=1`) by `TestSymlinkedSourcesAreNotRead` and `TestBoardLoadsOnlyItsOwnEncoder`.
+* **C2 (33 mutants — 33 killed)**:
+  * Baseline key deletions (`M-BL-1`..`M-BL-20`, all 6 top-level keys, 12 artifact record keys, 2 roadmap_waits keys): all 20 killed (`rc=1`) by `TestSchemaOneBaselineHolds`.
+  * Functional breaks `M-C2-1`..`M-C2-13` (`_header_fields` first-wins; copy raw snake_case header keys; rename `status` to `state` in code + guide; emit `""` for absent header; emit `null` for blank Waiting line; `sort_keys=False`; `ensure_ascii=False`; include archive without `--archive`; key by `id` instead of `path`; print partial stdout before failure; accept `--json --maintainer`; alter `_roadmap_waits` grammar; add `fences_without_wait` key): all 13 killed (`rc=1`).
+* **C3 (3 mutants — 3 killed)**:
+  * `M-C3-1` (change `revising` holder in guide table to `reviewer`): killed (`rc=1`) by `TestGuideLookupMatchesLifecycle`.
+  * `M-C3-2` (remove `--help` JSON guide paragraph): killed (`rc=1`) by `TestHelpCitesTheGuide`.
+  * `M-C3-3` (add `fences_without_wait` to guide table): killed (`rc=1`) by `TestGuideAndOutputAgree`.
+* **C4 (18 mutants — 18 killed)**:
+  * `M-C4-1`..`M-C4-10` in `view-example` (change lookup entry; remove `html.escape`; `quote=False`; remove category-C control step; drop precedence; omit commit stamp; write output before board finishes; drop skipped-paths footer; drop fence advisory sentence; build Maintainer group from `HOLDER_BY_STATUS` instead of `waiting_on_maintainer`; drop null guard on `status`): all 10 killed (`rc=1`) by `TestGuideLookupMatchesLifecycle` and `TestViewExample`.
+  * `M-C4-11`..`M-C4-15` in `waiting_on_maintainer` (exact status match; treat blank wait as absent; list archived rows; drop roadmap half; drop skip caveats; drop `awaiting-decision-x`): all 5 killed (`rc=1`) by `TestWaitsRecipeAgreesWithMaintainerView`.
+  * `M-C4-16`..`M-C4-18` in `finished-recipe` and `intent-recipe` (include `dev/proposals/archive`; join intents by file overlap; match empty `stem`): all 3 killed (`rc=1`) by `TestFinishedPlansRecipe` and `TestIntentJoinRecipe`.
+* **C5 (4 mutants — 4 killed)**:
+  * `M-C5-1`..`M-C5-4` (rename `**In brief**:` to `**In-brief**:` in `dev/proposals/_template.md`, `templates/core/dev/proposals/_template.md`, `dev/plans/_template.md`, and `templates/core/dev/plans/_template.md`, one at a time): all 4 killed (`rc=1`) by `TestTemplatesAskForTheLineTheBoardReads`, each failure naming the mutated template file.
+
+**Known omissions**:
+
+* Full-suite execution (`CAIRN_FULL_SUITE=1`) is omitted per `AGENTS.md` (`12be58d9`) and explicit Maintainer instruction; `**Certified by**: pending` awaits the Maintainer's next certifying run.
+* Chunk M's Maintainer reading of `/tmp/cairn-board-view.html` is open (`**Waiting on Maintainer**: read the generated board page`); per *Sequence*, C6 and code review proceed while archive waits on the Maintainer's answer.
+
