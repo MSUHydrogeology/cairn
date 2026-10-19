@@ -1,7 +1,7 @@
 # Plan: Remove the collaboration agreement
 
-**Source proposal**: `dev/proposals/2026-10-19-claude-remove-collaboration-agreement.md`
-**Status**: revising-plan
+**Source proposal**: `dev/proposals/archive/2026-10-19-claude-remove-collaboration-agreement.md`
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-19
 **In brief**: Cairn will stop installing its collaboration agreement while keeping each project's copy and the team guidance that still matters.
@@ -484,3 +484,77 @@ is heuristic and reads the whole file; this plan does not claim to solve
 those pre-existing limits. Both required plan-review passes are recorded;
 their findings await the author's fold and response, without a second
 plan-review round.
+
+## Operative amendments after plan review -- Codex -- 2026-10-19
+
+These amendments supersede only the named sentences in the earlier Scope,
+Sequence, Acceptance criteria, Verification and Dispositions cells. The
+earlier cells and both review passes remain intact as the record. No chunk
+starts until the review-stance plan is `archived`, and this work still precedes
+model-mapping C2.
+
+* **Source and C3:** The source proposal was moved, unchanged, to the archive
+  in correction commit `da6cc466`, repairing the missed opening transition.
+  C3 still writes `bootstrap/UPGRADE.md` and its tests, but does **not** edit
+  `CHANGELOG.md`. The final changelog entry belongs to the archive commit.
+* **C2 containment:** Add tests to
+  `bootstrap/tests/test_trigger_evaluation_action.py` that call the real
+  `evaluate_action_triggers` with an ordinary filled two-agent roster as a
+  control, a symlinked `dev/agent_collaboration.md` leaf, and a symlinked
+  `dev/` parent. Each symlink case must raise `OnboardingSecurityError`
+  before roster content is read; an empty fired set is not acceptance.
+  Run the existing
+  `test_onboarding_activation_helper.py::TestContainmentGuards` tests too.
+  In a separate copy beside an unmodified control, remove this reader's
+  `_assert_safe_read` call and show that the two new cases fail.
+* **C4 document-reader map:** The first Verification row and Boundary B's
+  reference to it additionally include the real-file readers
+  `test_documentation_plan_module.py`, `test_comprehension_floor.py`,
+  `test_verification_boundaries.py`,
+  `test_scientific_check_guidance_ships.py`, `test_certifying_run_rule.py`,
+  and `test_doc_governance.py`. They read, respectively, the edited
+  documentation-plan pair and governing/template surfaces; the AGENTS pair;
+  the AGENTS and authoring-template pairs; the authoring-template pair and
+  bootstrap guide; the AGENTS and plan-template pair plus dual-review
+  doctrine; and the shipped dev README. The earlier mapping already includes
+  the real readers `test_review_stance_in_shipped_files.py`,
+  `test_scope_reduction_trap.py`, `test_review_and_verification_rules_ship.py`,
+  `test_review_sweep_ships.py` and `test_scaffold.py`. Re-search at
+  implementation time for additions. Tests such as
+  `test_claim_check_module.py` and `test_loop_fidelity_gate.py` that write
+  similarly named scratch files, without reading the corresponding repo
+  documents, are not document-reader owners; the claim checker itself still
+  runs on every authored document.
+* **C4 security gate:** The onboarding/engine Verification row and Boundary B
+  additionally include
+  `bootstrap/tests/test_security_lint.py::test_no_blocking_security_findings`.
+  It runs Bandit over the scaffold and always-on onboarding targets through
+  the repository's severity and allowlist policy; neutrality and redundancy
+  do not run it. A missing-Bandit skip is a non-pass to record and resolve,
+  not a clean gate result. Keep the full certifying suite pending and never
+  set its override for this change.
+* **Archive handoff:** At archive, after code review, obtain the final blob
+  of `bootstrap/tests/test_review_stance_in_shipped_files.py` with
+  `git ls-tree <code-reviewed-commit> -- bootstrap/tests/test_review_stance_in_shipped_files.py`.
+  Put the blob and commit into the existing Joined paragraph under
+  **Re-anchor the gate manifest** in `dev/PLANNING.md`, stating that they
+  replace the review-stance predecessor's blob record for this file only.
+  This is a board record, not an AST or gate-manifest re-anchor. The same
+  archive serialization closes the removal and seed rows and writes the
+  changelog entry.
+
+## Response to plan review -- Codex -- 2026-10-19
+
+| Finding | Disposition | Where answered |
+|---|---|---|
+| CA-PR1 | Accepted; source archived in `da6cc466`. | Header and operative amendment, Source and C3. |
+| CA-PR2 | Accepted; final blob is an explicit archive task. | Operative amendment, Archive handoff. |
+| CA-PR3 | Accepted; changelog moves from C3 to archive. | Operative amendment, Source and C3; Archive handoff. |
+| CA-PR4 | Accepted; real document readers added to the scoped mapping. | Operative amendment, C4 document-reader map. |
+| CA-PS1 | Accepted; call-path symlink refusals and a guard-removal break added. | Operative amendment, C2 containment. |
+| CA-PS2 | Accepted; Bandit owner added, and a skip is non-pass. | Operative amendment, C4 security gate. |
+
+Both plan-review obligations have been answered. There is no second plan
+review. `ready-to-implement` does not lift the Decision's start fence:
+implementation waits until `dev/plans/review-stance-and-lenses.md` is
+`archived`.
