@@ -2,6 +2,7 @@
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-external-is-a-maintainer-stance.md` (accepted `58f30d6c`) and `dev/proposals/archive/2026-10-18-claude-review-lenses-for-every-install.md` (accepted `fbf664f0`)
 **Status**: implementing
+**Waiting on Maintainer**: a 3rd expected flag in C7b
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance — inherited: the change edits `doctrine/`, the governing `AGENTS.md` every adopter receives, the authoring templates and a framework anchor.
 **Opened**: 2026-10-18
@@ -2174,3 +2175,45 @@ pages are.
 **The pre-existing flag.** `python scripts/check_cairn.py dev/modules/security-review.md`
 reports one broken link (`content_scan.py`, line 181) at the parent of C1 as well. It is
 not in a line this plan touches, and is left for the Maintainer's board.
+
+## Deviation request -- Claude Sonnet 5.5 (implementer) -- 2026-10-19
+
+**What cannot be met as written.** C7's *Expected checker flags* criterion says
+`check_cairn.py` over the two archived source proposals reports "exactly two new
+line-bound flags" at C7, "and nothing else new", and is red "when a flag appears
+that is not these two". With the module thinned as C7 requires, it reports
+**three**. The third is in the lenses proposal's Internal review (line 313): it
+cites `templates/modules/team-gated/dual-review.md:136-144`, the module's old
+four-item ledger, which the thinning removes. It is the same kind of flag as the
+other two (a line-bound citation into the module, inside an archived append-only
+record), and it appears for any thinned size below 144 lines, so the plan's own
+"about 84" module would raise it too. The plan counted the stance proposal's two
+citations and missed this one. Measured on a clean worktree of the parent of C7b
+(three flags, all about the deleted test) and of C7b (those three plus these
+three).
+
+**Options.**
+
+* **(A) Accept it, recommended.** Record the third flag beside the other two as
+  expected, edit no archive, and finish C7b and C8 as planned. This changes
+  neither scope nor any outcome; it corrects a count in a criterion.
+* **(B) Keep the module at 144 lines or more.** This contradicts the accepted
+  thinning (the lenses proposal's item 3) and keeps two definitions of the ledger.
+* **(C) Edit the archived record.** It is append-only, and the plan already says
+  not to.
+
+**Where the work stands.** C7a landed (the presets, the deleted test, the preset
+group). C7b is built and tested in a scratch worktree and kept, uncommitted to
+`master`, at `refs/rsl/c7b-draft` (`5ce3b1dc`): the thinned module pair, now 59
+lines each and byte-identical, the module and completeness groups, and the
+scoped finalize of `dev/modules/dual-review.md` (lock count 18). 2741 mapped tests
+pass on it. Two other readings for the Maintainer to see with this request: the
+thinned module is 59 lines, not about 84, because the lens-9 satisfier text left
+with the roster; and `check_module_body_coverage.py` reads 11 missing topics
+after C7b against 8 at the base, because the probe matches doctrine heading text
+and the thinned module no longer repeats three of those headings (the content
+they name now sits in the review-loop document).
+
+Untracked paths: `bootstrap/tests/test_onboarding_review_tiers.py` -- deleted by
+C7a, so a fresh checkout does not carry it; this plan cites it throughout as the
+frozen file whose removal the re-anchor must handle.
