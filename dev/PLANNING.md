@@ -1180,7 +1180,7 @@ So, for 0.4 (each item has its own record; this is the order):
    `review-stance-and-lenses`, which edits the same review norms). Out, for
    after 0.4: `board-as-basis`, `model-mapping-install-path`, the
    stewardship-and-reuse plan, and the draft strategy
-   `dev/strategy/2026-10-19-claude-core-and-two-profiles.md`.
+   `dev/strategy/2026-10-19-codex-cairn-and-assai.md`.
 2. **The README** says plainly that 0.4 has not had an outside test, and the
    0.3 external test stays open as a row above; it is waived for going
    public, not done.
