@@ -3,7 +3,7 @@
 **Author**: Codex (Strategy), for Anthony Kendall
 **Model**: Codex; exact model identifier not exposed in this session
 **Date**: 2026-10-19
-**Status**: draft
+**Status**: revised
 **Type**: design-exploration
 **Surfaces this would feed**: assai's architecture and first implementation plan, after Cairn adoption; the Cedar Creek operating specification and harness; the research display's data contract
 
@@ -116,7 +116,7 @@ assai/
 │   ├── controller.py                 # application commands and job transitions
 │   ├── store.py                      # operational SQLite transactions
 │   ├── record.py                     # scientific records, artifacts, Git writer
-│   ├── policy.py                     # actor capabilities, approvals, budgets
+│   ├── policy.py                     # object access, disclosure, approvals, limits
 │   ├── execution.py                  # sandbox/process lifecycle and reconciliation
 │   ├── agents.py                     # agent-session backend; no scientific policy
 │   ├── notebooks.py                  # crux adapter and stable ID mapping
@@ -213,6 +213,19 @@ Materialize permitted record views for each role; do not mount the whole record
 repository or its Git history and assume that selecting a few current files
 hides another lab's private notebook or earlier restricted content.
 
+The initial supported deployment is one Linux host with Docker Engine, a
+dedicated controller account, and non-privileged job containers. Before real
+execution, record the exact host/runtime versions, image digests, identities,
+mounts, network rules and enforceable quota configuration as one deployment
+profile. Development on another host does not establish its isolation. The
+controller's daemon access is trusted authority and never reaches a job.
+
+Trust the operator, host administrator, kernel/runtime and approved controller
+code; hostile administration or host/runtime compromise is outside this first
+boundary. Provider handling/retention of disclosed data requires an explicit
+deployment decision. Prompt injection and mistaken science remain possible:
+the access policy limits authority and disclosure, not scientific error.
+
 ## 5. Sources of truth and record shapes
 
 Use **SQLite for live operational state**, **Git-versioned files for scientific
@@ -227,6 +240,32 @@ history**, and an **artifact store for bulky evidence**. Each has one job:
 * Claim indexes, working summaries, display JSON, and a readable approvals summary
   are derived views. Rebuild them from the record; never reconcile competing edits
   to a second authoritative claims table or approvals document.
+
+**One object-access rule.** Every record revision and artifact reference carries
+its ecosystem, owner, visibility, and outbound-disclosure class independently
+of its content digest. Local visibility starts as own-lab, assigned-review,
+ecosystem-shared, public, or sealed. Newly submitted objects inherit restrictive
+input permissions; an agent cannot declare its inputs public or erase restrictions
+by copying, summarizing, or repackaging them. Sharing and classification changes
+require the authority defined in the operator-approved policy.
+Apply the combined restrictions of a session's exposed inputs to its outputs;
+do not ask a language model or a text filter to infer whether a derived sentence
+still contains restricted information.
+
+The same policy function must authorize the authenticated actor, operation,
+specific object revision, ecosystem, current grant and destination where relevant.
+Apply it to reads, listings/search, context assembly, writes and referenced
+objects, paper publication, and every export. Journal grants cover assigned
+material, not every notebook; cross-ecosystem access needs an explicit grant.
+A permitted operation or paper reference is not permission to dereference every
+attachment. Check every reference before returning or linking its contents.
+
+Knowing an ID or digest grants no access. Identical bytes stored once can have
+separately protected references; a public reference must not expose the metadata
+or authority of a private one. No raw digest-fetch endpoint bypasses object
+checks. Filter search results, counts and errors so they do not expose restricted
+objects. Recheck grants before tool dispatch and publication; expiry/revocation
+stops new access and invalidates cached views, but cannot recall earlier disclosure.
 
 Ingest artifacts into controller-owned temporary storage, verify their bytes,
 and finalize them before a scientific commit can reference them. Missing or
@@ -279,6 +318,11 @@ All writing commands reach the same controller application functions, whether
 called by the operator CLI or an agent tool. No alternative "quick" publication
 path bypasses policy, validation, or revision checks.
 
+Keep object access, disclosure destinations/data classes, and resource allowances
+in one compact deployment policy consumed by those functions. Its rules are
+deny-by-default and revisioned with operator authority, not copied into separate
+allowlists in search, context, retrieval and display implementations.
+
 For each session, the controller issues a role-scoped capability over a local
 tool channel mounted only into that session's sandbox. Capability means a
 limited permission, not the model's self-description. Bind it to the lab or
@@ -303,12 +347,23 @@ Ingest bundles as untrusted files: reject escaping paths, symlinks, hard-link
 tricks, device entries and excessive size before moving anything into protected
 storage. Never execute a paper's instructions in the controller process.
 
-The first execution backend should be a local container runtime on a specified
-supported host. Containers have explicit read-only inputs, separate output
-directories, bounded memory/CPU/time, no controller mounts, no container-daemon
-socket, and no privileged mode. Research jobs have no network by default.
-Literature/data retrieval is a separate approved tool that records its sources,
-not unrestricted network access from the model runner.
+Use the recorded Linux/Docker deployment profile. Containers have explicit
+read-only inputs, separate output directories, bounded memory/CPU/time/process
+counts and storage, no controller mounts, no container-daemon socket, and no
+privileged mode. Research jobs have no network by default. Backend-native
+browsing or other outbound tools must be disabled unless they obey the same
+destination and disclosure policy as controller-dispatched tools.
+
+**Retrieval is a restricted worker, not a host network proxy.** Initially accept
+an approved source ID and structured query, not arbitrary URLs. Allow only
+operator-approved HTTPS destinations. Validate resolved IPv4/IPv6 addresses and
+bind the checked destination to the actual connection; block local, private,
+link-local, metadata and other non-approved routes with network controls too.
+Disable redirects initially; any later redirect support must repeat checks at
+each hop. The worker receives no controller mount or ambient host credentials;
+a private source needs a separate explicit grant. Bound duration, response bytes
+and decompression, and treat fetched files as untrusted. This narrow-source
+design follows [OWASP's request-forgery guidance](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html).
 
 An agent-provider adapter launches a **fresh session** with a context packet and
 role tools, records usage and termination, and checkpoints accepted work. It
@@ -319,12 +374,45 @@ credentials; a CLI whose unrestricted host tools can reach those credentials
 does not meet the boundary. Prove the actual backend configuration before use.
 This design does not assume purchasing a new API service or subscription.
 
+**Read permission is not permission to transmit.** Before runtime model calls,
+the operator records approved providers/endpoints and the data classes each may
+receive, including licensed/private inputs and locally derived material. Use
+the same policy for provider context/tool responses, retrieval queries, request
+bodies/URLs, logs and exports. Credential protection alone does not authorize
+sending a dataset, notebook or model output to the credential's provider.
+
+For the first build, every input accessible to an externally connected session,
+and its derived text, must be approved for every outbound destination enabled
+for that session. Build context/tool views on that basis; otherwise deny the
+input or disable the destination. Keep sealed scoring in workers without those
+channels. Once an agent has read restricted material, a prompt or text filter
+cannot reliably prevent paraphrased disclosure. This is one deployment policy,
+not human approval per call; unknown classification or destination is denied.
+
 Reserve resources before launching jobs. Include journal and reproduction costs
 in the same ecosystem budget, with an allocation that prevents labs consuming
 all capacity before their submissions can be checked. Hard wall-time and process
 limits must be enforced by the executor, including child processes. If a backend
 cannot enforce a requested token/spend limit, record that limitation and resolve
 the operating policy with Anthony; do not present an estimate as a hard cap.
+
+Include per-job output bytes, log bytes, file/inode counts and process counts,
+plus cumulative ecosystem limits across artifacts, workspaces, receipts, Git
+growth and worker logs. Reserve projected growth before admission, enforce
+worker limits during execution, and stop admissions at the recovery threshold.
+Account for checkpoints and rejected requests too, not only successful runs.
+
+Keep controller database/terminal-receipt capacity outside job-writable storage,
+with reserved bytes and inodes for admitted jobs to finish or fail durably.
+A full worker volume must not fill this reserve. Bound and rotate job/host logs;
+demonstrate the chosen filesystem and runtime enforce these limits rather than
+assuming container defaults. [Docker's resource guidance](https://docs.docker.com/engine/containers/resource_constraints/)
+is not a substitute for explicit storage and process-limit configuration.
+
+Garbage collection removes only unreferenced drafts/caches under a recorded
+retention policy; retained evidence and the only recoverable copy of unfinished
+work are protected. When capacity cannot be reclaimed safely, pause and request
+an operator storage/retention decision instead of deleting scientific history.
 
 ## 7. A complete investigation through the system
 
@@ -375,6 +463,9 @@ and targets still match. It writes the paper/review record and updates derived
 claims. Journal acceptance admits a paper into the working literature; it
 neither certifies truth nor authorizes an instrument change. Revision requests
 produce new submissions, not silent manuscript replacement.
+Acceptance also does not waive licensing, privacy or public-export restrictions.
+Automatic sharing uses previously approved policy; it does not require Anthony
+to approve every paper, and cannot invent a grant the policy does not contain.
 
 **Continue.** Labs may build on accepted work in their next sessions, carrying
 unverified assumptions and shared inputs visibly. A proposed next test in a
@@ -511,6 +602,8 @@ Repeating the same action with the same content returns its prior result;
 reusing its ID with different content is rejected. A stale expected revision
 requires refresh. This prevents duplicate publications and accidental overwrites,
 not duplicate scientific ideas.
+Cached or replayed results still require current authorization before returning
+data; a previously successful action ID cannot bypass an expired or revoked grant.
 
 For a publication, store pending work in SQLite, prepare validated files in
 controller-owned staging, verify referenced artifacts, and commit one complete
@@ -577,6 +670,22 @@ Only deliberately selected exports reach the website; no private runtime tree
 is served. Cairn's development board remains a separate source, not a duplicate
 software-lifecycle engine inside assai.
 
+Reauthorize export objects and attachments for their intended audience and
+destination; an internal accepted paper is not automatically a public download.
+Treat text, figures and bundles as untrusted content even when access is allowed.
+Initially render escaped plain text, with no submitted HTML or active markup.
+Create inert raster figure previews in a restricted offline worker; do not
+inline submitted SVG, HTML or other active files under the display's origin.
+Disallow automatic remote images/resources and unsafe link schemes. Any later
+Markdown renderer needs a restrictive markup/link policy, not raw HTML insertion.
+
+Serve untrusted originals only as explicit attachments from an isolated download
+origin, with attachment disposition and no content-type sniffing, without
+operator cookies or control endpoints. Keep the public display
+on an origin separate from the operator interface, with a restrictive browser
+content policy and no route to the controller's privileged tool channel. Opening
+a read-only display must not run paper code or fetch a paper-supplied resource.
+
 ## 13. First build and the demonstrations that decide it
 
 Build the shortest complete path, in this order. These are proposed slices,
@@ -584,12 +693,14 @@ not a replacement for the later implementation plan or a promised calendar.
 
 1. **Records and a fake world.** Minimal CLI, contracts, operational store,
    scientific writer, fake agent backend and deterministic toy harness. Prove
-   request identity, revision checks, artifact references, and restart behavior
+   request identity, object authorization, disclosure decisions, revision checks,
+   artifact references, quota reservations and restart behavior
    without buying model calls or running LHM.
 2. **A genuinely persistent lab.** Integrate the pinned notebook and context
    packet; checkpoint interrupted work; recover it in a fresh session. Add the
    actual agent backend only with its tool/credential and budget boundaries
-   demonstrated. No scheduled operation on an unrestricted host agent.
+   demonstrated under the recorded deployment profile and approved data policy.
+   No scheduled operation on an unrestricted host agent.
 3. **One real investigation.** Add the Cedar Creek harness and approved input
    views; register a test, run it, submit a paper, re-execute it and conduct a
    scientific review. Preserve criticism and continue the investigation.
@@ -606,13 +717,18 @@ not a replacement for the later implementation plan or a promised calendar.
 | --- | --- |
 | Fresh-session recovery | The lab remembers its conclusion but loses the alternative, failed approach, or reason for its next test |
 | Notebook/approval forgery | Editing a local approval/hash or claiming a journal identity authorizes execution or publication |
+| Object-level access | A cross-lab/cross-ecosystem object, known artifact digest, private attachment or expired grant succeeds through reads, references, search, context, cached responses or export; a permitted same-lab operation must still succeed |
 | Filesystem/execution boundary | A lab reaches live policy, sealed data, host credentials, the daemon socket, or arbitrary host execution through another tool |
+| Retrieval destination | An approved public source fails, or a local/private target, public-to-private redirect or destination change between validation and connection succeeds |
+| Outbound disclosure | A marked restricted datum reaches model payloads, retrieval URLs/bodies, unauthorized logs or exports through context/tool/derived-text paths; a permitted-data request must still succeed |
 | Resource exhaustion and cancellation | A hung child process survives job termination, a retry bypasses accounting, or reviews exceed their reserved allocation |
+| Storage and process exhaustion | One noisy job, excess processes/files or many valid small jobs exhaust terminal-receipt/recovery capacity; normal work must succeed before exhaustion and after operator recovery |
 | Reproduction versus baseline | Agreement with a baseline masks disagreement with the submitted paper's outputs |
 | Scientific challenge | The journal accepts the reproducible wrong analysis or rejects the known-sound case without a defensible scientific reason |
 | Corrections | A requires descendant is missed, a motivated-by citation alone invalidates work, or resumed context conceals the correction |
 | Crash around publication/launch | A paper appears twice, an incomplete record becomes accepted, or an expensive run is duplicated after restart |
 | Backup restoration | A lab history or evidence artifact is missing, or restored jobs restart without reconciliation |
+| Safe rendering/downloads | Submitted markup/SVG or remote-resource references execute or fetch under the display/operator origin; sound text and raster figures must still display, and permitted originals remain downloadable as isolated attachments |
 | Domain separation | A synthetic non-hydrology harness needs to edit controller logic to report a valid quantity or failure |
 
 Future implementation tests invoke the fake-world, contract, recovery, isolation,
@@ -621,6 +737,14 @@ cannot: actual permissions, provider behavior, licensed model execution, and
 whole-job cleanup on the chosen host. The operator explicitly enables the
 scheduler after reviewing that evidence. No test or gate described here exists
 merely because it has been named.
+
+Each denial/exhaustion case needs its permitted or normal control alongside it;
+blocking everything is not a passing implementation. Object-access checks cover
+the actual read, listing/search, context, reference, publication and export entry
+points, not just a unit test of the shared policy function. Disclosure tests
+capture actual outbound payloads and inspect derived views/receipts; rendering
+tests use a browser to observe execution and network requests. Exhaustion tests
+must show a durable refusal and restart/recovery, not merely a killed worker.
 
 ## 14. Alternatives, unresolved integration, and promotion
 
@@ -639,8 +763,10 @@ support the role mapping without invasive rewrites. Preserve exportable historie
 and test recovery; do not choose on vocabulary alone or maintain two notebooks.
 
 The integration questions to settle first are the real agent backend's confined
-tool/credential model and usage limits; the deployment host/container runtime and
-LHM licensing constraints; the crux revision/license and permitted state edits;
+tool/credential model and usage limits; the exact Linux/Docker profile and LHM
+licensing constraints; approved providers, retrieval sources and data classes;
+enforceable storage/process limits and recovery reserves;
+the crux revision/license and permitted state edits;
 and the exact first reference sets, metric definitions and scientific controls.
 Their answers may change an adapter or deployment choice, not justify silently
 weakening a claimed boundary. If no existing backend meets the budget/isolation
@@ -651,187 +777,3 @@ proof of accumulated knowledge or a reason to refactor Cairn. Once the design
 is ready for implementation, move or promote it into assai after Cairn adoption,
 carrying the scientific requirements and explicit unknowns with it. This note
 creates no assai files and changes no Cairn doctrine, scaffold, or release work.
-
-## Review -- Codex (Security) -- 2026-10-19
-
-**Foundations**
-
-1. **Should this happen as framed?** Yes, with the access and disclosure contracts below completed before implementation: one controller, untrusted experimental code, and separately protected scoring are appropriate boundaries for this research loop -- sections 4, 6, 8, and 9 at `ba15a599`.
-2. **Best alternative.** Keep this architecture and add a small shared authorization policy used by object access, outbound tools, and exports; select one concrete sandbox deployment for the first slice rather than adding services or bespoke containment -- sections 3, 6, and 13 at `ba15a599`.
-3. **What would show it wrong?** A permitted tool can retrieve another lab's private artifact, reach a host service, send restricted material to a provider, or exhaust the storage needed to record a refusal; the future isolation and recovery demonstrations must cover these cases -- section 13's failure matrix and findings ASR-1 through ASR-4 below.
-
-**Model**: GPT-6 (Codex; exact deployment identifier unavailable)
-**Reviewed commit**: `ba15a599ab3afd8b2449efcb501246693afc59ed`
-**Target**: this complete strategy note, sections 1-14
-**Obligation**: requested Security Review of the proposed runtime architecture
-**Verdict**: **REVISE the security contract before promotion to implementation.**
-
-This is a temporary strategy review. The author should fold accepted points
-into the note and remove this section, following the strategy template. The
-findings identify design gaps and plausible failure paths, not reproduced
-vulnerabilities in an implementation that does not yet exist.
-
-### What the architecture gets right
-
-The controller owns authority independently of agent prose. Labs cannot edit
-live policy or canonical approvals; paper code stays untrusted after journal
-acceptance; and the scorer does not share its hidden-data mount with submitted
-analysis. Sections 4, 6, 8, and 9 state those boundaries clearly. Section 11
-also correctly acknowledges that SQLite, Git, and process launch are separate
-operations and supplies reconciliation rather than claiming joint atomicity.
-Sections 7 and 12 distinguish reproducibility, scientific judgment, hidden-test
-exposure, and instrument adoption. Those choices should survive the revision.
-
-### Findings
-
-1. **ASR-1 -- HIGH: role authentication needs an explicit object-access rule.**
-
-   Sections 4-6 promise permitted snapshots, separately checked artifact
-   permissions, and a capability bound to a lab/journal ID and ecosystem
-   (lines 199-214, 225-226, 237-242, and 282-287). They do not state how that
-   identity constrains access to a particular record revision or artifact.
-   Authenticating a lab and permitting an artifact-reading operation does not
-   establish that it may read a supplied artifact ID. A reference in a paper,
-   a known digest, or a search result could otherwise turn the controller into
-   a reader for another lab's notebook or a sealed scoring object. The same
-   omission affects attachments, context retrieval, evidence links, and exports.
-
-   **Satisfier:** specify a single mandatory authorization rule for each object
-   and reference, including reads, listing/search, context assembly, writes,
-   publication, and export. Record visibility and ownership independently of
-   content identity; knowing a digest grants no access. Check the authenticated
-   actor, operation, object revision, ecosystem, and current grant before
-   returning or linking protected data. Shared bytes must not inherit public
-   access merely because another reference to their digest is public. Scope
-   journal access to assigned material. A future contract test should deny
-   cross-lab/cross-ecosystem reads and references, including a known artifact
-   digest and an expired grant, beside a permitted same-lab read. The existing
-   private-history requirement should remain; this makes its tool path precise.
-
-2. **ASR-2 -- HIGH: the retrieval tool is an unspecified network bridge around
-   the sandbox.**
-
-   Section 6 removes network access from research jobs but delegates retrieval
-   to an approved tool (lines 306-311). Approval of the executable and recording
-   its sources do not constrain the destinations it can contact. If a lab can
-   supply a URL, a literature request or redirect can target localhost, private
-   services, or a metadata endpoint reachable by the fetcher. The sandbox can
-   remain intact while this permitted host-side tool exposes protected data.
-   This is a design risk, not a claim that a fetcher has already been written.
-
-   **Satisfier:** define retrieval as a narrowly privileged worker with an
-   operator-approved destination policy, permitted protocols, validation of
-   resolved destinations and redirect hops, and enforced network restrictions.
-   Give it neither controller storage nor ambient host credentials; define any
-   private data source as a separate explicit grant. Bound response size, time,
-   and decompression, and treat fetched bytes as untrusted input. Prefer a
-   small approved-source set for the first ecosystem. The later demonstration
-   should permit a normal source while denying local/private destinations,
-   a public-to-private redirect, and a destination change between checking and
-   connecting. These controls follow the threat described in the
-   [OWASP SSRF prevention guidance](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html).
-
-3. **ASR-3 -- HIGH: protecting provider credentials does not define permission
-   to disclose research data to that provider.**
-
-   Sections 5 and 6 protect raw receipts and gateway credentials
-   (lines 260-264 and 313-320). Sections 4 and 12 separately protect sealed
-   observations. Nothing defines which intermediate datasets, notebook text,
-   model outputs, or licensed/private material may enter a provider request.
-   An agent may be allowed to inspect a local file without being allowed to
-   transmit its contents externally. Prompt-injected literature can also ask it
-   to send data through a retrieval URL or an otherwise permitted model call.
-   Keeping the provider key outside its sandbox does not close that path.
-
-   **Satisfier:** make outbound disclosure an operator-approved deployment
-   policy, including approved providers/destinations and the data classes each
-   may receive. The controller should build permitted context views; restrict
-   both model requests and retrieval request bodies/URLs under the same policy.
-   For the first build, use only data approved for that provider in any session
-   able to send arbitrary prompts there. Once restricted content reaches an
-   agent, a text filter is not a reliable way to prevent it being paraphrased
-   into an outbound request. Keep sealed scoring in workers without that
-   channel. A later demonstration should trace a marked restricted datum through
-   context, tool responses, provider payloads, logs, and exports, with an
-   approved-data request as the passing control. This requires one recorded
-   deployment decision, not human approval of every model call.
-
-4. **ASR-4 -- MEDIUM: resource protection omits cumulative storage and the
-   capacity needed for recovery.**
-
-   Sections 5 and 6 bound submitted object sizes and job memory/CPU/time/spend;
-   sections 7 and 11 preserve interrupted work and retained evidence
-   (lines 231-242, 306-327, 336-340, and 536-541). Those are useful constraints,
-   but a sequence of individually permitted jobs can fill artifacts, workspaces,
-   receipts, Git history, or container logs. A single noisy job can also exhaust
-   output space before its time limit. The controller then cannot reliably
-   persist its terminal failure, reconcile work, or back up the scientific
-   record. Memory and CPU limits do not specify a storage quota; Docker's
-   [resource documentation](https://docs.docker.com/engine/containers/resource_constraints/)
-   reinforces the need to configure limits rather than assume container defaults.
-
-   **Satisfier:** include per-job output/log/file-count limits and cumulative
-   ecosystem storage quotas in admission and execution policy. Reserve capacity
-   for controller state and terminal receipts, stop new admissions before it is
-   exhausted, and define retention/garbage collection without deleting evidence
-   still referenced by a retained record. Specify a process-count limit as well
-   as whole-job cancellation. Demonstrate output exhaustion and accumulation
-   across multiple valid small jobs; both should stop safely with a durable
-   reason, while a normal job and later recovery still work.
-
-5. **ASR-5 -- MEDIUM: read-only exports still need a safe rendering boundary.**
-
-   Section 12 selects exports and gives the display no publication authority
-   (lines 571-578), but it does not constrain active content in papers, figures,
-   or downloaded bundles. Read-only files can contain executable HTML/SVG,
-   browser requests, or misleading links. A display that inserts manuscript
-   text as HTML can execute agent-authored content in the operator's browser
-   even though it cannot write the scientific repository.
-
-   **Satisfier:** render manuscript/claim text with escaping and a restricted
-   markup policy; use inert figure previews produced in a restricted worker.
-   Do not serve submitted active files inline under a trusted application
-   origin. Keep downloadable untrusted originals isolated, and keep the public
-   display separate from any operator control channel. Include malicious
-   markup, SVG, and remote-resource references in the later display checks,
-   beside a sound text-and-figure rendering. This preserves the proposed
-   dashboard and downloadable evidence without treating either as trusted code.
-
-### Recommended implementation shape and residuals
-
-Keep the single controller and the intended scientific outcomes. Add a compact
-permission table covering actors, object visibility, outbound destinations/data
-classes, and resource allowances. Enforce it where the controller resolves an
-ID or dispatches a tool; role prompts are context, not enforcement. Use one
-concrete supported host and container profile for the first deployment, with
-measured permissions and cleanup behavior before enabling unattended cycles.
-Docker's [security guidance](https://docs.docker.com/engine/security/) supports
-the note's caution about daemon authority and configuration; it does not make
-the proposed deployment an already-verified sandbox.
-
-A hostile host administrator, host/runtime compromise, model-provider trust,
-and scientific mistakes surviving journal review remain separate residuals.
-Define the first deployment's assumptions about them explicitly. This review
-does not require an external trust service, distributed workers, cryptographic
-paper signing, or another review workflow to address the five findings.
-
-### Coverage
-
-**Covered:** claims and drift against the committed note's explicit proposed
-status (section 1); design completeness and failure behavior across object
-access, execution, resource limits, and recovery (sections 4-6 and 11);
-cross-document/scientific scope against
-`dev/strategy/2026-10-19-codex-cairn-and-assai.md`; the LHM agent-run-contract
-proposal's accepted header and Decision at its cited `d3b5bd0f`; the initial
-assai commit `08ad42e5`; the attributed crux inspection at `fce8e653`; lifecycle
-placement through the manual-cycle and scheduler-enablement sequence (sections
-13-14); and a named satisfier for every finding. Opened the note's Python SQLite
-and Docker documentation links and the additional OWASP/resource references.
-
-**Not covered / low confidence:** no assai runtime or production-path tests
-exist at the cited initial checkout, so no isolation, permission, provider,
-recovery, or browser behavior was executed or certified here. I did not
-independently inspect upstream crux code, the two local concept/display source
-documents, a deployed container profile, provider contractual data terms, or
-LHM execution/scientific calculations. The later demonstrations named above
-are recommendations for implementation evidence, not tests this review ran.
