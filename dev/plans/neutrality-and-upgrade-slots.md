@@ -1,7 +1,7 @@
 # Plan: neutrality and upgrade slots -- a vendor-name check that reads zero, and a note for slots an upgrade adds
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-neutrality-and-upgrade-slots.md`
-**Status**: revising-code
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance -- inherited from the proposal: the work widens the neutrality checker, adds code to the lockfile reader adopters run before they trust their scripts (`bootstrap/verify_integrity.py`), and edits comments in two security-relevant scripts (the interpreter binding and the content scanner)
 **Opened**: 2026-10-18
@@ -1779,3 +1779,144 @@ He saw it restated last as: "Should `verify_integrity`'s unescaped lockfile path
 * *Tests*, red before the change: a crafted path holding an escape sequence, a bell, a bidirectional override and a Cyrillic letter, taken to each of the nine sites, must print as exactly the written escapes in the form a clean path prints in; a clean report with a space in a path is unchanged; a printable homoglyph and a bare ASCII escape sequence are each escaped; and a static test lists every lockfile-derived f-string field in `verify()` from the source and requires each to be `_plain` or `ascii`. Mutants: the encoding removed at each of the ten fields, and the encoder as the identity, with its quotes kept, testing only "printable", testing only "ASCII", and the line wrapper without newlines: 15, all killed (two survived at first and each now has a node).
 
 No question remains for the Maintainer. Status stays `revising-code` until the next commit carries the fresh record.
+
+## Implementation verification -- Claude Sonnet 5.5 -- 2026-10-19
+
+This is the second record, after the code reviews. It is for the implementation bytes at the tested commit below and replaces the first record's Boundary B result for them; the first record stands for everything it measured about the plan's earlier chunks.
+
+**Status**: revising-code -> awaiting-code-review.
+
+**Boundary B mode**: `full`. The first record's four reasons stand, and the revision adds a fifth: the change to the fence in `_run_slot_note` and the encoding of the report sit on the verdict path of the lockfile reader.
+
+**Tested commit**: `f949e342fcaa8e0206a550175822a7d1f5305ef0`
+
+**Reviewed range**: `afbb1f23..f949e342` (the commit both reviews read, to the tested commit), non-contiguous (other sessions' commits interleave). This revision's commits:
+
+| Commit | What |
+| --- | --- |
+| `cf102f2c` | NU-CR1 (the fence), NU-CR2 to NU-CR4, NU-CSR1, NU-CSR2, NU-CSR5: `bootstrap/verify_integrity.py`, its test file, one sentence of `bootstrap/UPGRADE.md` |
+| `36ea62c1` | NU-CR5, NU-CR6(b), NU-CSR6(b): the checker's tests and one comment |
+| `41895ddc` | NU-CR7: two lines of `docs/DOCUMENTATION_PLAN.md` |
+| `b72d0308` | NU-CR6(a): the routing table's `_doc`, template and twin, one finalize |
+| `f9e1d572` | the Response to code review (prose) |
+| `f949e342` | the Maintainer's instruction: the existing report prints lockfile text escaped (`bootstrap/verify_integrity.py` and its test file) |
+| `c504fca8` | the addendum to the Response (prose, after the tested commit) |
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` -- Python 3.13.13 (conda-forge, Clang 19.1.7), pytest 9.0.3, pluggy 1.6.0, macOS. `PYTHONDONTWRITEBYTECODE=1` exported for the suite.
+
+**Pre-run state**: a fresh `git worktree add --detach` of `f949e342` in a uniquely named scratch directory; `git status --short` prints nothing. **Post-run state**: the same worktree and commit; `git status --short` prints nothing.
+
+### Starts that are not evidence
+
+One start preceded the recorded one: it began at `3c50940d`, and I stopped it by its process id (and its child's) when the Maintainer's instruction added the report-escaping change, which changes implementation bytes. An earlier full run at `b72d0308` (3665 passed, 2 failed) was complete and valid for the bytes before that change, and is superseded by this one.
+
+### Command table
+
+| Command | Exit | Outcomes | Elapsed |
+| --- | --- | --- | --- |
+| `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` (run through `python -c "import sys, pytest; sys.exit(pytest.main([...same arguments..., '-p', 'no:cacheprovider', '-q']))"`, which differs from `python -m pytest` only in its process name) | 1 | **4432 passed, 2 failed**, 3 warnings; no skip, xfail or xpass | 866.97 s (0:14:26) |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | neutrality `fail=0 info=56`; redundancy `fail=0 info=0` | 1 s |
+| `python scripts/check_cairn.py` | 1 | **1 issue in 185 files, not this plan's** (below) | 3 s |
+| `python scripts/claim_check.py <file>` over the 21 documents this plan edits (the plan file is checked in the commit that carries this record) | 0 each | no claim-check flags in any of the 21 | -- |
+| `python scripts/link_check.py bootstrap/UPGRADE.md` | 0 | OK | -- |
+
+The suite's count is higher than the first record's (3504) because other sessions have added tests since; every one of them passed.
+
+### Non-pass disposition
+
+* **The two AST nodes**, as before and not this plan's: `test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package` and `::test_ast_gate_passes_over_the_full_scaffold_module_set`. The CHANGED set at the tested commit is five symbols: `_cmd_adopt_module`, `cmd_upgrade`, `create_dev_tree`, `main`, `seed_gitignore`. At this plan's base `bb4f710a` it is three (`_cmd_adopt_module`, `main`, `seed_gitignore`); `cmd_upgrade` arrived with another session's `3ba6f230` and `create_dev_tree` with another session's `b5c7a4bd`. None of this plan's commits changes a byte under `bootstrap/_scaffold/` or `bootstrap/scaffold.py` (`git show --name-only` over each of the twenty prints no such path), and no engine commit has landed since `b72d0308`, where the set was already these five.
+* **The `check_cairn` issue.** `dev/reviews/2026-10-18-security-review-session-writes.md:131` cites `tools/__pycache__`, which resolves only where a `__pycache__` folder exists; the clean worktree, run with `PYTHONDONTWRITEBYTECODE=1`, has none. It is another session's committed review record. In the shared tree `check_cairn` reports OK (185 files). Not touched.
+
+### Plan-specific acceptance, at the tested commit
+
+* **NU-CR1, measured.** `verify_integrity ... 2>&1 | grep -q "verify_integrity: OK"` under `set -o pipefail`, 40 runs on a fresh `solo-greenfield` install: the parent of the revision failed 40 of 40; the tested commit fails **0 of 40**. The test that starts the check with its stderr reader already closed requires exit 0 on a passing tree, and was red (120) before the fix.
+* **Neutrality and the plants**, each alone on a copy of the tested commit's bytes (control reads `fail=0 info=56`): prose, a whole-line HTML comment, a `.txt` file, a `.json` value, and `Copilot` in `templates/` each read `fail=1`; lower-case `claude`, `ClaudeCode`, `GPT4o`, `Claude_Code` and a zero-width character inside `Claude` each read `fail=0`.
+* **Old versus new on the tested commit.** The parent's `verify_integrity.py` (the file at `bb4f710a`) beside the new one, same engine: 29 hostile cases, a fresh `solo-greenfield` install (exit 0), that install with a modified `AGENTS.md` (exit 1), Cairn's own tree (exit 1) and the nine crafted-path trees of the report-escaping change -- **41 trees, all equal**. For the nine, exit code and stdout are equal and the new stderr equals the old with each unsafe character replaced by its written escape; the old report carries 1 to 8 raw control characters per tree, the new report none.
+* **The two probes**, with the upgrade step run by `b72d0308` and the verify step by the tested commit's `verify_integrity.py`: fully filled lists **exactly one** slot, `'dev/proposals/_template.md' slot 'assurance-path-triggers'` (23 slots checked); partly filled lists **17**, with that slot among them. **They cannot be run end to end at the tested commit**, and the reason is not this plan's: run with the tested commit as the upgrade source, the same 4ad1c115 install now plans `dev/proposals/_template.md` as `needs-value` (the current template needs a token value the old install never recorded, so the file is not updated and the slot never arrives) and `dev/plans/_template.md` as `error` ("malformed slots: duplicate slot name 'acceptance-doc-tooling' in one file (line 334)", counted in the *installed* file). Both follow other sessions' template changes after `b72d0308`; I did not investigate them. That run listed 0 slots (fully filled) and 16 (partly filled).
+* **`python bootstrap/verify_integrity.py --target .`** at the tested commit exits 1 and lists the plan's 18 files.
+* **The kernel comparison** (C2): SAME for `templates/skills/_lib/session.py` and `tools/session.py` against `b13ad7b7`, and the pair is `cmp`-identical. Another session's `7e6a14e5` also edits both files, outside the ten named functions.
+* **The one-time name search**, repeated over `b13ad7b7..f949e342` (same exclusions as C7, same 20 names, control: a scratch `ClaudeCode` line is found): 205 hits in 109 distinct words, read by hand. Almost all come from other sessions' files in the range: a test file for the session kernel, the strategy and review records under `dev/` (deliberation records, like the excluded `dev/plans/` and `dev/proposals/`), and a test file for the upgrade path. From this plan: names on lines that now carry a `vendor-ok` marker or sit in the roster block, `.claude/skills` paths, the plan stem `2026-05-28-claude-cairn-progressive-onboarding`, and `metadata`. No joined, lower-case or odd spelling of a name outside a path, a routing id (`claude-code`) or an identifier in another session's test (`_CLAUDE_ROW`).
+* **The mutation ledger, on the tested bytes** (a separate copy of the tested commit, an unmutated control beside each set: 153 passed for the install check, 59 for the checker): **96 mutants, 96 killed, none survived.**
+  * The existing report's encoding (15): removed at each of the ten fields; the encoder as the identity, keeping its quotes, testing only "printable", testing only "ASCII"; the line wrapper without newlines. Two survived on the first run (a path of printable non-ASCII only, one of ASCII control only) and each now has a node.
+  * This revision's install-check mutants (16): the fence not silencing stderr, silencing for every exception, redirecting stdout; the `..` check dropped; containment weakened to the first component and to a string prefix; a whole-file read with the size checked after; `<` for `<=` in the read loop; null tokens refused; the last duplicate slot winning; a living-state `verbatim` record read, and subtracted from the failed count; the budget `>=`; the per-slot budget only; the accepted bytes kept whole and cut at the cap.
+  * The checker (29): each of the 20 names dropped, each of the 7 file types dropped, no word boundary, the comment-line skip put back.
+  * C8's 18 and C9's 18 from the first record, re-run on these bytes.
+  * `O_NOCTTY` and `O_BINARY` stay survivors no test can reach on this platform (no terminal; not Windows).
+* **Not touched.** None of this plan's commits changes `bootstrap/tests/_gate_manifest.py`, `bootstrap/tests/fixtures/gate_manifest.json`, `bootstrap/tests/fixtures/scaffold_ast_baseline.json`, `AGENTS.md`, `templates/core/AGENTS.md` or `scripts/check_model_selection.py`.
+* **Edits only add: the one exception.** `git diff -U0 bb4f710a -- bootstrap/tests/test_verify_integrity.py` removes no line. `git diff -U0 bb4f710a -- bootstrap/verify_integrity.py` removes nine, all the report-escaping change `f949e342` at the Maintainer's instruction (message text inside the failure branches; no `continue`, count or `return` among them). Before that commit it removed none.
+
+### Changes for the Maintainer's re-anchor (`bootstrap/REANCHOR_RUNBOOK.md`)
+
+* **Frozen files changed: 14**, the same fourteen as in the first record; this revision edits four of them again (`scripts/quality_gate.py`, `bootstrap/verify_integrity.py`, `bootstrap/tests/test_quality_gate_neutrality.py`, `bootstrap/tests/test_verify_integrity.py`). **Phase-mutable files changed: 2**, unchanged.
+* **Node-set changes at the tested commit:** `test_quality_gate_neutrality.py` 22 -> 59 collected (+37); `test_verify_integrity.py` 19 -> 153 collected (+134); 171 IDs added in all. All 41 base nodes of the two files are still collected, and so are all of the first record's 111. The first record lists those 111; the **60 added since** (29 + 31), as `pytest --collect-only -q` prints them at the tested commit:
+
+```
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_name_fails_alone_in_a_template[Claude]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_name_fails_alone_in_a_template[Codex]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_name_fails_alone_in_a_template[Anthropic]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_name_fails_alone_in_a_template[OpenAI]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_name_fails_alone_in_a_template[Google]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_name_fails_alone_in_a_template[DeepMind]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_name_fails_alone_in_a_template[Microsoft]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_name_fails_alone_in_a_template[Meta]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_name_fails_alone_in_a_template[Gemini]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_name_fails_alone_in_a_template[GPT]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_name_fails_alone_in_a_template[Llama]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_name_fails_alone_in_a_template[LLaMA]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_name_fails_alone_in_a_template[Antigravity]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_name_fails_alone_in_a_template[Cursor]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_name_fails_alone_in_a_template[Copilot]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_name_fails_alone_in_a_template[Windsurf]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_name_fails_alone_in_a_template[Cline]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_name_fails_alone_in_a_template[OpenCode]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_name_fails_alone_in_a_template[modflow_tools]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_name_fails_alone_in_a_template[LHM]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_file_type_is_read_under_templates[.md]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_file_type_is_read_under_templates[.yml]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_file_type_is_read_under_templates[.yaml]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_file_type_is_read_under_templates[.py]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_file_type_is_read_under_templates[.toml]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_file_type_is_read_under_templates[.json]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_each_listed_file_type_is_read_under_templates[.txt]
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_every_file_type_the_installer_ships_is_one_the_gate_reads
+bootstrap/tests/test_quality_gate_neutrality.py::TestEveryListedNameAndFileTypeIsRead::test_a_listed_name_inside_a_longer_word_is_not_a_hit
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[base_cache-dotdot-out-of-the-project]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[base_cache-dotdot-within-the-project]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[base_cache-beside-the-base-dir-sharing-its-name]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[base_cache-in-another-folder-under-dev]
+bootstrap/tests/test_verify_integrity.py::test_no_lockfile_or_file_shape_changes_the_verdict[many-slots-each-near-the-cap-in-one-file]
+bootstrap/tests/test_verify_integrity.py::test_a_passing_check_exits_0_when_nothing_is_reading_stderr
+bootstrap/tests/test_verify_integrity.py::test_stderr_is_silenced_only_after_a_write_to_it_failed[raised0-True]
+bootstrap/tests/test_verify_integrity.py::test_stderr_is_silenced_only_after_a_write_to_it_failed[raised1-True]
+bootstrap/tests/test_verify_integrity.py::test_stderr_is_silenced_only_after_a_write_to_it_failed[raised2-False]
+bootstrap/tests/test_verify_integrity.py::test_stderr_is_silenced_only_after_a_write_to_it_failed[raised3-False]
+bootstrap/tests/test_verify_integrity.py::test_the_note_is_handed_no_more_of_a_file_than_it_can_use
+bootstrap/tests/test_verify_integrity.py::test_no_read_asks_for_more_than_the_cap_plus_one_byte
+bootstrap/tests/test_verify_integrity.py::test_the_cap_holds_when_reads_come_back_short
+bootstrap/tests/test_verify_integrity.py::test_a_lockfile_without_tokens_is_read_as_having_none[None]
+bootstrap/tests/test_verify_integrity.py::test_a_lockfile_without_tokens_is_read_as_having_none[absent]
+bootstrap/tests/test_verify_integrity.py::test_when_a_slot_name_repeats_the_first_complete_pair_decides
+bootstrap/tests/test_verify_integrity.py::test_a_living_state_record_marked_verbatim_is_not_opened_or_counted
+bootstrap/tests/test_verify_integrity.py::test_the_substitution_budget_is_the_cap_and_is_spent_across_a_file
+bootstrap/tests/test_verify_integrity.py::test_lockfile_text_in_the_report_reaches_the_terminal_only_escaped[malformed-record]
+bootstrap/tests/test_verify_integrity.py::test_lockfile_text_in_the_report_reaches_the_terminal_only_escaped[unsafe-dst]
+bootstrap/tests/test_verify_integrity.py::test_lockfile_text_in_the_report_reaches_the_terminal_only_escaped[malformed-hash]
+bootstrap/tests/test_verify_integrity.py::test_lockfile_text_in_the_report_reaches_the_terminal_only_escaped[dst-escapes-the-target]
+bootstrap/tests/test_verify_integrity.py::test_lockfile_text_in_the_report_reaches_the_terminal_only_escaped[illegal-living-state]
+bootstrap/tests/test_verify_integrity.py::test_lockfile_text_in_the_report_reaches_the_terminal_only_escaped[missing]
+bootstrap/tests/test_verify_integrity.py::test_lockfile_text_in_the_report_reaches_the_terminal_only_escaped[modified]
+bootstrap/tests/test_verify_integrity.py::test_lockfile_text_in_the_report_reaches_the_terminal_only_escaped[finalize-hint]
+bootstrap/tests/test_verify_integrity.py::test_lockfile_text_in_the_report_reaches_the_terminal_only_escaped[forked-facade-advisory]
+bootstrap/tests/test_verify_integrity.py::test_a_clean_report_is_what_it_always_was
+bootstrap/tests/test_verify_integrity.py::test_every_lockfile_value_the_report_prints_goes_through_one_encoder
+bootstrap/tests/test_verify_integrity.py::test_a_printable_non_ascii_path_is_escaped_too
+bootstrap/tests/test_verify_integrity.py::test_an_ascii_control_character_is_escaped_without_any_non_ascii_text
+```
+
+### Known omissions
+
+* macOS only, one shuffle seed, as before. `O_NOCTTY` and `O_BINARY` are unexercised here.
+* One edge in the fence remains: if the `OSError` it catches came from flushing *stdout*, stderr is silenced as well; the exit code is 120 for that case in the parent too.
+* `upgrade` prints the forked-facade advisory through the engine's formatter, whose source-version line carries the lockfile's `cairn_version` raw. `verify_integrity` now escapes the advisory on the way out; the engine is untouched, and escaping it for `upgrade` is the engine repair the Maintainer's second question refers to.
+* The note's line count is uncapped (NU-CR8, `accept`).
+* The probes were not run end to end at the tested commit, for the reason given above.
