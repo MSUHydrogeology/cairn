@@ -1422,6 +1422,19 @@ class TestGuideLookupMatchesLifecycle:
         for retired in ("proposed", "reviewed", "revised", "unknown-state"):
             assert lookup_status(retired) == "none named"
 
+    def test_view_example_lookup_matches_guide_table_and_lifecycle(self) -> None:
+        """`HOLDER_BY_STATUS` inside the `view-example` block equals both the
+        guide's lookup table and `doctrine/lifecycle.md`'s diagram labels."""
+        diagram_map, raw_labels = _lifecycle_diagram_holders()
+        guide_text = GUIDE_PATH.read_text(encoding="utf-8")
+        rows = _parse_markdown_table(_guide_section(guide_text, "### The lookup"))
+        guide_map = {col1.strip("`"): col2.strip("`") for col1, col2 in rows[:-1]}
+        ns = _load_tagged_module("view-example")
+        assert ns["HOLDER_BY_STATUS"] == guide_map == diagram_map, (
+            f"example={ns['HOLDER_BY_STATUS']}, guide={guide_map}, "
+            f"lifecycle={diagram_map} (labels: {raw_labels})"
+        )
+
 
 class TestFenceStaysInTheTerminalView:
     """The fence warning stays in `board.py --maintainer` only; the guide only
@@ -1479,3 +1492,673 @@ class TestGuideIsNotInstalled:
             check=True,
         )
         assert "build-a-board-view" not in proc.stdout
+
+
+import ast
+import shutil
+
+
+def _extract_tagged_block(tag: str) -> str:
+    text = GUIDE_PATH.read_text(encoding="utf-8")
+    pattern = re.compile(rf"^```python {re.escape(tag)}\n(.*?)^```", re.MULTILINE | re.DOTALL)
+    matches = pattern.findall(text)
+    assert len(matches) == 1, f"expected exactly 1 block tagged {tag!r}, found {len(matches)}"
+    return matches[0]
+
+
+def _load_tagged_module(tag: str) -> dict[str, object]:
+    code = _extract_tagged_block(tag)
+    compiled = compile(code, f"<guide:{tag}>", "exec")
+    ns: dict[str, object] = {"__name__": f"_guide_{tag.replace('-', '_')}"}
+    exec(compiled, ns)
+    return ns
+
+
+def _git_env(**extra: str) -> dict[str, str]:
+    env = os.environ.copy()
+    env["GIT_CONFIG_NOSYSTEM"] = "1"
+    env["GIT_CONFIG_GLOBAL"] = os.devnull
+    env.update(extra)
+    return env
+
+
+def _git_run(repo: Path, *args: str, **env_extra: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.name=Test User",
+            "-c",
+            "user.email=test@example.com",
+            "-c",
+            "commit.gpgsign=false",
+            *args,
+        ],
+        cwd=repo,
+        env=_git_env(**env_extra),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+
+class TestWaitsRecipeAgreesWithMaintainerView:
+    """The `waiting_on_maintainer` recipe in `docs/build-a-board-view.md` agrees
+    with `board.py --maintainer` across every status, header, blank-wait,
+    archive, roadmap and symlink shape."""
+
+    def test_waits_recipe_matches_maintainer_view_across_all_shapes(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        ns = _load_tagged_module("view-example")
+        waits_fn = ns["waiting_on_maintainer"]
+        diagram_map, _ = _lifecycle_diagram_holders()
+
+        trees: list[tuple[str, Path, tuple[str, ...]]] = []
+
+        # 1. Every lifecycle status word bare and with notes, plus awaiting-decision variants:
+        t1 = tmp_path / "t1_statuses"
+        idx = 0
+        for word in sorted(diagram_map):
+            for suffix in ("", " -- note", ": note", ", note"):
+                idx += 1
+                _write(
+                    t1,
+                    f"dev/proposals/2026-01-{idx:02d}-s.md",
+                    f"# S {idx}\n\n**Status**: {word}{suffix}\n\n## Body\n",
+                )
+        for slug, st in (
+            ("hyphen", "awaiting-decision-x"),
+            ("plural", "awaiting-decisions"),
+            ("under", "awaiting-decision_x"),
+            ("digit", "awaiting-decision2"),
+        ):
+            _write(
+                t1,
+                f"dev/proposals/2026-02-01-{slug}.md",
+                f"# {slug}\n\n**Status**: {st}\n\n## Body\n",
+            )
+        _write(t1, "dev/PLANNING.md", "# Board\n")
+        trees.append(("statuses", t1, ()))
+
+        # 2. Waiting lines, files, blanked waits, repeated lines, archive, roadmap shapes:
+        t2 = tmp_path / "t2_waits_and_files"
+        _write(
+            t2,
+            "dev/plans/wait-blank.md",
+            "# Blank\n\n**Status**: implementing\n**Waiting on Maintainer**:\n\n## Body\n",
+        )
+        _write(
+            t2,
+            "dev/plans/wait-spaced.md",
+            "# Spaced\n\n**Status**: implementing\n**Waiting on Maintainer **: spaced\n\n## Body\n",
+        )
+        _write(
+            t2,
+            "dev/plans/wait-lower.md",
+            "# Lower\n\n**Status**: implementing\n**waiting on maintainer**: lower\n\n## Body\n",
+        )
+        _write(
+            t2,
+            "dev/plans/wait-below.md",
+            "# Below\n\n**Status**: implementing\n\n## Body\n**Waiting on Maintainer**: below\n",
+        )
+        _write(
+            t2,
+            "dev/plans/wait-repeated.md",
+            "# Repeated\n\n**Status**: implementing\n"
+            "**Waiting on Maintainer**: first\n"
+            "**Waiting on Maintainer**: second\n\n## Body\n",
+        )
+        _write(
+            t2,
+            "dev/proposals/2026-01-01-status-repeated.md",
+            "# Status repeated\n\n  **Status**: awaiting-review\n"
+            "  **Status**: awaiting-decision\n\n## Body\n",
+        )
+        _write(
+            t2,
+            "dev/proposals/2026-01-02-both.md",
+            "# Both\n\n**Status**: awaiting-decision\n"
+            "**Waiting on Maintainer**: both text\n\n## Body\n",
+        )
+        _write(t2, "dev/plans/headerless.md", "# No headers\n\nBody.\n\n## Section\n")
+        _write(t2, "dev/plans/no-status.md", "# No status\n\n**Opened**: 2026-01-01\n\n## Section\n")
+        _write(
+            t2,
+            "dev/plans/_template.md",
+            "# Template\n\n**Status**: implementing\n**Waiting on Maintainer**: skip\n\n## Body\n",
+        )
+        _write(
+            t2,
+            "dev/plans/_notes.md",
+            "# Notes\n\n**Status**: implementing\n**Waiting on Maintainer**: skip\n\n## Body\n",
+        )
+        _write(
+            t2,
+            "dev/plans/archive/arch-wait.md",
+            "# Archived\n\n**Status**: archived\n**Waiting on Maintainer**: done\n\n## Body\n",
+        )
+        _write(
+            t2,
+            "dev/PLANNING.md",
+            "# Planning\n\n"
+            "**Waiting on Maintainer**: plain\n"
+            "  **Waiting on Maintainer**: indented\n"
+            "  * **Waiting on Maintainer**: sub-bullet\n"
+            "- **Waiting on Maintainer**: dash-bullet\n"
+            "* **Waiting on Maintainer**:\n"
+            "Prose mentioning **Waiting on Maintainer**: inline.\n",
+        )
+        trees.append(("waits_live", t2, ()))
+        trees.append(("waits_archive", t2, ("--archive",)))
+
+        # 3. Missing dev/PLANNING.md:
+        t3 = tmp_path / "t3_no_planning"
+        _write(
+            t3,
+            "dev/proposals/2026-01-01-decide.md",
+            "# Decide\n\n**Status**: awaiting-decision\n\n## Body\n",
+        )
+        trees.append(("no_planning", t3, ()))
+
+        # 4. C1's ten symlink trees:
+        for name, lroot, _, _ in _build_ten_symlink_trees(tmp_path / "links"):
+            extra = ("--archive",) if name == "archive_linked" else ()
+            trees.append((f"link_{name}", lroot, extra))
+
+        for label, root, extra in trees:
+            doc = _run_json(root, capsys, *extra)
+            recipe_entries, caveats = waits_fn(doc)
+
+            assert board.main(["--maintainer", *extra, "--root", str(root)]) == 0
+            maint_lines = capsys.readouterr().out.splitlines()
+            maint_entries = []
+            for line in maint_lines[1:]:
+                cells = line.removeprefix("board: ").split(" | ", 3)
+                if len(cells) == 4:
+                    maint_entries.append(tuple(cells))
+
+            assert [(k, a, r) for k, a, r, _ in recipe_entries] == [
+                (k, a, r) for k, a, r, _ in maint_entries
+            ], f"{label}: entry keys/reasons differed"
+
+            for (rk, ra, rr, rt), (mk, ma, mr, mt) in zip(recipe_entries, maint_entries):
+                if rt.isascii() and len(rt) < 47:
+                    assert rt == mt, f"{label} ({rk}, {ra}): text {rt!r} != {mt!r}"
+
+            maint_missing = any(
+                "dev/PLANNING.md is missing" in l for l in maint_lines
+            )
+            maint_skips = [
+                l.removeprefix("board: ")
+                for l in maint_lines
+                if l.startswith("board: skipped (symbolic link, not read): ")
+            ]
+            if maint_missing:
+                assert "dev/PLANNING.md was not read" in caveats, label
+            for sk in maint_skips:
+                assert sk in caveats, f"{label}: missing skip caveat {sk!r} in {caveats}"
+
+
+class TestViewExample:
+    """The `view-example` block in `docs/build-a-board-view.md` is concise, uses
+    only two safe subprocesses, escapes HTML and category-C characters, matches
+    `--maintainer` on the Maintainer group, reports skipped links and missing
+    roadmap files, and never overwrites an existing page on failure."""
+
+    def test_view_example_structure_lookup_and_ast(self) -> None:
+        code = _extract_tagged_block("view-example")
+        line_count = len(code.strip().splitlines())
+        assert 75 <= line_count <= 110, f"view-example line count {line_count} outside [75, 110]"
+
+        ns = _load_tagged_module("view-example")
+        diagram_map, _ = _lifecycle_diagram_holders()
+        assert ns["HOLDER_BY_STATUS"] == diagram_map
+
+        tree = ast.parse(code)
+        subproc_calls: list[ast.Call] = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                func = node.func
+                if (
+                    isinstance(func, ast.Attribute)
+                    and isinstance(func.value, ast.Name)
+                    and func.value.id == "subprocess"
+                ):
+                    subproc_calls.append(node)
+        assert len(subproc_calls) == 2, f"expected 2 subprocess calls, got {len(subproc_calls)}"
+        for call in subproc_calls:
+            for kw in call.keywords:
+                if kw.arg == "shell":
+                    assert isinstance(kw.value, ast.Constant) and kw.value.value is False
+            assert len(call.args) >= 1 and isinstance(call.args[0], ast.List)
+            elts = call.args[0].elts
+            for elt in elts:
+                if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                    assert elt.value != "python", "must not look up bare 'python' on PATH"
+        first_elts = subproc_calls[0].args[0].elts
+        assert (
+            isinstance(first_elts[0], ast.Attribute)
+            and isinstance(first_elts[0].value, ast.Name)
+            and first_elts[0].value.id == "sys"
+            and first_elts[0].attr == "executable"
+        )
+
+    def test_view_example_renders_groups_escaping_footer_and_preserves_page_on_failure(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        ns = _load_tagged_module("view-example")
+        build_view = ns["build_view"]
+        render_page = ns["render_page"]
+
+        repo = tmp_path / "repo"
+        (repo / "tools").mkdir(parents=True)
+        shutil.copy2(CAIRN_ROOT / "tools" / "board.py", repo / "tools" / "board.py")
+        shutil.copy2(CAIRN_ROOT / "tools" / "session.py", repo / "tools" / "session.py")
+        _git_run(repo, "init")
+
+        esc = "\x1b"
+        rlo = "\u202e"
+        hangul_filler = "\u3164"
+        long_brief = "B" * 1000
+
+        _write(
+            repo,
+            "dev/proposals/2026-01-01-decide-note.md",
+            "# Decide with note\n\n"
+            "**Status**: awaiting-decision \u2014 scope question\n"
+            "**In brief**: Ready for decision.\n\n## Body\n",
+        )
+        _write(
+            repo,
+            "dev/proposals/2026-01-02-decide-digit.md",
+            "# Digit suffix\n\n**Status**: awaiting-decision2\n\n## Body\n",
+        )
+        _write(
+            repo,
+            "dev/proposals/2026-01-03-revising.md",
+            f"# Author <script>alert(\"x\")</script> 'quote' {esc} {rlo} {hangul_filler}\n\n"
+            "**Status**: revising\n\n## Body\n",
+        )
+        _write(
+            repo,
+            "dev/plans/waiting-impl.md",
+            "# Implementing with wait\n\n"
+            "**Status**: implementing\n"
+            "**Waiting on Maintainer**: confirm threshold\n"
+            f"**In brief**: {long_brief}\n\n## Body\n",
+        )
+        _write(
+            repo,
+            "dev/plans/review-plan.md",
+            "# In code review\n\n**Status**: awaiting-code-review\n\n## Body\n",
+        )
+        _write(
+            repo,
+            "dev/plans/active-impl.md",
+            "# Active implementation\n\n**Status**: implementing\n\n## Body\n",
+        )
+        _write(repo, "dev/plans/headerless.md", "# Headerless plan\n\nBody.\n\n## Section\n")
+        _write(
+            repo,
+            "dev/plans/no-status.md",
+            "# No status line\n\n**Opened**: 2026-01-05\n\n## Section\n",
+        )
+        _write(
+            repo,
+            "dev/PLANNING.md",
+            "# Planning\n\n* **Waiting on Maintainer**: run release ceremony\n",
+        )
+        _git_run(repo, "add", ".")
+        _git_run(repo, "commit", "-m", "initial")
+        head_sha = _git_run(repo, "rev-parse", "HEAD").stdout.strip()
+
+        monkeypatch.chdir(repo)
+        out_html = tmp_path / "board-view.html"
+        build_view(out_html)
+        html_text = out_html.read_text(encoding="utf-8")
+
+        # Group order and counts:
+        headings = re.findall(r"<h2>([^<]+)</h2>", html_text)
+        assert headings == [
+            "Maintainer (3)",
+            "author (1)",
+            "reviewer (1)",
+            "implementer (1)",
+            "none named (3)",
+        ]
+
+        # Maintainer section members match board.py --maintainer:
+        maint_sec = re.search(
+            r"<h2>Maintainer \(3\)</h2><ul>(.*?)</ul>", html_text, flags=re.DOTALL
+        ).group(1)
+        maint_codes = re.findall(r"<li><code>([^<]+)</code>", maint_sec)
+        assert board.main(["--maintainer", "--root", str(repo)]) == 0
+        maint_cli = [
+            l.removeprefix("board: ").split(" | ", 3)[1]
+            for l in capsys.readouterr().out.splitlines()[1:]
+            if len(l.removeprefix("board: ").split(" | ", 3)) == 4
+        ]
+        assert maint_codes == maint_cli
+        assert "waiting-impl" in maint_codes
+        assert "dev/PLANNING.md:3" in maint_codes
+
+        # Headerless and no-status files are in "none named" with "status unknown":
+        none_sec = re.search(
+            r"<h2>none named \(3\)</h2><ul>(.*?)</ul>", html_text, flags=re.DOTALL
+        ).group(1)
+        assert "<code>headerless</code> (status unknown)" in none_sec
+        assert "<code>no-status</code> (status unknown)" in none_sec
+        assert "<code>2026-01-02-decide-digit</code> (awaiting-decision2)" in none_sec
+
+        # Escaping and category-C replacement:
+        assert "<script>" not in html_text
+        assert "&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;" in html_text
+        assert "&#x27;quote&#x27;" in html_text
+        assert esc not in html_text and "U+001B" in html_text
+        assert rlo not in html_text and "U+202E" in html_text
+        assert hangul_filler in html_text
+        assert ("B" * 125) not in html_text
+        assert ("B" * 119 + "\u2026") in html_text
+
+        # Footer checks:
+        assert head_sha in html_text
+        assert "2 of 8 live rows carry an In brief line." in html_text
+        assert "python tools/board.py --maintainer" in html_text
+        assert "Page incomplete" not in html_text
+
+        # Skipped symlinks and missing roadmap reach the page footer:
+        for name, lroot, _, _ in _build_ten_symlink_trees(tmp_path / "view_links"):
+            if name in ("leaf_outside", "dangling_plans", "dangling_planning"):
+                doc = _run_json(lroot, capsys)
+                rendered = render_page(doc, head_sha)
+                assert "Page incomplete" in rendered
+                for sk in doc["skipped_symlinks"]:
+                    assert sk in rendered
+                if not doc["roadmap_read"]:
+                    assert "dev/PLANNING.md was not read" in rendered
+
+        # Failure preservation: board fails (non-UTF-8 file) -> existing page untouched
+        sentinel = "<!-- existing page must survive -->\n"
+        out_html.write_text(sentinel, encoding="utf-8")
+        (repo / "dev" / "plans" / "corrupt.md").write_bytes(b"\xff\xfe")
+        with pytest.raises(subprocess.CalledProcessError):
+            build_view(out_html)
+        assert out_html.read_text(encoding="utf-8") == sentinel
+
+        no_exist = tmp_path / "never_created.html"
+        with pytest.raises(subprocess.CalledProcessError):
+            build_view(no_exist)
+        assert not no_exist.exists()
+        (repo / "dev" / "plans" / "corrupt.md").unlink()
+
+        # Failure preservation: git rev-parse fails (non-git directory) -> page untouched
+        non_git = tmp_path / "non_git"
+        (non_git / "tools").mkdir(parents=True)
+        shutil.copy2(CAIRN_ROOT / "tools" / "board.py", non_git / "tools" / "board.py")
+        shutil.copy2(CAIRN_ROOT / "tools" / "session.py", non_git / "tools" / "session.py")
+        _write(non_git, "dev/plans/ok.md", "# OK\n\n**Status**: implementing\n")
+        monkeypatch.chdir(non_git)
+        with pytest.raises(subprocess.CalledProcessError):
+            build_view(out_html)
+        assert out_html.read_text(encoding="utf-8") == sentinel
+
+
+class TestFinishedPlansRecipe:
+    """The `finished-recipe` block reports archived plans only, ordered newest
+    first by git author date (`%ad`), one entry per plan."""
+
+    def test_finished_plans_recipe_uses_author_date_and_excludes_proposals_and_edits(
+        self, tmp_path: Path
+    ) -> None:
+        ns = _load_tagged_module("finished-recipe")
+        finished_plans = ns["finished_plans"]
+
+        repo = tmp_path / "hist_repo"
+        repo.mkdir()
+        _git_run(repo, "init")
+
+        # Plan alpha archived on 2026-01-10 (author date) with a later committer date:
+        _write(repo, "dev/plans/archive/plan-alpha.md", "# Alpha\n")
+        _git_run(repo, "add", ".")
+        _git_run(
+            repo,
+            "commit",
+            "-m",
+            "archive alpha",
+            GIT_AUTHOR_DATE="2026-01-10T12:00:00Z",
+            GIT_COMMITTER_DATE="2026-03-01T12:00:00Z",
+        )
+
+        # Proposal archived on 2026-02-15 (must not appear):
+        _write(repo, "dev/proposals/archive/2026-02-01-prop.md", "# Prop\n")
+        _git_run(repo, "add", ".")
+        _git_run(
+            repo,
+            "commit",
+            "-m",
+            "archive prop",
+            GIT_AUTHOR_DATE="2026-02-15T12:00:00Z",
+            GIT_COMMITTER_DATE="2026-02-15T12:00:00Z",
+        )
+
+        # Plan beta archived on 2026-01-20:
+        _write(repo, "dev/plans/archive/plan-beta.md", "# Beta\n")
+        _git_run(repo, "add", ".")
+        _git_run(
+            repo,
+            "commit",
+            "-m",
+            "archive beta",
+            GIT_AUTHOR_DATE="2026-01-20T12:00:00Z",
+            GIT_COMMITTER_DATE="2026-01-20T12:00:00Z",
+        )
+
+        # Plan gamma archived on 2026-02-05:
+        _write(repo, "dev/plans/archive/plan-gamma.md", "# Gamma\n")
+        _git_run(repo, "add", ".")
+        _git_run(
+            repo,
+            "commit",
+            "-m",
+            "archive gamma",
+            GIT_AUTHOR_DATE="2026-02-05T12:00:00Z",
+            GIT_COMMITTER_DATE="2026-02-05T12:00:00Z",
+        )
+
+        # Post-archive edit to plan-alpha on 2026-04-01 (must not change archive date or duplicate):
+        _write(repo, "dev/plans/archive/plan-alpha.md", "# Alpha edited\n")
+        _git_run(repo, "add", ".")
+        _git_run(
+            repo,
+            "commit",
+            "-m",
+            "edit alpha",
+            GIT_AUTHOR_DATE="2026-04-01T12:00:00Z",
+            GIT_COMMITTER_DATE="2026-04-01T12:00:00Z",
+        )
+
+        result = finished_plans(repo)
+        assert result == [
+            ("plan-gamma", "2026-02-05"),
+            ("plan-beta", "2026-01-20"),
+            ("plan-alpha", "2026-01-10"),
+        ]
+
+        # Run on Cairn's own repository:
+        live_result = finished_plans(CAIRN_ROOT)
+        archived_files = [
+            p.stem
+            for p in (CAIRN_ROOT / "dev" / "plans" / "archive").glob("*.md")
+            if not p.name.startswith("_")
+        ]
+        assert len(live_result) == len(archived_files)
+
+
+class TestIntentJoinRecipe:
+    """The `intent-recipe` block joins `cairn-intent-list/1` claims with live
+    board artifacts by `stem` only, never by file overlap, and the guide carries
+    the hook safety warning."""
+
+    def test_intent_join_matches_by_stem_only_and_canned_shape_matches_real_tool(
+        self, tmp_path: Path
+    ) -> None:
+        ns = _load_tagged_module("intent-recipe")
+        join_intents = ns["join_intents"]
+
+        # Verify canned shape against real tools/intent.py:
+        scratch_log = tmp_path / "intents.jsonl"
+        intent_tool = str(CAIRN_ROOT / "tools" / "intent.py")
+        subprocess.run(
+            [
+                sys.executable,
+                intent_tool,
+                "--log-path",
+                str(scratch_log),
+                "claim",
+                "--agent",
+                "agent-1",
+                "--files",
+                "tools/board.py",
+                "--action",
+                "implement",
+                "--stem",
+                "board-as-basis",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        subprocess.run(
+            [
+                sys.executable,
+                intent_tool,
+                "--log-path",
+                str(scratch_log),
+                "claim",
+                "--agent",
+                "agent-2",
+                "--files",
+                "dev/plans/board-as-basis.md",
+                "--action",
+                "review",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        real_out = subprocess.run(
+            [
+                sys.executable,
+                intent_tool,
+                "--log-path",
+                str(scratch_log),
+                "list",
+                "--format",
+                "json",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+        real_doc = json.loads(real_out)
+        assert real_doc["schema"] == "cairn-intent-list/1"
+        assert len(real_doc["claims"]) == 2
+        assert real_doc["claims"][0]["stem"] == "board-as-basis"
+        assert real_doc["claims"][1]["stem"] == ""
+
+        canned_claims = [
+            {
+                "action": "implement",
+                "agent": "agent-1",
+                "files": ["tools/board.py"],
+                "id": "c1",
+                "stem": "board-as-basis",
+                "ts": "2026-10-19T10:00:00-04:00",
+            },
+            {
+                "action": "edit",
+                "agent": "agent-2",
+                "files": ["dev/plans/board-as-basis.md"],
+                "id": "c2",
+                "stem": "",
+                "ts": "2026-10-19T10:01:00-04:00",
+            },
+            {
+                "action": "explore",
+                "agent": "agent-3",
+                "files": ["README.md"],
+                "id": "c3",
+                "stem": "nonexistent-artifact",
+                "ts": "2026-10-19T10:02:00-04:00",
+            },
+        ]
+        assert set(canned_claims[0].keys()) == set(real_doc["claims"][0].keys())
+
+        canned_board = {
+            "artifacts": [
+                {
+                    "archived": False,
+                    "id": "board-as-basis",
+                    "in_brief": None,
+                    "kind": "plan",
+                    "opened": "2026-10-18",
+                    "path": "dev/plans/board-as-basis.md",
+                    "plan_review": None,
+                    "review": None,
+                    "source_proposal": None,
+                    "status": "implementing",
+                    "title": "Plan",
+                    "waiting_on_maintainer": None,
+                },
+                {
+                    "archived": True,
+                    "id": "archived-plan",
+                    "in_brief": None,
+                    "kind": "plan",
+                    "opened": "2026-10-01",
+                    "path": "dev/plans/archive/archived-plan.md",
+                    "plan_review": None,
+                    "review": None,
+                    "source_proposal": None,
+                    "status": "archived",
+                    "title": "Old",
+                    "waiting_on_maintainer": None,
+                },
+            ],
+            "includes_archive": True,
+            "roadmap_read": True,
+            "roadmap_waits": [],
+            "schema": "cairn-board/1",
+            "skipped_symlinks": [],
+        }
+
+        attached, unattached = join_intents(
+            canned_board, {"schema": "cairn-intent-list/1", "claims": canned_claims}
+        )
+        assert list(attached.keys()) == ["board-as-basis"]
+        assert [c["id"] for c in attached["board-as-basis"]] == ["c1"]
+        assert [c["id"] for c in unattached] == ["c2", "c3"]
+
+        # Empty claims list gives no hints:
+        assert join_intents(
+            canned_board, {"schema": "cairn-intent-list/1", "claims": []}
+        ) == ({}, [])
+
+        # Unknown schemas are refused:
+        with pytest.raises(ValueError):
+            join_intents(canned_board, {"schema": "cairn-intent-list/2", "claims": []})
+        with pytest.raises(ValueError):
+            join_intents(
+                {**canned_board, "schema": "cairn-board/2"},
+                {"schema": "cairn-intent-list/1", "claims": []},
+            )
+
+        # Standing phrase in ## Keeping a page honest:
+        honest_sec = " ".join(
+            _guide_section(
+                GUIDE_PATH.read_text(encoding="utf-8"), "## Keeping a page honest"
+            ).split()
+        )
+        assert "whatever commit is checked out" in honest_sec
