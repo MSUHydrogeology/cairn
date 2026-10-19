@@ -1151,6 +1151,47 @@ public:
   polish, not blockers.
 * **0.5+** — per-project efficacy-data infrastructure and beyond.
 
+**Revised 2026-10-19: 0.4 goes public after the current batch, with the
+external test waived.** The Maintainer asked whether to make Cairn public and
+cut a release "after this", and answered four questions in chat (multiple
+choice). The questions and choices, verbatim:
+
+> "The roadmap says Cairn goes public only after the external test: a
+> consenting third-party science project runs the bootstrap end to end. That's
+> blocked on finding the third party. What do you want to do?" — **"Waive it
+> for 0.4"** ("Go public once the batch lands. The README says plainly that it
+> hasn't yet had an outside test. The waiver goes on record in your words.")
+>
+> "You decided to remove the collaboration agreement 'before 0.4'. The template
+> still ships it, and five shipped files reference it. Include that removal in
+> this release?" — **"Yes, before the cut (Recommended)"**
+>
+> "Do the AST and gate-manifest re-anchors at the release cut, rather than
+> once after model-mapping as you chose before?" — **"Yes, at the cut
+> (Recommended)"**
+
+So, for 0.4 (each item has its own record; this is the order):
+
+1. **The cut line.** In: the four security repairs (the `.gitignore` seed guard,
+   the session-kernel writes, the committed interpreter binding, the engine's
+   copy fallback), `neutrality-and-upgrade-slots`, `independent-scientific-check`
+   and `review-stance-and-lenses`, each reviewed and archived, and the
+   collaboration-agreement removal above (its own proposal, sequenced after
+   `review-stance-and-lenses`, which edits the same review norms). Out, for
+   after 0.4: `board-as-basis`, `model-mapping-install-path`, the
+   stewardship-and-reuse plan, and the draft strategy
+   `dev/strategy/2026-10-19-claude-core-and-two-profiles.md`.
+2. **The README** says plainly that 0.4 has not had an outside test, and the
+   0.3 external test stays open as a row above; it is waived for going
+   public, not done.
+3. **The Maintainer's AST and gate-manifest re-anchors at the cut**, so the
+   release suite is green. `model-mapping-install-path` gets its own ceremony
+   after 0.4, replacing the single combined ceremony chosen on 2026-10-18.
+4. **Before the repo flips:** a full-history secret scan, and a read of what the
+   history and the GitHub issues expose.
+5. **The release sweeps** in `docs/release-process.md`, then the
+   public-launch sequence below, unchanged from step 1.
+
 **Public-launch sequence** (deferred to 0.4+; Maintainer-gated, in order).
 **Revised 2026-08-04** to carry plan `release-authenticity`'s Chunk M, which is
 Maintainer-only and was not performed by the implementing agent. The previous
