@@ -38,8 +38,11 @@ link (only a process already on the machine can do that) is the one gap left.
 binding and the caller then *executes* the path it returns.  It is a strict
 shape validator -- absoluteness, schema, symlink-freedom, the executable bit --
 and deliberately not an authenticator: it establishes nothing about Python
-identity or provenance.  Changes to its schema, validation order, fallback
-disposition, warning visibility, or subprocess use take a Security Review.
+identity or provenance.  One check on where the file came from comes after those:
+a binding that git tracks, or that sits behind a link, or that git cannot be
+asked about, is not used (see `_binding_untrusted`).  Changes to its schema,
+validation order, fallback disposition, warning visibility, or subprocess use
+take a Security Review.
 
 It also owns `encode_display`, the single terminal encoder for externally
 sourced values.  There is no second escape table in this tree; a fallback would
@@ -675,6 +678,89 @@ def _probe_interpreter(interp: Path) -> str:
     return "present"
 
 
+#: Why a binding that passed the shape checks is still not used.  Fixed words
+#: only: nothing from the project or from git is put in them, so there is no
+#: text here to encode.  The remedy deletes the file as well as untracking it,
+#: because an untracked copy of a hostile binding would be trusted next run.
+_BINDING_TRACKED = (
+    "dev/.cairn/local-env.json is tracked by git, so it came with the repository "
+    "and was not written for this machine.  It was not used: this run uses the "
+    "current interpreter.  To fix it: git rm dev/.cairn/local-env.json (this "
+    "deletes the file too), add it to .gitignore, commit, then re-run the Cairn "
+    "scaffold install to write a binding for this machine."
+)
+_BINDING_LINKED = (
+    "dev/.cairn/local-env.json is reached through a link, so it may not be the "
+    "file written for this machine.  It was not used: this run uses the current "
+    "interpreter.  To fix it: replace the link with a real folder and file "
+    "(delete dev/.cairn/local-env.json, then re-run the Cairn scaffold install)."
+)
+_BINDING_UNVERIFIED = (
+    "could not ask git whether dev/.cairn/local-env.json is tracked, so it was "
+    "not used: this run uses the current interpreter.  Check that git works in "
+    "this folder, then run again."
+)
+
+#: How long the question to git may take before it counts as "could not ask".
+_BINDING_GIT_TIMEOUT_SECONDS = 30
+
+
+def _binding_untrusted(root: Path, cfg: Path) -> Optional[str]:
+    """Why the binding file *cfg* must not be used although its shape is fine,
+    or ``None`` when it may be.
+
+    The binding is meant to be written on one machine and never committed, but
+    nothing enforced that: git checks a committed one out like any other file,
+    and a checkout of a branch that tracks it silently replaces the user's own
+    ignored one.  A project could then choose the program the kernel runs.  So
+    the file is refused when
+
+    * a folder on the way, or the file, is a link -- git lists nothing beyond a
+      link, so a tracked folder behind a tracked link would look untracked;
+    * git has it in its index (any spelling of the name: ``icase``, because on a
+      volume that ignores case a project can track it as ``DEV/.CAIRN/...``); or
+    * git cannot answer -- not installed, an error, no answer in time.  An
+      unanswered question is not an answer of "no".
+
+    The question is a fixed argument list (no shell) run in *root* with the
+    module's own git environment (no pager, no prompt); the path is a constant,
+    after ``--``, and ``literal`` turns off pathspec magic in it.
+    """
+    try:
+        _assert_not_linked(cfg, root)
+    except LifecycleError:
+        return _BINDING_LINKED
+    relative = "/".join(_CAIRN_STATE_DIR + ("local-env.json",))
+    try:
+        proc = subprocess.run(
+            ["git", "ls-files", "-z", "--cached", "--", ":(literal,icase)" + relative],
+            cwd=str(root),
+            capture_output=True,
+            check=False,
+            env=_git_env(),
+            stdin=subprocess.DEVNULL,
+            timeout=_BINDING_GIT_TIMEOUT_SECONDS,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return _BINDING_UNVERIFIED
+    if proc.returncode != 0:
+        return _BINDING_UNVERIFIED
+    return _BINDING_TRACKED if proc.stdout else None
+
+
+_UNTRUSTED_WARNED = False
+
+
+def _warn_untrusted_once(message: str) -> None:
+    """Say once per process that the binding was not used (the resolver is
+    reached several times in one run; `_warn_stale_once` does the same)."""
+    global _UNTRUSTED_WARNED
+    if _UNTRUSTED_WARNED:
+        return
+    _UNTRUSTED_WARNED = True
+    _warn(message)
+
+
 def _resolve_interpreter(root: Path) -> Tuple[str, str]:
     """Resolve the project interpreter the routines invoke sub-tools with.
 
@@ -693,6 +779,13 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
     checks **neither Python identity nor binary provenance**.  Any absolute,
     present, non-symlinked, executable regular file is accepted and
     executed.
+
+    **Where the file came from is checked last.**  A binding that passed every
+    shape check is still not used if `_binding_untrusted` says so (git tracks it,
+    it sits behind a link, or git cannot be asked): the run goes on with the
+    current interpreter, source ``"fallback-untrusted"``, and a warning that
+    names the fix.  The shape checks, their order and their refusals are
+    unchanged, and nothing is run before this check.
 
     A structurally-valid-but-absent path **degrades** with a warning
     (``"fallback-stale"``, below).  Every other violation **refuses before
@@ -773,6 +866,10 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
             f'{cfg}: "interpreter" is not an executable file: {interp}.  '
             f"{_REBIND_REMEDY}"
         )
+    untrusted = _binding_untrusted(root, cfg)
+    if untrusted is not None:
+        _warn_untrusted_once(untrusted)
+        return sys.executable, "fallback-untrusted"
     return str(interp), "local-env.json"
 
 
