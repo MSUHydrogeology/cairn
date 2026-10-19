@@ -256,8 +256,8 @@ only about itself:
   run above serves as the control when the mistake it makes produces an effect
   of that size. At implementation, the implementer records the control with the
   failing run. For example, an analysis that reports no streamflow depletion
-  from a pumping well first recovers the depletion of a synthetic well of
-  comparable rate.
+  from a pumping well first recovers the depletion of a synthetic well at the
+  same rate, distance and schedule.
 
 **Reviewers.** The proposal reviewer challenges whether the basis is really
 independent of the code under review. The code reviewer verifies the recorded
