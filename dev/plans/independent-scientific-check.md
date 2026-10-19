@@ -1,7 +1,7 @@
 # Plan: independent scientific check — one check per scientific change, shown able to fail
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-independent-scientific-check.md`
-**Status**: revising-code
+**Status**: awaiting-code-review
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits the authoring templates and the axis prose that adopters' bootstrap reads.
 **Opened**: 2026-10-18
@@ -2945,3 +2945,122 @@ falsifier F2 on the revisit row) is unchanged.
 > that the block yields a check that catches the priming error. The stop rule's
 > literal outcome (both plans no, block judged ritual) was superseded by that
 > instruction.
+
+## Implementation verification -- Claude Sonnet 5.5 (implementer) -- 2026-10-19 (the data-prompt sentence)
+
+This is the third record. It covers only the one-sentence change made at the
+Maintainer's instruction (recorded above); the first and second records stand.
+
+**In plain terms.** One sentence of the block changed. The test goes red on the
+old sentence and green on the new, the mutants aimed at the sentence are all
+caught, and the full suite gives the same two red tests as before, both about the
+AST baseline of the engine, which this change does not touch. The code reviewer
+re-checks that sentence and its test.
+
+**Boundary B mode**: full.
+
+**Tested commit**: `02adb81f9e12b991999b9e576b99d1462c39d3d0`.
+
+**Reviewed range**: base `d2730303a34480d6d94966387a5dcff8d70543e6` (the commit
+recording the Maintainer's instruction) to tested `02adb81f9e12b991999b9e576b99d1462c39d3d0`.
+One commit. It changes four paths: the two proposal templates, the test, and this
+plan (the fixed wording). The later commit `d759c14031e82e2bda090964d7d359b2a61685d6`
+changes only this plan.
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python
+3.13.13 (conda-forge), pytest 9.0.3.
+
+**Pre-run state**: a fresh detached `git worktree` at the tested commit, `git
+status --short` empty (0 lines), `HEAD` the tested commit. **Post-run state**:
+empty (0 lines), `HEAD` unchanged. The mutation sweep and the probes ran in other
+worktrees, so nothing touched the tested worktree.
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---|---|---|
+| `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0 -rsfExX` at the tested commit | 1 | **2 failed, 5832 passed**, 0 skipped, 0 xfail, 0 xpass, 3 warnings | 1075.1 s (11:59:31 to 12:17:32), on a machine running several suites at once |
+| `pytest -q bootstrap/tests/test_ast_attest.py` at the base `d2730303` | 1 | 2 failed, 28 passed | 0.2 s |
+| `pytest --collect-only -q bootstrap/tests` at base and at tested | 0 | 5834 tests at both | 3.3 s each |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | neutrality `fail=0 info=56`, redundancy `fail=0 info=0`; neutrality output identical to the base's | 1.3 s |
+| `python bootstrap/scaffold.py --manifest` | 0 | byte-identical to the base's (98 lines) | under 1 s |
+| `python bootstrap/verify_integrity.py --target .` | 1 | 18 violations, output identical to the base's | 0.1 s |
+| `python scripts/claim_check.py` on both proposal templates | 0 each | OK | under 1 s |
+| `python scripts/check_cairn.py` | 1 | 7 issues, the same files at the base and the tested commit, none in a template or the test; see below | 2.1 s |
+
+**On `check_cairn.py`.** Three of the seven are in this plan: the three citations
+of `tools/__pycache__` (two in the second record, one in the verification
+review), a path that exists only in a tree that has run Python. They are there at
+the base too, are not from this change, and are not flagged in the shared working
+tree where that folder exists. A typed `claim-check-allow` for it would itself be
+flagged as unused in that tree, so I left it. The other four are in other
+sessions' files.
+
+**Node.** Unchanged and still one: `bootstrap/tests/test_scientific_check_guidance_ships.py::test_the_check_guidance_reaches_every_copy_and_promise_site`.
+5834 nodes at base and tested; no node added or dropped. The pass count differs
+from the second record's 4432 only because other plans have landed tests since.
+
+**Non-pass disposition.**
+* The two failures are the same two AST tests as before:
+  `test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package`
+  and `test_ast_attest.py::test_ast_gate_passes_over_the_full_scaffold_module_set`.
+  The AST file at the base also gives 2 failed, 28 passed.
+* The CHANGED set by the runbook's Step 1 method is the same at the base and the
+  tested commit: **CHANGED 7, MISSING 0, DUPLICATE 0, NEW 86**, the same seven
+  symbols with the same hashes (baseline, then current): `_cmd_adopt_module`
+  `92290a6b95389cc2` to `c637af9f6ad93565`; `_emit_skill_copy_fallback`
+  `28134f3136c51838` to `29ef25b1a8aba93d`; `_symlinks_available`
+  `eee811ebda2020c8` to `28f5d712e82d2dd7`; `cmd_upgrade` `d98eff085ea46b43` to
+  `d9c59a4db630c49e`; `create_dev_tree` `0e8c4e4f41b5bcb8` to `9de03f6ae0c0c469`;
+  `main` `5c197afe8ee049d4` to `bd3724f284d16af0`; `seed_gitignore`
+  `55a95c62ab693619` to `12ca0b5cd49ed2d7`. The first record had five; the two
+  extra belong to other sessions' work on the engine's copy fallback, and are
+  there at the base.
+* `git diff --stat d2730303..02adb81f` over `bootstrap/_scaffold` and
+  `bootstrap/tests/fixtures` is empty. Re-anchoring the AST baseline is the
+  Maintainer's and was not done.
+* No skip, xfail or xpass. The 3 warnings are the same third-party notice.
+* I did not run the full suite at the base: this change is one sentence, the
+  failing tests are named and identical, and the machine was oversubscribed. The
+  base's AST file, node count and gates stand in for it.
+
+**Frozen files and nodes.** The range's four paths and the 183 `frozen_files`
+keys do not intersect (control: `bootstrap/tests/test_scaffold.py` is a key). The
+new test is still not a key, so editing it owes no re-anchor.
+
+**Not touched.** `git diff --stat d2730303..02adb81f` over `doctrine/`,
+`AGENTS.md`, `templates/modules/`, `docs/`, `scripts/`, `tools/`, `dev/.cairn/`,
+`dev/PLANNING.md`, `CHANGELOG.md`, `dimensions/`, `bootstrap/BOOTSTRAP.md`, both
+plan templates, `bootstrap/_scaffold`, `bootstrap/tests/fixtures` and
+`bootstrap/verify_integrity.py` is empty (control: over the templates it prints
+two lines). A vendor-name grep over the 9 added lines in the templates and the
+test prints nothing; the control line is found.
+
+**Plan-specific acceptance commands.**
+
+| Criterion | Method | Result |
+|---|---|---|
+| The test sees the sentence | in a scratch worktree: new templates with the old pinned text; old templates with the new pinned text; both new | red, naming the old and the new sentence; red, naming both; green |
+| The sentence is the Maintainer's | the block's first bullet in both copies | "Say whether you have opened the data and confirmed it holds what the check needs; if not, name what you would open to confirm it. If the check depends on data that does not exist yet, say so." The last sentence is kept: it covers data with nothing to open, and reads on |
+| Same wording everywhere | extracted block against the plan's fenced C2 text; the test's literal, collapsed, against the same | equal in both copies (45 lines) and the literal |
+| An adopter receives it | real install from the tested commit into an empty folder; `--summary` and `--dry-run` | the installed proposal and plan templates are byte-identical to the shipped source and hold the new sentence; the dry run wrote nothing |
+| An existing adopter keeps their work | install from `d2730303`, fill `documentation-tier-home` in both templates, commit, `upgrade --plan` then `--stage` against the tested tree | the proposal template is "locally-modified (merged clean)" (the earlier `needs-value` is fixed); the staged file holds the block once, the new sentence once, no old sentence, the adopter's fill once, no conflict marker |
+
+**Mutation spot-check on the sentence** (run in a worktree holding these exact
+bytes, checked equal to the commit's files before it ran). Under the session's
+rule it is the one ledger I ran, and it is the whole of the earlier ledger too
+(88 mutants: 82 killed, 6 pass by design, none unexpected, controls before and
+after pass). The seven aimed at this sentence, all **killed**: reverted to "in
+hand and has been checked" in both copies; the same in the Cairn copy only; in
+the shipped copy only; the clause "if not, name what you would open to confirm
+it" dropped; "opened the data" weakened to "seen the data"; "holds what the check
+needs" dropped; and the next sentence ("If the check depends on data that does
+not exist yet, say so.") deleted.
+
+**A check that passes by finding nothing.** None for the plan's own sake.
+
+**Known omissions.**
+* The new sentence has not been tried by a blind run. C1 is the evidence that it
+  is the wording that works; the code reviewer re-checks the sentence and its
+  test.
+* No full-suite run at the base for this change (see above).
+* The first and second records' omissions still hold, including that the
+  gate-manifest and AST re-anchors are the Maintainer's.
