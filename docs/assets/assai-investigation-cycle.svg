@@ -1,0 +1,72 @@
+<!--
+  assai-investigation-cycle.svg - The recurring scientific loop and human promotion branch.
+  Depicts registration, execution, papers, reproduction/review, publication and continuation.
+  Provenance: hand-authored by Codex for the 2026-10-19 assai runtime architecture
+  strategy; no external drawing service; rendered and inspected locally.
+  License: Creative Commons Attribution 4.0 International (CC BY 4.0).
+  See ../../LICENSE-CC-BY.md.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 1200" role="img" aria-labelledby="title description">
+  <title id="title">The scientific loop continues without a nightly human signature</title>
+  <desc id="description">A lab resumes its investigation, registers a test, runs it, submits a paper, and receives reproduction and scientific review. Journal acceptance enters the working record and the lab continues. A separate dashed branch takes promising leads, scope changes or instrument changes to Anthony. Acceptance does not certify truth.</desc>
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #172b45; text-anchor: middle; }
+    .heading { font-size: 28px; font-weight: 700; }
+    .name { font-size: 26px; font-weight: 700; }
+    .body { font-size: 22px; }
+    .edge { fill: none; stroke: #64748b; stroke-width: 2.5; marker-end: url(#arrow); }
+    .promotion { fill: none; stroke: #9a6b12; stroke-width: 2.5; stroke-dasharray: 7 6; marker-end: url(#gold-arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#64748b"/></marker>
+    <marker id="gold-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#9a6b12"/></marker>
+  </defs>
+  <rect width="600" height="1200" rx="16" fill="#ffffff"/>
+  <text x="300" y="43" class="heading">One investigation, many sessions</text>
+  <g data-box="resume">
+    <rect x="36" y="80" width="528" height="100" rx="12" fill="#edf7f0" stroke="#377a53" stroke-width="2"/>
+    <text x="300" y="119" class="name">1. Resume the lab</text>
+    <text x="300" y="154" class="body">Recover questions, failures and next test</text>
+  </g>
+  <path d="M300 180 V218" class="edge"/>
+  <g data-box="register">
+    <rect x="36" y="220" width="528" height="100" rx="12" fill="#fff5e2" stroke="#9a6b12" stroke-width="2"/>
+    <text x="300" y="259" class="name">2. Register the test</text>
+    <text x="300" y="294" class="body">Journal critiques; controller freezes it</text>
+  </g>
+  <path d="M300 320 V358" class="edge"/>
+  <g data-box="run">
+    <rect x="36" y="360" width="528" height="100" rx="12" fill="#eaf2ff" stroke="#315baa" stroke-width="2"/>
+    <text x="300" y="399" class="name">3. Run and observe</text>
+    <text x="300" y="434" class="body">Isolated execution; outcome recorded</text>
+  </g>
+  <path d="M300 460 V498" class="edge"/>
+  <g data-box="submit">
+    <rect x="36" y="500" width="528" height="100" rx="12" fill="#edf7f0" stroke="#377a53" stroke-width="2"/>
+    <text x="300" y="539" class="name">4. Submit a paper</text>
+    <text x="300" y="574" class="body">Pin claims, code and evidence by revision</text>
+  </g>
+  <path d="M300 600 V638" class="edge"/>
+  <g data-box="review">
+    <rect x="36" y="640" width="528" height="114" rx="12" fill="#fff5e2" stroke="#9a6b12" stroke-width="2"/>
+    <text x="300" y="679" class="name">5. Reproduce and review</text>
+    <text x="300" y="713" class="body">Rerun outputs; challenge interpretation</text>
+  </g>
+  <path d="M300 754 V792" class="edge"/>
+  <g data-box="continue">
+    <rect x="36" y="794" width="528" height="124" rx="12" fill="#eaf2ff" stroke="#315baa" stroke-width="2"/>
+    <text x="300" y="834" class="name">6. Publish and continue</text>
+    <text x="300" y="868" class="body">Journal accepts into the working record</text>
+    <text x="300" y="899" class="body">Labs build on explicit assumptions</text>
+  </g>
+  <path d="M36 856 H14 V130 H34" class="edge"/>
+  <path d="M300 918 V1038" class="promotion"/>
+  <rect x="92" y="955" width="416" height="38" rx="6" fill="#ffffff"/>
+  <text x="300" y="982" class="body">When human action is needed</text>
+  <g data-box="human">
+    <rect x="36" y="1040" width="528" height="108" rx="12" fill="#fff5e2" stroke="#9a6b12" stroke-width="2" stroke-dasharray="7 6"/>
+    <text x="300" y="1080" class="name">Anthony: human promotion</text>
+    <text x="300" y="1117" class="body">Promising leads · scope · instruments</text>
+  </g>
+  <text x="300" y="1184" class="body">Journal acceptance does not certify truth.</text>
+</svg>

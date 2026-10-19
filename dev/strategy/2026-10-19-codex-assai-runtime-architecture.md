@@ -70,18 +70,7 @@ an immutable upstream revision rather than treating a version label as a pin.
 There are four cooperating parts, with one controller as the only writer of
 shared authority:
 
-~~~text
-Anthony ── approved scope, instruments, resources; audits and decisions
-   │
-Controller ── durable jobs, permissions, execution, publication and correction
-   ├── Lab sessions ── whole investigations; private notebooks and drafts
-   ├── Journal sessions ── pre-run critique and post-run scientific review
-   └── Execution workers ── model runs, clean re-execution, scoring
-              │
-        Harness interface ── domain/model-specific inputs and observations
-
-Controller ── writes ── Scientific record ── read-only views ── Labs / display
-~~~
+![Labs and the journal supply scientific judgment; the controller alone publishes their records and enforces approved resources.](../../docs/assets/assai-components.svg)
 
 The controller is ordinary code, not a chief-scientist agent. It can enforce
 that a reference set is approved and all required metrics are present. It
@@ -205,6 +194,8 @@ record, artifacts, live state, and deployment policy—not just its persona file
 | Operational database, commitments, live policy | Controller/operator | No direct file access |
 | Hidden observations, test answers, authority credentials | Operator and narrowly assigned services | No lab/journal access; only permitted scoring outputs |
 | Exports | Controller/exporter | Read-only; never a source of authority |
+
+![Every object read and outbound disclosure crosses the same policy boundary; a session cannot access controller authority.](../../docs/assets/assai-authority-boundaries.svg)
 
 The runtime controller must not run inside a lab's writable environment. An
 unrestricted agent with the controller's operating-system identity and host
@@ -415,6 +406,11 @@ work are protected. When capacity cannot be reclaimed safely, pause and request
 an operator storage/retention decision instead of deleting scientific history.
 
 ## 7. A complete investigation through the system
+
+![The routine scientific loop continues without nightly human approval; consequential promotion goes to Anthony, and journal acceptance does not certify truth.](../../docs/assets/assai-investigation-cycle.svg)
+
+The diagram shows the normal path. Failed attempts and requested revisions also
+remain in the history; they do not silently become accepted papers.
 
 **Resume.** The controller admits one active session per lab, pins a scientific
 record revision, and builds its working packet. A lab can follow any question

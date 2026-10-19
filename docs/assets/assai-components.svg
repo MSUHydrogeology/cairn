@@ -1,0 +1,70 @@
+<!--
+  assai-components.svg - Runtime roles and the controller's publication authority.
+  Depicts the operator, controller, supporting sessions/workers, and scientific record.
+  Provenance: hand-authored by Codex for the 2026-10-19 assai runtime architecture
+  strategy; no external drawing service; rendered and inspected locally.
+  License: Creative Commons Attribution 4.0 International (CC BY 4.0).
+  See ../../LICENSE-CC-BY.md.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 840" role="img" aria-labelledby="title description">
+  <title id="title">Scientific judgment and runtime authority have different owners</title>
+  <desc id="description">Anthony sets scope and resources. The controller manages lab sessions, journal sessions, and execution workers. Those roles investigate, critique, and run experiments; only the controller writes the shared scientific record.</desc>
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #172b45; text-anchor: middle; }
+    .heading { font-size: 28px; font-weight: 700; }
+    .name { font-size: 26px; font-weight: 700; }
+    .body { font-size: 22px; }
+    .edge { fill: none; stroke: #64748b; stroke-width: 2.5; marker-end: url(#arrow); }
+    .write { fill: none; stroke: #315baa; stroke-width: 3; marker-end: url(#blue-arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#64748b"/></marker>
+    <marker id="blue-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#315baa"/></marker>
+  </defs>
+  <rect width="600" height="840" rx="16" fill="#ffffff"/>
+  <text x="300" y="43" class="heading">Who does what?</text>
+  <g data-box="operator">
+    <rect x="28" y="72" width="544" height="102" rx="12" fill="#fff5e2" stroke="#9a6b12" stroke-width="2"/>
+    <text x="300" y="111" class="name">Anthony</text>
+    <text x="300" y="147" class="body">Scope · instruments · resources</text>
+  </g>
+  <path d="M300 174 V222" class="edge"/>
+  <g data-box="controller">
+    <rect x="28" y="224" width="544" height="116" rx="12" fill="#eaf2ff" stroke="#315baa" stroke-width="2"/>
+    <text x="300" y="267" class="name">Controller</text>
+    <text x="300" y="304" class="body">Policy · scheduling · publication</text>
+  </g>
+  <path d="M300 340 V373 H112 V408" class="edge"/>
+  <path d="M300 373 V408" class="edge"/>
+  <path d="M300 373 H488 V408" class="edge"/>
+  <g data-box="labs">
+    <rect x="28" y="410" width="168" height="160" rx="12" fill="#edf7f0" stroke="#377a53" stroke-width="2"/>
+    <text x="112" y="450" class="name">Labs</text>
+    <text x="112" y="487" class="body">Questions</text>
+    <text x="112" y="518" class="body">Experiments</text>
+    <text x="112" y="549" class="body">Papers</text>
+  </g>
+  <g data-box="journal">
+    <rect x="216" y="410" width="168" height="160" rx="12" fill="#edf7f0" stroke="#377a53" stroke-width="2"/>
+    <text x="300" y="450" class="name">Journal</text>
+    <text x="300" y="487" class="body">Critique</text>
+    <text x="300" y="518" class="body">Scientific</text>
+    <text x="300" y="549" class="body">review</text>
+  </g>
+  <g data-box="workers">
+    <rect x="404" y="410" width="168" height="160" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+    <text x="488" y="450" class="name">Workers</text>
+    <text x="488" y="487" class="body">Model runs</text>
+    <text x="488" y="518" class="body">Clean reruns</text>
+    <text x="488" y="549" class="body">Scoring</text>
+  </g>
+  <text x="300" y="616" class="body">Sessions submit requests and evidence.</text>
+  <text x="300" y="650" class="body" fill="#315baa">Only the controller writes the record.</text>
+  <path d="M28 282 H12 V744 H26" class="write"/>
+  <g data-box="record">
+    <rect x="28" y="686" width="544" height="126" rx="12" fill="#eaf2ff" stroke="#315baa" stroke-width="2"/>
+    <text x="300" y="726" class="name">Scientific record</text>
+    <text x="300" y="761" class="body">Papers · reviews · lab histories</text>
+    <text x="300" y="793" class="body">Approved views feed queries and displays</text>
+  </g>
+</svg>

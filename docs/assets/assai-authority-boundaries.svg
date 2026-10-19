@@ -1,0 +1,61 @@
+<!--
+  assai-authority-boundaries.svg - Object access and disclosure share a policy boundary.
+  Depicts protected authority, confined sessions/jobs, and approved external destinations.
+  Provenance: hand-authored by Codex for the 2026-10-19 assai runtime architecture
+  strategy; no external drawing service; rendered and inspected locally.
+  License: Creative Commons Attribution 4.0 International (CC BY 4.0).
+  See ../../LICENSE-CC-BY.md.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 1050" role="img" aria-labelledby="title description">
+  <title id="title">Access and outbound disclosure require explicit permission</title>
+  <desc id="description">Protected controller state and sealed data stay outside session mounts. A single policy boundary authorizes particular objects, grants and destinations. Sessions receive permitted views and send scoped requests. Only data approved for a destination may leave through provider or retrieval tools.</desc>
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #172b45; text-anchor: middle; }
+    .heading { font-size: 28px; font-weight: 700; }
+    .name { font-size: 26px; font-weight: 700; }
+    .body { font-size: 22px; }
+    .edge { fill: none; stroke: #64748b; stroke-width: 2.5; marker-end: url(#arrow); }
+    .outbound { fill: none; stroke: #315baa; stroke-width: 3; marker-end: url(#blue-arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#64748b"/></marker>
+    <marker id="blue-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#315baa"/></marker>
+  </defs>
+  <rect width="600" height="1050" rx="16" fill="#ffffff"/>
+  <text x="300" y="43" class="heading">Where authority stops</text>
+  <g data-box="protected">
+    <rect x="28" y="76" width="544" height="204" rx="12" fill="#eaf2ff" stroke="#315baa" stroke-width="2"/>
+    <text x="300" y="119" class="name">Protected side</text>
+    <text x="300" y="157" class="body">Controller and assigned services</text>
+    <text x="300" y="195" class="body">Live policy · approvals · private state</text>
+    <text x="300" y="233" class="body">Sealed data · recovery reserves</text>
+  </g>
+  <path d="M300 280 V338" class="edge"/>
+  <g data-box="policy">
+    <rect x="28" y="340" width="544" height="114" rx="12" fill="#fff5e2" stroke="#9a6b12" stroke-width="2"/>
+    <text x="300" y="382" class="name">One policy boundary</text>
+    <text x="300" y="420" class="body">Actor + object + grant + destination</text>
+  </g>
+  <path d="M148 454 V548" class="edge"/>
+  <path d="M452 548 V456" class="edge"/>
+  <rect x="38" y="481" width="220" height="39" fill="#ffffff"/>
+  <rect x="342" y="481" width="220" height="39" fill="#ffffff"/>
+  <text x="148" y="508" class="body">Permitted views</text>
+  <text x="452" y="508" class="body">Scoped requests</text>
+  <g data-box="confined">
+    <rect x="28" y="550" width="544" height="190" rx="12" fill="#edf7f0" stroke="#377a53" stroke-width="2"/>
+    <text x="300" y="593" class="name">Confined session / job</text>
+    <text x="300" y="631" class="body">Read granted inputs; write own drafts</text>
+    <text x="300" y="669" class="body">Use only role-scoped tool channels</text>
+    <text x="300" y="707" class="body">No controller mount or daemon socket</text>
+  </g>
+  <path d="M572 397 H588 V884 H574" class="outbound"/>
+  <text x="300" y="791" class="body">Outbound tools cross the policy boundary.</text>
+  <g data-box="destination">
+    <rect x="28" y="826" width="544" height="128" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+    <text x="300" y="868" class="name">Provider / retrieval destination</text>
+    <text x="300" y="907" class="body">Only approved data and endpoints</text>
+  </g>
+  <text x="300" y="999" class="body">Read permission is not disclosure permission.</text>
+  <text x="300" y="1031" class="body">A digest identifies bytes, not access rights.</text>
+</svg>

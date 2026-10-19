@@ -8,7 +8,8 @@ studies (`case-studies/`), the bootstrap narrative (`bootstrap/*.md`),
 the forkable **document templates** — the Markdown (`.md`) files under
 `templates/` — the on-ramp (`on-ramp/`), this repository's documentation
 (`README.md`, `CITATION.cff`), and the **explanatory diagrams** under
-`docs/assets/` (e.g. `dual-review-independence.svg`) — are licensed under
+`docs/assets/` (`dual-review-independence.svg`, `assai-components.svg`,
+`assai-authority-boundaries.svg`, and `assai-investigation-cycle.svg`) — are licensed under
 the **Creative Commons Attribution 4.0 International License (CC BY 4.0)**.
 
 **Exception 1 — source code takes precedence.** Any source-code file
