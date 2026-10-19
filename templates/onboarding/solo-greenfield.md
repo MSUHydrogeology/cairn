@@ -90,7 +90,9 @@ Your solo deployment has matured to a point where a second agent
 type would be useful. Fresh sessions of your agent already do every
 review, and you can read any piece of work yourself; a second agent
 type makes a different model's read available whenever you ask for
-one, and eases how much falls on you alone. Walk
+one, and eases how much falls on you alone. The roster makes the
+fresh-session review reproducible -- real value, not a formality.
+Walk
 `dev/modules/onboarding/agent-team-onboarding.md` for the spin-up
 checklist; the second agent's capability tier should match the
 work it will do.
