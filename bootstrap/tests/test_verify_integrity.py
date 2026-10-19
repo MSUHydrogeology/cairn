@@ -1305,7 +1305,7 @@ def test_the_customized_marker_and_token_patterns_are_the_engines() -> None:
 
 _SPACING_SAMPLES = [
     "", "plain", "a\nb", "  a\n\n  b  \n", "a\r\nb\r\n", "a\r\n\r\n b",
-    "\ta b\x0bc\x0cd\x85e", "\n\n\n", "a \n \n b",
+    "\ta\u2028b\x0bc\x0cd\x85e", "\n\n\n", "a \n \n b",
 ]
 
 
@@ -1341,7 +1341,7 @@ def test_the_note_finds_the_slot_bodies_the_engine_finds() -> None:
 def test_nothing_the_note_prints_is_outside_printable_ascii(
     tmp_path: Path, capsys
 ) -> None:
-    hostile_slot = "pl\x1b[31maceho‏lder-é"
+    hostile_slot = "pl\x1b[31maceho\u200flder-é"
     text = _slot(hostile_slot, "Placeholder.")
     _note_tree(tmp_path, [{"dst": "we\x1b[2Jird\nname.md",
                            "installed": text.encode(), "base": text.encode()},
@@ -1687,3 +1687,189 @@ def test_the_substitution_budget_is_the_cap_and_is_spent_across_a_file() -> None
     # whole budget and the next then has none to spend.
     assert verify_integrity._substituted(body, {"big": "v" * 10}, 10) == "v" * 10
     assert verify_integrity._substituted(body, {"big": "v" * 10}, 9) is None
+
+
+# ---------------------------------------------------------------------------
+# The existing report prints lockfile text: it must reach the terminal escaped
+# ---------------------------------------------------------------------------
+#
+# Every path the integrity report names, the hint's `--finalize` list and the
+# forked-facade advisory come out of the lockfile, which is a tamper target. A
+# path holding an escape sequence, a bell or a bidirectional override would
+# otherwise reach the terminal as itself. The slot note already prints through
+# ``ascii()``; the report now does too, leaving ordinary printable-ASCII text
+# exactly as it was, so a clean report is byte-for-byte what it always was.
+
+_EVIL = "e\x1b]0;pwned\x07\u202ev\u0430.md"
+_ZERO_HASH = "sha256:" + "0" * 64
+
+
+# `_EVIL` as the report must write it: each unsafe character as its escape,
+# the printable ASCII around it untouched, no quotes added.
+_WRITTEN = "e\\x1b]0;pwned\\x07\\u202ev\\u0430.md"
+
+
+class _ReportSite(NamedTuple):
+    """One place the report prints lockfile text: a tree that reaches it, the
+    exit code that tree must give, and the exact text the report must print
+    there."""
+    id: str
+    build: Callable[[Path], None]
+    exit_code: int
+    fragment: str
+
+
+def _lock_only(target: Path, files: list) -> None:
+    _write_lock(target, files)
+
+
+def _r_malformed_record(target: Path) -> None:
+    _lock_only(target, [{"hash": _ZERO_HASH, "note": _EVIL}])
+
+
+def _r_unsafe_dst(target: Path) -> None:
+    _lock_only(target, [{"dst": "../" + _EVIL, "hash": _ZERO_HASH}])
+
+
+def _r_malformed_hash(target: Path) -> None:
+    _lock_only(target, [{"dst": _EVIL, "hash": "\x07" + _EVIL}])
+
+
+def _r_dst_escapes(target: Path) -> None:
+    _need("symlink")
+    (target.parent / "elsewhere").mkdir()
+    target.mkdir(exist_ok=True)
+    os.symlink(target.parent / "elsewhere", target / "link")
+    _lock_only(target, [{"dst": "link/" + _EVIL, "hash": _ZERO_HASH}])
+
+
+def _r_illegal_living_state(target: Path) -> None:
+    _lock_only(target, [{"dst": _EVIL, "hash": _ZERO_HASH, "living_state": True}])
+
+
+def _r_missing(target: Path) -> None:
+    _lock_only(target, [{"dst": _EVIL, "hash": _ZERO_HASH}])
+
+
+def _r_modified(target: Path) -> None:
+    _note_tree(target, [{"dst": _EVIL}])
+    (target / _EVIL).write_bytes(b"modified after install\n")
+
+
+def _r_hint(target: Path) -> None:
+    slot = _slot("s", "Placeholder.").encode()
+    _note_tree(target, [{"dst": _EVIL, "installed": slot, "base": slot}])
+    (target / _EVIL).write_bytes(
+        _slot("s", "<!-- cairn:customized -->\nours").encode())
+
+
+def _r_advisory(target: Path) -> None:
+    rec = _facade_entry(target, "tools/intent.py", forked=True, engine=True)
+    _write_lock(target, [rec])
+    _edit_lock(target, lambda lock: lock.__setitem__(
+        "cairn_version", "9.9.9" + _EVIL))
+
+
+_REPORT_SITES: list[_ReportSite] = [
+    _ReportSite("malformed-record", _r_malformed_record, 1,
+                "malformed record (no dst): {'hash': '" + _ZERO_HASH
+                + "', 'note': '" + _WRITTEN + "'}"),
+    _ReportSite("unsafe-dst", _r_unsafe_dst, 1,
+                "  unsafe dst (absolute / .. escape): ../" + _WRITTEN + "\n"),
+    _ReportSite("malformed-hash", _r_malformed_hash, 1,
+                "  malformed hash for " + _WRITTEN + ": '\\x07" + _WRITTEN + "'\n"),
+    _ReportSite("dst-escapes-the-target", _r_dst_escapes, 1,
+                "  dst escapes the target tree: link/" + _WRITTEN + "\n"),
+    _ReportSite("illegal-living-state", _r_illegal_living_state, 1,
+                "  illegal living_state opt-out: " + _WRITTEN + " is not an "),
+    _ReportSite("missing", _r_missing, 1, "  missing: " + _WRITTEN + "\n"),
+    _ReportSite("modified", _r_modified, 1,
+                "  modified (hash mismatch): " + _WRITTEN + "\n"),
+    _ReportSite("finalize-hint", _r_hint, 1, "--finalize " + _WRITTEN + "\n"),
+    _ReportSite("forked-facade-advisory", _r_advisory, 0,
+                "while this tree records its install from Cairn 9.9.9"
+                + _WRITTEN + ".\n"),
+]
+
+
+def _plain_ascii(text: str) -> bool:
+    return all(ch == "\n" or 32 <= ord(ch) < 127 for ch in text)
+
+
+@pytest.mark.parametrize("site", _REPORT_SITES, ids=lambda s: s.id)
+def test_lockfile_text_in_the_report_reaches_the_terminal_only_escaped(
+    site: _ReportSite, tmp_path: Path
+) -> None:
+    target = tmp_path / "repo"
+    target.mkdir()
+    site.build(target)
+    proc = _run_verify(target)
+    out, err = _text(proc.stdout), _text(proc.stderr)
+    assert proc.returncode == site.exit_code, err
+    assert _plain_ascii(out + err), ascii(out + err)
+    # The hostile characters are there, as their written escapes -- an escape
+    # sequence, a bell, a bidirectional override and a non-ASCII letter -- and
+    # in exactly the form a clean path would print in, with no quotes added.
+    assert site.fragment in err, (site.fragment, err)
+
+
+def test_a_clean_report_is_what_it_always_was(tmp_path: Path, capsys) -> None:
+    """Ordinary paths, spaces included, are printed as they are: no quotes, no
+    escapes. Only text that is not printable ASCII is rewritten."""
+    _note_tree(tmp_path, [{"dst": "ctl.md"}, {"dst": "my notes.md"}])
+    (tmp_path / "my notes.md").write_bytes(b"modified\n")
+    capsys.readouterr()
+    assert verify_integrity.verify(tmp_path) == 1
+    err = capsys.readouterr().err
+    assert "  modified (hash mismatch): my notes.md\n" in err
+
+
+def test_every_lockfile_value_the_report_prints_goes_through_one_encoder() -> None:
+    """Listed from the source, not from a list of sites: each f-string field in
+    ``verify`` that names a value read from a lockfile record must be a call
+    to ``_plain`` (or ``ascii``), so a site added later cannot print raw."""
+    tree = ast.parse(_VERIFY_PY.read_text(encoding="utf-8"))
+    verify_fn = next(n for n in tree.body
+                     if isinstance(n, ast.FunctionDef) and n.name == "verify")
+    lockfile_names = {"dst_rel", "recorded", "rec", "customized"}
+    sites = []
+    for node in ast.walk(verify_fn):
+        if isinstance(node, ast.FormattedValue) and any(
+                isinstance(sub, ast.Name) and sub.id in lockfile_names
+                for sub in ast.walk(node.value)):
+            sites.append(node)
+    assert len(sites) >= 5, "the instrument found too few sites to mean anything"
+    raw = [ast.unparse(s.value) + (f"!{chr(s.conversion)}" if s.conversion > 0 else "")
+           for s in sites
+           if s.conversion > 0
+           or not (isinstance(s.value, ast.Call)
+                   and isinstance(s.value.func, ast.Name)
+                   and s.value.func.id in {"_plain", "ascii"})]
+    assert raw == []
+
+
+def test_a_printable_non_ascii_path_is_escaped_too(tmp_path: Path, capsys) -> None:
+    """A homoglyph is printable, so a check that only looked for control
+    characters would pass it: `pa\u0430th.md` (Cyrillic a) must not read as
+    `path.md` in the report."""
+    _note_tree(tmp_path, [{"dst": "pa\u0430th.md"}])
+    (tmp_path / "pa\u0430th.md").write_bytes(b"modified\n")
+    capsys.readouterr()
+    assert verify_integrity.verify(tmp_path) == 1
+    err = capsys.readouterr().err
+    assert "  modified (hash mismatch): pa\\u0430th.md\n" in err
+    assert _plain_ascii(err)
+
+
+def test_an_ascii_control_character_is_escaped_without_any_non_ascii_text(
+    tmp_path: Path, capsys
+) -> None:
+    """ASCII text is not automatically safe to print: an escape sequence is
+    ASCII. The check for "printable" and the check for "ASCII" are separate."""
+    _note_tree(tmp_path, [{"dst": "ctl\x1b[2J\x07.md"}])
+    (tmp_path / "ctl\x1b[2J\x07.md").write_bytes(b"modified\n")
+    capsys.readouterr()
+    assert verify_integrity.verify(tmp_path) == 1
+    err = capsys.readouterr().err
+    assert "  modified (hash mismatch): ctl\\x1b[2J\\x07.md\n" in err
+    assert _plain_ascii(err)

@@ -374,6 +374,21 @@ def _run_slot_note(target: Path, files: list, accepted: list, living: list,
             return
 
 
+def _plain(text: str) -> str:
+    """*text* as it may be printed.  Printable ASCII is returned as it is, so
+    an ordinary report reads exactly as it always has; anything else goes
+    through ``ascii()`` -- the encoder the slot note uses -- without its
+    quotes, so a control character, a bell or a bidirectional override in a
+    string read from the lockfile (a tamper target) reaches the terminal only
+    as its written escape."""
+    return text if text.isascii() and text.isprintable() else ascii(text)[1:-1]
+
+
+def _plain_lines(text: str) -> str:
+    """*text* with each line passed through ``_plain``, newlines kept."""
+    return "\n".join(_plain(line) for line in text.split("\n"))
+
+
 def verify(target: Path) -> int:
     lock = read_lockfile(target)
     if lock is None:
@@ -402,18 +417,21 @@ def verify(target: Path) -> int:
         # sha256 hash.  Without this, a `dst: ../outside` could make the check
         # "attest" a file outside the installed tree and still print OK.
         if not isinstance(dst_rel, str) or not dst_rel:
-            violations.append(f"  malformed record (no dst): {rec!r}")
+            violations.append(f"  malformed record (no dst): {ascii(rec)}")
             continue
         rel = Path(dst_rel)
         if rel.is_absolute() or ".." in rel.parts:
-            violations.append(f"  unsafe dst (absolute / .. escape): {dst_rel}")
+            violations.append(
+                f"  unsafe dst (absolute / .. escape): {_plain(dst_rel)}")
             continue
         if not (isinstance(recorded, str) and recorded.startswith("sha256:")):
-            violations.append(f"  malformed hash for {dst_rel}: {recorded!r}")
+            violations.append(
+                f"  malformed hash for {_plain(dst_rel)}: {ascii(recorded)}")
             continue
         dst = (target / rel).resolve()
         if dst != target_resolved and target_resolved not in dst.parents:
-            violations.append(f"  dst escapes the target tree: {dst_rel}")
+            violations.append(
+                f"  dst escapes the target tree: {_plain(dst_rel)}")
             continue
         # Living-state opt-out is a *verifier policy*, not a self-asserted
         # lockfile escape hatch.  Adopter-authored project state (a living
@@ -432,18 +450,18 @@ def verify(target: Path) -> int:
                 living.append(rec)
                 continue
             violations.append(
-                f"  illegal living_state opt-out: {dst_rel} is not an "
+                f"  illegal living_state opt-out: {_plain(dst_rel)} is not an "
                 f"authoritative living-state path -- only "
                 f"{sorted(_LIVING_STATE_DSTS)} may set living_state "
                 f"(tamper / malformed lockfile)")
             continue
         if not dst.is_file():
-            violations.append(f"  missing: {dst_rel}")
+            violations.append(f"  missing: {_plain(dst_rel)}")
             continue
         on_disk = dst.read_bytes()
         actual = "sha256:" + hashlib.sha256(on_disk).hexdigest()
         if actual != recorded:
-            violations.append(f"  modified (hash mismatch): {dst_rel}")
+            violations.append(f"  modified (hash mismatch): {_plain(dst_rel)}")
             if _has_customized_slot(on_disk.decode("utf-8", errors="replace")):
                 customized.append(dst_rel)
         elif not rec.get("verbatim"):
@@ -462,7 +480,8 @@ def verify(target: Path) -> int:
     for finding in forked_facade_findings(
             target, lock, upstream=trusted_upstream(CAIRN_ROOT)):
         if not finding["acknowledged"]:
-            print(format_forked_facade_warning(finding, at_upgrade=False),
+            print(_plain_lines(
+                format_forked_facade_warning(finding, at_upgrade=False)),
                   file=sys.stderr, end="")
 
     if violations:
@@ -486,7 +505,8 @@ def verify(target: Path) -> int:
                   "confirm that your fill is there and nothing outside its "
                   "slots changed (--finalize records the whole file). Then "
                   "record it: python bootstrap/scaffold.py "
-                  "upgrade --target <repo> --finalize " + " ".join(customized),
+                  "upgrade --target <repo> --finalize "
+                  + " ".join(_plain(path) for path in customized),
                   file=sys.stderr)
         _run_slot_note(target, files, accepted, living, lock.get("tokens"))
         return 1
