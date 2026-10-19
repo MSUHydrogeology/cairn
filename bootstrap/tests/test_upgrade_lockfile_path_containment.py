@@ -383,7 +383,8 @@ def _plant_stage(world: World) -> Path:
 
 
 @needs_links
-@pytest.mark.parametrize("where", ["staged-file", "new-base-file", "staged-folder"])
+@pytest.mark.parametrize(
+    "where", ["staged-file", "new-base-file", "staged-folder", "metadata-file"])
 def test_apply_refuses_a_staged_upgrade_that_holds_a_link(world, where):
     """`--apply` read the staged copy through whatever the link named and wrote it
     over a project file -- or into the saved ancestors -- saying `Applied 1 file(s)`."""
@@ -397,6 +398,9 @@ def test_apply_refuses_a_staged_upgrade_that_holds_a_link(world, where):
         elif where == "new-base-file":
             (stage / "new-base" / "docs").mkdir(parents=True)
             os.symlink(world.secret, stage / "new-base" / "docs" / "notes.md")
+        elif where == "metadata-file":
+            (stage / "stage-metadata.json").unlink()
+            os.symlink(world.secret, stage / "stage-metadata.json")
         else:
             shutil.rmtree(stage / "files" / "docs")
             (world.outside / "notes.md").write_text(f"{world.marker}\n", encoding="utf-8")
@@ -535,7 +539,7 @@ def test_the_lockfile_check_judges_what_is_there_and_invents_no_requirement(tmp_
     UP._check_lockfile_paths({"files": []}, project, TEMPLATES_ROOT)
     UP._check_lockfile_paths({"files": [{"dst": "a.md"}, {"src": "core/NOTICE.md"}]},
                              project, TEMPLATES_ROOT)
-    for bad in ({"files": {"a": 1}}, {"files": ["a.md"]}, {"files": [{"dst": 3}]},
+    for bad in ({"files": {"a": 1}}, {"files": 7}, {"files": ["a.md"]}, {"files": [{"dst": 3}]},
                 {"files": [{"dst": "a.md", "base_cache": ""}]},
                 {"files": [{"src": "../x"}]}, {"files": [{"dst": "../x"}]}):
         with pytest.raises(ScaffoldSecurityError):
