@@ -1,7 +1,7 @@
 # Plan: the model mapping on every install path -- a notice where agents install, a check that is right both ways, and a write that cannot escape
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-model-mapping-install-path.md`
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance -- inherited: the change edits the scaffold engine (`bootstrap/_scaffold/`), a script every adopter runs verbatim, and the onboarding seeds written into preset adopters' `dev/PLANNING.md`
 **Opened**: 2026-10-18
