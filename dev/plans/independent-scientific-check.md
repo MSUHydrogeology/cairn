@@ -1,7 +1,7 @@
 # Plan: independent scientific check — one check per scientific change, shown able to fail
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-independent-scientific-check.md`
-**Status**: revising-code
+**Status**: awaiting-code-review
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits the authoring templates and the axis prose that adopters' bootstrap reads.
 **Opened**: 2026-10-18
@@ -2179,3 +2179,227 @@ these two additions to its duties in this section:
    `dev/PLANNING.md`), F2 reads "most bases are the Maintainer's expectation".
    Add the mode the review found: *or the "domain expert" is the author of the
    change, or the agent that wrote the code.* No edit to the accepted block text.
+
+## Implementation verification -- Claude Sonnet 5.5 (implementer) -- 2026-10-19
+
+This is the second record. The first (2026-10-18) covers the original work and
+stands. This one covers the revision made after the code review; test bytes
+changed in it, so a fresh full run is owed and is recorded here.
+
+**In plain terms.** The full suite gives the same result before and after the
+revision: 4432 passed, 2 failed, and the 2 failures are the same two AST tests
+that were red at the revision's base, on the same five engine functions. The
+revised test was run against 80 deliberate breaks of the templates and the
+three promise sites; 74 were caught and the 6 that pass do so by design. One
+thing outside this plan turned up and is reported below, not fixed.
+
+**Boundary B mode**: full. The same four reasons as the first record hold; the
+revision changes test bytes and two shipped templates.
+
+**Tested commit**: `550750fb6c45a769077b62500e56d3aef407c57a` (the last code
+commit of the revision).
+
+**Reviewed range**: base `c504fca86a9ce17b2160bbdd30e71a4e81aba91e` to tested
+`550750fb6c45a769077b62500e56d3aef407c57a`. Three commits:
+`86db42ae86b0dec2d748cf3c7ba38537dbb17449` (layout and place),
+`e2978e446f16dcb64ebf3645c26eaa93b2511696` (one trigger),
+`550750fb6c45a769077b62500e56d3aef407c57a` (the example wording). The range
+changes six paths: `bootstrap/BOOTSTRAP.md`, `dimensions/complexity.md`, the two
+proposal templates, the test and this plan. The Response commit
+`1e4f1e968fc9a112c664dbe10e5c6a336d0be367` follows the tested commit and changes
+only this plan.
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python
+3.13.13 (conda-forge), pytest 9.0.3.
+
+**Pre-run state**: each full run was in a fresh detached `git worktree`, `git
+status --short` empty (0 lines), `HEAD` the commit named. **Post-run state**:
+`git status --short` empty (0 lines), `HEAD` unchanged. The mutation ledgers and
+the probes ran in other worktrees at the same commits, so nothing mutated a
+worktree that a full run used. The two full runs were done one after the other.
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---|---|---|
+| `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0 -rsfExX` at the tested commit | 1 | **2 failed, 4432 passed**, 0 skipped, 0 xfail, 0 xpass, 3 warnings | 793.0 s (10:50:08 to 11:03:22) |
+| the same command at the base `c504fca8` | 1 | **2 failed, 4432 passed**, 0 skipped, 0 xfail, 0 xpass, 3 warnings | 870.8 s (11:03:33 to 11:18:10) |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | neutrality `fail=0 info=56`, redundancy `fail=0 info=0`; the neutrality output is identical to the base's, line for line | 1.4 s |
+| `python scripts/check_cairn.py` | 1 | one issue, in `dev/reviews/2026-10-18-security-review-session-writes.md:131` (the path `tools/__pycache__`, which exists only in a working tree that has run Python); the same issue at the base; none in a file this revision edits | 2.2 s |
+| `python bootstrap/scaffold.py --manifest` | 0 | byte-identical to the base's (98 lines) | under 1 s |
+| `python bootstrap/verify_integrity.py --target .` | 1 | 18 violations, output identical to the base's; `--finalize` not run | 0.1 s |
+| `python scripts/claim_check.py <file>` on the four template copies, `dimensions/complexity.md`, `dimensions/README.md`, `bootstrap/BOOTSTRAP.md` and this plan | 0 each | OK, no flags | under 1 s each |
+| `python -m pytest --collect-only -q bootstrap/tests/test_scientific_check_guidance_ships.py` | 0 | 1 test collected | 0.0 s |
+
+`check_cairn.py` exits 1 in a clean worktree because of an issue in another
+session's review file. It is the same at the base, so it is not this revision's.
+In the shared working tree, where `tools/__pycache__` exists, it reports OK.
+
+**Node ID** (unchanged, one node): `bootstrap/tests/test_scientific_check_guidance_ships.py::test_the_check_guidance_reaches_every_copy_and_promise_site`.
+The full-suite counts are equal at the base and the tested commit (4432 + 2), as
+they should be: the revision adds and removes no test. They differ from the first
+record's 3510 + 2 because other plans have since landed tests.
+
+**Non-pass disposition.**
+* The two failures are `test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package`
+  and `test_ast_attest.py::test_ast_gate_passes_over_the_full_scaffold_module_set`.
+  Both fail at the base `c504fca8` in the full run, with the same failure text
+  as at the tested commit (compared after removing the worktree path and the
+  memory addresses of function objects).
+* The CHANGED set by the runbook's Step 1 method is the same at the base and at
+  the tested commit: **CHANGED 5, MISSING 0, DUPLICATE 0, NEW 86**, the same five
+  symbols with the same hashes as in the first record (`_cmd_adopt_module` and
+  `cmd_upgrade` in `upgrade.py`; `create_dev_tree` and `seed_gitignore` in
+  `install.py`; `main` in `cli.py`). `git diff --stat c504fca8..550750fb` over
+  `bootstrap/_scaffold` and `bootstrap/tests/fixtures` is empty.
+* No skip, xfail or xpass in either run. `test_a_t4_output_is_bounded` passed in
+  both. The 3 warnings are the same third-party deprecation notice in both.
+* Re-anchoring the AST baseline is the Maintainer's and was not done.
+
+**Frozen files and nodes.** The range's changed paths and the 183 `frozen_files`
+keys in `bootstrap/tests/fixtures/gate_manifest.json` do not intersect (control:
+`bootstrap/tests/test_scaffold.py` is a key). The new test file is still not a
+key, so this revision's edits to it owe no second re-anchor. No node was added or
+dropped by this revision.
+
+**Not touched.** `git diff --stat c504fca8..550750fb` over `doctrine/`,
+`AGENTS.md`, `templates/modules/`, `docs/`, `scripts/`, `tools/`, `dev/.cairn/`,
+`dev/PLANNING.md`, `CHANGELOG.md`, `dimensions/README.md` and both plan templates
+is empty (control: the same command over `dimensions/complexity.md` prints a
+line). A `grep -E 'Claude|Codex|Anthropic|OpenAI|Gemini|Cursor|LHM|modflow_tools'`
+over the 171 added lines of the range prints nothing; a control line holding
+`Gemini` is found.
+
+**Plan-specific acceptance commands.**
+
+| Criterion | Method | Result |
+|---|---|---|
+| SC-CR1: the reviewer's survivors die | the survivors rebuilt from the review's table, run against the test at the base and at the tested commit | at the base **20 survive** (the review's 18, plus a loose list and an indented first bullet of mine); at the tested commit **all 20 are killed** |
+| Block and paragraph are the fenced bytes | extracted block and paragraph against the plan's fenced C2 text; the test's literals, collapsed, against the same | equal in both proposal and both plan copies (45 and 7 lines); the example reads "at the same rate, distance and schedule" and "comparable rate" is gone |
+| Promise sites are the fenced bytes | the plan's fenced C3 texts against the three shipped files | each occurs once |
+| The block is where the test says | the heading once, followed by `## Signals the change is wrong`, in both proposal copies | yes |
+| An adopter receives the revised texts | real install from the tested commit into an empty scratch folder; `--summary` and `--dry-run` also run | the installed proposal and plan templates are byte-identical to the shipped source; the dry run wrote nothing |
+| The sentence change reaches an existing adopter | install from `531084a1`, fill `documentation-tier-home` in both templates, commit, `upgrade --plan` then `--stage` against a copy of `531084a1` changed only by the new example sentence | the proposal template is "locally-modified (merged clean)"; the staged file holds the block once, the new sentence once, no "comparable rate", the adopter's fill once, no conflict marker |
+| Upgrade of the proposal template from the revision's own base | install from `c504fca8`, fill the slots, `upgrade --plan` against `c504fca8` itself, then against the tested tree | **needs-value** in both (see the observation below); the plan template merges clean |
+
+**An observation outside this plan, reported and not fixed.** At the revision's
+base, `upgrade --plan` classes the Cairn proposal template as `needs-value`
+even when planned against the very tree it was installed from, so an existing
+adopter's proposal template cannot advance. The cause is a `{{evidence}}` token
+in the template's review skeleton with no recorded value; it was added by
+`b5b049d0` (the review-stance-and-lenses plan's second chunk) and is not in this
+plan's text. It showed on the first record's date as "merged clean" and no longer
+does. This revision neither causes nor fixes it, and the sentence-change probe
+above isolates this plan's edit from it. It is the sibling plan's to answer.
+
+**Mutation ledger at the tested commit.** Run by the same throwaway harness (it
+refuses to run outside a scratch worktree, checks every mutant really changed the
+files, and checks the files are byte-identical after each one). **80 mutants: 74
+killed, none survived unexpectedly.** Six pass by design: the old lens phrase
+restored beside the check in the README row; one sentence re-wrapped; the plan
+paragraph re-wrapped (wrapping is free); the check name written with a capital
+(letter case is ignored); the Complex bullet's first-sentence trigger narrowed;
+and the I-2 trigger narrowed (the last two are not pinned; the pinned N/A finding
+carries the gate). Unmutated controls before and after pass. The set is the first
+record's 48, then the reviewer's survivors (S1, S2.0 to S2.4, S5, four P1, seven
+P2), my five layout mutants, the promise-site mutants and the two example
+mutants. Rows, in order:
+
+```text
+PASSED  control (before)
+KILLED  m1 block word changed, Cairn copy only
+KILLED  m2 block word changed, shipped copy only
+KILLED  m3 paragraph word changed, one plan copy
+KILLED  m4 paragraph deleted, one plan copy
+KILLED  m5.00 block unit deleted from both: '### Independent scientific check'
+KILLED  m5.01 block unit deleted from both: '*Gated to a change that touches a scientific ass'
+KILLED  m5.02 block unit deleted from both: 'For every other change, one line — "N/A: no scie'
+KILLED  m5.03 block unit deleted from both: 'Name **one** check that could show the change is'
+KILLED  m5.04 block unit deleted from both: '* **What it compares.** The quantity, the expect'
+KILLED  m5.05 block unit deleted from both: 'Say whether the data behind the expected value i'
+KILLED  m5.06 block unit deleted from both: 'If the check depends on data that does not exist'
+KILLED  m5.07 block unit deleted from both: '* **Why the expectation is independent.** Neithe'
+KILLED  m5.08 block unit deleted from both: 'Its basis is one of these:'
+KILLED  m5.09 block unit deleted from both: '* an analytical or manufactured solution;'
+KILLED  m5.10 block unit deleted from both: '* a conservation law chosen against the error th'
+KILLED  m5.11 block unit deleted from both: '* a trusted observation or benchmark;'
+KILLED  m5.12 block unit deleted from both: '* an independent implementation, or the saved ou'
+KILLED  m5.13 block unit deleted from both: "* a domain expert's expectation, written down be"
+KILLED  m5.14 block unit deleted from both: '* **The error it would catch.** The plausible mi'
+KILLED  m5.15 block unit deleted from both: 'This is security preflight S2\'s "Can it fail?", '
+KILLED  m5.16 block unit deleted from both: 'At implementation, the implementer makes that mi'
+KILLED  m5.17 block unit deleted from both: '* **When the check passes by finding nothing.** '
+KILLED  m5.18 block unit deleted from both: 'Show the same analysis detecting a known effect '
+KILLED  m5.19 block unit deleted from both: 'The failing\n  run above serves as the control wh'
+KILLED  m5.20 block unit deleted from both: 'At implementation, the implementer records the c'
+KILLED  m5.21 block unit deleted from both: 'For example, an analysis that reports no streamf'
+KILLED  m5.22 block unit deleted from both: '**Reviewers.** The proposal reviewer challenges '
+KILLED  m5.23 block unit deleted from both: 'The code reviewer verifies the recorded\nfailing '
+KILLED  m5.24 block unit deleted from both: 'The Maintainer judges at the Decision whether th'
+KILLED  m5.25 block unit deleted from both: 'If no independent basis exists, say so;'
+KILLED  m5.26 block unit deleted from both: 'the Maintainer weighs that, and it is not a reas'
+KILLED  m6.00 paragraph unit deleted from both: '**An independent scientific check is accepted sc'
+KILLED  m6.01 paragraph unit deleted from both: 'A replacement qualifies only if it\nfails under t'
+KILLED  m6.02 paragraph unit deleted from both: 'If nothing qualifies, dropping the\ncheck is a sc'
+KILLED  m6.03 paragraph unit deleted from both: 'Saying that the result now rests on the implemen'
+KILLED  m6.04 paragraph unit deleted from both: 'When the check fails for real during implementat'
+KILLED  m7 'qualifies only if' -> 'qualifies if', both plan copies
+KILLED  m8 'it becomes' -> 'it may become', both plan copies
+KILLED  m9 block heading removed, both proposal copies
+KILLED  m10 block heading moved above '**Prospective only.**', both
+KILLED  m11 block wrapped in a slot, both proposal copies
+KILLED  m12 paragraph moved inside the doc-tooling slot, one plan copy
+KILLED  m13 sentence added to one proposal copy
+KILLED  d1 'independent scientific check' -> 'review' at dimensions/complexity.md
+KILLED  d1 'independent scientific check' -> 'review' at dimensions/README.md
+KILLED  d1 'independent scientific check' -> 'review' at bootstrap/BOOTSTRAP.md
+KILLED  d2 'review finding' -> 'note' in dimensions/complexity.md
+PASSED  d3 old lens phrase restored beside the check, README (expected to pass)
+KILLED  S1 the five bases de-indented to top level, both proposal copies
+KILLED  S2.0 blank line 1 of 5 removed from the block, both proposal copies
+KILLED  S2.1 blank line 2 of 5 removed from the block, both proposal copies
+KILLED  S2.2 blank line 3 of 5 removed from the block, both proposal copies
+KILLED  S2.3 blank line 4 of 5 removed from the block, both proposal copies
+KILLED  S2.4 blank line 5 of 5 removed from the block, both proposal copies
+KILLED  S5 one space replaced by a non-breaking space in the block, both copies
+KILLED  P1 block moved before '## Scope delta', both proposal copies
+KILLED  P1 block moved before '## Assurance path', both proposal copies
+KILLED  P1 block moved before '## Review --', both proposal copies
+KILLED  P1 block moved before '## Decision --', both proposal copies
+KILLED  P2 plan paragraph moved before 'A security-touching plan re-answers', both plan copies
+KILLED  P2 plan paragraph moved before '## Source proposal', both plan copies
+KILLED  P2 plan paragraph moved before '## Scope', both plan copies
+KILLED  P2 plan paragraph moved before '## Scope delta', both plan copies
+KILLED  P2 plan paragraph moved before '## Verification', both plan copies
+KILLED  P2 plan paragraph moved before '## Dispositions', both plan copies
+KILLED  P2 plan paragraph moved before '## Plan review --', both plan copies
+KILLED  L1 top-level bullet markers '*' -> '-' for the first bullet, both copies
+KILLED  L2 a blank line inserted between two top-level bullets (loose list), both copies
+KILLED  L3 first top-level bullet indented by two spaces, both copies
+KILLED  L4 plan paragraph split in two by a blank line, both plan copies
+KILLED  L5 block heading made an H4, both proposal copies
+PASSED  W1 one sentence re-wrapped onto one line, both copies (wrapping is free: expected to pass)
+PASSED  W2 plan paragraph re-wrapped (two lines joined), both copies (wrapping is free: expected to pass)
+PASSED  D8 'independent scientific check' written 'Independent scientific check' in README (case-insensitive: expected to pass)
+KILLED  D10 the finding sentence narrowed back to 'a computed result' in complexity.md
+PASSED  D11 the bullet's first-sentence trigger narrowed back to 'a published result' in complexity.md (not pinned: expected to pass)
+KILLED  D12 the finding sentence loses the scientific-assumption half of the gate in complexity.md
+PASSED  D13 the I-2 trigger loses 'or a result the project publishes or acts on' (not pinned: expected to pass)
+KILLED  X1 the positive-control example reverted to 'comparable rate', both proposal copies
+KILLED  X2 the positive-control example loses 'distance', both proposal copies
+PASSED  control (after)
+```
+
+**A check that passes by finding nothing.** None for the plan's own sake (see the
+first record). The test's controls are the ledger's.
+
+**Known omissions.**
+* **Boundary C is the reviewer's.** The revision is for the same reviewer, or
+  another fresh one, to falsify; in particular the third place rule I added
+  (before the doc-tooling slot) and the claim that nothing else needs pinning.
+* **The reviewer's families D4, D5, D6, D9 and S10 are not re-run.** They are the
+  presence-only choices; they still pass, by design.
+* **The harness is not committed;** each ledger row names its mutation.
+* **The review's upgrade probe with an adopter who edited the block itself** was
+  not repeated; the revision changes one sentence and the engine is unchanged.
+* **The archive duties** (the caveat on the stor-modflow "yes" and the F2 mode)
+  are in the Response and are not yet done; they belong to the archive commit.
+* **The first record's omissions** about the gate-manifest re-anchor still hold.
