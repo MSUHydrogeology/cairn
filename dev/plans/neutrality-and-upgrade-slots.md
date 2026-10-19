@@ -1,7 +1,7 @@
 # Plan: neutrality and upgrade slots -- a vendor-name check that reads zero, and a note for slots an upgrade adds
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-neutrality-and-upgrade-slots.md`
-**Status**: revising-code
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance -- inherited from the proposal: the work widens the neutrality checker, adds code to the lockfile reader adopters run before they trust their scripts (`bootstrap/verify_integrity.py`), and edits comments in two security-relevant scripts (the interpreter binding and the content scanner)
 **Opened**: 2026-10-18
@@ -2208,3 +2208,72 @@ This answers the code reviewer's verification (`14f4403d`: NU-CR1 to NU-CR8 clos
 | NU-CR9 a non-ASCII file name prints escaped in the `--finalize` hint, so it cannot be pasted | **accepted as is** | recorded: shipped paths are ASCII, and making a homoglyph visible is the point. |
 
 The correction above is the answer to the Security Reviewer's note that another agent was diagnosing the upgrade results. Status stays `revising-code` until the next commit carries the fresh record.
+
+## Implementation verification -- Claude Sonnet 5.5 -- 2026-10-19
+
+The third record, after the verifications of the revision. It covers the last revision, `ab086789`, and replaces the second record's Boundary B result for the implementation bytes; everything the second record measured about the earlier revision stands except where this one says otherwise.
+
+**Status**: revising-code -> awaiting-code-review.
+
+**Boundary B mode**: `full`. The earlier reasons stand; the revision again changes the verdict-path module and its frozen test file.
+
+**Tested commit**: `96d967b47c54a32566c530bb693154a8c084315d`
+
+**Reviewed range**: `f949e342..96d967b4`, non-contiguous (other sessions' commits interleave). This revision's commits: `ab086789` (`bootstrap/verify_integrity.py` and its test file: NU-CSR7 to NU-CSR10) and `fcfaffc5` (prose: the correction and the response to the verifications). My implementation files are byte-identical from `ab086789` to the tested commit.
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` -- Python 3.13.13, pytest 9.0.3, pluggy 1.6.0, macOS. `PYTHONDONTWRITEBYTECODE=1` exported for the suite.
+
+**Pre-run state**: a fresh `git worktree add --detach` of `96d967b4` in a uniquely named scratch directory; `git status --short` prints nothing. **Post-run state**: the same worktree and commit; nothing.
+
+### Command table
+
+| Command | Exit | Outcomes | Elapsed |
+| --- | --- | --- | --- |
+| `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` (through `python -c "import sys, pytest; sys.exit(pytest.main([...]))"`, as before) | 1 | **5700 passed, 2 failed**, 3 warnings; no skip, xfail or xpass | 746.26 s (0:12:26) |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | neutrality `fail=0 info=56`; redundancy `fail=0 info=0` | 1 s |
+| `python scripts/check_cairn.py` | 1 | 4 issues in 187 files, none in a file this plan edits (below) | 3 s |
+| `python scripts/claim_check.py <file>` over the 21 documents this plan edits (the plan file is checked in the commit that carries this record) | 0 each | no flags in any of the 21 | -- |
+| `python scripts/link_check.py bootstrap/UPGRADE.md` | 0 | OK | -- |
+
+### Non-pass disposition
+
+* **The two AST nodes**, as before and not this plan's. The CHANGED set at the tested commit is **seven** symbols: `_cmd_adopt_module`, `_emit_skill_copy_fallback`, `_symlinks_available`, `cmd_upgrade`, `create_dev_tree`, `main`, `seed_gitignore`. The second record's five plus two that arrived with another session's `cf707e2a` (the installer fan-out). None of this plan's twenty-three commits changes a byte under `bootstrap/_scaffold/` or `bootstrap/scaffold.py`; `bootstrap/verify_integrity.py` still imports only the two engine modules it did.
+* **The `check_cairn` issues** are other sessions': three cite `tools/__pycache__` (which resolves only where a `__pycache__` folder exists, so not in this clean worktree), and one cites the retired `bootstrap/tests/test_onboarding_review_tiers.py` in a record of the review-stance plan. An earlier draft of the correction above made `check_cairn` flag *this* plan's file, because a comment-closing marker I had written inside backticks closed a comment-opening one earlier in the file; I rewrote the sentence, and the plan file is clean.
+* **The kernel comparison reads DIFFERENT against `b13ad7b7` now**, and not because of this plan: another session's `a95b9b31` changed `_resolve_interpreter` (and `7e6a14e5` other functions). This plan's own commit, `01d21423`, read against its parent, reads **SAME** for both copies (the ten named functions), and the pair is `cmp`-identical at the tested commit.
+
+### Plan-specific acceptance, at the tested commit
+
+* **NU-CSR7, measured.** A `cairn_version` holding a line break, a forged `verify_integrity: OK -- ...` line and a forged `--finalize` hint prints as one line with the breaks written out; no line of the report starts with `verify_integrity: OK`. Red before the fix.
+* **NU-CSR8, measured.** A passing run whose stdout reader has gone exits 120 and leaves `BrokenPipeError` on stderr (the redirect had hidden it); a passing run whose stderr reader has gone exits 0; `... 2>&1 | grep -q "verify_integrity: OK"` under `set -o pipefail`: 0 of 20 failed. Each was a test, red or green as stated in `ab086789`.
+* **NU-CSR9, shown killed.** Five planted regressions -- the three the Security Reviewer planted (a new field under another name, the hint's join raw, the advisory raw), a `!r`, and a new print of a lockfile value -- each make the static test fail on its own (5 of 5 killed, run against that test alone; the old four-name check passed all three of the Reviewer's).
+* **Old versus new, on the tested commit:** 29 hostile cases, a fresh `solo-greenfield` install, that install with a modified `AGENTS.md`, Cairn's own tree and the nine crafted-path trees -- **41 trees, all equal** (for the nine: exit code and stdout equal, and the new stderr equals the old with each unsafe character replaced by its written escape; raw control characters in the old report 1 to 8 per tree, in the new 0).
+* **The two probes, end to end at the tested commit** (install `4ad1c115`; fill with the indent kept; finalize; plan, stage, apply and verify all by the tested commit; 0 conflict hunks): fully filled names **exactly one** slot, `'dev/proposals/_template.md' slot 'assurance-path-triggers'` (23 checked); partly filled lists **17**, with it among them. Both trees exit 1 for the old install's `illegal living_state opt-out`, as before.
+* **`python bootstrap/verify_integrity.py --target .`** at the tested commit exits 1 and lists the plan's 18 files.
+* **Plants**, on the tested commit's bytes (control `fail=0 info=56`): prose, a whole-line HTML comment, a `.txt` file, a `.json` value and `Copilot` each read `fail=1`; lower-case `claude`, `ClaudeCode` and a zero-width character inside `Claude` each read `fail=0`.
+* **The one-time name search** over `b13ad7b7..96d967b4`: 241 hits in 108 distinct words, nearly all in other sessions' files (test files for the session kernel and the upgrade path, strategy and review records under `dev/`); the rest as before.
+* **The mutation ledger, on the tested bytes: 106 mutants, 106 killed, none survived**, each set beside an unmutated control (161 passed for the install check, 59 for the checker, 1 for the static test alone). By set: the report's encoding (13: the encoding removed at each of nine fields, and the encoder as the identity, keeping its quotes, testing only "printable", testing only "ASCII"); this revision's reader and budget mutants (16); the checker's names and file types (29); C8's (18); C9's (18); the last revision's (7: the advisory formatted from the raw finding, its fields unencoded, only `dst` encoded; the stdout flush back inside the fence, dropped, and not suppressed; the encoder ignoring backslashes); and the five planted regressions against the static test (5). `O_NOCTTY` and `O_BINARY` stay survivors no test can reach here.
+* **Edits only add: the one exception stands.** `git diff -U0 bb4f710a -- bootstrap/tests/test_verify_integrity.py` removes no line; `-- bootstrap/verify_integrity.py` removes the same nine report statements as before, at the Maintainer's instruction.
+
+### Changes for the Maintainer's re-anchor
+
+* **Frozen files changed: 14**, the same fourteen; **phase-mutable: 2**, unchanged.
+* **Node-set changes at the tested commit:** `test_quality_gate_neutrality.py` 22 -> 59 collected (+37); `test_verify_integrity.py` 19 -> 161 collected (+142); 179 IDs added in all. All 41 base nodes are still collected. Since the second record there are **9 new IDs, and one of that record's IDs is replaced**: `test_every_lockfile_value_the_report_prints_goes_through_one_encoder` became `test_everything_the_report_prints_is_constant_safe_or_encoded`. The 9, as `pytest --collect-only -q` prints them:
+
+```
+bootstrap/tests/test_verify_integrity.py::test_everything_the_report_prints_is_constant_safe_or_encoded
+bootstrap/tests/test_verify_integrity.py::test_the_static_check_fires_on_each_planted_regression[new-field-under-another-name]
+bootstrap/tests/test_verify_integrity.py::test_the_static_check_fires_on_each_planted_regression[hint-join-raw]
+bootstrap/tests/test_verify_integrity.py::test_the_static_check_fires_on_each_planted_regression[advisory-raw-finding]
+bootstrap/tests/test_verify_integrity.py::test_the_static_check_fires_on_each_planted_regression[repr-instead-of-ascii]
+bootstrap/tests/test_verify_integrity.py::test_the_static_check_fires_on_each_planted_regression[advisory-fields-unencoded]
+bootstrap/tests/test_verify_integrity.py::test_a_line_break_in_the_lockfile_cannot_forge_a_line_of_the_advisory
+bootstrap/tests/test_verify_integrity.py::test_a_failing_stdout_still_gets_pythons_one_line_reason
+bootstrap/tests/test_verify_integrity.py::test_a_backslash_in_a_path_is_not_taken_for_an_escape
+```
+
+### Known omissions
+
+* macOS only, one shuffle seed. `O_NOCTTY` and `O_BINARY` are unexercised here.
+* `upgrade` prints the forked-facade advisory through the engine's formatter without the encoding; `verify_integrity` escapes it. The engine repair is the Maintainer's second question and not part of this plan.
+* A non-ASCII file name prints escaped in the `--finalize` hint, so it cannot be pasted (NU-CR9, accepted: shipped paths are ASCII).
+* The note's line count is uncapped (NU-CR8, `accept`).
