@@ -1891,8 +1891,11 @@ def test_everything_the_report_prints_is_constant_safe_or_encoded() -> None:
     """Listed from the source: every piece of every message `verify` prints or
     adds to the violations must be constant text, a value on the short safe
     list, or a call to `_plain` or `ascii`; the advisory must be formatted from
-    fields encoded with `_plain`.  A site added later in any other form fails
-    here, whatever name it gives the lockfile value."""
+    fields encoded with `_plain`.  It reads two forms only: the first argument
+    of each `print` call and of each `violations.append` call.  A raw value
+    passed in another form (a later `print` argument, `sys.stderr.write`,
+    `violations.extend`) is not seen here; the tests that take a crafted path
+    to each existing site are what guard those."""
     source = _VERIFY_PY.read_text(encoding="utf-8")
     assert _unencoded_report_pieces(source) == []
 
