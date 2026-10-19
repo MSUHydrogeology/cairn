@@ -1,7 +1,7 @@
 # Plan: the board as the basis for richer views -- a data output, and a guide to building on it
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-board-as-basis.md`
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance -- inherited from the proposal: `tools/board.py` is run by every adopter and its output becomes a published contract
 **Opened**: 2026-10-18
@@ -207,7 +207,7 @@ The rows are in run order. All commits go to `master`; nothing is pushed. Implem
 
 ### Sequencing with the other plans
 
-**The build order is the Maintainer's, set on 2026-10-18:** `neutrality-and-upgrade-slots`, `independent-scientific-check`, `review-stance-and-lenses`, **this plan**, `model-mapping-install-path`, then `stewardship-and-reuse`. It is his order, not one derived from the other plans' own texts, which differ about it; those texts are being corrected. Plan statuses are read at each chunk's start (`python tools/board.py`), not carried here. Chunks C1 to C4 touch none of the earlier plans' files except disjoint lockfile records and one paragraph of `docs/tool-usage.md`, and C5 re-reads the four templates at edit time.
+**The build order is the Maintainer's, set on 2026-10-18:** `neutrality-and-upgrade-slots`, `independent-scientific-check`, `review-stance-and-lenses`, **this plan**, `model-mapping-install-path`, then `stewardship-and-reuse`. It is his order, not one derived from the other plans' own texts, which differ about it; those texts are being corrected. Plan statuses are read at each chunk's start (`python tools/board.py`), not carried here. Chunks C1 to C4 touch none of the earlier plans' files except disjoint lockfile records and one paragraph of `docs/tool-usage.md`, and C5 re-reads the four templates at edit time. On 2026-10-19 the Maintainer placed both `board-as-basis` and `model-mapping-install-path` into the 0.4 release train (`dev/PLANNING.md`), so the two `FROZEN-NEW` files join the single combined Maintainer-run AST and gate-manifest ceremony at the 0.4 cut.
 
 Files shared with the other plans, each read from that plan's own text:
 
