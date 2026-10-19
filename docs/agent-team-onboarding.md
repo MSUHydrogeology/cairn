@@ -36,7 +36,7 @@ Example (collaborative-team profile):
 <!-- cairn:slot team-roster -->
 * Anthony (Maintainer)
 * Claude Opus 4.7 (1M context) -- author + reviewer
-* Codex GPT-5 -- reviewer (External cross-type)   # newly added
+* Codex GPT-5 -- reviewer   # newly added
 <!-- cairn:end team-roster -->
 ```
 <!-- vendor-ok-end -->

@@ -373,7 +373,7 @@ Assurance path: <the plan's declared path>
 **Tier**: <Internal | Internal Security Review>
 **Findings**: <raised | none>
 
-*On a read the Maintainer called, add these two lines, with the Maintainer's
+*On a read the Maintainer called, replace the Tier line with these two, with the Maintainer's
 words beneath them, verbatim and apart:*
 
 **Tier**: External

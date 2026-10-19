@@ -44,7 +44,8 @@ the best alternative is and what would show it wrong, and answers in writing.
 Floor: a fresh session.
 
 **Called read** — a review the Maintainer asked for on one named piece of work,
-from more distance: a different AI model, or a person. Only the Maintainer
+from more distance: a different AI model, or a person. Also written
+**External read**. Only the Maintainer
 calls one, and the record quotes their words.
 
 **Structural independence** — independence you can point at, rather than take

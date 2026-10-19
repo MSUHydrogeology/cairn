@@ -116,6 +116,8 @@ committer.
 **A high-risk surface takes a Security Review.** `usual + Security Review` in a
 header means two passes: the usual pass and a Security Review pass that names its
 own obligation. The usual pass never clears the second.
+In a proposal review, `**Tier**: Security Review` names that obligation; the
+skeleton does not call for a separate `**Obligation**` line.
 
 ## Forward-reference paths
 

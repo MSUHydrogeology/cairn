@@ -69,8 +69,9 @@ The stage sets three questions:
 
 Each pass opens with a **Foundations** block of three lines, one answer per
 question, each ending in the file, test, line or command that backs it. For
-code review, Answer 3 points at the falsification ledger rather than restating
-it. **Improve means recommend**: the reviewer proposes the better version
+code review, Answer 3 points at the falsification ledger (the record of what
+the reviewer tried to break, and what happened) rather than restating it.
+**Improve means recommend**: the reviewer proposes the better version
 ("don't do this" and "do it differently" count) and the author decides. **There
 is no quota of findings.** "No defects found" is allowed only with the three
 answers evidenced and the gaps named.
@@ -148,6 +149,7 @@ calls for security treatment declares `Plan review: required(Internal + Internal
 Security Review)`. Only an appended `## Plan review` pass whose `**Obligation**`
 line matches clears it, never an ordinary Internal pass. No tool reads that line:
 the next reviewer, the code reviewer and the Maintainer check it.
+Here, `Internal` means the ordinary plan review.
 
 **Reviews are attributed and self-committed.** No agent writes or commits a
 review attributed to another. The attribution *is* the record's integrity: a
