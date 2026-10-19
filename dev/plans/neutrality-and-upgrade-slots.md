@@ -1,7 +1,7 @@
 # Plan: neutrality and upgrade slots -- a vendor-name check that reads zero, and a note for slots an upgrade adds
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-neutrality-and-upgrade-slots.md`
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance -- inherited from the proposal: the work widens the neutrality checker, adds code to the lockfile reader adopters run before they trust their scripts (`bootstrap/verify_integrity.py`), and edits comments in two security-relevant scripts (the interpreter binding and the content scanner)
 **Opened**: 2026-10-18
@@ -2277,3 +2277,74 @@ bootstrap/tests/test_verify_integrity.py::test_a_backslash_in_a_path_is_not_take
 * `upgrade` prints the forked-facade advisory through the engine's formatter without the encoding; `verify_integrity` escapes it. The engine repair is the Maintainer's second question and not part of this plan.
 * A non-ASCII file name prints escaped in the `--finalize` hint, so it cannot be pasted (NU-CR9, accepted: shipped paths are ASCII).
 * The note's line count is uncapped (NU-CR8, `accept`).
+
+## Security verification of the last fix -- Claude Opus 5.5 -- 2026-10-19
+
+```
+Reviewed commit: ab086789929ac777e2100e823516c5566f941474 (bootstrap/verify_integrity.py and its test file are byte-identical at the tested commit 96d967b4)
+Target: the answer to NU-CSR7 to NU-CSR10, read against f949e342 (what the last verification read) and bb4f710a (the plan's parent)
+Prior findings: NU-CSR7 to NU-CSR10 (a003bd4e)
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review (verification of the last fix)
+**Tier**: Internal Security Review
+**Findings**: raised (1; information only, none blocking)
+
+**Model**: claude-opus-5-5
+
+Distance: a fresh session, the same author as the two Security sections above. I am not the implementer.
+
+### In plain terms
+
+**All four fixes close, nothing new breaks, and the obligation clears.** Status moves to `ready-to-archive`.
+
+* **NU-CSR7 is closed.** A line break in the lockfile's `cairn_version` now prints as a written `\n` inside the advisory's one line, so the forged "OK" line and the forged `--finalize` hint are gone. At every report site, crafted text now reaches the terminal only as printable ASCII.
+* **NU-CSR8 is closed.** When stdout cannot be written, the check still exits 120, and Python's explanation is back on stderr. The earlier fix still holds too: a passing check exits 0 when stderr's reader has gone.
+* **NU-CSR9 is closed.** The static test now catches the three regressions it used to miss. Four other shapes still get past it (NU-CSR11, information only), but the per-site behaviour tests catch each one today.
+* **NU-CSR10 is closed.** A real escape character and the same escape typed as text now print differently. Clean reports are unchanged.
+* **Nothing else moved.** Exit codes match the parent in every run, and the test file gives 161 passed.
+
+### What I ran
+
+Every run used `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13) on macOS, in a detached `git worktree` of `ab086789` in a fresh, uniquely named scratch folder, with `git archive` extractions for the mutants. The mutant batch ran under the session's serial-run lock. I did not re-run the full suite: the record's Boundary B (`96d967b4`, full mode) covers these bytes, and nothing below gave me a reason to doubt it. The parent's verifier ran beside the new one, on the same engine.
+
+| Finding | What I re-ran | Result |
+|---|---|---|
+| NU-CSR7 | the forged-line tree: a facade finding, a tampered `scripts/evil.py`, and a `cairn_version` holding two line breaks, a forged `verify_integrity: OK` line and a forged `--finalize scripts/evil.py` hint | **closed**. The whole value now prints on the one skew line, with each line break as a written `\n`. 0 forged lines (the parent: both forged lines). |
+| NU-CSR7 | the crafted-text battery: 9 report sites, with control characters, a C1 CSI, bidi and zero-width marks, a BOM, look-alike letters, a forging line break, and a lone surrogate | exit codes equal to the parent in all 24 runs; raw unsafe bytes 0 and forged lines 0 everywhere, the advisory included (the parent: 5-50 bytes, and forged lines at 8 sites) |
+| NU-CSR8 | a real `solo-greenfield` install and a copy with a planted line, with stdout's reader gone and with stdout a file that cannot grow (`ulimit -f 0`) | **closed**. A passing tree exits 120 and stderr again says `Exception ignored on flushing sys.stdout:` with `BrokenPipeError` or `OSError: [Errno 27] File too large`. A failing tree exits 1 with its full report. |
+| NU-CR1, not regressed | the same trees, with the stderr reader gone, and 40 runs each of `2>&1 \| grep -q` | passing: 0, and 0 in 40 of 40; failing: 120, and 1 in 40 of 40 |
+| NU-CSR10 | `_plain` on a real ESC and on the four typed characters `\x1b`; every code point against its own typed escape | **closed**. They print `a\x1bb.md` and `a\\x1bb.md`; 0 shared outputs over all 1,114,112 code points (was 1,114,014); 0 outputs outside printable ASCII; clean paths, spaces included, unchanged |
+| NU-CSR9 | planted regressions against `test_everything_the_report_prints_is_constant_safe_or_encoded`, each in a fresh extraction (control: whole file 161 passed) | see below |
+
+| Planted regression | Static test | Whole file (161 tests) |
+|---|---|---|
+| 1. a new line printing the resolved path `{dst}` | **fails** (caught) | 4 failed |
+| 2. the hint's list joined raw | **fails** | 3 failed |
+| 3. the advisory formatted from the raw finding | **fails** | 4 failed |
+| 4. the raw path as a second argument to `print` | passes | 1 failed (the `missing` site test) |
+| 5. `sys.stderr.write` of the raw path | passes | 1 failed |
+| 6. `violations.extend` with the raw path | passes | 2 failed |
+| 7. `shown` rewritten so `_plain` never runs, though its name stays in the text (contrived) | passes | 3 failed |
+
+At `f949e342` the old static test passed regressions 1 to 3; now it fails them all.
+
+One thing changed shape, and it is cosmetic. `_plain_lines` is gone, so the advisory relies on each field being escaped before the engine formats it. The engine still applies `!r` to the facade's `dst` and engine folder, so a non-ASCII facade path now shows its escape with a doubled backslash. That is safe, and a little harder to read.
+
+### Findings
+
+**[NU-CSR11] (Info; recommended disposition `accept`) The static test reads two forms only.**
+
+* **Evidence.**
+  * `test_everything_the_report_prints_is_constant_safe_or_encoded` checks the first argument of each `print` call and of each `violations.append` call in `verify()`.
+  * Its docstring says "a site added later in any other form fails here".
+  * Regressions 4 to 7 above pass it: a raw path as the second argument to `print`, `sys.stderr.write`, `violations.extend`, and a `shown` that keeps the text `_plain(v)` without ever calling it.
+  * The per-site behaviour tests caught all four, and every site that exists today has one.
+* **Recommended disposition.** `accept`: the behaviour tests guard every existing site, and the static test is the second line of defence. If it is ever widened, it should read every positional argument of `print`, treat `sys.stderr.write` like `print`, and treat `violations.extend`, `insert` and `+=` like `append`. Or narrow the docstring to the two forms it checks. Nothing is owed before archive.
+
+### What I did not cover
+
+* Linux and Windows; macOS only.
+* The full suite (the record's Boundary B), and the rest of the tested commit's range.
+* The engine's own copy of the advisory, printed by `upgrade`; unchanged, outside this plan.
