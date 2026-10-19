@@ -1367,8 +1367,8 @@ _DIM_OBLIGATIONS = {
             r"evidence plan is, whether an unexplained .N/A. on the independent "
             r"scientific check is a review finding",
         "the-team-gated-bullet-says-what-the-module-adds":
-            r"staffing guidance for a read the Maintainer has called, and the "
-            r"scope-reduction trap, in the Dual-Review module",
+            r"staffing guidance for a read the Maintainer has called, in the "
+            r"Dual-Review module",
         "the-agent-team-cell-names-who-can-be-the-one-reviewer":
             r"who is available to be the one reviewer",
     },

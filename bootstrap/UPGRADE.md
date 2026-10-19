@@ -13,6 +13,36 @@ you (or your agent) review, resolve any conflicts, and apply — and the
 applied upgrade is itself a tracked change in your repo that goes through
 your own review lifecycle.
 
+## Moving to one review at every stage
+
+Cairn now ships one review stance and its nine-question evidence sweep in
+`dev/agent_collaboration.md`, with the governing pointer in `AGENTS.md`.
+Adding a second agent type to the team roster does not call an outside read;
+only the Maintainer can ask for one on a named piece of work. The upgrade
+merges these words with your own, so inspect both conflicted and cleanly
+merged files before applying. A clean merge can preserve local language from
+the former two-kind review system, including a claim that a second agent
+always needs higher capability; Cairn does not flag those sentences. Search
+the files you actually have for the old role and tier words, for example:
+
+```
+grep -n -i -E 'internal|external|tier' AGENTS.md dev/agent_collaboration.md
+```
+
+Treat hits as prompts to read, not instructions to replace every use of the
+words: also inspect `dev/collaboration_agreement.md` if your project has one;
+`External read` remains the name of a Maintainer-called read. In the
+two adopter rehearsals, one project's `AGENTS.md` had a one-line conflict:
+keep its local doctrine-gating bullet and the new upstream sentence above it.
+That project's loop document needed the shipped sweep plus its domain probes,
+without a second ledger or clean-pass rule. The other project's collaboration
+agreement was entirely local text and conflicted as a whole; keep that local
+file. These
+are examples of what to inspect, not automatic resolutions for your tree.
+The module-body-coverage probe now lists 11 unmatched old heading names for
+`dual-review` (8 before this change); the three added names moved under other
+headings rather than losing their rules.
+
 ## The two on-disk artifacts the install leaves
 
 Installing (or upgrading) writes two **tracked** artifacts into your

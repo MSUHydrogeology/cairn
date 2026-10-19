@@ -1319,9 +1319,10 @@ def unrecognized_profile_keys(cfg: dict[str, Any]) -> list[str]:
 #: serves any *concurrent* team -- multiple same-type agents collide on shared
 #: files exactly as a multi-type team does, and the work-intent mechanism is
 #: what prevents it -- so it staffs both ``concurrent-multi-type`` and
-#: ``concurrent-single-type``.  ``dual-review`` needs a second agent *type* to
-#: fill its External tier with structural independence, which a same-type team
-#: lacks, so it stays ``concurrent-multi-type`` only.
+#: ``concurrent-single-type``. ``dual-review`` is optional staffing guidance
+#: for a Maintainer-called read from another agent type. The base one-review
+#: method also works for a same-type team, but the optional module stays
+#: ``concurrent-multi-type`` only.
 _TEAM_STAFFING_GATES: dict[str, frozenset[str]] = {
     "dual-review": frozenset({"concurrent-multi-type"}),
     "coordination-tiers": frozenset(

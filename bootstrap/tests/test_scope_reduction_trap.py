@@ -130,24 +130,6 @@ _BOARD_TAXONOMY = {
         r"grouped\s+scope-remainder record",
 }
 
-_TEAM_GATED_MODULE = {
-    "scope-cut is reserved for claim correction":
-        r"scope-cut.{0,80}claim correction",
-    "names the trap":
-        r"scope-reduction trap",
-    "carries the three-way outcome test":
-        r"preserved.{0,300}degraded",
-    "declining a review-proposed expansion is not a reduction":
-        r"never in the baseline",
-    # The same shape again. A code review rewrote this module to say degraded
-    # and lost "are for the author and reviewer to settle between them" --
-    # the exact contradiction an External round was spent eliminating -- and
-    # the suite stayed green.
-    "only the Maintainer may concede a baseline outcome":
-        r"only the Maintainer may concede|never who may concede it|the "
-        r"\*{0,2}Maintainer'?.{0,4}s?\*{0,2} explicit allowance",
-}
-
 #: The canonical rule requires each remainder entry to
 #: carry FOUR things -- source section, reason, **a disposition**, and a revival
 #: or closure condition. All four templates and both emitted scaffolds asked for
@@ -258,13 +240,6 @@ _SURFACES = {
     "templates/core/dev/plans/_template.md": _PLAN_TEMPLATE,
     "dev/PLANNING.md": _BOARD_TAXONOMY,
     "templates/core/dev/PLANNING.md": _BOARD_TAXONOMY,
-    "templates/modules/team-gated/dual-review.md": _TEAM_GATED_MODULE,
-    # Cairn's OWN installed copy of the module above, paired to it by
-    # `dev/.cairn/cairn-lock.yml`. Chunk B edited the shipped source and not
-    # this one, leaving the unsound `scope-cut -> accept` mapping live in the
-    # copy Cairn itself reads. Listing it here is what makes
-    # that drift a red test rather than a lucky catch.
-    "dev/modules/dual-review.md": _TEAM_GATED_MODULE,
     "doctrine/dual-review.md": _DOCTRINE_CANONICAL,
     "doctrine/proposals.md": _DOCTRINE_PROPOSALS,
     "doctrine/plans.md": _DOCTRINE_PLANS,

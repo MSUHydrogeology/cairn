@@ -473,6 +473,9 @@ _MODULE_ABSENT = {
         r"\(or consciously not\)",
     "module-has-a-second-ledger-definition":
         r"ledger of five items|lightweight four-part record|falsification ledger",
+    "module-has-a-duplicate-scope-reduction-trap":
+        r"scope-cut means claim correction|The scope-reduction trap — the "
+        r"mirror of the clean pass|The outcome test\. Judge a narrowing",
 }
 
 

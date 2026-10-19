@@ -167,10 +167,9 @@ class TestStaffability:
         assert set(_TEAM_STAFFING_GATED) <= roster
 
     def test_concurrent_single_type_splits_the_gate(self) -> None:
-        # fold-back #40: a concurrent-single-type team staffs
-        # coordination-tiers (same-type agents still collide on shared
-        # files, and work-intent is the mechanism) but NOT dual-review
-        # (no second agent type to fill its External tier).
+        # Same-type agents still collide on shared files, so this team staffs
+        # coordination-tiers. It does not staff dual-review: that optional
+        # called-read guide assumes a second agent type is available.
         roster = _roster({
             "preset": "solo-greenfield",
             "agent_team": "concurrent-single-type",

@@ -66,8 +66,8 @@ what makes "the invariant core is small" an honest claim.
   `bootstrap/BOOTSTRAP.md` > I-5.)
 * **Team-gated modules** — activated only when the team has the
   structure to run them: staffing guidance for a read the
-  Maintainer has called, and the scope-reduction trap, in the
-  Dual-Review module; the domain-agent roster;
+  Maintainer has called, in the Dual-Review module; the
+  domain-agent roster;
   the legacy-agent role and readiness map; the multi-language test
   architecture; the asynchronous and real-time coordination tiers.
 

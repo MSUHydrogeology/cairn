@@ -178,7 +178,7 @@ model — and these are real, landed controls the module's
   **every** write, plus a Cairn-dev Bandit gate that scans the **whole engine
   package recursively**.
 * **Layers 2/3 — content integrity.** The
-  [`content_scan.py`](content_scan.py) scanner,
+  `scripts/content_scan.py` scanner,
   run over Cairn's source prose and over scaffolded generated output by
   `cairn/scripts/check_cairn.py` — a **tripwire
   that forces human review, not a safety proof**.

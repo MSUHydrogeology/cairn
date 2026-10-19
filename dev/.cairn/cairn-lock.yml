@@ -131,7 +131,7 @@
     },
     {
       "dst": "dev/modules/dual-review.md",
-      "hash": "sha256:82b5b9aba1dc63defe9da9dbbb09600edd88456be9590c9b53854343a3e9fa42",
+      "hash": "sha256:b35fa2a580a666f15d87e6365b3c1180c30a3c1e01c2a00ffe5cb0b758bef9b2",
       "src": "modules/team-gated/dual-review.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -188,7 +188,7 @@
     },
     {
       "dst": "dev/modules/security-review.md",
-      "hash": "sha256:b720f629a13d11329783ddbdc71fd75acf00f24ffb7ff06161271fbe05d1267e",
+      "hash": "sha256:8d2ccaf3a9b3cc542f49b3a9faaf537a88bf298980813d601065fffdf45b8229",
       "src": "modules/team-gated/security-review.md",
       "unrecoverable_base": true,
       "verbatim": false
