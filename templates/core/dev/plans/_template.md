@@ -128,6 +128,13 @@ A path that does not exist yet trips `claim_check`. Declare it instead — the
 literal `Proposed paths:` line, no blank line before the first bullet, one
 physical line per bullet. Drop a line once its path resolves.
 
+**The summary line.** In the `In brief` header line below the rule, write one plain
+sentence a scientist outside the project could follow, and keep it on one physical
+line because the board reads that line only. `python tools/board.py --json` prints
+it as `in_brief` and a view shows it in place of the title; a longer `## In brief`
+section below the header is separate and is not read by the board. Leave no
+placeholder in a finished artifact, because the board prints whatever the line holds.
+
 ---
 
 # Plan: {{short title}}
@@ -136,6 +143,7 @@ physical line per bullet. Drop a line once its path resolves.
 **Status**: awaiting-plan-review
 **Plan review**: {{required(Internal) | required(Internal + Internal Security Review)}}
 **Opened**: {{YYYY-MM-DD}}
+**In brief**: {{one plain sentence: what changes and why it matters}}
 
 ## Source proposal
 

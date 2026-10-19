@@ -1986,12 +1986,20 @@ class TestFinishedPlansRecipe:
             ("plan-alpha", "2026-01-10"),
         ]
 
-        # Run on Cairn's own repository:
+        # Run on Cairn's own repository (count committed archived files at HEAD
+        # so an uncommitted working-tree move does not skew the comparison):
         live_result = finished_plans(CAIRN_ROOT)
+        ls_tree = subprocess.run(
+            ["git", "ls-tree", "-r", "--name-only", "HEAD", "--", "dev/plans/archive"],
+            cwd=str(CAIRN_ROOT),
+            check=True,
+            capture_output=True,
+            text=True,
+        )
         archived_files = [
-            p.stem
-            for p in (CAIRN_ROOT / "dev" / "plans" / "archive").glob("*.md")
-            if not p.name.startswith("_")
+            Path(line).stem
+            for line in ls_tree.stdout.splitlines()
+            if line.endswith(".md") and not Path(line).name.startswith("_")
         ]
         assert len(live_result) == len(archived_files)
 
@@ -2162,3 +2170,120 @@ class TestIntentJoinRecipe:
             ).split()
         )
         assert "whatever commit is checked out" in honest_sec
+
+
+class TestTemplatesAskForTheLineTheBoardReads:
+    """Proposal and plan templates prompt for **In brief**: below the rule and round-trip through --json."""
+
+    def test_proposal_templates_carry_in_brief_below_the_rule(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Both proposal templates carry **In brief**: below --- and round-trip through board.py --json."""
+        for rel in ("dev/proposals/_template.md", "templates/core/dev/proposals/_template.md"):
+            txt = (CAIRN_ROOT / rel).read_text(encoding="utf-8")
+            assert txt.count("**In brief**:") == 1, rel
+            above, sep, below = txt.partition("\n---\n")
+            assert sep == "\n---\n", rel
+            header_block = below.partition("\n## ")[0]
+            assert "**In brief**:" not in above, rel
+            assert (
+                "**In brief**: {{one plain sentence: what changes and why it matters}}"
+                in header_block
+            ), rel
+            assert "**The summary line.**" in above, rel
+
+            filled = (
+                below.replace("{{proposal title}}", "Test proposal title")
+                .replace("{{agent or human}}", "claude")
+                .replace("{{usual | usual + Security Review}}", "usual")
+                .replace(
+                    "{{required(Internal) | required(Internal + Internal Security Review)}}",
+                    "required(Internal)",
+                )
+                .replace("{{YYYY-MM-DD}}", "2026-10-19")
+                .replace(
+                    "{{one plain sentence: what changes and why it matters}}",
+                    "Adds a deterministic summary line so custom views can display it.",
+                )
+            )
+            tree = tmp_path / rel.replace("/", "_")
+            (tree / "dev" / "proposals").mkdir(parents=True)
+            (tree / "dev" / "plans").mkdir(parents=True)
+            (tree / "dev" / "proposals" / "2026-10-19-claude-sample.md").write_text(
+                filled, encoding="utf-8"
+            )
+            rc = board.main(["--json", "--root", str(tree)])
+            captured = capsys.readouterr()
+            assert (rc, captured.err) == (0, "")
+            doc = json.loads(captured.out)
+            assert len(doc["artifacts"]) == 1
+            rec = doc["artifacts"][0]
+            assert (
+                rec["in_brief"]
+                == "Adds a deterministic summary line so custom views can display it."
+            )
+            assert rec["waiting_on_maintainer"] is None
+
+            rc_m = board.main(["--maintainer", "--root", str(tree)])
+            cap_m = capsys.readouterr()
+            assert rc_m == 0
+            assert "board: 0 waiting on the Maintainer" in cap_m.out, rel
+
+    def test_plan_templates_carry_in_brief_below_the_rule_and_keep_waiting_above_it(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Both plan templates carry **In brief**: below ---, keep **Waiting on Maintainer**: out of header block, and round-trip."""
+        for rel in ("dev/plans/_template.md", "templates/core/dev/plans/_template.md"):
+            txt = (CAIRN_ROOT / rel).read_text(encoding="utf-8")
+            assert txt.count("**In brief**:") == 1, rel
+            above, sep, below = txt.partition("\n---\n")
+            assert sep == "\n---\n", rel
+            header_block = below.partition("\n## ")[0]
+            assert "**In brief**:" not in above, rel
+            assert "**Waiting on Maintainer**:" in above, rel
+            assert "**Waiting on Maintainer**:" not in header_block, rel
+            assert (
+                "**In brief**: {{one plain sentence: what changes and why it matters}}"
+                in header_block
+            ), rel
+            assert "**The summary line.**" in above, rel
+
+            filled = (
+                below.replace("{{short title}}", "Sample plan")
+                .replace(
+                    "{{dev/proposals/archive/...}}",
+                    "`dev/proposals/archive/2026-10-19-claude-sample.md`",
+                )
+                .replace(
+                    "{{required(Internal) | required(Internal + Internal Security Review)}}",
+                    "required(Internal)",
+                )
+                .replace("{{YYYY-MM-DD}}", "2026-10-19")
+                .replace(
+                    "{{one plain sentence: what changes and why it matters}}",
+                    "Ships the board JSON mode and verifies it against the golden baseline.",
+                )
+            )
+            tree = tmp_path / rel.replace("/", "_")
+            (tree / "dev" / "proposals").mkdir(parents=True)
+            (tree / "dev" / "plans").mkdir(parents=True)
+            (tree / "dev" / "plans" / "sample-plan.md").write_text(
+                filled, encoding="utf-8"
+            )
+            rc = board.main(["--json", "--root", str(tree)])
+            captured = capsys.readouterr()
+            assert (rc, captured.err) == (0, "")
+            doc = json.loads(captured.out)
+            assert len(doc["artifacts"]) == 1
+            rec = doc["artifacts"][0]
+            assert (
+                rec["in_brief"]
+                == "Ships the board JSON mode and verifies it against the golden baseline."
+            )
+            assert rec["waiting_on_maintainer"] is None
+
+            rc_m = board.main(["--maintainer", "--root", str(tree)])
+            cap_m = capsys.readouterr()
+            assert rc_m == 0
+            assert "board: 0 waiting on the Maintainer" in cap_m.out, rel
+
