@@ -23,17 +23,20 @@ weight and verification depth.
 
 ### Simple
 
-* **Internal review** is usually sufficient; **External** review
-  is reserved for genuinely contract-touching changes.
-* A thinner evidence / verification plan in each proposal.
+* The **one review** (`AGENTS.md` > "Review") asks the same three
+  questions here as anywhere, of a thinner evidence / verification
+  plan in each proposal.
 * The proposal template's "signals the change is wrong" prompt
   stays light.
 
 ### Complex
 
-* **External review is mandatory** for any change touching a
-  contract or a scientific assumption — the make-it-prove-itself
-  tier is not optional where a quiet error is costly.
+* The **one review** carries the scientific-trust lens (Domain /
+  scientific validity & scope, in the review sweep), and a proposal
+  **names the contracts and scientific assumptions it touches**, so
+  the Maintainer sees them before deciding. No agent adds a more
+  distant read on its own; where a quiet error is costly, the
+  Maintainer can ask for one.
 * The proposal template's **independent scientific check** is expected
   of every change that touches a scientific assumption or a result the
   project publishes or acts on: one check whose expected value neither

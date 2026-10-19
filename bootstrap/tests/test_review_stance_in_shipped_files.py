@@ -1308,3 +1308,154 @@ def test_no_live_document_credits_a_checker_that_does_not_exist() -> None:
         f"{hits} name a checker that was retired. Nothing mechanical reads the "
         f"obligation line; the next reviewer and the Maintainer do.")
     assert re.search(_RETIRED_CHECKER, "the _pass_headings parser")
+
+
+# --------------------------------------------------------------------------
+# The dimensions pages, and the upgrade guide's plan-pass example. The pages
+# say what each axis position drives. None of them may say a review "tier" is
+# reserved, mandatory, wanted or filled: there is one review, and more distance
+# is the Maintainer's call.
+# --------------------------------------------------------------------------
+
+DIM_COMPLEXITY = "dimensions/complexity.md"
+DIM_README = "dimensions/README.md"
+DIM_AGENT_TEAM = "dimensions/agent-team.md"
+DIM_HUMAN_TEAM = "dimensions/human-team.md"
+UPGRADE_GUIDE = "bootstrap/UPGRADE.md"
+_DIM_FILES = (DIM_COMPLEXITY, DIM_README, DIM_AGENT_TEAM, DIM_HUMAN_TEAM)
+_DIM_IDS = {DIM_COMPLEXITY: "complexity", DIM_README: "dimensions-readme",
+            DIM_AGENT_TEAM: "agent-team", DIM_HUMAN_TEAM: "human-team",
+            UPGRADE_GUIDE: "upgrade-guide"}
+
+_DIM_FORBIDDEN = {
+    **_FORBIDDEN,
+    "external-review-is-reserved": r"reserved for genuinely",
+    "external-review-is-mandatory": r"(review|tier) is mandatory",
+    "the-make-it-prove-itself-tier": r"make-it-prove-itself",
+    "the-two-tier-apparatus": r"two-tier",
+    "the-review-tiers-still-hold": r"review tiers",
+    "a-tier-the-agent-team-fills": r"tiers are filled",
+    "a-tier-wanting-structural-independence": r"independence the external",
+}
+_DIM_FORBIDDEN_EXAMPLES = {
+    **_FORBIDDEN_EXAMPLES,
+    "external-review-is-reserved":
+        "External review is reserved for genuinely contract-touching changes.",
+    "external-review-is-mandatory": "External review is mandatory for a contract.",
+    "the-make-it-prove-itself-tier": "The make-it-prove-itself tier is not optional.",
+    "the-two-tier-apparatus": "The full two-tier Dual-Review apparatus.",
+    "the-review-tiers-still-hold": "The review tiers still hold, filled by time.",
+    "a-tier-the-agent-team-fills": "The review tiers are filled by the agent team.",
+    "a-tier-wanting-structural-independence":
+        "A different agent type supplies the independence the External tier wants.",
+}
+
+_DIM_OBLIGATIONS = {
+    DIM_COMPLEXITY: {
+        "simple-has-the-one-review-with-a-thinner-evidence-plan":
+            r"The one review \(AGENTS\.md > .Review.\) asks the same three "
+            r"questions here as anywhere, of a thinner evidence / verification "
+            r"plan in each proposal",
+        "complex-has-the-one-review-with-the-scientific-trust-lens":
+            r"The one review carries the scientific-trust lens \(Domain / "
+            r"scientific validity & scope, in the review sweep\)",
+        "complex-proposal-names-the-contracts-and-assumptions-it-touches":
+            r"a proposal names the contracts and scientific assumptions it "
+            r"touches, so the Maintainer sees them before deciding",
+        "complex-no-agent-adds-a-more-distant-read":
+            r"No agent adds a more distant read on its own",
+        "complex-keeps-the-independent-scientific-check":
+            r"independent scientific check is expected of every change that "
+            r"touches a scientific assumption",
+    },
+    DIM_README: {
+        "the-complexity-cell-is-review-weight-and-verification-depth":
+            r"Review weight and verification depth — how thin or thick the "
+            r"evidence plan is, whether an unexplained .N/A. on the independent "
+            r"scientific check is a review finding",
+        "the-team-gated-bullet-says-what-the-module-adds":
+            r"staffing guidance for a read the Maintainer has called, and the "
+            r"scope-reduction trap, in the Dual-Review module",
+        "the-agent-team-cell-names-who-can-be-the-one-reviewer":
+            r"who is available to be the one reviewer",
+    },
+    DIM_AGENT_TEAM: {
+        "a-single-agent-has-the-one-review-filled-by-time":
+            r"The one review still holds, filled by time rather than by agent",
+        "more-distance-is-staffable":
+            r"More distance is staffable\. A different agent type is there for "
+            r"a read the Maintainer calls",
+    },
+    DIM_HUMAN_TEAM: {
+        "other-humans-are-available-to-be-the-one-reviewer":
+            r"are available to be the one reviewer, or the reader the "
+            r"Maintainer asks for",
+    },
+}
+
+
+@pytest.mark.parametrize("rel", _DIM_FILES, ids=_DIM_IDS.get)
+def test_dimensions_omit_the_old_wording(rel: str) -> None:
+    found = _present(_text(rel), _DIM_FORBIDDEN)
+    assert not found, f"{rel} {_FORBIDDEN_REASON} Found: {found}"
+
+
+@pytest.mark.parametrize("rel", _DIM_FILES, ids=_DIM_IDS.get)
+@pytest.mark.parametrize("label", sorted(_DIM_FORBIDDEN))
+def test_inserting_old_wording_into_a_dimensions_page_is_reported(
+        label: str, rel: str) -> None:
+    intact = _text(rel)
+    assert _present(intact, _DIM_FORBIDDEN) == [], (
+        f"{rel}: the unmutated page already carries old wording; no control.")
+    assert label in _present(f"{intact}\n\n{_DIM_FORBIDDEN_EXAMPLES[label]}\n",
+                             _DIM_FORBIDDEN)
+
+
+_DIM_CASES = [(rel, label) for rel in _DIM_OBLIGATIONS
+              for label in sorted(_DIM_OBLIGATIONS[rel])]
+_DIM_CASE_IDS = [f"{label}-{_DIM_IDS[rel]}" for rel, label in _DIM_CASES]
+
+
+@pytest.mark.parametrize("rel,label", _DIM_CASES, ids=_DIM_CASE_IDS)
+def test_dimensions_page_carries_the_obligation(rel: str, label: str) -> None:
+    assert label not in _missing(_text(rel), _DIM_OBLIGATIONS[rel]), (
+        f"{rel} no longer carries {label!r}.")
+
+
+@pytest.mark.parametrize("rel,label", _DIM_CASES, ids=_DIM_CASE_IDS)
+def test_removing_a_dimensions_obligation_is_reported(rel: str, label: str) -> None:
+    obligations = _DIM_OBLIGATIONS[rel]
+    text = _text(rel)
+    assert _missing(text, obligations) == [], (
+        f"{rel}: the unmutated page is missing obligations; no control.")
+    stripped = re.sub(obligations[label], "", _normalize(text))
+    assert label in _missing(stripped, obligations)
+
+
+def test_the_complexity_cell_still_names_the_scientific_check() -> None:
+    """Plan D asks the reworded cell to keep naming the check."""
+    cell = [l for l in _text(DIM_README).splitlines()
+            if l.startswith("| **Complexity**")]
+    assert len(cell) == 1 and "independent scientific check" in cell[0]
+
+
+def test_the_upgrade_guides_plan_pass_examples_are_not_external() -> None:
+    """Only the two example rows changed: they resolve to `internal`.
+
+    The stale text around them describes a retired planner and is left as it
+    was, so the negation example (`not External`) stays.
+    """
+    text = _normalize(_text(UPGRADE_GUIDE))
+    assert re.search(r"required\(Internal, security lens\) and "
+                     r"required\(Internal \+ Internal Security Review\) both "
+                     r"resolve to internal", text)
+    assert not re.search(r"required\(External, security lens\)", text)
+    assert not re.search(r"required\(External \+ External Security Review\)", text)
+    assert "required(not External) is a violation" in text
+
+
+def test_putting_an_external_example_back_in_the_upgrade_guide_is_reported() -> None:
+    text = _normalize(_text(UPGRADE_GUIDE))
+    assert not re.search(r"required\(External \+ External Security Review\)", text)
+    mutant = text + " required(External + External Security Review) resolves to external."
+    assert re.search(r"required\(External \+ External Security Review\)", mutant)

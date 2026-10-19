@@ -21,8 +21,8 @@ agents; a multi-human team may run one.
 ### Solo
 
 One human, who is by definition the Maintainer. Decision authority
-is unambiguous. There is no human-to-human review; the review
-tiers are filled by the agent team and the Maintainer
+is unambiguous. There is no human-to-human review; the one review
+is done by the agent team, and the Maintainer reads at the Decision
 (`../doctrine/dual-review.md`).
 
 ### Multi-human
@@ -32,9 +32,9 @@ tiers are filled by the agent team and the Maintainer
   Cairn's v1 does not split Decision rights — a multi-human team
   *elects* its Maintainer rather than deciding by committee.
 * **Human review patterns.** Other humans — a PI, senior
-  contributors — can fill the External-review tier, and human
-  review of agent-authored work is available where the team wants
-  it.
+  contributors — are available to be the one reviewer, or the
+  reader the Maintainer asks for, and human review of
+  agent-authored work is available where the team wants it.
 * **Optional `CONTRIBUTING.md`.** A multi-human team (the
   `small-multi` / `large-multi` axis values) gets the optional
   human-facing `CONTRIBUTING.md` — the GitLab/GitHub-surfaced

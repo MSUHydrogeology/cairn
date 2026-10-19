@@ -305,8 +305,8 @@ plan header's `**Plan review**:` line: `required(...)`, with `*`, `_` and
 backticks stripped, the first alphabetic word taken and case-folded, and
 `internal` or `external` required. Text after the closing paren is ignored, and
 text after the first word *inside* the group is a lens annotation — so
-`required(**External**, security lens)` and
-`required(External + External Security Review)` both resolve to `external`.
+`required(**Internal**, security lens)` and
+`required(Internal + Internal Security Review)` both resolve to `internal`.
 Negations fail closed: `required(not External)` is a violation, not an External
 requirement.
 

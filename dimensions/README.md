@@ -26,7 +26,7 @@ very different points, and they should.
 |------|-------|----------------|
 | **Age** (`age.md`) | greenfield ↔ legacy | Whether a retrofit apparatus is needed — a legacy-agent role, a surface-readiness map, characterization testing. |
 | **Size** (`size.md`) | small ↔ large | Whether the *code* is partitioned into domains, and whether the role roster specializes by domain. |
-| **Complexity** (`complexity.md`) | simple ↔ complex | Review weight and verification depth — how often External review is mandatory, whether an unexplained "N/A" on the independent scientific check is a review finding. |
+| **Complexity** (`complexity.md`) | simple ↔ complex | Review weight and verification depth — how thin or thick the evidence plan is, whether an unexplained "N/A" on the independent scientific check is a review finding. |
 | **Language** (`language.md`) | single ↔ multi | Whether a multi-language test architecture and cross-language seam doctrine are needed. |
 
 ### Team axes — who builds it
@@ -34,7 +34,7 @@ very different points, and they should.
 | Axis | Range | What it drives |
 |------|-------|----------------|
 | **Human team** (`human-team.md`) | solo ↔ multi-human | Decision-authority handling and human-review patterns. |
-| **Agent team** (`agent-team.md`) | single agent ↔ multiple agents / types | The role roster, the review tiers, and the coordination tiers (`../doctrine/coordination.md`). |
+| **Agent team** (`agent-team.md`) | single agent ↔ multiple agents / types | The role roster, who is available to be the one reviewer, and the coordination tiers (`../doctrine/coordination.md`). |
 
 Each axis has its own document in this directory, and each carries
 a **scoring rubric**: the observable signals — module count,
@@ -65,8 +65,9 @@ what makes "the invariant core is small" an honest claim.
   authoritative per-module rationale is the gate table in
   `bootstrap/BOOTSTRAP.md` > I-5.)
 * **Team-gated modules** — activated only when the team has the
-  structure to run them: the full two-tier Dual-Review apparatus
-  with structural-independence floors; the domain-agent roster;
+  structure to run them: staffing guidance for a read the
+  Maintainer has called, and the scope-reduction trap, in the
+  Dual-Review module; the domain-agent roster;
   the legacy-agent role and readiness map; the multi-language test
   architecture; the asynchronous and real-time coordination tiers.
 
@@ -103,9 +104,9 @@ fill in the six axes and stop, those four are the ones you silently skipped.*
 
 A team-gated module is not "advanced" — it is simply unstaffable
 below a certain team shape. A solo, single-agent team cannot run a
-two-agent-type External review; it runs the kernel's review (the
-same agent, a fresh session) and gates up when a second agent type
-becomes available.
+read from a second agent type; it runs the one review (the same
+agent, a fresh session) and the Dual-Review module's staffing
+guidance applies when a second agent type becomes available.
 
 ## The minimal viable configuration
 

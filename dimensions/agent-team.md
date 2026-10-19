@@ -2,8 +2,8 @@
 
 The **agent team** axis is how many AI agents work on the project,
 and whether they are of different types. It is the axis that does
-the most work: it drives the role roster, the review tiers, and the
-coordination tiers. It absorbs what was once a separate
+the most work: it drives the role roster, who is available to be
+the one reviewer, and the coordination tiers. It absorbs what was once a separate
 "concurrency" axis — concurrent agents in one working tree is
 simply a multi-agent team.
 
@@ -22,10 +22,10 @@ simply a multi-agent team.
 ### Single agent
 
 One agent wears every role across sessions
-(`../doctrine/roles.md`). The review tiers still hold, filled
-structurally by *time* rather than by *agent*: Internal review is
-the same agent in a fresh session; External review is the
-Maintainer, or a second agent type when one becomes available. The
+(`../doctrine/roles.md`). The one review still holds, filled by
+*time* rather than by *agent*: the reviewer is the same agent in a
+fresh session. The Maintainer can ask for more distance — a read
+from a second agent type when one is available, or their own. The
 Coordination module runs at its baseline tier only.
 
 ### Multiple agents
@@ -34,15 +34,14 @@ Coordination module runs at its baseline tier only.
   lifecycle-stage roles — a Strategy agent and an Implementation
   agent — become natural; with many agents and a large codebase,
   domain-specialized agents (`size.md`).
-* **The full Dual-Review apparatus is staffable.** A different
-  agent type supplies the structural independence the External
-  tier wants; review need not collapse onto fresh sessions of one
-  agent.
+* **More distance is staffable.** A different agent type is
+  there for a read the Maintainer calls; the one review need not
+  collapse onto fresh sessions of one agent.
 * **Coordination tiers activate.** Concurrent agents in one
   working tree enable the asynchronous tier (work intents); a
   high-concurrency, domain-agent team additionally enables the
   real-time typed-event tier (`../doctrine/coordination.md`).
-* On a large domain-agent team, **review independence comes from
+* On a large domain-agent team, **the one reviewer can come from
   domain rotation** — an agent reviews a domain it does not own.
 
 This axis is where most of Cairn's team-gated apparatus is gated.
