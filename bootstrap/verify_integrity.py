@@ -27,6 +27,7 @@ or a fail-closed condition; ``2`` usage error.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import hashlib
 import os
 import re
@@ -358,8 +359,12 @@ def _run_slot_note(target: Path, files: list, accepted: list, living: list,
     becomes one line naming its type -- never its message, which can carry
     text from the tree.  ``KeyboardInterrupt`` is not caught.  The caller's
     exit code was fixed before this runs and is returned unchanged."""
-    try:
+    # Stdout is flushed on its own: if it cannot be written, Python explains why
+    # at exit, and only a failed write of the note's own (to stderr) may point
+    # stderr at the null device below.
+    with contextlib.suppress(Exception):
         sys.stdout.flush()
+    try:
         failed = (sum(1 for r in files if not r.get("verbatim"))
                   - len(accepted)
                   - sum(1 for r in living if not r.get("verbatim")))
@@ -380,13 +385,11 @@ def _plain(text: str) -> str:
     through ``ascii()`` -- the encoder the slot note uses -- without its
     quotes, so a control character, a bell or a bidirectional override in a
     string read from the lockfile (a tamper target) reaches the terminal only
-    as its written escape."""
-    return text if text.isascii() and text.isprintable() else ascii(text)[1:-1]
-
-
-def _plain_lines(text: str) -> str:
-    """*text* with each line passed through ``_plain``, newlines kept."""
-    return "\n".join(_plain(line) for line in text.split("\n"))
+    as its written escape.  Text with a backslash in it takes the same road, so
+    a real escape character (printed `\\x1b`) and the four typed characters
+    `\\x1b` (printed `\\\\x1b`) can be told apart."""
+    return (text if text.isascii() and text.isprintable() and "\\" not in text
+            else ascii(text)[1:-1])
 
 
 def verify(target: Path) -> int:
@@ -480,8 +483,12 @@ def verify(target: Path) -> int:
     for finding in forked_facade_findings(
             target, lock, upstream=trusted_upstream(CAIRN_ROOT)):
         if not finding["acknowledged"]:
-            print(_plain_lines(
-                format_forked_facade_warning(finding, at_upgrade=False)),
+            # The engine builds this text, and one lockfile value (the Cairn
+            # version) goes into it raw; encoding every field first means a
+            # line break from the lockfile cannot become a line of the report.
+            shown = {k: _plain(v) if isinstance(v, str) else v
+                     for k, v in finding.items()}
+            print(format_forked_facade_warning(shown, at_upgrade=False),
                   file=sys.stderr, end="")
 
     if violations:

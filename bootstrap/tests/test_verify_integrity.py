@@ -1824,29 +1824,100 @@ def test_a_clean_report_is_what_it_always_was(tmp_path: Path, capsys) -> None:
     assert "  modified (hash mismatch): my notes.md\n" in err
 
 
-def test_every_lockfile_value_the_report_prints_goes_through_one_encoder() -> None:
-    """Listed from the source, not from a list of sites: each f-string field in
-    ``verify`` that names a value read from a lockfile record must be a call
-    to ``_plain`` (or ``ascii``), so a site added later cannot print raw."""
-    tree = ast.parse(_VERIFY_PY.read_text(encoding="utf-8"))
+# What `verify` may print without encoding: text it wrote itself, and values it
+# computed from the tree rather than read from the lockfile.  Anything else must
+# be a call to `_plain` or `ascii`.  `target` is the caller's own argument.
+_SAFE_FIELDS = {"_LOCKFILE_REL", "target", "len(violations)", "checked",
+                "extra", "skipped", "sorted(_LIVING_STATE_DSTS)"}
+
+
+def _encoded_call(node) -> bool:
+    return (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+            and node.func.id in {"_plain", "ascii"})
+
+
+def _unencoded_pieces(node) -> list:
+    """The parts of an expression that `verify` prints which are neither
+    constant text, a value on the safe list, nor encoded.  Deny by default: a
+    piece the rules do not recognise is reported, so a new site cannot print
+    lockfile text raw by being written in a form nobody listed."""
+    if isinstance(node, ast.Constant):
+        return []
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        return _unencoded_pieces(node.left) + _unencoded_pieces(node.right)
+    if isinstance(node, ast.JoinedStr):
+        return [p for part in node.values for p in _unencoded_pieces(part)]
+    if isinstance(node, ast.FormattedValue):
+        shown = ast.unparse(node.value)
+        if node.conversion > 0:
+            return [f"{{{shown}!{chr(node.conversion)}}}"]
+        if _encoded_call(node.value) or shown in _SAFE_FIELDS:
+            return []
+        return [f"{{{shown}}}"]
+    if isinstance(node, ast.Call):
+        text = ast.unparse(node)
+        if text == "'\\n'.join(violations)":       # built from encoded fields
+            return []
+        if (isinstance(node.func, ast.Attribute) and node.func.attr == "join"
+                and node.args and isinstance(node.args[0], ast.GeneratorExp)
+                and _encoded_call(node.args[0].elt)):
+            return []                                 # the hint's path list
+        if (isinstance(node.func, ast.Name)
+                and node.func.id == "format_forked_facade_warning"
+                and node.args and ast.unparse(node.args[0]) == "shown"):
+            return []                                 # the advisory, fields encoded
+    return [ast.unparse(node)]
+
+
+def _unencoded_report_pieces(source: str) -> list:
+    tree = ast.parse(source)
     verify_fn = next(n for n in tree.body
                      if isinstance(n, ast.FunctionDef) and n.name == "verify")
-    lockfile_names = {"dst_rel", "recorded", "rec", "customized"}
-    sites = []
+    found = []
     for node in ast.walk(verify_fn):
-        if isinstance(node, ast.FormattedValue) and any(
-                isinstance(sub, ast.Name) and sub.id in lockfile_names
-                for sub in ast.walk(node.value)):
-            sites.append(node)
-    assert len(sites) >= 5, "the instrument found too few sites to mean anything"
-    raw = [ast.unparse(s.value) + (f"!{chr(s.conversion)}" if s.conversion > 0 else "")
-           for s in sites
-           if s.conversion > 0
-           or not (isinstance(s.value, ast.Call)
-                   and isinstance(s.value.func, ast.Name)
-                   and s.value.func.id in {"_plain", "ascii"})]
-    assert raw == []
+        if isinstance(node, ast.Call):
+            name = ast.unparse(node.func)
+            if name == "print":
+                found += _unencoded_pieces(node.args[0])
+            elif name == "violations.append":
+                found += _unencoded_pieces(node.args[0])
+        if (isinstance(node, ast.Assign) and ast.unparse(node.targets[0]) == "shown"
+                and "_plain(v)" not in ast.unparse(node.value)):
+            found.append("shown is not built with _plain")
+    return found
 
+
+def test_everything_the_report_prints_is_constant_safe_or_encoded() -> None:
+    """Listed from the source: every piece of every message `verify` prints or
+    adds to the violations must be constant text, a value on the short safe
+    list, or a call to `_plain` or `ascii`; the advisory must be formatted from
+    fields encoded with `_plain`.  A site added later in any other form fails
+    here, whatever name it gives the lockfile value."""
+    source = _VERIFY_PY.read_text(encoding="utf-8")
+    assert _unencoded_report_pieces(source) == []
+
+
+@pytest.mark.parametrize("old, new", [
+    # a new line printing the resolved path under its own name
+    ('violations.append(f"  missing: {_plain(dst_rel)}")',
+     'violations.append(f"  missing: {_plain(dst_rel)} ({dst})")'),
+    # the hint's path list joined without the encoder
+    ('" ".join(_plain(path) for path in customized)', '" ".join(customized)'),
+    # the advisory formatted from the raw finding
+    ("format_forked_facade_warning(shown, at_upgrade=False)",
+     "format_forked_facade_warning(finding, at_upgrade=False)"),
+    # a lockfile value shown with !r (which leaves printable non-ASCII alone)
+    ("{ascii(recorded)}", "{recorded!r}"),
+    # the advisory's fields left unencoded
+    ("_plain(v) if isinstance(v, str) else v", "v"),
+], ids=["new-field-under-another-name", "hint-join-raw", "advisory-raw-finding",
+        "repr-instead-of-ascii", "advisory-fields-unencoded"])
+def test_the_static_check_fires_on_each_planted_regression(old, new) -> None:
+    """The instrument must be able to fail: each of these is a regression a
+    narrower check (one that looked for four variable names) let through."""
+    source = _VERIFY_PY.read_text(encoding="utf-8")
+    assert source.count(old) == 1, old
+    assert _unencoded_report_pieces(source.replace(old, new)) != []
 
 def test_a_printable_non_ascii_path_is_escaped_too(tmp_path: Path, capsys) -> None:
     """A homoglyph is printable, so a check that only looked for control
@@ -1873,3 +1944,66 @@ def test_an_ascii_control_character_is_escaped_without_any_non_ascii_text(
     err = capsys.readouterr().err
     assert "  modified (hash mismatch): ctl\\x1b[2J\\x07.md\n" in err
     assert _plain_ascii(err)
+
+
+def test_a_line_break_in_the_lockfile_cannot_forge_a_line_of_the_advisory(
+    tmp_path: Path
+) -> None:
+    """The advisory carries the lockfile's `cairn_version` in its
+    source-version line.  A line break there must print as one line, with the
+    break written out: otherwise a crafted lockfile can add a whole
+    `verify_integrity: OK` line, or a `--finalize` hint, above the real report."""
+    forged = ("9.9.9\nverify_integrity: OK -- 47 recorded file(s) match "
+              "dev/.cairn/cairn-lock.yml.\nThen record it: python bootstrap/"
+              "scaffold.py upgrade --target <repo> --finalize scripts/evil.py")
+    target = tmp_path / "repo"
+    target.mkdir()
+    rec = _facade_entry(target, "tools/intent.py", forked=True, engine=True)
+    _write_lock(target, [rec])
+    _edit_lock(target, lambda lock: lock.__setitem__("cairn_version", forged))
+    proc = _run_verify(target)
+    err = _text(proc.stderr)
+    assert proc.returncode == 0
+    assert "forked from upstream" in err
+    assert [line for line in err.splitlines()
+            if line.startswith("verify_integrity: OK")] == []
+    assert not any(line.lstrip().startswith("Then record it")
+                   for line in err.splitlines())
+    assert "from Cairn 9.9.9\\nverify_integrity: OK -- 47 recorded" in err
+
+
+def test_a_failing_stdout_still_gets_pythons_one_line_reason(tmp_path: Path) -> None:
+    """When stdout cannot be written (its reader has gone, the disk is full)
+    the check exits 120 and Python says why on stderr. The note's fence must
+    not swallow that: only a failed write of the note's own, to stderr, may
+    point stderr at the null device."""
+    _clean_tree(tmp_path)
+    reader, writer = os.pipe()
+    os.close(reader)
+    try:
+        proc = subprocess.run(
+            [sys.executable, str(_VERIFY_PY), "--target", str(tmp_path)],
+            stdout=writer, stderr=subprocess.PIPE, timeout=20)
+    finally:
+        os.close(writer)
+    err = _text(proc.stderr)
+    assert proc.returncode == 120
+    assert "BrokenPipeError" in err, err
+    assert "slot note: files in scope" in err
+
+
+def test_a_backslash_in_a_path_is_not_taken_for_an_escape(
+    tmp_path: Path, capsys
+) -> None:
+    """A real escape character prints as `\\x1b`. The four typed characters
+    `\\x1b` in a file name must not print the same, or a reader cannot tell a
+    control character from text that looks like one."""
+    real, typed = "a\x1bb.md", "a\\x1bb.md"
+    _note_tree(tmp_path, [{"dst": real}, {"dst": typed}])
+    (tmp_path / real).write_bytes(b"modified\n")
+    (tmp_path / typed).write_bytes(b"modified\n")
+    capsys.readouterr()
+    assert verify_integrity.verify(tmp_path) == 1
+    err = capsys.readouterr().err
+    assert "  modified (hash mismatch): a\\x1bb.md\n" in err          # the real ESC
+    assert "  modified (hash mismatch): a\\\\x1bb.md\n" in err      # the typed text
