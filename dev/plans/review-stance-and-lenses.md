@@ -1,7 +1,7 @@
 # Plan: review stance and lenses — one review at every stage, and the lenses in every install
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-external-is-a-maintainer-stance.md` (accepted `58f30d6c`) and `dev/proposals/archive/2026-10-18-claude-review-lenses-for-every-install.md` (accepted `fbf664f0`)
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance — inherited: the change edits `doctrine/`, the governing `AGENTS.md` every adopter receives, the authoring templates and a framework anchor.
 **Opened**: 2026-10-18
@@ -4876,3 +4876,58 @@ Total of the first five rows: 75 mutants, 201 runs, 139 killed, 62 survived. The
 * The AST attestation and gate-manifest re-anchors: not run, and not mine. The verifier output I read is the one line pair for the retired test.
 * I did not try Windows line endings, or a template read by a different Markdown tool.
 * I stopped when the coordinator asked me to wrap up. I did not re-read the plan's history beyond its acceptance criteria, the Security Review findings and the Implementation verification record, and I opened no new line of inquiry after the ledger.
+
+## Response to code review -- Codex -- 2026-10-19
+
+The revision is `a756397d`, `5b320ac1` and `2a9fa399`. The reviewer found
+one timing blocker and seven low-severity recommendations. The accepted
+contract is unchanged; this response does not request a second code review.
+
+| Finding | Disposition |
+|---|---|
+| RS-CR1 | Accepted. The stance test now pins the six copies of the Security Review parenthetical, the two plan-skeleton `Obligation` lines, fresh-context plan review, no second plan-review round, agent restraint and the coverage-gap permission. On the committed revision, 26 independently chosen text substitutions each turned its named check red beside a green control; zero survived. |
+| RS-CR2 | Accepted. Both byte-identical onboarding tours now call the new agent simply `reviewer`. |
+| RS-CR3 | Accepted. Both plan skeletons say to replace, not add, the Tier line. Both proposal templates explain that `Tier: Security Review` names that pass's obligation. |
+| RS-CR4 | Accepted the recommended short clarifications: define falsification ledger at first use in both `AGENTS.md` copies, explain `Internal` there, and add `External read` to the glossary. The proposed rewrites of “standing floor” and “declared tier” are not needed to close a correctness gap and would change six rule-bearing copies immediately before the accepted collaboration-agreement removal rewrites their roster pointer; leave those two phrasings for that work to assess against its final text. |
+| RS-CR5 | Accepted. The stance test's docstring now says its phrase pins cannot prove the absence of every differently worded review rule. The archive note must repeat that Search B, whose command and classification are recorded above, is a human read to rerun before later edits to the six governing/template carrier files. |
+| RS-CR6 | Accepted. Removed self-confirming positive controls and collapsed redundant negative examples to one check per pattern set. The per-file pins and independently located deletion probes remain; the two focused files now collect and pass 537 nodes. |
+| RS-CR7 | Accepted as an archive task. The changelog entry and Dispositions must state the LHM `AGENTS.md` one-line resolution, LHM's loop-document resolution, modflow_tools' local agreement resolution, and the possibility that clean merges retain old review vocabulary. The upgrade advice must tell adopters to search their own merged text. Record that the body-coverage probe's 11 missing topics are relocations under other names, not 11 missing rules. |
+| RS-CR8 | Accepted under the Maintainer's chat answer on 2026-10-19, quoted verbatim: “Yes—record all six (Recommended)”. The three old module line citations and three references to the deleted test are expected permanent flags in the two archived proposals; do not edit their append-only history or call the six a clean check. |
+
+The six archive-history flags are: in the stance proposal, missing-test paths
+at lines 390 and 418, module line ranges at line 1277 (two), and a missing-test
+line range at line 1306; in the lenses proposal, the module line range at line
+313. The archive note carries this disposition, not a suppression rule.
+
+## Implementation verification of code-review revision -- Codex -- 2026-10-19
+
+* **Tested commit and range**: `2a9fa399aa188c606899abce898e2a92a5b14d2a`,
+  after the reviewed implementation at `555d2f78` and the three revision
+  commits named above. The detached scratch worktree at that commit was clean
+  before and after every leg. The shared checkout's concurrent edits to the
+  board, changelog and other files were not part of this measurement.
+* **Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python
+  3.13.13. **Certified by**: pending; no full suite was run or claimed.
+* **Scoped Boundary B**: the same 50 mapped test files listed in the earlier
+  Implementation verification record, split into two batches of 25 under the
+  broad-run guard. Batch A: 1,491 passed in 25.76 s. Batch B: 546 passed in
+  47.07 s. Total: **2,037 passed**, zero failed, skipped, xfailed or xpassed.
+  The smaller count reflects the deliberate removal of redundant test nodes,
+  not a smaller mapped file set. `quality_gate.py --sub neutrality --sub
+  redundancy`: neutrality `fail=0, info=56`; redundancy `fail=0, info=0`.
+* **Other checks**: claim-check on the nine edited Markdown files: no flags;
+  link-check on those nine: no issues; snippet sync: 357 documents, no drift.
+  `check_cairn.py` on the two archived source proposals reports the six
+  expected flags above. Its default live-tree run reports one separate
+  stewardship-proposal line citation, already assigned outside this plan.
+* **Targeted falsification**: for each new rule pin, a green direct test call
+  was followed by one isolated in-memory replacement of the relevant file's
+  text and the same check. All 26 replacements were detected; zero survived.
+  This probe covered the new sentence pins and plan skeleton line, not every
+  carrier or every possible rewording. It is not a second code review.
+* **Omissions and non-pass disposition**: no certifying full suite, real
+  adopter apply, release security ceremony, AST re-anchor or gate-manifest
+  re-anchor was run. The six archive-history checker flags and the separate
+  stewardship flag are named above; none is reported as a pass. The three
+  review-stance test files' final blobs and node counts are derived at archive
+  from the code-reviewed commit, because this revision changed two of them.
