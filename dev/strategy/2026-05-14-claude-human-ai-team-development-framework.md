@@ -279,7 +279,10 @@ a table row.
   6). Scientific correctness routes entirely through the human, and nothing in
   the apparatus asks for a basis independent of the proposed code and its
   tests. The `deliverable` axis is the proposed way to move part of it into
-  the apparatus; the one-check form above is the cheap first step.
+  the apparatus; the one-check form above is the cheap first step. That form
+  landed as template guidance on 2026-10-19 (`independent-scientific-check`).
+  The gap stays named: the `deliverable` axis, its disciplines, the governance
+  reframe and the doctrine statement of the rule remain open (issue #19).
 * **Reviewer diversity is bounded by the model families available** (6). The
   External tier reduces correlated blind spots; it cannot manufacture
   independence past the number of distinct families in use.

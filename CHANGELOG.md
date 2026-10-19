@@ -37,6 +37,44 @@ release is cut, that section is renamed to the version + date
 and a new empty `Unreleased` is started above.
 
 ## Unreleased
+### Added — One independent scientific check for a change that touches a scientific result
+
+- **The proposal template asks for one independent scientific check.**  A new
+  gated block sits after the security preflight in both proposal templates.  It
+  applies to a change that touches a scientific assumption, or a result the
+  project publishes or acts on; any other change writes one line, "N/A: no
+  scientific assumption or result touched".  The author names one check whose
+  expected value neither the code nor a test written from the same understanding
+  computes, and answers four things.  What it compares: the quantity, the
+  expected value, the tolerance and its source, and whether the author has
+  opened the data and confirmed it holds what the check needs, naming what they
+  would open if not.  Why the expectation is independent: one of five bases, an
+  analytical or manufactured solution, a conservation law chosen against the
+  error the change risks, a trusted observation, an independent implementation or
+  the model's own saved output, or a domain expert's expectation written down
+  before the result is seen.  The plausible error that would make it fail, which
+  the implementer then makes on purpose, recording the failing output.  And, when
+  the check passes by finding nothing, a positive control: the same analysis
+  recovering a known effect (a synthetic well at the same rate, distance and
+  schedule, for a streamflow-depletion analysis), or a plain statement that it
+  cannot.
+- **The plan template makes the check accepted scope.**  A replacement qualifies
+  only if it fails under the same error; dropping the check is a scope reduction
+  that needs the Maintainer's quoted allowance; "the result now rests on the
+  implementation" does not settle it.
+- **Three sentences stop promising a review lens that no module installs.**
+  `dimensions/complexity.md`, `dimensions/README.md` and `bootstrap/BOOTSTRAP.md`
+  now point at the check, and on a complex project an unexplained N/A on a
+  change that touches a scientific assumption or a result the project publishes
+  or acts on is a review finding.
+- The rule is template guidance, not doctrine: no `doctrine/` file changes, and
+  the doctrine sentence waits on issue #19, which stays open.  One new test, in
+  one node, holds the block and the paragraph word for word, their layout and
+  where they sit, in all four template copies, and requires the three sentences
+  to name the check.  A blind trial of the wording on two past plans led to the
+  data sentence; it is weak evidence, and the archived plan says what it does and
+  does not show.  From `dev/plans/archive/independent-scientific-check.md`.
+
 ### Changed — The vendor-name check reads zero; the integrity check lists slots still holding Cairn's placeholder
 
 - **`python scripts/quality_gate.py --sub neutrality` now reads `fail=0` and

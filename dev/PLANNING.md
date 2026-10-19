@@ -446,6 +446,25 @@ with the plan's filename stem.
   changed: its asserted `repository-code` URL now names the new slug. No node is
   added or dropped, and no engine symbol changes.
 
+  **Joined 2026-10-19** at the archive of
+  `plans/archive/independent-scientific-check.md` — **changed**: that plan
+  changed **no existing frozen file**. It added one test file,
+  `bootstrap/tests/test_scientific_check_guidance_ships.py`, which becomes frozen
+  when the ceremony re-globs `bootstrap/tests/**/*.py`; until then the verifier
+  reports it as `FROZEN-NEW`, which is allowed, and the suite stays green. The
+  pinned collection grows by one node, and drops none:
+  `bootstrap/tests/test_scientific_check_guidance_ships.py::test_the_check_guidance_reaches_every_copy_and_promise_site`.
+  **It is final first**: its last edit is `02adb81f`, and an edit after the
+  ceremony owes a second re-anchor. It holds the check block, the plan paragraph
+  and the three promise sentences word for word, in their layout and place, so a
+  later plan that moves or rewords any of them edits the test in the same
+  commit. No `bootstrap/_scaffold/` symbol changes. Authorization for joining
+  this batch is the Decision accepting the proposal, quoted verbatim (the same
+  words as above):
+
+  > "Accept A, B, C and D as revised, with every recommended answer, including
+  > B’s scope cut and D’s scope delta."
+
   **Timing, superseded 2026-10-19.** Where the paragraphs above say the AST
   ceremony waits for one combined run after `model-mapping-install-path`
   archives, the Release path's "Revised 2026-10-19" block supersedes them: both
@@ -489,7 +508,9 @@ with the plan's filename stem.
   and its independent-basis half has no incident behind it yet. Revisit with
   the `deliverable` axis, when the third-party probe row moves, or at the
   Maintainer's call once about ten real checks exist; issue #19 stays open as
-  the home. Maintainer authorization, quoted verbatim:
+  the home. The trigger, the falsifiers and the warning signs are on the
+  third-party probe row, added when the plan archived. Maintainer authorization,
+  quoted verbatim:
 
   > "Accept A, B, C and D as revised, with every recommended answer, including
   > B’s scope cut and D’s scope delta."
@@ -969,6 +990,42 @@ near the top of this file.
   (one that did not contribute to the doctrine) runs the bootstrap
   end-to-end. **Blocks the 0.4 public release.** Blocked on enrolling a
   third party.
+
+  **Also the revisit point for the `deliverable` axis** *(added 2026-10-19, at
+  the archive of `plans/archive/independent-scientific-check.md`)*. The
+  independent scientific check landed as template guidance. The `deliverable`
+  axis, its disciplines, the governance reframe and the doctrine sentence (#19)
+  stay open. Revisit the axis when this row moves, or at the Maintainer's call
+  once about ten real (non-N/A) checks exist across two projects. Nothing counts
+  them; the Maintainer remembers. Issue #19 stays open as the reminder. The
+  revisit reads that plan's C1 record and its archive record.
+  * **What the blind trial (C1) showed, in short.** Two past plans, one drafter
+    and one scorer for each, so n = 2, and the two scorers read similar data
+    statements differently. One draft was a sound check aimed at a different
+    risk than the one that later bit. The other was drafted twice, once under a
+    brief that told the drafter to name what it would open to confirm unchecked
+    data and once without, and that contrast led to the data sentence the
+    template now carries. The new sentence has not been tried by a blind run. C1
+    is no evidence on the independent-basis half of the block, and none that the
+    block yields a check that catches the error found later. Under the stop rule
+    as written both plans were no; the Maintainer superseded that on 2026-10-19.
+  * **Falsifiers.** **F1** every failing check's record names something else that
+    already showed the error; **F2** most bases are "the Maintainer's
+    expectation", or the "domain expert" is the author of the change or the agent
+    that wrote the code; **F3** changes that touched an assumption carry N/A;
+    **F4** recorded failing runs are absent or cannot be reproduced; **F5**
+    failing checks keep coinciding with errors code review also catches (a
+    smaller claim, still worth having); **F6** no check that passes by finding
+    nothing carries a control or a plain statement that none exists. If nothing
+    fails and no later error surfaces, the result is inconclusive, not a pass.
+  * **Signals the change is wrong.** Checks are written after the code, with the
+    expected value shifting at code review to match the result; a data status
+    reads "in hand" and is not; the gate misfires (N/A on changes that touch
+    results, or a ritual check on tooling); the block grows discipline
+    sub-lists, which is the axis arriving by accretion. Two watch items from the
+    trial: a check that needs no data is answered with a stock sentence, and the
+    first real checks written under the new data sentence do not name what they
+    opened.
 * **Remove the collaboration agreement** *(queued, gate: before 0.4)* —
   Maintainer decision (2026-06-12): Cairn no longer needs a collaboration
   agreement. Retire `templates/core/dev/collaboration_agreement.md` and

@@ -1,7 +1,7 @@
 # Plan: independent scientific check — one check per scientific change, shown able to fail
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-independent-scientific-check.md`
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits the authoring templates and the axis prose that adopters' bootstrap reads.
 **Opened**: 2026-10-18
@@ -3163,3 +3163,62 @@ SC-VD1 above is the only one, low, and is resolved by the corrected wording. Not
 * I did not re-review anything outside the sentence, its test and the two records. SC-VR1 is closed by the re-run and the Maintainer's decision as recorded; I verified none of the C1 re-run's internals beyond the verdict table and the hashes.
 * The Maintainer's words are as the Response and Decision sections quote them; I cannot see the chat.
 * The new sentence has not been tried by a blind run, and neither have I tried it. Whether it fixes the behaviour it is aimed at is untested, as the record says.
+
+## Archive -- Claude Sonnet 5.5 (implementer) -- 2026-10-19
+
+`Dispositions: accept x10, guard x1, defer x5 (authorized)` -- restated over the whole record, since sections were appended after *Dispositions*. Where this list and the earlier *Dispositions* section differ, this list governs.
+
+The Maintainer authorized the archive in chat on 2026-10-19 (as relayed by the coordinating session), and the authorization names the condition every `defer` below answers, quoted verbatim:
+
+> "Go ahead and archive those plans, provided follow-up has a permanent home."
+
+> "Go ahead and archive the other. We want that board cleared."
+
+**The archive wording for the C1 trial.** The code reviewer's corrected wording (SC-VD1, in *Verification of the decision*) replaces the earlier wording under "The archive wording, replaced" and is the one the archive commit and the board row use. It is quoted verbatim:
+
+> C1 was a go/no-go exercise on two past LHM plans: one blind drafter and one separate scorer for each, so n = 2, and the two scorers read similar data statements differently. Assemble part A: a sound check aimed at a different risk than the one that later bit. Stor-modflow, first draft (the drafter's brief told it to name what it would open to confirm any data it could not check): it asked whether the saved array existed at all, named the file to open, and passed the data question. Stor-modflow, second draft (a fresh drafter, the same inputs, a brief without that instruction): it took the array's existence from the proposal, planned a shape and orientation check before any residual was read, labelled the data "In hand but not checked", and failed the data question. Two single drafts by different agents cannot separate the brief from chance, but they point at the same weak spot: the template's old wording ("in hand and has been checked") left room to write "in hand". By the Maintainer's instruction (2026-10-19) that sentence is now "Say whether you have opened the data and confirmed it holds what the check needs; if not, name what you would open to confirm it." The new sentence has not itself been tried by a blind run. C1 is the evidence for that change and for nothing more: none on the independent-basis half of the block, and none that the block yields a check that catches the priming error. Under the stop rule as written both plans were no and the block would have been judged ritual; the Maintainer's instruction superseded that outcome.
+
+The phrase "the same author" in the C1 evidence summary above is withdrawn (the second draft came from a different fresh agent). The "no" is reported here, in the archive commit, and on the board row, each with this caveat.
+
+**accept (ten)**
+
+* **The accepted text, delivered.** Revision 1 of the Source proposal, as accepted at `019d2bbc`: the gated block in both proposal templates, the paragraph in both plan templates, the three promise sentences repointed at the check, and one test in one node; no `doctrine/` edit. Landed in `27feca34` (C2) and `531084a1` (C3), with the Boundary B record at `2764eccd`.
+* **Two additions at the Maintainer's word,** neither a removal: the positive control for a check that passes by finding nothing (quoted in *Scope*), and the block's data sentence, now "Say whether you have opened the data and confirmed it holds what the check needs; if not, name what you would open to confirm it." (`02adb81f`; his words are in *Decision on the C1 outcome*).
+* **Plan review SC-PR1 to SC-PR9,** folded in before implementation (*Response to plan review*).
+* **Code review SC-CR1 to SC-CR6 and the verifications SC-VR1, SC-VR2, SC-VD1.** SC-CR1 (layout and place pinned) in `86db42ae`; SC-CR3 (the example, at the Maintainer's instruction) in `550750fb`; SC-CR4 (one trigger) in `e2978e44`; SC-CR5 (briefs on file) and SC-CR6 (the caveat) in the Response and, for the wording, above; SC-CR2 (the expert basis) by naming the mode under F2 on the board row, with no text edit; SC-VR1 by the neutral-brief re-run and then the Maintainer's instruction; SC-VD1 by the wording above.
+* **SC-VR2, the `needs-value` upgrade regression.** Not this plan's defect. Fixed by the review-stance-and-lenses plan in `5c77c11b` (`{{evidence}}` became `<evidence>`, with guard tests); checked at the head the same day.
+* **The stop rule's literal outcome (both plans no, block judged ritual).** Superseded by the Maintainer's instruction in *Decision on the C1 outcome*; the C1 record above stands as written and is the evidence for the data sentence, no more.
+* **The plan's *In brief* still paraphrases the old data prompt** ("in hand and has been looked at"). Operative cells append once execution has begun, so it stays; the changelog entry and the board row describe the new sentence.
+* **The fenced wording changed in place after execution began** (the C2 example sentence, the data sentence, the C3 texts and the two sentences that quote the pinned finding). Listed in the Response and in *Decision on the C1 outcome*; what was reviewed is recoverable at `531084a1` and `2764eccd`.
+* **`tools/__pycache__`, cited in three records of this plan, was flagged by `claim_check` and `check_cairn` in a clean checkout while the plan was live.** The folder exists only in a tree that has run Python. Moot at archive: an archived file is a record, and `claim_check` exits 0 on this one in a clean worktree after the move. No allowance was added (it would have been flagged as unused in the tree where the folder exists).
+* **The sentence presumes there is data** (reviewer's observation). A check that needs none is answered "no data needed", as the assemble draft did unprompted; no pinned text edited. A stock answer of that kind is a watch item on the board row.
+
+**guard (one)**
+
+* **The block, the paragraph, their layout and place, and the three promise sentences.** `bootstrap/tests/test_scientific_check_guidance_ships.py::test_the_check_guidance_reaches_every_copy_and_promise_site`: 88 mutants in the final ledger, 82 killed, 6 passing by design (re-wraps, a capitalised check name, the old lens phrase beside the check, two triggers left unpinned), each beside an unmutated control. A person runs it; there is no CI.
+
+**defer (five, all authorized by the sentence above)**
+
+* **The `deliverable` axis, its disciplines, the governance reframe and the doctrine sentence for the rule (#19)** -> issue #19 (kept open, as the Decision said) and `dev/PLANNING.md` > the row "The independent-scientific-check rule as doctrine (#19)", which now points at the probe row for its trigger.
+* **The revisit trigger, the falsifiers F1 to F6 (F2 now naming "the expert is the author of the change, or the agent"), the signals, the two trial watch items, and what C1 did and did not show** -> `dev/PLANNING.md` > the row "0.3 external correctness test (R-H third-party probe)", where this commit added them. The revisit reads C1 with the residual in view: n = 2, the scorers disagreed, the new data sentence is untested blind, and C1 is no evidence on the independent-basis half or on a check that catches the priming error.
+* **The gate-manifest re-anchor (M)** -> the marked row "Re-anchor the gate manifest" in `dev/PLANNING.md`, which this commit extended with this plan's paragraph: one new test file freezing at the ceremony, one node joining, none dropped, no existing frozen file changed. The ceremony stays the Maintainer's.
+* **The AST re-anchor for the seven engine symbols** that fail `test_ast_attest.py` (not this plan's; none of its range touches the engine) -> the same row's AST accounting and the Release path's "re-anchors at the 0.4 cut".
+* **`dev/plans/board-as-basis.md` cites this plan's old path with line numbers** (its review text, line 1208: "`dev/plans/independent-scientific-check.md` lines 339-341"). The move makes that citation stale. That plan is open and another agent's, so this commit does not edit it -> `dev/plans/board-as-basis.md`, whose author updates the citation (it now lives at `dev/plans/archive/independent-scientific-check.md`, and the cited lines are in *Sequencing with the other accepted work*).
+
+Issues confirmed, edited neither: #18 `CLOSED` (done 2026-10-18), #19 `OPEN`. #18's export-safety affirmation is not touched. This plan carries no Waiting line at archive; its one open wait, the re-anchor, is on its marked board row.
+
+### Evidence ledger
+
+* **Evidence shipped.** One new test node, with mutation ledgers recorded in the three *Implementation verification* records (C2: 43 of 43; C3: 47 of 48; final: 88 mutants, 82 killed, 6 by design); the reviewer's 18 layout and place survivors and two of mine survive the pre-revision test and die on the revised one; real installs and upgrade stages in each record; Boundary B runs by the implementer at `531084a1`, `550750fb` and `02adb81f` (3510, 4432 and 5832 passed, each with the same two AST tests failing, which fail identically at the base); the C1 trial with every input, brief, draft and score on file and its hashes.
+* **Evidence deferred.** A certifying run that contains the final commit (below). A blind trial of the new data sentence.
+* **Deferred evidence home.** The certifying run is defined in `AGENTS.md` > Verification boundaries (before a push, before the re-anchor ceremony, before a release cut, or when the Maintainer asks). The blind trial of the new sentence has no scheduled run; its home is the probe row's revisit and the first real checks written under the sentence.
+
+### Fidelity sign-off
+
+The landed commits match the accepted text. **Governing section:** the Source proposal's Revision 1 (accepted at `019d2bbc`), plus the two additions at the Maintainer's word recorded above. **Landed:** `396c13d6` (Status), `0ac2b567`, `4d9d632c` and `33df0cb8` (the C1 inputs, drafts and scores), `27feca34` (C2), `531084a1` (C3), `2764eccd` (C4); the revision `86db42ae`, `e2978e44`, `550750fb`; the re-run `67529e35`, `57e832b6`, `5a01686b`; the Maintainer's instruction `d2730303`, the data sentence `02adb81f`, the evidence summary `d759c140` and the last record `81751536`. The outcomes the accepted text committed to are all delivered. Two changes went beyond it, both at the Maintainer's word: the positive control, and the data sentence.
+
+### The lasting truth
+
+Agents that agree show the work is consistent, not that it is right; what breaks the tie is an expected value that does not come from the code under review, shown able to fail under the mistake it names. A question that can be answered "in hand" will be, so the data prompt asks what was opened and confirmed. The rule is template guidance, tried on two past plans with weak evidence and no evidence yet for its independent-basis half, and it waits on issue #19 to become doctrine. It lives in the proposal and plan templates, in `dimensions/complexity.md`, `dimensions/README.md` and `bootstrap/BOOTSTRAP.md`, in the `CHANGELOG.md` entry, in the board rows named above, and in the test.
+
+**Certified by**: pending
