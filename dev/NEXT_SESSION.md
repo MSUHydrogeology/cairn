@@ -94,11 +94,45 @@ Each item names the next step and who holds it.
      > "Accept in writing; move later (Recommended)"
 
      The gap: a binding that git does not track is still run. Moving the
-     binding into the `.git` folder is deferred to a proposal after 0.4. A
-     fixer was answering SW-SR-11 to SW-SR-15 in
-     `dev/reviews/2026-10-18-security-review-session-writes.md`.
-   * **Next:** finish them. A code review checks the answer, with no second
-     Security Review.
+     binding into the `.git` folder is deferred to a proposal after 0.4. The
+     findings are in `dev/reviews/2026-10-18-security-review-session-writes.md`.
+     **At the pause none was fixed, and nothing was committed**, not even
+     SW-SR-10's acceptance text. The fixer's untested test hunks were saved
+     outside the repository in this session's scratch folder, as
+     `sw-sr-11-15-tests.patch`. That copy may not survive a reboot.
+   * **Next:**
+     1. Write SW-SR-10's acceptance: one docstring sentence in
+        `_resolve_interpreter` and a residual-risk entry in
+        `bootstrap/SAFETY.md`, with the Maintainer's words in the commit
+        body.
+     2. Fix SW-SR-11 to SW-SR-15.
+     3. A code review checks the answer. No second Security Review.
+   * **The fixer's design notes:**
+     * **Where to edit.** Edit `templates/skills/_lib/session.py`, copy it to
+       `tools/session.py`, and check with `cmp`.
+     * **How the earlier answers were recorded.** They lived in commit bodies
+       only, and each one re-finalized the lockfile line for
+       `tools/session.py`.
+     * **Where new tests go.** Put them in
+       `bootstrap/tests/test_session_binding_untracked.py`, which is not
+       frozen. Four session test files are frozen: `test_prune_tools.py`,
+       `test_session_failsafe.py`, `test_session_kernel.py` and
+       `test_session_routines.py`.
+     * **SW-SR-11.** Give `_binding_untrusted` an optional interpreter
+       argument. If the interpreter lies inside the project, run the same
+       index check on it, submodule rule included, and return a fixed reason.
+     * **SW-SR-12.** Also compare device and inode for the binding and its
+       two parent folders against the index entries.
+     * **SW-SR-14.** Catch `(OSError, ValueError)` at both the read and
+       `_probe_interpreter`.
+     * **SW-SR-15.** Seven values still print raw. Wrap each in
+       `encode_display(str(...))`:
+       * `base` and `path` in `_assert_within`;
+       * `dst` in `_heal_skill_symlink`;
+       * `self.path` in `_reclaim_or_refuse`;
+       * `sys.executable` in the stale message;
+       * the exception text in `_surface_intents`, `_prune_intents` and
+         `_run_evolution_infer`.
 3. **The review-stance-and-lenses plan** (`plans/review-stance-and-lenses.md`).
    * **State:** its code review is at `62002427`, verdict REVISE, findings
      RS-CR1 to RS-CR8. The review found the work does what the plan said. The
@@ -185,7 +219,8 @@ commits; these are names, not counts.**
     `install.py`, and `format_forked_facade_warning` in `lockfile.py`.
 * **Session-binding repair** (`7e6a14e5` through its answer):
   * frozen `templates/modules/default-on/prune_reflections.py` changed;
-  * the new `bootstrap/tests/test_session_writes_contained.py` freezes at the
+  * the new `bootstrap/tests/test_session_writes_contained.py` and
+    `bootstrap/tests/test_session_binding_untracked.py` freeze at the
     ceremony;
   * no engine symbols.
 * **Upgrade lockfile-path repair** (`d299f37c` through its answer):
