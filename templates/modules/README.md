@@ -45,6 +45,7 @@ instance; the module file states the tool's contract.
 | team-gated | `issue-capture` | the team uses an issue tracker for gap / friction capture (the User Agent surface) |
 | team-gated | `architecture-review` | the codebase's architecture *accreted rather than was deliberately designed* (inherited legacy, merged prototypes, vibe-coded growth); not gated on team shape — a solo maintainer with an inherited legacy codebase qualifies |
 
-The kernel's own review — the same agent in a fresh session — runs
-without the `dual-review` module; the module *adds* the second,
-structurally-independent tier when the team can staff it.
+The kernel's own review — a fresh reviewer who did not write the work —
+runs without the `dual-review` module; the module *adds* guidance for a
+team with two agent types or several people on staffing a read the
+Maintainer has called.

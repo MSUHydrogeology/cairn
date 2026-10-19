@@ -36,24 +36,36 @@ Merged into the adopter's role/configuration documentation:
 > cost for routine work as `medium-capability tier`; pick a
 > fast / inexpensive tier for trivial work as `low-capability
 > tier`. Where multiple vendors are available, list at least
-> one model per vendor at each tier you populate — this is what
-> lets the *diversity within tier* rule (`doctrine/roles.md`)
-> apply.
+> one model per vendor at each tier you populate — that keeps a
+> different model architecture available when the Maintainer
+> assigns one or asks for more distance. Diversity within a tier
+> (`doctrine/roles.md`) is useful distance on request, never a
+> default an agent applies.
 >
 > **Default tier-by-role mapping:**
 >
 > | Role | Default floor | Notes |
 > |------|---------------|-------|
 > | Strategy / Research | high | High-stakes by default; Maintainer Decision may lower. |
-> | External Review | high | Different model architecture from author preferred (diversity within tier). |
-> | Security Review | high | Same as External Review; focused-mode pass. |
+> | Proposal review | high | The premise is still movable, and a wrong one is cheapest to catch here. |
+> | Security Review | high | Focused-mode pass on a high-risk surface; its floor does not follow the stage it attaches to. |
 > | Maintainer scribing | high | Decision-of-record artifacts; capability floor matches Strategy. |
 > | Implementation (non-trivial) | medium | High permitted; not required. |
-> | Internal Review | medium | Same as Implementation. |
-> | Code Review | medium | Floor is "not the implementing agent"; tier is medium-or-higher. |
+> | Plan review | medium | Same as Implementation. |
+> | Code review | medium | Floor is "not the implementing agent"; tier is medium-or-higher. |
 > | Implementation (trivial chunks) | low | Single commit, single area, no follow-ups. |
 > | User Agent (routine workflow) | low | Concrete-mode workflow exercise, capture only. |
 > | Non-substantive doc tweaks | low | Typo / wording / linkfix. |
+> | Docstring and comment cleanup, and related edits | low | The writing step only; the paragraph below says what stays unchanged. |
+>
+> **Docstring and comment cleanup, and related edits, may be written at low.**
+> This covers an edit that changes only docstrings, comments and other
+> non-executable wording: no executable token, and no bytes that a test, manifest
+> or attestation pins. It lowers the writing step only. The review keeps its
+> stage's floor (medium for code review), and where the edit touches a surface
+> this project's `AGENTS.md` names as high-risk it also owes the Security Review
+> that surface already requires, at high. Nothing in this row lowers a review or
+> removes a Security Review.
 >
 > **Override discipline.** Lowering a high-stakes floor for a
 > specific session or sub-domain requires an explicit Maintainer
@@ -111,13 +123,13 @@ calls, and by most tooling defaults each silently inherits the orchestrator's
 > independence, a narrow context packet, and a merge/review path — otherwise the
 > context-packaging cost exceeds the saving.
 >
-> **An independent reviewer can lower the *generative* step's floor — under four
-> conditions, all required.** Because substantive change is gated behind
-> independent review, a cheaper author is safe *only when*: (a) the reviewer is
-> at a tier **strictly above** the downshifted author **and** architecturally
-> diverse (a different model family) — never same-tier or same-model, because
-> same-model fresh-session independence is *time* independence, not capability
-> headroom; (b) acceptance criteria are pre-declared; (c) the output is
+> **A stronger, independent check can lower the *generative* step's floor — under
+> four conditions, all required.** A cheaper author is safe *only when*: (a) the
+> model that checks the output is at a tier **strictly above** the downshifted
+> author **and** is a different model architecture (a stronger model from the
+> same maker is not one) — never same-tier or same-model, because same-model
+> fresh-session independence is *time* independence, not capability headroom;
+> (b) acceptance criteria are pre-declared; (c) the output is
 > falsifiable without trusting the author (compact, fully inspectable, backed by
 > a checkable artifact); (d) a failed review **escalates** the next attempt,
 > never retries indefinitely at the cheap tier. This does **not** apply to
@@ -125,10 +137,21 @@ calls, and by most tooling defaults each silently inherits the orchestrator's
 > irreversible migrations, or large / diffuse edits a reviewer would have to
 > re-derive to check — those are bright-line.
 >
+> **The cost rule's check is not a review.** An orchestrator may run a
+> sub-agent's generative step on a cheaper model only when the model that checks
+> the output is at a tier strictly above it and is a different model
+> architecture; a stronger model from the same maker is not one. The check is
+> the orchestrator's. It is never filed as a proposal, plan or code review pass
+> and never counts toward one, and no lifecycle review requires a different
+> architecture. Sending the context packet to a second maker's model crosses the
+> data-governance gate below, so that gate applies first.
+>
 > **Bright-line tasks never downshift — even as a fan-out leaf.** Security
-> Review, the high-risk trust boundaries, adversarial premise-checking, and
-> genuinely novel design stay at the high floor regardless of orchestration
-> context. One missed subtle failure there dwarfs a session of token savings.
+> Review, the high-risk trust boundaries, premise-checking, and genuinely novel
+> design stay at the high floor regardless of orchestration context. The one
+> exception is the docstring-and-comment cleanup row above, and only for its
+> writing step: it lowers no review and no Security Review. One missed subtle
+> failure there dwarfs a session of token savings.
 >
 > **Data-governance / tool-parity is a hard gate.** Never downshift across a
 > data-governance boundary: proprietary code, collaborator data, unpublished

@@ -24,8 +24,9 @@ Refreshed when the team changes.)
   opinion goes through a proposal — it is not committed because
   its author is confident. The lifecycle is in
   `proposals/_template.md`.
-* **Review is honest.** A reviewer improves a change and, at the
-  External tier, makes it prove it should land — reporting a real
+* **Review is honest.** A reviewer improves a change by questioning its
+  foundations — whether it should happen as framed, the best
+  alternative, and what would show it wrong — reporting a real
   problem, and reporting honestly when there is none. Confidence
   proves itself.
 * **The record is durable and append-only.** Deliberation is

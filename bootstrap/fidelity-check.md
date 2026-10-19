@@ -163,8 +163,9 @@ roles:
   - Human Maintainer
   - Strategy
   - Implementation
-  - Internal Reviewer
-  - External Reviewer
+  - Reviewer
+  - Security Review
+  - User Agent
 
 # Customization-slot status
 #   "filled"   — the slot has project-specific content

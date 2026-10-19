@@ -81,8 +81,8 @@ plans for it rather than discovers it.
   pull-request review, code review, none?
 * How is design currently discussed — in chat, in a doc, in
   someone's head, in commit messages?
-* How ready is the team to adopt **peer-review gates** — the
-  Internal / External tiers, the proposal-first lifecycle? What
+* How ready is the team to adopt **peer-review gates** — a fresh
+  reviewer at every stage, the proposal-first lifecycle? What
   about that will feel slow, and what will feel like protection?
 * Which surfaces sit closest to human muscle memory — the parts
   of the workflow contributors do automatically — and where will

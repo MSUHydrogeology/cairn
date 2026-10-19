@@ -132,8 +132,8 @@ maps these classes onto their own formats:
 A focused-mode reviewer reports each risky call site with
 file:line, its trust-class, a one-line attack scenario, and a
 suggested remediation, in severity tiers (critical / important /
-informational). Per the External Review Norms, the reviewer
-surfaces the list; the author decides what to act on.
+informational). The reviewer surfaces the list; the author decides
+what to act on.
 
 ### v1 scope — a self-audit gate, not an untrusted-PR reviewer
 

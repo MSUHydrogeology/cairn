@@ -166,7 +166,7 @@
     },
     {
       "dst": "dev/modules/model-selection.md",
-      "hash": "sha256:7e11fcfd1dfcb6a0f426511d768d484d830738e8bc800df8296808ae3d5e4055",
+      "hash": "sha256:5535b6901c62071a6b254ff6dad7ef29bde190b7eee241101a7f5c2260521cdc",
       "src": "modules/team-gated/model-selection.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -188,7 +188,7 @@
     },
     {
       "dst": "dev/modules/security-review.md",
-      "hash": "sha256:ff88958b69752b2d27d40236b45bf5b3dda50110203d9075b3922d2ab5523480",
+      "hash": "sha256:b720f629a13d11329783ddbdc71fd75acf00f24ffb7ff06161271fbe05d1267e",
       "src": "modules/team-gated/security-review.md",
       "unrecoverable_base": true,
       "verbatim": false

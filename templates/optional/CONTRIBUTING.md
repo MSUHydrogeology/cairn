@@ -27,8 +27,8 @@ rather than restating them, so there is a single source for each rule.
 ## How a change lands
 
 A substantive change is **deliberated, reviewed, and recorded** — it
-lands because it went through a proposal, was reviewed across
-structural independence, and the reasoning is committed to the durable
+lands because it went through a proposal, was reviewed by an independent
+reviewer beside its author, and the reasoning is committed to the durable
 record, not because its author was confident. The lifecycle
 (`proposed → reviewed → revised → accepted`, then a plan for
 non-trivial work) is in `dev/proposals/_template.md` and
@@ -52,11 +52,11 @@ release is a review finding.)
 
 ## Code of conduct and review
 
-Every substantive change is reviewed — a constructive **internal**
-read and, for changes that must prove themselves, an independent
-**external** read (`dev/agent_collaboration.md`). Reviews are
-asynchronous and commit-mediated: a review is a dated, attributed
-section appended to the artifact, not a conversation that leaves no
-record. Engage as a **collaborative skeptic** — steelman a position
+Every substantive change is reviewed by a fresh reviewer who did not write
+it: they question its foundations and answer in writing
+(`dev/agent_collaboration.md`). The Maintainer may ask for more distance on
+one named piece of work. Reviews are asynchronous and commit-mediated: a
+review is a dated, attributed section appended to the artifact, not a
+conversation that leaves no record. Engage as a **collaborative skeptic** — steelman a position
 before critiquing it, and treat disagreement as a way to improve the
 change.
