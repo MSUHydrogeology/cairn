@@ -1,7 +1,7 @@
 # Plan: Remove the collaboration agreement
 
 **Source proposal**: `dev/proposals/archive/2026-10-19-claude-remove-collaboration-agreement.md`
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-19
 **In brief**: Cairn will stop installing its collaboration agreement while keeping each project's copy and the team guidance that still matters.
@@ -558,3 +558,10 @@ Both plan-review obligations have been answered. There is no second plan
 review. `ready-to-implement` does not lift the Decision's start fence:
 implementation waits until `dev/plans/review-stance-and-lenses.md` is
 `archived`.
+
+## Implementation start -- Codex -- 2026-10-19
+
+The start fence is satisfied: `review-stance-and-lenses` was archived at
+`0974a4de`. The model-mapping plan has committed C1 but not C2. This plan
+starts C1 now and keeps its before-C2 ordering. The concurrent model-mapping
+engine edits are another session's work and are not part of this chunk.
