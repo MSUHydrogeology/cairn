@@ -1187,20 +1187,35 @@ So, for 0.4 (each item has its own record; this is the order):
    copy fallback), `neutrality-and-upgrade-slots`, `independent-scientific-check`
    and `review-stance-and-lenses`, each reviewed and archived, and the
    collaboration-agreement removal above (its own proposal, sequenced after
-   `review-stance-and-lenses`, which edits the same review norms). Out, for
-   after 0.4: `board-as-basis`, `model-mapping-install-path`, the
+   `review-stance-and-lenses`, which edits the same review norms). Also in,
+   by the Maintainer's later change the same day (below): `board-as-basis`,
+   then `model-mapping-install-path`. Out, for after 0.4: the
    stewardship-and-reuse plan, and the draft strategy
    `dev/strategy/2026-10-19-codex-cairn-and-assai.md`.
 2. **The README** says plainly that 0.4 has not had an outside test, and the
    0.3 external test stays open as a row above; it is waived for going
    public, not done.
 3. **The Maintainer's AST and gate-manifest re-anchors at the cut**, so the
-   release suite is green. `model-mapping-install-path` gets its own ceremony
-   after 0.4, replacing the single combined ceremony chosen on 2026-10-18.
+   release suite is green. Because `model-mapping-install-path` is now in 0.4,
+   one ceremony at the cut covers every engine change, that plan's included,
+   which is what the single combined ceremony chosen on 2026-10-18 intended.
 4. **Before the repo flips:** a full-history secret scan, and a read of what the
    history and the GitHub issues expose.
 5. **The release sweeps** in `docs/release-process.md`, then the
    public-launch sequence below, unchanged from step 1.
+
+**The later change (2026-10-19), verbatim.** The Maintainer wrote "I think the
+model_mapping_install_path should be implemented prior to 0.4". Asked "Model-mapping
+into 0.4: you'd set board-as-basis to go before it. What about board-as-basis?",
+he chose **"Both into 0.4"** ("Keep your order (board-as-basis, then
+model-mapping) and ship both."). He then added "But, I'll have another agent
+develop them", and the two plans' implementation was handed to a separate agent
+of his choosing. Their start gates are unchanged: `board-as-basis` C1 waits for
+`review-stance-and-lenses` to reach `awaiting-code-review`, and
+`model-mapping-install-path` waits for `board-as-basis` to reach
+`awaiting-code-review` and for the engine copy-fallback repair to clear its
+Security Review. Their reviews are run by fresh sessions, never by the
+implementer.
 
 **Public-launch sequence** (deferred to 0.4+; Maintainer-gated, in order).
 **Revised 2026-08-04** to carry plan `release-authenticity`'s Chunk M, which is
