@@ -1,7 +1,7 @@
 # Plan: independent scientific check — one check per scientific change, shown able to fail
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-independent-scientific-check.md`
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits the authoring templates and the axis prose that adopters' bootstrap reads.
 **Opened**: 2026-10-18
@@ -2403,3 +2403,127 @@ first record). The test's controls are the ledger's.
 * **The archive duties** (the caveat on the stor-modflow "yes" and the F2 mode)
   are in the Response and are not yet done; they belong to the archive commit.
 * **The first record's omissions** about the gate-manifest re-anchor still hold.
+
+## Verification of the revision -- Claude Sonnet 5.5 -- 2026-10-19
+
+```
+Reviewed commit: 550750fb6c45a769077b62500e56d3aef407c57a
+Target: the revision range c504fca8..550750fb (86db42ae, e2978e44, 550750fb), the Response 1e4f1e96 and the second Boundary B record c1c92ccc, read against SC-CR1 to SC-CR6 of my code review (5ed51cdf)
+Prior findings: SC-CR1 to SC-CR6
+```
+
+**Obligation**: Verification of the revision (not a second review round)
+**Tier**: Internal
+**Bounding**: not owed. The second Boundary B record is a `full` run, and I reproduced it on the tested commit (below). It is the fresh full run my first review said the revision owed.
+**Findings**: raised (1 new medium, 1 new low); SC-CR1 to SC-CR5 closed, SC-CR6 closed with a correction
+**Verdict**: REVISE -> `revising-code`, for SC-VR1 only. The code and template changes are clean. What is not clean is the C1 exercise, because of what the drafters' briefs (now on file) turn out to say.
+**Model**: claude-sonnet-5-5
+
+Distance: a fresh session of the implementer's agent type (Claude Sonnet 5.5), the same reviewer as the code review above. I wrote none of the revision. This is Internal and not External. I did not re-review the whole plan: SC-VR1 comes from material I could not read in the first round (SC-CR5 was the missing briefs), not from a defect the revision introduced. Interpreter for every figure: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13, in detached worktrees of `550750fb`, `c504fca8` and `c1c92ccc` in a fresh folder of my own (removed at the end). `git diff` on this plan file was empty when I claimed it and again before I appended.
+
+### In plain terms
+
+**The fixes hold.** Every layout and place mutant that survived last time (18 of them) is now caught, the two new wording changes are in all the right places byte for byte, the full suite gives the same result the second record states, and I found no new defect in the test, the templates or the promise sentences. The third placement rule the implementer added ("before the doc-tooling slot") is not too tight.
+
+**One thing is not settled, and it is about C1.** The briefs show the two drafters were told to do exactly what question (B) rewards: say the data is unconfirmed and name what they would open. That makes (B) impossible to fail for a draft that follows the brief. So the stor-modflow "yes" tells us nothing about whether the block's own data prompt works, and the exercise did not get its fair chance to fail on stor-modflow. I said in the first review that I "would not call it narrow" and that the draft passed "because the block's own data-status prompt made its author write the doubt". I withdraw both: I could not see the briefs then. The remedy is small and quick: re-draft stor-modflow once with a brief that does not carry the nudge, and score it (SC-VR1).
+
+### The six closures
+
+| Finding | State | Evidence |
+|---|---|---|
+| SC-CR1 (medium) layout and place | **closed** | 18 of 18 rebuilt survivors killed at `550750fb`; no new defect (below) |
+| SC-CR2 (low) expert basis | **closed** as I recommended | No text edit. The F2 wording is an archive duty in the Response, still to be done by the archive commit |
+| SC-CR3 (low) control example | **closed** | `550750fb`; the sentence reads "at the same rate, distance and schedule" in both proposal copies, in the test and in the plan's fenced text; "comparable rate" is gone. The Maintainer's question and choice are quoted in the Response (as relayed, the same provenance as his earlier answer) |
+| SC-CR4 (low) one trigger | **closed** | `e2978e44`; the three shipped promise texts equal the plan's revised fenced texts, each once; the test lower-cases and pins the new finding sentence |
+| SC-CR5 (low) briefs on file | **closed**, and it matters | All three briefs are in the Response; their SHA-256 recompute from the fenced text (2ab39e8e..., 6e1a6eb6..., 43f273d9...). See SC-VR1 |
+| SC-CR6 (low) archive caveat | **closed with a correction** | The duty exists, but its suggested wording still credits the block's prompt. SC-VR1 supersedes that sentence |
+
+### SC-CR1 against the tested commit
+
+I rebuilt my harness (my earlier one was removed with its folder) and ran the **real** `pytest` on the **real** files in worktrees at `550750fb`, each mutant restored by `git checkout` and checked clean, each run beside an unmutated control (seven controls, all passing).
+
+| Family | Mutants | Killed | Survived |
+|---|---|---|---|
+| Delete each sentence or list item of the block (27) and paragraph (5), both copies, first only, second only | 96 | 96 | 0 |
+| Delete **each word** of the block (457) and the paragraph (81), both copies | 538 | 538 | 0 |
+| Markup and characters (indent, `*` to `-`, zero-width space, Cyrillic `a`, HTML comment, bold removed, heading removed, word appended, block wrapped in a slot); the SC-CR3 sentence put back to "comparable rate", and "distance" dropped from it | 12 | 12 | 0 |
+| Promise sites: phrase to `review` at each of three sites; each site reverted to its pre-change text; `review finding` to `note`; finding sentence deleted; trigger narrowed to `a computed result`; the `scientific assumption` half dropped | 10 | 10 | 0 |
+| **My first-pass survivors, rebuilt**: S1, S2.0 to S2.4, S5 (non-breaking space), P1 x4, P2 x7 | 18 | **18** | 0 |
+| My first-pass survivors that are presence-only by design: S10 (a new paragraph beside the pinned one), D4 (bullet moved to the Simple position), D5, D6 (I-2 text), D9 (old lens phrase beside the check) | 5 | 0 | 5 |
+| New probes aimed at the revised rules (below) | 11 | 6 | 5 |
+| README capital `I` (case ignored: expected to pass) | 1 | 0 | 1 |
+
+Total: 691 mutants, 680 killed, 11 survived. The 18 rebuilt survivors die with a specific message, for example "a '## ' heading sits between the line starting '**Prospective only.**' and the block", "the paragraph sits under '## Source proposal', not '## Acceptance criteria'", "the block's layout differs from the reviewed text, at layout element 9: expected ('item', 2, '*')". The five by-design survivors are the ones the Response and the test's docstring say are not pinned.
+
+**New probes, and what they say about the revised test.**
+
+* **Killed (6):** nested bullets indented three spaces; a nested marker `*` to `+`; two blank lines where one stood; the plan paragraph duplicated elsewhere (marker repeated); the doc-tooling slot **renamed** in both plan copies; the slot moved **above** the paragraph.
+* **Survived (5), none a defect:** a blank line holding three spaces; trailing spaces at a line end; a tab in place of a space inside a line (all three render the same); an H3 heading inserted before the plan paragraph (still under Acceptance criteria); an H3 heading and a line of text inserted between `**Prospective only.**` and the block (same H2). The last two are placements the rule deliberately leaves free, since only `## ` headings bound it. The docstring's phrase "the headings do not bound" is a little loose about H3s; harmless.
+* **One cosmetic strictness:** an extra blank line mid-block renders identically and turns the test red. A false red that costs one deleted blank line is acceptable; I note it so nobody is surprised.
+
+**The third placement rule is not too tight.** The question was whether a later slot rename would turn the test red for no good reason. A rename does turn it red, with "missing marker: no line opening the 'acceptance-doc-tooling' slot", and the fix is one constant. But the rename is not a cosmetic event: the merge engine keys adopters' filled slots by name (`cairn:slot NAME` pairs; `bootstrap/UPGRADE.md` says slots are adopter-owned), so renaming a slot is an install-contract change and a test that notices it is doing work. The rule asks only "before the slot's opening", not adjacency, so inserting text or another paragraph before the slot passes. It is the plan's own C2 criterion made executable. A rename-proof form (no slot opening between `## Acceptance criteria` and the paragraph) would kill the same P2 mutant, but it would turn red on any new slot placed earlier in that section, which is the same cost with less information. Keep the rule as written. The test also passes at `c1c92ccc` (the current head of this plan's history, carrying the sibling plan's template and dimensions commits so far), so the sibling work has not tripped it.
+
+### The second Boundary B record, checked against `550750fb`
+
+* **Right bytes.** The range changes six paths: `bootstrap/BOOTSTRAP.md`, `dimensions/complexity.md`, the two proposal templates, the test and this plan. `git diff --stat` over `doctrine`, `AGENTS.md`, `templates/modules`, `docs`, `scripts`, `tools`, `dev/.cairn`, `dev/PLANNING.md`, `CHANGELOG.md`, `dimensions/README.md`, both plan templates, `bootstrap/_scaffold`, `bootstrap/tests/fixtures` and `bootstrap/verify_integrity.py` is empty. The range's paths and the 183 `frozen_files` keys do not intersect (control: `bootstrap/tests/test_scaffold.py` is a key; the new test is still not one). A vendor-name grep over the 160 added lines in the changed template, dimensions, bootstrap and test files prints nothing; the control line is found.
+* **4432 passed, 2 failed: reproduced.** `CAIRN_FULL_SUITE=1 ... --quality-gate-shuffle-seed=0 -rsfExX`, a fresh worktree of `550750fb`, clean before and after: **2 failed, 4432 passed, 3 warnings in 879.7 s** (the record's 793.0 s; mine ran alongside about 700 mutant runs), 0 skipped, 0 xfail, 0 xpass. The two failures are the same two AST tests.
+* **The same two at the base.** At `c504fca8` the AST file gives 2 failed, 28 passed, with the same text once worktree paths are removed. My run's CHANGED list names the same five symbols with the same baseline and current hashes as both records.
+* **No node added or dropped.** `pytest --collect-only` lists 4434 nodes at both commits (4432 + 2), identical sets.
+* **Gates and contract.** Neutrality `fail=0 info=56` and redundancy `fail=0 info=0`, output identical to the base's. `scaffold.py --manifest` byte-identical (98 lines). `verify_integrity.py --target .` output identical (23 lines). `check_cairn.py` reports one issue at both commits, in another session's review file (a path under `tools/__pycache__` that exists only in a tree that has run Python), none in a file this revision edits, as the record says.
+* **The block and the paragraph are the plan's fenced bytes.** The revised fenced C2 block occurs once in each proposal copy and the paragraph once in each plan copy.
+
+### C1 and the briefs
+
+The briefs are what I asked for in SC-CR5, and they are better evidence than I had. What they show:
+
+* **Blindness is as the record said.** Each drafter was told to read exactly two named files, nothing else, no commands, no web. No brief names a path into the LHM repository, an error statement or a review. The assemble drafter's brief carries the part-naming sentence word for word.
+* **The briefs also tell the drafter how to handle data, in terms the block does not use.** Both drafter briefs say: if you would want to check something, the data behind it for example, you cannot; "Say so in the section, as its instructions ask, and name what you would open to confirm it." The block's instruction is "Say whether the data behind the expected value is in hand and has been checked. If the check depends on data that does not exist yet, say so." It does not ask the author to name what to open. The brief attributes that to the block ("as its instructions ask") when the block does not carry it.
+* **That sentence is, nearly word for word, the pass branch of (B).** The scorer's rubric accepts a draft that says the data is "not confirmed, and names what would be opened". A draft that follows the brief therefore passes (B) by construction. The only way to fail (B) was to state that the data was in hand, against the brief's own instruction.
+* **The plan designed (B) to prevent exactly this.** C1 says that without (B), "(A) is 'yes' for any draft that repeats the original compare-with-saved-output check, and the exercise could not fail on stor-modflow, the very ritual it exists to detect." With the brief as written, it could not fail on stor-modflow after all. The stor-modflow draft's "Data in hand" heading over text that says nothing was checked passed (B) on the strength of text that follows the brief.
+
+**Does it change my view? Yes, and more than the implementer's wording says.** The Response says the draft's pass "owes part of its form to the brief". I would say the (B) pass owes its whole form to it: the exercise cannot tell the block's data prompt from the brief's. So:
+
+* The stor-modflow "yes" is now (A) alone, and (A) is "yes" only on the condition that the reference array had existed, which it never did. It says nothing about the block's data-status prompt, for or against.
+* The Response's suggested archive sentence ("the block's data-status prompt, with that help, made a blind author flag the false data claim. It is weak positive evidence for that prompt") credits the prompt. On this run it is no evidence either way. Also, the draft flagged the variable's existence as *unchecked*, not as *false*.
+* The assemble "no" is untouched by this (the same nudge could only have helped it).
+* The stop rule was applied as written to the record it was given: one yes, one no, proceed. The record is not a fair run of the test the plan designed.
+
+I do not read this as the implementer's fault: the disclosure was made unprompted and is precise. It is what I would have asked for.
+
+### Findings
+
+#### SC-VR1 -- Medium -- The drafters' briefs handed over the pass condition of question (B), so the stor-modflow "yes" is not a fair result
+
+**Plain.** The go/no-go exercise exists to catch a block that is a ritual. Its one real chance to catch it on stor-modflow was whether the draft admitted what it had not checked. The briefs told the drafters to admit it and name the file. The "yes" proves the drafter could follow an instruction, not that the block works.
+
+**Precision.** Evidence is the two drafter briefs (both carry the sentence), the block text, the scorer's (B) branch and C1's own paragraph on why (B) exists, all quoted above. C1's red condition for the blind draft includes "the brief holds anything else". The record already softened "pasted into the brief, no repository access" to a read tool and an instruction, and disclosed it. A sentence that hands over the rubric's pass condition is the one addition that changes the result. Plan C1 is a Decision-relevant gate ("stop if neither"), so its result should not rest on a nudge. Nothing is pushed, so the cost of getting this right is a re-draft, not a revert.
+
+**Closes when** the stor-modflow draft is redone once, under C1's rules, as a dated sub-section appended under the `## Retroactive application` record:
+1. A fresh drafter that is none of: the implementer, me, either of the first two drafters, or the scorer, given the same two inputs (checked against the recorded SHA-256 of the wording and of the proposal as opened), and a brief identical to the first **except** that the last rule reads only "If the instructions ask for something you cannot do from these two texts, say so in the section." The brief must not say "name", "open" or "confirm" about data, and must not say what the block's instructions ask.
+2. The same scorer brief to a fresh scorer, with the same two error statements.
+3. Both briefs (SHA-256 each), the draft and the score, appended verbatim. The first stor-modflow draft and score stay on file, labelled as made under a brief that helped.
+4. The stop rule applied to {assemble part A: no, stor-modflow re-run}. If the re-run is **yes** on (A) and (B), C1 stands; the archive sentence then says the "yes" came from a re-run after the first brief was found to help. If it is **no**, both plans are no and the accepted rule applies as written: the block is judged ritual, the implementer writes the Waiting line, and the Maintainer decides what happens to the committed, unpushed C2 to C4.
+5. The Response's suggested archive sentence is replaced, after the re-run, by one that credits the prompt only if the re-run does.
+
+A single re-draft is a sample of one, as the first was. The plan accepted that ("a go/no-go gate, not a measurement"), and the point is to run the gate it designed, not a better one.
+
+#### SC-VR2 -- Low -- The `needs-value` regression has no live home, and it stands between this plan's block and existing adopters
+
+**Plain.** The second record reports, and does not fix, that an existing adopter's proposal template cannot advance: the upgrade plan classes it `needs-value`. I reproduced it: an install from `c504fca8` (`solo-greenfield`), then `upgrade --plan` against `550750fb`, and again against `c1c92ccc`, lists `dev/proposals/_template.md` as `needs-value`. The cause is the new `{{evidence}}` tokens at lines 335 and 336 of the shipped proposal template at `550750fb`, from the sibling plan's second chunk. Until that is answered, the block reaches a new install but not an existing one.
+
+**Precision.** It is not this plan's defect, and this plan's own probe isolates its sentence from it. But the plan template's rule is that nothing still to be done may have an archived file as its only home. Searching `dev/plans/review-stance-and-lenses.md` and `dev/PLANNING.md` for `needs-value` and `{{evidence}}` finds nothing; the only home is this plan's second record.
+
+**Closes when** the item is named in the sibling plan (which owns the template change) or on a board row, before this plan archives, saying that an existing adopter's proposal template stops at `needs-value` and that this plan's block is among what is held back. This does not block the plan.
+
+### Observations (no finding)
+
+* **Operative cells were revised in place after execution began.** The Response edited the plan's fenced wording and the C3 criterion in place (the SC-CR3 example, the SC-CR4 texts) and listed each change. The plan template says changes append once execution of a chunk begins. The text as reviewed is recoverable at `531084a1` and `2764eccd`, and the list is complete, so I do not ask for a revert. One side effect: the cell that describes the test's groups (a) to (d) still reads as the old spec; the layout and place rules live in the test's docstring and the Response.
+* **The Response's suggested archive sentence and the F2 wording** (SC-CR2) are duties for the archive commit and are not done yet; the second record says so.
+
+### What I did not cover
+
+* I did not run the re-draft or the re-score myself. That is the implementer's chunk, run by agents that are neither the implementer nor me; SC-VR1 gives the recipe.
+* I did not re-read the whole plan or re-run last round's upgrade table for an adopter who edited the block itself. The revision changes one sentence of the block and no engine code, and my `needs-value` probe used the installed proposal template as it stands.
+* I did not run the base's full suite; I checked its AST file, collection and gates.
+* The Maintainer's chat answer on the control example is as the Response quotes it; I cannot see the chat.
+* Last round's other omissions still hold: rendering was measured for the survivors I named, not for every whitespace variant, and the scientific content beyond the positive-control bullet is the Maintainer's.
