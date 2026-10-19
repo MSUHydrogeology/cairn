@@ -14,12 +14,18 @@ at once, with every anchor still found and the two copies still equal. Pinning
 every word closes that, at a price: editing either text means editing this
 test in the same commit.
 
-It also pins where the text sits. The block must come after the
-security-preflight sub-block, whose slice another test compares byte for byte
-between the two proposal templates: a block placed inside that slice would be
-swallowed into it and no test would go red, because both copies grow alike.
-Neither text may sit inside a slot, because an adopter who fills the slot
-replaces everything in it.
+It also pins the layout and the place. Collapsing whitespace is what lets a
+sentence be re-wrapped, and it would also let a nested list flatten into one
+list, or a paragraph fold into the bullet above it, with every word still
+present. So the blank lines, the list items (with their indents and markers)
+and the paragraph starts are compared as well, and line wrapping is the only
+thing left free. The block must come after the security-preflight sub-block,
+whose slice another test compares byte for byte between the two proposal
+templates: a block placed inside that slice would be swallowed into it and no
+test would go red, because both copies grow alike. It must be followed by the
+Signals heading, and the plan paragraph must sit under Acceptance criteria
+after the security-touching paragraph. Neither text may sit inside a slot,
+because an adopter who fills the slot replaces everything in it.
 
 Three further places tell a reader what the review practice does about
 scientific results: the Complex position in ``dimensions/complexity.md``, the
@@ -70,7 +76,11 @@ _COMPLEXITY_FINDING = (
 
 _BLOCK_HEADING = "### Independent scientific check"
 _PREFLIGHT_CLOSE = "**Prospective only.**"
+_PROPOSAL_NEXT_HEADING = "## Signals the change is wrong"
 _PLAN_LEAD = "**An independent scientific check is accepted scope.**"
+_PLAN_PRECEDING = "A security-touching plan re-answers"
+_PLAN_HOME_HEADING = "## Acceptance criteria"
+_PLAN_SLOT = "acceptance-doc-tooling"
 
 #: The proposal template's block, word for word. Whitespace is collapsed when
 #: it is compared, so line wrapping is free and the words are not.
@@ -135,7 +145,12 @@ records whether anything else would have shown the error.
 
 
 def _collapse(text: str) -> str:
-    return " ".join(text.split())
+    """Collapse runs of space, tab and line breaks to one space.
+
+    Only ASCII whitespace: a non-breaking space is a different character and
+    renders differently, so it counts as a difference.
+    """
+    return re.sub(r"[ \t\r\n]+", " ", text).strip()
 
 
 def _first_difference(want: str, got: str) -> str:
@@ -148,6 +163,41 @@ def _first_difference(want: str, got: str) -> str:
         if w != g:
             return f"expected {w!r}, found {g!r}"
     return "the texts differ only in spacing"
+
+
+_LIST_ITEM = re.compile(r"^(\s*)([*+-]|\d+[.)])\s+\S")
+
+
+def _shape(lines: list[str]) -> list[tuple]:
+    """The layout of a region, with line wrapping left free.
+
+    One entry per blank line, per heading, per list item (with its indent and
+    its marker) and per paragraph start. A line that only continues the line
+    above adds nothing, so re-wrapping a sentence changes no entry, while
+    flattening a nested list, dropping a blank line or turning a paragraph
+    into part of a bullet does.
+    """
+    shape: list[tuple] = []
+    for line in lines:
+        item = _LIST_ITEM.match(line)
+        if not line.strip():
+            shape.append(("blank",))
+        elif line.startswith("#"):
+            shape.append(("heading", len(line) - len(line.lstrip("#"))))
+        elif item:
+            shape.append(("item", len(item.group(1)), item.group(2)))
+        elif not shape or shape[-1] == ("blank",):
+            shape.append(("paragraph",))
+    return shape
+
+
+def _first_shape_difference(want: list[tuple], got: list[tuple]) -> str:
+    for i in range(max(len(want), len(got))):
+        w = want[i] if i < len(want) else "<nothing>"
+        g = got[i] if i < len(got) else "<nothing>"
+        if w != g:
+            return f"at layout element {i + 1}: expected {w}, found {g}"
+    return "the layouts are equal"
 
 
 def _only_line(lines: list[str], matches, what: str) -> int:
@@ -181,22 +231,38 @@ def _read(rel: str) -> list[str]:
     return (CAIRN_ROOT / rel).read_text(encoding="utf-8").splitlines()
 
 
+def _without_trailing_blanks(lines: list[str]) -> list[str]:
+    kept = list(lines)
+    while kept and not kept[-1].strip():
+        kept.pop()
+    return kept
+
+
 def test_the_check_guidance_reaches_every_copy_and_promise_site() -> None:
     """Both proposal copies hold the block, both plan copies hold the paragraph,
-    each word for word and outside every slot, and the three places that
-    describe the review practice name the check.
+    each word for word, in the same layout, in the same place and outside every
+    slot, and the three places that describe the review practice name the check.
 
     The groups accumulate into one ``failures`` list rather than stopping at
     the first, so every group runs every time and a failure shows all of what
     is wrong at once.
 
-    (a) the block, in each proposal copy, equals the reviewed text;
-    (b) the paragraph, in each plan copy, equals the reviewed text;
-    (c) placement: the block sits after the security-preflight sub-block, and
-        neither text holds a slot marker or sits inside a slot;
+    (a) the block, in each proposal copy, equals the reviewed text in its words
+        and in its layout (blank lines, list items with their indents and
+        markers; line wrapping is free);
+    (b) the paragraph, in each plan copy, equals the reviewed text the same way;
+    (c) place: the block follows the security-preflight sub-block with no
+        heading between and is followed directly by ``## Signals the change is
+        wrong``; the paragraph sits under ``## Acceptance criteria``, after the
+        security-touching paragraph and before the doc-tooling slot; neither
+        holds a slot marker or sits inside a slot;
     (d) the three promise sites each name the check, and the Complex position
         says an unexplained "N/A" on a change that touches a computed result
         is a review finding. Presence only.
+
+    Not pinned, on purpose: text added as its own paragraph beside the pinned
+    ones (the pinned text is closed, its neighbourhood is not), and where the
+    text sits among the lines of a section the headings do not bound.
     """
     failures: list[str] = []
 
@@ -221,6 +287,20 @@ def test_the_check_guidance_reaches_every_copy_and_promise_site() -> None:
                 f"(a) {rel}: the block differs from the reviewed text; "
                 + _first_difference(_PROPOSAL_BLOCK, "\n".join(region))
             )
+        got_shape = _shape(_without_trailing_blanks(region))
+        want_shape = _shape(_PROPOSAL_BLOCK.splitlines())
+        if got_shape != want_shape:
+            failures.append(
+                f"(a) {rel}: the block's layout differs from the reviewed text, "
+                + _first_shape_difference(want_shape, got_shape)
+            )
+        if len(region) - len(_without_trailing_blanks(region)) != 1:
+            failures.append(
+                f"(a) {rel}: exactly one blank line must close the block, before "
+                f"the next '## ' line"
+            )
+        if start == 0 or lines[start - 1].strip():
+            failures.append(f"(a) {rel}: the block heading must follow a blank line")
         try:
             close = _only_line(
                 lines,
@@ -232,8 +312,18 @@ def test_the_check_guidance_reaches_every_copy_and_promise_site() -> None:
                     f"(c) {rel}: the block sits above the line starting "
                     f"{_PREFLIGHT_CLOSE!r}, inside the security-preflight slice"
                 )
+            elif any(l.startswith("## ") for l in lines[close + 1:start]):
+                failures.append(
+                    f"(c) {rel}: a '## ' heading sits between the line starting "
+                    f"{_PREFLIGHT_CLOSE!r} and the block"
+                )
         except AssertionError as exc:
             failures.append(f"(c) {rel}: {exc}")
+        if lines[end] != _PROPOSAL_NEXT_HEADING:
+            failures.append(
+                f"(c) {rel}: the block is followed by {lines[end]!r}, "
+                f"not {_PROPOSAL_NEXT_HEADING!r}"
+            )
         if any(_is_slot_open(l) or _is_slot_end(l) for l in region):
             failures.append(f"(c) {rel}: the block holds a slot marker")
         if _inside_a_slot(lines, start):
@@ -258,6 +348,49 @@ def test_the_check_guidance_reaches_every_copy_and_promise_site() -> None:
                 f"(b) {rel}: the paragraph differs from the reviewed text; "
                 + _first_difference(_PLAN_PARAGRAPH, "\n".join(region))
             )
+        got_shape = _shape(region)
+        want_shape = _shape(_PLAN_PARAGRAPH.splitlines())
+        if got_shape != want_shape:
+            failures.append(
+                f"(b) {rel}: the paragraph's layout differs from the reviewed "
+                "text, " + _first_shape_difference(want_shape, got_shape)
+            )
+        if start == 0 or lines[start - 1].strip():
+            failures.append(f"(b) {rel}: the paragraph must follow a blank line")
+        heading_above = next(
+            (l for l in reversed(lines[:start]) if l.startswith("## ")), None
+        )
+        if heading_above != _PLAN_HOME_HEADING:
+            failures.append(
+                f"(c) {rel}: the paragraph sits under {heading_above!r}, "
+                f"not {_PLAN_HOME_HEADING!r}"
+            )
+        try:
+            before = _only_line(
+                lines,
+                lambda l: l.startswith(_PLAN_PRECEDING),
+                f"starting {_PLAN_PRECEDING!r}",
+            )
+            if before > start:
+                failures.append(
+                    f"(c) {rel}: the paragraph sits above the paragraph starting "
+                    f"{_PLAN_PRECEDING!r}"
+                )
+        except AssertionError as exc:
+            failures.append(f"(c) {rel}: {exc}")
+        try:
+            slot = _only_line(
+                lines,
+                lambda l: _PLAN_SLOT in l and _is_slot_open(l),
+                f"opening the {_PLAN_SLOT!r} slot",
+            )
+            if slot < start:
+                failures.append(
+                    f"(c) {rel}: the paragraph sits below the opening of the "
+                    f"{_PLAN_SLOT!r} slot"
+                )
+        except AssertionError as exc:
+            failures.append(f"(c) {rel}: {exc}")
         if any(_is_slot_open(l) or _is_slot_end(l) for l in region):
             failures.append(f"(c) {rel}: the paragraph holds a slot marker")
         if _inside_a_slot(lines, start):
