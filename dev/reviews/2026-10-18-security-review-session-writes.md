@@ -488,3 +488,492 @@ project-relative, like `_assert_not_linked`.
 * The `.claude/skills` symlink that `session-start` makes shows as untracked
   in a project that does not ignore it (seen in the C1 clone). That is
   ordinary behaviour, not reviewed.
+
+## Security verification of the answer -- Claude Opus 5.5 -- 2026-10-19
+
+**Obligation**: SW-SR-1 (above), answered by `a95b9b31`, `83b144f9` and
+`7832d057`; plus confirmation that SW-SR-3 to SW-SR-7 are closed.
+**Reviewed commit**: `7832d057`. `tools/session.py` is byte-identical to its
+twin `templates/skills/_lib/session.py` (`cmp`), and unchanged from
+`7832d057` to today's `master`.
+**Distance**: a fresh session, not the implementing one. Same agent type,
+different model size, so the distance is a fresh context. Security pass only.
+**Single pass**: by the Maintainer's instruction there is no second round
+("Let's just not iterate back and forth on the Security Review"). So each
+finding below carries the exact fix and the test that shows it closed, and
+the verdict says which answers a code review can sign off.
+**Method**: reading, the two owning test files, and resolver-level cases in a
+scratch file. Every scratch case asserts on what `_resolve_interpreter` or
+`_binding_untrusted` returns; nothing a binding names was run. No full suite,
+`CAIRN_FULL_SUITE` unset.
+**Interpreter**: Python 3.13.13, `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+`PYTHONDONTWRITEBYTECODE=1`. Darwin, APFS (case-insensitive), git 2.53.0.
+**Where things ran**: one detached worktree of `7832d057` and two more for
+mutants, each in a fresh, uniquely named folder under the session
+scratchpad, plus throwaway probe folders; all removed. The only writes to the
+shared tree are the intent claim and this record.
+
+**Verdict: SW-SR-1 CLEARED on the route it named.** A binding that came with a
+`git clone` or a branch checkout is no longer run, under any spelling this
+Mac's disk treats as the same file, through a link, inside a submodule, in a
+linked worktree, or when git fails, hangs or prints something odd. I found no
+path that returns a binding git's index lists. Six new findings, none
+caused by a defect in the fix's own logic: 1 medium, measured (SW-SR-10); 1
+medium, argued (SW-SR-12); 1 low (SW-SR-11); 3 informational.
+
+**What a code review can close, and what it cannot.**
+* SW-SR-11 to SW-SR-15: answered exactly as written below, they close without
+  another Security Review; the code review checks each answer against its
+  test. Until SW-SR-12 is answered, the clearance holds on APFS only, not on
+  Windows or on Mac OS Extended (HFS+) drives.
+* **SW-SR-10 I would not clear on a code review.** Its real fix moves the
+  binding to a place no download or patch can carry, which changes the
+  install contract and needs its own proposal and Security Review. The
+  alternative is to accept the gap in writing, which is a risk decision.
+  Either way it is the Maintainer's call. My recommended default is in the
+  finding.
+
+### In brief
+
+**The hole SW-SR-1 named is closed.** The fix asks git one question, "list
+everything you track", and checks the answer itself. That means it does not
+depend on how git matches names. The questions I was asked about it come out
+clean. Stripping the caller's git settings works. Putting back the two
+settings the module chooses itself (no pager, no password prompt) cannot
+point git anywhere else. Every failure, including a timeout, counts as "not
+safe".
+
+**But the fix works on a proxy.** It asks "does git track this file *now*?"
+That stands in for the real question: "was this file written on this
+machine?" A binding that comes with the project another way passes the check
+and is run. I measured three such ways: a downloaded copy of the repository
+followed by `git init`, a contributed patch applied with `git apply`, and the
+common "undo last commit" (`git reset HEAD~`) (SW-SR-10). Separately, an
+honest binding can name a Python *inside* the project folder, and checking
+out a branch can replace that program (SW-SR-11).
+
+**The name rule fits this Mac exactly.** I tried every character in every
+letter position of the binding's three names, and slipped every character
+into three places. The only foreign spelling this disk opens as the binding
+is U+017F (long s) for the "s" of "json", and the rule catches it. But other
+disks compare names differently: older Mac drives ignore some invisible
+characters, and Windows has its own rules and short "8.3" names. There a
+tracked look-alike would get through (SW-SR-12, argued, not measured). The
+fix is to ask the disk, not model it: compare the file's identity.
+
+**Fall back, don't stop.** When the binding is not trusted, the kernel uses
+the Python already running it. That Python is already running the kernel
+itself, so falling back gives the project nothing new. Stopping would protect
+nothing more, and it would block every collaborator whenever someone
+commits a binding by mistake.
+
+### Findings at a glance
+
+| id | what | severity | answer closes it on code review? |
+|---|---|---|---|
+| SW-SR-10 | the gate sees only git's index; a binding that arrives by a downloaded archive + `git init`, `git apply`, or `git reset HEAD~` is trusted and run (measured, resolver level) | **medium** | **no**: Maintainer decision (design change or accepted residual) |
+| SW-SR-11 | an honest binding may name an interpreter inside the project; a branch checkout replaces that ignored file and the kernel runs the branch's program (measured, resolver level) | low (argued medium on Windows, where a venv's `python.exe` is a real file in the project) | yes |
+| SW-SR-12 | the name fold models APFS; on HFS+ (ignored invisible characters) and NTFS (dotless i, 8.3 short names) a tracked look-alike is the same file but not the same folded name | **medium** (argued, not measured) | yes; the mechanism test runs on any disk |
+| SW-SR-13 | the two "equivalent" encoder mutants on exception text are survivors: a printable-invisible character tells them apart (measured, 2 of 2) | informational | yes |
+| SW-SR-14 | a non-UTF-8 binding and a binding holding a lone surrogate end in a Python traceback, not a refusal; a tracked binding reaches both, since the gate runs last | informational | yes |
+| SW-SR-15 | the project folder's path still reaches the terminal raw in three messages, plus `sys.executable` in the stale message and the interpreter path in three run-failure messages | informational | yes |
+
+### Q1 -- Does SW-SR-1 clear? Reading the gate
+
+`_resolve_interpreter` runs its shape checks (all read-only: one JSON read,
+`lstat`/`stat`, `os.access`), then `_binding_untrusted`, then returns. Every
+process start in the module is accounted for. Two git calls run before it
+(`_repo_root`, `_git`) and one inside it. The three that run the interpreter
+(`_intent_whoami`, `_surface_intents`, `_prune_intents`/`_run_evolution_infer`)
+all take it from `_resolve_interpreter`. No other shipped reader of the
+binding exists: `git grep local-env` outside the deliberation record finds
+only the kernel, the engine's writer `write_local_env`, and a path list in
+`claim_check.py`.
+
+* **Links.** `_assert_not_linked(cfg, root)` runs before git is asked. It
+  refuses a link at any folder between the project and the file, or at the
+  file. A tracked `dev/.cairn` link is caught (tested).
+* **Index reading and parsing.** One argument list,
+  `git ls-files -z --cached --stage`, with no pathspec, so pathspec magic and
+  `GIT_LITERAL_PATHSPECS` no longer matter. With `-z` git never quotes, and
+  each record is `mode object stage TAB path`. The code splits at the first
+  tab, which is right because the head can hold no tab. A record with no tab
+  or no head means "could not ask". Names that are not UTF-8 are decoded with
+  replacement characters and cannot fold onto an ASCII name. Index states
+  checked: assume-unchanged and skip-worktree (tested); conflict stages
+  (listed once per stage, by reading); **a sparse index** (measured:
+  `ls-files` without `--sparse` expands a `dev/` sparse-directory entry, so
+  the binding is still listed).
+* **Submodules.** A `160000` entry whose folded path is a whole-folder prefix
+  of the binding gives its own reason. A gitlink at exactly the binding's
+  path gives "tracked". `de` does not count as `dev`, and a plain file called
+  `dev` is not a submodule (both tested).
+* **Worktrees and the `.git` file form.** Git finds the repository from the
+  folder alone, so a linked worktree and a project that is itself a
+  submodule both read their own index (tested, tracked and untracked).
+  A checkout cannot create a `.git` file or folder, since git refuses that
+  name at any depth.
+* **The environment.** `_binding_git_env` drops every `GIT_*` name (compared
+  upper-cased) and puts back `GIT_PAGER=cat` and `GIT_TERMINAL_PROMPT=0`.
+  Those two are the module's own constants, not the caller's values. Neither
+  one can choose a repository, an index or a matching rule. `ls-files` writes
+  to a pipe, so no pager starts, and it never asks for credentials. **Putting
+  them back does not matter.** What remains outside `GIT_*` is the operator's
+  own: `HOME`/`XDG_CONFIG_HOME` choose their global config, and `PATH`
+  chooses which `git` runs. That is the same `git` that `_repo_root` has
+  already run, so a project-controlled `PATH` entry would own the session
+  before the gate. `_repo_root` still honours a caller's `GIT_DIR` and
+  `GIT_WORK_TREE`. The gate then asks about that folder by discovery, which
+  either agrees or fails, and failing falls back.
+* **Failures fail closed.** Git missing, an `OSError`, a timeout (`run` kills
+  the child), a non-zero exit, or output it does not understand all give
+  `_BINDING_UNVERIFIED` and the fallback. A silent success means "nothing
+  tracked", correctly (all tested).
+
+**Tests.** `test_session_binding_untracked.py` and
+`test_session_writes_contained.py` at `7832d057`: **196 passed (48 + 148), 0
+skipped, 0 failed, 13.9 s**. I checked that each variant test exercises what
+its name says:
+* The resolver-level variants assert on the return value: the source is
+  `fallback-untrusted` and the interpreter is `sys.executable`.
+* The case and long-s tests take their asserting branch here. I measured that
+  this disk opens both spellings as the binding.
+* Two variants are weaker than their names. `GIT_CEILING_DIRECTORIES` set to
+  the project's parent cannot redirect discovery from the project folder, so
+  it pins the strip without showing a harm. `GIT_LITERAL_PATHSPECS` is moot
+  now that there is no pathspec; it was red only against the old form. The
+  submodule tests assert the fallback but not which reason. None of these is
+  a gap in what the gate does.
+* The encoding tests use a C1 control and a bidi override. Python's `repr()`
+  already escapes both, which is why two mutants survived (SW-SR-13).
+
+**Resolver-level scratch cases** (12, all passing on `7832d057`; each asserts
+a return value). Three show the SW-SR-10 routes trusted. One shows the
+SW-SR-11 replacement trusted. Two pin the exception-text encoding. Two
+document the spellings the fold does not equate. One shows an ASCII case
+variant gives the "tracked" reason. One is the sparse index. Two are the
+SW-SR-14 tracebacks.
+
+**Mutation ledger** (separate fresh worktree per mutant, both twins mutated;
+control: unmutated, 48 + 12 passed):
+
+| mutant | `test_session_binding_untracked.py` | scratch case | result |
+|---|---|---|---|
+| M1: drop `encode_display` on the read-error exception text | 48 passed | `test_read_error_text_is_encoded` failed | survived the shipped tests; killed by the scratch case |
+| M2: drop `encode_display` on the could-not-inspect exception text | 48 passed | `test_inspect_error_text_is_encoded` failed | survived the shipped tests; killed by the scratch case |
+
+**The disk measurement.** On this APFS volume, with `dev/.cairn/local-env.json`
+present, I opened every candidate spelling and compared device and inode.
+Candidates: each letter of `dev`, `.cairn` and `local-env.json` replaced by
+every non-ASCII code point; every code point inserted into `local-env.json`
+at two places and into `.cairn` at one. One hit: U+017F for the `s` of
+`json`. No insertion matched, so APFS ignores no invisible character. The
+fold is exact for this disk and only over-folds, which fails closed.
+
+### Q2 -- Fall back or refuse
+
+**Can project data influence `sys.executable`?** Only through how the
+operator starts the kernel. The skill says `python tools/session.py
+session-start`, and `python` comes from the operator's `PATH`. A project can
+steer that only through the operator's own tools. Examples: a `.python-version`
+file for pyenv, which picks among installed versions (older pyenv also
+allowed a path, CVE-2022-35861); an editor that activates a project `.venv`
+on its own; `uv run`; `direnv` or `mise` once trusted. In every such case the
+same interpreter is already running the kernel's own code before any check.
+The kernel cannot be safer than the program running it, and falling back
+hands the sub-tools nothing that program did not already have.
+
+**Recommendation: keep fall-back with the warning.** Reasons:
+1. The property the gate exists for, that project data does not choose a
+   second program, holds fully under fall-back. `fallback-untrusted` runs
+   exactly what a fresh clone with no binding runs.
+2. The honest failure is common: someone runs `git add -f`, or commits before
+   the ignore line existed. Refusing would stop every collaborator's session
+   in that project until history is fixed. A warning keeps them working and
+   names the fix.
+3. Cairn's own rule is that tools warn and refuse only for a genuine safety
+   property. Here the fallback already secures that property.
+
+Optional, not a finding: the reason goes to stderr. Stdout carries only
+`(from fallback-untrusted)`. An agent that relays stdout alone would drop the
+"why", and repeating the reason under "resolved project interpreter" would
+fix that. SW-SR-1's two *recommended* (not required) items were not done and
+are not needed to clear it. The installer still keeps an existing binding
+silently (`write_local_env` → `skipped-exists`), which matters for SW-SR-10.
+The interpreter line still prints after `_surface_intents` has run.
+
+### Q3 -- Messages
+
+**Confirmed for every value that can come from a binding git has not
+vouched for:**
+* the binding file's path (`shown_cfg`, encoded: the project folder's name
+  may come from a clone URL);
+* the interpreter text (`shown_interp`), in the vanished, parent-traversal,
+  could-not-inspect and not-executable messages;
+* the exception text in the read and inspect refusals;
+* the `session-start` interpreter line;
+* `_intent_whoami`, which repeats the refusal already encoded where it was
+  made.
+
+The three `_BINDING_*` reasons are fixed words.
+
+**The fixer's equivalence claim is half right.** It holds for the JSON
+error, whose text is fixed words plus a position. It also holds for control
+and bidi characters, which `repr()` escapes inside `OSError` text. It fails
+for the printable-invisible characters (U+3164 Hangul filler, U+034F, the
+variation selectors). `repr()` leaves these raw, and the encoder's range
+table exists for exactly them. Measured: both mutants are killed by a
+U+3164 in the project folder or the interpreter path (SW-SR-13). The code is
+right; the pin is missing.
+
+**The raw `sys.executable` in the stale message is acceptable.** It is the
+operator's own path. Project text reaches it only when the operator starts
+the kernel from an interpreter inside a folder someone else named. Encoding
+it is one call, so I list it under SW-SR-15. The interpreter path also
+appears unencoded inside the `OSError` text of three run-failure warnings
+(`could not run intent.py list`, `intent prune failed to run`,
+`could not run evolution_infer.py`). Those need a binding that passed the
+gate, and `repr()` covers control characters there. They are in SW-SR-15
+for the same reason.
+
+### Q4 -- The fold
+
+**Canonical caseless matching is the right rule for APFS** (measured above).
+Folding more than the disk does is the right way to be wrong. My concerns:
+1. It is a model of one disk. Other disks compare names differently
+   (SW-SR-12). The robust rule asks the disk: compare device and inode.
+2. On a case-sensitive disk (Linux), a tracked `DEV/.cairn/local-env.json` is
+   a *different* file. The honest binding is still set aside, and the
+   remedy says `git rm dev/.cairn/local-env.json`, a path git does not track
+   there (scratch case: the reason is "tracked" and the remedy names the
+   plain spelling). A hostile project can use this to switch off every Linux
+   user's binding. The result is the current interpreter, which is what a
+   fresh clone gets anyway, so the cost is a wrong remedy, not a hole. The
+   fix in SW-SR-12 names the entry git actually tracks.
+
+The fixer's choice to fail closed is right. I have no other concern.
+
+### Q5 -- SW-SR-3 to SW-SR-7, by reading
+
+* **SW-SR-3 closed.** `_write_replacing` sets the kept mode with
+  `os.fchmod` on the open descriptor after a flush, skipped where the
+  platform lacks it. A name swapped for a link can no longer carry the change.
+* **SW-SR-4 closed, and the recheck is sound.** `_read_regular_bytes` takes
+  `lstat` (no link followed), refuses a non-regular file, opens, and
+  requires `fstat` to show a regular file with the same device and inode.
+  A link swapped in leads to a different file, which has its own inode.
+  The only way to match is the same file under another name (a hard link),
+  and then its bytes were already the project file's own. Inode reuse gains
+  nothing: a reused inode holds bytes the racer just wrote, never an existing
+  outside file's. One residue, no finding: where `O_NOFOLLOW` is missing, a
+  swapped-in device file is *opened* before the check refuses it.
+  `O_NONBLOCK` keeps that from hanging, and the platform that lacks the flag
+  (Windows) has no named pipes on disk.
+* **SW-SR-5 closed.** `_heal_skill_copy`'s planning loop refuses a non-folder
+  where a folder must go with a `LifecycleError`, which `cmd_session_start`
+  turns into a warning. No copy is written first. The `.gitignore` seed still
+  lands before the copy plan refuses, by design ("the ignore entry first").
+  It is the idempotent line the module wants anyway.
+* **SW-SR-6 closed.** The full-handoff manifest names, the lock refusal's
+  agent, pid and host, the reclaim warning's agent and the prune warning go
+  through `encode_display`. The reclaim warning's pid is printed raw but is
+  checked to be an `int` on that branch. The lock refusal's `self.path` is
+  still raw (SW-SR-15).
+* **SW-SR-7 closed.** The type is checked by `lstat` before the open, and the
+  open adds `O_NONBLOCK`.
+
+### Findings
+
+#### SW-SR-10 -- medium: the gate sees only git's index, so a binding that arrives another way is trusted
+
+**Plain:** the check asks git "do you track this file now?" A binding can
+come with a project without being in git's index. Then it passes, and the
+kernel runs the program it names, which is SW-SR-1's consequence by another
+road.
+
+* **Measured** (resolver level, returns `(program, "local-env.json")`):
+  `git archive` of a repository that tracks a binding, unpacked, then
+  `git init` (what "Download ZIP" plus a new repository gives);
+  `git apply` of a patch that creates the binding (no `--index`, so the
+  index is untouched); and `git reset HEAD~` after the commit that added it.
+  The shipped test `test_an_untracked_binding_resolves_and_a_tracked_one_falls_back`
+  already shows `git rm --cached` does the same. The tracked-binding remedy
+  rightly says plain `git rm`, but `git rm --cached` is the widely taught
+  "untrack, keep locally" idiom.
+* The installer keeps such a binding without a word
+  (`write_local_env`: `skipped-exists`).
+* No check based on the index can see these routes. The signal itself is the
+  limit.
+
+**Fix (the Maintainer chooses):**
+* **(a) Full fix, recommended for later.** Its own proposal and Security
+  Review, because it changes the install contract. Move the binding into
+  git's own folder (`git rev-parse --git-common-dir` + `/cairn/local-env.json`).
+  No checkout, archive, patch or ZIP can carry a file there. The old path is
+  then read only to say "not used; re-run the install". A repository that
+  arrives with its own `.git` folder is already hostile to every git call,
+  so it is out of scope.
+* **(b) Interim, recommended now as the default.** Accept the residual in
+  writing. In the `_resolve_interpreter` docstring and `bootstrap/SAFETY.md`'s
+  residuals, add one sentence saying the gate proves only "git's index does
+  not list the file now". Name the routes: a downloaded archive followed by
+  `git init`, `git apply`, `git reset`, `git rm --cached`.
+* **Test for (a):** the three scratch cases above, plus `git rm --cached`,
+  each ending at `fallback` or `fallback-untrusted`.
+* **For (b):** a claim-checked prose change, no test.
+
+#### SW-SR-11 -- low (argued medium on Windows): an in-project interpreter can be replaced by a checkout
+
+**Plain:** an honest binding may name a Python inside the project folder (an
+ignored `env/` or `.venv/`). Git treats ignored files as expendable. Checking
+out a branch that tracks that path overwrites the program, and the gate does
+not look at it.
+
+* **Measured** (resolver level): the binding names `env/bin/python3`, an
+  ignored regular file. Checking out a branch that tracks that path rewrote
+  the file, and `_resolve_interpreter` still returned it with source
+  `local-env.json`.
+* **Reach.** The installer writes `Path(sys.executable).resolve()`, so a
+  symlinked venv on macOS or Linux points outside the project. The case needs
+  a conda prefix inside the project (`conda create -p ./env`) or
+  `venv --copies`. On Windows, a venv's `Scripts\python.exe` is a real file
+  inside the project, so this is the normal case there (argued; no Windows
+  run).
+
+**Fix:** in `_binding_untrusted`, give it the interpreter. When it lies under
+`root` (`Path(value).relative_to(root.resolve())` succeeds; `_probe_interpreter`
+has already refused links), compare its project-relative path against the
+**same** listing, with the same fold and the same `160000` prefix rule.
+Return a new fixed-text reason, `_INTERPRETER_TRACKED`: the interpreter is
+inside the project and tracked by git, so it was not used.
+
+**Test:** add the scratch case
+`test_a_checkout_can_replace_an_in_tree_interpreter_the_binding_names` to
+`test_session_binding_untracked.py`, with its last assertion changed to
+`(sys.executable, "fallback-untrusted")`. Keep its middle assertion as the
+control: before the checkout, the untracked in-project interpreter still
+resolves.
+
+#### SW-SR-12 -- medium, argued not measured: the name fold models APFS, not every disk
+
+**Plain:** the fix decides "same file" by comparing folded names. That
+matches this Mac exactly. Other disks treat other spellings as the same
+name, and there a tracked look-alike is opened as the binding while its
+folded name differs.
+
+* **HFS+ (Mac OS Extended, still common on external drives)** ignores
+  U+200C to U+200F, U+202A to U+202E, U+206A to U+206F and U+FEFF in names.
+  Git's own guard for `.git` skips exactly these. A tracked
+  `dev/.cai<U+200C>rn/local-env.json` is the binding there; the fold leaves
+  U+200C in place (scratch case: `_binding_untrusted` returns `None` for
+  that listing).
+* **NTFS** compares upper-cased names. U+0131 (dotless i) upper-cases to `I`,
+  but case folding leaves it alone (scratch case, same result for
+  `dev/.ca<U+0131>rn/...`). With 8.3 names on, a folder `.cairn` also has a
+  short name. Git writes through a short name for any folder but `.git`. A
+  tracked `dev/<short name>/local-env.json` then lands in `dev/.cairn`, and
+  no name fold can see it.
+* **Argued, not measured.** There is no HFS+ volume or Windows machine here,
+  and the binding tests skip on Windows entirely (`pytestmark`), so the gate
+  has never run there.
+
+**Fix:** keep the fold. Also compare identity: take `os.stat(cfg)` once.
+* For every index entry whose path has exactly three parts, `os.lstat(root
+  / entry)`, ignoring `OSError`. Equal `(st_dev, st_ino)` means tracked.
+* For every `160000` entry with one or two parts, compare its identity with
+  `root / "dev"` or `root / "dev" / ".cairn"`. Equal means in a submodule.
+* When the match came from the fold or from identity rather than the exact
+  name, the message adds "git tracks it as <entry>", with the entry through
+  `encode_display`, so the `git rm` remedy works (Q4 point 2).
+
+**Test (runs on any disk):**
+* In the test's temporary project, make a file `alias.json` beside the
+  binding (same folder) as a hard link to it. Stub the listing to that one
+  entry. `_binding_untrusted` returns the tracked reason, and the message
+  names that entry.
+* Control: a separate file of the same name, not a link, gives `None`.
+
+A Windows run is still owed before anyone claims the gate on Windows.
+
+#### SW-SR-13 -- informational: two encoder calls on exception text are unpinned
+
+The fixer's ledger recorded the encoder calls on the read-error and
+could-not-inspect exception text as equivalent mutants. They are survivors.
+A U+3164 (Hangul filler) in the project folder or interpreter path reaches
+the message raw when either call is removed (measured, 2 of 2 killed by the
+scratch cases).
+
+**Fix:** no code change. Add the scratch cases `test_read_error_text_is_encoded`
+(binding at mode 000 in a folder named `p<U+3164>`) and
+`test_inspect_error_text_is_encoded` (interpreter
+`/tmp/` + 300 × `a` + U+3164 + `/python`) to `test_session_binding_untracked.py`.
+
+**Test:** each must fail with its call removed and pass without the removal.
+
+#### SW-SR-14 -- informational: two binding shapes end in a traceback, not a refusal
+
+* A binding holding the byte `0xff` raises `UnicodeDecodeError` from the
+  read. The handler catches only `OSError` and `JSONDecodeError`.
+* `{"interpreter": "/x\ud800y"}` (a lone surrogate) raises
+  `UnicodeEncodeError` from `stat()` in `_probe_interpreter`, since
+  `is_symlink()` swallows it first and the caller catches only `OSError`.
+* Nothing runs in either case. But session-start dies with a Python
+  traceback, and because the gate runs last, a tracked binding chooses this.
+  Measured, resolver level.
+
+**Fix:**
+* Catch `(OSError, ValueError)` on the read, which covers
+  `UnicodeDecodeError` and `JSONDecodeError`, with the same "not readable
+  JSON" refusal.
+* Catch `(OSError, ValueError)` around `_probe_interpreter`, with the same
+  "could not be inspected" refusal.
+* Optional, the fixer's call: run `_binding_untrusted` before the read, so a
+  tracked binding's content is never read or printed. That changes two
+  pinned behaviours
+  (`test_a_malformed_binding_still_refuses_even_when_tracked`,
+  `test_a_tracked_binding_to_a_vanished_interpreter_keeps_the_stale_message`).
+
+**Test:** add the scratch cases `test_a_non_utf8_binding_is_a_traceback_not_a_refusal`
+and `test_a_lone_surrogate_interpreter_is_a_traceback_not_a_refusal`, with
+both changed to expect `LifecycleError`.
+
+#### SW-SR-15 -- informational: a few paths still reach the terminal raw
+
+The fix encodes the binding file's path because "a folder name may be
+someone else's choice". The same folder name is still printed raw in:
+* `_assert_within` (`base`, `path`);
+* `_heal_skill_symlink` ("exists as a non-symlink", `dst`);
+* `HandoffLock._reclaim_or_refuse` (`self.path` in the refusal).
+
+`sys.executable` is raw in the stale message (Q3). The exception text is
+raw in `_surface_intents`, `_prune_intents` and `_run_evolution_infer`'s
+run-failure warnings.
+
+**Fix:** wrap each of these values in `encode_display` (`str(...)` first).
+
+**Test:** one parametrized test over the seven sites. Use a project folder
+named `p` + U+009B + U+202E for the three path sites, a monkeypatched
+`sys.executable` holding the same two characters for the stale message, and
+a monkeypatched `subprocess.run` raising `OSError(8, "Exec format error",
+<that path>)` for the three run sites. Assert with the existing
+`_assert_inert`. Add a U+3164 case so `repr()` cannot hide a missing call
+(SW-SR-13).
+
+### What I did not cover
+
+* **Windows and HFS+.** Neither is available here, and the binding tests skip
+  on Windows. SW-SR-11's Windows reach and all of SW-SR-12 are argued from
+  documented disk behaviour and git's own guards, not run.
+* **Linux and case-sensitive disks**, and the optional case-folding folders
+  some Linux file systems offer. Q4 point 2 was shown with a stubbed
+  listing, not on such a disk.
+* **Other git versions.** Only 2.53.0. In particular, I did not check how
+  older versions expand a sparse index in `ls-files`.
+* **Hostile end-to-end runs.** Excluded by the brief. Every case here is
+  resolver-level, and nothing a binding names was executed.
+* **Races** on the binding between its read and the gate. These need a
+  process already on the machine.
+* **The full suite.** Excluded by today's rule. I ran the two owning files
+  (196) and my 12 scratch cases.
+* **What `intent.py` and `evolution_infer.py` do** under the interpreter
+  they are given.
