@@ -270,16 +270,41 @@ _FORBIDDEN_REASON = (
     "pattern's exemptions."
 )
 
-#: The module keeps its remaining wording for now. Only the clause that lets a
-#: more distant pass stand in for a falsification ledger is held out.
+#: The two module copies are under every phrasing pattern the carriers are, and
+#: also may not bring back the clause that let a more distant pass stand in for
+#: a falsification ledger, the "make it prove itself" stance, or a description
+#: of the module as a second, structurally independent tier.
 _MODULE_FORBIDDEN = {
+    **_FORBIDDEN,
     "a-confirming-pass-never-stands-in-for-a-falsification-ledger":
         r"confirmed by a second independent different-agent-type pass",
+    "make-it-prove-itself":
+        r"make it prove itself",
+    "a-structurally-independent-tier":
+        r"structurally-independent (external )?tier|two-tier",
 }
 _MODULE_FORBIDDEN_EXAMPLES = {
+    **_FORBIDDEN_EXAMPLES,
     "a-confirming-pass-never-stands-in-for-a-falsification-ledger":
         "It either carries a falsification ledger or is confirmed by a "
         "second independent different-agent-type pass.",
+    "make-it-prove-itself":
+        "The reviewer's stance is make it prove itself.",
+    "a-structurally-independent-tier":
+        "This module adds the second, structurally-independent tier.",
+}
+
+#: What the thinned module is now for, in the words an adopter reads.
+_MODULE_OBLIGATIONS = {
+    "the-module-is-for-staffing-a-read-the-maintainer-called":
+        r"how a team with two agent types, or several people, staffs a read "
+        r"the Maintainer has called",
+    "agents-md-holds-the-one-definition-of-the-call":
+        r"AGENTS\.md > .Review. holds the one definition of that call",
+    "the-module-never-lets-an-agent-pick-a-reviewer":
+        r"never lets an agent pick a reviewer or add a read",
+    "the-sweep-and-the-trap-are-in-every-install":
+        r"the one review, the sweep and the trap are in every install",
 }
 
 
@@ -461,21 +486,42 @@ def test_a_sentence_saying_no_tool_reads_the_line_is_not_flagged() -> None:
 # --------------------------------------------------------------------------
 
 @pytest.mark.parametrize("rel", _MODULE_FILES, ids=_FILE_IDS.get)
-def test_module_does_not_let_a_confirming_pass_stand_in_for_a_ledger(rel: str) -> None:
-    assert _present(_text(rel), _MODULE_FORBIDDEN) == [], (
-        f"{rel} lets a second pass from a different kind of agent stand in for "
-        f"a falsification ledger. Only the ledger clears a clean code review; "
-        f"a more distant pass is information, never a substitute for evidence.")
+def test_module_omits_the_old_vocabulary(rel: str) -> None:
+    found = _present(_text(rel), _MODULE_FORBIDDEN)
+    assert not found, (
+        f"{rel} {_FORBIDDEN_REASON} Found: {found}. The module is for staffing "
+        f"a read the Maintainer has called; it selects no reviewer, and a "
+        f"more distant pass never stands in for a falsification ledger.")
 
 
 @pytest.mark.parametrize("rel", _MODULE_FILES, ids=_FILE_IDS.get)
 @pytest.mark.parametrize("label", sorted(_MODULE_FORBIDDEN))
-def test_inserting_the_standing_in_clause_is_reported(label: str, rel: str) -> None:
+def test_inserting_old_wording_into_the_module_is_reported(label: str, rel: str) -> None:
     intact = _text(rel)
     assert _present(intact, _MODULE_FORBIDDEN) == [], (
-        f"{rel}: the unmutated module already carries the clause; no control.")
+        f"{rel}: the unmutated module already carries old wording; no control.")
     assert label in _present(f"{intact}\n\n{_MODULE_FORBIDDEN_EXAMPLES[label]}\n",
                              _MODULE_FORBIDDEN)
+
+
+_MODULE_CASES = [(rel, label) for rel in _MODULE_FILES
+                 for label in sorted(_MODULE_OBLIGATIONS)]
+_MODULE_CASE_IDS = [f"{label}-{_FILE_IDS[rel]}" for rel, label in _MODULE_CASES]
+
+
+@pytest.mark.parametrize("rel,label", _MODULE_CASES, ids=_MODULE_CASE_IDS)
+def test_module_says_what_it_is_for(rel: str, label: str) -> None:
+    assert label not in _missing(_text(rel), _MODULE_OBLIGATIONS), (
+        f"{rel} no longer carries {label!r}.")
+
+
+@pytest.mark.parametrize("rel,label", _MODULE_CASES, ids=_MODULE_CASE_IDS)
+def test_removing_a_module_statement_is_reported(rel: str, label: str) -> None:
+    text = _text(rel)
+    assert _missing(text, _MODULE_OBLIGATIONS) == [], (
+        f"{rel}: the unmutated module is missing statements; no control.")
+    stripped = re.sub(_MODULE_OBLIGATIONS[label], "", _normalize(text))
+    assert label in _missing(stripped, _MODULE_OBLIGATIONS)
 
 
 # --------------------------------------------------------------------------
@@ -1865,3 +1911,132 @@ def test_a_one_word_placeholder_in_an_authoring_template_is_reported(rel: str) -
         == {"evidence"}
     allowed = "\n## Review -- {{reviewer}} -- {{YYYY-MM-DD}}\n{{project_name}}\n"
     assert _unknown_install_tokens(f"{intact}{allowed}") == set()
+
+
+# --------------------------------------------------------------------------
+# Completeness. Every pin above names its files, so a file nobody listed could
+# bring the old phrasing back without turning anything red. This walks the same
+# roots the phrasing search uses and requires that any file carrying a hit is
+# in an explicit table of files that do not ship, each with its reason. A file
+# an adopter receives can never be in that table: the table is for history and
+# ceremony documents, not an exemption from the rule.
+# --------------------------------------------------------------------------
+
+_SEARCH_A_ROOT_FILES = (
+    "AGENTS.md", "README.md", "dev/proposals/_template.md",
+    "dev/plans/_template.md", "dev/agent_collaboration.md",
+    "dev/collaboration_agreement.md", "bootstrap/fidelity-check.md",
+    "bootstrap/UPGRADE.md", "bootstrap/REANCHOR_RUNBOOK.md",
+)
+_SEARCH_A_ROOT_DIRS = ("doctrine", "templates", "dev/modules", "docs",
+                       "dimensions", "on-ramp")
+_SEARCH_A_SUFFIXES = {".md", ".yml", ".svg"}
+#: The phrasing search the stance proposal pinned, as one pattern. It is checked
+#: against emphasis-stripped, whitespace-collapsed text, case-insensitively.
+_SEARCH_A = re.compile(
+    r"required\(external"
+    r"|external[ -](floor|tier|review|reviewer|independence|stance|code review)"
+    r"|declared-external|a human fills|different-agent-type (pass|round)"
+    r"|escalate to the external|External Review Norms",
+    re.IGNORECASE)
+
+#: Files with a hit that are not shipped as live guidance, and why. Every entry
+#: must still carry a hit (a stale entry is reported), and none may be a file an
+#: adopter receives.
+_COMPLETENESS_EXEMPT = {
+    "doctrine/lifecycle-contract.md":
+        "history reference: one sentence, introduced by 'History:', about a "
+        "plan-review tier that was retired",
+    "doctrine/onboarding.md":
+        "credit comment: it credits an earlier review's disposition by name",
+}
+_INSTALL_SET_PREFIXES = ("templates/", "dev/modules/")
+_INSTALL_SET_FILES = frozenset(_AGENTS_FILES + _LOOP_FILES)
+
+
+def _strip_for_search(text: str) -> str:
+    return " ".join(re.sub(r"[*_`>]", "", text).split())
+
+
+def _search_a_files(root: Path) -> dict[str, int]:
+    """Search-A hit counts per file under *root*, archives excluded."""
+    found: dict[str, int] = {}
+    paths = [root / rel for rel in _SEARCH_A_ROOT_FILES]
+    for d in _SEARCH_A_ROOT_DIRS:
+        base = root / d
+        if base.is_dir():
+            paths.extend(p for p in sorted(base.rglob("*"))
+                         if p.suffix in _SEARCH_A_SUFFIXES)
+    for path in paths:
+        rel = path.relative_to(root).as_posix()
+        if not path.is_file() or "archive" in rel.split("/"):
+            continue
+        hits = len(_SEARCH_A.findall(_strip_for_search(
+            path.read_text(encoding="utf-8", errors="replace"))))
+        if hits:
+            found[rel] = hits
+    return found
+
+
+def _unaccounted(hits: dict[str, int], exempt: dict[str, str]) -> list[str]:
+    return sorted(set(hits) - set(exempt))
+
+
+def _stale_exemptions(hits: dict[str, int], exempt: dict[str, str]) -> list[str]:
+    return sorted(set(exempt) - set(hits))
+
+
+def _exempt_install_files(exempt: dict[str, str]) -> list[str]:
+    return sorted(rel for rel in exempt
+                  if rel.startswith(_INSTALL_SET_PREFIXES)
+                  or rel in _INSTALL_SET_FILES)
+
+
+def test_every_file_with_a_phrasing_hit_is_exempt_for_a_reason() -> None:
+    hits = _search_a_files(CAIRN_ROOT)
+    assert not _unaccounted(hits, _COMPLETENESS_EXEMPT), (
+        f"{_unaccounted(hits, _COMPLETENESS_EXEMPT)} carry the old phrasing and "
+        f"are not scanned or exempt. Reword them; an exemption is only for a "
+        f"file that does not ship.")
+
+
+def test_no_exemption_is_stale() -> None:
+    assert not _stale_exemptions(_search_a_files(CAIRN_ROOT), _COMPLETENESS_EXEMPT)
+
+
+def test_no_file_an_adopter_receives_is_exempt() -> None:
+    assert _exempt_install_files(_COMPLETENESS_EXEMPT) == []
+    assert all(reason.strip() for reason in _COMPLETENESS_EXEMPT.values())
+
+
+def test_removing_an_exemption_is_reported() -> None:
+    hits = _search_a_files(CAIRN_ROOT)
+    assert _unaccounted(hits, _COMPLETENESS_EXEMPT) == [], "control: all accounted"
+    smaller = {k: v for k, v in _COMPLETENESS_EXEMPT.items()
+               if k != "doctrine/onboarding.md"}
+    assert _unaccounted(hits, smaller) == ["doctrine/onboarding.md"]
+
+
+def test_a_phrase_inserted_into_a_scanned_copy_is_reported(tmp_path: Path) -> None:
+    assert _unaccounted(_search_a_files(CAIRN_ROOT), _COMPLETENESS_EXEMPT) == []
+    copy = tmp_path / "templates" / "core"
+    copy.mkdir(parents=True)
+    (copy / "AGENTS.md").write_text(_text(SHIPPED_AGENTS), encoding="utf-8")
+    assert _search_a_files(tmp_path) == {}, "control: the unmutated copy is clean"
+    (copy / "AGENTS.md").write_text(
+        _text(SHIPPED_AGENTS) + "\nA human fills the External tier.\n",
+        encoding="utf-8")
+    assert _unaccounted(_search_a_files(tmp_path), _COMPLETENESS_EXEMPT) == [
+        "templates/core/AGENTS.md"]
+
+
+def test_exempting_an_installed_file_is_reported() -> None:
+    assert _exempt_install_files(_COMPLETENESS_EXEMPT) == []
+    for rel in (SHIPPED_AGENTS, OWN_MODULE, SHIPPED_PROPOSAL, SHIPPED_LOOP):
+        assert _exempt_install_files({**_COMPLETENESS_EXEMPT, rel: "x"}) == [rel]
+
+
+def test_the_walk_reaches_the_roots_it_claims() -> None:
+    """Confirm the instrument: it finds a known hit and walks a known file."""
+    assert _SEARCH_A.search("A human fills the External tier.")
+    assert _search_a_files(CAIRN_ROOT).get("doctrine/onboarding.md", 0) >= 1

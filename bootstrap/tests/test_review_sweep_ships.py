@@ -446,3 +446,79 @@ def test_an_install_leaves_no_placeholder_the_engine_cannot_fill(
         f"a {profile.stem} install carries one-word placeholders the engine "
         f"cannot fill: {bad}. An upgrade plans each such file as needing a "
         f"value and never advances it.")
+
+
+# --------------------------------------------------------------------------
+# The lens text exists once. The dual-review module used to hold the roster,
+# the citation rule and the ledger; it is thinned to how a team staffs a read
+# the Maintainer has called, and carries none of them. A second copy of the
+# roster in the module is how two definitions drift apart, and a team that
+# selected the module would merge both into its loop document.
+# --------------------------------------------------------------------------
+
+SHIPPED_MODULE = "templates/modules/team-gated/dual-review.md"
+OWN_MODULE = "dev/modules/dual-review.md"
+_MODULE_FILES = (SHIPPED_MODULE, OWN_MODULE)
+_MODULE_IDS = {SHIPPED_MODULE: "shipped-module", OWN_MODULE: "own-module"}
+
+#: label -> pattern for the text only the review-loop document may carry.
+_MODULE_ABSENT = {
+    **{f"module-has-{label}": pattern for label, pattern in _LENSES.items()},
+    "module-has-the-citation-rule":
+        r"Falsifiable coverage|names the file path, test node, line or command "
+        r"output|bare .#2: checked.",
+    "module-has-the-ledger-items":
+        r"Surfaces probed|A negative or edge-case attempt|Residual risk — what "
+        r"remains|Probed edge cases|Failure modes tested|Verification run "
+        r"\(or consciously not\)",
+    "module-has-a-second-ledger-definition":
+        r"ledger of five items|lightweight four-part record|falsification ledger",
+}
+
+
+def _module_carries(text: str) -> list[str]:
+    normalized = _normalize(text)
+    return [label for label, pattern in _MODULE_ABSENT.items()
+            if re.search(pattern, normalized)]
+
+
+def _sweep_part(rel: str, start: str, end: str) -> str:
+    """A stretch of the sweep, between two literals, as the module once held it."""
+    flat = _normalize(_sweep(_text(rel)))
+    a = flat.index(start)
+    return flat[a:flat.index(end, a)]
+
+
+@pytest.mark.parametrize("rel", _MODULE_FILES, ids=_MODULE_IDS.get)
+def test_the_module_carries_no_lens_citation_rule_or_ledger(rel: str) -> None:
+    found = _module_carries(_text(rel))
+    assert not found, (
+        f"{rel} carries {found}. That text lives once, in the review-loop "
+        f"document every install receives; a second copy drifts.")
+
+
+@pytest.mark.parametrize("rel", _MODULE_FILES, ids=_MODULE_IDS.get)
+def test_restoring_the_roster_into_the_module_is_reported(rel: str) -> None:
+    assert _module_carries(_text(rel)) == [], "control: the module is clean"
+    roster = _sweep_part(SHIPPED_LOOP, "1. Claims", "The sweep applies to")
+    found = _module_carries(f"{_text(rel)}\n\n> {roster}\n")
+    assert "module-has-lens-4-silent-failure-fail-closed" in found
+    assert "module-has-lens-1-claims" in found
+
+
+@pytest.mark.parametrize("rel", _MODULE_FILES, ids=_MODULE_IDS.get)
+def test_restoring_the_citation_rule_into_the_module_is_reported(rel: str) -> None:
+    assert _module_carries(_text(rel)) == [], "control: the module is clean"
+    rule = _sweep_part(SHIPPED_LOOP, "Falsifiable coverage", "End with a two-part")
+    assert "module-has-the-citation-rule" in _module_carries(
+        f"{_text(rel)}\n\n> {rule}\n")
+
+
+@pytest.mark.parametrize("rel", _MODULE_FILES, ids=_MODULE_IDS.get)
+def test_restoring_the_ledger_into_the_module_is_reported(rel: str) -> None:
+    assert _module_carries(_text(rel)) == [], "control: the module is clean"
+    ledger = _sweep_part(SHIPPED_LOOP, "A clean code review shows a falsification "
+                                       "ledger", "A reviewer who tried to break")
+    found = _module_carries(f"{_text(rel)}\n\n> {ledger}\n")
+    assert "module-has-the-ledger-items" in found
+    assert "module-has-a-second-ledger-definition" in found
