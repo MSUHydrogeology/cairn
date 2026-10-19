@@ -1,7 +1,7 @@
 # Plan: Fix easy defects and reuse what already exists
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-stewardship-and-reuse.md`
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-19
@@ -323,3 +323,37 @@ Maintainer re-anchors before that test is final, another re-anchor is owed;
 this plan records that consequence and never performs the ceremony. Quote
 the accepted source authorization on the board deposit. Verify the actual
 frozen intersection again, so any additional obligation is named explicitly.
+
+## Plan review -- Antigravity (Gemini 3.8 Flash, fresh session) -- 2026-10-19
+
+```
+Reviewed commit: d140ad2fc4ef407cf11bbcef25f0ed6c6c9922a3
+Target: the entire opened plan against the accepted proposal's Revision 1 and Decision
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes; the plan delivers the Decision's premise faithfully: promise-only defect fixes with no date cut-off, the per-plan total as a warning sign, no mandatory Known-defects cell in plan templates, a single-sentence reuse duty in both `AGENTS.md` copies, and one small ship test without an expansive mutation matrix -- `dev/proposals/archive/2026-10-18-claude-stewardship-and-reuse.md:1388-1428`; `dev/plans/stewardship-and-reuse.md:12-24, 39-44, 77-110, 207-216`.
+2. **Best alternative.** The plan already chose the simplest path: compact operational additions in `AGENTS.md` and `templates/core/AGENTS.md` (~a dozen lines), thin pointers in the six deviation carriers, issue-capture guidance pointing at the single operational rule, and a single small ship test reusing pytest's `tmp_path` and scaffold CLI rather than new test infrastructure -- `dev/plans/stewardship-and-reuse.md:46-58, 62-73, 98-105, 207-216`.
+3. **What would show it wrong.** A test treating notes, issues, or review comments as manufacturing an authorized promise; silent deletion or unapproved dropping of accepted scope; drift between module twins; or installed module text failing integrity verification -- `dev/plans/stewardship-and-reuse.md:79-87, 181-187, 218-221`; `bootstrap/tests/test_scope_reduction_trap.py`.
+
+The plan adheres strictly to the narrowed contract established by the Maintainer Decision. The four accepted outcomes (justified deferrals, small fixes to broken promises, capture guidance pointing at the one defect-fix rule, and reuse as an author/reviewer duty) are mapped with precision.
+
+Observations across the nine lenses:
+* **Claims and drift (#1, #6):** All references, commit citations (`d140ad2f`, `60bf7cab`, `01a8f73c`, `f5ac6381`), source proposal paths, verbatim Decision and chat allowance quotes, and proposed test paths match the repository state.
+* **Production path exercised by tests (#2):** Public entry point `bootstrap/scaffold.py` installing `issue-capture` profile into a fresh scratch directory and verifying integrity is explicitly exercised in C3 and in `test_stewardship_rules_ship.py`.
+* **Design completeness (#3):** The scope boundaries, cheap cost-bar definition (counting person-steps rather than machine runtime), commit-line format, warning-sign status, and carrier inventory are stated completely.
+* **Silent failure / fail-closed (#4):** Fences remain binding; promises cannot be manufactured by review notes or issues; uncertainty resolves to not-cheap; Boundary B mode is full (retaining source classification) with certifying run pending.
+* **Cross-document consistency (#5):** All 6 deviation carriers (`AGENTS.md`, `templates/core/AGENTS.md`, `dev/plans/_template.md`, `templates/core/dev/plans/_template.md`, `doctrine/plans.md`, `doctrine/dual-review.md`) are mapped. Module twins are kept byte-identical. Lens 5 is updated consistently across loop documents and dual-review doctrine without changing the nine-lens interface.
+* **Lifecycle / process placement (#7):** C1-C3 chunks are cleanly sequenced. Predecessor fence (`review-stance-and-lenses` archived) is tracked and satisfied on master (`0974a4de`). Archive ceremony tasks (re-anchor row update with actual node ID/blob, board deposit quoting Decision, changelog) are correctly assigned to the archive transition.
+* **Domain / scientific validity & scope (#8):** Scientific validity is N/A (no scientific result or calculation touched). Scope delta is preserved as narrowed by the Decision; no accepted scope is dropped.
+* **Name the satisfier (#9):** No defects found; 0 findings raised.
+
+**Coverage -- Covered:** claims #1-#9; scope boundaries against Decision; carrier inventory; predecessor fence status (confirmed archived at `0974a4de`); small test boundary; doc gates. Not covered / low confidence: no implementation exists to execute; no suite, mutation, install, real-project upgrade, or ceremony was run for this plan review.
