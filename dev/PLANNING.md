@@ -470,6 +470,28 @@ with the plan's filename stem.
   archives, the Release path's "Revised 2026-10-19" block supersedes them: both
   re-anchors run at the 0.4 cut.
 
+  **Joined 2026-10-19** at the opening of
+  `plans/remove-collaboration-agreement.md` — planned, not yet changed. The
+  nine existing `frozen_files` keys it will edit are
+  `templates/modules/default-on/_onboarding/prompts.py`,
+  `templates/modules/default-on/_onboarding/triggers.py`,
+  `bootstrap/tests/test_active_surfacing_mechanism.py`,
+  `bootstrap/tests/test_active_surfacing_render.py`,
+  `bootstrap/tests/test_core_dev_folders.py`,
+  `bootstrap/tests/test_notice_install.py`,
+  `bootstrap/tests/test_onboarding_seed_roster.py`,
+  `bootstrap/tests/test_quickstart_sequence.py` and
+  `bootstrap/tests/test_trigger_evaluation_action.py`. Its new retirement
+  test and the edited `test_review_stance_in_shipped_files.py` join the
+  ceremony's collection; the latter will have new final bytes, superseding
+  the earlier review-stance blob record. The engine has **no top-level
+  function** expected to change; the expected top-level assignment change
+  is `_CORE_MAPPINGS`. Derive all hashes, symbol sets and collection changes
+  from the final tree at the single 0.4 ceremony. The accepted Decision's
+  authorization, quoted verbatim:
+
+  > "Please scribe my acceptance as recommended."
+
   **Waiting on Maintainer**: run the gate-manifest re-anchor
 
 * **F8 — the post-install report asks for work the profile does not make
@@ -1047,6 +1069,21 @@ near the top of this file.
   drift through parallel registries.
 
 ### Deferred follow-ups (durable home)
+
+* **Decision-rights questions left by the agreement removal** *(registered
+  2026-10-19 at the opening of `plans/remove-collaboration-agreement.md`)* —
+  two separate questions have this live home. First, the Maintainer accepted
+  keeping Cairn's finite decision list in Cairn's copy only; offering that
+  different unsure-case rule to adopters needs its own proposal and explicit
+  explanation that it changes when their agents ask. Second,
+  `doctrine/lifecycle.md` still describes waiting for the Maintainer on a
+  broader class of calls; conforming it to Cairn's finite list needs a
+  separate doctrine decision under the rate-limit gate. Neither is part of
+  the 0.4 removal. Revisit the first if adoption needs a shared decision-rights
+  rule, and the second when a concrete conflict reaches a decision. The
+  Maintainer's acceptance of Revision 1, quoted verbatim:
+
+  > "Please scribe my acceptance as recommended."
 
 * **A stable section identity for an append-only artifact, and a complete-set
   rule over it** *(registered 2026-08-21, from
