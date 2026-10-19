@@ -1906,3 +1906,276 @@ None blocks. SC-CR1 should be taken before the re-anchor; the rest are the autho
 * I did not try Windows line endings, or a template read by a different Markdown tool than CommonMark.
 * The scientific content: I read the positive-control bullet and its example as a hydrogeologist would (SC-CR3). Whether the five bases are the right five, and the Complex-position policy, are the Maintainer's.
 * The gate-manifest re-anchor and the AST re-anchor: not run, and not mine to run.
+
+## Response to code review -- Claude Sonnet 5.5 (implementer) -- 2026-10-19
+
+**In plain terms.** All six findings are taken; none is declined. The one that
+mattered (SC-CR1) is fixed: the test now also notices a flattened list, a lost
+blank line, or the block or plan paragraph moved to the wrong place, and it
+still sits in one test. Each of the reviewer's survivors that I could rebuild
+was killed, and three small wording fixes and one new rule for the archive
+commit are in. The positive-control example now reads as the Maintainer chose.
+Nothing is pushed. The full suite is run again afterwards, because test bytes
+changed; its record follows this section.
+
+**The code commits of this revision** (parent `c504fca8`, the last commit before
+the first of them):
+
+| Finding | Commit | What changed |
+|---|---|---|
+| SC-CR1 | `86db42ae` | the test pins layout and place |
+| SC-CR4 | `e2978e44` | one trigger in the three promise sentences; case-insensitive match |
+| SC-CR3 | `550750fb` | the example wording, at the Maintainer's instruction |
+
+| Finding | Disposition | Where it landed |
+|---|---|---|
+| **SC-CR1** (medium) the test pins words, not layout or place | **accept, in full** | `86db42ae`. See below. |
+| **SC-CR2** (low) the expert basis has no guard against the author being the expert | **accept the recommendation: no text edit** | An archive duty (below): name the mode under F2 on the revisit row. |
+| **SC-CR3** (low) the example matches the rate only | **accept, at the Maintainer's instruction** | `550750fb`. His question and answer, verbatim, below. |
+| **SC-CR4** (low) three triggers for one gate; case-sensitive match | **accept** | `e2978e44`. See below. |
+| **SC-CR5** (low) the C1 briefs are not on file | **accept** | The three briefs are recorded verbatim below, with SHA-256. |
+| **SC-CR6** (low) the archive duty carries the "no" and not the caveat on the "yes" | **accept** | An archive duty (below), sharpened by what the briefs show. |
+
+### SC-CR1: layout and place, pinned
+
+The test (still the one function, still one node) now compares, beside the
+collapsed words:
+* **Layout.** The blank lines, the headings, the list items (with their indent
+  and marker) and the paragraph starts of each region, in order. Line wrapping is
+  the only thing left free. The block must end with exactly one blank line before
+  the next `## ` line, and its heading and the plan paragraph must follow a blank
+  line.
+* **Place, proposal templates.** No `## ` line between the `**Prospective only.**`
+  line and the block, and the line after the block is `## Signals the change is
+  wrong`.
+* **Place, plan templates.** The nearest `## ` line above the paragraph is `##
+  Acceptance criteria`; the paragraph follows the paragraph starting `A
+  security-touching plan re-answers`; and it sits before the opening of the
+  `acceptance-doc-tooling` slot.
+* **Whitespace.** The collapse now treats only ASCII space, tab and line breaks
+  as whitespace, so a non-breaking space counts as a change.
+
+**One departure from the reviewer's recipe, with the reason.** The review's
+closing rule for the plan paragraph (nearest `## ` is `## Acceptance criteria`,
+and after the security paragraph) leaves one of its own seven P2 mutants alive:
+the paragraph moved to just before `## Scope delta`, which is still under
+Acceptance criteria but after the slot. The plan's own C2 criterion says "before
+the acceptance-doc-tooling slot", so I made that third rule part of the test. It
+costs one coupling: if a later plan renames that slot, the test says so.
+
+**What the mutants say.** The reviewer's harness was not available, so I rebuilt
+the survivors from the review's table: S1; S2.0 to S2.4; S5; P1 (four places);
+P2 (seven places). Against the committed test before this revision, **those 18
+survive** (the harness is sound: they are the reviewer's survivors), as do two of
+my own (a loose list; the first bullet indented). Against the revised test **all
+20 are killed**. Re-wrapping a sentence, and re-wrapping the plan paragraph,
+still pass, as intended. The full ledger at the tested commit is in the
+verification record that follows.
+
+**What is still not pinned, said plainly.** Text added as its own paragraph
+beside the pinned ones (S10); the check bullet's position among the Simple and
+Complex bullets (D4); the I-2 sentence's wording beyond the check's name (D5,
+D6); and, after SC-CR4, the first sentence of the Complex-position bullet and the
+I-2 trigger (their gate phrase is not pinned; the pinned N/A finding carries it).
+These are the "presence only" choices the plan made so a later plan may reword
+the cells, and the test's docstring says what is and is not pinned.
+
+**For the sibling plan.** The test now holds the block's position directly before
+`## Signals the change is wrong`, the plan paragraph under `## Acceptance
+criteria`, and the layout of both texts. A plan that moves or reshapes either
+has to edit this test in the same commit. The test is still not in the gate
+manifest (checked: the new file is not among the 183 `frozen_files` keys), so
+these edits owe no second re-anchor.
+
+### SC-CR3: a wording change at the Maintainer's instruction
+
+The coordinating session put this question to the Maintainer, and he answered.
+Verbatim, as relayed to me on 2026-10-19:
+
+> "Plan D's positive-control example currently reads: an analysis reporting no streamflow depletion 'first recovers the depletion of a synthetic well of comparable rate'. The reviewer notes that detectability also depends on distance to the stream, the pumping schedule and streambed conductance. Change the wording?"
+
+His choice, verbatim:
+
+> "Same rate, distance, schedule (Recommended)". That option read: "'…of a synthetic well at the same rate, distance and schedule'."
+
+**What changed (`550750fb`).** In both proposal templates, and in the test's
+pinned block, and in this plan's fenced C2 wording, the example sentence ends
+"...first recovers the depletion of a synthetic well at the same rate, distance
+and schedule." where it ended "...of a synthetic well of comparable rate." The
+plan templates did not hold the example and are untouched. Two new mutants (the
+example put back to "comparable rate"; "distance" dropped) are killed.
+
+### SC-CR4: one trigger, and a case-insensitive match
+
+The block's gate is "a scientific assumption, or a result the project publishes
+or acts on". The promise sentences now say that and no other (`e2978e44`):
+* `dimensions/complexity.md`, Complex position. The bullet: "expected of every
+  change that touches a scientific assumption or a result the project publishes
+  or acts on" (it said "a published result"). The pinned finding: "an
+  unexplained "N/A" on a change that touches a scientific assumption or a result
+  the project publishes or acts on is a review finding" (it said "a computed
+  result").
+* `bootstrap/BOOTSTRAP.md`, I-2. "those drive the legacy-agent decision, and the
+  scientific-surface section shows which changes touch a scientific assumption or
+  a result the project publishes or acts on, and so need the proposal template's
+  independent scientific check." (It said "those" show it; only the
+  scientific-surface section does.)
+* The test's fourth group lower-cases both sides, and pins the new finding
+  sentence. Presence only still holds. The README Complexity row never carried a
+  trigger and is unchanged.
+
+### Where the plan's fixed wording changed, and why
+
+The "Wording each chunk lands" texts are the bytes the test is generated from and
+the bytes a reviewer compares against. Two changes after implementation began
+were made to them **in place**, to keep one source of truth, and are listed here
+so the change is not silent. What was reviewed is in git at `531084a1` and
+`2764eccd`.
+* The C2 block's example sentence (SC-CR3; `550750fb`): "of a synthetic well of
+  comparable rate" became "at the same rate, distance and schedule".
+* The C3 Complex-position bullet and the C3 I-2 text (SC-CR4; `e2978e44`), to the
+  texts above, and the two sentences elsewhere in the plan that quote the pinned
+  finding (the fourth group's description, and the C3 criterion "The complex-
+  project finding is stated"). The C3 criterion on bytes now means the revised
+  fenced text.
+
+Every other cell, and the review sections, are untouched.
+
+### SC-CR5: the C1 briefs, on file
+
+The coordinating session extracted the three prompts it sent from its own
+transcript on 2026-10-19 and handed them to me; I did not see them when I wrote
+the C1 record. All three agents were Sonnet. Verbatim, each with the SHA-256 of
+the file it was taken from, and no fence of its own:
+
+**Drafter, stor-modflow** (15 lines). SHA-256
+`2ab39e8efa508aacffeec221844fbf37ddba0ff1204714ab72e90810b5640a7a`.
+
+```text
+You are the author of a scientific-software proposal, filling in one section of it. This is a blind exercise. **You may read exactly two files, and nothing else.** Read them with the Read tool:
+
+1. `/private/tmp/claude-501/-Users-kendal30-Code-cairn/79ada448-b159-4255-b0ea-444b74328be1/scratchpad/c1-inputs/wording-independent-scientific-check-block.md`: the instructions for a section called "Independent scientific check".
+2. `/private/tmp/claude-501/-Users-kendal30-Code-cairn/79ada448-b159-4255-b0ea-444b74328be1/scratchpad/c1-inputs/stor-modflow-proposal-as-opened.md`: your proposal, exactly as you opened it.
+
+**Rules:**
+- Do not read, search or list any other file or directory.
+- Do not run commands.
+- Do not use the web.
+- Work only from those two texts.
+- If you would want to check something, the data behind it for example, you cannot. Say so in the section, as its instructions ask, and name what you would open to confirm it.
+
+**Task.** Following the section's instructions exactly, write the "Independent scientific check" section for this proposal, as its author would at the moment the proposal was opened. Be concrete: the quantity, the expected value and tolerance with its source, whether the data behind it is in hand, why the expectation is independent, the plausible mistake under which the check would fail, and the positive-control clause if your check passes by finding nothing. If you judge that no independent basis exists, say so plainly. Don't invent one.
+
+**Reply** with only the filled section, in Markdown, starting with its `### Independent scientific check` heading. Add no commentary before or after it.
+```
+
+**Drafter, assemble part A** (17 lines). SHA-256
+`6e1a6eb6018845418944e2211a0a7ccfd5df315f518df9af1b3aaa505a0c5b66`. The part
+sentence in it is the one fixed in the C1 record, word for word.
+
+```text
+You are the author of a scientific-software proposal, filling in one section of it. This is a blind exercise. **You may read exactly two files, and nothing else.** Read them with the Read tool:
+
+1. `/private/tmp/claude-501/-Users-kendal30-Code-cairn/79ada448-b159-4255-b0ea-444b74328be1/scratchpad/c1-inputs/wording-independent-scientific-check-block.md`: the instructions for a section called "Independent scientific check".
+2. `/private/tmp/claude-501/-Users-kendal30-Code-cairn/79ada448-b159-4255-b0ea-444b74328be1/scratchpad/c1-inputs/assemble-full-port-proposal-as-opened.md`: your proposal, exactly as you opened it.
+
+**Which part you are drafting for:** The plan you are drafting for implements Part A of this proposal ("The stage's foundation", A1 to A3). It is plan 1 of 6 for the whole proposal.
+
+**Rules:**
+- Do not read, search or list any other file or directory.
+- Do not run commands.
+- Do not use the web.
+- Work only from those two texts and the sentence above.
+- If you would want to check something, the data behind it for example, you cannot. Say so in the section, as its instructions ask, and name what you would open to confirm it.
+
+**Task.** Following the section's instructions exactly, write the "Independent scientific check" section for Part A of this proposal, as its author would at the moment the proposal was opened. Be concrete: the quantity, the expected value and tolerance with its source, whether the data behind it is in hand, why the expectation is independent, the plausible mistake under which the check would fail, and the positive-control clause if your check passes by finding nothing. If you judge that no independent basis exists, say so plainly. Don't invent one.
+
+**Reply** with only the filled section, in Markdown, starting with its `### Independent scientific check` heading. Add no commentary before or after it.
+```
+
+**Scorer** (38 lines). SHA-256
+`43f273d91f5f20694573d07d2ad61d12296670d0b5472bbe6d449ea09113aea7`.
+
+```text
+You are a **scorer** in a small blind exercise. You are not the person who drafted the texts you score, nor the person who will record your answers. **You may read exactly four files, and nothing else.** Read them with the Read tool, all in `/private/tmp/claude-501/-Users-kendal30-Code-cairn/79ada448-b159-4255-b0ea-444b74328be1/scratchpad/c1-inputs/`:
+1. `draft-stor-modflow.raw.md`: draft 1.
+2. `error-stor-modflow.txt`: the error later found in the work draft 1 was written for.
+3. `draft-assemble-part-a.raw.md`: draft 2.
+4. `error-assemble-part-a.txt`: the error later found in the work draft 2 was written for.
+
+**Rules:**
+- Read, search or list no other file or directory.
+- Run no commands.
+- Do not use the web.
+
+**Background.** Each draft is an "Independent scientific check" written by a proposal's author, at the moment the proposal was opened, before any code existed or any review happened. The check is meant to be one that could show the change is wrong about the world. The error file says what actually went wrong later, as found by a reviewer.
+
+**For each draft, answer two questions. Every "yes" must quote, verbatim, the draft sentence that carries it.** A "yes" with no quoted sentence does not count.
+- **(A) Does the draft name a check that fails under that error?** That is: if the check described were run on the work as it was with the error in place, would it fail? Reason it through concretely from the error statement.
+- **(B) Is that a check that could have been run?** The draft's data-status statement must do one of two things:
+  - confirm the data is in hand and name what was opened; or
+  - say the data is not confirmed **and name what would be opened to confirm it** (a file or an array).
+
+  A stock hedge that names nothing does not count. Also: **where the error statement shows the draft's data claim to be false or never checked, a draft that repeats the claim as "in hand" fails (B).** For example, the stor-modflow error statement says something about whether a reference array was ever saved.
+
+**The verdict** for a draft is **yes** only when (A) and (B) are both yes.
+
+**Record, but do not score:** whether the check's basis is one of these listed kinds, and whether it is independent of the code under review:
+- an analytical or manufactured solution;
+- a conservation law chosen against the error;
+- a trusted observation or benchmark;
+- an independent implementation, or the saved output of the model the code reads;
+- a domain expert's written expectation.
+
+**Reply** with only this, in Markdown, for each draft in turn:
+- `#### Draft N (<name>)`
+- **(A):** yes or no, then one to three sentences of reasoning, then the quoted draft sentence if yes.
+- **(B):** yes or no, then reasoning, then the quoted draft sentence if yes.
+- **Verdict:** yes or no.
+- **Basis (not scored):** which kind, and whether it is independent of the code.
+
+Add nothing else.
+```
+
+**What the briefs show.**
+* The record's account was right. Each drafter was told to read exactly two named
+  files, to read, search and list nothing else, to run no commands and to use no
+  web; the scorer, to read exactly four named files. No brief names a path into
+  the LHM repository, an error statement or a review (the scorer's brief points
+  at the stor-modflow error statement because the scorer reads it). Blindness is
+  still by instruction and by the observed tool counts, not by a sandbox.
+* **A disclosure the review could not make, and it matters to SC-CR6.** The
+  drafter briefs add a sentence the block does not carry: if the drafter would
+  want to check something, the data behind it for example, it cannot; it should
+  say so in the section "and name what you would open to confirm it". That is
+  nearly word for word the branch of (B) the scorer's rubric accepts ("not
+  confirmed, and names what would be opened"). So the drafters' hedges on data
+  status, and the stor-modflow draft's narrow pass of (B) in particular, owe part
+  of their form to the brief and not only to the block's own data-status prompt.
+  The block asks the author to say whether the data is in hand and has been
+  checked, and to say so if the data does not exist yet; it does not tell an
+  author to name the file to open.
+
+### SC-CR6 and SC-CR2: duties for the archive commit
+
+*Dispositions* is filled at archive-preparation and is not edited here (the plan
+is past the point where its cells revise in place). The archive preparer finds
+these two additions to its duties in this section:
+
+1. **Repeat the "no" and the caveat on the "yes", together, in the archive commit
+   and on the revisit row.** Suggested wording: *C1 ran on two past LHM plans.
+   Assemble part A said no: its draft was a good check for the change the
+   proposal described, aimed at a different risk than the one that later bit
+   (the fill for uncovered land-use cells), which the proposal as opened never
+   mentioned. Stor-modflow said yes, but its check was against an array that had
+   never been saved, and the drafters' briefs told them to name what they would
+   open to confirm any data they could not check. What that showed is that the
+   block's data-status prompt, with that help, made a blind author flag the false
+   data claim. It is weak positive evidence for that prompt, none yet for the
+   independent-basis half, and not evidence that the block yields a check that
+   catches the priming error.* The revisit reads the C1 record with this in view.
+2. **Name the author-as-expert mode under falsifier F2.** On the revisit row (the
+   "0.3 external correctness test (R-H third-party probe)" row in
+   `dev/PLANNING.md`), F2 reads "most bases are the Maintainer's expectation".
+   Add the mode the review found: *or the "domain expert" is the author of the
+   change, or the agent that wrote the code.* No edit to the accepted block text.
