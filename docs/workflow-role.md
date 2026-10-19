@@ -16,10 +16,10 @@ reviewed decision-making *upstream* of the code:
   git-committed artifacts (see [`../doctrine/lifecycle.md`](../doctrine/lifecycle.md)).
   Cairn decides *what gets proposed, reviewed, and shipped* — and
   keeps the trail.
-* **Dual-Review.** Two-tier review across structural independence
+* **Dual-Review.** One review at every stage
   (see [`../doctrine/dual-review.md`](../doctrine/dual-review.md)):
-  who must look at a change before it lands, and how independent
-  they must be.
+  who looks at a change before it lands, and how far from the author
+  the Maintainer wants them.
 * **Coordination.** How a human maintainer and one or more AI agents
   share the tree without colliding (see
   [`../doctrine/coordination.md`](../doctrine/coordination.md)),

@@ -313,11 +313,13 @@ untouched.
 
 ## What you did *not* see
 
-* **Dual-Review.**  A second reviewer (a different agent, or a
-  second human) appends an independent `## Review` before the
-  Decision.  Quickstart skipped it -- the change was trivial.  On a
-  non-trivial change, the review is the lifecycle's second pillar
-  (see [`doctrine/dual-review.md`](../doctrine/dual-review.md)).
+* **Dual-Review.**  A fresh reviewer who did not write the work
+  appends a `## Review` before the Decision.  Quickstart skipped it
+  -- the change was trivial.  On a non-trivial change, the review is
+  the lifecycle's second pillar (see
+  [`doctrine/dual-review.md`](../doctrine/dual-review.md)); the
+  Maintainer can ask for a different agent or a second human when
+  they want more distance.
 * **Plans.**  Multi-commit changes open a plan
   ([`dev/plans/_template.md`](../templates/core/dev/plans/_template.md))
   that sequences the work and gets its own review.  The trivial

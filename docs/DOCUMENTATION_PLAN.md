@@ -339,8 +339,8 @@ three buckets:
    review record") -> `cairn/templates/core/AGENTS.md`, as a
    compact imperative rule.
 3. **The team's deliberation and decision process** (roles, the
-   proposal->review->decision lifecycle as a process, structural
-   independence, review norms, handoffs) ->
+   proposal->review->decision lifecycle as a process, how review
+   distance is recorded, review norms, handoffs) ->
    `cairn/templates/core/dev/agent_collaboration.md`.
 
 **Operational safety minimum.**  For bucket 2 the executable

@@ -34,11 +34,11 @@ Two differentiators, both genuinely uncommon, define the method:
   substantive change moves through a recorded proposal (and, for
   non-trivial work, a plan); the full arc of a decision is reconstructible
   from `git log`, not lost when a session ends (`doctrine/lifecycle.md`).
-* **The Dual-Review model** — two-tier review across structural
-  independence: an *Internal* read helps a change land; an *External* read
-  (a different agent type, or a human) makes it prove it should.
-  Asynchronous, commit-mediated, attributed — a faithful instantiation of
-  scientific peer review (`doctrine/dual-review.md`).
+* **The Dual-Review model** — one review at every stage: a fresh reviewer
+  who did not write the work questions its foundations and answers in
+  writing, and a different model or a person adds more distance whenever
+  the Maintainer asks. Asynchronous, commit-mediated, attributed — a faithful
+  instantiation of scientific peer review (`doctrine/dual-review.md`).
 
 Around these, Cairn ships the apparatus a forkable, *living* standard needs
 and a static prose framework does not: a layered security model; an upgrade
@@ -124,7 +124,7 @@ direction here does not by itself authorize it. In particular, nothing here
 authorizes — absent its own proposal, review, and Maintainer Decision:
 
 * adding a new `dimensions/` axis, or changing the role roster, the
-  lifecycle, or the structural-independence tiers;
+  lifecycle, or the review stance;
 * building a self-instrumenting maturity layer;
 * any public-surface action (flipping the repository public, tagging a
   public release) — those are Maintainer-performed.

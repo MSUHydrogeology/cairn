@@ -41,13 +41,12 @@ to it, never edited over. The file is the audit trail.
 
 ### 2. Review
 
-A reviewer — **structurally independent** of the author (a different
-person, or a different agent type; see
-[Dual-Review](../doctrine/dual-review.md)) — appends a `## Review`
-section. They check the reasoning, not just the code-to-be: is the
-change backward-compatible, is a test absorbed, is anything
-under-specified? On a small change one review suffices; higher-stakes
-changes get the second tier.
+A reviewer who did not write it — a fresh session of an agent counts, and the
+file names who they were (see [Dual-Review](../doctrine/dual-review.md)) —
+appends a `## Review` section. They check the reasoning, not just the
+code-to-be: is the change backward-compatible, is a test absorbed, is anything
+under-specified? On a small change one review suffices; on a higher-stakes
+change the Maintainer can ask for more distance, a different model or a person.
 
 ### 3. Decide
 

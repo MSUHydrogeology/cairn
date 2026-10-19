@@ -266,7 +266,7 @@ buckets:
    rule.
 3. **The team's deliberation and decision process** (roles, the
    proposal->review->decision lifecycle as a process,
-   structural independence, review norms, handoffs) ->
+   how review distance is recorded, review norms, handoffs) ->
    `dev/agent_collaboration.md`.
 
 **Operational safety minimum.**  For bucket 2 the executable

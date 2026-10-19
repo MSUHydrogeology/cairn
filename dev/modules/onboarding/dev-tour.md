@@ -28,7 +28,7 @@ proposals start by copying it.
 
 A plan operationalizes an accepted proposal into reviewable
 chunks. Each plan is its own file: header (touches + plan-review
-tier + related artifacts), context, chunk decomposition with
+line + related artifacts), context, chunk decomposition with
 per-chunk acceptance criteria, verification, coordination, an
 appended Review section + Response section, lasting-truth
 migration. The plan archives at completion (`git mv` to

@@ -33,11 +33,11 @@ The profile decides which modules arrive; nothing else does. `team-gated` is
 the name of a folder of modules, not a rank: a solo scientist on an existing
 codebase installs some of them, and that is the right install.
 
-**You do not need a second reviewer to start.** Every review tier's floor is a
+**You do not need a second reviewer to start.** Every review's floor is a
 fresh session, so one agent is enough: a new session of it reviews what an
 earlier session wrote, and your own read as Maintainer counts too. A second
-agent type, or a second human, makes review stronger where you have one; it is
-never required.
+agent type, or a second human, adds more distance whenever you ask for it; it
+is never required.
 
 To try the whole thing on a throwaway repository first, run
 [`../docs/quickstart.md`](../docs/quickstart.md). The commands it uses are a

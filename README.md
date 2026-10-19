@@ -7,7 +7,8 @@
 > A cairn is a trail marker left for those who come after.
 
 **Peer review, for code written with AI agents.** Every substantial change is
-read by someone who did not write it — a different AI model, or a person —
+read by someone who did not write it — a fresh AI session by default, a different model
+or a person whenever you ask —
 first while it is still an argument on a page, and again once it is built. That
 review is the point. The written trail it leaves behind is a by-product, and a
 useful one.
@@ -46,13 +47,13 @@ same idea to code changes:
 |---|---|
 | Manuscript → editor → referees → decision | Written proposal → maintainer → reviewers → decision |
 | A colleague's read before you submit | A first review that helps the change land |
-| Independent referees who don't know you | A second review from a **different** AI model, or a person |
+| Independent referees who don't know you | A review by someone who did not write the work; a **different** AI model, or a person, whenever the maintainer asks |
 | Referee report → your response → revision | Review → response → revised proposal |
-| Conflict-of-interest rules | Independence you can check: a different model, or a different human |
+| Conflict-of-interest rules | Every review names its reviewer, so how far they stood from the author is on the record |
 
-Two things differ, and both favour the code case. Independence is easier to
-establish — "a different model architecture" is a brighter line than "no recent
-co-authorship." And review happens **before the work is done**, when saying
+Two things differ, and both favour the code case. Distance is easier to
+record — the file names the reviewer, and "a different model architecture" is a
+brighter line than "no recent co-authorship," when you want that line. And review happens **before the work is done**, when saying
 "that is the wrong thing to build" is still cheap.
 
 One thing is harder, and worth knowing up front: your reviewers are as diverse
@@ -99,9 +100,11 @@ writing.
   change starts as a short written argument. A reviewer who did not write it
   reads that argument while it is still cheap to say "that assumption is
   wrong" — before it is buried in a result.
-- **The reviewer is genuinely independent, and you can see that they were.**
-  The stronger review has to come from a different AI model, or from a person.
-  Who reviewed what is written down in your repository, not claimed.
+- **The reviewer is not the author, and you can see who they were.** Every
+  review is by a fresh reviewer, who must answer in writing whether the work
+  should exist as framed and what would show it wrong. A different AI model, or
+  a person, reads it too whenever you ask. Who reviewed what is written down in
+  your repository, not claimed.
 - **You write down what would prove you wrong, before you look.** The same
   discipline as pre-registering an analysis: the test is fixed before the
   result is known, so it cannot be quietly adjusted afterwards.
@@ -173,12 +176,11 @@ move it is without opening the file. Faithful to `doctrine/lifecycle.md` — no
 invented or contradicting transition. Proposal states in full; the plan
 lifecycle is collapsed into one node, with its two revision loops folded in.*
 
-![Two review tiers: a first read that helps a change land, and an independent read from a different model or a person that makes it prove it should.](docs/assets/dual-review-independence.svg)
+![One review at every stage: a reviewer who did not write the work questions its foundations and answers in writing. A different model, or a person, adds more distance whenever the maintainer asks.](docs/assets/dual-review-independence.svg)
 
-**This works with one agent.** If you have a single AI tool, your own read or a
-fresh session covers the first review. The stronger independent review arrives
-when a second model — or a second person — is available. You do not need a team
-to start.
+**This works with one agent.** If you have a single AI tool, a fresh session of
+it is your reviewer at every stage. A second model, or a second person, is there
+whenever you want more distance. You do not need a team to start.
 
 ---
 
@@ -373,5 +375,5 @@ Hydrology).  Both case studies are in
 The Cairn repository itself is built using Cairn — its
 construction is recorded as a `cairn_methodology_repo` plan in the
 modflow_tools repository's own `dev/plans/` lifecycle, with each
-phase ending in a required Internal review before the next phase
+phase ending in a required review before the next phase
 starts.  The plan is the artifact; Cairn is the deliverable.

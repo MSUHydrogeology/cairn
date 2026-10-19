@@ -38,27 +38,32 @@ read it for context, do not edit it, and never mine it for metrics.
 
 ## Review
 
-**Internal review** — a constructive read that helps a change land. Floor: the
-same agent type in a fresh session.
+**Review** — one stance at every stage: a fresh reviewer who did not write the
+work reads it on the work's side, asks whether it should exist as framed, what
+the best alternative is and what would show it wrong, and answers in writing.
+Floor: a fresh session.
 
-**External review** — a harder read that makes a change prove it should land.
-Floor: **a different agent type, or a human**. This floor is what "structural
-independence" means in practice.
+**Called read** — a review the Maintainer asked for on one named piece of work,
+from more distance: a different AI model, or a person. Only the Maintainer
+calls one, and the record quotes their words.
 
 **Structural independence** — independence you can point at, rather than take
-on trust: a different AI model, or a different person. Journals ask whether a
-referee is too close to the author, which is a judgement call. This is not.
-One honest limit: the record shows *who was named* as reviewer; nothing proves
-they were who they said.
+on trust: every review names its reviewer, so how far they stood from the
+author is on the record. Journals ask whether a referee is too close to the
+author, which is a judgement call. This is a fact in the file. One honest
+limit: the record shows *who was named* as reviewer; nothing proves they were
+who they said.
 
-**Dual-Review** — the two tiers together. This is Cairn's central mechanism;
-the written record exists to serve it.
+**Dual-Review** — an independent reviewer beside the author at every stage,
+then the Maintainer's Decision. This is Cairn's central mechanism; the written
+record exists to serve it.
 
 **Code review** — the review of an implementation, by someone who is not the
 implementer. A plan cannot archive until one has occurred.
 
-**Security Review** — a focused mode of Internal or External review, triggered
-by named high-risk surfaces rather than by size.
+**Security Review** — a focused review of a high-risk surface, its own pass
+beside the usual review, triggered by named high-risk surfaces rather than by
+size.
 
 **Comprehension floor** — the rule that you cannot legitimately decide what you
 cannot understand. An agent leads plain and keeps precision beneath; "I don't

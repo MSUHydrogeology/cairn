@@ -1459,3 +1459,247 @@ def test_putting_an_external_example_back_in_the_upgrade_guide_is_reported() -> 
     assert not re.search(r"required\(External \+ External Security Review\)", text)
     mutant = text + " required(External + External Security Review) resolves to external."
     assert re.search(r"required\(External \+ External Security Review\)", mutant)
+
+
+# --------------------------------------------------------------------------
+# The headline: the README, the figure, and the descriptive pages. The README
+# and the framework anchor promise the same thing in the same words, so a
+# visitor who reads either learns that review is by someone who did not write
+# the work, and that more distance is something the maintainer asks for.
+# --------------------------------------------------------------------------
+
+README = "README.md"
+FIGURE = "docs/assets/dual-review-independence.svg"
+ONRAMP = "on-ramp/README.md"
+DOCS_ONBOARDING = "docs/agent-team-onboarding.md"
+INSTALLED_ONBOARDING = "dev/modules/onboarding/agent-team-onboarding.md"
+DOCS_TOUR = "docs/dev-tour.md"
+INSTALLED_TOUR = "dev/modules/onboarding/dev-tour.md"
+DOCUMENTATION_PLAN = "docs/DOCUMENTATION_PLAN.md"
+DOCUMENTATION_PLAN_TEMPLATE = "templates/modules/default-on/documentation_plan_template.md"
+
+_DESCRIPTIVE_FILES = (
+    README, "docs/glossary.md", "docs/vision.md", DOCS_ONBOARDING,
+    INSTALLED_ONBOARDING, "docs/quickstart.md", "docs/workflow-role.md",
+    "docs/getting-started.md", DOCS_TOUR, INSTALLED_TOUR, "docs/tool-usage.md",
+    ONRAMP, DOCUMENTATION_PLAN, DOCUMENTATION_PLAN_TEMPLATE, FIGURE,
+)
+_DESC_IDS = {rel: re.sub(r"[^a-z0-9]+", "-", rel.lower()).strip("-")
+             for rel in _DESCRIPTIVE_FILES}
+
+#: The README's six places, in the words the maintainer accepted.
+_README_SPANS = {
+    "line-ten-says-a-fresh-session-by-default-and-more-on-request":
+        "read by someone who did not write it — a fresh AI session by default, "
+        "a different model or a person whenever you ask —",
+    "the-referee-row-says-a-reviewer-who-did-not-write-the-work":
+        "| Independent referees who don't know you | A review by someone who did "
+        "not write the work; a **different** AI model, or a person, whenever the "
+        "maintainer asks |",
+    "the-conflict-of-interest-row-says-the-record-names-the-reviewer":
+        "| Conflict-of-interest rules | Every review names its reviewer, so how "
+        "far they stood from the author is on the record |",
+    "the-distance-sentence-says-distance-is-easier-to-record":
+        "Distance is easier to record — the file names the reviewer, and \"a "
+        "different model architecture\" is a brighter line than \"no recent "
+        "co-authorship,\" when you want that line.",
+    "the-what-you-get-bullet-says-the-reviewer-is-not-the-author":
+        "- **The reviewer is not the author, and you can see who they were.** "
+        "Every review is by a fresh reviewer, who must answer in writing "
+        "whether the work should exist as framed and what would show it wrong. "
+        "A different AI model, or a person, reads it too whenever you ask. Who "
+        "reviewed what is written down in your repository, not claimed.",
+    "the-figure-text-says-one-review-at-every-stage":
+        "One review at every stage: a reviewer who did not write the work "
+        "questions its foundations and answers in writing. A different model, "
+        "or a person, adds more distance whenever the maintainer asks.",
+    "the-one-agent-paragraph-says-a-fresh-session-is-your-reviewer":
+        "**This works with one agent.** If you have a single AI tool, a fresh "
+        "session of it is your reviewer at every stage. A second model, or a "
+        "second person, is there whenever you want more distance. You do not "
+        "need a team to start.",
+    "the-lead-in-sentence-before-the-distance-sentence-stays":
+        "Two things differ, and both favour the code case.",
+    "the-sentence-after-the-distance-sentence-stays":
+        "And review happens **before the work is done**",
+}
+
+#: Wording the descriptive pages must not carry: a review that has to come from
+#: a different model or person, a tier, a floor, or the old two-stage picture.
+_DESC_FORBIDDEN = {
+    **_FORBIDDEN,
+    "review-has-to-come-from-a-different-model-or-person":
+        r"has to come from a different",
+    "a-second-review-from-a-different-model":
+        r"a second review from a",
+    "independence-you-can-check-by-model-type":
+        r"independence you can check",
+    "two-review-tiers": r"two review tiers",
+    "the-two-tier-description": r"two-tier",
+    "the-second-tier": r"second tier",
+    "a-review-tier": r"review[- ]tier",
+    "structural-independence-tiers": r"structural-independence tiers",
+    "a-reviewer-structurally-independent-of-the-author":
+        r"structurally independent\*{0,2} of the author",
+    "a-floor-of-a-different-agent-type":
+        r"floor: a different agent type",
+    "a-different-agent-type-or-a-human-as-the-floor":
+        r"different agent type, or a human",
+    "internal-review-as-a-kind":
+        r"internal review",
+    "structural-independence-as-process-content":
+        r"structural independence, review norms",
+    "a-second-reviewer-who-must-be-a-different-agent":
+        r"a second reviewer \(a different agent",
+}
+_DESC_FORBIDDEN_EXAMPLES = {
+    **_FORBIDDEN_EXAMPLES,
+    "review-has-to-come-from-a-different-model-or-person":
+        "The stronger review has to come from a different AI model.",
+    "a-second-review-from-a-different-model":
+        "A second review from a different AI model, or a person.",
+    "independence-you-can-check-by-model-type":
+        "Independence you can check: a different model.",
+    "two-review-tiers": "Two review tiers: a first read and a stronger one.",
+    "the-two-tier-description": "Two-tier review across structural independence.",
+    "the-second-tier": "Higher-stakes changes get the second tier.",
+    "a-review-tier": "Status, review tier, when it opened.",
+    "structural-independence-tiers": "Changing the structural-independence tiers.",
+    "a-reviewer-structurally-independent-of-the-author":
+        "A reviewer structurally independent of the author.",
+    "a-floor-of-a-different-agent-type":
+        "Floor: a different agent type, or a human.",
+    "a-different-agent-type-or-a-human-as-the-floor":
+        "Needs a different agent type, or a human.",
+    "internal-review-as-a-kind": "An Internal review helps a change land.",
+    "structural-independence-as-process-content":
+        "The process (roles, lifecycle, structural independence, review norms).",
+    "a-second-reviewer-who-must-be-a-different-agent":
+        "A second reviewer (a different agent, or a second human) appends it.",
+}
+
+_DESC_OBLIGATIONS = {
+    "docs/glossary.md": {
+        "review-is-one-stance-at-every-stage":
+            r"Review — one stance at every stage: a fresh reviewer who did not "
+            r"write the work",
+        "a-called-read-is-the-maintainers-call":
+            r"Called read — a review the Maintainer asked for on one named piece "
+            r"of work, from more distance",
+        "dual-review-is-an-independent-reviewer-beside-the-author":
+            r"Dual-Review — an independent reviewer beside the author at every "
+            r"stage, then the Maintainer's Decision",
+        "structural-independence-is-recorded":
+            r"every review names its reviewer, so how far they stood from the "
+            r"author is on the record",
+    },
+    "docs/vision.md": {
+        "the-vision-names-one-review-at-every-stage":
+            r"The Dual-Review model — one review at every stage",
+    },
+    "docs/tool-usage.md": {
+        "the-board-names-the-review-lines":
+            r"status, the Review and Plan review lines, when it opened",
+    },
+    ONRAMP: {
+        "more-distance-is-added-on-request":
+            r"adds more distance whenever you ask for it; it is never required",
+    },
+}
+
+
+@pytest.mark.parametrize("label", sorted(_README_SPANS))
+def test_readme_carries_the_accepted_wording(label: str) -> None:
+    assert _normalize(_README_SPANS[label]) in _normalize(_text(README)), (
+        f"README.md differs from the accepted wording at {label!r}. These "
+        f"places promise what the framework anchor promises; they move together.")
+
+
+@pytest.mark.parametrize("label", sorted(_README_SPANS))
+def test_a_reworded_readme_span_is_reported(label: str) -> None:
+    span = _normalize(_README_SPANS[label])
+    readme = _normalize(_text(README))
+    assert span in readme, "control: the unmutated README carries the span"
+    assert span.replace("a", "A", 1) not in readme.replace(span, "")
+
+
+def test_the_readme_alt_text_equals_the_figures_accessible_title() -> None:
+    import xml.etree.ElementTree as ET
+    alt = re.search(r"!\[([^\]]*)\]\(docs/assets/dual-review-independence\.svg\)",
+                    _text(README))
+    assert alt, "README no longer embeds the figure"
+    root = ET.fromstring(_text(FIGURE))
+    ns = "{http://www.w3.org/2000/svg}"
+    title = " ".join(root.find(ns + "title").text.split())
+    desc = " ".join(root.find(ns + "desc").text.split())
+    assert " ".join(alt.group(1).split()) == title
+    assert title == " ".join(_README_SPANS[
+        "the-figure-text-says-one-review-at-every-stage"].split())
+    assert desc.startswith(title), "the description opens with the figure text"
+
+
+def test_the_figure_parses_and_keeps_its_embed_geometry() -> None:
+    import xml.etree.ElementTree as ET
+    root = ET.fromstring(_text(FIGURE))
+    assert root.get("viewBox") == "0 0 640 260"
+    assert root.get("width") is None and root.get("height") is None
+
+
+@pytest.mark.parametrize("phrase", [
+    "two tiers", "Internal", "External", "different agent type or human"])
+def test_the_figure_carries_no_old_phrase(phrase: str) -> None:
+    assert phrase.lower() not in _text(FIGURE).lower(), (
+        f"the figure still says {phrase!r}")
+
+
+@pytest.mark.parametrize("rel", _DESCRIPTIVE_FILES, ids=_DESC_IDS.get)
+def test_descriptive_page_omits_the_old_wording(rel: str) -> None:
+    found = _present(_text(rel), _DESC_FORBIDDEN)
+    assert not found, f"{rel} {_FORBIDDEN_REASON} Found: {found}"
+
+
+@pytest.mark.parametrize("rel", _DESCRIPTIVE_FILES, ids=_DESC_IDS.get)
+@pytest.mark.parametrize("label", sorted(_DESC_FORBIDDEN))
+def test_inserting_old_wording_into_a_descriptive_page_is_reported(
+        label: str, rel: str) -> None:
+    intact = _text(rel)
+    assert _present(intact, _DESC_FORBIDDEN) == [], (
+        f"{rel}: the unmutated page already carries old wording; no control.")
+    assert label in _present(f"{intact}\n\n{_DESC_FORBIDDEN_EXAMPLES[label]}\n",
+                             _DESC_FORBIDDEN)
+
+
+_DESC_CASES = [(rel, label) for rel in _DESC_OBLIGATIONS
+               for label in sorted(_DESC_OBLIGATIONS[rel])]
+_DESC_CASE_IDS = [f"{label}-{_DESC_IDS[rel]}" for rel, label in _DESC_CASES]
+
+
+@pytest.mark.parametrize("rel,label", _DESC_CASES, ids=_DESC_CASE_IDS)
+def test_descriptive_page_carries_the_obligation(rel: str, label: str) -> None:
+    assert label not in _missing(_text(rel), _DESC_OBLIGATIONS[rel]), (
+        f"{rel} no longer carries {label!r}.")
+
+
+@pytest.mark.parametrize("rel,label", _DESC_CASES, ids=_DESC_CASE_IDS)
+def test_removing_a_descriptive_obligation_is_reported(rel: str, label: str) -> None:
+    obligations = _DESC_OBLIGATIONS[rel]
+    text = _text(rel)
+    assert _missing(text, obligations) == [], (
+        f"{rel}: the unmutated page is missing obligations; no control.")
+    assert label in _missing(re.sub(obligations[label], "", _normalize(text)),
+                             obligations)
+
+
+@pytest.mark.parametrize("page,copy", [(DOCS_ONBOARDING, INSTALLED_ONBOARDING),
+                                       (DOCS_TOUR, INSTALLED_TOUR)])
+def test_an_installed_onboarding_copy_equals_its_page(page: str, copy: str) -> None:
+    """Both pages reach every install that selects a preset, byte for byte."""
+    assert _text(page) == _text(copy), (
+        f"{copy} differs from {page}; they are one document in two places.")
+    assert _present(_text(page), _DESC_FORBIDDEN) == []
+
+
+def test_a_copy_that_drifts_from_its_page_is_reported() -> None:
+    page = _text(DOCS_ONBOARDING)
+    assert page == _text(INSTALLED_ONBOARDING), "control: the pair is equal"
+    assert page != page + " "

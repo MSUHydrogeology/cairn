@@ -1,13 +1,13 @@
 # Adding a second (or third) agent type to your deployment
 
 This doc walks the steps for staffing your Cairn deployment with
-an additional AI agent type -- the move that converts your
-External-review tier from same-vendor (fresh-session of the same
-agent) to **cross-type** (a structurally independent reviewer).
-For `collaborative-team` and `high-rigor-legacy` profiles this is
-day-one work; for `solo-greenfield`, it is optional: fresh sessions
-of your one agent already cover every review tier, and a second type
-strengthens them once you have one.
+an additional AI agent type -- the move that makes a different
+model architecture available when the Maintainer asks for more
+distance on a piece of work. For `collaborative-team` and
+`high-rigor-legacy` profiles this is day-one work; for
+`solo-greenfield`, it is optional: fresh sessions of your one agent
+already do every review, and a second type is there for the days you
+want it.
 
 ## Prerequisites
 
@@ -70,38 +70,40 @@ snapshots -- substitute whatever model you are currently running:
 
 Configure the trailer in the agent's commit-template (the
 mechanism varies by harness; the standing convention is that the
-trailer is reliable enough to drive review-tier disambiguation).
+trailer is reliable enough to tell which agent type wrote what).
 
 ## Step 3 -- record capability tier in the roster
 
 The `capability tier` is the rough strength bucket the team
-assigns to each agent for purposes of review-tier selection:
+assigns to each agent for purposes of choosing who does what:
 
-* **Frontier** -- the strongest tier; load-bearing for External
-  review on substantive changes.
-* **Standard** -- the team's working baseline; cover Internal
-  review + Implementation by default.
+* **Frontier** -- the strongest tier; load-bearing for proposal
+  review and Security Review on substantive changes.
+* **Standard** -- the team's working baseline; cover plan review,
+  code review and Implementation by default.
 * **Light** -- structural lifts where the higher-tier agents'
   attention is over-spent (mechanical follow-ups, label-only
   edits).
 
 Tier mapping is the team's call; the assignment lives inline in
 the team-roster slot. The mapping informs (it does not bind)
-which agent the goodnight owner asks for which kind of review.
+which agent the goodnight owner asks for which kind of work.
 
-## Step 4 -- smoke the cross-type review on a trivial proposal
+## Step 4 -- smoke a cross-type read on a trivial proposal
 
 Open a one-line proposal (e.g., a typo fix or a CHANGELOG note),
-and have the **new** agent type review it. The first cross-type
-review is significant for two reasons:
+and have the **new** agent type review it. The Maintainer asks for
+this one read, naming the proposal; that is what makes it a read
+they called. The first cross-type review is significant for two
+reasons:
 
 1. It validates the trailer is being parsed correctly (the
    `first-cross-type-review` activation trigger fires off this
    signal).
-2. It establishes the team's working pattern for the External
-   tier -- one cycle of "the new agent reviewed this without
-   surfacing problems" or "the new agent caught something the
-   author missed" calibrates expectations.
+2. It establishes the team's working pattern for a called read
+   -- one cycle of "the new agent reviewed this without surfacing
+   problems" or "the new agent caught something the author missed"
+   calibrates expectations.
 
 Commit the review with the new agent's trailer. The next
 goodnight run of `python scripts/onboarding_activate.py` will
@@ -132,5 +134,5 @@ the first's claim and coordinates rather than colliding.
 * When your fold-back ledger acquires its first open candidate,
   the fold-back issue template
   (*.github/ISSUE_TEMPLATE/foldback.md*) is the next
-  capability to exercise -- cross-type review is the
-  prerequisite for that surface working at its intended rigor.
+  capability to exercise -- a read from a second agent type is
+  useful there whenever the Maintainer asks for one.

@@ -115,7 +115,7 @@ editing it.
 ## tools/board.py — see what is actually in flight *(default-on)*
 
 **What it does.** Reads the header block of every proposal and plan under `dev/`
-and prints one row each: kind, artifact, status, review tier, when it opened,
+and prints one row each: kind, artifact, status, the Review and Plan review lines, when it opened,
 and its source proposal. It reports what the artifacts say and makes no
 judgments — the artifact is authoritative, and this is a view of it.
 
