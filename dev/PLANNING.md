@@ -229,33 +229,52 @@ with the plan's filename stem.
   > board. No second review round; External floor waived."
 
   **Joined 2026-10-18** at the opening of
-  `plans/neutrality-and-upgrade-slots.md` — **planned, not yet changed**: none
-  of the files below has moved, so derive the changed set from the manifest's
-  `frozen_files` keys at ceremony time, and expect a second pass if the
-  ceremony runs before that plan archives. It changes 14 frozen files:
-  `scripts/quality_gate.py`, `scripts/content_scan.py`,
-  `scripts/onboarding_activate.py`, `bootstrap/verify_integrity.py`,
-  `bootstrap/tests/fixtures/skills/README.md`,
-  `bootstrap/tests/test_quality_gate_neutrality.py`,
-  `bootstrap/tests/test_verify_integrity.py`,
-  `templates/modules/team-gated/content_scan.py` and
-  `templates/modules/default-on/_onboarding/{__init__,activation,cli,security,shared,triggers}.py`.
-  The pinned collection moves too: 8 nodes join `test_quality_gate_neutrality.py`
-  (22 pinned), and the new `test_verify_integrity.py` nodes are listed by ID in
-  the plan's *Implementation verification* record at archive.
-  `test_verify_integrity.py` already has 19 collected nodes against 13 pinned:
-  the one listed above and the five of `TestCustomizedSlotDetection`, which no
-  line here names. `bootstrap/verify_integrity.py` is also on the differential
+  `plans/neutrality-and-upgrade-slots.md`, **changed 2026-10-19** and archived
+  as `plans/archive/neutrality-and-upgrade-slots.md`: its work is final, so this
+  is the plan's closing account for the ceremony. It changed 16 frozen files,
+  at these blob ids as of `1793f07e` (the manifest still holds the earlier
+  ones, so the verifier reports each as `FROZEN-MODIFIED`, a hold, while
+  `test_gate_manifest.py` stays green and nothing in the suite says a
+  re-anchor is owed): `scripts/quality_gate.py` (`8fe7869d`),
+  `scripts/content_scan.py` and its twin
+  `templates/modules/team-gated/content_scan.py` (both `dc0fd7cc`),
+  `scripts/onboarding_activate.py` (`f0a18078`),
+  `bootstrap/verify_integrity.py` (`d7628d85`),
+  `bootstrap/tests/fixtures/skills/README.md` (`79a7d0c3`),
+  `bootstrap/tests/test_quality_gate_neutrality.py` (`3f5c8685`),
+  `bootstrap/tests/test_verify_integrity.py` (`86e97111`), and in
+  `templates/modules/default-on/_onboarding/` the files `__init__` (`1da0df19`),
+  `activation` (`be07f90a`), `cli` (`9afa5558`), `security` (`1ae0cf21`),
+  `shared` (`e362a8d1`) and `triggers` (`fff59f33`). The last two of the 16 are
+  `templates/modules/default-on/run_security_verification.py` (`b0ad6e1d`, one
+  comment) and `bootstrap/tests/test_security_verification.py` (`0c322fab`, one
+  docstring). They joined at the Maintainer's "Fix #2 please" (chat,
+  2026-10-19): each cited `bootstrap/verify_integrity.py:63-111`, which
+  stopped naming the record loop once this plan grew that file, so `555d2f78`
+  re-points both by function name. Both matched the manifest before that
+  commit, and both changed by text only (the code's AST is the same).
+  The pinned collection: no pinned node leaves (all 35 pinned in those two test
+  files are still collected). `test_quality_gate_neutrality.py` has 59 nodes
+  collected against 22 pinned, so 37 join. `test_verify_integrity.py` has 161
+  collected against 13 pinned, so 148 join: 142 are this plan's and 6 are older
+  (the one the 2026-10-17 paragraph above lists and the five of
+  `TestCustomizedSlotDetection`, which no line here names). Derive the set from a collection at ceremony time; the
+  plan's three *Implementation verification* records list the 179 it added by
+  node ID, as a cross-check (they list 180 IDs, one of which was replaced inside
+  the plan, `test_every_lockfile_value_the_report_prints_goes_through_one_encoder`
+  by `test_everything_the_report_prints_is_constant_safe_or_encoded`, and was
+  never pinned). `bootstrap/verify_integrity.py` is also on the differential
   oracle's refactor-sensitive roster (`bootstrap/tests/_oracle_activation.py`)
   and already differs from the gate anchor `bd66a70c`, so the ceremony's
   sensitive-path check covers it either way. The differential oracle does not
   run `verify_integrity` (the unit suite covers it), so the evidence behind
   that authorization is the unit suite, the old-versus-new comparison the plan
-  records, and the code review. Two more files it edits are not frozen
+  records (41 trees, verdict and report equal), and the two reviews that read
+  it. Two more files it edits are not frozen
   but *phase-mutable* in the manifest:
-  `templates/modules/team-gated/intent.py` and
-  `templates/modules/default-on/onboarding_activate.py` (the second already
-  differs from its recorded hash), so changing either gives a `PHASE-CHANGED`
+  `templates/modules/team-gated/intent.py` (`3937a39d`) and
+  `templates/modules/default-on/onboarding_activate.py` (`f0a18078`; it already
+  differed from its recorded hash), so changing either gives a `PHASE-CHANGED`
   note at the ceremony and never a hold. No `bootstrap/_scaffold/` symbol
   changes, so that plan adds nothing to the AST baseline. It also makes
   `python scripts/quality_gate.py --sub neutrality` read `fail=0`, the "green"
@@ -474,6 +493,54 @@ with the plan's filename stem.
 
   > "Accept A, B, C and D as revised, with every recommended answer, including
   > B’s scope cut and D’s scope delta."
+
+* **`upgrade` does not name the slots it adds (#8's second suggestion) — the
+  engine half cut from the neutrality-and-upgrade-slots proposal.** Deferred
+  2026-10-19 at the archive of `plans/archive/neutrality-and-upgrade-slots.md`
+  (Decision: Q2, "not now", on
+  `proposals/archive/2026-10-17-claude-neutrality-and-upgrade-slots.md`). What
+  landed instead is an advisory note in `bootstrap/verify_integrity.py` that
+  lists every slot still holding Cairn's placeholder, run by a person at step 4
+  of `bootstrap/UPGRADE.md`. `scaffold.py upgrade` itself still prints nothing
+  about the slots it adds, so an adopter who skips step 4 hears of none; and on
+  a partly filled tree the note lists every other unfilled slot too (17 in the
+  measured case) without singling the new one out. Naming the added slots in
+  `upgrade` changes at least `merge_file` (`bootstrap/_scaffold/merge.py`) and
+  `_print_upgrade_report` (`bootstrap/_scaffold/upgrade.py`): a Security Review
+  and a Maintainer-run AST re-anchor. **Trigger**, from the Decision: the next
+  engine change to the upgrade path that already owes a re-anchor, or sooner if
+  an adopter misses an upgrade-added slot. **The first half is effectively
+  met:** two in-flight engine changes to the upgrade path, the lockfile-path
+  containment repair (`6c436a9f`) and `model-mapping-install-path`, are both
+  covered by the 0.4-cut re-anchor. So weigh this at the cut, as a small change
+  after 0.4 or as an addition to `model-mapping-install-path`, by the
+  Maintainer's choice. **Watch**, the other half of the proposal's "the note
+  becomes noise" signal: revisit if an adopter reports the note listing slots
+  they filled by reflex with the `cairn:customized` marker. No incident-tracker
+  class is added (that would be new shipped-module scope no one accepted).
+  Maintainer authorization, quoted verbatim, first the Decision:
+
+  > "Accept A, B, C and D as revised, with every recommended answer, including
+  > B’s scope cut and D’s scope delta."
+
+  and then, at the archive (2026-10-19):
+
+  > "Go ahead and archive those plans, provided follow-up has a permanent home."
+
+* **Close issues #2 and #8 on GitHub, when the neutrality-and-upgrade-slots
+  commits are pushed.** Recorded 2026-10-19 at the archive of
+  `plans/archive/neutrality-and-upgrade-slots.md`. Issue #2 (the vendor-name
+  check read red) and issue #8 (an upgrade-added slot stays unfilled and nothing
+  detects it) are the two issues that plan answers; both were still open when it
+  archived, and the tracker is the Maintainer's, so the plan did not touch it.
+  #8 closes on the note alone: its second suggestion is the row above. Issue
+  #16 is already closed (`COMPLETED`, 2026-10-18, before its paragraph
+  existed); the paragraph landed at `0c9b568c`, and whether the closure reason
+  should read "not planned" is the Maintainer's call. The push is the
+  Maintainer's too (`AGENTS.md` > Git and commit workflow). Authorization for
+  this home, quoted verbatim:
+
+  > "Go ahead and archive those plans, provided follow-up has a permanent home."
 
 * **`NEXT_SESSION.md` becomes a local, untracked handoff — the reflections
   treatment.** Deposited 2026-10-16 on Maintainer instruction. The file

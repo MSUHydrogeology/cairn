@@ -37,6 +37,76 @@ release is cut, that section is renamed to the version + date
 and a new empty `Unreleased` is started above.
 
 ## Unreleased
+### Changed — The vendor-name check reads zero; the integrity check lists slots still holding Cairn's placeholder
+
+- **`python scripts/quality_gate.py --sub neutrality` now reads `fail=0` and
+  exits 0.**  It had been red on every recorded run (74 failures), so a new leak
+  would have been invisible.  The check got slightly stricter first: it reads
+  whole-line comments, two more file types in `templates/` (`.json`, `.txt`) and
+  four more tool names.  Then every shipped leak was reworded (reviewer credits
+  in comments, the reference project's name) and the illustrative mentions in
+  Cairn's own documents were marked.  No program changed what it does: a script
+  shows each edited file is identical to its parent apart from comments and
+  docstrings.
+- **What "zero" covers, and what it does not.**  It means no listed name, as a
+  whole word in its normal capitals, in the file types the check reads.  It does
+  not cover lower-case or joined spellings (`claude`, `ClaudeCode`), hidden
+  characters, names missing from the list, other file types, or someone hiding a
+  name on purpose.  **It does not cover file or folder names**: the check reads
+  file contents, so a file under `templates/core/` named for a listed tool, with
+  neutral text inside, reads zero.  No shipped path contains a listed word today
+  (every `scaffold.py --manifest` row was checked).  Outside `templates/`, a
+  line or block that carries a `vendor-ok` marker is exempt by design (those
+  files do not ship), so `info=`, not `fail=`, is the only sign of a name added
+  under a marker.
+- **Why zero should hold this time.**  An earlier run reached `fail=0` on
+  2026-05-28 (`29ffeea6`) and a reviewer credit refilled it that afternoon
+  (`dbc09557`).  Since then Cairn's integration run has included this check on
+  every plan (`5f6ecccc`), and reviewer credits in code are barred
+  (`013847b6`).  A person runs the check; no hook or CI does.  If a later
+  integration run shows a neutrality failure the change under test did not
+  introduce, a commit hook is owed (the trigger is written in
+  `doctrine/consolidation-review.md`).
+- **`bootstrap/verify_integrity.py` prints a slot note (#8).**  After it has
+  fixed its result and printed its report, it writes an advisory to stderr
+  listing each slot (a section of a file your project fills in) that still
+  holds the placeholder Cairn shipped.  It always ends with a coverage line
+  saying how many files it could check and why it could not check the rest, so
+  silence plus that line means none found among what it could check, never
+  none exist.  It cannot change the check's exit code or its report, it reports
+  state and not obligation, and it prints no command (a printed command could
+  lead someone to approve a tampered file).  Two limits: it compares your slot
+  with the base copy recorded at install, so a placeholder an upgrade rewords
+  reads as filled; and on a partly filled tree it lists every unfilled slot, so
+  it does not single out the ones an upgrade added (17 listed in the measured
+  case).  `upgrade` itself still does not name the slots it adds; that is a
+  board row in `dev/PLANNING.md`.
+- **If you upgrade:** `bootstrap/UPGRADE.md` gains step 4,
+  `python bootstrap/verify_integrity.py --target <repo>` after `--apply`.  Only
+  a person following the steps runs it; `--apply` does not, and Cairn has no CI
+  that does.  When you fill a slot, the check reports that file as
+  `modified (hash mismatch)` until you record the edit.  Read the whole file
+  first, inside your project, then run
+  `python bootstrap/scaffold.py upgrade --target <repo> --finalize <path>`.
+  That records the whole file, not only your slot, and the scoped form skips the
+  dirty-tree guard.  The new section "Recording an edit you made" says how, and
+  what reading can and cannot catch.
+- **The integrity report prints lockfile text escaped.**  Paths in the `missing`,
+  `modified` and other failure lines, and in the hint's `--finalize` list, used
+  to reach the terminal as written, so a crafted lockfile path could put control
+  characters there.  Printable ASCII prints unchanged (a clean report reads the
+  same to the byte); anything else prints as a written escape.  A file name with
+  non-ASCII characters therefore shows as its escape, and the hint's command
+  cannot be pasted as printed for such a name; shipped paths are ASCII.  A line
+  break in the lockfile's `cairn_version` can no longer forge lines of the
+  forked-facade advisory, in this check or in `upgrade` (`80c54552`).
+- **#16's paragraph.**  The doc-drift module now names the third kind of
+  documentation drift: prose that names a function the code no longer has.  The
+  code check #16 also asked for is not built; it is promoted only after three
+  independent recurrences.
+- From `dev/plans/archive/neutrality-and-upgrade-slots.md`.  It answers issues
+  #2 and #8 and #16's paragraph.
+
 ### Added — A list of what waits on the Maintainer, and no work left in archived files
 
 - **`python tools/board.py --maintainer` lists what waits on the Maintainer.**

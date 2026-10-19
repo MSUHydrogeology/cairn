@@ -1,7 +1,7 @@
 # Plan: neutrality and upgrade slots -- a vendor-name check that reads zero, and a note for slots an upgrade adds
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-neutrality-and-upgrade-slots.md`
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance -- inherited from the proposal: the work widens the neutrality checker, adds code to the lockfile reader adopters run before they trust their scripts (`bootstrap/verify_integrity.py`), and edits comments in two security-relevant scripts (the interpreter binding and the content scanner)
 **Opened**: 2026-10-18
@@ -2348,3 +2348,63 @@ One thing changed shape, and it is cosmetic. `_plain_lines` is gone, so the advi
 * Linux and Windows; macOS only.
 * The full suite (the record's Boundary B), and the rest of the tested commit's range.
 * The engine's own copy of the advisory, printed by `upgrade`; unchanged, outside this plan.
+
+## Archive -- Claude Sonnet 5.5 -- 2026-10-19
+
+`Dispositions: accept x12, guard x2, wontfix x3, defer x3 (authorized)` -- restated over the whole record, since sections were appended after *Dispositions*. Where this list and the earlier *Dispositions* section differ, this list governs, and says so below.
+
+The Maintainer authorized the archive in chat on 2026-10-19, and the authorization names the condition every `defer` below answers, quoted verbatim:
+
+> "Go ahead and archive those plans, provided follow-up has a permanent home."
+
+On the deferral batch (Q2, the stale citations and the watch line) he then said, verbatim:
+
+> "Fix #2 please"
+
+**accept (twelve)**
+
+* **The accepted text, delivered.** Chunks C1 to C12 and the revision, below. The Source proposal's Decision accepted all four answers.
+* **Code review NU-CR1 to NU-CR8 and Security Review NU-CSR1 to NU-CSR6.** Taken in `cf102f2c` and `36ea62c1`, answered in `f9e1d572`; the verifications at `14f4403d` and `a003bd4e` close them.
+* **The report's unescaped lockfile paths**, at the Maintainer's instruction ("Yes to both questions", quoted in the addendum above). Fixed in `f949e342`, with the ten fields and fifteen mutants recorded there.
+* **NU-CSR7 to NU-CSR10 and NU-CR9.** Fixed in `ab086789`; NU-CR9 (a non-ASCII file name prints escaped in the hint, so the hint cannot be pasted for it) is accepted as is: shipped paths are ASCII, and making a homoglyph visible is the point. NU-CSR7 to NU-CSR10 cleared at `f02eaaaa`; NU-CR9 was raised by the code reviewer's verification (`14f4403d`).
+* **NU-CSR11 (information).** Accepted by narrowing the claim: the static test's docstring said any added site in any other form fails it; it now says it reads the first argument of each `print` and `violations.append`, and names the per-site tests that guard the rest. Docstring only (`1793f07e`).
+* **NU-CR8, the note's line count is uncapped.** Measured 5,023 lines from 5,000 slots in 0.09 s, with no command and no control byte in them; accepted as recorded.
+* **The stale `bootstrap/verify_integrity.py:63-111` citations.** The earlier *Dispositions* section made this a `defer`. **That is superseded:** the Maintainer said "Fix #2 please" and both were re-pointed by function name in `555d2f78`, so nothing is deferred. Both files are frozen and joined the re-anchor row.
+* **Zero's limit on file and folder names.** In the CHANGELOG entry written in this commit and in the C7 log row's limits; no shipped path contains a listed word (97 manifest rows checked).
+* **The residual at 1,000 duplicate records (10.2 s against 0.23 s).** About 10 ms of parsing per cap-sized record, linear; the parent has the same lever (it hashes a duplicated file once per record), and it needs write access to the lockfile. The Security Review recommended nothing.
+* **Known omissions of the records.** macOS only, one shuffle seed; `O_NOCTTY` and `O_BINARY` unexercised (the flags are read with `getattr` at call time, and a test removes all three and gets the same verdict). Cairn has no Linux or Windows run of any kind, so this is not a limit of this plan's.
+* **The engine's own copy of the forked-facade advisory.** The reviews named it as outside this plan: `upgrade` printed the lockfile's `cairn_version` raw. It was repaired elsewhere, in `80c54552` (`format_forked_facade_warning` in `bootstrap/_scaffold/lockfile.py`, four tests, one through `upgrade --plan`), and its AST symbol rides that repair's re-anchor accounting, not this plan's.
+* **A reworded comment that lost an explanation.** Checked at code review; recoverable, because each rewording chunk's commit body quotes the old text and `git log -p` keeps it.
+
+**guard (two)**
+
+* **The standing neutrality trigger** (a later integration run that shows a neutrality failure the change under test did not introduce means the commit hook is owed). Homed in the C7 log row of `doctrine/consolidation-review.md` and executed by the second command of Boundary B (`python scripts/quality_gate.py --sub neutrality --sub redundancy`, `AGENTS.md` > Verification boundaries) and by the `quality-gate-neutrality` entry of `bootstrap/tests/_gate_manifest.py` (lines 149-151), which the re-anchor ceremony runs and expects green. A person runs these; no hook does.
+* **The note naming a slot that is already filled.** `bootstrap/tests/test_verify_integrity.py::test_a_filled_slot_is_never_listed` and `::test_a_slot_marked_customized_is_not_listed`, with the real-tree counts checked against an independent count.
+
+**wontfix (three)**
+
+* **Q1(a), #16's code check.** Not built, by the Decision, under the three-recurrence rule. The revival rule (promote it only after three independent recurrences of prose-versus-symbol drift) is in the closed issue's 2026-08-25 triage comment and in the sentence C11 wrote in `templates/modules/team-gated/doc-drift-prevention.md` and its twin. It is not work, so no board row.
+* **The simpler design** (compare installed slots with the template in the running checkout, instead of the adopter's base copy). It would remove the base-copy reader but opens a version-skew gap whenever checkout and install differ, and departs from the accepted text. Recorded so the next change to the note can weigh it.
+* **`stewardship-and-reuse`'s citation `scripts/quality_gate.py:498`**, now `_R1_SCAN_ROOTS` at line 507 (it was 508 when C1 landed; `36ea62c1` moved it by one). That proposal is accepted and its text is a record; the plan that implements it is not open and is out of the 0.4 cut, so there is nowhere live to hand the correction to. The symbol name and the move are in C1's commit body (`1fb06ea6`), and whoever opens that plan re-finds the line from the name. It reaches no adopter and blocks no release.
+
+**defer (three, all authorized by the sentence above)**
+
+* **Q2, `upgrade` does not name the slots it adds** -> `dev/PLANNING.md` > Queued, the row "`upgrade` does not name the slots it adds". The row carries the Decision's words, the trigger, **one line saying the trigger is effectively met** (two in-flight engine changes to the upgrade path, both covered by the 0.4-cut re-anchor, so it is weighed at the cut), and the watch for adopters who fill slots by reflex with the `cairn:customized` marker.
+* **Closing issues #2 and #8 on GitHub** (and the reason on #16) -> `dev/PLANNING.md` > Queued, the row "Close issues #2 and #8 on GitHub". The tracker and the push are the Maintainer's.
+* **The gate-manifest re-anchor (M)** -> the marked row "Re-anchor the gate manifest" in `dev/PLANNING.md` (its *Waiting on Maintainer* line is declared there). This commit rewrites this plan's paragraph in it from planned to changed: 16 frozen files with blob ids, 37 + 148 node joins, none dropped.
+
+### Evidence ledger
+
+* **Evidence shipped.** 37 and 142 new test nodes in `bootstrap/tests/test_quality_gate_neutrality.py` and `bootstrap/tests/test_verify_integrity.py` (179 net, listed by ID in the three *Implementation verification* records); 106 mutants killed, each against an unmutated control; 41 old-versus-new verifier trees equal in verdict and report; the plants and blind spots of C7 measured; both probes (install `4ad1c115`, fill, finalize, upgrade, verify) run end to end; Boundary B at `96d967b4` under Python 3.13: 5,700 passed, 2 failed (the two AST-baseline nodes, which another repair owns and the Maintainer's AST ceremony covers; neither is this plan's).
+* **Evidence deferred.** A fresh full run on the final bytes, which the new rule leaves to the certifying run (below); any Linux or Windows run.
+* **Deferred evidence home.** The certifying run is defined in `AGENTS.md` > Verification boundaries (before a push, before the re-anchor ceremony, before a release cut, or when the Maintainer asks). Linux and Windows have no home and need none: Cairn runs on neither today.
+
+### Fidelity sign-off
+
+The landed commits match the accepted text. **Governing section:** the Source proposal's Revision 4, over Revisions 1 to 3 as it states (Revision 2 is the last complete contract, Revision 3 replaces parts of it, Revision 4 replaces parts of Revision 3), accepted at `f4cff4be`. **Landed:** `1fb06ea6` (C1), `0c9b568c` (C11), `01d21423` (C2-C4), `346eda64` (C5), `0000c15b` (C6), `a1e2bc9d` (C7), `ca7179a6` (C8), `63336156` and `7d528f4d` (C9), `67aac1d4` (C10), `d820d856` (C12's cold read), then the revision `cf102f2c`, `36ea62c1`, `f949e342`, `ab086789`, and after the last verification `555d2f78` and `1793f07e`. The outcomes the accepted text committed to are all delivered. Two changes went beyond it, both at the Maintainer's word and recorded above: the report-escape fix, and the re-pointing of the two citations.
+
+### The lasting truth
+
+A check that is always red hides the next leak, and a zero that nothing re-runs refills; the guard is that someone runs it every time, and that "zero" states what it cannot see. An advisory added to a trust anchor is safe only if it is fenced, bounded and cannot change the verdict, and every byte it prints is encoded. These live in `doctrine/consolidation-review.md` (the log rows), in `bootstrap/UPGRADE.md` (step 4 and "Recording an edit you made"), in the `CHANGELOG.md` entry, and in the tests named above.
+
+**Certified by**: pending
