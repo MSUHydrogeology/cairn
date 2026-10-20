@@ -1,7 +1,7 @@
 # Plan: Remove the collaboration agreement
 
 **Source proposal**: `dev/proposals/archive/2026-10-19-claude-remove-collaboration-agreement.md`
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-19
 **In brief**: Cairn will stop installing its collaboration agreement while keeping each project's copy and the team guidance that still matters.
@@ -678,3 +678,41 @@ change is comment-only. Top-level engine functions changed by this plan:
 none. Neither AST baseline nor gate-manifest fixture was re-anchored. No
 full suite, release ceremony, external-project upgrade, external-link
 probe, or certifying run is claimed.
+
+## Code review -- Antigravity (Gemini 3.8 Flash, fresh session) -- 2026-10-20
+
+```
+Reviewed commit: 5b7848c5cea68e7d5afc49c3f6781fb592cb8b6c
+Target: C1-C4 (commits 7f253b6b, a36005cb, 69654f06, 2cc6b260, bf84769c, 5b7848c5)
+Prior findings: none
+```
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes; scaffold manifest loses exactly the agreement row, fresh installs omit the retired file while keeping roles, upgrades report `removed-upstream` once leaving existing files and lock records byte-for-byte untouched, and the moved roster is safely read from `dev/agent_collaboration.md` under containment guards with symlink refusal -- `bootstrap/_scaffold/config.py:547-553`; `bootstrap/_scaffold/lockfile.py:77-86`; `scripts/_onboarding/triggers.py:129-152`; `bootstrap/tests/test_agreement_retired.py::test_fresh_installs_have_roles_but_no_agreement`; `bootstrap/tests/test_trigger_evaluation_action.py::TestRosterReadBoundaries`.
+2. **Best alternative.** The implemented design is minimal and safe: unshipping the file through `_CORE_MAPPINGS` removal rather than engine deletion commands, maintaining backward-compatible `_LIVING_STATE_DSTS` exemption for old projects, reusing the existing `_assert_safe_read` containment check for the moved roster slot, and adding an 8-case contract test rather than invasive scaffold alterations -- `bootstrap/_scaffold/config.py`; `bootstrap/_scaffold/lockfile.py`; `bootstrap/tests/test_agreement_retired.py`.
+3. **What would show it wrong.** A symlinked roster being read, an upgrade silently deleting or modifying an old project's agreement file or lock cache, `removed-upstream` advancing machine state, or a fresh install leaking the retired file or trigger -- see the falsification ledger below.
+
+**Bounding**: ACCEPTED
+
+*Bounding rationale*: Challenged mapped tests and named surfaces across C1–C4:
+* Ran mapped test files (`test_agreement_retired.py`, `test_trigger_evaluation_action.py`, `test_active_surfacing_mechanism.py`, `test_active_surfacing_render.py`, `test_security_lint.py`): all 55 tests passed cleanly with 0 skips/xfails.
+* Verified byte-for-byte identity across all three twin pairs (`prompts.py`, `triggers.py`, and `agent-team-onboarding.md`).
+* Evaluated disclosed non-passes: `test_claim_check_allow_config.py::TestProseCarriesNoClaimCheckDirective` failure is caused by an inline directive in `dev/reviews/2026-10-19-security-review-upgrade-lockfile-paths.md:3` created at `f0280ef0` by another author, outside this scope and unowned by this change; `check_cairn.py`'s five flags consist of two pre-existing files plus three historical citations in the plan's own append-only text from before implementation, while all 22 live markdown files touched by this plan pass `check_cairn.py` with 0 issues.
+* Stated omissions: full-suite certifying run deferred per `AGENTS.md` and cited as `Certified by: pending`; AST and gate-manifest re-anchors deferred to Maintainer 0.4 ceremony.
+
+**Waiting-line check.** The start fence was Maintainer-gated by the Decision conditional on `review-stance-and-lenses` being archived. Predecessor was archived at `0974a4de` prior to C1 start (`dev/plans/remove-collaboration-agreement.md:562-568`), so the fence condition was met before execution without requiring a pause or new approval. No deviation request was made in the implementation range.
+
+### Falsification ledger
+
+In an independent test worktree at `bf84769c`, six deliberate mutations were evaluated beside an unmutated control run (44/44 passed across `test_agreement_retired.py`, `test_trigger_evaluation_action.py`, `test_active_surfacing_mechanism.py`, `test_active_surfacing_render.py`):
+1. **Mutant 1 (Roster read containment bypass)**: In `templates/modules/default-on/_onboarding/triggers.py`, removed `_assert_safe_read(roster_file, target)`. **KILLED** by `test_linked_roster_path_is_refused_before_read[leaf]` and `[parent]` in `test_trigger_evaluation_action.py` (2 failures: failed to raise `OnboardingSecurityError`).
+2. **Mutant 2 (Living-state drop for old agreement)**: In `bootstrap/_scaffold/lockfile.py`, removed `"dev/collaboration_agreement.md"` from `_LIVING_STATE_DSTS`. **KILLED** by `test_old_agreement_is_reported_once_and_unchanged_by_upgrade`, `test_missing_old_file_refuses_bare_finalize_but_empty_file_survives`, and `test_no_install_source_cites_the_retired_path_or_trigger` in `test_agreement_retired.py` (3 failures: verify exits 1; not in living state).
+3. **Mutant 3 (Accidental restoration of install mapping)**: In `bootstrap/_scaffold/config.py`, restored `("core/dev/collaboration_agreement.md", "dev/collaboration_agreement.md")` to `_CORE_MAPPINGS`. **KILLED** by `test_no_install_source_cites_the_retired_path_or_trigger` in `test_agreement_retired.py` (1 failure: manifest row assertion failed).
+4. **Mutant 4 (Doubled opening marker suppression bypass)**: In `templates/modules/default-on/_onboarding/triggers.py`, suppressed the second `open_marker` check. **KILLED** by `test_doubled_opening_marker_does_not_fire` in `test_trigger_evaluation_action.py` (1 failure: unexpectedly fired `second-agent-type`).
+5. **Mutant 5 (Preserved decision sentences drift)**: In `templates/core/dev/agent_collaboration.md`, replaced "they do not decide" with "they do not dictate". **KILLED** by `test_shipped_roles_retain_the_two_agreement_sentences_without_local_rule` in `test_agreement_retired.py` (1 failure: exact text match failed).
+6. **Mutant 6 (Upgrade deletion on apply)**: In `bootstrap/_scaffold/upgrade.py`, unlinked "dev/collaboration_agreement.md" during `_apply_upgrade`. **KILLED** by `test_old_agreement_is_reported_once_and_unchanged_by_upgrade` in `test_agreement_retired.py` (1 failure: file missing on disk after apply).
+
+There were no survived or equivalent mutants (6 of 6 killed).
+
+**Coverage -- Covered:** claims #1-#9; old-project upgrade preservation through plan, stage, apply, and finalize; containment and symlink security boundaries on the moved roster slot; byte identity of onboarding and tour twin pairs; public manifest diff; 6-mutant ledger; analysis of disclosed non-passes. Not covered / low confidence: no full suite, AST re-anchor, or gate-manifest re-anchor was run (deferred to Maintainer certifying run and 0.4 ceremony per plan contract).
