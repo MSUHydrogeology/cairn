@@ -182,6 +182,13 @@ def test_shipped_roles_retain_the_two_agreement_sentences_without_local_rule() -
         encoding="utf-8",
     )
     local = (ROOT / "dev/agent_collaboration.md").read_text(encoding="utf-8")
+    shipped_flat = " ".join(shipped.split())
+    assert "Agents propose, review, implement, and advise; they do not decide." in shipped_flat
+    assert (
+        "Acceptance, rejection, and supersession are the Maintainer's call. "
+        "An agent unsure whether something is a decision surfaces it rather "
+        "than assuming."
+    ) in shipped_flat
     assert shipped.count("<!-- cairn:slot team-roster -->") == 1
     assert "The team" in shipped
     assert "The team" in local
