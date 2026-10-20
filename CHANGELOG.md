@@ -38,6 +38,19 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Changed — Collaboration agreement retired from new installs
+
+- New installs no longer receive `dev/collaboration_agreement.md`; existing
+  projects keep their copy, lock record and cached base. `upgrade --plan`
+  reports it as `removed-upstream` without deleting it. The team roster now
+  lives in `dev/agent_collaboration.md`, the second-agent prompt remains,
+  and the signing prompt retires. The shipped roles guidance keeps its two
+  decision sentences; Cairn's own finite decision list is not shipped.
+  Projects retiring their old copy should
+  empty it rather than delete it. See the
+  [archived plan](dev/plans/archive/remove-collaboration-agreement.md) and
+  [upgrade guide](bootstrap/UPGRADE.md).
+
 ### Changed — One review stance and an evidence sweep in every install
 
 - **Every Cairn install now gives each review the same evidence questions.**

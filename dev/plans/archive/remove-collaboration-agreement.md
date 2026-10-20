@@ -1,7 +1,7 @@
 # Plan: Remove the collaboration agreement
 
 **Source proposal**: `dev/proposals/archive/2026-10-19-claude-remove-collaboration-agreement.md`
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-19
 **In brief**: Cairn will stop installing its collaboration agreement while keeping each project's copy and the team guidance that still matters.
@@ -716,3 +716,35 @@ In an independent test worktree at `bf84769c`, six deliberate mutations were eva
 There were no survived or equivalent mutants (6 of 6 killed).
 
 **Coverage -- Covered:** claims #1-#9; old-project upgrade preservation through plan, stage, apply, and finalize; containment and symlink security boundaries on the moved roster slot; byte identity of onboarding and tour twin pairs; public manifest diff; 6-mutant ledger; analysis of disclosed non-passes. Not covered / low confidence: no full suite, AST re-anchor, or gate-manifest re-anchor was run (deferred to Maintainer certifying run and 0.4 ceremony per plan contract).
+
+## Archive note -- Codex -- 2026-10-20
+
+The independent code review at `764808e0` accepted the implementation with
+no findings and a six-break falsification ledger. This archive is distinct
+from the implementation and review commits. The adopter-visible result is
+in the shipped roles document, onboarding helpers and `bootstrap/UPGRADE.md`;
+the changelog now points to this record. Existing projects keep their copy
+of the former agreement, lock record and base cache. The installer and
+upgrader gained no file-deletion behavior.
+
+The board's re-anchor register carries the reviewed final blob of
+`bootstrap/tests/test_review_stance_in_shipped_files.py` at `5b7848c5`,
+replacing the earlier review-stance receipt for that file only. The
+Maintainer's 0.4 ceremony still derives the actual frozen-file, AST and
+collection deltas; this archive performs none of those re-anchors. The
+earlier Joined paragraph was condensed into the board's ceremony table by
+`board-as-basis`; the new Joined paragraph beside that table is its durable
+replacement. There is no open Waiting line.
+
+The Decision's authorization for the two deferred decision-rights questions,
+quoted verbatim:
+
+> "Please scribe my acceptance as recommended."
+
+**Dispositions:** `accept` — retire the installed agreement and signing
+ritual while preserving old project copies, the roster and second-agent
+prompt; `defer` — any future adopter-facing version of Cairn's finite
+decision list needs its own proposal, homed in `dev/PLANNING.md`'s Decision
+rights row; `defer` — revisit the distinct lifecycle-escalation wording on
+a concrete conflict, in the same row; `defer` — the Maintainer-only AST and
+gate-manifest re-anchors at the 0.4 cut, in the board's ceremony register.

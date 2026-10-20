@@ -34,8 +34,7 @@ artifacts; this board does not maintain a second status table.
 |---|---|
 | Four security repairs: .gitignore seed guard, session-kernel writes, committed interpreter binding, engine copy fallback | Final review findings dispositioned; their repair and review records are the evidence. |
 | `neutrality-and-upgrade-slots`, `independent-scientific-check`, `review-stance-and-lenses`, `board-as-basis` | Archived; retain their final-byte contributions in the ceremony register below. |
-| `remove-collaboration-agreement` | Finish implementation, independent code reviews and archive; preserve project-owned copies. |
-| `model-mapping-install-path` | Finish implementation, independent code reviews and archive. The agreement removal lands before its C2. |
+| `model-mapping-install-path` | Finish implementation, independent code reviews and archive. The agreement removal landed before its C2. |
 | README disclosure | State that 0.4 has not had an outside correctness trial. |
 | Release assurance | Certify the final committed batch, perform the Maintainer's AST correction **before** the gate-manifest re-anchor, and complete the release sweeps in `docs/release-process.md`. |
 
@@ -124,7 +123,7 @@ the committed manifest and does not discharge this obligation.
 | Model mapping on every install path | Frozen mapping scripts and model-selection/seed/security/upgrade tests, the deliberately dropped comment-placeholder test, CHANGED/NEW engine functions and REKEYED _commit_lock_and_caches. | Live `model-mapping-install-path` plan; its final verification owns exact sets. |
 | Repository rename | Frozen `bootstrap/tests/test_lockfile_provenance.py` URL assertion; no node or engine-symbol change. | Rename commit `72248e15`. |
 | Independent scientific check | Newly frozen `bootstrap/tests/test_scientific_check_guidance_ships.py`; its single node, no engine-symbol change. | `independent-scientific-check` archive; last test edit `02adb81f`. |
-| Agreement removal | Nine forecast existing frozen files, the new retirement test, and revised stance test; assignment _CORE_MAPPINGS changes, no top-level function expected. | Live `remove-collaboration-agreement` plan; final record must supersede the stance-test blob below. |
+| Agreement removal | Nine changed existing frozen files, the eight-case retirement test, and revised stance test; assignment `_CORE_MAPPINGS` changed, no top-level engine function changed. | `remove-collaboration-agreement` archive and reviewed commit `5b7848c5`; final stance-test blob below supersedes its predecessor. |
 
 Final review-stance test receipts at `6fd6687f` (all three paths are under
 `bootstrap/tests/`; later authorized edits must replace their receipt):
@@ -134,6 +133,19 @@ Final review-stance test receipts at `6fd6687f` (all three paths are under
 | test_review_stance_in_shipped_files.py | `0064d10e1e2059e054928ce392022648194768e8` | 469 |
 | test_review_sweep_ships.py | `fa71104f443d3181eaf9bf710ae43e7b2b3eae51` | 192 |
 | test_review_and_verification_rules_ship.py | `5bb130d370259096d57b3c06cce0addc27830279` | 68 |
+
+**Joined 2026-10-20** at the archive of
+`dev/plans/archive/remove-collaboration-agreement.md`. At code-reviewed
+commit `5b7848c5cea68e7d5afc49c3f6781fb592cb8b6c`, the final blob of
+`bootstrap/tests/test_review_stance_in_shipped_files.py` is
+`f51bf7eddde9ba77b04dd75f96dba7d032d3459c`. It replaces the
+`0064d10e1e2059e054928ce392022648194768e8` review-stance receipt
+above **for that file only**. The nine frozen-file changes, eight new
+retirement-test cases and one assignment change are recorded in the
+archived plan. Derive the ceremony's full set from the final tree; this
+paragraph does not re-anchor it. The accepted Decision authorized the join:
+
+> "Please scribe my acceptance as recommended."
 
 The older adopt-module/slot-empty AST debt was re-anchored at `b82b56d0`;
 remaining symbol changes come from later repairs and the live plans. The old
