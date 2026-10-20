@@ -15,6 +15,7 @@ authors:
     orcid: "https://orcid.org/0000-0003-3914-9964"
 version: "0.4.0"
 date-released: "2026-10-20"
+doi: "10.5281/zenodo.23500751"
 repository-code: "https://github.com/MSUHydrogeology/cairn"
 license:
   - CC-BY-4.0
@@ -26,6 +27,5 @@ keywords:
   - software methodology
   - reproducibility
   - open science
-# The Zenodo DOI lands here after the first GitHub release tag
-# (release-driven Zenodo deposition).  Update with the `doi:` field
-# once issued; until then, cite by version and repository URL.
+# Concept DOI (all versions): 10.5281/zenodo.23500751
+# Version DOI (v0.4.0):       10.5281/zenodo.23500752

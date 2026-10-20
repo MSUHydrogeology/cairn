@@ -4,11 +4,14 @@
 
 ![Cairn — stacked stones trail-marker logo with project tagline](docs/assets/cairn-banner.svg)
 
+[![DOI](https://zenodo.org/badge/1244751141.svg)](https://doi.org/10.5281/zenodo.23500751)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE-MIT.md)
+[![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-blue.svg)](LICENSE-CC-BY.md)
+[![Language: Python](https://img.shields.io/badge/Language-Python_3.13-blue.svg)](https://www.python.org/)
+
 Cairn is a working method for scientists developing software with AI coding
 agents. It brings together project rules, written proposals, review, testing,
 and a record of decisions kept alongside the code.
-
-[![DOI](https://zenodo.org/badge/1244751141.svg)](https://doi.org/10.5281/zenodo.23500751)
 
 Research software often outlives the conversation that produced it. Someone
 still needs to know why an assumption was made, what a change was checked
@@ -158,4 +161,4 @@ document templates, and explanatory diagrams are
 [CC BY-ND 4.0](LICENSE-CC-BY-ND.md).
 
 If you use Cairn, see [CITATION.cff](CITATION.cff) for citation details.
-Until a DOI is issued, cite the version and repository URL.
+Cite using the DOI ([10.5281/zenodo.23500751](https://doi.org/10.5281/zenodo.23500751)) or the version and repository URL.
