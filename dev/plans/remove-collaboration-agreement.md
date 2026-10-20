@@ -1,7 +1,7 @@
 # Plan: Remove the collaboration agreement
 
 **Source proposal**: `dev/proposals/archive/2026-10-19-claude-remove-collaboration-agreement.md`
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-19
 **In brief**: Cairn will stop installing its collaboration agreement while keeping each project's copy and the team guidance that still matters.
@@ -565,3 +565,116 @@ The start fence is satisfied: `review-stance-and-lenses` was archived at
 `0974a4de`. The model-mapping plan has committed C1 but not C2. This plan
 starts C1 now and keeps its before-C2 ordering. The concurrent model-mapping
 engine edits are another session's work and are not part of this chunk.
+
+## Implementation verification -- Codex -- 2026-10-20
+
+**Boundary B mode**: full required for the install contract and scaffold
+engine; the reviewed plan defers the full certifying suite and calls for this
+scoped integration run. **Certified by**: pending. `CAIRN_FULL_SUITE` was never
+set.
+
+**Tested commit**: `bf84769c0beaac18594b0f7c45592f34cf72fc40`.
+**Reviewed range**: `0afe97e21b5df9ce78b0e3edc013d40ec0b72432..bf84769c0beaac18594b0f7c45592f34cf72fc40`.
+The removal's commits are `7f253b6b`, `a36005cb`, `69654f06`, `2cc6b260`
+and `bf84769c`; intervening commits in the range belong to other work.
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+Python 3.13.13.
+**Pre-run state**: clean `git status --porcelain` in a detached worktree at
+the tested SHA. **Post-run state**: the same clean status and unchanged SHA.
+
+The mapped pytest commands used `python -m pytest -q` with these exact file
+sets, split only to keep the run scoped:
+
+* **G1 (12 files):** `test_review_stance_in_shipped_files.py`,
+  `test_scope_reduction_trap.py`, `test_review_and_verification_rules_ship.py`,
+  `test_review_sweep_ships.py`, `test_core_dev_folders.py`,
+  `test_documentation_plan_module.py`, `test_comprehension_floor.py`,
+  `test_verification_boundaries.py`, `test_scientific_check_guidance_ships.py`,
+  `test_certifying_run_rule.py`, `test_doc_governance.py`,
+  `test_claim_check_allow_config.py`, each under `bootstrap/tests/`.
+* **G2 (10 files):** `test_trigger_evaluation_action.py`,
+  `test_active_surfacing_mechanism.py`, `test_active_surfacing_render.py`,
+  `test_onboarding_seed_roster.py`, `test_onboarding_slot_substitution.py`,
+  `test_skills_onboarding.py`, `test_presets.py`, `test_profiles_smoke.py`,
+  `test_onboarding_activation_helper.py`, `test_security_lint.py`, each under
+  `bootstrap/tests/`. The security-lint test ran, not skipped.
+* **G3 (11 files):** `test_notice_install.py`, `test_quickstart_sequence.py`,
+  `test_manifest.py`, `test_config_module.py`, `test_scaffold.py`,
+  `test_lockfile_module.py`, `test_verify_integrity.py`,
+  `test_security_capability_install.py`, `test_agreement_retired.py`,
+  `test_upgrade.py`, `test_upgrade_module_additions.py`, each under
+  `bootstrap/tests/`.
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---:|---|---:|
+| `python -m pytest -q G1` | 1 | 932 passed, 1 failed; 0 skips/xfails/xpasses | 4.03 s |
+| `python -m pytest -q G2` | 0 | 172 passed; 0 skips/xfails/xpasses | 6.78 s |
+| `python -m pytest -q G3` | 0 | 469 passed; 0 skips/xfails/xpasses | 47.53 s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | neutrality 0 fails, 56 informational; redundancy 0 fails | under 2 s |
+| `python scripts/check_cairn.py` | 1 | 5 flags across 185 files; 47 external links not probed | under 2 s |
+| `python scripts/claim_check.py <file>` for each of 12 changed Markdown documents | 0 each | 12 clean, including declared historical-path exemptions in the upgrade guide | under 1 s total |
+| `python scripts/link_check.py <the same 12 files>` | 0 | 12 files, no issues | under 1 s |
+| `python scripts/sync_doc_snippets.py --check` | 0 | 356 documents, no drift | under 1 s |
+
+**Non-pass disposition.** G1's sole failure is
+`test_claim_check_allow_config.py::TestProseCarriesNoClaimCheckDirective`:
+`dev/reviews/2026-10-19-security-review-upgrade-lockfile-paths.md:3` has an
+inline directive. That line already exists at C3's parent `c177b8ca`; this
+scope neither changed nor owns the other author's review. The other three
+tests in that file passed. `check_cairn.py`'s five flags are two other
+pre-existing records (`model-mapping-install-path.md`'s line citation and
+`2026-10-18-security-review-session-writes.md`'s `tools/__pycache__` path)
+plus three in this plan's original Scope/Proposed-paths paragraphs: two
+retired paths and the new test after it materialized. Those paragraphs are
+the append-only record of the planned change, not live adopter guidance;
+they are not rewritten after implementation started. A direct live-surface
+scan found the retired path only in `bootstrap/UPGRADE.md`, where it is
+intentional advice to existing projects. The citation test's injected
+retired-path control failed as intended. These non-passes are disclosed for
+the code reviewer; no clean `check_cairn.py` or all-green mapped run is
+claimed.
+
+**Plan-specific acceptance.** Public `scaffold.py --manifest --allow-dev`
+output at C3's parent `c177b8ca` and this tested SHA differs by exactly
+one row, the retired agreement; the mapping was unchanged between C2 and
+that parent. `test_agreement_retired.py` passed all eight cases: three fresh
+presets, old-project plan/stage/apply preservation and the single
+`removed-upstream` line, finalize refusal/empty-file recovery, roster
+integrity and prompt activation, live-citation scan, and both shipped
+decision sentences. Both onboarding helper pairs and the tour pair are
+byte-identical. The clean old-project test exercises a synthetic prior
+lock record and cached base through the public scaffold entry point.
+
+**Controlled-break ledger.** Six fresh archive extractions of the tested SHA
+each held one deliberate break; an unmodified control run of the same nodes
+passed 5/5. Removing the roster read guard was **killed** by both leaf- and
+parent-symlink cases (2 failures). Removing the already-emitted guard was
+**killed** by the second-activation case (1 failure). Removing the retired
+living-state exemption, restoring its install mapping, and injecting a
+retired citation were each **killed** by the no-install-source contract
+case (1 failure each). Making apply delete the old project file was
+**killed** by the byte-preservation case (1 failure). The fresh-install
+cases alone passed with the restored mapping because its source file is
+absent; the explicit manifest-row assertion is what killed that mutant.
+There were no survived or equivalent mutants.
+
+**Ceremony handoff and known omissions.** The nine frozen-file changes,
+as `+/-` line counts from the plan-start commit to C3, are:
+`templates/modules/default-on/_onboarding/prompts.py` 1/2,
+`templates/modules/default-on/_onboarding/triggers.py` 15/39,
+`bootstrap/tests/test_active_surfacing_mechanism.py` 24/26,
+`bootstrap/tests/test_active_surfacing_render.py` 29/24,
+`bootstrap/tests/test_core_dev_folders.py` 1/1,
+`bootstrap/tests/test_notice_install.py` 3/14,
+`bootstrap/tests/test_onboarding_seed_roster.py` 1/1,
+`bootstrap/tests/test_quickstart_sequence.py` 1/1, and
+`bootstrap/tests/test_trigger_evaluation_action.py` 37/77. The new
+`bootstrap/tests/test_agreement_retired.py` adds eight collected cases;
+the roster test adds two parametrized symlink cases.
+`bootstrap/tests/test_review_stance_in_shipped_files.py` also changes but
+was not an existing frozen-file key. Our engine change is the one-row
+`_CORE_MAPPINGS` assignment removal in `config.py`; our `lockfile.py`
+change is comment-only. Top-level engine functions changed by this plan:
+none. Neither AST baseline nor gate-manifest fixture was re-anchored. No
+full suite, release ceremony, external-project upgrade, external-link
+probe, or certifying run is claimed.
