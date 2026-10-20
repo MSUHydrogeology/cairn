@@ -38,6 +38,18 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Added — Defect fixes under existing promises and reuse duty
+
+- Agents may fix cheap defects that break promises already documented in the file,
+  docstring, tests, or governing text, with a test in the independently reviewed range,
+  without creating new scope or altering rule text.
+- Work that must be deferred requires one of three canonical reasons: a Maintainer
+  decision is needed, work is already in motion in a named receiving plan with
+  verbatim authorization, or the fix is over the person-step cost bar.
+- Authors and reviewers owe a named search for reusable code before adding new code,
+  supported by the fifth review lens without expanding the nine-lens sweep.
+  ([`dev/plans/archive/stewardship-and-reuse.md`](dev/plans/archive/stewardship-and-reuse.md))
+
 ### Added — Model mapping install notices, check parity, and safe atomic writes
 
 - Non-interactive installs, module adoption, and upgrade runs now emit a clear notice

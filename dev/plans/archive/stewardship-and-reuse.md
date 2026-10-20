@@ -1,7 +1,7 @@
 # Plan: Fix easy defects and reuse what already exists
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-stewardship-and-reuse.md`
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-19
@@ -576,3 +576,32 @@ In an independent test worktree at `6d7978fa`, six deliberate mutations were eva
 There were no survived or equivalent mutants (6 of 6 killed).
 
 **Coverage -- Covered:** claims #1-#9; authority boundaries on defect fixes and promise definitions; three canonical deferral reasons and receiving-plan authorization; person-step cost bar; issue-capture guidance pointing to AGENTS.md; issue-capture twin byte identity; 1-sentence reuse rule and nine-lens interface; all six deviation carriers; 6-mutant falsification ledger; public manifest diff; synthetic upgrade preservation. Not covered / low confidence: no full certifying suite run, AST re-anchor, or gate-manifest re-anchor was run (deferred to Maintainer certifying run and 0.4 ceremony per plan contract); no real adopter repositories were modified.
+
+## Archive note -- Codex / Antigravity -- 2026-10-20
+
+The independent code review at `c2a08aff` accepted the implementation with
+no findings and a 6-break falsification ledger. This archive is distinct from
+the implementation and review commits. The adopter-visible guidance is live
+across operational references, lifecycle doctrine, issue-capture guidance,
+and plan templates.
+
+**Dispositions:**
+- `accept`: C1 small defect fix rule ("Fixing an easy problem you meet") based
+  strictly on existing promises and person-step cost bars; deviation pointers
+  across six carriers; C2 canonical deferral reasons (decision required, in
+  motion with receiving plan, over cost bar); 1-sentence reuse duty with
+  nine-lens roster intact; and install-time rule verification test.
+- `defer`: Full certifying suite and 0.4 ceremony re-anchors in the board's
+  ceremony register.
+- There is no open Waiting line.
+
+**Pinned test collection changes:**
+- Added: `bootstrap/tests/test_stewardship_rules_ship.py` (1 node:
+  `test_small_fix_rule_and_capture_pointer_reach_install`).
+
+**Adopter upgrade cost:**
+- Upgrade smoke rehearsal on real adopters confirms that LHM adds one conflict
+  on `dev/modules/issue-capture.md` (6 vs 5 base) from upstream evolution;
+  `modflow_tools` retains its 2 baseline conflicts. Synthetic customized
+  upgrades cleanly preserve local edits under 3-way merge. No real adopters
+  were modified.

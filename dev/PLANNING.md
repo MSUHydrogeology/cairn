@@ -38,9 +38,8 @@ artifacts; this board does not maintain a second status table.
 | README disclosure | State that 0.4 has not had an outside correctness trial. |
 | Release assurance | Certify the final committed batch, perform the Maintainer's AST correction **before** the gate-manifest re-anchor, and complete the release sweeps in `docs/release-process.md`. |
 
-**After 0.4:** `stewardship-and-reuse` and the draft strategy
-`dev/strategy/2026-10-19-codex-cairn-and-assai.md`. Opening the stewardship
-plan early did not move it into the release or authorize early implementation.
+**Archived alongside 0.4:** `stewardship-and-reuse`.
+**After 0.4:** The draft strategy `dev/strategy/2026-10-19-codex-cairn-and-assai.md`.
 
 The release choices remain on record, verbatim:
 
@@ -124,6 +123,7 @@ the committed manifest and does not discharge this obligation.
 | Repository rename | Frozen `bootstrap/tests/test_lockfile_provenance.py` URL assertion; no node or engine-symbol change. | Rename commit `72248e15`. |
 | Independent scientific check | Newly frozen `bootstrap/tests/test_scientific_check_guidance_ships.py`; its single node, no engine-symbol change. | `independent-scientific-check` archive; last test edit `02adb81f`. |
 | Agreement removal | Nine changed existing frozen files, the eight-case retirement test, and revised stance test; assignment `_CORE_MAPPINGS` changed, no top-level engine function changed. | `remove-collaboration-agreement` archive and reviewed commit `5b7848c5`; final stance-test blob below supersedes its predecessor. |
+| Stewardship and reuse | Newly frozen `bootstrap/tests/test_stewardship_rules_ship.py` (blob `ae4aaa79e51ae6992f234aa86320b1370baf7abe`, 1 node); no engine-symbol or manifest change. | `stewardship-and-reuse` archive; reviewed commit `1e4e979b`. |
 
 Final review-stance test receipts at `6fd6687f` (all three paths are under
 `bootstrap/tests/`; later authorized edits must replace their receipt):
@@ -172,6 +172,15 @@ The accepted Decision authorized the join:
 
 The Maintainer's ceremony runs in this strict order: **the AST correction
 first, then the gate-manifest re-anchor once.**
+
+**Joined 2026-10-20** at the archive of
+`dev/plans/archive/stewardship-and-reuse.md`. At code-reviewed commit
+`1e4e979b9f3f10136c3a1953333f9947ead41c06`, the newly frozen test file is
+`bootstrap/tests/test_stewardship_rules_ship.py` (blob
+`ae4aaa79e51ae6992f234aa86320b1370baf7abe`, 1 node). No engine symbols,
+contracts, or public manifests changed. The Maintainer authorized the join:
+
+> "Okay, can you finish up both the plans, include stewardship-and-reuse?"
 
 The older adopt-module/slot-empty AST debt was re-anchored at `b82b56d0`;
 remaining symbol changes come from later repairs and the live plans. The old
