@@ -1,12 +1,12 @@
 {
   "Assign:RECOGNIZED_PROFILE_KEYS": [
-    "f3d84dec9c52eb45"
+    "ecd2387224a6157f"
   ],
   "Assign:_ADOPTABLE_BLOCKED_KINDS": [
     "b77cd1b7b08d3fe7"
   ],
   "Assign:_ALWAYS_ON_MAPPINGS": [
-    "2a694da91690ec5c"
+    "b72f7310ef02fae2"
   ],
   "Assign:_BLOCKED_ADDITION_KINDS": [
     "3f1bba8eb574b6eb"
@@ -21,240 +21,168 @@
     "588c35a3528adc47"
   ],
   "Assign:_IF_RE": [
-    "36d695ac37c412f9"
+    "ee3d16c9237ef6ec"
   ],
   "Assign:_MODULE_REQUIRED_TOKENS": [
     "a72b4e9c40b9610c"
   ],
   "Assign:_PROFILE_CONTROL_RE": [
-    "2edba3555711a8a4"
+    "48879e37c682cb5a"
   ],
   "Assign:_PROFILE_INDICATORS": [
     "ce4e9a0c7845f633"
   ],
   "Assign:_PROFILE_INT_RE": [
-    "401f1ef9999fbb82"
+    "1efc1735cc402a7d"
   ],
   "Assign:_PROFILE_KEY_RE": [
-    "de18d1d053b64f05"
+    "665ffc3673aafbfa"
   ],
   "Assign:_PROFILE_RESERVED_SCALARS": [
-    "56c813c36f8d15ac"
+    "026368aae2acfeed"
   ],
   "Assign:_PROFILE_RESOLVER_TOKENS": [
-    "d1c94b4aac84b9a3"
+    "fe47c52680cbf43b"
   ],
   "Assign:_PROFILE_UNICODE_SPACE_RE": [
-    "46473bef03423ef6"
+    "fb805a6a51180da3"
   ],
   "Assign:_STRUCTURAL_PROFILE_KEYS": [
-    "e9ec1e45e8df01a7"
+    "36c83184f10009fc"
   ],
   "Assign:_TOKEN_GATED_MODULES": [
     "34d036b1e185a62b"
   ],
   "Assign:_UNFILLED_TOKEN_VALUE": [
-    "928f0b76439240f6"
+    "b7b016d00d120d1f"
   ],
   "Assign:_yaml": [
     "6bd09aa48027fc97"
   ],
   "ClassDef:EngineFinder": [
-    "91ed5661f8da0a11"
+    "021cf4be25e80244"
   ],
   "ClassDef:ProfileGrammarError": [
-    "bf03503efab39e2c"
+    "e8539c2a3077287a"
   ],
   "ClassDef:ScaffoldLoaderError": [
-    "a2605986b981e98c"
+    "0ac3d6ead8d3098e"
   ],
   "ClassDef:UpstreamSource": [
-    "08b0953fb82ce770"
+    "85e18b461ac12da8"
   ],
   "FunctionDef:_adopt_token_unfilled": [
-    "b9c092921239de51"
+    "dcc6c5fe67a94510"
   ],
   "FunctionDef:_always_on_group_complete": [
-    "455f2f91934a6cc0"
+    "483e60de33c95384"
   ],
   "FunctionDef:_assert_mapping_ownership": [
-    "5a486d4635e28808"
+    "e9c51f0e05968e3c"
+  ],
+  "FunctionDef:_assert_stage_has_no_links": [
+    "4362b49cccbd445e"
   ],
   "FunctionDef:_cairn_provenance": [
-    "cefba38144462d79"
+    "c338c25c2d3832fc"
+  ],
+  "FunctionDef:_check_lockfile_paths": [
+    "c5b4b8fabee3066e"
   ],
   "FunctionDef:_cmd_adopt_collisions": [
-    "86ec2a73e0a8a6cd"
+    "568691ca0adcc452"
   ],
   "FunctionDef:_commit_lock_and_caches": [
-    "6ac12c2a70bb2303"
+    "67acc1e88a725280"
+  ],
+  "FunctionDef:_contained_lockfile_path": [
+    "405e367adb7f2b10"
   ],
   "FunctionDef:_count_adoptable_collisions": [
-    "3715cff91aa4f798"
+    "41c59bce518afa25"
   ],
   "FunctionDef:_embedded_axes": [
-    "6b6be0f9021d22be"
+    "ee44fb81b4e81577"
+  ],
+  "FunctionDef:_lockfile_refusal": [
+    "8d50a8d58ef97a6e"
+  ],
+  "FunctionDef:_mapping_is_unfilled": [
+    "9b93dbc3b9244ffa"
   ],
   "FunctionDef:_parse_collision_auth": [
-    "86f293fad30fd98c"
+    "9b5868384782c631"
   ],
   "FunctionDef:_print_adopt_command": [
-    "0359d3ca4d4c8a79"
+    "c2dc10db9f4e0f8b"
+  ],
+  "FunctionDef:_read_regular_bytes": [
+    "cd4edbae1e7a1399"
   ],
   "FunctionDef:_record_fork_entry": [
-    "88df7af466835cdb"
+    "cc535a6805e45a26"
   ],
   "FunctionDef:_reject_polluted_children": [
-    "9242114fae01b4ce"
+    "58013982d614b705"
   ],
   "FunctionDef:_rendered_onboarding_overlay": [
-    "5b08be7902e89353"
+    "00f8c1e07adaf4e3"
   ],
   "FunctionDef:_resolve_current_profile": [
-    "92d800225f4df000"
+    "2355169c2381202d"
+  ],
+  "FunctionDef:_stage_exclusive": [
+    "70053bc76d1dd73f"
+  ],
+  "FunctionDef:_write_by_replacing": [
+    "1144693f841618b9"
   ],
   "FunctionDef:_yaml_load": [
-    "272bc70fc9fe77c8"
+    "56e7dbcf29b0a97c"
   ],
   "FunctionDef:apply_module_merges": [
-    "67aaed81bfc5c3c9"
+    "fa99e17af2bb9574"
   ],
   "FunctionDef:assert_always_on_complete": [
-    "b2675588e1a0a8cc"
+    "dbc8ae1f2009bd16"
   ],
   "FunctionDef:capability_install_notice_lines": [
-    "88af82a8ce5a1d5e"
+    "707615b8e8a4dddc"
   ],
   "FunctionDef:duplicate_destinations": [
-    "004920e9761733a3"
+    "f1d215c5d6a1dc7a"
   ],
   "FunctionDef:install": [
-    "5d2af1b105a77a61"
+    "e485a51217a6b07b"
   ],
   "FunctionDef:missing_always_on_sources": [
-    "f17ebdabc60d5361"
+    "aa7dc0d22696211f"
   ],
   "FunctionDef:missing_required_tokens": [
-    "b27d4da834d695c4"
+    "7ca67b4feba7ab5a"
+  ],
+  "FunctionDef:model_selection_notice_lines": [
+    "e4eaffe33549881a"
   ],
   "FunctionDef:module_merge_directives": [
-    "dc44c50f0289d5b6"
+    "2631462dccb45785"
   ],
   "FunctionDef:resolve_slot_merge": [
-    "d8f87188c146a75e"
+    "629ef1db1f3286c1"
   ],
   "FunctionDef:strip_conditional_regions": [
-    "99de9adbb9523ac9"
+    "d474ac92918fdeba"
   ],
   "FunctionDef:token_gated_modules": [
-    "0826cc41dd939a75"
+    "1a97db062d85ee87"
   ],
   "FunctionDef:trusted_upstream": [
-    "3d7f75eff09c9383"
+    "41034452b6fb8dab"
   ],
   "FunctionDef:unrecognized_profile_keys": [
-    "9bbd3914c17550f2"
+    "3ee1c67967199acc"
   ],
   "FunctionDef:verify_within_root": [
-    "8d998b82d8a9cfab"
-  ],
-  "Import:080e5955857c": [
-    "080e5955857cc60c"
-  ],
-  "Import:168e8cb7d9af": [
-    "168e8cb7d9af10d9"
-  ],
-  "Import:1bd25b1faa92": [
-    "1bd25b1faa92dbdc"
-  ],
-  "Import:1f266e984797": [
-    "1f266e984797b982"
-  ],
-  "Import:28aac7484aa9": [
-    "28aac7484aa9a46d"
-  ],
-  "Import:2e7c4d9da58d": [
-    "2e7c4d9da58d00f3"
-  ],
-  "Import:2f50860721a3": [
-    "2f50860721a34038"
-  ],
-  "Import:38c41a014270": [
-    "38c41a014270161d"
-  ],
-  "Import:3f0dd9fe5bac": [
-    "3f0dd9fe5bace6c9"
-  ],
-  "Import:4b497a0c2216": [
-    "4b497a0c22160a92"
-  ],
-  "Import:4b6bfb2b8707": [
-    "4b6bfb2b87076195"
-  ],
-  "Import:4f4228beb075": [
-    "4f4228beb075e7cc"
-  ],
-  "Import:59e3e0fd8cdb": [
-    "59e3e0fd8cdbdc20"
-  ],
-  "Import:68c3503c9652": [
-    "68c3503c96524a29"
-  ],
-  "Import:6a99de5308a6": [
-    "6a99de5308a6dc86"
-  ],
-  "Import:81abbc7ea41d": [
-    "81abbc7ea41d45b8"
-  ],
-  "Import:84ab4fbddb0a": [
-    "84ab4fbddb0a5186"
-  ],
-  "Import:866a97c0a29d": [
-    "866a97c0a29d398d"
-  ],
-  "Import:86998a335d57": [
-    "86998a335d5791b4"
-  ],
-  "Import:8eea3b6a0d57": [
-    "8eea3b6a0d57e1cc"
-  ],
-  "Import:9523e5432f6f": [
-    "9523e5432f6faa43"
-  ],
-  "Import:9c92f19b21cd": [
-    "9c92f19b21cd2aa4"
-  ],
-  "Import:a10597dd9879": [
-    "a10597dd98794309"
-  ],
-  "Import:a5de01d06f82": [
-    "a5de01d06f824ab3"
-  ],
-  "Import:a6948c6ef9fd": [
-    "a6948c6ef9fd3034"
-  ],
-  "Import:b15953b84150": [
-    "b15953b8415054c7"
-  ],
-  "Import:b9241efcdac0": [
-    "b9241efcdac07f4d"
-  ],
-  "Import:c636ea87b7d2": [
-    "c636ea87b7d23616"
-  ],
-  "Import:d8e1b6a2d62f": [
-    "d8e1b6a2d62fe3d6"
-  ],
-  "Import:da10787ca958": [
-    "da10787ca958786a"
-  ],
-  "Import:e448e389dff2": [
-    "e448e389dff2a196"
-  ],
-  "Import:e904d83928f4": [
-    "e904d83928f465c5"
-  ],
-  "Import:f0a8b732f682": [
-    "f0a8b732f682850e"
+    "393cb83f09bc9134"
   ]
 }
