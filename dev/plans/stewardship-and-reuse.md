@@ -1,7 +1,7 @@
 # Plan: Fix easy defects and reuse what already exists
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-stewardship-and-reuse.md`
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-19
@@ -536,3 +536,43 @@ and board-pointer wording has no dedicated semantic owner beyond module
 installation and document checks found by the plan's reader search; the
 pending certifying run supplies broader integration coverage. Review still
 owes the authority boundaries, reuse searches and all accepted outcomes.
+
+## Code review -- Antigravity (Gemini 3.8 Flash, fresh session) -- 2026-10-20
+
+```
+Reviewed commit: 1e4e979b9f3f10136c3a1953333f9947ead41c06
+Target: C1-C3 (commits 1c6cc903, edf92ba3, 6d7978fa, 1e4e979b)
+Prior findings: none
+```
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes; all four accepted outcomes are delivered without widening scope: canonical deferral reasons in lifecycle doctrine with live receiving-plan authorization, compact promise-only defect rule and person-step cost bar in both operational references, issue-capture guidance pointing to that single rule without independent permission, and a 1-sentence reuse duty with the nine-lens roster intact -- `AGENTS.md:226-240`; `doctrine/lifecycle.md:605-625`; `dev/modules/issue-capture.md:57-67`; `bootstrap/tests/test_stewardship_rules_ship.py::test_small_fix_rule_and_capture_pointer_reach_install`.
+2. **Best alternative.** The implemented design delivers the simplest path: compact operational text (~15 lines) in `AGENTS.md`, thin deviation pointers across all six carriers, issue-capture guidance delegating to `AGENTS.md`, and one small real-install test (`test_stewardship_rules_ship.py`) without introducing a broad mutation framework or clause matrix -- `AGENTS.md:198-240`; `templates/core/AGENTS.md:203-245`; `dev/plans/_template.md:38-41`; `doctrine/plans.md:970-985`; `bootstrap/tests/test_stewardship_rules_ship.py`.
+3. **What would show it wrong.** A review note, issue, or comment manufacturing a promise; defect fixes altering rule text or bypassing fences; scope reduction or accepted outcomes dropped without a Decision; or installed guidance drifting from the operational rule -- see the falsification ledger below.
+
+**Bounding**: ACCEPTED
+
+*Bounding rationale*: Challenged mapped tests and named surfaces across C1–C3:
+* Ran mapped test files (`test_stewardship_rules_ship.py`, `test_scope_reduction_trap.py`, `test_review_and_verification_rules_ship.py`, `test_review_sweep_ships.py`, `test_scientific_check_guidance_ships.py`, `test_documentation_plan_module.py`, `test_verification_boundaries.py`, `test_comprehension_floor.py`, `test_certifying_run_rule.py`): 893 tests passed cleanly under Python 3.13.13 with 0 skips/xfails/xpasses.
+* Verified that public `scaffold.py --manifest` is 100% byte-identical to base `a3672176` (no engine changes, no new manifest rows).
+* Verified byte-for-byte identity of issue-capture module twins (`dev/modules/issue-capture.md` and `templates/modules/team-gated/issue-capture.md`).
+* Verified all six deviation pointers in `AGENTS.md`, `templates/core/AGENTS.md`, `dev/plans/_template.md`, `templates/core/dev/plans/_template.md`, `doctrine/plans.md`, and `doctrine/dual-review.md`.
+* Evaluated disclosed upgrade smoke limitations: LHM adds one conflict on `issue-capture.md` (6 vs 5) as expected from upstream module evolution; modflow_tools retains 2 baseline conflicts; synthetic upgrade tests confirm that clean 3-way merge preserves local customizations. Real adopters were unmodified.
+* Stated omissions: full-suite certifying run deferred per `AGENTS.md` and cited as `Certified by: pending`; AST and gate-manifest re-anchors deferred to Maintainer ceremony.
+
+**Waiting-line check.** Predecessor fence was Maintainer-gated by the Decision conditional on `review-stance-and-lenses` being archived. That plan was archived at `0974a4de` prior to start, and the Maintainer authorized pickup in chat (`dev/plans/stewardship-and-reuse.md:367-372`). No deviation request was made in the implementation range.
+
+### Falsification ledger
+
+In an independent test worktree at `6d7978fa`, six deliberate mutations were evaluated beside an unmutated control run (158/158 passed across `test_stewardship_rules_ship.py`, `test_scope_reduction_trap.py`, `test_review_and_verification_rules_ship.py`):
+1. **Mutant 1 (Promise rule altered in shipped AGENTS.md)**: In `templates/core/AGENTS.md`, replaced "A defect breaks a promise already in the file" with note-based authority. **KILLED** by `test_stewardship_rules_ship.py::test_small_fix_rule_and_capture_pointer_reach_install` (1 failure: literal promise string missing in installed project).
+2. **Mutant 2 (Cost bar inverted in shipped AGENTS.md)**: In `templates/core/AGENTS.md`, replaced "Count person-steps, not machine time" with machine time. **KILLED** by `test_stewardship_rules_ship.py::test_small_fix_rule_and_capture_pointer_reach_install` (1 failure: person-steps cost bar missing in installed project).
+3. **Mutant 3 (Issue-capture guidance altered)**: In `templates/modules/team-gated/issue-capture.md`, replaced "Fixing an easy problem you meet" with capture-first advice. **KILLED** by `test_stewardship_rules_ship.py::test_small_fix_rule_and_capture_pointer_reach_install` (1 failure: pointer missing in installed module).
+4. **Mutant 4 (defer-OK restored)**: In `doctrine/plans.md`, restored the deprecated `defer-OK` label. **KILLED** by `test_stewardship_rules_ship.py::test_small_fix_rule_and_capture_pointer_reach_install` (1 failure: assertion against defer-OK failed).
+5. **Mutant 5 (In-motion deferral reason dropped)**: In `doctrine/lifecycle.md`, replaced "belongs to work already in motion" with an unspecified future plan. **KILLED** by `test_stewardship_rules_ship.py::test_small_fix_rule_and_capture_pointer_reach_install` (1 failure: canonical in-motion phrase missing).
+6. **Mutant 6 (Accepted scope floor dropped)**: In `templates/core/AGENTS.md`, removed "Accepted scope is a **floor**". **KILLED** by `test_scope_reduction_trap.py::test_scope_reduction_obligation_present[templates/core/AGENTS.md::accepted scope is a floor]` (1 failure: scope reduction obligation violated).
+
+There were no survived or equivalent mutants (6 of 6 killed).
+
+**Coverage -- Covered:** claims #1-#9; authority boundaries on defect fixes and promise definitions; three canonical deferral reasons and receiving-plan authorization; person-step cost bar; issue-capture guidance pointing to AGENTS.md; issue-capture twin byte identity; 1-sentence reuse rule and nine-lens interface; all six deviation carriers; 6-mutant falsification ledger; public manifest diff; synthetic upgrade preservation. Not covered / low confidence: no full certifying suite run, AST re-anchor, or gate-manifest re-anchor was run (deferred to Maintainer certifying run and 0.4 ceremony per plan contract); no real adopter repositories were modified.
