@@ -1,7 +1,7 @@
 # Plan: the model mapping on every install path -- a notice where agents install, a check that is right both ways, and a write that cannot escape
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-model-mapping-install-path.md`
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance -- inherited: the change edits the scaffold engine (`bootstrap/_scaffold/`), a script every adopter runs verbatim, and the onboarding seeds written into preset adopters' `dev/PLANNING.md`
 **Opened**: 2026-10-18
@@ -1117,3 +1117,63 @@ This answers the Internal review (`d13bd2ac`, MM-PR-1 to MM-PR-12) and the Inter
 **Also taken from the reviews.** The Internal review's offer of a single writer helper (its Answer 2) is adopted, in the shape of two helpers in `security.py`, because the Maintainer's later answers added four more callers and a hand-written recipe in each would have drifted. The capture's accepted "all inline" is a means, not an outcome; C4 (b) records the change. The Security review's rule that cleanup removes only what the call created is in the helper's criterion and in M32. The stale sequencing cells (the neutrality plan, `board-as-basis`) are updated. P4 now says why the structure is judged before the rows.
 
 **Not taken.** The optional `fsync` (MM-SR-10): an in-place write has the same crash window, so it is no worse. A size cap on reads (P9) was not asked for and stays a residual.
+
+## Implementation verification -- Claude Sonnet 5.5 (scribed at Maintainer direction) -- 2026-10-20
+
+**Boundary B mode**: full required for the scaffold engine and install contract surfaces; scoped integration run performed at `1b609e5c` under canonical interpreter Python 3.13.13, with full certifying suite deferred to Maintainer certification. **Certified by**: pending. `CAIRN_FULL_SUITE` was never set.
+
+**Tested commit**: `1b609e5c03e18f7e156a33020f29f271d274d6d8`.
+**Reviewed range**: `26b214194c502da2913b7b51b74e6c38ceee1ce8..1b609e5c03e18f7e156a33020f29f271d274d6d8`.
+The plan's implementation commits are `6dcbdda7` (C1), `7e1faa64` (C3/C4), `a3672176` (C4), `90c6f35a` (C2), `6d0de9ac` (C4), `4f313242` (C4), and `1b609e5c` (C6). Intervening commits in the range belong to other sessions' work.
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13.
+**Pre-run state**: clean `git status --porcelain` in the working tree apart from untracked `.claude/` and `dev/measurement/collision_log.md`. **Post-run state**: the same clean status and unchanged SHA.
+
+### Scoped Test Execution
+
+Mapped test suites run via `python -m pytest -q` under Python 3.13.13:
+
+* **Primary mapped suite (5 files):** `bootstrap/tests/test_model_selection_stub.py`, `bootstrap/tests/test_security_leaf.py`, `bootstrap/tests/test_upgrade_module_additions.py`, `bootstrap/tests/test_onboarding_seed_roster.py`, `bootstrap/tests/test_intents_tool.py`: **273 passed** in 36.97s (0 skips/xfails/xpasses).
+* **Secondary mapped suite (5 files):** `bootstrap/tests/test_scaffold.py`, `bootstrap/tests/test_lockfile_module.py`, `bootstrap/tests/test_verify_integrity.py`, `bootstrap/tests/test_presets.py`, `bootstrap/tests/test_profiles_smoke.py`: **284 passed** in 5.30s (0 skips/xfails/xpasses).
+* **Upgrade suite (1 file):** `bootstrap/tests/test_upgrade.py`: **106 passed** in 14.31s (0 skips/xfails/xpasses).
+* **AST gate test (1 file):** `bootstrap/tests/test_ast_attest.py`: **28 passed, 2 expected non-passes** (0.19s).
+Total mapped tests passing: **691 passed**.
+
+### Standing Quality Gates
+
+* `python scripts/quality_gate.py --sub neutrality --sub redundancy`: neutrality `fail=0` (56 informational); redundancy `fail=0`.
+* `python scripts/check_cairn.py`: 1 disclosed flag (line citation at `dev/plans/model-mapping-install-path.md:1020` exceeding `dev/PLANNING.md`).
+* `python scripts/claim_check.py`: clean across touched durable documentation.
+* `python bootstrap/scaffold.py --manifest`: byte-identical to parent manifest.
+
+### Non-Pass Disposition
+
+* **`test_ast_attest.py`**: 2 expected failures (`test_committed_baseline_accounted_for_across_the_engine_package` and `test_ast_gate_passes_over_the_full_scaffold_module_set`). The baseline was already stale before this plan. Per Maintainer ruling (*"Yes, use exact measured delta"*), `_apply_upgrade` was already classified as changed before this plan's first engine commit; its baseline digest was `dc53397782e91c18` and is now `f05f1ee7ad8c58fe`. The newly changed engine function definitions added by this plan are exactly 5: `capture_model_selection_mapping` (`baf873c923f3060e`), `write_install_lockfile` (`88db57e796412133`), `_cmd_init_lock` (`e630648f70117ff9`), `_cmd_finalize_lockfile` (`4966e1fa55574461`), and `read_lockfile` (`662e46033c193c42`), along with previously changed engine functions `main` (`0270e7f38e594156`), `_cmd_adopt_module` (`c4ee1bcae92a9f80`), `cmd_upgrade` (`e334138dcc0745aa`), and `seed_gitignore` (`490255ef714f9afe`). The known-new re-key is `_commit_lock_and_caches` (`acda3d85b18f7f18`). The newly added function definitions are exactly five: `_mapping_is_unfilled`, `_read_regular_bytes`, `_stage_exclusive`, `_write_by_replacing`, and `model_selection_notice_lines`. The failures end when the Maintainer executes the combined AST and manifest ceremony.
+* **`check_cairn.py`**: 1 flag in line 1020 of this plan file (`dev/PLANNING.md:370` citation from earlier review response); disclosed as historical plan text, not live adopter guidance.
+
+### Mutation Ledger
+
+All 52+ plan mutations (`M1`–`M52`, `M38-paired`, `MM-SR` stand-ins) were executed against commit `1b609e5c` via `/private/tmp/cairn-model-mapping-mutations.py` beside unmutated control runs (control runs: 100% passed). All 52 mutants were **killed**:
+- `M1`–`M40`, `M42`–`M52`, `M38-paired`, `MM-SR` stand-ins: killed by targeted test failure (returncode 1).
+- `M41` (`O_NONBLOCK` removed from `_read_regular_bytes`): **killed** by timeout on named-pipe test (`test_special_files_refused_without_blocking`), confirming non-blocking refusal.
+- Survived mutants: **0**.
+- Unmeasured equivalents: **0**.
+
+### Stub Merge Measurement
+
+Measured on `1b609e5c` with base stub `26b21419:templates/modules/team-gated/model_selection_mapping_stub.yml` and theirs `templates/modules/team-gated/model_selection_mapping_stub.yml`:
+- (a) untouched stub: exit 0 (clean merge).
+- (b) hand-filled stub keeping comments: exit 0 (clean merge).
+- (c) interactive capture output: exit 1 (conflict). `upgrade --apply` refuses while conflict markers remain and writes nothing.
+- (d) rewritten header: exit 0 (clean merge).
+
+### Smoke Checks & Maintainer Rulings
+
+- **Vendor-name grep**: Per Maintainer ruling (*"Yes, record allowed matches"*), the installed-tree vendor-name grep matches the filled mapping, as well as existing explicitly allowed onboarding examples and lockfile caches; the neutrality gate itself passes cleanly (`fail=0`).
+- **Checker verification**: `scripts/check_model_selection.py` returns exit code 1 on the stub, 0 on a hand-filled stub, and 0 on Cairn's own filled mapping.
+- **Install & upgrade notices**: `scaffold.py --config <profile> --target <tmp> --non-interactive` prints the first notice and exits 0. `upgrade --plan` prints the notice. `board.py --maintainer` lists the seeded row.
+
+### Reviewer Handoff Briefing (Late Additions)
+
+Per C6 acceptance criterion (:542), the code review and Internal Security Review are notified that:
+- The four other lockfile writers (`write_install_lockfile`, `_cmd_init_lock`, `_cmd_finalize_lockfile`, `_apply_upgrade`), the lockfile reader (`read_lockfile`), and the `.gitignore` append (`seed_gitignore`) were folded into C4 (d) and C4 (e) after both plan reviews.
+- The review must cover all seven callers of the writer helpers (`_stage_exclusive`, `_write_by_replacing`) and the callers of `_read_regular_bytes` explicitly by name.
