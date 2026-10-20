@@ -34,7 +34,7 @@ artifacts; this board does not maintain a second status table.
 |---|---|
 | Four security repairs: .gitignore seed guard, session-kernel writes, committed interpreter binding, engine copy fallback | Final review findings dispositioned; their repair and review records are the evidence. |
 | `neutrality-and-upgrade-slots`, `independent-scientific-check`, `review-stance-and-lenses`, `board-as-basis` | Archived; retain their final-byte contributions in the ceremony register below. |
-| `model-mapping-install-path` | Finish implementation, independent code reviews and archive. The agreement removal landed before its C2. |
+| `model-mapping-install-path` | Archived; retain its final-byte contributions in the ceremony register below. |
 | README disclosure | State that 0.4 has not had an outside correctness trial. |
 | Release assurance | Certify the final committed batch, perform the Maintainer's AST correction **before** the gate-manifest re-anchor, and complete the release sweeps in `docs/release-process.md`. |
 
@@ -120,7 +120,7 @@ the committed manifest and does not discharge this obligation.
 | Review stance and lenses | Deleted test_onboarding_review_tiers.py and its five pinned nodes; three newly frozen tests; cascade-mutable config comments plus frozen preset/scope-test edits. | `review-stance-and-lenses` archive; reviewed repair `6fd6687f`; final blob table below. |
 | Board as basis | Newly frozen `bootstrap/tests/test_board_json_contract.py` and `bootstrap/tests/fixtures/board_json_v1_baseline.json`; 25 new nodes, none dropped. | `board-as-basis` archive verification. |
 | .gitignore seed guard | Frozen security-leaf/skills-upgrade tests; phase-mutable intent tests; CHANGED main, seed_gitignore, _cmd_adopt_module, cmd_upgrade and create_dev_tree. | `dev/reviews/2026-10-18-code-review-gitignore-seed-guard.md`, GS-CR5; `b8a402c6` through `3ba6f230`. |
-| Model mapping on every install path | Frozen mapping scripts and model-selection/seed/security/upgrade tests, the deliberately dropped comment-placeholder test, CHANGED/NEW engine functions and REKEYED _commit_lock_and_caches. | Live `model-mapping-install-path` plan; its final verification owns exact sets. |
+| Model mapping on every install path | Six changed existing frozen files, new model-selection/seed/security/upgrade tests, the deliberately dropped comment-placeholder test; CHANGED engine functions, five NEW functions, and REKEYED _commit_lock_and_caches. | `model-mapping-install-path` archive and reviewed commit `1b609e5c`. |
 | Repository rename | Frozen `bootstrap/tests/test_lockfile_provenance.py` URL assertion; no node or engine-symbol change. | Rename commit `72248e15`. |
 | Independent scientific check | Newly frozen `bootstrap/tests/test_scientific_check_guidance_ships.py`; its single node, no engine-symbol change. | `independent-scientific-check` archive; last test edit `02adb81f`. |
 | Agreement removal | Nine changed existing frozen files, the eight-case retirement test, and revised stance test; assignment `_CORE_MAPPINGS` changed, no top-level engine function changed. | `remove-collaboration-agreement` archive and reviewed commit `5b7848c5`; final stance-test blob below supersedes its predecessor. |
@@ -146,6 +146,32 @@ archived plan. Derive the ceremony's full set from the final tree; this
 paragraph does not re-anchor it. The accepted Decision authorized the join:
 
 > "Please scribe my acceptance as recommended."
+
+**Joined 2026-10-20** at the archive of
+`dev/plans/archive/model-mapping-install-path.md`. At code-reviewed
+commit `1b609e5c03e18f7e156a33020f29f271d274d6d8`, the six existing
+frozen files changed are:
+`templates/modules/team-gated/check_model_selection.py`,
+`templates/modules/team-gated/model_selection_mapping_stub.yml`,
+`templates/modules/team-gated/model-selection.md`,
+`bootstrap/tests/test_model_selection_stub.py`,
+`bootstrap/tests/test_onboarding_seed_roster.py`, and
+`bootstrap/tests/test_upgrade_module_additions.py`.
+Engine functions changed: `main`, `_cmd_adopt_module`, `cmd_upgrade`,
+`seed_gitignore`, `capture_model_selection_mapping`, `write_install_lockfile`,
+`_cmd_init_lock`, `_cmd_finalize_lockfile`, `read_lockfile`, and
+`_apply_upgrade` (digest updated from its earlier changed state).
+Five new engine functions: `_mapping_is_unfilled`, `_read_regular_bytes`,
+`_stage_exclusive`, `_write_by_replacing`, and `model_selection_notice_lines`.
+One re-keyed known-new function: `_commit_lock_and_caches`.
+Dropped pinned test: `TestFidelityCheck::test_fill_me_in_comment_fails`
+(replaced by `TestCommentsAreNotPlaceholders`).
+The accepted Decision authorized the join:
+
+> "Yes, fold them into the plan"
+
+The Maintainer's ceremony runs in this strict order: **the AST correction
+first, then the gate-manifest re-anchor once.**
 
 The older adopt-module/slot-empty AST debt was re-anchored at `b82b56d0`;
 remaining symbol changes come from later repairs and the live plans. The old

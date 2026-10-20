@@ -38,6 +38,19 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Added — Model mapping install notices, check parity, and safe atomic writes
+
+- Non-interactive installs, module adoption, and upgrade runs now emit a clear notice
+  when the model selection mapping is unfilled, advising agents to prompt the Maintainer
+  for model families rather than guessing.
+- `scripts/check_model_selection.py` skips full-line comments while requiring a non-empty
+  row list, scans parsed YAML values with PyYAML, and refuses merge-key recursion attacks.
+- Adopter writes across interactive capture, `.gitignore` seeding, and five lockfile writers
+  now execute via atomic replacement (`_stage_exclusive` and `_write_by_replacing`),
+  masking descriptor modes to `& 0o666` and preventing redirection through symlinks, hardlinks,
+  or racing temporary files. The lockfile reader refuses non-regular files and pipes.
+  ([`dev/plans/archive/model-mapping-install-path.md`](dev/plans/archive/model-mapping-install-path.md))
+
 ### Changed — Collaboration agreement retired from new installs
 
 - New installs no longer receive `dev/collaboration_agreement.md`; existing

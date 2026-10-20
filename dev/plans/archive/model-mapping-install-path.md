@@ -1,7 +1,7 @@
 # Plan: the model mapping on every install path -- a notice where agents install, a check that is right both ways, and a write that cannot escape
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-model-mapping-install-path.md`
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance -- inherited: the change edits the scaffold engine (`bootstrap/_scaffold/`), a script every adopter runs verbatim, and the onboarding seeds written into preset adopters' `dev/PLANNING.md`
 **Opened**: 2026-10-18
@@ -1245,3 +1245,54 @@ No defects found. All acceptance criteria and security obligations are satisfied
 - **Operating systems other than macOS (APFS):** The checks were verified on Darwin APFS. Windows file locking semantics and Linux ELF binary execution residuals were not verified on native kernels.
 - **Full suite certifying run:** As required by `AGENTS.md`, `CAIRN_FULL_SUITE` was not run; full tree certification remains pending the Maintainer's next certifying run.
 - **Combined AST baseline and gate manifest re-anchor:** Chunk M is explicitly Maintainer-only and runs after archiving.
+
+## Archive note -- Claude Sonnet 5.5 (scribed at Maintainer direction) -- 2026-10-20
+
+The independent code review and Internal Security Review at `64e88420` accepted
+the implementation with no findings and a 14-item falsification ledger. This
+archive is distinct from the implementation and review commits. The
+adopter-visible changes are live: non-interactive and upgrade notices, safe
+atomic writes through `_stage_exclusive` and `_write_by_replacing`, link/pipe
+containment, and comment skipping and merge-key refusals in `check_model_selection.py`.
+The changelog and roadmap boards now point to this record.
+
+**Maintainer Ceremony Order (Chunk M):**
+The Maintainer's 0.4 ceremony derives the actual frozen-file, AST, and
+collection deltas. As settled by chunk M and the Decision, the ceremonies run
+in this strict order: **the AST correction first, then the gate-manifest
+re-anchor once.** This archive performs none of those re-anchors.
+
+**Pinned test collection changes:**
+- Removed: `TestFidelityCheck::test_fill_me_in_comment_fails` (replaced by
+  `TestCommentsAreNotPlaceholders`).
+- Added node classes: `TestCommentsAreNotPlaceholders`,
+  `TestAMappingNeedsAtLeastOneRow`, `TestParsedValuesAreScannedWhenYamlIsPresent`,
+  `TestMergeKeysAreRefused`, `TestCheckerMessagesCarryNoParsedValue`,
+  `TestBarePathResidualIsPinned`, `TestValueScanVisitsEachObjectOnce`,
+  `TestThisRepositorysMappingIsFilled`, `TestEngineAndCheckerAgreeOnUnfilled` in
+  `bootstrap/tests/test_model_selection_stub.py`;
+  `TestStubExampleNamesAFamilyNotAVersion`,
+  `TestAcceptanceChecklistNamesTheMappingCheck`,
+  `TestShippedWordsArePinnedByExactString`,
+  `TestFamilyNotVersionReachesEverySite`; in
+  `bootstrap/tests/test_onboarding_seed_roster.py`:
+  `TestModelMappingWaitingSeed`; in `bootstrap/tests/test_security_leaf.py`:
+  `TestReadRegularBytesRefusesAnythingElse`, `TestWriteByReplacing`; in
+  `bootstrap/tests/test_upgrade_module_additions.py`:
+  `TestLockCommitWritesThroughExclusiveTemporaries`,
+  `TestLockfileWritersWriteByReplacing`,
+  `TestLockfileReaderRefusesAnythingButARegularFile`; in
+  `bootstrap/tests/test_intents_tool.py`: `TestGitignoreSeedWritesByReplacing`.
+
+**Adopter upgrade cost:** An adopter whose stub header was rewritten (e.g. `lhm`)
+will encounter one clean 3-way merge conflict on `dev/.cairn/model-selection-mapping.yml`
+at their next upgrade; keeping their own side resolves it.
+
+**Dispositions:**
+- `accept`: C1 checker comment/row/value scan and merge-key refusal; C2 family
+  wording, II-5 checklist, and onboarding seeds; C3 install notices; C4 safe
+  atomic replacement writers, descriptor mode masking (`& 0o666`), and
+  link/pipe containment; C5 upgrade and adopt notices.
+- `defer`: The Maintainer-only AST correction and gate-manifest re-anchor at
+  the 0.4 cut, in the board's ceremony register.
+- There is no open Waiting line.
