@@ -90,7 +90,8 @@ be proposed back to Cairn.
 **Try it on a disposable repository.** The
 [quickstart](docs/quickstart.md) walks through one small change with one human
 and one agent. The [getting-started guide](docs/getting-started.md) explains
-the steps in more detail.
+the steps in more detail. [The guides](docs/README.md) map everything else to
+read.
 
 Then choose how much to adopt:
 
@@ -141,7 +142,7 @@ before installing third-party instructions or running agents on sensitive work.
 | [templates/](templates/) | Instructions, document templates, and optional modules installed into a project. |
 | [dimensions/](dimensions/) | How the configuration varies with the codebase and team. |
 | [bootstrap/](bootstrap/) | Installation, upgrades, integrity checks, and their tests. |
-| [docs/](docs/) | Walkthroughs, explanations, and further reading. |
+| [docs/](docs/README.md) | Start here: a map of the guides. |
 | [examples/](examples/) | Small repositories showing the workflow. |
 | [case-studies/](case-studies/) | Accounts of using Cairn in research-software projects. |
 | [dev/](dev/) | Cairn's own proposals, plans, strategy, and development record. |

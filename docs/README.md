@@ -1,0 +1,54 @@
+# Cairn guides
+
+A map of the guides in this folder and where the rest of Cairn's reading lives.
+New to Cairn? Start with the [quickstart](quickstart.md).
+
+## Try it
+
+* [Quickstart](quickstart.md) -- one small change with one human and one AI
+  agent, on a disposable repository.
+* [Getting started](getting-started.md) -- the same steps explained in more
+  detail.
+
+## Understand it
+
+* [Vision and charter](vision.md) -- what Cairn is for and what it is not.
+* [Cairn's role in the workflow](workflow-role.md) -- where Cairn sits in
+  ordinary software development.
+* [Related practices](related-practices.md) -- the overlap with decision
+  records, lab notebooks, pre-registration and code review.
+* [Glossary](glossary.md) -- the terms Cairn uses.
+* [Further reading](further-reading.md) -- the craft Cairn relies on but does
+  not re-teach.
+
+## Adopt it
+
+* [The on-ramp](../on-ramp/README.md) -- two ways in: read the guidance, or
+  install it.
+* [Dimensions](../dimensions/README.md) -- how the setup changes with the
+  codebase and the team.
+* [Solo legacy recipe](solo-legacy-recipe.md) -- one person adopting Cairn on
+  an existing codebase.
+* [Adding another agent type](agent-team-onboarding.md) -- bringing a second
+  or third AI agent into a deployment.
+* [Skills compatibility](skills-compatibility.md) -- which agents can run
+  Cairn's skills.
+
+## Work with it day to day
+
+* [Tool usage](tool-usage.md) -- worked examples of Cairn's tools.
+* [A tour of `dev/`](dev-tour.md) -- the folder where proposals, plans and
+  reviews live.
+* [Build a board view](build-a-board-view.md) -- turning the board's data into
+  a page.
+
+## The rules
+
+* [The doctrine](../doctrine/README.md) -- the methodology itself; its front
+  page explains how to read it.
+
+## Maintaining Cairn itself
+
+* [Release process](release-process.md) -- how a Cairn release is cut.
+* [Documentation plan](DOCUMENTATION_PLAN.md) -- where each kind of document
+  belongs.
