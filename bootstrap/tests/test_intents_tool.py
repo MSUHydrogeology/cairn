@@ -256,6 +256,18 @@ _REMEDY = "replace the link with a regular file, then re-run"
 
 
 class TestGitignoreSeedWritesByReplacing:
+    def test_read_only_file_is_not_replaced(self, tmp_path: Path) -> None:
+        ignore = tmp_path / ".gitignore"
+        ignore.write_bytes(b"existing\n")
+        ignore.chmod(0o444)
+        try:
+            with pytest.raises(ScaffoldSecurityError, match="not writable"):
+                seed_gitignore(tmp_path, ("new",))
+            assert ignore.read_bytes() == b"existing\n"
+            assert stat.S_IMODE(ignore.stat().st_mode) == 0o444
+        finally:
+            ignore.chmod(0o644)
+
     def test_hardlink_refused_before_any_read(self, tmp_path: Path) -> None:
         victim = tmp_path / "victim"
         victim.write_bytes(b"outside\n")
