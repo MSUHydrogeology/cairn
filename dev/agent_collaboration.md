@@ -79,7 +79,9 @@ trying to do before saying what is wrong with it. A review that opens with
 findings reads as a verdict, and an author defends rather than thinks.
 
 A finding is **blocking** or **non-blocking**, and says what evidence would
-close it. "This is too large" is not a finding.
+close it. "This is too large" is not a finding. Non-blocking says only that
+shipping would not do damage that is hard to undo; it does not make a finding
+deferrable.
 
 ## The review sweep
 
@@ -106,6 +108,9 @@ wrong judgment but an *unswept category*. The nine:
 5. **Cross-document consistency** — scan the governing docs, the roadmap, and
    code, tests and doctrine for an orphaned reference to old or deferred
    behavior, or an existing tool or path the change should use or update.
+   Check the plan's Reuse answer by re-running its search and one of your own,
+   first against a known positive control. An accidental near-copy is a
+   finding with reuse or generalization as its satisfier, never a nit.
 6. **Drift** — docs, examples, changelog, and commit claims match the behavior
    that actually shipped.
 7. **Lifecycle / process placement** — for a doctrine or process change: *who*

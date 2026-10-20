@@ -202,6 +202,8 @@ names and for any release or security ceremony.
 cause damage that is hard to undo?* **Yes → blocking**; a blocking finding
 on the standard lane forces escalation to deliberate or an explicit
 recorded Maintainer disposition. No → `note` / `nit`, recorded, non-blocking.
+Non-blocking says only that shipping would not do damage that is hard to undo;
+it does not make a finding deferrable (the archive rule is in `lifecycle.md`).
 
 Full review weight remains on the deliberate lane, where every finding
 gets the complete review the lane already runs; the test is what lets the
@@ -450,6 +452,9 @@ where this change's bug lives.
    roadmap, and code/tests/doctrine for references to what is changing:
    an orphaned reference to the old or deferred behavior, or an existing
    tool / path / constraint the change should use or update.
+   Check the plan's Reuse answer by re-running its search and one of your own,
+   first against a known positive control. An accidental near-copy is a
+   finding with reuse or generalization as its satisfier, never a nit.
 6. **Drift** — docs, examples, changelog, and commit claims match the
    behavior that actually shipped.
 7. **Lifecycle / process placement** — for a doctrine or process
@@ -601,6 +606,8 @@ recommendations binding, the opposite of the calibration intended.
 This adds no new approval ceremony. The Decision and the existing deviation gate
 are already the authority points; doctrine only has to say that reduction is one
 of the things they govern, alongside new scope and a revived struck chunk.
+A defect fix made under "Fixing an easy problem you meet" in `AGENTS.md` is
+not new scope; that rule does not authorize removing an accepted outcome.
 
 ### The grouped scope-remainder record
 

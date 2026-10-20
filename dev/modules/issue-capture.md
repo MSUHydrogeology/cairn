@@ -54,18 +54,17 @@ adopter.
 
 ### Capture vs. fix inline
 
-A standing rule keeps the channel useful: **capture friction as an
-issue rather than fixing it inline mid-session**, unless the fix is
-trivial and in-scope for the current work. Inline fixes to
-unrelated friction scatter the work and escape review; an issue
-preserves the signal for triage on its own cadence. The exception
-is the genuinely one-line, on-path fix.
+Friction is **fixed where you meet it** when "Fixing an easy problem you
+meet" in `AGENTS.md` allows it, and **captured** as an issue otherwise.
+The operational rule is stated there once, including what counts as a defect
+and as cheap; this module adds no permission. A person who meets an easy
+problem fixes it with its test and review rather than scattering unreviewed
+changes through the session.
 
-This same limit binds the User Agent's **debug-from-the-user's-seat**
-mode (`roles.md` > User Agent, which defines that mode): a fix
-diagnosed from real use, once it exceeds the trivial one-line bar
-above, is captured as an issue — reproduction plus root cause — and
-routed to the owning implementer rather than landed mid-diagnosis.
+The same rule binds the User Agent's **debug-from-the-user's-seat** mode:
+a diagnosed fix that meets it lands with its test; one that does not is
+captured with reproduction and root cause, then routed to its owning
+implementer or to the Maintainer when a decision is required.
 
 ### Tracker-unavailable fallback
 

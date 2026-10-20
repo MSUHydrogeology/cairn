@@ -134,9 +134,12 @@ scope-reduction rule in the `accept` entry), with the *why* in
   A comment is *not* eligible: comments do not fire, and a comment is
   a board row relocated somewhere fewer people read.
 * `wontfix` — explicit non-action, **with a rationale**.
-* `defer` — deposited on this board. **Requires the Maintainer's
-  authorization, quoted verbatim.** A deposit on a shared board is a
-  scope decision.
+* `defer` — deposited on this board or appended to the receiving open plan.
+  **Requires the Maintainer's authorization, quoted verbatim**, including
+  the added scope in the receiving plan.
+
+A deferral names one of the three reasons in the governing plan template's
+*Dispositions*; a priority label is not a reason. This mirror adds no rule.
 
 **No required order** — the record says why the chosen disposition is
 right. Two eligibility rules bound it: a follow-up that **reaches an

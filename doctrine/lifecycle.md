@@ -588,7 +588,8 @@ vocabulary is therefore:
   people read.
 * `wontfix` — explicit non-action, **with a rationale**. Subject to
   the eligibility rule below.
-* `defer` — deposited on the roadmap board. **Requires the
+* `defer` — deposited on the roadmap board, or appended to the open plan
+  that takes it. **Requires the
   Maintainer's authorization, quoted verbatim** (the attestation form
   is the one used for scribing a Decision). A deposit on a shared
   board is a scope decision, and scope is Maintainer-held.
@@ -600,6 +601,26 @@ vocabulary is therefore:
 say why the chosen disposition is the right one. An ordering rule
 would make the cheapest disposition the default, which is the failure
 being fixed rather than a fix for it.
+
+**A `defer` says why it could not be fixed now.** The record already gives a
+reason for each disposition; for a deferral it must be one of three:
+
+* It **needs a Maintainer decision**: name that decision.
+* It **belongs to work already in motion**: name the receiving open plan or
+  proposal and append the item to its text; the Maintainer's quoted
+  authorization covers the addition to that scope. Do not create a duplicate
+  issue or leave only a pointer to work that has not opened.
+* It is **over the cost bar**: name the person-step or the size that prevents
+  fixing it now. For a finding on the plan's own change, about a chunk's worth
+  (one commit with its test when there is no plan) is the size bar.
+
+"Non-blocking", "nit", "low priority" and a reviewer's suggested home are not
+reasons. The operational cost bar is in `AGENTS.md` > "Fixing an easy problem
+you meet": prescribed test runtime is machine time, not a reason by itself.
+An item that is cheap, needs no decision and belongs to no work in motion is
+fixed before archive. This orders nothing among `accept`, `guard` and
+`wontfix`: consequence decides what may not be declined; cost decides what
+must be fixed. A true cheap defect is fixed unless fixing it needs a decision.
 
 ### Two eligibility rules
 
