@@ -1,7 +1,7 @@
 # Plan: the model mapping on every install path -- a notice where agents install, a check that is right both ways, and a write that cannot escape
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-model-mapping-install-path.md`
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance -- inherited: the change edits the scaffold engine (`bootstrap/_scaffold/`), a script every adopter runs verbatim, and the onboarding seeds written into preset adopters' `dev/PLANNING.md`
 **Opened**: 2026-10-18
@@ -1177,3 +1177,71 @@ Measured on `1b609e5c` with base stub `26b21419:templates/modules/team-gated/mod
 Per C6 acceptance criterion (:542), the code review and Internal Security Review are notified that:
 - The four other lockfile writers (`write_install_lockfile`, `_cmd_init_lock`, `_cmd_finalize_lockfile`, `_apply_upgrade`), the lockfile reader (`read_lockfile`), and the `.gitignore` append (`seed_gitignore`) were folded into C4 (d) and C4 (e) after both plan reviews.
 - The review must cover all seven callers of the writer helpers (`_stage_exclusive`, `_write_by_replacing`) and the callers of `_read_regular_bytes` explicitly by name.
+
+## Code review (Internal + Internal Security Review) -- Antigravity (code reviewer) -- 2026-10-20
+
+```
+Reviewed commit: b400c03ce7bf4ec1c9ea5a528a472a1cf58a5c68
+Target: 26b214194c502da2913b7b51b74e6c38ceee1ce8..1b609e5c03e18f7e156a33020f29f271d274d6d8
+Prior findings: none
+```
+
+**Obligation**: safe writes, temporary descriptor races, lockfile reader containment, and late-addition coverage (C4 (d) and C4 (e)).
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes; the implementation correctly hardens all seven write sites against symlink/hard-link redirection, prevents descriptor races, safely contains the lockfile reader against pipes and links, skips comments while requiring rows in the checker, and emits non-interactive notices reliably across all install/upgrade paths -- verified across 691 passing mapped tests (`bootstrap/tests/test_model_selection_stub.py`, `bootstrap/tests/test_security_leaf.py`, `bootstrap/tests/test_upgrade_module_additions.py`, `bootstrap/tests/test_onboarding_seed_roster.py`, `bootstrap/tests/test_intents_tool.py`, `bootstrap/tests/test_upgrade.py`).
+2. **Best alternative.** None simpler or safer; factoring atomic replacement into `_stage_exclusive` and `_write_by_replacing` in leaf module `bootstrap/_scaffold/security.py` using `O_CREAT | O_EXCL`, `secrets.token_hex(8)`, and `os.fchmod` masked with `& 0o666` on the open descriptor eliminates TOCTOU windows and prevents mode-escalation vulnerabilities across all seven engine writers (`bootstrap/_scaffold/security.py:54-108`).
+3. **What would show it wrong.** A surviving mutant in any of the 52+ plan mutation specifications or a failure of any writer helper to refuse symlinks/hardlinks, or a lockfile reader that hangs on a FIFO pipe -- see the falsification ledger below.
+
+**Bounding**: ACCEPTED. Boundary B's full scope was challenged by testing the contract surface (`bootstrap/scaffold.py --manifest`), checking link/pipe refusal in `read_lockfile`, verifying non-UTF-8 preservation in `seed_gitignore`, testing descriptor mode mask safety against setuid/executable source files, and verifying that all 52 plan mutants were killed without unmeasured survivors.
+
+### Falsification Ledger
+
+Targeted independent falsification checks executed against commit `1b609e5c`:
+
+| Focus Area | Probed Condition / Challenge | Observed Result | Verdict |
+|---|---|---|---|
+| **C1 Check Parity & Limits** | Checked comment skip with real row vs empty mapping vs merge-key chain (`<<: *anchor`). | Comments skipped cleanly (exit 0); empty mapping refused (exit 1); merge key refused with `ConstructorError` (exit 3 in 0.12s). | PASS |
+| **C2 Presets & Board** | Ran `tools/board.py --maintainer` on clean fresh install of both `collaborative-team` and `high-rigor-legacy`. | Both presets seed `**Waiting on Maintainer**: fill the model mapping` and board reports it on day one. | PASS |
+| **C3 Notice Mechanics** | Probed non-interactive install, interactive with filled mapping, and interactive with absent mapping. | Non-interactive prints notice and exits 0; filled mapping stays silent; absent mapping stays silent. | PASS |
+| **C4 Helper 1: `capture_model_selection_mapping`** | Preflight containment checked against symlinked mapping and parent symlink before prompting. | Refused early with constant line to stderr without prompting; exits 2 without target leak (`test_real_interactive_install_refuses_link_without_leaking_target`). | PASS |
+| **C4 Helper 2: `seed_gitignore`** | Hard link (`st_nlink > 1`), un-writable file (`os.access`), and non-UTF-8 byte sequence tested. | Hard link refused early with specific remedy text; read-only refused; non-UTF-8 bytes preserved bit-for-bit (`TestGitignoreSeedWritesByReplacing`). | PASS |
+| **C4 Helper 3: `write_install_lockfile`** | Planted hard link at `dev/.cairn/cairn-lock.yml` prior to install write. | Replaced by exclusive temporary; hard link target untouched (`test_install_does_not_write_through_a_hardlink`). | PASS |
+| **C4 Helper 4: `_cmd_init_lock`** | Planted hard link at lockfile during `--init-lock`. | Replaced by exclusive temporary; hard link target untouched (`test_init_lock_does_not_write_through_a_hardlink`). | PASS |
+| **C4 Helper 5: `_commit_lock_and_caches`** | Planted predictable sibling temp names and forced collision during staged commit. | Exclusive creation refuses collision (`O_EXCL`); failure cleans up only newly created temporaries (`TestLockCommitWritesThroughExclusiveTemporaries`). | PASS |
+| **C4 Helper 6: `_cmd_finalize_lockfile`** | Planted hard link at lockfile during `--finalize`. | Replaced by exclusive temporary; hard link target untouched (`test_finalize_does_not_write_through_a_hardlink`). | PASS |
+| **C4 Helper 7: `_apply_upgrade`** | Planted hard link at lockfile during upgrade apply. | Replaced by exclusive temporary; hard link target untouched (`test_apply_does_not_write_through_a_hardlink`). | PASS |
+| **C4 Reader: `read_lockfile`** | Symlink, dangling link, directory, and named FIFO pipe at `cairn-lock.yml`. | Refused without following links; FIFO pipe refused without blocking (`TestLockfileReaderRefusesAnythingButARegularFile`). | PASS |
+| **C4 Mode Masking** | Source file with permissions `0o4755` (setuid + exec) replaced via `_write_by_replacing`. | New file mode masked `& 0o666`, resulting in `0o644` without setuid or execute bits (`test_swapped_temp_cannot_change_victim_mode`). | PASS |
+| **C5 Adopt/Upgrade Notice** | Notice emission tested across `--adopt-module`, `upgrade --plan`, `upgrade --stage`, and failed vs successful `upgrade --apply`. | Printed after plan/stage and successful apply; omitted on failed apply (`TestNoticeOnEveryInstallPath`). | PASS |
+| **C6 Mutation Ledger** | Independent re-execution of `/private/tmp/cairn-model-mapping-mutations.py` across all 52 mutants (`M1`–`M52`). | 52 mutants killed, 0 survived, 0 unmeasured equivalents; control pass 100%. | PASS |
+
+### Late Additions Coverage (C4 (d) and C4 (e))
+
+Per C6 handoff criterion (:542), the late additions folded in after plan review were scrutinized:
+- **Seven writer helper callers:**
+  1. `capture_model_selection_mapping` (`bootstrap/_scaffold/install.py:965`): read, nothing found. Preflight guard at line 901 precedes prompts; write is gated by `_write_by_replacing`.
+  2. `seed_gitignore` (`bootstrap/_scaffold/install.py:266`): read, nothing found. Preflight lstat checks file kind and link count (`st_nlink == 1`); writable access verified before staging; non-UTF-8 prefix preserved; replaces atomically.
+  3. `write_install_lockfile` (`bootstrap/_scaffold/install.py:2066`): read, nothing found. Directory creation followed by `_write_by_replacing`.
+  4. `_cmd_init_lock` (`bootstrap/_scaffold/upgrade.py:1412`): read, nothing found. Emitted lock written through `_write_by_replacing`.
+  5. `_commit_lock_and_caches` (`bootstrap/_scaffold/upgrade.py:1509`, `1513`): read, nothing found. Multi-file staging creates exclusive siblings tracked by inode/device identity; replaces in reverse order; unlinks un-replaced siblings on failure only when identity matches.
+  6. `_cmd_finalize_lockfile` (`bootstrap/_scaffold/upgrade.py:2058`): read, nothing found. Finalized lock written through `_write_by_replacing`.
+  7. `_apply_upgrade` (`bootstrap/_scaffold/upgrade.py:2382`): read, nothing found. Applied lock written through `_write_by_replacing`.
+- **Lockfile reader callers (`read_lockfile`):**
+  1. `cmd_upgrade` (`upgrade.py:1320`): read, nothing found.
+  2. `_commit_lock_and_caches` (`upgrade.py:1489`): read, nothing found.
+  3. `_behind_by_n` (`upgrade.py:1621`): read, nothing found.
+  4. `_cmd_adopt_module` (`upgrade.py:2560`): read, nothing found.
+  5. `write_install_lockfile` (`install.py:2029`): read, nothing found.
+  All five callers receive `None` on missing or unparseable files, and `_read_regular_bytes` prevents following symlinks or hanging on special devices/FIFOs.
+
+### Findings
+
+No defects found. All acceptance criteria and security obligations are satisfied. Status moves to `ready-to-archive`.
+
+### What I did not cover
+
+- **Operating systems other than macOS (APFS):** The checks were verified on Darwin APFS. Windows file locking semantics and Linux ELF binary execution residuals were not verified on native kernels.
+- **Full suite certifying run:** As required by `AGENTS.md`, `CAIRN_FULL_SUITE` was not run; full tree certification remains pending the Maintainer's next certifying run.
+- **Combined AST baseline and gate manifest re-anchor:** Chunk M is explicitly Maintainer-only and runs after archiving.
