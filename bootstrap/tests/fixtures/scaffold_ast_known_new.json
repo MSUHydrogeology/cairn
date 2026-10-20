@@ -1,12 +1,12 @@
 {
   "Assign:RECOGNIZED_PROFILE_KEYS": [
-    "ecd2387224a6157f"
+    "f3d84dec9c52eb45"
   ],
   "Assign:_ADOPTABLE_BLOCKED_KINDS": [
     "b77cd1b7b08d3fe7"
   ],
   "Assign:_ALWAYS_ON_MAPPINGS": [
-    "b72f7310ef02fae2"
+    "2a694da91690ec5c"
   ],
   "Assign:_BLOCKED_ADDITION_KINDS": [
     "3f1bba8eb574b6eb"
@@ -21,168 +21,168 @@
     "588c35a3528adc47"
   ],
   "Assign:_IF_RE": [
-    "ee3d16c9237ef6ec"
+    "36d695ac37c412f9"
   ],
   "Assign:_MODULE_REQUIRED_TOKENS": [
     "a72b4e9c40b9610c"
   ],
   "Assign:_PROFILE_CONTROL_RE": [
-    "48879e37c682cb5a"
+    "2edba3555711a8a4"
   ],
   "Assign:_PROFILE_INDICATORS": [
     "ce4e9a0c7845f633"
   ],
   "Assign:_PROFILE_INT_RE": [
-    "1efc1735cc402a7d"
+    "401f1ef9999fbb82"
   ],
   "Assign:_PROFILE_KEY_RE": [
-    "665ffc3673aafbfa"
+    "de18d1d053b64f05"
   ],
   "Assign:_PROFILE_RESERVED_SCALARS": [
-    "026368aae2acfeed"
+    "56c813c36f8d15ac"
   ],
   "Assign:_PROFILE_RESOLVER_TOKENS": [
-    "fe47c52680cbf43b"
+    "d1c94b4aac84b9a3"
   ],
   "Assign:_PROFILE_UNICODE_SPACE_RE": [
-    "fb805a6a51180da3"
+    "46473bef03423ef6"
   ],
   "Assign:_STRUCTURAL_PROFILE_KEYS": [
-    "36c83184f10009fc"
+    "e9ec1e45e8df01a7"
   ],
   "Assign:_TOKEN_GATED_MODULES": [
     "34d036b1e185a62b"
   ],
   "Assign:_UNFILLED_TOKEN_VALUE": [
-    "b7b016d00d120d1f"
+    "928f0b76439240f6"
   ],
   "Assign:_yaml": [
     "6bd09aa48027fc97"
   ],
   "ClassDef:EngineFinder": [
-    "021cf4be25e80244"
+    "91ed5661f8da0a11"
   ],
   "ClassDef:ProfileGrammarError": [
-    "e8539c2a3077287a"
+    "bf03503efab39e2c"
   ],
   "ClassDef:ScaffoldLoaderError": [
-    "0ac3d6ead8d3098e"
+    "a2605986b981e98c"
   ],
   "ClassDef:UpstreamSource": [
-    "85e18b461ac12da8"
+    "08b0953fb82ce770"
   ],
   "FunctionDef:_adopt_token_unfilled": [
-    "dcc6c5fe67a94510"
+    "b9c092921239de51"
   ],
   "FunctionDef:_always_on_group_complete": [
-    "483e60de33c95384"
+    "455f2f91934a6cc0"
   ],
   "FunctionDef:_assert_mapping_ownership": [
-    "e9c51f0e05968e3c"
+    "5a486d4635e28808"
   ],
   "FunctionDef:_assert_stage_has_no_links": [
-    "4362b49cccbd445e"
+    "53565ee93f61a900"
   ],
   "FunctionDef:_cairn_provenance": [
-    "c338c25c2d3832fc"
+    "cefba38144462d79"
   ],
   "FunctionDef:_check_lockfile_paths": [
-    "c5b4b8fabee3066e"
+    "ae1a5456758c20fe"
   ],
   "FunctionDef:_cmd_adopt_collisions": [
-    "568691ca0adcc452"
+    "86ec2a73e0a8a6cd"
   ],
   "FunctionDef:_commit_lock_and_caches": [
-    "67acc1e88a725280"
+    "acda3d85b18f7f18"
   ],
   "FunctionDef:_contained_lockfile_path": [
-    "405e367adb7f2b10"
+    "69635d49123c223b"
   ],
   "FunctionDef:_count_adoptable_collisions": [
-    "41c59bce518afa25"
+    "3715cff91aa4f798"
   ],
   "FunctionDef:_embedded_axes": [
-    "ee44fb81b4e81577"
+    "6b6be0f9021d22be"
   ],
   "FunctionDef:_lockfile_refusal": [
-    "8d50a8d58ef97a6e"
+    "dd548fefd6ac9502"
   ],
   "FunctionDef:_mapping_is_unfilled": [
-    "9b93dbc3b9244ffa"
+    "cf878ddc12c8b28b"
   ],
   "FunctionDef:_parse_collision_auth": [
-    "9b5868384782c631"
+    "86f293fad30fd98c"
   ],
   "FunctionDef:_print_adopt_command": [
-    "c2dc10db9f4e0f8b"
+    "0359d3ca4d4c8a79"
   ],
   "FunctionDef:_read_regular_bytes": [
-    "cd4edbae1e7a1399"
+    "fea7c9399cf2c67f"
   ],
   "FunctionDef:_record_fork_entry": [
-    "cc535a6805e45a26"
+    "88df7af466835cdb"
   ],
   "FunctionDef:_reject_polluted_children": [
-    "58013982d614b705"
+    "9242114fae01b4ce"
   ],
   "FunctionDef:_rendered_onboarding_overlay": [
-    "00f8c1e07adaf4e3"
+    "5b08be7902e89353"
   ],
   "FunctionDef:_resolve_current_profile": [
-    "2355169c2381202d"
+    "92d800225f4df000"
   ],
   "FunctionDef:_stage_exclusive": [
-    "70053bc76d1dd73f"
+    "a4ae528b29ebf978"
   ],
   "FunctionDef:_write_by_replacing": [
-    "1144693f841618b9"
+    "bd1cc3be76436a8d"
   ],
   "FunctionDef:_yaml_load": [
-    "56e7dbcf29b0a97c"
+    "272bc70fc9fe77c8"
   ],
   "FunctionDef:apply_module_merges": [
-    "fa99e17af2bb9574"
+    "67aaed81bfc5c3c9"
   ],
   "FunctionDef:assert_always_on_complete": [
-    "dbc8ae1f2009bd16"
+    "b2675588e1a0a8cc"
   ],
   "FunctionDef:capability_install_notice_lines": [
-    "707615b8e8a4dddc"
+    "88af82a8ce5a1d5e"
   ],
   "FunctionDef:duplicate_destinations": [
-    "f1d215c5d6a1dc7a"
+    "004920e9761733a3"
   ],
   "FunctionDef:install": [
-    "e485a51217a6b07b"
+    "5d2af1b105a77a61"
   ],
   "FunctionDef:missing_always_on_sources": [
-    "aa7dc0d22696211f"
+    "f17ebdabc60d5361"
   ],
   "FunctionDef:missing_required_tokens": [
-    "7ca67b4feba7ab5a"
+    "b27d4da834d695c4"
   ],
   "FunctionDef:model_selection_notice_lines": [
-    "e4eaffe33549881a"
+    "408fc1dace0ddf4e"
   ],
   "FunctionDef:module_merge_directives": [
-    "2631462dccb45785"
+    "dc44c50f0289d5b6"
   ],
   "FunctionDef:resolve_slot_merge": [
-    "629ef1db1f3286c1"
+    "d8f87188c146a75e"
   ],
   "FunctionDef:strip_conditional_regions": [
-    "d474ac92918fdeba"
+    "99de9adbb9523ac9"
   ],
   "FunctionDef:token_gated_modules": [
-    "1a97db062d85ee87"
+    "0826cc41dd939a75"
   ],
   "FunctionDef:trusted_upstream": [
-    "41034452b6fb8dab"
+    "3d7f75eff09c9383"
   ],
   "FunctionDef:unrecognized_profile_keys": [
-    "3ee1c67967199acc"
+    "9bbd3914c17550f2"
   ],
   "FunctionDef:verify_within_root": [
-    "393cb83f09bc9134"
+    "8d998b82d8a9cfab"
   ]
 }
