@@ -1013,6 +1013,19 @@ class TestNoticeOnEveryInstallPath:
 
 
 class TestNoticeTextIgnoresFileContent:
+    def test_notice_does_not_read_mapping_by_path(self, tmp_path: Path, monkeypatch) -> None:
+        mapping = _seed_stub(tmp_path)
+        real_open = Path.open
+
+        def refuse_named_open(path, *args, **kwargs):
+            if path == mapping:
+                pytest.fail("mapping was opened by path")
+            return real_open(path, *args, **kwargs)
+
+        with monkeypatch.context() as mp:
+            mp.setattr(Path, "open", refuse_named_open)
+            assert model_selection_notice_lines(tmp_path)
+
     def test_unfilled_content_is_not_echoed(self, tmp_path: Path) -> None:
         mapping = _seed_stub(tmp_path)
         first = model_selection_notice_lines(tmp_path)

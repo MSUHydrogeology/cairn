@@ -178,6 +178,26 @@ class TestLockfileReaderRefusesAnythingButARegularFile:
 
 
 class TestLockCommitWritesThroughExclusiveTemporaries:
+    def test_failed_commit_removes_its_staged_files(self, tmp_path: Path, monkeypatch):
+        from bootstrap._scaffold import upgrade as U
+        target = tmp_path / "target"
+        target.mkdir()
+        _install(target)
+        cache = target / "dev/.cairn/base/new-template.txt"
+        cache.parent.mkdir(parents=True, exist_ok=True)
+
+        def refuse_replace(*_args):
+            raise OSError("replace refused")
+
+        with monkeypatch.context() as mp:
+            mp.setattr(os, "replace", refuse_replace)
+            with pytest.raises(OSError, match="replace refused"):
+                U._commit_lock_and_caches(
+                    target, s.read_lockfile(target), [(cache, b"new")]
+                )
+        assert list(target.rglob("*.tmp")) == []
+        assert not cache.exists()
+
     def test_old_fixed_names_cannot_redirect_commit(self, tmp_path: Path):
         from bootstrap._scaffold.upgrade import _commit_lock_and_caches
         target = tmp_path / "target"

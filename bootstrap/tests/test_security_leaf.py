@@ -58,6 +58,40 @@ _GUARDED_WRITE_FUNCS = {
 
 
 class TestReadRegularBytesRefusesAnythingElse:
+    def test_link_swapped_between_probe_and_open_is_refused(
+        self, tmp_path, monkeypatch
+    ):
+        from bootstrap._scaffold import security as S
+        candidate = tmp_path / "candidate"
+        candidate.write_bytes(b"initial")
+        victim = tmp_path / "victim"
+        victim.write_bytes(b"outside")
+        real_probe = Path.is_symlink
+
+        def swap_on_probe(path):
+            if path == candidate:
+                candidate.unlink()
+                candidate.symlink_to(victim)
+                return False
+            return real_probe(path)
+
+        with monkeypatch.context() as mp:
+            mp.setattr(Path, "is_symlink", swap_on_probe)
+            with pytest.raises(S.ScaffoldSecurityError):
+                S._read_regular_bytes(candidate)
+        assert victim.read_bytes() == b"outside"
+
+    def test_optional_open_flags_can_be_absent(self, tmp_path, monkeypatch):
+        from bootstrap._scaffold import security as S
+        plain = tmp_path / "plain"
+        plain.write_bytes(b"initial")
+        with monkeypatch.context() as mp:
+            for name in ("O_NOFOLLOW", "O_NONBLOCK", "O_NOCTTY", "O_BINARY"):
+                mp.delattr(S.os, name, raising=False)
+            assert S._read_regular_bytes(plain) == b"initial"
+            S._write_by_replacing(plain, b"changed", tmp_path)
+        assert plain.read_bytes() == b"changed"
+
     def test_regular_missing_link_and_hardlink(self, tmp_path):
         from bootstrap._scaffold import security as S
         plain = tmp_path / "plain"
@@ -89,6 +123,20 @@ class TestReadRegularBytesRefusesAnythingElse:
 
 
 class TestWriteByReplacing:
+    def test_linked_final_refused_before_staging(self, tmp_path, monkeypatch):
+        from bootstrap._scaffold import security as S
+        victim = tmp_path / "victim"
+        victim.write_bytes(b"outside")
+        target = tmp_path / "target"
+        target.mkdir()
+        dst = target / "file"
+        dst.symlink_to(victim)
+        monkeypatch.setattr(S.secrets, "token_hex", lambda _: "fixed")
+        with pytest.raises(S.ScaffoldSecurityError):
+            S._stage_exclusive(dst, b"new", target)
+        assert not (target / "file.fixed.tmp").exists()
+        assert victim.read_bytes() == b"outside"
+
     def test_replace_does_not_write_through_a_hardlink(self, tmp_path):
         from bootstrap._scaffold import security as S
         victim = tmp_path / "victim"
