@@ -279,6 +279,13 @@
         "dev/modules/legacy-agent.md",
         "dev/modules/dual-language-tests.md"
       ]
+    },
+    "dev/reviews/2026-10-19-security-review-upgrade-lockfile-paths.md": {
+      "paths": [
+        "docs/notes.md",
+        "docs/linkdir",
+        "templates/core/evil"
+      ]
     }
   }
 }

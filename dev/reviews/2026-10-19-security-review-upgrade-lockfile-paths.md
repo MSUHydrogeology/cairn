@@ -1,7 +1,5 @@
 # Security Review — upgrade lockfile paths (`d299f37c..2f07f2e7`) — Claude Opus 5.5 — 2026-10-19
 
-<!-- claim-check-allow: docs/notes.md, docs/linkdir, templates/core/evil -->
-
 **Obligation**: the Security Review of the repair for the out-of-scope finding
 raised in the Security Review of
 `dev/proposals/2026-10-19-claude-remove-collaboration-agreement.md`: `upgrade`
