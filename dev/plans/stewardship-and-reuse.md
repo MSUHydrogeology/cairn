@@ -1,7 +1,7 @@
 # Plan: Fix easy defects and reuse what already exists
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-stewardship-and-reuse.md`
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-19
@@ -377,3 +377,162 @@ other sessions' edits. No merge into that release checkout or push is implied.
 The cleanup shortened Cairn's board mirror; this plan will conform its
 remaining scope/disposition reminder only at archive as already specified.
 The scope, chunk order and one-small-test boundary are unchanged.
+
+## Implementation verification -- Codex -- 2026-10-20
+
+C1 (`edf92ba3`) and C2 (`6d7978fa`) deliver the four accepted outcomes.
+The only operative-cell maintenance after start removed the new test's
+`Proposed paths` declaration when C2 created it; no scope or fence changed.
+The live board/changelog mirror and test re-anchor deposit remain assigned
+to archive, after code review. The Maintainer will arrange that review.
+
+**Tested commit**: `6d7978fac7c281a1421abcfd1706720e118d3639`.
+**Implementation range**: `a36721766cfa1ae588135acce3d4046eb16303b3..6d7978fac7c281a1421abcfd1706720e118d3639`.
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13.
+**Boundary B mode**: full, as reviewed; execution is the scoped mapping below.
+**Certified by**: pending. This is no certifying run; its full-suite switch
+was not set. The next authorized certifying run must contain this branch.
+**Tree state**: clean before and after the stable run and public smokes;
+all implementation/test bytes committed and unchanged. Only this record and
+Status change follow measurement. The work remains on the isolated
+`codex/stewardship-and-reuse` branch, outside the 0.4 release checkout.
+
+### Stable scoped run
+
+From the isolated repository root, the exact command was (the interpreter
+above replaces `python`):
+
+```bash
+python -m pytest -q \
+  bootstrap/tests/test_review_and_verification_rules_ship.py \
+  bootstrap/tests/test_verification_boundaries.py \
+  bootstrap/tests/test_certifying_run_rule.py \
+  bootstrap/tests/test_comprehension_floor.py \
+  bootstrap/tests/test_scope_reduction_trap.py \
+  bootstrap/tests/test_review_stance_in_shipped_files.py \
+  bootstrap/tests/test_review_sweep_ships.py \
+  bootstrap/tests/test_scientific_check_guidance_ships.py \
+  bootstrap/tests/test_documentation_plan_module.py \
+  bootstrap/tests/test_stewardship_rules_ship.py \
+  bootstrap/tests/test_scaffold.py \
+  bootstrap/tests/test_scaffold_substrate.py \
+  bootstrap/tests/test_core_dev_folders.py \
+  bootstrap/tests/test_module_merge_lockfile.py \
+  bootstrap/tests/test_manifest.py \
+  bootstrap/tests/test_notice_install.py \
+  bootstrap/tests/test_quickstart_sequence.py \
+  bootstrap/tests/test_presets.py \
+  bootstrap/tests/test_profiles_smoke.py \
+  bootstrap/tests/test_upgrade.py \
+  bootstrap/tests/test_verify_integrity.py \
+  bootstrap/tests/test_lockfile_module.py \
+  bootstrap/tests/test_loop_fidelity_gate.py \
+  --quality-gate-shuffle-seed=0
+```
+
+**Result**: 1,361 passed in 60.23 seconds (60.88 seconds wall time), exit 0;
+0 skips, xfails, xpasses or failures. C1's iteration mapping passed 892 tests;
+C2's passed 893, both under Python 3.13.13. The first C2 test attempt lacked
+the target directory required by the public CLI (1 failed / 892 passed);
+creating that scratch directory fixed the test setup before C2 committed.
+No production repair or existing test edit was needed.
+
+The 14 governing/module Markdown paths in Scope, plus this plan, passed
+`python scripts/claim_check.py <file>` individually,
+`python scripts/check_cairn.py <15 paths>`,
+`python scripts/link_check.py <15 paths>`, and
+`python scripts/sync_doc_snippets.py --check <15 paths>`.
+The neutral/redundancy legs were invoked through
+`quality_gate.run_gates(["neutrality", "redundancy"], repo_root)`, the same
+entry used by `python scripts/quality_gate.py --sub neutrality --sub redundancy`.
+Neutrality: 0 failures, 56 information flags; redundancy: 0 failures, 0 flags.
+Comparing complete finding identities against an extraction of `a3672176`
+found the identical 56 flags, not merely equal totals. R1 adds no duplicate
+rule: lifecycle owns deferral reasons, AGENTS owns defect permission, and
+module/board guidance points there; the templates ask authors to apply them.
+
+The final changed-path set has no intersection with committed
+`frozen_files`; the membership check first found the known frozen
+`bootstrap/tests/test_verification_boundaries.py` as its positive control.
+The new test has not yet been frozen. Module twins are byte-identical;
+all six deviation pointers name the one operational rule. Both loop docs
+and dual-review doctrine retain nine lenses and lens 5's label. The old
+`defer-OK` search matched the base and finds nothing in final plans doctrine.
+The reuse sentence and Reuse question agree across their pairs. No runtime
+code, engine symbol, public-manifest row or existing test changed.
+
+### Public install and scratch upgrades
+
+All commands below used the same Python 3.13.13 and committed source.
+`python bootstrap/scaffold.py --manifest` is byte-identical to the captured
+base output (50 ms final invocation). For each shipped profile
+`solo-greenfield`, `collaborative-team`, `high-rigor-legacy`, both
+`--config bootstrap/profiles/<name>.yml --summary` and
+`--config bootstrap/profiles/<name>.yml --target <empty scratch> --dry-run --allow-dev`
+passed, each in 47–56 ms. An explicit scratch profile selected only
+`issue-capture` and supplied project/test tokens; installation with
+`--config <profile> --target <scratch> --allow-dev` passed in 86 ms.
+The installed operational rule and module pointer were read, and
+`python bootstrap/verify_integrity.py --target <scratch>` passed in 57 ms.
+An initial scratch assertion failed on a line wrap in the pointer; the
+whitespace-collapsed reading passed with unchanged committed bytes.
+
+For each adopter, copied every existing lock/current-manifest destination,
+base cache and profile to a fresh scratch repository: LHM 119 files,
+modflow_tools 127. This exercises their installed governance, not their
+scientific trees. Every copied source file's SHA-256 was equal before/after;
+no real adopter was written. Invocations were
+`python bootstrap/scaffold.py upgrade --target <copy> --cairn-root <this source> --plan`,
+then `--stage`, then `--apply`, without force, conflict resolution or finalize.
+Plan/stage passed (418–473 ms); apply refused (64–65 ms), as follows:
+
+* LHM: six conflicts: AGENTS, loop document, issue-capture module,
+  CONTRIBUTING, session-start skill and upstream README. Base-source stage
+  on another identical governance copy has five, the same set except
+  issue-capture. This change therefore adds that module conflict to existing
+  drift; it is not a clean-upgrade claim. Apply stopped at the unresolved
+  session-start skill, exit 1.
+* modflow_tools: two conflicts, board and documentation plan, identical at
+  base and final. Fourteen verbatim-local modifications and the forked intent
+  launcher warning remain visible. Apply stopped at the unresolved board,
+  exit 1. No modifications were automatically acknowledged.
+
+The planned fallback used a separate fresh install with committed local
+notes appended to AGENTS and issue-capture. Public upgrade plan/stage/apply
+all passed (219/237/71 ms); both notes survived and the stage classified both
+as locally modified, merged clean. No customized governance was finalized.
+These rehearsals establish preservation and refusal, not conflict resolution
+for either real adopter. Their observed conflicts are smoke results, not a
+new authorized upgrade task.
+
+### Baseline disposition comparison
+
+Read the actual archive Dispositions in `verification-practice` and
+`maintainer-attention`, against the new rules. No archived record was edited.
+All six original outcomes stand:
+
+| Baseline item | Outcome and present reason |
+|---|---|
+| verification-practice PR4 optional installed assertion | `wontfix`: optional coverage, not a broken promise; its original marker check establishes the rationale. This plan independently uses the accepted real-install test. |
+| verification-practice CR4 doctrine pins | `wontfix`: extra test scope, not a defect in the promised rule; existing frozen verification pins already cover six triggers. |
+| verification-practice issue 12 tooling | `wontfix`: explicitly declined mechanism with a stated revival condition; a review note does not create a promise. |
+| maintainer-attention CR3 five survivors | `wontfix`: none hides a wait; pinning changes a frozen test and needs the Maintainer's re-anchor ceremony. That person-step is the cost reason; test runtime is not. |
+| maintainer-attention PR10 tool-usage sentence | `wontfix`: existing page remained accurate; optional explanatory coverage is not a true defect. |
+| maintainer-attention footer gloss | `wontfix`: accurate wording, explicitly not a finding; an optional gloss creates no broken promise. |
+
+### Review and archive handoff
+
+The one new collected node is
+`bootstrap/tests/test_stewardship_rules_ship.py::test_small_fix_rule_and_capture_pointer_reach_install`;
+its blob at the tested commit is `ae4aaa79e51ae6992f234aa86320b1370baf7abe`.
+Code review must read this implementation range and evidence before the
+archive handoff records its final reviewed blob/node on the re-anchor row.
+No ceremony, board deposit, changelog entry, merge or push happened here.
+
+Known omissions: no full certifying suite, independent code review or
+scientific run; no real-project apply or manual conflict resolution. The
+single test intentionally does not prove all policy semantics. Roles/module
+and board-pointer wording has no dedicated semantic owner beyond module
+installation and document checks found by the plan's reader search; the
+pending certifying run supplies broader integration coverage. Review still
+owes the authority boundaries, reuse searches and all accepted outcomes.
