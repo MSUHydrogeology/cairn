@@ -256,6 +256,30 @@ _REMEDY = "replace the link with a regular file, then re-run"
 
 
 class TestGitignoreSeedWritesByReplacing:
+    def test_swapped_hardlink_never_receives_appended_bytes(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        from bootstrap._scaffold import install as I
+
+        ignore = tmp_path / ".gitignore"
+        ignore.write_bytes(b"existing\n")
+        victim = tmp_path / "outside"
+        victim.write_bytes(b"outside\n")
+        real_read = I._read_regular_bytes
+
+        def swap_after_read(path: Path, *, single_link: bool = False) -> bytes | None:
+            raw = real_read(path, single_link=single_link)
+            ignore.unlink()
+            os.link(victim, ignore)
+            return raw
+
+        with monkeypatch.context() as mp:
+            mp.setattr(I, "_read_regular_bytes", swap_after_read)
+            assert seed_gitignore(tmp_path, ("new",)) == ["new"]
+        assert victim.read_bytes() == b"outside\n"
+        assert ignore.read_bytes() == b"existing\nnew\n"
+        assert ignore.stat().st_nlink == 1
+
     def test_read_only_file_is_not_replaced(self, tmp_path: Path) -> None:
         ignore = tmp_path / ".gitignore"
         ignore.write_bytes(b"existing\n")

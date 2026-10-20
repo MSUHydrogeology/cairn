@@ -1099,6 +1099,11 @@ class TestCaptureWritesByReplacing:
         assert "error: model-selection capture refused (containment)" in captured.err
         assert "Replace it with a regular file" in captured.err
         assert "distinctive-outside-file" not in captured.err
+        refusal = next(
+            line for line in captured.err.splitlines()
+            if line.startswith("error: model-selection capture refused")
+        )
+        assert str(tmp_path) not in refusal
         assert victim.read_bytes() == before
         assert not (tmp_path / "dev/.cairn/cairn-lock.yml").exists()
 
