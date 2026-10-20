@@ -8,6 +8,8 @@ Cairn is a working method for scientists developing software with AI coding
 agents. It brings together project rules, written proposals, review, testing,
 and a record of decisions kept alongside the code.
 
+[![DOI](https://zenodo.org/badge/1244751141.svg)](https://doi.org/10.5281/zenodo.23500751)
+
 Research software often outlives the conversation that produced it. Someone
 still needs to know why an assumption was made, what a change was checked
 against, and what remains uncertain. Cairn gives that information a home in
