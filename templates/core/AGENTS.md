@@ -461,6 +461,10 @@ finding.)
 
 ## Project-specific conventions
 
+**Search before you build; generalize rather than copy:** look for existing
+code and use or extend it, naming the search in the plan or commit body and,
+if the project has a shared-code map, naming it in the project's conventions.
+
 **Durable artifacts stand without the deliberation that produced them.** A test
 name, a comment, a docstring outlives the plan chunk and the review finding that
 prompted it. The next reader has no proposal open and no reviewer to ask, so a

@@ -767,7 +767,8 @@ Priority labels:
   criteria; blocker for implementation.
 * `(important)` — design / scope concern; deserves resolution but not
   strictly a blocker.
-* `(nit)` — clarity / polish; defer-OK.
+* `(nit)` — clarity / polish. A priority, not a reason to defer: fold it into
+  the plan with the other findings, or explain why under the archive rule.
 
 ### The record schema — what a pass must carry
 
@@ -933,6 +934,8 @@ the proposal Review section). Findings as a numbered list with
 `accept (commit <sha>)` / `guard (<path>::<node>)` / `defer` /
 `wontfix` dispositions.
 Sharpening fixes land as follow-up commits before the plan archives.
+A finding that is cheap to fix is fixed that way, whatever its label;
+a reviewer's suggested home is advice, not the Maintainer's authorization.
 
 **A clean code review carries a falsification ledger.** Per
 `dev/agent_collaboration.md` > "The review sweep", a **final
@@ -986,7 +989,8 @@ a doc. That is the ordinary case for a fixed defect. It is *not* the
 case for an observation, a lesson, or a design gap: recording one in
 the plan and marking it `accept` leaves it in a file that is about to
 stop being read, which is the opposite of migration. **An item with
-no landing place outside the plan is a `defer`, and needs a row.**
+no landing place outside the plan is a `defer`, and needs a board row or an
+entry appended to the receiving open plan.**
 
 **An append re-opens the attestation.** This section is filled at
 archive time and is append-only afterwards, so it accretes — and an
@@ -999,6 +1003,8 @@ Acceptable `defer` homes:
 
 * `dev/PLANNING.md` — a tier item, a follow-up backlog, or a new
   dedicated subsection.
+* The receiving open plan's named section, with the item actually appended
+  and the Maintainer's quoted authorization covering the added scope.
 * A topic doc's "Future work" section.
 * `CHANGELOG.md > Unreleased` — the user-visible release-facing
   summary.
@@ -1026,7 +1032,8 @@ Dispositions:
 * <item> -> accept (fixed in <chunk>)
 * <item> -> guard (tests/test_thing.py::test_the_case)
 * <item> -> wontfix (<rationale>)
-* <item> -> defer -> dev/PLANNING.md > <section>   [Maintainer: "<quote>"]
+* <item> -> defer (<reason>) -> dev/PLANNING.md > <section>   [Maintainer: "<quote>"]
+* <item> -> defer (in motion) -> dev/plans/<slug>.md > <section>   [Maintainer: "<quote>"]
 ```
 
 The older `Follow-ups migrated to:` spelling remains valid and is

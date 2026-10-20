@@ -157,6 +157,12 @@ One paragraph: what the proposal decided. The plan executes it.
 What this plan does and, where it is not obvious, what it deliberately does
 not. Name the surfaces it touches.
 
+**Reuse.** What existing code does this reuse or generalize? Where did you
+search for near-duplicates (query or path, and what it found)? "None" needs a
+named search; for no code added, write `N/A: no code added`. A near-duplicate
+does a job existing code already does under another name or with a small
+change; intentional copies pinned as identical are not near-duplicates.
+
 ### Documentation / doctrine surface
 
 <!-- cairn:slot documentation-tier-home -->
@@ -318,10 +324,15 @@ in something that **executes** and names the node -- a comment is not eligible,
 because comments do not fire), `wontfix` (explicit non-action, with a
 rationale), or `defer`.
 
-**Every deferred item is recorded in `dev/PLANNING.md`, and requires the
-Maintainer's authorization quoted verbatim.** Writing the disposition is not
-performing the deposit. An item left only in a plan that then archives is
-invisible to anyone looking for outstanding work, and archived artifacts are
+**Every deferred item is recorded in `dev/PLANNING.md` or appended to the
+open plan that takes it, requires the Maintainer's authorization quoted
+verbatim, and names its reason:** it needs a Maintainer decision, belongs to
+work already in motion (name the receiving plan), or is over the cost bar.
+For in-motion work the quote also authorizes its addition to the receiving
+scope. "Non-blocking", "nit" and a reviewer's suggested home are not reasons.
+See `doctrine/lifecycle.md` > "Archive precondition" for the cost/eligibility
+rule. Writing the disposition is not performing the deposit. An item left
+only in a plan that then archives is invisible to anyone looking for outstanding work, and archived artifacts are
 not scanned by default -- so it is not deferred, it is lost. Present `defer`
 requests as **one batch**; that batching keeps the Maintainer gate affordable.
 When you put the batch to the Maintainer, write the Waiting line

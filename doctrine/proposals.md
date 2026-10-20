@@ -360,6 +360,8 @@ A `defer` needs a home outside the proposal text; acceptable homes:
 
 * `dev/PLANNING.md` — a tier item, a follow-up backlog, or a new
   dedicated subsection.
+* The receiving open plan's named section, with the item actually appended
+  and the Maintainer's quoted authorization covering the added scope.
 * A topic doc's "Future work" section.
 * Its own queued follow-up proposal at
   `dev/proposals/<date>-<author>-<short-title>.md`.
@@ -377,7 +379,8 @@ Dispositions:
 * <item> -> accept (fixed in this proposal's scope)
 * <item> -> guard (tests/test_thing.py::test_the_case)
 * <item> -> wontfix (<rationale>)
-* <item> -> defer -> dev/PLANNING.md > <subsection>   [Maintainer: "<quote>"]
+* <item> -> defer (<reason>) -> dev/PLANNING.md > <section>   [Maintainer: "<quote>"]
+* <item> -> defer (in motion) -> dev/plans/<slug>.md > <section>   [Maintainer: "<quote>"]
 ```
 
 The older `Follow-ups migrated to:` spelling remains valid and is

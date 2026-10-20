@@ -424,6 +424,10 @@ and route by layer.
 
 ## Project-specific conventions
 
+**Search before you build; generalize rather than copy:** look for existing
+code and use or extend it, naming the search in the plan or commit body and,
+if the project has a shared-code map, naming it in the project's conventions.
+
 **Local cost-bar examples.** A one-line engine change still needs a proposal
 and Security Review, and an AST correction beyond self-service is Maintainer-run;
 a frozen-file edit owes the gate-manifest ceremony. Prescribed test runtime

@@ -56,9 +56,6 @@ promise that authorizes a defect fix.
 | `bootstrap/tests/test_stewardship_rules_ship.py` | One small test of the load-bearing sentences, including a real fresh install selecting issue-capture. No carrier-by-carrier mutation framework or exhaustive clause matrix. |
 | `dev/PLANNING.md`, `CHANGELOG.md` | At archive only: conform Cairn's archive-precondition mirror, record the new test's final collection/blob handoff on the standing re-anchor row, and write the changelog entry. |
 
-Proposed paths:
-* `bootstrap/tests/test_stewardship_rules_ship.py` — one small ship test, created during implementation.
-
 **Reuse.** No runtime code is added. The one test reuses pytest's `tmp_path`
 and the existing public scaffold CLI, with an explicit profile selecting
 `issue-capture`; it does not introduce an installer helper. I searched
