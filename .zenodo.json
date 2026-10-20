@@ -1,0 +1,22 @@
+{
+  "title": "Cairn: An Adaptable Framework for Scientist-AI Research Software Teams",
+  "description": "Cairn is a methodology for scientist-led research-software teams adopting AI agents: an invariant doctrine of recorded, reviewed deliberation; forkable templates; a single-agent bootstrap that adapts the apparatus along codebase and team dimensions; and two worked case studies (modflow_tools and LHM).",
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "MIT",
+  "creators": [
+    {
+      "name": "Kendall, Anthony",
+      "affiliation": "Department of Earth and Environmental Sciences, Michigan State University",
+      "orcid": "0000-0003-3914-9964"
+    }
+  ],
+  "keywords": [
+    "human-AI collaboration",
+    "scientific software",
+    "research software engineering",
+    "software methodology",
+    "reproducibility",
+    "open science"
+  ]
+}
