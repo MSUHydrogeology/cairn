@@ -38,6 +38,8 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+## 0.4.0 — 2026-10-20
+
 ### Added — Defect fixes under existing promises and reuse duty
 
 - Agents may fix cheap defects that break promises already documented in the file,

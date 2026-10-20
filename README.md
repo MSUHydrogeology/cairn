@@ -109,7 +109,7 @@ choosing a configuration.
 ## Status and limits
 
 Cairn is in active development. The most recent version listed in
-[the changelog](CHANGELOG.md) is **0.3.0** (2026-06-12).
+[the changelog](CHANGELOG.md) is **0.4.0** (2026-10-20).
 
 Cairn was developed by Anthony Kendall through work on
 [modflow_tools](case-studies/modflow_tools.md) and [LHM](case-studies/lhm.md),
@@ -117,7 +117,8 @@ and this repository uses the method for its own development. These are
 deployments by the same human maintainer, not independent adoptions.
 
 There is no controlled study showing that Cairn improves development outcomes.
-An adoption by someone outside its development remains an outstanding test.
+An adoption by someone outside its development remains an outstanding test;
+no outside project has run the install yet.
 The method draws on established practices, but its benefits and costs need
 to be judged in use. [Related practices](docs/related-practices.md) describes
 the overlap with decision records, lab notebooks, pre-registration, and code
