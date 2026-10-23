@@ -22,10 +22,21 @@ If you are evaluating Cairn for a real project, start here, then
 return to the [on-ramp](../on-ramp/README.md) once you trust the
 shape.
 
+> **Windows is new.**  The Windows commands were added in October 2026,
+> and Cairn's own tests run on macOS.  The installer and tools are plain
+> Python with no shell dependencies, so they are expected to work, but if
+> a step fails on Windows, please
+> [open an issue](https://github.com/MSUHydrogeology/cairn/issues) with
+> the command and its output.
+
 ## What you need
 
-* A POSIX shell (macOS / Linux / WSL).
-* Python 3.13, the version Cairn is tested on.
+* A terminal: **Terminal** on macOS or Linux, or **PowerShell** on
+  Windows (the built-in Windows PowerShell or PowerShell 7).  On WSL, use
+  the macOS / Linux commands.  Every step below shows both, side by side.
+* Python 3.13, the version Cairn is tested on.  On Windows, install it
+  from python.org; if `python` is not found afterwards, use `py` in its
+  place.
 * `git`.
 * One AI coding agent, any that can read and write files in a folder.
   Cairn works with any such agent; the recipe uses prompts the agent
@@ -55,14 +66,37 @@ gives the real route.
 
 ## Step 1 -- clone Cairn and create a disposable target
 
+In the folder where you keep code:
+
 <!-- cairn-accept: suspicious-url reason="Literal Cairn clone URL the adopter needs to copy" reviewer="Claude" date=2026-05-28 -->
+<table>
+<tr><th>macOS / Linux (Terminal)</th><th>Windows (PowerShell)</th></tr>
+<tr>
+<td>
+
 ```bash
-# Anywhere you keep code:
 git clone https://github.com/MSUHydrogeology/cairn.git cairn
 cd cairn
-export CAIRN="$(pwd)"   # the rest of this recipe refers to $CAIRN
+export CAIRN="$(pwd)"
 ```
+
+</td>
+<td>
+
+```powershell
+git clone https://github.com/MSUHydrogeology/cairn.git cairn
+cd cairn
+$CAIRN = (Get-Location).Path
+```
+
+</td>
+</tr>
+</table>
 <!-- cairn-accept-end: suspicious-url -->
+
+`CAIRN` now holds the path to your clone; the rest of the recipe uses
+it.  It lasts only as long as this terminal window, so run the
+remaining steps in the same window.
 
 > **This clone is the trust decision.** Everything below runs code from
 > it.  Before you install Cairn into anything you care about, verify the
@@ -72,18 +106,43 @@ export CAIRN="$(pwd)"   # the rest of this recipe refers to $CAIRN
 > throwaway shakedown you can skip it; for a real project you should
 > not.
 
+Now create the disposable target repository, outside the clone.  It
+gets a README and a stub `CHANGELOG.md`: Cairn's lifecycle writes to a
+changelog, but the installer does not create one, since a real project
+usually has its own.
+
+<table>
+<tr><th>macOS / Linux (Terminal)</th><th>Windows (PowerShell)</th></tr>
+<tr>
+<td>
+
 ```bash
-# Create the disposable target repo somewhere else:
-mkdir -p /tmp/cairn-quickstart && cd /tmp/cairn-quickstart
+mkdir -p /tmp/cairn-quickstart
+cd /tmp/cairn-quickstart
 git init -q
 echo "# quickstart" > README.md
-
-# Cairn's lifecycle uses CHANGELOG.md but the scaffold does not
-# create one (your real repo may already have one).  Touch a stub:
 printf "# Changelog\n\n## Unreleased\n" > CHANGELOG.md
-
-git add README.md CHANGELOG.md && git commit -q -m "init"
+git add README.md CHANGELOG.md
+git commit -q -m "init"
 ```
+
+</td>
+<td>
+
+```powershell
+$QS = Join-Path $env:TEMP "cairn-quickstart"
+New-Item -ItemType Directory -Force $QS | Out-Null
+Set-Location $QS
+git init -q
+Set-Content README.md "# quickstart"
+Set-Content CHANGELOG.md "# Changelog`n`n## Unreleased"
+git add README.md CHANGELOG.md
+git commit -q -m "init"
+```
+
+</td>
+</tr>
+</table>
 
 ## Step 2 -- copy the `solo-greenfield` profile
 
@@ -91,9 +150,25 @@ The quickstart uses the smallest viable profile: one human + one
 agent, new codebase, default-on modules only.  Copy the shipped
 YAML literally:
 
+<table>
+<tr><th>macOS / Linux (Terminal)</th><th>Windows (PowerShell)</th></tr>
+<tr>
+<td>
+
 ```bash
 cp "$CAIRN/bootstrap/profiles/solo-greenfield.yml" profile.yml
 ```
+
+</td>
+<td>
+
+```powershell
+Copy-Item "$CAIRN\bootstrap\profiles\solo-greenfield.yml" profile.yml
+```
+
+</td>
+</tr>
+</table>
 
 The file looks like this -- you can read it before continuing:
 
@@ -122,12 +197,25 @@ to see how axis values drive the roster.
 anything, so you can confirm the dimension profile and the module
 roster Cairn would install):
 
+<table>
+<tr><th>macOS / Linux (Terminal)</th><th>Windows (PowerShell)</th></tr>
+<tr>
+<td>
+
 ```bash
-python "$CAIRN/bootstrap/scaffold.py" \
-    --config profile.yml \
-    --target . \
-    --summary
+python "$CAIRN/bootstrap/scaffold.py" --config profile.yml --target . --summary
 ```
+
+</td>
+<td>
+
+```powershell
+python "$CAIRN\bootstrap\scaffold.py" --config profile.yml --target . --summary
+```
+
+</td>
+</tr>
+</table>
 
 The `--summary` flag is **preview-only**: it prints the resolved
 axes and the module roster, then exits without touching the target.
@@ -147,11 +235,25 @@ For the `solo-greenfield` profile you should see **6** modules listed <!-- verif
 
 **Then install** (drop `--summary`):
 
+<table>
+<tr><th>macOS / Linux (Terminal)</th><th>Windows (PowerShell)</th></tr>
+<tr>
+<td>
+
 ```bash
-python "$CAIRN/bootstrap/scaffold.py" \
-    --config profile.yml \
-    --target .
+python "$CAIRN/bootstrap/scaffold.py" --config profile.yml --target .
 ```
+
+</td>
+<td>
+
+```powershell
+python "$CAIRN\bootstrap\scaffold.py" --config profile.yml --target .
+```
+
+</td>
+</tr>
+</table>
 
 > **A note on the provenance warning.**  Because Step 1 cloned Cairn's
 > tip (not a tagged release), the scaffold prints a one-line provenance
@@ -185,9 +287,11 @@ is for when you install into a real project.
 Commit the install (path-scoped, since the scaffold touched many
 files; `CHANGELOG.md` was already committed in Step 1):
 
-```bash
-git add AGENTS.md VENDOR.md NOTICE.md .gitignore dev/ tools/ scripts/ .agents/ docs/ && \
-    git commit -q -m "Install Cairn kernel + default-on modules"
+The command is the same in both terminals:
+
+```text
+git add AGENTS.md VENDOR.md NOTICE.md .gitignore dev/ tools/ scripts/ .agents/ docs/
+git commit -q -m "Install Cairn kernel + default-on modules"
 ```
 
 <!-- vendor-ok-begin: editor-name list -- illustrative options for adopters; not a vendor endorsement -->
@@ -196,8 +300,8 @@ git add AGENTS.md VENDOR.md NOTICE.md .gitignore dev/ tools/ scripts/ .agents/ d
 > proposal under `dev/proposals/`; you will be following along
 > by reading those files as they land. A side-by-side editor
 > view (VS Code, Cursor, or your editor of choice) makes the
-> lifecycle visible as it happens, instead of relying on
-> `cat` + `git log` between steps.
+> lifecycle visible as it happens, instead of reading files in the
+> terminal between steps.
 <!-- vendor-ok-end -->
 
 ## Step 4 -- the first prompt to your AI agent
@@ -226,10 +330,11 @@ intentionally short; Cairn's `AGENTS.md` carries the doctrine):
 Watch the agent: it should read `AGENTS.md`, write the proposal file,
 and stop.  In the heavy lane the proposal comes before the code.
 
-Commit the proposal:
+Commit the proposal (the same in both terminals):
 
-```bash
-git add dev/proposals/ && git commit -q -m "Open proposal: README tagline"
+```text
+git add dev/proposals/
+git commit -q -m "Open proposal: README tagline"
 ```
 
 Most of this step is the agent reading.
@@ -263,7 +368,13 @@ the header to `Status: accepted`:
 > "Accepted.  Add the tagline and archive the proposal in one commit."
 ```
 
-Commit the decision, then ask the agent that wrote the proposal:
+Commit the decision (the same in both terminals):
+
+```text
+git commit -q -m "Decision: accept README tagline" dev/proposals/
+```
+
+Then ask the agent that wrote the proposal:
 
 > The proposal is accepted.  Implement the tagline, move the proposal
 > to `dev/proposals/archive/`, and add a one-line entry to
@@ -280,11 +391,29 @@ commit with no plan.  You should see the agent:
 
 ## Step 6 -- look at what you have
 
+<table>
+<tr><th>macOS / Linux (Terminal)</th><th>Windows (PowerShell)</th></tr>
+<tr>
+<td>
+
 ```bash
 git log --oneline
 ls dev/proposals/archive/
 cat CHANGELOG.md
 ```
+
+</td>
+<td>
+
+```powershell
+git log --oneline
+Get-ChildItem dev\proposals\archive
+Get-Content CHANGELOG.md
+```
+
+</td>
+</tr>
+</table>
 
 You should see:
 
@@ -298,9 +427,27 @@ review, but the mechanics are the same.
 
 ## Step 7 -- teardown
 
+<table>
+<tr><th>macOS / Linux (Terminal)</th><th>Windows (PowerShell)</th></tr>
+<tr>
+<td>
+
 ```bash
-cd .. && rm -rf /tmp/cairn-quickstart
+cd ..
+rm -rf /tmp/cairn-quickstart
 ```
+
+</td>
+<td>
+
+```powershell
+Set-Location ..
+Remove-Item -Recurse -Force $QS
+```
+
+</td>
+</tr>
+</table>
 
 The disposable repo is gone.  Cairn (in your `cairn/` clone) is
 untouched.
