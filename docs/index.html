@@ -94,23 +94,11 @@
   ol.steps { padding-left: 1.3em; margin: 0 0 14px; }
   ol.steps li { margin: 4px 0; }
 
-  .file {
-    background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px;
-    padding: 12px 14px; font-size: 15px; line-height: 1.5; margin: 12px 0 18px;
-  }
-  .file .path { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-                font-size: 13.5px; overflow-wrap: anywhere; margin-bottom: 8px; }
-  .file dl { display: grid; grid-template-columns: max-content 1fr;
-             gap: 4px 14px; margin: 0; }
-  .file dt { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-             font-size: 13.5px; font-weight: 700; }
-  .file dd { margin: 0; color: var(--ink-soft); }
-  .exchange { display: grid; gap: 12px; margin: 8px 0 16px; }
+  .exchange { display: grid; gap: 12px; margin: 8px 0 16px; padding: 0; list-style: none; }
   .turn { border-left: 4px solid var(--accent); background: var(--quote);
           border-radius: 0 8px 8px 0; padding: 10px 14px; }
   .turn .who { font-size: 13px; font-weight: 700; letter-spacing: 0.04em;
                text-transform: uppercase; color: var(--ink-soft); margin-bottom: 4px; }
-  .turn blockquote { margin: 0; }
   code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
          font-size: 0.88em; background: var(--code-bg); border: 1px solid var(--line);
          border-radius: 5px; padding: 0 4px; overflow-wrap: anywhere; }
@@ -191,51 +179,67 @@
 </section>
 
 <section id="example" aria-labelledby="example-h">
-  <h2 id="example-h">An example: one change, start to finish</h2>
-  <p>A small script reconciles a catchment's monthly water budget, but never
-  checks that the budget closes. The change is to pin that conservation law as a
-  test. The whole exchange is one Markdown file that grows as each person adds a
-  section:</p>
-  <div class="file" role="figure" aria-label="The sections of the proposal file, and who adds each">
-    <div class="path">dev/proposals/archive/0001-add-mass-balance-invariant-test.md</div>
-    <dl>
-      <dt>## Context</dt><dd>the author: what could go wrong today</dd>
-      <dt>## Proposal</dt><dd>the change, and the tests that pin it</dd>
-      <dt>## Review</dt><dd>a fresh reviewer: which test catches which mistake</dd>
-      <dt>## Decision</dt><dd>the Maintainer: accepted</dd>
-    </dl>
-  </div>
-
-  <div class="exchange">
-    <div class="turn">
-      <div class="who">The author names the risk</div>
-      <blockquote>“a sign flip in the formula, a column rename in the loader, or a
-      silent scaling error in a future contribution would all ship without the test
-      catching them.”</blockquote>
-    </div>
-    <div class="turn">
-      <div class="who">The proposal makes sure the test can fail</div>
-      <blockquote>“The sentinels prove the invariant is not vacuous — if the
-      residual formula collapsed to "return 0", the sentinels would catch it.”</blockquote>
-    </div>
-    <div class="turn">
-      <div class="who">The reviewer checks each feared mistake has a test</div>
-      <blockquote>“If the residual formula's sign flips, the
-      <code>test_residual_formula_signs_match_doctrine</code> case fails on the
-      closed-precip-et row.”</blockquote>
-    </div>
-    <div class="turn">
-      <div class="who">The Maintainer decides</div>
-      <blockquote>“<strong>Accepted</strong> as a trivial change. Implemented in the
-      same commit that archived this proposal; the test landed with it, and the
-      CHANGELOG line recorded it.”</blockquote>
-    </div>
-  </div>
-  <p>What is left behind is ordinary: the code, its test, and the proposal with
-  its review and decision, all in git. A year later, anyone asking “why does this
-  test exist, and what does it protect?” can read the answer instead of
-  reconstructing it.
-  <a href="https://github.com/MSUHydrogeology/cairn/tree/master/examples/scientific-minimal">See the files.</a></p>
+  <h2 id="example-h">An example: asking for a new feature</h2>
+  <p>You ask your agent: <em>“Check the model's simulated streamflow against the
+  stream-gauge records, so we can see how well it matches reality.”</em> That is a
+  new capability, with a new dataset, so it takes the full path. Here is what
+  happens, and who does it:</p>
+  <ol class="exchange" aria-label="The steps, and who does each">
+    <li class="turn">
+      <div class="who">1 · Proposal · the agent, before any code</div>
+      Writes one short file. <strong>Why:</strong> validation is done by hand in a
+      notebook today, so it is rarely rerun after the model changes.
+      <strong>The change:</strong> read daily discharge records for each gauge,
+      match each gauge to its model stream reach, and report the fit
+      (Nash–Sutcliffe efficiency and percent bias) for each one.
+      <strong>The assumptions, stated:</strong> gauges report cubic feet per second
+      and the model cubic metres per second; missing days are skipped, never treated
+      as zero. <strong>Rejected:</strong> keeping the notebook, because its results
+      cannot be repeated after each change.
+    </li>
+    <li class="turn">
+      <div class="who">2 · Review · a fresh agent session that did not write it</div>
+      Asks: <em>“Gauge records flag days as ice-affected or estimated. Are those
+      compared as if they were measured?”</em> The author revises: flagged days are
+      left out of the fit, and the report says how many were left out.
+    </li>
+    <li class="turn">
+      <div class="who">3 · Decision · you</div>
+      Accept, and add one requirement from your own experience: the report also
+      lists the date range each gauge covers, so a short record is never mistaken
+      for a good fit.
+    </li>
+    <li class="turn">
+      <div class="who">4 · Plan · the agent, then a fresh reviewer</div>
+      Splits the work into steps (reader, matching, statistics, report) with how
+      each will be checked. The reviewer confirms the plan delivers what you
+      accepted, including your added requirement.
+    </li>
+    <li class="turn">
+      <div class="who">5 · Build · the agent</div>
+      Writes each piece with its tests, then runs a check whose answers come from
+      the definitions, not from the code. If the simulation equals the
+      observations, efficiency must be exactly 1 and bias 0. If it equals the
+      observed average every day, efficiency must be exactly 0. A gauge reading of
+      35.3147 cubic feet per second must arrive as 1.0 cubic metre per second. Then
+      it skips the unit conversion on purpose and records that the check fails,
+      which shows the check can catch that mistake.
+    </li>
+    <li class="turn">
+      <div class="who">6 · Code review · a reviewer who did not build it</div>
+      Tries to break it with a record that has gaps, a record that starts before
+      the model run, and two gauges on one reach, and records what was tried and
+      what happened.
+    </li>
+  </ol>
+  <p>Afterwards your repository holds the new code and its tests, plus the
+  proposal, the review, your decision and the plan, all in git. Next spring, when
+  a colleague asks <em>“why are ice-affected days left out of the fit?”</em>, the
+  answer is in the review: who raised it, and why. It is a file they can open,
+  not a chat that has gone.</p>
+  <p>A small fix skips most of this: a typo or a one-line bug is just the change,
+  its test and a code review.
+  <a href="https://github.com/MSUHydrogeology/cairn/tree/master/examples/scientific-minimal">See real files from a small change.</a></p>
 </section>
 
 <section aria-labelledby="science-h">

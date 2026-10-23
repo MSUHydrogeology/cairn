@@ -20,7 +20,7 @@ the repository, so work can continue across sessions, tools, and collaborators.
 
 ![Chats end; the repository keeps the record. An agent session today, a different AI tool next week and a new colleague next year all read and write the same files: the project's rules for agents, the proposals recording what was decided and why, the plans recording how it was checked, and the code with its tests.](docs/assets/shared-record-across-sessions.svg)
 
-[Try a small example](docs/quickstart.md) · [See one change, start to finish](#an-example-one-change-start-to-finish) · [Read the workflow](docs/getting-started.md) · [Browse the methodology](doctrine/) · [Project site](https://msuhydrogeology.github.io/cairn/)
+[Try a small example](docs/quickstart.md) · [See an example](#an-example-asking-for-a-new-feature) · [Read the workflow](docs/getting-started.md) · [Browse the methodology](doctrine/) · [Project site](https://msuhydrogeology.github.io/cairn/)
 
 ## What it provides
 
@@ -71,55 +71,32 @@ pick up unfinished work, or understand a scientific assumption without needing
 the original chat. It is also work to maintain: if the process obscures the
 change or costs more attention than it saves, it needs to be simplified.
 
-## An example: one change, start to finish
+## An example: asking for a new feature
 
-A small script reconciles a catchment's monthly water budget: precipitation
-in, and evapotranspiration, runoff, recharge and storage change out. It
-computes a residual but never checks that the budget closes. The change is to
-pin that conservation law as a test. Everything below is in the repository's
-[scientific example](examples/scientific-minimal/), and the whole exchange is
-one Markdown file that grows as each person adds a section:
+You ask your agent: *"Check the model's simulated streamflow against the
+stream-gauge records, so we can see how well it matches reality."* That is a
+new capability, with a new dataset, so it takes the full path. Here is what
+happens, and who does it:
 
-```text
-dev/proposals/archive/0001-add-mass-balance-invariant-test.md
-  ## Context     the author: what could go wrong today, and why it matters
-  ## Proposal    the change, and the test cases that pin it
-  ## Review      a reviewer who did not write it: which test catches which mistake
-  ## Decision    the Maintainer: accepted
-```
+| Step | Who | What happens |
+| --- | --- | --- |
+| **1. Proposal** | The agent, before any code | Writes one short file. **Why:** validation is done by hand in a notebook today, so it is rarely rerun after the model changes. **The change:** read daily discharge records for each gauge, match each gauge to its model stream reach, and report the fit (Nash–Sutcliffe efficiency and percent bias) for each one. **The assumptions, stated:** gauges report cubic feet per second and the model cubic metres per second; missing days are skipped, never treated as zero. **Rejected:** keeping the notebook, because its results cannot be repeated after each change. **How a mistake would show up:** see step 5. |
+| **2. Review** | A fresh agent session that did not write it | Asks: *"Gauge records flag days as ice-affected or estimated. Are those compared as if they were measured?"* The author revises: flagged days are left out of the fit, and the report says how many were left out. |
+| **3. Decision** | You | Accept, and add one requirement from your own experience: the report also lists the date range each gauge covers, so a short record is never mistaken for a good fit. |
+| **4. Plan** | The agent, then a fresh reviewer | Splits the work into steps (reader, matching, statistics, report) with how each will be checked. The reviewer confirms the plan delivers what you accepted, including your added requirement. |
+| **5. Build** | The agent | Writes each piece with its tests, then runs a check whose answers come from the definitions, not from the code. If the simulation equals the observations, efficiency must be exactly 1 and bias 0. If it equals the observed average every day, efficiency must be exactly 0. A gauge reading of 35.3147 cubic feet per second must arrive as 1.0 cubic metre per second. Then it skips the unit conversion on purpose and records that the check fails, which shows the check can catch that mistake. |
+| **6. Code review** | A reviewer who did not build it | Tries to break it with a record that has gaps, a record that starts before the model run, and two gauges on one reach, and records what was tried and what happened. |
 
-**The author** names the risk, in the proposal's *Context*:
+Afterwards your repository holds the new code and its tests, plus the proposal,
+the review, your decision and the plan, all in git. Next spring, when a
+colleague asks *"why are ice-affected days left out of the fit?"*, the answer
+is in the review: who raised it, and why. It is a file they can open, not a
+chat that has gone.
 
-> "a sign flip in the formula, a column rename in the loader, or a silent
-> scaling error in a future contribution would all ship without the test
-> catching them."
-
-**The proposal** adds the test, plus deliberately unbalanced rows, so that a
-test that can never fail would show up:
-
-> "The sentinels prove the invariant is not vacuous — if the residual formula
-> collapsed to "return 0", the sentinels would catch it."
-
-**The reviewer** checks that each mistake the author feared has a test that
-fails on it:
-
-> "If the residual formula's sign flips, the
-> `test_residual_formula_signs_match_doctrine` case fails on the
-> closed-precip-et row."
-
-**The Maintainer** decides:
-
-> "**Accepted** as a trivial change. Implemented in the same commit that
-> archived this proposal; the test landed with it, and the CHANGELOG line
-> recorded it."
-
-What is left behind is ordinary: [the code](examples/scientific-minimal/water_budget.py),
-[its test](examples/scientific-minimal/test_water_budget.py), and
-[the proposal](examples/scientific-minimal/dev/proposals/archive/0001-add-mass-balance-invariant-test.md)
-with its review and decision, all in git. A year later, anyone asking "why
-does this test exist, and what does it protect?" can read the answer instead
-of reconstructing it. A larger change follows the same shape over more
-commits, with a plan between the decision and the code.
+A small fix skips most of this: a typo or a one-line bug is just the change,
+its test and a code review. For real files from a small change, see the
+[scientific example](examples/scientific-minimal/), where a reviewer confirms
+which test catches a flipped sign in a water-budget formula.
 
 ## Engineering practice and scientific judgment
 
