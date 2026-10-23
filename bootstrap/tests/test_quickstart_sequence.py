@@ -19,8 +19,9 @@ finding):
 
 * **Layer B (lifecycle-shape coverage via scripted surrogate)**:
   scripts the file operations the agent + maintainer would
-  perform in Steps 4-6 (programmatic proposal-open, Decision
-  append, ``git mv`` to archive, ``CHANGELOG.md`` line).
+  perform in Steps 4-6 (programmatic proposal-open, a fresh-session
+  Review append, a quoted Decision, ``git mv`` to archive,
+  ``CHANGELOG.md`` line).
   This is **explicitly NOT a literal AI-agent execution** --
   the test cannot faithfully exercise the prompt-mediated path.
   The module-level constant
@@ -54,7 +55,7 @@ SOLO_GREENFIELD_YAML = PROFILES_DIR / "solo-greenfield.yml"
 # coverage, not a literal AI-agent execution -- the test cannot
 # faithfully exercise the prompt-mediated path the quickstart
 # documents.  A scripted surrogate creates the proposal, appends
-# the Decision, moves the proposal to archive, and adds the
+# the Review and the Decision, moves the proposal to archive, and adds the
 # CHANGELOG line; the resulting tree shape matches what the
 # quickstart describes, but no AI agent or maintainer was
 # involved in producing it.
@@ -254,6 +255,52 @@ class TestLayerAStepsOneThroughThree:
 # ---------------------------------------------------------------------------
 
 
+_PROPOSAL_STEM = "2026-05-28-test-readme-tagline"
+_PROPOSAL_TEXT = (
+    "# README tagline\n\n"
+    "**Author**: Agent\n"
+    "**Status**: awaiting-review\n"
+    "**Opened**: 2026-05-28\n\n"
+    "## Proposal\n\nAdd a one-line project tagline to README.md.\n"
+)
+_REVIEW_TEXT = (
+    "\n## Review -- Reviewer -- 2026-05-28\n\n"
+    "**Tier**: usual\n**Findings**: none\n**Verdict**: ACCEPT\n"
+)
+_DECISION_TEXT = (
+    "\n## Decision -- Maintainer -- 2026-05-28\n\n"
+    "**ACCEPTED.** The Maintainer's authorization, quoted verbatim:\n\n"
+    '> "Accepted.  Add the tagline and archive the proposal in one commit."\n'
+)
+
+
+def _set_status(path: Path, status: str) -> None:
+    text = path.read_text()
+    current = re.search(r"\*\*Status\*\*: [a-z-]+", text)
+    assert current, f"no Status line in {path}"
+    path.write_text(text.replace(current.group(0), f"**Status**: {status}", 1))
+
+
+def _open_review_decide(repo: Path) -> Path:
+    """Steps 4-5a as the quickstart prescribes them: open the proposal,
+    a fresh session appends its Review, then the Maintainer's quoted
+    Decision, each in its own commit.  Returns the proposal path."""
+    proposal_path = repo / "dev" / "proposals" / f"{_PROPOSAL_STEM}.md"
+    rel = str(proposal_path.relative_to(repo))
+    proposal_path.write_text(_PROPOSAL_TEXT)
+    _run_git("add", rel, cwd=repo)
+    _run_git("commit", "-q", "-m", "Open proposal: README tagline", cwd=repo)
+    with proposal_path.open("a") as fh:
+        fh.write(_REVIEW_TEXT)
+    _set_status(proposal_path, "awaiting-decision")
+    _run_git("commit", "-q", "-m", "Review: README tagline", rel, cwd=repo)
+    with proposal_path.open("a") as fh:
+        fh.write(_DECISION_TEXT)
+    _set_status(proposal_path, "accepted")
+    _run_git("commit", "-q", "-m", "Decision: accept README tagline", rel, cwd=repo)
+    return proposal_path
+
+
 class TestLayerBLifecycleShapeOnly:
     """Layer B uses a scripted surrogate to perform the file
     operations the agent + maintainer would do in Steps 4-6.
@@ -304,44 +351,29 @@ class TestLayerBLifecycleShapeOnly:
         dev/proposals/ and commit it on its own."""
         repo = disposable_repo
         self._install_cairn(repo)
-        proposal_stem = "2026-05-28-test-readme-tagline"
-        proposal_path = repo / "dev" / "proposals" / f"{proposal_stem}.md"
-        proposal_path.write_text(
-            "# README tagline\n\n"
-            "**Status**: proposed\n\n"
-            "## Proposal\n\nAdd a one-line project tagline to README.md.\n"
-        )
+        proposal_path = repo / "dev" / "proposals" / f"{_PROPOSAL_STEM}.md"
+        proposal_path.write_text(_PROPOSAL_TEXT)
         _run_git("add", str(proposal_path.relative_to(repo)), cwd=repo)
         _run_git("commit", "-q", "-m", "Open proposal: README tagline", cwd=repo)
         # Quickstart Step 4 asserts the proposal file lives under
         # dev/proposals/<stem>.md.
         assert proposal_path.exists()
         assert proposal_path.read_text().startswith("# README tagline")
+        assert "**Status**: awaiting-review" in proposal_path.read_text()
 
     def test_step5_decision_then_implement_and_archive(
         self, disposable_repo: Path
     ) -> None:
-        """Step 5 (surrogate): append the Decision section, commit
-        decision; then implement the change, git mv the proposal
-        to archive, add the CHANGELOG line, commit as a single
-        implementing-and-archiving commit."""
+        """Step 5 (surrogate): a fresh session appends the Review and
+        commits it; the Maintainer appends a quoted Decision and sets
+        the status to accepted; then the change is implemented, the
+        proposal moved to archive and the CHANGELOG line added, in a
+        single implementing-and-archiving commit."""
         repo = disposable_repo
         self._install_cairn(repo)
-        # --- Step 4 setup (proposal exists) ---
-        proposal_stem = "2026-05-28-test-readme-tagline"
+        # --- Steps 4-5a: open, review, decide ---
         proposals_dir = repo / "dev" / "proposals"
-        proposal_path = proposals_dir / f"{proposal_stem}.md"
-        proposal_path.write_text(
-            "# README tagline\n\n**Status**: proposed\n\n## Proposal\n\nAdd a tagline.\n"
-        )
-        _run_git("add", str(proposal_path.relative_to(repo)), cwd=repo)
-        _run_git("commit", "-q", "-m", "Open proposal: README tagline", cwd=repo)
-
-        # --- Step 5a: append Decision and commit ---
-        with proposal_path.open("a") as fh:
-            fh.write("\n## Decision -- Maintainer -- 2026-05-28\n\nAccept.  Trivial.\n")
-        _run_git("add", str(proposal_path.relative_to(repo)), cwd=repo)
-        _run_git("commit", "-q", "-m", "Decision: accept README tagline", cwd=repo)
+        proposal_path = _open_review_decide(repo)
 
         # --- Step 5b: implement + archive + CHANGELOG, single commit ---
         # Edit README.md (the tagline).
@@ -362,14 +394,14 @@ class TestLayerBLifecycleShapeOnly:
         text = changelog.read_text()
         new_text = text.replace(
             "## Unreleased\n",
-            "## Unreleased\n\n### Added\n\n- README tagline (trivial dogfood).\n",
+            "## Unreleased\n\n### Added\n\n- README tagline.\n",
         )
         changelog.write_text(new_text)
         # Single path-scoped commit for all three.
         _run_git(
             "commit",
             "-m",
-            "Implement README tagline (trivial accept; archived)",
+            "Implement README tagline (archived)",
             str(readme.relative_to(repo)),
             str(archived_path.relative_to(repo)),
             # Naming BOTH sides of the git mv -- per AGENTS.md > "The
@@ -386,7 +418,9 @@ class TestLayerBLifecycleShapeOnly:
         assert not proposal_path.exists()
         # The Decision section is in the archived proposal.
         archived_text = archived_path.read_text()
+        assert "## Review -- Reviewer -- 2026-05-28" in archived_text
         assert "## Decision -- Maintainer -- 2026-05-28" in archived_text
+        assert "**Status**: accepted" in archived_text
         # The CHANGELOG carries the new line.
         assert "README tagline" in changelog.read_text()
         # The README carries the tagline.
@@ -395,26 +429,16 @@ class TestLayerBLifecycleShapeOnly:
     def test_step6_git_log_has_lifecycle_boundaries(
         self, disposable_repo: Path
     ) -> None:
-        """Step 6 says ``git log --oneline`` shows five commits
+        """Step 6 says ``git log --oneline`` shows six commits
         with clear lifecycle boundaries: init, install,
-        proposal-open, decision, implement-and-archive.  This
+        proposal-open, review, decision, implement-and-archive.  This
         test reaches the same end-state and pins the commit
         count + boundary subjects."""
         repo = disposable_repo
         # Re-use Step 5's setup end-to-end.
         self._install_cairn(repo)
-        proposal_stem = "2026-05-28-test-readme-tagline"
         proposals_dir = repo / "dev" / "proposals"
-        proposal_path = proposals_dir / f"{proposal_stem}.md"
-        proposal_path.write_text(
-            "# README tagline\n\n**Status**: proposed\n\n## Proposal\n\nAdd a tagline.\n"
-        )
-        _run_git("add", str(proposal_path.relative_to(repo)), cwd=repo)
-        _run_git("commit", "-q", "-m", "Open proposal: README tagline", cwd=repo)
-        with proposal_path.open("a") as fh:
-            fh.write("\n## Decision -- Maintainer -- 2026-05-28\n\nAccept.\n")
-        _run_git("add", str(proposal_path.relative_to(repo)), cwd=repo)
-        _run_git("commit", "-q", "-m", "Decision: accept README tagline", cwd=repo)
+        proposal_path = _open_review_decide(repo)
         readme = repo / "README.md"
         readme.write_text(readme.read_text() + "\n> Tagline.\n")
         archive_dir = proposals_dir / "archive"
@@ -448,20 +472,19 @@ class TestLayerBLifecycleShapeOnly:
             cwd=repo, capture_output=True, text=True, check=True,
         )
         lines = result.stdout.strip().splitlines()
-        # Five lifecycle commits per Step 6's published count.
-        assert len(lines) == 5, (
-            f"quickstart Step 6 documents five commits; got {len(lines)}:\n{result.stdout}"
+        # Six lifecycle commits per Step 6's published count.
+        assert len(lines) == 6, (
+            f"quickstart Step 6 documents six commits; got {len(lines)}:\n{result.stdout}"
         )
         subjects = [line.split(" ", 1)[1] for line in lines]
         # Boundaries are present and ordered (newest first via git log).
         assert subjects[0].startswith("Implement README tagline")
         assert subjects[1].startswith("Decision: accept")
-        assert subjects[2].startswith("Open proposal:")
-        assert subjects[3].startswith("Install Cairn")
-        assert subjects[4] == "init"
-        # The proposal is in archive/.
-        archive_listing = subprocess.run(
-            ["ls", str(repo / "dev" / "proposals" / "archive")],
-            capture_output=True, text=True, check=True,
-        ).stdout
-        assert f"{proposal_stem}.md" in archive_listing
+        assert subjects[2].startswith("Review:")
+        assert subjects[3].startswith("Open proposal:")
+        assert subjects[4].startswith("Install Cairn")
+        assert subjects[5] == "init"
+        # The proposal is in archive/ (listed in Python, so the check
+        # also runs where no `ls` exists).
+        archive_names = {p.name for p in (proposals_dir / "archive").iterdir()}
+        assert f"{_PROPOSAL_STEM}.md" in archive_names
