@@ -20,7 +20,7 @@ the repository, so work can continue across sessions, tools, and collaborators.
 
 ![Chats end; the repository keeps the record. An agent session today, a different AI tool next week and a new colleague next year all read and write the same files: the project's rules for agents, the proposals recording what was decided and why, the plans recording how it was checked, and the code with its tests.](docs/assets/shared-record-across-sessions.svg)
 
-[Try a small example](docs/quickstart.md) · [See an example](#an-example-asking-for-a-new-feature) · [Read the workflow](docs/getting-started.md) · [Browse the methodology](doctrine/) · [Project site](https://msuhydrogeology.github.io/cairn/)
+[Try a small example](docs/quickstart.md) · [See a toy example](#a-toy-example-asking-for-a-new-feature) · [Read the workflow](docs/getting-started.md) · [Browse the methodology](doctrine/) · [Project site](https://msuhydrogeology.github.io/cairn/)
 
 ## What it provides
 
@@ -71,9 +71,9 @@ pick up unfinished work, or understand a scientific assumption without needing
 the original chat. It is also work to maintain: if the process obscures the
 change or costs more attention than it saves, it needs to be simplified.
 
-## An example: asking for a new feature
+## A toy example: asking for a new feature
 
-You ask your agent: *"Check the model's simulated streamflow against the
+This is an illustration, not a record from a real project. You ask your agent: *"Check the model's simulated streamflow against the
 stream-gauge records, so we can see how well it matches reality."* That is a
 new capability, with a new dataset, so it takes the full path. Here is what
 happens, and who does it:
@@ -84,7 +84,7 @@ happens, and who does it:
 | **2. Review** | A fresh agent session that did not write it | Asks: *"Gauge records flag days as ice-affected or estimated. Are those compared as if they were measured?"* The author revises: flagged days are left out of the fit, and the report says how many were left out. |
 | **3. Decision** | You | Accept, and add one requirement from your own experience: the report also lists the date range each gauge covers, so a short record is never mistaken for a good fit. |
 | **4. Plan** | The agent, then a fresh reviewer | Splits the work into steps (reader, matching, statistics, report) with how each will be checked. The reviewer confirms the plan delivers what you accepted, including your added requirement. |
-| **5. Build** | The agent | Writes each piece with its tests. Before trusting the fit statistics on real gauges, it runs them on made-up series whose scores the formulas fix in advance: a series compared with itself must score an efficiency of exactly 1 and a bias of 0, and a flat line at the observed average must score exactly 0. (No real model scores 1; these inputs test the arithmetic, not the model.) A gauge reading of 35.3147 cubic feet per second must arrive as 1.0 cubic metre per second. Then it skips the unit conversion on purpose and records that the check fails, which shows the check can catch that mistake. |
+| **5. Build** | The agent | Writes each piece with its tests and documentation. Before trusting the fit statistics on real gauges, it runs them on made-up series whose scores the formulas fix in advance: a series compared with itself must score an efficiency of exactly 1 and a bias of 0, and a flat line at the observed average must score exactly 0. (No real model scores 1; these inputs test the arithmetic, not the model.) A gauge reading of 35.3147 cubic feet per second must arrive as 1.0 cubic metre per second. Then it skips the unit conversion on purpose and records that the check fails, which shows the check can catch that mistake. |
 | **6. Code review** | A reviewer who did not build it | Tries to break it with a record that has gaps, a record that starts before the model run, and two gauges on one reach, and records what was tried and what happened. |
 
 Afterwards your repository holds the new code and its tests, plus the proposal,
