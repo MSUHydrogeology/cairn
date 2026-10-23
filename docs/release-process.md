@@ -105,8 +105,11 @@ Two techniques that earned their place in past runs:
 produces the confidence the cut rests on.
 
 * `CITATION.cff` — bump `version` and `date-released`.
-* `.zenodo.json` — check that its title, description, creators, license and
-  keywords still match `CITATION.cff`. It carries no version number.
+* `.zenodo.json` — check that its title, description, creators and keywords
+  still match `CITATION.cff`. It carries no version number. Its `license`
+  differs on purpose: Zenodo accepts only one license per record, so
+  `.zenodo.json` names MIT, while `CITATION.cff` lists both MIT and CC BY 4.0.
+  Do not "fix" that difference.
 * `CHANGELOG.md` — rename `## Unreleased` to `## <version> — <date>`, and open
   a fresh empty `Unreleased` above it.
 * An **annotated tag**, signed or on a Maintainer-approved release commit on

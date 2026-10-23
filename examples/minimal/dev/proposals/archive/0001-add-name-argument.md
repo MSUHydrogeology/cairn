@@ -1,39 +1,72 @@
 # Add an optional name argument to `greet`
 
 **Author**: Maintainer
-**Date opened**: 2026-05-22
 **Status**: accepted
-**Touches**: `greet.py`, `test_greet.py`
+**Review**: usual
+**Plan review**: not required(one function and one test; implemented and archived in one commit)
+**Opened**: 2026-05-22
+**In brief**: Let `greet` say hello to a named person, keeping "world" as the default.
 
 > This is a deliberately tiny, illustrative proposal for the
 > `examples/minimal/` walkthrough. It shows the *shape* of a Cairn
-> lifecycle record at the smallest possible scale — a trivial-accept
-> change on a throwaway project. See the example `README.md` for the
+> record at the smallest scale. Adding an option is a new capability, so
+> it takes the full proposal path; see the example `README.md` for the
 > narrated trace.
 
 ## Context
 
 The toy `greet` CLI always greets `"world"`. A user asked to greet a
-named person. This is a one-function change with one test — small
-enough to be a **trivial accept** (no separate plan).
+named person.
 
 ## Proposal
 
-Add an optional `name` argument to `greet(name="world")`, returning
-`"Hello, <name>!"`, and absorb a test covering the default and the
-named case. Update the CLI to pass through `sys.argv[1]` when present.
+Add an optional `name` argument, `greet(name="world")`, returning
+`"Hello, <name>!"`. The CLI passes `sys.argv[1]` through when present.
+The change lands with a test covering the default and the named case.
 
-## Review -- Reviewer (Internal) -- 2026-05-22
+## Alternatives considered
 
-Verified the change is one function + one test, backward-compatible
-(the default preserves the old behavior). No interface beyond the new
-optional argument; nothing to gate. Recommend **accept** as a trivial
-change — the test absorbed alongside the code is exactly the discipline
-("a change absorbs its tests"). No plan needed at this size.
+* **Do nothing.** The user keeps editing the source to change the name.
+* **A required argument.** Breaks every existing call; rejected.
+
+## Evidence / verification plan
+
+`test_greet.py` checks that `greet()` still returns `"Hello, world!"`
+and that `greet("Ada")` returns `"Hello, Ada!"`.
+
+## Signals the change is wrong
+
+Any existing caller of `greet()` gets a different greeting.
+
+## Review -- Reviewer -- 2026-05-22
+
+```
+Reviewed commit: illustrative example; no real commit
+Target: the whole proposal
+Prior findings: none
+Assurance path: standard
+```
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: one optional argument, and the
+   default keeps today's behaviour -- `greet.py`.
+2. **Best alternative.** Doing nothing, which leaves users editing the
+   source; the proposal is the smaller cost -- *Alternatives considered*.
+3. **What would show it wrong.** `greet()` returning anything other than
+   `"Hello, world!"`; the default-case test pins it -- `test_greet.py`.
+
+No findings. A plan is not needed at this size.
 
 ## Decision -- Maintainer -- 2026-05-22
 
-**Accepted** as a trivial change. Implemented in the same commit that
-archived this proposal; the test landed with it, and the CHANGELOG line
-recorded it. This is the whole loop at minimum scale:
-propose → review → decide → implement (with the test) → record.
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim:
+
+> "Accepted. Implement it with its test and archive this proposal in the same commit."
+
+Implemented in the commit that archived this proposal, with the test and a
+CHANGELOG line.

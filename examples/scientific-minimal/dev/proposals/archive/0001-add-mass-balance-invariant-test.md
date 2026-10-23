@@ -1,24 +1,23 @@
 # Add the mass-balance invariant test to `water_budget`
 
 **Author**: Maintainer
-**Date opened**: 2026-05-28
 **Status**: accepted
-**Touches**: `water_budget.py`, `test_water_budget.py`,
-`data/water_budget_2025.csv`
+**Review**: usual
+**Plan review**: not required(one test module and a small dataset; implemented and archived in one commit)
+**Opened**: 2026-05-28
+**In brief**: Test that the water budget closes, so a sign, unit or column mistake can no longer ship silently.
 
 > This is a deliberately tiny, illustrative proposal for the
-> `examples/scientific-minimal/` walkthrough. It shows the *shape*
-> of a Cairn lifecycle record at the smallest possible scale on a
-> *scientific* workflow — a trivial-accept change on a throwaway
-> water-budget reconciler. See the example `README.md` for the
-> narrated trace.
+> `examples/scientific-minimal/` walkthrough. It shows the *shape* of a
+> Cairn record on a *scientific* workflow, at the smallest scale. See
+> the example `README.md` for the narrated trace.
 
 ## Context
 
 The toy `water_budget.py` reads a CSV of monthly precipitation,
-evapotranspiration, runoff, recharge, and observed storage change
-for a catchment, and writes a residual column. The residual
-formula encodes the conservation law
+evapotranspiration, runoff, recharge and observed storage change for a
+catchment, all in millimetres per month, and writes a residual column.
+Water in minus water out must equal the change in storage:
 
     precip - et - runoff - recharge = dS_storage
 
@@ -26,83 +25,87 @@ so the residual is
 
     residual = precip - et - runoff - recharge - dS_storage
 
-For a closed water budget on synthetic data, the residual should be
-small (round-off only). The script today computes and writes the
-residual, but **does not test that the invariant actually holds** —
-a sign flip in the formula, a column rename in the loader, or a
-silent scaling error in a future contribution would all ship
-without the test catching them.
-
-This is the single most differentiated thing Cairn asks of a
-scientific codebase (see `../../../docs/workflow-role.md` and the
-codebase-readiness-report template section 11): the scientific
-assumptions should be made *explicit* and *testable* rather than
-left implicit in the code. The mass-balance invariant is exactly
-that kind of assumption.
-
-This is a one-function change plus one test plus two synthetic
-edge cases — small enough to be a **trivial accept** (no separate
-plan).
+On a closed synthetic budget the residual should be round-off only. The
+script computes and writes it, but **nothing tests that the budget
+closes**. A sign flip in the formula, a column rename in the loader, or a
+silent scaling error in a future contribution would all ship without a
+test catching them.
 
 ## Proposal
 
-Add a test module `test_water_budget.py` that pins the
-mass-balance invariant as four pytest cases:
+Add `test_water_budget.py`, pinning the mass-balance invariant:
 
-1. The default dataset (`data/water_budget_2025.csv`) satisfies
-   `max(|residual|) < RESIDUAL_TOL_MM`.
-2. The residual formula's sign convention is correct (zero-row →
-   residual 0; precip-only row → residual = +precip; closed
-   precip=et row → residual 0).
-3. The round-trip from CSV input through `compute_residuals` and
-   `write_residuals_csv` produces a destination CSV with the
-   `residual_mm` column and the same row count as the input.
-4. The CLI `main()` returns exit code 0 on the balanced dataset
-   (and would return 2 on an unbalanced one).
+1. The shipped dataset (`data/water_budget_2025.csv`) satisfies
+   `max(|residual|) < RESIDUAL_TOL_MM` (0.5 mm/month).
+2. The formula's signs are right, on rows whose answer is known by hand:
+   an all-zero row gives 0; a precipitation-only row gives +precip; a row
+   where evapotranspiration equals precipitation gives 0.
+3. Reading the CSV and writing the residuals keeps every row and adds the
+   `residual_mm` column.
+4. The command-line entry point returns 0 on the balanced dataset.
 
-Plus two parametrized **sentinels** in `test_unbalanced_rows_exceed_tolerance`
-covering deliberately-unbalanced rows: a precip-only row and a
-precip-with-too-small-storage-change row, both well above
-tolerance. The sentinels prove the invariant is not vacuous — if
-the residual formula collapsed to "return 0", the sentinels would
-catch it.
+Plus two deliberately unbalanced rows ("sentinels") that must exceed the
+tolerance. They prove the test can fail: if the residual formula
+collapsed to `return 0`, the sentinels would catch it.
 
-Absorb the test alongside the code (`a change absorbs its tests`)
-in a single implementing-and-archiving commit.
+## Alternatives considered
 
-## Review -- Reviewer (Internal) -- 2026-05-28
+* **Do nothing.** The budget is checked by eye, when someone remembers.
+* **Check the residual only on the shipped dataset.** A balanced dataset
+  cannot tell a correct formula from one that always returns 0; the
+  sentinels and the hand-computed rows close that gap.
 
-Verified the change is the test module plus two sentinel rows
-plus the input dataset, with no edit to the existing `water_budget.py`
-module beyond exporting the constants the test imports.
-Backward-compatible (the script's external behaviour is unchanged;
-the test exercises the existing public functions).
+## Evidence / verification plan
 
-The four invariant cases plus the two parametrized sentinels give
-a real falsification footprint:
+The test module above, run with `python -m pytest test_water_budget.py`.
 
-* If the residual formula's sign flips, the
-  `test_residual_formula_signs_match_doctrine` case fails on the
-  closed-precip-et row.
-* If the tolerance is silently relaxed, the
-  `test_unbalanced_rows_exceed_tolerance` parametrized cases either
-  start passing the unbalanced rows (which is the bug) or the
-  tolerance constant is moved out of reach of the assertions
-  (which is visible in the diff).
-* If a column is renamed in the loader without updating the
-  computation, `compute_residual` raises `KeyError` and the
-  `test_default_dataset_satisfies_invariant` case red-flags it.
+### Independent scientific check
 
-Recommend **accept** as a trivial change. The discipline of pinning
-the conservation law as a test is exactly what the
-codebase-readiness-report template's section 11 asks for; this
-example will be the first place a reader sees that discipline in
-action.
+The expected values in item 2 come from hand arithmetic on rows with
+known answers, not from the code. Flipping the sign of evapotranspiration
+in the formula must make `test_residual_formula_signs_match_doctrine`
+fail; that failing run is the evidence the check works.
+
+## Signals the change is wrong
+
+The shipped dataset fails the tolerance (the data, not the formula, is
+unbalanced), or a sentinel row passes.
+
+## Review -- Reviewer -- 2026-05-28
+
+```
+Reviewed commit: illustrative example; no real commit
+Target: the whole proposal
+Prior findings: none
+Assurance path: standard
+```
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: it pins the conservation law the
+   script already encodes, without changing the script's behaviour --
+   `water_budget.py`.
+2. **Best alternative.** Checking only the shipped dataset, which a
+   formula returning 0 would also pass; the sentinels rule that out --
+   `test_water_budget.py::test_unbalanced_rows_exceed_tolerance`.
+3. **What would show it wrong.** Each mistake the author fears has a test
+   that fails on it. A flipped sign fails
+   `test_residual_formula_signs_match_doctrine` on the row where
+   evapotranspiration equals precipitation. A relaxed tolerance lets the
+   sentinels pass, which their test catches. A renamed column raises
+   `KeyError` in `test_default_dataset_satisfies_invariant`.
+
+No findings. A plan is not needed at this size.
 
 ## Decision -- Maintainer -- 2026-05-28
 
-**Accepted** as a trivial change. Implemented in the same commit
-that archived this proposal; the test landed with it, and the
-CHANGELOG line recorded it. This is the whole loop at minimum
-scale on a scientifically-shaped workflow:
-propose → review → decide → implement (with the test) → record.
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim:
+
+> "Accepted. Land the test with the dataset and archive this proposal in the same commit."
+
+Implemented in the commit that archived this proposal, with the test and a
+CHANGELOG line.
