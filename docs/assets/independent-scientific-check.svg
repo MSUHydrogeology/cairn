@@ -1,0 +1,103 @@
+<!--
+  independent-scientific-check.svg - Conceptual diagram: code and a test
+  written from the same understanding can share a scientific mistake, so a
+  change to a scientific assumption names one check whose expected answer
+  comes from outside the code.
+
+  Shown, left: one understanding of the physics (here, an outflow term with
+  its sign reversed) produces both the code and its test; they agree, so
+  the test passes, and both are wrong. Right: an expected answer from
+  elsewhere (an analytical or manufactured solution, a conservation law
+  aimed at the error the change risks, a trusted observation or benchmark,
+  an independent implementation, or an expert's expectation written down
+  first) is compared with the code's result, and the disagreement shows the
+  mistake. Footer: the check is proven by making the mistake on purpose and
+  recording that the check fails. Checkable against the proposal template's
+  "Independent scientific check" section (templates/core/dev/proposals/_template.md).
+
+  Provenance: hand-authored SVG, no external tool; produced for the README
+  and project-site visuals on the Maintainer's direction, 2026-10-23.
+
+  License: Creative Commons Attribution 4.0 International (CC BY 4.0).
+  See LICENSE-CC-BY.md.
+
+  Theme-adaptive: a prefers-color-scheme media query flips the box fills and
+  a foreground ink custom property, so the figure reads on light and dark.
+-->
+<svg viewBox="0 0 680 350" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-labelledby="fig-title fig-desc">
+  <title id="fig-title">A test written from the same understanding as the code can share its mistake; one check whose expected answer comes from outside the code can catch it.</title>
+  <desc id="fig-desc">Left: one understanding of the physics, here with an outflow sign reversed, produces both the code and its test. They agree, the test passes, and both are wrong. Right: an expected answer from elsewhere, such as an analytical or manufactured solution, a conservation law aimed at the risk, a trusted observation or benchmark, an independent implementation, or an expert's expectation written down first, is compared with the code's result, and the disagreement shows the mistake. To prove the check works, make the mistake on purpose and record that the check fails.</desc>
+  <style>
+    svg { --ink: #1f2328; }
+    .work  { fill: #dbeafe; stroke: #3b82f6; stroke-width: 1.4; }
+    .wrong { fill: #fee2e2; stroke: #ef4444; stroke-width: 1.6; }
+    .basis { fill: #dcfce7; stroke: #22c55e; stroke-width: 1.4; }
+    .found { fill: #fef9c3; stroke: #eab308; stroke-width: 1.6; }
+    .t { font-family: ui-sans-serif, system-ui, -apple-system,
+         BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; fill: var(--ink); }
+    .title { font-size: 17px; font-weight: 700; }
+    .side  { font-size: 13px; font-weight: 700; letter-spacing: 0.04em;
+             text-transform: uppercase; opacity: 0.6; }
+    .head  { font-size: 14.5px; font-weight: 700; }
+    .body  { font-size: 13px; opacity: 0.85; }
+    .note  { font-size: 12.5px; font-style: italic; opacity: 0.75; }
+    .arrow { stroke: var(--ink); stroke-opacity: 0.45; stroke-width: 1.5;
+             fill: none; marker-end: url(#a); }
+    .head-mark { fill: var(--ink); opacity: 0.45; }
+    .divider { stroke: var(--ink); stroke-opacity: 0.15; stroke-width: 1; }
+    @media (prefers-color-scheme: dark) {
+      svg { --ink: #e6edf3; }
+      .work  { fill: #1e3a5f; stroke: #60a5fa; }
+      .wrong { fill: #3f1416; stroke: #f87171; }
+      .basis { fill: #14391f; stroke: #4ade80; }
+      .found { fill: #3b2f07; stroke: #fbbf24; }
+    }
+  </style>
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0.5 L7,4 L0,7.5 z" class="head-mark"/>
+    </marker>
+  </defs>
+
+  <text x="340" y="26" text-anchor="middle" class="t title">A scientific change needs one check from outside the code</text>
+
+  <!-- Left: the check from inside -->
+  <text x="175" y="56" text-anchor="middle" class="t side">From the same understanding</text>
+  <rect x="25" y="68" width="300" height="52" rx="8" class="work"/>
+  <text x="175" y="90" text-anchor="middle" class="t head">One idea of the physics</text>
+  <text x="175" y="109" text-anchor="middle" class="t body">(an outflow sign is reversed)</text>
+
+  <path d="M120,121 L100,150" class="arrow"/>
+  <path d="M230,121 L250,150" class="arrow"/>
+  <rect x="25" y="152" width="140" height="44" rx="8" class="work"/>
+  <text x="95" y="179" text-anchor="middle" class="t head">the code</text>
+  <rect x="185" y="152" width="140" height="44" rx="8" class="work"/>
+  <text x="255" y="179" text-anchor="middle" class="t head">its test</text>
+
+  <path d="M95,197 L140,228" class="arrow"/>
+  <path d="M255,197 L210,228" class="arrow"/>
+  <rect x="25" y="230" width="300" height="56" rx="8" class="wrong"/>
+  <text x="175" y="253" text-anchor="middle" class="t head">They agree. The test passes.</text>
+  <text x="175" y="273" text-anchor="middle" class="t body">Both are wrong in the same way.</text>
+
+  <line x1="340" y1="48" x2="340" y2="290" class="divider"/>
+
+  <!-- Right: the check from outside -->
+  <text x="505" y="56" text-anchor="middle" class="t side">From somewhere else</text>
+  <rect x="355" y="68" width="300" height="146" rx="8" class="basis"/>
+  <text x="505" y="90" text-anchor="middle" class="t head">An expected answer from</text>
+  <text x="371" y="116" class="t body">• an analytical or manufactured solution</text>
+  <text x="371" y="137" class="t body">• a conservation law aimed at the risk</text>
+  <text x="371" y="158" class="t body">• a trusted observation or benchmark</text>
+  <text x="371" y="179" class="t body">• an independent implementation</text>
+  <text x="371" y="200" class="t body">• an expert's expectation, written first</text>
+
+  <path d="M505,215 L505,228" class="arrow"/>
+  <rect x="355" y="230" width="300" height="56" rx="8" class="found"/>
+  <text x="505" y="253" text-anchor="middle" class="t head">Compare with the code's result</text>
+  <text x="505" y="273" text-anchor="middle" class="t body">They disagree: the mistake shows.</text>
+
+  <text x="340" y="320" text-anchor="middle" class="t note">Proof that the check works: make the mistake on purpose,</text>
+  <text x="340" y="338" text-anchor="middle" class="t note">and record that the check fails.</text>
+</svg>

@@ -48,6 +48,14 @@ visitor expects `README.md`; the Keep a Changelog convention
 expects `CHANGELOG.md`; the security disclosure convention expects
 `SECURITY.md`.  Their placement is inherited, not a project choice.
 
+The **project site** (`docs/index.html`, served by GitHub Pages from
+`docs/`, with `docs/.nojekyll` so Pages serves the folder unchanged)
+is an entry page too.  It summarizes `README.md` for visitors who
+arrive from outside GitHub, reuses the figures in `docs/assets/`, and
+links into the repository for everything else.  It states no rule of
+its own; when it and `README.md` disagree, the README is right and the
+page is corrected.
+
 ### 2. Governing layer -- "How must I build?"
 
 Prescriptive doctrine a contributor (human or AI) must follow to

@@ -1,0 +1,99 @@
+<!--
+  shared-record-across-sessions.svg - Conceptual diagram: the repository,
+  not a chat, carries a project's context between sessions, tools and people.
+
+  Shown: three workers at different times (an agent session this afternoon,
+  a different AI tool next week, a new student or colleague next year) all
+  read and write the same repository files: the project's rules for agents
+  (AGENTS.md), the proposals that record what was decided and why
+  (dev/proposals/), the plans that record how it was built and checked
+  (dev/plans/), and the code with its tests. Checkable against
+  doctrine/session-routines.md and doctrine/lifecycle.md ("Commit-mediated").
+
+  Provenance: hand-authored SVG, no external tool; produced for the README
+  and project-site visuals on the Maintainer's direction, 2026-10-23.
+
+  License: Creative Commons Attribution 4.0 International (CC BY 4.0).
+  See LICENSE-CC-BY.md.
+
+  Theme-adaptive: a prefers-color-scheme media query flips the box fills and
+  a foreground ink custom property, so the figure reads on light and dark.
+-->
+<svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-labelledby="fig-title fig-desc">
+  <title id="fig-title">Chats end; the repository keeps the record. Every session, tool and person starts from the same files.</title>
+  <desc id="fig-desc">Three workers at different times, an agent session this afternoon, a different AI tool next week, and a new student or colleague next year, all read and write the same repository: AGENTS.md, the project's rules for agents; dev/proposals, what was decided and why; dev/plans, how it was built and checked; and the code with its tests.</desc>
+  <style>
+    svg { --ink: #1f2328; }
+    .box-who  { fill: #dbeafe; stroke: #3b82f6; stroke-width: 1.5; }
+    .box-repo { fill: #f6f8fa; stroke: #8c959f; stroke-width: 1.5; }
+    .row      { fill: #ffffff; stroke: #d0d7de; stroke-width: 1; }
+    .t   { font-family: ui-sans-serif, system-ui, -apple-system,
+           BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; fill: var(--ink); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            fill: var(--ink); font-size: 13.5px; font-weight: 700; }
+    .title { font-size: 17px; font-weight: 700; }
+    .head  { font-size: 14.5px; font-weight: 700; }
+    .body  { font-size: 13px; opacity: 0.8; }
+    .note  { font-size: 12.5px; font-style: italic; opacity: 0.7; }
+    .link  { stroke: var(--ink); stroke-opacity: 0.45; stroke-width: 1.6;
+             fill: none; marker-start: url(#a); marker-end: url(#a); }
+    .head-mark { fill: var(--ink); opacity: 0.45; }
+    @media (prefers-color-scheme: dark) {
+      svg { --ink: #e6edf3; }
+      .box-who  { fill: #1e3a5f; stroke: #60a5fa; }
+      .box-repo { fill: #161b22; stroke: #6e7681; }
+      .row      { fill: #0d1117; stroke: #30363d; }
+    }
+  </style>
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="4" refY="4"
+            orient="auto-start-reverse">
+      <path d="M0,0.5 L7,4 L0,7.5 z" class="head-mark"/>
+    </marker>
+  </defs>
+
+  <text x="320" y="26" text-anchor="middle" class="t title">Chats end. The repository keeps the record.</text>
+
+  <!-- Who works on the project, over time -->
+  <rect x="20" y="50" width="210" height="58" rx="8" class="box-who"/>
+  <text x="125" y="74" text-anchor="middle" class="t head">This afternoon</text>
+  <text x="125" y="94" text-anchor="middle" class="t body">an agent session</text>
+
+  <rect x="20" y="122" width="210" height="58" rx="8" class="box-who"/>
+  <text x="125" y="146" text-anchor="middle" class="t head">Next week</text>
+  <text x="125" y="166" text-anchor="middle" class="t body">a different AI tool</text>
+
+  <rect x="20" y="194" width="210" height="58" rx="8" class="box-who"/>
+  <text x="125" y="218" text-anchor="middle" class="t head">Next year</text>
+  <text x="125" y="238" text-anchor="middle" class="t body">a new student or colleague</text>
+
+  <!-- Read and write -->
+  <path d="M236,79 L322,118" class="link"/>
+  <path d="M236,151 L322,151" class="link"/>
+  <path d="M236,223 L322,184" class="link"/>
+  <text x="279" y="142" text-anchor="middle" class="t note">read</text>
+  <text x="279" y="170" text-anchor="middle" class="t note">write</text>
+
+  <!-- The repository -->
+  <rect x="330" y="50" width="290" height="202" rx="8" class="box-repo"/>
+  <text x="475" y="74" text-anchor="middle" class="t head">Your repository</text>
+
+  <rect x="344" y="86" width="262" height="36" rx="5" class="row"/>
+  <text x="356" y="109" class="mono">AGENTS.md</text>
+  <text x="466" y="109" class="t body">rules for agents</text>
+
+  <rect x="344" y="127" width="262" height="36" rx="5" class="row"/>
+  <text x="356" y="150" class="mono">proposals</text>
+  <text x="466" y="150" class="t body">decisions, and why</text>
+
+  <rect x="344" y="168" width="262" height="36" rx="5" class="row"/>
+  <text x="356" y="191" class="mono">plans</text>
+  <text x="466" y="191" class="t body">how it was checked</text>
+
+  <rect x="344" y="209" width="262" height="36" rx="5" class="row"/>
+  <text x="356" y="232" class="mono">code, tests</text>
+  <text x="466" y="232" class="t body">the change itself</text>
+
+  <text x="320" y="284" text-anchor="middle" class="t note">Nothing the next session needs lives only in a chat window.</text>
+</svg>

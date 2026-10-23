@@ -24,6 +24,11 @@ invariant — if you want a domain-flavored example.)
 
 ## The five steps
 
+Not every change needs all five. A change is sorted into one of three lanes
+first, and the steps below are the deliberate lane, the heaviest one:
+
+![Three lanes: most changes take a light path. A typo or one-line fix is the change with its test, then a code review. A change whose shape is settled gets a short change note and a review first. Only a new feature, a contract change or a high-risk surface gets a proposal, a review, the Maintainer's decision and a plan. When unsure, take the heavier lane; every step is a commit.](assets/three-lanes-of-change.svg)
+
 A substantive change moves through
 [propose → review → decide → implement → record](../doctrine/lifecycle.md).
 Walk a concrete one: *add an optional name argument to a `greet` CLI.*
@@ -53,7 +58,9 @@ change the Maintainer can ask for more distance, a different model or a person.
 The **Maintainer** appends the `## Decision` section: accept, reject,
 or supersede. This is the human authority gate — agents propose and
 review, but the Maintainer (or their explicit instruction) records the
-decision. An accepted proposal then moves to `dev/proposals/archive/`.
+decision. An accepted proposal stays in `dev/proposals/` until the work
+starts: it moves to `dev/proposals/archive/` in the commit that opens its plan,
+or, for a small change, in the commit that implements it.
 
 A small change is a **trivial accept** (implement-and-archive in one
 step). A larger one opens a **plan** under `dev/plans/` first, which

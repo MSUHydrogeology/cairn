@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cairn — a working method for scientific software built with AI agents</title>
+<meta name="description" content="Cairn is an open working method for scientists developing software with AI coding agents: project rules, written proposals, independent review, testing, and a record of decisions kept in git beside the code.">
+<meta property="og:title" content="Cairn — a working method for scientific software built with AI agents">
+<meta property="og:description" content="Project rules, written proposals, independent review, and a record of decisions kept in git beside the code, so research software keeps its reasoning across sessions, tools and people.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://msuhydrogeology.github.io/cairn/">
+<!--
+  The Cairn project site: one static, self-contained page served by GitHub
+  Pages from docs/ (docs/.nojekyll keeps Pages from rebuilding the folder).
+  It summarizes README.md for visitors and links to the repository for
+  everything else; it states no rule of its own. Figures are the SVGs in
+  docs/assets/, shared with the README. License: CC BY 4.0, see
+  LICENSE-CC-BY.md.
+-->
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #f6f8fa;
+    --ink: #1f2328;
+    --ink-soft: #57606a;
+    --line: #d0d7de;
+    --accent: #2f6f4f;
+    --accent-ink: #ffffff;
+    --quote: #f1f5f2;
+    --code-bg: #f6f8fa;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117;
+      --bg-soft: #161b22;
+      --ink: #e6edf3;
+      --ink-soft: #9198a1;
+      --line: #30363d;
+      --accent: #5fb38a;
+      --accent-ink: #0d1117;
+      --quote: #142019;
+      --code-bg: #161b22;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, sans-serif;
+  }
+  a { color: var(--accent); text-underline-offset: 2px; }
+  a:hover { text-decoration-thickness: 2px; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 16px; }
+
+  header.top {
+    border-bottom: 1px solid var(--line);
+    background: var(--bg);
+  }
+  header.top .wrap {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; padding-top: 12px; padding-bottom: 12px; flex-wrap: wrap;
+  }
+  .brand { font-weight: 700; font-size: 19px; color: var(--ink); text-decoration: none; }
+  nav.links { display: flex; gap: 18px; flex-wrap: wrap; font-size: 15px; }
+  nav.links a { color: var(--ink-soft); text-decoration: none; }
+  nav.links a:hover { color: var(--ink); text-decoration: underline; }
+
+  .hero { padding: 40px 0 8px; }
+  .hero img.banner { width: 100%; max-width: 600px; height: auto; display: block; margin: 0 0 24px; }
+  h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.2; margin: 0 0 16px; letter-spacing: -0.01em; }
+  .lede { font-size: 19px; color: var(--ink-soft); margin: 0 0 24px; max-width: 46em; }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; margin: 0 0 8px; }
+  .button {
+    display: inline-block; padding: 10px 18px; border-radius: 8px;
+    font-weight: 600; font-size: 16px; text-decoration: none;
+    border: 1px solid var(--accent);
+  }
+  .button.primary { background: var(--accent); color: var(--accent-ink); }
+  .button.secondary { color: var(--accent); background: transparent; }
+  .button:hover { text-decoration: none; filter: brightness(1.05); }
+
+  section { padding: 36px 0 8px; border-top: 1px solid var(--line); margin-top: 32px; }
+  section:first-of-type { border-top: 0; margin-top: 0; }
+  h2 { font-size: 26px; line-height: 1.25; margin: 0 0 12px; }
+  h3 { font-size: 18px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  figure { margin: 20px 0 8px; }
+  figure img { width: 100%; height: auto; display: block; }
+  figcaption { font-size: 14px; color: var(--ink-soft); margin-top: 8px; }
+
+  ol.steps { padding-left: 1.3em; margin: 0 0 14px; }
+  ol.steps li { margin: 4px 0; }
+
+  .file {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px;
+    padding: 12px 14px; font-size: 15px; line-height: 1.5; margin: 12px 0 18px;
+  }
+  .file .path { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                font-size: 13.5px; overflow-wrap: anywhere; margin-bottom: 8px; }
+  .file dl { display: grid; grid-template-columns: max-content 1fr;
+             gap: 4px 14px; margin: 0; }
+  .file dt { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+             font-size: 13.5px; font-weight: 700; }
+  .file dd { margin: 0; color: var(--ink-soft); }
+  .exchange { display: grid; gap: 12px; margin: 8px 0 16px; }
+  .turn { border-left: 4px solid var(--accent); background: var(--quote);
+          border-radius: 0 8px 8px 0; padding: 10px 14px; }
+  .turn .who { font-size: 13px; font-weight: 700; letter-spacing: 0.04em;
+               text-transform: uppercase; color: var(--ink-soft); margin-bottom: 4px; }
+  .turn blockquote { margin: 0; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+         font-size: 0.88em; background: var(--code-bg); border: 1px solid var(--line);
+         border-radius: 5px; padding: 0 4px; overflow-wrap: anywhere; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+           gap: 14px; margin: 16px 0; }
+  .card { border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px;
+          background: var(--bg-soft); }
+  .card h3 { margin: 0 0 6px; font-size: 17px; }
+  .card p { margin: 0; font-size: 15px; color: var(--ink-soft); }
+
+  .note { background: var(--bg-soft); border: 1px solid var(--line);
+          border-radius: 10px; padding: 14px 16px; font-size: 16px; }
+
+  footer { border-top: 1px solid var(--line); margin-top: 48px; padding: 24px 0 40px;
+           font-size: 14px; color: var(--ink-soft); }
+  footer p { margin: 0 0 8px; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./">Cairn</a>
+    <nav class="links" aria-label="Site">
+      <a href="#how">How it works</a>
+      <a href="#example">An example</a>
+      <a href="#start">Get started</a>
+      <a href="https://github.com/MSUHydrogeology/cairn">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section class="hero" aria-labelledby="title">
+  <img class="banner" src="assets/cairn-banner.svg" alt="Cairn — stacked stones trail-marker logo with project tagline">
+  <h1 id="title">A working method for scientists developing software with AI coding agents</h1>
+  <p class="lede">Research software outlives the conversation that produced it. Someone
+  still needs to know why an assumption was made, what a change was checked against,
+  and what remains uncertain. Cairn gives that information a home in the repository,
+  so work can continue across sessions, tools, and collaborators.</p>
+  <div class="cta">
+    <a class="button primary" href="https://github.com/MSUHydrogeology/cairn/blob/master/docs/quickstart.md">Try the quickstart</a>
+    <a class="button secondary" href="https://github.com/MSUHydrogeology/cairn">Read it on GitHub</a>
+  </div>
+</section>
+
+<section aria-labelledby="record">
+  <h2 id="record">The repository keeps the record</h2>
+  <p>Cairn is a set of files and local tools, not a hosted service. It brings
+  together project rules that agents read, written proposals, review, testing,
+  and a record of decisions kept in git beside the code. It works with different
+  agent tools and programming languages.</p>
+  <figure>
+    <img src="assets/shared-record-across-sessions.svg" alt="Chats end; the repository keeps the record. An agent session today, a different AI tool next week and a new colleague next year all read and write the same files: the project's rules for agents, the proposals recording what was decided and why, the plans recording how it was checked, and the code with its tests.">
+  </figure>
+</section>
+
+<section id="how" aria-labelledby="how-h">
+  <h2 id="how-h">The process grows with the change</h2>
+  <p>Before anything is written, a change is sorted into one of three lanes.
+  A typo or a one-line fix is just the change, its test and a code review. Only a
+  new feature, a contract change or a high-risk surface gets the full path: a
+  proposal, a review, a decision by the human Maintainer, and a plan.</p>
+  <figure>
+    <img src="assets/three-lanes-of-change.svg" alt="Three lanes: most changes take a light path. A typo or one-line fix is the change with its test, then a code review. A change whose shape is settled gets a short change note and a review first. Only a new feature, a contract change or a high-risk surface gets a proposal, a review, the Maintainer's decision and a plan. When unsure, take the heavier lane; every step is a commit.">
+  </figure>
+
+  <h3>One review at every stage</h3>
+  <p>Every review is by someone who did not write the work. A fresh session of
+  the same AI tool is enough; the Maintainer can ask for another model or a person
+  when a change warrants it. Each review records who wrote it and the evidence it
+  considered.</p>
+  <figure>
+    <img src="assets/dual-review-independence.svg" alt="One review at every stage, by a reviewer who did not write the work and who questions its foundations in writing. A different model or a person adds more distance only when the Maintainer asks, and every review names its reviewer, so that distance is on the record.">
+  </figure>
+</section>
+
+<section id="example" aria-labelledby="example-h">
+  <h2 id="example-h">An example: one change, start to finish</h2>
+  <p>A small script reconciles a catchment's monthly water budget, but never
+  checks that the budget closes. The change is to pin that conservation law as a
+  test. The whole exchange is one Markdown file that grows as each person adds a
+  section:</p>
+  <div class="file" role="figure" aria-label="The sections of the proposal file, and who adds each">
+    <div class="path">dev/proposals/archive/0001-add-mass-balance-invariant-test.md</div>
+    <dl>
+      <dt>## Context</dt><dd>the author: what could go wrong today</dd>
+      <dt>## Proposal</dt><dd>the change, and the tests that pin it</dd>
+      <dt>## Review</dt><dd>a fresh reviewer: which test catches which mistake</dd>
+      <dt>## Decision</dt><dd>the Maintainer: accepted</dd>
+    </dl>
+  </div>
+
+  <div class="exchange">
+    <div class="turn">
+      <div class="who">The author names the risk</div>
+      <blockquote>“a sign flip in the formula, a column rename in the loader, or a
+      silent scaling error in a future contribution would all ship without the test
+      catching them.”</blockquote>
+    </div>
+    <div class="turn">
+      <div class="who">The proposal makes sure the test can fail</div>
+      <blockquote>“The sentinels prove the invariant is not vacuous — if the
+      residual formula collapsed to "return 0", the sentinels would catch it.”</blockquote>
+    </div>
+    <div class="turn">
+      <div class="who">The reviewer checks each feared mistake has a test</div>
+      <blockquote>“If the residual formula's sign flips, the
+      <code>test_residual_formula_signs_match_doctrine</code> case fails on the
+      closed-precip-et row.”</blockquote>
+    </div>
+    <div class="turn">
+      <div class="who">The Maintainer decides</div>
+      <blockquote>“<strong>Accepted</strong> as a trivial change. Implemented in the
+      same commit that archived this proposal; the test landed with it, and the
+      CHANGELOG line recorded it.”</blockquote>
+    </div>
+  </div>
+  <p>What is left behind is ordinary: the code, its test, and the proposal with
+  its review and decision, all in git. A year later, anyone asking “why does this
+  test exist, and what does it protect?” can read the answer instead of
+  reconstructing it.
+  <a href="https://github.com/MSUHydrogeology/cairn/tree/master/examples/scientific-minimal">See the files.</a></p>
+</section>
+
+<section aria-labelledby="science-h">
+  <h2 id="science-h">Passing tests are not scientific validity</h2>
+  <p>A passing test does not establish that a model represents the right physical
+  process. When a change touches a scientific assumption, such as a governing
+  equation, a unit or sign convention, a boundary condition or a parameter
+  default, its proposal names one check whose expected answer does not come from
+  the code, or from a test written from the same understanding. The implementer
+  then makes the feared mistake on purpose and records that the check fails.</p>
+  <figure>
+    <img src="assets/independent-scientific-check.svg" alt="A test written from the same understanding as the code can share its mistake: with an outflow sign reversed in both, they agree and the test passes. One check whose expected answer comes from elsewhere, such as an analytical solution, a conservation law aimed at the risk, a trusted observation, an independent implementation or an expert's expectation written down first, disagrees with the code and shows the mistake.">
+  </figure>
+</section>
+
+<section id="start" aria-labelledby="start-h">
+  <h2 id="start-h">Get started</h2>
+  <figure>
+    <img src="assets/two-ways-to-adopt.svg" alt="Two ways in: read the method and install nothing, or install it by choosing a profile, running the scaffold and doing the four steps the installer prints. An install then grows by adding modules as the work earns them; a profile is a starting point, not a rank.">
+  </figure>
+  <div class="cards">
+    <div class="card">
+      <h3><a href="https://github.com/MSUHydrogeology/cairn/blob/master/docs/quickstart.md">Try it on a throwaway repo</a></h3>
+      <p>One small change, one human, one AI agent, with a real install of the smallest profile.</p>
+    </div>
+    <div class="card">
+      <h3><a href="https://github.com/MSUHydrogeology/cairn/blob/master/on-ramp/README.md">Choose how much to adopt</a></h3>
+      <p>Read the method as a handbook, or install it with the profile that fits your project.</p>
+    </div>
+    <div class="card">
+      <h3><a href="https://github.com/MSUHydrogeology/cairn/tree/master/doctrine">Read the method</a></h3>
+      <p>The lifecycle, review, roles, session continuity, and the research behind them.</p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="status-h">
+  <h2 id="status-h">Status and limits</h2>
+  <p class="note">Cairn is in active development. It was developed by Anthony
+  Kendall through work on two research-software projects, and this repository uses
+  the method for its own development. Those are deployments by the same maintainer,
+  not independent adoptions. There is no controlled study showing that Cairn
+  improves development outcomes, and no outside project has run the install yet.
+  Its benefits and costs need to be judged in use; if you try it,
+  <a href="https://github.com/MSUHydrogeology/cairn/issues">we would like to hear how it went</a>.</p>
+  <p>AI coding agents can read files, run commands, and send repository content to
+  their model provider. Keep secrets, credentials, embargoed data and unpublished
+  results out of agent-readable material, and read the
+  <a href="https://github.com/MSUHydrogeology/cairn/blob/master/SECURITY.md">security statement</a>
+  before running agents on sensitive work.</p>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Cite Cairn with its DOI,
+    <a href="https://doi.org/10.5281/zenodo.23500751">10.5281/zenodo.23500751</a>,
+    or see <a href="https://github.com/MSUHydrogeology/cairn/blob/master/CITATION.cff">CITATION.cff</a>.</p>
+    <p>Code is MIT licensed; prose, templates and diagrams are CC BY 4.0; the brand
+    mark is CC BY-ND 4.0. Details in the
+    <a href="https://github.com/MSUHydrogeology/cairn">repository</a>.</p>
+  </div>
+</footer>
+
+</body>
+</html>

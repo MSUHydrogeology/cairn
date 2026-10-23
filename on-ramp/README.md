@@ -5,6 +5,8 @@ ideas shape how you already work, or you can **install it**. There is one
 installer, and the profile you give it decides how much it installs, so start
 small and grow.
 
+![Two ways in: read the method and install nothing, or install it by choosing a profile, running the scaffold and doing the four steps the installer prints. An install then grows by adding modules as the work earns them; a profile is a starting point, not a rank.](../docs/assets/two-ways-to-adopt.svg)
+
 > **Honest framing.** Cairn is **slower for the first few changes**:
 > writing decisions down, reviewing them, and committing the trail adds
 > friction *before* code. The payback is later — fewer repeated decisions,

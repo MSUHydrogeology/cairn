@@ -7,8 +7,11 @@ the doctrine (`doctrine/`), the dimensions (`dimensions/`), the case
 studies (`case-studies/`), the bootstrap narrative (`bootstrap/*.md`),
 the forkable **document templates** — the Markdown (`.md`) files under
 `templates/` — the on-ramp (`on-ramp/`), this repository's documentation
-(`README.md`, `CITATION.cff`), and the **explanatory diagrams** under
-`docs/assets/` (`dual-review-independence.svg`, `assai-components.svg`,
+(`README.md`, `CITATION.cff`), the project site's page (`docs/index.html`),
+and the **explanatory diagrams** under `docs/assets/`
+(`dual-review-independence.svg`, `shared-record-across-sessions.svg`,
+`three-lanes-of-change.svg`, `independent-scientific-check.svg`,
+`two-ways-to-adopt.svg`, `assai-components.svg`,
 `assai-authority-boundaries.svg`, and `assai-investigation-cycle.svg`) — are licensed under
 the **Creative Commons Attribution 4.0 International License (CC BY 4.0)**.
 

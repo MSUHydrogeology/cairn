@@ -1,0 +1,121 @@
+<!--
+  three-lanes-of-change.svg - Conceptual diagram: Cairn triages each change
+  into one of three lanes, and only the deliberate lane carries a proposal,
+  a Maintainer decision and a plan.
+
+  Shown: the trivial lane (a typo or a one-line fix: the change with its
+  test, then a code review); the standard lane (a change whose shape is
+  already settled: a short change note, its review, the change with its
+  test, and a code review); and the deliberate lane (a new feature, a
+  contract change or a high-risk surface: a proposal, its review, the
+  Maintainer's decision, a plan, the plan's review, the change with its
+  test, and a code review). Footer: the deliberate test is checked first,
+  uncertainty resolves upward, and every step is a commit. Checkable
+  against doctrine/lifecycle.md > "Three lanes, chosen by a closed triage
+  procedure".
+
+  Provenance: hand-authored SVG, no external tool; produced for the README
+  and project-site visuals on the Maintainer's direction, 2026-10-23.
+
+  License: Creative Commons Attribution 4.0 International (CC BY 4.0).
+  See LICENSE-CC-BY.md.
+
+  Theme-adaptive: a prefers-color-scheme media query flips the box fills and
+  a foreground ink custom property, so the figure reads on light and dark.
+-->
+<svg viewBox="0 0 700 390" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-labelledby="fig-title fig-desc">
+  <title id="fig-title">Three lanes: most changes take a light path, and only a new feature, a contract change or a high-risk surface gets a proposal, a Maintainer decision and a plan.</title>
+  <desc id="fig-desc">Trivial lane, for a typo or a one-line fix: the change with its test, then a code review. Standard lane, for a change whose shape is already settled: a short change note, its review, the change with its test, then a code review. Deliberate lane, for a new feature, a contract change or a high-risk surface: a proposal, its review, the Maintainer decides, a plan, the plan's review, the change with its test, then a code review. The deliberate test is checked first; when unsure, take the heavier lane. Every step is a commit.</desc>
+  <style>
+    svg { --ink: #1f2328; }
+    .lane   { fill: #f6f8fa; stroke: #d0d7de; stroke-width: 1; }
+    .work   { fill: #dbeafe; stroke: #3b82f6; stroke-width: 1.4; }
+    .review { fill: #dcfce7; stroke: #22c55e; stroke-width: 1.4; }
+    .human  { fill: #fef9c3; stroke: #eab308; stroke-width: 1.6; }
+    .t { font-family: ui-sans-serif, system-ui, -apple-system,
+         BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; fill: var(--ink); }
+    .title { font-size: 17px; font-weight: 700; }
+    .lname { font-size: 15px; font-weight: 700; }
+    .lwhen { font-size: 12px; opacity: 0.75; }
+    .chip  { font-size: 13px; font-weight: 600; }
+    .note  { font-size: 12.5px; font-style: italic; opacity: 0.75; }
+    .arrow { stroke: var(--ink); stroke-opacity: 0.45; stroke-width: 1.5;
+             fill: none; marker-end: url(#a); }
+    .head-mark { fill: var(--ink); opacity: 0.45; }
+    @media (prefers-color-scheme: dark) {
+      svg { --ink: #e6edf3; }
+      .lane   { fill: #161b22; stroke: #30363d; }
+      .work   { fill: #1e3a5f; stroke: #60a5fa; }
+      .review { fill: #14391f; stroke: #4ade80; }
+      .human  { fill: #3b2f07; stroke: #fbbf24; }
+    }
+  </style>
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0.5 L7,4 L0,7.5 z" class="head-mark"/>
+    </marker>
+  </defs>
+
+  <text x="350" y="26" text-anchor="middle" class="t title">Three lanes: the process grows with the change</text>
+
+  <!-- Trivial -->
+  <rect x="16" y="44" width="668" height="70" rx="9" class="lane"/>
+  <text x="30" y="72" class="t lname">Trivial</text>
+  <text x="30" y="91" class="t lwhen">a typo, a one-line fix</text>
+  <rect x="186" y="61" width="118" height="36" rx="6" class="work"/>
+  <text x="245" y="84" text-anchor="middle" class="t chip">change + test</text>
+  <path d="M305,79 L325,79" class="arrow"/>
+  <rect x="328" y="61" width="118" height="36" rx="6" class="review"/>
+  <text x="387" y="84" text-anchor="middle" class="t chip">code review</text>
+
+  <!-- Standard -->
+  <rect x="16" y="124" width="668" height="70" rx="9" class="lane"/>
+  <text x="30" y="152" class="t lname">Standard</text>
+  <text x="30" y="171" class="t lwhen">shape already settled</text>
+  <rect x="186" y="141" width="118" height="36" rx="6" class="work"/>
+  <text x="245" y="164" text-anchor="middle" class="t chip">change note</text>
+  <path d="M305,159 L325,159" class="arrow"/>
+  <rect x="328" y="141" width="96" height="36" rx="6" class="review"/>
+  <text x="376" y="164" text-anchor="middle" class="t chip">review</text>
+  <path d="M425,159 L445,159" class="arrow"/>
+  <rect x="448" y="141" width="112" height="36" rx="6" class="work"/>
+  <text x="504" y="164" text-anchor="middle" class="t chip">change + test</text>
+  <path d="M561,159 L568,159" class="arrow"/>
+  <rect x="570" y="141" width="104" height="36" rx="6" class="review"/>
+  <text x="622" y="164" text-anchor="middle" class="t chip">code review</text>
+
+  <!-- Deliberate -->
+  <rect x="16" y="204" width="668" height="128" rx="9" class="lane"/>
+  <text x="30" y="232" class="t lname">Deliberate</text>
+  <text x="30" y="251" class="t lwhen">a new feature,</text>
+  <text x="30" y="267" class="t lwhen">a contract change,</text>
+  <text x="30" y="283" class="t lwhen">a high-risk surface</text>
+
+  <rect x="186" y="219" width="104" height="36" rx="6" class="work"/>
+  <text x="238" y="242" text-anchor="middle" class="t chip">proposal</text>
+  <path d="M291,237 L311,237" class="arrow"/>
+  <rect x="314" y="219" width="96" height="36" rx="6" class="review"/>
+  <text x="362" y="242" text-anchor="middle" class="t chip">review</text>
+  <path d="M411,237 L431,237" class="arrow"/>
+  <rect x="434" y="219" width="166" height="36" rx="6" class="human"/>
+  <text x="517" y="242" text-anchor="middle" class="t chip">Maintainer decides</text>
+
+  <!-- wrap to the second row -->
+  <path d="M600,237 L650,237 L650,266 L232,266 L232,276" class="arrow"/>
+
+  <rect x="186" y="279" width="92" height="36" rx="6" class="work"/>
+  <text x="232" y="302" text-anchor="middle" class="t chip">plan</text>
+  <path d="M279,297 L299,297" class="arrow"/>
+  <rect x="302" y="279" width="108" height="36" rx="6" class="review"/>
+  <text x="356" y="302" text-anchor="middle" class="t chip">plan review</text>
+  <path d="M411,297 L431,297" class="arrow"/>
+  <rect x="434" y="279" width="112" height="36" rx="6" class="work"/>
+  <text x="490" y="302" text-anchor="middle" class="t chip">change + test</text>
+  <path d="M547,297 L567,297" class="arrow"/>
+  <rect x="570" y="279" width="104" height="36" rx="6" class="review"/>
+  <text x="622" y="302" text-anchor="middle" class="t chip">code review</text>
+
+  <text x="350" y="358" text-anchor="middle" class="t note">Check the deliberate test first; when unsure, take the heavier lane.</text>
+  <text x="350" y="377" text-anchor="middle" class="t note">Every step is a commit, so the record replays from git.</text>
+</svg>
