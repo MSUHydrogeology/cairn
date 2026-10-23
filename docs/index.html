@@ -217,10 +217,12 @@
     </li>
     <li class="turn">
       <div class="who">5 · Build · the agent</div>
-      Writes each piece with its tests, then runs a check whose answers come from
-      the definitions, not from the code. If the simulation equals the
-      observations, efficiency must be exactly 1 and bias 0. If it equals the
-      observed average every day, efficiency must be exactly 0. A gauge reading of
+      Writes each piece with its tests. Before trusting the fit statistics on real
+      gauges, it runs them on made-up series whose scores the formulas fix in
+      advance: a series compared with itself must score an efficiency of exactly 1
+      and a bias of 0, and a flat line at the observed average must score exactly
+      0. (No real model scores 1; these inputs test the arithmetic, not the model.)
+      A gauge reading of
       35.3147 cubic feet per second must arrive as 1.0 cubic metre per second. Then
       it skips the unit conversion on purpose and records that the check fails,
       which shows the check can catch that mistake.
