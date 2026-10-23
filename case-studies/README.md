@@ -1,111 +1,48 @@
 # Case studies
 
-Worked examples of the Cairn dimension matrix applied to real
-projects. Each case study walks through:
+Two research-software projects that use Cairn day to day, told from their own
+decision records: what the projects are, how Cairn is set up in each, moments
+where the method caught a scientific mistake or recorded a domain decision,
+and what it cost.
 
-1. The project — what it is, what it builds, who it is for.
-2. The dimension scores — the six axes, with a reproducible
-   reason for each placement.
-3. The derived module selection — kernel, default-on, and
-   team-gated.
-4. The role roster.
-5. The customization narrative — how the kernel block slots were
-   filled.
-6. What might surprise an adopter — the non-obvious decisions and
-   the project-local adaptations.
+| Case study | The project | Why it is a useful example |
+| --- | --- | --- |
+| [LHM](lhm.md) | An 18-year-old surface-water and groundwater model: a MATLAB core with few tests, a Python frontend, and a partial port between them | The heaviest setup: old code, two languages, several agents |
+| [modflow_tools](modflow_tools.md) | A Python toolkit for building, reviewing and calibrating MODFLOW groundwater models | Built with AI agents from the start; where Cairn was first worked out |
 
-The case studies are **descriptive**, not prescriptive — they
-record how a specific project landed at a specific
-configuration, with the reasoning the bootstrap procedure
-(R-A Act I) requires. Two real projects, sitting at different
-points on the matrix, illustrate the range without forcing an
-adopter to imagine intermediate cases.
+**Read them as accounts of use, not as proof.** Both projects have the same
+maintainer as Cairn, so neither is an independent adoption, and no controlled
+comparison exists. What they show is the kind of mistake the method catches,
+the kind of decision it records, and where its overhead shows.
 
-## The matched pair
+## Rules for this folder
 
-| File | Profile | Module shape |
-|------|---------|--------------|
-| [`modflow_tools.md`](modflow_tools.md) | legacy · medium · complex · single · solo · concurrent-multi-type | Kernel + all default-on + two team-gated (`dual-review`, `coordination-tiers`) |
-| [`lhm.md`](lhm.md) | legacy · large · complex · multi · solo · concurrent-multi-type | Kernel + all default-on + **all five team-gated** |
+* **The project's maintainer approves the content** before a case study is
+  added or changed here, and the approval is recorded in a commit
+  (`bootstrap/SAFETY.md`, Rule 3). Both of these were approved by Anthony
+  Kendall, who maintains both projects.
+* **Methodology only.** No scientific results, calibration data, source code
+  or embargoed material. The projects' own repositories hold their working
+  detail.
+* **Tool names are allowed here.** A case study may name the AI tools a
+  project really used, because it reports what happened. Everywhere else,
+  Cairn's guidance names no vendor.
 
-The pair shares three axes (complexity, human team, agent team)
-and scores `legacy` on age for both. They diverge on size and
-language, and on the case-study-level analysis of *how much
-retrofit apparatus the legacy classification earns* —
-modflow_tools' age is legacy-by-origin (methodology authored
-alongside the codebase, no Legacy Agent installed); LHM's is
-legacy-throughout (18-year MATLAB core, full retrofit apparatus
-installed). The axis score is the same; the analysis below the
-score differs, and that difference drives the module-set delta.
-See the matched-pair table in [`lhm.md`](lhm.md) for the
-side-by-side.
+## A historical file
 
-## Reference manifests
+[`modflow_tools-fidelity-manifest.yml`](modflow_tools-fidelity-manifest.yml)
+is a machine-readable snapshot of modflow_tools' setup in May 2026, kept as a
+worked example of the format described in
+[`../bootstrap/fidelity-check.md`](../bootstrap/fidelity-check.md). It lists
+modules and files that have since been removed, and does not describe the
+project today.
 
-A **fidelity manifest** (R-H) is the machine-readable companion
-to a case study: the dimension profile, the installed modules,
-the role roster, the slot statuses, the Cairn reference commit
-that informed the install. The format spec is in
-[`../bootstrap/fidelity-check.md`](../bootstrap/fidelity-check.md).
+## Adding a case study
 
-* [`modflow_tools-fidelity-manifest.yml`](modflow_tools-fidelity-manifest.yml)
-  — the descriptive manifest for the modflow_tools case study.
-
-LHM keeps its fidelity manifest in its own repository (the
-project's home for living state); only the descriptive
-walkthrough lives here.
-
-## Safety
-
-Case studies are governed by R-I rule 3 in
-[`../bootstrap/SAFETY.md`](../bootstrap/SAFETY.md): the
-Maintainer of the target project must explicitly approve any
-content before it is committed to this directory. Both case
-studies here have the Maintainer's recorded approval (Anthony
-Kendall is the Maintainer of both modflow_tools and LHM); see
-the corresponding plan in the modflow_tools repository
-(`dev/plans/cairn_methodology_repo.md`) for the approval record.
-
-The case studies contain methodology content only — dimension
-profiles, module selection, customization narrative. They do
-not contain scientific results, calibration data, source-code
-snippets, or any embargoed material. Project-specific
-operational detail lives in each project's own `dev/` tree.
-
-**Vendor-name exception.** Case studies may name the specific AI
-tools each project actually uses (e.g., "Claude", "Codex",
-"Opus", "GPT-5"). This is the **single permitted exception** to
-the otherwise-doctrine-wide R-G vendor-neutrality constraint and
-applies *only* to the `case-studies/` directory. The rationale:
-a case study is empirical — describing real toolchains is what
-makes it useful — not prescriptive. The templates, the
-bootstrap procedure, the doctrine, and the dimensions/ writings
-remain vendor-neutral; the case studies are where the abstract
-"the agent" lands on concrete vendors. A future case-study
-contributor naming their own toolchain in their case study is
-following the same exception.
-
-## Adding a new case study
-
-A future adopter who wants to contribute a case study should:
-
-1. Open a proposal in the adopter's own repository describing
-   the adoption — the dimension profile, the module selection,
-   the customization.
-2. Run the bootstrap procedure to produce a fidelity manifest
-   (`R-H`).
-3. Propose the case-study walkthrough to Cairn via a Cairn-side
-   proposal, with the Maintainer's explicit approval recorded
-   (R-I rule 3).
-
-A case study contributed to Cairn is offered under the same license split
-as the rest of the repository — CC BY 4.0 for the prose
-([`../LICENSE-CC-BY.md`](../LICENSE-CC-BY.md)), MIT for any code
-([`../LICENSE-MIT.md`](../LICENSE-MIT.md)).
-
-The bar is the matrix doing distinguishable work — a third case
-study earns its place by sitting somewhere meaningfully
-different from the two reference cases (a small greenfield
-project; a multi-human team; a single-agent adoption; a
-massively-multi-domain partition). Replicating an existing
-profile shape adds little.
+A third case study is most useful if it sits somewhere these two do not: a
+small new project, a team of several people, or a single agent. To propose
+one, open an issue on Cairn's tracker describing the project, how Cairn is
+set up there, and two or three moments from its record. The project's
+maintainer must approve the text before it is added. A contributed case
+study is licensed like the rest of Cairn's prose, under CC BY 4.0
+([`../LICENSE-CC-BY.md`](../LICENSE-CC-BY.md)).
