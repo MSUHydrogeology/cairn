@@ -56,9 +56,13 @@ a sweep slots into the matching row or proposes a new lens.
 * **Findings report first.** Survey, then a written prioritized list, then
   Maintainer triage into in-scope-for-cut versus deferred, then fixes. No edits
   before the report unless trivially mechanical.
-* **Route fixes by size.** Mechanical goes direct to commit. Substantive goes
-  through the proposal and plan lifecycle. Deferred goes to a durable home with
-  a revival condition — never to an untracked note.
+* **Route fixes by lane.** A typo or one-line fix takes the trivial lane: the
+  change, its test, and a code review. A fix whose shape is settled takes the
+  standard lane: a short change note, reviewed, then the change and a code
+  review. A new feature, a contract change or a high-risk surface takes the
+  deliberate lane: proposal, review, the Maintainer's decision, plan. Deferred
+  work goes to a durable home with a revival condition — never to an untracked
+  note.
 * **An empty sweep is a successful sweep.** A sweep that finds nothing records
   an explicit "clean as of `<date>`". Silence is not a result.
 * **Verify before recording a finding.** A large fraction of first signals are
@@ -101,12 +105,16 @@ Two techniques that earned their place in past runs:
 produces the confidence the cut rests on.
 
 * `CITATION.cff` — bump `version` and `date-released`.
+* `.zenodo.json` — check that its title, description, creators, license and
+  keywords still match `CITATION.cff`. It carries no version number.
 * `CHANGELOG.md` — rename `## Unreleased` to `## <version> — <date>`, and open
   a fresh empty `Unreleased` above it.
 * An **annotated tag**, signed or on a Maintainer-approved release commit on
   the protected branch, then push.
-* DOI or archival minting **when wired**. It is not currently wired; a cut that
-  omits it is correct, and any older note implying otherwise is aspirational.
+* **After Zenodo mints the version DOI** for the new release, record it in the
+  version-DOI comment at the foot of `CITATION.cff`. The `doi:` field and the
+  README badge hold the concept DOI, which covers all versions and does not
+  change.
 
 **Gate condition.** Every sweep in the roster is either green or its findings
 triaged: in-scope items fixed, deferrals homed. Sweep F is the final pre-flight.

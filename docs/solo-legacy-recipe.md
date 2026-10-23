@@ -1,29 +1,23 @@
-<!-- The path above is external-repo: it lives in the adopter's own
-     tree (created by their first substantive proposal), not Cairn's. -->
-
 # The solo-legacy adopter recipe
 
-A verified adoption path for the solo scientist + one agent + an
-existing research codebase. If you are that persona — one human, one
-AI agent, and a codebase that already exists (messy, undocumented,
-half-tested, or all three) — the other routes mis-route you: the larger
-profiles assume a team big enough to staff them, and the naive shortcut
-("just take `solo-greenfield` and set `age: legacy`") silently ships you
-a roster missing the one thing a legacy codebase actually needs. This
-page is the path that doesn't do either.
+A tested adoption path for one scientist, one AI agent and an existing
+research codebase (messy, undocumented, half-tested, or all three). The
+larger profiles assume a team big enough to staff them. The shortcut of
+taking `solo-greenfield` and setting `age: legacy` quietly leaves out
+the one module an existing codebase needs. This page avoids both.
 
 ## Before you install: the readiness pre-pass
 
-You install with the scaffold, like any other adopter — **with one step
-a greenfield adopter skips: fill
+You install with the scaffold like any other adopter, with one extra
+step: **fill in
 [`templates/codebase-readiness-report.md`](../templates/codebase-readiness-report.md)
-first.** The eleven-section assessment surfaces hidden state,
-scientific assumptions, and security boundaries in an *existing* tree —
-exactly what a fresh greenfield repo doesn't have yet. Solo + legacy
-usually scores "mostly Mixed with 1-2 Poor", which means start with the
-profile below and fix the Poor sections first. Do the pre-pass before
-you commit to a module roster, not after — it is what tells you whether
-the conditional modules below actually apply to your tree.
+first.** Its eleven sections surface hidden state, scientific
+assumptions and security boundaries in an existing tree. A new
+repository has none of these yet. A solo scientist with a legacy
+codebase usually scores "mostly Mixed, with one or two Poor". That
+means: start with the profile below and fix the Poor sections first. Do
+this before you choose modules, because it tells you whether the two
+optional modules below apply to you.
 
 ## The exact composed profile
 
@@ -85,30 +79,29 @@ whole point is that the pre-pass decides this, not a fixed checklist.
 
 ### Why these lines are load-bearing
 
-You might reasonably try `preset: solo-greenfield` with just
-`age: legacy` and no `modules_add` — it looks like it should be
-enough. It silently isn't: overriding the `age` axis changes what the
-resolver *reports*, but the module roster it *builds* still starts from
-the preset's static baseline, and that baseline doesn't get re-derived
-for the age axis the way it does for team-staffing axes. The naive
-override resolves to the same 6 modules a plain greenfield install
-gets — no `legacy-agent`, no warning that anything is missing. The two
-`modules_add` lines above aren't decoration; they're the actual
-legacy-retrofit apparatus (`dimensions/age.md`'s Legacy Agent role and
-characterization-testing discipline) your existing codebase needs and
-the override alone won't give you. (This is a known engine gap, tracked
-for its own future fix — the workaround above is what makes this recipe
-correct today.)
+You might try `preset: solo-greenfield` with only `age: legacy` and no
+`modules_add`. It looks sufficient and is not. The `age` setting changes
+what the scaffold *reports*, but the modules it *installs* still come
+from the preset's fixed list. For team-size axes the list is
+recalculated; for age it is not. The result is the same 6 modules as a
+greenfield install, with no `legacy-agent` and no warning. The two
+`modules_add` lines are therefore not optional: they add the Legacy
+Agent role and the characterization-testing habit
+(`dimensions/age.md`) that an existing codebase needs. This is a known
+gap in the scaffold, tracked for a later fix. Until then, this
+workaround keeps the recipe correct.
 
 ## The week-one arc
 
 1. **Fill the readiness report** (`templates/codebase-readiness-report.md`)
    before anything else. It's what the conditional modules above key off.
-2. **Your first proposal: the Hello-world trivial accept.** Solo
-   greenfield onboarding builds the first lifecycle rep around something
-   disposable on purpose — it's the safest way to learn proposal → review
-   → decision mechanics before anything that matters rides on it. Do
-   that first, even on a legacy tree.
+2. **Your first change: something disposable.** A real trivial edit (a
+   typo or one-line fix) needs no proposal. To learn the proposal →
+   review → decision steps, though, take one tiny change down the full
+   path once, as the [quickstart](quickstart.md) does, before anything
+   that matters depends on it. A small accepted proposal can be
+   implemented and archived in one commit. Do this first, even on a
+   legacy tree.
 3. **Then, your first *substantive* proposal: `docs/assumptions.md`.**
    Write down your codebase's load-bearing scientific choices — sign
    conventions, unit conventions, default parameters, calibration
@@ -118,11 +111,11 @@ correct today.)
 
 ## Add the science trigger to your own triage rules
 
-Cairn's universal triage list doesn't name a scientific-assumption
-trigger — it's deliberately general, so it doesn't over-fit to science
-projects. Your own installed `dev/proposals/_template.md` has a slot for
-exactly this: the `<!-- cairn:slot triage-extra-triggers -->` block.
-Fill it with something like:
+Cairn's general list of when to open a proposal does not name
+scientific assumptions, so that it fits any project. Your installed
+`dev/proposals/_template.md` has a slot for this:
+the `<!-- cairn:slot triage-extra-triggers -->` block. Fill it with
+something like:
 
 ```
 Open a proposal when a change touches a scientific assumption this
@@ -132,11 +125,19 @@ would the science silently degrade if a contributor changed this
 default?
 ```
 
-## The escape hatch
+Once a proposal is open, the same template's **Independent scientific
+check** section covers the assumption itself. For a change that touches
+a scientific assumption, it asks for one check that could show the
+change is wrong about the world, with an expected value that neither
+the new code nor its tests computed.
 
-If a change is urgent, clearly reversible, or explicitly experimental,
-it may proceed without a proposal, but the commit or follow-up note
-should say why the proposal step was skipped. This keeps the bypass
-traceable without forcing process onto bug fixes or short-lived
-experiments. (Your installed `dev/proposals/_template.md` carries this
-too — see its own escape-hatch note.)
+## Small changes need no proposal
+
+Cairn sorts every change into one of three lanes before anything is
+written. A typo or one-line fix is trivial: make the change with its
+test and get a code review, with no proposal. A change whose shape is
+already settled gets one short change note, reviewed. A new feature, a
+contract change or a high-risk surface gets a proposal. When you are
+unsure, take the heavier lane. This keeps process off bug fixes while
+the changes that matter stay on the record. The full rules are in
+[`doctrine/lifecycle.md`](../doctrine/lifecycle.md).

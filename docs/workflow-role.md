@@ -1,25 +1,26 @@
 # Cairn's role in the software-development workflow
 
-Cairn is **methodology, not software**. The single most common
-misread — "is this another CI tool / test framework / prompt
-library?" — is worth answering head-on, because what Cairn *is* is
-defined as much by what it deliberately leaves to other tools as by
-what it owns.
+People often ask whether Cairn is a test framework or a CI tool. It is
+not. Cairn is **methodology, not software**: a set of rules and records
+for how changes are argued, reviewed and recorded. It leaves running
+tests and shipping code to the tools built for that.
 
 ## What Cairn owns
 
 Cairn governs the **deliberation** around a change — the recorded,
 reviewed decision-making *upstream* of the code:
 
-* **The lifecycle.** Substantive changes move through
-  propose → review → decide → implement → record, as append-only,
-  git-committed artifacts (see [`../doctrine/lifecycle.md`](../doctrine/lifecycle.md)).
-  Cairn decides *what gets proposed, reviewed, and shipped* — and
-  keeps the trail.
+* **The lifecycle.** Changes are sorted into one of three lanes. A typo or
+  one-line fix gets a test and a code review. A change with a settled shape
+  gets a short change note first. Only a new feature, a contract change or a
+  high-risk surface moves through propose → review → decide → implement →
+  record, as append-only, git-committed artifacts (see
+  [`../doctrine/lifecycle.md`](../doctrine/lifecycle.md)). Cairn sets how
+  each change is argued and reviewed, and keeps the trail.
 * **Dual-Review.** One review at every stage
   (see [`../doctrine/dual-review.md`](../doctrine/dual-review.md)):
-  who looks at a change before it lands, and how far from the author
-  the Maintainer wants them.
+  who looks at a change before it lands: a fresh reviewer who did not
+  write it, plus more distance whenever the Maintainer asks.
 * **Coordination.** How a human maintainer and one or more AI agents
   share the tree without colliding (see
   [`../doctrine/coordination.md`](../doctrine/coordination.md)),
@@ -35,13 +36,13 @@ Cairn sits **upstream** of the build/test/doc machinery and does not
 replace it:
 
 * **It does not run your tests.** Cairn's doctrine says a change
-  *absorbs* tests; your test framework (pytest, JUnit, ...) runs
+  *lands with* its tests; your test framework (pytest, JUnit, ...) runs
   them. Cairn decides that a test is required and reviewed; it does
   not execute it.
 * **It is not CI/CD.** Cairn produces the reviewed decision and the
   recorded rationale; your CI system builds, gates, and deploys.
-  Cairn is what tells CI *what* should be built and *why* it was
-  agreed.
+  The record can tell a reader *why* a change was agreed; it does not
+  drive CI.
 * **It is not a prompt library.** Cairn governs which work is worth
   prompting an agent for, and how the result is reviewed — not the
   wording of prompts. Bring your own.
@@ -59,7 +60,7 @@ replace it:
   │   (recorded deliberation)    │
   │            │                 │
   │            ▼                 │
-  │ implement: change absorbs ───┼──▶  test framework runs the tests
+  │ implement: lands with ───────┼──▶  test framework runs the tests
   │   tests + docs + examples ───┼──▶  doc builder builds the docs
   │            │                 │
   │            ▼                 │
@@ -69,8 +70,8 @@ replace it:
 
 The boundary is a feature: Cairn stays small and durable because it
 does not duplicate the tools that already run tests and ship code.
-It is the layer that decides *what gets prompted, reviewed, and
-shipped* — and leaves the running of tests and the shipping of code
+It is the layer that records *what gets prompted, reviewed, and
+shipped*, and why, and leaves the running of tests and the shipping of code
 to the tools built for those jobs.
 
 ## See also

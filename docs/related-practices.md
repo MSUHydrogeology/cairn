@@ -23,7 +23,7 @@ to happen to it — an independent read, a reply, a decision — before anyone
 starts building. A decision record documents. A proposal has to be got past.
 
 If your team keeps ADRs and is happy, you already have most of the value Cairn's
-record provides. The part you do not have is the review tier.
+record provides. The part you do not have is the independent review.
 
 ## RFC, PEP, NEP, APE — community proposal processes
 
@@ -33,13 +33,18 @@ discussion, a decision by a named authority.
 
 **Overlap.** Large, and Cairn's lifecycle is openly modelled on this shape.
 
-**The difference.** Two, both about scale. Those processes are built for
+**The difference.** Two things. First, scale. Those processes are built for
 changes that affect thousands of people, where a written round of review is
 cheap next to the consequences of getting it wrong. Cairn applies the same
-shape to ordinary day-to-day changes in one repository — which only works if
-the process stays light. Keeping it light is a live problem, not a solved one.
-Second, Cairn's reviewers are usually AI models, so independence means *a
-different model* rather than someone at a different institution.
+shape to ordinary day-to-day changes in one repository, which only works if
+the process stays light. So Cairn sorts changes into three lanes: a typo gets
+a test and a review, and only a new feature, a contract change or a
+high-risk surface gets the full proposal. Keeping it light is a live problem,
+not a solved one.
+
+Second, Cairn's reviewers are usually AI sessions. The required independence
+is modest: a fresh session that did not write the work. Another model, or a
+person, joins only when the Maintainer asks for that extra distance.
 
 If you already run something like this, Cairn's version will feel familiar.
 Read it as the same idea, sized for one scientist working with agents.
@@ -70,21 +75,19 @@ falsify the change before the implementation exists — the same move.
 applies the discipline to a code change. The shared insight is identical: a
 plan written after you have seen the outcome is not a plan.
 
-This is also where Cairn's own measurement work is bound — a study of the
-method registers its analysis before the data exists, for the same reason.
-
 ## Code review
 
 **What it is.** Another engineer reads a change before it merges.
 
-**Overlap.** Cairn's code-review tier *is* this, with one added rule: the
+**Overlap.** Cairn's code review *is* this, with one added rule: the
 reviewer must not be the implementer.
 
-**The difference.** Cairn's earlier tier has no equivalent in normal code
-review. Ordinary review happens after code exists, so it can catch a bug and
-rarely questions the premise. Cairn's proposal review happens when there is
-nothing to read but the argument, which is the only point where "this is the
-wrong thing to build" is a cheap finding.
+**The difference.** For new features, contract changes and high-risk
+surfaces, Cairn also reviews the proposal before any code exists. Ordinary
+review happens after code exists, so it can catch a bug and rarely questions
+the premise. Proposal review happens when there is nothing to read but the
+argument, which is the only point where "this is the wrong thing to build" is
+a cheap finding.
 
 ## Agile, Scrum, and the rest
 
@@ -116,10 +119,13 @@ you work.
 
 Stripped of everything shared:
 
-1. **The review happens before the code exists**, when saying "that is the
-   wrong thing to build" is still cheap.
-2. **You can check that the reviewer was independent** — a different AI model,
-   or a person — rather than taking it on trust.
+1. **For substantial changes, review happens before the code exists**, when
+   saying "that is the wrong thing to build" is still cheap. Small changes
+   skip this and get a code review.
+2. **You can check that the reviewer was independent.** The record names a
+   fresh reviewer who did not write the work, so independence is a fact in the
+   file rather than something taken on trust. Another model or a person adds
+   distance when the Maintainer asks.
 3. **What would show the change to be wrong is written down first.**
 4. **The whole exchange stays in your repository**, not in a chat history you
    cannot search a year later.

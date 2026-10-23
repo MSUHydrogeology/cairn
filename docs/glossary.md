@@ -14,27 +14,45 @@ exists. Reviewed independently, then decided. The unit of deliberation.
 **Plan** — the execution artifact for an accepted proposal that is large enough
 to need one. Chunks, acceptance criteria, verification evidence.
 
-**Proposal states** — `proposed` → `reviewed` → `revised` → then `accepted`,
-`rejected`, or `superseded`.
+**Lanes** — the three routes a change can take, chosen before anything is
+written. *Trivial*: a typo or one-line fix gets the change, its test and one
+code review, with no proposal. *Standard*: a change whose shape is settled gets
+a short change note, a review, then the change, its test and a code review.
+*Deliberate*: a new feature, a contract change or a high-risk surface gets a
+proposal, a review, the Maintainer's decision, a plan, a plan review, the
+implementation, a code review and an archive. When unsure, take the heavier
+lane.
 
-**Plan states** — `open` → `executing` → `review` → `archived`.
+**Change note** — the one short file (about 150 lines or fewer) that the
+standard lane uses in place of a proposal and a plan: why, what, approach,
+verification, risk.
 
-**Superseded** — a proposal that review blocked *as written*, and whose author
-replaced it rather than defended it. Distinct from rejected: the idea survived,
-the proposal did not.
+**Proposal states** — `awaiting-review` ⇄ `revising` → `awaiting-decision` →
+then `accepted`, `rejected`, or `superseded`. Each name says who holds the
+proposal next. The older words `proposed`, `reviewed` and `revised` are retired.
+
+**Plan states** — `awaiting-plan-review` → `revising-plan` →
+`ready-to-implement` → `implementing` → `awaiting-code-review` ⇄
+`revising-code` → `ready-to-archive` → `archived`. The older words `open`,
+`executing` and `review` are retired.
+
+**Superseded** — a proposal the Maintainer closes because a newer proposal
+amends or replaces it. Distinct from rejected: the idea may live on, in the
+newer proposal. Like rejected, it archives in the Decision commit.
 
 **Append-only** — the rule that you add to a proposal rather than editing what
 is already there. Like a bound lab notebook: you can write a correction on the
 next page, but you do not erase the earlier entry. The record has to show what
 you believed *at the time*, not a cleaned-up version.
 
-**Inline-revised** — the opposite rule, used for exploratory notes: take the
-review's point, edit the note, and delete the review. Like a working draft
-rather than a notebook. Confusingly, both this and append-only use the words
-`reviewed` and `revised` — they mean opposite things about what you keep.
+**Inline-revised** — the opposite rule, used for strategy notes (exploratory
+writing in `dev/strategy/`): take the review's point, edit the note, and delete
+the review. Like a working draft rather than a notebook. Strategy notes carry
+their own statuses (`draft`, `reviewed`, `revised`, `settled`, `living`), which
+are not the proposal statuses.
 
 **Archive** — the closed end of the lifecycle. An archived artifact is history:
-read it for context, do not edit it, and never mine it for metrics.
+read it for context, do not edit it.
 
 ## Review
 
@@ -45,8 +63,8 @@ Floor: a fresh session.
 
 **Called read** — a review the Maintainer asked for on one named piece of work,
 from more distance: a different AI model, or a person. Also written
-**External read**. Only the Maintainer
-calls one, and the record quotes their words.
+**External read**. It happens only when the Maintainer asks; no agent can
+require one. The record quotes the Maintainer's words.
 
 **Structural independence** — independence you can point at, rather than take
 on trust: every review names its reviewer, so how far they stood from the
@@ -56,8 +74,9 @@ limit: the record shows *who was named* as reviewer; nothing proves they were
 who they said.
 
 **Dual-Review** — an independent reviewer beside the author at every stage,
-then the Maintainer's Decision. This is Cairn's central mechanism; the written
-record exists to serve it.
+then the Maintainer's Decision. The reviewer is a fresh reviewer who did not
+write the work. This is Cairn's central mechanism; the written record exists
+to serve it.
 
 **Code review** — the review of an implementation, by someone who is not the
 implementer. A plan cannot archive until one has occurred.
@@ -70,18 +89,16 @@ size.
 cannot understand. An agent leads plain and keeps precision beneath; "I don't
 understand this yet" is a mandatory pause.
 
-**Scope-reduction trap** — the mirror of the clean-pass trap. Recommending that
-a change be made smaller costs the reviewer nothing, looks prudent, and can
-never be shown wrong, because the smaller version is the one that gets built.
-Each narrowing is defensible on its own; the damage only shows up in aggregate,
-as a long deliberation record with very little shipped behind it.
+**Scope-reduction trap** — the pull toward saying "make it smaller." Asking for
+less costs a reviewer nothing, looks prudent, and can never be shown wrong,
+because the smaller version is the one that gets built. Each cut is defensible
+alone; together they leave a long record and little shipped work.
 
-**Outcome test** — how you tell a harmless narrowing from a real one. Ask
-whether the smaller version still delivers what the original artifact
-*committed to delivering*: `preserved` (yes — nothing is owed), `degraded`
-(partly), or `lost` (no). The comparison is against the artifact as written,
-never against a summary of its purpose composed afterwards by whoever is doing
-the narrowing.
+**Outcome test** — how you tell a harmless cut from a real one. Ask whether the
+smaller version still delivers what the original artifact *committed to*:
+`preserved` (yes — nothing is owed), `degraded` (partly), or `lost` (no).
+Compare against the artifact as written, never against a summary of its
+purpose written afterwards by whoever is doing the cutting.
 
 **Scope-cut** — narrowing an artifact's stated *claim* to match what it always
 did. No work disappears, so it is an ordinary `accept`. Deliberately distinct
@@ -100,7 +117,7 @@ prevent: fragments preserve the words and lose the reach.
 interchangeable.
 
 **Role** — a frame, not a person. Any capable agent can occupy Strategy,
-Implementation, or a reviewer tier; name yours before substantive work.
+Implementation, or Reviewer; name yours before substantive work.
 
 ## The tree and the tooling
 
@@ -122,8 +139,8 @@ repository.
 **Lockfile** — the record of what was installed and its file digests. What
 integrity checking and upgrades read.
 
-**Fold-back** — the channel by which a deployment's improvements return
-upstream to the methodology.
+**Fold-back** — suggesting an improvement back to Cairn itself, by filing an
+issue on Cairn's issue tracker using the fold-back template.
 
 **Work-intent** — a claim on files you are about to edit, so concurrent agents
 do not collide. Advisory, and it fires.
@@ -134,9 +151,21 @@ must stay exactly identical, and a test checks that they do.
 ## Verification
 
 **Verification boundaries** — three separate testing jobs, deliberately not
-paid for all at once: quick targeted runs while building, one full run on a
-clean tree before review, and the reviewer's own attempt to break it. Re-running
-someone else's test command is not the third one.
+paid for all at once: quick targeted runs while building (A), the
+implementer's scoped record on a clean commit before code review (B), and the
+reviewer's own attempt to break it (C). Re-running someone else's test command
+is not the third one.
+
+**Certifying run** — the full test suite on a clean, committed tree. It is run
+only before a push, before the Maintainer's re-anchor ceremony, before a
+release cut, or when the Maintainer asks. One green run certifies every change
+at or before it; a change's record cites it as `Certified by: <commit>`, or
+`pending` until one exists.
+
+**Independent scientific check** — for a change that touches a scientific
+assumption: one named check whose expected answer does not come from the code
+or from a test written from the same understanding. The implementer makes the
+feared mistake on purpose and records that the check fails.
 
 **Claim check** — the checker that flags broken repository paths and
 out-of-bounds line citations before commit. A discipline aid, not a gate.

@@ -1,18 +1,22 @@
 # Try Cairn in one short sitting, with one AI agent
 
 This page is a recipe, not a tour.  Follow it on a disposable repo
-to see one human + one AI agent move a single change through Cairn's
-lifecycle.  You will not learn the doctrine in one sitting -- that is
-what [`docs/getting-started.md`](getting-started.md) and
-[`doctrine/`](../doctrine/) are for.  What you *will* see: the
-apparatus in motion, in your own terminal, on your own machine.
+to watch one person and one AI agent take a single change through
+Cairn's lifecycle, in your own terminal.  It will not teach you the
+method in one sitting; [`getting-started.md`](getting-started.md) and
+[`doctrine/`](../doctrine/) do that.
 
-> **How long it takes is not stated here, on purpose.**  It depends on
-> whether your agent is already configured, whether you copy the profile
-> YAML literally or read what it installs, and whether you pause to
-> understand the lifecycle as you go.  Cairn measures nothing about this
-> today, and a number nobody measures is a claim the reader cannot check
-> -- so the recipe gives you the steps and lets you find your own pace.
+> **A note on the example.**  The change here is a one-line README
+> tagline.  In real work that is a *trivial* change: you would make it
+> and commit it with its test and one code review.  Cairn sorts changes
+> into three lanes, and only the heaviest (a new feature, a contract change, a
+> high-risk surface) needs a proposal.  This recipe sends the tagline
+> down the full proposal path **on purpose**, so that you can see each
+> record the heavy lane leaves behind.
+
+> **How long it takes is not stated.**  It depends on how your agent is
+> set up and how closely you read.  Cairn has not measured it, and a
+> number nobody measured cannot be checked.
 
 If you are evaluating Cairn for a real project, start here, then
 return to the [on-ramp](../on-ramp/README.md) once you trust the
@@ -21,14 +25,11 @@ shape.
 ## What you need
 
 * A POSIX shell (macOS / Linux / WSL).
-* Python 3.11+.
+* Python 3.13, the version Cairn is tested on.
 * `git`.
-<!-- vendor-ok-begin: illustrative list of adopter-side tools the recipe is compatible with -- not a vendor endorsement; the line itself says "vendor-neutral" -->
-* One AI coding agent connected to a repo of your choice -- Claude
-  Code, Codex CLI, Cursor, Aider, or anything else that can read
-  and write files in a working tree.  Cairn is vendor-neutral; the
-  recipe uses prompts the agent reads, not API calls Cairn makes.
-<!-- vendor-ok-end -->
+* One AI coding agent, any that can read and write files in a folder.
+  Cairn works with any such agent; the recipe uses prompts the agent
+  reads, not calls Cairn makes.
 * One uninterrupted sitting -- the steps are short, but do not start
   this one in the gaps between other things.
 
@@ -36,11 +37,10 @@ shape.
 
 A **fresh, disposable repo** with:
 
-* A `dev/` tree containing one proposal, an archived form of that
-  proposal, and a `PLANNING.md` line.
-* One commit per lifecycle step (proposal-open, decision,
-  implement-and-archive), plus the two setup commits (init,
-  install).
+* A `dev/` tree containing one proposal, with its review and
+  decision, archived.
+* One commit per lifecycle step (open, review, decision,
+  implement-and-archive), plus the two setup commits (init, install).
 * A `CHANGELOG.md > Unreleased` line for the change.
 * A teardown step you can delete in one command.
 
@@ -131,22 +131,19 @@ python "$CAIRN/bootstrap/scaffold.py" \
 
 The `--summary` flag is **preview-only**: it prints the resolved
 axes and the module roster, then exits without touching the target.
-For the `solo-greenfield` profile you should see **6** modules listed `<!-- verify: solo_greenfield_module_count -->`
-(the default-on floor): `reflections`, `claim-check`,
+For the `solo-greenfield` profile you should see **6** modules listed <!-- verify: solo_greenfield_module_count -->
+(the modules every install gets): `reflections`, `claim-check`,
 `incident-trackers`, `documentation-plan`,
 `content-security`, `security-verification`.
 
-> **What the six axes mean.** Cairn adapts the apparatus along
-> six dimensions: **age** (greenfield / legacy), **size** (small /
-> medium / large), **complexity** (simple / moderate / complex),
-> **language** (single / multi), **human_team** (solo /
-> small-multi / large-multi), and **agent_team** (single /
-> concurrent-single-type / concurrent-multi-type). The
-> `solo-greenfield` profile picks the smallest value on each
-> axis -- minimum apparatus. Larger projects pick larger values
-> and get more modules; see
-> [`dimensions/README.md`](../dimensions/README.md) for the full
-> rubric.
+> **What the six axes are.** Cairn sizes the apparatus to your
+> project along six axes: **age** (greenfield or legacy), **size**
+> (small to large), **complexity** (simple to complex), **language**
+> (one or several), **human_team** (solo to large team), and
+> **agent_team** (one agent to several). `solo-greenfield` takes the
+> smallest value on every axis, so it installs the least. Larger
+> projects take larger values and get more modules; see
+> [`dimensions/README.md`](../dimensions/README.md).
 
 **Then install** (drop `--summary`):
 
@@ -162,36 +159,28 @@ python "$CAIRN/bootstrap/scaffold.py" \
 > from the tip and never blocks the install.  (A real adoption scaffolds
 > from a tagged release, where the warning does not appear.)
 
-The scaffold prints **its own install report** -- and *that report is the
-authoritative list* of every file it wrote.  Read it rather than matching
-against a list here, which would drift as Cairn's default-on set grows.
-The landmarks worth recognising:
+The scaffold prints **its own install report**, and *that report is the
+authoritative list* of every file it wrote.  Read it rather than
+matching against a list here, which would go stale.  For this recipe
+you only need two things:
 
-* `AGENTS.md` -- the kernel doctrine file every agent reads; `VENDOR.md`
-  -- the vendor-addendum template you rename to your tool's auto-loaded
-  file (`CLAUDE.md`, …).
-* the `dev/` tree -- the coordination space: `README.md`, the roadmap
-  boards (`PLANNING.md`, `NEXT_SESSION.md`), the working-norm docs, the
-  `proposals/` + `plans/` lifecycle templates, and one
-  `dev/modules/<name>.md` per installed module.
-* the **lifecycle tooling** -- `tools/` and `scripts/` hold the runnable
-  reference tools (the metrics extractor, the claim-checker), and
-  `.agents/skills/` ships the `session-start` / `session-end` routines
-  your harness surfaces as commands (`tools/session.py` is their CLI).
-  Ignore these for the shakedown -- they are orientation, not homework.
-* `dev/.cairn/` -- machine state (the fold-back ledger, the
-  lockfile + base-cache upgrade anchor); you do not need to read it.
+* `AGENTS.md` -- the rules your agent reads.  `VENDOR.md` is a template
+  you rename to the file your agent tool loads automatically.
+* the `dev/` tree -- where the record lives: the roadmap boards, the
+  `proposals/` and `plans/` templates, and one doc per installed
+  module.  `dev/.cairn/` holds the lockfile and install state that
+  upgrades use; you never need to read it.
 
-(The `tools/` and `scripts/` files install *into your target repo*; they
-are not Cairn-tree paths.)
+`tools/`, `scripts/` and `.agents/` hold helper tools and the
+`session-start` / `session-end` routines.  They install into your
+target repo, not into Cairn.  Ignore them for now.
 
 The scaffold also reports **22 unfilled block slots** -- placeholders
-your agent will fill during dogfood.  See
+your agent fills in a real adoption.  See
 [`bootstrap/BOOTSTRAP.md`](../bootstrap/BOOTSTRAP.md) Act II-4 for the
-full filling pass.  For this quickstart we leave them: the trivial dogfood
-below does not need them filled, and the scaffold's "Next steps **for a
-real adoption**" note is for when you install Cairn into a project for
-real, not this shakedown.
+filling pass.  This recipe leaves them: the tagline change does not
+need them, and the scaffold's "Next steps **for a real adoption**" note
+is for when you install into a real project.
 
 Commit the install (path-scoped, since the scaffold touched many
 files; `CHANGELOG.md` was already committed in Step 1):
@@ -213,16 +202,16 @@ git add AGENTS.md VENDOR.md NOTICE.md .gitignore dev/ tools/ scripts/ .agents/ d
 
 ## Step 4 -- the first prompt to your AI agent
 
-> **Where the agent will write.** Cairn's lifecycle artifacts
-> live under `dev/`. A proposal is a Markdown file like
-> `dev/proposals/2026-XX-XX-<slug>.md` with a header
-> (`Status: proposed`, `Author:`, `Touches:`), a `## Context`
-> section, a `## Proposal` section, and -- after review and
-> decision -- a `## Review` and `## Decision` section appended
-> in order. The whole file is the audit trail.
-> See [`dev/proposals/_template.md`](../templates/core/dev/proposals/_template.md)
-> for the full shape; the trivial proposal below uses a small
-> subset.
+> **Where the agent will write.** A proposal is a Markdown file such
+> as `dev/proposals/2026-XX-XX-<slug>.md`.  Its header has the fields
+> `Author`, `Status`, `Review`, `Plan review`, `Opened` and `In brief`,
+> and it starts at `Status: awaiting-review`.  Below the header come
+> sections such as Context, Proposal, Alternatives considered and
+> Evidence / verification plan.  A review and a decision are
+> appended later, in order.  The whole file is the audit trail.  See
+> [`dev/proposals/_template.md`](../templates/core/dev/proposals/_template.md)
+> for the full shape.  For a one-line tagline most sections need only a
+> sentence.
 
 Paste this into your agent (verbatim is fine -- the prompt is
 intentionally short; Cairn's `AGENTS.md` carries the doctrine):
@@ -230,13 +219,12 @@ intentionally short; Cairn's `AGENTS.md` carries the doctrine):
 > Read `AGENTS.md` in this repo to learn how proposals work.  Then
 > propose a one-line addition to `README.md`: a brief project tagline.
 > Open the proposal as
-> `dev/proposals/2026-XX-XX-<your-name>-readme-tagline.md`, with
-> Status `proposed`.  Wait for me to review and decide before
-> implementing.
+> `dev/proposals/2026-XX-XX-<your-name>-readme-tagline.md`, copying
+> the shape of `dev/proposals/_template.md`, with Status
+> `awaiting-review`.  Do not implement anything yet.
 
 Watch the agent: it should read `AGENTS.md`, write the proposal file,
-and stop.  This is the **lifecycle invariant** -- propose before
-code.
+and stop.  In the heavy lane the proposal comes before the code.
 
 Commit the proposal:
 
@@ -248,23 +236,42 @@ Most of this step is the agent reading.
 
 ## Step 5 -- review, decide, implement, archive
 
-You are the Maintainer.  Append a `## Decision` section to the
-proposal yourself:
+**Review.** Start a **new session** of your agent, so the reviewer is
+not the one that wrote the proposal, and paste:
+
+> You did not write the proposal in `dev/proposals/`.  Read it and
+> `AGENTS.md`, then append a `## Review` section in the shape the
+> template gives.  Question whether the change should happen as
+> framed, name the best alternative (doing nothing counts), and say
+> what would show it wrong.  Commit only the proposal file.
+
+The reviewer writes its own review and commits it; that is one
+commit.  If it finds nothing blocking, it moves the header to
+`Status: awaiting-decision`.  If it finds something blocking, the
+status becomes `revising` and the first agent answers in an appended
+section before the Maintainer sees it.
+
+**Decide.** You are the Maintainer.  Append a `## Decision` section to
+the proposal yourself, quoting your own words, set apart, and change
+the header to `Status: accepted`:
 
 ```markdown
 ## Decision -- <your-name> -- 2026-XX-XX
 
-Accept.  Trivial implementation; ship + archive in one commit.
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim:
+
+> "Accepted.  Add the tagline and archive the proposal in one commit."
 ```
 
-Commit the decision, then ask the agent:
+Commit the decision, then ask the agent that wrote the proposal:
 
-> The proposal is accepted (trivial).  Implement the tagline,
-> move the proposal to `dev/proposals/archive/`, and add a one-line
-> entry to `CHANGELOG.md > Unreleased`.  Commit the whole thing as
-> the implementing-and-archiving commit.
+> The proposal is accepted.  Implement the tagline, move the proposal
+> to `dev/proposals/archive/`, and add a one-line entry to
+> `CHANGELOG.md > Unreleased`.  Commit the whole thing as one
+> implementing-and-archiving commit.
 
-You should see the agent:
+A small accepted proposal can be implemented and archived in one
+commit with no plan.  You should see the agent:
 
 * Edit `README.md` to add the tagline.
 * `git mv` the proposal into `dev/proposals/archive/`.
@@ -281,14 +288,13 @@ cat CHANGELOG.md
 
 You should see:
 
-* Five commits with clear lifecycle boundaries (init, install,
-  proposal-open, decision, implement-and-archive).
-* The proposal in `archive/`, frozen.
+* Six commits with clear lifecycle boundaries (init, install,
+  proposal-open, review, decision, implement-and-archive).
+* The proposal in `archive/`, frozen, with its review and decision.
 * A CHANGELOG line that records what changed.
 
-That is the lifecycle.  The same shape scales to a multi-day
-proposal with reviews, plans, and large refactors -- but the
-mechanics are identical.
+That is the lifecycle.  A larger change adds a plan, with its own
+review, but the mechanics are the same.
 
 ## Step 7 -- teardown
 
@@ -301,42 +307,43 @@ untouched.
 
 ## What you saw
 
-* **Propose before code.**  The first commit was a proposal, not a
+* **Proposal before code.**  The first commit was a proposal, not a
   feature.
-* **Lifecycle transitions are commits.**  Open / decide /
+* **Each transition is its own commit.**  Open, review, decision and
   implement-and-archive each landed separately.
-* **The proposal is the audit trail.**  After archiving, you can
-  read the file and reconstruct *why* the change happened, not just
-  *what*.
-* **The Maintainer decides.**  The AI agent proposed and implemented;
-  you decided.  That is Cairn's human authority gate.
+* **A fresh reviewer.**  A new session that did not write the proposal
+  questioned it in writing before the Maintainer decided.
+* **The proposal is the audit trail.**  After archiving, you can read
+  the file and reconstruct *why* the change happened, not just *what*.
+* **The Maintainer decides.**  The agent proposed and implemented; you
+  decided, in your own quoted words.
 
 ## What you did *not* see
 
-* **Dual-Review.**  A fresh reviewer who did not write the work
-  appends a `## Review` before the Decision.  Quickstart skipped it
-  -- the change was trivial.  On a non-trivial change, the review is
-  the lifecycle's second pillar (see
-  [`doctrine/dual-review.md`](../doctrine/dual-review.md)); the
-  Maintainer can ask for a different agent or a second human when
-  they want more distance.
-* **Plans.**  Multi-commit changes open a plan
+* **The other two lanes.**  A trivial change (a typo or one-line fix)
+  takes no proposal.  A change whose shape is already settled takes one
+  short change note, reviewed, then the change and its test.  When
+  unsure, take the heavier lane.  See
+  [`doctrine/lifecycle.md`](../doctrine/lifecycle.md).
+* **Extra distance in review.**  A fresh session of the same agent is
+  enough.  When you want more distance, you can ask for another model
+  or a person to review a particular piece of work (see
+  [`doctrine/dual-review.md`](../doctrine/dual-review.md)).
+* **Plans.**  A larger accepted proposal opens a plan
   ([`dev/plans/_template.md`](../templates/core/dev/plans/_template.md))
-  that sequences the work and gets its own review.  The trivial
-  accept above did not need one.
-* **The dimensional matrix.**  The minimal profile picked
-  default-on modules only.  A larger project picks more (see
+  that sequences the work and gets its own review.  This one did not
+  need it.
+* **The dimensional matrix.**  The minimal profile installed only the
+  default modules.  A larger project picks more (see
   [`bootstrap/profiles/`](../bootstrap/profiles/) and
   [`dimensions/`](../dimensions/)).
 
 ## What to do next
 
-The quickstart deliberately uses a trivial tagline change so the
-*shape* of the lifecycle is visible without the lifecycle's
-overhead getting in the way.  The next step is to run the same
-shape on a **real, non-trivial** change -- one that has multiple
-files, a review worth writing down, and a plan worth sequencing --
-because that is where the apparatus actually pays back.
+The tagline was small so the *shape* of the lifecycle would be easy
+to see.  The next step is to run the same shape on a **real change**:
+one that touches several files, has a review worth writing down, and
+needs a plan.  That is where the apparatus pays back.
 
 In order:
 
@@ -345,14 +352,12 @@ In order:
   to surface the questions before you choose a profile.  Fill it
   locally first; the template's "What to check in" section names
   the safer default check-in posture.
-* **Hand the assessment to your agent (one-shot)** -- use the
-  [bootstrap-lite prompt](../bootstrap/prompts/bootstrap-lite.md) if
-  you would rather have the agent score the six axes and recommend
-  a profile than fill the Act I templates yourself by hand.  The
-  bootstrap-lite prompt is also the natural follow-on when you
-  want to drive a *real* (non-trivial) proposal next: it preserves
-  the Maintainer-acceptance gate the quickstart preserved, just
-  scaled up to the work your repo actually does.
+* **Hand the assessment to your agent** -- the
+  [bootstrap-lite prompt](../bootstrap/prompts/bootstrap-lite.md) has
+  the agent score the six axes and recommend a profile, so you do not
+  fill in the Act I templates by hand.  It keeps the same rule as this
+  recipe: you, the Maintainer, accept the result before anything is
+  installed.
 * **Install Cairn into the real project** -- run Steps 2 and 3
   against your own repository, with the profile the assessment points
   to, from a release tag you have verified
@@ -361,12 +366,10 @@ In order:
   for a real adoption (`bootstrap/BOOTSTRAP.md` Act II-3 to II-6).
   The [on-ramp](../on-ramp/README.md) has the profile table, and what
   to do if you copied the kernel in by hand.
-* **Read the doctrine** -- [`doctrine/`](../doctrine/) is the
-  invariant core; it explains *why* the lifecycle works the way it
-  does.  The
-  [`dual-review`](../doctrine/dual-review.md) and
-  [`lifecycle`](../doctrine/lifecycle.md) docs are the first two to
-  read once you have a non-trivial change in flight.
+* **Read the doctrine** -- [`doctrine/`](../doctrine/) explains
+  *why* the lifecycle works as it does.  Start with
+  [`lifecycle`](../doctrine/lifecycle.md) and
+  [`dual-review`](../doctrine/dual-review.md).
 
 ## Honest framing
 

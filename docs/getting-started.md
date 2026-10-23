@@ -17,10 +17,8 @@ invariant — if you want a domain-flavored example.)
 > code: you write the decision down first, review it, accept it,
 > *then* implement. That is the design. The payback is fewer
 > forgotten assumptions, fewer collisions, less rework — but only
-> on changes substantive enough to warrant a proposal. The
-> [quickstart](quickstart.md)'s "trivial accept" path collapses
-> three of these steps into a single implement-and-archive commit
-> for the smallest end of that scale.
+> on changes big enough to warrant a proposal. Smaller changes take
+> a lighter lane (see the figure below).
 
 ## The five steps
 
@@ -32,6 +30,7 @@ first, and the steps below are the deliberate lane, the heaviest one:
 A substantive change moves through
 [propose → review → decide → implement → record](../doctrine/lifecycle.md).
 Walk a concrete one: *add an optional name argument to a `greet` CLI.*
+That adds a capability, so it belongs in the deliberate lane.
 
 ### 1. Propose
 
@@ -49,9 +48,10 @@ to it, never edited over. The file is the audit trail.
 A reviewer who did not write it — a fresh session of an agent counts, and the
 file names who they were (see [Dual-Review](../doctrine/dual-review.md)) —
 appends a `## Review` section. They check the reasoning, not just the
-code-to-be: is the change backward-compatible, is a test absorbed, is anything
-under-specified? On a small change one review suffices; on a higher-stakes
-change the Maintainer can ask for more distance, a different model or a person.
+code-to-be: should this exist as framed, is the change backward-compatible,
+is anything under-specified? One fresh reviewer is enough. If the
+Maintainer wants more distance on a particular change, they can ask for
+another model or a person.
 
 ### 3. Decide
 
@@ -62,19 +62,18 @@ decision. An accepted proposal stays in `dev/proposals/` until the work
 starts: it moves to `dev/proposals/archive/` in the commit that opens its plan,
 or, for a small change, in the commit that implements it.
 
-A small change is a **trivial accept** (implement-and-archive in one
-step). A larger one opens a **plan** under `dev/plans/` first, which
-sequences the implementation and gets its own review before the work
-archives.
+A small accepted proposal can be implemented and archived in one commit.
+A larger one opens a **plan** under `dev/plans/` first, which sequences
+the implementation and gets its own review before the work archives.
+The `greet` change is small enough for the one-commit path.
 
 ### 4. Implement — absorbing tests, docs, examples
 
-The change lands *with* its test and any doc/example update in the same
-movement — "a change absorbs its tests" is core doctrine, not an
-afterthought. Cairn does not run those tests; your test framework does,
-and your CI gates them (see [`workflow-role.md`](workflow-role.md) for
-the boundary). Cairn's job was to decide the test is required and to
-have it reviewed.
+The change lands *with* its test and any doc or example update in the
+same commit. A change absorbs its tests; they are not an afterthought.
+Cairn does not run those tests. Your test runner does (see
+[`workflow-role.md`](workflow-role.md) for the boundary). Cairn's job
+is to make sure the test is required and that it gets reviewed.
 
 ### 5. Record
 

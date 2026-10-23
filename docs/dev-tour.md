@@ -1,130 +1,123 @@
 # A short tour of `dev/` -- the deliberation tree
 
-The `dev/` tree is where Cairn writes things down. **Substantive
-change is deliberated**: a proposal, then a review, then a
-decision, then a plan, then implementing commits, then an archive.
-This tour walks the five subdirectories with one paragraph each,
-then runs a single trivial change through the full lifecycle as a
-worked example. Best read after *doctrine/lifecycle.md* (which
-carries the *why*; this is the *where*).
+The `dev/` folder is where your project writes down what it decided
+and why. Every change goes into one of three lanes, chosen before any
+file is written. Most changes take a light lane; only a few take the
+full one. This tour says what each part of `dev/` holds, then shows the
+light lane on a typo and points to the full lane in Cairn's README.
+Best read after *doctrine/lifecycle.md*, which carries the *why*; this
+is the *where*.
 
-## The five subdirectories
+## What lives in `dev/`
 
-### `dev/proposals/` -- the deliberation channel
+### `dev/proposals/` -- the written case for a big change
 
-A proposal is the unit of change. One open proposal per file;
-filename is the stable handle the rest of the tree refers to.
-Lifecycle: **open** (status `proposed`) → **reviewed** (a
-reviewer appends a `## Review` section) → **responded** (the
-author appends a `## Response`, often with body revisions) →
-**decided** (the Maintainer appends a `## Decision` accepting or
-rejecting) → **archived** (the accepted proposal `git mv`'s to
-`dev/proposals/archive/`). Once archived, the proposal is the
-canonical reasoning record -- everything downstream references
-it. `dev/proposals/_template.md` is the structural baseline; new
-proposals start by copying it.
+A proposal explains a substantial change before anyone builds it: the
+problem, the change, the alternatives, and what would show it wrong.
+One proposal per file; the filename is its handle. Its status always
+says who moves next:
 
-### `dev/plans/` -- the implementation channel
+`awaiting-review` → `revising` → `awaiting-decision` → `accepted`,
+`rejected` or `superseded`.
 
-A plan operationalizes an accepted proposal into reviewable
-chunks. Each plan is its own file: header (touches + plan-review
-line + related artifacts), context, chunk decomposition with
-per-chunk acceptance criteria, verification, coordination, an
-appended Review section + Response section, lasting-truth
-migration. The plan archives at completion (`git mv` to
-`dev/plans/archive/`). Plans are the *map* implementing commits
-follow; commits themselves cross-reference the plan by filename.
-`dev/plans/_template.md` carries the structural baseline.
+A fresh reviewer who did not write the proposal appends a `## Review`.
+The author appends a `## Response` and a revised proposal. The
+Maintainer appends a `## Decision`. Proposals are append-only: nothing
+already written is edited, so the file shows what was believed at each
+point. A rejected or superseded proposal moves to
+`dev/proposals/archive/` with its Decision; an accepted one moves when
+its plan opens or its change ships. `dev/proposals/_template.md` is the
+starting point.
 
-### `dev/strategy/` -- the long-horizon framing channel
+### `dev/plans/` -- how an accepted proposal gets built
 
-A strategy doc is a long-form framing -- a problem space
-characterization, an audit of an emerging concern, a multi-year
-direction sketch. Not yet a proposal; ground that proposals
-later draw from. Strategies are append-only (revised by appended
-sections, never overwritten) and they archive when their
-substance has been fully absorbed into accepted proposals +
-doctrine + the changelog. The shape of a strategy doc is more
-fluid than a proposal's; the convention is "long-horizon honest
-thinking that needs to be deliberated alongside the day-to-day
-work."
+A plan splits accepted work into chunks, each with its own acceptance
+criteria and how it will be checked. A fresh reviewer reads the plan
+once, then you implement, and a code review checks the result. The plan
+moves to `dev/plans/archive/` when the work is done. Commits cite the
+plan by filename. The short change note used by the standard lane
+follows the same plan template. See `dev/plans/_template.md`.
 
-### `dev/reflections/` -- the daily handoff channel
+### `dev/strategy/` -- thinking before a proposal
 
-A reflection is one agent's session log -- what they tried, what
-worked, what didn't, what the next session should pick up. The
-directory is gitignored by default (the per-session content is
-ephemeral); the tracked `README.md` is the directory guide.
-Substantive observations migrate out (to proposals, to the
-strategy/, to PLANNING). The reflection channel exists because
-multi-agent and across-session-handoff coordination is friction
-that compounds without the channel.
+A strategy note is long-form framing: a comparison of tools, an audit
+of a worry, a direction sketch. It is not yet a commitment. Unlike a
+proposal, a strategy note is **revised in place**: when a review
+arrives, the author folds in what they accept and deletes the review,
+so the note stays clean. The history lives in `git log`. A note
+archives once accepted proposals and doctrine have absorbed it.
 
-### `dev/.cairn/` -- the fold-back channel
+### `dev/reflections/` -- session logs
 
-A methodology improvement is filed as an issue on Cairn's own tracker.
-A deployment captures Cairn-portable doctrine improvements here
--- changes that would help any differently-shaped team, not
-just yours -- and the goodnight foldback-capture step keeps the
-ledger populated. The ledger's job is to bridge the gap between
-"noticed something generalizable" and "filed a Cairn upstream
-issue or PR"; the fold-back issue template
-(*.github/ISSUE_TEMPLATE/foldback.md*) walks you through
-the filing when a candidate is ready.
+A reflection is one agent's session log: what it tried, what worked,
+what the next session should pick up. The folder is gitignored by
+default, because the per-session content is short-lived. Anything
+that matters moves into a proposal, a strategy note or the roadmap.
 
-## Worked example -- one trivial change end-to-end
+### The rest of `dev/`
 
-The shortest illustration of the full lifecycle. Suppose your
-project's README has a one-line typo: "scientifc" instead of
-"scientific". A trivial fix; the lifecycle is still worth running
-once to feel the shape.
+| Path | What it holds |
+|------|---------------|
+| `README.md` | Entry point to the tree. |
+| `agent_collaboration.md` | The roles and the review loop. |
+| `PLANNING.md` | The roadmap board: queued and active work. |
+| `NEXT_SESSION.md` | The handoff: what to start next. |
+| `modules/` | One file per installed optional module. |
+| `upstream/` | Drafts of bug reports for outside tools your project depends on. |
+| `rules/` | Detail for your project's own agent rules, routed from `RULES.md`. |
 
-**Step 1 -- open the proposal.** Copy `dev/proposals/_template.md`
-to `dev/proposals/2026-MM-DD-<your-name>-readme-typo-fix.md`.
-Fill in the header (author, model if AI, date opened, status
-`proposed`). Write a one-line Context ("a typo in README; trivial
-fix"), a one-line Proposal ("change `scientifc` to
-`scientific`"), and a Rationale ("typo; no behavior change").
-Commit: `git add dev/proposals/2026-MM-DD-... && git commit -m
-"open proposal: readme-typo-fix"`. Status `proposed`.
+### `dev/.cairn/` -- install state, not for editing by hand
 
-**Step 2 -- review.** A reviewer (a different agent type if
-you have one staffed; otherwise a fresh session of your agent,
-or the Maintainer) appends a `## Review` section with a one-line
-finding ("approve; trivial fix"). Status moves to `reviewed`. The
-review commit carries the trailer naming the reviewer.
+This folder holds what the installer needs to update your copy of
+Cairn later: the lockfile, base copies of installed files, your
+profile, and local settings. It is not a log of ideas.
 
-**Step 3 -- decide.** The Maintainer appends a `## Decision`
-("Accepted -- the fix is correct; merge."). Status moves to
-`accepted`. For trivial changes the proposal can also be its own
-plan (no implementing chunks worth tracking separately); the
-Decision section names this explicitly.
+If you find an improvement that would help other teams too, file it as
+an issue on Cairn's own tracker. The template is
+`.github/ISSUE_TEMPLATE/foldback.md` in the Cairn repository.
 
-**Step 4 -- implement.** Make the actual README edit (fix the
-typo). Commit references the proposal: `git commit -m "Fix typo
-in README per accepted-proposal 2026-MM-DD-..."`. Implementing
-commits cite the accepted proposal by filename stem.
+## The three lanes
 
-**Step 5 -- archive.** `git mv
-dev/proposals/2026-MM-DD-<...>.md dev/proposals/archive/` and
-commit. The proposal moves to its permanent home; the deliberation
-trail is now archival history. Status `archived`. The README typo
-fix is a complete lifecycle artifact.
+1. **Trivial** -- a typo or one-line fix. Make the change and its test
+   in one commit; a fresh reviewer who did not write it reviews the
+   commit. No proposal.
+2. **Standard** -- the shape is settled, but the change is not trivial.
+   Write one short change note (why, what, approach, verification,
+   risk), have it reviewed, then make the change and its test, then a
+   code review.
+3. **Deliberate** -- a new feature, a contract change, or a
+   high-risk surface. Proposal, review, the Maintainer's decision,
+   plan, plan review, change and test, code review, archive.
 
-That five-step shape -- open / review / decide / implement /
-archive -- holds for trivial changes (where every step is
-one-line) up through multi-week proposals (where each step has
-multiple commits + Review/Response rounds). The discipline
-scales; the artifact tree is the same shape.
+When you are unsure, take the heavier lane. Every step is its own
+commit.
+
+## Worked example -- a typo, in the trivial lane
+
+Suppose your README says "scientifc" where it means "scientific".
+
+**Step 1 -- fix it.** Edit the word and commit it with a message that
+says what changed. A README typo has no behavior to test, so the edit
+is the whole change.
+
+**Step 2 -- review.** A fresh reviewer who did not make the edit reads
+the commit and records one line: what they looked at and that it holds.
+A fresh session of your agent is enough. If you want another model or
+a person to look, that is your call as Maintainer.
+
+That is all: no proposal, no plan, no archive. Running this change
+through a proposal would cost more attention than the typo is worth.
+
+For the full lane from start to finish, see the toy example in Cairn's
+README ("A toy example: asking for a new feature"). It follows one
+feature request through proposal, review, decision, plan, build and
+code review.
 
 ## Where to next
 
-* Try the worked example above on a real change in your tree. A
-  one-line README typo fix is a fine first run.
-* When you're ready to coordinate across two or more agents, read
-  *doctrine/coordination.md* -- it carries the work-intent
-  mechanism that prevents collision.
-* When your deployment's fold-back ledger has its first open
-  candidate, the fold-back issue template
-  (*.github/ISSUE_TEMPLATE/foldback.md*) is the natural
-  next read.
+* Try the typo fix above on a real change in your tree.
+* When you coordinate two or more agents, read *doctrine/coordination.md*;
+  it covers the work-intent mechanism that prevents collisions.
+* When you have an improvement for Cairn itself, the template
+  `.github/ISSUE_TEMPLATE/foldback.md` in the Cairn repository walks
+  you through filing it.

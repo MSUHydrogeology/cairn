@@ -52,16 +52,19 @@ disturbing the core.
 What an adoption installs is sorted into three layers. This is
 what makes "the invariant core is small" an honest claim.
 
-* **The invariant kernel** — present in every adoption; what makes
-  it Cairn at all: the **lifecycle** (proposal → review → decision,
-  plus the plan lifecycle for non-trivial accepted proposals); one
-  designated Human Maintainer holding final Decision authority;
-  append-only, commit-recorded deliberation; stigmergic
-  coordination through a `dev/` tree; the baseline coordination
-  tier; the session routines.
+* **The core** — present in every adoption; what makes it Cairn at
+  all. Changes are sorted into three lanes: a trivial change is
+  committed with its test and a code review; a change whose shape is
+  settled gets one short change note; a new feature, a contract change
+  or a high-risk surface gets a proposal, a review, the Maintainer's
+  decision and a plan. One person, the Maintainer, makes the final
+  decisions. The record is append-only and committed in git. Agents
+  coordinate by reading and writing files in a shared `dev/` folder.
+  The core also includes the baseline coordination tier and the
+  session routines.
 * **Default-on modules** — installed unless a dimension removes
-  them: lifecycle-metrics, reflections, claim-check, fold-back-ledger,
-  incident-trackers, documentation-plan, and content-security. (The
+  them: reflections, claim-check, incident-trackers,
+  documentation-plan, content-security, and security-verification. (The
   authoritative per-module rationale is the gate table in
   `bootstrap/BOOTSTRAP.md` > I-5.)
 * **Team-gated modules** — activated only when the team has the
@@ -76,11 +79,10 @@ what makes "the invariant core is small" an honest claim.
 ```mermaid
 flowchart LR
   P(["your project"])
-  P --> ALW["ALWAYS<br/>invariant kernel<br/>+ 7 default-on modules"]
+  P --> ALW["ALWAYS<br/>the core<br/>+ 6 default-on modules"]
   P --> AX["YOUR SIX AXES"]
   P --> JG["YOUR JUDGMENT<br/>no axis decides these"]
 
-  AX --> AGE["age = legacy"] --> LA["legacy-agent"]
   AX --> AT["agent-team =<br/>concurrent-multi-type"] --> DR["dual-review"]
   AT --> CT["coordination-tiers"]
   AX --> CX["complexity =<br/>moderate or complex"] --> MS["model-selection"]
@@ -100,26 +102,30 @@ flowchart LR
 *A complete six-axis profile does not complete the module selection. Most of
 the roster is derived — but four modules are not reachable from any axis:
 three are judgments about the project, and one waits on a profile token. If you
-fill in the six axes and stop, those four are the ones you silently skipped.*
+fill in the six axes and stop, those four are the ones you silently skipped.
+Age is a similar case: setting `age: legacy` does not add `legacy-agent` by
+itself, so for an existing codebase you add it (and `testing-discipline`)
+yourself; see [`../docs/solo-legacy-recipe.md`](../docs/solo-legacy-recipe.md).*
 
 A team-gated module is not "advanced" — it is simply unstaffable
-below a certain team shape. A solo, single-agent team cannot run a
-read from a second agent type; it runs the one review (the same
-agent, a fresh session) and the Dual-Review module's staffing
-guidance applies when a second agent type becomes available.
+below a certain team shape. A solo, single-agent team still runs every
+review: a fresh session of the same agent. It can ask for another model
+or a person whenever the Maintainer wants more distance, and the
+Dual-Review module's staffing guidance applies once a second agent type
+is available.
 
 ## The minimal viable configuration
 
-The smallest honest Cairn adoption is **the invariant kernel plus
-the default-on modules**, with the role roster collapsed to the
-Maintainer plus one generalist agent. It runs the recorded,
-reviewed lifecycle; it does not run a Dual-Review apparatus it
-cannot staff, or a domain-agent roster it does not need.
+The smallest honest Cairn adoption is **the core plus the default-on
+modules**, with the role roster collapsed to the Maintainer plus one
+generalist agent. It runs the recorded, reviewed lifecycle; it does
+not run team machinery it cannot staff, such as a domain-agent roster
+it does not need.
 
 This is the configuration that makes Cairn adoptable by a small,
 new project and not only by a large, complex one. Every axis
 position above the minimum *adds* — it never subtracts from the
-kernel.
+core.
 
 ## How the matrix is used
 

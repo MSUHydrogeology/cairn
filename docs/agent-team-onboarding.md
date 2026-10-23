@@ -1,22 +1,20 @@
 # Adding a second (or third) agent type to your deployment
 
-This doc walks the steps for staffing your Cairn deployment with
-an additional AI agent type -- the move that makes a different
-model architecture available when the Maintainer asks for more
-distance on a piece of work. For `collaborative-team` and
+This doc walks the steps for adding another AI agent type to your
+Cairn deployment. A second type is useful when the Maintainer wants
+more distance on a piece of work: a different model has different
+blind spots. No review requires one. For `collaborative-team` and
 `high-rigor-legacy` profiles this is day-one work; for
-`solo-greenfield`, it is optional: fresh sessions of your one agent
-already do every review, and a second type is there for the days you
-want it.
+`solo-greenfield` it is optional, because fresh sessions of your one
+agent already do every review.
 
 ## Prerequisites
 
 * A Cairn deployment past the first proposal-archive cycle (the
   apparatus has earned its keep; multi-agent is the next investment).
-* A second AI agent type available to the team (a different
-  vendor, or a sufficiently different model architecture from the
-  first; an aspirational "future second agent" is not a
-  prerequisite -- this doc applies when the agent is here).
+* A second AI agent type available to the team (a different tool, or
+  a clearly different model from the first). Do not follow this doc
+  for an agent you only plan to add; it applies once the agent is here.
 * The team-roster slot in `dev/agent_collaboration.md` filled
   with the existing agent(s) so the new addition has a place to
   attach.
@@ -25,114 +23,88 @@ want it.
 
 Add the new agent's identifier to
 `dev/agent_collaboration.md`'s `<!-- cairn:slot team-roster
--->` block. Use the canonical-id form your team has chosen for
-the existing agents (vendor + model name + optional capability
-tier suffix; the form matters less than the consistency).
+-->` block. Use the same form your team uses for the existing agents
+(tool and model name; the form matters less than being consistent).
 
 Example (collaborative-team profile):
 
-<!-- vendor-ok-begin: the roster example shows real model names in the slot's expected format -->
 ```markdown
 <!-- cairn:slot team-roster -->
-* Anthony (Maintainer)
-* Claude Opus 4.7 (1M context) -- author + reviewer
-* Codex GPT-5 -- reviewer   # newly added
+* <Maintainer name> (Maintainer)
+* <Agent A: tool and model> -- author + reviewer
+* <Agent B: tool and model> -- reviewer   # newly added
 <!-- cairn:end team-roster -->
 ```
-<!-- vendor-ok-end -->
 
-Commit the roster edit. The team-roster slot is the explicit
-state the goodnight activation helper reads to surface the
-`second-agent-type` trigger; updating it is what makes the trigger
-fire on the next goodnight.
+Commit the roster edit. The goodnight activation helper reads this
+slot to decide whether the `second-agent-type` trigger has fired, so
+filling it in is what makes the trigger fire at the next goodnight.
 
 ## Step 2 -- set up the agent's `Co-Authored-By:` trailer
 
-Each agent commits with a trailer naming itself, so the commit
-log is the audit trail for who wrote what. The trailer convention
-is a **pattern**, not a version frozen in this doc -- each agent
-stamps its own *current* model identifier, so a model bump never
-requires an edit here:
+Each agent commits with a trailer naming itself, so the commit log
+shows who wrote what. The trailer is a pattern, so a model upgrade
+never needs an edit here:
 
 ```
 Co-Authored-By: <Agent Display Name> <noreply@<vendor-domain>>
 ```
 
-Fill `<Agent Display Name>` with the agent's current model as its
-harness reports it. Stamping the running model (rather than a
-pinned version) keeps every trailer accurate with no doc
-maintenance, and leaves git history attributing each commit to the
-model that produced it. The examples below are illustrative
-snapshots -- substitute whatever model you are currently running:
-* `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>` <!-- vendor-ok: illustrative trailer example naming a real model -->
-* `Co-Authored-By: Codex GPT-5 <noreply@openai.com>` <!-- vendor-ok: illustrative trailer example naming a real model -->
-* `Co-Authored-By: Antigravity GPT-5 <noreply@google.com>` <!-- vendor-ok: illustrative trailer example naming a real model -->
+Fill `<Agent Display Name>` with the model the agent is running now,
+as its tool reports it. Configure the trailer in the agent's
+commit template; how you do that depends on the tool. The trailer is
+for people reading the log. The onboarding helper does not read it.
 
-Configure the trailer in the agent's commit-template (the
-mechanism varies by harness; the standing convention is that the
-trailer is reliable enough to tell which agent type wrote what).
+## Step 3 -- note how capable each agent is (optional)
 
-## Step 3 -- record capability tier in the roster
+No review requires a particular agent type. If you want a rough guide
+for which agent takes which kind of work, note each agent's
+capability in the roster using your own labels (high, medium or low
+capability), as `doctrine/roles.md` in Cairn's
+published doctrine describes. The labels guide you. They do not bind anyone, and the
+Maintainer decides.
 
-The `capability tier` is the rough strength bucket the team
-assigns to each agent for purposes of choosing who does what:
+## Step 4 -- try one called read on a trivial proposal
 
-* **Frontier** -- the strongest tier; load-bearing for proposal
-  review and Security Review on substantive changes.
-* **Standard** -- the team's working baseline; cover plan review,
-  code review and Implementation by default.
-* **Light** -- structural lifts where the higher-tier agents'
-  attention is over-spent (mechanical follow-ups, label-only
-  edits).
+Open a one-line proposal (for example a CHANGELOG note) and have the
+**new** agent review it. You, the Maintainer, ask for this one read
+and name the proposal; that is what makes it a read you called. The
+first review by a second agent type is worth doing for two reasons:
 
-Tier mapping is the team's call; the assignment lives inline in
-the team-roster slot. The mapping informs (it does not bind)
-which agent the goodnight owner asks for which kind of work.
+1. It checks that the activation helper sees it. The
+   `first-cross-type-review` trigger reads the proposal and plan files
+   themselves. It fires when a file's `Author` line names one agent
+   and a `## Review` section (its heading or first lines) names a
+   different one. It does not read git trailers.
+2. It shows how a called read goes in your team. One cycle of "the
+   new agent found nothing" or "the new agent caught something the
+   author missed" sets expectations.
 
-## Step 4 -- smoke a cross-type read on a trivial proposal
-
-Open a one-line proposal (e.g., a typo fix or a CHANGELOG note),
-and have the **new** agent type review it. The Maintainer asks for
-this one read, naming the proposal; that is what makes it a read
-they called. The first cross-type review is significant for two
-reasons:
-
-1. It validates the trailer is being parsed correctly (the
-   `first-cross-type-review` activation trigger fires off this
-   signal).
-2. It establishes the team's working pattern for a called read
-   -- one cycle of "the new agent reviewed this without surfacing
-   problems" or "the new agent caught something the author missed"
-   calibrates expectations.
-
-Commit the review with the new agent's trailer. The next
-goodnight run of `python scripts/onboarding_activate.py` will
-fire the `first-cross-type-review` trigger and surface the
-follow-up onboarding task (per the active-surfacing protocol).
+Commit the review. The next goodnight run of
+`python scripts/onboarding_activate.py` fires the trigger and
+surfaces the follow-up onboarding task.
 
 ## Step 5 -- coordinate work-intents going forward
 
-With two or more agents now writing the tree, the work-intent
-mechanism (the `coordination-tiers` module's seed) earns its keep
-from the next session. Each agent claims intent before editing
-shared files:
+With two or more agents writing to the tree, the work-intent
+mechanism (from the `coordination-tiers` module) starts to pay off.
+Each agent claims the files it will edit:
 
 ```bash
 python tools/intent.py claim --files <paths> --action "<short summary>"
 ```
 
-The post-commit hook auto-releases the claim. The intent log
-(`dev/intents.jsonl`) is the agent-collision-prevention surface;
-when both agents try to edit the same file the second one sees
-the first's claim and coordinates rather than colliding.
+If both agents try to edit the same file, the second sees the first's
+claim and coordinates instead of colliding. The claims are recorded in
+`dev/intents.jsonl`.
+
+Release a claim by hand with `python tools/intent.py release <id>`, or
+turn on the post-commit hook, which is opt-in: run
+`python tools/intent.py install-hook` once, and each commit then
+releases your claims on the paths it touched.
 
 ## Where to next
 
 * If you haven't yet, walk `dev/modules/onboarding/dev-tour.md`
   together so the new agent gets the same dev-tree orientation the
   rest of the team has.
-* When your fold-back ledger acquires its first open candidate,
-  the fold-back issue template
-  (*.github/ISSUE_TEMPLATE/foldback.md*) is the next
-  capability to exercise -- a read from a second agent type is
-  useful there whenever the Maintainer asks for one.

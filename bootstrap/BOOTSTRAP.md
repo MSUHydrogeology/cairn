@@ -110,9 +110,8 @@ From the six-axis profile, select the module set:
    `../dimensions/README.md > The three module layers`.
 
 2. **Default-on modules** (installed unless a dimension removes
-   them): lifecycle-metrics, reflections, claim-check,
-   fold-back-ledger, incident-trackers, documentation-plan,
-   content-security. Remove a
+   them): reflections, claim-check, incident-trackers,
+   documentation-plan, content-security, security-verification. Remove a
    default-on module only when the dimensional profile gives a specific
    reason — record the reason.
 
@@ -424,8 +423,6 @@ merge rather than relying on this prose alone:
 * `claim-check` in `AGENTS.md` — the `claim-check` default-on module
 * `reflections` in `dev/agent_collaboration.md` — the `reflections`
   default-on module
-* `lifecycle-metrics` in `dev/agent_collaboration.md` — the
-  `lifecycle-metrics` default-on module
 
 A module whose `Adds to:` target is an existing prose section rather
 than a slot (e.g. `dual-review` → the review-loop section) is merged
@@ -699,7 +696,6 @@ Block slots (judgment work, left for the agent and Maintainer):
 | `coordination-additions` | `dev/agent_collaboration.md` | Higher coordination tiers if the team profile selects them |
 | `claim-check` | `AGENTS.md` | The `claim-check` module's verify-before-asserting note (or `N/A` if not installed) |
 | `reflections` | `dev/agent_collaboration.md` | The `reflections` module's per-agent handoff content (or `N/A`) |
-| `lifecycle-metrics` | `dev/agent_collaboration.md` | The `lifecycle-metrics` module's extractor note (or `N/A`) |
 | `team-roster` | `dev/agent_collaboration.md` | The team members and their roles |
 
 ---
@@ -718,13 +714,12 @@ test_command: "pytest"
 modules:
   # Default-on (remove a line only if the dimensional profile gives
   # a specific reason to omit it):
-  - lifecycle-metrics
   - reflections
   - claim-check
-  - fold-back-ledger
   - incident-trackers
   - documentation-plan
   - content-security
+  - security-verification
   # Team-gated (add from templates/modules/team-gated/ as needed):
   # - dual-review
   # - domain-agents

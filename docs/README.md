@@ -31,16 +31,14 @@ New to Cairn? Start with the [quickstart](quickstart.md).
   an existing codebase.
 * [Adding another agent type](agent-team-onboarding.md) -- bringing a second
   or third AI agent into a deployment.
-* [Skills compatibility](skills-compatibility.md) -- which agents can run
-  Cairn's skills.
 
 ## Work with it day to day
 
 * [Tool usage](tool-usage.md) -- worked examples of Cairn's tools.
 * [A tour of `dev/`](dev-tour.md) -- the folder where proposals, plans and
   reviews live.
-* [Build a board view](build-a-board-view.md) -- turning the board's data into
-  a page.
+* [Build a board view](build-a-board-view.md) -- for maintainers, or teams
+  running several agents: turning the board's data into a page.
 
 ## The rules
 
@@ -50,5 +48,7 @@ New to Cairn? Start with the [quickstart](quickstart.md).
 ## Maintaining Cairn itself
 
 * [Release process](release-process.md) -- how a Cairn release is cut.
+* [Skills compatibility](skills-compatibility.md) -- which agents can run
+  Cairn's skills.
 * [Documentation plan](DOCUMENTATION_PLAN.md) -- where each kind of document
   belongs.

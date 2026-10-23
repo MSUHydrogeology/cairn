@@ -14,18 +14,21 @@ with the proposal lifecycle, run by hand.
 
 ## The change, traced through the lifecycle
 
-One small change — *add an optional name argument to `greet`* — moves
-through Cairn's five steps
-([`../../doctrine/lifecycle.md`](../../doctrine/lifecycle.md)):
+Cairn first sorts a change into one of three lanes
+([`../../doctrine/lifecycle.md`](../../doctrine/lifecycle.md)): a typo or
+one-line fix is just a commit with its test and a code review; a change
+with a settled shape gets a short note and a review; a new capability gets
+the full path. The change here -- *add an optional name argument to
+`greet`* -- adds a capability, so it took the full path, shown in five steps:
 
 1. **Propose.** A proposal is written and committed:
    [`dev/proposals/archive/0001-add-name-argument.md`](dev/proposals/archive/0001-add-name-argument.md).
-   It states the context, the change, and that it's small enough to be
-   a *trivial accept* (no separate plan).
-2. **Review.** A reviewer (structurally independent of the author)
-   appends a `## Review` section to the same file — here, confirming
-   the change is backward-compatible and that its test is absorbed
-   alongside the code.
+   It states the context, the change, and that it is small enough that no
+   separate plan was needed.
+2. **Review.** A fresh reviewer who did not write the proposal appends
+   a `## Review` section to the same file -- here, confirming the change
+   is backward-compatible and that its test is absorbed alongside the
+   code.
 3. **Decide.** The Maintainer appends the `## Decision` section
    (accept), closing the deliberation. The proposal then moves to
    `dev/proposals/archive/`.
@@ -39,9 +42,10 @@ through Cairn's five steps
    proposal; a one-line CHANGELOG entry would record the user-visible
    change. The git history plus the archived proposal *are* the record.
 
-That is the entire loop. On a real project the proposal is larger,
-review is two-tier (Dual-Review), and non-trivial changes open a plan —
-but the shape is identical. For the narrated, step-by-step version see
+That is the entire loop. On a real project the proposal is larger and
+a change that is not this small opens a plan, but the shape is
+identical. Review is the same at every stage: one fresh reviewer who did
+not write the work. For the narrated, step-by-step version see
 [`../../docs/getting-started.md`](../../docs/getting-started.md).
 
 > **The default-on disciplines come with tools.** This hand-copied

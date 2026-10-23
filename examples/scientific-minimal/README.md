@@ -10,25 +10,24 @@ example sits between them: a tiny **scientific** workflow (CSV in,
 invariant tested, residual table out) so a scientist sees the
 lifecycle on a shape they recognize rather than on a CLI toy.
 
-The toy science: **monthly water-budget reconciliation.** Given a
-CSV of monthly precipitation, evapotranspiration, runoff, recharge,
-and observed storage change (all in mm/month for a catchment), the
-workflow computes a residual and pins the **mass-balance invariant**
-as a test:
+The toy science: **monthly water-budget reconciliation.** Water that
+enters a catchment must leave it or stay in it. The input is a CSV with one
+row per month: precipitation, evapotranspiration, runoff, recharge, and the
+observed change in stored water, all in millimetres per month. The workflow
+checks that the rows add up, and a test pins that check:
 
 > `precip - et - runoff - recharge = dS_storage`
 >
-> Equivalently, `residual = precip - et - runoff - recharge - dS_storage ≈ 0`.
+> In other words, `residual = precip - et - runoff - recharge - dS_storage`
+> should be close to zero.
 >
-> The test asserts `max(|residual|) < RESIDUAL_TOL_MM` across all
-> rows.
+> The test asserts `max(|residual|) < RESIDUAL_TOL_MM` across all rows.
 
-This is the smallest shape that carries a *scientific contract*: a
-named conservation law, a tolerance, and a synthetic-balanced input
-the contract holds on. A real hydrologic dataset would have
-process-rooted residuals (lateral subsurface flow, snow storage,
-diversions) and a tolerance derived from the data, but the
-lifecycle shape is identical.
+This is the smallest shape that carries a *scientific contract*: a named
+conservation law, a tolerance, and a made-up input that balances by
+construction. A real dataset has residuals with physical causes (lateral
+subsurface flow, snow storage, diversions) and a tolerance taken from the
+data, but the lifecycle shape is identical.
 
 This example, like [`minimal/`](../minimal/), carries a Cairn kernel
 copied in by hand, with no lockfile (see
@@ -37,16 +36,20 @@ tree with the proposal lifecycle, run by hand.
 
 ## The change, traced through the lifecycle
 
-One small change — *add the mass-balance invariant test and the
-residual writer to `water_budget.py`* — moves through Cairn's five
-steps ([`../../doctrine/lifecycle.md`](../../doctrine/lifecycle.md)):
+Cairn first sorts a change into one of three lanes
+([`../../doctrine/lifecycle.md`](../../doctrine/lifecycle.md)): a typo or
+one-line fix is just a commit with its test and a code review; a change
+with a settled shape gets a short note and a review; a new capability gets
+the full path. The change here -- *add the mass-balance invariant test and
+the residual writer to `water_budget.py`* -- adds a capability, so it took
+the full path, shown in five steps:
 
 1. **Propose.** A proposal is written and committed:
    [`dev/proposals/archive/0001-add-mass-balance-invariant-test.md`](dev/proposals/archive/0001-add-mass-balance-invariant-test.md).
-   It states the context, the change, and that it's small enough to
-   be a *trivial accept* (no separate plan).
-2. **Review.** A reviewer (structurally independent of the author)
-   appends a `## Review` section to the same file — here, confirming
+   It states the context, the change, and that it is small enough that
+   no separate plan was needed.
+2. **Review.** A fresh reviewer who did not write the proposal appends
+   a `## Review` section to the same file -- here, confirming
    that the residual formula matches the canonical mass-balance and
    that the test pins both the closed-dataset case and unbalanced
    sentinels (so the invariant is not vacuous).
@@ -63,13 +66,13 @@ steps ([`../../doctrine/lifecycle.md`](../../doctrine/lifecycle.md)):
    addition. The git history plus the archived proposal *are* the
    record.
 
-That is the entire loop on a scientific shape. On a real project
-the proposal is larger (the invariant has data-derived rather than
-constant tolerance, the dataset is real and may not close to
-within machine epsilon, and the residual gets its own diagnostic
-plot), review is two-tier (Dual-Review with a domain reviewer for
-the conservation-law step), and non-trivial changes open a plan —
-but the shape is identical.
+That is the entire loop on a scientific shape. On a real project the
+proposal is larger (the tolerance comes from the data rather than a
+constant, the dataset is real and may not close to within machine
+epsilon, and the residual gets its own diagnostic plot) and a change
+that is not this small opens a plan. Review is the same at every stage:
+a fresh reviewer, plus a domain expert if you have one, who checks the
+conservation-law step. The shape is identical.
 
 ## Running the example
 
@@ -132,8 +135,10 @@ ones:
   evapotranspiration, runoff, and recharge are positive outflows;
   `dS_storage` is the *observed* storage change (positive when
   storage grew).
-* **Units**: all six budget columns are millimetres per month over
-  the catchment area. The residual is in the same units.
+* **Units**: the five budget columns (`precip_mm`, `et_mm`,
+  `runoff_mm`, `recharge_mm`, `dS_storage_mm`) are millimetres per
+  month over the catchment area; `month` is a date. The residual is
+  in millimetres too.
 * **Tolerance**: `RESIDUAL_TOL_MM = 0.5 mm/month`, tuned to the
   synthetic input's round-off. A real dataset would derive
   tolerance from measurement error and expected sub-monthly process
