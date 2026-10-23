@@ -1,9 +1,14 @@
 # Try Cairn in one short sitting, with one AI agent
 
-This page is a recipe, not a tour.  Follow it on a disposable repo
-to watch one person and one AI agent take a single change through
-Cairn's lifecycle, in your own terminal.  It will not teach you the
-method in one sitting; [`getting-started.md`](getting-started.md) and
+This page is a recipe, not a tour.  You will take one small change
+through Cairn's lifecycle on a throwaway project, working the way most
+people work with an AI agent: **in its chat**, in the agent's own app or
+in your editor.  The agent runs the commands; you make the decisions.
+
+Every step also shows the commands, if you would rather type them
+yourself in a terminal, with macOS / Linux and Windows side by side.
+This page will not teach you the method in one sitting;
+[`getting-started.md`](getting-started.md) and
 [`doctrine/`](../doctrine/) do that.
 
 > **A note on the example.**  The change here is a one-line README
@@ -22,94 +27,67 @@ If you are evaluating Cairn for a real project, start here, then
 return to the [on-ramp](../on-ramp/README.md) once you trust the
 shape.
 
-> **Windows is new.**  The Windows commands were added in October 2026,
-> and Cairn's own tests run on macOS.  The installer and tools are plain
-> Python with no shell dependencies, so they are expected to work, but if
-> a step fails on Windows, please
-> [open an issue](https://github.com/MSUHydrogeology/cairn/issues) with
-> the command and its output.
-
 ## What you need
 
-* A terminal: **Terminal** on macOS or Linux, or **PowerShell** on
-  Windows (the built-in Windows PowerShell or PowerShell 7).  On WSL, use
-  the macOS / Linux commands.  Every step below shows both, side by side.
-* Python 3.13, the version Cairn is tested on.  On Windows, install it
-  from python.org; if `python` is not found afterwards, use `py` in its
-  place.
-* `git`.
-* One AI coding agent, any that can read and write files in a folder.
+* **An AI coding agent** that can read and write files and run commands
+  in a folder: in its own app, in your editor, or in a terminal.
   Cairn works with any such agent; the recipe uses prompts the agent
   reads, not calls Cairn makes.
-* One uninterrupted sitting -- the steps are short, but do not start
+* **Python 3.13** (the version Cairn is tested on) and **git**,
+  installed on your computer.  The agent uses them.  On Windows, install
+  Python from python.org; if `python` is not found afterwards, `py` works
+  in its place.
+* **A way to watch files appear**: your editor's file view, or your
+  agent app's.
+* One uninterrupted sitting.  The steps are short, but do not start
   this one in the gaps between other things.
 
 ## What you will end up with
 
-A **fresh, disposable repo** with:
+A **throwaway folder**, `cairn-try`, holding a copy of Cairn and a small
+practice project with:
 
-* A `dev/` tree containing one proposal, with its review and
-  decision, archived.
-* One commit per lifecycle step (open, review, decision,
-  implement-and-archive), plus the two setup commits (init, install).
-* A `CHANGELOG.md > Unreleased` line for the change.
-* A teardown step you can delete in one command.
+* a `dev/` tree containing one proposal, with its review and decision,
+  archived;
+* one commit per lifecycle step (open, review, decision,
+  implement-and-archive), plus the two setup commits (init, install);
+* a `CHANGELOG.md > Unreleased` line for the change.
 
-You are *not* installing Cairn into a real project here.  This is a
-shakedown.
-
-The install itself is real, though: Steps 2 and 3 are the commands you
+At the end you delete the folder.  You are *not* installing Cairn into a
+real project, though the install is real: Steps 2 and 3 are what you
 would run on a real project, with the smallest profile Cairn ships.
-What makes this a shakedown is the throwaway target, the trust check
-Step 1 lets you skip, and the teardown at the end.  *What to do next*
-gives the real route.
 
-## Step 1 -- clone Cairn and create a disposable target
+## Your three jobs
 
-In the folder where you keep code:
+The agent does the typing.  Three things stay yours, here and in real
+work:
+
+1. **The trust decision.**  The agent will run code from the copy of
+   Cairn it downloads.  For this throwaway you can accept that; for a
+   real project, check the release first (see Step 1).
+2. **Being the Maintainer.**  You decide whether the change goes ahead,
+   in your own words.
+3. **Choosing a fresh reviewer.**  You open a new chat, so the review is
+   written by a session that did not write the proposal.
+
+## Step 1 -- a throwaway folder, Cairn, and a practice project
+
+Make an empty folder named `cairn-try` anywhere you like, and open your
+agent in it (in its app, choose the folder as the project or
+workspace).  Then paste:
 
 <!-- cairn-accept: suspicious-url reason="Literal Cairn clone URL the adopter needs to copy" reviewer="Claude" date=2026-05-28 -->
-<table>
-<tr><th>macOS / Linux (Terminal)</th><th>Windows (PowerShell)</th></tr>
-<tr>
-<td>
+> In this folder, clone https://github.com/MSUHydrogeology/cairn.git
+> into a subfolder named `cairn`.  Then make a second subfolder named
+> `quickstart`, turn it into a git repository, and add two files: a
+> `README.md` containing `# quickstart`, and a `CHANGELOG.md` containing
+> `# Changelog`, a blank line, and `## Unreleased`.  Commit both files
+> in `quickstart` with the message `init`.  Tell me what you did.
 
-```bash
-git clone https://github.com/MSUHydrogeology/cairn.git cairn
-cd cairn
-export CAIRN="$(pwd)"
-```
+<details>
+<summary>Or do it yourself in a terminal</summary>
 
-</td>
-<td>
-
-```powershell
-git clone https://github.com/MSUHydrogeology/cairn.git cairn
-cd cairn
-$CAIRN = (Get-Location).Path
-```
-
-</td>
-</tr>
-</table>
-<!-- cairn-accept-end: suspicious-url -->
-
-`CAIRN` now holds the path to your clone; the rest of the recipe uses
-it.  It lasts only as long as this terminal window, so run the
-remaining steps in the same window.
-
-> **This clone is the trust decision.** Everything below runs code from
-> it.  Before you install Cairn into anything you care about, verify the
-> release tag you checked out against a signing-key fingerprint you
-> compared on two independent channels — the procedure is in
-> `bootstrap/PROVENANCE.md` > "Verifying a release".  For this
-> throwaway shakedown you can skip it; for a real project you should
-> not.
-
-Now create the disposable target repository, outside the clone.  It
-gets a README and a stub `CHANGELOG.md`: Cairn's lifecycle writes to a
-changelog, but the installer does not create one, since a real project
-usually has its own.
+Start in the folder where you want `cairn-try` to live.
 
 <table>
 <tr><th>macOS / Linux (Terminal)</th><th>Windows (PowerShell)</th></tr>
@@ -117,8 +95,12 @@ usually has its own.
 <td>
 
 ```bash
-mkdir -p /tmp/cairn-quickstart
-cd /tmp/cairn-quickstart
+mkdir cairn-try
+cd cairn-try
+git clone https://github.com/MSUHydrogeology/cairn.git cairn
+export CAIRN="$(pwd)/cairn"
+mkdir quickstart
+cd quickstart
 git init -q
 echo "# quickstart" > README.md
 printf "# Changelog\n\n## Unreleased\n" > CHANGELOG.md
@@ -130,9 +112,12 @@ git commit -q -m "init"
 <td>
 
 ```powershell
-$QS = Join-Path $env:TEMP "cairn-quickstart"
-New-Item -ItemType Directory -Force $QS | Out-Null
-Set-Location $QS
+New-Item -ItemType Directory cairn-try | Out-Null
+Set-Location cairn-try
+git clone https://github.com/MSUHydrogeology/cairn.git cairn
+$CAIRN = Join-Path (Get-Location).Path "cairn"
+New-Item -ItemType Directory quickstart | Out-Null
+Set-Location quickstart
 git init -q
 Set-Content README.md "# quickstart"
 Set-Content CHANGELOG.md "# Changelog`n`n## Unreleased"
@@ -144,11 +129,42 @@ git commit -q -m "init"
 </tr>
 </table>
 
-## Step 2 -- copy the `solo-greenfield` profile
+`CAIRN` holds the path to your copy of Cairn for the rest of the
+commands.  It lasts only as long as this terminal window, so run the
+remaining steps in the same window.
 
-The quickstart uses the smallest viable profile: one human + one
-agent, new codebase, default-on modules only.  Copy the shipped
-YAML literally:
+</details>
+<!-- cairn-accept-end: suspicious-url -->
+
+`quickstart` gets a stub `CHANGELOG.md` because Cairn's lifecycle writes
+to a changelog and the installer does not create one: a real project
+usually has its own.
+
+> **This copy is the trust decision.** Everything below runs code from
+> it.  Before you install Cairn into anything you care about, verify the
+> release tag against a signing-key fingerprint you compared on two
+> independent channels; the procedure is in `bootstrap/PROVENANCE.md` >
+> "Verifying a release".  For this throwaway you can skip it; for a real
+> project you should not.
+
+> **Windows is new.**  The Windows commands were added in October 2026,
+> and Cairn's own tests run on macOS.  The installer and tools are plain
+> Python with no shell dependencies, so they are expected to work, but if
+> a step fails on Windows, please
+> [open an issue](https://github.com/MSUHydrogeology/cairn/issues) with
+> what you ran and what it printed.
+
+## Step 2 -- choose the profile
+
+A profile tells the installer how much of Cairn your project needs.
+This recipe uses the smallest one, `solo-greenfield`: one person, one
+agent, a new codebase.  Paste:
+
+> Copy `cairn/bootstrap/profiles/solo-greenfield.yml` into the
+> `quickstart` folder as `profile.yml`, and show me what is in it.
+
+<details>
+<summary>Or do it yourself in a terminal</summary>
 
 <table>
 <tr><th>macOS / Linux (Terminal)</th><th>Windows (PowerShell)</th></tr>
@@ -170,7 +186,9 @@ Copy-Item "$CAIRN\bootstrap\profiles\solo-greenfield.yml" profile.yml
 </tr>
 </table>
 
-The file looks like this -- you can read it before continuing:
+</details>
+
+The settings look like this:
 
 ```yaml
 # Inline token values (mechanical substitution into installed templates).
@@ -182,47 +200,27 @@ test_command: "pytest"
 preset: solo-greenfield
 ```
 
-The full file carries an in-file comment header listing the six-axis
-dimensional profile this preset expresses (age, size, complexity,
-language, human-team, agent-team) and the resulting module roster.
-Other shipped profiles
+The full file starts with a comment listing the six-axis profile this
+preset expresses and the modules it installs.  The other shipped
+profiles
 ([`collaborative-team.yml`](../bootstrap/profiles/collaborative-team.yml),
 [`high-rigor-legacy.yml`](../bootstrap/profiles/high-rigor-legacy.yml))
-follow the same shape with different presets; you can compare them
-to see how axis values drive the roster.
+have the same shape with different presets.
 
-## Step 3 -- preview, then run the scaffold
+## Step 3 -- preview, then install
 
-**Preview first** (recommended -- this exits without writing
-anything, so you can confirm the dimension profile and the module
-roster Cairn would install):
+**Preview first.**  Paste:
 
-<table>
-<tr><th>macOS / Linux (Terminal)</th><th>Windows (PowerShell)</th></tr>
-<tr>
-<td>
+> In the `quickstart` folder, run
+> `python ../cairn/bootstrap/scaffold.py --config profile.yml --target . --summary`
+> and show me the list of modules it would install.  Do not install
+> anything yet.
 
-```bash
-python "$CAIRN/bootstrap/scaffold.py" --config profile.yml --target . --summary
-```
-
-</td>
-<td>
-
-```powershell
-python "$CAIRN\bootstrap\scaffold.py" --config profile.yml --target . --summary
-```
-
-</td>
-</tr>
-</table>
-
-The `--summary` flag is **preview-only**: it prints the resolved
-axes and the module roster, then exits without touching the target.
-For the `solo-greenfield` profile you should see **6** modules listed <!-- verify: solo_greenfield_module_count -->
+The `--summary` flag only previews: nothing is written.  For the
+`solo-greenfield` profile you should see **6** modules listed <!-- verify: solo_greenfield_module_count -->
 (the modules every install gets): `reflections`, `claim-check`,
-`incident-trackers`, `documentation-plan`,
-`content-security`, `security-verification`.
+`incident-trackers`, `documentation-plan`, `content-security`,
+`security-verification`.
 
 > **What the six axes are.** Cairn sizes the apparatus to your
 > project along six axes: **age** (greenfield or legacy), **size**
@@ -233,7 +231,17 @@ For the `solo-greenfield` profile you should see **6** modules listed <!-- verif
 > projects take larger values and get more modules; see
 > [`dimensions/README.md`](../dimensions/README.md).
 
-**Then install** (drop `--summary`):
+**Then install.**  Paste:
+
+> Run the same command without `--summary` to install, and show me the
+> report it prints.  Then commit what it installed (`AGENTS.md`,
+> `VENDOR.md`, `NOTICE.md`, `.gitignore`, `dev/`, `tools/`, `scripts/`,
+> `.agents/` and `docs/`) with the message
+> `Install Cairn kernel + default-on modules`.  Leave `profile.yml`
+> uncommitted.
+
+<details>
+<summary>Or do it yourself in a terminal</summary>
 
 <table>
 <tr><th>macOS / Linux (Terminal)</th><th>Windows (PowerShell)</th></tr>
@@ -241,6 +249,7 @@ For the `solo-greenfield` profile you should see **6** modules listed <!-- verif
 <td>
 
 ```bash
+python "$CAIRN/bootstrap/scaffold.py" --config profile.yml --target . --summary
 python "$CAIRN/bootstrap/scaffold.py" --config profile.yml --target .
 ```
 
@@ -248,6 +257,7 @@ python "$CAIRN/bootstrap/scaffold.py" --config profile.yml --target .
 <td>
 
 ```powershell
+python "$CAIRN\bootstrap\scaffold.py" --config profile.yml --target . --summary
 python "$CAIRN\bootstrap\scaffold.py" --config profile.yml --target .
 ```
 
@@ -255,56 +265,43 @@ python "$CAIRN\bootstrap\scaffold.py" --config profile.yml --target .
 </tr>
 </table>
 
-> **A note on the provenance warning.**  Because Step 1 cloned Cairn's
-> tip (not a tagged release), the scaffold prints a one-line provenance
-> warning suggesting `--allow-dev`.  That is **expected** for a shakedown
-> from the tip and never blocks the install.  (A real adoption scaffolds
-> from a tagged release, where the warning does not appear.)
-
-The scaffold prints **its own install report**, and *that report is the
-authoritative list* of every file it wrote.  Read it rather than
-matching against a list here, which would go stale.  For this recipe
-you only need two things:
-
-* `AGENTS.md` -- the rules your agent reads.  `VENDOR.md` is a template
-  you rename to the file your agent tool loads automatically.
-* the `dev/` tree -- where the record lives: the roadmap boards, the
-  `proposals/` and `plans/` templates, and one doc per installed
-  module.  `dev/.cairn/` holds the lockfile and install state that
-  upgrades use; you never need to read it.
-
-`tools/`, `scripts/` and `.agents/` hold helper tools and the
-`session-start` / `session-end` routines.  They install into your
-target repo, not into Cairn.  Ignore them for now.
-
-The scaffold also reports **22 unfilled block slots** -- placeholders
-your agent fills in a real adoption.  See
-[`bootstrap/BOOTSTRAP.md`](../bootstrap/BOOTSTRAP.md) Act II-4 for the
-filling pass.  This recipe leaves them: the tagline change does not
-need them, and the scaffold's "Next steps **for a real adoption**" note
-is for when you install into a real project.
-
-Commit the install (path-scoped, since the scaffold touched many
-files; `CHANGELOG.md` was already committed in Step 1):
-
-The command is the same in both terminals:
+Then commit the install; the commands are the same in both terminals:
 
 ```text
 git add AGENTS.md VENDOR.md NOTICE.md .gitignore dev/ tools/ scripts/ .agents/ docs/
 git commit -q -m "Install Cairn kernel + default-on modules"
 ```
 
-<!-- vendor-ok-begin: editor-name list -- illustrative options for adopters; not a vendor endorsement -->
-> **Tip -- open the disposable repo in your editor now.** The
-> next two steps ask your agent to read `AGENTS.md` and write a
-> proposal under `dev/proposals/`; you will be following along
-> by reading those files as they land. A side-by-side editor
-> view (VS Code, Cursor, or your editor of choice) makes the
-> lifecycle visible as it happens, instead of reading files in the
-> terminal between steps.
-<!-- vendor-ok-end -->
+</details>
 
-## Step 4 -- the first prompt to your AI agent
+> **A note on the provenance warning.**  Because Step 1 copied Cairn's
+> latest commit rather than a tagged release, the installer prints a
+> one-line provenance warning suggesting `--allow-dev`.  That is
+> **expected** here and never blocks the install.  A real adoption
+> installs from a tagged release, where the warning does not appear.
+
+The installer's report is the **authoritative list** of every file it
+wrote.  Open the `quickstart` folder in your editor's file view now and
+leave it open: from here on you watch the record grow as files appear.
+For this recipe you only need two things:
+
+* `AGENTS.md` -- the rules your agent reads.  `VENDOR.md` is a template
+  you rename to the file your agent tool loads automatically.
+* the `dev/` folder -- where the record lives: the roadmap boards, the
+  `proposals/` and `plans/` templates, and one doc per installed
+  module.  `dev/.cairn/` holds the lockfile and install state that
+  updates use; you never need to read it.
+
+`tools/`, `scripts/` and `.agents/` hold helper tools and the
+`session-start` / `session-end` routines.  Ignore them for now.
+
+The report also lists **22 unfilled block slots** -- placeholders
+your agent fills in a real adoption (see
+[`bootstrap/BOOTSTRAP.md`](../bootstrap/BOOTSTRAP.md) Act II-4).  This
+recipe leaves them: the tagline does not need them, and the report's
+"Next steps **for a real adoption**" are for a real project.
+
+## Step 4 -- the agent writes a proposal
 
 > **Where the agent will write.** A proposal is a Markdown file such
 > as `dev/proposals/2026-XX-XX-<slug>.md`.  Its header has the fields
@@ -312,53 +309,60 @@ git commit -q -m "Install Cairn kernel + default-on modules"
 > and it starts at `Status: awaiting-review`.  Below the header come
 > sections such as Context, Proposal, Alternatives considered and
 > Evidence / verification plan.  A review and a decision are
-> appended later, in order.  The whole file is the audit trail.  See
+> appended later, in order.  The whole file is the record.  See
 > [`dev/proposals/_template.md`](../templates/core/dev/proposals/_template.md)
 > for the full shape.  For a one-line tagline most sections need only a
 > sentence.
 
-Paste this into your agent (verbatim is fine -- the prompt is
-intentionally short; Cairn's `AGENTS.md` carries the doctrine):
+Paste this (the prompt is short on purpose; `AGENTS.md` carries the
+rules):
 
-> Read `AGENTS.md` in this repo to learn how proposals work.  Then
-> propose a one-line addition to `README.md`: a brief project tagline.
-> Open the proposal as
+> Work in the `quickstart` folder.  Read `AGENTS.md` to learn how
+> proposals work.  Then propose a one-line addition to `README.md`: a
+> brief project tagline.  Open the proposal as
 > `dev/proposals/2026-XX-XX-<your-name>-readme-tagline.md`, copying
 > the shape of `dev/proposals/_template.md`, with Status
-> `awaiting-review`.  Do not implement anything yet.
+> `awaiting-review`.  Do not implement anything yet.  Commit only the
+> proposal, with the message `Open proposal: README tagline`.
 
-Watch the agent: it should read `AGENTS.md`, write the proposal file,
-and stop.  In the heavy lane the proposal comes before the code.
+Watch the file appear in `dev/proposals/`.  The agent should read
+`AGENTS.md`, write the proposal, commit it and stop.  In the heavy lane
+the proposal comes before the code.
 
-Commit the proposal (the same in both terminals):
+<details>
+<summary>Or commit it yourself in a terminal</summary>
+
+The commands are the same in both terminals:
 
 ```text
 git add dev/proposals/
 git commit -q -m "Open proposal: README tagline"
 ```
 
-Most of this step is the agent reading.
+</details>
 
 ## Step 5 -- review, decide, implement, archive
 
-**Review.** Start a **new session** of your agent, so the reviewer is
-not the one that wrote the proposal, and paste:
+**Review, in a new chat.**  Start a **new chat** with your agent, in the
+same `cairn-try` folder, so the reviewer is not the session that wrote
+the proposal.  Paste:
 
-> You did not write the proposal in `dev/proposals/`.  Read it and
-> `AGENTS.md`, then append a `## Review` section in the shape the
-> template gives.  Question whether the change should happen as
-> framed, name the best alternative (doing nothing counts), and say
-> what would show it wrong.  Commit only the proposal file.
+> Work in the `quickstart` folder.  You did not write the proposal in
+> `dev/proposals/`.  Read it and `AGENTS.md`, then append a `## Review`
+> section in the shape the template gives.  Question whether the change
+> should happen as framed, name the best alternative (doing nothing
+> counts), and say what would show it wrong.  Commit only the proposal
+> file.
 
-The reviewer writes its own review and commits it; that is one
-commit.  If it finds nothing blocking, it moves the header to
-`Status: awaiting-decision`.  If it finds something blocking, the
-status becomes `revising` and the first agent answers in an appended
-section before the Maintainer sees it.
+The reviewer writes and commits its own review.  If it finds nothing
+blocking, it moves the header to `Status: awaiting-decision`.  If it
+finds something blocking, the status becomes `revising` and the first
+chat answers in an appended section before you decide.
 
-**Decide.** You are the Maintainer.  Append a `## Decision` section to
-the proposal yourself, quoting your own words, set apart, and change
-the header to `Status: accepted`:
+**Decide, in your editor.**  You are the Maintainer.  Open the proposal
+in your editor, add a `## Decision` section at the end in your own
+words, set apart as a quote, and change the header to
+`Status: accepted`.  Save the file.
 
 ```markdown
 ## Decision -- <your-name> -- 2026-XX-XX
@@ -368,28 +372,48 @@ the header to `Status: accepted`:
 > "Accepted.  Add the tagline and archive the proposal in one commit."
 ```
 
-Commit the decision (the same in both terminals):
+Then go back to the **first** chat, the one that wrote the proposal, and
+paste:
+
+> I have accepted the proposal; my decision is in the file.  Commit my
+> decision on its own, with the message `Decision: accept README tagline`.
+> Then implement the tagline, move the proposal to
+> `dev/proposals/archive/`, add a one-line entry to
+> `CHANGELOG.md > Unreleased`, and commit those three together as one
+> implementing-and-archiving commit.
+
+A small accepted proposal can be implemented and archived in one commit
+with no plan.  You should see the agent:
+
+* commit your decision;
+* edit `README.md` to add the tagline;
+* move the proposal into `dev/proposals/archive/`;
+* add the CHANGELOG line;
+* commit those three together, naming each file.
+
+<details>
+<summary>Or commit your decision yourself in a terminal</summary>
+
+The command is the same in both terminals:
 
 ```text
 git commit -q -m "Decision: accept README tagline" dev/proposals/
 ```
 
-Then ask the agent that wrote the proposal:
-
-> The proposal is accepted.  Implement the tagline, move the proposal
-> to `dev/proposals/archive/`, and add a one-line entry to
-> `CHANGELOG.md > Unreleased`.  Commit the whole thing as one
-> implementing-and-archiving commit.
-
-A small accepted proposal can be implemented and archived in one
-commit with no plan.  You should see the agent:
-
-* Edit `README.md` to add the tagline.
-* `git mv` the proposal into `dev/proposals/archive/`.
-* Add the CHANGELOG line.
-* Commit all three with a single explicit-path commit.
+</details>
 
 ## Step 6 -- look at what you have
+
+Paste:
+
+> Show me `git log --oneline`, the contents of `dev/proposals/archive/`,
+> and `CHANGELOG.md`.
+
+Or look for yourself: your editor's source-control or history view shows
+the commits, and the file view shows the archive folder.
+
+<details>
+<summary>Or look in a terminal</summary>
 
 <table>
 <tr><th>macOS / Linux (Terminal)</th><th>Windows (PowerShell)</th></tr>
@@ -415,17 +439,27 @@ Get-Content CHANGELOG.md
 </tr>
 </table>
 
+</details>
+
 You should see:
 
-* Six commits with clear lifecycle boundaries (init, install,
-  proposal-open, review, decision, implement-and-archive).
-* The proposal in `archive/`, frozen, with its review and decision.
-* A CHANGELOG line that records what changed.
+* six commits with clear lifecycle boundaries (init, install,
+  proposal-open, review, decision, implement-and-archive);
+* the proposal in `archive/`, frozen, with its review and decision;
+* a CHANGELOG line that records what changed.
 
 That is the lifecycle.  A larger change adds a plan, with its own
 review, but the mechanics are the same.
 
-## Step 7 -- teardown
+## Step 7 -- clean up
+
+Close the agent's chats, then delete the `cairn-try` folder in your file
+manager.  Nothing outside it was touched.
+
+<details>
+<summary>Or delete it in a terminal</summary>
+
+Run this from the folder that holds `cairn-try`.
 
 <table>
 <tr><th>macOS / Linux (Terminal)</th><th>Windows (PowerShell)</th></tr>
@@ -433,37 +467,34 @@ review, but the mechanics are the same.
 <td>
 
 ```bash
-cd ..
-rm -rf /tmp/cairn-quickstart
+rm -rf cairn-try
 ```
 
 </td>
 <td>
 
 ```powershell
-Set-Location ..
-Remove-Item -Recurse -Force $QS
+Remove-Item -Recurse -Force cairn-try
 ```
 
 </td>
 </tr>
 </table>
 
-The disposable repo is gone.  Cairn (in your `cairn/` clone) is
-untouched.
+</details>
 
 ## What you saw
 
-* **Proposal before code.**  The first commit was a proposal, not a
-  feature.
+* **Proposal before code.**  The first commit after setup was a
+  proposal, not a feature.
 * **Each transition is its own commit.**  Open, review, decision and
   implement-and-archive each landed separately.
-* **A fresh reviewer.**  A new session that did not write the proposal
-  questioned it in writing before the Maintainer decided.
-* **The proposal is the audit trail.**  After archiving, you can read
-  the file and reconstruct *why* the change happened, not just *what*.
-* **The Maintainer decides.**  The agent proposed and implemented; you
-  decided, in your own quoted words.
+* **A fresh reviewer.**  A new chat that did not write the proposal
+  questioned it in writing before you decided.
+* **The proposal is the record.**  After archiving, you can read the
+  file and reconstruct *why* the change happened, not just *what*.
+* **You decided.**  The agent proposed and implemented; you decided, in
+  your own quoted words.
 
 ## What you did *not* see
 
@@ -472,7 +503,7 @@ untouched.
   short change note, reviewed, then the change and its test.  When
   unsure, take the heavier lane.  See
   [`doctrine/lifecycle.md`](../doctrine/lifecycle.md).
-* **Extra distance in review.**  A fresh session of the same agent is
+* **Extra distance in review.**  A fresh chat with the same agent is
   enough.  When you want more distance, you can ask for another model
   or a person to review a particular piece of work (see
   [`doctrine/dual-review.md`](../doctrine/dual-review.md)).
