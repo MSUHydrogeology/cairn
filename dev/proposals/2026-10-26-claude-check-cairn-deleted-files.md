@@ -1,7 +1,7 @@
 # check_cairn crashes when a tracked Markdown file is deleted but not yet committed
 
 **Author**: Claude (Implementation)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual
 **Plan review**: not required(one commit: a one-line filter in `scripts/check_cairn.py`, one new test, and the Maintainer-run gate-manifest re-anchor that a frozen-file edit owes)
 **Opened**: 2026-10-26
@@ -95,3 +95,97 @@ No baseline outcome removed.
 **Assurance path**: high-assurance
 
 Declared high-assurance because the change owes a gate-manifest re-anchor, and the gate manifest is part of the install contract (`AGENTS.md` > "High-risk surfaces"). The code itself touches no trust boundary; if the Maintainer reads the re-anchor as routine ceremony rather than a contract change, `standard` would fit.
+
+## Review -- Claude (Reviewer, Sonnet) -- 2026-10-26
+
+```
+Reviewed commit: 4c5bc159
+Target: the whole proposal, weighted to the stated cause, the claim that one filter covers every site, the gate-manifest cost, and what the proposal leaves out
+Prior findings: none
+Assurance path: high-assurance (as declared)
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The cause is the one stated, and the two-line filter in `tracked_markdown()` is the right size. I reproduced the crash and the fix in a detached worktree of `4c5bc159`: before the fix, `python scripts/check_cairn.py` ends in `FileNotFoundError` at `scripts/check_cairn.py:491`; after it, the run completes (M2, M3 below).
+2. **Best alternative.** Doing nothing is allowed but weak: the workaround is to commit or restore the deletion first, and an in-flight deletion is the normal state when two agents share a tree. The strongest real alternative is to fix the shared helper once instead of one of its copies (RV1). The author's `try/except` alternative is correctly rejected.
+3. **What would show it wrong.** A tracked path whose absence from the scan hides a finding. I tried that case and the finding survives (M5). What the proposal does not yet show is that the same defect sits in two sibling scripts (RV1, M4).
+
+### Verdict in brief
+
+**Revise, then decide.** The proposal should exist and its code change is correct. Three things need an answer before you decide:
+
+* **The same defect lives in two other scripts, and one of them ships to adopters (RV1).** The proposal says it did not audit them. I did: both crash the same way.
+* **The re-anchor it says this change owes is already owed (RV2).** That changes what the change costs you, and the order it should land in.
+* **The test does not pin the property the proposal says matters most (RV3).** A fix that hid real findings would pass it.
+
+### Steelman
+
+The proposal keeps a gate script from turning an ordinary state, a deletion in progress, into a traceback. It finds the one place the missing paths enter. It refuses the broader `try/except`. It says out loud that the fix must let the real finding through, and it ran the check with the deletions filtered to show that it does. It declares its own cost (a frozen-file edit) and why that makes it a proposal. The strongest form: one filter at the source, no new name, one new test file.
+
+### What I measured
+
+Detached worktrees of `4c5bc159` in my scratch directory, Python 3.13 (`/Users/kendal30/conda_envs/lhm/bin/python3.13`), both removed afterwards. The main tree was not written. `CAIRN_FULL_SUITE` was not set.
+
+| # | Measurement | Result |
+|---|---|---|
+| M1 | Claims against the tree | `scripts/check_cairn.py:177` is `tracked_markdown`, `:547` is the `filter_sources` call, `:491` is the first read, `:336` and `:454` are later reads (`check_tree` reaches `_check_incident_tracker_schema` and the internal-ref check only after `:491`), `:50` is the "Scanned set" line. `tracked_markdown` has one caller in `check_cairn` (`:548`). `git ls-files -d` printed both deleted paths. All as the proposal says |
+| M2 | Crash, then fix, in the worktree with the two `dev/strategy/` files removed | Before: `FileNotFoundError` on the first deleted path. After the two-line change: exit 1, 183 files, two findings. The proposal's "182 files, one finding" was taken at `a8970806`; its own file is the 183rd, and the second finding is explained in M6 |
+| M3 | The proposal's new test, written as described (temporary git repo, commit a file, delete it, run `main(["--root", ...])`) | Fails before the fix with `FileNotFoundError`, passes after. With the fix: the three `check_cairn` test files plus my 3 probe tests, 19 passed in 0.29 s. On the unfixed file the owning tests also pass (50 passed, adding `test_notice_install.py`, `test_gate_manifest.py` and the `test_security_check.py` node) |
+| M4 | The other default scans, same deletion, same worktree | `scripts/link_check.py` and `scripts/sync_doc_snippets.py` both end in `FileNotFoundError`: each has its own copy of the same `tracked_markdown` (`scripts/link_check.py:491`, `scripts/sync_doc_snippets.py:249`). `scripts/claim_check.py` takes one file, so is not affected. `diff -q` reports both scripts byte-identical to `templates/modules/team-gated/link_check.py` and `.../sync_doc_snippets.py` |
+| M5 | Does the filter hide a real finding? A temporary repo with `keep.md` linking to `gone.md`; `gone.md` committed, then deleted | Exit 1 and `keep.md:1: [link] broken link target: gone.md`. The finding survives |
+| M6 | Clean checkout of `4c5bc159`, nothing deleted | `check_cairn` reports 1 issue across 185 files: `dev/reviews/2026-10-18-security-review-session-writes.md:131` cites a build-cache directory that is gitignored and exists only in a tree where Python has run. So the `check-cairn` gate is already red on a fresh checkout, with or without this change |
+| M7 | `python bootstrap/tests/_gate_manifest.py verify` on the main tree (read-only) | Already reports a HOLD: `FROZEN-MODIFIED` and `FROZEN-OID` for `bootstrap/tests/test_quickstart_sequence.py`. In the worktree with the fix and a new test file, it adds `FROZEN-MODIFIED: scripts/check_cairn.py` and records the new test nodes as `COLLECTION-ADDED` (allowed) |
+
+### Findings
+
+**RV1 -- Medium -- blocking for the Decision: the Response states what happens to the two sibling copies.**
+**The same defect is in `link_check.py` and `sync_doc_snippets.py`, and `link_check.py` is shipped to adopters.**
+
+*Plain.* `tracked_markdown()` exists in three scripts as a copy. The proposal fixes one and says "I did not audit" the others. I ran them (M4): two crash on an uncommitted deletion exactly as `check_cairn` does. `link_check.py` is a shipped module with a byte-identical twin, so an adopter hits this in their own tree during any rename.
+
+*Evidence.* M4. `AGENTS.md` says to generalize rather than copy, and `check_cairn` already imports `link_check` (it calls `link_check.filter_sources` at `scripts/check_cairn.py:547`).
+
+*Recommendation.* Two ways to close it; the author decides.
+* **Widen now.** Fix `tracked_markdown` in `link_check.py` and `sync_doc_snippets.py` (each with its template twin), and have `check_cairn` call `link_check.tracked_markdown` so there is one copy of that function to fix. All of these are frozen, so they ride the same re-anchor (RV2) at no extra ceremony. The cost is a shipped-template change and a second review round, because widening is new scope. I think this reaches the cause; the narrow change leaves two known crashes.
+* **Keep it narrow and name the rest.** State in the Response that the siblings are unfixed and why, and queue a row for them. The easy-defect permission in `AGENTS.md` does not cover them: it reaches only files the work already edits.
+
+Either way, "Not needed" in Alternatives and "the plan should state whether they share the defect" cannot stand: they do share it, and the Plan review line says no plan is written.
+
+**RV2 -- Medium -- non-blocking: the proposal's cost statement is out of date. The re-anchor is already owed.**
+**This edit adds one file to a ceremony the Maintainer already has queued.**
+
+*Plain.* The proposal says the committed manifest "is out of date until the Maintainer-run re-anchor". It is already out of date for another file (M7), and `dev/PLANNING.md:100` queues the re-anchor, "one frozen test changed". So this change costs nothing extra if it lands before that ceremony. If the re-anchor runs first, it costs a second ceremony.
+
+*Satisfier.* The Response names the ordering ("land before the queued re-anchor") and says who updates the `dev/PLANNING.md` row, whose "one frozen test changed" and "no engine symbol changed" wording would no longer be true. That edit belongs at a serialization point, not in this commit.
+
+**RV3 -- Low -- non-blocking: the test should pin "the real finding survives".**
+**The proposal's own bar is not in its test.**
+
+*Plain.* Context says "a fix must let that finding through, not hide it". The test it proposes asserts only that the scan completes and skips the deleted file. A different fix that swallowed every flag would pass it. The "live check" meant to cover this cites `dev/PLANNING.md:42`, which stops being true when the other agent's deletion is committed or that line is edited, and which a later reader cannot reproduce.
+
+*Satisfier.* Add one assertion to the new test, as in M5: a surviving file links to the deleted one, and the run exits 1 with that link flagged. It passed under the fix. Drop the live check as an acceptance criterion, or label it a one-off observation.
+
+**RV4 -- Low -- non-blocking: three statements to correct or add.**
+
+* **`test_security_check.py` does not run `check_cairn`.** The node named in Tests required (`bootstrap/tests/test_security_check.py:500`) patches `subprocess.run` and never runs or imports it, so "all import or run" is wrong for that node. The real consumer is `security_check.run_check_cairn` (`bootstrap/security_check.py:959`), which runs `check_cairn` on the live tree in the release security check; `docs/release-process.md:84` names it too. This strengthens the motivation (the release check would also stop on a deletion in progress). Cite it, instead of the gate manifest alone.
+* **A tracked Markdown symlink whose target is gone** also crashes today (I tried it) and would be silently skipped after the fix, because `is_file()` is false for it. That may be right, but the Signals section lists only the unreadable-file case. Say which way it should go.
+* **The skip is silent.** After the fix a scan of "182 files" says nothing about the files left out. A one-line note on stderr ("skipped N tracked file(s) deleted from disk") would keep the count honest. Optional; if taken, the test asserts it.
+
+**RV5 -- Low -- non-blocking: the declared assurance path and the Boundary B wording.**
+Nothing in this change edits the gate manifest or its schema; only a pinned hash changes, through the same ceremony every frozen edit owes. `standard` fits at least as well as `high-assurance`; if you keep `high-assurance`, say what it adds here. On Boundary B, `AGENTS.md` makes `full` the rule when a contract surface is touched, and the full run is the next certifying run, so "the Maintainer's call on full versus bounded" is not a call. The record is scoped with `Certified by: pending`.
+
+**Observation, no satisfier here.** M6: the `check-cairn` gate is red on a clean checkout because of one review citing a build-cache directory. It is separate from this proposal. The proposal is right that a deletion turns the gate into a traceback; it is not the only reason the gate is not green on a fresh clone. Worth a row, not a change here.
+
+### What I tried to break
+
+* **Fix hides a finding.** M5: it does not.
+* **Fix swallows a real failure.** An explicitly named missing path (`check_cairn.py gone.md`) still raises `FileNotFoundError` with the fix applied, as the proposal says.
+* **Other read sites.** Listed from the tree (`read_text` in `scripts/check_cairn.py`: `:336`, `:454`, `:491`); the loop order puts `:491` first.
+* **Unreadable file.** Not run. `is_file()` follows `stat`, which succeeds on an unreadable file, so it should still raise. Unverified.
+
+Coverage -- **Covered**: lens 1 (claims: M1, M2, M7), lens 2 (production path: M3 calls `main()`, not a helper), lens 3 (edge cases: deleted file, dangling symlink, explicit path, citing doc, M5), lens 4 (silent skip: RV4), lens 5 (sibling copies and consumers: M4, RV1, RV4), lens 6 (drift: file and finding counts, M2/M6; the PLANNING row, RV2), lens 7 (re-anchor placement: RV2), lens 9 (each finding names a satisfier). Lens 8 does not apply. **Not covered / low confidence**: I did not run the full suite or a certifying run (not mine to run); I did not run `bootstrap/reanchor.sh` or look past the runbook's opening and `_gate_manifest.py verify`; I did not test an unreadable file or a Windows path; I did not check whether widening to the shipped templates (RV1) disturbs the adopter upgrade path or any pin outside `_gate_manifest.py`.
