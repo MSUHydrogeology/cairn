@@ -1,7 +1,7 @@
 # Engine batch: a post-install report that matches the profile, and an upgrade that names the slots it adds
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review) — the plan edits `bootstrap/_scaffold/`, a named high-risk surface
 **Opened**: 2026-10-26
@@ -508,3 +508,24 @@ Not in the baseline and not built: naming at `--apply` (Q3), and the `customized
 * **The "What is lost" list without the rename, no-base-copy and `needs-value` cases.** Replaced by the longer list. Why: F3, F5, F6.
 * **The Do-nothing cost "low and continuing".** Replaced by the numbers I have and a statement that adopter time lost is unmeasured. Why: F8.
 * **The `cairn:if` rival's point (3) "every adopter's next upgrade merges the change".** Replaced by the measured `slot-removed` on every existing solo adopter. Why: F4.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-26
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and
+visually isolated**. He was asked: "Engine batch proposal (the install-report fix
+and naming slots added by an upgrade): do you accept it as revised? The open
+point is Question 2, how far the install report goes toward 'asks only for live
+work'." He answered:
+
+> "Accept, leave 2 slots counted (Recommended)"
+
+*Scribe's note, separate from the quoted words.* "As revised" means the opening
+contract as amended by the Response and Revision of 2026-10-26. The answer
+chose option (a) for Question 2: the two slots the install fills itself stay in
+the count, and a board row records the second form of option (c). Questions 1,
+3 and 4 were not answered separately, so each takes its stated default, as the
+proposal says an unanswered question does: the two slots for modules the profile
+did not install are listed separately; added slots are named at plan and stage,
+not at `--apply`; and the supplier table stays local to `print_report`.
+Plan review stays as the header declares it: `required(Internal + Internal
+Security Review)`.
