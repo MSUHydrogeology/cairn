@@ -38,6 +38,20 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Fixed — `upgrade` no longer writes, reads or prints through project data it cannot trust
+
+- `upgrade --apply` could create a file outside the project when
+  `dev/.cairn/profile.yml` was a link to a file that did not exist yet, with some
+  lines chosen by the lockfile. A cloned repository could carry that link. A link
+  there is now refused with exit 2, wherever it points, and the profile is written
+  only from plain text. The same refusal now covers a lockfile that is itself a
+  link, a saved commit name that git would read as an option, module and
+  review-area names with control characters, a linked vendor wrapper, and a record
+  that names a file inside `.git/`. The "leads outside" message now says to replace
+  the link. One finding stays a documented residual (the forked-facade advisory
+  still looks for a folder at a lockfile-chosen path before the check runs).
+  ([review](dev/reviews/2026-10-19-security-review-upgrade-lockfile-paths.md), findings LP-SR-1 to 8)
+
 ### Fixed — Session kernel: the interpreter-binding gate and its messages
 
 - `session-start` no longer runs a program inside the project that git tracks, and it

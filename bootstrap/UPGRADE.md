@@ -245,6 +245,18 @@ you what changed.
   stops before creating a single folder, at either end of the link, with a
   `ScaffoldSecurityError` traceback and exit 1. That refusal prints no
   remedy line: replace the link with a real folder, then re-run.
+* **A linked `dev/.cairn/profile.yml` or lockfile is refused, wherever it
+  points.** `upgrade --apply` writes `dev/.cairn/profile.yml` when it is absent,
+  and every action reads `dev/.cairn/cairn-lock.yml`. If either one is a link,
+  or `dev/.cairn` is, `upgrade` stops with exit 2 and a one-line refusal before
+  it reads or writes through it. This includes a profile that is a link to a
+  file inside the project, which earlier versions wrote through: the rule is
+  stricter on purpose and the same for every link. Replace the link with a
+  regular file, then re-run. A profile that is absent or a regular file is not
+  affected. The same exit-2 refusal covers a lockfile whose `modules` list holds
+  anything but plain names, a staged upgrade that names a file or a version that
+  is not plain text, and a lockfile record whose `dst` or `base_cache` is inside
+  `.git/`.
 * **The session helper refuses links and unsafe table rows.** `tools/session.py`
   (`session-start`, `session-end`) never writes through a link or outside the
   project. If `dev/`, `dev/reflections` or `dev/.cairn` is a link, `session-end`
