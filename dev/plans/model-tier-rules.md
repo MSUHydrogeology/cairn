@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy, plan author)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-model-tier-rules.md](../proposals/archive/2026-10-26-claude-model-tier-rules.md)
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal)
 **Opened**: 2026-10-26
 **In brief**: Every Cairn project gets a short rule to use the cheapest model that is safe and to name it when starting a helper agent; a stronger model from the same maker may now check cheaper work; and proposals are written at the medium tier by default.
@@ -62,8 +62,8 @@ joins the next anchor. **The re-anchor is MAINTAINER-ONLY**, already in the 0.5 
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
 | C1 | `roles.md`, module twins, mapping, and the frozen patterns that pin them | none | R1, R4, both Answers in the doctrine |
-| C2 | Both `AGENTS.md` copies and the new test file | starts only after the other session's `AGENTS.md` claim releases | R2 and its tests |
-| C3 | `CLAUDE.md` bullet; PLANNING row | none | R3, R5 |
+| C2 | Both `AGENTS.md` copies and the new test file | at C2's start, `python tools/intent.py list`; proceed only if no other session holds `AGENTS.md` | R2 and its tests |
+| C3 | `CLAUDE.md` bullet; PLANNING edits, made at the archive commit (a shared board file) | none | R3, R5 |
 | C4 | Boundary B record | after C1 to C3 | Implementation verification section |
 | -- | Gate-manifest re-anchor | **MAINTAINER-ONLY**, at the 0.5 cut | not an agent chunk |
 
@@ -78,14 +78,20 @@ C1's pins land with the text they pin, in one commit. The `CHANGELOG.md` line co
    places. Sentences wrap, so a person also reads each of the six places. Remaining
    "different model architecture" hits are only "distance on request".
 2. The new sentence (same-maker stronger model counts; same tier does not) is in `roles.md`
-   and both module copies, and the three frozen patterns match it:
-   `pytest bootstrap/tests/test_review_stance_in_shipped_files.py` passes.
+   and both module copies. `pytest bootstrap/tests/test_review_stance_in_shipped_files.py` passes;
+   that shows only that text and pattern agree (the same person wrote both), so a person
+   reads that each place says what the Decision says.
 3. The frozen edit is narrow: `pytest --collect-only -q` on that file lists the same node ids
    before and after (a dropped node is a `COLLECTION-DROPPED` the re-anchor must accept, so no
    label is renamed); a label now naming the old subject gets one comment, as in `cdffeb8a`.
-4. `roles.md` and both module copies say proposal authoring is medium, and Strategy /
-   Research, proposal review, Security Review and scribing stay high; the pinned rows
-   (`| Plan review | medium |` and the rest) are unchanged. `cmp
+4. Proposal authoring is medium, in three named places: a new row `| Proposal authoring | medium |`
+   after the Strategy / Research row in both module copies, and "proposal authoring" in the
+   Standard-stakes bullet of `roles.md` (it leaves the High-stakes bullet, `roles.md:167-172`; the
+   roster line at `:42-43` describes a frame, not a tier, and stays). The premise-check rule is
+   one sentence in all three: a premise-check inside a proposal is its own task, spawned at
+   high, its result handed to the medium draft. Strategy / Research (research, premise-checking,
+   novel design), Proposal review, Security Review and scribing stay high; the `| Proposal review |
+   high |` and `| Plan review | medium |` rows stay byte-equal (pinned). `cmp
    templates/modules/team-gated/model-selection.md dev/modules/model-selection.md` is silent;
    `python scripts/check_model_selection.py` exits 0. In
    `dev/.cairn/model-selection-mapping.yml`, "proposal authoring" moves from the high row to
@@ -101,7 +107,7 @@ C1's pins land with the text they pin, in one commit. The `CHANGELOG.md` line co
 
 **C2.**
 
-1. `python tools/intent.py list` shows no claim on either `AGENTS.md`; if one is held, wait.
+1. At the start of C2, `python tools/intent.py list` shows no claim on either `AGENTS.md`; if one is held, wait.
 2. The R2 block sits under `## Roles`, identical in both copies, with the Revision's clauses
    and one change: proposal authoring medium, and Security Review, proposal review,
    premise-checking and other bright-line work high. `python scripts/quality_gate.py --sub neutrality --sub redundancy`
@@ -109,8 +115,11 @@ C1's pins land with the text they pin, in one commit. The `CHANGELOG.md` line co
 3. The new test file has: `test_both_agents_copies_carry_the_model_tier_rule`,
    `test_the_rule_sits_under_roles`, `test_deleting_the_name_the_model_sentence_is_reported`
    (mutant red beside a green control), `test_a_profile_with_no_module_still_installs_the_rule`
-   (a real `solo-greenfield` install), `test_a_stronger_model_from_the_same_maker_counts_as_the_check`
-   (new text present, old absent, in `roles.md` and both module copies) and
+   (a real `solo-greenfield` install), `test_the_different_maker_condition_is_gone_and_same_tier_is_excluded`
+   (the frozen patterns already pin the new sentence, so this pins only what they do not: the
+   fan-out paragraph at `roles.md:221` carries it, the old text is absent from all six places,
+   and the same-tier exclusion is stated; a mutant putting one old clause back in one place goes
+   red beside a green control) and
    `test_proposal_authoring_is_medium_and_proposal_review_stays_high`.
 4. `python scripts/token_budget.py` shows `AGENTS.md` at 8,520 tokens or fewer (8,290 today
    plus the Revision's measured 207, with margin); over that, shorten R2.
@@ -123,15 +132,21 @@ C1's pins land with the text they pin, in one commit. The `CHANGELOG.md` line co
 1. The `CLAUDE.md` addendum gains one bullet: pass the model on every new agent call; a
    resumed agent keeps its old model, so start a fresh lower-tier agent for new work. It is
    finalized by path as above.
-2. The `dev/PLANNING.md` deferred table has a row beside "Watch the new review header" with
+2. At the archive commit, the `dev/PLANNING.md` deferred table has a row beside "Watch the new review header" with
    the Revision's R5 fields, reworded for Answer 2: after ten proposal reviews, compare
-   proposals written at medium with those written at high. The Queued re-anchor row's "new
-   unfrozen test files" sentence names `test_model_tier_rule_ships.py`.
+   proposals written at medium with those written at high; if fewer than three of the ten were
+   written at high, report counts only and say the comparison is not available. The Queued re-anchor row's "new
+   unfrozen test files" sentence names `test_model_tier_rule_ships.py`. The same commit replaces the stale clause at `dev/PLANNING.md:71`,
+   "decide in the proposal whether to relax the condition that lets a cheaper author work under a
+   check, which today requires a different maker's model and so is closed to a single-vendor
+   adopter", with "the condition that lets a cheaper author work under a check was relaxed
+   2026-10-26: a stronger model from the same maker now counts".
 3. `python scripts/check_cairn.py` and `python tools/board.py` run clean; the board lists this plan.
 
 **C4.** The Verification record has every field `AGENTS.md` names for Boundary B.
 
-**Not turned into a command.** Nothing sees a spawn call, so "name the model at every spawn" is checked
+**Not turned into a command.** C1.2 (does each sentence say the Decision's rule), the C1.4 row and
+sentence placement, and C1.5's "names the lanes" and "about 6 lines" are read by a person. Nothing sees a spawn call, so "name the model at every spawn" is checked
 only by the sentence's presence and a reader of author and review names; the reviewer's below-floor flag
 is a behavior, not text; R3's claim that a resumed agent keeps its model is harness behavior, not in the
 tree; R5 needs ten reviews and the goodnight owner.
@@ -146,12 +161,10 @@ architecture, irreversible, large edits) is untouched. S5: bright-line work neve
 data-governance gate applies first, and a same-maker checker sends nothing to a second maker, so
 exposure falls.
 
-**Does it need its own Security Review? My recommendation: no.** None of the `AGENTS.md` high-risk
+**Does it need its own Security Review? No (Maintainer confirmed 2026-10-26; the header stays `required(Internal)`).** None of the `AGENTS.md` high-risk
 surfaces is edited in the sense that rule means: no engine code; R2 names no vendor; the lockfile
 schema, fidelity manifest and `--manifest` do not change (only a content hash advances); and the
-proposal's own test, "a trust boundary added, moved, or widened", fails here. The Maintainer has not
-decided this. **Question, default no:** should plan review also run a Security Review of this change? If
-yes, the header becomes `required(Internal + Internal Security Review)` before plan review starts.
+proposal's own test, "a trust boundary added, moved, or widened", fails here.
 
 ## Verification
 
@@ -161,19 +174,19 @@ yes, the header becomes `required(Internal + Internal Security Review)` before p
 | Touched | Tests and gates |
 |---|---|
 | `roles.md`, module twins, mapping | `test_review_stance_in_shipped_files.py`, `test_model_selection_stub.py`, `test_check_cairn_content.py`; `check_model_selection.py`; `cmp` on the twins |
-| both `AGENTS.md` | the new file, and the tests that read it: `test_writing_rules_ship.py`, `test_certifying_run_rule.py`, `test_comprehension_floor.py`, `test_review_and_verification_rules_ship.py`, `test_verification_boundaries.py`, `test_review_sweep_ships.py`, `test_scope_reduction_trap.py`, `test_stewardship_rules_ship.py`, `test_loop_fidelity_gate.py`, `test_agreement_retired.py`, `test_security_verification.py`, `test_module_merge_lockfile.py` |
+| both `AGENTS.md` | the new file, `test_upgrade.py::TestTemplateGatingSafety` (`## Roles` is never in a gated region and survives a solo install), and the tests that read it: `test_writing_rules_ship.py`, `test_certifying_run_rule.py`, `test_comprehension_floor.py`, `test_review_and_verification_rules_ship.py`, `test_verification_boundaries.py`, `test_review_sweep_ships.py`, `test_scope_reduction_trap.py`, `test_stewardship_rules_ship.py`, `test_loop_fidelity_gate.py`, `test_agreement_retired.py`, `test_security_verification.py`, `test_module_merge_lockfile.py` |
 | `CLAUDE.md`, PLANNING; every edited Markdown | `test_claim_check_module.py`, `test_board_json_contract.py`, `test_verify_integrity.py`; `claim_check.py <file>`, `check_cairn.py`, `link_check.py`, neutrality and redundancy legs |
 
 **Boundary B mode: `full`.** The change edits a frozen gate test and installed templates whose bytes
-feed the lockfile hash and about 35 tests that read `AGENTS.md`; I cannot bound those effects
+feed the lockfile hash, and 45 test files mention `AGENTS.md` (`git grep -l AGENTS.md bootstrap/tests | wc -l`;
+a mention count, not a count of tests that read it); I cannot bound those effects
 confidently, so uncertainty resolves to `full`. The full suite runs only as a certifying run, so the
 record (`Implementation verification -- <agent> -- YYYY-MM-DD`, after C3) holds the scoped runs above
 and **`Certified by`: pending**. **Nobody sets `CAIRN_FULL_SUITE` for this change.**
 
 **Boundary C: one code-review loop**, by a fresh session that is not the implementer. It should attack:
 (1) the same-maker removal across the tree, not the diff, searching paraphrases such as "another
-company"; (2) whether "authoring medium" and "premise-checking high" leave a gap for a proposal needing
-both; (3) whether R2 contradicts the pinned wording-cleanup row; (4) the frozen file's node ids; (5)
+company"; (2) whether the premise-check sentence reads the same in all three C1.4 places; (3) whether R2 contradicts the pinned wording-cleanup row; (4) the frozen file's node ids; (5)
 that each `--finalize` named only its path; (6) the module twins' byte-identity; (7) the new test's
 mutant and control, run against the old text.
 
@@ -348,3 +361,23 @@ Revision's "Strategy / Research may be lowered by Decision" interplay beyond fin
 did not read `test_stewardship_rules_ship.py` or `test_writing_rules_ship.py` beyond their
 headers; the harness claim in R3 (a resumed agent keeps its model) is outside the tree and
 unchecked.
+
+## Response -- plan author -- 2026-10-26
+
+All six accepted; the operative cells above are revised in place and Status is `ready-to-implement`
+(no second plan-review round). Cited lines were opened in the current tree first.
+
+1. **Accepted.** C3.2's R5 row now says: if fewer than three of the ten proposals were written at
+   high, report counts only and say the comparison is not available.
+2. **Accepted.** C1.4 names the three places (new module row, `roles.md` Standard-stakes bullet,
+   the High-stakes bullet it leaves), keeps the two pinned rows byte-equal, and settles the
+   premise-check rule now: its own task at high, result handed to the medium draft.
+3. **Accepted.** C3.2 replaces the quoted `dev/PLANNING.md:71` clause at the archive commit (shared
+   board file); the C2 gate cell now reads "check `python tools/intent.py list` at C2's start".
+4. **Accepted.** `test_upgrade.py::TestTemplateGatingSafety` is in Boundary A; "about 35" became 45
+   test files that mention `AGENTS.md`, labelled a mention count.
+5. **Accepted.** The same-maker node is renamed and narrowed to the fan-out paragraph, old-text
+   absence in six places and the same-tier exclusion, with a mutant beside a green control.
+6. **Accepted.** C1.2 no longer claims a passing pattern proves the sentence right; it and the
+   other read-by-a-person criteria are listed in "Not turned into a command".
+   Also: the Security Review question is recorded as answered (no), per the Maintainer.
