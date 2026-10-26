@@ -340,7 +340,7 @@ changed set from the final committed tree.
   signature on the commit it names", which is false for the current anchor. Two
   ways to close it: sign the anchor at the next key ceremony, or correct that
   sentence. Which is the Maintainer's call. Found by the repin Security Review
-  (finding SR-8, in `dev/proposals/2026-10-26-claude-repin-build.md`).
+  (finding SR-8, in `dev/proposals/archive/2026-10-26-claude-repin-build.md`).
   Authorization to queue it, verbatim:
 
   > "Yes, add both as Queued rows"
