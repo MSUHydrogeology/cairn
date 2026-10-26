@@ -41,7 +41,7 @@ artifacts; this board does not maintain a second status table.
 | **#32** board and `session-start` accept retired statuses | Maintainer direction, 2026-10-23 | Defect. Lands before drain mode, which reads the board. |
 | **#31** "keep it short" in the plan and proposal templates | Prose | The adopter supplied the draft and the evidence. |
 | **Model tiers: use the lowest tier that is safe** | Doctrine change: own proposal, clears the rate-limit gate | Maintainer direction, 2026-10-26: formalize a rule set for lower-tier models where possible. Scope below. |
-| **Security findings from the two 0.4 Security Reviews** | Maintainer direction; a fixer answers, one code review checks, no second Security Review | LP-SR-1 to 8 and SW-SR-11 to 15, found after their repairs shipped in 0.4.0 and never fixed. Scope below. |
+| **Security findings from the two 0.4 Security Reviews** | Maintainer direction; a fixer answers, one code review checks, no second Security Review | LP-SR-1 to 8 and SW-SR-11 to 15, found after their repairs shipped in 0.4.0 and never fixed, plus three older problems the engine-batch Security Review found. Scope below. |
 | **Engine batch: F8 and #8 engine half** | Own proposal, Security Review, one AST re-anchor | One batch so the review and the re-anchor are paid once. Maintainer: "Engine batch is in". Rows below. |
 | **`repin`** | Proposal first, from `strategy/2026-08-28-claude-repin-revitalization.md` | Maintainer: "Repin is a build". Removes the re-anchor ceremony's manual corrections. |
 | **Drain mode**, last | Settled design, `strategy/2026-08-25-claude-drain-mode.md` | Scope below. |
@@ -99,6 +99,23 @@ Maintainer, 2026-10-26, relayed by the Developer session:
   back and forth on the Security Review"* and *"For now let's just do the
   single-round Security Review for these"*. A fixer answers the findings and one
   code review checks the answer.
+* **Three older problems found by the engine-batch Security Review**
+  (`dev/proposals/2026-10-26-claude-engine-batch-f8-slots.md`, commit `e92ad324`).
+  Reported by that review; the roadmap's author reproduced none of them. All
+  three are outside the engine batch and in the same files as the rows above.
+  Authorization to fold them in, verbatim:
+
+  > "Yes, fold all three into the security row"
+
+  1. **The upgrade does not check the saved base copy against its recorded hash**
+     before the merge uses it (finding SR6). A crafted base copy can already
+     silently drop an adopter's edit or a Cairn fix. Recommended fix: check the
+     hash at plan, stage and apply, and on a mismatch make the file a by-hand
+     merge.
+  2. **Lockfile file names can carry invisible characters** that pass Python's
+     `isprintable()`.
+  3. **`bootstrap/_scaffold/install.py` prints unknown profile module names
+     unescaped** (about line 1526).
 * **Overlap with the engine batch.** Both change functions in `upgrade.py` and
   `lockfile.py`. One fixer holds both, or they run in sequence, never in
   parallel on the same functions. Both add engine symbols to the single 0.5 AST
