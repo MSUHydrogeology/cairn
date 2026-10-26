@@ -295,10 +295,11 @@ For this recipe you only need two things:
 `tools/`, `scripts/` and `.agents/` hold helper tools and the
 `session-start` / `session-end` routines.  Ignore them for now.
 
-The report also lists **22 unfilled block slots** -- placeholders
+The report also lists **20 unfilled block slots** -- placeholders
 your agent fills in a real adoption (see
-[`bootstrap/BOOTSTRAP.md`](../bootstrap/BOOTSTRAP.md) Act II-4).  This
-recipe leaves them: the tagline does not need them, and the report's
+[`bootstrap/BOOTSTRAP.md`](../bootstrap/BOOTSTRAP.md) Act II-4) -- and
+lists separately the 2 slots that belong to modules this profile did
+not install.  This recipe leaves them: the tagline does not need them, and the report's
 "Next steps **for a real adoption**" are for a real project.
 
 ## Step 4 -- the agent writes a proposal

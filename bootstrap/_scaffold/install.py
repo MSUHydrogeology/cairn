@@ -1604,8 +1604,14 @@ def print_report(
     target: Path,
     dirs_created: list[Path],
     installed: list[InstallResult],
+    modules: list[str] | None = None,
 ) -> None:
-    """Print a human-readable post-scaffold report to stdout."""
+    """Print a human-readable post-scaffold report to stdout.
+
+    *modules* is the installed module list.  A slot that only modules fill,
+    none of which is installed, is listed apart from the live slots.  When
+    *modules* is ``None`` every slot stays in the main list.
+    """
     print()
     print("=" * 68)
     print("  Cairn scaffold complete")
@@ -1662,13 +1668,60 @@ def print_report(
         for dst, _u, slots, _st in accounted
         for slot in slots
     ]
-    if all_slots:
-        print(f"\nBlock slots requiring agent attention ({len(all_slots)}):")
-        for path, slot in all_slots:
+    # Slot -> the modules whose content fills it.  Module names printed in
+    # the report come only from this table, never from the profile's list,
+    # which is only tested for membership.  Sources: the "Filled from the
+    # <module>" placeholders in templates/core/ and BOOTSTRAP.md Act II-4.
+    # They disagree on one name: BOOTSTRAP.md lists model-selection as a
+    # role-roster-additions supplier, but model-selection.md says it adds to
+    # doctrine/roles.md and local configuration.  The table follows
+    # BOOTSTRAP.md; the error shows more work, never less.  A supplier whose
+    # placeholder lacks the "Filled from the" phrase (coordination-additions,
+    # role-roster-additions) is hand-listed here.
+    suppliers = {
+        "claim-check": ("claim-check",),
+        "reflections": ("reflections",),
+        "documentation-discipline": ("documentation-plan",),
+        "documentation-tier-home": ("documentation-plan",),
+        "security-verification": ("security-verification",),
+        "coordination-additions": ("coordination-tiers",),
+        "role-roster-additions": (
+            "domain-agents", "legacy-agent", "security-review",
+            "issue-capture", "model-selection",
+        ),
+    }
+    absent_slots = []
+    live_slots = all_slots
+    if modules is not None:
+        absent_slots = [
+            (path, slot) for path, slot in all_slots
+            if slot in suppliers
+            and not any(name in modules for name in suppliers[slot])
+        ]
+        live_slots = [s for s in all_slots if s not in absent_slots]
+
+    if live_slots:
+        print(f"\nBlock slots requiring agent attention ({len(live_slots)}):")
+        for path, slot in live_slots:
             print(f"  {path}  [cairn:slot {slot}]")
         print("  -> See BOOTSTRAP.md Act II-4 for guidance.")
-    else:
+    elif not absent_slots:
         print("\n[OK] No block slots detected.")
+    if absent_slots:
+        print(
+            f"\nSlots for modules this profile did not install "
+            f"({len(absent_slots)}):"
+        )
+        for path, slot in absent_slots:
+            print(
+                f"  {path}  [cairn:slot {slot}]  supplied by: "
+                f"{', '.join(suppliers[slot])}"
+            )
+        print(
+            "  -> Mark each `N/A: <reason>` (for example `N/A: "
+            "coordination-tiers not installed`), or fill it yourself if "
+            "your project needs it."
+        )
 
     print()
     print("Next steps for a real adoption (BOOTSTRAP.md Act II):")

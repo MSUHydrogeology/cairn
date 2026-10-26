@@ -628,6 +628,7 @@ def main(argv: list[str] | None = None) -> int:
         target, dirs_created,
         core_results + skills_results + onboarding_results + module_results
         + reference_results + optional_results,
+        modules=modules,
     )
 
     # Module-merge pass (Proposal B / audit gap #3).  Each installed
