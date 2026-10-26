@@ -1,7 +1,7 @@
 # Make the upgrade edit check run no program from the project's git settings
 
 **Author**: Claude Sonnet 5.5
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review) -- the change edits the scaffold engine (`bootstrap/_scaffold/`), a named high-risk surface, next to the git call the twelfth change added
 **Opened**: 2026-10-26
@@ -126,3 +126,43 @@ A program from `.git/config` runs under any of the three commands. The check cal
 ## Sequence
 
 Lands after the twelfth change's code review clears (this moves its launcher), before the 0.5 cut. It needs a plan (more than one commit; Boundary B `full`). One baseline re-anchor at the cut, Maintainer-run, covers the twelfth change and this one.
+
+## Review -- Proposal reviewer (Internal) -- 2026-10-26
+
+```
+Reviewed commit: a8e4f85d
+Target: the whole proposal, except Security preflight S1 to S5 (left to the Security Review pass, which is still owed after the answer)
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Internal
+**Model**: Sonnet 5.5, fresh session
+**Findings**: raised (2 blocking, 6 non-blocking)
+**Verdict**: REVISE. The change should happen and the design is sound for git 2.45 and later. Two things need an answer first: the dropped version floor is unsafe in one case I measured, and the set of names bare `--finalize` asks about is not pinned down.
+
+**Foundations**
+1. *Should it exist as framed?* Yes. Both faults reproduce on the current tree, and doing nothing leaves a live program run and a silent overwrite. The names-only check is a better design than a sterile `git status`. -- scratch repository: `core.fsmonitor` and a clean filter wrote markers under `_dirty_tracked_paths` (`bootstrap/_scaffold/upgrade.py:2365`); `_writeset_dirty_collisions(proj, ["AGENTS.md"])` returned `[]` for an edited file in a subfolder project.
+2. *Best alternative?* The proposal's own, with the floor restored (B1). A batched `cat-file --batch` over the names is the one cheaper-than-per-name option the Alternatives omit (N5). -- `upgrade.py:2434-2524`; cost row below.
+3. *What would make the author withdraw?* A program run by the four commands, or an edit read as clean. I found no program (13 config keys, below). I did find an older git running one (B1). -- ledger P1, P3.
+
+**Falsification ledger** (scratch folder `rev-dirtycheck` under the scratchpad; git 2.53.0, Python 3.13.13; a prototype of the four commands outside the tree; no test run)
+* P1. Programs: config named a monitor, clean, smudge, textconv, external diff, pager, ssh command, alternate-refs command, ask-pass, pack hook, credential helper, proxy and editor, plus `post-index-change` and `reference-transaction` hooks. Prototype ran none; plain `git status` ran the monitor and the hook.
+* P2. Agreement with `git status`: staged then edited then reverted, file to folder, intent-to-add, `autocrlf=true` CRLF file: same answers. Assume-unchanged and skip-worktree edits: prototype flags, `git status` does not (the safe direction). Chmod only: prototype clean, git dirty (N1). Tracked unchanged link: prototype dirty, git clean. Case-insensitive repository, name in other spelling: clean (N2).
+* P3. Treeless clone (`--filter=tree:0`, no checkout), `remote.origin.uploadpack` naming a program, `diff-index --cached HEAD`: with `GIT_NO_LAZY_FETCH=1` on 2.53.0 it stops ("bad tree object") and no program runs; without that variable (what git before 2.45 does) it fetched and ran the program.
+* P4. Cost: 50,000 tracked files, 62 names 55 ms, 200 names 85 ms, `git status` 99 ms. The proposal's rows hold.
+* P5. Read from the tree: the three callers, `_cmd_finalize_lockfile` (2182-2362), `test_upgrade.py` `TestDirtyTreeGuard` and `TestFinalizeDirtyTreeGuard`, oracle `_dirty_tree_refusal_scenario`; `_ast_attest.py verify` on 3.13 gives 158 lines with the two helpers matching the baseline today, as stated.
+
+**Findings**
+* **B1 -- blocking. The floor is not safe to drop (Proposal 6).** "These four commands read no blob" is true, but `diff-index --cached HEAD` reads trees, and a treeless clone fetches them (P3). On git before 2.45 that runs the project's upload-pack program, the same hole the twelfth change closed. The author measured only a blobless clone. Fix: keep the floor in the shared launcher. Below it, do not give up the guard: first read `extensions.partialclone` and `remote.*.promisor` (a config read runs no program) and run the four commands only when neither is set; otherwise answer "cannot tell" (Proposal 4). Add a node with a stand-in older `git` and a treeless clone. I did not run the config-read idea; the plan should measure it.
+* **B2 -- blocking. Pin the names bare `--finalize` asks about (Proposal 1, Question 1).** Finalize hashes only records that are not living state and not retired-and-gone (`upgrade.py:2285-2305`), then rewrites the lockfile. "Recorded files" as written includes the installed NEXT_SESSION and PLANNING notes (living state, usually edited) and a hand-deleted retired file, so the guard would still refuse on exactly the cases the twelfth change's guide sentence is wrong about (`bootstrap/UPGRADE.md:102`). It also drops today's protection for the lockfile itself, which finalize rewrites and no record names. Fix: define the set as the records finalize will hash, plus the lockfile path, and say in Question 1 what is lost (own source files) and gained (no refusal for a living-state edit). Add a node for each of living state, a gone retired file and a dirty lockfile.
+* **N1 -- non-blocking. The Signals line is false for a mode-only edit (P2).** `git status` flags an executable-bit change; the engine hashes bytes only. Cairn ships executable scripts. Overwrite keeps the mode, so little is lost. Fix: compare the index mode with the file's executable bit, or list it beside the two stated over-reports.
+* **N2 -- non-blocking. A name in another letter case is read as untracked on a case-insensitive repository (P2).** `--literal-pathspecs` is case-exact. Today's set intersection has the same gap, so this is not new; the Context says the fix makes subfolder projects "read by their own names", so say so or add the node.
+* **N3 -- non-blocking. A frozen test goes quiet.** `test_self_heal_composes_with_dirty_tree_guard` stays green but its assertion ("profile.yml not in the result") becomes true by construction once `names=None` means recorded files. `names=None` also changes the helper from the whole repository to the records, hidden behind the default. Fix: say what `names=None` returns with no lockfile, and carry the property in a new node (an untracked recorded name is not returned).
+* **N4 -- non-blocking. Question 2 is framed as protecting Windows.** `git status` already calls a CRLF checkout clean (P2, `autocrlf=true`); rule 7 exists only because the engine compares raw bytes instead of asking git. The Maintainer should hear that, and that Windows is unmeasured. Say so in the question.
+* **N5 -- non-blocking. Alternatives omit the batched form.** One `git cat-file --batch` over the names costs one process, not 8 ms a name, but needs the same floor and cannot see a staged-then-reverted index. One line saying so makes the rejection of "call the helper per name" fair.
+* **N6 -- non-blocking. Two edges to name.** (a) Sequence: the twelfth change's code review N2 rewrites the guide sentence at `UPGRADE.md:102`, the one B2 changes; the plan should list that line and say which change owns it. (b) `bootstrap/_scaffold/install.py:1648` is another `git status --porcelain`, run on the Cairn source checkout; list it under "Not in scope" with the reason (the person already runs that checkout's code), so a later reader does not call it missed.
+
+**Checked, no defect.** Frozen tests: `TestDirtyTreeGuard` and `TestFinalizeDirtyTreeGuard` call the entry points or the one-argument helper and read stderr text, so they stay green under the contract; the oracle block is built from `collide` in `_apply_upgrade` (`upgrade.py:2689-2697`), which the change does not touch. AST symbols match the proposal. The cost rows hold (P4).
+
+**Coverage.** Not covered: git below 2.53.0 (emulated by omitting `GIT_NO_LAZY_FETCH`, not run on an old build); Windows; SHA-256; submodules, sparse checkouts, merge conflict, no-commit and glob names (the author's agreement run, not repeated); an index replaced by a link; a hung git; the Security preflight S1-S5; the plan's test nodes beyond reading their titles. No test suite run. The Security Review is still owed after the author's answer.
