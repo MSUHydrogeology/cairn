@@ -2864,6 +2864,14 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                 print(line)
         return result
 
+    # What is left is the report and `--stage`.  Both size the upgrade under the
+    # profile the project has now, which reads `dev/.cairn/profile.yml`; a link
+    # at that name or above it is refused first, wherever it points, as
+    # `--apply` (its self-heal above) and `--init-lock` refuse it.
+    refused = _refuse_if_linked(target, _PROFILE_REL, f"the profile {_PROFILE_REL}")
+    if refused is not None:
+        return refused
+
     plans, structural = _compute_upgrade(
         target, cairn_root, templates_root, lock, args.to)
     citation = _citation_ok(target, lock)
