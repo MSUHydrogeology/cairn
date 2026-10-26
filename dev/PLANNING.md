@@ -438,6 +438,18 @@ changed set from the final committed tree.
 
   > "Yes, queue it (Recommended)"
 
+* **`upgrade --init-lock` records the digest of the file behind a linked
+  tracked file.** A linked `AGENTS.md` puts the digest of its target into the
+  new lockfile. Nothing is written outside the project, and `bootstrap/UPGRADE.md`
+  and `SECURITY_MUTATIONS.md` state the limit. Not a simple fix: what a tracked
+  link should record (the link, its target, or a refusal) is a design choice in
+  the engine, so it needs a proposal and a Security Review. Found by the repair
+  of `--init-lock` over links (commits `18511e42`, `091ec219`, `41bcd166`).
+  Authorization to queue it: the Maintainer, 2026-10-26, "Queue them if it's not
+  simple to fix them now. No need to generate more work for us later." (given for
+  this finding and the `--plan`/`--stage` one, which is simple and is being
+  fixed now).
+
 * **The gate anchor has no signature.** `refs/cairn/gate-anchor` points to
   commit `6f29519d`, and git reports no signature on it (signature status `N`;
   `git verify-commit` exits 1; the control `git tag -v v0.4.0` exits 0, measured
