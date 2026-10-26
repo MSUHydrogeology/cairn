@@ -1,7 +1,7 @@
 # Onboard at install: retire the delayed onboarding prompts
 
 **Author**: Claude Sonnet 5.5 (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
@@ -754,3 +754,27 @@ Restated for the Security Review, which found S1 to S3 right and S4 and S5 in ne
 * **Revision 1's S1 citation `:521-524`:** moved to `:541-545`, with the containment check at `:234-274`.
 * **Revision 1's seven test properties:** now eight; the pointer test gains the refused-lockfile case (SR1, SR3).
 * **No record of what the group's removal loses:** replaced by the sentences in Proposal 2 and `bootstrap/SAFETY.md` (SR6).
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-26
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and
+visually isolated**. He was asked: "Accept as revised with all five defaults?"
+(the five questions in the proposal's In brief, each with its default, as
+Revision 2 states them). He answered:
+
+> "Accept, all five defaults (Recommended)"
+
+*Scribe's note, separate from the quoted words.* "As revised" means Revision 2,
+the complete current contract, which answers the usual review and the Security
+Review (cleared on conditions SR1 to SR4, all adopted; SR5 and SR6 adopted). The
+five defaults are: (1) the former prompts show up in the list the install already
+writes into `dev/PLANNING.md`, with no new tasks, plus one new line at the end of
+the install report; (2) yes to the nine dispositions as tabled; (3) existing
+installs are told nothing, `upgrade --plan` prints one informational line, the
+upgrade guide gets a short section and the changelog an entry, and the removal of
+untouched copies is the separate twelfth 0.5 row; (4) `doctrine/onboarding.md`
+shrinks in place; (5) the rate-limit gate is not engaged, since his direction
+started the change. The plan review stays `required(Internal + Internal Security
+Review)`. The landing order is set elsewhere: the `NEXT_SESSION` change lands
+first. The implementer does not edit `scaffold_ast_known_new.json` or the AST
+baseline; those belong to the Maintainer's re-anchor (Security Review SR4).
