@@ -14,21 +14,21 @@
     },
     {
       "dst": ".agents/skills/session-end/SKILL.md",
-      "hash": "sha256:b8da935cd98c7e28c29293130dd653a9105e805c575378676ae0faa7291909ae",
+      "hash": "sha256:3770f3597e0717be9474b65daf2e89c5e49baad7c75083b812b38c60fc94fd46",
       "src": "skills/session-end/SKILL.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": ".agents/skills/session-start/SKILL.md",
-      "hash": "sha256:5435248f0f7246bb580ab53ab3def2f02a1f5d609ef797cc26e5f6bc5c5b2132",
+      "hash": "sha256:ad7473f5ea2985ebf0e2583a4cf14281a591424614dc17eb38baca46222dca82",
       "src": "skills/session-start/SKILL.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "AGENTS.md",
-      "hash": "sha256:5e19d9422139b37cbf541b5cf8c6915643734dafe04b3de726b789ba8758fbd6",
+      "hash": "sha256:5d5a6326e8684a805fe274429b1816f8f7393fca1875fb68c13a33afc1b6d255",
       "src": "core/AGENTS.md",
       "unrecoverable_base": true,
       "verbatim": false

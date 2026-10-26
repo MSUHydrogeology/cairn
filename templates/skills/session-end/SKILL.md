@@ -4,7 +4,6 @@ description: Manual lifecycle routine -- session-end (goodnight). Invoke only on
 disable-model-invocation: true
 ---
 <!-- cairn-internal-ref-allow: doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: dev/reflections/next-session.md -->
 
 # Session-end (goodnight)
 
@@ -61,7 +60,7 @@ doctrine or the roadmap before it is pruned. For a full handoff the **roadmap
 scrub, the local next-session note, and the handoff commit** are also yours;
 the note is never committed.
 
-**The next-session note** is `dev/reflections/next-session.md`, a file the
+**The next-session note** is `next-session.md` in `dev/reflections/`, a file the
 reflections ignore line already covers. It is a convenience, not a record: the
 board, the plans and the issues carry the handoff, and the first task is the
 operator's call. Do not copy text from an issue, a web page or a comment into
