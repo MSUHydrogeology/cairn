@@ -810,7 +810,7 @@ def test_a_missing_or_duplicated_symbol_is_a_review_item_never_a_pin(bed, break_
 
 def test_a_pin_owed_to_a_plain_change_packages(bed):
     out = ok(bed.run("package"))
-    assert "No AST pin is owed" in out
+    assert "No pin is owed" in out
     owe_a_pin(bed)
     assert re.search(r"transaction digest [0-9a-f]{64}", ok(bed.run("package")))
 
@@ -877,3 +877,87 @@ def test_package_writes_only_into_the_ceremony_folder(bed):
     assert bed.tree_hash() == before
     ok(bed.run("package", "--ceremony-dir", str(cdir)))
     assert bed.tree_hash() == before and (cdir / "ast-pin-transaction.json").is_file()
+
+
+# --------------------------------------------------------------------------
+# the lockfile as a third output
+# --------------------------------------------------------------------------
+
+LOCKFILE = "dev/.cairn/cairn-lock.yml"
+CONFIG = "bootstrap/_scaffold/config.py"
+
+
+def lock_bed(bed, *, marker=None, template_text="verbatim\n", installed_text="verbatim\n"):
+    """A tree with a lockfile that has one stale record, a mapping with no record, and a config.py
+    holding `_SKILLS_MAPPINGS` as a literal."""
+    guard = f"open({str(marker)!r}, 'w').close()\n" if marker else ""
+    bed.write(CONFIG, guard + "_SKILLS_MAPPINGS = ((\"skills/x.md\", \"tools/x.md\", True),)\n")
+    bed.write("templates/skills/x.md", template_text)
+    bed.write("tools/x.md", installed_text)
+    body = {"cairn_version": "0", "files": [{"base_hash": "sha256:0", "dst": "gone/old.md", "hash": "sha256:0",
+                                              "src": "old.md", "verbatim": True},
+                                             {"base_hash": "sha256:1", "dst": "tools/kept.md", "hash": "sha256:1",
+                                              "src": "kept.md", "verbatim": True}]}
+    bed.write("tools/kept.md", "kept\n")
+    bed.write(LOCKFILE, "# cairn-lock.yml -- header kept byte for byte\n# second line\n" + _dump(body))
+    bed.write(BASELINE, _dump({**A.digest_module(bed.repo / ENGINE), **A.digest_module(bed.repo / CONFIG)}))
+    bed.pin("lockfile bed")
+
+
+def test_the_lockfile_adapter_does_not_import_candidate_code(bed):
+    lock_bed(bed, marker=bed.marker())
+    out = ok(bed.run("package"))
+    assert not bed.marker().exists(), "config.py was executed"
+    assert "cairn-lock.yml" in out                      # the correction was still computed
+    subprocess.run([PY, str(bed.repo / CONFIG)], cwd=bed.repo, check=False)
+    assert bed.marker().exists(), "the control is wrong: running config.py should write the marker"
+
+
+def test_a_stale_record_is_dropped_and_a_missing_verbatim_record_added(bed):
+    lock_bed(bed)
+    out = ok(bed.run("package"))
+    assert '"dst": "gone/old.md"' in out and "(absent)" in out              # the stale record leaves
+    assert "tools/x.md" in out and '"verbatim": true' in out                # the mapping gains a record
+    assert "tools/kept.md" not in out                                        # a record that holds stays
+
+
+def test_a_verbatim_record_over_a_file_that_differs_from_its_template_refuses(bed):
+    lock_bed(bed, installed_text="edited locally\n")
+    r = bed.run("package")
+    assert r.returncode == 2 and "not byte-identical to its template" in r.stderr
+
+
+def test_the_lockfile_is_written_with_the_other_outputs_and_its_header_is_kept(bed):
+    lock_bed(bed)
+    owe_a_pin(bed, "def f():\n    return 3\n")
+    before = reads(bed, LOCKFILE)
+    code, out = snippet(bed, APPLY, YES)
+    assert "RESULT: ok" in out, out
+    after = reads(bed, LOCKFILE)
+    assert after.startswith(before.split(b"{")[0]) and after != before
+    doc = json.loads(after.decode().split("\n", 2)[2])
+    assert [r["dst"] for r in doc["files"]] == ["tools/kept.md", "tools/x.md"]
+    assert sorted(bed.git("status", "--porcelain").stdout.split()[1::2]) == sorted([BASELINE, LOCKFILE])
+
+
+def test_a_failed_second_of_three_replaces_names_what_was_replaced(bed):
+    lock_bed(bed)
+    bed.write(ENGINE, "def f():\n    return 2\n\ndef g():\n    return 3\n")
+    bed.commit("change f, add g")
+    head = bed.git("rev-parse", "HEAD").stdout.strip()
+    before = {rel: reads(bed, rel) for rel in (BASELINE, KNOWN_NEW, LOCKFILE)}
+    code = """
+real, calls = R.os.replace, []
+def flaky(src, dst):
+    if "fixtures" in str(dst) or str(dst).endswith("cairn-lock.yml"):
+        calls.append(dst)
+        if len(calls) == 2:
+            raise OSError("disk full")
+    real(src, dst)
+R.os.replace = flaky
+""" + APPLY
+    out = snippet(bed, code, YES)[1]
+    assert "Already replaced:" in out and f"git restore --source={head} --" in out
+    changed = [rel for rel in before if reads(bed, rel) != before[rel]]
+    assert len(changed) == 1
+    assert not list(bed.repo.rglob("*.tmp"))

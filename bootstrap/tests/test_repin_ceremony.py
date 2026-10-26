@@ -412,7 +412,7 @@ def test_first_run_refuses_an_owed_ast_pin(cbed):
     reviewed = cbed.commit("engine change")
     code, out = full_run(cbed, extra=("--first-run", "--reviewed-commit", reviewed))
     assert code == 2
-    refused_early(out, "an AST pin is owed")
+    refused_early(out, "a pin is owed")
 
 
 # --------------------------------------------------------------------------

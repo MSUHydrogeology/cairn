@@ -34,6 +34,7 @@ if __name__ == "__main__":
     sys.pycache_prefix = tempfile.mkdtemp(prefix="repin-pyc-")
 
 import argparse
+import ast
 import hashlib
 import importlib
 import importlib.util
@@ -431,7 +432,8 @@ def manifest_status(ctx, dropped_from=None):
 
 #: The only paths `repin` ever writes.  The gate manifest is not among them: its
 #: writer is the signed ceremony, so no transaction can reach it.
-OUTPUTS = (BASELINE_REL, KNOWN_NEW_REL)
+LOCKFILE_REL = "dev/.cairn/cairn-lock.yml"
+OUTPUTS = (BASELINE_REL, KNOWN_NEW_REL, LOCKFILE_REL)
 TXN_NAME = "ast-pin-transaction.json"
 STOP_PREFIX = "ast-pin-stop-"
 
@@ -440,10 +442,56 @@ def dump(obj):
     return (json.dumps(obj, indent=2, sort_keys=True) + "\n").encode()
 
 
+def split_lockfile(raw):
+    """The comment header (kept byte for byte) and the JSON body of the lockfile."""
+    lines = raw.decode().split("\n")
+    n = next((i for i, ln in enumerate(lines) if ln.strip() and not ln.startswith("#")), len(lines))
+    return "\n".join(lines[:n]), json.loads("\n".join(lines[n:]))
+
+
+def parse_output(rel, raw):
+    """An output as a flat dict, so old and new can be compared key by key."""
+    if rel != LOCKFILE_REL:
+        return json.loads(raw)
+    header, doc = split_lockfile(raw)
+    return {**{r["dst"]: r for r in doc["files"]},
+            "(other fields)": {**{k: v for k, v in doc.items() if k != "files"}, "header": header}}
+
+
+def lockfile_correction(ctx):
+    """The install lockfile with stale records dropped and missing verbatim records added,
+    or None.  The mappings are read from config.py at HEAD with ast and never imported."""
+    tracked = {p for _m, _o, p in ctx["ents"]}
+    if LOCKFILE_REL not in tracked:
+        return None
+    ext = ctx["ext"]
+    header, doc = split_lockfile((ext / LOCKFILE_REL).read_bytes())
+    mappings = ()
+    if "bootstrap/_scaffold/config.py" in tracked:
+        for node in ast.parse((ext / "bootstrap/_scaffold/config.py").read_bytes()).body:
+            target = node.targets[0] if isinstance(node, ast.Assign) else getattr(node, "target", None)
+            if getattr(target, "id", "") == "_SKILLS_MAPPINGS":
+                mappings = ast.literal_eval(node.value)
+    kept = [r for r in doc["files"] if r.get("dst") in tracked]
+    recorded = {r.get("dst") for r in doc["files"]}
+    added = []
+    for src, dst, verbatim in mappings:
+        if not verbatim or dst in recorded or dst not in tracked:
+            continue
+        if "templates/" + src not in tracked or (ext / "templates" / src).read_bytes() != (ext / dst).read_bytes():
+            raise Refuse(f"{d(dst)} is not byte-identical to its template, so a verbatim record would hide a defect.")
+        digest = "sha256:" + sha((ext / dst).read_bytes())
+        added.append({"base_hash": digest, "dst": dst, "hash": digest, "src": src, "verbatim": True})
+    if len(kept) == len(doc["files"]) and not added:
+        return None
+    doc["files"] = sorted(kept + added, key=lambda r: r.get("dst", ""))
+    return (header + "\n" + json.dumps(doc, indent=2, sort_keys=True) + "\n").encode()
+
+
 def render_changes(rel, old_raw, new_raw):
     """Every key the write changes, from the bytes on disk against the bytes to be
     written.  Not stored text and not the checker's classifier."""
-    old, new = json.loads(old_raw), json.loads(new_raw)
+    old, new = parse_output(rel, old_raw), parse_output(rel, new_raw)
     if rel == BASELINE_REL and set(old) != set(new):
         raise Refuse("the pin would add or drop a baseline key. That is a full "
                      "re-pin, which erases the motion record. Nothing was written.")
@@ -463,25 +511,29 @@ def build_transaction(ctx):
     if view["missing"] or view["dup"]:
         raise Refuse("a baselined symbol is missing or defined twice. That is a review "
                      "item, never a pin. Run `status` and read the symbols named.")
-    if not view["owed"]:
+    ext, new, files = ctx["ext"], {}, set()
+    old = {rel: (ext / rel).read_bytes() for rel in OUTPUTS if (ext / rel).is_file()}
+    if view["owed"]:
+        base = json.loads(old[BASELINE_REL])
+        for key, (_old, digest, _file) in view["changed"].items():
+            base[key]["digest"], base[key]["span"] = digest, view["spans"][key]
+        new[BASELINE_REL] = dump(base)
+        if view["rekeyed"] or view["added"] or view["dropped"]:
+            new[KNOWN_NEW_REL] = dump(view["new_known"])
+        check = ctx["tmp"] / "pinned-fixtures"
+        check.mkdir(exist_ok=True)
+        for rel in (BASELINE_REL, KNOWN_NEW_REL):
+            (check / Path(rel).name).write_bytes(new.get(rel, old[rel]))
+        if ast_view(ctx, check)["owed"]:
+            raise Refuse("the pin built here would not account for the engine. Nothing was "
+                         "written; this is a defect in repin, so tell the Maintainer.")
+        files = {v[2] for v in view["changed"].values()}
+        files |= {view["new_files"][k] for k in view["rekeyed"] + view["added"]}
+    lock = lockfile_correction(ctx)
+    if lock is not None:
+        new[LOCKFILE_REL] = lock
+    if not new:
         return None
-    ext = ctx["ext"]
-    old = {rel: (ext / rel).read_bytes() for rel in OUTPUTS}
-    base = json.loads(old[BASELINE_REL])
-    for key, (_old, new, _file) in view["changed"].items():
-        base[key]["digest"], base[key]["span"] = new, view["spans"][key]
-    new = {BASELINE_REL: dump(base)}
-    if view["rekeyed"] or view["added"] or view["dropped"]:
-        new[KNOWN_NEW_REL] = dump(view["new_known"])
-    check = ctx["tmp"] / "pinned-fixtures"
-    check.mkdir(exist_ok=True)
-    for rel in OUTPUTS:
-        (check / Path(rel).name).write_bytes(new.get(rel, old[rel]))
-    if ast_view(ctx, check)["owed"]:
-        raise Refuse("the pin built here would not account for the engine. Nothing was "
-                     "written; this is a defect in repin, so tell the Maintainer.")
-    files = {v[2] for v in view["changed"].values()}
-    files |= {view["new_files"][k] for k in view["rekeyed"] + view["added"]}
     return {"schema": "repin-ast-transaction/v1", "head": ctx["head"], "anchor": ctx["anchor"],
             "influences": {"python": sys.version, "git_version": git_text(ctx["repo"], "--version"),
                            "display_encoder_blob": ctx["session_oid"]},
@@ -651,7 +703,7 @@ def package(ctx, cdir=None):
     """The AST pin's transaction, its digest and (with a folder) the file; no repository write."""
     txn = build_transaction(ctx)
     if txn is None:
-        say("\nNo AST pin is owed: the baseline accounts for the engine.")
+        say("\nNo pin is owed: the baseline accounts for the engine and the lockfile has nothing to correct.")
         return None
     raw = encode_txn(txn)
     say("\nAST pin transaction (what a write would change):")
@@ -806,8 +858,8 @@ def check_first_run(ctx, reviewed):
             raise Refuse(f"{path} at HEAD is not the file the reviewed commit has. It was edited "
                          f"after review; a new review must name a newer commit.")
     if build_transaction(ctx) is not None:
-        raise Refuse("an AST pin is owed. The first run never carries one, because repin's own "
-                     "unpinned bytes would decide it. Pin it by hand under "
+        raise Refuse("a pin is owed (the AST baseline or the lockfile). The first run never carries "
+                     "one, because repin's own unpinned bytes would decide it. Pin it by hand under "
                      "bootstrap/AST_BASELINE_RUNBOOK.md first.")
 
 
@@ -1004,6 +1056,7 @@ def main(argv=None, *, launchctl=launchctl_socket):
         first_screen(ctx)
         if args.verb == "status":
             show_ast(ctx, ast_view(ctx))
+            say("  lockfile correction owed: " + ("no" if lockfile_correction(ctx) is None else "yes"))
             manifest_status(ctx, args.dropped_from)
         elif args.verb == "package":
             package(ctx, args.ceremony_dir)

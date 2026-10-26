@@ -2,7 +2,7 @@
 
 **Author**: Claude (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-repin-build.md](../proposals/archive/2026-10-26-claude-repin-build.md)
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: Build one tested script that runs the Maintainer's checksum re-pins and the signed re-anchor, so he compares two digests, answers two summaries and types one passphrase instead of pasting commands an agent wrote.
@@ -451,3 +451,40 @@ All 13 findings are accepted; none is declined. The pass at commit ece46a77 had 
 3. **Budgets restated upward** (R1+R3 300 to 400, R2 300 to 350, R4 300 to 400), my estimates; the old figures would fire the stopping rule sooner.
 4. **R6b is made by the Maintainer or on his word, and a fresh code review precedes M3.**
 5. **M2 refuses if any of the ten listed files changed since the anchor**, so an unrelated gate-module edit before the cut moves the first run to a by-hand ceremony.
+
+## Implementation verification -- Claude Sonnet 5.5 (implementer) -- 2026-10-26
+
+**Done:** R1, R2, R3, R4 and R5 (R5 was owed by the plan's own trigger, see below). **Not done, and not mine:** M1, M2, M3, R6a, R6b. They remain for the Maintainer and the code review, in the order the Sequence gives (M2, M1, R6a, R6b, then M3's by-hand ceremony). No ceremony, no key, no anchor, no AST re-anchor and no gate-manifest re-anchor was run, read or touched. `repin status` and `repin package` were run against this repository (read only: they write into a scratch folder under `TMPDIR` and nothing in the tree); `ceremony` was never run against it.
+
+**Reviewed range.** Commits `ed252bdb` (R1 and R3), `cbaa999b` (R2), `21b61dae` (R4) and the commit that carries this section (R5, the plan's Status line and this record). The files are `scripts/repin.py`, `bootstrap/tests/test_repin.py` and `bootstrap/tests/test_repin_ceremony.py`. For M2, `<id>` is the last commit that edited those three paths and that the code reviewer read.
+
+**Boundary B mode**: full. **Certified by**: pending. I did not run the full pair (`CAIRN_FULL_SUITE` was never set). What I ran is scoped (Boundary A), on Python 3.13.13 (`/Users/kendal30/conda_envs/lhm/bin/python3.13`), in the shared checkout, whose tree carries other sessions' uncommitted edits; the tests build their own scratch repositories and do not read the working tree except to copy `scripts/repin.py`, the listed gate modules, the closure files and the launcher template into them. The tree was therefore not clean, and this is not a Boundary B record.
+
+**Commands and outcomes (Python 3.13.13).**
+* `python -m pytest bootstrap/tests/test_repin.py bootstrap/tests/test_repin_ceremony.py bootstrap/tests/test_security_lint.py -q -rs` on the final bytes: 150 passed, 0 skipped, 234 s (78 + 61 + 11). `ssh-keygen` and `ssh-agent` were present, so no signing test skipped.
+* Bandit, through `test_security_lint.py`: 0 findings of MEDIUM or higher on `scripts/repin.py`; 7 LOW (subprocess and `execv` notes); the `ALLOWLIST` in `bootstrap/security_check.py` was not edited.
+* `python scripts/quality_gate.py --sub neutrality --sub redundancy`: clean after R4 (before R4 the redundancy gate named `apply_pin`, which had no caller until `ceremony` called it; no allowlist entry was added).
+* `python scripts/check_cairn.py` and `python scripts/claim_check.py dev/plans/repin-build.md`: clean. The two `Proposed paths:` entries for files that now exist were removed, because `claim_check` counts a materialised entry as a hard finding; no criterion text changed.
+* `python bootstrap/tests/_gate_manifest.py verify --no-collect` before and after R1: the `FROZEN-*` lines differed only by `scripts/repin.py` and `test_repin.py` turning from `FROZEN-UNTRACKED` to `FROZEN-NEW`. The other FROZEN-MODIFIED and FROZEN-NEW rows belong to other sessions and were already there.
+* `python bootstrap/scaffold.py --manifest`: names no `repin` path.
+* `python -m pytest bootstrap/tests/test_ast_attest.py`: 2 fail, before and after this work, because the real engine has 7 or more CHANGED symbols and 3 re-keyed known-new symbols that `repin status` lists. That pin is owed and is M1's.
+
+**R4's first tasks, measured.**
+* A scratch bed reaches a real stage-2 signature: the real checker, the real `reanchor.sh` and launcher, a throwaway key (encrypted after the setup commits are signed), one passphrase prompt, a `G` signature from the packet-pinned roster. The stopping rule did not fire.
+* `reanchor.sh` runs `validate`, `show-report` and `hash-package` from a lone private copy of the hashed bytes, so `repin` runs that copy and re-hashes it before each call. Stage 1 and 2 run from the launcher's own extraction, as before. The record therefore carries no "hashed immediately before" gap.
+* The passphrase prompt reads `Enter passphrase for`. The launcher's banner also contains the word "passphrase", so a harness that waits for that bare word types too early. The tests wait for the full prompt.
+
+**R5 and its trigger.** `python bootstrap/verify_integrity.py --target .` exits 1 with 23 `modified (hash mismatch)` lines, on the working tree and on a clean extraction of `HEAD` alike, so by the plan's trigger R5 is owed and I built it (about 53 lines). **The trigger and the correction do not measure the same thing.** The 23 lines are recorded files that were edited after install; the correction R5 builds (taken from the retired runner's lockfile plan) drops records whose file is no longer tracked and adds missing verbatim records. On this tree it would drop exactly one record (the one for the collaboration agreement file under dev/, which no longer exists) and add none; it does not touch the 23. Those need an edit to be recorded under `bootstrap/UPGRADE.md`. This is for the code reviewer and the Maintainer to read.
+
+**Sizes against the budgets** (lines of `scripts/repin.py`, excluding tests; all lines, then non-blank non-comment in brackets where measured): R1 and R3 440 (budget about 400); R2 about 251 (350); R4 about 336 (400); R5 about 53 (100); file total 1080 (922 non-blank non-comment) against 1250. R1 plus R3 is 10 percent over its figure counted in all lines and under it counted in code lines (about 375); I did not treat that as the budget firing. No other budget fired.
+
+**Mutation evidence** (each mutant was a one-line break in `scripts/repin.py`, run against the named tests, each killed; a mutant that let a loosened answer through was run only against the apply-step test): R2 15, R4 17, listed in the commit bodies.
+
+**Known omissions and limits.**
+* Not run: any Linux case, the real `launchctl`, the Maintainer's agent, a timed full ceremony on the real tree, and the Boundary B pair.
+* `--first-run`'s success path was exercised in a scratch bed with an unsigned anchor; the real M2 run is the Maintainer's.
+* The `repin` member of the byte-compared list cannot carry the marker form of the test (the running file is the process itself); it is covered by the refusal tests (`an_edited_repin_refuses_ceremony_without_first_run`, the three-path test) and by the state line `status` prints.
+* The decoy-on-`PATH` test fires for `ssh-keygen`, `ssh-add` and the shell through the real ceremony; for `launchctl` it checks that the code names the absolute path, because no test may ask the real `launchctl`.
+* The plan names five disclosures. Three of them are tested as printed by the tools: the candidate-code banner, the anchor note and the signature census (the last shows in Summary 2). I did not find the "untracked-files record" printed by any tool in the stage output, and the interpreter-minor hold appears only as a refusal that the shared precondition preempts.
+* Stage 1's no-terminal property is tested by contrast (the launcher run with a terminal prompts at its key probe; the full run through `repin` counts one prompt, at stage 2). The audit-hook test saw `Popen` events; I did not measure the pseudo-terminal child's own exec event.
+* `test_ast_attest.py` and `verify_integrity.py` read the shared tree; their results above are the tree's, not this work's.
