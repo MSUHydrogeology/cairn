@@ -31,6 +31,10 @@
         "tools/suite_cost.py",
         "scripts/onboarding_activate.py",
         "scripts/_onboarding/",
+        "templates/modules/default-on/onboarding_activate.py",
+        "templates/modules/default-on/_onboarding/",
+        "bootstrap/tests/test_onboarding_activation_helper.py",
+        "dev/.cairn/onboarding-activated.jsonl",
         "dev/plans/byline-classification.md",
         "dev/proposals/archive/2026-06-04-claude-cairn-foldback-drain-7-candidates.md",
         "dev/proposals/archive/2026-06-08-claude-cairn-lifecycle-template-thinning.md",
@@ -50,7 +54,10 @@
     },
     "bootstrap/UPGRADE.md": {
       "paths": [
-        "dev/collaboration_agreement.md"
+        "dev/collaboration_agreement.md",
+        "scripts/onboarding_activate.py",
+        "scripts/_onboarding/",
+        "dev/.cairn/onboarding-activated.jsonl"
       ]
     },
     "bootstrap/REANCHOR_RUNBOOK.md": {
@@ -61,7 +68,6 @@
     },
     "bootstrap/SAFETY.md": {
       "paths": [
-        "scripts/_onboarding/",
         "scripts/api_access_security.py",
         "scripts/web_hosting_security.py",
         "scripts/run_security_verification.py"
@@ -81,6 +87,11 @@
         "templates/modules/default-on/lifecycle_metrics.py"
       ]
     },
+    "doctrine/consolidation-review.md": {
+      "paths": [
+        "templates/modules/default-on/_onboarding/"
+      ]
+    },
     "dev/measurement/tag-pass-dispositions.md": {
       "paths": [
         "../plans/comprehension-outlives-the-artifact.md",
@@ -88,6 +99,7 @@
         "bootstrap/tests/test_lifecycle_cli.py",
         "bootstrap/tests/test_lifecycle_vocabulary.py",
         "bootstrap/tests/test_transition_lint.py",
+        "bootstrap/tests/test_trigger_evaluation_action.py",
         "scripts/transition_lint.py",
         "templates/core/dev/proposals/_template.md",
         "tools/lifecycle.py",
@@ -193,13 +205,6 @@
         "docs/developer/style.md",
         "docs/style.md",
         "STYLE_GUIDE.md"
-      ]
-    },
-    "doctrine/onboarding.md": {
-      "paths": [
-        "scripts/onboarding_activate.py",
-        "dev/.cairn/onboarding-activated.jsonl",
-        "dev/modules/onboarding/"
       ]
     },
     "doctrine/session-routines.md": {
