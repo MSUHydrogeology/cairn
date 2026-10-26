@@ -1,7 +1,7 @@
 # A change with no plan: where its code review goes, and when its proposal archives
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual
 **Plan review**: not required(prose edits to one rule and the docs that repeat it; the edit list is checked by the second review; the plan opens in the fast multi-stage form)
 **Opened**: 2026-10-26
@@ -596,3 +596,107 @@ reviewer is asked to challenge it.
 **Scope delta**: narrowed by the Maintainer's direction. Revision 1's
 reordering and its named exception are withdrawn; no accepted scope is removed,
 because nothing was accepted. **Assurance path**: high-assurance, unchanged.
+
+## Review (second round, Revision 2) -- Claude (Reviewer, Sonnet) -- 2026-10-26
+
+```
+Reviewed commit: 24959550
+Target: `## Revision 2 -- Claude (author) -- 2026-10-26 -- on the Maintainer's direction`, and the Status, Plan review and In brief header lines. Earlier sections only where Revision 2 relies on them.
+Prior findings: RV1 to RV6 of the first review, answered in the Response and Revision 1; none reopened here
+Assurance path: high-assurance (as declared)
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes, in direction. A trivial change owing no review, and archiving with its implementing commit, removes the contradiction at the lowest cost, and it is the Maintainer's call. Two parts of the framing do not hold yet: the fence has no place to put its review (RV8), and the revision is not a complete contract (RV9). Backed by `doctrine/lifecycle.md:176-178` and `doctrine/proposals.md:521-543`.
+2. **Best alternative.** For the fence, a rule placed in the plan triage, not in the Boundary B label: a change whose Boundary B would run `full` is not a no-plan change, so it opens a plan, which already has a home for a review. Failing that, no fence at all: the certifying run (`AGENTS.md:275-300`) already covers every unpushed change, which is the job the Bounding verdict did. Backed by `doctrine/plans.md:187-192`.
+3. **What would show it wrong.** A trivial change that ships a defect a review would have caught and that the triage rule would have called trivial. I tested the claim that this did not happen on 2026-10-26: both cases fail the triage rule (RV10), so the claim holds. Backed by `git show --stat 9ec53a43` and `git show --stat 4a88ca82`.
+
+### Verdict in brief
+
+**Revise, then decide.** The design is sound. Two things block the Decision, both small:
+
+* **The fence reopens the contradiction it exists to avoid (RV8).** A change whose review is kept has no place to record it, because the proposal has already archived.
+* **Revision 2 is not a complete current contract (RV9).** It leans on Revision 1 for text it says it withdrew, and neither revision carries the mandatory `### Withdrawn / superseded commitments` heading. I missed the second point in the first round; it was already true of Revision 1.
+
+The edit list is also short (RV7); that does not block the Decision but must be fixed before it reaches the implementer.
+
+### What I checked
+
+Against the tree at `24959550`. Python 3.13 for the one search script. No test or gate was run, no worktree was made, and `CAIRN_FULL_SUITE` was not set.
+
+| # | Check | Result |
+|---|---|---|
+| N1 | Search for sites that give a trivial change a review or a Bounding verdict | Two searches. A line-based `git grep` missed wrapped sites (it did not find `doctrine/lifecycle.md:61` or `docs/glossary.md:18`, both known to contain the target), so I redid it as a paragraph scan over every tracked file outside `dev/proposals`, `dev/plans`, `dev/reviews`, `dev/strategy`, the changelog and the tests. The scan finds both controls. Its hits are in RV7. |
+| N2 | The two worked cases (RV10) | `9ec53a43` touched 7 files: three scripts, two shipped template twins, `docs/tool-usage.md`, one test file. `4a88ca82` touched 8: both `AGENTS.md` copies, `doctrine/rationale.md`, both `agent_collaboration.md` copies, the lockfile, the changelog and a test file. |
+| N3 | Tests that read the sentences being removed | See RV11. |
+| N4 | Frozen files | None of the files in Revision 2's table, or the extra ones in RV7, is a key of `frozen_files` in `bootstrap/tests/fixtures/gate_manifest.json`. The test files that pin nearby text (`test_review_stance_in_shipped_files.py`, `test_quickstart_sequence.py`) are frozen and are not edited. |
+
+### Findings
+
+**RV7 -- Medium -- non-blocking for the Decision, owed before implementation: the edit list is short and has one near-miss.**
+**At least ten files that give a trivial change a review are missing, and three more need a decision.**
+
+*Plain.* The Revision asks for the list to be checked. Missing, each with the line where the sentence starts:
+* `doctrine/plans.md:362-370`: the same Boundary B paragraph as `AGENTS.md:332-341`, with the same two sentences ("Bounding verdict reviews it afterwards", "the code reviewer's Bounding verdict rules"). The table lists `plans.md` only under "not edited". Leaving it makes the two governing copies disagree;
+* `README.md:96-98` ("a typo or a one-line bug is just the change, its test and a code review"). Only the line-44 alt text is listed;
+* `docs/index.html:164` (the prose paragraph). Only the alt text at line 168 is listed;
+* `docs/vision.md:32`, `docs/workflow-role.md:13-14`, `docs/related-practices.md:40`, `docs/release-process.md:59-60`, `docs/solo-legacy-recipe.md:136-138`, `dimensions/README.md:56`;
+* `dev/modules/onboarding/dev-tour.md:81`: a byte-identical copy of `docs/dev-tour.md` (`diff -q` is silent). Both are in the descriptive-pages test list (`test_review_stance_in_shipped_files.py:1452-1460`), so they are meant to match; the table lists only `docs/dev-tour.md`.
+Needing a decision: `examples/minimal/README.md:18-19` and `examples/scientific-minimal/README.md:40-41` say "a typo or one-line fix is just a commit with its test and a code review". Revision 1 left the example projects alone as dated records; these two sentences are in READMEs, not archived proposals, so they can be edited, and the Response should say which.
+
+Correctly left alone: `doctrine/dual-review.md:344-346`. It is pinned verbatim by `test_review_stance_in_shipped_files.py` (`boundary-c-names-the-no-plan-accepted-proposal`, a frozen test), and it still reads true for the fenced class. Correctly listed: `doctrine/lifecycle.md:61`, `docs/glossary.md:18`, `docs/quickstart.md:15-16`, `README.md:44`, `docs/getting-started.md:28`, the SVG (`docs/assets/three-lanes-of-change.svg`: header comment lines 6-9, `desc` line 29, the "code review" chip at lines 69-70). Nothing in `bootstrap/tests` reads the figure by name.
+
+*Satisfier.* The list in the revision (or the plan's mapping, if the revision says the plan owns it) carries the files above.
+
+**RV8 -- Medium -- blocking for the Decision: the fence has no place to put its review.**
+**"A change whose Boundary B ran in full mode keeps its review" reopens the contradiction the proposal opened to fix.**
+
+*Plain.* Revision 2 keeps the order "the no-plan implementation archives its proposal in the implementing commit". A review that happens after that commit finds the proposal closed (`doctrine/proposals.md:142-146`). The Revision says to record it "in a note if the proposal has archived", and a note has no defined home. For the fenced class the proposal has always archived, so the "if" never fails to apply. That is the problem in the Context, moved to a smaller set of changes. Two smaller problems with the fence:
+* **It is graded by the implementer.** The mode (`full | bounded`) is written in the commit body by the person who wrote the change, and the only check on it was the Bounding verdict this proposal drops. Bounded mode refuses on contract and trust-ceremony surfaces (`AGENTS.md:316-326`), but nobody reads whether it did.
+* **It is mostly redundant.** A change on a contract or high-risk surface is already in the deliberate lane (`doctrine/lifecycle.md:47-58`), so it has a proposal and normally a plan. The one trivial path onto a named surface is the defect-repair carve-out in that same list, which has three conditions of its own. And the Bounding verdict's job was to decide whether a fresh full run is needed; the next certifying run (`AGENTS.md:275-300`) covers every unpushed change at full anyway.
+
+*Recommendation, the better version.* Put the fence where the decision is made, before implementation: add a fourth skip condition to the plan triage (`doctrine/plans.md:187-192`): "Boundary B would run bounded". A change that cannot bound its effects opens a plan, which has a `## Code review` section, a verification section and the archive precondition. That needs no "note", no mode check after the fact, and the claim is testable at proposal review, which is where Revision 2 already puts the test. If the Maintainer prefers fewer steps still, no fence is defensible: the carve-out and the certifying run cover most of what it covers. Either way the "recorded in a note" sentence goes.
+
+*Satisfier.* The revision moves the fence into the triage rule, or drops it, and the edit list gains the triage lines (`doctrine/plans.md:187-192`) in the first case.
+
+**RV9 -- Medium -- blocking for the Decision: Revision 2 is not the complete current contract the doctrine requires.**
+**It has no `### Withdrawn / superseded commitments` heading, and it relies on Revision 1 for text it says it withdrew.**
+
+*Plain.* `doctrine/proposals.md:521-543` says every revision is a complete, self-contained contract with that heading mandatory even when its value is `None`, and the newest reviewed revision is what the Decision binds. `grep -n "Withdrawn" ` finds the heading in neither revision. Revision 2 also depends on Revision 1 for: the "no plan" header clause and its wording, the template-prefix constraint (`test_review_stance_in_shipped_files.py:709-711`), the `doctrine/proposals.md:191-203` sentence, the consistency-check method, the corrected evidence, and "Context, Alternatives, the Response ... stand". Meanwhile some of what "stands" no longer follows:
+* the Context says the practice order "works" and that the 2026-10-26 reviews "would have had nowhere to be recorded", while Revision 2 says those two changes were not trivial under the triage rule and would have had plans;
+* the Alternatives still list "Keep archiving in the implementing commit and record the review in a new place" as rejected, and that is now close to the chosen design minus the review;
+* Revision 1's Question 2 (does the quickstart show a review) and its quickstart-edit rows are replaced by Revision 2's rows without saying so;
+* Revision 1's rate-limit evidence ("the same order improvised three times") argues for a rule about review placement, which is no longer the rule.
+
+*Satisfier.* A Revision 3 (or a rewritten Revision 2, whichever the author appends) that is self-contained, carries the "no plan" clause in full, lists in the ledger what it withdraws from Revision 1, the Context and the Alternatives, and has the heading. If it says `None` for anything, that should be true.
+
+**RV10 -- Low -- non-blocking: the cost claim is true, but the check that carries it failed twice today.**
+**Both real defects came from changes the triage rule would not call trivial; the rule was not applied to them either.**
+
+*Plain.* Applying `doctrine/plans.md:176-192`: the `check_cairn` fix touched 7 files across scripts, shipped templates, a doc and a test, so it fails "single-file or single-area", and it left a Maintainer-run re-anchor, so it fails "no follow-up". Cairn Plain Language touched 8 files in the governing layer, doctrine, a dev doc, a test and the lockfile, so it fails the same way. Both claims are true. But both proposals said "no plan" before implementation (`dev/proposals/archive/2026-10-26-claude-writing-for-the-reader.md:6` says "expected to land in one commit with no plan"), and the proposal review did not catch either. So "the claim is tested at proposal review" has a measured miss rate of two in two on the day it matters, and Revision 2 makes that claim the only thing standing between a change and a review.
+
+*Recommendation.* Add a check on the real diff, not only the prediction: the implementing commit re-reads the three skip conditions against what it actually touched, and if it touched more than one area, a plan opens then. That is the sentence Revision 1 had ("if the change proves not to be trivial, a plan opens then") and Revision 2 dropped it. It costs one sentence and no step.
+
+*Satisfier.* The revision restores that sentence, or says why the proposal-stage test is enough.
+
+**RV11 -- Low -- non-blocking: other rules and tests, checked.**
+**Nothing contradicts the removal; two rules need a sentence.**
+
+* `doctrine/lifecycle.md:61` says the trivial lane carries "one code review". It is listed and is the only doctrine sentence that does. `dev/agent_collaboration.md:133` already says "A trivial change with no review owes none" and is pinned by `test_review_sweep_ships.py:101`: today the repo states both. Revision 2 resolves that, which is a point in its favour.
+* The easy-defect rule (`AGENTS.md:228-241`) grants its permission "in the independently reviewed range" and has the code reviewer check the `Defect fix:` line. A trivial change with no review has no reviewed range, so the permission does not reach it, and a `Defect fix:` line in its commit body is read by nobody. That is consistent, not contradictory, but the Revision should say so in one sentence: otherwise an agent may add an easy-problem fix to a trivial commit and write the line for a reviewer who is not coming. `AGENTS.md:228-241` is not in the edit table.
+* Tests: `test_verification_boundaries.py:205-262` requires the bounded-mode obligations and the words "Bounding" and "FULL RUN REQUIRED" to stay on five surfaces; removing the two trivial-change sentences leaves them (the second occurrence, `AGENTS.md:353`, remains). `test_review_and_verification_rules_ship.py:100-113` pins the opening sentence, "for a trivial change, with no proposal or plan, the tests that own each touched surface", "runs before the commit" and "its record is its commit body"; all stay. `test_certifying_run_rule.py` reads the same files for the certifying-run rule and does not pin the sentences. `test_review_stance_in_shipped_files.py:1124-1126` pins `doctrine/dual-review.md:344-346`, which Revision 2 does not edit. None of these is reddened by the table's edits, read from the test sources, not measured. The surfaces `AGENTS.md` and `templates/core/AGENTS.md` are kept parallel by obligation tests, not by a diff, so editing both is the author's job. Editing `AGENTS.md` and its twin also moves the lockfile hash, which Revision 2 already names.
+
+### Items answered
+
+* **Item 2, Boundary C.** Dropping the Bounding verdict for trivial changes does not contradict Boundary C: that paragraph describes a reviewer's duties when a review exists. What changes is that a trivial change's `bounded` claim has no adjudicator before the next certifying run (RV8).
+* **Item 6, the Plan review claim.** Accepted. This answers my RV4: the header now says `not required(...)` for a plan that opens in the fast multi-stage form, not a claim that no plan exists. The edit list spans the governing layer, doctrine, a shipped template, a dozen or more `docs/` and example files and a figure, which the triage rule sends to a plan, and the header says a plan opens. The condition is that the plan's mapping carries RV7's additions; a plan review adds little if the mapping is right, but this review found ten missing files, so the mapping should be rechecked by search with a known-present control, as the Revision's Verification says.
+* **Item 7, "Revision 2 replaces Revision 1".** It does not cleanly: RV9.
+
+### Not covered
+
+I did not run any test, gate, or the figure's legibility check, and I did not open the figure in a renderer: I read its source only. The paragraph scan covers text the scan's pattern can match (the words "typo", "one-line" or "trivial" with "code review", "a review" or "Bounding verdict" in one paragraph); a sentence that gives a trivial change a review in other words would not appear. I did not read `docs/` pages beyond those hits, `templates/onboarding/` or `dev/modules/` beyond `dev-tour.md`. I did not check whether the Maintainer's quoted words, which the Revision gives verbatim, match the chat; that is the Decision's check. I did not look at the Response beyond the lines Revision 2 says stand.
