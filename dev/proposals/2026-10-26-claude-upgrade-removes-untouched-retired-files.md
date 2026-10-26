@@ -1,7 +1,7 @@
 # Remove untouched copies of retired files when a project upgrades
 
 **Author**: Claude Sonnet 5.5 (Strategy; model id `claude-sonnet-5-5`)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review) — the plan edits the scaffold engine (`bootstrap/_scaffold/`), a named high-risk surface, and adds the first engine code that deletes a file in a project
 **Opened**: 2026-10-26
@@ -650,3 +650,32 @@ The Maintainer asked for it, and the measurements show the cost of waiting: stal
 * **Revision 1, S1, S4 and S5 (git unmentioned; "a same-user racer ... still wins; `dir_fd` is a question for the Security Review"):** restated above.
 * **Revision 1, the Tests table:** replaced by the list above, with the SR1 to SR5 and R1 nodes added.
 * **Revision 1, the `test_security_leaf.py` edit naming only the step:** now names the step and the delete leaf.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-26
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and
+visually isolated**. He was asked: "Accept as revised with all five defaults?"
+(the five questions in Revision 2's In brief, each with its default). He answered:
+
+> "Accept, all five defaults (Recommended)"
+
+*Scribe's note, separate from the quoted words.* "As revised" means Revision 2,
+the complete current contract, which supersedes Revision 1 and answers the usual
+review and the Security Review (cleared on conditions SR1 to SR5, all adopted).
+The five defaults are: (1) the list holds every file a release since 0.3.0 shipped
+and the tree no longer ships, 30 rows, with Cairn's own digests as the only proof
+of "untouched" (the 11-file cut-off was offered and not chosen, so his row is not
+narrowed); (2) deleting is its own step, `upgrade --remove-retired`, `--plan` is
+the preview and `--apply` is unchanged; (3) a changed copy stays and is named one
+per line, a bare `--finalize` skips it and exits 0, and a deleted file's record is
+cleared; (4) the list also covers the 0.4 collaboration agreement file, so two
+assertions in the frozen `bootstrap/tests/test_agreement_retired.py` change and owe
+an entry in the Maintainer's re-anchor; (5) the rate-limit gate is not engaged,
+since his direction started the change. `dev/NEXT_SESSION.md` is on the list as
+the NEXT_SESSION Decision requires. The plan review stays
+`required(Internal + Internal Security Review)`. The landing order is unchanged: the
+NEXT_SESSION change first, then onboarding, then this change, then the thirteenth
+0.5 row, which reuses `_committed_copy_matches`. The implementer does not edit
+`scaffold_ast_known_new.json` or the AST baseline; those belong to the
+Maintainer's re-anchor, whose authorization must name the oracle-sensitive files
+(`bootstrap/_scaffold/`, including `config.py`).
