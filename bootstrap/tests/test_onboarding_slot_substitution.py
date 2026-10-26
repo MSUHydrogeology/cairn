@@ -247,12 +247,14 @@ class TestOnboardingDocDelivery:
         self, tmp_path: Path, preset: str,
     ) -> None:
         """Every ``dev/modules/onboarding/<doc>`` ref the installed
-        preset source names points at a file that now exists -- the
-        delivery's whole point (no dead "walk this doc" links)."""
+        task list (the PLANNING slot) names points at a file that now
+        exists -- the delivery's whole point (no dead "walk this doc"
+        links)."""
         assert _scaffold(tmp_path, preset) == 0
-        preset_src = (
-            tmp_path / "dev" / "modules" / "onboarding" / f"{preset}.md"
-        ).read_text(encoding="utf-8")
+        planning = (tmp_path / "dev" / "PLANNING.md").read_text(encoding="utf-8")
+        a = planning.index("<!-- cairn:slot onboarding-tasks -->")
+        preset_src = planning[a: planning.index(
+            "<!-- cairn:end onboarding-tasks -->", a)]
         for name in self.DOC_NAMES:
             ref = f"dev/modules/onboarding/{name}"
             if ref in preset_src:
