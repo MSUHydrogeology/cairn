@@ -369,12 +369,10 @@ def test_every_templates_py_on_disk_is_release_scanned() -> None:
 
 def test_templates_py_count_is_pinned() -> None:
     """A growth tripwire, and the antidote to a fail-open exclusion table: the
-    shipped .py surface cannot grow without a human looking at it. Same posture
-    as ``assert scanned == 9`` for the always-on group in
-    ``bootstrap/tests/test_upgrade_side_door_parity.py``."""
+    shipped .py surface cannot grow without a human looking at it."""
     on_disk = _templates_py_on_disk(CAIRN_ROOT)
-    assert len(on_disk) == 40, (
-        f"expected 40 .py under templates/, found {len(on_disk)} -- if this "
+    assert len(on_disk) == 31, (
+        f"expected 31 .py under templates/, found {len(on_disk)} -- if this "
         "moved intentionally, update BOTH this pin and its sibling in "
         "bootstrap/tests/test_notice_install.py "
         "(test_manifest_has_the_expected_py_source_count) in the SAME commit. "
@@ -391,7 +389,9 @@ def test_templates_py_count_is_pinned() -> None:
         "source, one destination -- events.py); moved back 53 -> 52 by "
         "retire-event-blocks; moved 52 -> 53 by the subtraction sweep C1, "
         "which adds templates/skills/_lib/session.py -- the session kernel "
-        "extracted so the session routines outlive the lifecycle CLI."
+        "extracted so the session routines outlive the lifecycle CLI; "
+        "moved 40 -> 31 when the nine onboarding helper files (the launcher "
+        "and its eight-member _onboarding/ engine) were retired."
     )
 
 

@@ -658,50 +658,6 @@ class InstallSpec(NamedTuple):
     verbatim: bool = False
 
 
-#: Always-on **executable** helper deliveries -- the progressive-onboarding
-#: launcher + its private ``_onboarding/`` engine package.  Historically
-#: ``install_onboarding`` fanned these out UNCONDITIONALLY but OUTSIDE the
-#: manifest / lockfile (a side door): ``write_install_lockfile`` never recorded
-#: them, so ``upgrade`` could not enumerate / refresh / attest them, and
-#: ``security_check.scan_targets()`` (which derives shipped-code coverage from
-#: ``_MODULE_MAPPINGS`` only) never release-scanned them.  Promoted here as
-#: first-class always-on ``InstallSpec``s so the **same** declaration is consumed
-#: by all three authorities: ``install_onboarding`` (delivery),
-#: ``install_manifest`` / ``write_install_lockfile`` (tracking + attestation),
-#: and ``scan_targets()`` (release Bandit).  ``src`` is relative to
-#: ``templates/modules/`` (the ``_MODULE_MAPPINGS`` convention), so every consumer
-#: reuses the same ``modules/{src}`` join.  ``verbatim=True`` -- byte-for-byte
-#: executables on the hash-only upgrade policy.
-#:
-#: The launcher + the eight engine members are a **required completeness group**
-#: (``install.assert_always_on_complete`` / the new-core advancement guard): a
-#: partial group -- a present launcher with a missing/absent engine member --
-#: fails closed BEFORE any facade/engine write or lock advancement, never
-#: advancing a facade over an absent engine.  These are **always-on** structural
-#: helpers (onboarding installs unconditionally); this is NOT an opt-in
-#: ``_MODULE_MAPPINGS`` module, and the opt-in boundary is untouched.
-_ALWAYS_ON_MAPPINGS: tuple[InstallSpec, ...] = (
-    InstallSpec("default-on/onboarding_activate.py",
-                "scripts/onboarding_activate.py", True),
-    InstallSpec("default-on/_onboarding/__init__.py",
-                "scripts/_onboarding/__init__.py", True),
-    InstallSpec("default-on/_onboarding/activation.py",
-                "scripts/_onboarding/activation.py", True),
-    InstallSpec("default-on/_onboarding/cli.py",
-                "scripts/_onboarding/cli.py", True),
-    InstallSpec("default-on/_onboarding/prompts.py",
-                "scripts/_onboarding/prompts.py", True),
-    InstallSpec("default-on/_onboarding/security.py",
-                "scripts/_onboarding/security.py", True),
-    InstallSpec("default-on/_onboarding/shared.py",
-                "scripts/_onboarding/shared.py", True),
-    InstallSpec("default-on/_onboarding/slotparse.py",
-                "scripts/_onboarding/slotparse.py", True),
-    InstallSpec("default-on/_onboarding/triggers.py",
-                "scripts/_onboarding/triggers.py", True),
-)
-
-
 def duplicate_destinations(
     entries: list[tuple[str, str]],
 ) -> dict[str, list[str]]:
@@ -712,8 +668,8 @@ def duplicate_destinations(
     duplicate destination means one ``InstallSpec`` silently shadows another on a
     ``--force`` install, or the published manifest emits two rows for one path.
     Each entry is ``(owner_label, dst)``.  Pure leaf logic; the callers choose the
-    failure (``install_onboarding`` / ``assert_always_on_complete`` and the
-    upgrade planner fail closed before any write; ``install_manifest`` refuses)."""
+    failure (the upgrade planner fails closed before any write;
+    ``install_manifest`` refuses)."""
     owners: dict[str, list[str]] = {}
     for label, dst in entries:
         owners.setdefault(dst, []).append(label)
@@ -988,9 +944,8 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
     #
     # The three specs are **registered as one group and pinned as one group by
     # bootstrap/tests/test_portable_security_sweeps.py**.  The engine performs
-    # no group-completeness refusal for _MODULE_MAPPINGS (its only
-    # completeness enforcement is scoped to the always-on onboarding group), so
-    # the pin is test-side and the comment must not imply otherwise.
+    # no group-completeness refusal for _MODULE_MAPPINGS, so the pin is
+    # test-side and the comment must not imply otherwise.
     #
     # The module declares **no required token** -- unlike the "python-security"
     # key one entry above, whose gate needs {{python_package}}.  Its doctrine

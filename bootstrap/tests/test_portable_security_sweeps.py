@@ -449,8 +449,7 @@ def test_the_module_installs_exactly_three_files(installed: Path) -> None:
 
 def test_the_registration_pins_all_three_specs_as_one_group() -> None:
     """A **test-side membership pin**, not an engine refusal: the engine
-    performs no group-completeness check for ``_MODULE_MAPPINGS`` (its only
-    such enforcement is scoped to the always-on onboarding group), so nothing
+    performs no group-completeness check for ``_MODULE_MAPPINGS``, so nothing
     but this node refuses a registration that drops a group member."""
     specs = _MODULE_MAPPINGS[MODULE]
     actual = tuple((spec.src, spec.dst, spec.verbatim) for spec in specs)

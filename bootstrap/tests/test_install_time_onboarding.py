@@ -120,3 +120,83 @@ class TestDoctrineStatesTheInstallTimeModel:
         for retired in ("onboarding_activate", "onboarding-activated",
                         "[trigger:", "active-surfacing"):
             assert retired not in text, retired
+
+
+# --------------------------------------------------------------------------
+# An install writes the day-one list and two tour pages, and nothing that runs.
+# --------------------------------------------------------------------------
+
+from bootstrap import scaffold as s  # noqa: E402
+
+PROFILES = ("solo-greenfield", "collaborative-team", "high-rigor-legacy")
+TOUR_PAGES = ("agent-team-onboarding.md", "dev-tour.md")
+
+
+def _install(target: Path, preset: str | None, agent_team: str | None = None,
+             extra: tuple[str, ...] = ()) -> int:
+    """Install through the real CLI; ``preset`` None is the no-profile path."""
+    target.mkdir(parents=True, exist_ok=True)
+    lines = ["project_name: InstallTimeOnboarding", "test_command: pytest"]
+    if preset is None:
+        lines += ["modules:", "  - reflections"]
+    else:
+        lines.append(f"preset: {preset}")
+    if agent_team is not None:
+        lines.append(f"agent_team: {agent_team}")
+    cfg = target.parent / f"{target.name}-profile.yml"
+    cfg.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return s.main(["--config", str(cfg), "--target", str(target),
+                   "--cairn-root", str(ROOT), *extra])
+
+
+class TestInstallWritesNoActivationMachinery:
+    @pytest.mark.parametrize("preset", (*PROFILES, None))
+    def test_an_install_writes_no_helper_log_or_profile_copy(
+            self, tmp_path: Path, preset: str | None) -> None:
+        target = tmp_path / "t"
+        assert _install(target, preset) == 0
+        assert not (target / "scripts" / "onboarding_activate.py").exists()
+        assert not (target / "scripts" / "_onboarding").exists()
+        assert not (target / "dev/.cairn/onboarding-activated.jsonl").exists()
+        for profile in PROFILES:
+            assert not (target / "dev/modules/onboarding" / f"{profile}.md").exists()
+
+    @pytest.mark.parametrize("preset", PROFILES)
+    def test_a_profile_install_still_writes_both_tour_pages(
+            self, tmp_path: Path, preset: str) -> None:
+        target = tmp_path / "t"
+        assert _install(target, preset) == 0
+        for page in TOUR_PAGES:
+            assert (target / "dev/modules/onboarding" / page).is_file(), page
+
+    def test_the_published_manifest_lists_no_activation_helper(self) -> None:
+        rows = s.install_manifest(modules=None)
+        assert not [r for r in rows
+                    if "onboarding_activate" in r[1] or "_onboarding/" in r[1]
+                    or "onboarding_activate" in r[0] or "_onboarding/" in r[0]]
+        assert rows, "control: the manifest is not empty"
+
+
+class TestInstallLockfileRecordsKeepTheirShape:
+    """``_LOCK_SCHEMA`` is pinned by the engine-symbol attestation, which is
+    red until the Maintainer's re-anchor; this pins the shape a real install
+    writes in the meantime."""
+
+    RECORD_KEYS = {"base_cache", "base_hash", "dst", "hash", "living_state",
+                   "src", "verbatim"}
+    TOP_KEYS = {"cairn_commit", "cairn_version", "files", "modules",
+                "optional_templates", "profile", "schema", "source_licenses",
+                "source_repository", "tokens"}
+
+    @pytest.mark.parametrize("preset", (*PROFILES, None))
+    def test_a_fresh_installs_lockfile_has_the_expected_key_sets(
+            self, tmp_path: Path, preset: str | None) -> None:
+        target = tmp_path / "t"
+        assert _install(target, preset) == 0
+        lock = s.read_lockfile(target)
+        assert lock is not None
+        assert set(lock) == self.TOP_KEYS
+        keys: set[str] = set()
+        for record in lock["files"]:
+            keys |= set(record)
+        assert keys == self.RECORD_KEYS

@@ -1,16 +1,14 @@
 """Cross-facade loader poison-cleanup regressions (Codex cross-phase finding #4).
 
-Each thin launcher facade (`intent.py`, `onboarding_activate.py`,
-`lifecycle_metrics.py`) registers its canonical package in `sys.modules`
-*before* `exec_module()` (a package `__init__` may import its own submodules by
+Each thin launcher facade (`intent.py`, `lifecycle_metrics.py`) registers its
+canonical package in `sys.modules` *before* `exec_module()` (a package `__init__` may import its own submodules by
 canonical name). A mid-exec failure must therefore remove the parent **and**
 every canonical child it registered, so a later retry rebuilds a clean module
 graph instead of reusing a stale submodule. And a fully-loaded canonical package
 must be reused idempotently (one object), not re-executed.
 
-These exercise the THREE real facades (loaded from their template locations);
-they are net-new (COLLECTION-ADDED for the gate manifest) and load
-unconditionally (the facades are always-present source artifacts).
+These exercise the real facade (loaded from its template location); it loads
+unconditionally (the facade is an always-present source artifact).
 """
 from __future__ import annotations
 
@@ -25,7 +23,6 @@ CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 
 FACADES = [
     ("templates/modules/team-gated/intent.py", "tools._intent"),
-    ("templates/modules/default-on/onboarding_activate.py", "scripts._onboarding"),
 ]
 
 

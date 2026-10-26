@@ -71,8 +71,8 @@ def _has_header(path: Path) -> bool:
 
 def test_manifest_has_the_expected_py_source_count():
     sources = _manifest_py_sources()
-    assert len(sources) == 44, (
-        f"expected 44 templates/**/*.py manifest sources, found "
+    assert len(sources) == 35, (
+        f"expected 35 templates/**/*.py manifest sources, found "
         f"{len(sources)} -- if this moved intentionally, update this test. "
         f"Moved 44 -> 45 by portable-security-sweeps Chunk A, which registers "
         f"templates/modules/team-gated/run_portable_security_sweeps.py; "
@@ -90,7 +90,9 @@ def test_manifest_has_the_expected_py_source_count():
         f"Moved 56 -> 57 by the subtraction sweep's C1, which registers templates/skills/_lib/session.py -- the session kernel extracted so the session routines survive the removal of the lifecycle CLI. Its sibling pin in bootstrap/tests/test_security_lint.py "
         f"(test_templates_py_count_is_pinned) counts DISTINCT files on disk and "
         f"therefore no longer agrees with this one: 52 there, 56 here. The two "
-        f"still move in the same commit; they no longer move to the same number"
+        f"still move in the same commit; they no longer move to the same number. "
+        f"Moved 44 -> 35 when the nine onboarding helper files (the launcher "
+        f"and its eight-member _onboarding/ engine) were retired."
     )
 
 
@@ -181,9 +183,9 @@ def test_notice_is_a_core_mapping():
 
 def test_notice_appears_in_manifest_data_row_count():
     rows = install_manifest(modules=None)
-    assert len(rows) == 95, (
-        f"expected 95 manifest rows after retiring the collaboration agreement "
-        f"and the handoff file; "
+    assert len(rows) == 86, (
+        f"expected 86 manifest rows after retiring the collaboration agreement, "
+        f"the handoff file and the nine onboarding helper files; "
         f"found {len(rows)}. Investigate any install-contract change."
     )
 

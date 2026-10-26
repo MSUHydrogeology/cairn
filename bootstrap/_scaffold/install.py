@@ -28,7 +28,6 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .config import (
-    _ALWAYS_ON_MAPPINGS,
     _CORE_MAPPINGS,
     _MODULE_MAPPINGS,
     _SKILLS_GITIGNORE,
@@ -172,19 +171,10 @@ _DEV_DIRS: tuple[str, ...] = (
     # Ships empty at adoption; the README is installed by _CORE_MAPPINGS.
     "dev/rules",
     "dev/modules",
-    # Progressive-onboarding module's installed-source-file home.
-    # Per plan 2026-05-28-claude-cairn-progressive-onboarding (Chunk
-    # scaffold inlines a preset's seed
-    # tasks into `dev/PLANNING.md` and ALSO copies the full source
-    # file here so the activation helper can discover deferred tasks
-    # at goodnight.  The directory exists from install time onward.
+    # Home of the two onboarding tour pages the install copies in when a
+    # profile is selected.
     "dev/modules/onboarding",
-    # Progressive-onboarding state-file directory (per
-    # Codex P2-5 disposition: tracked, parallel to dev/intents.jsonl).
-    # The scaffold creates this dir + writes an empty activation log
-    # (`onboarding-activated.jsonl`) at install time so the helper
-    # never has to mkdir; the tracked state means multi-team profiles
-    # share activation history through git.
+    # The lockfile and its base-template cache live here.
     "dev/.cairn",
 )
 
@@ -1060,11 +1050,8 @@ def capability_install_notice_lines(module_names: "list[str]") -> "list[str]":
 #: Three named preset onboarding files (under
 #: ``templates/onboarding/<name>.md``).  An adopter's chosen preset
 #: maps 1:1 to one of these files; the scaffold inlines the file's
-#: seed tasks into ``dev/PLANNING.md``'s ``onboarding-tasks`` slot and
-#: copies the full source file to ``dev/modules/onboarding/<name>.md``
-#: as the authoritative reference for deferred-task discovery at
-#: goodnight (Codex P1-1 / P2-4 disposition: seed-only PLANNING render
-#: + tracked installed source).
+#: seed tasks into ``dev/PLANNING.md``'s ``onboarding-tasks`` slot; the
+#: file itself is not copied into the adopter.
 _ONBOARDING_PRESETS: frozenset[str] = frozenset(
     {"solo-greenfield", "collaborative-team", "high-rigor-legacy"}
 )
@@ -1186,29 +1173,6 @@ def _substitute_slot(
     return text[:body_start] + new_body + text[c:], True
 
 
-#: The activation helper script Cairn ships to every adopter (Chunk
-#: ALWAYS installed alongside any progressive-onboarding
-#: deployment).  The source lives under templates/modules/default-on/
-#: parallel to the foldback_suggest.py + claim_check.py precedent;
-#: the destination is the adopter's scripts/ tree, invoked at
-#: goodnight per doctrine/onboarding.md.
-_ONBOARDING_HELPER_SRC_REL = "modules/default-on/onboarding_activate.py"
-_ONBOARDING_HELPER_DST_REL = "scripts/onboarding_activate.py"
-
-#: The activation log path the helper appends to (per
-#: Codex P2-5: tracked, parallel to dev/intents.jsonl).
-_ONBOARDING_LOG_REL = "dev/.cairn/onboarding-activated.jsonl"
-
-#: The header comment the scaffold writes into a freshly-seeded
-#: activation log so a cold reader knows what it is + the schema.
-_ONBOARDING_LOG_HEADER = (
-    "# dev/.cairn/onboarding-activated.jsonl -- progressive-onboarding\n"
-    "# activation log; one JSONL line per activation; append-only.\n"
-    "# Schema: {task-id, activated-at, by-agent, source-preset, trigger}.\n"
-    "# Managed by scripts/onboarding_activate.py at goodnight;\n"
-    "# see doctrine/onboarding.md for the mechanism.\n"
-)
-
 #: The shared onboarding reference docs Cairn ships into an adopter when
 #: a preset is selected (fold-back: onboarding-doc-delivery).  Sourced
 #: from ``cairn/docs/`` (``templates_root.parent / "docs"``) and installed
@@ -1217,66 +1181,6 @@ _ONBOARDING_LOG_HEADER = (
 #: were dead links on first run (the bug this delivery fixes).
 _ONBOARDING_DOC_NAMES = ("agent-team-onboarding.md", "dev-tour.md")
 _ONBOARDING_DOC_DST_DIR_REL = "dev/modules/onboarding"
-
-
-def missing_always_on_sources(templates_root: Path) -> list[str]:
-    """The always-on completeness-group source members absent under
-    ``templates/modules/`` -- empty list means a complete group.
-
-    The onboarding launcher + its ``_onboarding/`` engine are a REQUIRED
-    completeness group: a present launcher delivered/tracked over an absent
-    engine member is the facade-without-engine breakage the side-door-parity
-    change exists to close.  This is the cheap source-presence check the
-    fail-closed guards (``assert_always_on_complete`` for install,
-    ``write_install_lockfile`` for the lockfile) consult BEFORE any write."""
-    missing: list[str] = []
-    for spec in _ALWAYS_ON_MAPPINGS:
-        if not (templates_root / "modules" / spec.src).is_file():
-            missing.append(f"modules/{spec.src}")
-    return missing
-
-
-def assert_always_on_complete(templates_root: Path) -> None:
-    """Fail closed unless the always-on launcher+engine group is **well-formed**
-    before any install -- source-complete AND uniquely-owned destinations.
-
-    Two fail-closed checks, both raising :class:`ScaffoldSecurityError` (the CLI
-    converts the raise to a crisp non-zero exit) BEFORE any facade/engine write:
-
-    1. **Source completeness** -- every launcher+engine source resolves; a partial
-       group (corrupted checkout / misregistered spec) never ships a launcher
-       without its engine.
-    2. **Destination ownership** -- no always-on destination is claimed by a
-       second always-on spec OR by a ``core``/``skills`` destination.  Without
-       this, two specs mapping one ``dst`` let ``--force`` write both in
-       sequence, silently replacing the launcher with another source and
-       returning success.  ``install_manifest``
-       carries the global (all-tier) refusal for the manifest/lockfile path."""
-    missing = missing_always_on_sources(templates_root)
-    if missing:
-        raise ScaffoldSecurityError(
-            "always-on onboarding completeness group is incomplete -- missing "
-            f"source(s): {', '.join(missing)}. Refusing to install/track a "
-            "partial launcher+engine group (a facade must never ship without "
-            "its engine).")
-    owned = (
-        [(f"core:{src}", dst) for src, dst in _CORE_MAPPINGS]
-        + [(f"skills:{src}", dst) for src, dst, _v in _SKILLS_MAPPINGS]
-        + [(f"always-on:{spec.src}", spec.dst) for spec in _ALWAYS_ON_MAPPINGS]
-    )
-    dupes = duplicate_destinations(owned)
-    # Only a collision that INVOLVES an always-on destination is this installer's
-    # to refuse (a hypothetical core-vs-skills dup is install_manifest's global
-    # check); scope to the always-on destination set.
-    always_on_dsts = {spec.dst for spec in _ALWAYS_ON_MAPPINGS}
-    relevant = {dst: who for dst, who in dupes.items() if dst in always_on_dsts}
-    if relevant:
-        detail = "; ".join(
-            f"{dst} <- {', '.join(who)}" for dst, who in sorted(relevant.items()))
-        raise ScaffoldSecurityError(
-            "always-on destination ownership conflict (a destination is claimed "
-            f"by more than one source): {detail}. Refusing to install -- one spec "
-            "would silently shadow another.")
 
 
 def install_onboarding(
@@ -1288,125 +1192,36 @@ def install_onboarding(
     dry_run: bool = False,
     force: bool = False,
 ) -> list[InstallResult]:
-    """Install the progressive-onboarding artifacts.
+    """Install the install-time onboarding artifacts.
 
-    Three categories of writes:
-
-    **Always (regardless of preset selection)**:
-
-    A. Install the activation helper script to
-       ``<target>/scripts/onboarding_activate.py`` (verbatim copy).
-    B. Seed an empty activation log at
-       ``<target>/dev/.cairn/onboarding-activated.jsonl`` (header-
-       comment-only; the helper appends to it at goodnight).
-
-    **Only when a named preset is selected**:
+    Nothing is written without a named preset. With one, two writes:
 
     C. Inline seed tasks + the ``<!-- preset: <name> -->`` metadata
        comment into ``dev/PLANNING.md``'s ``onboarding-tasks`` slot.
-       ONLY ``[seed; id: ...]`` items render into the slot; deferred
-       tasks (``[trigger: X; id: ...]``) stay in the installed source
-       file (write D).
-    D. Copy the full preset source file
-       ``templates/onboarding/<name>.md`` to
-       ``<target>/dev/modules/onboarding/<name>.md`` byte-for-byte.
-       This is the authoritative reference the goodnight activation
-       helper reads to discover deferred tasks (Codex External
-       Review P1-1).
+       ONLY ``[seed; id: ...]`` items render into the slot.
     E. Copy the shared onboarding reference docs
        (``docs/agent-team-onboarding.md`` + ``docs/dev-tour.md``) to
        ``<target>/dev/modules/onboarding/`` so the presets' "walk this
-       doc" task refs resolve in the adopter (fold-back:
-       onboarding-doc-delivery; without this they were dead links on
-       first run).  Shared across presets -- shipped on any preset
-       selection.
+       doc" task refs resolve in the adopter.  Shared across presets --
+       shipped on any preset selection.
 
-    ``axes`` (first-session-survivability finding 3): the resolved
-    six-axis profile, gating write C's rendered seed content by the
-    resolved roster via ``_rendered_onboarding_overlay`` (a task never
-    commands a tool/doc the resolved axes didn't staff). Keyword-only
-    with a ``None`` default -- omitted or ``None`` keeps every
-    ``cairn:if``-gated seed (the conservative default), preserving every
-    existing 3-positional call site unchanged. Callers pass the SAME
-    axes map ``install_core`` stripped the always-on surface with (the
+    Nothing here schedules a later prompt: the list is written once.
+
+    ``axes``: the resolved six-axis profile, gating write C's rendered
+    seed content by the resolved roster via ``_rendered_onboarding_overlay``
+    (a task never commands a tool/doc the resolved axes didn't staff).
+    Keyword-only with a ``None`` default -- omitted or ``None`` keeps every
+    ``cairn:if``-gated seed (the conservative default). Callers pass the
+    SAME axes map ``install_core`` stripped the core surface with (the
     CLI's ``embedded_axes``), not a separately-resolved axes dict, so
     every strip site keys off one axes map.
 
-    Returns the list of InstallResults for each write (the
-    always-writes always present; the preset-conditional writes only
-    when ``preset_name`` is one of the three named presets).
-
-    Per plan 2026-05-28-claude-cairn-progressive-onboarding Chunks
-    slot substitution + preset source copy, plus the helper script
-    install + activation log seed) + Codex External Review P1-1 /
-    P2-4 / P2-5 dispositions.
+    Returns the list of InstallResults for each write; empty when
+    ``preset_name`` is not one of the three named presets.
     """
     results: list[InstallResult] = []
 
-    # Fail closed BEFORE any facade/engine write unless the FULL always-on
-    # launcher+engine source set resolves -- a partial group must never ship a
-    # facade over an absent engine member. Raises ScaffoldSecurityError (the CLI
-    # converts it to a crisp non-zero exit); the per-member warn below is then
-    # unreachable defense-in-depth.
-    assert_always_on_complete(templates_root)
-
-    # ----- Always: install the launcher + engine completeness group (A) --
-    # The onboarding launcher (a thin facade) + its private ``_onboarding/``
-    # engine package are the always-on EXECUTABLE deliveries.  They are now
-    # declared once in ``_ALWAYS_ON_MAPPINGS`` and installed FROM it -- the SAME
-    # declaration ``install_manifest`` tracks and ``security_check.scan_targets()``
-    # scans -- so the installer and the manifest/lockfile/scanner can no longer
-    # desync on what onboarding ships (the side-door parity fix).  The engine must
-    # install BESIDE the launcher at ``scripts/_onboarding/`` for the facade to
-    # import (parity with the team-gated ``tools/_intent/`` package install).  Each
-    # member is copied byte-for-byte through the containment guard.  The group's
-    # source-completeness is enforced fail-closed by the caller via
-    # ``assert_always_on_complete`` BEFORE this runs, so a present launcher is
-    # never installed over an absent engine member; the per-member ``[warn]`` below
-    # is unreachable defense-in-depth.
-    for spec in _ALWAYS_ON_MAPPINGS:
-        helper_src = templates_root / "modules" / spec.src
-        helper_dst = target / spec.dst
-        if not helper_src.exists():
-            print(
-                f"  [warn] always-on helper source missing: "
-                f"templates/modules/{spec.src}",
-                file=sys.stderr,
-            )
-            continue
-        if dry_run:
-            results.append((helper_dst, [], [], "dry-run"))
-        elif helper_dst.exists() and not force:
-            print(
-                f"  [skip] {helper_dst}: already exists -- pass --force "
-                f"to overwrite",
-                file=sys.stderr,
-            )
-            results.append((helper_dst, [], [], "skipped-exists"))
-        else:
-            _assert_safe_write(helper_dst, target)
-            helper_dst.parent.mkdir(parents=True, exist_ok=True)
-            helper_dst.write_bytes(helper_src.read_bytes())
-            results.append((helper_dst, [], [], "installed"))
-
-    # ----- Always: seed an empty activation log (B) ---------------------
-    log_dst = target / _ONBOARDING_LOG_REL
-    if dry_run:
-        results.append((log_dst, [], [], "dry-run"))
-    elif log_dst.exists() and not force:
-        print(
-            f"  [skip] {log_dst}: already exists -- pass --force to "
-            f"overwrite",
-            file=sys.stderr,
-        )
-        results.append((log_dst, [], [], "skipped-exists"))
-    else:
-        _assert_safe_write(log_dst, target)
-        log_dst.parent.mkdir(parents=True, exist_ok=True)
-        log_dst.write_text(_ONBOARDING_LOG_HEADER, encoding="utf-8")
-        results.append((log_dst, [], [], "installed"))
-
-    # ----- Preset-conditional: slot subst + source copy (C + D) ---------
+    # ----- Preset-conditional: slot substitution (C) + tour pages (E) ----
     if not preset_name or preset_name not in _ONBOARDING_PRESETS:
         return results
 
@@ -1449,29 +1264,11 @@ def install_onboarding(
                 planning_dst.write_text(new_text, encoding="utf-8")
                 results.append((planning_dst, [], [], "installed"))
 
-    # Write D: copy source file verbatim to installed-source path.
-    source_dst = target / "dev" / "modules" / "onboarding" / f"{preset_name}.md"
-    if dry_run:
-        results.append((source_dst, [], [], "dry-run"))
-    else:
-        if source_dst.exists() and not force:
-            print(
-                f"  [skip] {source_dst}: already exists -- pass --force to "
-                f"overwrite",
-                file=sys.stderr,
-            )
-            results.append((source_dst, [], [], "skipped-exists"))
-        else:
-            _assert_safe_write(source_dst, target)
-            source_dst.parent.mkdir(parents=True, exist_ok=True)
-            source_dst.write_text(preset_text, encoding="utf-8")
-            results.append((source_dst, [], [], "installed"))
-
     # Write E: ship the shared onboarding reference docs into the
     # installed-source dir so the presets' "walk this doc" refs resolve
-    # in the adopter (fold-back: onboarding-doc-delivery).  Sourced from
-    # cairn/docs/; same skip-unless-force guard as Write D.  Shared across
-    # presets, so a preset selection ships both regardless of which one.
+    # in the adopter.  Sourced from cairn/docs/; skipped when the file
+    # exists unless --force.  Shared across presets, so a preset selection
+    # ships both regardless of which one.
     docs_root = templates_root.parent / "docs"
     for doc_name in _ONBOARDING_DOC_NAMES:
         doc_src = docs_root / doc_name
@@ -1747,7 +1544,7 @@ def install_manifest(
     modules when ``None`` -- the published catalog).  ``source`` is
     relative to ``templates/``; ``destination`` is relative to the
     target repo root.  Derived from ``_CORE_MAPPINGS`` +
-    ``_SKILLS_MAPPINGS`` + ``_ALWAYS_ON_MAPPINGS`` + ``_MODULE_MAPPINGS``
+    ``_SKILLS_MAPPINGS`` + ``_MODULE_MAPPINGS``
     so the published manifest (Layer 1) cannot drift from what the
     scaffold actually writes.  Sorted by destination for a stable,
     diffable emission.
@@ -1757,11 +1554,6 @@ def install_manifest(
     ]
     # Skills install unconditionally (like core); always in the manifest.
     entries.extend(_SKILLS_MAPPINGS)
-    # Always-on executable helpers (onboarding launcher + engine) install
-    # unconditionally too -- record them so write_install_lockfile tracks them
-    # and upgrade carries / attests them (closing the install.py side door).
-    for spec in _ALWAYS_ON_MAPPINGS:
-        entries.append((f"modules/{spec.src}", spec.dst, spec.verbatim))
     names = sorted(_MODULE_MAPPINGS) if modules is None else modules
     for name in names:
         for spec in _MODULE_MAPPINGS.get(name, []):
@@ -1929,23 +1721,6 @@ def write_install_lockfile(
     :func:`module_merge_directives`.
     """
     _refuse_secret_tokens(tokens, allow_secret_tokens)
-
-    # Refuse to record a PARTIAL always-on completeness group. The file loop
-    # below silently skips a missing source (`if not src.exists(): continue`), so
-    # without this an incomplete launcher+engine would yield a lockfile that
-    # tracks only the members present -- the side-door blind spot, re-expressed in
-    # the lockfile. Fail closed (return None, the writer's refuse signal) so no
-    # partial-group lockfile is ever written.
-    missing_group = missing_always_on_sources(templates_root)
-    if missing_group:
-        print(
-            f"  [warn] {_LOCKFILE_REL} NOT written: the always-on onboarding "
-            f"completeness group is incomplete -- missing source(s): "
-            f"{', '.join(missing_group)}. Restore the launcher+engine sources "
-            "and re-run.",
-            file=sys.stderr,
-        )
-        return None
 
     file_records: list[dict[str, Any]] = []
     cache_writes: list[tuple[Path, str]] = []

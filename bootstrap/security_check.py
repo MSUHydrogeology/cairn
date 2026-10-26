@@ -83,7 +83,6 @@ CAIRN_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(CAIRN_ROOT))
 
 from bootstrap._scaffold.config import (  # noqa: E402  (trust anchor: narrowest owner, plan 0B.3 / Stage 4)
-    _ALWAYS_ON_MAPPINGS,
     _MODULE_MAPPINGS,
 )
 from bootstrap._scaffold.install import install_manifest  # noqa: E402
@@ -689,32 +688,21 @@ def scan_targets() -> list[str]:
     files. A newly-shipped script is covered automatically; there is no
     hand-maintained list to drift.
 
-    The two registry loops below (``_MODULE_MAPPINGS``, ``_ALWAYS_ON_MAPPINGS``)
-    are strictly redundant once the manifest union lands -- measured, their
-    43 entries are a subset of the manifest's 45 (``as_of`` 2026-08-05; both
-    are dated snapshots that move with every module registration, and no test
-    pins either, so re-measure rather than trust them -- what is durable is
-    the **subset relation**, not the pair of counts) -- and are **retained on
-    purpose**: they are ``set.add`` calls into the same accumulator, so
-    "this change cannot shrink the scanned surface" is true by inspection
-    rather than by measurement. They are defence in depth, not a second
-    guard: what actually catches a shipped ``.py`` falling out of this set is
-    the on-disk oracle in ``bootstrap/tests/test_security_lint.py``, whose
-    input this function never reads."""
+    The registry loop below (``_MODULE_MAPPINGS``) is strictly redundant once
+    the manifest union lands -- every verbatim ``.py`` it names is also a
+    verbatim ``.py`` in the published manifest, and that subset relation, not
+    any count, is what is durable -- and is **retained on purpose**: it is a
+    ``set.add`` call into the same accumulator, so "this change cannot shrink
+    the scanned surface" is true by inspection rather than by measurement. It
+    is defence in depth, not a second guard: what actually catches a shipped
+    ``.py`` falling out of this set is the on-disk oracle in
+    ``bootstrap/tests/test_security_lint.py``, whose input this function never
+    reads."""
     targets: set[str] = set()
     for specs in _MODULE_MAPPINGS.values():
         for spec in specs:
             if spec.verbatim and spec.src.endswith(".py"):
                 targets.add(f"templates/modules/{spec.src}")
-    # Always-on EXECUTABLE helpers (onboarding launcher + _onboarding/ engine):
-    # the same shipped-verbatim-.py class as a module script, but delivered
-    # unconditionally OUTSIDE _MODULE_MAPPINGS (install._ALWAYS_ON_MAPPINGS). They
-    # were release-unscanned while side-door-delivered; including them here closes
-    # that PRE-EXISTING Bandit blind spot, not just a new one. Same
-    # `templates/modules/{src}` join as the module loop above.
-    for spec in _ALWAYS_ON_MAPPINGS:
-        if spec.verbatim and spec.src.endswith(".py"):
-            targets.add(f"templates/modules/{spec.src}")
     # Cairn's own dev executables: scripts/*.py + the top-level bootstrap/
     # tools (scaffold, security_check, verify_integrity). Non-recursive, so
     # bootstrap/tests/ -- which carry intentional attack fixtures -- are not
@@ -743,7 +731,7 @@ def scan_targets() -> list[str]:
     #   * `modules=None` means the FULL published catalog. A module subset
     #     would silently shrink the scanned surface, and nothing downstream
     #     would say so.
-    #   * This is a UNION WITH the two registry loops above, never a
+    #   * This is a UNION WITH the registry loop above, never a
     #     replacement for them. That framing is what makes "coverage cannot
     #     shrink" checkable by inspection instead of by measurement.
     # It closes a real, 63-day-old miss: `_SKILLS_MAPPINGS` ships the two

@@ -27,7 +27,6 @@ from typing import Any, NamedTuple
 from .config import (
     KNOWN_TOKENS,
     PresetError,
-    _ALWAYS_ON_MAPPINGS,
     _AXES,
     _CORE_MAPPINGS,
     _GITIGNORE_SEEDS,
@@ -339,21 +338,6 @@ def _theirs_bytes(
     return text.encode("utf-8") if text is not None else None
 
 
-def _always_on_group_complete(
-    cairn_root: Path, templates_root: Path, to_ref: str | None,
-) -> bool:
-    """True iff EVERY always-on launcher+engine source resolves at *to_ref* -- the
-    Completeness-group precondition. When False, no always-on member may
-    advance OR be adopted: ANY lockfile-authority mutation touching the group is
-    fail-closed, so a facade never lands without its engine (External-Security
-    -- the precondition the upgrade post-pass AND ``--adopt-collisions``
-    both consult, not just the advancing path)."""
-    return all(
-        _theirs_bytes(cairn_root, templates_root, f"modules/{spec.src}", to_ref)
-        is not None
-        for spec in _ALWAYS_ON_MAPPINGS)
-
-
 #: Kinds that may be staged + applied (they advance the machine
 #: authority).  Every other kind is report-only and is NEVER staged, so it
 #: can never be applied: slot-removed, error,
@@ -380,9 +364,8 @@ _KIND_DISPLAY_LABEL = {
     "new-module": "new module file (added)",
     "new-module-blocked": "new module file (BLOCKED — adopt-as-fork or reconcile, then re-stage)",
     "new-module-lockconflict": "new module file (BLOCKED — destination owned by another source; resolve by hand)",
-    "new-core-blocked": "new core/always-on file (BLOCKED — adopt-as-fork or reconcile, then re-stage)",
-    "new-core-lockconflict": "new core/always-on file (BLOCKED — destination owned by another source; resolve by hand)",
-    "new-core-incomplete-group": "always-on file (BLOCKED — completeness group incomplete; restore the missing launcher/engine source)",
+    "new-core-blocked": "new core/skills file (BLOCKED — adopt-as-fork or reconcile, then re-stage)",
+    "new-core-lockconflict": "new core/skills file (BLOCKED — destination owned by another source; resolve by hand)",
 }
 
 
@@ -483,13 +466,11 @@ def _assert_mapping_ownership(lock_modules: set[str]) -> None:
     a duplicate hidden by source-absence or processing order cannot slip through.
     Current Cairn mappings have none; this preserves that as an enforced
     invariant.  Shares the ``duplicate_destinations`` preflight with the install
-    paths -- one detector, three callers
-    (install_onboarding / install_manifest / here), each choosing its failure."""
+    manifest -- one detector, two callers (install_manifest / here), each
+    choosing its failure."""
     entries = (
         [(f"core:{src}", dst) for src, dst in _CORE_MAPPINGS]
         + [(f"skills:{src}", dst) for src, dst, _v in _SKILLS_MAPPINGS]
-        # Always-on executable helpers share the destination namespace.
-        + [(f"always-on:{spec.src}", spec.dst) for spec in _ALWAYS_ON_MAPPINGS]
         + [(f"module[{mod}]:{spec.src}", spec.dst)
            for mod in sorted(lock_modules)
            for spec in _MODULE_MAPPINGS.get(mod, [])]
@@ -630,14 +611,8 @@ def _compute_upgrade(
     # would spuriously re-add VENDOR.md alongside the renamed CLAUDE.md.
     lock_srcs = {rec.get("src") for rec in lock.get("files", [])}
     lock_dsts = {rec["dst"] for rec in lock.get("files", [])}
-    # Always-on EXECUTABLE helpers (onboarding launcher + engine) ride this same
-    # unconditional path (side-door parity): declared once in _ALWAYS_ON_MAPPINGS,
-    # they classify / carry / attest through the core machinery, with the same
-    # ``modules/{src}`` lockfile-source convention install_manifest uses.
     core_like = ([(s, d, False) for s, d in _CORE_MAPPINGS]
-                 + list(_SKILLS_MAPPINGS)
-                 + [(f"modules/{spec.src}", spec.dst, spec.verbatim)
-                    for spec in _ALWAYS_ON_MAPPINGS])
+                 + list(_SKILLS_MAPPINGS))
     seen_new: set[str] = set()
     for src_rel, dst_rel, verbatim in core_like:
         if src_rel in lock_srcs or dst_rel in seen_new:
@@ -650,9 +625,8 @@ def _compute_upgrade(
         # onto new-core. The prior new-core path NEVER checked whether the
         # destination already existed, so a genuinely-new core-like add over an
         # occupied UNLOCKED file would SILENTLY OVERWRITE it -- a latent data-loss
-        # surface independent of onboarding, reachable the moment any always-on
-        # helper is registered as tracked. Two distinct provenance states (as the
-        # new-module split): a dst already tracked under ANOTHER source is a
+        # surface for any file added to the core or skills mappings. Two
+        # distinct provenance states (as the new-module split): a dst already tracked under ANOTHER source is a
         # provenance conflict adoption never clears; an occupied-UNLOCKED regular
         # file is an adoptable fork (`upgrade --adopt-collisions`, the SAME
         # adoptable class the sibling resolves) -- or remove-and-re-stage to accept
@@ -805,38 +779,6 @@ def _compute_upgrade(
                     f"{_BASE_CACHE_REL}/{dst_rel}",
                     src=canonical_src, verbatim=False))
 
-    # Always-on completeness-group enforcement (the upgrade-authority guard).
-    # The launcher + engine reach lockfile authority through THREE paths -- a
-    # tracked launcher advancing via the clean/verbatim classification above, a
-    # not-yet-tracked member adding via new-core, and an occupied-unlocked launcher
-    # ADOPTED via `--adopt-collisions` (`new-core-blocked`) -- so a per-loop check
-    # cannot see the whole group. Resolve every group source ONCE; if ANY is
-    # missing upstream (a corrupted checkout / misregistered spec), NO group member
-    # may advance OR be adopted: convert EVERY pending group plan -- advancing AND
-    # blocked-addition (incl. the adoptable `new-core-blocked`) -- to the hard
-    # block, so a facade never lands without its engine. Converting the adoptable
-    # kinds too: a non-advancing
-    # `new-core-blocked` was left adoptable, so `--adopt-collisions` could record a
-    # partial-group fork into the lockfile. Since `_cmd_adopt_collisions` discovers
-    # its adoptable set by re-running `_compute_upgrade`, this conversion removes
-    # the always-on collisions from that set too. A no-op on the overwhelmingly-
-    # common complete-group case. Report-only kinds (up-to-date, verbatim-up-to-
-    # date) carry no authority mutation and are left untouched.
-    _mutating_group_kinds = _ADVANCING_KINDS | set(_BLOCKED_ADDITION_KINDS)
-    always_on_dsts = {spec.dst for spec in _ALWAYS_ON_MAPPINGS}
-    if not _always_on_group_complete(cairn_root, templates_root, to_ref):
-        plans = [
-            FilePlan(
-                fp.dst, "new-core-incomplete-group", None,
-                "always-on onboarding completeness group is incomplete (a "
-                "launcher/engine member's source is missing upstream); refusing "
-                "to advance or adopt any member until it is restored", None, None)
-            if (fp.dst in always_on_dsts
-                and fp.kind in _mutating_group_kinds)
-            else fp
-            for fp in plans
-        ]
-
     # Structural reconciliation.
     current_modules = set(_MODULE_MAPPINGS)
     structural = {
@@ -935,19 +877,17 @@ def _print_upgrade_report(
 
 #: The two adoptable occupied-destination collision kinds an operator can keep as
 #: a tracked fork via ``upgrade --adopt-collisions`` (module-internal + core/
-#: always-on). Both carry ``src`` (canonical) + ``theirs_raw`` (merge base)
+#: skills). Both carry ``src`` (canonical) + ``theirs_raw`` (merge base)
 #: when adoptable; a lock-conflict block (``*-lockconflict``) never is.
 _ADOPTABLE_BLOCKED_KINDS = ("new-module-blocked", "new-core-blocked")
 
 #: Every hard-blocked addition kind: ``--apply`` fails closed UNCONDITIONALLY on
-#: any of these (no ``--ack-review-only`` / ``--force`` bypass).  The
-#: ``incomplete-group`` kind is the completeness-group fail-closed (a facade
-#: must never advance over an absent engine member); it is hard-blocked but NOT
-#: adoptable (the fix is to restore the source, not keep a fork).
+#: any of these (no ``--ack-review-only`` / ``--force`` bypass).  A
+#: ``*-lockconflict`` kind is hard-blocked but NOT adoptable (the fix is to
+#: resolve ownership by hand, not keep a fork).
 _BLOCKED_ADDITION_KINDS = (
     "new-module-blocked", "new-module-lockconflict",
     "new-core-blocked", "new-core-lockconflict",
-    "new-core-incomplete-group",
 )
 
 
@@ -1101,7 +1041,7 @@ def _write_stage(
                 dst_abs.read_text(encoding="utf-8"), encoding="utf-8")
     # Side-door parity: blocked
     # additions -- an occupied-destination collision or a lock-ownership conflict,
-    # in EITHER the module-internal OR the core/always-on tier, or a structural
+    # in EITHER the module-internal OR the core/skills tier, or a structural
     # addition pending under an explicit ``--to`` -- are HARD blocks. They are
     # recorded DISTINCTLY (not folded into review_only) so --apply fails closed
     # UNCONDITIONALLY: the generic ``--ack-review-only`` override cannot bypass
@@ -1174,7 +1114,7 @@ def _write_stage(
         # unless --ack-review-only is passed (#44 completion gate).
         "review_only": sorted(review_only_dsts),
         # Occupied-collision / lock-conflict / pending-under-`--to`
-        # blocked additions, in EITHER tier (module-internal + core/always-on) --
+        # blocked additions, in EITHER tier (module-internal + core/skills) --
         # --apply fails closed UNCONDITIONALLY (no --ack-review-only / --force
         # bypass). Key name kept ``module_blocked`` for stage/apply compatibility.
         "module_blocked": sorted(blocked_dsts),
@@ -1941,21 +1881,6 @@ def _cmd_adopt_collisions(
         target, cairn_root, templates_root, lock, None)
     adoptable = {fp.dst: fp for fp in plans
                  if fp.kind in _ADOPTABLE_BLOCKED_KINDS and fp.src}
-    always_on_dsts = {spec.dst for spec in _ALWAYS_ON_MAPPINGS}
-    # Defense in depth: adopting an always-on
-    # collision into the lockfile IS an authority advancement, so it must fail
-    # closed on a partial completeness group. The post-pass above already removes
-    # always-on members from `adoptable` when the group is incomplete (so the
-    # exactness check below would refuse anyway); this explicit guard makes the
-    # invariant local to the authority-write site and survives a future change to
-    # the post-pass. Refuse outright rather than silently dropping members.
-    if any(d in always_on_dsts for d in adoptable) and not \
-            _always_on_group_complete(cairn_root, templates_root, None):
-        print("error: refusing to adopt an always-on launcher/engine collision "
-              "while the completeness group is incomplete (a member source is "
-              "missing upstream); restore it first, then re-run `upgrade --plan`.",
-              file=sys.stderr)
-        return 1
     if set(authorized) != set(adoptable):
         print("error: the authorized set must be EXACTLY the live adoptable "
               "collisions -- review `upgrade --plan` and authorize each "
@@ -2342,7 +2267,7 @@ def _apply_upgrade(
         return 1
     # (d3) Blocked-addition HARD block: an
     #      occupied-destination collision or a lock-ownership conflict -- in EITHER
-    #      the module-internal OR the core/always-on tier -- or a structural
+    #      the module-internal OR the core/skills tier -- or a structural
     #      addition pending under an explicit --to, fails closed UNCONDITIONALLY --
     #      neither --ack-review-only NOR --force bypasses it. Without this, apply
     #      could advance the lock + install the siblings while leaving the

@@ -479,8 +479,7 @@ def main(argv: list[str] | None = None) -> int:
             print(
                 f"[dry-run] Onboarding:      "
                 f"templates/onboarding/{dry_preset}.md (seeds -> "
-                f"dev/PLANNING.md slot; full source -> "
-                f"dev/modules/onboarding/{dry_preset}.md)"
+                f"dev/PLANNING.md slot)"
             )
         print(
             "[dry-run] Skills:          "
@@ -561,22 +560,19 @@ def main(argv: list[str] | None = None) -> int:
         elif status != "noop":
             print(f"  Skills fan-out [{tier}] {name}: {status}")
 
-    # Install progressive-onboarding content.  Must run AFTER
+    # Install the profile's onboarding content.  Must run AFTER
     # install_core because it edits the just-installed
-    # dev/PLANNING.md's `onboarding-tasks` slot.  Always installs the
-    # helper script + seeds the activation log; only
-    # populates the slot + copies the preset source file when a
+    # dev/PLANNING.md's `onboarding-tasks` slot.  Writes nothing unless a
     # `preset:` is selected.
     preset_name = str(cfg.get("preset") or "").strip() or None
     label = (
-        f"progressive onboarding ({preset_name})"
+        f"onboarding ({preset_name})"
         if preset_name
-        else "progressive onboarding (helper + log only; no preset)"
+        else "onboarding (no preset; nothing to install)"
     )
     print(f"Installing {label} ...")
-    # install_onboarding fails closed (ScaffoldSecurityError) on an incomplete
-    # always-on launcher+engine completeness group BEFORE any write. Convert that
-    # to a crisp non-zero exit (no traceback), mirroring the skills-fanout guard.
+    # A containment refusal from install_onboarding becomes a crisp non-zero
+    # exit (no traceback), mirroring the skills-fanout guard.
     try:
         onboarding_results = install_onboarding(
             templates_root, target, preset_name,
@@ -775,4 +771,12 @@ def main(argv: list[str] | None = None) -> int:
             f"\nWrote {_LOCKFILE_REL} (upgrade ancestor) + the base-template "
             f"cache under {_BASE_CACHE_REL}/."
         )
+        # The pointer goes last, and only when this run wrote the slot and the
+        # lockfile: a refused lockfile (its guidance goes to stderr) must stay
+        # the last word, and a slot nobody wrote has no list to point at.
+        planning = target / "dev" / "PLANNING.md"
+        if any(path == planning and status == "installed"
+               for path, _u, _s, status in onboarding_results):
+            print("Day-one tasks for your profile: dev/PLANNING.md, "
+                  "section Onboarding.")
     return 0

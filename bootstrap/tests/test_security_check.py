@@ -303,15 +303,8 @@ def test_scan_targets_are_explicit_files_and_name_the_expected_executables() -> 
       fails them; the two skills tools below fail if the manifest union in
       ``scan_targets()`` is removed. Their oracle is path strings typed by a
       human, so there is no shared derivation with the subject.
-    * **The ``_ALWAYS_ON_MAPPINGS`` loop CANNOT fail on registry drift.** Its
-      oracle is the very registry the subject reads, so a gap moves both and
-      the difference stays empty -- and after the manifest union landed it
-      cannot fail on the loop's *deletion* either, since the union covers the
-      identical ``templates/modules/{src}`` strings. It is retained as a
-      readable inventory, not as a guard.
-    * **The two real guards are elsewhere**: the growth tripwire ``assert
-      scanned == 9`` in ``bootstrap/tests/test_upgrade_side_door_parity.py``,
-      and the on-disk oracle in ``bootstrap/tests/test_security_lint.py``
+    * **The real guard is elsewhere**: the on-disk oracle in
+      ``bootstrap/tests/test_security_lint.py``
       (``test_every_templates_py_on_disk_is_release_scanned``), whose input
       ``scan_targets()`` never reads."""
     targets = set(security_check.scan_targets())
@@ -328,15 +321,6 @@ def test_scan_targets_are_explicit_files_and_name_the_expected_executables() -> 
     # union is removed from scan_targets().  It named two tools until the
     # subtraction sweep retired the lifecycle CLI and its planner.
     assert "templates/skills/_lib/session.py" in targets
-    # Always-on executable helpers (onboarding launcher + every engine member)
-    # are release-scanned -- they ship verbatim outside _MODULE_MAPPINGS, so the
-    # side-door-parity change (security_check consumes _ALWAYS_ON_MAPPINGS too)
-    # must cover them. A regression here re-opens the pre-existing scan blind spot.
-    from bootstrap._scaffold.config import _ALWAYS_ON_MAPPINGS
-    assert "templates/modules/default-on/onboarding_activate.py" in targets
-    for spec in _ALWAYS_ON_MAPPINGS:
-        if spec.verbatim and spec.src.endswith(".py"):
-            assert f"templates/modules/{spec.src}" in targets, spec.src
     # Explicit files only -- no bare directory (the no-`-r` footgun).
     assert all(t.endswith(".py") for t in targets), targets
 
