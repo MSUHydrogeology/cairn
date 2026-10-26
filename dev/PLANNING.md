@@ -40,6 +40,7 @@ artifacts; this board does not maintain a second status table.
 | `check_cairn` deleted-file crash | Proposal `2026-10-26-claude-check-cairn-deleted-files`, awaiting review | Defect; one commit. |
 | **#32** board and `session-start` accept retired statuses | Maintainer direction, 2026-10-23 | Defect. Lands before drain mode, which reads the board. |
 | **#31** "keep it short" in the plan and proposal templates | Prose | The adopter supplied the draft and the evidence. |
+| **Model tiers: use the lowest tier that is safe** | Doctrine change: own proposal, clears the rate-limit gate | Maintainer direction, 2026-10-26: formalize a rule set for lower-tier models where possible. Scope below. |
 | **Engine batch: F8 and #8 engine half** | Own proposal, Security Review, one AST re-anchor | One batch so the review and the re-anchor are paid once. Maintainer: "Engine batch is in". Rows below. |
 | **`repin`** | Proposal first, from `strategy/2026-08-28-claude-repin-revitalization.md` | Maintainer: "Repin is a build". Removes the re-anchor ceremony's manual corrections. |
 | **Drain mode**, last | Settled design, `strategy/2026-08-25-claude-drain-mode.md` | Scope below. |
@@ -59,17 +60,34 @@ Triage has three levels; the Maintainer took the first two:
    instruction:** drain never runs anything an issue contains. The design note
    predates this rule and must state it.
 
-**Order.** Cheap defects first (`check_cairn`, #32), then Plain Language and
-#31, then the engine batch, then `repin` and drain mode.
+**Model-tier rules scope.** The floors by role exist (`doctrine/roles.md`,
+the `model-selection` module) and the proposal builds on them, mostly in prose:
+key the table on the lane (trivial, standard, deliberate), with Security Review
+always high; put the sub-agent default in `AGENTS.md` so every profile gets it,
+not only the two that install the module; require the model to be named
+explicitly at every spawn, with escalation by one tier on failure; and decide
+in the proposal whether to relax the condition that lets a cheaper author work
+under a check, which today requires a different maker's model and so is closed
+to a single-vendor adopter. Measurement needs no new machinery: every review
+already records its model. The standing rule is written down once in the
+repository, not left in an agent's private memory.
+
+**Order.** Cheap defects first (`check_cairn`, #32), then Plain Language, #31
+and the model-tier prose, then the engine batch, then `repin` and drain mode.
+
+**Issues.** #31 and #32 are the only open issues in 0.5 (#8's engine half is a
+row below; #19 is not in 0.5). Both carry a comment saying so.
 
 **One re-anchor, at the cut.** The re-anchor owed since 2026-10-23 (the Queued
 row below) is folded into the 0.5 cut, not paid twice. The AST correction
 precedes the gate-manifest re-anchor, as at 0.4. Maintainer-only; follow
 `bootstrap/REANCHOR_RUNBOOK.md`.
 
-**Not decided, so not in 0.5 until the Maintainer says:** making NEXT_SESSION
-local and untracked, and VER-5. **Left out, waiting on their revival
-conditions:** #19, #13 and the deferred table.
+**Final list: the eight rows above.** **Not in 0.5**, and still queued below
+unchanged: making NEXT_SESSION local and untracked, and VER-5 (a new mechanism).
+Left out because 0.5 already carries an engine batch, a ceremony and a build;
+either can join by the Maintainer's word. **Also not in 0.5, waiting on their
+revival conditions:** #19, #13 and the deferred table.
 
 **Standing direction.** The 2026-07-22 direction, *fix defects, build nothing
 new*, applies to every row above; the choices on this page are the go-ahead for
@@ -165,11 +183,11 @@ changed set from the final committed tree.
 
 ### Other queued work (reviewed Oct 2026)
 
-* **Make re-pinning usable.** Promote
+* **Make re-pinning usable. Targeted for 0.5, as a build.** Promote
   `dev/strategy/2026-08-28-claude-repin-revitalization.md` to a reviewed proposal
   before building `repin`. Until then corrections remain manual. A called
   outside read is the Maintainer's choice, not a standing requirement.
-* **F8: make the post-install report match the selected profile.** A minimal
+* **F8: make the post-install report match the selected profile. Targeted for 0.5, in the engine batch.** A minimal
   install is asked to fill slots for modules it does not install. Classify
   obligations by the accepted profile; this touches the scaffold engine and
   needs its own proposal and Security Review. Deferred from
@@ -178,7 +196,7 @@ changed set from the final committed tree.
   > "Accept Revision 2 as written. Defer the install-report fix (F8) to the
   > board. No second review round; External floor waived."
 
-* **Name upgrade-added slots (#8, engine half).** The integrity command's
+* **Name upgrade-added slots (#8, engine half). Targeted for 0.5, in the engine batch.** The integrity command's
   advisory note shipped; `upgrade` still does not distinguish newly added
   slots from all unfilled placeholders. Revival: an upgrade-engine change
   already owing a re-anchor, or an adopter missing a new slot. The current
