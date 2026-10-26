@@ -1091,6 +1091,9 @@ def run_ceremony(ctx, args, launchctl, rec):
     if new == ctx["anchor"]:
         raise Refuse(f"stage 2 exited cleanly but the anchor did not move from {new}. Nothing was "
                      f"signed that this tool can see. Do not push.")
+    if git(repo, "merge-base", "--is-ancestor", ctx["anchor"], new, check=False) is None:
+        raise Refuse(f"stage 2 left the anchor at {new}, which does not descend from the old anchor "
+                     f"{ctx['anchor']}: a checkpoint that is not a move forward. Do not push.")
     good, status, key = verify_checkpoint(repo, new, roster, fingerprint)
     if not good:
         raise Refuse(f"the new anchor {new} does not carry a good signature by {fingerprint} "

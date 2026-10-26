@@ -968,6 +968,27 @@ R.subprocess.Popen = lambda argv, *a, **k: real_popen(["/usr/bin/true"] if "--st
     assert anchor_of(cbed) == old
 
 
+@pytest.mark.parametrize("where", ["an unrelated commit", "an older commit"])
+def test_a_stage_two_that_moves_the_anchor_to_a_commit_that_is_not_ahead_of_the_old_one_is_not_done(cbed, where):
+    """Whatever the signature says, the new anchor must descend from the old one.  The signature
+    check is told to accept the forged anchor, so the ancestry check alone decides."""
+    old = anchor_of(cbed)
+    forged = (cbed.git("commit-tree", "-m", "elsewhere", "HEAD^{tree}").stdout.strip()
+              if where == "an unrelated commit" else cbed.git("rev-parse", old + "^").stdout.strip())
+    patch = f"""
+real_popen, real_vc = R.subprocess.Popen, R.verify_checkpoint
+R.subprocess.Popen = lambda argv, *a, **k: real_popen(
+    ["/usr/bin/git", "-C", {str(cbed.repo)!r}, "update-ref", "refs/cairn/gate-anchor", {forged!r}]
+    if "--stage2" in argv else argv, *a, **k)
+R.verify_checkpoint = lambda repo, commit, roster, fp: (
+    (True, "G", fp) if commit == {forged!r} else real_vc(repo, commit, roster, fp))
+"""
+    code, out = drive(cbed, [("Paste the launcher digest", cbed.launcher_digest),
+                             ("Do the two digests match", "yes"), ("Does Summary 2", "yes")], patch=patch)
+    assert code == 2 and "does not descend from the old anchor" in out and "Done:" not in out, out
+    assert anchor_of(cbed) == forged
+
+
 def popen_calls(bed):
     calls = []
     for line in (bed.root / "audit.log").read_text().splitlines():
