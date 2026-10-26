@@ -182,6 +182,7 @@ obligation a security-sensitive plan declares.
   per-target rollouts).
 * Carries deferred follow-ups that need a `defer` home before
   archiving.
+* Needs Boundary B in `full` mode.
 
 **Skip the plan when:**
 
@@ -189,6 +190,10 @@ obligation a security-sensitive plan declares.
 * The change is single-file or single-area.
 * No follow-up needs a `defer` home (the proposal's "what's next" is
   fully captured in the implementing commit message).
+* Boundary B would run `bounded`. A change that needs `full` mode (it
+  touches a contract or trust-ceremony surface, or its effects cannot be
+  bounded with confidence) opens a plan, which has a `## Code review`
+  section. A change that skips the plan has no code review.
 
 When in doubt, open the plan. The cost is low (one file in
 `dev/plans/`); the benefit is durable execution context for any agent
@@ -197,11 +202,11 @@ who picks up the work mid-flight.
 ### Fast multi-stage (a sub-pattern of non-trivial)
 
 The triage bullets above are OR-conditions: a plan is warranted when
-ANY of the four hold. The common sub-pattern where the first bullet
+ANY of the five hold. The common sub-pattern where the first bullet
 is FALSE (the implementation itself fits in one commit) but at least
 one of the others holds (touches multiple files / areas, has
-multi-stage sequencing, or carries deferred follow-ups) is called
-**fast multi-stage**.
+multi-stage sequencing, carries deferred follow-ups, or needs Boundary B
+in `full` mode) is called **fast multi-stage**.
 
 Fast multi-stage compresses the implementation phase into a single
 commit but does **not** collapse the lifecycle. Plan-open + first
@@ -359,15 +364,15 @@ it is whose signature is on the verdict: an independent reviewer, who captures
 nothing.
 
 **Boundary B governs every implementation, a trivial change included.** A
-trivial change's mapping is the owning tests Boundary A names, and Boundary C's
-Bounding verdict reviews it afterwards. It runs before the commit, not after, on
-exactly the bytes being committed: a tree clean apart from the change, or a
-separate copy holding only it. Its record is its commit body, not a plan
-section, and carries the mode, the interpreter, and on `bounded` every field the
-bounding claim above names. An accepted proposal implemented in one commit with
-no plan records its result the same way, in its commit body, and if it ran fewer
-than all the tests, the code reviewer's Bounding verdict rules on whether the
-tests chosen were enough.
+trivial change's mapping is the owning tests Boundary A names. It runs before
+the commit, not after, on exactly the bytes being committed: a tree clean apart
+from the change, or a separate copy holding only it. Its record is its commit
+body, not a plan section, and carries the mode, the interpreter, and on
+`bounded` every field the bounding claim above names. An accepted proposal
+implemented in one commit with no plan records its result the same way. A
+trivial change has no code review, so its commit body is the whole record. A
+change whose Boundary B would run in `full` mode is not trivial: it opens a
+plan.
 
 **An already-open plan keeps the verification contract written in it.** Bounded
 mode becomes available to it only through that plan's own explicit, append-only

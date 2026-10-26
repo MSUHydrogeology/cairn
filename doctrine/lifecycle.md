@@ -58,8 +58,8 @@ order** — the first match assigns the lane:
    whether or not a public contract moved.
 2. **Trivial — just commit** for defect repairs meeting the
    carve-out and the existing just-commit class (a typo, a one-line
-   bug fix, an obvious correction): code + test + one code review, no
-   proposal.
+   bug fix, an obvious correction): code + test, no proposal and no
+   code review.
 3. **Standard — the change note** for everything else: a change
    whose shape is already settled but that is not itself trivial. One
    artifact replaces proposal *and* plan — a file opening with *Why /
@@ -213,11 +213,12 @@ review-finding sections.
 ### Trivial vs. non-trivial
 
 Not every change needs the full apparatus. A **trivial** change —
-a single commit, a single area, no deferred follow-ups — is
-implemented and has its proposal archived in one commit. A
+a single commit, a single area, no deferred follow-ups, and a
+Boundary B that would run `bounded` — is implemented and has its
+proposal archived in one commit, with no code review. A
 **non-trivial** change — landing across multiple commits, touching
-multiple areas, carrying multi-stage sequencing, or leaving
-deferred follow-ups — opens a plan.
+multiple areas, carrying multi-stage sequencing, leaving deferred
+follow-ups, or needing Boundary B in `full` mode — opens a plan.
 
 ## The plan lifecycle
 

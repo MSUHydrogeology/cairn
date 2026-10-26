@@ -183,9 +183,10 @@ failing-test reproduction, a self-contained helper, a docstring polish
 — is just made, with no proposal and no change note.
 
 Once accepted, the implementation is **trivial** (a single commit, a
-single area, no follow-ups — implemented and the proposal archived
-together) or **non-trivial** (multiple commits or areas, multi-stage
-sequencing, or deferred follow-ups — it opens a plan; see
+single area, no follow-ups, and a Boundary B that would run `bounded` —
+implemented and the proposal archived together, with no code review) or
+**non-trivial** (multiple commits or areas, multi-stage sequencing,
+deferred follow-ups, or Boundary B in `full` mode — it opens a plan; see
 `doctrine/plans.md`).
 
 **The plan-review decision is part of accepting a non-trivial
@@ -200,7 +201,12 @@ the Maintainer's Decision ratifies or overrides. Valid `not required`
 rationales include "pure doc sync",
 "trivial layout only", "straightforward follow-up to a
 recently-reviewed sibling plan"; a reviewer treats an unjustified
-`not required` on a clearly-risky change as a finding. A `required`
+`not required` on a clearly-risky change as a finding. Bare `not
+required` describes a plan that skips its own review. A change that needs
+no plan at all writes `not required(no plan: <how each skip condition
+holds>)`, showing each of the plan triage conditions in turn (single
+commit, single area, no follow-up, Boundary B would run `bounded`); a
+"no plan" claim without each condition shown is a review finding. A `required`
 plan opens in `awaiting-plan-review` and does not start implementation
 until its plan-review section lands (the *review-before-implement*
 gate; see `doctrine/plans.md` > "The plan-review precondition").
@@ -314,12 +320,14 @@ for `rejected` / `superseded`.
 commit:
 
 * If the implementation will be **trivial** (single commit, single
-  area, no multi-stage execution, no deferred follow-ups), the
-  implementing commit ships the work AND moves the proposal to
-  `dev/proposals/archive/` in the same commit.
+  area, no multi-stage execution, no deferred follow-ups, and a
+  Boundary B that would run `bounded`), the implementing commit ships the
+  work AND moves the proposal to `dev/proposals/archive/` in the same
+  commit. It has no code review.
 * If the implementation is **non-trivial** (lands across multiple
   commits, OR touches multiple files / areas, OR has multi-stage
-  sequencing, OR carries deferred follow-ups — see the plan triage
+  sequencing, OR carries deferred follow-ups, OR needs Boundary B in
+  `full` mode — see the plan triage
   rule in `doctrine/plans.md` for the canonical formulation), the
   implementing agent first opens a plan in `dev/plans/`. The plan-open
   commit moves the proposal to `dev/proposals/archive/` in the same

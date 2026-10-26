@@ -245,6 +245,7 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
   **What cheap means.** Count person-steps, not machine time: high-risk, contract or hash-pinned surfaces,
   Maintainer-only steps, a Security Review, new proposal or decision make a fix not cheap;
   uncertainty about needing one also means not cheap; prescribed test runtime alone never does.
+  A change with no code review carries no easy-problem fix: nobody would read the `Defect fix:` line.
 * **Scribing a Decision.** An explicitly-instructed agent may scribe and commit
   the Maintainer's Decision, bounded by three rules: **quote the authorization
   verbatim and visually isolated** in both the `## Decision` block and the
@@ -329,15 +330,15 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
     any contract or trust-ceremony surface.
 
     **Boundary B governs every implementation, a trivial change included.** A
-    trivial change's mapping is the owning tests Boundary A names, and Boundary
-    C's Bounding verdict reviews it afterwards. It runs before the commit, not
-    after, on exactly the bytes being committed: a tree clean apart from the
-    change, or a separate copy holding only it. Its record is its commit body,
-    not a plan section, and carries the mode, the interpreter, and on `bounded`
-    every field the record sentence above names. An accepted proposal
-    implemented in one commit with no plan records its result the same way, in
-    its commit body, and if it ran fewer than all the tests, the code reviewer's
-    Bounding verdict rules on whether the tests chosen were enough.
+    trivial change's mapping is the owning tests Boundary A names. It runs
+    before the commit, not after, on exactly the bytes being committed: a tree
+    clean apart from the change, or a separate copy holding only it. Its record
+    is its commit body, not a plan section, and carries the mode, the
+    interpreter, and on `bounded` every field the record sentence above names.
+    An accepted proposal implemented in one commit with no plan records its
+    result the same way. A trivial change has no code review, so its commit body
+    is the whole record. A change whose Boundary B would run in `full` mode is
+    not trivial: it opens a plan.
 
     **An already-open plan keeps the verification contract written in it.**
     Bounded mode reaches it only through that plan's own append-only revision.

@@ -137,7 +137,7 @@ placeholder in a finished artifact, because the board prints whatever the line h
 **Author**: {{agent or human}}
 **Status**: awaiting-review
 **Review**: {{usual | usual + Security Review}}
-**Plan review**: {{required(Internal) | required(Internal + Internal Security Review)}} — the tier the derived plan will declare, decided here where the surface is still visible
+**Plan review**: {{required(Internal) | required(Internal + Internal Security Review)}} — the tier the derived plan will declare, decided here where the surface is still visible; or `not required(no plan: <how each plan-skip condition holds>)` when the change needs no plan (the skip conditions are in the plan triage rule)
 **Opened**: {{YYYY-MM-DD}}
 **In brief**: {{one plain sentence: what changes and why it matters}}
 
