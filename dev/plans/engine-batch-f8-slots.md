@@ -1,12 +1,12 @@
 # Plan: Engine batch, the install report by profile and the slots an upgrade adds
 
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-engine-batch-f8-slots.md](../proposals/archive/2026-10-26-claude-engine-batch-f8-slots.md)
-**Status**: revising-plan
+**Status**: awaiting-plan-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: The install report moves the slots of modules a profile did not install to their own list (2 of 22 on `solo-greenfield`), and `upgrade --plan` and `--stage` name the slots an upgrade adds, with every printed `detail` made terminal-safe.
 
-The Internal Security Review is a separate pass from the ordinary plan review. The ordinary pass never clears it (`AGENTS.md` > Review). It clears only through its own `## Plan review` pass whose `**Obligation**` line names it.
+The ordinary plan review is answered (below). The Internal Security Review is a separate pass, still owed; the ordinary pass never clears it (`AGENTS.md` > Review). It clears only through its own `## Plan review` pass whose `**Obligation**` line names it. Status stays `awaiting-plan-review` because that pass holds the plan next; it moves to `ready-to-implement` after that pass. "SR1 to SR3" below are the proposal's Security Review findings; "B.5" is item 5 of its Revision's part B.
 
 ## Source proposal
 
@@ -20,7 +20,7 @@ The Decision (2026-10-26) accepts the proposal as revised. Q2 takes option (a): 
 **Rules the code must keep (from the Revision and the Security Review):**
 * No new top-level name, and no top-level import added or changed in `install.py`, `cli.py`, `merge.py` or `upgrade.py`. The AST gate does not see imports, so the code reviewer reads the diff. `parse_slots` and `SlotError` are already in `merge.py`.
 * `merge_file` reads names from its own `base_raw` and `theirs_raw` arguments and the adopter's file, never from the token-filled copies (`merge.py:194-195`). Both new parses sit in one `try` that catches `SlotError` and nothing wider, as `_transplant_slots` does (`merge.py:129`). Names fill `detail` only on `clean` and `conflict`.
-* At most 10 names per file, each cut to 80 characters (a longer one ends in `...`), then `(and N more)`. Both numbers are literals inside `merge_file`; `merge_file` returns the names unescaped.
+* At most 10 names per file, each cut to 80 characters (a longer one ends in `...`), then `(and N more)`. Both numbers are literals inside `merge_file`; `merge_file` returns the names unescaped. `MergeResult` is left untouched: a docstring there would be a fifth CHANGED symbol (its stale field comment, `merge.py:111`, may be corrected, as the AST ignores comments).
 * `_print_upgrade_report` prints every `detail` through `ascii(text)[1:-1]`: the `[flag]` line (`upgrade.py:889`), the review-only line (`:899`) and the new `[new slot]` line.
 * `print_report` gains one keyword `modules`, only tests membership in it, and prints module names from its own table, never from the profile's list. The table lists the seven slots in the Revision's table, including `documentation-tier-home` in both files, and carries a comment naming the `model-selection` disagreement (`BOOTSTRAP.md:418-420` against `templates/modules/team-gated/model-selection.md:10-13`).
 
@@ -46,31 +46,33 @@ Proposed paths:
 
 ## Sequence
 
-**Gate: implementation waits for the code review of the LP-SR-1 to 8 repair to close** (commits `1cf56d4a`, `9af86ae4`, `9b607bc8`), because it changed `upgrade.py` and `lockfile.py` and a finding there can change them again. When it closes, the implementer re-reads `upgrade.py` and `merge.py` and re-checks every line cite below before the first edit. They were verified at `f8800485` and `upgrade.py` already moved about 30 lines against the proposal's cites. The plan's own review does not wait.
+**Gate: C2 and C3 wait for the code review of the LP-SR repair to close.** LP-SR is the lockfile-path Security Review (`dev/reviews/2026-10-19-security-review-upgrade-lockfile-paths.md`); its repair is commits `1cf56d4a`, `9af86ae4`, `9b607bc8`. Those touched `upgrade.py`, `lockfile.py` and `SECURITY_MUTATIONS.md` in the engine (plus `CHANGELOG.md` and `UPGRADE.md`, which C3 edits), so a finding there can change C2's files; C1 touches none of them and does not wait. The gate closes when the LP-SR code review file (named on the next line) is committed, or when the Maintainer says go. Then the implementer re-reads `upgrade.py` and `merge.py` and re-checks every line cite below before the first C2 edit. They were verified at `f8800485` and `upgrade.py` already moved about 30 lines against the proposal's cites. The plan's own review does not wait.
+
+Proposed path: `dev/reviews/2026-10-26-code-review-lockfile-path-findings.md` (another session is writing it; it did not exist when this plan was revised).
 
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
-| C1 | **F8: the install report by profile.** Tests first, shown failing on unchanged code; then the table and second list in `print_report`; `main` passes `modules=`; `docs/quickstart.md` count 22 to 20 in the same commit, because the frozen quickstart test compares the prose to the live report | Gate line above | `install.py`, `cli.py`, `docs/quickstart.md`, `test_install_report_slots.py` |
-| C2 | **#8: name added slots, escape `detail`.** Tests first, shown failing; then `merge_file` names (SR1, SR2) and `_print_upgrade_report` escape and `[new slot]` line (SR3) | C1 done | `merge.py`, `upgrade.py`, `test_upgrade_added_slots.py` |
+| C1 | **F8: the install report by profile.** Before the first edit, record S0 in the tests commit body (below). Tests first, shown failing on unchanged code; then the table and second list in `print_report`; `main` passes `modules=`; `docs/quickstart.md` count 22 to 20 in the same commit, because the frozen quickstart test compares the prose to the live report | None | `install.py`, `cli.py`, `docs/quickstart.md`, `test_install_report_slots.py` |
+| C2 | **#8: name added slots, escape `detail`.** Tests first, shown failing; then `merge_file` names (SR1, SR2) and `_print_upgrade_report` escape and `[new slot]` line (SR3) | C1 done; gate line above | `merge.py`, `upgrade.py`, `test_upgrade_added_slots.py` |
 | C3 | **Prose.** One sentence in the `--plan` bullet of `UPGRADE.md`, naming the cases not covered; the `CHANGELOG.md` entry (it names the escape on the old `[flag]` lines); lockfile check | C2 done | `UPGRADE.md`, `CHANGELOG.md` |
 | C4 | **Boundary B record**: append `## Implementation verification -- <agent> -- <date>` against a clean committed tree; then status `awaiting-code-review` | C3 done | the record |
 | C5 | **MAINTAINER-ONLY: the AST attestation re-anchor, then the gate-manifest re-anchor.** Not scheduled for an agent. The 0.5 cut folds one re-anchor (`dev/PLANNING.md` "### 0.5", "One re-anchor, at the cut", and the Queued re-anchor row). When work reaches it, write `**Waiting on Maintainer**: AST and gate re-anchor` in the header | Maintainer, at the cut, by `bootstrap/AST_BASELINE_RUNBOOK.md` then `bootstrap/REANCHOR_RUNBOOK.md` | `scaffold_ast_baseline.json` and the manifest fixture |
 
 C1 and C2 each land as two commits (tests, then code) so the control run is a commit. The code reviewer reads from the tests' commit.
 
-**Frozen files, derived** from `bootstrap/tests/fixtures/gate_manifest.json` (`frozen_files`, 195 keys) with a membership check on each path. **Frozen**: `bootstrap/scaffold.py`, `bootstrap/verify_integrity.py`, `scaffold_ast_known_new.json`, and every existing `bootstrap/tests/**/*.py`, including `test_quickstart_sequence.py`, `test_upgrade.py`, `test_install_module.py` and `test_ast_attest.py`. **Not frozen, and edited here**: `install.py`, `cli.py`, `merge.py`, `upgrade.py`, `docs/quickstart.md`, `bootstrap/UPGRADE.md`, `CHANGELOG.md`. **Chunks that add only new test files**: C1 and C2. No chunk edits a frozen file. If a frozen test fails because of this change (for example one that pins non-ASCII text on a `[flag]` line), the implementer stops and asks the Maintainer: editing it owes the gate-manifest ceremony and is a deviation.
+**Frozen files, derived** from `bootstrap/tests/fixtures/gate_manifest.json` (`frozen_files`, 195 keys) with a membership check on each path. **Frozen**: `bootstrap/scaffold.py`, `bootstrap/verify_integrity.py`, `bootstrap/tests/fixtures/scaffold_ast_known_new.json`, and every existing `bootstrap/tests/**/*.py`, including `test_quickstart_sequence.py`, `test_upgrade.py`, `test_install_module.py` and `test_ast_attest.py`. **Not frozen, and edited here**: `install.py`, `cli.py`, `merge.py`, `upgrade.py`, `docs/quickstart.md`, `bootstrap/UPGRADE.md`, `CHANGELOG.md`. `scaffold_ast_baseline.json` is not frozen (the gate manifest lets it change), which is why C5 may edit it. **Chunks that add only new test files**: C1 and C2. No chunk edits a frozen file. If a frozen test fails because of this change (for example one that pins non-ASCII text on a `[flag]` line), the implementer stops and asks the Maintainer: editing it owes the gate-manifest ceremony and is a deviation.
 
 ## Acceptance criteria
 
 Test names say the property. "New" tests are in the two new files; each goes through the real entry point (`scaffold.py`, `scaffold.py upgrade --plan|--stage`) unless stated. Every new test is first run on the unchanged code and recorded failing (its control), except the ones that pin today's behavior and pass both before and after: marked "pins".
 
 **C1: install report.**
-1. `test_minimal_profile_lists_absent_module_slots_separately`: on `solo-greenfield`, `coordination-additions` and `role-roster-additions` are under `Slots for modules this profile did not install (2):` and not in the main list; the main heading reads 20 and equals its line count; the two lists total 22.
-2. `test_team_profile_keeps_live_module_slots_in_main_list`: on `collaborative-team`, the main heading reads 23 and no second list prints.
+1. `test_minimal_profile_lists_absent_module_slots_separately`: on `solo-greenfield`, `coordination-additions` and `role-roster-additions` are under `Slots for modules this profile did not install (2):` and not in the main list; the main heading reads 20 and equals its line count; the two lists total 22. The second list names `coordination-tiers` for `coordination-additions` and the five suppliers for `role-roster-additions`, and its closing line ("Mark each `N/A: <reason>` ...") prints once.
+2. `test_team_profile_keeps_live_module_slots_in_main_list` (pins): on `collaborative-team`, the main heading reads 23 and no second list prints.
 3. `test_report_without_modules_argument_lists_every_slot_in_main_list` (calls `print_report` directly, the one exception): absent `modules`, no second list.
 4. `test_removing_a_module_moves_every_slot_it_fills`: a profile that removes `documentation-plan`, `claim-check`, `reflections` and `security-verification` moves their slots, `documentation-tier-home` in both files included, to the second list. `test_a_slot_with_any_installed_supplier_stays_in_main_list`: with one of the five `role-roster-additions` suppliers installed, that slot stays in the main list. This is the mutation test for "no supplier installed" against "not every supplier installed".
-5. `test_every_slot_that_says_filled_from_a_module_is_in_the_supplier_table`: scans the core templates for the phrase `Filled from the` and fails on a slot the table lacks. It reads the templates, not the table. `test_supplier_table_names_real_slots_and_real_modules`: with `modules=[]` every table slot is in the second list; each exists in a core template and each printed module is a shipped module under `templates/modules/`. Neither can see a supplier whose placeholder lacks the phrase (`coordination-additions`, `role-roster-additions`), so those two stay hand-listed. The Revision says so.
-6. `test_hostile_module_name_in_profile_prints_no_escape_byte_in_the_report`: a profile whose exact `modules:` list holds a name with an ESC byte. The assertion covers the report section only (from the `Cairn scaffold complete` banner). The older raw print of unknown module names at `install.py:1526` is on the board's security row and is not this plan's.
+5. `test_every_slot_that_says_filled_from_a_module_is_in_the_supplier_table`: scans the core templates for the phrase `Filled from the` and compares `(slot, module)` pairs with the table, so a right slot under the wrong module fails. It first asserts the scan found the six known placeholders (`templates/core/AGENTS.md` x3, `agent_collaboration.md`, the two `_template.md` files), so a re-wrapped placeholder fails the scan and cannot blind it. Mutants: swap one module in the table; re-wrap one placeholder. It reads the templates, not the table. `test_supplier_table_names_real_slots_and_real_modules`: with `modules=[]` every table slot is in the second list; each exists in a core template and each printed module is a shipped module under `templates/modules/`. Neither can see a supplier whose placeholder lacks the phrase (`coordination-additions`, `role-roster-additions`), so those two stay hand-listed. The Revision says so.
+6. `test_hostile_module_name_in_profile_prints_no_escape_byte_in_the_report` (pins; today the report prints no module names): a profile whose exact `modules:` list holds a name with an ESC byte. The assertion covers the report section only (from the `Cairn scaffold complete` banner). Mutant: print the names from `modules`; this test must fail it. The older raw print of unknown module names at `install.py:1526` is on the board's security row and is not this plan's.
 7. The existing `test_quickstart_sequence.py::TestLayerAStepsOneThroughThree::test_step3_install_writes_expected_kernel_and_modules` (lines 240-250) is not edited; it compares `**N unfilled block slots**` in `docs/quickstart.md:298` with the live count, so it passes after the edit to **20 unfilled block slots**, with the sentence format unchanged, and one clause says the report lists the other slots separately. It must pass: `python -m pytest bootstrap/tests/test_quickstart_sequence.py`.
 8. `scaffold.py --manifest`, captured before the first edit and after C3, is byte-identical (`cmp`). `git diff` of `bootstrap/_scaffold/SECURITY_MUTATIONS.md` is empty (no new write).
 
@@ -80,22 +82,22 @@ Test names say the property. "New" tests are in the two new files; each goes thr
 3. `test_detail_is_empty_or_exactly_the_name_list_on_clean_and_conflict` (through `merge_file`); `test_needs_value_slot_removed_and_error_carry_no_names`.
 4. `test_lockfile_token_value_carrying_a_slot_pair_adds_no_name` (SR1, through `upgrade --plan`): a token value with a slot pair, used only in the new template, gives no `[new slot]` line. Mutant: parse the token-filled text; this test must fail it.
 5. `test_new_slot_line_stays_within_its_bound` (SR2): a template with one 1 MB slot name, and one with 1,000 new slots; each `[new slot]` line is under 1,200 characters for ASCII names (8,300 worst case) and states `(and N more)`.
-6. `test_every_flag_and_new_slot_line_is_printable_ascii` (SR3): an adopter file with a filled slot whose name holds an ESC byte, removed upstream. Control: fails on today's code (the Security Review measured the raw print). The same test covers `malformed slots: {exc}` at `upgrade.py:577`. **The set of `detail` print sites is listed from the tree** (`grep -n "\.detail" bootstrap/_scaffold/*.py`: `:889`, `:899`, plus the new line) **and the escape is removed at each in a separate copy; each removal must fail a test.** The review-only site prints fixed text today (`upgrade.py:544`, `:557`), so no real run reaches it with a hostile byte: its test calls `_print_upgrade_report` directly with a `FilePlan` whose `detail` holds an ESC. The second direct call in the plan.
+6. `test_every_flag_and_new_slot_line_is_printable_ascii` (SR3): an adopter file with a filled slot whose name holds an ESC byte, removed upstream. Control: fails on today's code (the Security Review measured the raw print). A second fixture covers the new line itself, which prints names from the *new template*: an added slot whose name holds an ESC byte and a character outside the Basic Multilingual Plane (the slot pattern is `\S+`, `slotmerge.py:40`, so it parses); the `[new slot]` line must be printable ASCII under both `--plan` and `--stage`. The same test covers `malformed slots: {exc}` at `upgrade.py:577`. **The set of `detail` print sites is listed from the tree** (`grep -n "\.detail" bootstrap/_scaffold/*.py`: `:889`, `:899`, plus the new line) **and the escape is removed at each in a separate copy; each removal must fail a test** (the new line's by the second fixture). The review-only site prints fixed text today (`upgrade.py:544`, `:557`), so no real run reaches it with a hostile byte: its test calls `_print_upgrade_report` directly with a `FilePlan` whose `detail` holds an ESC. The second direct call in the plan.
 7. `test_malformed_old_base_keeps_its_status_and_prints_no_name` (pins the status; today `conflict`), `test_tree_without_base_copy_names_nothing` (`review-only`), `test_renamed_filled_slot_stays_slot_removed_and_names_no_new_slot`.
 8. The `except` added in `merge.py` names `SlotError` only; `git diff` over the four files adds no `import` line. The sorted `note: NEW Import:` lines of `_ast_attest.py verify` are identical before and after.
 9. `test_security_leaf.py` passes unchanged. `scaffold.py --manifest` is byte-identical.
 
 **C3: prose.**
 1. The `UPGRADE.md` sentence says plan and stage name slots an upgrade adds, and not for a file new in the upgrade, a tree with no base copy, or a renamed filled slot (B.5 of the Revision). Commands: `python -m pytest bootstrap/tests/test_verify_integrity.py bootstrap/tests/test_review_stance_in_shipped_files.py`; `python scripts/claim_check.py`, `python scripts/check_cairn.py` and `python scripts/link_check.py` on each changed Markdown file.
-2. `CHANGELOG.md` `## Unreleased` has one entry naming both changes and the escape on the old `[flag]` lines, with a link to this plan.
+2. `CHANGELOG.md` `## Unreleased` has one entry naming both changes and the escape on the old `[flag]` lines, with a link to this plan. The `UPGRADE.md` sentence and this entry say: non-ASCII and control characters print as escapes; never "ASCII prints unchanged" (`ascii()` also doubles a backslash and adds `\'` when both quote kinds appear; still safe).
 3. **Lockfile.** None of the edited files is a `dst` in `dev/.cairn/cairn-lock.yml` (checked 2026-10-26: `grep '"dst"' dev/.cairn/cairn-lock.yml | grep -i "quickstart\|UPGRADE\|CHANGELOG\|_scaffold"` finds nothing). If an edited file is tracked when this runs, run `python bootstrap/scaffold.py upgrade --target . --finalize <path>` for it, scoped, and commit the lockfile.
 
-**C4/C5.** C4's record carries the fields the template names. C5 is the Maintainer's: derive the changed set from the final tree with the runbook's Step 1 and compare it with this plan's four symbols, taken as the difference from the set LP-SR left (S0, recorded in C1 before the first edit under Python 3.13.x). Expected: four CHANGED, none NEW, no changed import note. More than four means something else moved, and the proposal's accounting is wrong.
+**C4/C5.** C4's record carries the fields the template names. C5 is the Maintainer's: derive the changed set from the final tree with the runbook's Step 1 and compare it with this plan's four symbols, taken as the difference from the set LP-SR left. **S0** is the sorted CHANGED/NEW list from `_ast_attest.py verify` taken before the first C1 edit under Python 3.13.x, pasted in the C1 tests commit body; **S1** is the same list from the final tree. Expected: four CHANGED, none NEW, no changed import note. More than four means something else moved, and the proposal's accounting is wrong.
 
 ## Scope delta
 
 **Scope delta**: degraded, as the Decision set it. Reduced against the archived Decision's wide wording ("a post-install report that asks only for live work"), preserved against the board row. The report still lists the two slots the install fills itself.
-* The second form of Q2 option (c) (print the report after the module-merge pass and drop the slots it fills) is not built. **disposition**: defer. Home: a `dev/PLANNING.md` row, written at this plan's archive commit (a serialization point). Authorization, the Maintainer's answer to the Decision: "Accept, leave 2 slots counted (Recommended)".
+* The second form of Q2 option (c) (print the report after the module-merge pass and drop the slots it fills) is not built. **disposition**: defer. Reason: over the cost bar (it moves output a frozen test pins). Home: this plan until its archive commit, which writes the `dev/PLANNING.md` row (a serialization point). Authorization, the Maintainer's answer to the Decision: "Accept, leave 2 slots counted (Recommended)".
 
 ## Verification
 
@@ -123,7 +125,7 @@ Plan-specific commands the record lists: the two new test files; `scaffold.py --
 
 ## Dispositions
 
-Filled at archive-preparation. The one item carried is the `defer` in Scope delta.
+Filled at archive-preparation. Two items are carried: the `defer` in Scope delta, and C5 (the AST and gate re-anchor), carried by the Queued re-anchor row in `dev/PLANNING.md`; the archive commit adds the four symbols and the two new test files to that row.
 
 ## Plan review -- Plan reviewer (fresh session, Internal) -- 2026-10-26
 
@@ -172,3 +174,21 @@ Assurance path: high-assurance (proposal "Assurance path"; header `required(Inte
 9. **Name the satisfier.** Each finding above states one.
 
 **Coverage.** *Covered:* every acceptance criterion against the Revision and Decision; every cited line in the plan's Scope and Acceptance sections; the frozen-file and AST claims by derivation and a read-only `verify` run; the 22 and 23 counts by scratch install (scratch folders, not the repo). *Not covered:* the **Internal Security Review is still owed** and is not discharged or attempted here; I did not run any test suite, did not set `CAIRN_FULL_SUITE`, and wrote no code, so every behavior claim about the built code is still the plan's expectation; I did not read the full LP-SR security review or judge whether its code review will land clean; I did not check each of the 195 frozen files against the plan's test list beyond the owning-test greps; I did not validate the proposal's Security Review findings SR1 to SR5 on their merits (the plan adopts them), only that each maps to a criterion; the smoke checks and `UPGRADE.md`/`CHANGELOG.md` prose do not exist yet.
+
+## Response -- plan author -- 2026-10-26
+
+All nine findings are accepted; the operative cells carry the changes (this table points at them, it does not restate them). I opened each cited line in the current tree first; all held, and `git show --stat` confirmed the LP-SR repair touched only `upgrade.py`, `lockfile.py` and `SECURITY_MUTATIONS.md` in the engine.
+
+| # | Finding | Answer | Where |
+|---|---|---|---|
+| 1 | C1.5 pairs, blind scan | Accepted | C1.5: `(slot, module)` pairs, six placeholders asserted, two mutants |
+| 2 | Nothing fails the `[new slot]` escape | Accepted | C2.6: second fixture, ESC byte and non-BMP name, `--plan` and `--stage` |
+| 3 | Gate only C2 and C3 | Accepted | Sequence gate paragraph and table; closes on the review file or the Maintainer's go |
+| 4 | C1.2, C1.6 unmarked pins | Accepted | both marked "pins"; C1.6 gets the `modules` mutant |
+| 5 | Second list text unasserted | Accepted | C1.1: module names and the closing line |
+| 6 | Define S0, S1, LP-SR | Accepted | Status paragraph, Sequence gate, C4/C5; S0 goes in the C1 tests commit body |
+| 7 | `defer` has no reason; C5 | Accepted | Scope delta (reason: over the cost bar); Dispositions (C5 via the Queued re-anchor row) |
+| 8 | "ASCII prints unchanged" | Accepted | C3.2 wording rule |
+| 9 | `MergeResult`; frozen path | Accepted | Rules (`MergeResult` untouched); frozen-file paragraph in full |
+
+Status: `awaiting-plan-review`, not `ready-to-implement`, because the Internal Security Review is still owed and holds the plan next. No Security Review is written here.
