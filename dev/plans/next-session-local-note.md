@@ -54,10 +54,9 @@ How to work: directly on `0.5-dev`. **Every chunk's first criterion** has three 
 
 ## Acceptance criteria
 
-Each criterion names a test or command; refusals have a control that passes. Test nodes are in `bootstrap/tests/test_next_session_local_note.py` (modelled on `test_agreement_retired.py:72-121`), named for the property they pin. Proposed paths: the new test file and the local note, neither of which exists yet.
+Each criterion names a test or command; refusals have a control that passes. Test nodes are in `bootstrap/tests/test_next_session_local_note.py` (modelled on `test_agreement_retired.py:72-121`), named for the property they pin. Proposed path: the local note, which does not exist yet.
 
 Proposed paths:
-* `bootstrap/tests/test_next_session_local_note.py`
 * `dev/reflections/next-session.md`
 
 **C1.**
