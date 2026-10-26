@@ -185,6 +185,30 @@ def test_an_interpreter_outside_the_project_is_not_looked_up(tmp_path, monkeypat
     assert lifecycle._binding_untrusted(root, cfg, program) is None
 
 
+@pytest.mark.parametrize("sibling, tail", [
+    ("Proj2", "2"),
+    ("PROJ2", "2"),
+    ("Proj-other", "-other"),
+    ("Proj.d", ".d"),
+], ids=["digit", "upper-digit", "hyphen", "dot"])
+def test_a_folder_beside_the_project_whose_name_starts_like_it_is_not_inside_the_project(
+        tmp_path, monkeypatch, sibling, tail):
+    """The project is `Proj`; `Proj2` next to it is another folder, though its path
+    begins with the project's.  If the project's path were cut off at its name
+    alone, `Proj2/env/bin/python3` would read as `2/env/bin/python3` inside the
+    project, and a listing that tracks that name would make the gate refuse a
+    program git has no say over.  The project's own program, in the same listing,
+    is the control: it shows the listing can match."""
+    root = _repo(tmp_path, "Proj")
+    cfg = _bind(root, "/usr/bin/true")
+    inside = _executable(root / "env" / "bin" / "python3")
+    beside = _executable(tmp_path.resolve() / sibling / "env" / "bin" / "python3")
+    _stub_listing(monkeypatch, "100755 env/bin/python3", f"100755 {tail}/env/bin/python3")
+
+    assert lifecycle._binding_untrusted(root, cfg, inside) == lifecycle._INTERPRETER_TRACKED
+    assert lifecycle._binding_untrusted(root, cfg, beside) is None
+
+
 @pytest.mark.parametrize("respell", [str.lower, str.upper], ids=["lower", "upper"])
 def test_a_checkout_is_noticed_when_the_binding_spells_the_project_folder_in_another_case(
         tmp_path, respell):
@@ -408,10 +432,14 @@ def test_the_warning_for_a_disk_that_cannot_be_asked_says_so(tmp_path, monkeypat
 # --- a disk that reports inode 0 ------------------------------------------------
 
 
-def _report_inode_zero(monkeypatch) -> None:
+def _report_inode_zero(monkeypatch, only=None) -> None:
+    """Make `os.stat` and `os.lstat` report inode 0: for every path, or, with
+    *only* (a collection of paths), for those paths while the rest keep theirs."""
     for name in ("stat", "lstat"):
         def zeroed(path, *args, _real=getattr(os, name), **kwargs):
             st = _real(path, *args, **kwargs)
+            if only is not None and Path(path) not in only:
+                return st
             return os.stat_result((st.st_mode, 0, st.st_dev, st.st_nlink, st.st_uid,
                                    st.st_gid, st.st_size, int(st.st_atime),
                                    int(st.st_mtime), int(st.st_ctime)))
@@ -438,6 +466,43 @@ def test_a_disk_that_reports_inode_zero_gives_no_identity_to_match(tmp_path, mon
     assert lifecycle._binding_untrusted(root, cfg) is None   # real inodes: unrelated
 
     _report_inode_zero(monkeypatch)
+    assert lifecycle._binding_untrusted(root, cfg) is None
+
+
+@pytest.mark.parametrize("entry, folder", [
+    ("dev/.cairn/alias.json", None),
+    ("de\u200cv", ("dev",)),
+    ("dev/.ca\u200cirn", ("dev", ".cairn")),
+], ids=["three-part-file", "one-part-gitlink", "two-part-gitlink"])
+def test_a_stored_inode_of_zero_does_not_stand_for_the_file_looked_up(
+        tmp_path, monkeypatch, entry, folder):
+    """The gate first reads the identity (device and inode) of the binding, or of one
+    of its two folders, then compares each tracked entry's identity with it.  Here
+    only that first reading says inode 0; the entry says its real, nonzero one.
+    Inode 0 says nothing about which file it was, so it must not match any entry.
+    Control: before the zero is applied, the entry is the same file by its real
+    inode and the gate refuses."""
+    root = _repo(tmp_path)
+    cfg = _bind(root, "/usr/bin/true")
+    if folder is None:
+        os.link(cfg, root / entry)
+        stored, opening = cfg, TRACKED_OPENING
+    else:
+        stored, opening = root.joinpath(*folder), lifecycle._BINDING_IN_SUBMODULE
+        real_lstat, held = os.lstat, os.lstat(stored)
+
+        def lstat(path, *args, **kwargs):
+            if Path(path) == root / entry:
+                return held
+            return real_lstat(path, *args, **kwargs)
+
+        monkeypatch.setattr(lifecycle.os, "lstat", lstat)
+    _stub_listing(monkeypatch, f"{'100644' if folder is None else '160000'} {entry}")
+
+    control = lifecycle._binding_untrusted(root, cfg)
+    assert control is not None and control.startswith(opening)
+
+    _report_inode_zero(monkeypatch, only=(stored,))
     assert lifecycle._binding_untrusted(root, cfg) is None
 
 
