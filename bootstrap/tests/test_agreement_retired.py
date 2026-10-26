@@ -18,7 +18,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from bootstrap import scaffold as s  # noqa: E402
 from bootstrap.verify_integrity import verify  # noqa: E402
-from scripts._onboarding.triggers import evaluate_action_triggers  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 OLD = "dev/collaboration_agreement.md"
@@ -141,7 +140,6 @@ def test_moved_roster_needs_explicit_integrity_finalization(
     assert s.main(["upgrade", "--target", str(target), "--finalize", ROLES,
                    "--cairn-root", str(ROOT)]) == 0
     assert verify(target) == 0
-    assert "second-agent-type" in evaluate_action_triggers(target)
 
 
 def _retired_citations(sources: dict[str, str]) -> list[str]:

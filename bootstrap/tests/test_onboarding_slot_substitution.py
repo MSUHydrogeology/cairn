@@ -1,20 +1,13 @@
 """
-Tests for the progressive-onboarding scaffold integration.
+Tests for the install-time onboarding scaffold integration.
 
-Plan: 2026-05-28-claude-cairn-progressive-onboarding.
-
-Covers per the Codex External plan-review (P1-1 + P2-4):
+Covers:
 
 * `_extract_seed_tasks` parses seed list-items from preset
-  onboarding files while excluding `[trigger:` deferred tasks and
-  non-task prose (P1-1).
-* The scaffold inlines **only** seed tasks plus a
+  onboarding files and ignores non-task prose.
+* The scaffold inlines the seed tasks plus a
   `<!-- preset: <name> -->` metadata comment into PLANNING's
-  `onboarding-tasks` slot (P1-1 + P2-4).
-* The scaffold also copies the full source onboarding file
-  byte-for-byte to `dev/modules/onboarding/<preset>.md` -- the
-  authoritative reference for goodnight deferred-task discovery
-  (P1-1).
+  `onboarding-tasks` slot.
 * A profile without `preset:` (explicit-modules path) yields no
   onboarding install (the slot remains its empty placeholder).
 * `--dry-run` reports the planned onboarding install without
@@ -99,8 +92,8 @@ class TestRegistration:
 
 
 class TestSeedExtraction:
-    """`_extract_seed_tasks` parses `[seed; id: ...]` items + excludes
-    `[trigger: ...]` deferred items + ignores non-task prose."""
+    """`_extract_seed_tasks` parses `[seed; id: ...]` items and ignores
+    non-task prose."""
 
     def test_extracts_seed_blocks_with_continuation_lines(self) -> None:
         text = (
@@ -111,9 +104,6 @@ class TestSeedExtraction:
             "* [seed; id: alpha]\n"
             "  Continuation line for alpha.\n"
             "\n"
-            "* [trigger: first-proposal-archived; id: beta]\n"
-            "  This is a deferred task, should NOT be extracted.\n"
-            "\n"
             "* [seed; id: gamma]\n"
             "  Continuation for gamma.\n"
         )
@@ -122,14 +112,6 @@ class TestSeedExtraction:
         assert "[seed; id: alpha]" in blocks[0]
         assert "Continuation line for alpha." in blocks[0]
         assert "[seed; id: gamma]" in blocks[1]
-
-    def test_excludes_trigger_tasks(self) -> None:
-        text = (
-            "* [trigger: first-proposal-archived; id: deferred-only]\n"
-            "  Body.\n"
-        )
-        blocks = _extract_seed_tasks(text)
-        assert blocks == []
 
     def test_no_tasks_returns_empty(self) -> None:
         assert _extract_seed_tasks("# Just a heading\n\nProse only.\n") == []
@@ -182,9 +164,7 @@ class TestInstallPath:
         self, tmp_path: Path, preset: str,
     ) -> None:
         """Scaffold with each preset yields a PLANNING slot containing
-        ONLY seed-task lines + the preset metadata comment.  Deferred
-        tasks (`[trigger:` lines) MUST NOT appear in PLANNING (per
-        Codex P1-1)."""
+        the seed-task lines + the preset metadata comment."""
         assert _scaffold(tmp_path, preset) == 0
 
         planning = (tmp_path / "dev" / "PLANNING.md").read_text(
@@ -195,35 +175,12 @@ class TestInstallPath:
         assert "<!-- cairn:end onboarding-tasks -->" in planning
         # The preset metadata comment is present.
         assert f"<!-- preset: {preset} -->" in planning
-        # The slot body (between delimiters) contains zero `[trigger:`
-        # lines.  Extract the body deterministically.
         a = planning.index("<!-- cairn:slot onboarding-tasks -->")
         b = planning.index("<!-- cairn:end onboarding-tasks -->", a)
         slot_body = planning[a:b]
-        assert "[trigger:" not in slot_body, (
-            f"deferred [trigger:] task leaked into PLANNING slot for "
-            f"preset={preset}; slot body was:\n{slot_body}"
-        )
         # At least one seed task IS in the slot body.
         assert "[seed;" in slot_body, (
             f"no [seed;] tasks rendered for preset={preset}"
-        )
-
-    @pytest.mark.parametrize("preset", PRESETS)
-    def test_installed_source_file_matches_byte_for_byte(
-        self, tmp_path: Path, preset: str,
-    ) -> None:
-        """`dev/modules/onboarding/<preset>.md` matches the Cairn-side
-        `templates/onboarding/<preset>.md` byte-for-byte.  This is the
-        authoritative reference the goodnight activation helper reads
-        to discover deferred tasks (per Codex P1-1)."""
-        assert _scaffold(tmp_path, preset) == 0
-
-        installed = tmp_path / "dev" / "modules" / "onboarding" / f"{preset}.md"
-        source = ONBOARDING_TEMPLATES / f"{preset}.md"
-        assert installed.is_file()
-        assert installed.read_bytes() == source.read_bytes(), (
-            f"installed onboarding source mismatch for {preset}"
         )
 
     @pytest.mark.parametrize("preset", PRESETS)
