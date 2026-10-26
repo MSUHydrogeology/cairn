@@ -1,4 +1,5 @@
 # UPGRADE.md — folding new Cairn doctrine into a customized tree
+<!-- claim-check-allow: dev/reflections/next-session.md -->
 
 Cairn keeps evolving. An adopting team that bootstrapped months ago is
 frozen at the version they installed — unless they can pull new doctrine
@@ -54,9 +55,9 @@ file, its lockfile record and its cached base copy untouched.
 The file is yours now. Keep it while your lockfile lists it. To retire its
 contents, reduce it to a one-line note or empty it; **do not delete the
 file**. Deletion makes a bare `upgrade --finalize` refuse with "tracked
-file(s) missing on disk", even with `--force`, and makes the integrity
-check report it unreadable. If you have already deleted it, restore an
-empty file at that path. A scoped `--finalize <path>` can record edits to
+file(s) missing on disk", even with `--force`. `verify_integrity.py` still
+passes and prints OK; only its slot note counts the file as unreadable. If
+you have already deleted it, restore an empty file at that path. A scoped `--finalize <path>` can record edits to
 other tracked files without sweeping the missing file, but does not erase
 its record.
 
@@ -73,6 +74,33 @@ file, then record the expected edit with
 `python bootstrap/scaffold.py upgrade --target <repo> --finalize dev/agent_collaboration.md`.
 A slot note that still names the old file can be ignored; fill the new
 slot. Until then the second-agent prompt stays quiet.
+
+## A file Cairn stopped shipping: `dev/NEXT_SESSION.md`
+
+Cairn no longer installs this file. The next-session handoff is now a short
+local note at `dev/reflections/next-session.md`, a path git already ignores.
+If your project already has the old file, `upgrade --plan` reports
+`removed-upstream 1: dev/NEXT_SESSION.md`. The line is informational and
+repeats on later plans: plan, stage and apply leave your file, its lockfile
+record and its cached base copy untouched.
+
+For now your project keeps its file. Keep it, shrink it to a line, or empty
+it; **do not delete it, and do not run `git rm --cached` on it**. Deletion
+makes a bare `upgrade --finalize` refuse with "tracked file(s) missing on
+disk". `verify_integrity.py` still passes and prints OK; only its slot note
+counts the file as unreadable. If you have already deleted it, restore an
+empty file at that path. An emptied file lists no slot and finalizes.
+
+At your next goodnight, write the new note at `dev/reflections/next-session.md`;
+the Goodnight bullet in your `AGENTS.md` says how. First run
+`git check-ignore -v dev/reflections/next-session.md`. You should see the line
+that ignores it. If you see nothing, and git does not track the path, add the
+path to `.gitignore`. `verify_stems.py` needs no action.
+
+A later change to `upgrade` will remove untouched copies of files Cairn
+stopped shipping. When it ships, an untouched `dev/NEXT_SESSION.md` is removed
+and its lockfile record cleared, and a changed copy is named and left in place.
+Until then, nothing in `upgrade` removes your file.
 
 ## The two on-disk artifacts the install leaves
 

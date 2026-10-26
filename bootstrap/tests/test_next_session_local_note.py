@@ -477,3 +477,73 @@ def test_no_shipped_source_tells_a_reader_to_read_or_write_the_retired_file() ->
     assert victim in sources
     planted = {**sources, victim: sources[victim] + f"\nRead {HANDOFF}.\n"}
     assert _naming_the_retired_file(planted) == [victim]
+
+
+# --- what an existing project is told ---------------------------------------
+
+def _all_output(capsys: pytest.CaptureFixture[str]) -> str:
+    captured = capsys.readouterr()
+    return captured.out + captured.err
+
+
+def test_a_deleted_handoff_leaves_integrity_passing_and_an_emptied_one_lists_no_slot(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    target = tmp_path / "project"
+    old_file, _base, _record = _old_project_with_handoff(target)
+    capsys.readouterr()
+
+    old_file.unlink()
+    assert verify(target) == 0
+    deleted = _all_output(capsys)
+    assert "unreadable 1" in deleted, deleted
+    assert s.main(["upgrade", "--target", str(target), "--finalize",
+                   "--cairn-root", str(ROOT)]) != 0
+
+    old_file.write_text("", encoding="utf-8")
+    assert verify(target) == 0
+    assert s.main(["upgrade", "--target", str(target), "--finalize",
+                   "--cairn-root", str(ROOT)]) == 0
+    capsys.readouterr()
+    assert verify(target) == 0
+    emptied = _all_output(capsys)
+    assert "unreadable 0" in emptied, emptied
+    assert "NEXT_SESSION" not in emptied, emptied
+
+
+UPGRADE_GUIDE = ROOT / "bootstrap" / "UPGRADE.md"
+
+
+def _guide_section(heading_prefix: str) -> str:
+    text = UPGRADE_GUIDE.read_text(encoding="utf-8")
+    start = text.index(heading_prefix)
+    end = text.find("\n## ", start + 1)
+    return text[start:end if end != -1 else len(text)]
+
+
+def _release_version_or_date(text: str) -> list[str]:
+    return re.findall(
+        r"\b(?:release[sd]?|version|v?\d+\.\d+(?:\.\d+)?|(?:19|20)\d\d)\b",
+        text, re.I)
+
+
+def test_the_upgrade_guide_names_the_path_the_plan_line_prints(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    target = tmp_path / "project"
+    _old_project_with_handoff(target)
+    capsys.readouterr()
+    assert s.main(["upgrade", "--target", str(target), "--plan",
+                   "--cairn-root", str(ROOT)]) == 0
+    printed = re.findall(
+        r"^\s*removed-upstream\s+1: (\S+)$", capsys.readouterr().out, re.M)
+    assert printed == [HANDOFF]
+
+    section = _guide_section("## A file Cairn stopped shipping: `dev/NEXT_SESSION.md`")
+    assert f"`removed-upstream 1: {printed[0]}`" in section
+    # It describes what is true now. It names no release, version or date, so
+    # it cannot promise the later cleanup on a schedule.
+    assert _release_version_or_date(section) == []
+    # Control: the same check finds a release, a version and a date.
+    assert _release_version_or_date(
+        section + " in the next release, version 1.2, by 2030") != []
