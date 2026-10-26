@@ -1,8 +1,8 @@
 # Plan: Trivial changes need no plan and no code review
 
 **Author**: Claude (Strategy)
-**Source proposal**: [dev/proposals/archive/2026-10-26-claude-no-plan-changes-end-to-end.md](../proposals/archive/2026-10-26-claude-no-plan-changes-end-to-end.md)
-**Status**: ready-to-archive
+**Source proposal**: [dev/proposals/archive/2026-10-26-claude-no-plan-changes-end-to-end.md](../../proposals/archive/2026-10-26-claude-no-plan-changes-end-to-end.md)
+**Status**: archived
 **Plan review**: not required(prose edits to one rule and the docs that repeat it; the proposal's two reviews checked the edit list; this plan opens in the fast multi-stage form)
 **Opened**: 2026-10-26
 **In brief**: Edit the rules and the pages that repeat them so a trivial change owes no code review, and a change that cannot bound its effects opens a plan.
@@ -396,3 +396,36 @@ neutrality (0 fail) and redundancy (0 fail) are clean; `link_check` shows the
 same 3 old issues. Not run: the full suite (`Certified by`: pending) and a second
 code-review pass. The review's survivors (10 of 13 breaks that no test
 notices) are prose the plan did not promise to pin, and I added no test.
+
+## Archive note -- Claude (Strategy) -- 2026-10-26
+
+The independent code review at `0a3bd5f1` found one blocking gap (the second
+test of a "no plan" claim, at the implementing commit) and two smaller ones. The
+fixes are in `cb93f1d9`, with the answers in the response above, and under the
+one-round rule they need no second pass: each is one sentence or one exception
+clause. This archive commit is distinct from the implementing and review
+commits. The rule is live in `AGENTS.md`, `doctrine/lifecycle.md`,
+`doctrine/plans.md`, `doctrine/proposals.md` and both proposal templates, and the
+reader-facing pages repeat it.
+
+**Dispositions:**
+- `accept`: the whole of Revision 3's edit list, C1 to C3 (`63b64784`,
+  `2a582c5d`, `6d84b5bd`), and C4 (`cdffeb8a`: the Boundary C sentence in
+  `doctrine/dual-review.md` and the statement in the frozen
+  `test_review_stance_in_shipped_files.py` that pins it).
+- `accept`: F1 (the implementing commit re-reads the plan-skip conditions), F2
+  (`docs/related-practices.md`), F3 (a defect repair meeting the lifecycle's
+  three conditions stays trivial on a named surface), all in `cb93f1d9`. F3 rests
+  on the Maintainer's quoted word in the response above.
+- `defer`: the certifying full run, and the gate-manifest re-anchor for the
+  edited frozen test, go to the Maintainer's existing ceremony row in
+  `dev/PLANNING.md`. The plan records no Waiting line.
+- `wontfix`: none.
+
+**Not done, named.** The reviewer recommended one small test that pins the new
+triage bullet, the shipped Boundary B sentence and the lane text: ten of its
+thirteen deliberate breaks survived every test. That test was never in the
+accepted scope, so it is offered to the Maintainer and not built.
+
+**Pinned test collection changes:** none added. One pinned statement changed
+text in a frozen file; its label is unchanged.

@@ -82,6 +82,19 @@ and a new empty `Unreleased` is started above.
   one line, instead of failing on the first read. A file named explicitly on the
   command line still raises. ([proposal](dev/proposals/archive/2026-10-26-claude-check-cairn-deleted-files.md))
 
+### Changed — A trivial change needs no plan and no code review
+
+- A typo or one-line fix, and an accepted proposal small enough to need no plan,
+  no longer get a code review. A change skips the plan only if one commit,
+  one area and no follow-ups hold and its Boundary B (the final test run) would
+  run only the tests that cover it; a change that needs the full run opens a
+  plan. A defect repair that meets the lifecycle's three conditions stays
+  trivial even on a protected file. A proposal that expects no plan says why in
+  its header, and the implementing commit checks that claim again against what
+  it touched. `AGENTS.md`, the lifecycle, plans and proposals doctrine, the
+  proposal templates, the three-lanes figure and the pages that repeat the rule
+  all follow. ([plan](dev/plans/archive/no-plan-changes-end-to-end.md))
+
 ### Added — "Keep the plan short" and "Keep the proposal short" in the templates
 
 - The plan and proposal templates now say what stays out of the file: checker
