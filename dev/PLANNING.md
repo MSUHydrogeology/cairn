@@ -100,17 +100,26 @@ reached the published notes. Those two errors are the Maintainer's to correct
 on the published release. Entries so far: Plain Language 1.0 and the
 deleted-file fix.
 
-**Branch rule.** All 0.5 work happens on the `0.5-dev` branch. `master` is
-frozen at `b70ee08f`: no commits to it. The shared checkout stays on `0.5-dev`.
-Git allows a branch in only one checkout, so an agent that wants a separate
-worktree branches off with its own name (`git worktree add -b 0.5-dev-<topic>
-<path> 0.5-dev`) and merges back into `0.5-dev`. Commits are path-scoped as
-usual. Merging `0.5-dev` to `master`, and pushing either, are the Maintainer's.
-The Maintainer, 2026-10-26:
+**Branch rule: one branch, and the intents board.** All 0.5 work happens
+directly on `0.5-dev`, in the one shared checkout. There are no topic branches
+and no worktrees for writing. `master` is frozen at `b70ee08f`: no commits to
+it. Before editing a file, record a claim with
+`python tools/intent.py claim --files <paths> --action "<what>"`; commit the
+files by explicit path, which releases the claim. `python tools/intent.py list`
+shows who holds what, and `python tools/board.py` shows every proposal and plan
+on the branch. A reviewer who must mutate code does it in a throwaway
+detached worktree of the reviewed commit and removes it afterward; it is not a
+named branch, and the review itself is written and committed on `0.5-dev`.
+Merging `0.5-dev` to `master`, and pushing either, are the Maintainer's. The
+Maintainer, 2026-10-26:
 
 > "No more edits in `master` in the Cairn repo"
 
 > "Go ahead and move all new development to 0.5-dev"
+
+> "I actually would prefer that all work happen in the 0.5-dev branch, and that
+> we use the intents board. This has gotten to be too many branches for me to
+> interact with properly."
 
 **Standing direction.** The 2026-07-22 direction, *fix defects, build nothing
 new*, applies to every row above; the choices on this page are the go-ahead for
