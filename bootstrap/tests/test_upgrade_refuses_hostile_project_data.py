@@ -485,6 +485,13 @@ def test_adoptions_refuse_a_profile_that_is_a_link(world, action, how):
         target.write_text(text, encoding="utf-8")
     else:
         target = world.outside / "new-profile.yml"
+        if action == "adopt-module":
+            # A lockfile that already holds the module's token lets the adoption
+            # go through without any profile, so a check made after the read
+            # shows up as a changed project instead of passing for a refusal.
+            lock = read_lock(world.project)
+            lock.setdefault("tokens", {})["python_package"] = "lockpkg"
+            write_lock(world.project, lock)
     link(target, profile)
     project_before, outside_before = snapshot(world.project), snapshot(world.outside)
     proc, opened = upgrade_audited(world, *flags)

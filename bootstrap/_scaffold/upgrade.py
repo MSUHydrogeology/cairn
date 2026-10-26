@@ -2718,6 +2718,16 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
         if refused is not None:
             return refused
 
+    # Both adoptions read the profile (`--adopt-module` for the module's tokens,
+    # `--adopt-collisions` through `_compute_upgrade`), so a link at its name or
+    # above it is refused before either reads, as on `--plan`, `--stage`,
+    # `--apply` and `--init-lock`.
+    if args.adopt_module or args.adopt_collisions:
+        refused = _refuse_if_linked(
+            target, _PROFILE_REL, f"the profile {_PROFILE_REL}")
+        if refused is not None:
+            return refused
+
     if args.adopt_module:
         return _cmd_adopt_module(
             target, args.adopt_module, cairn_root, templates_root)
