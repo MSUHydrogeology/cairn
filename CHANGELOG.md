@@ -38,13 +38,15 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
-### Fixed — `upgrade --plan` and `--stage` no longer read a linked profile
+### Fixed — `upgrade` no longer reads a linked profile on `--plan`, `--stage`, `--adopt-module` or `--adopt-collisions`
 
-- `upgrade --plan` and `--stage` now stop with exit 2 and a one-line remedy when
-  `dev/.cairn/profile.yml` is a link, as `--apply` and `--init-lock` already did. They used
-  to read the file behind it, print a warning about it and exit 0 (`--stage` also wrote its
-  review area). `--adopt-module` and `--adopt-collisions` still read the profile through a
-  link; [`bootstrap/UPGRADE.md`](bootstrap/UPGRADE.md) says so.
+- `upgrade --plan`, `--stage`, `--adopt-module` and `--adopt-collisions` now stop with exit 2
+  and a one-line remedy when `dev/.cairn/profile.yml` is a link, as `--apply` and
+  `--init-lock` already did. They used to read the file behind it: `--plan` and `--stage`
+  printed a warning about it and exited 0 (`--stage` also wrote its review area),
+  `--adopt-module` put a token value from it into the lockfile, and `--adopt-collisions`
+  printed a value from it. `--finalize` never opens the profile and is not affected;
+  [`bootstrap/UPGRADE.md`](bootstrap/UPGRADE.md) says so.
 
 ### Fixed — `upgrade --init-lock` no longer reads through a link; `--finalize` names a linked wrapper
 

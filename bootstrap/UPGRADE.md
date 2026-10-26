@@ -255,18 +255,16 @@ you what changed.
   `ScaffoldSecurityError` traceback and exit 1. That refusal prints no
   remedy line: replace the link with a real folder, then re-run.
 * **A linked lockfile or `dev/.cairn` is refused by every action; a linked
-  `dev/.cairn/profile.yml` is refused by `--plan`, `--stage`, `--apply` and
-  `--init-lock`.** Every action reads `dev/.cairn/cairn-lock.yml`; `--plan` and
-  `--stage` read `dev/.cairn/profile.yml` too, and `upgrade --apply` writes it
-  when it is absent. If the lockfile is a link, or `dev/.cairn` is, `--plan`,
-  `--stage` and `--apply` stop with exit 2 and a one-line refusal before they
-  read or write through it. If the profile is a link, those three stop the same
-  way, and so does `--init-lock`, whether the link points to a file that exists
-  or to nothing. `--finalize` never opens the profile, so a link there does not
-  stop it, and `--adopt-module` and `--adopt-collisions` still read the profile
-  through a link (measured: `--adopt-module python-security` over a link to a
-  file holding `python_package` put that value in the lockfile), so replace the
-  link before running either. This includes a profile that is a link to a file
+  `dev/.cairn/profile.yml` is refused by every action that reads it: `--plan`,
+  `--stage`, `--apply`, `--init-lock`, `--adopt-module` and
+  `--adopt-collisions`.** Every action reads `dev/.cairn/cairn-lock.yml`; the
+  six actions above read `dev/.cairn/profile.yml` too, and `upgrade --apply`
+  writes it when it is absent. If the lockfile is a link, or `dev/.cairn` is,
+  `--plan`, `--stage` and `--apply` stop with exit 2 and a one-line refusal
+  before they read or write through it. If the profile is a link, all six stop
+  the same way, whether the link points to a file that exists or to nothing, and
+  open nothing through it. `--finalize` never opens the profile, so a link there
+  does not stop it: it exits 0. This includes a profile that is a link to a file
   inside the project, which earlier versions accepted: the rule is stricter on
   purpose and the same for every link. Replace the link with a regular file,
   then re-run. A profile that is absent or a regular file is not affected. The
