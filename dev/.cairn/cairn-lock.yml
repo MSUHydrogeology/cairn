@@ -265,7 +265,7 @@
     },
     {
       "dst": "docs/DOCUMENTATION_PLAN.md",
-      "hash": "sha256:ff476b15ef598e58841667400a5d5bdf7517137eb4200cf3f64f098b73439593",
+      "hash": "sha256:38dd5cf3be6a2c0a7fc5b2d6763c7112277e7605cde3c8339f93115ad6b7201a",
       "src": "modules/default-on/documentation_plan_template.md",
       "unrecoverable_base": true,
       "verbatim": false
