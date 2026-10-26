@@ -47,7 +47,7 @@ artifacts; this board does not maintain a second status table.
 | **Drain mode**, last | Settled design, `strategy/2026-08-25-claude-drain-mode.md` | Scope below. |
 | **Onboarding happens at install** | Built and archived 2026-10-26 (`dev/plans/archive/install-time-onboarding.md`); its deletions and edits of frozen files join the re-anchor owed at the cut | Replace the delayed, trigger-based onboarding prompts with install-time onboarding. Maintainer words below. |
 | **`NEXT_SESSION` becomes a local note** | Proposal first (`2026-10-26-claude-next-session-local-note`, being written by the Developer session's author; it touches the engine: `config.py` and `lockfile.py` mention the file) | Maintainer direction, 2026-10-26: "Also, NEXT_SESSION becoming a local note should happen in v0.5 too." Confirmed in this session's chat by the Maintainer (answer: "Yes, add it to 0.5 (Recommended)"). The queued row "Make NEXT_SESSION local and untracked" below holds the earlier scope: the ignore pattern, the scaffold seed, the session-routines doctrine, the goodnight wording in `AGENTS.md`, and the session-end description. Engine files change, so the AST re-anchor set grows and a Security Review is probably owed; the proposal's author sets the header from what it finds. Built and archived 2026-10-26 (`dev/plans/archive/next-session-local-note.md`); its frozen-file edits and the new test join the re-anchor owed at the cut. |
-| **`upgrade` removes untouched copies of files Cairn stopped shipping** | Proposal first (to be written; engine change in `upgrade`, so a Security Review is probably owed) | Found by the onboarding proposal's usual review: that change leaves nine now-dead onboarding files in existing installs, and the `NEXT_SESSION` change leaves a stale copy too. Asked the Maintainer directly, 2026-10-26: add it to 0.5, queue it after, or skip it; answer: "Add it to 0.5". Order: it lands last, after the `NEXT_SESSION` and onboarding changes it cleans up after. Scope condition from the onboarding Security Review (its SR1): when a copy has been modified, `upgrade` must report it by name rather than fold it silently into the removed count. |
+| **`upgrade` removes untouched copies of files Cairn stopped shipping** | Proposal first (to be written; engine change in `upgrade`, so a Security Review is probably owed) | Found by the onboarding proposal's usual review: that change leaves nine now-dead onboarding files in existing installs, and the `NEXT_SESSION` change leaves a stale copy too. Asked the Maintainer directly, 2026-10-26: add it to 0.5, queue it after, or skip it; answer: "Add it to 0.5". Order: it lands last, after the `NEXT_SESSION` and onboarding changes it cleans up after. Scope condition from the onboarding Security Review (its SR1): when a copy has been modified, `upgrade` must report it by name rather than fold it silently into the removed count. Built 2026-10-26 (`dev/plans/upgrade-removes-retired-files.md`, code review answered); the plan stays open until the Maintainer allows two departures (see the 0.5 cut list). |
 | **`upgrade` stops running a repository's own programs when it checks for edits** | Proposal first (to be written after the twelfth row's; engine change, so a Security Review is owed) | Found by the twelfth-row Security Review: `upgrade --stage`, `--apply` and an unscoped `--finalize` call `_dirty_tracked_paths` (`bootstrap/_scaffold/upgrade.py`), a plain `git status`. Measured by that reviewer: an ordinary `upgrade --stage` ran a program named in a project's `.git/config` (`core.fsmonitor`), and the same helper reads an edited file as clean when the project sits in a subfolder of a larger repository. Not a simple fix (a sterile git call and a different dirty check). The Maintainer's answer, 2026-10-26, to where it goes: "A 0.5 row, after the twelfth (Recommended)". It reuses the sterile git helper the twelfth change builds. Reported by the reviewer, not reproduced by the planning session. |
 
 **Onboarding, the Maintainer's words.** Direction of 2026-10-26, relayed by the
@@ -241,6 +241,35 @@ Maintainer, 2026-10-26:
 **Standing direction.** The 2026-07-22 direction, *fix defects, build nothing
 new*, applies to every row above; the choices on this page are the go-ahead for
 these rows only.
+
+### The 0.5 cut: what waits on the Maintainer
+
+Written 2026-10-26 by the planning session, in the order to do it. Nothing in
+this list has been run by an agent.
+
+1. **Two allowances** on `dev/plans/upgrade-removes-retired-files.md` (its
+   `Waiting on Maintainer` line): departure 5 (a Markdown copy's cached template
+   must also be in git's last commit) and departure 7 (the plan's node for a
+   `base_cache` that leads outside cannot run as written; the case is covered
+   another way). Recommended: allow both; both are safer than the plan.
+2. **Decisions still to come**: the thirteenth row's proposal (the edit check
+   that runs no repository program) reaches you after its reviews, with three
+   questions and defaults.
+3. **Your `repin` steps**, in this order: M2 (the first real ceremony,
+   `--first-run --reviewed-commit 5670dda9`), M1, R6a, R6b, then M3 (by hand,
+   `bootstrap/REANCHOR_RUNBOOK.md`). The steps and their preconditions are in
+   `dev/plans/repin-build.md`.
+4. **The re-anchors, once, at the end**: the AST attestation and the gate
+   manifest. Derive the lists with `_ast_attest.py verify` and
+   `_gate_manifest.py verify` on Python 3.13.x, not from the rows below. Your
+   authorization must name the differential oracle's sensitive-roster entries
+   the 0.5 changes touch: `bootstrap/_scaffold/` (including `config.py`),
+   `bootstrap/security_check.py` and `bootstrap/tests/_gate_manifest.py`.
+5. **A certifying run** on the clean committed tree (the pair in `AGENTS.md`,
+   Boundary B), before the push. Nothing in the tree is certified yet.
+6. **Your push**, the merge of `0.5-dev` into `master`, the tag, and the
+   release notes copied from the changelog section (rename `## Unreleased` to
+   `## 0.5.0 — <date>`).
 
 ### 0.4 cut (Maintainer direction, 2026-10-19)
 

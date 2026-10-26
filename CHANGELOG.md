@@ -38,6 +38,23 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Added — `upgrade --remove-retired` removes untouched copies of files Cairn stopped shipping
+
+- `scaffold.py upgrade --target <repo> --remove-retired` removes a project's copy
+  of a file Cairn has retired, but only if the file is on Cairn's own list of 30
+  retired files, is byte-for-byte a version Cairn shipped (checked against SHA-256
+  digests carried in the engine), is tracked in the project's last git commit with
+  no uncommitted change, and sits behind no link. It deletes through open folder
+  handles so a swapped folder cannot redirect it, and its git check runs no program
+  the project's git settings name. Any other copy is kept and named one per line,
+  and a copy already deleted loses its lockfile record; so does a bare
+  `upgrade --finalize`, which skips a changed retired copy and says so. `upgrade
+  --plan` shows what the step would do; `--apply` is unchanged. The list holds the
+  20 files Cairn's v0.3.0 installs carried that v0.4.0 no longer ships, the nine
+  onboarding files and the handoff file. Python 3.13 and git 2.53.0 were the tested
+  versions; Windows and older git are not covered.
+  ([plan](dev/plans/upgrade-removes-retired-files.md))
+
 ### Changed — Onboarding happens at install; the delayed prompts are gone
 
 - Cairn no longer ships the delayed, trigger-based onboarding prompts, the helper
