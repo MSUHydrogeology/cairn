@@ -304,7 +304,8 @@ is built, not which words it uses, because swapping field terms
 for simpler words would fail the expert reader (the
 expertise-reversal concern above); Markowitz (2024) found that
 simpler AI-written summaries raised lay readers' comprehension but
-made the scientists they described seem less intelligent. And it
+made the scientists they described seem more credible but less
+intelligent. And it
 is checked by reading, never by a readability score: a score
 becomes the target, and the cheapest way to raise it is to cut the
 qualifiers and numbers the rules on reasoning exist to protect.

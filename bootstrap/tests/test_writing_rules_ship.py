@@ -55,9 +55,23 @@ def _flat(text: str) -> str:
 
 def _section(text: str) -> str:
     """The standard's section: from its heading to the next level-two heading."""
-    start = text.index("## Cairn Plain Language")
+    heading = re.search(r"^## Cairn Plain Language$", text, re.MULTILINE)
+    assert heading, "no level-two heading 'Cairn Plain Language'"
+    start = heading.start()
     end = text.find("\n## ", start + 1)
     return text[start:] if end == -1 else text[start:end]
+
+
+def _assert_before_surfacing(text: str) -> None:
+    """The standard sits just ahead of the Maintainer-escalation section."""
+    standard = re.search(r"^## Cairn Plain Language$", text, re.MULTILINE)
+    surfacing = re.search(
+        r"^## Surfacing judgment calls to the Maintainer$", text, re.MULTILINE
+    )
+    assert standard and surfacing
+    assert standard.start() < surfacing.start()
+    between = text[standard.end():surfacing.start()]
+    assert "\n## " not in between, "another level-two section sits between them"
 
 
 @pytest.fixture(scope="module")
@@ -100,6 +114,19 @@ def test_install_writes_the_shipped_standard_unchanged(installed: Path) -> None:
     shipped = _section((ROOT / SHIPPED_LOOP).read_text(encoding="utf-8"))
     out = _section((installed / "dev/agent_collaboration.md").read_text(encoding="utf-8"))
     assert _flat(out) == _flat(shipped)
+
+
+@pytest.mark.parametrize("source", [SHIPPED_LOOP, OWN_LOOP], ids=["shipped-loop", "own-loop"])
+def test_standard_sits_just_before_surfacing_judgment_calls(source: str) -> None:
+    """The place is part of the doc's order; a moved section changes what readers meet."""
+    _assert_before_surfacing((ROOT / source).read_text(encoding="utf-8"))
+
+
+def test_installed_standard_sits_just_before_surfacing_judgment_calls(installed: Path) -> None:
+    """An install must keep the standard's place, not only its text."""
+    _assert_before_surfacing(
+        (installed / "dev/agent_collaboration.md").read_text(encoding="utf-8")
+    )
 
 
 def test_cairns_own_copy_says_what_it_ships() -> None:
