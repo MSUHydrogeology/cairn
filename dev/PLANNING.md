@@ -74,6 +74,21 @@ frozen files and tests folds into the one re-anchor owed at the cut. A Security
 Review is owed if the proposal changes engine files, module tables or AST
 symbols; the proposal's author sets the header from what it finds.
 
+The proposal landed as `dev/proposals/2026-10-26-claude-retire-delayed-onboarding-prompts.md`
+(commit `ac47a584`, 263 lines, `awaiting-review`; its header asks for the usual
+review plus a Security Review, and its plan review would need an Internal
+Security Review). What its author measured, reported by the Developer session
+and not re-derived here: nine delayed items (six trigger tasks and three
+first-session terminal prompts, one per profile); a mechanism of 9 shipped
+files and 1,964 lines (18 files in Cairn's own tree); 16 engine symbols (8
+deleted, 8 changed); 15 frozen files deleted and 12 edited; the published
+install manifest going from 96 rows to 87, pinned at `test_notice_install.py:184`.
+The recommended design puts the content into the one list the install already
+writes: five sentences and one install-report line, no new tasks. This is
+bigger than the row first looked. The `NEXT_SESSION` proposal touches the same
+manifest row-count pin and engine files, so the two must be sequenced, not
+built in parallel; the AST re-anchor set grows with both.
+
 **Drain mode scope.** `/session-start --drain [board | issues | <item>]`.
 Triage has three levels; the Maintainer took the first two:
 
