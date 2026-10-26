@@ -885,8 +885,17 @@ def _print_upgrade_report(
     if conflicts:
         print(f"\n  {len(conflicts)} file(s) need conflict resolution before "
               "--apply.")
+    # ``detail`` can carry text from a project file or a template (a slot
+    # name, a git error), so it prints as ``ascii()`` escapes: a name holding an
+    # ESC byte or a right-to-left override must not reach the terminal as such.
     for fp in flags:
-        print(f"  [flag] {fp.dst}: {fp.detail}")
+        print(f"  [flag] {fp.dst}: {ascii(fp.detail)[1:-1]}")
+    # Only a merge that went through (clean or conflict) names added slots; the
+    # other kinds keep their own, unrelated detail.
+    for fp in plans:
+        if fp.kind in ("clean", "clean-locally-modified", "conflict") and fp.detail:
+            print(f"  [new slot] {fp.dst}: {ascii(fp.detail)[1:-1]} -- new in "
+                  "this upgrade. Fill it, or write N/A: <reason>.")
     # Review-only files owe a by-hand merge: the upgrade is NOT complete until
     # each is reconciled against the new upstream.  Surface them per-file with
     # the reason (not just the summary count) + the concrete next step, so an
@@ -896,7 +905,7 @@ def _print_upgrade_report(
         print("\n  ⚠ manual merge owed -- the upgrade is NOT complete "
               "until these are reconciled against the new upstream:")
         for fp in review_only:
-            print(f"      {fp.dst}: {fp.detail}")
+            print(f"      {fp.dst}: {ascii(fp.detail)[1:-1]}")
         print(f"  next step: `upgrade --stage` writes each file's upstream "
               f"version (+ your current copy) under "
               f"{_STAGING_REL}/review-only/ for a by-hand merge; `--apply` "

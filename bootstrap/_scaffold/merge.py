@@ -108,9 +108,12 @@ def parse_slots(text: str) -> list[Slot]:
 class MergeResult(NamedTuple):
     """Outcome of merging one substituted ``.md`` file."""
 
-    status: str          # "clean" | "conflict" | "slot-removed" | "error"
+    # "clean" | "conflict" | "slot-removed" | "error" | "needs-value"
+    status: str
     merged: str          # merged text (with conflict markers if conflicted)
-    detail: str          # human-readable note (needs-value tokens, etc.)
+    # human-readable note: needs-value tokens, orphaned slots, an error, or on
+    # clean / conflict the names of slots the new template adds ("" if none)
+    detail: str
 
 
 def _transplant_slots(target_text: str, ours_text: str) -> str:
@@ -188,6 +191,14 @@ def merge_file(
       **fail-closed** flagged decision (status ``slot-removed``) -- the
       adopter's filled content would otherwise be orphaned.
 
+    * A slot present in the new template but in neither the saved old
+      template nor ``ours`` is **added**; on ``clean`` and ``conflict`` the
+      result's ``detail`` names such slots (at most 10 names, each cut to
+      80 characters, then ``(and N more)``), unescaped -- the report
+      escapes what it prints.  Names are read from ``base_raw`` and
+      ``theirs_raw`` *before* token values are filled in, because a token
+      value is project data and must not be able to add a name.
+
     ``ours`` is parsed strictly; a malformed ``ours`` raises
     :class:`SlotError` to the caller (never silently mis-merged).
     """
@@ -214,6 +225,23 @@ def merge_file(
             + " -- resolve by hand (the filled content would be orphaned).",
         )
 
+    # Names of slots the new template adds.  Only these two parses sit in the
+    # ``try``: the strict parses of ``ours`` and of the token-filled text above
+    # stay outside it, so a malformed file still raises to the caller.  An
+    # unparseable old or new template yields no names, never a different status.
+    try:
+        old_names = {s.name for s in parse_slots(base_raw)}
+        added = [
+            s.name for s in parse_slots(theirs_raw)
+            if s.name not in old_names and s.name not in our_bodies
+        ]
+    except SlotError:
+        added = []
+    shown = [n if len(n) <= 80 else n[:77] + "..." for n in added[:10]]
+    names = ", ".join(shown)
+    if len(added) > 10:
+        names += f" (and {len(added) - 10} more)"
+
     base_t = _transplant_slots(base, ours)
     theirs_t = _transplant_slots(theirs, ours)
     try:
@@ -221,7 +249,7 @@ def merge_file(
     except RuntimeError as exc:
         return MergeResult("error", ours, str(exc))
     if had_conflict:
-        return MergeResult("conflict", merged, "")
+        return MergeResult("conflict", merged, names)
     # A clean merge that still carries an unfilled NEW upstream token is
     # NOT safe to apply (it would write a raw {{token}} into a tracked
     # doctrine file); surface it as a non-advancing "needs-value" status so
@@ -232,4 +260,4 @@ def merge_file(
             "new upstream token(s) need a value before this file can "
             "advance: " + ", ".join(needs_value),
         )
-    return MergeResult("clean", merged, "")
+    return MergeResult("clean", merged, names)

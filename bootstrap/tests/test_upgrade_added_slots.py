@@ -355,6 +355,40 @@ def test_lockfile_token_value_carrying_a_slot_pair_adds_no_name(scenario):
     ], proc.stdout
 
 
+def test_lockfile_token_value_in_the_old_template_hides_no_name(scenario):
+    """The saved old template is read as shipped too.  If its names were read
+    after the token fill, a value holding a slot pair could hide a real new slot
+    by putting its name into the "already there" set."""
+    lock = read_lock(scenario.project)
+    lock["tokens"]["inj_tok"] = (
+        "<!-- cairn:slot fresh-slot -->\n<!-- cairn:end fresh-slot -->")
+    write_lock(scenario.project, lock)
+    base = scenario.project / readme_record(scenario.project)["base_cache"]
+    base.write_text(base.read_text(encoding="utf-8") + "\n{{inj_tok}}\n",
+                    encoding="utf-8")
+    release = scenario.new_release(lambda t: with_slot_after_heading(t, "fresh-slot"))
+    proc = upgrade(scenario, release)
+    assert proc.returncode == 0, proc.stderr
+    assert new_slot_lines(proc.stdout) == [
+        "  [new slot] dev/README.md: fresh-slot" + NEW_SLOT_TAIL
+    ], proc.stdout
+
+
+def test_token_value_that_breaks_the_new_text_still_reports_error(scenario):
+    """The new template, token values filled in, is parsed strictly, outside the
+    step that reads names.  A value that leaves a slot unclosed must give `error`,
+    not an empty slot set that would flag the adopter's slot as removed."""
+    lock = read_lock(scenario.project)
+    lock["tokens"]["inj_tok"] = "<!-- cairn:slot unclosed -->"
+    write_lock(scenario.project, lock)
+    release = scenario.new_release(lambda t: t + "\n{{inj_tok}}\n")
+    proc = upgrade(scenario, release)
+    assert proc.returncode == 0, proc.stderr
+    assert summary_has(proc.stdout, "error", README_DST), proc.stdout
+    (flag,) = [ln for ln in flag_lines(proc.stdout) if README_DST in ln]
+    assert "malformed slots:" in flag, flag
+
+
 # --- how much is printed -------------------------------------------------------
 
 
