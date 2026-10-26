@@ -38,6 +38,21 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Changed — The install report follows the profile; `upgrade` names the slots it adds
+
+- The install report no longer asks you to fill a slot that only a module you did
+  not install fills. It lists those slots apart, under "Slots for modules this
+  profile did not install", each with its module names and how to mark it `N/A`
+  (on `solo-greenfield`, 2 of the 22 slots; `collaborative-team` stays at 23).
+  Slots that the install itself fills still count in the main list. `upgrade --plan`
+  and `--stage` now print a `[new slot]` line for each file whose new template adds
+  a slot you do not have, so a new slot is not lost among the old ones; a file new
+  in the upgrade, a tree with no saved old template and a renamed filled slot get
+  no such line. Every note the upgrade report prints now shows non-ASCII and
+  control characters as escapes, which also covers the older `[flag]` and
+  review-only lines.
+  ([plan](dev/plans/engine-batch-f8-slots.md))
+
 ### Changed — Model tiers: use the lowest tier that is safe
 
 - Every install now says which model tier a job needs. The lane sets the lowest

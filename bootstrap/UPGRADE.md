@@ -109,6 +109,15 @@ python bootstrap/verify_integrity.py --target <repo>            # 4. verify
   (clean / conflict / slot-removed / review-only / verbatim-* /
   up-to-date), lists new modules available since install (opt-in only) and
   modules removed upstream, and prints any flags. It writes **nothing**.
+  When a file's new template adds a slot that neither your file nor the saved
+  old template has, `--plan` and `--stage` (not `--apply`) print a
+  `[new slot] <file>: <names>` line for it: fill the slot or write
+  `N/A: <reason>`. They print none for a file that is new in the upgrade, for a
+  tree with no saved old template (`review-only`), for a file that needs a
+  token value, or for a slot you renamed after filling it (that file is flagged
+  `slot-removed` instead). Every note the report prints shows non-ASCII and
+  control characters as escapes, and a `[new slot]` line names at most ten
+  slots, then counts the rest.
 * **`--stage`** writes the merged/updated results into the **ephemeral**
   `dev/.cairn-upgrade/` staging directory (auto-seeded into your
   `.gitignore`) along with stage metadata. Originals are untouched.
