@@ -1,4 +1,5 @@
 # Plan: Make the next-session handoff a local note
+<!-- claim-check-allow: templates/core/dev/NEXT_SESSION.md -->
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-next-session-local-note.md](../proposals/archive/2026-10-26-claude-next-session-local-note.md)
@@ -232,3 +233,18 @@ Carried into the doctrine paragraph, both `AGENTS.md` copies, both `session-star
 * **N5 -- accepted.** `test_cairns_own_tree_tracks_no_handoff_file` in C6, run by the next certifying run, and the archive commit repeats `git ls-files`.
 
 **Clearance.** Both required passes now exist and are answered. The Security Review obligation (the header clause) is cleared by the pass at commit `411eac0d` once these answers are in. Status is `ready-to-implement`. Calls the Maintainer may overrule: the stop-on-other-exit clause (taken from the reviewer's recommendation, not his words); the `tools/session.py` finalize waiting on `50b5fbdf`; the new C6 test.
+
+## Migration record -- Claude Sonnet 5.5 (implementer) -- 2026-10-26
+
+I read the whole of `dev/NEXT_SESSION.md` at blob `054f28ca2d1b6363ea31ab4c3f0280bc2f5107a5` (`git rev-parse HEAD:dev/NEXT_SESSION.md`; the working copy hashes the same). It is the 2026-10-19 rewrite, 274 lines: a preface and five headed sections. Homes were checked against the tree and the board today, not from memory. Placement follows `docs/DOCUMENTATION_PLAN.md`.
+
+| Part | Durable content | Home |
+|---|---|---|
+| Preface | "Check each claim against `git log` before repeating it." The rest (the pause, three agents told to stop) is stale. | The advice is the stamp-and-cite rule in `doctrine/session-routines.md` (C2); the rest is dropped. |
+| Where the project stands | The goal 0.4, 166 unpushed commits, the archived plans A to D, the repository rename: all happened or changed. The certifying-run rule landed (`12be58d9`). | Status: `dev/PLANNING.md:11` (v0.4.0, tagged 2026-10-20). The rule: `AGENTS.md`, Verification boundaries. The rest is stale, dropped. |
+| In flight at the pause (six items) | 1 and 2: the lockfile-path and session-binding repairs, their eight and six findings, SW-SR-10's acceptance, the fixers' design notes. 3 to 6: four plans. | 1 and 2: the Security findings row (`dev/PLANNING.md:44`, `:122-141`) and the reviews `dev/reviews/2026-10-26-code-review-lockfile-path-findings.md` and `...-session-write-findings.md`; the design notes were already kept at `dev/PLANNING.md:198`; SW-SR-10 is in `bootstrap/SAFETY.md:260`; moving the binding into `.git` is a proposal after 0.5 (`dev/PLANNING.md:141`). 3 to 6: archived (`dev/plans/archive/review-stance-and-lenses.md`, `board-as-basis.md`, `remove-collaboration-agreement.md`, `model-mapping-install-path.md`). The two copies in a scratch folder are gone, as the file said they might be. |
+| Bookkeeping owed in `dev/PLANNING.md` | "Joined" paragraphs for the 0.4 re-anchors; three new rows: move the binding into `.git`, a broken link at `security-review.md:181`, stale citations in the stewardship proposal (#30). | The re-anchors were discharged (`dev/PLANNING.md:340`, `6f29519d`). The binding row is `dev/PLANNING.md:141`. The link is plain code text now (`templates/modules/team-gated/security-review.md:180-181`). #30 is closed (`gh issue view 30`). Stale, dropped. |
+| At the 0.4 cut | Eight steps for the cut. | Done: v0.4.0 is tagged; issues #2 and #8 are closed (`gh issue view`). The cut record is `dev/PLANNING.md:269`. Stale, dropped. |
+| Notes for whoever coordinates next | Three lessons: every subagent in one session shares one work-intent agent id, so one commit releases the others' claims (check `git diff` before each commit); heavy test runs should take turns; a review of a long plan is expensive, so give tight briefs. | **No home.** `dev/PLANNING.md:247-249` covers claims in general, not the shared-id trap. One `dev/PLANNING.md` row, written by the planning session at the archive commit (the plan's rule; doctrine would take the rate-limit gate). |
+
+Not checked: the file's earlier versions in history (I read only the blob above, which is the one being deleted), and whether anyone outside this repository keeps a copy.
