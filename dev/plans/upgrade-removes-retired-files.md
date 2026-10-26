@@ -1,5 +1,4 @@
 # Plan: upgrade removes untouched copies of retired files
-<!-- claim-check-allow: dev/NEXT_SESSION.md -->
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-upgrade-removes-untouched-retired-files.md](../proposals/archive/2026-10-26-claude-upgrade-removes-untouched-retired-files.md)

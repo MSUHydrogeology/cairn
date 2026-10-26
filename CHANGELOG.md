@@ -1,6 +1,5 @@
 <!-- A release history necessarily names files as they were at each version; a
      path that later stopped existing does not make the entry wrong. -->
-<!-- claim-check-allow: dev/NEXT_SESSION.md, templates/core/dev/NEXT_SESSION.md, dev/reflections/next-session.md -->
 <!-- Historical lifecycle paths: this changelog narrates Cairn's construction, tracked in the modflow_tools-side dev/ lifecycle (and earlier Cairn locations) -- the cited stems are history, not claims about Cairn's own tree. -->
 <!-- ^ Archived 2026-08-04; the plans moved to dev/plans/archive/. These are
      historical citations in append-only or logged content, so the path is

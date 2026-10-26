@@ -11,6 +11,9 @@
   "exemptions": {
     "CHANGELOG.md": {
       "paths": [
+        "dev/NEXT_SESSION.md",
+        "templates/core/dev/NEXT_SESSION.md",
+        "dev/reflections/next-session.md",
         "dev/collaboration_agreement.md",
         "templates/core/dev/collaboration_agreement.md",
         "bootstrap/tests/test_lifecycle_cli.py",
@@ -54,6 +57,8 @@
     },
     "bootstrap/UPGRADE.md": {
       "paths": [
+        "dev/reflections/next-session.md",
+        "dev/NEXT_SESSION.md",
         "dev/collaboration_agreement.md",
         "scripts/onboarding_activate.py",
         "scripts/_onboarding/",
@@ -283,6 +288,11 @@
       "paths": [
         "dev/modules/legacy-agent.md",
         "dev/modules/dual-language-tests.md"
+      ]
+    },
+    "dev/plans/upgrade-removes-retired-files.md": {
+      "paths": [
+        "dev/NEXT_SESSION.md"
       ]
     },
     "dev/plans/archive/2026-10-19-security-review-upgrade-lockfile-paths.md": {

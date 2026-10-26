@@ -1,5 +1,4 @@
 # UPGRADE.md — folding new Cairn doctrine into a customized tree
-<!-- claim-check-allow: dev/reflections/next-session.md, dev/NEXT_SESSION.md -->
 
 Cairn keeps evolving. An adopting team that bootstrapped months ago is
 frozen at the version they installed — unless they can pull new doctrine
