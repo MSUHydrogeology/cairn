@@ -383,6 +383,16 @@ def test_first_run_shows_the_unsigned_base_line_with_both_ids_and_the_count(cbed
     assert re.search(r"the last signed anchor is [0-9a-f]{40}, \d+ commits earlier", flat)
 
 
+def test_first_run_with_nothing_owed_says_so(cbed):
+    reviewed = first_run_bed(cbed)
+    stop = "R.check_stop_records = lambda *a: (_ for _ in ()).throw(R.Refuse('stopped for the test'))"
+    code, out = drive(cbed, [("Paste the launcher digest", cbed.launcher_digest),
+                             ("Do the two digests match", "yes")],
+                      extra=("--first-run", "--reviewed-commit", reviewed), patch=stop)
+    assert code == 2 and "stopped for the test" in out, out
+    assert "No pin is owed" in out, out
+
+
 def test_a_reviewed_commit_that_is_not_an_ancestor_refuses(cbed):
     first_run_bed(cbed)
     side = cbed.git("commit-tree", "-m", "elsewhere", "HEAD^{tree}").stdout.strip()

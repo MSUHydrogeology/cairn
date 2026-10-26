@@ -750,11 +750,14 @@ def apply_pin(ctx, cdir, raw):
     return record
 
 
+NOTHING_OWED = "\nNo pin is owed: the baseline accounts for the engine and the lockfile has nothing to correct."
+
+
 def package(ctx, cdir=None):
     """The AST pin's transaction, its digest and (with a folder) the file; no repository write."""
     txn = build_transaction(ctx)
     if txn is None:
-        say("\nNo pin is owed: the baseline accounts for the engine and the lockfile has nothing to correct.")
+        say(NOTHING_OWED)
         return None
     raw = encode_txn(txn)
     say("\nAST pin transaction (what a write would change):")
@@ -923,7 +926,9 @@ def check_first_run(ctx, reviewed):
         raise Refuse("a pin is owed (the AST baseline). The first run never carries one, because "
                      "repin's own unpinned bytes would decide it. Pin it by hand under "
                      "bootstrap/AST_BASELINE_RUNBOOK.md first.")
-    if txn is not None:
+    if txn is None:
+        say(NOTHING_OWED)
+    else:
         say("\nA lockfile correction is owed. The first run does not apply it: the ordinary ceremony "
             "after this one does.")
         for line in txn["summary"]:
