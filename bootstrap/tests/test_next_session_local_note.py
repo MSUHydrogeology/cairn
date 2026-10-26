@@ -547,8 +547,10 @@ def test_the_upgrade_guide_names_the_path_the_plan_line_prints(
         r"^\s*retired, kept\s+1: (\S+)$", capsys.readouterr().out, re.M)
     assert printed == [HANDOFF]
 
-    section = _guide_section("## A file Cairn stopped shipping: `dev/NEXT_SESSION.md`")
-    assert f"`retired, kept 1: {printed[0]}`" in section
+    section = _guide_section("## Files Cairn stopped shipping")
+    assert printed[0] in section
+    for label in ("retired, untouched", "retired, already deleted", "retired, kept"):
+        assert label in section
     # It describes what is true now. It names no release, version or date, so
     # it cannot promise the later cleanup on a schedule.
     assert _release_version_or_date(section) == []

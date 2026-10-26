@@ -1754,3 +1754,28 @@ def test_finalize_never_reaches_committed_copy_matches(
     for flags in ((), ("--force",), (SCRIPT,)):
         code, out, err = _finalize(capsys, project, *flags)
         assert code == 0, (flags, out, err)
+
+
+# ---------------------------------------------------------------------------
+# The guide and the printed line
+# ---------------------------------------------------------------------------
+
+def test_the_upgrade_guide_and_the_printed_line_name_the_same_flag(
+    project: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    _add_script(project, SCRIPT)
+    _commit_all(project)
+    code, out, _err = _upgrade(capsys, project, "--plan")
+    assert code == 0, out
+    printed = [line.strip() for line in out.splitlines()
+               if line.strip().startswith("python bootstrap/scaffold.py upgrade")
+               and "--remove-retired" in line]
+    assert len(printed) == 1, out
+    guide = (ROOT / "bootstrap" / "UPGRADE.md").read_text(encoding="utf-8")
+    start = guide.index("## Files Cairn stopped shipping")
+    end = guide.find("\n## ", start + 1)
+    section = " ".join(guide[start:end].split())
+    assert " ".join(printed[0].split()) in section, "the guide must quote the printed command"
+    # The guide's own example lines use the labels the report prints.
+    for label in ("retired, untouched", "retired, already deleted", "retired, kept"):
+        assert label in section and label in U._KIND_DISPLAY_LABEL.values()

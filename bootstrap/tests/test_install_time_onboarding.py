@@ -363,17 +363,17 @@ class TestUpgradeLeavesAnOldHelperAlone:
         assert OLD_HELPER_DSTS[3] not in kept
         assert set(OLD_HELPER_DSTS) - {OLD_HELPER_DSTS[3]} <= kept
 
-    def test_the_guide_says_do_not_delete_and_names_the_three_loose_files(self) -> None:
+    def test_the_guide_names_the_step_and_the_three_loose_files(self) -> None:
         guide = _flat((ROOT / UPGRADE_GUIDE).read_text(encoding="utf-8"))
-        assert "**Do not delete them.**" in guide
-        assert "names every retired file your project still has" in guide
-        assert "**Run `verify_integrity` before `--finalize`.**" in guide
-        loose = ("Three loose files are not in the lockfile and are safe to "
-                 "delete: `dev/modules/onboarding/<profile>.md`")
+        assert "`upgrade --remove-retired`" in guide
+        assert "**Do not delete them.**" not in guide
+        assert "**Run `verify_integrity` before `--finalize`.**" not in guide
+        loose = ("Three files are safe to delete by hand: "
+                 "`dev/modules/onboarding/<profile>.md`")
         assert loose in guide
         for name in ("dev/.cairn/onboarding-activated.jsonl",
                      "dev/modules/onboarding/agent-team-onboarding.md"):
-            assert name in guide.split(loose, 1)[1].split("No supported way", 1)[0]
+            assert name in guide.split(loose, 1)[1].split("**The handoff note.**", 1)[0]
 
     def test_the_guide_names_no_prompt_that_shows_later(self) -> None:
         guide = (ROOT / UPGRADE_GUIDE).read_text(encoding="utf-8")

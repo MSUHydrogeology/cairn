@@ -43,108 +43,93 @@ The module-body-coverage probe now lists 11 unmatched old heading names for
 `dual-review` (8 before this change); the three added names moved under other
 headings rather than losing their rules.
 
-## A file Cairn stopped shipping: `dev/collaboration_agreement.md`
+## Files Cairn stopped shipping
 
-From 0.4, Cairn no longer installs this file, and no installed Cairn helper
-reads it. If your project already has it, `upgrade --plan` reports
-`removed-upstream 1: dev/collaboration_agreement.md`. The line is
-informational and repeats on later plans: plan, stage and apply leave your
-file, its lockfile record and its cached base copy untouched.
+Some files that older installs wrote are no longer installed: the collaboration
+agreement (`dev/collaboration_agreement.md`), the next-session handoff
+(`dev/NEXT_SESSION.md`), the onboarding helper (`scripts/onboarding_activate.py`
+and the eight files in `scripts/_onboarding/`), and the fold-back and
+lifecycle-metrics files of the earliest installs. Your project may still have
+some of them. One upgrade action tidies them: `upgrade --remove-retired`.
 
-The file is yours now. Keep it while your lockfile lists it. To retire its
-contents, reduce it to a one-line note or empty it; **do not delete the
-file**. Deletion makes a bare `upgrade --finalize` refuse with "tracked
-file(s) missing on disk", even with `--force`. `verify_integrity.py` still
-passes and prints OK; only its slot note counts the file as unreadable. If
-you have already deleted it, restore an empty file at that path. A scoped `--finalize <path>` can record edits to
-other tracked files without sweeping the missing file, but does not erase
-its record.
+**What `upgrade --plan` shows.** One line for each state, with the file names
+after the count:
 
-Before changing your copy, search your own tree for references to it.
-Your `AGENTS.md`, `dev/README.md`, tests or local guidance may still cite
-it. Cairn's `dev/README.md` row is removed by the merge; if your copy
-still holds rules you follow, restore a local pointer or move the rules
-to `dev/agent_collaboration.md`.
+```
+retired, untouched        2: scripts/onboarding_activate.py, scripts/_onboarding/cli.py
+retired, already deleted  1: dev/NEXT_SESSION.md
+retired, kept             1: dev/collaboration_agreement.md
+```
 
-The `team-roster` slot now lives in `dev/agent_collaboration.md` under
-*The team*. Copy your roster across by hand. Filling the slot makes
-`verify_integrity` report that roles document as modified; read the whole
-file, then record the expected edit with
-`python bootstrap/scaffold.py upgrade --target <repo> --finalize dev/agent_collaboration.md`.
-A slot note that still names the old file can be ignored; fill the new
-slot.
+Each kept file also gets a `[flag]` line that says why. "matches none of the
+versions this Cairn knows" means the bytes differ from every copy Cairn lists:
+you changed the file, or it comes from a state Cairn does not list. "cannot show
+it is unchanged" means the evidence is missing: no cached template, a migrated
+lockfile, or a copy that your last git commit does not hold. A link or a folder
+at the name is kept too, and nothing is read through it. `--plan` writes
+nothing. When something can be removed, its report ends with the command below.
 
-## A file Cairn stopped shipping: `dev/NEXT_SESSION.md`
+**What `--remove-retired` does.** Run:
 
-Cairn no longer installs this file. The next-session handoff is now a short
-local note at `dev/reflections/next-session.md`, a path git already ignores.
-If your project already has the old file, `upgrade --plan` names it on a
-`retired, ...` line. A copy it cannot show is unchanged prints as
-`retired, kept 1: dev/NEXT_SESSION.md`. The line is informational and
-repeats on later plans: plan, stage and apply leave your file, its lockfile
-record and its cached base copy untouched.
+```
+python bootstrap/scaffold.py upgrade --target <repo> --remove-retired
+```
 
-For now your project keeps its file. Keep it, shrink it to a line, or empty
-it; **do not delete it, and do not run `git rm --cached` on it**. Deletion
-makes a bare `upgrade --finalize` refuse with "tracked file(s) missing on
-disk". `verify_integrity.py` still passes and prints OK; only its slot note
-counts the file as unreadable. If you have already deleted it, restore an
-empty file at that path. An emptied file lists no slot and finalizes.
+It removes a copy only if all three are true. The path is on Cairn's own list of
+retired files. The file is byte for byte a copy Cairn shipped. Your last git
+commit holds the same bytes, so `git restore <path>` brings the file back. It
+then clears the file's lockfile record and, for a Markdown file, its cached
+template under `dev/.cairn/base/`. It also clears the record of a file you
+already deleted. It prints one line for each file and ends by telling you to
+commit. Commit the change, then run `python bootstrap/verify_integrity.py
+--target <repo>`. You should see no `missing:` line for these files. If you do,
+run the step again: it finishes any record a stopped run left behind.
 
-At your next goodnight, write the new note at `dev/reflections/next-session.md`;
-the Goodnight bullet in your `AGENTS.md` says how. First run
-`git check-ignore -v dev/reflections/next-session.md`. You should see the line
-that ignores it. If you see nothing, and git does not track the path, add the
-path to `.gitignore`. `verify_stems.py` needs no action.
+**What stays.** Anything else is kept and named: a file you changed, a file your
+last commit does not hold (untracked, ignored or edited since), a link, a folder.
+A kept file is not an error. It stays in the lockfile and `verify_integrity`
+keeps checking it. To drop it, delete the file yourself and run
+`upgrade --finalize`, which clears its record. To keep your edit, leave it; run
+`upgrade --finalize <path>` to record the edit on purpose. A bare
+`upgrade --finalize` never records an edit to a retired file, with or without
+`--force`: it names the file, leaves its record, and says in its closing line how
+many records it did not record.
 
-A later change to `upgrade` will remove untouched copies of files Cairn
-stopped shipping. When it ships, an untouched `dev/NEXT_SESSION.md` is removed
-and its lockfile record cleared, and a changed copy is named and left in place.
-Until then, nothing in `upgrade` removes your file.
+**Deleting by hand is fine.** If you delete these files before you run the step,
+`upgrade --finalize` or `--remove-retired` clears their records. Until one of
+them runs, `verify_integrity.py` prints a `missing:` line for a deleted file
+that is not living state.
 
-## Files Cairn stopped shipping: the onboarding helper
+**A leftover folder.** If `scripts/_onboarding/` holds only `__pycache__` after
+the step, it is safe to delete. Nothing imports it. Cairn has not tested that
+Python ignores stale bytecode there, so delete the folder if you want a clean
+tree.
 
-Cairn no longer installs the onboarding helper: `scripts/onboarding_activate.py`
-and the eight files in `scripts/_onboarding/`. It was meant to show onboarding
-prompts at a later goodnight. Onboarding now happens once, at install: the
-profile's day-one tasks go into `dev/PLANNING.md` under Onboarding, and the
-install report ends with a line that says where they are. A project that is
-already installed needs no change for this.
-
-If your project installed Cairn before this change, `upgrade --plan` prints one
-`removed-upstream` line that names every retired file your project still has.
-The number on the line counts all of them, so it can be larger than nine: a
-project installed from 0.4 also has `dev/NEXT_SESSION.md`, and the line says
-`removed-upstream 10`. The nine helper files are among them. The line is
-informational and repeats on later plans. Plan, stage and apply leave the nine
-files and their lockfile records untouched. The files do nothing unless someone runs
-them.
-
-Leave the nine files where they are. **Do not delete them.** A deleted file
-makes `upgrade --finalize` refuse with "tracked file(s) missing on disk", with
-or without `--force`, and makes `verify_integrity.py` print a `missing:` line
-and exit 1. **Do not blank them either.** Blanking needs a finalize over nine
-executables, and a finalize records whatever is on disk.
-
-**Run `verify_integrity` before `--finalize`.** If it reports `modified` on one
-of the nine, do not finalize. Cairn no longer ships that file, so no upgrade
-changes it and `upgrade --plan` no longer flags it. A bare `--finalize` on a
-clean tree would record the edit as if you had made it on purpose. Restore the
-file from git history, then run `verify_integrity` again.
-
-Three loose files are not in the lockfile and are safe to delete:
-`dev/modules/onboarding/<profile>.md` (your profile's copy of the task list;
-the tasks themselves are in `dev/PLANNING.md`), `dev/.cairn/onboarding-activated.jsonl`
-(the helper's log), and an old `dev/modules/onboarding/agent-team-onboarding.md`
-(it tells the reader to run the helper; you can replace it with Cairn's current
+**Loose files the lockfile does not list.** Three files are safe to delete by
+hand: `dev/modules/onboarding/<profile>.md` (your profile's copy of the task
+list; the tasks themselves are in `dev/PLANNING.md`),
+`dev/.cairn/onboarding-activated.jsonl` (the helper's log), and an old
+`dev/modules/onboarding/agent-team-onboarding.md` (it tells the reader to run
+the helper; you can replace it with Cairn's current
 `docs/agent-team-onboarding.md`).
 
-No supported way yet clears the nine lockfile records. A later change to
-`upgrade` (the 0.5 row that removes untouched copies of files Cairn stopped
-shipping) has to cover these nine records and the `dev/NEXT_SESSION.md` record.
-It has to remove only a copy that still equals what Cairn shipped, and name a
-modified copy instead of counting it as removed. Until it ships, nothing in
-`upgrade` removes the nine files.
+**The handoff note.** The next-session handoff is now a short local note at
+`dev/reflections/next-session.md`, a path git already ignores. At your next
+goodnight, write the note there; the Goodnight bullet in your `AGENTS.md` says
+how. First run `git check-ignore -v dev/reflections/next-session.md`. You should
+see the line that ignores it. If you see nothing, and git does not track the
+path, add the path to `.gitignore`. `verify_stems.py` needs no action.
+
+**The agreement's contents.** Before you delete your copy of the agreement,
+search your own tree for references to it. Your `AGENTS.md`, `dev/README.md`,
+tests or local guidance may still cite it. Cairn's `dev/README.md` row is removed
+by the merge; if your copy still holds rules you follow, restore a local pointer
+or move the rules to `dev/agent_collaboration.md`. The `team-roster` slot now
+lives in `dev/agent_collaboration.md` under *The team*. Copy your roster across
+by hand. Filling the slot makes `verify_integrity` report that roles document as
+modified; read the whole file, then record the expected edit with
+`python bootstrap/scaffold.py upgrade --target <repo> --finalize dev/agent_collaboration.md`.
+A slot note that still names the old file can be ignored; fill the new slot.
 
 ## The two on-disk artifacts the install leaves
 
