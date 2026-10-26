@@ -1,7 +1,7 @@
 # Security Review — engine copy fallback (`cf707e2a`) — Claude Opus 5.5 — 2026-10-19
 
 **Obligation**: the Security Review of the repair for SW-SR-2
-(`dev/reviews/2026-10-18-security-review-session-writes.md`, at `598aa6be`).
+(`dev/plans/archive/2026-10-18-security-review-session-writes.md`, at `598aa6be`).
 The repair changes the scaffold engine (`bootstrap/_scaffold/`), a named
 high-risk surface in `AGENTS.md`. It has no proposal or plan.
 **Reviewed commit**: `cf707e2a` ("Installer fan-out: no copy, quarantine or

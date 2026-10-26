@@ -2,7 +2,7 @@
 
 **Obligation**: code review (falsification) of a defect repair that has no plan,
 the repair of SW-SR-2 in
-`dev/reviews/2026-10-18-security-review-session-writes.md`. Fresh session, not the
+`dev/plans/archive/2026-10-18-security-review-session-writes.md`. Fresh session, not the
 implementing session. The implementer is the same agent type, so the distance here
 is a fresh context, not a different type. This is an Internal pass; I do not claim
 External standing. A separate Security Review of the same commit ran in parallel;

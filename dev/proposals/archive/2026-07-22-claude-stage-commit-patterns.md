@@ -602,7 +602,7 @@ manifest's frozen set (additions are allowed; frozen-file edits HOLD).
 
 **Model**: Claude Opus 4.8 (three fresh-context subagents — corpus-evidence, scope/stopping-rule, transition-lint-necessity — no access to the authoring session; consolidated, none dropped).
 
-**Attribution / committer note.** The panel's findings, transcribed faithfully — none softened, reordered to bury, or dropped. Raw panel source committed in-tree at `dev/reviews/2026-07-22-stage-commit-patterns-internal-panel.json` per the binding practice from the superseded automated-review-committer Decision; committed under the Maintainer's git identity by the author-session as disclosed scribe.
+**Attribution / committer note.** The panel's findings, transcribed faithfully — none softened, reordered to bury, or dropped. Raw panel source committed in-tree at `dev/proposals/archive/2026-07-22-stage-commit-patterns-internal-panel.json` per the binding practice from the superseded automated-review-committer Decision; committed under the Maintainer's git identity by the author-session as disclosed scribe.
 
 **Steelman.** All three lenses independently reproduced the proposal's empirical spine on the canonical interpreter (`~/conda_envs/lhm/bin/python`, Python 3.13.13) and converge on the same verdict: the diagnosis is correct, the repair is a real repair, and the scope discipline is the strongest this tree has seen.
 

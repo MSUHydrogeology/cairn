@@ -597,7 +597,7 @@ nodes green.**
 **Verified absence, with the control above:** `glab-resolved` and
 `vscode-merge-base` appear nowhere in the runner or the test file — their only
 occurrences in the whole tree are three deliberation documents (this plan, the
-source proposal, `dev/reviews/2026-08-20-adopter-issues-decision-support.md`).
+source proposal, `dev/proposals/archive/2026-08-20-adopter-issues-decision-support.md`).
 And nothing else catches it: chunk G's instrument 1 builds a *fresh* repository
 (`:235-243`) carrying neither key, and Boundary C's four named targets
 (`:382-388`) are the canary, the twin, the flag-table fake and the exit value.
@@ -805,7 +805,7 @@ list.
 * **Baselines, measured on a clean tree immediately before chunk A** and
   unchanged by this work: `check_cairn` `3 issue(s) across 173 file(s)` -- all
   three are stale `dev/measurement/` path citations in
-  `dev/reviews/2026-08-27-code-review-c5-c6-removals.md`, unrelated to this
+  `dev/plans/archive/2026-08-27-code-review-c5-c6-removals.md`, unrelated to this
   surface; `quality_gate --sub neutrality` `fail=79 info=21`; `--sub redundancy`
   `fail=0`. Every post-change figure matches its own baseline exactly. (The
   plan's frozen `6 issue(s)` figure did not survive, exactly as it warned.)

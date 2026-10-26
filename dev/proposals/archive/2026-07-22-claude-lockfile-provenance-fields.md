@@ -624,7 +624,7 @@ installed lockfile (as_of 2026-07-22).
 
 **Model**: Claude Opus 4.8 (three fresh-context subagents on lenses tailored to this proposal's failure modes; no access to the authoring session; consolidated, none dropped).
 
-**Attribution / committer note.** The panel's findings, transcribed faithfully — none softened, reordered to bury, or dropped. Per the binding practice from the superseded automated-review-committer Decision (2026-07-09), the raw panel source is committed in-tree at `dev/reviews/2026-07-22-lockfile-provenance-internal-panel.json`; committed under the Maintainer's git identity by the author-session as disclosed scribe.
+**Attribution / committer note.** The panel's findings, transcribed faithfully — none softened, reordered to bury, or dropped. Per the binding practice from the superseded automated-review-committer Decision (2026-07-09), the raw panel source is committed in-tree at `dev/proposals/archive/2026-07-22-lockfile-provenance-internal-panel.json`; committed under the Maintainer's git identity by the author-session as disclosed scribe.
 
 **Steelman.** All three lenses independently found this proposal unusually well-evidenced, and two of them tried hard to break its central argument and could not.
 

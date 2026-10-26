@@ -3,7 +3,7 @@
 **Model**: claude-sonnet-5-5
 **Tier**: usual (code stage; a fresh session, not the fixer)
 **Reviewed commits**: `1cf56d4a` (new tests, 101), `9af86ae4` (the engine fix: `bootstrap/_scaffold/upgrade.py`, `bootstrap/_scaffold/lockfile.py`), `9b607bc8` (docs: `SECURITY_MUTATIONS.md`, `UPGRADE.md`, `CHANGELOG.md`). Read against `63b64784`, the parent of the first. The engine bytes are the same at `9b607bc8` and at the shared tip when I started.
-**Answers**: `dev/reviews/2026-10-19-security-review-upgrade-lockfile-paths.md` (`f0280ef0`), findings LP-SR-1 to LP-SR-8.
+**Answers**: `dev/plans/archive/2026-10-19-security-review-upgrade-lockfile-paths.md` (`f0280ef0`), findings LP-SR-1 to LP-SR-8.
 **Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13, git 2.53.0, macOS (case-insensitive APFS). `PYTHONDONTWRITEBYTECODE=1`. No full suite and no `CAIRN_FULL_SUITE`.
 **Called by**: none (the usual review; not an External read).
 **Not reopened**: the Decision, and the Maintainer's single-round rule. No second Security Review follows; this review checks the fixer's answer.

@@ -1211,7 +1211,7 @@ refuses it as "not the authority closure."
 
 **Verdict accepted in full: BLOCK.** Seven blocking findings, two CRITICAL, each
 **reproduced** by the reviewer rather than argued. The runner now refuses on
-entry, in code, citing the review. `dev/reviews/2026-08-27-external-security-review-correct-pinned-digests.md`.
+entry, in code, citing the review. `dev/plans/archive/2026-08-27-external-security-review-correct-pinned-digests.md`.
 
 **The claim I made was wrong, and precisely wrong.** I wrote that the checksum
 "is not theatre" because the two digests are separated in time. The reviewer's

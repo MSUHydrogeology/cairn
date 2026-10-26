@@ -3,7 +3,7 @@
 **Model**: claude-sonnet-5-5
 **Tier**: usual (the code review of an answer to a single-round Security Review; a fresh session, not the fixer)
 **Reviewed commits**: `c5daabe4` (kernel code in both twins, one new test file) and `fb1dd3a4` (the SAFETY.md residual and a CHANGELOG entry), read against the parent `1951e054`.
-**Answers**: `dev/reviews/2026-10-18-security-review-session-writes.md`, section "Security verification of the answer -- Claude Opus 5.5 -- 2026-10-19" (commit `bf746470`).
+**Answers**: `dev/plans/archive/2026-10-18-security-review-session-writes.md`, section "Security verification of the answer -- Claude Opus 5.5 -- 2026-10-19" (commit `bf746470`).
 **Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13), git 2.53.0, macOS on APFS (case-insensitive). Bytecode caches were cleared before every mutant and probe run (see the caution under the ledger).
 **Where things ran**: two detached worktrees in fresh folders under the session scratchpad (the fix at `fb1dd3a4`; the parent `1951e054` with only the new test file copied in). Every mutant and probe ran there. Both are removed. The shared checkout got two writes: the intent claim and this record.
 **Called by**: none (the usual review, not an External read).

@@ -113,7 +113,7 @@ On 2026-10-18 the Maintainer answered four questions in chat, by multiple-choice
 
    > "Yes, fix the .gitignore points"
 
-   **So all three are accepted scope, an addition at the Maintainer's instruction.** They are findings GS-SR-3, GS-SR-4 and GS-SR-5 of `dev/reviews/2026-10-18-security-review-gitignore-seed-guard.md` (`c00e6ddc`), all in `seed_gitignore` in `bootstrap/_scaffold/install.py`:
+   **So all three are accepted scope, an addition at the Maintainer's instruction.** They are findings GS-SR-3, GS-SR-4 and GS-SR-5 of `dev/plans/archive/2026-10-18-security-review-gitignore-seed-guard.md` (`c00e6ddc`), all in `seed_gitignore` in `bootstrap/_scaffold/install.py`:
 
    * **GS-SR-3, the gap between check and write.** About a tenth of a millisecond sits between the guard and the write. In that review a racing thread won 99 of 3,000 calls, and a win overwrites the outside file instead of appending to it.
    * **GS-SR-4, a hard-linked `.gitignore`.** The guard checks symbolic links, not link counts, so a `.gitignore` that is a second name for an outside file is still written through on install, stage and adopt.
@@ -843,7 +843,7 @@ This is the Internal pass of `required(Internal + Internal Security Review)`. Th
 
 **MM-PR-7 -- Medium -- P15 drops the repair's fail-early for a folder or pipe named `.gitignore`, which nobody asked for**
 
-* *Evidence.* P15 (line 210), line 378 and the residual at line 577 accept that a folder or pipe named `.gitignore` is "no longer caught by the preflight" and is refused only at the first seeding that writes, "after any earlier writes". P15 says "the Maintainer called the preflight's read a regression" (line 113 calls it "a regression the repair introduced"); no quote supports the first. His quoted words (lines 103-107) answer a question about "a non-UTF-8 `.gitignore` stopping an upgrade". The Security Review (`dev/reviews/2026-10-18-security-review-gitignore-seed-guard.md:402-418`) rates GS-SR-5 informational and says "Fail-earlier is the safer behaviour".
+* *Evidence.* P15 (line 210), line 378 and the residual at line 577 accept that a folder or pipe named `.gitignore` is "no longer caught by the preflight" and is refused only at the first seeding that writes, "after any earlier writes". P15 says "the Maintainer called the preflight's read a regression" (line 113 calls it "a regression the repair introduced"); no quote supports the first. His quoted words (lines 103-107) answer a question about "a non-UTF-8 `.gitignore` stopping an upgrade". The Security Review (`dev/plans/archive/2026-10-18-security-review-gitignore-seed-guard.md:402-418`) rates GS-SR-5 informational and says "Fail-earlier is the safer behaviour".
 * *Effect.* Git can carry `.gitignore/x`, so a folder named `.gitignore` is possible. After this change an install over one creates the dev tree and installed files and then dies at the first seed with a traceback and exit 1, the half-install the repair removed, and `--stage` leaves a stage behind.
 * *Recommended fix.* P14 already runs an `lstat` in the preflight for the link count. Add "not a regular file" to that `lstat` (folder, pipe, socket, device): refuse with `ScaffoldSecurityError`, open nothing, decode nothing. Keep the first-write refusal as a backstop. Only the non-UTF-8 case then changes behaviour, which is what was asked. Remove the "Maintainer called it" clause or quote him, and update line 577. Cost: one condition and one test row.
 
@@ -904,7 +904,7 @@ No simpler path to the accepted outcomes. The notice, the check and the guarded 
 ```
 Reviewed commit: 20f145eda92c575473a2ccfcf021946086a0186c
 Target: the whole plan, read for its security treatment: Scope (and the answers folded after opening), What the exit codes are now, Frozen files, AST and the oracle, P1-P15, the C1-C6 and M criteria, The security findings ledger, Verification (mutation ledger, Boundary C, security preflight), Named residuals
-Prior findings: carried in, checked for coverage, not closed here -- SEC-3 to SEC-8 and CL-1 to CL-4 (dev/proposals/archive/2026-10-18-claude-model-mapping-install-path.md); GS-SR-3 to GS-SR-5 (dev/reviews/2026-10-18-security-review-gitignore-seed-guard.md)
+Prior findings: carried in, checked for coverage, not closed here -- SEC-3 to SEC-8 and CL-1 to CL-4 (dev/proposals/archive/2026-10-18-claude-model-mapping-install-path.md); GS-SR-3 to GS-SR-5 (dev/plans/archive/2026-10-18-security-review-gitignore-seed-guard.md)
 Assurance path: high-assurance -- inherited (the scaffold engine)
 ```
 

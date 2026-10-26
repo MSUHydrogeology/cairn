@@ -3,7 +3,7 @@
 **Model**: claude-sonnet-5-5
 **Tier**: usual (one short second look at a code revision; a fresh session, not the revision's author and not the first fix's reviewer)
 **Reviewed commits**: `62508ef0` (code and tests: `tools/session.py`, its twin `templates/skills/_lib/session.py`, `bootstrap/tests/test_session_binding_gate_and_printing_hold.py`) and `9f61e8c8` (prose: `bootstrap/SAFETY.md`, one line of `dev/NEXT_SESSION.md`), read against the parent `bad52be1`.
-**Answers**: `dev/reviews/2026-10-26-code-review-session-write-findings.md` (commit `3bcee549`), findings F1, F2, F4, F6 (code) and F3, F7(c) (prose).
+**Answers**: `dev/plans/archive/2026-10-26-code-review-session-write-findings.md` (commit `3bcee549`), findings F1, F2, F4, F6 (code) and F3, F7(c) (prose).
 **Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13), macOS on APFS. The default volume ignores letter case and Unicode form (measured below).
 **Where things ran**: two detached worktrees in fresh folders (the revision; the parent with only the new test file copied in) and one throwaway case-sensitive disk image. All removed.
 **Called by**: none. **Not reopened**: the Decision. This is not a Security Review.

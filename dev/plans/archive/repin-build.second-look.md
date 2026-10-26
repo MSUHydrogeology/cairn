@@ -2,7 +2,7 @@
 
 **Model**: Sonnet 5.5, fresh session; I did not write or implement any of it, and I am not the first code reviewer.
 **Tier**: Internal. **Called by**: none. **Reviewed commit**: `e3cec581`, read against the first review's `595cbfdc`. Code last changed at `baca8a45` (`git diff baca8a45 e3cec581` over the three code files is empty), the commit M2's `--reviewed-commit` should name.
-**Answers**: `dev/reviews/2026-10-26-code-review-repin-build.md` (B1, B2, N3). **Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13).
+**Answers**: `dev/plans/archive/repin-build.code-review.md` (B1, B2, N3). **Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13).
 **Where things ran**: detached worktrees of `e3cec581` and `595cbfdc` in the scratchpad (removed after), scratch beds only. No real key, `~/.ssh`, anchor, ceremony, re-anchor or `CAIRN_FULL_SUITE`.
 
 **Verdict: no blocking findings.** B1 and B2 are fixed as the Maintainer chose, and the N3 check has no false-refusal path I could build. Three non-blocking points, each a line of test or output.

@@ -521,7 +521,7 @@ has an instrument behind it.
 4. **B relies on a board column that does not exist.** B's paragraph lands in
    the section of `doctrine/session-routines.md` that already promises an
    "owner role" column the board lacks (line 52, open as IB4 in
-   `dev/reviews/2026-10-17-code-review-issue-batch.md`). B's phrase "the board
+   `dev/plans/archive/2026-10-17-code-review-issue-batch.md`). B's phrase "the board
    shows its role holding" leans on that column. The board shows Status only.
    The status-to-holder mapping lives in `doctrine/lifecycle.md` prose, and
    `Author` is not a column.

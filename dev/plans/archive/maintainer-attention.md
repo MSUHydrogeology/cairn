@@ -1091,7 +1091,7 @@ files were absent.
   `dev/measurement/suite-runs.jsonl` and `dev/measurement/suite-cost.md`, which
   are local-only files (`git ls-files` returns nothing for either) cited by
   `dev/plans/verification-practice.md` and
-  `dev/reviews/2026-08-27-code-review-c5-c6-removals.md`. Neither file is in this
+  `dev/plans/archive/2026-08-27-code-review-c5-c6-removals.md`. Neither file is in this
   plan's range. The same script in the shared working tree, which holds those
   files, printed `OK -- 181 Markdown file(s) scanned; no issues` at C4. This
   plan's own files carry no flag.

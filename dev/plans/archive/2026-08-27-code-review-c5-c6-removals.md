@@ -522,7 +522,7 @@ pins the property that actually matters now.
 
 ## Claim-check disposition
 
-`python scripts/claim_check.py dev/reviews/2026-08-27-code-review-c5-c6-removals.md`
+`python scripts/claim_check.py dev/plans/archive/2026-08-27-code-review-c5-c6-removals.md`
 reports **11 hard flags**, all of one kind: a repo path that does not resolve
 **because the chunk group under review deleted it**. Six are in the findings
 themselves; the other five are this table restating those same six paths, which

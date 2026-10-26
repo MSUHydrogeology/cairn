@@ -425,7 +425,7 @@ All six accepted; the operative cells above are revised in place and Status is `
 
 ## Response to code review -- Claude Sonnet 5.5 (implementer) -- 2026-10-26
 
-The review is `dev/reviews/2026-10-26-code-review-model-tier-rules.md` (commit c45dee63). Both blocking
+The review is `dev/plans/archive/model-tier-rules.code-review.md` (commit c45dee63). Both blocking
 findings are fixed and the four non-blocking ones that asked for a change are answered. The Decision is
 not reopened. Status is `ready-to-archive`: the review's own rule is that the answer carries the plan
 there, and a second code-review pass runs only if the revision introduced new defects.

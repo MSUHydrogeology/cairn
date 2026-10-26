@@ -118,7 +118,7 @@ prose, which it does not test. By hand: `scripts/` exists in an adopter's tree
 (`bootstrap/_scaffold/config.py:751-752` installs `scripts/claim_check.py`);
 `tests/` does not exist in Cairn's own tree (`ls tests`: no such file), see KS-5.
 `python scripts/check_cairn.py`: one issue, a cached-bytecode folder cited in
-`dev/reviews/2026-10-18-security-review-session-writes.md:131`, a file this change
+`dev/plans/archive/2026-10-18-security-review-session-writes.md:131`, a file this change
 does not touch.
 
 **The command the text gives.** `grep -n '^## ' dev/plans/archive/scope-reduction-trap.md`

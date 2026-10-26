@@ -1,9 +1,9 @@
 # Security Review — session kernel writes (`7e6a14e5`) — Claude Opus 5.5 — 2026-10-18
 
 **Obligation**: the Security Review that clears GS-SR-1
-(`dev/reviews/2026-10-18-security-review-gitignore-seed-guard.md`, at
+(`dev/plans/archive/2026-10-18-security-review-gitignore-seed-guard.md`, at
 `c00e6ddc`) and GS-CR1
-(`dev/reviews/2026-10-18-code-review-gitignore-seed-guard.md`), both
+(`dev/plans/archive/2026-10-18-code-review-gitignore-seed-guard.md`), both
 answered by the defect repair in `7e6a14e5`. That repair has no proposal or
 plan; it changes the local interpreter binding's module, a named high-risk
 surface in `AGENTS.md`.

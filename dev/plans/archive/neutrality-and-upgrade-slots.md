@@ -1825,7 +1825,7 @@ The suite's count is higher than the first record's (3504) because other session
 ### Non-pass disposition
 
 * **The two AST nodes**, as before and not this plan's: `test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package` and `::test_ast_gate_passes_over_the_full_scaffold_module_set`. The CHANGED set at the tested commit is five symbols: `_cmd_adopt_module`, `cmd_upgrade`, `create_dev_tree`, `main`, `seed_gitignore`. At this plan's base `bb4f710a` it is three (`_cmd_adopt_module`, `main`, `seed_gitignore`); `cmd_upgrade` arrived with another session's `3ba6f230` and `create_dev_tree` with another session's `b5c7a4bd`. None of this plan's commits changes a byte under `bootstrap/_scaffold/` or `bootstrap/scaffold.py` (`git show --name-only` over each of the twenty prints no such path), and no engine commit has landed since `b72d0308`, where the set was already these five.
-* **The `check_cairn` issue.** `dev/reviews/2026-10-18-security-review-session-writes.md:131` cites `tools/__pycache__`, which resolves only where a `__pycache__` folder exists; the clean worktree, run with `PYTHONDONTWRITEBYTECODE=1`, has none. It is another session's committed review record. In the shared tree `check_cairn` reports OK (185 files). Not touched.
+* **The `check_cairn` issue.** `dev/plans/archive/2026-10-18-security-review-session-writes.md:131` cites `tools/__pycache__`, which resolves only where a `__pycache__` folder exists; the clean worktree, run with `PYTHONDONTWRITEBYTECODE=1`, has none. It is another session's committed review record. In the shared tree `check_cairn` reports OK (185 files). Not touched.
 
 ### Plan-specific acceptance, at the tested commit
 

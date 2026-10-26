@@ -903,7 +903,7 @@ new finding beyond that baseline**, and each count is unchanged:
   21; neither reconciled path appears in the 21.
 * **check_cairn 3** — the plan records this gate as clean (0), and it *is* clean
   in the primary checkout. All three findings are
-  `dev/reviews/2026-08-27-code-review-c5-c6-removals.md` citing
+  `dev/plans/archive/2026-08-27-code-review-c5-c6-removals.md` citing
   the suite-cost and suite-runs records under `dev/measurement/`, which are
   **gitignored** (`.gitignore:18-19`) and therefore absent from a fresh
   worktree checkout while present on disk in the primary tree. Their paths are

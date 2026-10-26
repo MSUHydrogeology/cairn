@@ -988,7 +988,7 @@ run created only ignored caches (`.pytest_cache/`,
   line-for-line the same set as at the base `d1aacb8e`, diffed after sorting.
   None is in a file this plan edits. Redundancy is clean.
 * **`check_cairn` exit 1: pre-existing, and outside this plan.**
-  * The three issues are in `dev/reviews/2026-08-27-code-review-c5-c6-removals.md`,
+  * The three issues are in `dev/plans/archive/2026-08-27-code-review-c5-c6-removals.md`,
     at lines 380, 398 and 400.
   * They cite `dev/measurement/suite-runs.jsonl` and
     `dev/measurement/suite-cost.md`, which are gitignored local files
@@ -1179,7 +1179,7 @@ go to archive preparation with the eight follow-ups below.
   `docs/`.
 * **`check_cairn` exit 1.** At `b712020d` in a clean worktree it reports exactly
   the 3 issues the record names, all in
-  `dev/reviews/2026-08-27-code-review-c5-c6-removals.md`, citing two gitignored
+  `dev/plans/archive/2026-08-27-code-review-c5-c6-removals.md`, citing two gitignored
   files. **At `739e3aba` it reports 6** (finding [CR5]).
 * **Frozen files.** Each of the six commits checked against the manifest's 183
   `frozen_files`, with `test_verification_boundaries.py` present as the control:
@@ -1611,7 +1611,7 @@ Measured in fresh, detached worktrees at `f93eef04` with this file in place
 | `check_cairn`, fresh checkout | 6 issues | 3 issues, none in this plan |
 
 The 3 that remain are in a closed review,
-`dev/reviews/2026-08-27-code-review-c5-c6-removals.md` (lines 380, 398 and 400),
+`dev/plans/archive/2026-08-27-code-review-c5-c6-removals.md` (lines 380, 398 and 400),
 which cites the same two ignored measurement files. They are older than this
 plan and identical at its base, and the file is outside this work, so they are
 untouched. With the ignored files present, as in the shared tree,

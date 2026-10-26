@@ -618,7 +618,7 @@ sets, split only to keep the run scoped:
 
 **Non-pass disposition.** G1's sole failure is
 `test_claim_check_allow_config.py::TestProseCarriesNoClaimCheckDirective`:
-`dev/reviews/2026-10-19-security-review-upgrade-lockfile-paths.md:3` has an
+`dev/plans/archive/2026-10-19-security-review-upgrade-lockfile-paths.md:3` has an
 inline directive. That line already exists at C3's parent `c177b8ca`; this
 scope neither changed nor owns the other author's review. The other three
 tests in that file passed. `check_cairn.py`'s five flags are two other
@@ -698,7 +698,7 @@ Prior findings: none
 *Bounding rationale*: Challenged mapped tests and named surfaces across C1–C4:
 * Ran mapped test files (`test_agreement_retired.py`, `test_trigger_evaluation_action.py`, `test_active_surfacing_mechanism.py`, `test_active_surfacing_render.py`, `test_security_lint.py`): all 55 tests passed cleanly with 0 skips/xfails.
 * Verified byte-for-byte identity across all three twin pairs (`prompts.py`, `triggers.py`, and `agent-team-onboarding.md`).
-* Evaluated disclosed non-passes: `test_claim_check_allow_config.py::TestProseCarriesNoClaimCheckDirective` failure is caused by an inline directive in `dev/reviews/2026-10-19-security-review-upgrade-lockfile-paths.md:3` created at `f0280ef0` by another author, outside this scope and unowned by this change; `check_cairn.py`'s five flags consist of two pre-existing files plus three historical citations in the plan's own append-only text from before implementation, while all 22 live markdown files touched by this plan pass `check_cairn.py` with 0 issues.
+* Evaluated disclosed non-passes: `test_claim_check_allow_config.py::TestProseCarriesNoClaimCheckDirective` failure is caused by an inline directive in `dev/plans/archive/2026-10-19-security-review-upgrade-lockfile-paths.md:3` created at `f0280ef0` by another author, outside this scope and unowned by this change; `check_cairn.py`'s five flags consist of two pre-existing files plus three historical citations in the plan's own append-only text from before implementation, while all 22 live markdown files touched by this plan pass `check_cairn.py` with 0 issues.
 * Stated omissions: full-suite certifying run deferred per `AGENTS.md` and cited as `Certified by: pending`; AST and gate-manifest re-anchors deferred to Maintainer 0.4 ceremony.
 
 **Waiting-line check.** The start fence was Maintainer-gated by the Decision conditional on `review-stance-and-lenses` being archived. Predecessor was archived at `0974a4de` prior to C1 start (`dev/plans/remove-collaboration-agreement.md:562-568`), so the fence condition was met before execution without requiring a pause or new approval. No deviation request was made in the implementation range.

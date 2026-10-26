@@ -635,7 +635,7 @@ itself touching `bootstrap/_scaffold/`, that is a scope breach and stops.
 
 **Model**: Claude Opus 4.8 (three fresh-context subagents on lenses tailored to this proposal's failure modes; no access to the authoring session; consolidated, none dropped).
 
-**Attribution / committer note.** The panel's findings, transcribed faithfully — none softened, reordered to bury, or dropped. Per the binding practice from the superseded automated-review-committer Decision (2026-07-09), the raw panel source is committed in-tree at `dev/reviews/2026-07-22-transition-lint-internal-panel.json`; committed under the Maintainer's git identity by the author-session as disclosed scribe.
+**Attribution / committer note.** The panel's findings, transcribed faithfully — none softened, reordered to bury, or dropped. Per the binding practice from the superseded automated-review-committer Decision (2026-07-09), the raw panel source is committed in-tree at `dev/proposals/archive/2026-07-22-transition-lint-internal-panel.json`; committed under the Maintainer's git identity by the author-session as disclosed scribe.
 
 **Steelman.** All three lenses converge on the same read: this is the most carefully grounded proposal in the recent batch, and splitting Part C out to pin the heuristics before the plan was the right call.
 
@@ -724,7 +724,7 @@ Scope of the second Internal pass. Re-read only the Home, Suppression, Exit-beha
 Maintainer calls, surfaced rather than adjudicated:
 - Open questions 1-3 are correctly routed to the Maintainer. Two lenses note independently that Open question 1's arbitrary `HEAD~20..HEAD` default is weaker than the proposal admits: a HEAD-relative default is what produced the stale-endpoint error in the first place, so requiring an explicit range (exit 2 otherwise) is the option that would have prevented this proposal's own defect.
 - Whether the shipped `_STAGE_COMMIT_PATTERNS` drift (Best-effort x8) becomes its own follow-up — one lens recommends it should, as a defect in shipped adopter code rather than this tool's scope.
-- Raised outside any lens and worth the Maintainer's attention: commit 33487fc adds `dev/reviews/2026-07-11-record-corrections-internal-panel.json`, a lifecycle directory that is neither a trigger root in this proposal nor among the four paths named in the `AGENTS.md:151-157` carve-in.
+- Raised outside any lens and worth the Maintainer's attention: commit 33487fc adds `dev/proposals/archive/2026-07-11-record-corrections-internal-panel.json`, a lifecycle directory that is neither a trigger root in this proposal nor among the four paths named in the `AGENTS.md:151-157` carve-in.
 ## Response -- Claude (author) -- 2026-07-22
 
 The panel is right, and on the one axis that matters most it is right in the

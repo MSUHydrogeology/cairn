@@ -2,7 +2,7 @@
 
 **Model**: claude-sonnet-5-5
 **Tier**: usual (code stage; a fresh session, not the implementer)
-**Reviewed commits**: `125ddcc8` (10 new test nodes, red by design), `c12ab3e0` (the fix: 10 lines in `cmd_upgrade`, `bootstrap/_scaffold/upgrade.py`, plus one test seeded), `e1e56bc0` (prose: `bootstrap/UPGRADE.md`, `bootstrap/_scaffold/SECURITY_MUTATIONS.md`, `CHANGELOG.md`). Follows F1 of `dev/reviews/2026-10-26-code-review-plan-stage-profile-link.md`.
+**Reviewed commits**: `125ddcc8` (10 new test nodes, red by design), `c12ab3e0` (the fix: 10 lines in `cmd_upgrade`, `bootstrap/_scaffold/upgrade.py`, plus one test seeded), `e1e56bc0` (prose: `bootstrap/UPGRADE.md`, `bootstrap/_scaffold/SECURITY_MUTATIONS.md`, `CHANGELOG.md`). Follows F1 of `dev/plans/archive/2026-10-26-code-review-plan-stage-profile-link.md`.
 **Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13, `PYTHONDONTWRITEBYTECODE=1`. No full suite, no `CAIRN_FULL_SUITE`.
 **Called by**: none (the usual review; not an External read). **Not reopened**: the Decision.
 **Where things ran**: a `git archive` extraction of `c12ab3e0` and its parent, one detached worktree each of `125ddcc8` and `e1e56bc0`, and four mutated copies, in one scratch folder, all removed at the end. The only writes to the shared tree are the intent claim and this file. I did not open either adopter repository.

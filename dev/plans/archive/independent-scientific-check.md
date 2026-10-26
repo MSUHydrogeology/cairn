@@ -2223,7 +2223,7 @@ worktree that a full run used. The two full runs were done one after the other.
 | `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0 -rsfExX` at the tested commit | 1 | **2 failed, 4432 passed**, 0 skipped, 0 xfail, 0 xpass, 3 warnings | 793.0 s (10:50:08 to 11:03:22) |
 | the same command at the base `c504fca8` | 1 | **2 failed, 4432 passed**, 0 skipped, 0 xfail, 0 xpass, 3 warnings | 870.8 s (11:03:33 to 11:18:10) |
 | `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | neutrality `fail=0 info=56`, redundancy `fail=0 info=0`; the neutrality output is identical to the base's, line for line | 1.4 s |
-| `python scripts/check_cairn.py` | 1 | one issue, in `dev/reviews/2026-10-18-security-review-session-writes.md:131` (the path `tools/__pycache__`, which exists only in a working tree that has run Python); the same issue at the base; none in a file this revision edits | 2.2 s |
+| `python scripts/check_cairn.py` | 1 | one issue, in `dev/plans/archive/2026-10-18-security-review-session-writes.md:131` (the path `tools/__pycache__`, which exists only in a working tree that has run Python); the same issue at the base; none in a file this revision edits | 2.2 s |
 | `python bootstrap/scaffold.py --manifest` | 0 | byte-identical to the base's (98 lines) | under 1 s |
 | `python bootstrap/verify_integrity.py --target .` | 1 | 18 violations, output identical to the base's; `--finalize` not run | 0.1 s |
 | `python scripts/claim_check.py <file>` on the four template copies, `dimensions/complexity.md`, `dimensions/README.md`, `bootstrap/BOOTSTRAP.md` and this plan | 0 each | OK, no flags | under 1 s each |

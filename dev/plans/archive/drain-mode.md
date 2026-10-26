@@ -293,7 +293,7 @@ The Maintainer settled Question 1 ("Trivial, as the lifecycle says"; quoted in t
 
 **Boundary B mode**: full. Two reasons: the new test file joins the gate manifest's collection (a contract surface), and `python bootstrap/tests/_gate_manifest.py verify` is not clean even on the parent (63 violations), and the plan says a report that is not clean makes the mode full. The full suite was not run (`CAIRN_FULL_SUITE` never set); the next certifying run covers it. The run below is scoped.
 
-**Gate confirmed in the tree first.** The code review of #32 is `dev/reviews/2026-10-26-code-review-status-vocabulary-advisory.md` (commit `9bb423c2`), and its fixes `50b5fbdf` is an ancestor of `HEAD` (`git merge-base --is-ancestor`).
+**Gate confirmed in the tree first.** The code review of #32 is `dev/plans/archive/2026-10-26-code-review-status-vocabulary-advisory.md` (commit `9bb423c2`), and its fixes `50b5fbdf` is an ancestor of `HEAD` (`git merge-base --is-ancestor`).
 
 **Tested commit**: `5e3363d9` (one commit; bytes identical to the tested copy, `cmp` on the skill and the test file). **Reviewed range**: `ea1c0bef..5e3363d9`; the skill pair and the test file are the only paths of this plan.
 **Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13, `PYTHONDONTWRITEBYTECODE=1`.

@@ -1,8 +1,8 @@
 # Code review (Internal) — the session kernel's writes (`7e6a14e5`) — Claude Sonnet 5.5 — 2026-10-18
 
 **Obligation**: code review (falsification) of a defect repair that has no plan,
-the repair of GS-SR-1 in `dev/reviews/2026-10-18-security-review-gitignore-seed-guard.md`
-and GS-CR1 in `dev/reviews/2026-10-18-code-review-gitignore-seed-guard.md`.
+the repair of GS-SR-1 in `dev/plans/archive/2026-10-18-security-review-gitignore-seed-guard.md`
+and GS-CR1 in `dev/plans/archive/2026-10-18-code-review-gitignore-seed-guard.md`.
 Fresh session, not the implementing session. The implementer is the same agent
 type, so the distance here is a fresh context, not a different type. This is an
 Internal pass; I do not claim External standing. A separate Security Review of the

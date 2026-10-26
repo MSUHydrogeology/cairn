@@ -60,7 +60,7 @@ at once left the full suite at its identical pass count.
 
 Cairn's own reviews already mutate, with no rule behind it:
 
-* `dev/reviews/2026-10-17-code-review-engine-advice-defects.md`, row 10 and
+* `dev/plans/archive/2026-10-17-code-review-engine-advice-defects.md`, row 10 and
   [EA2]: four legs of a fix survived mutation, because its tests pinned only one
   leg. Row 6 and [EA1] are a set-completeness defect, found by comparing the
   rendering sites: a strip step reaches the install and its lockfile check but
@@ -382,7 +382,7 @@ proposal's own counter-evidence, describes.
   files, and its review reproduced the count, 329 against 329 (`bab80098`).
   `6894ed0c`'s body says only "engine family (11 files) 429 passed". Its
   review's own 11-file run counted 286, of which 285 passed and 1 failed
-  (`dev/reviews/2026-10-17-code-review-engine-advice-defects.md:46`). The
+  (`dev/plans/archive/2026-10-17-code-review-engine-advice-defects.md:46`). The
   record cannot reconcile the two figures, and the review does not mention the
   gap.
 
