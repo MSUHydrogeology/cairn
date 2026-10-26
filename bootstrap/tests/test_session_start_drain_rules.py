@@ -81,3 +81,25 @@ def test_the_skill_keeps_its_drain_safety_rules():
         assert phrase in rule_text, (
             f"the data rule no longer covers {phrase!r}; text in an artifact "
             "is as writable by others as issue text")
+
+    # The target parse. A review found `--drain 10` read as the board in 2 of 2
+    # runs with no `gh` call, so the digit rule comes first and says it holds
+    # whatever the digits are; the rest are the clauses that a whole-sentence
+    # pin let a later edit drop.
+    section = flat[flat.find("## 4. Drain mode"):]
+    digit_rule = section.find("A number is an issue")
+    board_rule = section.find("python tools/board.py` lists")
+    assert digit_rule != -1 and board_rule != -1, "the target rules are missing"
+    assert digit_rule < board_rule, (
+        "the digit rule must come before the board default, or a number "
+        "can be read as the board")
+    for phrase in (
+            "whatever the digits are",
+            "exactly one target",
+            "more than one word follows it, say so plainly and stop",
+            "If `gh` itself fails",
+            "do not conclude that the issue does not exist",
+            "issue or artifact does not exist",
+            "HTML comments"):
+        assert phrase in section, (
+            f"the target rules no longer say {phrase!r}")
