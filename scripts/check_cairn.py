@@ -47,7 +47,9 @@ Three checks, all deterministic and offline by default:
    patterns; a reviewed hit is cleared with an inline ``cairn-accept``
    marker.  Disable with ``--no-content-scan``.
 
-Scanned set: the whole tracked Markdown tree (``git ls-files '*.md'``).
+Scanned set: the whole tracked Markdown tree (``git ls-files '*.md'``)
+that exists on disk -- a tracked file deleted but not yet committed is
+skipped and counted on stderr.
 
 Usage::
 
@@ -172,14 +174,6 @@ def repo_root() -> Path:
         return Path(out.stdout.strip())
     except (subprocess.CalledProcessError, OSError):
         return Path(__file__).resolve().parents[1]
-
-
-def tracked_markdown(root: Path) -> list[Path]:
-    out = subprocess.run(
-        ['git', 'ls-files', '*.md'], cwd=str(root),
-        capture_output=True, text=True, check=True,
-    )
-    return [root / line for line in out.stdout.splitlines() if line.strip()]
 
 
 # --------------------------------------------------------------------------
@@ -545,7 +539,7 @@ def main(argv: list[str] | None = None) -> int:
         files = [f.resolve() for f in args.files]
     else:
         files = link_check.filter_sources(
-            tracked_markdown(root), root,
+            link_check.tracked_markdown(root), root,
             include_archives=args.include_archives,
         )
     if not files:

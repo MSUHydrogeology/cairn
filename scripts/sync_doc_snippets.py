@@ -245,11 +245,24 @@ def repo_root() -> Path:
 
 
 def tracked_markdown(root: Path) -> list[Path]:
+    """Tracked ``*.md`` paths that exist on disk.
+
+    ``git ls-files`` still lists a file whose deletion is not yet committed
+    (and a tracked symlink whose target is gone); reading either raises, so
+    both are dropped and counted.  The note on stderr names no tool on
+    purpose: ``check_cairn`` calls this same function, so a tool-name prefix
+    here would sometimes name the wrong tool."""
     out = subprocess.run(
         ['git', 'ls-files', '*.md'], cwd=str(root),
         capture_output=True, text=True, check=True,
     )
-    return [root / line for line in out.stdout.splitlines() if line.strip()]
+    listed = [root / line for line in out.stdout.splitlines() if line.strip()]
+    present = [path for path in listed if path.is_file()]
+    skipped = len(listed) - len(present)
+    if skipped:
+        print(f'skipped {skipped} tracked Markdown file(s) not present on '
+              f'disk', file=sys.stderr)
+    return present
 
 
 def main(argv: list[str] | None = None) -> int:

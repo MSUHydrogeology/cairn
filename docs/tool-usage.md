@@ -81,7 +81,8 @@ wrong, fix the artifact's header block — not this output.
 ## scripts/link_check.py — check cross-references resolve *(team-gated: doc-drift-prevention)*
 
 **What it does.** Resolves the Markdown links across your tracked docs and
-reports the ones that do not.
+reports the ones that do not. A tracked file that is deleted from disk but not
+yet committed is skipped, and the run prints how many it skipped.
 
 ```bash
 python scripts/link_check.py                 # whole tracked tree
