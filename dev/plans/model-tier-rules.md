@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy, plan author)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-model-tier-rules.md](../proposals/archive/2026-10-26-claude-model-tier-rules.md)
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal)
 **Opened**: 2026-10-26
 **In brief**: Every Cairn project gets a short rule to use the cheapest model that is safe and to name it when starting a helper agent; a stronger model from the same maker may now check cheaper work; and proposals are written at the medium tier by default.
@@ -179,3 +179,172 @@ mutant and control, run against the old text.
 
 **Scope delta**: preserved. The Revision's one removed unit (raising the writing floor on named
 high-risk surfaces) is closed by Answer 4; no `defer` is owed.
+## Plan review -- Claude Sonnet 5.5 (Internal, fresh session) -- 2026-10-26
+
+```
+Reviewed commit: 18ba5907aaea55eba365987dd4500ef27d33cdcc
+Target: the whole plan, read against the Revision and Decision of dev/proposals/archive/2026-10-26-claude-model-tier-rules.md and the tree at the reviewed commit
+Prior findings: none
+Assurance path: high-assurance, inherited from the source proposal
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Model**: Sonnet 5.5, fresh session. I did not write this plan.
+**Findings**: raised (0 blocking, 6 non-blocking)
+**Verdict**: deliverable as written; fold the six non-blocking points, then `ready-to-implement`.
+
+**Conclusion first.** The plan delivers the Decision. Its counts are right against the
+current tree, the departure from the Revision (R2 pins in a new file) is correct, and
+the frozen-file, claim-gate and Boundary B reasoning all hold. Nothing blocks. The six
+points below tighten wording, close two gaps the plan leaves for code review to find,
+and fix one measure that Answer 2 quietly empties. Setting Status to `revising-plan`
+because findings were raised and the author's fold carries it on; no second pass.
+
+**Foundations**
+
+1. **Should this happen as framed (does the plan deliver the Decision)?** Yes. Answer 1
+   (same maker counts, strictly higher tier, same tier does not) and Answer 2 (proposal
+   authoring medium; Strategy / Research, proposal review, Security Review high) each
+   map to a chunk and a criterion, and the Out list leaves the Decision alone --
+   `git grep -nE "same maker is not one|\*\*and\*\* (is )?a different model architecture" -- doctrine templates dev/modules docs`
+   returns 8 lines in 6 places at 18ba5907, as the plan says.
+2. **Best alternative.** The plan is already the lean version: three commits of prose
+   plus one new test file, no new tool or field. The only simpler path I found is trimming
+   duplicate pins in the new test file (finding 5); nothing simpler reaches the Decision's
+   outcomes, because the six places and three patterns must move together --
+   `bootstrap/tests/test_review_stance_in_shipped_files.py:944-955` and `:1148-1157`.
+3. **What would show it wrong.** A paraphrase of the old condition surviving outside the
+   grep's roots, or a pinned pattern that cannot be made to match the new sentence without
+   renaming a node id. I looked for both and found neither:
+   `git grep -nIiE "different (model )?(architecture|maker|vendor|company|lab|family)|same maker|second maker|cost rule|downshift"`
+   over the live tree (one stale scope note, finding 3); the three patterns are labels
+   `condition-a-is-a-different-model-architecture`, `the-cost-rule-check-is-not-a-review`
+   (module) and `the-cost-rule-check-is-not-a-review` (roles), and
+   `pytest --collect-only -q` lists their ids, so keeping the labels keeps the nodes.
+
+**Lenses used, with evidence**
+
+* **1 Claims.** The six-place count: `doctrine/roles.md:221`, `:230`; each module copy at
+  `:129-130` and `:143`. The Decision's "five" is a miscount and the plan says so correctly.
+  The three frozen patterns are in `_MODEL_OBLIGATIONS` (two, covering both module copies)
+  and `_DOCTRINE_OBLIGATIONS` (one, roles.md). Note `roles.md:221` is not pinned by any
+  frozen pattern; only the grep and the new test reach it (finding 5). Frozen claim:
+  `gate_manifest.json` `frozen_files` lists `test_review_stance_in_shipped_files.py`,
+  `test_model_selection_stub.py`, `test_stewardship_rules_ship.py` and
+  `scripts/check_model_selection.py`; the glob in `_gate_manifest.py:352-356` freezes
+  `bootstrap/tests/**/*.py` and `scripts/*.py`. Of those, the plan edits only the first;
+  it runs the others unedited. The new test file is a "FROZEN-UNTRACKED" note until
+  anchored (`_gate_manifest.py:644-660`), the same as `test_writing_rules_ship.py`.
+  "cdffeb8a" precedent (label kept, one comment) checked with `git show cdffeb8a`.
+  Baseline "23 violations, none among the four lockfile files": reproduced with
+  `python bootstrap/verify_integrity.py --target .` (23; no AGENTS, CLAUDE, mapping or
+  model-selection line). `upgrade --finalize [PATH ...]` exists as the plan uses it
+  (`python bootstrap/scaffold.py upgrade --help`). AGENTS.md at 8,290 tokens:
+  `python scripts/token_budget.py`.
+* **The R2-in-a-new-file departure: correct.** `_STANCE_OBLIGATIONS` is documented as
+  "for the `## Review` section" (`test_review_stance_in_shipped_files.py:93`) and its only
+  consumer reads `_review_section(rel)` (`:376-388`). R2 sits under `## Roles`, so a pin
+  in that table would never see it, or would force R2 into Review. The plan read this
+  right, and the new file keeps the frozen edit to the three old patterns.
+* **5 Cross-document consistency.** Found one place the old text lives that the plan does
+  not name: `dev/PLANNING.md:71`, "which today requires a different maker's model". Not a
+  rule text, so not pinned, but stale once C1 lands (finding 3). Also
+  `bootstrap/tests/test_upgrade.py:271-282` (`TestTemplateGatingSafety`) reads the
+  `## Roles` heading of `templates/core/AGENTS.md` and fails if it sits in a `cairn:if`
+  region; this is the test R2's placement most directly touches, and Boundary A does not
+  list it (finding 4).
+* **2 Production path / 4 fail-closed.** The mutant for R2 (delete the sentence, red
+  beside a green control) is stated; the real `solo-greenfield` install test exercises
+  the shipped path, as `test_writing_rules_ship.py` does. No equivalent mutant is stated
+  for the same-maker change (finding 5).
+* **3 Design completeness.** The AGENTS.md claim gate: `python tools/intent.py list` at my
+  review shows no claim on either `AGENTS.md` (5 claims, none touching them), so C2's
+  start gate is open now and C2.1 re-checks it at start, which is the right trigger.
+  Boundary B `full`: correct. AGENTS.md says bounded mode refuses on contract surfaces and
+  that uncertainty resolves to `full`; this change edits a frozen gate test and installed
+  templates whose bytes are pinned by tests and hashed into the lockfile, so it is not
+  prose-only and not boundable with confidence. Recording a scoped result with
+  `Certified by: pending` is what the certifying-run rule requires.
+* **6 Drift / 7 Process placement.** The `## Roles` carrier is identical in both
+  AGENTS.md copies (`diff` of the two sections is empty), so "identical in both copies"
+  is achievable. The re-anchor stays MAINTAINER-ONLY at the cut and is named in the
+  Queued row (`dev/PLANNING.md:304-321`).
+* **9 Name the satisfier.** Each finding below names one.
+
+**Findings (all non-blocking)**
+
+1. **R5's comparison group may be empty after Answer 2.** C3.2 rewrites R5 to compare
+   proposals written at medium with those written at high. With medium now the default,
+   few proposals will be written at high, and the earlier 87 name no model at all (the
+   Revision's own count). Ten medium proposals and zero high ones compares nothing.
+   *Recommend:* the row says what to do then, for example "if fewer than three were
+   written at high, report counts only and say so". Satisfier: that clause in the C3.2
+   row text.
+2. **Say which row and sentence carry the carve-out.** `doctrine/roles.md:42-43` lists
+   "drafts proposals" under Strategy / Research, `roles.md:167-172` puts Strategy /
+   Research at high, and the module has `| Strategy / Research | high |` at `:49`. C1.4
+   says "proposal authoring is medium" without naming where, so two implementers could
+   write different rules. Boundary C attack (2) asks whether a proposal needing both
+   authoring and premise-checking has a gap; the plan can settle that now, since its own
+   Scope already says a premise-check inside a proposal is spawned at high.
+   *Recommend:* C1.4 names a new row (for example `| Proposal authoring | medium |`) in
+   both module copies and a sentence in the `roles.md` standard/high-stakes bullets, each
+   keeping the `| Proposal review | high |` and `| Plan review | medium |` rows byte-equal
+   (those two are pinned, `:921-925`), and the carve-out sentence includes the
+   premise-check rule. Satisfier: C1.4 text, plus the `test_proposal_authoring_is_medium_...`
+   test it already lists.
+3. **A stale scope note.** `dev/PLANNING.md:71` ("decide in the proposal whether to relax
+   the condition that lets a cheaper author work under a check, which today requires a
+   different maker's model") is wrong once C1 lands. *Recommend:* C3.2 adds a one-clause
+   edit ("... relaxed 2026-10-26, same maker now counts") in the same row it already
+   edits. Also, C2's gate row cites "the other session's `AGENTS.md` claim"; none exists at
+   review time, so reword the Sequence cell to "if a claim is held at start". Satisfier:
+   the C3.2 criterion and the Sequence cell.
+4. **Boundary A mapping is missing the test closest to R2, and one figure is
+   unsourced.** Add `bootstrap/tests/test_upgrade.py::TestTemplateGatingSafety` to the
+   `AGENTS.md` row (it pins that `## Roles` is never inside a gated region and survives a
+   solo install). "About 35 tests that read `AGENTS.md`" has no source:
+   `git grep -lE "AGENTS\.md" -- bootstrap/tests | wc -l` gives 45 files. Because the
+   mode is `full` this does not change the outcome, but the figure should come from a
+   command or be dropped. Satisfier: the Boundary A table row and the Boundary B sentence.
+5. **Narrow the new same-maker test and give it a mutant.** The three edited frozen
+   patterns already pin that the new sentence is present in the module copies and in
+   `roles.md`'s check-is-not-a-review paragraph, so
+   `test_a_stronger_model_from_the_same_maker_counts_as_the_check` repeats that. What no
+   frozen pattern covers is (a) `roles.md:221` (the fan-out paragraph), (b) the old text
+   being absent from all six places, and (c) the same-tier exclusion. *Recommend:* the new
+   node asserts exactly (a) to (c), and C2.3 adds a mutant (put one old clause back in one
+   place) that goes red beside a green control, as the R2 test has. This matches the
+   suite's rule that a test pins one property in one node, and answers Boundary C
+   attack (7) before code review. Satisfier: C2.3 text and that node.
+6. **Label the non-command criteria honestly, and note the circular one.** The plan's
+   "Not turned into a command" paragraph is good. Not yet labelled: C1.2's "the three
+   frozen patterns match it" is circular, because the implementer writes both the text
+   and the pattern, so a pass shows only that they agree, not that the sentence says the
+   right thing; the content is checked by finding 5's node and a person. C1.4's mapping
+   row, C1.5's "about 6 lines" and "name the lanes" are reads by a person, not commands.
+   *Recommend:* add them to that paragraph in one sentence. Satisfier: that paragraph.
+
+**What I agree with, so the author need not re-justify it.** Keeping the label
+`condition-a-is-a-different-model-architecture` with a one-line comment, rather than
+renaming and asking the re-anchor to accept a dropped node, is the right trade: the
+precedent is `cdffeb8a`, and a rename would add a `COLLECTION-DROPPED` to a Maintainer-only
+ceremony for a cosmetic gain. The 8,520-token ceiling leaves a thin 23-token margin over
+the Revision's measured 207; the plan already says to shorten R2 if over, which is the
+right response.
+
+**Header.** The Maintainer's chat word that the same-maker change needs no separate
+Security Review stands; `Plan review: required(Internal)` is left as written and I do not
+recommend otherwise. The plan's Security preflight S1-S5 reads soundly; I have no
+objection to its "does not need its own Security Review" recommendation beyond what the
+Maintainer has already said.
+
+**Coverage line.** Not covered: I ran no test suite and did not set `CAIRN_FULL_SUITE`; I
+did not read the new `AGENTS.md` R2 wording (it does not exist yet), so whether it trips
+the carrier forbidden patterns (`_FORBIDDEN`, `:100-190` region) is untested; I did not
+verify the Revision's 207-token figure, only the 8,290 baseline; I did not check the
+Revision's "Strategy / Research may be lowered by Decision" interplay beyond finding 2; I
+did not read `test_stewardship_rules_ship.py` or `test_writing_rules_ship.py` beyond their
+headers; the harness claim in R3 (a resumed agent keeps its model) is outside the tree and
+unchecked.
