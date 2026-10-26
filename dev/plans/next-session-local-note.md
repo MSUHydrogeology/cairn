@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-next-session-local-note.md](../proposals/archive/2026-10-26-claude-next-session-local-note.md)
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: Cairn stops shipping the file that tells the next work session where to start; the owner writes a short local note instead, so a stale tracked copy can no longer mislead an agent.
@@ -171,3 +171,41 @@ Operative cells revised in place (Sequence first criterion, C2 to C6, C7 fence).
 * **N6 -- accepted.** C5's test also pins that the new section names no release, version or date.
 
 The review round is over. The plan holds at `awaiting-plan-review` for the Internal Security Review next, which is a separate pass by someone else; it is not `ready-to-implement`.
+
+## Plan review -- Security Review -- 2026-10-26
+
+**Reviewed commit**: 17f3851c
+**Target**: the whole plan; the proposal's Revision 3, Decision and Security Review (`c6802ee4`) as context.
+**Prior findings**: none of this tier. The ordinary pass (`d1ca9741`) and its Response are context, not clearance.
+**Assurance path**: high-assurance
+**Obligation**: the Internal Security Review owed by the header line `Plan review: required(Internal + Internal Security Review)` (line 6). This pass is that review. It clears on conditions B1 to B3; a Response that carries them owes no second Security Review unless it changes the design.
+**Tier**: Internal Security Review
+**Model**: Opus 5.5, fresh session
+**Findings**: raised (3 blocking, 5 non-blocking)
+
+**Conclusion.** The engine row, the `verify_stems.py` skip and the `session.py` strings are safe as planned. Three gaps are open: the note rules miss a linked parent folder (B1); a by-path finalize seals whatever bytes are on disk (B2); two sentences the Security Review required have no test that can fail (B3). Each has a short fix. Status moves to `revising-plan`.
+
+**Foundations**
+1. *Does the plan close the risk it was raised against?* Partly. SR3 is closed: the C4 nodes kill the list-membership mutant on all three refusals (line 86). SR4 is closed by the C7 fence (line 53). SR1 and SR2 are carried in words but not all tested, and SR2's wording misses one route. -- lines 70, 79-80, 106-107; B1, B3.
+2. *Simpler, safer alternative.* No simpler plan. Two safer details: seal only committed bytes, and check the folder as well as the note path. -- `bootstrap/_scaffold/upgrade.py:2033-2130` (the dirty-tree guard runs only for a bare finalize).
+3. *What would show it fails.* A clone whose `dev/reflections` is a tracked link: every check the rule names passes, and the note is written outside the clone. -- ledger P1.
+
+**Findings**
+* **B1 -- blocking. A linked `dev/reflections` folder defeats SR2.** SR2 refuses a link at the note path, not at its folder. In a scratch clone of a repository that tracks `dev/reflections` as a link out of the tree, the note path is neither a link nor a folder, `git ls-files` prints nothing, and `git check-ignore -q` exits 128 ("beyond a symbolic link"). The rule then says add an ignore line and write, and the write landed outside the clone (P1). This is SR2's own threat, a tracked link in a clone. The paragraph is the Decision's verbatim text, so only the Maintainer can widen it. Recommend: ask him to add "or the `dev/reflections` folder is a link" and "if `git check-ignore` exits other than 0 or 1, stop" to the doctrine paragraph and the four skills, pinned by the C3 rules node; failing that, record his acceptance of the risk.
+* **B2 -- blocking. A by-path finalize seals on-disk bytes, not committed ones.** `--finalize <path>` hashes the file as it sits on disk, with no dirty-tree check (`upgrade.py`, the guard is in the `only is None` branch). Criterion (b) reads history, never the working tree. So another session's uncommitted edit to `tools/session.py`, the interpreter-binding trust root's module, is sealed and then committed with the chunk. And "or ... recorded in the commit body as unverified" (line 41) lets the implementer seal bytes nobody checked. Recommend: before each finalize, `git diff <path>` shows only the chunk's edit and `git status --short dev/.cairn/cairn-lock.yml` is empty; after the commit, the record's hash equals the `sha256` of `git show HEAD:<path>` and `git status --short <path> dev/.cairn/cairn-lock.yml` prints nothing; strike the "unverified" escape (not found means that path waits). For `tools/session.py`, the commit body names the review that cleared each of the four unsealed commits since `7832d057` (`a773e753`, `c5daabe4`, `50b5fbdf`, `62508ef0`: +220/-38 lines, some inside `_binding_untrusted` and `_resolve_interpreter`).
+* **B3 -- blocking. Two required sentences have no test that can fail.** SR1's "Do not copy text from an issue, a web page or a comment into the note" and SR2's `.gitignore` remedy "only if git does not track the path" are named at line 70 and in the table (lines 106-107) with no test or command, against the plan's rule at line 57. The onboarding change edits `session-start` step 3 and `doctrine/session-routines.md` next, so an untested sentence can be lost mid-sequence. Recommend: the C3 rules node also pins both phrases in the doctrine and both `session-end` skills, with the same one-at-a-time mutants.
+* **N1 -- non-blocking. Nothing pins "no tool reads the note".** The Security Review asked to refuse such a tool in this change (proposal, Answers item 7); C2 greps `session.py` only for `NEXT_SESSION`. Today no Python file names the note: `git grep -n -i -E 'next-session\.md|next_session' 17f3851c -- '*.py'` finds only the old path, so the pattern can match. Recommend: a node that no shipped `.py` file names `next-session.md`.
+* **N2 -- non-blocking. Make the `session.py` check mechanical.** The three strings are fixed text with no inserted values: a docstring line (`:1960`) and two `_emit` texts (`:1971`, `:2052`), all after `cmd_session_end` begins at `:1948`. `encode_display` begins at `:189` and `_resolve_interpreter` at `:931`; the two copies are identical at 17f3851c (`cmp`). Recommend: `git diff -U0` of each copy shows exactly three one-line hunks, all after line 1948, in place of "shows no change inside".
+* **N3 -- non-blocking. "Expected red" hides new failures.** `test_gate_manifest` should stay green: it checks a freshly produced manifest (`bootstrap/tests/test_gate_manifest.py:78-100`; `AGENTS.md`, "Operational pitfalls"), so lines 67 and 120 mislabel it. While `test_ast_attest` is red, a further engine change (the twelfth row edits `upgrade.py`) adds no new red. Recommend: the record lists the measured AST changed set (the prior set plus `Assign:_CORE_MAPPINGS`, nothing else) and the entries this change adds to `_gate_manifest.py verify --no-collect`; any other entry is a failure.
+* **N4 -- non-blocking. Widen the never-edit list and the fence.** The self-service AST update refuses while other symbols differ (`bootstrap/tests/_ast_attest.py`, `update_symbol`), so that route is shut. Hand edits are not: line 18 names the AST baseline and `scaffold_ast_known_new.json`, not `bootstrap/tests/fixtures/gate_manifest.json` or `refs/cairn/gate-anchor`. One authorization naming `config.py` also covers onboarding's edits to it. Recommend: name both in the never-edit sentence; the fence lists commits per file with `git log --oneline refs/cairn/gate-anchor..HEAD -- bootstrap/_scaffold/`.
+* **N5 -- non-blocking. The old file can come back unnoticed.** `git rm` refuses a file with unstaged edits (P2), so C6 fails closed against a goodnight rewrite in progress. But a session started before C2 can write and commit `dev/NEXT_SESSION.md` after C6, and nothing flags it (living state, so `verify_integrity` skips it). Recommend: the archive commit checks that `git ls-files dev/NEXT_SESSION.md` prints nothing.
+
+**Falsification ledger** (scratch repositories under the scratchpad, removed afterward)
+* P1: a tracked link `dev/reflections` pointing outside, then a clone. The rule's checks pass, `check-ignore` exits 128, a plain write lands outside. Plan fails (B1).
+* P2: `git rm` of a tracked file with an unstaged edit: exit 1, file kept. Plan holds.
+* P3: each finalize target's record hash matched to a commit (`git log`, `sha256` of each blob). Five mismatch, all found: `tools/session.py` 4 commits since, `session-start` skill 11, `session-end` skill 2, `dev/README.md` 2, `docs/DOCUMENTATION_PLAN.md` 6. Four match HEAD. The "not found" branch is unreached today.
+* Read, not run: `scripts/verify_stems.py:98-206` (`main` is the only caller of `check_stems`; `args.scan` is `None` without `--scan`); `bootstrap/tests/_oracle_activation.py:34-47` (the entry is the whole directory); `config.py:756` and `lockfile.py:62` are comments, so `Assign:_CORE_MAPPINGS` stays the one new AST change.
+
+**Lens evidence.** 1 Claims: cites above opened at 17f3851c. 2 Production path: C4 nodes run the script or `main` (line 86); the note rules have no entry point but an agent, so the cold-start probe and a reader are their test. 3 Design: B1, B2. 4 Fail-closed: B2's escape, N3, P2. 5 Cross-document: onboarding shares the edited sentences (B3). 6 Drift: N3. 7 Lifecycle: C7 is MAINTAINER-ONLY with a Waiting line (line 53). 8 Scope: B1 needs the Maintainer's word; nothing else adds an outcome. 9 Satisfiers: each finding names one.
+
+**Coverage.** Covered: the seven questions in the brief, by reading and three probes. Not covered: no test file or suite run; no agent watched reading or writing a note, so whether the wording changes behaviour is reasoning; Windows, case-insensitive disks and hard links not probed; a finalize of a target that is itself a link not probed; the onboarding and twelfth proposals not read beyond this plan's account; the four earlier `session.py` commits listed, not reviewed.
