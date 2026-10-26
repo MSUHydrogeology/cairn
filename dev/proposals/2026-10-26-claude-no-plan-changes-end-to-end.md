@@ -1,7 +1,7 @@
 # A change with no plan: where its code review goes, and when its proposal archives
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual
 **Plan review**: not required(no plan: one commit, three doctrine files and one template pair, no follow-ups; the change is prose in four areas that share one rule, and the reviewer is asked to challenge that claim)
 **Opened**: 2026-10-26
@@ -184,3 +184,125 @@ no engine, contract, trust root or licence file, so no Security Review is owed.
 The doctrine files are not frozen in the gate manifest and the template is not
 either (checked in `bootstrap/tests/fixtures/gate_manifest.json`; the
 implementer rechecks), so no re-anchor is owed.
+
+## Review -- Claude (Reviewer, Sonnet) -- 2026-10-26
+
+```
+Reviewed commit: ca15890761f910acca7e12d79a47ed019ac19ba7
+Target: the whole proposal, weighted to the claim that a change with no plan is the right shape, the list of files that state the rule, the header evidence, and the "always open a plan" alternative
+Prior findings: none
+Assurance path: high-assurance (as declared)
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**:
+
+1. **Should this exist as framed?** The conflict should be fixed, but not as framed. The four sentences really do say the implementing commit archives (`doctrine/lifecycle.md:176-178`), while a code review needs an open proposal. The fix as framed puts a Stage 2 code review into an accepted proposal, which `doctrine/lifecycle.md:181-184` forbids and the proposal does not mention (RV1).
+2. **Best alternative.** The doctrine already has the order this proposal asks for: "fast multi-stage" (`doctrine/plans.md:198-216`): one commit that opens the plan and implements, then a code review, then a plan archive. It needs no new carve-out, header form or edit to the append-only rule (RV2). Doing nothing is not free: `7066489a` archived `r6-unused-def-blindspot` in its implementing commit under the written rule, and no code review of it exists in the tree.
+3. **What would show it wrong.** Writing a plan for a one-commit change turns out to cost far more than the proposal's route. The smallest archived plan is 185 lines (`dev/plans/archive/adopter-entry-doc-refresh.md`), which is the number that would make me drop RV2. I did not test a short plan.
+
+### Verdict in brief
+
+**Revise, then decide.** The contradiction is real and worth fixing. Three things need an answer first:
+
+* **The new order puts a code review inside an accepted proposal, and the doctrine says an accepted proposal changes only by a new proposal (RV1).**
+* **The existing "fast multi-stage" path already gives this order, with a home for the review, and the proposal never mentions it (RV2).**
+* **The file list is short by at least seven files, the proposal says no `docs/` page changes, and its own check cannot find four of its own edit sites (RV3).**
+
+### Steelman
+
+The proposal sees a true conflict: the rule that archives early and the rule that demands a review cannot both be followed. It notices practice settled on an order, and it asks to write that order down instead of inventing a mechanism. It adds no tool, status or file. It owns up to its own misjudgment on 2026-10-26. It asks the reviewer to challenge the "no plan" claim, which is the right invitation, and RV4 takes it up.
+
+### What I checked
+
+Against the tree at `ca158907`. Python 3.13 (`/Users/kendal30/conda_envs/lhm/bin/python3.13`) for the tools. Nothing was written but this section. `CAIRN_FULL_SUITE` was not set, and no test was run, so the "would not redden" statements below are read from the tests, not measured.
+
+| # | Check | Result |
+|---|---|---|
+| M1 | Cited lines | `doctrine/lifecycle.md:176-178` and `:212-219`, `doctrine/plans.md:88-91`, `:131-134`, `:189-192`, `:194`, `:690-691`, `doctrine/proposals.md:44-46`, `:142-146`, `:316-319`, `:467-470`, `AGENTS.md:332-340`, `doctrine/lifecycle.md:298-305` and `doctrine/plans.md:52-54` all say what the proposal says. The "four statements" are real. |
+| M2 | Commits | `2baa53df`, `68f74315` (2026-08-12) and `4a88ca82`, `9db7f3b5`, `9ec53a43`, `2193014d`, `68268b4b` (2026-10-26) exist in the order the proposal gives. `68268b4b` archives both proposals in one commit. |
+| M3 | Search instrument | `git grep -i -E "trivial-implementing\|trivial accepts\|implemented and the proposal archived" -- doctrine` finds `lifecycle.md:177`, `plans.md:89` and `:690`, `proposals.md:45`, `:84`, `:126`, `:186`. It does not find `lifecycle.md:216`, `plans.md:131` (the phrase wraps across two lines), or `proposals.md:24` and `:319`. The proposal's own "Consistency" check would therefore miss four of its own edit sites. |
+| M4 | Wider search | `git grep -i` for archive-timing phrasing outside `dev/*/archive`, `dev/reviews` and the changelog found the files in RV3. I confirmed the pattern can match with the known-present `lifecycle.md:177`. |
+| M5 | Header evidence | Recomputed in RV5. |
+| M6 | Frozen files | None of the six files to edit is in `frozen_files` of `bootstrap/tests/fixtures/gate_manifest.json` (195 entries, read with `json`; the six names do not appear as keys). Their names appear only inside test node ids. But `bootstrap/tests/test_quickstart_sequence.py` is frozen (RV3). |
+| M7 | Tools | `tools/board.py` and `tools/session.py` list every file in `dev/proposals/` with its status line and check the status word against a vocabulary (`tools/session.py:996-1020`). Nothing reads when a proposal archives. `scripts/check_cairn.py` has no archive-timing rule. |
+| M8 | Tests | See RV6. |
+
+### Findings
+
+**RV1 -- High -- blocking for the Decision: change 1 conflicts with the append-only rule and the proposal does not carry it in its edit list.**
+**An accepted proposal "is changed only by a new proposal that amends or supersedes it", and a code review is a change to it.**
+
+*Plain.* `doctrine/lifecycle.md:181-184` says an accepted proposal is not edited; the point is that an amendment is itself open to review. `doctrine/proposals.md:56-64` makes the proposal the Stage 1 record (the locked design) and the plan with its code review the Stage 2 record. The proposal puts Stage 2 inside the Stage 1 file and says "no new status". It never touches that sentence. Practice did the same on 2026-08-12 and 2026-10-26, but those were improvised, and the rule they bent is the one the proposal does not edit. If the order stays, the edit list must add a named exception to a bright-line rule, which is a bigger doctrine change than the proposal admits. The proposal template also has no code-review section, so the reviewer of a no-plan change has no skeleton for the falsification ledger or the Bounding verdict; the plan template has both.
+
+*Evidence.* `doctrine/lifecycle.md:181-184`, `doctrine/proposals.md:56-64`, `dev/proposals/_template.md` (no code-review skeleton; `grep -n "Code review" dev/proposals/_template.md` finds none), `dev/plans/_template.md`.
+
+*Satisfier.* Either adopt RV2 (no exception needed), or state the exception in the edit list with its wording, name where the code-review skeleton for a no-plan change lives, and say why the exception does not weaken the Stage 1 / Stage 2 split.
+
+**RV2 -- High -- blocking for the Decision: the better design is already in the doctrine, and the proposal's reason for rejecting a plan does not hold.**
+**Fast multi-stage is "implement in one commit, review, archive", with a plan file as the home for the review.**
+
+*Plain.* `doctrine/plans.md:198-216` defines the case "the implementation fits in one commit, but it touches several files or areas or leaves follow-ups". Its sequence is: commit N, plan-open plus implementation (the plan-open commit archives the proposal: `doctrine/lifecycle-contract.md:149`); commit N+1, code review and sharpening; commit N+2, plan archive. The plan opens at `implementing` when `Plan review: not required` (`doctrine/plans.md:52-54`). The code review lands in the plan (Stage 2 in the Stage 2 file), the plan-archive precondition ("a code review has occurred", `doctrine/lifecycle-contract.md:166`) already exists, and the code-review Response grammar already exists. The proposal's route is also three commits after the Decision: implement, review, archive. So the proposal's stated cost of this alternative ("a plan file, a status lifecycle and an archive commit") is, once the status lifecycle is skipped by opening at `implementing`, one plan file. The proposal never mentions fast multi-stage, so the Maintainer is not told this option exists.
+
+The fair cost of this route, which I name so you can weigh it: the smallest archived plan is 185 lines (`dev/plans/archive/adopter-entry-doc-refresh.md`), and "always open a plan" removes the skip bullets at `doctrine/plans.md:187-192` and leaves four sentences in `AGENTS.md:337-340`, `templates/core/AGENTS.md:336-339`, `doctrine/dual-review.md:344-346` and `doctrine/plans.md:366-370` describing a case that no longer exists ("implemented in one commit with no plan"). Those are a cleanup cost; and `AGENTS.md` is the governing layer.
+
+*Recommendation.* The smaller, safer edit is: an accepted proposal always has a plan; a change that fits one commit uses the fast multi-stage shape with `Plan review: not required(<why>)`; the four "implementing commit archives" sentences change to "the plan-open commit archives"; change 2 (the "no plan" header form) is dropped because there is no "no plan" claim left to test. The author may still prefer to keep a no-plan path for changes as small as `r6-unused-def-blindspot` (about four lines). If so, the Response should say that, cost both routes, and carry RV1.
+
+*Satisfier.* The Response names fast multi-stage, counts the commits of both routes, and either adopts it or says what it loses and why the smaller loss is the chosen one.
+
+**RV3 -- Medium -- blocking for the Decision: the file list is incomplete and the "no docs change" statement is wrong.**
+**At least seven further files say the implementing commit archives, and one test file that encodes it is frozen.**
+
+*Plain.* Files that say "a small accepted proposal is implemented and archived in one commit" or teach it as a step, and are not in the edit table:
+* `docs/getting-started.md:62-65` ("in the commit that implements it", "implemented and archived in one commit");
+* `docs/quickstart.md:53`, `:372`, `:383-390`, `:447`, `:491`: the worked example, which tells the reader to commit the implementation, archive and changelog line together and to expect six commits ending in "implement-and-archive". A fixed order adds a review step and a seventh commit to the first walkthrough a new adopter runs;
+* `docs/dev-tour.md:28` ("an accepted one moves when its plan opens or its change ships");
+* `docs/solo-legacy-recipe.md:102`;
+* `examples/minimal/README.md` and `examples/scientific-minimal/README.md` (step 3 "the proposal then moves to archive"), whose archived proposals carry the Decision "archive this proposal in the same commit" (`examples/minimal/dev/proposals/archive/0001-add-name-argument.md:69`). Archived records are closed, so these two can only be left as they are or described as dated examples;
+* `bootstrap/tests/test_quickstart_sequence.py:364-420`, which does implement-and-archive as a single commit. It would still pass (it exercises git moves, not the doctrine text), but it is frozen, so changing it is a gate-manifest ceremony, and leaving it teaches the old order.
+
+The Documentation section says "No `docs/` page ... text changes beyond one changelog entry". That is wrong for four `docs/` pages. Part of the edit table is also in the right place but unreachable by the check: M3 shows the "Consistency" grep misses `lifecycle.md:216`, `plans.md:131`, `proposals.md:24` and `:319`.
+
+*Satisfier.* Add the four `docs/` pages to the table (or say why a page keeps the old wording, for example "the example is a trivial-lane change"), decide what happens to the two example projects and the frozen quickstart test, and replace the consistency grep with one that matches the wrapped lines (search the stems `archiv` and `same commit` and `one commit`, and say which hits are accepted).
+
+**RV4 -- Medium -- blocking for the Decision: the proposal's own "no plan" claim fails the triage rule it relies on.**
+**I do not accept `Plan review: not required(no plan: ...)` for this proposal.**
+
+*Plain.* `doctrine/plans.md:189-192` allows skipping a plan only if the change is one commit, single-file or single-area, and leaves no follow-up. The proposal edits four doctrine files, two template files, and (per RV3) four `docs/` pages, the changelog, and possibly the examples and a frozen test. That is three areas (governing doctrine, shipped template, descriptive docs), and `doctrine/plans.md:176-186` says "touches multiple files / areas" opens a plan. The same proposal says it is "prose in four areas". It also leaves follow-ups: the frozen quickstart test, the examples, and a changelog line. `doctrine/plans.md:194` says "When in doubt, open the plan". By the proposal's own sentence "a 'no plan' claim without the three conditions shown is a review finding", this is a finding. It is also the fast multi-stage case (RV2). This proposal is the strongest evidence that the claim needs testing, and it fails the test.
+
+*Satisfier.* Change the line to `required(Internal)` or `not required(...)` with a plan that is opened, per RV2, or show how each of the three conditions holds with the files in RV3 counted.
+
+**RV5 -- Low -- non-blocking: the header evidence is right in count, wrong in meaning, and the best evidence is missing.**
+**Two of the "four with no code review" were drained by plans, and the strongest recurrence case is not cited.**
+
+*Plain.* Recomputed with `git grep` over `**Plan review**: not required` in `dev/proposals/archive`: eight archived proposals carry it (`r6-unused-def-blindspot`, `security-preflight-checklist`, `decision-rights-floor`, `boundary-b-bounding-clause`, `finding-tags-are-not-reasons`, `test-names-outlive-their-plans`, `slot-ratchet`, `check-cairn-deleted-files`). One has a matching plan (`dev/plans/archive/security-preflight-checklist.md`), one is superseded (`slot-ratchet`), six do not match by name. Four of the six show no `## Code review`: `r6-unused-def-blindspot`, `decision-rights-floor`, `finding-tags-are-not-reasons`, `test-names-outlive-their-plans`. I looked elsewhere, as the proposal did not:
+* `finding-tags-are-not-reasons` and `test-names-outlive-their-plans` were implemented inside larger plans: `dev/plans/archive/comprehension-outlives-the-artifact.md:9-11`, and `dev/plans/archive/ceremony-as-code.md:255` for the first. Their code review is in those plans. So the header "not required" was not a no-plan claim in practice, but the match-by-name method cannot tell.
+* `r6-unused-def-blindspot`: the implementing commit `7066489a` says in its body that the proposal "archives here per the file-move rule for the trivial-implementing commit". It followed the written rule exactly. I found no code review of it in the proposal, `dev/reviews/` or `dev/plans/archive/`. This is the case that shows the harm, and it is the strongest evidence for fixing the rule.
+* `decision-rights-floor`: no code review found. Its change was a norm paragraph; I did not trace its implementing commit.
+
+So the true count of "no plan and no review found" is two, not four, and one of them is a direct hit on the written rule. The "do nothing" cost claim holds, on better evidence than the proposal gave.
+
+*Satisfier.* The Response corrects the counts and cites `7066489a`.
+
+**RV6 -- Low -- non-blocking: what the tests read, and what to keep in mind when editing.**
+**Nothing I found reddens, but two constraints bind the edit.**
+
+*Plain.* The proposal's counts ("eight tests read `lifecycle.md`", and so on) come from path mentions, not reads. Tests whose assertions touch these files' wording are `test_scope_reduction_trap.py`, `test_review_stance_in_shipped_files.py`, `test_stewardship_rules_ship.py` and `test_certifying_run_rule.py`. None pins a phrase near the edit sites (searched for `trivial`, `single commit`, `plan-open`, `not required(`, `When in doubt`, `fast multi-stage`; the only hit, `test_scope_reduction_trap.py:444`, is a fixture). Two constraints: `test_review_stance_in_shipped_files.py:709-711` requires the template's `**Plan review**:` line to start with `{{required(Internal) | required(Internal + Internal Security Review)}}`, so a "no plan" clause must come after that text, not replace it; and the template edit must also land in `templates/core/dev/proposals/_template.md` (both are in the scope-reduction grammar test). The `lifecycle-contract.md` row is documentary only: its checker was retired (`doctrine/lifecycle-contract.md:16-21`), and the contract's rows are status transitions, while archiving an accepted proposal is "a file move, not a status" (the template says so). If the contract gets a row it is a precondition on a file move, which the table does not otherwise hold; if the author keeps the row, say so.
+
+*Satisfier.* The Response corrects the counts and carries the two constraints into the plan or commit mapping.
+
+### Alternatives I weighed
+
+* **Do nothing.** Costs a rule a careful agent cannot follow; `7066489a` is an instance. Not recommended.
+* **Always open a plan (fast multi-stage).** Recommended in RV2, with its real cost stated there.
+* **The proposal's three changes.** Workable only with RV1's exception, RV3's file set, and RV4 corrected.
+* **A smaller edit than the proposal's.** If the author keeps a no-plan path, the least rule is: delete the phrase "and the proposal archived together" in the four places, say the archive follows the code review, and let the existing code-review Response grammar apply. That drops change 2 entirely and still needs RV1's exception.
+
+### Not covered
+
+I did not run any test or gate (no full suite, per the rule, and no scoped run: the "nothing reddens" statements are read from the test sources). I did not write the edit in a copy to see which sentences a test pins, which would settle RV6 by measurement. I did not read `docs/` beyond the archive-timing phrasing, the example projects beyond their READMEs and archived proposals, or the plan template for whether a short plan is allowed, which is what could make RV2's cost larger than I state. I did not trace the implementing commit of `decision-rights-floor`. The scope delta (preserved) and assurance path (high-assurance) look right to me and I did not challenge them further.
+
+No quota applies: RV1 to RV4 are what I would want answered before the Decision, and RV5 and RV6 are corrections.
