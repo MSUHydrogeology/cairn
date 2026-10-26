@@ -59,7 +59,10 @@ and a new empty `Unreleased` is started above.
 
 ### Added — "Keep the plan short" and "Keep the proposal short" in the templates
 
-- The plan and proposal templates say what stays out of the file: checker scripts, run briefs and probe output. Long files are read by their `##` headings. ([issue #31](https://github.com/MSUHydrogeology/cairn/issues/31))
+- The plan and proposal templates now say what stays out of the file: checker
+  scripts, task briefs and pasted probe output. Long files are read by their `##`
+  headings, so a reader opens only the sections the job needs.
+  ([issue #31](https://github.com/MSUHydrogeology/cairn/issues/31))
 
 ### Fixed — The board and `session-start` flag statuses outside the vocabulary
 

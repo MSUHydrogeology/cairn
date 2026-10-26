@@ -123,14 +123,15 @@ skeleton does not call for a separate `**Obligation**` line.
 
 The proposal stays one file. Keep what goes in it small.
 
-* **Scripts and run briefs stay out.** A checker lives under `tests/` or
-  `scripts/`. A run brief is a short note or file, cited by path and commit.
+* **Scripts and task briefs stay out.** A checker lives in a script or a test
+  file, not in the plan. A task brief for a sub-agent is a short note or file,
+  cited by path and commit.
   The proposal carries the criterion and the result, not the code behind them.
-* **Cite evidence by path, not by quotation.** A probe ledger has one line
-  per probe, with no output pasted.
+* **Cite evidence by path, not by quotation.** A falsification ledger has one
+  line per probe, with no output pasted.
 * **Read by section.** Give each review, response or decision its own `##`
   heading, titled by what it holds and when it was written. Readers list them
-  with `grep -n '^## ' <proposal>`.
+  with `grep -n '^## ' <proposal>` and read only the sections the job needs.
 
 ## Forward-reference paths
 
