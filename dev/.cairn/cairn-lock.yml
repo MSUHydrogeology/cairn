@@ -427,7 +427,7 @@
     {
       "base_hash": "sha256:515c4102216a6c8eeef039862a23bb6b1328e5edda178423e8af9aaf51850e3b",
       "dst": "scripts/verify_stems.py",
-      "hash": "sha256:652a5b0a64d77792479504bf4b79a2f6f64f3547d2a99ca952cf98dd73c3bce4",
+      "hash": "sha256:f53ea66bfba3f8ef95db2ad9edd0c5386b62f15f09e78762b1202f05ab9604eb",
       "src": "modules/default-on/verify_stems.py",
       "verbatim": true
     },

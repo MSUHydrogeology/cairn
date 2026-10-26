@@ -111,9 +111,10 @@ def check_stems(
     """Return a list of stem-resolution issues across the scanned files.
 
     *scanned* is the set of repo-relative paths to scan for date-stems.
-    When ``None``, the default set (``PLANNING.md`` + ``NEXT_SESSION.md``)
-    is used.  Adopters may supply additional coordination files here or via
-    the ``--scan`` CLI option.
+    When ``None``, the module's default set is used.  Adopters may supply
+    additional coordination files here or via the ``--scan`` CLI option.
+    This function reports every path it is given that is not a file and never
+    skips one; the skip of an absent handoff file lives only in ``main``.
     """
     if scanned is None:
         scanned = _DEFAULT_SCANNED
