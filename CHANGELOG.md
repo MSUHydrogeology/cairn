@@ -38,6 +38,17 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Fixed — Session kernel: the interpreter-binding gate and its messages
+
+- `session-start` no longer runs a program inside the project that git tracks, and it
+  recognizes the binding file as tracked even when the disk equates two spellings of its
+  name. A binding that is not text, or that names an impossible path, is now a plain
+  refusal, not a Python traceback. Folder names and error text from a project are printed
+  through the terminal encoder in seven more places. One gap stays open by decision: a
+  binding that arrives by a downloaded archive, `git apply`, `git reset` or
+  `git rm --cached` is still trusted (recorded in `bootstrap/SAFETY.md`).
+  ([review](dev/reviews/2026-10-18-security-review-session-writes.md), findings SW-SR-10 to 15)
+
 ### Added — Cairn Plain Language, a writing standard for agents
 
 - Every install now carries a versioned, 17-rule writing standard in

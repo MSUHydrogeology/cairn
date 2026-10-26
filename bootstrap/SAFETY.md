@@ -257,6 +257,27 @@ than appends, while a swapped parent remains in the accepted window; and
 **fixed, script-relative** paths (a deliberate dogfood composition, not a
 dynamic-exec vector). See `../SECURITY.md` for the public statement.
 
+**Documented residual risk: the interpreter binding proves only "git does not
+list it now".** The session kernel (`tools/session.py`) runs the program named
+in `dev/.cairn/local-env.json`. Before it does, it refuses a binding that git's
+index lists (and one behind a link, inside a submodule, or that git cannot be
+asked about). That check stands in for the real question, "was this file
+written on this machine?", so a binding that came with the project by another
+route is used and its program is run. Four routes are known: a downloaded
+archive of a repository that tracked the binding, followed by `git init`;
+`git apply` of a patch that creates the file; `git reset` after the commit
+that added it; and `git rm --cached`, the common "untrack but keep" idiom.
+Consequence: a project can choose which program `session-start` runs, with
+arguments the kernel fixes, on a machine where the operator took the project
+that way. The Maintainer accepted this on 2026-10-19, in writing here and in
+the `_resolve_interpreter` docstring, as the interim position. The full fix is a
+separate later proposal and Security Review: keep the binding inside git's own
+folder (`git rev-parse --git-common-dir`), where no checkout, archive, patch
+or download can carry a file, and read the old path only to say it is no longer
+used. Until then the operator's protection is to run `session-start` only in
+projects obtained by `git clone` or `git checkout`, and to read a project's
+`dev/.cairn/` before trusting it.
+
 ### The default-on security-verification dispatcher — a shipped file that runs a child
 
 `security-verification` is **default-on**, so this is Layer-4 code in
