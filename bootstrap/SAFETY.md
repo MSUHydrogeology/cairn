@@ -280,9 +280,12 @@ executable file, so the arguments the kernel passes do not limit what runs: it
 can be any program, and it runs with the operator's own permissions. The gate
 has never been run on Windows or on an HFS+ volume (its tests skip on Windows,
 and a run on each is still owed), so what it does when a disk treats two
-spellings of one name as the same file is shown only for the disks tried. The
-Maintainer accepted this on 2026-10-19, in writing here and in
-the `_resolve_interpreter` docstring, as the interim position. The full fix is a
+spellings of one name as the same file is shown only for the disks tried. On a
+disk that reports the same inode number (0) for every file, the identity checks
+are skipped and only the checks by folded name run; I do not know which real
+disks do this. The Maintainer accepted this on 2026-10-19, in writing here and in
+the `_resolve_interpreter` docstring, as the interim position, and accepted the
+wider description above on 2026-10-26. The full fix is a
 separate later proposal and Security Review: keep the binding inside git's own
 folder (`git rev-parse --git-common-dir`), where no checkout, archive, patch
 or download can carry a file, and read the old path only to say it is no longer
