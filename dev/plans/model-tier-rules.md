@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy, plan author)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-model-tier-rules.md](../proposals/archive/2026-10-26-claude-model-tier-rules.md)
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal)
 **Opened**: 2026-10-26
 **In brief**: Every Cairn project gets a short rule to use the cheapest model that is safe and to name it when starting a helper agent; a stronger model from the same maker may now check cheaper work; and proposals are written at the medium tier by default.
@@ -381,3 +381,44 @@ All six accepted; the operative cells above are revised in place and Status is `
 6. **Accepted.** C1.2 no longer claims a passing pattern proves the sentence right; it and the
    other read-by-a-person criteria are listed in "Not turned into a command".
    Also: the Security Review question is recorded as answered (no), per the Maintainer.
+
+## Implementation verification -- Claude Sonnet 5.5 (implementer) -- 2026-10-26
+
+**Boundary B mode**: full (the plan's own record; see Verification above). The full suite was not run: it runs only as a certifying run, and `CAIRN_FULL_SUITE` was never set. **Certified by**: pending.
+
+**Tested commit**: f8fc472c7400b3165e89f00f9fb0712d802638b2 (C2, the last of the three implementation commits).
+**Reviewed range**: 50b5fbdf3a961b9ed34810caeb28d80161bb0404 (parent of C1) to f8fc472c. Three commits are this plan's: C1 `5702f27a`, C3 `9b9bb3c6`, C2 `f8fc472c`. Other sessions' commits sit between them in the log (for example `cb93f1d9`); read the plan's commits by path.
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13. The token figure below used the system `python3` (tiktoken is installed only there); the lhm interpreter reports the characters-divided-by-four proxy, which reads 8,950 for the same file.
+**Pre-run state** and **Post-run state**: every file the tests read was committed and unchanged. `git status --short` before and after showed `HEAD` f8fc472c with only other sessions' uncommitted edits to `templates/skills/_lib/session.py` and `tools/session.py` and the untracked `.claude/` and `dev/measurement/collision_log.md`. None of those is read by a test in the table, but I did not prove that for `session.py` and `tools/session.py`.
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---|---|---|
+| `pytest` on `test_review_stance_in_shipped_files.py`, `test_model_selection_stub.py`, `test_check_cairn_content.py`, the new `test_model_tier_rule_ships.py`, `test_upgrade.py::TestTemplateGatingSafety`, and the 12 other `AGENTS.md` readers the plan names | 0 | 1,108 passed, 0 failed, 0 skipped, 0 xfail, 0 xpass | 10 s |
+| `pytest` on `test_claim_check_module.py`, `test_board_json_contract.py`, `test_verify_integrity.py`, `test_onboarding_seed_roster.py`, `test_presets.py`, `test_profiles_smoke.py`, `test_upgrade_module.py` | 0 | 336 passed, same zeros | 9 s |
+| `python scripts/check_model_selection.py` | 0 | mapping filled | 1 s |
+| `python scripts/check_cairn.py` | 0 | 191 files, no issues | 1 s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | neutrality fail=0, redundancy fail=0 | 2 s |
+| `python scripts/claim_check.py` on the six edited Markdown files | 0 each | no flags | under 1 s each |
+| `python bootstrap/scaffold.py --dry-run --config bootstrap/profiles/solo-greenfield.yml --target <empty dir>` | 0 | | 1 s |
+| `python bootstrap/verify_integrity.py --target .` | 1 | 23 violations, all in other sessions' files; none of `AGENTS.md`, `CLAUDE.md`, `dev/modules/model-selection.md`, `dev/.cairn/model-selection-mapping.yml` | 1 s |
+| `cmp templates/modules/team-gated/model-selection.md dev/modules/model-selection.md` | 0 | silent | 0 s |
+| `git grep -nE "same maker is not one\|\*\*and\*\* (is )?a different model architecture" -- doctrine templates dev/modules docs` | 1 | no match; the same command returned 8 lines in 6 places before C1 | 0 s |
+| `python3 scripts/token_budget.py` (tiktoken) | 0 | `AGENTS.md` 8,518 tokens; ceiling 8,520 | 1 s |
+
+**Non-pass disposition**: no skip, xfail or xpass. The one non-zero exit is `verify_integrity` at 23 violations, the baseline the plan states, none among this plan's four lockfile files.
+
+**Plan-specific acceptance commands**
+* C1.3: `pytest --collect-only -q` on `test_review_stance_in_shipped_files.py` lists 464 node ids before and after, `cmp` silent; no label renamed; one comment on the label that now names the old subject.
+* C1.6: the module's lockfile record was finalized by path (`dev/modules/model-selection.md` and the mapping); the mapping is `living_state` and holds no checked hash, so one hash advanced. The other session's commit `cb93f1d9` carried the lock file, so my module record landed there; my own commits did not name the lock until C2.
+* C2.2 and C2.3: the new file has the six named tests plus a copy-equality and a proposal-authoring node (9 in all). Run against the pre-C1 text of the five files (a copy outside the tree), 8 of 8 non-install nodes fail; the install node needs the real tree. Each mutant is beside a control run on the real text.
+* C2.4: 8,518 tokens against the ceiling of 8,520. **Deviation from the plan's wording, not its criterion**: another commit raised the `AGENTS.md` baseline from the plan's 8,290 to 8,367 before C2, leaving R2 153 tokens instead of the Revision's 207. R2 omits three of the Revision's clauses to fit: the pointer to `doctrine/roles.md`, "search helpers and wording-only edits: low" (still in `roles.md` and the module), and "author and reviewer names carry the model". It also reads "no Maintainer Decision quoted on it", without "or dated direction". The reviewer should read whether that loses a promise the Decision relied on.
+* C2.5: `finalize` by path for `AGENTS.md` and `CLAUDE.md`; neither is in the integrity list.
+* C3.1: the `CLAUDE.md` bullet is in `9b9bb3c6`; its lock record landed in `f8fc472c` because another session claimed the lock file when C3 was committed.
+* C3.2 (the `dev/PLANNING.md` row, the Queued re-anchor row's file name, the stale clause at line 71, and the `CHANGELOG.md` line) is deferred to the archive commit by the plan and is not done.
+* C3.3: `python tools/board.py` listed this plan (before this section; the Status line now reads `awaiting-code-review`).
+
+**Known omissions**
+* The full suite was not run. Everything above is scoped.
+* The gate-manifest and AST re-anchors are Maintainer-only and not run; the edit to the frozen `test_review_stance_in_shipped_files.py` and the new test file wait for the re-anchor at the 0.5 cut. I did not run `_gate_manifest.py verify`.
+* No test reads a spawn call, so "name the model at every spawn" and R3's claim that a resumed agent keeps its model are unchecked.
+* Whether each of the six places says what the Decision says (C1.2), the C1.4 row and sentence placement, and C1.5's "names the lanes" and "about 6 lines" (the gating note is 8 lines) are for a person to read.
