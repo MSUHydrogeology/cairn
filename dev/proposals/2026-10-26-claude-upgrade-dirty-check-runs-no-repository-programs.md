@@ -1,7 +1,7 @@
 # Make the upgrade edit check run no program from the project's git settings
 
 **Author**: Claude Sonnet 5.5
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review) -- the change edits the scaffold engine (`bootstrap/_scaffold/`), a named high-risk surface, next to the git call the twelfth change added
 **Opened**: 2026-10-26
@@ -266,3 +266,44 @@ A program from `.git/config` runs under any of the three commands, including on 
 * The Signals sentence "the check calls a file clean that `git status` calls edited, apart from the two stated over-reports": reworded; the over-reports and the case gap are now listed (item 8).
 * Question 2's premise that line-ending handling protects Windows: replaced by the engine comparing raw bytes (N4).
 * Not in scope, "the twelfth change's own behaviour is not widened": narrowed. A bare finalize no longer waits for the commit of a hand-deleted retired file, so this change rewrites the guide sentence near `UPGRADE.md:102` and the bare arm of the twelfth change's node for it.
+
+## Security Review -- Security Reviewer (fresh session) -- 2026-10-26
+
+```
+Reviewed commit: 0320b94b
+Target: Revision 1 (the complete current contract), against the security risks of the change it proposes
+Prior findings: usual review B1, B2, N1-N6 (answered; not redone)
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Obligation**: the Security Review that `**Review**: usual + Security Review` names: does this proposal, as revised, close the security risks of the change it proposes.
+**Model**: Opus 5.5, fresh session
+**Reviewed commit**: 0320b94b
+**Findings**: raised (1 blocking, 5 non-blocking)
+
+**Verdict: revising.** The design holds. With lazy fetch switched off, the six commands ran none of the more than 30 programs, hooks and file writers I planted, and the check either agreed with `git status` or refused. One hole: below the floor, the config gate misses a key that also turns the fetch on, and with it the project's program ran (B1). The fix is a wider key match and one node. This pass clears the obligation once the Response adopts B1 as written; no second round.
+
+**Foundations**
+1. *Does it close the risk?* Yes for programs at or above the floor and for the subfolder misread; not below the floor, where `remote.<name>.partialclonefilter` alone starts a fetch the gate does not see. -- ledger L1, L4.
+2. *Simpler, safer alternative?* "Cannot tell" for every git below 2.45.0 is safer, but it makes `--force` routine on every host with an older git. The widened match keeps the guard there. -- Revision 1 item 4; L4.
+3. *What would show it fails?* A planted program running under the six commands (L4 is one), or "clean" for a file `git status` calls edited outside the disclosed gaps (L3, three non-blocking cases). -- ledger.
+
+**Falsification ledger** (scratch folder `secrev-dirty-7q3x` under the scratchpad, removed afterwards; git 2.53.0, Python 3.13, macOS; my own prototype of items 3 and 5 outside the tree, environment cleaned as at `bootstrap/_scaffold/upgrade.py:2470-2471`; no test or suite run)
+* L1. Project in a subfolder; `.git/config` naming a monitor, required clean/smudge/process filters, textconv, diff command, external diff, order file, pager and per-command pagers, a hooks folder with eight hooks, `sshCommand`, `askPass`, `alternateRefsCommand`, `gitProxy`, editor, credential helper, an `ext::` remote, `uploadpack`, `receivepack`, `packObjectsHook`, `include.path`, `includeIf`, trace2 file targets, `gc.auto`, `maintenance.auto`. The six commands wrote no marker and no trace file; plain `git status` ran the monitor and the filter (control). Through a `.git` file plus `core.worktree`: the same.
+* L2. A replace ref making HEAD equal the index hid a staged edit from a plain `diff-index`; with `core.useReplaceRefs=false` it was found. Index linked to a FIFO: 10 s timeout, "cannot tell"; to `/dev/zero`: exit 128, "cannot tell". A 600,000-entry (52 MB) index: 0.1 s.
+* L3. "Clean" where git says edited: (a) a script given CRLF endings, no `core.autocrlf` (git `M`; rule 7 clean); (b) `sub/` swapped for a link to an outside folder with the same bytes (git `D`; a reader that follows the link: clean); (c) git's dubious-ownership refusal (`GIT_TEST_ASSUME_DIFFERENT_OWNER=1`) and `core.bare=true`: the first `rev-parse` exits 128 or says false, so "no guard", silently.
+* L4. Partial clones of a local `origin.git`, `uploadpack` naming a marker that then runs the real upload-pack. Blobless and treeless clones with a checkout: answered, no program, lazy fetch on or off. Treeless after `fetch` and `reset --soft` (HEAD's folder listings absent): `GIT_NO_LAZY_FETCH=1` gave "cannot tell", no program; without it (as git before 2.45) the program ran, and the config read shows `remote.origin.promisor`, so the gate holds. **With `promisor` and `extensions.partialclone` removed and only `remote.origin.partialclonefilter` left, the config read returned only `core.filemode`, and `diff-index` fetched and ran the program.** With all three removed: exit 128, no program.
+* L5. Read from the tree: `_dirty_tracked_paths` (`upgrade.py:2365`), `_writeset_dirty_collisions` and its callers (`2689`, `3240`), `_cmd_finalize_lockfile` (`2182-2362`), `_check_lockfile_paths` before it (`3079`), `--force` (`2674`, `2688`), `_committed_copy_matches` (`2434-2524`), `bootstrap/_scaffold/security.py:29, 110`, `bootstrap/tests/test_upgrade.py:1884, 2072, 2101`, `bootstrap/tests/_oracle.py:359`, `bootstrap/tests/test_upgrade_removes_retired_files.py:132`.
+
+**Findings**
+* **B1 -- blocking. The below-floor gate misses `remote.<name>.partialclonefilter` (item 4).** Git treats a remote with that key as a promisor and fetches through it (L4, on 2.53.0 with lazy fetch left on; not run on a real older build). So on git before 2.45.0, a project that sets the filter and no `promisor` key runs its `uploadpack` program under `--stage`. Fix: below the floor, "cannot tell" when any config key contains `promisor` or `partialclone` (regexp `core\.filemode|promisor|partialclone`, which also covers older git's `core.partialclonefilter`), not three exact names. One case per key in `test_below_the_floor_a_partial_clone_answers_cannot_tell_and_runs_no_program`; mutant: the item-3 regexp.
+* **N1 -- non-blocking. A refusal at git's first question still reads as "no guard".** Dubious ownership (an upgrade run as another user, for example root in a container over a mounted checkout) and `core.bare=true` both end at the first `rev-parse` (L3c), so `--apply` overwrites edits silently, as today. Fix: if a `.git` file or folder exists at the project or above it (a filesystem look, no git) and git does not confirm a work tree, answer "cannot tell"; a node with `core.bare=true`.
+* **N2 -- non-blocking. Rule 7 reads a CRLF-only edit as clean where git does not (L3a).** A bare finalize then records those bytes, and in a shell script a `\r` at each line end changes what runs. Fix: apply rule 7 only when the same config read finds `core.autocrlf` true or `core.eol` crlf (a `.gitattributes` `eol=crlf` file then over-reports, the refusing direction). Say so in Question 2, and list the gap in item 8.
+* **N3 -- non-blocking. Name the reader in item 5.** A plain `open` follows a linked parent folder (L3b) and blocks with no timeout on a FIFO swapped in after the type check. `--apply`'s write guard refuses the linked parent (`security.py:110`), but finalize's loop reads through it (`upgrade.py:2293, 2315`; pre-existing). Fix: read with `_read_regular_bytes` (`O_NOFOLLOW`, `O_NONBLOCK`, `fstat`), and count a link between the project and the name as dirty, as `_assert_safe_write` checks.
+* **N4 -- non-blocking. Say how the config answer is read.** `git config --get-regexp` exits 1 when no key matches; read as an error, a repository with no `core.filemode` line refuses every time. Say: exit 1 is "no keys", other non-zero is "cannot tell"; `core.filemode` follows git's boolean rules, last value wins.
+* **N5 -- non-blocking. Moving the floor cache silences a test.** `test_upgrade_removes_retired_files.py:132` forgets the floor through `U._committed_copy_matches.git_floor_met` with `raising=False`. If the cache moves to the shared launcher, that line sets an attribute nothing reads, and the stand-in older-`git` nodes depend on test order. Fix: one cache, that line updated (the file is not keyed), and each below-floor node resets it.
+
+**Checked, no defect.** Names (3): the set comes from the engine's own lists (`_LIVING_STATE_DSTS`, the retired list), not a record's flags, so a lockfile edit shrinks it only by deleting a record, which also stops finalize hashing that file, and the lockfile is itself in the set; an outside name is refused before finalize (`upgrade.py:3079`); a huge lockfile adds two git processes per 100 names to finalize's own hashing. DoS (4): "cannot tell" blocks only the project's own upgrade, `--force` on `--apply` skips only the dirty guard (`upgrade.py:2674, 2688`), and a treeless clone with a checkout answers normally (L4). Frozen (5): the oracle block comes from `collide` on a plain edited `AGENTS.md`, unchanged under the contract; `TestDirtyTreeGuard`, `TestFinalizeDirtyTreeGuard` and the one-argument call stay valid. Sequence (6): the twelfth plan is `revising-code` waiting on the Maintainer's two allowances (`dev/plans/upgrade-removes-retired-files.md:5-7`); this proposal waits for it and owns `bootstrap/UPGRADE.md:99-104`.
+
+**Coverage.** Not covered: a real git older than 2.53.0 (below-floor behaviour emulated by leaving lazy fetch on); Windows (`nul` hooks path, CRLF, bare-`git` lookup); SHA-256; submodules, sparse index and linked work trees beyond the `.git` file case; case, mode-only, intent-to-add, assume-unchanged and skip-worktree edits (the usual review's P2, not repeated); the AST symbol list (not run); the plan's nodes beyond their titles. No test suite or in-tree mutant run.
