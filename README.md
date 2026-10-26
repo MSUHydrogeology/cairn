@@ -119,6 +119,11 @@ the check must state.
 
 ![A test written from the same understanding as the code can share its mistake: with an outflow sign reversed in both, they agree and the test passes. One check whose expected answer comes from elsewhere, such as an analytical solution, a conservation law aimed at the risk, a trusted observation, an independent implementation or an expert's expectation written down first, disagrees with the code and shows the mistake.](docs/assets/independent-scientific-check.svg)
 
+Agents also write what a scientist has to review. [Cairn Plain Language](docs/plain-language.md)
+is a 17-rule writing standard that installs with Cairn: conclusion first,
+measured claims kept apart from assumed ones, uncertainty as a number with its
+source, and the agent saying what it did not check.
+
 The [scientific example](examples/scientific-minimal/) shows the workflow around
 a mass-balance test. [The rationale](doctrine/rationale.md) explains the research
 and experience behind the method, including its limitations.

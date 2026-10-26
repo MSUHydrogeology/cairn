@@ -89,6 +89,11 @@ size.
 cannot understand. An agent leads plain and keeps precision beneath; "I don't
 understand this yet" is a mandatory pause.
 
+**Cairn Plain Language** — the writing standard that gives the comprehension
+floor a method: 17 numbered rules for what an agent writes to a person, including
+how to separate measured, assumed and expected claims. See
+[Cairn Plain Language](plain-language.md).
+
 **Scope-reduction trap** — the pull toward saying "make it smaller." Asking for
 less costs a reviewer nothing, looks prudent, and can never be shown wrong,
 because the smaller version is the one that gets built. Each cut is defensible

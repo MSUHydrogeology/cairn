@@ -17,6 +17,8 @@ New to Cairn? Start with the [quickstart](quickstart.md).
   ordinary software development.
 * [Related practices](related-practices.md) -- the overlap with decision
   records, lab notebooks, pre-registration and code review.
+* [Cairn Plain Language](plain-language.md) -- the writing standard for what
+  agents write to people: what it asks, why, and how to adopt it.
 * [Glossary](glossary.md) -- the terms Cairn uses.
 * [Further reading](further-reading.md) -- the craft Cairn relies on but does
   not re-teach.
