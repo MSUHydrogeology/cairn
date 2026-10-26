@@ -2,7 +2,7 @@
 
 **Author**: Claude (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-repin-build.md](../proposals/archive/2026-10-26-claude-repin-build.md)
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: Build one tested script that runs the Maintainer's checksum re-pins and the signed re-anchor, so he compares two digests, answers two summaries and types one passphrase instead of pasting commands an agent wrote.
@@ -246,3 +246,181 @@ All 14 findings are accepted. None is declined. Each is folded into an operative
 | N11 | Accepted | M2 (`<id>` after a revision); Scope Reuse (sterile launcher and tree readers named) |
 
 Facts checked in the current tree before changing the cells: `_gate_preflight.py:49-53`, `_gate_reanchor.py:48-58` and `_oracle.py:77` import exactly the five extra modules the review named, and the seven Python members of `declared_authority_closure()` (`_gate_preflight.py:600-626`) are that import set; `reanchor_ceremony.py` imports no local module at load time and imports `_gate_preflight` only inside its review-manifest path (`:348`); `tools/session.py` and `templates/skills/_lib/session.py` are byte-identical (`cmp`), `encode_display` is in the second, and neither is in `_frozen_files` or the closure; `_gate_preflight._tree_entries` carries the `export-ignore` note the review cited (`:413-440`); `verify` has `--no-collect` (`_gate_manifest.py:742`); the reuse pattern for the tree readers matched. **Not checked:** I ran no test and no tool. The R5 trigger rests on `bootstrap/verify_integrity.py`'s docstring (mismatch or missing file exits 1), not on a run, and I did not check whether it covers a lockfile record that should be added.
+
+## Plan review -- Security Review -- 2026-10-26
+
+**Conclusion.** The plan carries every proposal Security Review finding (SR-1 to SR-8, SR2-1 to SR2-6) to a chunk and a test, and its 11-file list is the real import closure. It does not yet close the risk it was raised against. The plan isolates the AST child, but not the `repin` process itself, and that process holds every check and drives the signing. Two things run in it unchecked: a committed file named like a standard-library module runs before any check (measured, probe A), and the one named extra, `tools/session.py`, is 2,097 lines that no anchor pins. Third, the SR2-6 (a) departure holds only with the re-run check, which must stay and must not fail open. I raise three blocking findings, each a fold into one or two cells, and ten non-blocking ones. No agent chunk can sign, push, run a re-anchor or move the real anchor.
+
+```
+Reviewed commit: 2c76789a44259c202db6d355f3dee6d1184f1bf2
+Target: the whole plan (Scope, Sequence, Acceptance criteria, the findings table, Verification), read for the trust-ceremony surface against Revision 3, the Decision, and both proposal Security Reviews
+Prior findings: SR-1 to SR-8 and SR2-1 to SR2-6 checked for carriage below; the ordinary pass's B1 to B3 and N1 to N11 read as context, not re-ruled
+Assurance path: required(Internal + Internal Security Review); this pass is the Security Review
+```
+
+**Obligation**: the Internal Security Review that the header line `Plan review: required(Internal + Internal Security Review)` declares: does this plan, as written, close the security risks of the change it schedules, with each proposal Security Review finding carried to a chunk and a test that can fail.
+**Tier**: Internal Security Review
+**Model**: Opus 5.5, fresh session; I wrote none of the plan, the proposal or its reviews
+**Reviewed commit**: 2c76789a
+**Findings**: raised (3 blocking, 10 non-blocking)
+
+**Foundations**
+
+1. **Does the plan close the security risk it was raised against?** Not yet. Every finding has a chunk and a test (checked row by row below), and the list of 11 byte-compared files equals the static import closure. But the `repin` process runs code that is outside that list and is not checked first (SB1, SB2), and the one check that binds Summary 1 to the signed bytes fails open (SB3). -- plan lines 67-68, 98; probe A.
+2. **The simpler, safer alternative.** Make the `repin` process the isolated one, rather than adding a test per file. Its first statement re-executes it under `python -I` before it imports anything except `sys` and `os`, which are already loaded at start-up (measured). It then sets `sys.pycache_prefix` to a fresh folder, imports only from the extraction, and loads `encode_display` from the anchor commit's tree, not from `HEAD`. -- probes A and B.
+3. **What result would show it fails.** On a scratch bed, commit a file `hashlib.py` in `scripts/` whose first line writes a marker file, then run `python scripts/repin.py status`: the marker appears. Or commit an edit to both copies of `session.py` with a marker at module top, then run `package`: the marker appears. The plan's "marker must not run" test mutates only the 11 listed files, so it cannot catch either. -- probe A; plan line 67 (`test_each_imported_file_is_byte_compared_with_the_anchor_before_import`).
+
+### Probes
+
+Python 3.13.13 (`/Users/kendal30/conda_envs/lhm/bin/python3.13`), git 2.53.0, macOS on APFS. Every probe ran in an empty folder under my scratch directory, with `HOME` and the git config pointed there; the folders stay outside the repository. I read the anchored manifest from commit `6f29519d` by its id. I did not resolve, read or move `refs/cairn/gate-anchor`. I touched no key, ran no test from the suite, and never set `CAIRN_FULL_SUITE`.
+
+* **A. A module in the script's folder shadows the standard library.** In `scripts/` I put `hashlib.py`, which writes a marker, and `main.py`, which runs `import hashlib`. `python scripts/main.py` wrote the marker, and `hashlib.__file__` was the planted file. With `-I`, or with `-P`, there was no marker and `hashlib` came from the standard library.
+* **B. A planted compiled file, and the run-time fix.** `pkg/__pycache__/mod.cpython-313.pyc` was compiled from other source as an unchecked hash-based file. A default import ran the compiled file. After `sys.pycache_prefix = tempfile.mkdtemp()`, set at run time before the import, the source ran. Under `python -I`, `os`, `stat`, `posixpath`, `io`, `codecs` and `abc` are already in `sys.modules` at start-up; `hashlib`, `json`, `subprocess` and `tempfile` are not.
+* **C. A tree with two names that differ only by case.** The tree held `t/mod.py` and `t/MOD.py`, and I extracted it with `ls-tree -r -z --full-tree` and `cat-file blob` in tree order. The folder then held one entry, `MOD.py`, carrying the bytes of `mod.py`, which was written last. `import mod` failed with `ModuleNotFoundError`. In tree order the failure is loud. An extraction that writes in another order would leave the other blob's bytes under the imported name.
+* **D. Index bits hide a modified file.** I ran `git update-index --assume-unchanged base.json` and then edited the file. `git status --porcelain` and `git diff --no-ext-diff --name-only HEAD`, both with `core.fsmonitor=false`, printed nothing. `git hash-object --no-filters base.json` differed from `HEAD:base.json`. `git commit base.json` committed the new bytes. With `--skip-worktree` instead, `status` printed nothing, and `git commit base.json` exited 1 with "nothing to commit".
+* **E. Reads, not probes.** At `2c76789a`, the ten existing files of the 11-file list equal their `frozen_files` entries in `6f29519d`'s manifest (I hashed the `cat-file` blobs; `scripts/repin.py` is absent, as expected). `tools/session.py` has no entry. It changed by 161 insertions and 22 deletions between `6f29519d` and `2c76789a` (`git diff --stat`). The anchor's copy defines `encode_display`. `closure_members` reads the closure list from the candidate's `bootstrap/reanchor-launcher.template.sh`, which no pin covers (`scripts/reanchor_ceremony.py:156`). The launcher's stage 2 fixes `PATH=/usr/bin:/bin` (`bootstrap/reanchor.sh:659`). `bootstrap/verify_integrity.py` makes no write call (a grep for write and replace calls finds none).
+
+### Rulings on the four points marked for this pass
+
+1. **The 11-file list: correct as a list.** I derived it myself. `_gate_preflight` imports `_gate_manifest` and `_gate_reanchor` (`bootstrap/tests/_gate_preflight.py:49-53`). `_gate_reanchor` imports `_oracle`, `_oracle_activation`, `_gate_transition`, `_gate_manifest` and `_oracle_trust` (`bootstrap/tests/_gate_reanchor.py:48-58`). `_oracle` imports `_oracle_trust` (`bootstrap/tests/_oracle.py:77`). The other modules import only the standard library. `bootstrap/tests/__init__.py` is empty. The `bootstrap/` folder has no `__init__.py`, so `bootstrap` is a namespace package. The seven Python members of `declared_authority_closure()` (`bootstrap/tests/_gate_preflight.py:600`) are that set, and with `__init__.py`, `_ast_attest.py`, `reanchor_ceremony.py` and `repin.py` there are 11. The driver's one local import, `_gate_preflight` from the working tree, sits in `rehearse` (`scripts/reanchor_ceremony.py:346-352`), which `repin` does not call. The list is right; what it leaves out is everything else the process loads (SB1, SB2).
+2. **The `tools/session.py` exemption: not acceptable as written.** See SB2.
+3. **The SR2-6 (a) departure and the re-run check: acceptable only with the re-run check, fail-closed.** See SB3.
+4. **R6b after M2 (order M2, M1, R6a, R6b, M3): sound.** M2 runs under `--first-run`, which exempts only `scripts/repin.py`. An earlier R6b would change `scripts/reanchor_ceremony.py`, a listed file, so M2 would refuse; the plan says so (line 58). After R6b, `repin ceremony` refuses until M3 anchors the new bytes. That refusal is the check working, and it fails closed. Two gaps are SN9.
+
+### Blocking findings
+
+**SB1. The `repin` process is not isolated, and the plan does not say where it imports from.** The plan isolates only the AST child (line 67). The parent process imports `_gate_manifest`, `_gate_preflight` and the five modules behind it, `reanchor_ceremony` and `encode_display`. It holds every refusal and starts the signing. The Maintainer runs it as `python scripts/repin.py ...` (Revision 3, "What you do"), so Python puts the working tree's `scripts/` folder first on `sys.path`.
+* *Attack from the tree alone.* A commit adds a file `hashlib.py` in `scripts/`. It matches the frozen glob `scripts/*.py` (`bootstrap/tests/_gate_manifest.py:339-363`), so it enters as `FROZEN-NEW`, which is allowed. The first `import hashlib` in `repin` runs it, before step 1 of the reading order (probe A). From there it can replace any check. The post-import "loaded local module outside the list" check runs too late, inside a process that code already controls.
+* *Attack by a same-user process, with no commit.* It plants an unchecked compiled file at `bootstrap/tests/__pycache__/_gate_manifest.cpython-313.pyc` in the working tree. If the parent imports the gate modules from the working tree, Python runs that file instead of the byte-compared source (probe B; the first Security Review's probe 3). The file is untracked, so the tracked-`.pyc` refusal does not see it. It is ignored, so the dirty-tree refusal does not see it either.
+* *A gap in what the plan states.* The 11 files are byte-compared "before any import" (line 67). The plan does not say whether the process then imports those bytes (the extraction) or the working-tree files. `status` and `package` have no dirty-tree refusal at all (line 80 names only `ceremony` step 2 and the apply step). So a working-tree edit to `_gate_manifest.py` would run while `HEAD`'s blob is the copy that passed.
+* *Recommend* (R1's first bullet and Scope's Reuse paragraph):
+  * The first statements of `scripts/repin.py` import only `sys` and `os`. If `sys.flags.isolated` is false, the script re-executes itself with `os.execv(sys.executable, [sys.executable, "-I", __file__, *sys.argv[1:]])`.
+  * Before any local import, it sets `sys.pycache_prefix` to a fresh `mkdtemp` folder.
+  * It imports local modules only from the extraction folder, which is the only folder it adds to `sys.path`.
+  * After import, it hashes the bytes at each loaded local module's `__file__`, as `_gate_reanchor._authority_code_files` does (`bootstrap/tests/_gate_reanchor.py:131-138`). It refuses if any module lies outside the extraction or differs from its anchored entry.
+* *Tests:*
+  * `test_a_committed_module_named_like_the_standard_library_does_not_run`: the scratch bed commits `hashlib.py` and `json.py` in `scripts/`, each writing a marker. `status`, `package` and `ceremony` leave no marker. Control: a bare `python` in that folder writes the marker, so the marker can fire.
+  * `test_the_repin_process_runs_isolated`: reads the parent's `sys.flags` and `sys.pycache_prefix`, as the child test does.
+  * `test_a_planted_compiled_file_in_the_working_tree_does_not_run`. Control: without the prefix, the planted file runs.
+* *Still open.* A same-user edit to `scripts/repin.py` itself, which Revision 3's "What this does not close" already states.
+
+**SB2. `tools/session.py` is not a display aid once it is imported; load it from the anchor, not from `HEAD`.** The plan author marked this for this pass. The reason for not copying the encoder is right: Cairn keeps one escape table. The chosen source is wrong.
+* *Why.* Importing a module runs all of its top-level code with the process's full authority. `tools/session.py` has 2,097 lines, no pin, and is in neither list. The check that the two copies are identical compares two files the same candidate commit controls, so it proves nothing about trust. The blob id in the transaction is a disclosure the Maintainer cannot read as such. One line at module top, in both copies, could rebind `hashlib.sha256`, the byte-comparison function or `subprocess.run` before Summary 1 or the signing. "Digests and ids print as plain hex, never through it" (line 68) does not help, because that code never needs to print. The file also changes often: 161 insertions and 22 deletions since the anchor (probe E).
+* *Recommend* (R1's `encode_display` bullet and the SR-6 row):
+  * Read `tools/session.py` from the anchor commit's tree (`cat-file blob <anchor-id>:tools/session.py`), write it into the private folder, and import it under SB1's rules.
+  * Record the anchor's blob id in the transaction. Refuse if the anchor's copy lacks `encode_display`; the current anchor's copy has it (probe E).
+  * Drop the identity check between the two candidate copies.
+
+  The file then rests on the same trust as every other anchored byte, because the anchor's signature covers its whole tree, and Cairn still has one escape table.
+* *Test:* `test_an_edited_session_module_at_head_does_not_run`. The candidate edits both copies with a marker at module top. `status`, `package` and `ceremony` leave no marker, and a subject with ESC and CR still prints escaped. Control: the transaction names the anchor's blob id.
+
+**SB3. The SR2-6 (a) departure holds only with the re-run check; keep that check, and make it fail closed.**
+* *What the working-tree check does.* For the named files it does what it says. `git hash-object --no-filters` reads the bytes on disk, so the stat cache, a clean filter, a `text`, `eol` or `ident` attribute, `core.fsmonitor` and an external diff cannot change its answer. The other half, "only the named paths differ", is weaker than line 80 says: an `assume-unchanged` or `skip-worktree` bit hides a modified file from `git status` and `git diff` (probe D; see SN6). That gap does not reach the signed bytes, because stages 1 and 2 read the commit, not the working tree.
+* *What it cannot do.* SR2-6 (a) existed to bind the bytes Summary 1 showed to the bytes that are committed and then signed. Between the stop and the commit, the Maintainer, an agent he asks to commit, a same-user process or a hook can commit more paths or other bytes. The AST baseline is the engine's only attestation, because `bootstrap/_scaffold/` is outside the frozen globs (`bootstrap/tests/_gate_manifest.py:339-363`). Suppose an extra engine edit is committed with a baseline that matches it. The re-run then finds no pin owed, shows no Summary 1, and the edit is signed. Only the re-run check would see it.
+* *The defect.* As written (line 98), the check shows "not checked: no record" when the record is missing, for example after a different `--ceremony-dir` or a deletion. That fails open, and it is the one check that binds Summary 1 to the signed bytes. "`HEAD`'s newest commit" also misses a pin commit followed by another commit, and it does not require the recorded head to be that commit's parent.
+* *Recommend* (R2's "No commit" bullet, R4's stop-line bullet, and the SR2-6 (a) row):
+  * On every `ceremony` run, check each commit in `<anchor>..HEAD` that touches an AST output path. Each must match a stop record in `--ceremony-dir`: the record's head id is the commit's only parent, and the commit changes exactly the recorded paths to the recorded blob ids.
+  * Compare blob ids (`git diff-tree -r -z --no-renames` on raw output, or `ls-tree`). Never parse diff text.
+  * A match is shown. A mismatch or a missing record refuses and prints the undo line. The one exception is `--first-run`, where M2's hand pin has no record: there it is shown, not refused.
+  * State the cost. An AST pin made by hand after M2 makes `repin ceremony` refuse, so the ceremony after it is by hand. That is the honest result, not a defect.
+* *Tests:*
+  * A merge commit refuses.
+  * A commit whose parent is not the recorded head refuses.
+  * A commit that touches the baseline, with no record, refuses.
+  * A pin commit followed by an unrelated commit is still checked.
+  * Controls: the matching commit passes; a range with no output-touching commit passes with no record; `--first-run` shows the line.
+
+### Non-blocking findings
+
+**SN1. Extraction: compare the bytes that get imported, and refuse colliding or special entries.** On this filesystem, two tree names that differ only by case become one file (probe C). Recommend:
+* Byte-compare the extracted file on disk after extraction finishes, not only the blob.
+* Refuse a tree with two paths that are equal after case-folding or Unicode normalization.
+* Refuse a symlink (`120000`) or submodule (`160000`) entry under an import root.
+* Refuse a path that resolves outside the extraction folder.
+
+Test: a tree with `bootstrap/tests/_GATE_MANIFEST.py` beside the real file refuses before import. Control: no collision passes.
+
+**SN2. `--first-run` should waive only a missing signature.** Revision 3 step 3 says "anything else refuses, except under `--first-run`". R4 (line 89) does not say whether the flag also waives an anchor with a bad signature, or one signed outside the roster. The flag also comes back every time `scripts/repin.py` changes ("absent or different"), long after the anchor is signed. At those runs a same-user process that moved the local anchor ref to an unsigned commit would get a shown line, not a refusal. Recommend:
+* Under the flag, a signature that fails or is outside the roster refuses. Only a missing signature is shown.
+* Test `test_first_run_does_not_waive_a_bad_anchor_signature`. Control: an unsigned anchor under the flag shows the line.
+* R4's text names the later-first-run exposure as the same-user limit.
+
+**SN3. Harden `--reviewed-commit`.** Recommend:
+* Refuse unless `<id>` is an ancestor of `HEAD` (`git merge-base --is-ancestor`).
+* Compare the three paths by blob id (`ls-tree <id>` against `HEAD`), not by diff text. A `diff.external` or textconv setting in `.git/config` can empty diff text; that is the same-user limit, but closing it is free.
+* The fresh agent's M2 check also confirms that `<id>` is the commit named in the code reviewer's own committed `Reviewed commit` line (`git log -p` on the plan shows who committed it). Then an id relayed by someone else cannot point past an unreviewed edit.
+
+Test: an `<id>` that is not an ancestor refuses.
+
+**SN4. Test seams are function parameters, never environment variables or options.** The key checks need an injected `launchctl` lookup (line 92), and the terminal and interpreter checks need their own seams. Suppose a seam can be reached through an environment variable or a command-line option. Then a same-user process sets it at the real run, and SR2-1's refusal reads a fake answer. Recommend:
+* Seams are parameters that only the tests set.
+* A test shows that `ceremony --help` lists no seam.
+* A grep of `scripts/repin.py` for `os.environ` reads serves as a tripwire.
+* An autouse fixture injects the lookup in every test, so no test asks the real `/bin/launchctl` or the Maintainer's agent. The scratch-world rule (line 39) covers `~/.ssh`, but not the real agent.
+
+**SN5. Bind the apply step to `HEAD` at write time, and to its own transaction.** "`HEAD` moving refuses" covers `package` (Revision 3, reading-order step 3). Recommend:
+* Re-resolve `HEAD` immediately before the first `os.replace`, and refuse if it differs from the transaction's head id.
+* State that the apply step in `ceremony` writes only the transaction it packaged in the same process, never one found on disk. An agent may run `package` (line 43).
+
+Test: `HEAD` moved between package and write refuses, and nothing is written.
+
+**SN6. Refuse index bits that hide changes.** Recommend that the shared preconditions refuse any `assume-unchanged` or `skip-worktree` entry: a lowercase tag or `S` in `git ls-files -v -z`. Otherwise the dirty-tree refusal and "only the named paths differ" are both blind to it. With `skip-worktree` on the baseline, the Maintainer's `git commit <path>` commits nothing (probe D). Add one test, with a control.
+
+**SN7. Name the source of the closure list.** `compare`, which `repin` imports (line 20), reads the closure members from the candidate's launcher template (`scripts/reanchor_ceremony.py:156`), and no pin covers that file. Suppose step 6, or Summary 2's "authority-file changes", uses that list. Then a candidate that drops one line from `EXPECTED_PATHS` hides that member's change from `repin`'s screen; the launcher still checks its own list. Recommend:
+* Take the list from `declared_authority_closure()`, whose bytes are compared first.
+* Refuse when `compare`'s list differs from it.
+
+Test: a template with one line dropped refuses. Control: an unchanged template passes.
+
+**SN8. The passphrase test needs a named instrument.** Line 94 says the throwaway passphrase appears in no argv, no environment and no file, but not how argv and environment are observed. Recommend:
+* In the test, run `repin` with an audit hook (`sys.addaudithook`) that logs `subprocess.Popen`, `os.exec`, `os.posix_spawn` and `open` with a write mode: argv, environment and written paths.
+* Search those logs, and every file under the scratch `HOME`, `--ceremony-dir` and `TMPDIR` that changed during the run.
+* Require the signature to verify when the passphrase is written once, after the prompt appears. A `repin` that read the terminal at the same moment would then make the test fail.
+
+With that instrument, the behavioural test is enough for `repin`'s own route. What happens inside the launcher and the signer is reviewed code outside `repin`.
+
+**SN9. R6b's edit needs its own code review before M3 anchors it, and M2 has an unstated precondition.**
+* *R6b.* It edits `scripts/reanchor_ceremony.py`, which `repin` imports into its trusted process. M3 anchors whatever bytes are there, and the stage-1 report shows only `FROZEN-MODIFIED`. Lines 58 and 105 make R6b MAINTAINER-ONLY, but do not say who writes the edit or which review reads it before M3. Recommend a fresh code review of the R6b commit before M3, plus a deletion-only check: `git diff --numstat <parent> <R6b> -- scripts/reanchor_ceremony.py` reports 0 insertions, or names each inserted line.
+* *M2.* M2 refuses if any of the ten existing listed files changes before it runs. All ten equal `6f29519d`'s entries today (probe E). Recommend that M2's text says so, so that an unrelated edit to a gate module before the cut is read as moving M2 to a by-hand ceremony.
+
+**SN10. Smaller points.**
+* (a) The fence (line 43) says agents never read the real anchor, but `status` and `package`, which line 43 allows, resolve it in step 1. Say "never writes, moves or signs the real anchor".
+* (b) R1 should write its own engine-module rule (`bootstrap/_scaffold/*.py` from the extraction's tracked tree). It should not read the candidate's glob at `bootstrap/tests/test_ast_attest.py:78` (SR-1, item (d) of the first review's answer 1).
+* (c) Print the resolved path and SHA-256 of `git` on the first screen and in the record, so the accepted S5 limit is visible. Give `repin`'s own children a fixed `PATH=/usr/bin:/bin`, as the launcher does (`bootstrap/reanchor.sh:659`).
+* (d) The decoy-on-`PATH` test is sound for the four signing tools, because its control shows the decoy can fire. Leaving `git` on `PATH` is Revision 3's S5, which the Decision accepted; I do not reopen it.
+* (e) Line 10 says "SR-1 to SR-7", but the table also carries SR-8.
+
+### Carriage of the proposal's findings
+
+| Finding | Carried to | Verdict |
+|---|---|---|
+| SR-1 | R1 | carried; the process-level gaps are SB1 and SB2, and the extraction gap is SN1 |
+| SR-2, SR-3 | R2 | carried; each test has a control that can fail |
+| SR-4 | R1, R2 | carried; the apply step's `HEAD` check is SN5 |
+| SR-5 (a) to (f) | R2 | carried, one test each, plus the `_guard.py` comment |
+| SR-6 | R1 | carried; the source of `encode_display` is SB2 |
+| SR-7 | R5 | carried, only if R5 is built |
+| SR-8 | outside | board rows; correct |
+| SR2-1 | R4 | carried; seams are SN4 |
+| SR2-2 | R4 | carried; the instrument is SN8 |
+| SR2-3 | R4 | carried; the `--first-run` waiver is SN2 |
+| SR2-4 | R4 | carried, with the copy-or-hash first task |
+| SR2-5 | R1, R4 | carried; `--reviewed-commit` is SN3 |
+| SR2-6 (a) | R2, R4 | a departure; acceptable only with SB3 |
+| SR2-6 (b), (c), (d) | R4, R2 | carried |
+
+### Lenses used (each with its evidence)
+
+* **1 Claims.** I derived the 11-file closure from the import lines (ruling 1). I hashed ten listed files against `6f29519d`'s manifest (probe E). I checked that `tools/session.py` is unpinned and changing (probe E), that the stage-2 `PATH` is fixed (`bootstrap/reanchor.sh:659`), and that `verify_integrity.py` makes no write. The claim "exact only because of [the dirty refusal]" (line 80) is false under index bits (probe D).
+* **2 Production path exercised by tests.** The plan's isolation test reads only the child's flags (line 67). SB1's test drives the real command line.
+* **3 Design completeness.** The import source of the parent process is unstated (SB1). The `--first-run` waiver is ambiguous (SN2). The seams are unstated (SN4).
+* **4 Silent failure / fail-closed.** "Not checked: no record" fails open (SB3). Index bits hide changes silently (SN6). The case collision fails loudly only in tree order (SN1).
+* **5 Cross-document consistency.** `compare`'s closure comes from an unpinned template (`scripts/reanchor_ceremony.py:156`; SN7). `_authority_code_files` already hashes `__file__` bytes (`bootstrap/tests/_gate_reanchor.py:131-138`), so SB1 reuses it rather than inventing a check.
+* **6 Drift.** Line 10's list (SN10 (e)). The fence wording against the allowed verbs (SN10 (a)).
+* **7 Lifecycle / process placement.** I checked the fences M1, M2, M3 and R6b, and the order (ruling 4). R6b's review before M3 is SN9. No agent chunk signs except with a throwaway key, pushes, re-anchors or moves the real anchor.
+* **8 Scope.** Every recommendation stays inside Revision 3's contract and the Decision. None reopens one key, the no-commit answer or the same-user limit. SB3 keeps a check the plan already holds. SN10 (d) leaves `git` on `PATH`, as S5 accepted.
+* **9 Name the satisfier.** Each finding names its cell and its test, with a control.
+
+**Status.** Findings are raised, so the Status line moves to `revising-plan` (`doctrine/lifecycle.md` > "revising-plan": the author folds the findings). The author answers with a Response and folds the findings into the cells. The Maintainer decides. This is a single round: there is no second Security Review unless a revision changes the design. Folding SB1 to SB3 as recommended does not change the design: the process isolation, the anchor source and the fail-closed check all sit inside Revision 3's reading order and SR2-6 (a).
+
+**Coverage.** *Covered:* the plan against Revision 3, the Decision and both proposal Security Reviews; every SR and SR2 row; the import closure, derived from source; ten listed files hashed against the anchored manifest; probes A to D in scratch folders, each with a control or a contrast run. *Not covered / low confidence:* I ran no test and did not run `repin`, which does not exist yet, the launcher, `ssh-keygen` or `ssh-agent`. Everything about stage 1 and stage 2 comes from reading. I did not check whether `bootstrap/reanchor.sh` can run from a private copy (R4's first task). I measured case collisions on APFS only, not on Linux. I did not read `reanchor.sh`'s `show-report` or `hash-package` bodies. I did not test `sys.addaudithook` coverage of a pseudo-terminal child (SN8 is a recommendation, not a measurement). I did not look for other start-up paths that run code, such as `.pth` files or `sitecustomize`. Under `-I` those come only from the interpreter's own site-packages, which belong to the same-user limit.
