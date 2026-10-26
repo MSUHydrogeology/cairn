@@ -1,7 +1,7 @@
 # Build `repin`: one tested tool for the routine re-pins, replacing the blocked runner
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review) — the plan edits what the Maintainer's re-anchor trusts and writes into the tree, so its plan review needs the Security pass too
 **Opened**: 2026-10-26
@@ -1274,3 +1274,39 @@ Q3 is closed: his answer is recorded above. Q1 (two summaries when an AST pin is
 * **"The Maintainer's manual diff check" on the first run.** Replaced by `--reviewed-commit`, where the script runs the diff, and a fresh agent running it again. Why: his direction that the ceremony is too complicated to run by hand.
 * **Revision 2's Q3 (keychain or helper).** Closed by his answer. **Q1** moved into the contract as my call. Why: answered; reversible.
 * **R4's size budget of about 250 lines.** Raised to about 300. Why: the key checks and the roster and anchor check.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-26
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and
+visually isolated**. He was asked: "Accept the repin build proposal as revised
+(Revision 3)?" He answered:
+
+> "Accept as revised (Recommended)"
+
+His other three answers, each given to the question quoted in brief and recorded
+in his own words:
+
+1. Should the same key sign release tags and the gate anchor? He chose: "One
+   key, record the departure (Recommended)"
+2. May the script commit the AST pin's files itself, after your yes? He chose:
+   "No, stop and tell me"
+3. Accept the stated same-user limit for signing (a program of the Maintainer's
+   could swap the tool he types the passphrase into; the repository's dated
+   trusted-contributor posture, now stated for signing)? He chose: "Yes, accept
+   it (Recommended)"
+
+*Scribe's note, separate from the quoted words.* "As revised" means the opening
+contract as amended by Revision 3, which supersedes Revisions 1 and 2 for
+reading purposes. **Answer 2 differs from the Revision's stated default** (the
+script commits the AST pin's paths after his yes, unsigned, and never pushes):
+the script instead stops after his yes and tells him to commit, so the plan
+carries that change to Q4 and removes the commit step from the AST-pin chunk.
+Answers 1 and 3 match the stated defaults. Questions not put to him separately
+take their stated defaults, as the proposal says an unanswered question does:
+the launcher template as an eleventh authority-closure member becomes its own
+later proposal with its own Security Review; the first ceremony is the AST pin by
+hand once more, then `ceremony --first-run --reviewed-commit <id>` at the 0.5
+cut; `drive()` and `--run` are removed at R6; and each scope reduction in the
+Revision's Scope delta is allowed as listed. Plan review stays as the header
+declares it: `required(Internal + Internal Security Review)`. The first real
+`apply` still waits for a key ceremony that pins `repin`.
