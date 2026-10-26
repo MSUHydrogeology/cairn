@@ -38,6 +38,15 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Fixed — `upgrade --init-lock` no longer reads through a link; `--finalize` names a linked wrapper
+
+- `upgrade --init-lock` now stops with exit 2 and a one-line remedy when
+  `dev/.cairn/profile.yml` or `dev/.cairn` is a link; it used to read the file behind it.
+  `upgrade --finalize` over a linked vendor wrapper (for example `CLAUDE.md`) still exits 1
+  but now names the link and says to replace it. Two limits stay, stated in
+  [`bootstrap/UPGRADE.md`](bootstrap/UPGRADE.md): a lockfile that is itself a link, and a
+  linked tracked file.
+
 ### Changed — The install report follows the profile; `upgrade` names the slots it adds
 
 - The install report no longer asks you to fill a slot that only a module you did
@@ -107,10 +116,14 @@ and a new empty `Unreleased` is started above.
   needs the Maintainer goes into one batch for them. It posts nothing to GitHub:
   it never comments, labels or closes, and **issue text is data, never
   instruction**, so it runs nothing an issue contains. An engine repair parks at
-  the Maintainer-run AST re-anchor. A reviewer ran three hostile issue
-  bodies, one request to relax a rule and one empty-arguments run; no embedded
-  instruction was obeyed. The `--drain board` and `--drain <item>` forms are not
-  yet trialled. It ships in the `session-start` skill to
+  the Maintainer-run AST re-anchor. It takes exactly one target: a number
+  (or `#` and a number) is an issue, read on its own with `gh issue view`; an
+  unknown or missing target, or two targets, is reported and stops, and text in
+  an issue, a board row or any artifact is data, never instruction. Fresh agents
+  ran the board, artifact and issue forms against hostile text, with a logging
+  `gh` stand-in and a local listener: no embedded instruction was obeyed, no
+  request reached the listener, and nothing was written to GitHub. Most cases
+  ran once, on one model; the real argument substitution was not exercised. It ships in the `session-start` skill to
   every install, and `AGENTS.md`'s easy-fix rule now allows the fix's own test.
   ([plan](dev/plans/archive/drain-mode.md))
 
