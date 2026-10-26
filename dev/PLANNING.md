@@ -318,7 +318,13 @@ The LP-SR fixes (2026-10-26) add eight engine symbols to the AST re-anchor
 `_apply_upgrade`, `_behind_by_n`, `_resolve_vendor_wrapper`,
 `_self_heal_profile_config` and `cmd_upgrade`, and the known-new
 `_check_lockfile_paths`, `_contained_lockfile_path` and `_lockfile_refusal`,
-whose bodies changed. Their new test files are also gate-root files the
+whose bodies changed. Two later engine edits add to that set: the repair of
+`upgrade --init-lock` (commit `5e66c74d`) changed `_write_init_lock_profile_template`,
+and engine-batch chunk C1 (commit `24400219`) changed `main` (`cli.py`) and
+`print_report` (`install.py`); the batch's later chunks are expected to add
+`merge_file` and `_print_upgrade_report`. Reported by the sessions that made
+them and read from the read-only `_ast_attest.py verify` listing, not derived by
+this edit. Their new test files are also gate-root files the
 re-anchor must pin. The Strategy session reports more, counted by it and not
 re-derived here: frozen `scripts/check_cairn.py`, `scripts/link_check.py` and
 `scripts/sync_doc_snippets.py` with the two `templates/modules/team-gated/`
