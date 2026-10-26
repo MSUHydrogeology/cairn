@@ -480,7 +480,7 @@ Cairn tells agents to "lead plain" and names no method, so each agent invents on
 
 ### Foundations
 
-1. **Should this happen as framed?** Yes to a standard; not yet to all 18 rules. The gap is real: `AGENTS.md` names the goal and no method, and the incidents exist (`0381944f`, `e3448ed0`, three 2026-08-13 proposals). But rules 4 to 13 are general advice with "professional consensus only" evidence (proposal lines 213 to 221), and only the rules on names, terms and acronyms match the recurrences. -- `dev/proposals/2026-10-26-claude-writing-for-the-reader.md:213-221,360-364`
+1. **Should this happen as framed?** Yes to a standard; not yet to all 18 rules. The gap is real: `AGENTS.md` names the goal and no method, and the incidents exist (`0381944f`, `e3448ed0`, three 2026-08-13 proposals). But rules 4 to 13 are general advice with "professional consensus only" evidence (proposal lines 213 to 221), and only the rules on names, terms and acronyms match the recurrences. -- `dev/proposals/2026-10-26-claude-writing-for-the-reader.md:213-221` and `:360-364`
 2. **Best alternative.** Ship a v1.0 of about 8 rules (2, 3 and 14 to 18, plus the one rule on names and terms) and add the rest when an incident or a study earns them. Stable numbers make adding later cheap and removing costly, so this is the order that loses nothing. The proposal falls back to this itself under Signals. -- `proposal:80-81,193-196,368-370`
 3. **What would show it wrong.** The signals are the right ones, but the third has no record to count (W5), and the trial is judged by the implementer who ships it. -- `proposal:322-327,374-376`; `grep` of `dev/` finds no log of "I don't understand" pauses
 
