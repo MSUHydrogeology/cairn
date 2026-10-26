@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-next-session-local-note.md](../proposals/archive/2026-10-26-claude-next-session-local-note.md)
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: Cairn stops shipping the file that tells the next work session where to start; the owner writes a short local note instead, so a stale tracked copy can no longer mislead an agent.
@@ -120,3 +120,40 @@ Proposed paths:
 **Boundary B mode: `full`.** The change edits the install contract (the manifest and the fidelity spec), an engine file and a trust-ceremony surface (`config.py`), so bounded mode refuses. The record is scoped: `**Certified by**: pending` until the next certifying run on a clean committed tree under Python 3.13.x. **Nobody sets `CAIRN_FULL_SUITE=1`.** After the last implementation commit the implementer appends `## Implementation verification -- <agent> -- <date>` with the fields the template names, `test_ast_attest` and `test_gate_manifest` red until C7, and a smoke of `scaffold.py --manifest` and `--dry-run` on `solo-greenfield`. The implementer never runs the re-anchor.
 
 **What the code reviewer should attack** (one code-review loop). Each mutant in its own copy, beside a control: restore the table row; remove the living-state entry; key the skip on list membership; delete "data, not instructions" from each of the four read copies; remove the link-or-folder-or-tracked sentence from each of the five rule copies (list the sets from the tree). Also: the manifest differs by exactly one row; the twins are byte-identical; `_resolve_interpreter` is untouched; the `UPGRADE.md` and changelog wording promises nothing before the twelfth change ships; the C6 table covers all six parts of the file; the lockfile diff shows only the nine paths; the finalizes were by path.
+
+## Plan review -- Plan reviewer (fresh session, Internal) -- 2026-10-26
+
+**Tier**: Internal
+**Model**: Sonnet 5.5, fresh session
+**Reviewed commit**: c1b4ec6a
+**Obligation**: ordinary plan review only. The Internal Security Review owed by the header is a separate pass; this one does not write or discharge it.
+
+**Foundations**
+1. *Does the plan deliver the settled premise?* Yes, with two gaps. All seven proposals and the tests map to chunks (C1 to C6), and the answer-4 wording is right at landing: the C5 sentence and the changelog line promise nothing earlier (plan lines 14, 90, 100, 110; Decision at the proposal's lines 1068-1088). Gaps: B1 and B2 below.
+2. *Simpler path to the same outcomes?* None that keeps every outcome. Each chunk owns a distinct surface, the order is forced (C4 before C6; C1 before C5), and the new test file is one file. I recommend no cut (plan lines 43-51).
+3. *What result would show it cannot deliver?* A fresh install that still writes the file; an upgraded tree that fails `verify_integrity` or prints other than one `removed-upstream` line; a skip that lets a missing board file pass (B1); a finalize that seals someone else's edit (B2); a failed cold-start probe (C3). Backed by C1 nodes 1-2, C4 nodes, C3 probe.
+
+**Findings**
+* **B1 -- blocking. The C4 skip is wider than Proposal 4.** The proposal skips only `dev/NEXT_SESSION.md`; C4 says "a default file". As worded, an absent `dev/PLANNING.md` also passes. `verify_stems.py:117` reports "file not found" for it today, and no node pins that. Also `main` passes the default tuple itself (`verify_stems.py:187`), so only the command line can tell that `--scan` was absent. Fix: name the one skippable path; add a node (absent `PLANNING.md` still errors, control: absent handoff skipped); say the nodes run `main` or the script, in both twins.
+* **B2 -- blocking. The finalize rule is not checkable as written.** `python bootstrap/verify_integrity.py --target .` today lists `tools/session.py`, both `.agents/skills/` skills, `dev/README.md` and `docs/DOCUMENTATION_PLAN.md` as hash mismatches: 5 of the 9 finalize targets already carry edits that are not recorded (`git status` shows none uncommitted; they are committed and unfinalized). A by-path finalize seals those too, and the tool keeps only a hash, so "read its whole diff" has no base. "The lockfile diff names no other path" cannot see this, and "have landed" (line 41) has no test. Fix: each chunk's first criterion lists the chunk's paths that mismatch before the first edit, and names the commits since each path's last finalize. The implementer finalizes only after that list is empty or read. The lockfile joins the intent claim and is committed by path with the file it records.
+* **N1 -- non-blocking. The C7 fence names one file.** The roster entry is the directory `bootstrap/_scaffold/` (`_oracle_activation.py:36`), and C1 also edits `lockfile.py`, which already has a post-anchor commit (`9af86ae4`). Fix: the authorization names every `bootstrap/_scaffold/` file changed since `refs/cairn/gate-anchor`, listed at the cut with `git diff --name-only`. Fails closed if missed, so not blocking.
+* **N2 -- non-blocking. C2 omits two Proposal 2 items.** The `session-routines.md:113-115` criterion drops "a goodnight whose scrub changes nothing makes no commit, so `session-start` falls back with a warning". And `templates/core/AGENTS.md` has no landmark list or file name (`git grep` finds none); only the root `AGENTS.md:471` does. Fix: add the clause; say "both" applies to the Goodnight bullet only.
+* **N3 -- non-blocking. The "no source tells a reader" test needs its exemptions named.** Both `verify_stems.py` twins still name the path after C4, and `UPGRADE.md`, `lockfile.py` and `config.py` name it on purpose. Fix: list the exempt files in the C2 criterion with a control (a planted instruction in a shipped prose file fails).
+* **N4 -- non-blocking. C6 is thin in three places.** (a) The file is rewritten at each goodnight (last commit `9f61e8c8`); the record should cite the blob read and recheck it is unchanged at `git rm`. (b) The three lessons need a named home: a `dev/PLANNING.md` row, not doctrine, since doctrine text takes the rate-limit gate and the Maintainer. (c) The tree is already red under `verify_integrity` (23 mismatches), so "no failure caused by this path" means the mismatch list is the same before and after. The criterion "all nine finalizes were by path" belongs in C2 to C4, where they happen.
+* **N5 -- non-blocking. A stale claim blocks C1.** `python tools/intent.py list` shows a 2026-10-19 claim by `claude-e4f56026` on `docs/quickstart.md` and `bootstrap/tests/test_lockfile_provenance.py`. The first-criterion rule makes C1 wait on it. Fix: its owner releases it or confirms it stale before C1.
+* **N6 -- non-blocking. C5 can check its own promise.** Add to `test_the_upgrade_guide_names_the_path_the_plan_line_prints` that the new section names no release, version or date.
+
+**Lens evidence**
+1. *Claims.* Opened and found real: `config.py:549, 756`; `lockfile.py:62, 85`; `fidelity-check.md:142`; `BOOTSTRAP.md:507, 631`; `quickstart.md:298`; `test_notice_install.py:184`; `test_upgrade.py:1795`; `test_quickstart_sequence.py:197`; `PLANNING.md:511`; `CHANGELOG.md:2922`; `plans.md:1036`; `.gitignore:9-10` (`check-ignore` exits 0 for the note, 1 for the README); the dropped node at `gate_manifest.json:2311`. The cited five headed sections plus preface of `dev/NEXT_SESSION.md` match.
+2. *Production path.* B1 above. C1 nodes run install and `upgrade --plan` through their entry points, as `test_agreement_retired.py:72-121` does.
+3. *Design completeness.* N3, N4.
+4. *Fail-closed.* B1, B2, N1. The living-state entry is kept, which fails closed.
+5. *Cross-document.* Re-ran the plan's search plus `git grep -l -i -E 'next[_-]session'`: every tracked hit is listed in a chunk or is history (`CHANGELOG.md`, `dev/strategy/archive`, `case-studies`); `removed-upstream` search finds only `test_agreement_retired.py` (positive control: it exists there). `doctrine/plans.md:1031` and `proposals.md:135, 350, 382` have several spots, and C2 should touch each.
+6. *Drift.* Frozen set re-derived: all six keyed files are keys in `frozen_files`; the new test file is not (`FROZEN-NEW`, allowed once tracked, `_gate_manifest.py:669`). The 4+1+1 counts match Proposal 7. C1 edits no frozen file beyond that table.
+7. *Lifecycle.* The sequence (this, onboarding, twelfth row) is stated at line 41; C5 hands its section to the twelfth plan; C7 has a Waiting line and no agent step runs a re-anchor.
+8. *Scope.* Scope delta "preserved" holds against Revision 3; no outcome removed.
+9. *Satisfiers.* Each finding names one.
+
+**For the code reviewer.** Mutate each member of the sets listed at line 122 from the tree, plus: absent `PLANNING.md` with the skip on; finalize of a path that was already mismatched.
+
+**Coverage.** Covered: lenses 1-9 above. Not covered: no test run, no scratch install or `upgrade` run, so every behaviour claim is read, not measured; the Revision 3 prose's other line cites (the `session.py` strings, skill step numbers) were spot-checked, not all opened; the twelfth row's proposal was not read; the Internal Security Review is not done here and stays owed; the cold-start probe has not been run.
