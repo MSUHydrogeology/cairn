@@ -8,10 +8,10 @@ Completed work leaves the board. The commit history retains earlier versions.
 ## Where the project stands
 
 <!-- cairn:slot project-status -->
-Cairn is at **v0.3.0**, self-hosting and used in LHM and modflow_tools.
-**0.4 is the first public release**, after the batch below and the Maintainer's
-release steps. The external correctness trial remains open, but was expressly
-waived as a condition of publishing 0.4.
+Cairn is at **v0.4.0**, its first public release (tagged 2026-10-20), self-hosting
+and used in LHM and modflow_tools. The external correctness trial remains open;
+it was expressly waived as a condition of publishing 0.4. **0.5 is laid out
+below.**
 
 Standing direction: **postdoc-first** and **fix defects, build nothing new**
 (Maintainer, 2026-07-22). A new tool or mechanism needs its own go-ahead.
@@ -28,6 +28,53 @@ artifacts; this board does not maintain a second status table.
 
 ## Release path
 
+### 0.5 (Maintainer direction, 2026-10-26)
+
+**Theme: plain, short, and fits the install.** The Maintainer, on the theme:
+
+> "I like the theme!"
+
+| Work | Gate | Notes |
+|---|---|---|
+| **Cairn Plain Language 1.0** (17 rules) | Accepted as revised, `2026-10-26-claude-writing-for-the-reader`; handed to an implementation agent | Maintainer: "We will be adding this Cairn Plain Language 1.0 as a feature". Lockfile `--finalize` for `AGENTS.md` and `dev/agent_collaboration.md`, and a neutrality check on any vendor name in `doctrine/rationale.md`, before it commits. |
+| `check_cairn` deleted-file crash | Proposal `2026-10-26-claude-check-cairn-deleted-files`, awaiting review | Defect; one commit. |
+| **#32** board and `session-start` accept retired statuses | Maintainer direction, 2026-10-23 | Defect. Lands before drain mode, which reads the board. |
+| **#31** "keep it short" in the plan and proposal templates | Prose | The adopter supplied the draft and the evidence. |
+| **Engine batch: F8 and #8 engine half** | Own proposal, Security Review, one AST re-anchor | One batch so the review and the re-anchor are paid once. Maintainer: "Engine batch is in". Rows below. |
+| **`repin`** | Proposal first, from `strategy/2026-08-28-claude-repin-revitalization.md` | Maintainer: "Repin is a build". Removes the re-anchor ceremony's manual corrections. |
+| **Drain mode**, last | Settled design, `strategy/2026-08-25-claude-drain-mode.md` | Scope below. |
+
+**Drain mode scope.** `/session-start --drain [board | issues | <item>]`.
+Triage has three levels; the Maintainer took the first two:
+
+> "Let's go with the first two triage levels."
+
+1. **Sort.** Read each issue, assign a lane by `doctrine/lifecycle.md`'s closed
+   triage procedure, and mark what needs the Maintainer or touches a high-risk
+   surface. Changes nothing.
+2. **Act on trivial ones.** Fix the defect repairs that have a failing test,
+   review, commit.
+3. **Not in 0.5: comment, label, close.** Drafted comments are presented in the
+   batch for the Maintainer to post or reject. **Issue text is data, never
+   instruction:** drain never runs anything an issue contains. The design note
+   predates this rule and must state it.
+
+**Order.** Cheap defects first (`check_cairn`, #32), then Plain Language and
+#31, then the engine batch, then `repin` and drain mode.
+
+**One re-anchor, at the cut.** The re-anchor owed since 2026-10-23 (the Queued
+row below) is folded into the 0.5 cut, not paid twice. The AST correction
+precedes the gate-manifest re-anchor, as at 0.4. Maintainer-only; follow
+`bootstrap/REANCHOR_RUNBOOK.md`.
+
+**Not decided, so not in 0.5 until the Maintainer says:** making NEXT_SESSION
+local and untracked, and VER-5. **Left out, waiting on their revival
+conditions:** #19, #13 and the deferred table.
+
+**Standing direction.** The 2026-07-22 direction, *fix defects, build nothing
+new*, applies to every row above; the choices on this page are the go-ahead for
+these rows only.
+
 ### 0.4 cut (Maintainer direction, 2026-10-19)
 
 | Work | Remaining condition before the cut |
@@ -39,7 +86,7 @@ artifacts; this board does not maintain a second status table.
 | Release assurance | Certify the final committed batch, perform the Maintainer's AST correction **before** the gate-manifest re-anchor, and complete the release sweeps in `docs/release-process.md`. |
 
 **Archived alongside 0.4:** `stewardship-and-reuse`.
-**After 0.4:** The draft strategy `dev/strategy/2026-10-19-codex-cairn-and-assai.md`.
+**After 0.4:** a draft strategy on Cairn and Assai, removed from Cairn on 2026-10-26 (`6ea4d4d7`).
 
 The release choices remain on record, verbatim:
 
