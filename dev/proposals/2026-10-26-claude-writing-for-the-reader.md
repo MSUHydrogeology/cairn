@@ -1,7 +1,7 @@
 # Cairn Plain Language: a writing standard for what agents write to people
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Plan review**: required(Internal) — if the Decision calls for a plan; expected to land in one commit with no plan (see the Revision)
 **Opened**: 2026-10-26
@@ -744,3 +744,20 @@ either: it makes the agent's checks auditable by the Maintainer.
    is cheap and removing one is costly, which favours the smaller set. What it
    loses is the rules on names, sentences and structure, which are what the
    recurrences were about.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-26
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim
+and visually isolated**:
+
+> "No, I'm good. Let's go ahead and accept this one as revised. Then pass it to a Sonnet/Haiku agent for implementation."
+
+*Scribe's note, separate from the quoted words.* "No, I'm good" answered the
+author's offer, in chat, to drop the ship test; the ship test stays. "As
+revised" means the opening text as amended by the Revision of 2026-10-26.
+Questions 1 to 5 were not answered separately, so each takes its stated
+default, as the proposal says an unanswered question does: the name is Cairn
+Plain Language; the reasoning rules apply in chat too; publishing for other
+projects waits about three months; the rate-limit gate is met by recurrence
+for rules 1 to 12, while rules 13 to 17 rest on the literature, not on a Cairn
+incident; and version 1.0 ships all 17 rules.
