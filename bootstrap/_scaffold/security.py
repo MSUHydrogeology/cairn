@@ -188,7 +188,7 @@ def _assert_fanout_contained(dst: Path, target: Path) -> None:
 
 
 def _remove_unchanged_file(
-    path: Path, target: Path, expected: bytes, *, _after_walk=None,
+    path: Path, target: Path, expected: bytes | None, *, _after_walk=None,
 ) -> bool:
     """Remove *path* only if it is a regular file holding exactly *expected*.
 
@@ -197,7 +197,10 @@ def _remove_unchanged_file(
     replaced between the read and the removal, or the removal did not happen.
     Raises :class:`ScaffoldSecurityError` for a link at the name or above it, a
     name outside *target*, or anything at the name that is not a regular file.
-    The caller clears its record of the file only on ``True``.
+    The caller clears its record of the file only on ``True``.  With *expected*
+    ``None`` nothing is removed: the call only confirms, through the same folder
+    handles, that nothing is at the name (``True``) or that something is
+    (``False``).
 
     Where ``os.unlink`` takes ``dir_fd`` (every of ``os.open``, ``os.unlink``,
     ``os.rmdir`` and ``os.stat`` is in ``os.supports_dir_fd``, and the platform
@@ -245,6 +248,8 @@ def _remove_unchanged_file(
         and hasattr(os, "O_DIRECTORY") and hasattr(os, "O_NOFOLLOW")
     )
     if not can_walk:
+        if expected is None:
+            return not os.path.lexists(path)
         try:
             fd = os.open(path, read_flags)
         except FileNotFoundError:
@@ -292,6 +297,14 @@ def _remove_unchanged_file(
         if _after_walk is not None:
             _after_walk()
         name, folder = parts[-1], handles[-1]
+        if expected is None:
+            try:
+                os.stat(name, dir_fd=folder, follow_symlinks=False)
+            except FileNotFoundError:
+                return True
+            except OSError:
+                return False
+            return False
         try:
             fd = os.open(name, read_flags, dir_fd=folder)
         except FileNotFoundError:

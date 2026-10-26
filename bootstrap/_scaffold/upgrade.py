@@ -48,6 +48,7 @@ from .config import (
 from .security import (
     _assert_safe_write,
     _read_regular_bytes,
+    _remove_unchanged_file,
     _stage_exclusive,
     _write_by_replacing,
     ScaffoldSecurityError,
@@ -2099,6 +2100,85 @@ def _cmd_adopt_collisions(
     return 0
 
 
+def _cmd_remove_retired(
+    target: Path, templates_root: Path, lock: dict[str, Any],
+) -> int:
+    """`upgrade --remove-retired`: remove the untouched copies of files Cairn
+    stopped shipping and clear the lockfile records of the ones already deleted.
+
+    Which files may go is decided by :func:`_classify_retired_records` (the same
+    classifier ``--plan`` prints from): only a record whose pair is on Cairn's own
+    list, whose bytes are a version Cairn shipped and which the last git commit
+    holds exactly.  Every other copy is kept and named in fixed words; a kept file
+    is not an error.  Each removal goes through ``_remove_unchanged_file``, which
+    reads the file again and removes it by name through folder handles, and a
+    record is cleared only when that call confirms nothing is left at the name.
+    A Markdown copy's cached template at the row's path goes second; if it will
+    not go, the record stays and the next run finishes the job.
+
+    Files first, lockfile last: a stop in between leaves records for files that
+    are gone, and the next run (or ``--finalize``) clears them.  Names printed are
+    the list's, never the record's or git's output."""
+    results = _classify_retired_records(target, lock, templates_root, git_gate=True)
+    cleared: set[int] = set()
+    lines: list[str] = []
+    removed = deleted = kept = 0
+    for item in results:
+        dst, state = item["dst"], item["state"]
+        if state == "untouched":
+            try:
+                gone = _remove_unchanged_file(target / dst, target, item["data"])
+                if gone and item["cache"] is not None:
+                    cache_rel, cache_bytes = item["cache"]
+                    gone = _remove_unchanged_file(target / cache_rel, target, cache_bytes)
+            except ScaffoldSecurityError:
+                gone = False
+            if gone:
+                cleared.add(id(item["rec"]))
+                removed += 1
+                lines.append(f"  removed  {dst}")
+            else:
+                kept += 1
+                lines.append(f"  kept     {dst}: was not removed; it or its "
+                             "cached template changed or could not be deleted")
+        elif state == "gone":
+            try:
+                if item["cache"] is not None:
+                    cache_rel, cache_bytes = item["cache"]
+                    _remove_unchanged_file(target / cache_rel, target, cache_bytes)
+                absent = _remove_unchanged_file(target / dst, target, None)
+            except ScaffoldSecurityError:
+                absent = False
+            if absent:
+                cleared.add(id(item["rec"]))
+                deleted += 1
+                lines.append(f"  cleared  {dst}: already deleted, record removed")
+            else:
+                kept += 1
+                lines.append(f"  kept     {dst}: something appeared at this name")
+        else:
+            kept += 1
+            lines.append(f"  kept     {dst}: {item['words']}")
+    if not results:
+        print("No retired files to remove: nothing in the lockfile is on Cairn's "
+              "list of files it stopped shipping.")
+        return 0
+    if cleared:
+        lock["files"] = [r for r in lock.get("files", []) if id(r) not in cleared]
+        _assert_safe_write(target / _LOCKFILE_REL, target)
+        _commit_lock_and_caches(target, lock, [])
+    print("\n".join(lines))
+    print(f"Removed {removed} file(s); cleared {deleted} record(s) for files "
+          f"already deleted; kept {kept}.")
+    if removed or deleted:
+        print(f"Commit the removal. `git restore <path>` brings a removed file "
+              f"back; {_LOCKFILE_REL} is the record.")
+    if kept:
+        print("A kept file stays attested. Delete or restore it by hand, or run "
+              "`upgrade --plan` to see why each was kept.")
+    return 0
+
+
 def _cmd_finalize_lockfile(
     target: Path,
     lock: dict[str, Any],
@@ -2816,6 +2896,13 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                         "--apply, overwrite tracked files with uncommitted "
                         "changes in the write-set; for an unscoped --finalize, "
                         "finalize the whole tree even when it is dirty.")
+    p.add_argument("--remove-retired", action="store_true",
+                   help="Remove the project's untouched copies of files Cairn "
+                        "stopped shipping and clear their lockfile records "
+                        "(and the records of ones already deleted). A copy "
+                        "that differs, or that git's last commit does not "
+                        "hold, is kept and named. `--plan` shows first what "
+                        "it would do.")
     p.add_argument("--adopt-module", default=None, metavar="NAME",
                    help="Record an already-on-disk opt-in module NAME into the "
                         "lockfile so it 3-way-merges on later upgrades (#49). "
@@ -2845,6 +2932,7 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
         ("--stage", args.stage),
         ("--apply", args.apply),
         ("--adopt-collisions", args.adopt_collisions),
+        ("--remove-retired", args.remove_retired),
     ) if on]
     if args.adopt_module:
         actions.append("--adopt-module")
@@ -2889,7 +2977,7 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     # `--adopt-collisions` through `_compute_upgrade`), so a link at its name or
     # above it is refused before either reads, as on `--plan`, `--stage`,
     # `--apply` and `--init-lock`.
-    if args.adopt_module or args.adopt_collisions:
+    if args.adopt_module or args.adopt_collisions or args.remove_retired:
         refused = _refuse_if_linked(
             target, _PROFILE_REL, f"the profile {_PROFILE_REL}")
         if refused is not None:
@@ -2944,6 +3032,24 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     if args.finalize:
         only = set(args.finalize_paths) if args.finalize_paths else None
         return _cmd_finalize_lockfile(target, lock, only=only, force=args.force)
+
+    if args.remove_retired:
+        if args.to is not None:
+            print("error: --remove-retired runs against the running target "
+                  "tree; --to is not supported (run scaffold from the target "
+                  "tree).", file=sys.stderr)
+            return 2
+        if args.force:
+            print("error: --remove-retired takes no --force: a copy that cannot "
+                  "be shown unchanged is kept. Delete it yourself or restore "
+                  "it, then re-run.", file=sys.stderr)
+            return 2
+        try:
+            return _cmd_remove_retired(target, templates_root, lock)
+        except ScaffoldSecurityError as exc:
+            print("error: upgrade --remove-retired refused (containment): "
+                  f"{exc}", file=sys.stderr)
+            return 2
 
     if args.adopt_collisions:
         if args.to is not None:
@@ -3097,6 +3203,11 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     # Default: --plan (strictly read-only).
     _print_upgrade_report(plans, structural, citation,
                           mode="plan (read-only)", drift=drift)
+    if any(fp.kind in ("retired-untouched", "retired-gone") for fp in plans):
+        print("\n  To remove the untouched copies above and clear the records of "
+              "the ones already deleted, run:\n"
+              "    python bootstrap/scaffold.py upgrade --target <repo> "
+              "--remove-retired")
     n_adopt = _count_adoptable_collisions(plans)
     if n_adopt:
         print(f"\n  {n_adopt} occupied-destination collision(s) can be KEPT as "

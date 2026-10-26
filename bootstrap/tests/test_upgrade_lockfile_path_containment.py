@@ -71,6 +71,7 @@ _ACTIONS = (
     ("--apply",),
     ("--finalize", "--force"),
     ("--adopt-collisions", "x@" + "0" * 64 + "@" + "0" * 64),
+    ("--remove-retired",),
 )
 
 needs_links = pytest.mark.skipif(
@@ -598,7 +599,7 @@ def test_the_upgrade_command_checks_the_lockfile_before_anything_acts_on_it():
     line = checks[0].lineno
     later = ("_cmd_finalize_lockfile", "_cmd_adopt_collisions", "_apply_upgrade",
              "_compute_upgrade", "_write_stage", "_self_heal_profile_config",
-             "_print_upgrade_report")
+             "_print_upgrade_report", "_cmd_remove_retired")
     seen = 0
     for name in later:
         for call in _calls(fn, name):

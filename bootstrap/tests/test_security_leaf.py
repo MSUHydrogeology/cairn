@@ -57,6 +57,9 @@ _GUARDED_WRITE_FUNCS = {
     # The only engine deletion of a project file: it checks containment, then
     # removes by name through folder handles opened without following links.
     "_remove_unchanged_file",
+    # The step that calls it: it also writes the lockfile, so it guards that path
+    # itself before the shared committer does.
+    "_cmd_remove_retired",
 }
 
 
