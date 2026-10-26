@@ -97,9 +97,9 @@ def test_the_skill_keeps_its_drain_safety_rules():
             "whatever the digits are",
             "exactly one target",
             "more than one word follows it, say so plainly and stop",
-            "If `gh` itself fails",
-            "do not conclude that the issue does not exist",
-            "issue or artifact does not exist",
+            "If the artifact does not exist, say so and stop",
+            "If `gh issue view` fails or finds nothing, say what it printed and stop",
+            "Do not run any other `gh` command to investigate",
             "HTML comments"):
         assert phrase in section, (
             f"the target rules no longer say {phrase!r}")
