@@ -1785,8 +1785,7 @@ def test_putting_a_retired_sentence_back_in_a_preset_is_reported(
 
 def test_a_correctly_worded_sentence_is_not_flagged() -> None:
     """The guard has no false positive on the shape the solo preset now uses."""
-    solo = _normalize(_text(SHIPPED_PRESETS[0]))
-    assert _CORRECT_SENTENCE in solo, "control: the sentence is in the preset"
+    assert _preset_flags(_text(SHIPPED_PRESETS[0])) == [], "control: the preset is clean"
     assert _preset_flags(_CORRECT_SENTENCE) == []
 
 

@@ -397,3 +397,172 @@ class TestAnEditedOldHelperFailsTheIntegrityCheck:
         captured = capsys.readouterr()
         assert (f"modified (hash mismatch): {OLD_HELPER_DSTS[2]}"
                 in captured.out + captured.err)
+
+
+# --------------------------------------------------------------------------
+# The day-one list: what an install seeds, and that nothing is held back.
+# --------------------------------------------------------------------------
+
+PROFILE_FILES = tuple(f"templates/onboarding/{p}.md" for p in PROFILES)
+#: What each profile seeds. A growing list is a first-contact cost, so the
+#: counts are pinned and a change to one is a decision, not an accident.
+SEEDED_TASKS = {"solo-greenfield": 6, "collaborative-team": 10,
+                "high-rigor-legacy": 11}
+SLOT_OPEN = "<!-- cairn:slot onboarding-tasks -->"
+SLOT_END = "<!-- cairn:end onboarding-tasks -->"
+MULTI_TYPE = "concurrent-multi-type"
+
+
+def _slot(target: Path) -> str:
+    planning = (target / "dev" / "PLANNING.md").read_text(encoding="utf-8")
+    a = planning.index(SLOT_OPEN)
+    return planning[a: planning.index(SLOT_END, a)]
+
+
+def _seed_count(slot: str) -> int:
+    return len(re.findall(r"^\* \[seed; id: ", slot, re.MULTILINE))
+
+
+class TestNoProfileSchedulesAPromptForLater:
+    @pytest.mark.parametrize("rel", PROFILE_FILES)
+    def test_a_profile_holds_no_trigger_line_and_no_active_surfacing_heading(
+            self, rel: str) -> None:
+        text = (ROOT / rel).read_text(encoding="utf-8")
+        assert not re.search(r"\[trigger:", text)
+        assert not re.search(r"^#+ .*active[- ]surfacing", text,
+                             re.IGNORECASE | re.MULTILINE)
+
+    def test_the_check_sees_a_trigger_line_when_one_is_added(self) -> None:
+        text = (ROOT / PROFILE_FILES[0]).read_text(encoding="utf-8")
+        assert "[trigger:" not in text, "control: the shipped file is clean"
+        assert re.search(r"\[trigger:", text + "\n* [trigger: x; id: y]\n")
+
+
+class TestTheOnboardingListDoesNotGrow:
+    @pytest.mark.parametrize("preset", PROFILES)
+    def test_a_real_install_seeds_the_pinned_number_of_tasks(
+            self, tmp_path: Path, preset: str) -> None:
+        assert _install(tmp_path / "t", preset) == 0
+        assert _seed_count(_slot(tmp_path / "t")) == SEEDED_TASKS[preset]
+
+    def test_an_added_seed_changes_the_count(self) -> None:
+        slot = "* [seed; id: a]\n  body\n\n* [seed; id: b]\n"
+        assert _seed_count(slot) == 2
+        assert _seed_count(slot + "\n* [seed; id: c]\n") == 3
+
+
+#: The five sentences that carry what the former delayed prompts said.
+#: (id, profile, task the sentence sits on, sentence, shape it needs). Wording
+#: may be polished later; a task may not be added to carry one. C names the
+#: tour page, so it appears only where the roster's own tour task does (the
+#: multi-type team shape); the others reach every shape.
+PAGE = "`dev/modules/onboarding/agent-team-onboarding.md`"
+SENTENCE_C = ("When you add another agent type, record it in the roster slot "
+              f"and walk {PAGE}.")
+FORMER_PROMPTS = (
+    ("A", "solo-greenfield", "skim-coordination-doctrine",
+     f"When you add a second agent type, walk {PAGE}.", None),
+    ("B", "collaborative-team", "walk-dev-tour",
+     "Reflections are gitignored by default; track them only if agents hand "
+     "work to each other through them.", None),
+    ("C", "collaborative-team", "fill-team-roster-day-one", SENTENCE_C, MULTI_TYPE),
+    ("C", "high-rigor-legacy", "confirm-maintainer-authority", SENTENCE_C, MULTI_TYPE),
+    ("D", "high-rigor-legacy", "walk-dev-tour",
+     "Treat that first proposal as the diagnostic for calibrating the "
+     "security-review, dual-language-tests and legacy-agent modules against "
+     "your tree.", None),
+    ("E", "high-rigor-legacy", "confirm-maintainer-authority",
+     "A read from a different agent type is the Maintainer's call "
+     "(`AGENTS.md` > Review); the usual review stays a fresh session.", None),
+)
+#: Each profile's own team shape, then others.
+TEAM_SHAPES = {
+    "solo-greenfield": (None, MULTI_TYPE),
+    "collaborative-team": (None, MULTI_TYPE, "concurrent-single-type", "single"),
+    "high-rigor-legacy": (None, MULTI_TYPE, "single"),
+}
+#: The seed each profile gates on the multi-type shape; its presence says the
+#: install resolved to that shape, whatever the profile's own default is.
+MULTI_TYPE_MARKER = {"collaborative-team": "id: agent-team-onboarding]",
+                     "high-rigor-legacy": "id: agent-team-onboarding-legacy]"}
+
+
+def _task_block(slot: str, task_id: str) -> str:
+    """The text of one seed task, from its header to the next blank line."""
+    m = re.search(rf"^\* \[seed; id: {re.escape(task_id)}\]\n((?:  .*\n)+)",
+                  slot, re.MULTILINE)
+    assert m, f"task {task_id} is not in the installed slot"
+    return _flat(m.group(1))
+
+
+def _prompt_problems(slot: str, preset: str, team: str | None) -> list[str]:
+    multi = team == MULTI_TYPE or (
+        team is None and MULTI_TYPE_MARKER.get(preset, "\0") in slot)
+    problems = []
+    for pid, prof, task, sentence, needs in FORMER_PROMPTS:
+        if prof != preset:
+            continue
+        expected = needs is None or multi
+        if (sentence in _task_block(slot, task)) != expected:
+            problems.append(f"{pid} on {task}: expected "
+                            f"{'present' if expected else 'absent'}")
+    if (not multi and preset != "solo-greenfield"
+            and "agent-team-onboarding.md" in slot):
+        problems.append("the tour page is named in a shape without its task")
+    return problems
+
+
+class TestEveryFormerPromptHasAnInstallTimeHome:
+    @pytest.mark.parametrize(
+        "preset,team", [(p, t) for p, shapes in TEAM_SHAPES.items()
+                        for t in shapes], ids=lambda v: str(v))
+    def test_sentences_a_to_e_are_in_the_installed_slot(
+            self, tmp_path: Path, preset: str, team: str | None) -> None:
+        assert _install(tmp_path / "t", preset, team) == 0
+        assert _prompt_problems(_slot(tmp_path / "t"), preset, team) == []
+
+    def test_a_deleted_sentence_is_reported(self, tmp_path: Path) -> None:
+        assert _install(tmp_path / "t", "high-rigor-legacy", MULTI_TYPE) == 0
+        slot = _slot(tmp_path / "t")
+        assert _prompt_problems(slot, "high-rigor-legacy", MULTI_TYPE) == [], "control"
+        for index, label in ((5, "E"), (3, "C")):
+            sentence = FORMER_PROMPTS[index][3]
+            words = r"\s+".join(map(re.escape, sentence.split()))
+            found = _prompt_problems(re.sub(words, "", slot),
+                                     "high-rigor-legacy", MULTI_TYPE)
+            assert len(found) == 1 and found[0].startswith(label), found
+
+    @pytest.mark.parametrize("rel", PROFILE_FILES)
+    def test_only_sentence_c_sits_inside_a_conditional(self, rel: str) -> None:
+        """A sentence inside a ``cairn:if`` reaches only some installs; C is
+        the one deliberately gated, on the multi-type shape."""
+        text = (ROOT / rel).read_text(encoding="utf-8")
+        for pid, prof, task, sentence, needs in FORMER_PROMPTS:
+            if f"/{prof}.md" not in "/" + rel:
+                continue
+            start = re.search(rf"^\* \[seed; id: {re.escape(task)}\]", text,
+                              re.MULTILINE).start()
+            assert (len(re.findall(r"<!-- cairn:if ", text[:start]))
+                    == len(re.findall(r"<!-- cairn:endif", text[:start]))), (
+                f"the task {task} itself sits inside a cairn:if")
+            region = text[start:].split("\n* [seed;", 1)[0]
+            words = r"\s+".join(map(re.escape, sentence.split()))
+            body = re.search(words, region)
+            assert body, f"{pid} is not on {task}"
+            before = region[:body.start()]
+            inside = (len(re.findall(r"<!-- cairn:if ", before))
+                      > len(re.findall(r"<!-- cairn:endif", before)))
+            assert inside == (needs is not None), pid
+            if needs:
+                assert f"cairn:if agent_team in {needs} -->" in before
+
+    def test_sentence_c_moved_out_of_its_conditional_is_reported(self) -> None:
+        text = ("* [seed; id: t]\n  body\n<!-- cairn:if agent_team in x -->\n"
+                "  C sentence.\n<!-- cairn:endif -->\n")
+        before_inside = text[:text.index("  C sentence.")]
+        assert (len(re.findall(r"<!-- cairn:if ", before_inside))
+                > len(re.findall(r"<!-- cairn:endif", before_inside)))
+        flat = text.replace("<!-- cairn:if agent_team in x -->\n", "")
+        before_outside = flat[:flat.index("  C sentence.")]
+        assert (len(re.findall(r"<!-- cairn:if ", before_outside))
+                == len(re.findall(r"<!-- cairn:endif", before_outside)))

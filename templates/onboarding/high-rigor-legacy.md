@@ -1,24 +1,14 @@
 <!-- cairn-internal-ref-allow: doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- ^ Profile-conditional module files: present only in an adopter that installs them (this preset does); Cairn's own profile does not, so they don't resolve here. -->
 
-<!-- Cairn progressive-onboarding task list: high-rigor-legacy preset.
-     Authored under plan 2026-05-28-claude-cairn-progressive-onboarding
-     (Chunk P1.6 fills the full legacy-pre-pass + security-review +
-     dual-language-tests task list; P1.1 shipped a placeholder
-     ahead of this). -->
+<!-- Cairn onboarding task list: high-rigor-legacy preset. -->
 
 # Onboarding tasks -- high-rigor-legacy
 
-This file ships **three kinds of content**, segregated by tag
-syntax so the scaffold + the activation helper can parse them
-unambiguously:
-
-* `[seed; id: <name>]` lines -- day-one PLANNING entries.
-* `[trigger: <trigger-name>; id: <name>]` lines -- held until the
-  named trigger fires.
-* Active-surfacing prompt content blocks at the end -- per-row
-  prompt content emitted to the terminal when the row's trigger
-  fires.
+This file ships **one kind of content**: `[seed; id: <name>]`
+lines, the day-one PLANNING entries. The scaffold inlines them into
+`dev/PLANNING.md`'s `onboarding-tasks` slot at install time, and
+nothing reads this file afterward.
 
 The `high-rigor-legacy` preset assumes the heaviest shape: 5+
 humans + multiple agent types on a legacy codebase with multi-
@@ -53,7 +43,12 @@ goes live.
   slot. The legacy-codebase shape almost always has a de-facto
   Maintainer whose authority pre-dates the Cairn adoption; the
   apparatus should match the existing power structure, not
-  invert it.
+  invert it. A read from a different agent type is the Maintainer's call
+  (`AGENTS.md` > Review); the usual review stays a fresh session.
+<!-- cairn:if agent_team in concurrent-multi-type -->
+  When you add another agent type, record it in the roster slot and walk
+  `dev/modules/onboarding/agent-team-onboarding.md`.
+<!-- cairn:endif -->
 
 * [seed; id: read-security-review-module]
   Read `dev/modules/security-review.md`. The high-rigor-legacy
@@ -99,22 +94,9 @@ goes live.
 * [seed; id: walk-dev-tour]
   Walk `dev/modules/onboarding/dev-tour.md` as a final pre-engagement read; it
   carries the `dev/`-tree taxonomy + a worked example. After
-  reading it, the team is ready to open the first proposal.
-
-* [trigger: first-proposal-archived; id: post-first-proposal-legacy]
-  Now that the team has shipped one change through the lifecycle,
-  the next focus is calibrating the security-review +
-  dual-language-tests + legacy-agent modules against the actual
-  rhythm of your tree. The first cycle is the diagnostic; the
-  second through fifth shape the steady-state.
-
-* [trigger: first-cross-type-review; id: post-first-cross-type-legacy]
-  Your first cross-agent-type review just shipped. For
-  high-rigor-legacy a different agent type's read is useful
-  distance -- a check that legacy domain knowledge alone cannot
-  supply. Ask for it again whenever the Maintainer wants that
-  distance on a protected change; the usual review stays a fresh
-  session.
+  reading it, the team is ready to open the first proposal. Treat that
+  first proposal as the diagnostic for calibrating the security-review,
+  dual-language-tests and legacy-agent modules against your tree.
 
 * [seed; id: walk-foldback-protocol]
   The fold-back practice: when the method itself improves, not
@@ -134,17 +116,3 @@ goes live.
   a version), and run `python scripts/check_model_selection.py`. Delete the Waiting line
   when it passes.
 <!-- cairn:endif -->
-
-## Active-surfacing prompt content (per-preset)
-
-The active-surfacing row the high-rigor-legacy preset emits:
-
-### Row 1 -- second-agent-type spin-up prompt
-
-Your high-rigor-legacy profile benefits from multi-agent
-staffing. Walk `dev/modules/onboarding/agent-team-onboarding.md`; the
-second agent type's capability tier should be calibrated against
-your security-review module's bar -- a strong second agent gives
-the Maintainer a more distant read to call for, on the
-security-boundary class of finding that legacy codebases
-carry.
