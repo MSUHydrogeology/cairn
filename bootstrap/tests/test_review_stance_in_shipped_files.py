@@ -1121,9 +1121,8 @@ _DOCTRINE_OBLIGATIONS = {
         r"by its distance\. Nothing else in the procedure works this way"),
     "boundary-c-names-the-no-plan-accepted-proposal": (
         DOCTRINE_DUAL_REVIEW,
-        r"a plan's Implementation verification section, a trivial change's "
-        r"commit body, or the commit body of an accepted proposal implemented "
-        r"in one commit with no plan"),
+        r"a plan's Implementation verification section, or, where the "
+        r"Maintainer asks for a review of a trivial change, its commit body"),
     "the-stage-questions-are-in-the-doctrine": (
         DOCTRINE_DUAL_REVIEW,
         r"Should this exist as framed\? Is there a better design, doing nothing "
