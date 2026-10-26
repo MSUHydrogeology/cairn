@@ -415,6 +415,64 @@ def test_first_run_refuses_an_owed_ast_pin(cbed):
     refused_early(out, "a pin is owed")
 
 
+LOCKFILE = "dev/.cairn/cairn-lock.yml"
+
+
+def write_a_stale_lockfile(cbed):
+    """A lockfile with one record for a file that is no longer tracked."""
+    records = [{"base_hash": "sha256:0", "dst": "gone/old.md", "hash": "sha256:0", "src": "old.md", "verbatim": True},
+               {"base_hash": "sha256:1", "dst": "work.py", "hash": "sha256:1", "src": "work.py", "verbatim": True}]
+    cbed.write(LOCKFILE, "# cairn-lock.yml -- header\n" + _dump({"cairn_version": "0", "files": records}))
+
+
+def owe_a_lockfile_correction(cbed):
+    """Committed before the anchor is made: a later commit that edits the lockfile by hand is
+    the re-run check's business, not this test's."""
+    write_a_stale_lockfile(cbed)
+    return cbed.commit("a lockfile with a stale record")
+
+
+def test_first_run_shows_a_lockfile_only_correction_but_leaves_it_for_the_ordinary_ceremony(cbed):
+    owe_a_lockfile_correction(cbed)
+    reviewed = first_run_bed(cbed)
+    before = (cbed.repo / LOCKFILE).read_bytes()
+    code, out = full_run(cbed, extra=("--first-run", "--reviewed-commit", reviewed))
+    assert code == 0, out
+    assert "lockfile correction" in out and "gone/old.md" in out and "Written, not committed" not in out
+    assert (cbed.repo / LOCKFILE).read_bytes() == before and cbed.git("status", "--porcelain").stdout == ""
+    assert not list(cbed.cdir.glob("ast-pin-*"))
+
+
+def test_first_run_with_an_ast_pin_and_a_lockfile_correction_still_refuses(cbed):
+    owe_a_lockfile_correction(cbed)
+    first_run_bed(cbed)
+    cbed.write(ENGINE, "def f():\n    return 2\n")
+    reviewed = cbed.commit("engine change")
+    before = (cbed.repo / LOCKFILE).read_bytes()
+    code, out = full_run(cbed, extra=("--first-run", "--reviewed-commit", reviewed))
+    assert code == 2
+    refused_early(out, "a pin is owed")
+    assert (cbed.repo / LOCKFILE).read_bytes() == before
+
+
+def test_an_ordinary_ceremony_applies_a_lockfile_only_correction_and_stops(cbed):
+    # a signed anchor that already carries the stale lockfile: the key is decrypted only to sign it
+    sh("ssh-keygen", "-q", "-p", "-P", PASSPHRASE, "-N", "", "-f", str(cbed.key), cwd=cbed.root, env=cbed.env)
+    cbed.sign = True
+    write_a_stale_lockfile(cbed)
+    cbed.pin("signed anchor with a stale lockfile")
+    cbed.sign = False
+    sh("ssh-keygen", "-q", "-p", "-P", "", "-N", PASSPHRASE, "-f", str(cbed.key), cwd=cbed.root, env=cbed.env)
+    cbed.make_packet()
+    before, head = (cbed.repo / LOCKFILE).read_bytes(), cbed.git("rev-parse", "HEAD").stdout.strip()
+    code, out = drive(cbed, [("Paste the launcher digest", cbed.launcher_digest),
+                             ("Do the two digests match", "yes"), ("Write these files?", "yes")])
+    assert code == 0, out
+    assert "Written, not committed" in out and "Enter passphrase" not in out
+    assert (cbed.repo / LOCKFILE).read_bytes() != before and cbed.git("rev-parse", "HEAD").stdout.strip() == head
+    assert cbed.git("status", "--porcelain").stdout.split() == ["M", LOCKFILE]
+
+
 # --------------------------------------------------------------------------
 # the AST pin: stop line, then the re-run check
 # --------------------------------------------------------------------------

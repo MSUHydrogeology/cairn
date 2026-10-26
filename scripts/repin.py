@@ -908,10 +908,16 @@ def check_first_run(ctx, reviewed):
         if was is None or was != blob_at(repo, ctx["head"], path):
             raise Refuse(f"{path} at HEAD is not the file the reviewed commit has. It was edited "
                          f"after review; a new review must name a newer commit.")
-    if build_transaction(ctx) is not None:
-        raise Refuse("a pin is owed (the AST baseline or the lockfile). The first run never carries "
-                     "one, because repin's own unpinned bytes would decide it. Pin it by hand under "
+    txn = build_transaction(ctx)
+    if txn is not None and set(txn["outputs"]) != {LOCKFILE_REL}:
+        raise Refuse("a pin is owed (the AST baseline). The first run never carries one, because "
+                     "repin's own unpinned bytes would decide it. Pin it by hand under "
                      "bootstrap/AST_BASELINE_RUNBOOK.md first.")
+    if txn is not None:
+        say("\nA lockfile correction is owed. The first run does not apply it: the ordinary ceremony "
+            "after this one does.")
+        for line in txn["summary"]:
+            say(line)
 
 
 def write_record(cdir, lines):
@@ -1008,8 +1014,8 @@ def run_ceremony(ctx, args, launchctl, rec):
                      f"first run may continue, with --first-run --reviewed-commit <id>.")
     check_stop_records(ctx, cdir, args.first_run)
     key_checks(rec, pub, private, fingerprint, launchctl, "before stage 1")
-    # 5. an owed AST pin is written, then this stops
-    raw = package(ctx, cdir)
+    # 5. an owed pin is written, then this stops (a first run shows a lockfile correction and leaves it)
+    raw = None if args.first_run else package(ctx, cdir)
     if raw:
         apply_pin(ctx, cdir, raw)
         rec.append("yes typed on a terminal: Write these files? (AST pin)")
