@@ -14,7 +14,7 @@
     },
     {
       "dst": ".agents/skills/session-end/SKILL.md",
-      "hash": "sha256:04e6bfea342f50cf4a56b1712222add10f0a7606c184e374874d90c52ea5be09",
+      "hash": "sha256:b8da935cd98c7e28c29293130dd653a9105e805c575378676ae0faa7291909ae",
       "src": "skills/session-end/SKILL.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -28,7 +28,7 @@
     },
     {
       "dst": "AGENTS.md",
-      "hash": "sha256:c1eefb7f7a0c5e2dbfe2c58bde891523633f53051b72a1c6941b605ab683c194",
+      "hash": "sha256:c3fb482e335286ea348e0f20575616ea9485389d811e1335df18db3f0203b8e7",
       "src": "core/AGENTS.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -66,14 +66,14 @@
     },
     {
       "dst": "dev/README.md",
-      "hash": "sha256:d9cc0cd02b2db42fb6dcd3bcd044d5f2395b742ade1c5dcab1428f699723e656",
+      "hash": "sha256:14db45d7201fd72c4f4a9229f99d5f943eef86a84ba1bb28ffcbbefef77b054b",
       "src": "core/dev/README.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/agent_collaboration.md",
-      "hash": "sha256:34603c65ec1e56baf8bc3535ed560136e47e6b616fda48b8927453d97f4f8845",
+      "hash": "sha256:f6dc9f04f215b0e70ae0481a2c71c77416df8624f6f80efdb56cbb2d254483d3",
       "src": "core/dev/agent_collaboration.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -217,7 +217,7 @@
     {
       "base_hash": "sha256:7ea5eb697ee1839f9d4af535ac32a0aea353dfd4563ae43baecb80d73ca44480",
       "dst": "dev/reflections/README.md",
-      "hash": "sha256:7ea5eb697ee1839f9d4af535ac32a0aea353dfd4563ae43baecb80d73ca44480",
+      "hash": "sha256:d463c3fbc8915a66c6cc0b1c775c8bb69d90123c729327480b66357e8059e138",
       "src": "modules/default-on/reflections-README.md",
       "verbatim": true
     },
@@ -518,7 +518,7 @@
     {
       "base_hash": "sha256:1d777babbdfd56f47c6f0619a5763b08afdf24177f8ac9471ff3d255761cbe96",
       "dst": "tools/session.py",
-      "hash": "sha256:17ac9b636947e562a7a4e4e03ed84c4b34af51be1554ef944150279628d308ab",
+      "hash": "sha256:26830fd253b0d3d8d36910c2a25069ac3ad04efc80972f6961f752f597391eee",
       "src": "skills/_lib/session.py",
       "verbatim": true
     }

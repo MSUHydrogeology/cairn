@@ -349,5 +349,5 @@ finding.)
 <!-- cairn:end reflections -->
 
 The goodnight handoff is a status summary, a reflection, and — for the
-designated owner — a roadmap scrub and a from-scratch rewrite of the
-next-session note. **Pushing is never part of it.**
+designated owner — a roadmap scrub and a local next-session note.
+**Pushing is never part of it.**

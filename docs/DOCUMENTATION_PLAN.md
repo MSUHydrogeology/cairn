@@ -211,7 +211,7 @@ navigate *to* as a starting point.  The UPPERCASE set, repo-wide:
 * **Domain-governance maps** -- `cairn/bootstrap/BOOTSTRAP.md`,
   `cairn/docs/DOCUMENTATION_PLAN.md`.
 * **Roadmap boards** (self-hosted in `cairn/dev/`) --
-  `cairn/dev/PLANNING.md`, `cairn/dev/NEXT_SESSION.md`.
+  `cairn/dev/PLANNING.md`.
 
 Everything else is lowercase: the methodology doctrine essays
 (`cairn/doctrine/rationale.md`, `cairn/doctrine/session-

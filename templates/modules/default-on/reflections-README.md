@@ -23,6 +23,10 @@ to understand each agent's experience before writing the next plan.
   pruned; only this `README.md` is tracked (it is the directory's *guide*, not
   a reflection). Durable observations migrate out — to a proposal, the roadmap,
   or doctrine.
+* **One file here is not a reflection** — `next-session.md`, the handoff
+  owner's local next-session note (see the Goodnight bullet in `AGENTS.md`). It
+  is ignored like the reflections, and the prunes spare it because its name
+  carries no date.
 * **A retrospective, not a decision surface** — a point that belongs in a
   proposal does not live in a reflection.
 

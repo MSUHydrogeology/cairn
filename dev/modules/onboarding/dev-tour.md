@@ -61,7 +61,6 @@ that matters moves into a proposal, a strategy note or the roadmap.
 | `README.md` | Entry point to the tree. |
 | `agent_collaboration.md` | The roles and the review loop. |
 | `PLANNING.md` | The roadmap board: queued and active work. |
-| `NEXT_SESSION.md` | The handoff: what to start next. |
 | `modules/` | One file per installed optional module. |
 | `upstream/` | Drafts of bug reports for outside tools your project depends on. |
 | `rules/` | Detail for your project's own agent rules, routed from `RULES.md`. |

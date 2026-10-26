@@ -132,8 +132,8 @@ relative-path links *inside* the proposal (e.g., `../PLANNING.md`
 from a Decision section) get their depth adjusted (e.g.,
 `../../PLANNING.md`) to keep resolving from the deeper location.
 Both fall under the link-maintenance exception; the prose around
-them stays as written. `PLANNING.md` and `NEXT_SESSION.md` are
-*not* in the outbound-link set — they refer to proposals by
+them stays as written. `PLANNING.md` is
+*not* in the outbound-link set — it refers to proposals by
 backticked filename stem, not path link, so the archive move needs
 no edit there; and `CHANGELOG.md` entries are written once at
 finalization, never updated afterward. See the "File moves" note
@@ -347,8 +347,8 @@ immediately.
 
 In all cases, update any inbound path links from `dev/` docs in the
 same commit as the move so references stay resolved. `PLANNING.md`
-and `NEXT_SESSION.md` refer to proposals by filename stem, not path
-link (per `AGENTS.md > Shared communication files`), so they need no
+refers to proposals by filename stem, not path
+link (per `AGENTS.md > Shared communication files`), so it needs no
 link update on the move; `CHANGELOG.md` keeps full paths, but its
 entry is *written* in the archival commit — final-by-construction,
 never updated afterward.
@@ -379,10 +379,10 @@ A `defer` needs a home outside the proposal text; acceptable homes:
 * Its own queued follow-up proposal at
   `dev/proposals/<date>-<author>-<short-title>.md`.
 
-`dev/NEXT_SESSION.md` is not an archive-time home — it is edited only
-at the goodnight routine and on explicit user instruction. A small,
-pickable-cold follow-up goes to `dev/PLANNING.md` here; the goodnight
-scrub then surfaces it into `NEXT_SESSION.md`.
+The local next-session note is not an archive-time home — it is
+written only at the goodnight routine. A small, pickable-cold
+follow-up goes to `dev/PLANNING.md` here; the goodnight note may then
+point at that row.
 
 The archive commit body must name each deferred item's disposition,
 in the form:

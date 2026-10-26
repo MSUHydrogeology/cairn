@@ -1028,10 +1028,10 @@ Acceptable `defer` homes:
 * Its own queued follow-up proposal at
   `dev/proposals/<date>-<author>-<short-title>.md`.
 
-`dev/NEXT_SESSION.md` is not an archive-time home — it is edited only
-at the goodnight routine and on explicit user instruction. A small,
-pickable-cold follow-up goes to `dev/PLANNING.md` here; the goodnight
-scrub then surfaces it into `NEXT_SESSION.md`.
+The local next-session note is not an archive-time home — it is
+written only at the goodnight routine. A small, pickable-cold
+follow-up goes to `dev/PLANNING.md` here; the goodnight note may then
+point at that row.
 
 **The archive commit writes its own changelog entry.** `AGENTS.md`
 already makes an archive a serialization point for the changelog, so the

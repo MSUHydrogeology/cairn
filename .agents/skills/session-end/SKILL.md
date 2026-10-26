@@ -4,6 +4,7 @@ description: Manual lifecycle routine -- session-end (goodnight). Invoke only on
 disable-model-invocation: true
 ---
 <!-- cairn-internal-ref-allow: doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- claim-check-allow: dev/reflections/next-session.md -->
 
 # Session-end (goodnight)
 
@@ -57,8 +58,22 @@ python tools/session.py session-end $ARGUMENTS
 **Fill in the reflection** -- what shipped, what went well, what went wrong and
 the lesson, what threads stay open -- and migrate any durable observation out to
 doctrine or the roadmap before it is pruned. For a full handoff the **roadmap
-scrub, the from-scratch next-session rewrite, and the handoff commit** are also
-yours.
+scrub, the local next-session note, and the handoff commit** are also yours;
+the note is never committed.
+
+**The next-session note** is `dev/reflections/next-session.md`, a file the
+reflections ignore line already covers. It is a convenience, not a record: the
+board, the plans and the issues carry the handoff, and the first task is the
+operator's call. Do not copy text from an issue, a web page or a comment into
+the note; cite it by number or path. If the path is a link or a folder, or
+`dev/reflections` or `dev` is a link, or
+`git ls-files dev/reflections/next-session.md` prints it, do not read or write
+the note; tell the operator. Before you write it, run
+`git check-ignore -q dev/reflections/next-session.md`. If it exits 0, the path is
+ignored. If it exits 1 and git does not track the path, add it to `.gitignore`
+first. If it exits any other way, stop and tell the operator. Begin the note
+with the date and the short commit id it was written at, and cite a commit, a
+file or a board row for each claim.
 
 **Run any project-specific close-out steps** recorded in
 `dev/rules/custom_session_routines.md` (the `## Goodnight` section), if present

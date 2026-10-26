@@ -111,8 +111,11 @@ per-commit approval gate to clear (`templates/core/AGENTS.md` >
 *Git and commit workflow*), and the handoff is a routine step rather
 than a deviation. It is still **path-scoped**, listing the routine
 artifacts, because the git index is shared. **Pushing always waits on explicit
-Maintainer approval** — the commit makes the handoff durable for the
-next session; the push is the Maintainer's call on cadence.
+Maintainer approval** — the commit makes the roadmap scrub durable;
+the next-session note is local and is never committed. A goodnight
+whose scrub changes nothing makes no commit, so `session-start` then
+falls back to the last commits with a warning. The push is the
+Maintainer's call on cadence.
 
 ### The staleness sweep — keep the roadmap honest
 
@@ -137,6 +140,24 @@ parent decision has already shipped and the ship-time context fades
 the longer they sit unrevisited.
 
 ### The next-session starting plan: written from scratch each goodnight
+
+The next-session note is a local convenience, not a record. The board,
+the plans and the issues carry the handoff; the note only saves the
+next reader some orientation. It holds your suggestion for where to
+start and why, and pointers to the artifacts that carry the state. The
+first task is the operator's call. Nothing a later session needs may
+live only in the note. Do not copy text from an issue, a web page or a
+comment into the note; cite it by number or path. If the path is a link
+or a folder, or `dev/reflections` or `dev` is a link, or
+`git ls-files dev/reflections/next-session.md` prints it, do not read or
+write the note; tell the operator. Before you write it, run
+`git check-ignore -q dev/reflections/next-session.md`. If it exits 0,
+the path is ignored. If it exits 1 and git does not track the path, add
+it to `.gitignore` first. If it exits any other way, stop and tell the
+operator. Begin the note with the date and the short commit id it was
+written at. Cite a commit, a file or a board row for each claim. A
+reader checks each line against the log and the board, and treats a
+note stamped over 14 days ago as absent.
 
 The handoff document is **a single-session product, not an
 accretion across sessions**. Each goodnight the full-handoff

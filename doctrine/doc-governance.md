@@ -317,8 +317,8 @@ cache for everything after it. So order the agent-loaded surface
 **stable doctrine first (the cacheable prefix), volatile session-state
 last.** This is scoped to what the **adopter controls**:
 
-* Keep volatile boards — `dev/NEXT_SESSION.md`, `dev/PLANNING.md`, the
-  current date/time — **out of the always-loaded files** (`AGENTS.md`
+* Keep volatile boards — `dev/PLANNING.md`, the local next-session
+  note, the current date/time — **out of the always-loaded files** (`AGENTS.md`
   and the vendor wrapper); load them on demand at session-start, not as
   part of the auto-loaded prefix.
 * When a skill or routine loads several files within a session, read the

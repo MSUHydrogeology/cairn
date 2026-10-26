@@ -76,7 +76,7 @@ how something is built or organized**.  The layer has two ranges:
 
 The project **charter** (e.g., `dev/vision.md` or a `vision.md`
 at the docs root, deployment's choice), the **roadmap boards**
-(`dev/PLANNING.md`, `dev/NEXT_SESSION.md`), the **deliberation
+(`dev/PLANNING.md`), the **deliberation
 record** (`dev/proposals/`, `dev/plans/`, `dev/strategy/`,
 `dev/.cairn/`), and the **process doctrine** governing the
 deliberation itself (`dev/agent_collaboration.md`, optional security or architecture
@@ -158,7 +158,7 @@ navigate *to* as a starting point.  The UPPERCASE set, repo-wide:
   `tests/`), `CHANGELOG.md`.
 * **Root governing** -- `AGENTS.md`, the vendor-addendum file
   (`CLAUDE.md` / `GEMINI.md` / ...).
-* **Roadmap boards** -- `dev/PLANNING.md`, `dev/NEXT_SESSION.md`.
+* **Roadmap boards** -- `dev/PLANNING.md`.
 * **Domain-governance maps** -- `docs/DOCUMENTATION_PLAN.md`,
   `tests/TEST_PLAN.md`.
 
@@ -239,7 +239,7 @@ The voice rule is location-keyed:
 | `AGENTS.md` / vendor-addendum / domain-governance maps | Imperative ("do X", "don't do Y") |
 | `docs/<tier>/<topic>.md` | Descriptive ("the system resolves X by ...") |
 | `docs/<tier>/index.md` | Descriptive landing-page introduction |
-| `dev/PLANNING.md` / `dev/NEXT_SESSION.md` | Status / queue |
+| `dev/PLANNING.md` | Status / queue |
 | Notebook *cells* inside `examples/` | Imperative ("Run cell 3") |
 
 ## The `AGENTS.md` ↔ `agent_collaboration.md` boundary

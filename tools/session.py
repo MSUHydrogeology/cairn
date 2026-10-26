@@ -1957,7 +1957,7 @@ def cmd_session_end(args: argparse.Namespace) -> int:
     reflections, run metrics, surface intents) run **only** behind (1) a
     mutation manifest, (2) the maintainer-designation marker, and (3) the
     fail-closed concurrent-handoff lock.  The roadmap scrub +
-    NEXT_SESSION rewrite + handoff commit remain the owner's judgment steps.
+    next-session note + handoff commit remain the owner's judgment steps.
     """
     root = _repo_root()
 
@@ -1968,7 +1968,7 @@ def cmd_session_end(args: argparse.Namespace) -> int:
     if not args.handoff:
         _emit(
             "reflection-only goodnight complete.  The full handoff (roadmap "
-            "scrub, NEXT_SESSION rewrite, prune, metrics, handoff commit) is a "
+            "scrub, next-session note, prune, metrics, handoff commit) is a "
             "designated-owner action under `--handoff`."
         )
         return 0
@@ -2049,7 +2049,7 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
 
     _emit(
         "full-handoff mechanizable steps complete.  The roadmap scrub, "
-        "NEXT_SESSION rewrite, and handoff commit are your judgment steps."
+        "next-session note, and handoff commit are your judgment steps."
     )
     return 0
 

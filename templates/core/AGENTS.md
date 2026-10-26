@@ -184,8 +184,10 @@ place it can change.
   in-flight proposals and plans, and the resolved interpreter. **Read the
   artifacts it names and the evidence they cite, not every active record.**
 * **Goodnight** — leave a clean handoff: a status summary, a per-agent
-  reflection, and (for the designated owner) a roadmap scrub. The handoff commit
-  is part of the routine; **pushing is never implied by it** and waits on
+  reflection, and (for the designated owner) a roadmap scrub and a short local
+  next-session note, never committed (`doctrine/session-routines.md`; the note
+  is refused if its path, `dev/reflections` or `dev` is a link). The handoff
+  commit is part of the routine; **pushing is never implied by it** and waits on
   explicit Maintainer approval.
 
 ## Roles
