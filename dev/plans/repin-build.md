@@ -524,3 +524,11 @@ R5's trigger and M2 now say so; the cells were changed in place only as far as t
 * Red first: B1's two tests failed (14 of 14) and B2's first-run test failed on `f0753b59` in a detached worktree.
 * Size of `scripts/repin.py`: 1080 lines before, 1162 after.
 * Omissions: no ceremony, key, anchor, AST or gate-manifest re-anchor was run, read or touched; `status` and `package` were not run against this repository. The mutation harness lives in the session scratchpad and is not committed; the table above is its record. Not measured: a private copy of the launcher; NFD name collisions; the real `launchctl`.
+
+## Implementation verification -- Claude Sonnet 5.5 (implementer) -- 2026-10-26 (second-look fixes)
+
+**Range**: `f57b6f81..5670dda9` (three commits, one per finding of `dev/reviews/2026-10-26-second-look-repin-revision.md`: N1 test only, N2 `check_first_run` prints the "No pin is owed" line, N3a stage 2 requires the new anchor to descend from the old one). **Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13). **Boundary B mode**: full. **Certified by**: pending (`CAIRN_FULL_SUITE` was not set; the last commit editing `scripts/repin.py` and the two repin test files is `5670dda9`, which the next certifying run must contain).
+
+* `pytest test_repin.py test_repin_ceremony.py test_security_lint.py -q`: 193 passed (107 + 75 + 11), 297 s, in the shared checkout (other sessions' uncommitted edits present; the tests read only the files they copy into scratch repositories). Bandit on `scripts/repin.py`: 7 LOW, 0 MEDIUM or higher; `ALLOWLIST` untouched. Neutrality and redundancy gates: fail=0.
+* Mutants, each in a detached scratch worktree of `5670dda9` beside an unmutated control (all control nodes passed): N1, the extraction (root, `scripts`, `bootstrap`, `bootstrap/tests`) appended to `sys.path`, 4 of 4 killed; N2 line removed, killed; N3a ancestry check removed, killed (both the unrelated-commit and older-commit nodes). The worktree was removed.
+* Omissions: no ceremony, key, anchor, AST or gate-manifest re-anchor was run, read or touched; N3a's test stubs the signature check so the ancestry check alone decides (a real older or unrelated roster-signed commit was not built); the mutation harness is in the session scratchpad, not committed.
