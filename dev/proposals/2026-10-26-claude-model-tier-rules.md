@@ -1,7 +1,7 @@
 # Use the lowest model tier that is safe, and say which one ran
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Plan review**: required(Internal)
 **Opened**: 2026-10-26
@@ -495,3 +495,40 @@ Everything else opened is kept. Two stale module passages are cut ("Notes on the
 * Question 2's tie to the R5 count: replaced by dated direction as the source of data.
 * The "Worked example" cut with dangling mentions: kept, with the mentions reworded.
 * "Scope delta: preserved (opening revision; nothing removed)": replaced by the grouped record above.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-26
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and
+visually isolated**. He was asked: "Model-tier rules: accept the proposal as
+revised, with your four answers recorded? ... The same-maker change widens the
+proposal, so its plan must carry the frozen-test edits and the reopened security
+preflight." He answered:
+
+> "Accept as revised (Recommended)"
+
+His four answers to the proposal's questions, each given in reply to the
+question quoted here in brief and recorded in his own words:
+
+1. Keep the "different maker" check? He chose: "Let a stronger model from the
+   same maker count"
+2. Make medium the default floor for authoring proposals? He chose: "Yes, lower
+   it to medium now"
+3. May the Decision say the rate-limit gate is not engaged? He chose: "Yes, not
+   engaged (Recommended)"
+4. Writing code on a named high-risk surface at the high tier? He chose: "No,
+   keep medium (Recommended)"
+
+*Scribe's note, separate from the quoted words.* "As revised" means the opening
+contract as amended by the Response and Revision of 2026-10-26. **Answers 1 and
+2 differ from the author's stated defaults, so the Revision's text, which
+assumed the defaults, must be changed by the plan**, not read as already saying
+so: the plan carries (a) the removal of the different-maker condition from the
+five passages and three patterns the Revision lists, including the edit to the
+frozen test `bootstrap/tests/test_review_stance_in_shipped_files.py`, which owes
+the gate-manifest re-anchor already queued for the 0.5 cut, and (b) the
+medium default for proposal authoring in the floor table. The Revision says
+answer 1 "reopens the Security preflight": the plan must say whether that needs
+its own Security Review, and the Maintainer has not decided that. The gate is
+not engaged because the Maintainer's direction, not an incident, started this
+change. Answer 4 means R1 changes no floor on a named surface, as the Revision
+says. Plan review stays as the header declares it: `required(Internal)`.
