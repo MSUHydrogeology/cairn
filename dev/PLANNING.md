@@ -41,6 +41,7 @@ artifacts; this board does not maintain a second status table.
 | **#32** board and `session-start` accept retired statuses | Maintainer direction, 2026-10-23 | Defect. Lands before drain mode, which reads the board. |
 | **#31** "keep it short" in the plan and proposal templates | Prose | The adopter supplied the draft and the evidence. |
 | **Model tiers: use the lowest tier that is safe** | Doctrine change: own proposal, clears the rate-limit gate | Maintainer direction, 2026-10-26: formalize a rule set for lower-tier models where possible. Scope below. |
+| **Security findings from the two 0.4 Security Reviews** | Maintainer direction; a fixer answers, one code review checks, no second Security Review | LP-SR-1 to 8 and SW-SR-11 to 15, found after their repairs shipped in 0.4.0 and never fixed. Scope below. |
 | **Engine batch: F8 and #8 engine half** | Own proposal, Security Review, one AST re-anchor | One batch so the review and the re-anchor are paid once. Maintainer: "Engine batch is in". Rows below. |
 | **`repin`** | Proposal first, from `strategy/2026-08-28-claude-repin-revitalization.md` | Maintainer: "Repin is a build". Removes the re-anchor ceremony's manual corrections. |
 | **Drain mode**, last | Settled design, `strategy/2026-08-25-claude-drain-mode.md` | Scope below. |
@@ -72,8 +73,61 @@ to a single-vendor adopter. Measurement needs no new machinery: every review
 already records its model. The standing rule is written down once in the
 repository, not left in an agent's private memory.
 
+**Security findings scope.** Two Security Reviews raised findings after their
+repairs shipped in v0.4.0. They were never fixed, and no row or recorded
+acceptance existed. Checked 2026-10-26: no closing test the reviews name exists
+in `bootstrap/tests/` (for example `test_apply_never_creates_a_profile_through_a_link`
+and `test_a_lockfile_that_is_a_link_is_refused_and_never_written`). The
+Maintainer, 2026-10-26, relayed by the Developer session:
+
+> "Yes, add the security findings as a v0.5 item"
+
+* **LP-SR-1 to 8** (`dev/reviews/2026-10-19-security-review-upgrade-lockfile-paths.md`,
+  commit `f0280ef0`; touches `bootstrap/_scaffold/upgrade.py` and `lockfile.py`).
+  The serious one is LP-SR-1 (high, older than the 0.4 repair): `upgrade --apply`
+  creates a file outside the project when `dev/.cairn/profile.yml` is a link to
+  a file that does not exist yet, and the lockfile picks up some of its lines.
+* **SW-SR-11 to 15** (`dev/reviews/2026-10-18-security-review-session-writes.md`,
+  commit `bf746470`; touches `templates/skills/_lib/session.py` and its twin
+  `tools/session.py`: the interpreter binding, a named high-risk surface).
+* **SW-SR-10** was accepted in chat on 2026-10-19 (*"Accept in writing; move
+  later (Recommended)"*) and never written. Write it as one docstring sentence
+  in `_resolve_interpreter` and a residual-risk entry in `bootstrap/SAFETY.md`.
+  Moving the binding into `.git` is a separate proposal after 0.5.
+* **Each finding carries its exact fix and closing test in its review.** No
+  second Security Review. The Maintainer, 2026-10-19: *"Let's just not iterate
+  back and forth on the Security Review"* and *"For now let's just do the
+  single-round Security Review for these"*. A fixer answers the findings and one
+  code review checks the answer.
+* **Overlap with the engine batch.** Both change functions in `upgrade.py` and
+  `lockfile.py`. One fixer holds both, or they run in sequence, never in
+  parallel on the same functions. Both add engine symbols to the single 0.5 AST
+  re-anchor; derive the real set from the code. The planned names were
+  `_self_heal_profile_config`, `_cmd_finalize_lockfile`, `_behind_by_n`,
+  `_resolve_vendor_wrapper`, `_apply_upgrade`, `cmd_upgrade`,
+  `_check_lockfile_paths`, `_lockfile_refusal` and `_contained_lockfile_path`,
+  plus a new `_check_staged_names`; most exist already, so the re-anchor is
+  derived, not carried. `session.py` is not the engine, so it owes no AST
+  change, but it is a frozen-twin pair and its gate-manifest pins need
+  checking.
+* **The fixer's notes, kept from `dev/NEXT_SESSION.md` at `0c3a483b`, which is
+  stale.** In `_behind_by_n` (LP-SR-3) the new hex check goes *after* the
+  "missing or unknown" check, because frozen `test_drift_surfacing.py` pins that
+  text. LP-SR-1's guard also refuses a `profile.yml` linked to a file inside the
+  project: stricter than before, and belongs in `bootstrap/UPGRADE.md`. LP-SR-8's
+  `.git` refusal keys on the project tree, not only the `dst` and `base_cache`
+  fields, because the shape-table test calls the guard with four positional
+  arguments and would not see a new keyword. LP-SR-5's split must still run the
+  `files` and `modules` structure checks before the advisory, which crashes on a
+  record that is not an object. LP-SR-4 is refused in `_check_lockfile_paths`
+  through a new `_check_staged_names`, not escaped in `_print_upgrade_report`.
+  New tests go in `bootstrap/tests/test_upgrade_lockfile_path_containment.py`,
+  which is not frozen.
+
 **Order.** Cheap defects first (`check_cairn`, #32), then Plain Language, #31
-and the model-tier prose, then the engine batch, then `repin` and drain mode.
+and the model-tier prose, then the security findings, then the engine batch (the
+two share `upgrade.py` and `lockfile.py`, so one fixer holds both or they run in
+sequence), then `repin` and drain mode.
 
 **Issues.** #31 and #32 are the only open issues in 0.5 (#8's engine half is a
 row below; #19 is not in 0.5). Both carry a comment saying so.
@@ -83,7 +137,7 @@ row below) is folded into the 0.5 cut, not paid twice. The AST correction
 precedes the gate-manifest re-anchor, as at 0.4. Maintainer-only; follow
 `bootstrap/REANCHOR_RUNBOOK.md`.
 
-**Final list: the eight rows above.** **Not in 0.5**, and still queued below
+**Final list: the nine rows above.** **Not in 0.5**, and still queued below
 unchanged: making NEXT_SESSION local and untracked, and VER-5 (a new mechanism).
 Left out because 0.5 already carries an engine batch, a ceremony and a build;
 either can join by the Maintainer's word. **Also not in 0.5, waiting on their
