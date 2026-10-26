@@ -254,15 +254,20 @@ you what changed.
   stops before creating a single folder, at either end of the link, with a
   `ScaffoldSecurityError` traceback and exit 1. That refusal prints no
   remedy line: replace the link with a real folder, then re-run.
-* **A linked `dev/.cairn/profile.yml` or lockfile is refused, wherever it
-  points.** `upgrade --apply` writes `dev/.cairn/profile.yml` when it is absent,
-  and every action reads `dev/.cairn/cairn-lock.yml`. If either one is a link,
-  or `dev/.cairn` is, `upgrade` stops with exit 2 and a one-line refusal before
-  it reads or writes through it. This includes a profile that is a link to a
-  file inside the project, which earlier versions accepted: the rule is
-  stricter on purpose and the same for every link. Replace the link with a
-  regular file, then re-run. A profile that is absent or a regular file is not
-  affected. The same exit-2 refusal covers a lockfile whose `modules` list holds
+* **A linked lockfile or `dev/.cairn` is refused by every action; a linked
+  `dev/.cairn/profile.yml` is refused by `--apply` and `--init-lock`.** Every
+  action reads `dev/.cairn/cairn-lock.yml`, and `upgrade --apply` writes
+  `dev/.cairn/profile.yml` when it is absent or incomplete. If the lockfile is
+  a link, or `dev/.cairn` is, `--plan`, `--stage` and `--apply` stop with exit
+  2 and a one-line refusal before they read or write through it. If the
+  profile is a link, `--apply` stops the same way before it writes through it
+  (measured with an incomplete profile, the case that makes it write one),
+  while `--plan` and `--stage` read the profile through the link, print any
+  profile warning, exit 0 and write nothing there. This includes a profile
+  that is a link to a file inside the project, which earlier versions
+  accepted: the rule is stricter on purpose and the same for every link.
+  Replace the link with a regular file, then re-run. A profile that is absent
+  or a regular file is not affected. The same exit-2 refusal covers a lockfile whose `modules` list holds
   anything but plain names, a staged upgrade that names a file or a version that
   is not plain text, and a lockfile record whose `dst` or `base_cache` is inside
   `.git/`. `--init-lock` makes the same check for itself, before it looks for a
