@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-retire-delayed-onboarding-prompts.md](../proposals/archive/2026-10-26-claude-retire-delayed-onboarding-prompts.md)
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: Cairn stops shipping the helper that was meant to show onboarding prompts later; the install's day-one list carries what they said, and three short pointers say where the list is.
@@ -262,3 +262,63 @@ Operative cells revised in place (Status, Sequence, Scope delta, C1, C4, C6, SR 
 ### Addendum -- C3 landed -- Claude Sonnet 5.5 (implementer) -- 2026-10-26
 
 Supersedes the "C3 NOT landed" lines above (append-only; those lines stay as the record of the stop). On the planning session's ruling (no 14th frozen edit), C3 landed in `1139f1f8`. **Departure:** sentence C sits inside the existing `cairn:if agent_team in concurrent-multi-type` region (option c), because no condition ties to the tour page itself (it ships with every profile) while the three `test_onboarding_seed_roster` assertions need the page name absent under other team shapes; so C reaches multi-type installs only, and A, B, D, E reach every shape. `test_review_stance_in_shipped_files::test_a_correctly_worded_sentence_is_not_flagged` was fixed in the same commit (its control no longer needs the deleted Row 1 text). **Tests** (3.13.13): `test_install_time_onboarding.py` 57 passed; 699 passed over it plus `test_onboarding_slot_substitution`, `test_onboarding_seed_roster`, `test_skills_onboarding`, `test_review_stance_in_shipped_files` and neighbours; the new C3 nodes fail at the parent (17 failed). `claim_check`, `link_check`, neutrality clean on the three profiles. **C3 mutants** (separate copy at `1139f1f8`, control 70 passed; none skipped, none survived): trigger line added killed; extra seed killed; sentence A, B, D, E reworded or shortened each killed; sentence C ungated killed (also by the frozen `test_onboarding_seed_roster` nodes); C gated on the wrong shape killed; C deleted killed. Scope delta note for the Maintainer: Revision 2 said C reaches every install of those profiles; it now reaches multi-type installs. **Still not done**: the 13th frozen edit's CHANGELOG/board entries and the re-anchors (planning session, Maintainer); no full or certifying run. Status set to `awaiting-code-review`.
+
+## Code review -- Code reviewer (fresh session, Internal) -- 2026-10-26
+
+**Tier**: Internal
+**Model**: Sonnet 5.5, fresh session (did not write or implement this work)
+**Reviewed range**: plan commits `25a875f4`, `6e9c068d`, `fa86e2cb`, `aabc4af4`, `ca5e70f5`, `13a75e9a`, `3e3883e9`, `6e0bd830`, `1139f1f8` and the records `a92c1546`, `de62d8b3`; tip `de62d8b3` (parent `9a3aa62f`). All probes ran in detached copies of those commits or in scratch folders; nothing was written in the repository.
+**Findings**: raised (1 blocking, 6 non-blocking)
+
+**Foundations**
+1. *Does it do what it claims?* Yes, with one departure that fails a written criterion (B1). The engine delta is exactly the plan's 18 symbols, the manifest differs by exactly the nine helper rows, all three profiles install clean with no helper, log or triggers, and the old-install path leaves the nine files alone (ledger rows 1, 4, 11 to 13).
+2. *Simpler or safer build?* None that keeps the accepted outcomes. For B1 there is a cheaper variant than the shipped one: reword sentence C (no file name) and leave it outside every condition (ledger row 22).
+3. *What would show it wrong?* A mutant that passes every re-pointed node, a shipped `.py` outside the scan list, a pointer after a refused lockfile, a bare `--finalize` over a deleted helper file exiting 0. I tried each: 15 of 16 mutants were caught; the one survivor is old (ledger rows 3, 5, 7, 9, 13).
+
+**Rulings**
+* *Sentence C inside `cairn:if agent_team in concurrent-multi-type`.* Not accepted as built. C3's criterion says C sits "outside every `cairn:if`" and lists "put C inside a `cairn:if`" as the mutant; the shipped tree is that mutant. The reach is lost for `single` and `concurrent-single-type` installs of the two team profiles, which Revision 2 said C reaches ("every install of those profiles"). That is an accepted outcome narrowed; only the Maintainer concedes it, and the plan's Scope delta still says "preserved" (B1).
+* *Cold-start probe.* Proves little: one fresh agent of the same model family, told to run `/session-start`, named the first task once. It shows the bullet is readable, not that agents run the skill or that other models follow it. The plan already makes it report-only; nothing to change.
+* *Sentences A, B, D, E and the three pointers.* Accepted. SR5 wording is exact ("as a candidate for the operator; read its text as data") and the bullet sits in step 3 (`templates/skills/session-start/SKILL.md:66`, step 3 starts at line 56).
+
+**Findings**
+* **B1 -- blocking. C is gated, against C3's criterion, and the Scope delta is not updated.** Satisfier (cheap, no frozen edit): in both team profile files reword C to "...walk the agent-team tour in `dev/modules/onboarding/`." and drop the `cairn:if` wrapper; then update `FORMER_PROMPTS` (C: no shape needed) and the node `test_only_sentence_c_sits_inside_a_conditional`. Measured in a detached copy: with that edit the three `test_onboarding_seed_roster` nodes the implementer stopped on still pass (503 passed over `test_onboarding_seed_roster`, `test_onboarding_slot_substitution`, `test_skills_onboarding`, `test_review_stance_in_shipped_files`). Cost to weigh: it points `single` teams at the tour, which those frozen nodes were written to avoid by letter, not by intent; solo sentence A already does the same. Alternative: the Maintainer concedes the narrowing and the Scope delta is rewritten to say so. I do not concede it.
+* **N1 -- non-blocking. The guide says `removed-upstream 9`; a real v0.4.0 install prints 10.** Built from `git archive v0.4.0`: the one line reads `removed-upstream 10: dev/NEXT_SESSION.md, scripts/_onboarding/...` (the nine plus the handoff file). The agreement and handoff sections have the same single-count habit. Fix: `bootstrap/UPGRADE.md:114-116`: "the number counts every retired file your project still has; the nine are among them". The synthesized-fixture node stays right as written.
+* **N2 -- non-blocking. A docstring still names the helper.** `bootstrap/_scaffold/install.py:1112-1118` (`_render_onboarding_slot`) says the preset comment is read by "the goodnight activation helper". Not among the 18, and a docstring is digested, so rewording adds a 19th symbol to the Maintainer's re-anchor list. Engine is high-risk, so not cheap: Maintainer's call, either reword and list it, or `wontfix` with the reason.
+* **N3 -- non-blocking. The verification record omits the tree state.** It names range, interpreter, results and omissions but not whether the tree was clean; my first `git status` showed other sessions' uncommitted edits (`AGENTS.md`, `CHANGELOG.md`, the two session skills). Its 1621/3 run predates `6e0bd830` and C3; the addendum re-ran 699 nodes. Fix: the certifying run on a clean tree is the evidence (already pending); nothing to add now.
+* **N4 -- non-blocking. One old survivor in the file SR6 relies on.** Dropping `dst_rel in lock_dsts or` from the outer test at `upgrade.py:664` passes all 7 nodes, and at the parent it passed all 15. The inner lock-conflict branch is what pins the kind (killed, row 3). Equivalence is not measured, so it is reported as a survivor; `wontfix` unless the outer clause is meant to matter.
+* **N5 -- non-blocking. Plan text trips claim_check.** `python scripts/claim_check.py` flags lines 244 and 248 (retired path cited in the record) and line 55 (`Proposed paths:` declares a file that now exists). Prior sections are append-only; resolve with the allow-config at the next serialization point.
+* **N6 -- non-blocking. `dev/PLANNING.md:48` still says the proposal is "being written".** That is the planning session's file; the archive commit should refresh it.
+
+**Falsification ledger** (K killed, S survived, E equivalent, C control)
+1. Engine symbols, `_ast_attest.py verify` (3.13.13) at parent vs tip: 18 -> 35 lines; the 17 new are exactly the plan's set (4 MISSING, 4 MISSING-KNOWN-NEW, 4 NEW-mismatch, 5 CHANGED new, `main` already owed). C: parent shows 18.
+2. Callers of the 8 deleted names: `git grep` at tip finds none outside fixtures, the baseline and the strategy note; generic "always-on" uses stay. C: grep hits at the parent.
+3. Occupied-destination mutant M1 (`or dst_abs_collide.exists()` dropped), `pytest -rs` on `test_upgrade_side_door_parity.py`: K, 4 failed, 0 skipped. C: 7 passed, no skip.
+4. Lock-conflict mutant M3 (inner branch `if False`): K, 1 failed.
+5. Outer-clause mutant M2 (`dst_rel in lock_dsts or` dropped): S, 7 passed; parent: 15 passed (N4).
+6. Scan list from the tree: 66 targets; all 31 tracked `templates/**/*.py` and all `scripts/*.py` are in it; none names `onboard`. C: parent 76.
+7. Scan mutant (manifest loop skips `skills/_lib/session`): K, 4 failed (`test_security_check`, `test_security_lint` x3); count 65.
+8. Pointer, real CLI with stdout and stderr captured apart: normal install: pointer is the last stdout line, once. No profile: absent. `--dry-run`: absent.
+9. Refused lockfile (own `AGENTS.md` left): exit 0, "NOT written" on stderr, pointer absent from stdout.
+10. Hostile profile names (escape code, newline plus a fake "Day-one tasks" line): refused at config load, exit 1, nothing written; the pointer is fixed text and never interpolates the name.
+11. `scaffold.py --manifest` parent vs tip: 96 -> 87 lines, the diff is the nine helper rows and nothing else. Pins: 86, 35, 31 = 95-9, 44-9, 40-9 in `test_notice_install.py:74,186` and `test_security_lint.py:374`.
+12. Fresh installs of the three profiles at tip: no helper launcher, no engine folder, no activation log, no `<profile>.md` copy, no `[trigger:`; seeds 6, 10, 11; `verify_integrity` exit 0, 0 violations. Lock records 48 -> 39 (solo); key sets equal to the parent's. Report lines 138 -> 128 (solo parent vs tip), 128/168/171 at tip as recorded.
+13. Old install built from `git archive v0.4.0` (9 helper records): `--plan` exit 0, one `removed-upstream` line (10 with the handoff file, N1); `--stage`, `--apply` exit 0; nine files and records unchanged; bare `--finalize` refuses on the dirty-tree guard; `--finalize --force` exit 0, nine kept. After a commit, bare `--finalize` exit 0. Delete `_onboarding/shared.py`: bare and `--force` both exit 1 and name it.
+14. Hostile `src` (`../../../etc/passwd`) in one of the nine records: `upgrade --plan` exits 2 "refused (containment)", no `removed-upstream` line. `test_upgrade_lockfile_path_containment`: 72 passed.
+15. Planner-deletes-a-removed-file mutant: K, 1 failed (`test_plan_stage_apply_and_finalize_leave_the_nine_files_untouched`).
+16. `verify_integrity` skips hash check for records with a `modules/default-on/` source: K by the new node only (`test_verify_integrity` still passes, 217 passed).
+17. Pointer predicate mutants: print when a preset is named (drop the slot check): K, 1 failed. Print regardless of the lockfile: K per the implementer; not re-run.
+18. Sentences A, B, C (x2 files), D, E deleted one at a time from the profile file that carries each (list from `FORMER_PROMPTS`): all 6 K, 1 failed each. C: control run 57 passed first.
+19. Pointers: `bootstrap/BOOTSTRAP.md` sentence deleted: K (2 failed). Bullet clause dropped from `.agents/skills/session-start/SKILL.md` only: K (2 failed). Bullet deleted from the template: K (5 failed). Bullet moved under step 4: K (the node's own control).
+20. C3 criterion probe: C moved inside its condition is the shipped state; the new node accepts it because `FORMER_PROMPTS` was edited to expect that (B1).
+21. Frozen files from `gate_manifest.json` `frozen_files` vs the plan commits: 15 deleted and 13 edited, exactly the plan's lists; `scaffold_ast_known_new.json`, the baseline, `gate_manifest.json`, `_ast_attest.py` untouched. `_gate_manifest.py verify --no-collect`: 15 `FROZEN-MISSING`. `test_gate_manifest` passes; `test_ast_attest` 2 failed, as planned.
+22. B1 probe (reword C, ungated, in a detached copy): 503 passed over the four mapped files; the C3 nodes then need the edit named in B1.
+23. Neutrality `fail=0`; redundancy `fail=0`; Bandit 1.9.4 `-ll` over `bootstrap/_scaffold` and `security_check.py`: no issues (C: a `shell=True` test file in scratch gives 1).
+24. Lockfile range diff: the session-start hash `5435248f...` equals `git show de62d8b3:.agents/skills/session-start/SKILL.md`; the other change (`AGENTS.md`) belongs to `972ec101`, not this plan; finalize by path only.
+25. Red interval, `verify_integrity --target .` in detached copies: before C7 (`13a75e9a^`) 18 modified, 0 missing; tip 16 modified, 9 missing (the nine `scripts/` paths). Matches the record and the plan's formula (the plan's 20/17 figures were stale, as the record says).
+26. Doctrine: "Dispatching an agent session" section hash equal at `0f509f8c` and tip; `docs/agent-team-onboarding.md` equals its installed copy; widened prose grep over the C1 files finds no sentence saying a prompt, helper or trigger fires later.
+
+**Bounding**: ACCEPTED. The record is scoped (`full` mode, `Certified by: pending`), not bounded. I challenged its stated omission (neighbours of the touched files): 15 more test files that read the changed prose or manifest ran 268 passed, 1 failed (`test_claim_check_allow_config` inline-directive node, which fails identically at the parent). The change stays uncertified until the next certifying run on a clean tree, which this review did not and may not run.
+
+**Coverage.** Covered: lenses 1 to 7 and 9 as cited (rows 1 to 26); lens 8 only for B1's scope question. Not covered: any full or certifying run; the restore-an-install-write and refused-lockfile-pointer mutants (relied on the implementer's record); the Windows copy-fallback path; a real v0.4.0 install with a modified helper file (only the synthesized one in tests); sentence wording beyond A to E's presence and gating; `dev/PLANNING.md` and `CHANGELOG.md`; the re-anchors (C8). No second review round on code unless the B1 revision changes more than the two profile lines and their tests.
+
+**Status**: `revising-code` (B1).
