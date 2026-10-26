@@ -314,6 +314,24 @@ def test_supplier_table_names_real_slots_and_real_modules(tmp_path):
             assert name in shipped, f"{slot} names {name!r}, not a shipped module"
 
 
+def test_no_ok_line_when_only_module_supplied_slots_are_present(tmp_path):
+    """With no module installed and only slots a module fills, the main list is
+    empty but the second list is not, so "[OK] No block slots detected." would be
+    false.  An install with no slots at all still prints it."""
+    only_supplied = [
+        (tmp_path / "doc.md", [], sorted(SUPPLIED_SLOTS), "installed")
+    ]
+    out = _print_report_output(tmp_path, only_supplied, modules=[])
+    lists = _report_lists(out)
+    assert lists["main_count"] is None
+    assert lists["second_count"] == len(SUPPLIED_SLOTS)
+    assert "[OK] No block slots detected." not in out
+
+    no_slots = [(tmp_path / "doc.md", [], [], "installed")]
+    out = _print_report_output(tmp_path, no_slots, modules=[])
+    assert "[OK] No block slots detected." in out
+
+
 def test_profile_module_name_with_bidi_character_is_absent_from_the_report(
     tmp_path,
 ):

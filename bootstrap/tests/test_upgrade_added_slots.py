@@ -283,6 +283,27 @@ def test_slot_the_adopter_already_has_is_not_named(scenario):
     assert new_slot_lines(proc.stdout) == []
 
 
+@pytest.mark.parametrize("flag", ["--plan", "--stage"])
+def test_conflicting_file_still_names_the_slot_the_upgrade_adds(scenario, flag):
+    """The adopter and the release both change the heading line, so the file is a
+    conflict; the release also adds a slot.  The conflict is reported and so is
+    the slot."""
+    write_readme(scenario, read_readme(scenario).replace(
+        HEADING, "# adopter heading\n", 1))
+
+    def edit(text: str) -> str:
+        assert HEADING in text
+        return text.replace(
+            HEADING, "# release heading\n\n" + slot_block("fresh-slot"), 1)
+
+    proc = upgrade(scenario, scenario.new_release(edit), flag)
+    assert proc.returncode == 0, proc.stderr
+    assert summary_has(proc.stdout, "conflict", README_DST), proc.stdout
+    assert new_slot_lines(proc.stdout) == [
+        "  [new slot] dev/README.md: fresh-slot" + NEW_SLOT_TAIL
+    ], proc.stdout
+
+
 # --- what merge_file returns ---------------------------------------------------
 
 BASE = "head\n" + slot_block("kept") + "tail\n"
@@ -309,6 +330,53 @@ def test_detail_is_empty_or_exactly_the_name_list_on_clean_and_conflict():
     quiet_conflict = _merge(
         BASE.replace("head\n", "theirs head\n"), ours=ours_edit)
     assert (quiet_conflict.status, quiet_conflict.detail) == ("conflict", "")
+
+
+def _added_names(*names: str) -> str:
+    return "head\n" + slot_block("kept") + "".join(slot_block(n) for n in names) + "tail\n"
+
+
+def test_name_list_is_cut_after_ten_names_not_at_ten():
+    """The cap is "more than ten": exactly ten names print whole, with no
+    `(and N more)`; the eleventh adds `(and 1 more)`."""
+    ten = [f"slot-{i:02d}" for i in range(10)]
+    exact = _merge(_added_names(*ten))
+    assert (exact.status, exact.detail) == ("clean", ", ".join(ten))
+    assert "(and" not in exact.detail
+
+    eleven = _merge(_added_names(*ten, "slot-10"))
+    assert (eleven.status, eleven.detail) == (
+        "clean", ", ".join(ten) + " (and 1 more)")
+
+
+def test_name_of_eighty_characters_is_kept_whole_and_one_of_eighty_one_is_cut():
+    """The cut is at "longer than 80": an 80-character name prints as it is; an
+    81-character name prints its first 77 characters and `...`."""
+    exact = _merge(_added_names("a" * 80))
+    assert exact.detail == "a" * 80
+
+    over = _merge(_added_names("a" * 81))
+    assert over.detail == "a" * 77 + "..."
+
+
+def test_reading_added_names_catches_only_the_slot_error(monkeypatch):
+    """Only a malformed slot is excused when names are read.  Any other failure
+    in that step is a defect and must reach the caller, not become "no names"."""
+    real_parse = merge_module.parse_slots
+    calls = []
+
+    def failing_on_the_name_read(text):
+        calls.append(text)
+        # Calls 1 and 2 are the strict parses of the adopter file and of the
+        # token-filled new text; the third is the first parse the name read makes.
+        if len(calls) == 3:
+            raise ValueError("not a slot error")
+        return real_parse(text)
+
+    monkeypatch.setattr(merge_module, "parse_slots", failing_on_the_name_read)
+    with pytest.raises(ValueError, match="not a slot error"):
+        _merge(_added_names("added-one"))
+    assert len(calls) == 3
 
 
 def test_needs_value_slot_removed_and_error_carry_no_names(monkeypatch):
