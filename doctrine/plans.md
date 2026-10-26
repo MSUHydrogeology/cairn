@@ -154,10 +154,9 @@ Its plan-open and first-implementation commits stay
 `not required`, the rationale is on the record and the plan may combine
 plan-open with first implementation.
 
-```
-open --> awaiting-plan-review --> executing --> review --> archived   (review required)
-open ------------------------->   executing --> review --> archived   (review not required)
-```
+The statuses and their order are the diagram at the top of this file. A plan
+that needs review starts at `awaiting-plan-review`; one that does not starts at
+`ready-to-implement`.
 
 Like the plan-archive precondition, this converts a *remembered* norm
 into a *structural* one: the gate is a status the plan **carries**, not

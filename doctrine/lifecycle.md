@@ -152,7 +152,8 @@ which the board lists. A proposal needs none, because `awaiting-decision`
 already names the Maintainer. The earlier flat tokens (`proposed`, `reviewed`,
 `revised`) named a *phase* and left the owner to be inferred, which
 is why they were retired. They stay readable on archived artifacts
-and in longitudinal metrics, and are refused on an active one.
+and in longitudinal metrics. On an active one, `board.py` and `session-start`
+print a warning and still list it.
 
 * **awaiting-review** — held by a reviewer. The author has either
   just opened the proposal — the context, the change, the
