@@ -1790,9 +1790,10 @@ class TestLivingStatePartition:
         assert _install(tmp_path) == 0
         lock = s.read_lockfile(tmp_path)
         flagged = {r["dst"] for r in lock["files"] if r.get("living_state")}
-        # PLANNING.md + NEXT_SESSION.md are core -> always present + flagged.
+        # PLANNING.md is core -> always present + flagged. A handoff file is
+        # no longer shipped, so a new install records none.
         assert "dev/PLANNING.md" in flagged
-        assert "dev/NEXT_SESSION.md" in flagged
+        assert "dev/NEXT_SESSION.md" not in flagged
         # Apparatus is never flagged.
         assert "AGENTS.md" not in flagged
         # Every flagged dst is in the authoritative policy set.

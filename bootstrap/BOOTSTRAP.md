@@ -504,7 +504,7 @@ complete.
 - [ ] `dev/proposals/_template.md` and `dev/plans/_template.md`
       are present.
 - [ ] `dev/agent_collaboration.md` is present.
-- [ ] `dev/PLANNING.md` and `dev/NEXT_SESSION.md` are present.
+- [ ] `dev/PLANNING.md` is present.
 - [ ] Each selected module file is present under `dev/modules/`.
 - [ ] `dev/proposals/`, `dev/proposals/archive/`, `dev/plans/`,
       and `dev/plans/archive/` directories exist.
@@ -627,8 +627,8 @@ At the end of every session the agent leaves a clean handoff:
 
 * A status summary.
 * A per-agent reflection (if the reflections module is installed).
-* A scrub of the roadmap boards (`dev/PLANNING.md` and
-  `dev/NEXT_SESSION.md`).
+* A scrub of the roadmap board (`dev/PLANNING.md`).
+* A short local next-session note (never committed).
 
 Committing and pushing are never implied — they wait on explicit
 Maintainer approval.

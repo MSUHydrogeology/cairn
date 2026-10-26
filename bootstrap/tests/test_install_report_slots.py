@@ -142,11 +142,11 @@ def test_minimal_profile_lists_absent_module_slots_separately(tmp_path):
     assert proc.returncode == 0, proc.stderr
     lists = _report_lists(proc.stdout)
 
-    assert lists["main_count"] == 20
+    assert lists["main_count"] == 19
     assert lists["main_count"] == len(lists["main"])
     assert lists["second_count"] == 2
     assert lists["second_count"] == len(lists["second"])
-    assert lists["main_count"] + lists["second_count"] == 22
+    assert lists["main_count"] + lists["second_count"] == 21
 
     assert {s for _p, s, _r in lists["second"]} == {
         "coordination-additions", "role-roster-additions",
@@ -169,7 +169,7 @@ def test_team_profile_keeps_live_module_slots_in_main_list(tmp_path):
     assert proc.returncode == 0, proc.stderr
     lists = _report_lists(proc.stdout)
 
-    assert lists["main_count"] == 23
+    assert lists["main_count"] == 22
     assert lists["main_count"] == len(lists["main"])
     assert lists["second_count"] is None
     assert "did not install" not in proc.stdout
@@ -212,7 +212,7 @@ def test_removing_a_module_moves_every_slot_it_fills(tmp_path):
         ("dev/plans/_template.md", "documentation-tier-home"),
     }
     assert second.isdisjoint({(p, s) for p, s, _r in lists["main"]})
-    assert lists["main_count"] + lists["second_count"] == 22
+    assert lists["main_count"] + lists["second_count"] == 21
 
 
 def test_a_slot_with_any_installed_supplier_stays_in_main_list(tmp_path):

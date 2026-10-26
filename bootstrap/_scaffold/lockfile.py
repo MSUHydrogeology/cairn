@@ -59,8 +59,8 @@ _LOCK_SCHEMA = 1
 #: attest the *shipped Cairn apparatus* (scripts, module/core doctrine,
 #: templates) was not swapped -- a supply-chain check.  These files are not
 #: apparatus, in two classes.  Three are **adopter-authored project state** (a
-#: living roadmap, the per-goodnight handoff, the signed collaboration
-#: agreement) that merely starts from a thin Cairn template.  The
+#: living roadmap, a handoff file Cairn no longer ships, the signed
+#: collaboration agreement) that merely starts from a thin Cairn template.  The
 #: rest are **adopter-filled configuration** -- installed as an unconfigured
 #: stub and then filled in place (the model-selection mapping, and the two
 #: network-security capability policies).

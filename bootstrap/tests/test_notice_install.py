@@ -181,8 +181,9 @@ def test_notice_is_a_core_mapping():
 
 def test_notice_appears_in_manifest_data_row_count():
     rows = install_manifest(modules=None)
-    assert len(rows) == 96, (
-        f"expected 96 manifest rows after retiring the collaboration agreement; "
+    assert len(rows) == 95, (
+        f"expected 95 manifest rows after retiring the collaboration agreement "
+        f"and the handoff file; "
         f"found {len(rows)}. Investigate any install-contract change."
     )
 

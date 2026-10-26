@@ -9,13 +9,20 @@ lists its sources from the tree, so a new copy cannot be missed.
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
+import re
 import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
 
 import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+
+from bootstrap import scaffold as s  # noqa: E402
+from bootstrap.verify_integrity import verify  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 HANDOFF = "dev/NEXT_SESSION.md"
@@ -335,3 +342,138 @@ def test_every_copy_of_the_note_rules_refuses_a_link_a_linked_parent_a_folder_or
     assert len(short) == 2, short
     # Once in the Goodnight bullet and once in the Session start bullet.
     _each_copy_loses_its_phrase(short, SHORT_REFUSAL, times=2)
+
+
+# --- stop shipping the handoff file ----------------------------------------
+
+def _install(target: Path, preset: str = "solo-greenfield") -> None:
+    target.mkdir(parents=True)
+    profile = target / "profile.yml"
+    profile.write_text(
+        "project_name: HandoffRetirementTest\n"
+        "test_command: pytest\n"
+        "python_package: handoff_test\n"
+        f"preset: {preset}\n",
+        encoding="utf-8",
+    )
+    assert s.main([
+        "--config", str(profile), "--target", str(target),
+        "--cairn-root", str(ROOT), "--allow-dev",
+    ]) == 0
+
+
+@pytest.mark.parametrize(
+    "preset", ("solo-greenfield", "collaborative-team", "high-rigor-legacy")
+)
+def test_a_fresh_install_writes_no_handoff_file_record_or_row(
+    tmp_path: Path, preset: str,
+) -> None:
+    rows = s.install_manifest(modules=None)
+    assert HANDOFF not in {dst for _src, dst, _verbatim in rows}
+    assert not any(src.endswith("NEXT_SESSION.md") for src, _d, _v in rows)
+    # An older project's record must stay living state, or its upgraded tree
+    # fails the integrity check as a tamper.
+    assert HANDOFF in s._LIVING_STATE_DSTS
+
+    target = tmp_path / preset
+    _install(target, preset)
+    assert not (target / HANDOFF).exists()
+    lock = s.read_lockfile(target)
+    assert lock is not None
+    assert HANDOFF not in {rec["dst"] for rec in lock["files"]}
+    assert verify(target) == 0
+
+
+def _old_project_with_handoff(target: Path) -> tuple[Path, Path, dict]:
+    """A project that installed the handoff file before Cairn stopped shipping
+    it: a fresh install plus its former living-state record and cached base."""
+    _install(target)
+    old_file = target / HANDOFF
+    old_file.write_text("# Project-owned handoff\nLocal notes stay.\n",
+                        encoding="utf-8")
+    base = target / "dev/.cairn/base/dev/NEXT_SESSION.md"
+    base.parent.mkdir(parents=True, exist_ok=True)
+    base.write_text("# Former upstream handoff\n", encoding="utf-8")
+    lock = s.read_lockfile(target)
+    assert lock is not None
+    record = {
+        "dst": HANDOFF,
+        "src": "core/dev/NEXT_SESSION.md",
+        "verbatim": False,
+        "living_state": True,
+        "hash": "sha256:" + hashlib.sha256(old_file.read_bytes()).hexdigest(),
+        "base_cache": "dev/.cairn/base/dev/NEXT_SESSION.md",
+        "base_hash": "sha256:" + hashlib.sha256(base.read_bytes()).hexdigest(),
+    }
+    lock["files"].append(record)
+    (target / "dev/.cairn/cairn-lock.yml").write_text(
+        s._emit_lock_yaml(lock), encoding="utf-8",
+    )
+    return old_file, base, record
+
+
+def test_upgrade_plan_reports_the_retired_handoff_once_and_apply_leaves_it(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    target = tmp_path / "project"
+    old_file, base, record = _old_project_with_handoff(target)
+    assert verify(target) == 0
+    before = (old_file.read_bytes(), base.read_bytes(), record.copy())
+    assert s.main(["upgrade", "--target", str(target), "--plan",
+                   "--cairn-root", str(ROOT)]) == 0
+    report = capsys.readouterr().out
+    assert len(re.findall(
+        rf"^\s*removed-upstream\s+1: {re.escape(HANDOFF)}$", report, re.M,
+    )) == 1, report
+    assert s.main(["upgrade", "--target", str(target), "--stage",
+                   "--cairn-root", str(ROOT)]) == 0
+    assert s.main(["upgrade", "--target", str(target), "--apply",
+                   "--cairn-root", str(ROOT)]) == 0
+    after_lock = s.read_lockfile(target)
+    assert after_lock is not None
+    after_record = next(
+        rec for rec in after_lock["files"] if rec["dst"] == HANDOFF)
+    assert (old_file.read_bytes(), base.read_bytes(), after_record) == before
+    assert verify(target) == 0
+
+
+# Files that name the retired path on purpose: the upgrade guide tells an
+# existing project what to do with its copy, the two stem checkers still scan
+# a copy that exists, and the engine keeps its record as living state.
+RETIRED_PATH_EXEMPT = frozenset({
+    "bootstrap/UPGRADE.md",
+    "scripts/verify_stems.py",
+    "templates/modules/default-on/verify_stems.py",
+    "bootstrap/_scaffold/lockfile.py",
+    "bootstrap/_scaffold/config.py",
+})
+
+
+def _shipped_sources() -> dict[str, str]:
+    paths = _tracked(
+        "AGENTS.md", "CLAUDE.md", "templates", "dev/modules", "docs",
+        "scripts", "doctrine", "tools", "bootstrap",
+    )
+    suffixes = {".md", ".py", ".yml", ".yaml", ".json", ".toml", ".txt", ".sh"}
+    sources: dict[str, str] = {}
+    for path in paths:
+        rel = path.relative_to(ROOT).as_posix()
+        if (path.suffix not in suffixes or rel in RETIRED_PATH_EXEMPT
+                or rel.startswith("bootstrap/tests/")):
+            continue
+        sources[rel] = path.read_text(encoding="utf-8", errors="replace")
+    return sources
+
+
+def _naming_the_retired_file(sources: dict[str, str]) -> list[str]:
+    return [name for name, body in sources.items() if "NEXT_SESSION" in body]
+
+
+def test_no_shipped_source_tells_a_reader_to_read_or_write_the_retired_file() -> None:
+    sources = _shipped_sources()
+    assert len(sources) > 100, "the listing must reach the shipped sources"
+    assert _naming_the_retired_file(sources) == []
+    victim = "templates/core/AGENTS.md"
+    assert victim in sources
+    planted = {**sources, victim: sources[victim] + f"\nRead {HANDOFF}.\n"}
+    assert _naming_the_retired_file(planted) == [victim]

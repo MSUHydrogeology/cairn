@@ -139,7 +139,6 @@ modules:
     - AGENTS.md
     - dev/README.md
     - dev/PLANNING.md
-    - dev/NEXT_SESSION.md
     - dev/agent_collaboration.md
     - dev/proposals/_template.md
     - dev/plans/_template.md

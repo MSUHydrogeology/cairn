@@ -546,7 +546,6 @@ _CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
     # dev/ tree
     ("core/dev/README.md",                          "dev/README.md"),
     ("core/dev/PLANNING.md",                        "dev/PLANNING.md"),
-    ("core/dev/NEXT_SESSION.md",                    "dev/NEXT_SESSION.md"),
     ("core/dev/agent_collaboration.md",             "dev/agent_collaboration.md"),
     ("core/dev/proposals/_template.md",             "dev/proposals/_template.md"),
     ("core/dev/plans/_template.md",                 "dev/plans/_template.md"),
@@ -753,7 +752,8 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         # Fold 1 (foldback-drain-tooling): stem-resolution checker.
         # Complements claim_check.py (repo-path/line-bounds) and link_check.py
         # (markdown links) -- verifies that every backticked date-prefixed stem
-        # in PLANNING.md / NEXT_SESSION.md resolves to one proposal or plan.
+        # in PLANNING.md (and any other file a project scans) resolves to one
+        # proposal or plan.
         # Default-on with the claim-check module family because both are
         # lifecycle-hygiene checkers.
         InstallSpec("default-on/verify_stems.py",
