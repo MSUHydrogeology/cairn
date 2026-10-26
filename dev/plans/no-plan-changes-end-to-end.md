@@ -2,8 +2,7 @@
 
 **Author**: Claude (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-no-plan-changes-end-to-end.md](../proposals/archive/2026-10-26-claude-no-plan-changes-end-to-end.md)
-**Status**: revising-code
-**Waiting on Maintainer**: re-anchor gate manifest: dual-review.md:344-346
+**Status**: ready-to-archive
 **Plan review**: not required(prose edits to one rule and the docs that repeat it; the proposal's two reviews checked the edit list; this plan opens in the fast multi-stage form)
 **Opened**: 2026-10-26
 **In brief**: Edit the rules and the pages that repeat them so a trivial change owes no code review, and a change that cannot bound its effects opens a plan.
@@ -344,3 +343,56 @@ Revision 3, "What changes" item 3, third bullet: "Tested again at the implementi
 **Blocking.** F1 must be delivered, or conceded by the Maintainer, before this plan archives. F2 should ride the same revision. F3 is the Maintainer's call. Status set to `revising-code`. A second code-review pass runs only if the revision introduces new defects. Certification is unchanged: `**Certified by**: pending`, and the certifying run is the Maintainer's before the push; I did not run the full suite and did not set `CAIRN_FULL_SUITE`.
 
 **Coverage -- Covered:** the rule, doctrine and template sentences in the diff; the scan at two commits with a positive control and three patterns; every file in the edit table against the commits; the figure's source and its render at 375 and 1200 px in light theme; the three alt texts; the lock hash against the blob at `89f3957d`, and all 27 lock mismatches at base and head; 1278 tests over 22 files plus 881 over 8 files; the two named failures; 13 distinct breaks beside a control. **Not covered:** dark theme, and the figure inside `README.md`/`index.html` (the pane cannot show them); the full suite and the other roughly 26 test files the implementer ran (not mine to run); `docs/DOCUMENTATION_PLAN.md`'s other asset rules beyond the ones quoted; `bootstrap/tests/test_upgrade.py` and the gate-manifest and AST re-anchor state; the engine, `CHANGELOG.md` and `PLANNING.md` commits by other agents in the window; commit `cdffeb8a`; whether adopters' installed copies of the two `AGENTS.md` sentences merge cleanly on upgrade. The scan finds words, not meaning: a trivial-lane review implied without a scan word and not in my three patterns would not be found (F2 was found that way, so others may exist).
+
+## Code review response -- Claude Sonnet 5.5 (implementer) -- 2026-10-26
+
+**Conclusion.** F1, F2 and F3 are accepted and delivered in `cb93f1d9`. The
+wording note is accepted too. C4 is done. The plan is `ready-to-archive`.
+
+* **F1 -- accept (followup commit `cb93f1d9`).** `doctrine/proposals.md`, under
+  "Accepted proposals", now says the implementing commit re-reads each plan-skip
+  condition against what it touched; more than one area, or a Boundary B that
+  would run `full`, opens a plan then, and the plan-open commit archives the
+  proposal. `doctrine/plans.md` says the same in short, after the skip list.
+* **F2 -- accept (followup commit `cb93f1d9`).** `docs/related-practices.md`
+  now says small changes skip review and need no review.
+* **Easy-problem wording -- accept (followup commit `cb93f1d9`).** `AGENTS.md`
+  and `templates/core/AGENTS.md` now say a change with no code review "carries no
+  easy-problem fix inside it". No other claim was held on `AGENTS.md` (checked
+  with `tools/intent.py list`), and the `AGENTS.md` hash was advanced again with
+  `--finalize AGENTS.md` after I read the whole diff. `verify_integrity` still
+  shows 23 violations and `AGENTS.md` is not among them. The planning session's
+  sentence from `8b86051d` is untouched.
+* **F3 -- accept (followup commit `cb93f1d9`).** The Maintainer answered the
+  recommendation (the lifecycle wins) in these words, relayed by the coordinator:
+
+  > "I accept your recommendation"
+
+  That is the authorization for this rule text. A defect repair that meets the
+  lifecycle's three conditions (a failing-test reproduction; it restores
+  documented or intended behaviour with no contract change; the touched
+  surface's own test family runs in the loop) stays trivial even on a named
+  surface. The clause is in the Boundary B paragraph of `AGENTS.md`,
+  `templates/core/AGENTS.md` and `doctrine/plans.md`, on the skip and open
+  bullets of the plan triage (a clause, not a sixth item; the counts are
+  unchanged), and in the short summaries in `doctrine/lifecycle.md` and
+  `doctrine/proposals.md`. The proposal's Revision 3 is read with this one
+  clause added. No Waiting line is owed for F3.
+* **C4 -- done.** The Maintainer edited the sentence at
+  `doctrine/dual-review.md:344-346` and its pinned test in `cdffeb8a`, so my
+  earlier Waiting line was removed. The gate-manifest re-anchor for that edit is
+  still owed to the Maintainer. It is not a Waiting line on this plan, because
+  the plan archives without it.
+* **Note: the frozen test's docstring** (`test_review_and_verification_rules_ship.py`,
+  lines 24-27) still describes the old rule. It moves with the re-anchor. I did
+  not edit it.
+* **Note: a trivial change with a known cheap defect** has no stated route (no
+  review for a fix, no plan for a deferral reason). I did not act on it.
+
+**Verification.** Python 3.13.13, scoped: the 48 test files that read the edited
+files, in two batches, gave 1569 and 782 passed, 0 failed. `claim_check` is
+clean on the six edited Markdown files; `check_cairn`, `sync_doc_snippets`,
+neutrality (0 fail) and redundancy (0 fail) are clean; `link_check` shows the
+same 3 old issues. Not run: the full suite (`Certified by`: pending) and a second
+code-review pass. The review's survivors (10 of 13 breaks that no test
+notices) are prose the plan did not promise to pin, and I added no test.
