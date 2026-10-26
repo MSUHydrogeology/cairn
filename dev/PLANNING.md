@@ -367,6 +367,29 @@ changed set from the final committed tree.
 
   > "Leave the disagreement"
 
+* **`upgrade --init-lock` still reads through a link.** With no lockfile and
+  `dev/.cairn/profile.yml` linked to an existing file, it writes a lockfile in
+  the project that carries that file's values; with `dev/.cairn` linked, it reads
+  the lockfile behind the link. Nothing is written outside the project. It
+  breaks the "no read or write through a link" rule `bootstrap/UPGRADE.md`
+  states for the other paths, so taking it is a trivial-lane defect repair
+  (an engine one still ends at the Maintainer-run AST re-anchor). Found by the
+  code review of the lockfile-path fixes; `UPGRADE.md` and
+  `bootstrap/_scaffold/SECURITY_MUTATIONS.md` already say so plainly.
+* **A nested `.git` folder is not refused in an upgrade review area.** A
+  hand-built review area naming `sub/.git/hooks/post-merge` is applied; the
+  written promises (`SECURITY_MUTATIONS.md`, `UPGRADE.md`) cover only the root
+  `.git/`, so this is not a defect repair and needs a standard change note. A
+  hook is a program that git runs in that nested repository. Found by the same
+  code review (its F2).
+* **`upgrade --finalize` over a linked vendor wrapper exits 1 with "missing on
+  disk" and does not name the link.** A wording gap; `--stage` and `--apply`
+  already behave. Found by the same code review (its F3).
+
+  The Maintainer's authorization to queue these three, verbatim:
+
+  > "Yes, queue all three"
+
 * **The gate anchor has no signature.** `refs/cairn/gate-anchor` points to
   commit `6f29519d`, and git reports no signature on it (signature status `N`;
   `git verify-commit` exits 1; the control `git tag -v v0.4.0` exits 0, measured
