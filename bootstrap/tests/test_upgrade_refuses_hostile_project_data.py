@@ -541,6 +541,29 @@ def test_adoptions_still_run_over_a_regular_or_absent_profile(world, action, pro
     assert (any(Path(name).name == "profile.yml" for name in opened)) == (profile == "regular")
 
 
+@needs_links
+@pytest.mark.parametrize("how", ["existing-outside-file", "dangling"])
+def test_finalize_is_not_stopped_by_a_profile_that_is_a_link(world, how):
+    """`--finalize` never opens `dev/.cairn/profile.yml`, so a link there is no
+    reason to refuse it.  The profile guard belongs to the actions that read the
+    profile; this holds it to them.  `--finalize` also stays inside the project:
+    it opens nothing through the link and leaves the outside folder alone."""
+    profile = world.project / PROFILE_REL
+    profile.unlink(missing_ok=True)
+    target = world.outside / "linked-profile.yml"
+    if how == "existing-outside-file":
+        target.write_text(f"age: {_LINKED_AXIS}\n", encoding="utf-8")
+    link(target, profile)
+    outside_before = snapshot(world.outside)
+    proc, opened = upgrade_audited(world, "--finalize")
+    said = proc.stdout + proc.stderr
+    assert proc.returncode == 0, said[-600:]
+    assert "refus" not in said and "Traceback" not in said, said[-600:]
+    assert any(Path(name).name == Path(LOCK_REL).name for name in opened), "the audit log saw nothing"
+    assert not [name for name in opened if Path(name).name in {"profile.yml", target.name}]
+    assert profile.is_symlink() and snapshot(world.outside) == outside_before
+
+
 # --- the lockfile itself -------------------------------------------------------
 
 
