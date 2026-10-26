@@ -434,6 +434,17 @@ changed set from the final committed tree.
 
   > "Yes, queue all three"
 
+* **`session-start` prints a 508-commit range because its default marker does
+  not match Cairn's handoff commits.** The default marker in `tools/session.py`
+  (about lines 2076-2080) is `Goodnight`, but Cairn's handoff commits begin
+  `Handoff`, so the "commits since the last handoff" list runs back to commit
+  `7a78c283`. Reported by the `NEXT_SESSION` proposal's author and not yet
+  verified; the proposal's reviewer is to measure it. A trivial-lane defect
+  repair when taken; it edits the session kernel and its twin, so a fresh
+  reviewer reads it. Authorization to queue it, verbatim:
+
+  > "Yes, queue it (Recommended)"
+
 * **The gate anchor has no signature.** `refs/cairn/gate-anchor` points to
   commit `6f29519d`, and git reports no signature on it (signature status `N`;
   `git verify-commit` exits 1; the control `git tag -v v0.4.0` exits 0, measured
