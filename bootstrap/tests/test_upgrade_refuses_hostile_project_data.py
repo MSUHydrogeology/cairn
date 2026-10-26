@@ -111,8 +111,10 @@ def _profile_link_world(world: World, how: str, tmp_path: Path) -> World:
         link(world.outside / "existing.yml", profile)
         return world
     if how == "cairn-folder-is-a-link":
-        # Only the profile guard stands between this and a write: the saved
-        # ancestors' names are not in the lockfile, so the record check passes.
+        # The saved ancestors' names are dropped from the lockfile so that the
+        # record check passes.  Through the command line the lockfile-name check
+        # (which refuses a linked `dev/.cairn` too) answers first, so this case
+        # does not isolate the profile guard; the direct call below does.
         lock = read_lock(world.project)
         for rec in lock["files"]:
             rec.pop("base_cache", None)
@@ -211,6 +213,45 @@ def test_self_heal_refuses_a_linked_profile_called_directly(world):
     assert not (world.outside / "new-profile.yml").exists()
 
 
+@needs_links
+def test_self_heal_refuses_a_linked_cairn_folder_called_directly(world):
+    """The same guard, for a link above the file rather than at it.  The command
+    line answers this case with the lockfile-name check before the writer is
+    reached, so only a direct call shows that the writer refuses it too."""
+    cairn = world.project / "dev" / ".cairn"
+    lock = read_lock(world.project)
+    (cairn / "profile.yml").unlink(missing_ok=True)
+    moved = world.outside / "cairn-dir"
+    shutil.copytree(cairn, moved, symlinks=True)
+    shutil.rmtree(cairn)
+    link(moved, cairn)
+    outside_before = snapshot(world.outside)
+    with pytest.raises(ScaffoldSecurityError):
+        UP._self_heal_profile_config(world.project, lock)
+    assert snapshot(world.outside) == outside_before
+
+
+@needs_links
+def test_init_lock_never_creates_the_profile_template_through_a_link(world):
+    """`upgrade --init-lock` writes a template `dev/.cairn/profile.yml` when none
+    is there.  A link to a file not there yet counts as none, and the write
+    created that file wherever the link led.  The command may stop with an error
+    or with its usual "fill in the template" exit; it must write nothing
+    outside the project and leave the link as it was."""
+    (world.project / LOCK_REL).unlink()
+    profile = world.project / PROFILE_REL
+    profile.unlink(missing_ok=True)
+    link(world.outside / "new-profile.yml", profile)
+    outside_before = snapshot(world.outside)
+    proc = upgrade(world.project, "--init-lock")
+    said = proc.stdout + proc.stderr
+    assert snapshot(world.outside) == outside_before, "something outside the project changed"
+    assert not (world.outside / "new-profile.yml").exists()
+    assert profile.is_symlink(), "the link must be left as it was"
+    assert proc.returncode != 0, said[-600:]
+    assert f"Wrote {PROFILE_REL}" not in said
+
+
 # --- the lockfile itself -------------------------------------------------------
 
 
@@ -281,13 +322,61 @@ def test_a_saved_commit_name_that_is_an_option_never_reaches_git(tmp_path):
     assert list(outdir.iterdir()) == [], "git ran with the lockfile's text as an option"
 
 
-@needs_git
 @pytest.mark.parametrize("name", [
     "-1", "HEAD", "main", "ABCDEF1", "abc", "a" * 41, "abc 123", "abc1234\n", 7, ["a"],
 ])
-def test_only_a_short_or_full_hex_commit_name_reaches_git(name):
+def test_only_a_short_or_full_hex_commit_name_reaches_git(monkeypatch, name):
+    """The message for a name that is refused and for a name git cannot place is
+    the same text, so the text cannot show that git was not run.  Git is
+    replaced by a recorder instead, and it must never be called."""
+    calls: list[tuple] = []
+
+    def recorder(*args, **kwargs):
+        calls.append(args)
+        return subprocess.CompletedProcess(args, 1, "", "")
+
+    monkeypatch.setattr(subprocess, "run", recorder)
     said = LF._behind_by_n(CAIRN_ROOT, name, "HEAD")
     assert "check unavailable" in said
+    assert calls == [], "git was run with a name that is not a short or full hex commit"
+
+
+@pytest.mark.parametrize("name", ["abc1234", "a" * 40])
+def test_a_short_or_full_hex_commit_name_does_reach_git(monkeypatch, name):
+    """The control for the test above: the recorder sees a call that is made."""
+    calls: list[tuple] = []
+
+    def recorder(*args, **kwargs):
+        calls.append(args)
+        return subprocess.CompletedProcess(args, 0, "3\n", "")
+
+    monkeypatch.setattr(subprocess, "run", recorder)
+    said = LF._behind_by_n(CAIRN_ROOT, name, "HEAD")
+    assert [argv[0][-1] for argv in calls] == [f"{name}..HEAD"]
+    assert "behind canonical by 3 commit" in said
+
+
+@needs_git
+def test_a_four_character_saved_commit_still_gets_its_behind_by_count(tmp_path):
+    """Git's shortest abbreviation is 4 characters, and the lockfile records
+    `git rev-parse --short`, so a real saved commit can be that short.  A scratch
+    repository with fixed dates gives the same commit names on every run, so the
+    4-character name is never ambiguous."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    env = {**os.environ, **_GIT_ENV, "GIT_AUTHOR_DATE": "2020-01-01T00:00:00+0000",
+           "GIT_COMMITTER_DATE": "2020-01-01T00:00:00+0000"}
+
+    def run(*args: str) -> str:
+        return subprocess.run(["git", *args], cwd=repo, check=True, capture_output=True,
+                              text=True, env=env).stdout.strip()
+
+    run("init", "-q")
+    run("commit", "-q", "--allow-empty", "-m", "one")
+    run("commit", "-q", "--allow-empty", "-m", "two")
+    older = run("rev-parse", "--short=4", "HEAD~1")
+    assert len(older) == 4, "the scratch repository's commit name is ambiguous at 4 characters"
+    assert "behind canonical by 1 commit" in LF._behind_by_n(repo, older, run("rev-parse", "HEAD"))
 
 
 @needs_git
@@ -382,10 +471,13 @@ def _plant(world: World, **changes: object) -> Path:
 @pytest.mark.parametrize("field", [
     "review_only", "module_blocked", "expected_absent", "staged_files",
 ])
-@pytest.mark.parametrize("name", [_HOSTILE_NAME, "../escape.md", "/etc/hosts", 7])
+@pytest.mark.parametrize("name", [
+    _HOSTILE_NAME, "../escape.md", "/etc/hosts", 7, ".git/description", ".GIT/hooks/post-merge",
+])
 def test_apply_refuses_a_review_area_that_names_an_unplain_file(world, field, name):
     """The review area is project data: a repository can carry one whose
-    bookkeeping names whatever it likes, and `--apply` printed those names."""
+    bookkeeping names whatever it likes, and `--apply` printed those names.  A
+    name inside Git's own folder is refused here as it is in a lockfile record."""
     _project_with_a_profile(world)
     _plant(world, **{field: [name]})
     before = snapshot(world.project)
@@ -426,6 +518,19 @@ def test_apply_refuses_a_review_area_whose_bookkeeping_has_the_wrong_shape(world
     _plant(world, **{field: 7})
     proc = upgrade(world.project, "--apply")
     assert_plain_refusal(proc)
+
+
+@pytest.mark.parametrize("metadata", [[], ["staged_files"], 7, "text", None])
+def test_apply_refuses_a_review_area_whose_metadata_is_not_an_object(world, metadata):
+    """`stage-metadata.json` that parses but is not a JSON object has no names to
+    judge; it is refused in the same plain words, not left to fail on `.get`."""
+    _project_with_a_profile(world)
+    stage = _plant_stage(world)
+    (stage / "stage-metadata.json").write_text(json.dumps(metadata), encoding="utf-8")
+    before = snapshot(world.project)
+    proc = upgrade(world.project, "--apply")
+    assert_plain_refusal(proc)
+    assert snapshot(world.project) == before
 
 
 def test_apply_still_applies_a_review_area_of_plain_names(world):
