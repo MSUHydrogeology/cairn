@@ -164,20 +164,25 @@ configuration.
 
 The default mapping:
 
-* **High-stakes roles** — Strategy / Research, proposal review
-  (the premise is still movable, and a wrong one is cheapest to catch
-  there), Security Review, Maintainer scribing — require the
-  **high-capability tier** by default. The Maintainer may lower
-  the floor for a specific session or sub-domain by explicit
-  Decision; the default is high.
+* **High-stakes roles** — Strategy / Research (research,
+  premise-checking and novel design; proposal authoring is
+  standard-stakes, below), proposal review (the premise is still
+  movable, and a wrong one is cheapest to catch there), Security
+  Review, Maintainer scribing — require the **high-capability tier**
+  by default. The Maintainer may lower the floor for a specific
+  session or sub-domain by explicit Decision; the default is high.
 * **Standard-stakes roles** — Implementation for non-trivial
-  work, plan review, code review (whose floor is also **not the
-  implementing agent**) — accept the **medium-capability tier**;
-  high-tier is permitted when available but not required.
-* **Low-stakes roles** — Implementation of trivial chunks, User
-  Agent for routine workflow exercise, non-substantive doc
-  tweaks, and docstring and comment cleanup (below) — accept the
-  **lower-capability tier**; higher tiers are not required.
+  work (the standard lane, and the deliberate lane's plan chunks),
+  proposal authoring, plan review, code review (whose floor is also
+  **not the implementing agent**) — accept the **medium-capability
+  tier**; high-tier is permitted when available but not required. A
+  premise-check inside a proposal is its own task, spawned at high,
+  its result handed to the medium draft.
+* **Low-stakes roles** — Implementation of trivial chunks (the
+  trivial lane), User Agent for routine workflow exercise,
+  non-substantive doc tweaks, and docstring and comment cleanup
+  (below) — accept the **lower-capability tier**; higher tiers are
+  not required.
 
 **Docstring and comment cleanup, and related edits, may be written at low.**
 This covers an edit that changes only docstrings, comments and other
@@ -188,13 +193,14 @@ this project's `AGENTS.md` names as high-risk it also owes the Security Review
 that surface already requires, at high. Nothing in this row lowers a review or
 removes a Security Review.
 
-The floor is jointly determined by role **and** risk: the same
-role on a greenfield experimental codebase has a lower floor than
-on a high-stakes scientific codebase under regulatory review.
-Cairn's doctrine names the invariant (a floor exists, by role
-and risk); the adopter's project-specific placement on the
-complexity axis (`dimensions/complexity.md`) determines the
-numerical mapping.
+The lane is the measure of risk (`lifecycle.md`, "Three lanes"): a
+trivial-lane change is written at low, a standard-lane change at
+medium, and a deliberate-lane change at its role's floor. An adopter
+may raise a floor; lowering one below the module's row takes a
+Maintainer Decision. Cairn's
+doctrine names the invariant (a floor exists, by role and lane); the
+adopter's project-specific placement on the complexity axis
+(`dimensions/complexity.md`) determines the numerical mapping.
 
 **Diversity within tier.** Where multiple models meet a tier's
 floor, a different *model architecture* than the author's is
@@ -203,14 +209,15 @@ asks for it. It strengthens the floor; it does not replace it, and
 it is never a default an agent applies. The floor is necessary;
 model-architecture diversity is distance on request.
 
-The mechanism that operationalizes the floor — a tier rubric, a
-per-role default mapping template, a worked example — lives in
+The mechanism that operationalizes the floor — a tier rubric and a
+per-role default mapping template — lives in
 `templates/modules/team-gated/model-selection.md`, conditionally
 installed at the moderate-or-complex end of the complexity axis.
 Specific model names, vendor identities, and tier-to-model
-mappings stay in the adopter's `case-studies/` write-up; the
-doctrine names the invariant, the module instruments it, the
-case study identifies the models.
+mappings stay in the adopter's own mapping file
+(`dev/.cairn/model-selection-mapping.yml`); the doctrine names the
+invariant, the module instruments it, the mapping file identifies
+the models.
 
 **Orchestrated work — the fan-out.** The floor binds not only the
 human-role roster but **orchestrated sub-agents**: a fan-out leaf
@@ -218,16 +225,23 @@ takes its floor from its own task, never by inheriting the
 orchestrator's tier — the place the model-cost multiplier is
 largest. A stronger, independent check can lower a *generative*
 step's floor only when the model that checks the output is strictly
-more capable **and** a different model architecture (same-model
-fresh-session independence is *time* independence, not capability
-headroom), acceptance criteria are pre-declared, the output is
-falsifiable without trusting the author, and a failed check
-escalates rather than retrying at the cheap tier.
+more capable (a stronger model from the same maker counts, a model at
+the same tier does not, and same-model fresh-session independence is
+*time* independence, not capability headroom), acceptance criteria
+are pre-declared, the output is falsifiable without trusting the
+author, and a failed check escalates rather than retrying at the
+cheap tier.
+
+**Escalation applies to every role, not only the fan-out.** If work
+written below its floor fails its check, or a review blocks on a defect
+that tier should have caught, re-run it once one tier up; do not retry
+at the same tier. This generalizes the fan-out rule that a failed check
+escalates.
 
 **The cost rule's check is not a review.** An orchestrator may run a
 sub-agent's generative step on a cheaper model only when the model that checks
-the output is at a tier strictly above it and is a different model
-architecture; a stronger model from the same maker is not one. The check is
+the output is at a tier strictly above it; a stronger model from the same
+maker counts, and a model at the same tier does not. The check is
 the orchestrator's. It is never filed as a proposal, plan or code review pass
 and never counts toward one, and no lifecycle review requires a different
 architecture. Sending the context packet to a second maker's model crosses the

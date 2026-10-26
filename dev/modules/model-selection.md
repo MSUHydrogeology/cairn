@@ -22,8 +22,9 @@ A project at moderate or complex on the Complexity axis cannot
 afford to leave the capability-floor question implicit. The
 doctrine names the floor as adopter-local tier labels (high /
 medium / low capability); this module gives the adopter the
-rubric, the per-role default mapping, and a worked-example
-shape they fill in with the models they actually use.
+rubric, the per-role default mapping, and a mapping file
+(`dev/.cairn/model-selection-mapping.yml`) they fill in with the
+models they actually use.
 
 ## Template content
 
@@ -46,14 +47,15 @@ Merged into the adopter's role/configuration documentation:
 >
 > | Role | Default floor | Notes |
 > |------|---------------|-------|
-> | Strategy / Research | high | High-stakes by default; Maintainer Decision may lower. |
+> | Strategy / Research | high | Research, premise-checking, novel design. High-stakes by default; Maintainer Decision may lower. |
+> | Proposal authoring | medium | A premise-check inside a proposal is its own task, spawned at high, its result handed to the medium draft. |
 > | Proposal review | high | The premise is still movable, and a wrong one is cheapest to catch here. |
 > | Security Review | high | Focused-mode pass on a high-risk surface; its floor does not follow the stage it attaches to. |
 > | Maintainer scribing | high | Decision-of-record artifacts; capability floor matches Strategy. |
-> | Implementation (non-trivial) | medium | High permitted; not required. |
+> | Implementation (non-trivial) | medium | The standard lane, and the deliberate lane's plan chunks. High permitted; not required. |
 > | Plan review | medium | Same as Implementation. |
 > | Code review | medium | Floor is "not the implementing agent"; tier is medium-or-higher. |
-> | Implementation (trivial chunks) | low | Single commit, single area, no follow-ups. |
+> | Implementation (trivial chunks) | low | The trivial lane: single commit, single area, no follow-ups. |
 > | User Agent (routine workflow) | low | Concrete-mode workflow exercise, capture only. |
 > | Non-substantive doc tweaks | low | Typo / wording / linkfix. |
 > | Docstring and comment cleanup, and related edits | low | The writing step only; the paragraph below says what stays unchanged. |
@@ -72,15 +74,6 @@ Merged into the adopter's role/configuration documentation:
 > Decision recorded on the artifact (proposal or plan); the
 > Decision names the role, the lowered floor, the rationale, and
 > the scope. Raising a low-stakes role's tier is unrestricted.
->
-> **Worked example.** Adopters publish their tier-to-model
-> mapping in their `case-studies/<adopter>.md` write-up — e.g.
-> "high-capability tier = vendor-A's flagship model + vendor-B's
-> flagship model; medium = vendor-A's mid model + vendor-B's
-> mid model; low = vendor-A's fast model." Mappings get updated
-> as models evolve; the case study is the natural home because
-> model names are vendor-specific and change cadence is
-> independent of Cairn doctrine.
 
 ## Orchestrated work — tiering the fan-out (template content)
 
@@ -126,9 +119,9 @@ calls, and by most tooling defaults each silently inherits the orchestrator's
 > **A stronger, independent check can lower the *generative* step's floor — under
 > four conditions, all required.** A cheaper author is safe *only when*: (a) the
 > model that checks the output is at a tier **strictly above** the downshifted
-> author **and** is a different model architecture (a stronger model from the
-> same maker is not one) — never same-tier or same-model, because same-model
-> fresh-session independence is *time* independence, not capability headroom;
+> author; a stronger model from the same maker counts, and a model at the same
+> tier does not (same-model fresh-session independence is *time* independence,
+> not capability headroom);
 > (b) acceptance criteria are pre-declared; (c) the output is
 > falsifiable without trusting the author (compact, fully inspectable, backed by
 > a checkable artifact); (d) a failed review **escalates** the next attempt,
@@ -139,8 +132,8 @@ calls, and by most tooling defaults each silently inherits the orchestrator's
 >
 > **The cost rule's check is not a review.** An orchestrator may run a
 > sub-agent's generative step on a cheaper model only when the model that checks
-> the output is at a tier strictly above it and is a different model
-> architecture; a stronger model from the same maker is not one. The check is
+> the output is at a tier strictly above it; a stronger model from the same
+> maker counts, and a model at the same tier does not. The check is
 > the orchestrator's. It is never filed as a proposal, plan or code review pass
 > and never counts toward one, and no lifecycle review requires a different
 > architecture. Sending the context packet to a second maker's model crosses the
@@ -173,7 +166,7 @@ calls, and by most tooling defaults each silently inherits the orchestrator's
 > vendors — a newer mid-line model routinely out-benchmarks an older flagship
 > until that flagship's next release flips it back. So bind each tier to the
 > *currently top-benchmarking* model per vendor by **measurement, not name**,
-> and record it in the adopter-local mapping (the case study), never in this
+> and record it in the adopter-local mapping file, never in this
 > doctrine. Each mapping row carries: `model`, `tier`, `date-verified`,
 > `task-family`, `source/benchmark`, `accepted-quality-threshold`, `price-basis`,
 > `re-verification-trigger`. Re-rank on a low-frequency housekeeping pass;
@@ -192,24 +185,10 @@ automatically.
 
 ## Notes on the gating
 
-This module is **conditionally installed** based on the
-Complexity axis, but lives under `templates/modules/team-gated/`
-per Cairn's catch-all convention for any non-default-on module.
-The actual gate is the `Selected when:` header above
-(moderate-or-complex on Complexity), mirroring the pattern of
-`legacy-agent` (gates on Age) and `dual-language-tests` (gates on
-Language).
-
-A multi-agent team at low complexity does not install this
-module; their capability-floor questions do not bite at that
-stakes level. A solo single-agent team at any complexity also
-does not install it: one model fills every role, and the
-capability question is settled trivially by the model that is
-available. The module earns its keep only when (a) stakes are
-non-trivial and (b) more than one model is available to choose
-between.
-
-The module is **doctrine-tracked**, not a config schema. The
-adopter's actual tier-to-model assignment lives in adopter-
-local configuration; this module gives the rubric and the
-defaults the adopter customizes.
+This module is **conditionally installed**: the gate is the `Selected when:`
+header above (moderate-or-complex on Complexity), mirroring `legacy-agent` (Age)
+and `dual-language-tests` (Language). A project at low complexity does not
+install it. A solo team still has tiers to choose between within one maker's
+lineup, and the tier rule in `AGENTS.md` covers every profile, with or without
+this module. The module is **doctrine-tracked**, not a config schema: the
+adopter's tier-to-model assignment lives in its own mapping file.

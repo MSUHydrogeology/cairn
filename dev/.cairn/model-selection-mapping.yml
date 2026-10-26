@@ -19,18 +19,18 @@ mapping:
   - tier: high
     model: "Opus"              # Claude (Anthropic), latest release
     date_verified: "2026-10-18"
-    task_family: "strategy, proposal authoring, proposal review, Security Review"
+    task_family: "strategy, research, premise-checking, proposal review, Security Review"
     source: "Maintainer's assignment, 2026-10-18 -- by name, not benchmarked"
     re_verification_trigger: a release that changes which family fits the tier
   - tier: medium
     model: "Sonnet"            # Claude (Anthropic), latest release
     date_verified: "2026-10-18"
-    task_family: "implementation, plan review, code review, routine authoring"
+    task_family: "proposal authoring, implementation, plan review, code review, routine authoring"
     source: "Maintainer's assignment, 2026-10-18 -- by name, not benchmarked"
     re_verification_trigger: a release that changes which family fits the tier
   - tier: low
     model: "Haiku"             # Claude (Anthropic), latest release
     date_verified: "2026-10-18"
-    task_family: "trivial edits: typos, wording, link fixes"
+    task_family: "the trivial lane: typos, wording, link fixes, docstring and comment cleanup"
     source: "Maintainer's assignment, 2026-10-18 -- by name, not benchmarked"
     re_verification_trigger: a release that changes which family fits the tier

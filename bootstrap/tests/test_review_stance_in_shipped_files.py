@@ -943,16 +943,20 @@ _MODEL_OBLIGATIONS = {
     "the-cost-rule-check-is-not-a-review":
         r"The cost rule's check is not a review\. An orchestrator may run a "
         r"sub-agent's generative step on a cheaper model only when the model "
-        r"that checks the output is at a tier strictly above it and is a "
-        r"different model architecture; a stronger model from the same maker "
-        r"is not one\. The check is the orchestrator's\. It is never filed as "
+        r"that checks the output is at a tier strictly above it; a stronger "
+        r"model from the same maker counts, and a model at the same tier does "
+        r"not\. The check is the orchestrator's\. It is never filed as "
         r"a proposal, plan or code review pass and never counts toward one, "
         r"and no lifecycle review requires a different architecture\.",
     "the-data-governance-gate-applies-first":
         r"crosses the data-governance gate below, so that gate applies first",
+    # The label keeps its old name so the node id does not change; the
+    # pattern now pins condition (a) as stated: a stronger model from the same
+    # maker counts, and the same tier does not.
     "condition-a-is-a-different-model-architecture":
         r"\(a\) the model that checks the output is at a tier strictly above "
-        r"the downshifted author and is a different model architecture",
+        r"the downshifted author; a stronger model from the same maker counts, "
+        r"and a model at the same tier does not",
     "conditions-b-c-and-d-are-unchanged":
         r"\(b\) acceptance criteria are pre-declared; \(c\) the output is "
         r"falsifiable without trusting the author.{0,120}\(d\) a failed "
@@ -1148,9 +1152,9 @@ _DOCTRINE_OBLIGATIONS = {
         DOCTRINE_ROLES,
         r"The cost rule's check is not a review\. An orchestrator may run a "
         r"sub-agent's generative step on a cheaper model only when the model "
-        r"that checks the output is at a tier strictly above it and is a "
-        r"different model architecture; a stronger model from the same maker "
-        r"is not one\. The check is the orchestrator's\. It is never filed as "
+        r"that checks the output is at a tier strictly above it; a stronger "
+        r"model from the same maker counts, and a model at the same tier does "
+        r"not\. The check is the orchestrator's\. It is never filed as "
         r"a proposal, plan or code review pass and never counts toward one, "
         r"and no lifecycle review requires a different architecture\. Sending "
         r"the context packet to a second maker's model crosses the "
