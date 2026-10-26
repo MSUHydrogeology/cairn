@@ -38,6 +38,23 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Changed — Onboarding happens at install; the delayed prompts are gone
+
+- Cairn no longer ships the delayed, trigger-based onboarding prompts, the helper
+  that was meant to run them at goodnight (nothing ever ran it), its activation log
+  and its eight support files. What those prompts said now sits in the day-one task
+  list the install already writes: five short sentences added to existing tasks
+  and one new task, so first contact grows by a few words. The install report ends
+  with one line saying where the list is, and prints it only when a profile seeded
+  the list and the lockfile was written. A new install has nine fewer files and an
+  install report about ten lines shorter. An existing project keeps its old
+  onboarding files, and `upgrade --plan` prints one `removed-upstream` line naming
+  the ones it still has; leave them alone, because deleting one makes a bare
+  `upgrade --finalize` refuse. Cairn does not remove them yet. One fresh agent
+  read the new `session-start` bullet and named the first open task as a candidate;
+  that is a single run.
+  ([plan](dev/plans/archive/install-time-onboarding.md))
+
 ### Changed — The next-session handoff is a local note, not a shipped file
 
 - Cairn no longer installs `dev/NEXT_SESSION.md`. At goodnight the designated

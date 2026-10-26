@@ -1,8 +1,8 @@
 # Plan: Onboard at install, retire the delayed onboarding prompts
 
 **Author**: Claude Sonnet 5.5 (Strategy)
-**Source proposal**: [dev/proposals/archive/2026-10-26-claude-retire-delayed-onboarding-prompts.md](../proposals/archive/2026-10-26-claude-retire-delayed-onboarding-prompts.md)
-**Status**: ready-to-archive
+**Source proposal**: [dev/proposals/archive/2026-10-26-claude-retire-delayed-onboarding-prompts.md](../../proposals/archive/2026-10-26-claude-retire-delayed-onboarding-prompts.md)
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: Cairn stops shipping the helper that was meant to show onboarding prompts later; the install's day-one list carries what they said, and three short pointers say where the list is.

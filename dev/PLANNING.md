@@ -45,13 +45,13 @@ artifacts; this board does not maintain a second status table.
 | **Engine batch: F8 and #8 engine half** | Own proposal, Security Review, one AST re-anchor | One batch so the review and the re-anchor are paid once. Maintainer: "Engine batch is in". Rows below. Built and archived 2026-10-26 (`dev/plans/archive/engine-batch-f8-slots.md`); its AST and gate re-anchor is owed at the cut. |
 | **`repin`** | Proposal first, from `strategy/2026-08-28-claude-repin-revitalization.md` | Maintainer: "Repin is a build". Removes the re-anchor ceremony's manual corrections. |
 | **Drain mode**, last | Settled design, `strategy/2026-08-25-claude-drain-mode.md` | Scope below. |
-| **Onboarding happens at install** | Proposal first (the Developer session's author is writing `2026-10-26-claude-retire-delayed-onboarding-prompts`; it changes the premise of `doctrine/onboarding.md`) | Replace the delayed, trigger-based onboarding prompts with install-time onboarding. Scope below. |
+| **Onboarding happens at install** | Built and archived 2026-10-26 (`dev/plans/archive/install-time-onboarding.md`); its deletions and edits of frozen files join the re-anchor owed at the cut | Replace the delayed, trigger-based onboarding prompts with install-time onboarding. Maintainer words below. |
 | **`NEXT_SESSION` becomes a local note** | Proposal first (`2026-10-26-claude-next-session-local-note`, being written by the Developer session's author; it touches the engine: `config.py` and `lockfile.py` mention the file) | Maintainer direction, 2026-10-26: "Also, NEXT_SESSION becoming a local note should happen in v0.5 too." Confirmed in this session's chat by the Maintainer (answer: "Yes, add it to 0.5 (Recommended)"). The queued row "Make NEXT_SESSION local and untracked" below holds the earlier scope: the ignore pattern, the scaffold seed, the session-routines doctrine, the goodnight wording in `AGENTS.md`, and the session-end description. Engine files change, so the AST re-anchor set grows and a Security Review is probably owed; the proposal's author sets the header from what it finds. Built and archived 2026-10-26 (`dev/plans/archive/next-session-local-note.md`); its frozen-file edits and the new test join the re-anchor owed at the cut. |
 | **`upgrade` removes untouched copies of files Cairn stopped shipping** | Proposal first (to be written; engine change in `upgrade`, so a Security Review is probably owed) | Found by the onboarding proposal's usual review: that change leaves nine now-dead onboarding files in existing installs, and the `NEXT_SESSION` change leaves a stale copy too. Asked the Maintainer directly, 2026-10-26: add it to 0.5, queue it after, or skip it; answer: "Add it to 0.5". Order: it lands last, after the `NEXT_SESSION` and onboarding changes it cleans up after. Scope condition from the onboarding Security Review (its SR1): when a copy has been modified, `upgrade` must report it by name rather than fold it silently into the removed count. |
 | **`upgrade` stops running a repository's own programs when it checks for edits** | Proposal first (to be written after the twelfth row's; engine change, so a Security Review is owed) | Found by the twelfth-row Security Review: `upgrade --stage`, `--apply` and an unscoped `--finalize` call `_dirty_tracked_paths` (`bootstrap/_scaffold/upgrade.py`), a plain `git status`. Measured by that reviewer: an ordinary `upgrade --stage` ran a program named in a project's `.git/config` (`core.fsmonitor`), and the same helper reads an edited file as clean when the project sits in a subfolder of a larger repository. Not a simple fix (a sterile git call and a different dirty check). The Maintainer's answer, 2026-10-26, to where it goes: "A 0.5 row, after the twelfth (Recommended)". It reuses the sterile git helper the twelfth change builds. Reported by the reviewer, not reproduced by the planning session. |
 
-**Onboarding scope.** Maintainer direction, 2026-10-26, relayed by the Developer
-session. The first line, on the prompts that never fire:
+**Onboarding, the Maintainer's words.** Direction of 2026-10-26, relayed by the
+Developer session. On the prompts that never fire:
 
 > "I don't know why we have delayed prompts at all. They should onboard when we onboard!"
 
@@ -64,32 +64,8 @@ and on the release and the proposal:
 > "This belongs in v 0.5. Please write the proposal and coordinate with the Cairn v0.5 Planning session"
 
 The planning session also asked which release this goes in; the Maintainer's
-answer: "0.5, as a new row (Recommended)". What is measured (read-only, by the
-Developer session): nothing runs `scripts/onboarding_activate.py`; the log
-`dev/.cairn/onboarding-activated.jsonl` has no activations; two prompts are
-pending (`post-first-proposal-team`, `post-first-cross-type`). The mechanism
-(the helper and its shipped twin, the triggers, the activation log) goes; the
-prompts' content is delivered at install, rewritten where stale. The design
-question the proposal must answer: how to keep first contact short, because the
-engine batch just shortened the install report and this adds to it. Deleting
-frozen files and tests folds into the one re-anchor owed at the cut. A Security
-Review is owed if the proposal changes engine files, module tables or AST
-symbols; the proposal's author sets the header from what it finds.
-
-The proposal landed as `dev/proposals/2026-10-26-claude-retire-delayed-onboarding-prompts.md`
-(commit `ac47a584`, 263 lines, `awaiting-review`; its header asks for the usual
-review plus a Security Review, and its plan review would need an Internal
-Security Review). What its author measured, reported by the Developer session
-and not re-derived here: nine delayed items (six trigger tasks and three
-first-session terminal prompts, one per profile); a mechanism of 9 shipped
-files and 1,964 lines (18 files in Cairn's own tree); 16 engine symbols (8
-deleted, 8 changed); 15 frozen files deleted and 12 edited; the published
-install manifest going from 96 rows to 87, pinned at `test_notice_install.py:184`.
-The recommended design puts the content into the one list the install already
-writes: five sentences and one install-report line, no new tasks. This is
-bigger than the row first looked. The `NEXT_SESSION` proposal touches the same
-manifest row-count pin and engine files, so the two must be sequenced, not
-built in parallel; the AST re-anchor set grows with both.
+answer: "0.5, as a new row (Recommended)". The design, the Security Review and
+the build record are in `dev/plans/archive/install-time-onboarding.md`.
 
 **Drain mode scope.** `/session-start --drain [board | issues | <item>]`.
 Triage has three levels; the Maintainer took the first two:
@@ -376,6 +352,13 @@ listing (10 changed symbols, 3 known-new with changed bodies, no new symbol),
 not derived by this edit. The engine batch's two new test files,
 `test_install_report_slots.py` and `test_upgrade_added_slots.py`, are also
 gate-root files the re-anchor must pin, as are the LP-SR test file. The
+onboarding change (archived) deletes 15 frozen files and edits 13, and adds 19
+engine symbols to the AST set (8 deleted, 11 changed, one of them the
+docstring-only `FunctionDef:_render_onboarding_slot`); it needs 4 known-new keys
+dropped and 4 rekeyed, and 4 baseline keys dropped and 6 changed. Its plan lists
+them (`dev/plans/archive/install-time-onboarding.md`) and names the three oracle
+sensitive-roster entries the Maintainer's authorization must name. Reported by
+that plan, not re-derived here. The
 `NEXT_SESSION` change (archived) edited frozen `test_notice_install.py`,
 `test_upgrade.py` and both `verify_stems.py` twins (`test_quickstart_sequence.py`
 was already owed), dropped one pinned node in
