@@ -425,3 +425,71 @@ confirmed as cited: *Nature Climate Change* 4(6):508–512.
 **Still unconfirmed:** the full EFSA author list; Robillard & DeLine (2011),
 Fischhoff & Davis (2014), Kuhn (2014) and Gopen & Swan (1990) were not in the
 second search's results and rest on the first search.
+
+## Author's addendum -- Claude (author) -- 2026-10-26 -- full-text check
+
+Added before any review. The Maintainer supplied the full texts of six
+sources: Budescu et al. (2009, 2014), Steyvers et al. (2025), ISO 24495-1:2023,
+Robillard & DeLine (2011) and Kuhn (2014). Each was read; what changes:
+
+**A correction to *Context*.** The opening text says that pairing probability
+words with numeric ranges "brought readings much closer to what was meant"
+(Budescu et al., 2014). The effect is real but smaller than "much closer"
+suggests. Across 25 samples, the share of judgments consistent with the IPCC
+guidelines rose from 27% to 40%, and the overlap between readers' ranges and
+the intended ranges rose from 18.5% to 33.6%; readings stayed pulled toward
+50% in both conditions. Budescu, Broomell & Por (2009; 223 participants) found
+the same direction: numeric ranges in the text cut the share of inconsistent
+readings from 53% to 41%. This is the precision rule 16 asks for, applied to
+this proposal.
+
+**More support for rules 14 and 16.** Budescu et al. (2009) recommend, from
+their results, naming the sources of uncertainty behind a claim (rule 14's
+"with its source") and matching the precision of a statement to the precision
+of the evidence (rule 16). They also recommend defining the event a
+probability refers to precisely, since readers disagree about vague events as
+much as about the probability words.
+
+**ISO 24495-1:2023 maps onto the general and instruction rules.** Read in
+full, it covers rule 1 (important message first, 5.2.2a), rule 2 (same words
+for the same meaning, different words for different meanings, 5.3.2g), rule 3
+(specialized terms only when readers need them, explained when they first
+appear, 5.3.2c), rule 5 (active voice and one idea per sentence, 5.3.3c and
+5.3.4a), rule 6 (abbreviations spelled out on first use, 5.3.2e) and rule 9
+(instructions in time order, warnings before the steps they apply to, 5.2.2c
+and e). Its introduction rejects readability formulas as the measure of plain
+language, in favour of whether readers can use the document, which is the
+proposal's no-score rule. Its fourth principle, evaluating a document with its
+readers (5.4), matches the trial on real text in *Evidence*. The copy supplied
+is licensed to one university and may not be reproduced, so the standard
+cites ISO by clause and copies none of its text.
+
+**Robillard & DeLine (2011)**, a study of more than 440 professional
+developers, found documentation the most severe obstacle to learning an API,
+and named documentation of intent and code examples among five factors that
+matter most. That supports rule 4 (an example for each abstraction) and the
+"why" in rules 1 and 11.
+
+**Citations confirmed from the full texts:**
+
+* Budescu, D. V., Broomell, S., & Por, H.-H. (2009). Improving communication of
+  uncertainty in the reports of the Intergovernmental Panel on Climate Change.
+  *Psychological Science*, 20(3), 299–308.
+* Budescu, D. V., Por, H.-H., Broomell, S. B., & Smithson, M. (2014). The
+  interpretation of IPCC probabilistic statements around the world. *Nature
+  Climate Change*, 4, 508–512. doi:10.1038/nclimate2194
+* Steyvers, M., Tejeda, H., Kumar, A., Belem, C., Karny, S., Hu, X.,
+  Mayer, L. W., & Smyth, P. (2025). What large language models know and what
+  people think they know. *Nature Machine Intelligence*, 7, 221–231.
+  doi:10.1038/s42256-024-00976-7 (published online 21 January 2025)
+* International Organization for Standardization. (2023). *ISO 24495-1:2023
+  Plain language — Part 1: Governing principles and guidelines* (1st ed.).
+* Robillard, M. P., & DeLine, R. (2011). A field study of API learning
+  obstacles. *Empirical Software Engineering*, 16, 703–732.
+  doi:10.1007/s10664-010-9150-8
+* Kuhn, T. (2014). A survey and classification of controlled natural
+  languages. *Computational Linguistics*, 40(1), 121–170.
+  doi:10.1162/COLI_a_00168
+
+**Still unconfirmed:** the full EFSA (2019) author list, Fischhoff & Davis
+(2014) and Gopen & Swan (1990).
