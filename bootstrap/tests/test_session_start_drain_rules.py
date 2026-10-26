@@ -18,6 +18,7 @@ Run from the cairn repo root:
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -42,3 +43,22 @@ def test_the_skill_keeps_its_drain_safety_rules():
         assert phrase in text, (
             f"the triage block is missing {phrase!r}; an adopter's tree has no "
             "doctrine/lifecycle.md to fall back on")
+
+    # Written as one block so the step 3 default, the stop sentence and the
+    # ban on writing to issues each turn this node red when a later edit or an
+    # adopter's merge drops them. Whitespace is collapsed because the skill
+    # wraps its sentences.
+    flat = re.sub(r"\s+", " ", text)
+    assert "Without `--drain` among the arguments" in flat, (
+        "step 3 no longer says a run without --drain only orients")
+    assert "With no `--drain` among the arguments, run steps 1 to 3 and stop" in flat, (
+        "the skill no longer says a plain run stops after step 3")
+    assert "never run any `gh` command that writes" in flat, (
+        "the sentence that forbids gh writes is missing")
+    for hit in re.finditer(r"gh issue (comment|edit|close)", flat):
+        start = flat.rfind(". ", 0, hit.start()) + 1
+        end = flat.find(". ", hit.end())
+        sentence = flat[start:end if end != -1 else len(flat)]
+        assert re.search(r"\bnever\b", sentence, re.IGNORECASE), (
+            f"a gh write ({hit.group(0)!r}) appears outside a sentence "
+            f"that forbids it: {sentence.strip()!r}")
