@@ -36,12 +36,12 @@ artifacts; this board does not maintain a second status table.
 
 | Work | Gate | Notes |
 |---|---|---|
-| **Cairn Plain Language 1.0** (17 rules) | Accepted as revised, `2026-10-26-claude-writing-for-the-reader`; handed to an implementation agent | Maintainer: "We will be adding this Cairn Plain Language 1.0 as a feature". Lockfile `--finalize` for `AGENTS.md` and `dev/agent_collaboration.md`, and a neutrality check on any vendor name in `doctrine/rationale.md`, before it commits. |
-| `check_cairn` deleted-file crash | Proposal `2026-10-26-claude-check-cairn-deleted-files`, awaiting review | Defect; one commit. |
+| **Cairn Plain Language 1.0** (17 rules) | Built and archived 2026-10-26 (`2026-10-26-claude-writing-for-the-reader`); its changelog entry is written | Maintainer: "We will be adding this Cairn Plain Language 1.0 as a feature". Lockfile `--finalize` for `AGENTS.md` and `dev/agent_collaboration.md`, and a neutrality check on any vendor name in `doctrine/rationale.md`, before it commits. |
+| `check_cairn` deleted-file crash | Fixed 2026-10-26 (commit `9ec53a43`); its changelog entry is written | Defect; one commit. |
 | **#32** board and `session-start` accept retired statuses | Maintainer direction, 2026-10-23 | Defect. Lands before drain mode, which reads the board. |
 | **#31** "keep it short" in the plan and proposal templates | Prose | The adopter supplied the draft and the evidence. |
 | **Model tiers: use the lowest tier that is safe** | Doctrine change: own proposal, clears the rate-limit gate | Maintainer direction, 2026-10-26: formalize a rule set for lower-tier models where possible. Scope below. Built and archived 2026-10-26 (`dev/plans/archive/model-tier-rules.md`); its one frozen-test edit and the new test file join the re-anchor owed at the cut. |
-| **Security findings from the two 0.4 Security Reviews** | Maintainer direction; a fixer answers, one code review checks, no second Security Review | LP-SR-1 to 8 and SW-SR-11 to 15, found after their repairs shipped in 0.4.0 and never fixed, plus three older problems the engine-batch Security Review found. Scope below. |
+| **Security findings from the two 0.4 Security Reviews** | Built 2026-10-26: fixers answered, code reviews checked (no second Security Review); three older problems and later findings are queued below | LP-SR-1 to 8 and SW-SR-11 to 15, found after their repairs shipped in 0.4.0 and never fixed, plus three older problems the engine-batch Security Review found. Scope below. |
 | **Engine batch: F8 and #8 engine half** | Own proposal, Security Review, one AST re-anchor | One batch so the review and the re-anchor are paid once. Maintainer: "Engine batch is in". Rows below. Built and archived 2026-10-26 (`dev/plans/archive/engine-batch-f8-slots.md`); its AST and gate re-anchor is owed at the cut. |
 | **`repin`** | Proposal first, from `strategy/2026-08-28-claude-repin-revitalization.md` | Maintainer: "Repin is a build". Removes the re-anchor ceremony's manual corrections. |
 | **Drain mode**, last | Settled design, `strategy/2026-08-25-claude-drain-mode.md` | Scope below. |
