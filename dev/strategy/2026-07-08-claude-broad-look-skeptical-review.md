@@ -1,191 +1,80 @@
 # Cairn's adopter-facing audit — what a skeptical outsider would find
 
-**Author**: Claude (Strategy)
-**Model**: Claude Fable 5
-**Date**: 2026-07-08; merged with the 2026-06-12 adopter-friction audit and
-cut to its live core 2026-08-26
+**Author**: Claude (Strategy), Antigravity (Strategy)
+**Model**: Claude Fable 5, Gemini 3.1 Pro
+**Date**: 2026-07-08; updated for `0.5-dev` 2026-10-26
 **Status**: settled
 **Type**: product-strategy
-**Surfaces this feeds**: `2026-08-20-claude-adopter-path-consolidation` (the
-adopter-path owner); `2026-08-05-codex-security-strategy.md` (the security
-owner); the GitHub issues board; the eventual first-adopter probe protocol.
+**Surfaces this feeds**: [`dev/PLANNING.md`](../PLANNING.md); [`dev/strategy/2026-08-05-codex-security-strategy.md`](2026-08-05-codex-security-strategy.md); the eventual first-adopter comprehension check.
 
-**Merge note, 2026-08-26.** This note now carries both of Cairn's
-adopter-facing audits: the 2026-07-08 broad look and the 2026-06-12
-adopter-friction audit (its full text is preserved at
-`archive/2026-06-12-claude-adopter-friction-audit.md`). Per Maintainer
-direction — *"Having it as some checklist is not important... we don't need
-to keep the historically checked off stuff"* — the item-level inventories,
-phase checklists, and findings that have since been implemented are dropped
-rather than carried: git history, the archived plans under
-`dev/plans/archive/`, and this file's own prior revisions record what was
-found and what fixed it. What remains here is what is still live, and what
-is worth keeping permanently.
+## Summary
+
+Cairn's machinery, installer, and review trail hold up under direct inspection. The adopter path that was broken in earlier audits—where the lightweight level had no installer recipe, onboarding prompts waited on delayed triggers that never fired, and `upgrade` had never been exercised—is now unified on `0.5-dev` under `scaffold.py` (`install`, `upgrade`, `repin`), install-time onboarding, and **Cairn Plain Language 1.0** ([`docs/plain-language.md`](../../docs/plain-language.md)).
+
+What a skeptical outsider would still flag today is narrower and mostly empirical:
+1. **No outside-adopter trial yet.** Every deployment so far (`Cairn`, `modflow_tools`, `LHM`, `Assai`) shares one Maintainer.
+2. **Prose-meaning drift.** Automated gates verify file paths, links, vendor neutrality, and duplicate rules, but cannot tell when a summary's meaning falls behind a changed rule.
+3. **Specific `upgrade` and session-binding edges** documented openly in [`CHANGELOG.md`](../../CHANGELOG.md), [`bootstrap/UPGRADE.md`](../../bootstrap/UPGRADE.md), and [`dev/PLANNING.md`](../PLANNING.md).
+4. **Native Windows support** is still not stated at the front door.
+5. **The zero-rejections archive optic**, which needs its plain explanation wherever archive numbers are cited: bad ideas are filtered in conversation or strategy notes before a proposal opens.
+
+---
 
 ## The two questions
 
-The broad look asked: **if a skeptical, technically competent scientist
-spent an afternoon poking at this repository — reading the claims,
-re-running the checks, walking the install — what would they find, and
-which findings would cost us the first adopter or the launch?**
+This note combines two audits of Cairn's adopter surface (the 2026-07-08 broad skeptical review and the 2026-06-12 adopter-friction audit, archived at [`dev/strategy/archive/2026-06-12-claude-adopter-friction-audit.md`](archive/2026-06-12-claude-adopter-friction-audit.md)):
 
-The friction audit asked the complementary question: **can a solo scientist
-move from curious, to trying Cairn, to using it on a real repository — and
-explain what they have installed and agreed to — without an author beside
-them?** Its four transitions (try → choose → install → understand) remain
-the right frame for any future entry-path work: a project can have a good
-README, a working installer, and a tested quickstart, and still lose the
-adopter in the handoffs between them.
+1. **The skeptic's question:** If a skeptical, technically competent scientist spent an afternoon reading Cairn's claims, re-running its checks, and walking its install, what would they find that could cost us their trust?
+2. **The solo adopter's question:** Can a scientist move from curious, to trying Cairn, to installing and upgrading it on a real repository—and explain what they installed and agreed to—without Cairn's author in the room?
 
-## How this was reviewed
+Those four transitions (**try → choose → install → understand**) remain the test for any change to the entry path.
 
-The broad look ran ~150 independent reading passes in three waves — surface
-mappers, skeptical reviewers from seven distinct angles, then verification
-passes whose only job was to refute each finding (serious findings faced
-three attackers); only survivors were reported, and the most surprising were
-reproduced end-to-end. The friction audit did a measured cold install on the
-canonical interpreter against an exact commit, running every published
-command and comparing the documented state to the real one. Both notes
-recorded later falsifications in dated corrections rather than silent edits;
-the lessons from those corrections are kept below.
+---
 
-## What survived attack — still true
+## What holds up under inspection
 
-Calibration matters as much as findings, so the record of what *held*
-stays:
+* **Zero external runtime dependencies.** Every shipped Python tool (`bootstrap/scaffold.py`, `scripts/*.py`, `tools/*.py`) uses only the Python 3.13 standard library.
+* **Installer containment and symlink safety.** `scaffold.py` refuses symlink traversal, confines writes to the target repository, verifies recorded hashes before overwriting during `upgrade`, and refuses unsafe lockfile paths.
+* **One installer across every adoption level.** `scaffold.py` drives `minimal`, `standard`, and `full` installs alike (`dev/proposals/archive/2026-08-20-claude-adopter-path-consolidation.md`). Post-install reports list only the modules installed for the chosen profile and name unfilled slots for uninstalled modules separately (`dev/plans/archive/engine-batch-f8-slots.md`).
+* **Install-time onboarding replaces dead triggers.** Delayed trigger-based onboarding prompts that never fired in practice are retired on `0.5-dev` (`dev/proposals/archive/2026-10-26-claude-retire-delayed-onboarding-prompts.md`) in favor of filling project-specific slots during installation.
+* **Comprehension is a rule, backed by a style guide.** [`AGENTS.md`](../../AGENTS.md) makes comprehension a precondition of the Maintainer's Decision, and **Cairn Plain Language 1.0** ([`docs/plain-language.md`](../../docs/plain-language.md), [`dev/agent_collaboration.md`](../agent_collaboration.md)) enforces 17 writing rules so agents lead with conclusions and keep what was measured separate from what was assumed.
+* **Upgrades are exercised on real repositories.** Cross-version upgrades (`install` → `upgrade --plan` → `upgrade --stage` → `upgrade --apply`, plus `repin`) have been run across sister repositories (`modflow_tools`, `LHM`) and hardened against lockfile-path and merge edge cases.
+* **Honest positioning against prior art.** [`docs/related-practices.md`](../../docs/related-practices.md) compares Cairn directly to architecture decision records (ADRs), RFC processes, lab notebooks, and pre-registration, and says plainly where Cairn adds nothing new.
 
-* **"No dependencies" is true** — every shipped Python file is
-  standard-library only.
-* **The installer's core safety engineering is genuinely good** —
-  containment and symlink defenses hold under direct attack; the
-  security-minded reviewer would run it on their own machine.
-* **The install contract has actually held** across releases.
-* **When the deliberation process runs, it demonstrably works** — audited
-  recommendations were implemented, and the review trail shaped real code.
-* **The honest-voice branding is consistent**, including "slower at first."
-* **The trial path works** — the quickstart's counts are guarded by live
-  tests, and default-on security reports honestly rather than claiming
-  success over nothing.
+---
 
-## The strategic insight, from both audits
+## What a skeptical outsider would still find on `0.5-dev`
 
-The broad look's pattern was an inversion: **the machinery is better than
-the paperwork describing it, and better than the record showcasing it** —
-a strategic problem for a methodology whose product *is* the paperwork and
-the record. The friction audit sharpened it one step later in the funnel:
-**the trial works, but the handoff to real adoption does not** — the
-recommended lightweight path had no executable recipe, while the working
-installer was labeled as the heavier level. A path is not lightweight
-merely because its automation was removed.
+### 1. Every deployment so far shares one Maintainer (unmeasured)
+Cairn has been used on four repositories (`Cairn`, `modflow_tools`, `LHM`, and `Assai`), all led by the same Maintainer. We have not yet run a cold comprehension walk with an outside scientist who did not write the docs—measuring elapsed time, confusion points, terms looked up, and whether they can restate their Decision obligations in their own words—nor a comparative trial against a lighter baseline. Completing the install commands proves the scripts run; it does not prove an outsider understood what they agreed to.
 
-Both audits converge on the same root causes the 2026-08 refocus
-(`2026-08-21-claude-nimbleness-recovery`) now attacks by subtraction:
-hand-maintained descriptions of things that change, and comprehension load
-outgrowing the path it governs. Less described surface drifts less; fewer
-words are easier to hold.
+### 2. Prose drift when doctrine changes (structural risk)
+`scripts/claim_check.py`, `scripts/link_check.py`, and `scripts/quality_gate.py` catch broken paths, dead links, vendor-specific terms, and duplicated rule blocks. No script catches a strategy note, README paragraph, or comment whose *meaning* has fallen behind a changed rule. The only defense that works is keeping documents short, stating present reality rather than historical roadmaps, and pointing to [`AGENTS.md`](../../AGENTS.md) and [`dev/agent_collaboration.md`](../agent_collaboration.md) rather than restating them.
 
-## What is still live
+### 3. Known `upgrade` and ceremony edges (tracked on `dev/PLANNING.md`)
+Because `upgrade` is now exercised on real trees, its remaining sharp edges are concrete and documented rather than unknown:
+* **Retiring untouched template files on upgrade** — removing shipped files that a newer Cairn version retires when the adopter never edited them (`dev/proposals/archive/2026-10-26-claude-upgrade-removes-untouched-retired-files.md`).
+* **Untrusted `.git/config` hooks during dirty-tree checks** — passing `-c core.fsmonitor=false` when `upgrade` runs `git status` on a target repository so a repository's `fsmonitor` hook cannot execute during a read-only check (`dev/PLANNING.md`).
+* **Verifying the saved base copy against its recorded hash** before three-way merge (`CHANGELOG.md`, `dev/PLANNING.md`).
+* **File-to-directory replacement during `upgrade`** — reporting a clean conflict instead of an `IsADirectoryError` traceback when an adopter replaces a tracked file with a directory (`dev/PLANNING.md`).
+* **Re-anchoring (`repin`)** — replacing manual hash and commit-floor edits in `.cairn/cairn.lock` with a single checked `scaffold.py repin` command (`dev/plans/repin-build.md`).
 
-* **The adopter path** — the merged headline. One installer for every
-  non-zero adoption level, with levels distinguished by what the adopter
-  must read, decide, and can reverse — not by whether bytes were copied by
-  hand. Owner: `2026-08-20-claude-adopter-path-consolidation`
-  (awaiting-review). The populated-repository install — both audits' most
-  demanded rehearsal — has since been built and exercised
-  (`dev/plans/archive/adopt-into-existing-tree.md`). Quickstart command
-  hygiene (path-scoped commits; a staging list that matches the installed
-  state) rides with the consolidation rather than as separate items.
-* **Comprehension over mechanics.** The comprehension floor now ships in
-  the installed contract (`templates/core/AGENTS.md`, "Comprehension is a
-  precondition of the Decision"). The live half is measurement: before the
-  one-shot first-adopter test, one walk by someone who did not author the
-  entry docs, recording elapsed time, warnings, undocumented interventions,
-  every term they had to look up, and whether they can restate Cairn's
-  purpose and their obligations *in their own words*. Completing the
-  commands does not establish understanding, and no current canary asks.
-* **Documentation drift is an undetected class, not a backlog.** No gate
-  catches a dead exemption, a count fallen behind its source, or a claim
-  contradicted by the file it cites — the class regenerates. The refocus's
-  answer is structural, not another detector: shrink the described surface,
-  keep the checkers de-scoped and quiet, sample with the warn-only audit
-  reporter.
-* **Security** — superseded wholesale into
-  `2026-08-05-codex-security-strategy.md` (its "Theme 3 migration" table
-  maps every original finding). That document owns all of it.
-* **Windows** — still an undecided Maintainer question: support it (a small
-  always-LF-endings fix plus a seeded git-settings file) or state "native
-  Windows unsupported — use WSL" in the contract and quickstart. Today it
-  fails silently, which is worse than either answer.
-* **The reviewer's question** — "how is this different from decision
-  records, RFC processes, lab notebooks, pre-registration?" *(Corrected
-  2026-08-26, same day as the merge: this was carried as still-open and it
-  is not.)* Answered at the public surface since 2026-08-11 (`6df71b7`):
-  `docs/related-practices.md` gives the honest comparison — including
-  "where the answer is 'nothing much,' it says so" — `docs/glossary.md`
-  defines the vocabulary, and the README now opens with the two-sentence
-  pitch and links the comparison. What remains of the original finding is
-  a sliver: no CONTRIBUTING/support path, and `CITATION.cff` still titles
-  Cairn "An Adaptable Framework" against the README's methodology
-  identity.
-* **Upgrade reality.** A cross-version upgrade of an installed Cairn has
-  still never been rehearsed end-to-end. The subtraction sweep's sister
-  migrations will be the first forced, real exercise of adoption-surface
-  change; what they teach should be captured then, not speculated now.
-* **The zero-rejections optic** — "51 proposals, zero rejections, same-day
-  approval" reads as theater to a skeptic. The record has since gained its
-  rebuttal (4 supersessions, and review rounds that demonstrably block work
-  as written — see `archive/2026-05-20-claude-team-productivity-metrics.md`), but
-  the honest explanation — bad ideas die in conversation before a proposal
-  is written — should be stated wherever the numbers are shown.
+### 4. Windows support is still unstated at the front door
+Cairn is tested on macOS and Linux (POSIX). Whether native Windows is supported (via LF line-ending normalization) or unsupported in favor of WSL is still an open Maintainer call (`dev/PLANNING.md`). Until that call is made, an adopter on native Windows gets no upfront warning in [`README.md`](../../README.md) or [`docs/getting-started.md`](../../docs/getting-started.md).
 
-## Decisions that were open then, and where they stand
+### 5. Small public-surface mismatches
+* [`CITATION.cff`](../../CITATION.cff) still titles Cairn *"An Adaptable Framework for Scientist-AI Research Software Teams"* while [`README.md`](../../README.md) and [`AGENTS.md`](../../AGENTS.md) lead with *"Cairn is a methodology, not a framework."*
+* The repository does not yet ship a `CONTRIBUTING.md` for outside contributors.
+* **The zero-rejections optic:** every proposal in `dev/proposals/archive/` is either `accepted` or `superseded`. To an outsider, zero `rejected` proposals can look like rubber-stamping unless we state the reason where archive counts appear: weak ideas are killed in chat or strategy notes before a proposal is ever opened, and proposals that fail under review are either substantially revised in place or superseded (`dev/strategy/archive/2026-05-20-claude-team-productivity-metrics.md`).
 
-* **CI** — decided by the refocus, in the opposite direction the broad look
-  recommended: no CI; every trigger named at its real strength; the
-  security suite is release-only, Maintainer-run. The honest-trigger
-  doctrine in `AGENTS.md` is the durable form of this answer.
-* **Identity** (methodology-without-the-software: supported or not), **the
-  first-adopter probe** (formal gating test with protocol and consent, or
-  friendly rehearsal), and **Windows** — still the Maintainer's, still
-  open.
-* **Level semantics, the accepted profile's durable home, and the timing
-  claim** — to be settled at `adopter-path-consolidation`'s Decision.
+---
 
-## Lessons worth keeping (fold-up candidates, both audits)
+## Durable lessons from both audits
 
-* **A claim that checks passed is a claim like any other** — release notes
-  carry the machine output of the checks, never a summary from memory.
-* **Any scanner's target list derives from the list the installer uses** —
-  every coverage hole found was a hand-copied list that fell behind.
-* **Tests must not depend on today's date** — a suite that reddens by
-  itself teaches people to stop reading failures.
-* **A commit's message must match its contents** — a cheap check that
-  "adds review" actually adds a review would have caught the worst
-  record-integrity finding at commit time.
-* **An adoption level should name human obligations, not whether bytes
-  were copied by hand.**
-* **Progressive installation and progressive attention are different** — a
-  file may be present without demanding a day-one decision; report what is
-  live now, not everything that exists.
-* **A test that claims to exercise a published command must execute that
-  command vector and assert its residual state** — testing adjacent output
-  is coverage, not evidence the recipe works.
-* **Name the interpreter with every suite figure** — two honest agents on
-  one tree got materially different results because the instruction named
-  no interpreter; the reproducibility defect was in the instruction, not
-  anyone's diligence. (Now doctrine in `AGENTS.md`.)
-* **A deferral names a future artifact, and nothing resolves those** — four
-  artifacts each deferred the same core to a proposal that did not exist,
-  by name, and no checker notices. Deferrals need owners that exist, which
-  is why the refocus routes deferred work to the issues board.
-
-## Corrections record
-
-Both audits recorded their own falsifications in dated corrections rather
-than silent edits — the Bandit "runs nowhere" claim (wrong: measured on a
-non-canonical interpreter), the suite baselines inflated the same way, and
-a documented test command that was red on any clean checkout (since fixed).
-The full correction entries live in this file's git history and in the
-archived friction audit; their durable lessons are in the list above. The
-convention itself is the keeper: **a strategy note that asserts findings
-owes a dated correction when one is falsified.**
+* **A claim that checks passed is a claim like any other.** Verification records and release notes carry machine output and the exact Python interpreter (`Python 3.13.x`), never a summary from memory.
+* **Derive scanner target lists from the installer's manifest.** Every scanner coverage gap in the original audit came from a hand-copied file list that fell behind `scaffold.py`.
+* **Tests must not depend on wall-clock dates.** Date-sensitive tests that turn red on their own train people to ignore failing tests.
+* **Adoption levels describe human obligations, not manual file copying.** A lighter adoption level means fewer ceremonies and fewer files to read, not copying files by hand without an installer or lockfile.
+* **Report what is active now, not every optional slot.** Installing a template file or leaving an optional slot unfilled should not flood the adopter's day-one report (`dev/plans/archive/engine-batch-f8-slots.md`).
+* **Test the exact published command.** A test that checks a helper function without running the documented CLI command and checking the resulting working tree will miss handoff bugs.
+* **Strategy notes owe dated corrections when a finding is falsified.** Both audits initially over-reported tool failures that were actually caused by running under the wrong Python environment; recording the correction openly led directly to the canonical-interpreter rule in [`AGENTS.md`](../../AGENTS.md).
