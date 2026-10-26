@@ -143,6 +143,26 @@ def _lockfile_refusal(what: str, remedy: str | None = None) -> ScaffoldSecurityE
             "restore it from a copy you trust, then re-run.")))
 
 
+def _refuse_if_linked(target: Path, checked: str, named: str) -> int | None:
+    """The plain refusal for project data that is a link, or sits behind one.
+
+    *checked* is the project-relative name judged by :func:`_assert_safe_write`
+    (the name itself and every folder above it, wherever a link points, dangling
+    or not); *named* is how the refusal calls it.  Returns the exit code, 2,
+    after one line of fact and one line of remedy on stderr, or ``None`` when no
+    link is in the way.  Nothing is read or written.  The words are fixed and
+    never say where a link leads, so the refusal cannot be made to describe a
+    file outside the project."""
+    try:
+        _assert_safe_write(target / checked, target)
+    except ScaffoldSecurityError:
+        print(f"error: upgrade refused (containment): {named} is a link, or sits "
+              "behind one; upgrade does not read or write through it.\n"
+              "  Replace it with a regular file, then re-run.", file=sys.stderr)
+        return 2
+    return None
+
+
 def _contained_lockfile_path(
     root: Path, value: object, field: str, tree: str, record: int | None = None,
 ) -> Path:
@@ -1213,6 +1233,15 @@ def _resolve_vendor_wrapper(
     return None
 
 
+def _linked_vendor_wrapper_names(target: Path, mapped_dsts: set[str]) -> list[str]:
+    """Known vendor-wrapper names at the repo root that are links -- the ones
+    :func:`_resolve_vendor_wrapper` passed over for that reason (tier 1 only).
+    A link under a custom name cannot be told from any other link without
+    reading it, and nothing here reads through one.  Names only."""
+    return [name for name in _KNOWN_VENDOR_WRAPPERS
+            if name not in mapped_dsts and (target / name).is_symlink()]
+
+
 def _find_manifest_path(target: Path) -> tuple[Path, bool] | None:
     """Locate the adopter's fidelity manifest, searching `dev/.cairn/` first
     (the canonical adoption-state home), then the legacy `dev/strategy/`. Returns
@@ -1317,9 +1346,10 @@ def _write_init_lock_profile_template(target: Path) -> int:
     placeholders for the rest, then **fail loud** (exit non-zero, no lockfile) so
     the operator completes it and re-runs."""
     profile_path = target / _PROFILE_REL
-    # The caller sends a link to a file not there yet here (`is_file()` follows
-    # the link and finds nothing), and the write below would create that file
-    # wherever the link leads.  Refuse a link at the name or above it.
+    # `is_file()` follows a link and finds nothing at a link to a file not there
+    # yet, and the write below would create that file wherever the link leads.
+    # `_cmd_init_lock` refuses a link first; this guard stays for any other
+    # caller.  Refuse a link at the name or above it.
     _assert_safe_write(profile_path, target)
     inferred = _infer_init_lock_axes(target)
     modules = sorted(m for m in _MODULE_MAPPINGS
@@ -1365,7 +1395,17 @@ def _cmd_init_lock(
     Token-substituted files have **no recoverable token values** (the
     manifest records names, not values) -> classified
     *unrecoverable-base* and handled review-only on later upgrades, never a
-    pretended 3-way merge.  Verbatim scripts record their on-disk hash."""
+    pretended 3-way merge.  Verbatim scripts record their on-disk hash.
+
+    Reads no project data through a link: a linked ``dev/.cairn`` (or a link
+    above it) is refused before the lockfile is looked for, and a linked
+    ``profile.yml`` before it is read or written -- the refusal the other
+    actions make, at exit 2.  The lockfile's own name is left to the reader's
+    refusal below, which ends in a traceback; ``bootstrap/UPGRADE.md`` says so."""
+    refused = _refuse_if_linked(
+        target, Path(_LOCKFILE_REL).parent.as_posix(), f"the lockfile {_LOCKFILE_REL}")
+    if refused is not None:
+        return refused
     if read_lockfile(target) is not None:
         print(f"  [info] {_LOCKFILE_REL} already exists; nothing to migrate.",
               file=sys.stderr)
@@ -1374,6 +1414,9 @@ def _cmd_init_lock(
     # so the synthesized lockfile is never a gating-only stub. With no committed
     # config, fail-with-template; with one, validate it before use.
     profile_path = target / _PROFILE_REL
+    refused = _refuse_if_linked(target, _PROFILE_REL, f"the profile {_PROFILE_REL}")
+    if refused is not None:
+        return refused
     if not profile_path.is_file():
         return _write_init_lock_profile_template(target)
     try:
@@ -2046,6 +2089,7 @@ def _cmd_finalize_lockfile(
 
     changed = 0
     missing: list[str] = []
+    wrapper_links: list[tuple[str, str]] = []   # (the wrapper's record, the link found)
     matched: set[str] = set()
     for rec in files:
         dst_rel = rec.get("dst")
@@ -2073,6 +2117,9 @@ def _cmd_finalize_lockfile(
         dst_abs = target / dst_rel
         if not dst_abs.is_file():
             missing.append(dst_rel)
+            if rec.get("src") == "core/VENDOR.md":
+                wrapper_links += [(dst_rel, name) for name
+                                  in _linked_vendor_wrapper_names(target, mapped)]
             continue
         if dst_rel in _LIVING_STATE_DSTS:
             # Adopter-authored project state: tracked for upgrade but excluded
@@ -2093,6 +2140,10 @@ def _cmd_finalize_lockfile(
         print(f"error: {len(missing)} tracked file(s) missing on disk -- cannot "
               f"finalize (fix or re-install first):\n  " + "\n  ".join(missing),
               file=sys.stderr)
+        for record, name in wrapper_links:
+            print(f"  {name} is a link, so it is not taken for the vendor wrapper "
+                  f"{record}. Replace it with a regular file, then re-run.",
+                  file=sys.stderr)
         return 1
     # Scoped fail-closed: a named path that matched no lockfile record is a typo
     # or a wrong path, never a silent no-op.
@@ -2661,15 +2712,11 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     # the guard on each write.  `--adopt-collisions` is left to the lockfile
     # reader's own refusal, which a pinned test expects to propagate as an
     # exception rather than an exit code; it reads and writes nothing either way.
-    try:
-        if not args.adopt_collisions:
-            _assert_safe_write(target / _LOCKFILE_REL, target)
-    except ScaffoldSecurityError:
-        print("error: upgrade refused (containment): the lockfile "
-              f"{_LOCKFILE_REL} is a link, or sits behind one; upgrade does "
-              "not read or write through it.\n"
-              "  Replace it with a regular file, then re-run.", file=sys.stderr)
-        return 2
+    if not args.adopt_collisions:
+        refused = _refuse_if_linked(
+            target, _LOCKFILE_REL, f"the lockfile {_LOCKFILE_REL}")
+        if refused is not None:
+            return refused
 
     if args.adopt_module:
         return _cmd_adopt_module(
