@@ -423,7 +423,7 @@ def test_upgrade_plan_reports_the_retired_handoff_once_and_apply_leaves_it(
                    "--cairn-root", str(ROOT)]) == 0
     report = capsys.readouterr().out
     assert len(re.findall(
-        rf"^\s*removed-upstream\s+1: {re.escape(HANDOFF)}$", report, re.M,
+        rf"^\s*retired, kept\s+1: {re.escape(HANDOFF)}$", report, re.M,
     )) == 1, report
     assert s.main(["upgrade", "--target", str(target), "--stage",
                    "--cairn-root", str(ROOT)]) == 0
@@ -536,11 +536,11 @@ def test_the_upgrade_guide_names_the_path_the_plan_line_prints(
     assert s.main(["upgrade", "--target", str(target), "--plan",
                    "--cairn-root", str(ROOT)]) == 0
     printed = re.findall(
-        r"^\s*removed-upstream\s+1: (\S+)$", capsys.readouterr().out, re.M)
+        r"^\s*retired, kept\s+1: (\S+)$", capsys.readouterr().out, re.M)
     assert printed == [HANDOFF]
 
     section = _guide_section("## A file Cairn stopped shipping: `dev/NEXT_SESSION.md`")
-    assert f"`removed-upstream 1: {printed[0]}`" in section
+    assert f"`retired, kept 1: {printed[0]}`" in section
     # It describes what is true now. It names no release, version or date, so
     # it cannot promise the later cleanup on a schedule.
     assert _release_version_or_date(section) == []

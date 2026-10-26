@@ -339,8 +339,10 @@ class TestUpgradeLeavesAnOldHelperAlone:
         capsys.readouterr()
         assert _upgrade(target, "--plan") == 0
         report = capsys.readouterr().out
-        lines = [ln for ln in report.splitlines() if "removed-upstream" in ln]
-        assert len(lines) == 1 and re.search(r"removed-upstream\s+9\b", lines[0]), report
+        lines = [ln for ln in report.splitlines()
+                 if ln.lstrip().startswith("retired, kept")]
+        assert len(lines) == 1 and re.search(r"retired, kept\s+9\b", lines[0]), report
+        assert "removed-upstream" not in report
         for flag in ("--stage", "--apply", "--finalize"):
             assert _upgrade(target, flag) == 0, flag
         for dst, data in before.items():

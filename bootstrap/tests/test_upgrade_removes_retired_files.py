@@ -280,11 +280,13 @@ def test_a_git_that_does_not_finish_or_prints_too_much_keeps_the_file(
     started = time.monotonic()
     assert U._committed_copy_matches(project, "a.py", b"payload") is False
     assert time.monotonic() - started < 4
-    # Prints without end: cut at one byte past the copy.
+    # Prints without end: cut at one byte past the copy, well before the timeout.
+    monkeypatch.setattr(U, "_GIT_TIMEOUT_SECONDS", 30)
     _stand_in_git(tmp_path, monkeypatch, name="endless", cat_file="yes payload")
     started = time.monotonic()
     assert U._committed_copy_matches(project, "a.py", b"payload") is False
-    assert time.monotonic() - started < 4
+    assert time.monotonic() - started < 4, "the output was not cut off"
+    monkeypatch.setattr(U, "_GIT_TIMEOUT_SECONDS", 0.5)
     # Prints one byte more than the copy and stops.
     _stand_in_git(tmp_path, monkeypatch, name="plusone",
                   cat_file="printf '%s' \"${DATA}x\"")
@@ -637,3 +639,473 @@ def test_the_walk_runs_only_when_open_unlink_rmdir_and_stat_all_take_dir_fd(
         calls.clear()
         assert _removal(path, target, _after_walk=lambda: calls.append("walked")) == "removed"
     assert calls == []
+
+
+# ---------------------------------------------------------------------------
+# A project from an older Cairn
+# ---------------------------------------------------------------------------
+
+import functools  # noqa: E402
+import json  # noqa: E402
+
+from bootstrap._scaffold.config import strip_conditional_regions  # noqa: E402
+from bootstrap._scaffold.slotmerge import substitute_tokens  # noqa: E402
+from bootstrap.verify_integrity import verify  # noqa: E402
+
+LOCK_REL = "dev/.cairn/cairn-lock.yml"
+SCRIPT = "scripts/onboarding_activate.py"
+SCRIPT_2 = "scripts/foldback_suggest.py"
+NEXT_SESSION = "dev/NEXT_SESSION.md"
+PLAIN_MARKDOWN = "dev/modules/fold-back-ledger.md"
+ROWS = {row[1]: row for row in C._RETIRED_INSTALLS}
+MATCHES_NONE = "matches none of the versions this Cairn knows"
+CANNOT_TELL = "cannot show it is unchanged"
+PROFILE = (
+    "project_name: RetiredFilesTest\n"
+    "test_command: pytest\n"
+    "python_package: retired_test\n"
+    "preset: solo-greenfield\n"
+)
+
+
+@functools.lru_cache(maxsize=None)
+def _shipped_versions(dst: str) -> tuple[bytes, ...]:
+    """Every version of the template for *dst* the list knows, oldest first."""
+    versions = []
+    for _digest, _commit, blob in ROWS[dst][3]:
+        result = _git_blob(blob)
+        assert result.returncode == 0, f"git has no blob {blob}"
+        versions.append(result.stdout)
+    return tuple(versions)
+
+
+def _sha(data: bytes) -> str:
+    return "sha256:" + hashlib.sha256(data).hexdigest()
+
+
+def _git(project: Path, *args: str, check: bool = True) -> str:
+    done = subprocess.run(
+        ["git", "-C", str(project), "-c", "user.name=t", "-c", "user.email=t@t",
+         "-c", "commit.gpgsign=false", *args],
+        capture_output=True, text=True, check=check,
+    )
+    return done.stdout.strip()
+
+
+def _commit_all(project: Path, message: str = "state") -> None:
+    _git(project, "add", "-A")
+    _git(project, "commit", "-q", "--allow-empty", "-m", message)
+
+
+@pytest.fixture(scope="module")
+def pristine_install(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """A fresh install of this Cairn, committed in git; tests copy it."""
+    base = tmp_path_factory.mktemp("pristine")
+    target = base / "project"
+    target.mkdir()
+    profile = base / "profile.yml"
+    profile.write_text(PROFILE, encoding="utf-8")
+    assert s.main(["--config", str(profile), "--target", str(target),
+                   "--cairn-root", str(ROOT), "--allow-dev"]) == 0
+    _git(target, "init", "-q", "-b", "main")
+    _commit_all(target, "install")
+    return target
+
+
+@pytest.fixture
+def project(pristine_install: Path, tmp_path: Path) -> Path:
+    copy = tmp_path / "project"
+    shutil.copytree(pristine_install, copy, symlinks=True)
+    return copy
+
+
+def _read_lock(project: Path) -> dict:
+    lock = s.read_lockfile(project)
+    assert lock is not None
+    return lock
+
+
+def _write_lock(project: Path, lock: dict) -> None:
+    (project / LOCK_REL).write_text(s._emit_lock_yaml(lock), encoding="utf-8")
+
+
+def _add_record(project: Path, record: dict) -> None:
+    lock = _read_lock(project)
+    lock["files"].append(record)
+    _write_lock(project, lock)
+
+
+def _script_record(dst: str, data: bytes, *, base: bytes | None = None) -> dict:
+    return {"dst": dst, "src": ROWS[dst][0], "verbatim": True,
+            "hash": _sha(data), "base_hash": _sha(data if base is None else base)}
+
+
+def _add_script(project: Path, dst: str = SCRIPT, data: bytes | None = None, *,
+                base: bytes | None = None, write: bool = True) -> Path:
+    """Model a project that installed *dst* from an older Cairn."""
+    data = _shipped_versions(dst)[-1] if data is None else data
+    path = project / dst
+    if write:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+    _add_record(project, _script_record(dst, data, base=base))
+    return path
+
+
+def _rebuilt(project: Path, cache: bytes) -> bytes:
+    """The text an install writes for a Markdown template: sized, then tokens."""
+    lock = _read_lock(project)
+    tokens = {str(k): str(v) for k, v in (lock.get("tokens") or {}).items()}
+    axes = U._embedded_axes(lock.get("profile"))
+    text = cache.decode("utf-8")
+    text = strip_conditional_regions(text, axes) if axes else text
+    return substitute_tokens(text, tokens).encode("utf-8")
+
+
+def _add_markdown(project: Path, dst: str = NEXT_SESSION, *,
+                  cache: bytes | None = None, file: bytes | None = None,
+                  write_cache: bool = True, write_file: bool = True,
+                  base_cache: str | None = None) -> tuple[Path, Path]:
+    """Model a project that installed the Markdown file *dst* from an older Cairn."""
+    cache = _shipped_versions(dst)[-1] if cache is None else cache
+    file = _rebuilt(project, cache) if file is None else file
+    cache_rel = f"dev/.cairn/base/{dst}"
+    path, cache_path = project / dst, project / cache_rel
+    if write_file:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(file)
+    if write_cache:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_bytes(cache)
+    record = {"dst": dst, "src": ROWS[dst][0], "verbatim": False,
+              "hash": _sha(file), "base_hash": _sha(cache),
+              "base_cache": base_cache or cache_rel}
+    if dst in s._LIVING_STATE_DSTS:
+        record["living_state"] = True
+    _add_record(project, record)
+    return path, cache_path
+
+
+def _upgrade(capsys: pytest.CaptureFixture[str], project: Path, *flags: str,
+             ) -> tuple[int, str, str]:
+    code = s.main(["upgrade", "--target", str(project), *flags,
+                   "--cairn-root", str(ROOT)])
+    captured = capsys.readouterr()
+    return code, captured.out, captured.err
+
+
+def _kind_names(report: str, label: str) -> list[str]:
+    """The names a report line `<label>  N: a, b` carries; [] if there is none."""
+    found = re.search(rf"^\s*{re.escape(label)}\s+\d+: (.*)$", report, re.M)
+    return [] if found is None else [n.strip() for n in found.group(1).rstrip(".").split(",")]
+
+
+def _flag(report: str, dst: str) -> str | None:
+    found = re.search(rf"^\s*\[flag\] {re.escape(dst)}: (.*)$", report, re.M)
+    return None if found is None else found.group(1)
+
+
+def _tree_state(root: Path) -> dict[str, str]:
+    """Every file and link under *root* (git's own folder included) with its bytes."""
+    state: dict[str, str] = {}
+    for path in sorted(root.rglob("*")):
+        rel = path.relative_to(root).as_posix()
+        if path.is_symlink():
+            state[rel] = "link->" + os.readlink(path)
+        elif path.is_file():
+            state[rel] = hashlib.sha256(path.read_bytes()).hexdigest()
+        else:
+            state[rel] = "dir"
+    return state
+
+
+# ---------------------------------------------------------------------------
+# The classifier, through `--plan`
+# ---------------------------------------------------------------------------
+
+def test_a_planted_record_for_a_plain_project_file_is_never_retired(
+    project: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    analysis = project / "analysis.py"
+    analysis.write_text("print('mine')\n", encoding="utf-8")
+    _add_record(project, {
+        "dst": "analysis.py", "src": "modules/default-on/nothing-here.py",
+        "verbatim": True, "hash": _sha(analysis.read_bytes()),
+        "base_hash": _sha(analysis.read_bytes())})
+    # A record one letter off a real row, and one with another source, are not rows.
+    other_case = SCRIPT.replace("scripts", "Scripts", 1)
+    (project / other_case).parent.mkdir(exist_ok=True)
+    (project / other_case).write_bytes(_shipped_versions(SCRIPT)[-1])
+    _add_record(project, {**_script_record(SCRIPT, b"x"), "dst": other_case})
+    other_source = {**_script_record(SCRIPT_2, b"y"), "src": ROWS[SCRIPT_2][0] + "x"}
+    (project / SCRIPT_2).write_bytes(_shipped_versions(SCRIPT_2)[-1])
+    _add_record(project, other_source)
+    _commit_all(project)
+    code, out, _err = _upgrade(capsys, project, "--plan")
+    assert code == 0, out
+    assert sorted(_kind_names(out, "removed-upstream")) == sorted(
+        ["analysis.py", other_case, SCRIPT_2])
+    assert "retired," not in out
+
+
+def test_an_edit_after_init_lock_and_a_bare_finalize_is_kept(
+    project: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    edited = _shipped_versions(SCRIPT)[-1] + b"# local change\n"
+    # --init-lock records the disk as `hash` and a bare --finalize then copies it into
+    # `base_hash`, so the record itself vouches for the edit.
+    _add_script(project, data=edited)
+    _commit_all(project)
+    code, out, _err = _upgrade(capsys, project, "--plan")
+    assert code == 0, out
+    assert _kind_names(out, "retired, kept") == [SCRIPT]
+    assert _flag(out, SCRIPT) == MATCHES_NONE
+    assert _kind_names(out, "retired, untouched") == []
+
+
+def test_an_untouched_script_is_untouched_in_every_version_the_list_carries(
+    project: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    versions = _shipped_versions(SCRIPT)
+    assert len(versions) == len(set(versions)) >= 2, "the row should carry two versions"
+    for number, data in enumerate(versions):
+        fresh = project.parent / f"v{number}"
+        shutil.copytree(project, fresh, symlinks=True)
+        _add_script(fresh, data=data)
+        _commit_all(fresh)
+        code, out, _err = _upgrade(capsys, fresh, "--plan")
+        assert code == 0, out
+        assert _kind_names(out, "retired, untouched") == [SCRIPT], out
+
+
+def test_an_untouched_markdown_copy_is_untouched_an_added_line_matches_none_and_a_migrated_lockfile_cannot_tell(
+    project: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    def judged(name: str, setup) -> tuple[str, str | None]:
+        copy = tmp_path / name
+        shutil.copytree(project, copy, symlinks=True)
+        setup(copy)
+        _commit_all(copy)
+        code, out, _err = _upgrade(capsys, copy, "--plan")
+        assert code == 0, out
+        for label in ("retired, untouched", "retired, kept", "retired, already deleted"):
+            if _kind_names(out, label) == [NEXT_SESSION]:
+                return label, _flag(out, NEXT_SESSION)
+        raise AssertionError(out)
+
+    assert judged("untouched", _add_markdown) == ("retired, untouched", None)
+
+    def added_line(copy: Path) -> None:
+        _add_markdown(copy, file=_rebuilt(copy, _shipped_versions(NEXT_SESSION)[-1]) + b"mine\n")
+    assert judged("added", added_line) == ("retired, kept", MATCHES_NONE)
+
+    def migrated(copy: Path) -> None:
+        _add_markdown(copy)
+        lock = _read_lock(copy)
+        lock["migrated"] = True
+        _write_lock(copy, lock)
+    assert judged("migrated", migrated) == ("retired, kept", CANNOT_TELL)
+
+    def cache_not_a_shipped_version(copy: Path) -> None:
+        _add_markdown(copy, cache=b"# a cache nobody shipped\n")
+    assert judged("unlisted-cache", cache_not_a_shipped_version) == ("retired, kept", CANNOT_TELL)
+
+    def no_cache(copy: Path) -> None:
+        _add_markdown(copy, write_cache=False)
+    assert judged("no-cache", no_cache) == ("retired, kept", CANNOT_TELL)
+
+    # A second Markdown row classifies on its own, as the first does.
+    copy = tmp_path / "second-row"
+    shutil.copytree(project, copy, symlinks=True)
+    _add_markdown(copy, PLAIN_MARKDOWN)
+    _commit_all(copy)
+    code, out, _err = _upgrade(capsys, copy, "--plan")
+    assert code == 0 and _kind_names(out, "retired, untouched") == [PLAIN_MARKDOWN], out
+
+
+def test_a_base_cache_that_is_not_the_rows_is_cannot_tell(
+    project: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    elsewhere = "dev/.cairn/base/somewhere-else.md"
+    _add_markdown(project, base_cache=elsewhere, write_cache=False)
+    (project / elsewhere).write_bytes(_shipped_versions(NEXT_SESSION)[-1])
+    _commit_all(project)
+    code, out, _err = _upgrade(capsys, project, "--plan")
+    assert code == 0, out
+    assert _kind_names(out, "retired, kept") == [NEXT_SESSION]
+    assert _flag(out, NEXT_SESSION) == CANNOT_TELL
+
+
+def test_a_base_cache_another_record_also_names_is_cannot_tell(
+    project: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    _add_markdown(project)
+    _add_record(project, {
+        "dst": "docs/other.md", "src": "modules/default-on/nothing.md", "verbatim": False,
+        "hash": _sha(b"x"), "base_hash": _sha(b"x"),
+        "base_cache": f"dev/.cairn/base/{NEXT_SESSION}"})
+    _commit_all(project)
+    code, out, _err = _upgrade(capsys, project, "--plan")
+    assert code == 0, out
+    assert _kind_names(out, "retired, kept") == [NEXT_SESSION]
+    assert _flag(out, NEXT_SESSION) == CANNOT_TELL
+
+
+def test_plan_to_an_older_ref_never_labels_a_shipped_file_retired(
+    project: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str],
+) -> None:
+    notice = ("core/NOTICE.md", "NOTICE.md")
+    assert (ROOT / "templates" / notice[0]).is_file()
+    old = subprocess.run(["git", "-C", str(ROOT), "cat-file", "-e", f"v0.3.0:templates/{notice[0]}"],
+                         capture_output=True)
+    if old.returncode == 0:
+        pytest.skip("v0.3.0 shipped NOTICE.md; the control needs a ref without it")
+    # A list row for a template that the running tree still ships is not retired,
+    # whatever an older ref says.
+    monkeypatch.setattr(U, "_RETIRED_INSTALLS", (
+        (notice[0], notice[1], False, ((hashlib.sha256(b"x").hexdigest(), "a" * 40, "b" * 40),)),
+        *C._RETIRED_INSTALLS))
+    code, out, _err = _upgrade(capsys, project, "--plan", "--to", "v0.3.0")
+    assert code == 0, out
+    assert "NOTICE.md" in _kind_names(out, "removed-upstream"), out
+    assert "retired," not in out
+
+
+def test_a_dangling_link_a_folder_and_a_linked_parent_are_blocked_not_gone(
+    project: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    def blocked(name: str, setup) -> None:
+        copy = tmp_path / name
+        shutil.copytree(project, copy, symlinks=True)
+        dst = setup(copy)
+        _commit_all(copy)
+        code, out, _err = _upgrade(capsys, copy, "--plan")
+        assert code == 0, out
+        assert _kind_names(out, "retired, already deleted") == [], (name, out)
+        assert _kind_names(out, "retired, kept") == [dst], (name, out)
+        assert "link" in (_flag(out, dst) or ""), (name, out)
+
+    def dangling(copy: Path) -> str:
+        _add_script(copy, write=False)
+        (copy / SCRIPT).symlink_to(copy / "dev" / "nowhere")
+        return SCRIPT
+
+    def folder(copy: Path) -> str:
+        _add_script(copy, write=False)
+        (copy / SCRIPT).mkdir()
+        return SCRIPT
+
+    def linked_parent(copy: Path) -> str:
+        dst = "scripts/_onboarding/cli.py"
+        _add_script(copy, dst, write=False)
+        (copy / "dev" / "real-folder").mkdir()
+        (copy / "scripts" / "_onboarding").symlink_to(copy / "dev" / "real-folder")
+        return dst
+
+    blocked("dangling", dangling)
+    blocked("folder", folder)
+    blocked("linked-parent", linked_parent)
+
+
+def test_plan_names_each_retired_state_in_fixed_words(
+    project: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    _add_script(project, SCRIPT)                                    # untouched
+    _add_markdown(project, NEXT_SESSION, write_file=False, write_cache=False)  # gone
+    _add_script(project, SCRIPT_2, data=_shipped_versions(SCRIPT_2)[-1] + b"#\n",
+                base=_shipped_versions(SCRIPT_2)[-1])               # matches none
+    _add_markdown(project, PLAIN_MARKDOWN, cache=b"# unlisted\n")   # cannot tell
+    _add_record(project, {                                          # not on the list
+        "dst": "docs/old.md", "src": "modules/default-on/old.md", "verbatim": False,
+        "hash": _sha(b"x"), "base_hash": _sha(b"x")})
+    _commit_all(project)
+    code, out, _err = _upgrade(capsys, project, "--plan")
+    assert code == 0, out
+    assert _kind_names(out, "retired, untouched") == [SCRIPT]
+    assert _kind_names(out, "retired, already deleted") == [NEXT_SESSION]
+    assert sorted(_kind_names(out, "retired, kept")) == sorted([SCRIPT_2, PLAIN_MARKDOWN])
+    assert _flag(out, SCRIPT_2) == MATCHES_NONE
+    assert _flag(out, PLAIN_MARKDOWN) == CANNOT_TELL
+    assert _flag(out, SCRIPT) is None and _flag(out, NEXT_SESSION) is None
+    assert _kind_names(out, "removed-upstream") == ["docs/old.md"]
+    assert "differs from every version" not in out
+
+
+def test_plan_writes_nothing_and_a_folder_at_a_retired_name_does_not_crash_it(
+    project: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    _add_script(project, SCRIPT)
+    _add_script(project, SCRIPT_2, write=False)
+    (project / SCRIPT_2).mkdir()
+    (project / SCRIPT_2 / "inner").write_text("x", encoding="utf-8")
+    _add_markdown(project, NEXT_SESSION, write_file=False, write_cache=False)
+    _commit_all(project)
+    before = _tree_state(project)
+    code, out, err = _upgrade(capsys, project, "--plan")
+    assert code == 0, (out, err)
+    assert "Traceback" not in err
+    assert _tree_state(project) == before
+    assert _kind_names(out, "retired, kept") == [SCRIPT_2]
+
+
+def test_stage_and_apply_leave_retired_files_and_records_alone(
+    project: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    _add_script(project, SCRIPT)
+    _add_script(project, SCRIPT_2, data=_shipped_versions(SCRIPT_2)[-1] + b"#\n")
+    _add_markdown(project, NEXT_SESSION, write_file=False, write_cache=False)
+    _commit_all(project)
+    lock_before = _read_lock(project)
+    files_before = {d: (project / d).read_bytes() for d in (SCRIPT, SCRIPT_2)}
+    for flag in ("--stage", "--apply"):
+        code, out, err = _upgrade(capsys, project, flag)
+        assert code == 0, (flag, out, err)
+    retired = {SCRIPT, SCRIPT_2, NEXT_SESSION}
+    after = {r["dst"]: r for r in _read_lock(project)["files"] if r["dst"] in retired}
+    before = {r["dst"]: r for r in lock_before["files"] if r["dst"] in retired}
+    assert after == before
+    assert {d: (project / d).read_bytes() for d in (SCRIPT, SCRIPT_2)} == files_before
+
+
+def test_an_uncommitted_or_ignored_copy_is_kept(
+    project: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    def kept_words(copy: Path, dst: str = SCRIPT) -> tuple[str, str | None]:
+        code, out, _err = _upgrade(capsys, copy, "--plan")
+        assert code == 0, out
+        if _kind_names(out, "retired, untouched") == [dst]:
+            return "retired, untouched", None
+        assert _kind_names(out, "retired, kept") == [dst], out
+        return "retired, kept", _flag(out, dst)
+
+    # Control: committed and untouched.
+    _add_script(project)
+    _commit_all(project)
+    assert kept_words(project) == ("retired, untouched", None)
+    # Untracked: never committed.
+    other = project.parent / "untracked"
+    shutil.copytree(project, other, symlinks=True)
+    _git(other, "rm", "-q", "--cached", SCRIPT)
+    _git(other, "commit", "-q", "-m", "stop tracking the file")
+    assert (other / SCRIPT).is_file()
+    assert kept_words(other) == ("retired, kept", CANNOT_TELL)
+    # Ignored.
+    ignored = project.parent / "ignored"
+    shutil.copytree(project, ignored, symlinks=True)
+    _git(ignored, "rm", "-q", "--cached", SCRIPT)
+    with (ignored / ".gitignore").open("a", encoding="utf-8") as stream:
+        stream.write(f"\n{SCRIPT}\n")
+    _commit_all(ignored)
+    assert kept_words(ignored) == ("retired, kept", CANNOT_TELL)
+    # The last commit holds another version of the file than the disk does.
+    changed = project.parent / "committed-edit"
+    shutil.copytree(project, changed, symlinks=True)
+    (changed / SCRIPT).write_bytes(_shipped_versions(SCRIPT)[0])
+    _commit_all(changed)
+    (changed / SCRIPT).write_bytes(_shipped_versions(SCRIPT)[-1])
+    assert kept_words(changed) == ("retired, kept", CANNOT_TELL)
+    # No git at all.
+    no_git = project.parent / "no-git"
+    shutil.copytree(project, no_git, symlinks=True)
+    shutil.rmtree(no_git / ".git")
+    assert kept_words(no_git) == ("retired, kept", CANNOT_TELL)

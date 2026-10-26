@@ -78,8 +78,9 @@ slot.
 
 Cairn no longer installs this file. The next-session handoff is now a short
 local note at `dev/reflections/next-session.md`, a path git already ignores.
-If your project already has the old file, `upgrade --plan` reports
-`removed-upstream 1: dev/NEXT_SESSION.md`. The line is informational and
+If your project already has the old file, `upgrade --plan` names it on a
+`retired, ...` line. A copy it cannot show is unchanged prints as
+`retired, kept 1: dev/NEXT_SESSION.md`. The line is informational and
 repeats on later plans: plan, stage and apply leave your file, its lockfile
 record and its cached base copy untouched.
 

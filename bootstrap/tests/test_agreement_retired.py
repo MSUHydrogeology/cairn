@@ -92,7 +92,7 @@ def test_old_agreement_is_reported_once_and_unchanged_by_upgrade(
                    "--cairn-root", str(ROOT)]) == 0
     report = capsys.readouterr().out
     assert len(re.findall(
-        rf"^\s*removed-upstream\s+1: {re.escape(OLD)}$", report, re.M,
+        rf"^\s*retired, kept\s+1: {re.escape(OLD)}$", report, re.M,
     )) == 1, report
     assert s.main(["upgrade", "--target", str(target), "--stage",
                    "--cairn-root", str(ROOT)]) == 0

@@ -33,6 +33,7 @@ from .config import (
     _KNOWN_VENDOR_WRAPPERS,
     _MODULE_MAPPINGS,
     _MODULE_REQUIRED_TOKENS,
+    _RETIRED_INSTALLS,
     _SKILLS_GITIGNORE,
     _SKILLS_MAPPINGS,
     _UNFILLED_TOKEN_VALUE,
@@ -46,6 +47,7 @@ from .config import (
 )
 from .security import (
     _assert_safe_write,
+    _read_regular_bytes,
     _stage_exclusive,
     _write_by_replacing,
     ScaffoldSecurityError,
@@ -366,6 +368,9 @@ _KIND_DISPLAY_LABEL = {
     "new-module-lockconflict": "new module file (BLOCKED — destination owned by another source; resolve by hand)",
     "new-core-blocked": "new core/skills file (BLOCKED — adopt-as-fork or reconcile, then re-stage)",
     "new-core-lockconflict": "new core/skills file (BLOCKED — destination owned by another source; resolve by hand)",
+    "retired-untouched": "retired, untouched",
+    "retired-gone": "retired, already deleted",
+    "retired-kept": "retired, kept",
 }
 
 
@@ -484,6 +489,132 @@ def _assert_mapping_ownership(lock_modules: set[str]) -> None:
             f"InstallSpecs: {detail}")
 
 
+def _classify_retired_records(
+    target: Path, lock: dict[str, Any], templates_root: Path, *, git_gate: bool,
+) -> list[dict[str, Any]]:
+    """Sort each lockfile record for a retired file into one of five states.
+
+    The one classifier behind ``--plan``, ``--remove-retired`` and ``--finalize``.
+    A record is *retired* only if its ``src`` and ``dst`` equal a row of
+    ``_RETIRED_INSTALLS`` exactly and the row's template is absent from the running
+    tree (*templates_root*); no ``--to`` ref ever makes a record retired.  Anything
+    else the lockfile says is ignored: the row, not the record, names the path, the
+    kind of evidence and the cache.  Each result is a dict with ``rec`` (the
+    record), ``dst`` (the row's), ``state`` and ``words``:
+
+    * ``untouched`` -- a regular file whose bytes are a version Cairn shipped.
+      ``data`` holds them; ``cache`` is ``(path, bytes)`` of a Markdown copy's
+      cached template, removed with it.
+    * ``gone`` -- nothing at the name and no link above it.  ``cache`` may hold a
+      leftover cached template at the row's path that matches a shipped version.
+    * ``matches-none`` -- the evidence is complete and the bytes match no version.
+    * ``cannot-tell`` -- the evidence is missing or not the row's: no usable
+      cached template, a migrated lockfile, a cache path other than the row's, a
+      cache another record also names, or (when *git_gate*) git does not hold
+      exactly these bytes in its last commit.
+    * ``blocked`` -- a link, a folder or another non-file at the name, or a link
+      or file standing as a folder above it.  Nothing is read through it.
+
+    A script is judged by its SHA-256 against the row's digests.  A Markdown copy
+    needs a cached template at ``dev/.cairn/base/<row dst>`` whose digest is on
+    the row, a lockfile that is not ``migrated``, and a rebuild of the file from
+    that cache (the sizing and tokens ``_compute_upgrade`` uses) that equals it.
+    ``hash`` and ``base_hash`` are never evidence.  The state is decided from the
+    record and the files alone, before any git call; *git_gate* (on for the plan
+    and the step, off for ``--finalize``, which makes no git call) then turns an
+    ``untouched`` copy git cannot confirm into ``cannot-tell``.  ``words`` is the
+    fixed sentence for a kept state; names printed come from the row.
+    """
+    rows = {
+        (src, dst): (verbatim, [digest for digest, _commit, _blob in digests])
+        for src, dst, verbatim, digests in _RETIRED_INSTALLS
+    }
+    records = [r for r in (lock.get("files") or []) if isinstance(r, dict)]
+    tokens = {str(k): str(v) for k, v in (lock.get("tokens") or {}).items()}
+    old_axes = _embedded_axes(lock.get("profile"))
+    words = {
+        "untouched": "",
+        "gone": "",
+        "matches-none": "matches none of the versions this Cairn knows",
+        "cannot-tell": "cannot show it is unchanged",
+        "blocked": "a link, a folder or another non-file is in the way; "
+                   "upgrade reads nothing through it",
+    }
+    results: list[dict[str, Any]] = []
+
+    def read(rel: str) -> bytes | None:
+        """The bytes of a regular file inside the project, or ``None``."""
+        path = target / rel
+        try:
+            _assert_safe_write(path, target)
+            return _read_regular_bytes(path)
+        except (ScaffoldSecurityError, OSError):
+            return None
+
+    for rec in records:
+        src_rel, dst_rel = rec.get("src"), rec.get("dst")
+        if not (isinstance(src_rel, str) and isinstance(dst_rel, str)):
+            continue
+        row = rows.get((src_rel, dst_rel))
+        if row is None or (templates_root / src_rel).exists():
+            continue
+        verbatim, digests = row
+        cache_rel = f"{_BASE_CACHE_REL}/{dst_rel}"
+        shared_cache = any(
+            other is not rec and other.get("base_cache") == cache_rel
+            for other in records)
+        result: dict[str, Any] = {"rec": rec, "dst": dst_rel, "data": None, "cache": None}
+        results.append(result)
+
+        def decide(state: str) -> None:
+            result["state"], result["words"] = state, words[state]
+
+        path = target / dst_rel
+        try:
+            _assert_safe_write(path, target)
+            data = _read_regular_bytes(path)
+        except (ScaffoldSecurityError, OSError):
+            decide("blocked")
+            continue
+        if data is None:
+            decide("gone")
+            if git_gate and not verbatim and not shared_cache:
+                leftover = read(cache_rel)
+                if (leftover is not None and _sha256_hex(leftover) in digests
+                        and _committed_copy_matches(target, cache_rel, leftover)):
+                    result["cache"] = (cache_rel, leftover)
+            continue
+        if verbatim:
+            decide("untouched" if _sha256_hex(data) in digests else "matches-none")
+        else:
+            cache = read(cache_rel)
+            if (lock.get("migrated") or rec.get("base_cache") != cache_rel
+                    or shared_cache or cache is None
+                    or _sha256_hex(cache) not in digests):
+                decide("cannot-tell")
+                continue
+            try:
+                text = cache.decode("utf-8")
+                sized = strip_conditional_regions(text, old_axes) if old_axes else text
+                rebuilt = substitute_tokens(sized, tokens).encode("utf-8")
+            except Exception:  # noqa: BLE001 -- any failure to rebuild keeps the file
+                decide("cannot-tell")
+                continue
+            decide("untouched" if rebuilt == data else "matches-none")
+            if result["state"] == "untouched":
+                result["cache"] = (cache_rel, cache)
+        if result["state"] != "untouched":
+            continue
+        result["data"] = data
+        if git_gate and not (
+                _committed_copy_matches(target, dst_rel, data)
+                and (result["cache"] is None
+                     or _committed_copy_matches(target, *result["cache"]))):
+            decide("cannot-tell")
+            result["data"], result["cache"] = None, None
+    return results
+
+
 def _compute_upgrade(
     target: Path, cairn_root: Path, templates_root: Path,
     lock: dict[str, Any], to_ref: str | None,
@@ -497,9 +628,21 @@ def _compute_upgrade(
     # sized and is left untouched.
     old_axes = _embedded_axes(lock.get("profile"))
     _new_profile, new_axes, _new_tokens = _resolve_current_profile(target, lock)
+    # Retired records are judged against the running tree and the project's own
+    # files, before anything else reads the project's copy, whatever `to_ref` is.
+    retired = {id(r["rec"]): r for r in _classify_retired_records(
+        target, lock, templates_root, git_gate=True)}
     plans: list[FilePlan] = []
     for rec in lock.get("files", []):
         dst = rec["dst"]
+        judged = retired.get(id(rec))
+        if judged is not None:
+            plans.append(FilePlan(
+                judged["dst"],
+                {"untouched": "retired-untouched", "gone": "retired-gone"}.get(
+                    judged["state"], "retired-kept"),
+                None, judged["words"], None, None))
+            continue
         verbatim = bool(rec.get("verbatim"))
         src_rel = rec["src"]
         # Renamed vendor wrapper (#45): the lockfile records the thin
@@ -822,6 +965,7 @@ def _print_upgrade_report(
              "conflict", "slot-removed", "review-only",
              "verbatim-update", "verbatim-locally-modified",
              "verbatim-up-to-date", "verbatim-missing", "up-to-date",
+             "retired-untouched", "retired-gone", "retired-kept",
              "removed-upstream", "error"]
     # Column width sized for the longest display label ("locally-modified
     # (merged clean)" = 31 chars) plus a 2-space pad.
@@ -843,7 +987,7 @@ def _print_upgrade_report(
               "lockfile version/commit (R10) -- update its citation.")
     conflicts = [fp.dst for fp in plans if fp.kind == "conflict"]
     flags = [fp for fp in plans if fp.kind in
-             ("slot-removed", "verbatim-locally-modified", "error")]
+             ("slot-removed", "verbatim-locally-modified", "retired-kept", "error")]
     if conflicts:
         print(f"\n  {len(conflicts)} file(s) need conflict resolution before "
               "--apply.")
