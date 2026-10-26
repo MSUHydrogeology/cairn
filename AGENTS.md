@@ -196,8 +196,8 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
   role's floor for the deliberate lane. Proposal authoring is medium;
   Security Review, proposal review, premise-checking and other bright-line
   work stay high. Never downshift across a data-governance boundary.
-  **Name the model at every spawn**; an unset spawn inherits yours. If
-  lowered work fails its check, or a review blocks on a defect it should
+  **Name the model at every spawn**. Author and reviewer names carry the
+  model. If lowered work fails its check, or a review blocks on a defect it should
   have caught, re-run once one tier up. A reviewer who sees work written
   below its floor, with no Maintainer Decision quoted on it, says so.
 

@@ -28,14 +28,14 @@
     },
     {
       "dst": "AGENTS.md",
-      "hash": "sha256:1aeaa7f738bf72c86d20e3558df68ac94b39c70277c05de11450cdde82162a57",
+      "hash": "sha256:6032ed082d7349f3d47f54a67e120d36c502f20cf54f32070f110ff5b1f61843",
       "src": "core/AGENTS.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "CLAUDE.md",
-      "hash": "sha256:dde297518d2bb9503f725d503bc102dfb3a344c57df87b542dbffd5a5b7cb0ec",
+      "hash": "sha256:86911dab4949ecefa5017302e59613a499cc10bdcf928879a5602740c0bc5989",
       "src": "core/VENDOR.md",
       "unrecoverable_base": true,
       "verbatim": false

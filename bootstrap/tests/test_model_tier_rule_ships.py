@@ -49,6 +49,8 @@ _RULE_CLAUSES = {
     "no-downshift-across-data-governance": (
         "Never downshift across a data-governance boundary."),
     "name-the-model-at-every-spawn": "**Name the model at every spawn**",
+    "author-and-reviewer-names-carry-the-model": (
+        "Author and reviewer names carry the model."),
     "escalate-one-tier": "re-run once one tier up",
     "reviewer-flags-work-below-its-floor": (
         "A reviewer who sees work written below its floor"),
@@ -90,6 +92,28 @@ def _roles_section(text: str) -> str:
     assert heading, "no level-two heading 'Roles'"
     end = text.find("\n## ", heading.end())
     return text[heading.start():] if end == -1 else text[heading.start():end]
+
+
+#: What the fan-out paragraph of `doctrine/roles.md` must say about the check.
+_FAN_OUT_CLAUSES = (
+    "a stronger model from the same maker counts",
+    "a model at the same tier does not",
+)
+
+
+def _fan_out_gaps(roles_text: str) -> list[str]:
+    """The `_FAN_OUT_CLAUSES` the fan-out paragraph does not carry.
+
+    The paragraph ends where the next one starts, `**Escalation applies`, with
+    its bold markers. A split string without them never matches, the slice runs
+    to the end of the file, and the cost-rule paragraph below (which carries the
+    same two phrases) answers for the fan-out one.
+    """
+    flat = _flat(roles_text)
+    start = flat.index("Orchestrated work — the fan-out.")
+    end = flat.index("**Escalation applies", start)
+    paragraph = flat[start:end]
+    return [clause for clause in _FAN_OUT_CLAUSES if clause not in paragraph]
 
 
 def _missing_rule_clauses(text: str) -> list[str]:
@@ -174,11 +198,14 @@ def test_the_different_maker_condition_is_gone_and_same_tier_is_excluded() -> No
 
     assert violations(texts) == {}                     # control
 
-    fan_out = _flat(texts[ROLES])
-    start = fan_out.index("Orchestrated work — the fan-out.")
-    paragraph = fan_out[start:].split(" Escalation applies", 1)[0]
-    assert "a stronger model from the same maker counts" in paragraph
-    assert "a model at the same tier does not" in paragraph
+    assert _fan_out_gaps(texts[ROLES]) == []           # control
+    # Delete each clause from the fan-out paragraph only: the cost-rule paragraph
+    # further down keeps its own copy, so a check that read past the fan-out
+    # paragraph's end would still pass.
+    flat_roles = _flat(texts[ROLES])
+    for clause in _FAN_OUT_CLAUSES:
+        assert flat_roles.index(clause) < flat_roles.index("**Escalation applies")
+        assert _fan_out_gaps(flat_roles.replace(clause, "", 1)) == [clause]
     for rel in MODULE_COPIES:
         flat = _flat(texts[rel])
         assert flat.count("a model at the same tier does not") == 2, rel

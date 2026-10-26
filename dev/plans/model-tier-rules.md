@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy, plan author)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-model-tier-rules.md](../proposals/archive/2026-10-26-claude-model-tier-rules.md)
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(Internal)
 **Opened**: 2026-10-26
 **In brief**: Every Cairn project gets a short rule to use the cheapest model that is safe and to name it when starting a helper agent; a stronger model from the same maker may now check cheaper work; and proposals are written at the medium tier by default.
@@ -422,3 +422,84 @@ All six accepted; the operative cells above are revised in place and Status is `
 * The gate-manifest and AST re-anchors are Maintainer-only and not run; the edit to the frozen `test_review_stance_in_shipped_files.py` and the new test file wait for the re-anchor at the 0.5 cut. I did not run `_gate_manifest.py verify`.
 * No test reads a spawn call, so "name the model at every spawn" and R3's claim that a resumed agent keeps its model are unchecked.
 * Whether each of the six places says what the Decision says (C1.2), the C1.4 row and sentence placement, and C1.5's "names the lanes" and "about 6 lines" (the gating note is 8 lines) are for a person to read.
+
+## Response to code review -- Claude Sonnet 5.5 (implementer) -- 2026-10-26
+
+The review is `dev/reviews/2026-10-26-code-review-model-tier-rules.md` (commit c45dee63). Both blocking
+findings are fixed and the four non-blocking ones that asked for a change are answered. The Decision is
+not reopened. Status is `ready-to-archive`: the review's own rule is that the answer carries the plan
+there, and a second code-review pass runs only if the revision introduced new defects.
+
+* **B1, fixed.** The fan-out paragraph in `bootstrap/tests/test_model_tier_rule_ships.py` is now cut at
+  `**Escalation applies` (with the bold marks, which is how `doctrine/roles.md` writes it), in a small
+  helper `_fan_out_gaps`. The node deletes each of the two clauses from the fan-out paragraph only (the
+  cost-rule paragraph keeps its own copy) and asserts the helper reports exactly that clause, beside a
+  green control. Mutants run in a detached copy are in the verification section below: both survivors
+  the review found (M3, M18) are now killed, and the test as it stood at `f452442b` still passes on both.
+* **B2, fixed.** Both `AGENTS.md` copies again say "Author and reviewer names carry the model." in the
+  Model tier block, identical in the two copies, and `_RULE_CLAUSES` has a label for it
+  (`author-and-reviewer-names-carry-the-model`). It is paid for by removing "; an unset spawn
+  inherits yours". Measured with tiktoken (`python3 scripts/token_budget.py`): `AGENTS.md` is 8,520
+  tokens, exactly the plan's figure and not above it. Nothing else in R2 was cut.
+* **N1, done.** The shipped text no longer states the unverified inheritance claim (it went with B2).
+  `CLAUDE.md` now says an agent resumed with `SendMessage` "is assumed to keep the model it started with
+  (not checked here)". The sentence stays because acceptance criterion C3.1 requires the idea; it only
+  gained a plain "not checked here".
+* **N2, not done, on purpose.** "Dated Maintainer direction" costs about 5 tokens and R2 is already at the
+  8,520 figure with B2 fixed. Cutting 5 tokens from the accepted R2 wording to make room would change
+  text the Decision accepted, and the ceiling is a plan figure, not a gate (N4). So the narrower rule
+  stays: a below-floor flag is silenced by a quoted Maintainer Decision only. I record that as the
+  accepted loss; the Maintainer may widen it by adding the three words if the ceiling moves.
+* **N3, correction.** The Implementation verification line that says the "search helpers and wording-only
+  edits: low" rule is "still in `roles.md` and the module" is wrong in part. `doctrine/roles.md` keeps the
+  wording-only row (the docstring and comment paragraph) but says nothing about search helpers. The module
+  keeps search, retrieval and extraction at `low` only in the fan-out table, which a solo profile does not
+  install. A solo adopter's `AGENTS.md` therefore has the general rule ("lowest-capability model that can
+  do the task safely") and no named low tier for search helpers. The review judged that acceptable and the
+  Decision did not rest on the clause; it is stated here so the record is true.
+* **N4.** The 8,520 ceiling is a plan figure measured with tiktoken (`python3 scripts/token_budget.py`),
+  not a gate: the script has no default cap and no test reads it. Nothing in the tree enforces it.
+* **N5, N8.** No change.
+* **N6, left as is.** The retired-condition check stays at three exact strings. A paraphrase check would be
+  a guess at wordings nobody has written (the review's tree search found none), and any pattern I invented
+  would be tested only against my own paraphrases. The archive reviewer repeats the `git grep` instead.
+* **N7, still owed at the archive commit**: the R5 row in `dev/PLANNING.md`, the queued re-anchor row's file
+  name, the stale clause at `dev/PLANNING.md:71`, and the `CHANGELOG.md` line. Not touched here.
+
+## Implementation verification -- Claude Sonnet 5.5 (implementer) -- 2026-10-26 (revision)
+
+**Boundary B mode**: full (unchanged from the first record). The full suite was not run and `CAIRN_FULL_SUITE`
+was never set. **Certified by**: pending. The revision changes test and template bytes, so the first record's
+figures do not carry over; the next certifying run that contains this revision's commit certifies it.
+
+**Revised range**: base `f452442b` (reviewed work `5702f27a`, `9b9bb3c6`, `f8fc472c`, `ea1c0bef`, review
+`c45dee63`) to the single revision commit that carries this section. The tests below ran on the working
+tree holding exactly the bytes that commit holds.
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13), `PYTHONDONTWRITEBYTECODE=1`. Token
+figure: system `python3` with tiktoken.
+**Pre-run state**: the shared tree also held other sessions' uncommitted edits (the session-start skill
+copies, `bootstrap/_scaffold/upgrade.py`, `SECURITY_MUTATIONS.md`) and untracked files; the plan's tables do
+not read them, but I did not prove that for every test.
+
+| Command | Exit | Outcomes |
+|---|---|---|
+| `pytest` on the plan's first table (review-stance, model-selection stub, check_cairn content, the new file, `test_upgrade.py::TestTemplateGatingSafety`, the 12 `AGENTS.md` readers) | 0 | 1,108 passed, 0 failed, 0 skipped, 0 xfail, 0 xpass |
+| `pytest` on the plan's second table (claim_check module, board contract, verify_integrity, onboarding roster, presets, profiles smoke, upgrade module) | 0 | 336 passed, same zeros |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | neutrality fail=0, redundancy fail=0 |
+| `python scripts/check_model_selection.py`; `python scripts/check_cairn.py` | 0 | mapping filled; 192 files, no issues |
+| `python scripts/claim_check.py` on `AGENTS.md`, `templates/core/AGENTS.md`, `CLAUDE.md` | 0 each | no flags |
+| `python3 scripts/token_budget.py` (tiktoken) | 0 | `AGENTS.md` 8,520 tokens (figure 8,520) |
+| `python bootstrap/scaffold.py upgrade --target . --finalize AGENTS.md`, then `... --finalize CLAUDE.md` | 0 | one hash advanced each; `verify_integrity` still lists 23 violations, none of `AGENTS.md`, `CLAUDE.md`, the module |
+| `python scripts/link_check.py` | 1 | 3 issues, all in `templates/modules/default-on/documentation-plan.md` (not touched here) |
+
+**Mutants for B1** (detached worktree of `f452442b` in a fresh folder, the revised test copied in,
+worktree removed afterwards; node `test_the_different_maker_condition_is_gone_and_same_tier_is_excluded`):
+control, revised test, unmutated: passed. M3 (delete the same-tier clause in the fan-out paragraph,
+`roles.md:228`): revised test **killed**, test as at `f452442b` survived. M18 (delete the whole same-maker
+and same-tier parenthesis there): revised test **killed**, old test survived. Control after restoring: passed.
+
+**Non-pass disposition**: no skip, xfail or xpass in the runs above.
+**Known omissions**: full suite not run (certifying run owns it); the gate-manifest and AST re-anchors are
+Maintainer-only and not run (`_gate_manifest.py verify` was read-only and was not used to certify anything);
+the revised node was mutated for B1 only, not re-run over the other fifteen mutants of the review; the harness
+claim in `CLAUDE.md` stays unchecked.
