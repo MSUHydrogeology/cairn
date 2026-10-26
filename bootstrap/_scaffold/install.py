@@ -1112,12 +1112,7 @@ def _render_onboarding_slot(preset_name: str, seed_blocks: list[str]) -> str:
     ``onboarding-tasks`` slot from the preset name + extracted seeds.
 
     The first line is the ``<!-- preset: <name> -->`` metadata
-    comment the goodnight activation helper reads to resolve which
-    installed source file
-    (``<target>/dev/modules/onboarding/<name>.md``) carries the
-    deferred tasks (Codex P2-4 disposition: the metadata-comment
-    contract is established here at scaffold time so the helper's
-    contract is uniform).
+    comment, which records which profile the seeds came from.
     """
     parts = [f"<!-- preset: {preset_name} -->", ""]
     parts.extend(seed_blocks)
