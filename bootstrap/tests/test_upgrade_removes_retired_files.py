@@ -1602,3 +1602,155 @@ def test_a_name_that_is_taken_after_the_decision_keeps_its_record(
     assert (project / SCRIPT).read_bytes() == b"new work\n"
     assert SCRIPT in _records(project)
 
+
+
+# ---------------------------------------------------------------------------
+# `upgrade --finalize` over retired records
+# ---------------------------------------------------------------------------
+
+def _finalize(capsys: pytest.CaptureFixture[str], project: Path, *flags: str,
+              ) -> tuple[int, str, str]:
+    return _upgrade(capsys, project, "--finalize", *flags)
+
+
+def test_a_gone_retired_record_is_cleared_by_bare_finalize(
+    project: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    _add_script(project, SCRIPT, write=False)
+    _add_markdown(project, NEXT_SESSION, write_file=False, write_cache=False)
+    _commit_all(project)
+    assert verify(project) == 1
+    code, out, err = _finalize(capsys, project)
+    assert code == 0, (out, err)
+    records = _records(project)
+    assert SCRIPT not in records and NEXT_SESSION not in records
+    assert SCRIPT in out and NEXT_SESSION in out, "the cleared records are named"
+    assert verify(project) == 0
+
+
+def test_a_blocked_name_still_refuses_bare_finalize_with_exit_1(
+    project: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    def refused(name: str, setup) -> None:
+        copy = tmp_path / name
+        shutil.copytree(project, copy, symlinks=True)
+        dst = setup(copy)
+        _commit_all(copy)
+        code, _out, err = _finalize(capsys, copy)
+        assert code == 1, (name, err)
+        assert dst in err and dst in _records(copy), name
+
+    def dangling(copy: Path) -> str:
+        _add_script(copy, write=False)
+        (copy / SCRIPT).symlink_to(copy / "dev" / "nowhere")
+        return SCRIPT
+
+    def folder(copy: Path) -> str:
+        _add_script(copy, write=False)
+        (copy / SCRIPT).mkdir()
+        return SCRIPT
+
+    def linked_parent(copy: Path) -> str:
+        dst = "scripts/_onboarding/cli.py"
+        _add_script(copy, dst)
+        (copy / "dev" / "real-folder").mkdir()
+        shutil.move(str(copy / "scripts" / "_onboarding"), str(copy / "dev" / "real-folder" / "x"))
+        (copy / "scripts" / "_onboarding").symlink_to(copy / "dev" / "real-folder" / "x")
+        return dst
+
+    refused("dangling", dangling)
+    refused("folder", folder)
+    refused("linked-parent", linked_parent)
+
+
+def test_a_missing_unlisted_file_and_a_deleted_shipped_file_still_refuse(
+    project: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    mine = project / "analysis.py"
+    mine.write_text("print('mine')\n", encoding="utf-8")
+    _add_record(project, {
+        "dst": "analysis.py", "src": "modules/default-on/nothing-here.py", "verbatim": True,
+        "hash": _sha(mine.read_bytes()), "base_hash": _sha(mine.read_bytes())})
+    _commit_all(project)
+    mine.unlink()
+    code, _out, err = _finalize(capsys, project)
+    assert code == 1 and "analysis.py" in err
+    assert "analysis.py" in _records(project)
+    mine.write_text("print('mine')\n", encoding="utf-8")
+    (project / "NOTICE.md").unlink()
+    _commit_all(project)
+    code, _out, err = _finalize(capsys, project)
+    assert code == 1 and "NOTICE.md" in err
+    assert "NOTICE.md" in _records(project)
+
+
+@pytest.mark.parametrize("force", [(), ("--force",)])
+def test_a_copy_that_matches_none_or_cannot_be_shown_unchanged_is_skipped_by_bare_and_force_finalize(
+    project: Path, capsys: pytest.CaptureFixture[str], force: tuple[str, ...],
+) -> None:
+    shipped = _shipped_versions(SCRIPT)[-1]
+    edited = _add_script(project, SCRIPT, data=shipped + b"# mine\n", base=shipped)
+    _add_markdown(project, PLAIN_MARKDOWN, cache=b"# a cache nobody shipped\n")
+    fine = _add_script(project, SCRIPT_2)
+    lock = _read_lock(project)
+    next(r for r in lock["files"] if r["dst"] == SCRIPT_2)["hash"] = _sha(b"stale")
+    _write_lock(project, lock)
+    _commit_all(project)
+    before = _records(project)
+    code, out, err = _finalize(capsys, project, *force)
+    assert code == 0, (out, err)
+    after = _records(project)
+    assert after[SCRIPT]["hash"] == before[SCRIPT]["hash"], "an edited retired copy was recorded"
+    assert after[PLAIN_MARKDOWN]["hash"] == before[PLAIN_MARKDOWN]["hash"]
+    assert after[SCRIPT_2]["hash"] == _sha(fine.read_bytes()), "an untouched copy is recorded as today"
+    assert re.search(rf"{re.escape(SCRIPT)}: {re.escape(MATCHES_NONE)}", out), out
+    assert re.search(rf"{re.escape(PLAIN_MARKDOWN)}: {re.escape(CANNOT_TELL)}", out), out
+    assert "now attests this tree" not in out, "the closing line must not claim that"
+    assert re.search(r"2 retired .*not recorded", out), out
+    assert edited.is_file()
+
+
+def test_scoped_finalize_records_it_and_says_so(
+    project: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    shipped = _shipped_versions(SCRIPT)[-1]
+    _add_script(project, SCRIPT, data=shipped + b"# mine\n", base=shipped)
+    _commit_all(project)
+    (project / SCRIPT).write_bytes(shipped + b"# mine, edited again\n")
+    code, out, err = _finalize(capsys, project, SCRIPT)
+    assert code == 0, (out, err)
+    assert _records(project)[SCRIPT]["hash"] == _sha(shipped + b"# mine, edited again\n")
+    assert re.search(rf"recorded .*{re.escape(SCRIPT)}", out), out
+
+
+def test_an_edited_living_state_copy_is_neither_counted_nor_recorded(
+    project: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    agreement = "dev/collaboration_agreement.md"
+    _add_markdown(project, agreement, file=b"# Project-owned agreement\nLocal terms.\n")
+    _add_markdown(project, NEXT_SESSION, file=b"# my notes\n")
+    _commit_all(project)
+    before = _records(project)
+    code, out, err = _finalize(capsys, project)
+    assert code == 0, (out, err)
+    after = _records(project)
+    for dst in (agreement, NEXT_SESSION):
+        assert after[dst]["hash"] == before[dst]["hash"]
+        assert dst not in out, f"{dst} is living state: finalize neither counts nor names it"
+    assert "now attests this tree" in out
+
+
+def test_finalize_never_reaches_committed_copy_matches(
+    project: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str],
+) -> None:
+    _add_script(project, SCRIPT)
+    _add_script(project, SCRIPT_2, write=False)
+    _commit_all(project)
+
+    def never(*_args: object, **_kwargs: object) -> bool:
+        raise AssertionError("--finalize asked git about a committed copy")
+
+    monkeypatch.setattr(U, "_committed_copy_matches", never)
+    for flags in ((), ("--force",), (SCRIPT,)):
+        code, out, err = _finalize(capsys, project, *flags)
+        assert code == 0, (flags, out, err)

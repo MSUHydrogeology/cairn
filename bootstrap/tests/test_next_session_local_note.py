@@ -497,15 +497,23 @@ def test_a_deleted_handoff_leaves_integrity_passing_and_an_emptied_one_lists_no_
     assert verify(target) == 0
     deleted = _all_output(capsys)
     assert "unreadable 1" in deleted, deleted
-    assert s.main(["upgrade", "--target", str(target), "--finalize",
-                   "--cairn-root", str(ROOT)]) != 0
-
-    old_file.write_text("", encoding="utf-8")
-    assert verify(target) == 0
+    # Cairn no longer ships the file, so finalize clears the record of a deleted one.
     assert s.main(["upgrade", "--target", str(target), "--finalize",
                    "--cairn-root", str(ROOT)]) == 0
+    assert HANDOFF not in {rec["dst"] for rec in s.read_lockfile(target)["files"]}
     capsys.readouterr()
     assert verify(target) == 0
+    assert "unreadable 0" in _all_output(capsys)
+
+    kept = tmp_path / "emptied"
+    emptied_file, _base, _record = _old_project_with_handoff(kept)
+    capsys.readouterr()
+    emptied_file.write_text("", encoding="utf-8")
+    assert verify(kept) == 0
+    assert s.main(["upgrade", "--target", str(kept), "--finalize",
+                   "--cairn-root", str(ROOT)]) == 0
+    capsys.readouterr()
+    assert verify(kept) == 0
     emptied = _all_output(capsys)
     assert "unreadable 0" in emptied, emptied
     assert "NEXT_SESSION" not in emptied, emptied

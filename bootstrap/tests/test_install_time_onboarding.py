@@ -351,14 +351,17 @@ class TestUpgradeLeavesAnOldHelperAlone:
         assert set(OLD_HELPER_DSTS) <= kept
 
     @pytest.mark.parametrize("force", ((), ("--force",)))
-    def test_deleting_one_of_the_nine_makes_finalize_refuse_and_name_it(
+    def test_deleting_one_of_the_nine_is_cleared_by_finalize_and_names_it(
             self, tmp_path: Path, capsys, force: tuple[str, ...]) -> None:
         target = tmp_path / "project"
         _old_helper_project(target)
         (target / OLD_HELPER_DSTS[3]).unlink()
         capsys.readouterr()
-        assert _upgrade(target, "--finalize", *force) == 1
-        assert OLD_HELPER_DSTS[3] in capsys.readouterr().err
+        assert _upgrade(target, "--finalize", *force) == 0
+        assert OLD_HELPER_DSTS[3] in capsys.readouterr().out
+        kept = {r["dst"] for r in s.read_lockfile(target)["files"]}
+        assert OLD_HELPER_DSTS[3] not in kept
+        assert set(OLD_HELPER_DSTS) - {OLD_HELPER_DSTS[3]} <= kept
 
     def test_the_guide_says_do_not_delete_and_names_the_three_loose_files(self) -> None:
         guide = _flat((ROOT / UPGRADE_GUIDE).read_text(encoding="utf-8"))

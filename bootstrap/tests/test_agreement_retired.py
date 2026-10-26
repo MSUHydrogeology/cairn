@@ -105,18 +105,27 @@ def test_old_agreement_is_reported_once_and_unchanged_by_upgrade(
     assert verify(target) == 0
 
 
-def test_missing_old_file_refuses_bare_finalize_but_empty_file_survives(
+def test_deleted_old_file_is_cleared_by_bare_finalize_and_an_empty_file_survives(
     tmp_path: Path,
 ) -> None:
     target = tmp_path / "project"
     old_file, _, _ = _old_project(target)
     old_file.unlink()
     assert s.main(["upgrade", "--target", str(target), "--finalize",
-                   "--cairn-root", str(ROOT)]) != 0
-    old_file.write_text("", encoding="utf-8")
-    assert s.main(["upgrade", "--target", str(target), "--finalize",
                    "--cairn-root", str(ROOT)]) == 0
+    lock = s.read_lockfile(target)
+    assert lock is not None
+    assert OLD not in {rec["dst"] for rec in lock["files"]}
     assert verify(target) == 0
+    kept = tmp_path / "kept"
+    empty_file, _, _ = _old_project(kept)
+    empty_file.write_text("", encoding="utf-8")
+    assert s.main(["upgrade", "--target", str(kept), "--finalize",
+                   "--cairn-root", str(ROOT)]) == 0
+    lock = s.read_lockfile(kept)
+    assert lock is not None
+    assert OLD in {rec["dst"] for rec in lock["files"]}
+    assert verify(kept) == 0
 
 
 def test_moved_roster_needs_explicit_integrity_finalization(

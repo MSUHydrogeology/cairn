@@ -2184,6 +2184,7 @@ def _cmd_finalize_lockfile(
     lock: dict[str, Any],
     only: set[str] | None = None,
     force: bool = False,
+    templates_root: Path | None = None,
 ) -> int:
     """`upgrade --finalize [PATH ...]`: advance each record's ``hash`` to the
     adopter's *committed on-disk* content, so ``verify_integrity`` attests the
@@ -2213,9 +2214,26 @@ def _cmd_finalize_lockfile(
     integrity checks the real file, not the absent ``VENDOR.md``.  Idempotent.
     Fail-closed: a tracked file missing on disk -- or a named ``only`` path that
     matches no record -- aborts (never silently drop a file, or silently
-    no-op)."""
+    no-op).
+
+    Records of files Cairn stopped shipping are judged by
+    :func:`_classify_retired_records` (no git call here).  One whose file is gone
+    is cleared instead of refused; one with a link, a folder or another non-file at
+    the name still refuses.  A retired copy that matches no version Cairn shipped,
+    or that cannot be shown unchanged, is not recorded by a bare ``--finalize``
+    (``--force`` included): it is named, its ``hash`` stays, and the closing line
+    counts it.  ``--finalize <path>`` records it on purpose.  Living-state files
+    were never recorded and are neither named nor counted."""
     files = lock.get("files") or []
     mapped = {r.get("dst") for r in files}
+    retired = {id(r["rec"]): r for r in _classify_retired_records(
+        target, lock,
+        templates_root if templates_root is not None else _cairn_root() / "templates",
+        git_gate=False)}
+    cleared: list[str] = []
+    cleared_ids: set[int] = set()
+    not_recorded: list[tuple[str, str]] = []
+    recorded_by_name: list[tuple[str, str]] = []
 
     # #56 dirty-tree guard, finalize arm: an unscoped whole-tree finalize on a
     # dirty tree advances the hash of *every* drifted tracked file -- including a
@@ -2263,6 +2281,14 @@ def _cmd_finalize_lockfile(
                 matched.add(dst_rel)
             if orig_dst in only:
                 matched.add(orig_dst)
+        judged = retired.get(id(rec))
+        if judged is not None and judged["state"] == "gone":
+            cleared.append(dst_rel)
+            cleared_ids.add(id(rec))
+            continue
+        if judged is not None and judged["state"] == "blocked":
+            missing.append(dst_rel)
+            continue
         dst_abs = target / dst_rel
         if not dst_abs.is_file():
             missing.append(dst_rel)
@@ -2277,6 +2303,11 @@ def _cmd_finalize_lockfile(
             # the hash is unused for these records, so don't churn it.
             rec["living_state"] = True
             continue
+        if judged is not None and judged["state"] in ("matches-none", "cannot-tell"):
+            if only is None:
+                not_recorded.append((dst_rel, judged["words"]))
+                continue
+            recorded_by_name.append((dst_rel, judged["words"]))
         # Preserve the as-shipped baseline before advancing hash, for verbatim
         # records that predate base_hash.
         if rec.get("verbatim") and not rec.get("base_hash"):
@@ -2303,11 +2334,28 @@ def _cmd_finalize_lockfile(
                   "nothing to finalize:\n  " + "\n  ".join(unknown),
                   file=sys.stderr)
             return 1
+    if cleared_ids:
+        lock["files"] = [r for r in files if id(r) not in cleared_ids]
     (target / _LOCKFILE_REL).parent.mkdir(parents=True, exist_ok=True)
     _write_by_replacing(
         target / _LOCKFILE_REL, _emit_lock_yaml(lock).encode("utf-8"), target
     )
+    for dst_rel in cleared:
+        print(f"  cleared the record for {dst_rel}: the file Cairn stopped "
+              "shipping is already deleted.")
+    for dst_rel, words in recorded_by_name:
+        print(f"  recorded {dst_rel} on your request: it is a retired file that "
+              f"{words}.")
+    for dst_rel, words in not_recorded:
+        print(f"  not recorded: {dst_rel}: {words}. It is a retired file; "
+              f"`--finalize {dst_rel}` records it, or restore it from git history.")
     scope = "" if only is None else f" (scoped to {len(matched)} path(s))"
+    if not_recorded:
+        print(f"Finalized {_LOCKFILE_REL}: advanced {changed} hash(es){scope} to the "
+              f"committed on-disk content; {len(not_recorded)} retired file(s) not "
+              "recorded (listed above), so `verify_integrity` still reports them "
+              "until you restore or delete them.")
+        return 0
     print(f"Finalized {_LOCKFILE_REL}: advanced {changed} hash(es){scope} to the "
           f"committed on-disk content. `verify_integrity` now attests this tree "
           f"(the base cache / upgrade ancestor is unchanged).")
@@ -3031,7 +3079,8 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
 
     if args.finalize:
         only = set(args.finalize_paths) if args.finalize_paths else None
-        return _cmd_finalize_lockfile(target, lock, only=only, force=args.force)
+        return _cmd_finalize_lockfile(
+            target, lock, only=only, force=args.force, templates_root=templates_root)
 
     if args.remove_retired:
         if args.to is not None:
