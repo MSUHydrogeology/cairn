@@ -2,7 +2,7 @@
 
 **Author**: Claude (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-no-plan-changes-end-to-end.md](../proposals/archive/2026-10-26-claude-no-plan-changes-end-to-end.md)
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Waiting on Maintainer**: re-anchor gate manifest: dual-review.md:344-346
 **Plan review**: not required(prose edits to one rule and the docs that repeat it; the proposal's two reviews checked the edit list; this plan opens in the fast multi-stage form)
 **Opened**: 2026-10-26
@@ -247,3 +247,100 @@ the plan names. The 2350 passed is the sum of the two batches, 1569 plus 781.
 ## Dispositions
 
 *Filled at archive-preparation.*
+
+## Code review -- Claude Sonnet 5.5 (fresh session) -- 2026-10-26
+
+```
+Reviewed commit: 89f3957df0303a41767425b7040b74d1c8f1db8e
+Target: 63b64784^..89f3957d (C1 63b64784, C2 2a582c5d, C3 6d84b5bd, plan record 89f3957d); other agents' commits in that window were not reviewed
+Prior findings: none
+```
+
+**Conclusion.** The change does what Revision 3 says for the trivial lane and for
+the Boundary B condition on both triage lists, and no test or gate it touches is
+red. It does not deliver one accepted outcome: the second test of a "no plan"
+claim, at the implementing commit (finding F1, blocking). I also found one stale
+sentence the scan could not match (F2) and one rule-text gap for the Maintainer
+(F3). The verdict is blocking, so the plan moves to `revising-code`. What I did
+not check is in the coverage line.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Mostly yes: every row of Revision 3's edit table was edited, and the three rule sentences read true and agree with each other -- `git diff 63b64784^ 89f3957d -- AGENTS.md templates/core/AGENTS.md doctrine/`; but item 3's "tested again at the implementing commit" is written nowhere (`git grep -n -i -E 'against what it touched|more than one area|tested again' 89f3957d -- doctrine AGENTS.md templates/core` returns only the template's header text, not that rule) -- F1.
+2. **Best alternative.** None simpler for the rules: the Boundary B condition is one bullet per list in `doctrine/plans.md:185` and `:193-196`, plus the same clause in the two short summaries (`doctrine/lifecycle.md:215-221`, `doctrine/proposals.md:185-188` and `:322-331`). For F1 the cheapest delivery is one sentence in `doctrine/proposals.md` under "Accepted proposals", not a new mechanism.
+3. **What would show it wrong.** A trivial change that ships a defect, or a risky change that skips both the plan and the review -- see the falsification ledger below (2 of 13 distinct breaks killed by tests, one more by the integrity check; the survivors are named) and F1 and F3.
+
+**Bounding**: not owed. The plan's Boundary B record is `full` (`**Boundary B mode**: full`, `**Certified by**: pending`), so there is no bounded claim to rule on. I checked the record anyway: its tested commit is `6d84b5bd`, and `89f3957d` changes only the plan file (`git show --stat 89f3957d`), so the tested bytes equal the reviewed bytes for every file except the plan.
+
+**Waiting-line check.** C4 was the only fenced chunk. `git log -S'Waiting on Maintainer**: re-anchor' -- dev/plans/no-plan-changes-end-to-end.md` shows the Waiting line landing in `89f3957d`, inside the range. No deviation request was made in the range. Not a finding.
+
+### What I checked and how
+
+**1. The edited sentences.** Read in the diff and in the files at `89f3957d`.
+* `AGENTS.md:333-341` and `templates/core/AGENTS.md:332-340` carry the same new Boundary B text (diff of the two hunks: identical modulo indent). The old Bounding-verdict sentences are gone from both (`git grep -i bounding 89f3957d` finds only the plan-side rule at `AGENTS.md:354`).
+* `doctrine/plans.md`: the open list has five items and the skip list four (`:178-196`); "ANY of the five" and the fast multi-stage sentence name the new condition (`:205-211`); lines 88-91, 130-134 and 690-695 still read true. The Boundary B paragraph (`:366-374`) matches `AGENTS.md`.
+* The condition is on both lists in all three places that list conditions: plans (`:185`, `:193`), lifecycle (`:215-221`) and proposals (`:185-188`, `:322-331`). No stale count: `git grep` for "any/all of the three|four|five" and "three skip" finds only `plans.md:205` ("five").
+* The "no plan" header form is in both proposal templates, after the pinned prefix, and in `doctrine/proposals.md:204-209`.
+* The easy-problem sentence is in both `AGENTS.md` copies (`:243`, `:248`).
+* I found no sentence that contradicts another one, except F3 below.
+
+**2. The scan, from scratch** (my own paragraph scan, `scan.py` in my scratch folder, over every tracked file at the named commit, excluding `dev/proposals/`, `dev/plans/`, `dev/reviews/`, `dev/strategy/`, the changelog and `bootstrap/tests/`).
+* *Positive control.* At `63b64784^`, pattern "typo|one-line|trivial" with "code review|a review|Bounding verdict" found 50 paragraphs, including `doctrine/lifecycle.md:47` (the paragraph holding the old line 61), `docs/glossary.md:17`, and both example READMEs. So the scan can see the known cases.
+* *HEAD.* The same pattern at `89f3957d` finds 52 paragraphs. The implementer reports 48 and 50; my scan also counts the shipped twins and a few other files, so the totals differ by two. I read all 52. Each is either edited and now says "no code review" (lifecycle 47 and 215, proposals 185 and 322, plans 366, both `AGENTS.md`, README 48 and 100, the three alt texts, both dev tours, glossary, quickstart, vision, workflow-role, release-process, solo-legacy, dimensions, both example READMEs, the figure), or stands because the review it names belongs to another lane or stage (proposal review, plan review, standard or deliberate lane, the roster tables, `dev/agent_collaboration.md:132`, `dev/measurement/tag-pass-dispositions.md:445`, `docs/agent-team-onboarding.md:69`). None is a trivial-lane review that was left in.
+* *A second pattern.* "trivial|typo|just commit|one-line|obvious correction" with "reviewer|reviewed|fresh reviewer|independent review|reviewed range" gave 33 paragraphs; all stand except the dual-review one (item 7). A third pattern ("every change|small change|small fix|light path" with a review phrase) found the one the first two missed: `docs/related-practices.md:122-123`, "Small changes skip this and get a code review" (F2).
+
+**3. Every member of the set.** Every file in Revision 3's edit table was touched by the three commits: `AGENTS.md`, `templates/core/AGENTS.md`, `doctrine/{plans,lifecycle,proposals}.md`, both proposal templates, `docs/{dev-tour,glossary,quickstart,vision,workflow-role,related-practices,release-process,solo-legacy-recipe}.md`, `dev/modules/onboarding/dev-tour.md`, `dimensions/README.md`, both example READMEs, `README.md`, `docs/getting-started.md`, `docs/index.html`, the figure. Skipped: none. Not yet done: the changelog row, which the plan puts in the archive commit (C4 text), so it is not a skip. Edited but not in the table: the short summaries in `doctrine/lifecycle.md:213-221` (the table lists line 61 only, and the Revision's "Not edited" note names 212-219) and `doctrine/proposals.md:185-188` and `:322-331`. I judge these in scope: they list the same conditions and would otherwise be the stale list the task warns about.
+
+**4. The figure and the alt texts.** The figure's header comment (`:6-7`), `desc` (`:31`) and trivial lane say "the change with its test, and no code review". The three alt texts are the same string and say "needs no review" (`README.md:48`, `docs/getting-started.md:28`, `docs/index.html:168`); they open with the conclusion, as `docs/DOCUMENTATION_PLAN.md` asks. The figure has no script, image or link, keeps its `viewBox` (`0 0 700 390`), and the new `.note` text uses an existing class. I rendered the SVG alone in the built-in browser at 1200 px and 375 px: it fits both, nothing clips, and the trivial lane shows "change + test" and the italic note. The pane renders local files in light theme only, so I did not see dark theme, and I did not see the figure inside `README.md` or `index.html` (not checked). The C3 commit body gives the legibility result as `docs/DOCUMENTATION_PLAN.md` requires, and its overstated "none" is corrected in this plan's record: at `89f3957d`, `git grep 'then a code review'` outside the records finds one line, the figure's `desc` (standard and deliberate lanes), which is what the plan record says.
+
+**5. Lockfile and integrity.** `dev/.cairn/cairn-lock.yml` lists `AGENTS.md` at `sha256:8becb436...ee78a6`; `git show 89f3957d:AGENTS.md | shasum -a 256` gives the same, and so does the working-tree file now. `AGENTS.md` was last changed by `63b64784` (`git log -- AGENTS.md`), so no other agent committed an edit to it in the window; the momentary different `shasum` the implementer saw was an uncommitted working-tree state that is in no commit, and it does not affect the committed bytes. I recomputed every lock hash against the blobs at `63b64784^` and at `89f3957d`: 27 files do not match at either commit, the same 27 (none new, none fixed; `dev/proposals/_template.md` is among them before and after). `bootstrap/verify_integrity.py` on a clean worktree of `89f3957d` does not list `AGENTS.md`.
+
+**6. Tests.** In a clean detached worktree of `89f3957d`, Python 3.13.13: the six named test files plus `test_writing_rules_ship.py` and `test_review_sweep_ships.py` gave 881 passed in 2.5 s; 22 files that read edited files (the list is in the ledger) gave 1278 passed in about 42 s. The pinned sentences still exist where the tests look: the nine Boundary B patterns in `test_review_and_verification_rules_ship.py:100-125` match `AGENTS.md`/`templates/core/AGENTS.md`; `test_review_stance_in_shipped_files.py:709-718` still sees the pinned start of the `Plan review` line (mutant M3 below proves it still looks). The implementer's two failures: `test_oracle_privileged_workflows_preserved` passes alone on the clean `89f3957d` worktree (1 passed); it compares a baseline engine with the current one and reads no file these commits touched (`bootstrap/tests/test_oracle.py:162-171`), so the shared-checkout failure fits the uncommitted engine edits the implementer names. `test_a_t4_output_is_bounded` passes alone on the same worktree (1 passed); it floods a child process and reads no repository file (`test_security_stack.py:1117-1133`). I did not re-observe the original failures, so the cause is the implementer's account plus these two reads.
+
+**7. C4 (the sentence at `doctrine/dual-review.md:344-346`, at `89f3957d`).** It read: "For work with a valid Boundary B record (`doctrine/plans.md`: a plan's Implementation verification section, a trivial change's commit body, or the commit body of an accepted proposal implemented in one commit with no plan, whose tested revision is that commit and whose clean state is a tree clean apart from the change), the reviewer first checks...". It contradicted the rule in one way: it names two records a reviewer checks first, and under the rule neither a trivial change nor a no-plan implementation has a reviewer. The edit that fits is to keep only "a plan's Implementation verification section" and drop the two commit-body items and the clause "whose tested revision is that commit and whose clean state is a tree clean apart from the change", which describes only those two. The pinned statement `boundary-c-names-the-no-plan-accepted-proposal` (`test_review_stance_in_shipped_files.py:1123-1126`) moves with it. Note: commit `cdffeb8a` (Maintainer, after the reviewed range) has since edited this sentence and the test, keeping the trivial change's commit body "where the Maintainer asks for a review". I did not review that commit.
+
+**9. The C3 commit-body claim.** Checked in item 4: the plan record corrects it.
+
+### Falsification ledger
+
+Control and mutants ran in one throwaway detached worktree of `89f3957d` (reset between mutants, removed afterwards), Python 3.13.13, over the same 22 test files. Control: 1278 passed.
+
+| # | Mutant (one deliberate break) | Result |
+|---|---|---|
+| M1 | `templates/core/AGENTS.md`: put back the old "Boundary C's Bounding verdict reviews it afterwards" and the code reviewer's Bounding verdict closing sentence | **Survived** (1278 passed) |
+| M2 | `doctrine/plans.md`: delete the "Boundary B would run `bounded`" skip bullet | **Survived** |
+| M3 | `templates/core/dev/proposals/_template.md`: alter the start of the `Plan review` line | **Killed**: `test_review_stance_in_shipped_files.py::test_proposal_header_offers_only_usual_values[shipped-proposal]` |
+| M3b | The same break in `dev/proposals/_template.md` | **Killed**: the `[own-proposal]` case of the same test |
+| M4 | `doctrine/plans.md`: put "ANY of the four" back | **Survived** |
+| M5 | `AGENTS.md`: delete the easy-problem sentence | **Survived the tests**; **killed by** `verify_integrity.py` (`modified (hash mismatch): AGENTS.md`), a gate, not a test |
+| M5b | `templates/core/AGENTS.md`: delete the same sentence | **Survived** (nothing compares the two copies) |
+| M6 | `doctrine/lifecycle.md`: put "code + test + one code review" back in lane 2 | **Survived** |
+| M7 | `docs/dev-tour.md` only: change the trivial lane text | **Killed**: `test_an_installed_onboarding_copy_equals_its_page[docs/dev-tour.md-...]` |
+| M8 | The figure: put "and a code review" back in the `header` | **Survived** |
+| M9 | `doctrine/plans.md`: delete "Needs Boundary B in `full` mode" from the open list | **Survived** |
+| M10 | `doctrine/proposals.md`: replace "a 'no plan' claim without each condition shown is a review finding" with "is fine" | **Survived** |
+| M11 | `docs/quickstart.md`: "with no code review" to "with one code review" | **Survived** |
+| M12 | `doctrine/lifecycle.md`: delete the Boundary B condition from the trivial definition | **Survived** |
+
+Tally of 14 rows (13 distinct breaks; M3 and M3b are one break in two files): killed by a test 3 (M3, M3b, M7), killed by a gate only 1 (M5), survived 10, equivalent 0 (no equivalence was measured, so none is claimed). The survivors are the new prose the plan's own record says no test pins ("The change is prose", Known omissions); the plan does not promise a pin, so I do not count them as defects. They do mean a future edit can silently remove the new triage bullet, the new Boundary B sentences or the easy-problem sentence. Recommendation, not a finding: one node that pins the triage bullet, the shipped Boundary B sentence and the "no code review" lane text would kill M1, M2, M6, M9, M12.
+
+### Findings
+
+**F1 -- blocking -- accepted outcome not delivered: the "no plan" claim is tested at proposal review but not again at the implementing commit.**
+Revision 3, "What changes" item 3, third bullet: "Tested again at the implementing commit, which re-reads the skip conditions against what it touched. If it touched more than one area, a plan opens then, and the plan-open commit archives the proposal as today." The Decision says "Revision 3 is the contract", and the item's own reason is that the proposal-stage test alone missed two changes of two on 2026-10-26. The shipped text has the first half only: `doctrine/proposals.md:204-209` makes an unjustified "no plan" claim a review finding. Nothing tells the implementing agent to re-read the conditions. `AGENTS.md:340-341` and `doctrine/plans.md:373-374` say a full-mode change "opens a plan", and the triage lists say when to open one, which covers a change that is obviously risky, but not the act of re-reading, and not the "touched more than one area" case. The edit table's row for `doctrine/proposals.md` says only "the 'no plan' clause", which is why the plan's scope check did not catch it. Accepted scope is a floor (`AGENTS.md`, Git and commit workflow), so this is a deviation to be delivered or conceded by the Maintainer, not narrowed by me.
+*Satisfier:* one sentence in `doctrine/proposals.md`, under "Accepted proposals" (the first bullet, `:322-326`): the implementing commit re-reads each plan-skip condition against what it touched; if it touched more than one area or its Boundary B would run `full`, a plan opens then, and the plan-open commit archives the proposal. Plus the same clause, in short, in `doctrine/plans.md` after the skip list. Or a recorded Maintainer concession that the Boundary B sentence is enough.
+
+**F2 -- non-blocking -- one stale sentence the scan could not match.** `docs/related-practices.md:122-124`: "For substantial changes, review happens before the code exists... Small changes skip this and get a code review." Small changes are the trivial lane, which now has no code review. The scan words are absent from that paragraph, so the plan's scan and mine (patterns 1 and 2) miss it; the third pattern found it. The same file's line 40 was edited in C2, so the file was open. *Satisfier:* change to "Small changes skip this and need no review," or delete the clause; one line, descriptive layer, no rule text.
+
+**F3 -- non-blocking, for the Maintainer -- the trivial lane's defect-repair carve-out and the Boundary B condition do not meet.** `doctrine/lifecycle.md:51-59` lets a defect repair take the trivial lane "even on a named surface" (a high-risk surface), and lane 2 now says "code + test, no proposal and no code review" (`:59-61`). `AGENTS.md:340-341` says a change whose Boundary B would run `full` "is not trivial: it opens a plan", and bounded mode refuses on a high-risk or contract surface (`AGENTS.md:322-330`). So a defect repair on a named surface is lane 2 by one text and "opens a plan" by the other; the plan triage lists apply to "an accepted proposal's implementation" (`doctrine/plans.md:177`) and lane 2 has none. Before this change such a repair got one code review; now an agent that reads only lane 2 gets none. I read the `AGENTS.md` sentence as the binding one, so I do not call the loophole open, but the lifecycle text does not say which artifact "opens a plan" means for a change with no proposal. *Satisfier (rule text, so the Maintainer's word):* one clause in lane 2, for example "a defect repair whose Boundary B would run `full` is not trivial: it takes the standard lane."
+
+**Notes, not findings.**
+* `bootstrap/tests/test_review_and_verification_rules_ship.py:24-27` (frozen) still says in its docstring that a trivial change's commit body is what "the code reviewer's Bounding verdict reviews". The patterns it pins still match, so it passes; the docstring describes the old rule and moves with the Maintainer's re-anchor.
+* The new easy-problem sentence says a change with no code review "carries" no easy-problem fix. A trivial-lane defect repair is its own change, not a fix carried inside another one, so I read it as not forbidding that; the sentence could say "carries no easy-problem fix inside it".
+* A trivial change with a known cheap defect next to it can neither fix it (no review) nor cite a plan's deferral reasons (no plan). The existing `AGENTS.md` deferral sentence does not say what such a change does. I did not weigh this further.
+
+### Verdict
+
+**Blocking.** F1 must be delivered, or conceded by the Maintainer, before this plan archives. F2 should ride the same revision. F3 is the Maintainer's call. Status set to `revising-code`. A second code-review pass runs only if the revision introduces new defects. Certification is unchanged: `**Certified by**: pending`, and the certifying run is the Maintainer's before the push; I did not run the full suite and did not set `CAIRN_FULL_SUITE`.
+
+**Coverage -- Covered:** the rule, doctrine and template sentences in the diff; the scan at two commits with a positive control and three patterns; every file in the edit table against the commits; the figure's source and its render at 375 and 1200 px in light theme; the three alt texts; the lock hash against the blob at `89f3957d`, and all 27 lock mismatches at base and head; 1278 tests over 22 files plus 881 over 8 files; the two named failures; 13 distinct breaks beside a control. **Not covered:** dark theme, and the figure inside `README.md`/`index.html` (the pane cannot show them); the full suite and the other roughly 26 test files the implementer ran (not mine to run); `docs/DOCUMENTATION_PLAN.md`'s other asset rules beyond the ones quoted; `bootstrap/tests/test_upgrade.py` and the gate-manifest and AST re-anchor state; the engine, `CHANGELOG.md` and `PLANNING.md` commits by other agents in the window; commit `cdffeb8a`; whether adopters' installed copies of the two `AGENTS.md` sentences merge cleanly on upgrade. The scan finds words, not meaning: a trivial-lane review implied without a scan word and not in my three patterns would not be found (F2 was found that way, so others may exist).
