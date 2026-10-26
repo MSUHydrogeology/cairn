@@ -56,13 +56,14 @@ class Bed:
         self.root = root
         self.repo = root / "repo"
         self.home = root / "home"
+        self.sign = False
         self.env = {"PATH": os.environ["PATH"], "HOME": str(self.home), "LC_ALL": "C",
                     "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"}
 
     def git(self, *args, check=True, input=None, text=True):
         r = subprocess.run(
             ["git", "-C", str(self.repo), "-c", "user.name=t", "-c", "user.email=t@t",
-             "-c", "commit.gpgsign=false", *args],
+             "-c", f"commit.gpgsign={str(self.sign).lower()}", *args],
             capture_output=True, text=text, input=input, env=self.env, check=False)
         assert r.returncode == 0 or not check, r.stderr
         return r
@@ -329,10 +330,13 @@ except R.Refuse as exc:
 
 
 def test_the_status_command_reads_only_the_fixed_environment_variables():
-    """A tripwire, not a proof: no environment variable steers a check.  The one
-    read of the environment filters it down for git."""
+    """A tripwire, not a proof: no environment variable steers a check.  The reads are
+    the filter that strips the environment for git, the agent socket the key check
+    must ask about, and the terminal type handed to the signer."""
     reads = [ln for ln in (REAL / "scripts/repin.py").read_text().splitlines() if "os.environ" in ln]
-    assert len(reads) == 1 and "GIT_" in reads[0], reads
+    names = [("GIT_" if "GIT_" in ln else "SSH_AUTH_SOCK" if "SSH_AUTH_SOCK" in ln else "TERM" if "TERM" in ln else ln)
+             for ln in reads]
+    assert names == ["GIT_", "SSH_AUTH_SOCK", "TERM"], reads
 
 
 # --------------------------------------------------------------------------

@@ -129,9 +129,6 @@ Each criterion names its test or command. Each refusal test has a control that p
 | SR2-6 (d) only `yes` counts; record says "yes typed on a terminal" | R2, R4 | the answers test; the record's text |
 | SR-8 (inherited gaps) | outside | board rows, not this plan |
 
-Proposed paths:
-* `bootstrap/tests/test_repin_ceremony.py`
-
 ## Scope delta
 
 **Scope delta**: degraded, as Revision 3 declares and the Decision allows ("each scope reduction in the Revision's Scope delta is allowed as listed"). Carried unchanged: the transaction and safe write, the reading order, the manifest-not-written rule, the extraction, the provenance listing. The per-chunk budgets are restated upward (R1+R3 300 to 400, R2 300 to 350, R4 300 to 400; estimates, not measures) because the Security Review added process isolation, the anchor load, the extraction checks and the fail-closed re-run check; if the Maintainer holds the old figures, the stopping rule fires earlier. The one change this plan makes to the contract is the Maintainer's own answer: no AST commit by the script. Nothing is dropped beyond the Revision's list.

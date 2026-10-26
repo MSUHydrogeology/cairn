@@ -8,7 +8,13 @@ the gate manifest owe, and which commits touched the files involved.
 ``package`` computes the AST pin's transaction (the new baseline bytes, and the
 known-new file when it must change), prints its digest and writes only into
 ``--ceremony-dir``.  The write itself, ``apply_pin``, never commits: it stops
-after one ``yes`` and prints the ``git commit`` line.  Nothing runs this
+after one ``yes`` and prints the ``git commit`` line.  ``ceremony`` runs the
+whole re-anchor at a terminal: it compares the launcher's digest, checks the
+packet, roster and anchor signature, refuses a signing key that is loaded in any
+agent or stored without a passphrase, writes an owed AST pin and stops, or runs
+the launcher's two stages, asks you to read two summaries and verifies the
+signature it gets.  The only secret is the passphrase you type at the signer's
+own prompt; this tool never reads it.  It never pushes.  Nothing runs this
 unprompted.
 
 Every check reads the committed tree (``HEAD``), never the working tree: the
@@ -659,7 +665,321 @@ def package(ctx, cdir=None):
     return raw
 
 
-def main(argv=None):
+# ---------------------------------------------------------------------------
+# the ceremony: checks, the AST pin, the launcher's two stages, verification
+# ---------------------------------------------------------------------------
+
+KEYGEN, SSHADD, LAUNCHCTL, SH = "/usr/bin/ssh-keygen", "/usr/bin/ssh-add", "/bin/launchctl", "/bin/sh"
+CHILD_PATH = "/usr/bin:/bin"
+ARTIFACT_REL = "bootstrap/reanchor.sh"
+ROSTER_REL = "dev/.cairn/allowed_signers"
+REPIN_TESTS = ("bootstrap/tests/test_repin.py", "bootstrap/tests/test_repin_ceremony.py")
+
+
+def launchctl_socket():
+    """The agent socket the login session would hand to any process, or None."""
+    r = subprocess.run([LAUNCHCTL, "getenv", "SSH_AUTH_SOCK"], capture_output=True, text=True,
+                       stdin=subprocess.DEVNULL, env={"PATH": CHILD_PATH}, check=False)
+    return r.stdout.strip() or None if r.returncode == 0 else None
+
+
+def child(rec, argv, **kw):
+    """Run a child this tool starts, with a short environment; record command and exit."""
+    kw.setdefault("env", {"PATH": CHILD_PATH, "LC_ALL": "C"})
+    kw.setdefault("stdin", subprocess.DEVNULL)
+    r = subprocess.run(argv, capture_output=True, text=True, check=False, **kw)
+    rec.append(f"ran {' '.join(argv)} -> exit {r.returncode}")
+    return r
+
+
+def relay(text):
+    for line in text.splitlines():
+        say(d(line))
+
+
+def confirm(rec, question):
+    if not ask_yes(question):
+        raise Refuse("no `yes` was typed. Nothing further was run.")
+    rec.append(f"yes typed on a terminal: {question}")
+
+
+def key_fingerprint(rec, pub):
+    r = child(rec, [KEYGEN, "-lf", pub])
+    found = [t for t in r.stdout.split() if t.startswith("SHA256:")]
+    if r.returncode or not found:
+        raise Refuse(f"{d(pub)} is not a readable public key.")
+    return found[0]
+
+
+def key_checks(rec, pub, private, fingerprint, launchctl, when):
+    """Refuse a key that is loaded in any agent, or stored without a passphrase.
+    The passphrase typed at the one prompt is then the only thing that signs."""
+    sockets = [s for s in dict.fromkeys([os.environ.get("SSH_AUTH_SOCK"), launchctl()]) if s]
+    for sock in sockets:
+        r = child(rec, [SSHADD, "-l"], env={"PATH": CHILD_PATH, "SSH_AUTH_SOCK": sock},
+                  start_new_session=True)
+        if r.returncode == 2:
+            say(f"  agent at {d(sock)}: could not ask it ({when}); shown, not refused")
+        elif r.returncode == 0 and fingerprint in r.stdout:
+            raise Refuse(f"the signing key is loaded in an agent ({when}), which would sign with no "
+                         f"passphrase. Remove it with:\n  SSH_AUTH_SOCK={d(sock)} {SSHADD} -d {d(pub)}")
+    if child(rec, [KEYGEN, "-y", "-P", "", "-f", private], start_new_session=True).returncode == 0:
+        raise Refuse(f"the signing key file {d(private)} has no passphrase ({when}). Encrypt it "
+                     f"with ssh-keygen -p, then run again.")
+    say(f"  key checks ({when}): not in any agent I could ask, and the file is encrypted")
+
+
+def blob_at(repo, rev, path):
+    rows = git(repo, "ls-tree", "-z", rev, "--", path, check=False)
+    return rows.split(b"\0")[0].split()[2].decode() if rows else None
+
+
+def verify_checkpoint(repo, commit, roster, fingerprint):
+    """True only for a good signature, checked against *roster*, by *fingerprint*."""
+    out = git(repo, "-c", "gpg.format=ssh", "-c", f"gpg.ssh.allowedSignersFile={roster}",
+              "-c", f"gpg.ssh.program={KEYGEN}", "log", "-1", "--format=%G?%x00%GK", commit)
+    status, _, key = out.decode().strip().partition("\0")
+    return status == "G" and key == fingerprint, status, key
+
+
+def anchor_state(ctx, roster):
+    """('G', fp) good; ('N', ...) unsigned; anything else is a signature that fails."""
+    ok, status, key = verify_checkpoint(ctx["repo"], ctx["anchor"], roster, None)
+    return status, key
+
+
+def last_signed(ctx, roster):
+    rows = git(ctx["repo"], "-c", "gpg.format=ssh", "-c", f"gpg.ssh.allowedSignersFile={roster}",
+               "-c", f"gpg.ssh.program={KEYGEN}", "log", "--first-parent", "-n", "2000",
+               "--format=%H%x00%G?", ctx["anchor"]).decode().splitlines()
+    for n, row in enumerate(rows):
+        if row.endswith("\0G"):
+            return row.split("\0")[0], n
+    return None, len(rows)
+
+
+def check_stop_records(ctx, cdir, first_run):
+    """Every commit since the anchor that changes an output path must be the commit
+    a stop record in *cdir* describes: one parent (the recorded HEAD), exactly the
+    recorded paths at the recorded blobs.  Compared from raw diff-tree output."""
+    repo, anchor, head = ctx["repo"], ctx["anchor"], ctx["head"]
+    recs = [json.loads(read_safe(f, own=True)) for f in sorted(Path(cdir).glob(STOP_PREFIX + "*.json"))]
+    span = f"{anchor}..{head}"
+    # Path-limited listings print rewritten parents, so ask for each commit's real ones.
+    listed = set(git_text(repo, "rev-list", "--full-history", span, "--", *OUTPUTS).split())
+    listed |= set(git_text(repo, "rev-list", "--merges", span).split())
+    for name in sorted(listed):
+        commit, *parents = git_text(repo, "rev-list", "--parents", "-n", "1", name).split()
+        if not any(blob_at(repo, commit, o) != blob_at(repo, p, o) for p in parents for o in OUTPUTS):
+            continue
+        changed = {}
+        if len(parents) == 1:
+            parts = git(repo, "diff-tree", "-r", "-z", "--no-renames", "--no-commit-id", "--raw", commit).split(b"\0")
+            changed = {parts[i + 1].decode("utf-8", "surrogateescape"): parts[i].split()[3].decode()
+                       for i in range(0, len(parts) - 1, 2)}
+        if len(parents) == 1 and any(r["head"] == parents[0] and r["paths"] == changed for r in recs):
+            say(f"  commit {commit[:12]} matches a stop record: it changes exactly the paths and bytes written")
+            continue
+        msg = (f"commit {commit[:12]} changes {', '.join(OUTPUTS)} but matches no stop record in "
+               f"{d(str(cdir))}: it is a merge, has another parent, adds a path, or holds other bytes "
+               f"than the ones shown to you. To undo it: git revert {commit}")
+        if not first_run:
+            raise Refuse(msg)
+        say("  shown, not refused (first run): " + msg)
+
+
+def check_first_run(ctx, reviewed):
+    repo = ctx["repo"]
+    if ctx["repin_state"] == "anchored":
+        raise Refuse("--first-run is for a repin the anchor does not yet pin, and this one is anchored. "
+                     "Run without --first-run.")
+    if not reviewed:
+        raise Refuse("--first-run needs --reviewed-commit <id>: the last commit that edited repin or "
+                     "its tests and that the code reviewer read.")
+    rid = git(repo, "rev-parse", "--verify", reviewed + "^{commit}", check=False)
+    if rid is None or git(repo, "merge-base", "--is-ancestor", rid.decode().strip(), ctx["head"],
+                          check=False) is None:
+        raise Refuse(f"{d(reviewed)} is not a commit that is an ancestor of HEAD.")
+    for path in (REPIN_REL, *REPIN_TESTS):
+        was = blob_at(repo, rid.decode().strip(), path)
+        if was is None or was != blob_at(repo, ctx["head"], path):
+            raise Refuse(f"{path} at HEAD is not the file the reviewed commit has. It was edited "
+                         f"after review; a new review must name a newer commit.")
+    if build_transaction(ctx) is not None:
+        raise Refuse("an AST pin is owed. The first run never carries one, because repin's own "
+                     "unpinned bytes would decide it. Pin it by hand under "
+                     "bootstrap/AST_BASELINE_RUNBOOK.md first.")
+
+
+def write_record(cdir, lines):
+    raw = ("\n".join(lines) + "\n").encode()
+    fd, tmp = tempfile.mkstemp(dir=cdir, prefix=".record-")
+    with os.fdopen(fd, "wb") as fh:
+        fh.write(raw)
+    os.replace(tmp, Path(cdir) / "ceremony-record.txt")
+    return Path(cdir) / "ceremony-record.txt", sha(raw)
+
+
+def run_ceremony(ctx, args, launchctl, rec):
+    rc, repo, tmp = ctx["rc"], ctx["repo"], ctx["tmp"]
+    cdir, values = Path(args.ceremony_dir), Path(args.values)
+    check_preconditions(ctx)
+    packet, launcher = cdir / "authorization-packet.txt", cdir / "reanchor-launcher.sh"
+    field = {k: rc.values_field(values, k) for k in ("checkout", "signing_key", "package", "home")}
+    if None in field.values() or Path(field["checkout"]).resolve() != repo:
+        raise Refuse("the values file must name checkout, signing_key, package and home, and its "
+                     "checkout must be this repository.")
+    pub = field["signing_key"]
+    private = pub[:-4] if pub.endswith(".pub") else pub
+    term = os.environ.get("TERM", "xterm")
+    rec.append(f"repin ceremony at HEAD {ctx['head']}, anchor {ctx['anchor']}, python "
+               f"{sys.version.split()[0]}, git {GIT} sha256 "
+               f"{sha(Path(GIT).read_bytes()) if os.path.isfile(GIT) else 'unreadable'}")
+    # 1. the launcher's digest, compared by eye and by this program
+    ldigest = sha(read_safe(launcher))
+    try:
+        pasted = input("\nPaste the launcher digest from the review's record: ").strip()
+    except EOFError:
+        pasted = ""
+    say(f"  launcher {d(str(launcher))}\n  computed {ldigest}\n  pasted   {d(pasted)}")
+    if pasted != ldigest:
+        raise Refuse("the launcher's digest is not the one in the review's record. Do not run it.")
+    rec.append(f"launcher digest {ldigest} equals the pasted digest")
+    confirm(rec, "Do the two digests match?")
+    # 2. packet, launcher, artifact and values
+    try:
+        state = rc.compare(repo, ctx["head"], packet)
+    except SystemExit as exc:
+        raise Refuse(f"the closure could not be compared (exit {exc.code}).")
+    if sorted(state["members"]) != sorted(ctx["closure"]):
+        raise Refuse("the launcher template's closure list differs from the checker's declared closure, "
+                     "so the closure shown here cannot be trusted. Nothing was run.")
+    if not rc.check_packet_pair(state, packet, launcher):
+        raise Refuse("the packet and launcher are not the pair the launcher demands.")
+    want = rc.packet_artifact_digest(packet)
+    art = (ctx["ext"] / ARTIFACT_REL).read_bytes()
+    if sha(art) != want:
+        raise Refuse(f"{ARTIFACT_REL} at HEAD is not the artifact the packet authorises. Nothing was run.")
+    copy = tmp / "artifact" / "reanchor.sh"
+    copy.parent.mkdir()
+    copy.write_bytes(art)
+
+    def artifact(command):
+        if sha(copy.read_bytes()) != want:
+            raise Refuse("the private copy of reanchor.sh changed since it was hashed.")
+        env = {"PATH": CHILD_PATH, "HOME": field["home"], "LC_ALL": "C"}
+        return child(rec, [SH, str(copy), command, str(values)], env=env)
+    r = artifact("validate")
+    if r.returncode:
+        relay(r.stdout + r.stderr)
+        raise Refuse("reanchor.sh validate refused the values file. No report was shown.")
+    # 3. roster and anchor
+    # The packet's member rows were compared with HEAD above, the roster's included,
+    # so this copy is the roster the packet pins.
+    roster = tmp / "roster"
+    roster.write_bytes((ctx["ext"] / ROSTER_REL).read_bytes())
+    fingerprint = key_fingerprint(rec, pub)
+    rec.append(f"signing key fingerprint {fingerprint}")
+    kt, kd = Path(pub).read_text().split()[:2]
+    if not any(kt in t and kd in t and t.index(kd) == t.index(kt) + 1
+               for t in (ln.split() for ln in roster.read_text().splitlines())):
+        raise Refuse(f"the signing key {fingerprint} is not in the packet-pinned roster.")
+    status, signer = anchor_state(ctx, roster)
+    if status == "N" and args.first_run:
+        known, n = last_signed(ctx, roster)
+        say(f"  the comparison base {ctx['anchor']} is unsigned; the last signed anchor is "
+            f"{known or 'not found'}, {n} commits earlier; what this ceremony blesses since then "
+            f"rests on the launcher digest you compared.")
+    elif status != "G":
+        raise Refuse(f"the anchor {ctx['anchor']} has signature state {d(status)}, not a good signature "
+                     f"by a roster key. " + ("An unsigned anchor needs --first-run." if status == "N"
+                                             else "--first-run does not waive a signature that fails."))
+    # 4. the reading order's last findings
+    if ctx["closure_changed"]:
+        raise Refuse("authority files differ from the anchor: " + ", ".join(d(m) for m in ctx["closure_changed"])
+                     + f". That is a transition ceremony. Run it by hand under {RUNBOOK}.")
+    if args.first_run:
+        check_first_run(ctx, args.reviewed_commit)
+    elif args.reviewed_commit or ctx["repin_state"] != "anchored":
+        raise Refuse(f"{REPIN_REL} is {ctx['repin_state']}; its bytes are not the anchor's. Only the "
+                     f"first run may continue, with --first-run --reviewed-commit <id>.")
+    check_stop_records(ctx, cdir, args.first_run)
+    key_checks(rec, pub, private, fingerprint, launchctl, "before stage 1")
+    # 5. an owed AST pin is written, then this stops
+    raw = package(ctx, cdir)
+    if raw:
+        apply_pin(ctx, cdir, raw)
+        rec.append("yes typed on a terminal: Write these files? (AST pin)")
+        return None, None
+    # 6. stage 1: candidate code runs, in a new session with no terminal and a short environment
+    if Path(field["package"]).exists():
+        raise Refuse(f"{d(field['package'])} already exists; stage 1 must not overwrite it. Move it aside.")
+    env = {"PATH": CHILD_PATH, "HOME": field["home"], "LC_ALL": "C"}
+    r = child(rec, [SH, str(launcher), str(packet), str(values), ctx["head"]], env=env,
+              start_new_session=True)
+    relay(r.stdout + r.stderr)
+    if r.returncode or not Path(field["package"]).is_file():
+        raise Refuse(f"stage 1 failed (exit {r.returncode}). Nothing was signed and no ref moved.")
+    # 7. Summary 2
+    package_file = Path(field["package"])
+    own = sha(read_safe(package_file))
+    theirs = [t for t in artifact("hash-package").stdout.split() if len(t) == 64 and t.isalnum()]
+    if theirs[:1] != [own]:
+        raise Refuse("the launcher's hash of the package and this program's disagree.")
+    say("\nSummary 2: what you are about to sign")
+    relay(artifact("show-report").stdout)
+    manifest_status(ctx)
+    say(f"authority files changed since the anchor: 0 of {len(ctx['closure'])}\n"
+        f"anchor signature: {'good, by a roster key' if status == 'G' else 'unsigned (first run)'}\n"
+        f"signing key fingerprint: {fingerprint}\npackage digest: {own}")
+    rec.append(f"package digest {own}")
+    confirm(rec, "Does Summary 2 describe what you intend to sign?")
+    if sha(read_safe(package_file)) != own:
+        raise Refuse("the package was rewritten after you read the report. Nothing was signed.")
+    # 8-9. (signing path) key checks again, then stage 2 with the terminal attached and a short environment
+    key_checks(rec, pub, private, fingerprint, launchctl, "before stage 2")
+    note = ("The launcher's advice to load the key with ssh-add does not apply here: this key must "
+            "never be loaded into an agent.")
+    say(f"\nYou will be asked for the key's passphrase once, now. If you are asked at any other point, "
+        f"type nothing and stop.\n{note}\nasked once, now")
+    env = {"HOME": field["home"], "PATH": CHILD_PATH, "TERM": term, "LANG": "C"}
+    argv = [SH, str(launcher), str(packet), str(values), ctx["head"], "--stage2", own]
+    rec.append(f"ran {' '.join(argv)}")
+    proc = subprocess.Popen(argv, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT)
+    for raw_line in proc.stdout:
+        line = raw_line.decode("utf-8", "replace").rstrip("\n")
+        if "ssh-add" not in line and "missing key, not a broken tool" not in line:
+            say(d(line))
+    rec.append(f"stage 2 exit {proc.wait()}")
+    if proc.returncode:
+        say(note)
+        raise Refuse(f"stage 2 failed (exit {proc.returncode}). Nothing was pushed.")
+    # 10-11. (end of signing path) verify against the packet-pinned roster, then end
+    new = git_text(repo, "rev-parse", "--verify", ANCHOR_REF + "^{commit}")
+    good, status, key = verify_checkpoint(repo, new, roster, fingerprint)
+    if not good:
+        raise Refuse(f"the new anchor {new} does not carry a good signature by {fingerprint} "
+                     f"(state {d(status)}, key {d(key)}). Do not push.")
+    branch = git_text(repo, "symbolic-ref", "HEAD")
+    tip = git_text(repo, "rev-parse", "HEAD")
+    rec.append(f"verified: new anchor {new}, good signature by {fingerprint}, branch {branch} at {tip}")
+    return new, tip
+
+
+def finish(ctx, path, digest, done):
+    say(f"\nrecord  {d(str(path))}\nrecord digest  {digest}")
+    if done:
+        new, tip = done
+        branch = git_text(ctx["repo"], "symbolic-ref", "HEAD")
+        say(f"Done: the new anchor is {new} and the new {branch} is {tip}; the anchor carries a good "
+            f"signature by the roster key.\n"
+            f"The key was not in either agent when asked, before stage 1 and before stage 2.\n"
+            f"Publishing is yours; this tool never pushes:\n  git -C {d(str(ctx['repo']))} push --atomic "
+            f"origin {branch}:{branch} {ANCHOR_REF}:{ANCHOR_REF}")
+
+
+def main(argv=None, *, launchctl=launchctl_socket):
     ap = argparse.ArgumentParser(prog="repin", description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="verb", required=True)
     st = sub.add_parser("status", help="show what the pins owe; writes nothing")
@@ -668,17 +988,33 @@ def main(argv=None):
     pk = sub.add_parser("package", help="compute the AST pin's transaction and print its "
                         "digest; writes only into --ceremony-dir")
     pk.add_argument("--ceremony-dir", metavar="DIR", help="a folder to keep the transaction in")
+    ce = sub.add_parser("ceremony", help="the whole re-anchor: checks, an owed AST pin (then stop), "
+                        "the launcher's two stages, verification")
+    ce.add_argument("--values", required=True, metavar="FILE", help="your values file")
+    ce.add_argument("--ceremony-dir", required=True, metavar="DIR", help="holds the packet and "
+                    "launcher, and receives the transaction, stop record and record")
+    ce.add_argument("--first-run", action="store_true", help="the anchor does not pin this tool yet")
+    ce.add_argument("--reviewed-commit", metavar="ID", help="with --first-run: the last commit the "
+                    "code reviewer read that edited this tool or its tests")
     args = ap.parse_args(argv)
     tmp = Path(tempfile.mkdtemp(prefix="repin-"))
+    rec, done = [], None
     try:
         ctx = boot(Path(__file__).resolve().parent.parent, tmp)
         first_screen(ctx)
         if args.verb == "status":
             show_ast(ctx, ast_view(ctx))
             manifest_status(ctx, args.dropped_from)
-        else:
+        elif args.verb == "package":
             package(ctx, args.ceremony_dir)
-        check_head(ctx)
+        else:
+            try:
+                done = run_ceremony(ctx, args, launchctl, rec)
+            finally:
+                if Path(args.ceremony_dir).is_dir():
+                    finish(ctx, *write_record(args.ceremony_dir, rec), done)
+        if args.verb != "ceremony":
+            check_head(ctx)
         return 0
     except Refuse as exc:
         print(f"\nrepin stopped; nothing was written.\n  {exc}", file=sys.stderr)
