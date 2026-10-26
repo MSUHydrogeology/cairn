@@ -1,7 +1,7 @@
 # Build `repin`: one tested tool for the routine re-pins, replacing the blocked runner
 
 **Author**: Claude (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review) — the plan edits what the Maintainer's re-anchor trusts and writes into the tree, so its plan review needs the Security pass too
 **Opened**: 2026-10-26
@@ -1034,3 +1034,243 @@ Reads, not probes: `launchctl getenv SSH_AUTH_SOCK` returns a path of the form `
 **Clearing.** This Security Review does not clear at `6bf381c8`. It clears on conditions: the author's next Response adopts SR2-1 to SR2-5 as stated, or alternatives that meet each "Closed when" line. A third proposal-stage pass is not needed for that; the Maintainer at the Decision and the plan's Internal Security Review check that they are carried. It would be needed only if the Response changes the signing route or the trust root itself. SR2-6 goes to the plan. Following the template ("A review moves a proposal to `revising`"), I set Status to `revising`.
 
 **Coverage line.** I am confident in the probe results above: each ran with a control. I did not run the real launcher, stage 1 or stage 2, under a pseudo-terminal or at all; "one prompt per run" rests on one signing call read at `_gate_preflight.py:2630` and on P4. I did not test the keychain: that would change your keychain. "The signer does not read the keychain" rests on `strings`, not on a run. I did not connect to the default agent's socket, read your key's encryption rounds, read `reanchor.sh`'s `show-report` and `hash-package` bodies, re-measure the provenance figures, or test on Linux. I ran no test from the suite and never set `CAIRN_FULL_SUITE`.
+
+## Response -- Claude (author) -- 2026-10-26 -- the second-round Security Review
+
+This answers the second-round Security Review (`71b293d5`). It did not clear. It said it clears when SR2-1 to SR2-5 are adopted as stated, or by alternatives that meet each "Closed when" line. I adopt all five and the four non-blocking items. Revision 3, below, is the complete current contract.
+
+* **SR2-1, refuse a loaded signing key (both agents) and an unencrypted key: accepted.** The script refuses, before stage 1 and again before stage 2. It cannot see a key loaded during stage 1, because the checker's own probe drops the socket first (`bootstrap/tests/_gate_preflight.py:2201`); the contract says so.
+* **SR2-2, the passphrase is the only control, with four conditions: accepted.** The terminal is not a control. The same-user residual is stated for signing. The script prints "asked once, now" before stage 2.
+* **SR2-3, start trust where a same-user process cannot rewrite it unseen: accepted, with one choice of mine.** The script prints the launcher's digest beside the digest from the review's record, and he confirms they match. He pastes the review's digest at a prompt. It does not come from his values file, which a same-user process can edit. The anchor's signature is checked against the packet-pinned roster before the anchor is used. Today's anchor is unsigned, so the first run uses `--first-run` and shows that.
+* **SR2-4, check each working-tree script before it runs, and bind Summary 2's yes to a digest: accepted, with one variation.** The review asks for a private copy of the exact hashed bytes. I have not tested whether `bootstrap/reanchor.sh` runs from a copy. If it cannot, the plan hashes it immediately before each call and the text names that gap.
+* **SR2-5, put `scripts/repin.py` back in the hashed list: accepted.** `--first-run` now means "the anchor's entry for `repin` is absent or different". I read Revision 2 as also barring the AST write under that flag; I now say so.
+* **SR2-6 (non-blocking), accepted, to the plan:** (a) check the AST commit from the commit object; (b) override the launcher's `ssh-add` advice; (c) absolute paths for `ssh-keygen` and `ssh-add`; (d) only the exact word `yes`. Item (d) is in the contract, because SR2-3's conditions need it.
+* **Corrections the review made, accepted:** `DISPLAY` breaks the route but does not open it. `WAYLAND_DISPLAY` with `SSH_ASKPASS` signs with no person. The signer's environment is built from a short list of what it keeps, not by deleting names. `ssh-add -c` is not a control.
+
+**Does Revision 3 change the signing route or where trust starts? No.** The key still signs by the route measured in Revision 2: no agent, one prompt, no answer, no signature. Trust still starts with the launcher digest he compares and his passphrase, which is where the review placed it. Revision 3 adds refusals and checks the review asked for. The review said a third proposal-stage pass is needed only if the Response changes the route or the trust root. It does not, so I ask for none. The plan's Internal Security Review checks that the findings are carried.
+
+**His answer to Q3.** "No, I type it every time", asked through the planning session on 2026-10-26 and relayed to the reviewer by the coordinator. It is his statement. Nobody measured it. Q3 is closed on that basis and the contract records it as his statement.
+
+## Revision 3 -- Claude (author) -- 2026-10-26 -- the signing review answered
+
+This is the complete current contract. It supersedes Revisions 1 and 2 for reading purposes. They stay in the file as history, and you need not read them.
+
+### In plain terms
+
+**What changes.** One committed script, `scripts/repin.py`, runs the whole re-anchor ceremony. It writes the AST pin if one is owed, runs the gate-manifest pin and the signing, and checks the result. You stop composing or pasting commands.
+
+**What you do.**
+
+1. Run one command: `python scripts/repin.py ceremony --values <your values file> --ceremony-dir <your folder>`. On the first run, add `--first-run --reviewed-commit <id>`.
+2. Compare two digests. The script prints the launcher's digest next to the digest you paste from the review's record, and asks: do these match? Type `yes` or `no`.
+3. Read Summary 1 (skipped when no AST pin is owed). It lists the engine symbols whose pin would change and the commits that touched them. Type `yes` or `no`.
+4. Read Summary 2. It lists what the new gate manifest newly pins, whether any of the ten authority files changed, the anchor's signature state and the key's fingerprint. Type `yes` or `no`.
+5. Type the key's passphrase once, when the signing tool asks, right after the script says "asked once, now".
+6. Run the push line the script prints, or tell the agent to. The script never pushes.
+
+That is one command, two yes-or-no summaries (one when no AST pin is owed), one comparison of two strings, and one passphrase. If the script finds your key loaded in an ssh agent, it refuses and prints the one line to remove it. If anything else goes wrong it stops and says what happened, why and what to do, per Cairn Plain Language rules 10 to 12. Nothing is pushed.
+
+**What is yours and what is the script's.** You judge two things: that the digests match, and that each summary lists the changes you expected. You cannot judge the checksums or the test collection. Those are **the script's recorded step, not your sign-off**: it writes a plain-text record outside the repository (each command, its exit status, the digests) and prints the record's path and digest. Each yes is recorded as "yes typed on a terminal". It authenticates nothing.
+
+**The passphrase is the only control.** It works only while four things hold. (1) The key is in no ssh agent. The script checks this before stage 1 and before stage 2 and refuses; it cannot see a load during stage 1. (2) The passphrase is stored nowhere: no keychain, helper, file or environment variable. His statement, "No, I type it every time", is on record, unmeasured. (3) The key file is encrypted. The script checks this and refuses. (4) The program asking for the passphrase is the reviewed one. No script can check that on its own machine. The launcher digest you compare narrows it.
+
+**The terminal is not a control.** It keeps the prompt visible to you. A program that knows the passphrase signs with no terminal (a pipe on stdin) or with a fake one (measured, probes P6 and P7 of the second-round review).
+
+**What a same-user process can still do.** (a) If the key is loaded at any time, sign anything, with no prompt. (b) Change what runs, so the prompt you answer comes from its program: `scripts/repin.py` in the working tree, the executables your values file names, your shell's startup files. It then keeps what you type and can sign later. Nothing on one machine and one user stops this. (c) Copy the encrypted key file and guess the passphrase offline; a long passphrase is the defence (not measured). This is the dated trusted-contributor posture in `bootstrap/REANCHOR_RUNBOOK.md`, now stated for signing. It defends against an agent acting while you are away. It does not defend against one that has turned against you and edits the tools you run.
+
+**Habits that still matter.** Never load the signing key into an agent, including to sign a release tag (`v0.4.0` is signed with this key). Never store the passphrase. Type it only at the one prompt after the last yes; any other passphrase prompt means stop. Keep it long. Compare the digests every time.
+
+**Does this change how the key signs, or where trust starts? No.** Both are as Revision 2 had them and the second-round review measured them. Revision 3 adds refusals and checks.
+
+**How long.** Unmeasured. Stage 1 runs a pytest collection of about 4650 test nodes (the review's count) that I have not timed. The first real run records the minutes. One-time needs: a values file, a current packet-and-launcher pair and the review's recorded launcher digest (Q5).
+
+**Cost, and what breaks if I am wrong.** One script and its tests in six chunks with a size budget each. The go-ahead is on record: "Repin is a build" (`dev/PLANNING.md:45`). A flaw could bless a change you did not intend, or sign when you did not mean to. That is why a Security Review is declared. If the tool grows too large, the fallback is `status` alone, with the steps by hand as today.
+
+**His direction, verbatim.** Relayed with this task, 2026-10-26:
+
+> "The commands should be executed automatically via a single script, in my opinion. This script should then use my key which I enter a password for. As of right now, it's some set of steps that still are using one-off scripts built by agents. We've been struggling around this issue for a while now."
+
+Earlier that day: "I noticed that the gate anchor ceremony didn't use a key, but honestly it's still too damned complicated for me to properly execute in a meaningful way."
+
+**Terms.** *Pin*: write a checksum file so it matches the tree. *Anchor*: the ref `refs/cairn/gate-anchor`. *Re-anchor*: move it. *Checkpoint*: the signed commit the ceremony makes from the committed tree plus the new gate manifest; branch and anchor both move to it. *Ssh agent*: a background program that holds loaded keys and signs for any program of this user with no prompt. *Packet and launcher*: a pair of files a security review produces out of band. The launcher starts the ceremony. The packet lists reviewed digests, including the ten authority files, `bootstrap/reanchor.sh` and the signer roster. *Roster*: `dev/.cairn/allowed_signers`. *Values file*: your file outside the repository naming the key, the executables and the folders. *Preimage*: a file's bytes before the tool overwrites it. *Compare-and-swap*: refuse to write if the current bytes are not the preimage.
+
+### What was measured, and what was not
+
+* **The driver does most of the ceremony.** `scripts/reanchor_ceremony.py` (774 lines) with `--run` runs a preflight, stage 1 without the agent, the report, the package digest twice, stage 2 and the push line (`scripts/reanchor_ceremony.py:546-676`). It does not write the AST pin. It advises loading the key (`scripts/reanchor_ceremony.py:628-641`), which lets any program sign. It resolves `ssh-keygen` and `ssh-add` through `PATH` (`scripts/reanchor_ceremony.py:498`, `:518`). No test names it (a grep of `bootstrap/tests/*.py` finds nothing; the same grep finds `reanchor.sh` in `bootstrap/tests/test_reanchor.py`).
+* **The anchor is unsigned.** `bd66a70c` is the last anchor that verifies (`G`). `6f29519d` (`N`) is 397 commits later (the reviewer's count). I infer a hand commit and a hand `update-ref`; the reflog cannot tell. Nothing in the existing ceremony verifies the previous anchor's own signature (the reviewer searched for `verify-commit`, `%G?` and `gpgsig`).
+* **Signing, measured** (the reviewer's probes with throwaway keys and scratch agents; mine agreed):
+  * Key in an agent: signs with no prompt, any form (P1).
+  * Agent cut: one prompt, signed on the right answer; no answer, no signature. An empty `SSH_AUTH_SOCK` acts like an unset one (P4, P5).
+  * Removing `SSH_AUTH_SOCK` from one environment does not cut other programs off: the default agent's path is available to any process of this user through `launchctl getenv SSH_AUTH_SOCK` (read, not connected to), and a found socket signs with no prompt (P13).
+  * Passphrase from a program: signs on a stdin pipe with no terminal (P6) and on a fake terminal (P7). `SSH_ASKPASS` with `SSH_ASKPASS_REQUIRE=force` signs with no person (P3); `SSH_ASKPASS` with `DISPLAY` or `WAYLAND_DISPLAY` signs with no person (P9).
+  * `DISPLAY` alone gives no signature (P8) but breaks the route: with a terminal present, the signer skips it and fails on a missing `ssh-askpass` (P10).
+  * An unencrypted key signs with nothing (P11). `ssh-keygen -y -P '' -f <private key>` exits 255 on an encrypted key and 0 on an unencrypted one, with no prompt (P12).
+  * `ssh-add -c` is no control against the same user: whoever starts the agent chooses the confirming helper (P14).
+  * Keychain: `strings` finds keychain code in `ssh-add` and none in `ssh-keygen`, so the keychain reaches the key through an agent, not the signer. Not a run.
+* **Not measured.** The real launcher's stage 1 and stage 2 under a pseudo-terminal; that stage 2 prompts once (I read one signing call at `bootstrap/tests/_gate_preflight.py:2630`); whether `bootstrap/reanchor.sh` runs from a copy; the timing; the default agent's socket; Linux; his passphrase habit (his word only).
+
+### Proposal
+
+**One script, three verbs.** `status` reads and writes nothing: AST drift, static manifest drift and provenance lines. `package` computes the AST pin's transaction from an extraction and prints its digest; a fresh agent can run it in a clean checkout to replay the pin (the commit body records `Replay: matched <digest> | not run`; nothing can enforce "required"). `ceremony` runs the sequence below.
+
+**What it calls.** `scripts/correct_pinned_digests.py` and its test are retired in R6 (it already refuses on entry). `bootstrap/AST_BASELINE_RUNBOOK.md` is cut to one page. `bootstrap/reanchor.sh` and the launcher are called unchanged: `validate`, stage 1, stage 2, `show-report`, `hash-package`. `bootstrap/tests/_ast_attest.py` is called for the AST pin after the reading order. `bootstrap/tests/_gate_manifest.py` is never called to write; its writer path stays the launcher's stage 1 and stage 2, in the isolated copy. The driver's `compare`, `check_packet_pair` and `values_field` are imported after step 4 of the reading order. Its `key_fingerprint` and `key_in_agent` are not used, because they resolve their tools through `PATH`; `repin` has its own versions with absolute paths. It does not use `rehearse` or `drive()`. R6 removes `drive()` and `--run`, a frozen-file edit paid in a ceremony (Q7).
+
+**The `ceremony` sequence.**
+
+1. **Digest check.** Compute the launcher's SHA-256. Print it beside the digest he pastes from the review's record. Refuse if they differ; ask yes or no.
+2. **Checks, no write.** A terminal on stdin and stdout; `HEAD` on a branch; no dirty tracked file; the anchor resolves; the packet and launcher pair (`check_packet_pair`); `bootstrap/reanchor.sh` equals the packet's `artifact_sha256` row (below); `reanchor.sh validate` on the values file; the interpreter is the pinned minor version.
+3. **Roster and anchor.** Copy the roster into a private folder. Refuse unless its SHA-256 equals the packet's allowed-signers row. Verify the anchor commit with sterile git against that copy. A good signature by the roster key passes. Anything else refuses, except under `--first-run`, which shows: "the comparison base `<id>` is unsigned; the last signed anchor is `<id>`, `<n>` commits earlier; what this ceremony blesses since then rests on the launcher digest you compared." The signing key's fingerprint must be in that roster.
+4. **Reading order** (below). Then the key checks, **first time**: refuse a loaded or unencrypted key (below).
+5. **AST pin, if owed.** Package the transaction from an extraction of `HEAD`, render Summary 1 with its transaction and render digests printed under it, ask yes or no, write the baseline (and the known-new file if it must change), and commit those paths with `git commit <paths>` through sterile git with hooks off, never signed, never pushed. Then check from the commit object that only the named paths changed and that their blobs equal `git hash-object --no-filters` of the bytes shown; on a mismatch refuse and print the undo line without running it. The commit body records the digests, the interpreter and the checks.
+6. **Stage 1.** Through the launcher, in a new session with no controlling terminal and stdin closed, in an environment built from a short list. It runs candidate code; the script prints the checker's banner.
+7. **Summary 2.** Hash the package (the launcher's `hash-package` and the script's own `hashlib` must agree). Run `show-report` only after `bootstrap/reanchor.sh` matches the packet. Print the report, the manifest drift from `status`, the key's fingerprint and the digest under it. Ask yes or no. After the yes, hash the package again. Refuse if the two differ. Pass that digest to stage 2.
+8. **Key checks, second time**, then print: "You will be asked for the key's passphrase once, now. If you are asked at any other point, type nothing and stop. The launcher's advice to `ssh-add` the key does not apply here."
+9. **Stage 2, the signing step.** Through the launcher with `--stage2 <digest>`, in a child with the terminal attached. The child's environment is built from a short list (`HOME`, `PATH`, `TERM`, `LANG` at most; the plan fixes it) and holds none of `SSH_AUTH_SOCK`, `SSH_ASKPASS`, `SSH_ASKPASS_REQUIRE`, `DISPLAY`, `WAYLAND_DISPLAY`. The script never reads, stores or passes the passphrase and does not touch the terminal while the prompt is up. After a stage-2 failure it repeats the note about `ssh-add`; it never relays "load it and re-run".
+10. **Verification.** `git verify-commit` on the new anchor with sterile git and the same packet-pinned roster. Refuse to print "done" unless the result is a good signature by the expected fingerprint.
+11. **End.** Print the new branch and anchor ids, the record's path and digest, "the key was not in either agent when asked, before stage 1 and before stage 2", and the push line from `bootstrap/REANCHOR_RUNBOOK.md`, Phase 5. It does not run it.
+
+**Key checks.** Ask the agent `SSH_AUTH_SOCK` names, and the one `/bin/launchctl getenv SSH_AUTH_SOCK` names, with `/usr/bin/ssh-add -l`. Refuse if either lists the roster key's fingerprint, and print the line `SSH_AUTH_SOCK=<that path> /usr/bin/ssh-add -d <key>.pub`. "Could not ask" is shown, not refused. Also run `/usr/bin/ssh-keygen -y -P '' -f <private key>` with no terminal and stdin closed; refuse if it exits 0. The script reads the key file only to learn whether an empty passphrase opens it. All tool calls use absolute paths.
+
+**Only the word `yes` counts.** Anything else, end of input, or a closed terminal is no. Answers come from a terminal only.
+
+**Reading order, before anything is shown or written.**
+
+1. Resolve `HEAD` and the anchor once each to object ids. Refuse if the anchor does not resolve.
+2. Read the anchored manifest as JSON from the anchor object. Data only.
+3. Extract `HEAD` with `git archive` into a fresh private folder and read only that copy. Every git call goes through the sterile launcher (`bootstrap/tests/_gate_manifest.py:176-194`), plus `core.fsmonitor=false` where a working tree is read. Refuse if `HEAD` moved by the end of `package`.
+4. Before importing anything outside the standard library, hash each file in a fixed list written in `repin`: `bootstrap/tests/__init__.py`, `_ast_attest.py`, `_gate_manifest.py`, `_gate_preflight.py`, `scripts/reanchor_ceremony.py` and `scripts/repin.py`. Compare each with its anchored `frozen_files` entry. Refuse on any difference or absence. For `scripts/repin.py` alone, an absent or different entry is allowed only under `--first-run`, which also requires `--reviewed-commit <id>` (below).
+5. Do the AST work in a child run under `python -I -X pycache_prefix=<fresh empty folder>`, importing from the extraction. Refuse if a compiled file is tracked under an import root. After import, refuse any loaded local module outside the list.
+6. Measure the closure as blob-id differences between the anchor and `HEAD` for all ten authority members. For the AST pin, any difference refuses. In the ceremony, a difference makes a transition ceremony, which needs a reviewed packet; the script says so and stops.
+
+*What this does not close.* A commit that edits `scripts/repin.py` can delete step 4. That shows as `FROZEN-MODIFIED` in `_gate_manifest.py verify` from a trusted checkout and in the next ceremony's report, not on `repin`'s screen. Nothing pins the launcher template (Q8). "Anchored" means what the signed anchor names; until the anchor is signed, the launcher digest is the base.
+
+**Direct calls to `reanchor.sh`.** Before each call (`validate`, `show-report`, `hash-package`) hash the file and compare with the packet's `artifact_sha256` row, as the driver's `drive()` does (`scripts/reanchor_ceremony.py:553-564`). Run a private copy of exactly the hashed bytes. If it cannot run from a copy, hash it immediately before each call and say so (the plan tests this).
+
+**Refusals, no write.** Everything above that says refuse, and: a tracked compiled file under an import root; `HEAD` moving; an AST pin with `MISSING` or `DUPLICATE` symbols (a review item, never a pin); a pin that adds or drops a baseline key; an output path outside the hard-coded set (the AST baseline, the known-new file, the lockfile if R5 is built), `gate_manifest.json` included; an answer from anything but a terminal; a transaction file that is a symlink, not the user's own, or writable by others; a symlinked target or parent; a changed preimage; any git error; a declared set with zero members. Each check has a control test that passes when its condition is fine. **Shown, not refused:** commits naming no plan or proposal (about 43% in the measured range); an unsigned previous anchor (first run only); a known-new change.
+
+**The AST pin's transaction.** One JSON file bound by its SHA-256: head and anchor ids, each output's preimage blob id and SHA-256, every influence outside the tracked tree (interpreter, git, the blob id of `encode_display`), the full new bytes and the rendered summary. The script reads it once and renders Summary 1 itself from those bytes: a key-by-key comparison of the file on disk against what it will write, never stored text, never the candidate's `_classify`. The render and the write come from one in-memory copy in one process.
+
+**Manifest `status`** (static). After the reading order it calls `verify(..., do_collect=False)` on the extraction and lists `FROZEN-MODIFIED`, `FROZEN-MISSING` and new frozen files. It says it does not check collection. `status --dropped-from <file>` reads the saved text of a `verify` run and prints first the dropped nodes whose test file still exists.
+
+**Provenance.** For each commit since a fixture's last pin that touches a file the summary names, match case-insensitively the stem and slug (6 or more characters) of every file under `dev/plans` and `dev/proposals` at `HEAD` against the commit's subject and body. Print "the message names `<stem>` (status `<Status line>`)" or "the message names no plan or proposal". Never "reviewed"; no refusal depends on it. Over `92a72e4c..6f29519d`, 69 of 124 touching commits named one (my count); the earlier review got 57% and 58%.
+
+**Safe writes.** `tempfile.mkstemp` in the target's folder; refuse a symlinked target or parent, or a target not tracked as a regular file; `O_NOFOLLOW`; compare-and-swap immediately before `os.replace`; with two outputs, write and check both before replacing either; after a partial failure print what was replaced and the exact `git restore --source=<head-id> -- <path>` line, exit non-zero and restore nothing. The private folder comes from `tempfile.mkdtemp`. Do not import `bootstrap/_scaffold/_guard.py` (the AST baseline attests it); write the containment rule in `repin` and say why in a comment.
+
+**Untrusted text.** Every string from git, from file names under `dev/plans` and `dev/proposals`, from the transaction and from a subprocess's output goes through `encode_display` (`templates/skills/_lib/session.py:188`) before it reaches the screen or a printed command. Git output is read as bytes. The launcher's and checker's output the script relays is included.
+
+**Lockfile (R5).** Only if a correction is owed. It parses the mappings from the `HEAD` blob with `ast` and never imports them. **Disclosures.** The plan lists every disclosure the called tools make, from their source (the candidate-code banner, the anchor note, the untracked-files record, the interpreter-minor hold, the unsigned-anchor state), each with a control test: remove the line and the test fails.
+
+**The first ceremony.** `scripts/repin.py` and `bootstrap/tests/test_repin.py` enter the manifest as `FROZEN-NEW`, so no anchor pins them. The first run is two things: the AST pin by hand under the runbook, then `ceremony --first-run --reviewed-commit <id>`, where `<id>` is the commit the R4 code review named. Under that flag, the script runs `git diff <id> HEAD -- scripts/repin.py bootstrap/tests/test_repin.py` and refuses on any output. It also refuses an owed AST pin, because the AST write is the one place `repin`'s own unpinned bytes decide a pin. `--first-run` is valid only while the anchored entry for `scripts/repin.py` is absent or differs from the running file. It shows the unsigned-base line from step 3. An edited `repin` therefore always needs a ceremony it did not vouch for itself. An edited `repin` can bypass its own diff, so the check that can fail is a fresh agent running the same diff in a clean checkout (Q6).
+
+**Chunks.**
+
+| # | Chunk | Needs from him |
+|---|---|---|
+| R1 | Shared core and `status` for the AST baseline: reading order, provenance as a test fixture, refusals, controls. Read only. | Nothing; run `status` once to see if it reads well. |
+| R2 | The AST transaction, `package`, the render, the write and the commit check, in a scratch repository with its own anchor. | Nothing. |
+| R3 | Manifest `status` and `--dropped-from`. Read only. | Nothing. |
+| R4 | `ceremony`: digest check, roster and anchor check, key checks, the sequence, signing, verification and record, using the builders at `bootstrap/tests/test_reanchor.py:959-1025` and a throwaway key. | Nothing until the first real run. |
+| R5 | Lockfile adapter, only if a correction is owed. | Nothing. |
+| R6 | Retire `scripts/correct_pinned_digests.py` and its test; remove `drive()` and `--run`; cut the AST runbook to one page. | One ceremony pays for it; it lands just before the 0.5 cut's ceremony. |
+
+**Size budget per chunk (my choice, not a measure).** Lines excluding tests: R1 and R3 together about 300; R2 about 300; R4 about 300 (up from 250 for the key checks and the roster and anchor check). Check at the end of R1, R2 and R4. If a budget fires, stop at `status`, keep later code on an unmerged branch, and do the steps by hand. **Order against 0.5:** after the engine batch and before drain mode (`dev/PLANNING.md:76`); the cut's ceremony stays by hand and first pins `repin`, unless he chooses an earlier one.
+
+### Documentation, install contract, frozen files
+
+* No rule text changes. "Maintainer-run, dry-run-verified direct correction" (`AGENTS.md:525-526`) stays; `repin ceremony` is how he runs it. `SECURITY.md:193-197` says the ceremony key is dedicated; this design uses the key he already signs with (Q2).
+* The strategy note gets a one-line status pointer at R6. `bootstrap/REANCHOR_RUNBOOK.md` is a closure member and is not touched.
+* Install contract: none; the plan confirms `scripts/repin.py` is in no install mapping.
+* Frozen set: the two new files enter as `FROZEN-NEW`. R6 deletes two frozen files and nine pinned nodes and edits `scripts/reanchor_ceremony.py`, so the gate holds until the ceremony that follows. The authority closure and the AST baseline are unchanged.
+
+Proposed paths:
+* `scripts/repin.py`
+* `bootstrap/tests/test_repin.py`
+
+### Evidence / verification plan
+
+I have run none of the script; the plan owns the commands. Cairn has no CI; each trigger is a person or an agent running a command. Boundary A: `python -m pytest bootstrap/tests/test_repin.py` per chunk, plus `bootstrap/tests/test_reanchor.py`. The change touches the gate manifest and a trust-ceremony surface, so Boundary B is the full pair, and the certifying run follows `AGENTS.md`. This file is checked with `claim_check.py` and `check_cairn.py`. The signing tests need `ssh-keygen` and `ssh-agent`; if absent they skip with a named reason and the record says so. Tests build a scratch repository with its own anchor, a throwaway key and a scratch agent; `HOME` points at a scratch folder; nothing reads `~/.ssh`.
+
+**Tests required** (real command-line entry; each with its control that passes when the condition is fine):
+
+* **Key checks.** A key loaded in a scratch agent refuses before stage 1 (control: unloaded passes). A key in a second agent reached only through an injected `launchctl` lookup refuses (control: absent passes). An unencrypted key refuses (control: encrypted passes). Each check runs again before stage 2.
+* **Signer environment.** With `SSH_AUTH_SOCK`, `SSH_ASKPASS`, `SSH_ASKPASS_REQUIRE`, `DISPLAY` and `WAYLAND_DISPLAY` set in the parent, the child holds none (control: a copied environment signs with no person).
+* **One prompt.** A scratch ceremony on a pseudo-terminal with the key unloaded counts exactly one passphrase prompt (control: with the socket left in, zero prompts). No terminal: no signature.
+* **Verification.** Refuses an unsigned checkpoint, a checkpoint signed by a key outside the roster, and a checkpoint checked against the candidate's roster rather than the packet-pinned one (control: a good one passes).
+* **Digests and trust start.** A launcher digest that differs from the pasted one refuses (control: match passes). An unsigned anchor refuses without `--first-run` (control: signed passes). An anchor signed outside the roster refuses. A roster differing from the packet's row refuses. With `--first-run` the unsigned-base line appears with both ids and the count.
+* **Scripts before they run.** A `bootstrap/reanchor.sh` that differs from the packet's row refuses before `show-report` runs (control: match passes). A package rewritten between the report and the yes refuses (control: unchanged passes).
+* **`repin` itself.** An edited `scripts/repin.py` refuses `ceremony` without `--first-run` (control: anchored bytes pass). `--first-run` refuses when the anchored entry equals the running file, refuses an owed AST pin, and refuses on any output from the reviewed-commit diff.
+* **Answers.** Only `yes` passes; `Yes`, `y`, an empty line and end of input are no. An answer from a pipe refuses (the test says a pseudo-terminal can satisfy a terminal check and pins only "a pipe cannot").
+* **AST pin.** Two trees that differ only in a kept record give different transaction digests; an edited output byte refuses. A candidate that changes `_ast_attest.py` refuses with no write. A tracked `.pyc` under an import root refuses. A closure-member change refuses an AST pin. A transaction naming `gate_manifest.json` refuses, and its blob id is unchanged until stage 2. Every key the write changes appears on the screen before the question. An untracked engine module is not in the output; `HEAD` moving refuses. The commit check catches an extra path and a blob that differs from the bytes shown.
+* **Writes and text.** A changed preimage refuses and leaves every file as it was; a symlinked target, symlinked parent, outside path and a planted `<name>.tmp` link each refuse or are not followed. A commit subject with ESC and CR is escaped.
+* **Stage 1, sets, disclosures.** Stage 1 runs with no controlling terminal and no socket (control: with a terminal the probe prompts). Zero-member sets refuse. Each disclosure appears in output. `status --dropped-from` prints the still-present group first. `package` at a commit and again in a detached checkout gives one digest.
+* **The launcher's advice.** The `ssh-add` note is printed before stage 2 and after a stage-2 failure (control: remove the line and the test fails).
+
+### Security preflight
+
+* **S1. Who supplied it?** The tree being pinned supplies the files. It does not supply the rule or the tool code the pin runs: their bytes must equal the signed anchor's, or on the first run the launcher digest he compares. He supplies the digest, the yes answers and the passphrase.
+* **S2. Can it fail?** Each check has a mutation in the tests above and a control that passes.
+* **S3. What fires it?** A person runs `ceremony`, `status` or `package`. The script's header must agree with "In plain terms".
+* **S4. Which way does it break?** Every refusal is "no write, no signature". Shown-not-refused items give more authority only for an unsigned previous anchor, on the first run, with the base named.
+* **S5. Who still wins?** A process with his operating-system user can type a yes on a pseudo-terminal, edit the script before it runs or substitute `git`. It still signs if the key is loaded at a time the script does not check (the script checks twice, not during stage 1), if the passphrase is stored where it can read it, if the key file is unencrypted (refused, but only when the script runs), or if it has replaced the program that asks (residual (b)). It can also guess the passphrase offline from a copy of the key file (residual (c)).
+* **S6. What does signing add?** A key use at the end of a script. The script holds neither key nor passphrase. The signature says the key signed a commit the roster allows. It does not say he read anything; the yes answers and the script's record say that.
+
+### Signals the change is wrong
+
+* A chunk exceeds its budget; stop at `status`.
+* A summary is unreadable to him, or the yes becomes a reflex typed without reading.
+* A refusal fires on ordinary runs twice in a row.
+* Two different outputs carry one digest.
+* A signing form is found that signs with no person on the script's route, or a key check misses a loaded key.
+* He finds the passphrase is stored where a program can read it; the text must then be reworded.
+* The first real run takes longer than he can carry out in one sitting (unmeasured).
+
+### Questions for the Maintainer (each has a default; none blocks)
+
+Q3 is closed: his answer is recorded above. Q1 (two summaries when an AST pin is owed) is my call: the second summary cannot exist until the first pin is committed, and one summary would ask him to bless a pin he had not read. He can reverse it.
+
+* **Q2. One key for release signing and for the anchor?** `SECURITY.md:193-197` says the ceremony key should do nothing else. A second key is a roster change, which is a transition ceremony. Default: keep one key and record the departure. The cost is that signing a tag with this key must never load it into an agent.
+* **Q4. May the script commit the AST pin, and may it ever push?** Default: it commits the AST pin's paths after your yes, unsigned, and never pushes.
+* **Q5. Do you have a current values file, a packet-and-launcher pair, and the review's recorded launcher digest?** I cannot tell from here. Default: the script's first screen says what is missing; producing a pair stays an out-of-band review.
+* **Q6. The first ceremony.** Default: the AST pin by hand once more, then `ceremony --first-run --reviewed-commit <id>` at the 0.5 cut, plus one fresh agent running the same diff in a clean checkout and reporting the result. Alternative: an earlier ceremony of your choosing.
+* **Q7. Remove `drive()` and `--run` from `scripts/reanchor_ceremony.py` at R6?** Default: yes. Two ways to run the ceremony, one without the signing control, is what this removes.
+* **Q8. The launcher template as the eleventh authority file.** The 2026-08-28 note made it an acceptance criterion; it weighs more now that the script calls the launcher. Default: its own proposal and Security Review, soon. Say if you want it folded in; that widens scope again.
+* **Q9. Do you allow the reductions in the Scope delta?** Default: allow, each as listed. Neither I nor a reviewer can concede them.
+* **Q10. Do you accept the same-user residual, stated above, for signing?** It is the dated trusted-contributor posture already in the runbook. Default: yes. If no, the answer is a different design, and I would need your reason.
+
+### Scope delta
+
+**Scope delta**: degraded, and widened by him. Only he concedes a row (Q9). **Widened by his direction:** the whole ceremony is in scope. This owes no disposition. **Carried:** the transaction and its safe write, the reading order, the rule that no `repin` path writes the manifest, the extraction, the provenance listing, the per-chunk budget. Reductions:
+
+* The typed 12-character code, now a yes or no plus the passphrase. **disposition**: accept (his direction).
+* The note's dedicated ceremony key: not built (Q2); the typed digest confirmation: the script supplies the digest after the yes, as the driver does. **disposition**: defer the key; accept the rest.
+* The driver's three questions, now one comparison and one or two summaries; its rehearsal, not run. **disposition**: accept.
+* The launcher template joining the closure, and cutting the second values parser: not built (Q8). **disposition**: defer.
+* Every disclosure forwarded: carried for the tools the script calls, not for the checker's internal messages the launcher does not print. **disposition**: accept.
+* A risk or volume trigger: not built; nothing runs `status` unprompted. **disposition**: defer.
+* The modification-staleness silence is visible on demand only; only the AST runbook shrinks. **disposition**: accept; defer.
+* "The previous pin covers the tool that moves the next one": true only after the first ceremony that pins `repin`. Carried, delayed.
+* The two-program double hash for the AST pin: one digest plus the optional replay. **disposition**: accept.
+
+### Assurance path
+
+**Assurance path**: high-assurance, unchanged. The header declares `usual + Security Review`, and the plan `required(Internal + Internal Security Review)`. The second-round Security Review's findings SR2-1 to SR2-5 are adopted here, and its non-blocking items go to the plan. I wrote no review.
+
+### Withdrawn / superseded commitments
+
+* **"The passphrase is a control if three things hold."** Replaced by four conditions, with the terminal named as no control. Why: SR2-2, probes P6 and P7.
+* **"A loaded key is named on the first screen; the route still prompts."** Replaced by a refusal before stage 1 and again before stage 2, in both agents. Why: SR2-1; P1 and P13 show a loaded key signs with no prompt and is reachable by any process.
+* **S4's "a loaded key that is only named is safe because the route does not use the agent."** Withdrawn. Why: it was wrong for any process other than the signer (P13).
+* **"The signer's environment drops four variables."** Replaced by an environment built from a short list. Why: `WAYLAND_DISPLAY` was missed, and `DISPLAY` breaks the route (P9, P10).
+* **"`DISPLAY` needs clearing" as a way to close a signing path.** Corrected: `DISPLAY` alone does not open one. Why: P8, P10.
+* **`ssh-add -c` as a possible control.** Not relied on. Why: P14.
+* **The driver's `key_fingerprint` and `key_in_agent` as imports.** Replaced by `repin`'s own absolute-path versions. Why: SR2-6(c).
+* **"The key was never in the agent, nothing to put away."** Replaced by "not in either agent when asked, before stage 1 and before stage 2". Why: the script cannot see a load during stage 1.
+* **Five steps for the Maintainer without the digest comparison.** Replaced by six steps including it. Why: SR2-3(a); the launcher's own header says it is the one thing he verifies.
+* **Trusting the anchor's contents on the strength of the ref name.** Replaced by verifying the anchor's signature against the packet-pinned roster, with `--first-run` showing an unsigned base. Why: SR2-3(b).
+* **Step 6 reading the roster from the previous anchor's object.** Replaced by the packet-pinned roster for both checks. Why: SR2-3(c).
+* **Calling `bootstrap/reanchor.sh` unchecked, and hashing the package once.** Replaced by a check against the packet's row before each call, and a package hash before the report and after the yes. Why: SR2-4.
+* **The hashed list without `scripts/repin.py`, with `--first-run` valid only while the entry is absent.** Replaced by a list that includes it, and `--first-run` for "absent or different". Why: SR2-5.
+* **The anchor must pin both `repin` files.** Narrowed to `scripts/repin.py`. Why: the test file never runs in a ceremony; its change shows in the report, and the first-run diff covers both.
+* **"The Maintainer's manual diff check" on the first run.** Replaced by `--reviewed-commit`, where the script runs the diff, and a fresh agent running it again. Why: his direction that the ceremony is too complicated to run by hand.
+* **Revision 2's Q3 (keychain or helper).** Closed by his answer. **Q1** moved into the contract as my call. Why: answered; reversible.
+* **R4's size budget of about 250 lines.** Raised to about 300. Why: the key checks and the roster and anchor check.
