@@ -54,6 +54,9 @@ _GUARDED_WRITE_FUNCS = {
     # The dev/ tree is made with `mkdir(parents=True)`, which follows a linked
     # `dev/` (or any linked folder below it) to the far end.
     "create_dev_tree",
+    # The only engine deletion of a project file: it checks containment, then
+    # removes by name through folder handles opened without following links.
+    "_remove_unchanged_file",
 }
 
 

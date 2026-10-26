@@ -185,3 +185,146 @@ def _assert_fanout_contained(dst: Path, target: Path) -> None:
         raise ScaffoldSecurityError(
             f"refusing fan-out outside the target directory: {final}"
         )
+
+
+def _remove_unchanged_file(
+    path: Path, target: Path, expected: bytes, *, _after_walk=None,
+) -> bool:
+    """Remove *path* only if it is a regular file holding exactly *expected*.
+
+    Returns ``True`` when nothing is left at the name (removed, or already gone),
+    ``False`` when the file was kept: its bytes are not *expected*, or it was
+    replaced between the read and the removal, or the removal did not happen.
+    Raises :class:`ScaffoldSecurityError` for a link at the name or above it, a
+    name outside *target*, or anything at the name that is not a regular file.
+    The caller clears its record of the file only on ``True``.
+
+    Where ``os.unlink`` takes ``dir_fd`` (every of ``os.open``, ``os.unlink``,
+    ``os.rmdir`` and ``os.stat`` is in ``os.supports_dir_fd``, and the platform
+    has ``O_DIRECTORY`` and ``O_NOFOLLOW``), the project folder and each folder
+    down to the file are opened one level at a time without following links, and
+    the file is read, checked and unlinked *by name through the last folder
+    handle*.  A folder swapped for a link after the walk then changes nothing: the
+    handles still point at the original folders.  Where those are missing
+    (Windows), the same steps run by path, and a folder swapped for a link in that
+    window can redirect the removal; ``bootstrap/SAFETY.md`` names that residual.
+
+    After the file goes, its own folder is removed if it is now empty -- that one
+    folder, never one above it and never *target* -- through the same handles.
+    ``_after_walk`` is called once, after the last handle is open and before the
+    file is read; it exists so a test can change the tree at that instant.
+    """
+    _assert_safe_write(path, target)
+    try:
+        parts = path.relative_to(target).parts
+    except ValueError:
+        raise ScaffoldSecurityError(
+            "refusing to remove a path outside the target directory") from None
+    if not parts or any(part in ("", ".", "..") for part in parts):
+        raise ScaffoldSecurityError("refusing to remove a path that is not a plain name")
+    not_regular = "refusing to remove a non-regular file"
+
+    read_flags = os.O_RDONLY
+    for name in ("O_NOFOLLOW", "O_NONBLOCK", "O_NOCTTY", "O_BINARY", "O_CLOEXEC"):
+        read_flags |= getattr(os, name, 0)
+
+    def read_open_file(fd: int) -> tuple[bytes, os.stat_result]:
+        try:
+            opened = os.fstat(fd)
+            if not stat.S_ISREG(opened.st_mode):
+                raise ScaffoldSecurityError(not_regular)
+            with os.fdopen(fd, "rb", closefd=False) as stream:
+                return stream.read(), opened
+        except OSError as exc:
+            raise ScaffoldSecurityError(not_regular) from exc
+        finally:
+            os.close(fd)
+
+    can_walk = (
+        all(fn in os.supports_dir_fd for fn in (os.open, os.unlink, os.rmdir, os.stat))
+        and hasattr(os, "O_DIRECTORY") and hasattr(os, "O_NOFOLLOW")
+    )
+    if not can_walk:
+        try:
+            fd = os.open(path, read_flags)
+        except FileNotFoundError:
+            return True
+        except OSError as exc:
+            raise ScaffoldSecurityError(not_regular) from exc
+        data, opened = read_open_file(fd)
+        if data != expected:
+            return False
+        try:
+            now = os.lstat(path)
+        except FileNotFoundError:
+            return True
+        if (now.st_dev, now.st_ino) != (opened.st_dev, opened.st_ino):
+            return False
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+        if os.path.lexists(path):
+            return False
+        if len(parts) > 1:
+            try:
+                os.rmdir(path.parent)
+            except OSError:
+                pass
+        return True
+
+    folder_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0)
+    handles: list[int] = []
+    try:
+        try:
+            handles.append(os.open(target, folder_flags))
+        except OSError as exc:
+            raise ScaffoldSecurityError("refusing to open the target directory") from exc
+        for folder in parts[:-1]:
+            try:
+                handles.append(os.open(folder, folder_flags, dir_fd=handles[-1]))
+            except FileNotFoundError:
+                return True
+            except OSError as exc:
+                raise ScaffoldSecurityError(
+                    "refusing to remove through a link or a file standing as a folder"
+                ) from exc
+        if _after_walk is not None:
+            _after_walk()
+        name, folder = parts[-1], handles[-1]
+        try:
+            fd = os.open(name, read_flags, dir_fd=folder)
+        except FileNotFoundError:
+            return True
+        except OSError as exc:
+            raise ScaffoldSecurityError(not_regular) from exc
+        data, opened = read_open_file(fd)
+        if data != expected:
+            return False
+        try:
+            now = os.stat(name, dir_fd=folder, follow_symlinks=False)
+        except FileNotFoundError:
+            return True
+        if (now.st_dev, now.st_ino) != (opened.st_dev, opened.st_ino):
+            return False
+        try:
+            os.unlink(name, dir_fd=folder)
+        except OSError:
+            pass
+        try:
+            os.stat(name, dir_fd=folder, follow_symlinks=False)
+        except FileNotFoundError:
+            pass
+        except OSError:
+            return False
+        else:
+            return False
+        if len(handles) > 1:
+            try:
+                os.rmdir(parts[-2], dir_fd=handles[-2])
+            except OSError:
+                pass
+        return True
+    finally:
+        for handle in handles:
+            os.close(handle)
