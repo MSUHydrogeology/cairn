@@ -46,6 +46,7 @@ artifacts; this board does not maintain a second status table.
 | **`repin`** | Proposal first, from `strategy/2026-08-28-claude-repin-revitalization.md` | Maintainer: "Repin is a build". Removes the re-anchor ceremony's manual corrections. |
 | **Drain mode**, last | Settled design, `strategy/2026-08-25-claude-drain-mode.md` | Scope below. |
 | **Onboarding happens at install** | Proposal first (the Developer session's author is writing `2026-10-26-claude-retire-delayed-onboarding-prompts`; it changes the premise of `doctrine/onboarding.md`) | Replace the delayed, trigger-based onboarding prompts with install-time onboarding. Scope below. |
+| **`NEXT_SESSION` becomes a local note** | Proposal first (`2026-10-26-claude-next-session-local-note`, being written by the Developer session's author; it touches the engine: `config.py` and `lockfile.py` mention the file) | Maintainer direction, 2026-10-26: "Also, NEXT_SESSION becoming a local note should happen in v0.5 too." Confirmed in this session's chat by the Maintainer (answer: "Yes, add it to 0.5 (Recommended)"). The queued row "Make NEXT_SESSION local and untracked" below holds the earlier scope: the ignore pattern, the scaffold seed, the session-routines doctrine, the goodnight wording in `AGENTS.md`, and the session-end description. Engine files change, so the AST re-anchor set grows and a Security Review is probably owed; the proposal's author sets the header from what it finds. |
 
 **Onboarding scope.** Maintainer direction, 2026-10-26, relayed by the Developer
 session. The first line, on the prompts that never fire:
@@ -207,10 +208,9 @@ row below) is folded into the 0.5 cut, not paid twice. The AST correction
 precedes the gate-manifest re-anchor, as at 0.4. Maintainer-only; follow
 `bootstrap/REANCHOR_RUNBOOK.md`.
 
-**Final list: the ten rows above.** **Not in 0.5**, and still queued below
-unchanged: making NEXT_SESSION local and untracked, and VER-5 (a new mechanism).
-Left out because 0.5 already carries an engine batch, a ceremony and a build;
-either can join by the Maintainer's word. **Also not in 0.5, waiting on their
+**Final list: the eleven rows above.** **Not in 0.5**, and still queued below
+unchanged: VER-5 (a new mechanism). Left out because 0.5 already carries an
+engine batch, a ceremony and a build; it can join by the Maintainer's word. **Also not in 0.5, waiting on their
 revival conditions:** #19, #13 and the deferred table.
 
 **Changelog.** Each row lands with its entry under `## Unreleased` in
