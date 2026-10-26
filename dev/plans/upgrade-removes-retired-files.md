@@ -4,6 +4,7 @@
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-upgrade-removes-untouched-retired-files.md](../proposals/archive/2026-10-26-claude-upgrade-removes-untouched-retired-files.md)
 **Status**: revising-code
 **Waiting on Maintainer**: re-anchor at the cut (C8)
+**Waiting on Maintainer**: allow departures 5 and 7 (recommended default: allow both; both are safer than the plan)
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: A new `upgrade` step deletes retired Cairn files that a project never edited and clears the records of ones it already deleted, so tidying up no longer breaks `--finalize` or the integrity check.
@@ -119,7 +120,7 @@ Each criterion names a test or command and has a control that passes. Mutants ru
 
 ## Scope delta
 
-**Scope delta**: preserved. No outcome of Revision 2 is removed. The proposal's Question 1 narrower cut-off (11 files) was offered and not chosen.
+**Scope delta** (corrected after the code review): every outcome of Revision 2 is delivered in a default install, but two departures need the Maintainer's allowance and are **not** allowed yet. **Departure 5** narrows accepted scope in one corner: a Markdown copy is removed only if its cached template under `dev/.cairn/base/` is also in the project's last commit; the plan asks git's confirmation of the copy alone. Where that folder is not committed, an untouched Markdown copy is kept ("cannot show it is unchanged") and not removed. **Departure 7** meets one acceptance criterion differently: the plan's linked-outside `base_cache` node cannot run, because such a record makes the whole run exit 2 at the lockfile check before any file is read. The proposal's Question 1 narrower cut-off (11 files) was offered and not chosen.
 
 ## Verification
 
@@ -325,3 +326,28 @@ Sonnet 5.5. Measured today, read-only: every cited line (`upgrade.py:146, 1554, 
 **Boundary B record**: mode `full`, `Certified by: pending`, interpreter 3.13.13 named, tested commit a39706f6 equals the tip's code. Challenged surfaces: the Markdown cache gate (M13 killed) and the unmapped owners above. **Bounding**: ACCEPTED, with the omissions the record names (no oracle, AST and gate-manifest re-anchor are C8's).
 
 **Coverage.** Not covered: Windows; git below 2.53.0 (stand-ins only); the 1851- and 470-test figures (I never ran the broad suite); the differential oracle on `config.py`; `_gate_manifest.py verify` with collection (static only); a real timing race; Python 3.10 to 3.12 beyond one 3.12 run; `UPGRADE.md` outside the new section; the onboarding and NEXT_SESSION plans' own tests beyond the two rewritten files' diffs; `dev/measurement/maintainer-view-misses.md` was not written (outside my one file).
+
+## Response to code review -- Claude Sonnet 5.5 (implementer) -- 2026-10-26
+
+Answers the code review at baf04dde (`revising-code`; 1 blocking, 7 non-blocking). Code tested: 0f395af523f421f830bc1b1e22164172132cd27a (the tip after this Response's code commit 0f395af5). Python 3.13.13.
+
+**B1 -- accepted. Two deviations are the Maintainer's to allow; I do not treat either as allowed.**
+* **Departure 5 (narrower than the plan).** The plan asks git's last commit to hold the copy. I also require it to hold the Markdown copy's cached template, because the step removes the cache too ("only what git can restore"). Effect: where `dev/.cairn/base/` is not committed, an untouched Markdown copy is kept and named. The reviewer's evidence: fresh v0.3.0 and v0.4.0 installs commit their caches (`git add -A` took them), so the outcome is intact in the default install; the node `test_an_uncommitted_or_ignored_copy_is_kept` and mutant M13 (skip the cache's git check) pin it. It narrows the plan only in that corner.
+* **Departure 7 (a criterion met differently).** The plan's `test_a_linked_base_cache_folder_removes_nothing_outside_the_project` reads "`dev/.cairn/base` linked outside, holding a cache with the template's bytes ... the copy and the record stay, and the name prints". The reviewer confirmed (H5, H5b) that such a record makes the run exit 2 at the lockfile check (`_check_lockfile_paths`), so nothing is reached and no name prints. The outcome (nothing outside is removed) is met by four other nodes: the same layout with the record's `base_cache` left out, a link to a folder inside the project (kept, "cannot show it is unchanged"), the exit-2 case, and the swap-after-the-decision nodes at each delete site.
+* Both are listed in the header's **Waiting on Maintainer** line. Recommended default: allow both (both are safer than the plan). The `Scope delta` line no longer says "preserved"; it names both.
+
+**N1 -- fixed.** New step-level nodes (0f395af5): a folder swapped for a link inside the containment check, after the step has decided, at the file, at a copy's cached template and at a leftover cached template; the same for a "gone" record (the record must stay because absence cannot be confirmed); and a spy node that every `unlink`, `rmdir`, `remove` and `rmtree` runs inside `_remove_unchanged_file`, with the leaf called for each expected path. Mutants, each beside an unmutated control (96 passed, 0 skipped), a skip counted as survived: M3 (leftover cache removed by path with its own check) killed; M4 (gone confirmation by path with a check) killed; M4c (the same unguarded) killed; the same two variants for the file (M1g) and the copy's cache (M2g) killed. None is unreachable by a test.
+
+**N2 -- fixed.** `bootstrap/UPGRADE.md` now says a bare `upgrade --finalize` refuses (exit 1, dirty-tree guard) while a deletion is uncommitted, and names `--remove-retired` and `--finalize <path>` as the ways to clear a hand-deleted file's record; to drop a kept file it says `--remove-retired`; and both places that say what git's last commit must hold now name the cached template. The node `test_a_hand_deleted_file_is_cleared_by_the_step_or_a_scoped_finalize_and_a_bare_finalize_waits_for_the_commit` pins all three behaviours; no other node pinned the changed phrases (`grep` of the tests found none).
+
+**N3 -- fixed (one-line wording change, existing message).** `--finalize` over a link or folder at a retired name now prints the classifier's words beside the name ("a link, a folder or another non-file is in the way"); `test_a_blocked_name_still_refuses_bare_finalize_with_exit_1` asserts them. No new symbol.
+
+**N4 -- wontfix.** Python 3.9 failing at the lockfile write in `_stage_exclusive` is pre-existing (`Path.stat(follow_symlinks=...)`), and `docs/quickstart.md:36` names 3.13 as the tested version; this change adds no new Python-version floor.
+
+**N5 -- recorded for the Maintainer at C8.** Tell the Maintainer at the cut: (a) the second node of `test_agreement_retired.py` was renamed to `test_deleted_old_file_is_cleared_by_bare_finalize_and_an_empty_file_survives`, so one collected node id in a keyed file changes; (b) `Assign:_GIT_TIMEOUT_SECONDS` is a sixth new AST symbol the C8 fence's list omits (the authorization should come from the AST output, not that list).
+
+**N6 -- accepted.** On a case-insensitive disk, a disk `Tools/` over a committed `tools/` is removed (git holds the bytes, so `git restore` returns it); the reverse is kept. **N7 -- accepted.** The by-path branch (Windows) cannot be raced by the test hook; `bootstrap/SAFETY.md` names the window.
+
+**Verification after this Response** (clean tree before and after; tested commit 0f395af523f421f830bc1b1e22164172132cd27a; Python 3.13.13): the plan's mapped scoped set plus the two owners the reviewer found unmapped (`test_model_tier_rule_ships`, `test_status_vocabulary_advisory`) and `test_gate_manifest`: 1916 passed, 0 skipped, 147 s. AST (read-only): the lines naming the six guards are identical to before C1; the new symbols are unchanged (six). Neutrality, redundancy, `claim_check`, `link_check`, `check_cairn` clean. Mutants above. No new defect found.
+
+**Status stays `revising-code`**: it moves to `ready-to-archive` only after the Maintainer allows departures 5 and 7.
