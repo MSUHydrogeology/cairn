@@ -193,6 +193,7 @@ _GOLDEN_MAIN = {
         "board: plan | wait-lower | implementing |  |  |  |  | \n"
         "board: plan | wait-space-field | implementing |  |  |  |  | spaced field name\n"
         "board: 13 row(s). Derived from header blocks; the artifact is authoritative.\n"
+        "board: advisory -- 4 active artifacts carry a status outside the vocabulary: 2026-01-05-decide-hyphen (awaiting-decision-x: unknown), 2026-01-06-decide-s (awaiting-decisions: unknown), 2026-01-07-decide-under (awaiting-decision_x: unknown), 2026-01-08-decide-digit (awaiting-decision2: unknown). The allowed statuses are in AGENTS.md > The lifecycle.\n"
     ),
     ("--archive",): (
         "board: kind | artifact | Status | Review | Plan review | Opened | Source proposal | Waiting on Maintainer | archived\n"
@@ -212,6 +213,7 @@ _GOLDEN_MAIN = {
         "board: plan | done-plain | archived |  |  |  |  |  | yes\n"
         "board: plan | done-wait | archived |  |  |  |  | old wait | yes\n"
         "board: 15 row(s). Derived from header blocks; the artifact is authoritative.\n"
+        "board: advisory -- 4 active artifacts carry a status outside the vocabulary: 2026-01-05-decide-hyphen (awaiting-decision-x: unknown), 2026-01-06-decide-s (awaiting-decisions: unknown), 2026-01-07-decide-under (awaiting-decision_x: unknown), 2026-01-08-decide-digit (awaiting-decision2: unknown). The allowed statuses are in AGENTS.md > The lifecycle.\n"
     ),
     ("--maintainer",): (
         "board: kind | artifact | reason | text\n"
@@ -282,8 +284,10 @@ _GOLDEN_SMALL = {
 
 
 class TestTerminalBoardIsUnchanged:
-    """The terminal board and `--maintainer` outputs are byte-for-byte unchanged
-    on trees with no symbolic links."""
+    """The terminal board and `--maintainer` outputs hold their exact bytes on
+    trees with no symbolic links. The one addition is the advisory line the
+    plain board prints when an active status is outside the vocabulary; the
+    golden main tree carries four lookalike words, so it prints one."""
 
     def test_terminal_modes_match_parent_golden_output(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]

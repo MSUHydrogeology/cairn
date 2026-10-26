@@ -65,7 +65,7 @@ editing it.
 
 ## tools/board.py — see what is actually in flight *(default-on)*
 
-**What it does.** Prints one row for every proposal and plan under `dev/`: kind, artifact, status, the Review and Plan review lines, when it opened, its source proposal, and any `Waiting on Maintainer` line. With `--maintainer` or `--json` it also reads the `dev/PLANNING.md` rows that declare a wait. `--json` prints the same board as plain JSON (`cairn-board/1`), so you can build your own view without scraping the table; see [`docs/build-a-board-view.md`](build-a-board-view.md). It only reports what the artifacts say, skips symbolic links, and makes no judgments. The artifact is the authority; this is a view of it.
+**What it does.** Prints one row for every proposal and plan under `dev/`: kind, artifact, status, the Review and Plan review lines, when it opened, its source proposal, and any `Waiting on Maintainer` line. With `--maintainer` or `--json` it also reads the `dev/PLANNING.md` rows that declare a wait. `--json` prints the same board as plain JSON (`cairn-board/1`), so you can build your own view without scraping the table; see [`docs/build-a-board-view.md`](build-a-board-view.md). It only reports what the artifacts say and skips symbolic links. The one check it makes is on the status word: if an active proposal or plan carries a retired status (such as `proposed`) or a value that is not a status, it adds an advisory line naming it, and still lists the artifact. `session-start` prints the same advisory under its in-flight threads. The artifact is the authority; this is a view of it.
 
 ```bash
 python tools/board.py

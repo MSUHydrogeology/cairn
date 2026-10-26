@@ -988,6 +988,72 @@ def _status_of(path: Path) -> str:
     return "(no status line)"
 
 
+#: The published status words, by artifact kind (AGENTS.md > The lifecycle;
+#: doctrine/lifecycle.md for proposals, doctrine/plans.md for plans and change
+#: notes). The board loads this table from here rather than keeping its own.
+_STATUS_VOCABULARY = {
+    "proposal": ("awaiting-review", "revising", "awaiting-decision",
+                 "accepted", "rejected", "superseded"),
+    "plan": ("awaiting-plan-review", "revising-plan", "ready-to-implement",
+             "implementing", "awaiting-code-review", "revising-code",
+             "ready-to-archive", "archived"),
+}
+
+#: Old words that stay readable on archived records and are refused on an
+#: active one; named as retired so the reader is told what happened to them.
+_RETIRED_STATUSES = ("proposed", "reviewed", "revised", "executing")
+
+#: The word a status line opens with, before any note (`awaiting-decision --
+#: ...`, `implementing (round 2)`). Underscores and digits stay inside the word,
+#: so `awaiting-decision2` is a different word from `awaiting-decision`.
+_STATUS_WORD_RE = re.compile(r"^`?(?P<word>[A-Za-z][A-Za-z0-9_-]*)")
+
+
+def _status_problem(kind: str, status: str) -> str:
+    """`""` if `status` opens with an allowed word for `kind` ("proposal" or
+    "plan"), else `"retired"` or `"unknown"`. A blank status, or this survey's
+    own placeholder for a line it could not read, has nothing to judge."""
+    if not status.strip() or status in ("(unspecified)", "(no status line)"):
+        return ""
+    match = _STATUS_WORD_RE.match(status.strip())
+    word = match.group("word") if match else ""
+    if word in _STATUS_VOCABULARY[kind]:
+        return ""
+    return "retired" if word in _RETIRED_STATUSES else "unknown"
+
+
+def _status_advisory(items: List[Tuple[str, str, str]], encode) -> str:
+    """One advisory line naming active artifacts whose status is outside the
+    vocabulary, or `""` when there are none. `items` is `(name, kind, status)`;
+    `encode` renders an untrusted value inert for the terminal, and the caller
+    adds its own line prefix. This only warns: every artifact stays listed."""
+    found = []
+    for name, kind, status in items:
+        problem = _status_problem(kind, status)
+        if problem:
+            found.append(f"{encode(name)} ({encode(status.split()[0])}: {problem})")
+    if not found:
+        return ""
+    noun = "artifact carries" if len(found) == 1 else "artifacts carry"
+    return (f"advisory -- {len(found)} active {noun} a status outside the "
+            f"vocabulary: {', '.join(found)}. The allowed statuses are in "
+            f"AGENTS.md > The lifecycle.")
+
+
+def _in_flight_status_advisory(root: Path) -> str:
+    """The advisory line for the open proposals and plans under `root`."""
+    items: List[Tuple[str, str, str]] = []
+    for kind in ("proposals", "plans"):
+        base = root / "dev" / kind
+        if not base.is_dir():
+            continue
+        for path in sorted(base.glob("*.md")):
+            if path.name != "_template.md":
+                items.append((f"{kind}/{path.name}", kind[:-1],
+                              _status_of(path)))
+    return _status_advisory(items, _safe_field)
+
+
 def _in_flight(root: Path) -> List[str]:
     """List open proposals/plans (live `dev/` files, excluding archives).
 
@@ -1372,6 +1438,9 @@ def cmd_session_start(args: argparse.Namespace) -> int:
     if threads:
         for line in threads:
             print(f"{_PREFIX}   {line}")
+        advisory = _in_flight_status_advisory(root)
+        if advisory:
+            print(f"{_PREFIX} {advisory}")
     else:
         print(f"{_PREFIX} (no open proposals or plans)")
 

@@ -57,6 +57,13 @@ and a new empty `Unreleased` is started above.
   one line, instead of failing on the first read. A file named explicitly on the
   command line still raises. ([proposal](dev/proposals/archive/2026-10-26-claude-check-cairn-deleted-files.md))
 
+### Fixed — The board and `session-start` flag statuses outside the vocabulary
+
+- An active proposal or plan whose status is retired (`proposed`, `executing`) or not a status
+  at all is now named in one advisory line on the board and in `session-start`. Both still list
+  it and exit as before; archived records are never flagged.
+  ([#32](https://github.com/MSUHydrogeology/cairn/issues/32))
+
 ## 0.4.0 — 2026-10-20
 
 ### Added — Defect fixes under existing promises and reuse duty
