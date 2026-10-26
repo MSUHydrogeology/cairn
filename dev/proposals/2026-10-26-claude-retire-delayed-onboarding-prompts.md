@@ -1,11 +1,11 @@
 # Onboard at install: retire the delayed onboarding prompts
 
 **Author**: Claude Sonnet 5.5 (Strategy)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
-**In brief**: Cairn's follow-up onboarding prompts, which were meant to appear later after a trigger, have never appeared, so this removes that machinery and moves what the prompts said into the short day-one task list the install already writes, without making that list or the install report meaningfully longer.
+**In brief**: Onboarding prompts meant to appear later have never appeared in Cairn's own project, so this removes them and puts what they said in the install's day-one task list and points to that list.
 
 **The Maintainer's direction**, chat, 2026-10-26, relayed to me by the coordinating session. His words, in the order the board row "Onboarding happens at install" in `dev/PLANNING.md` quotes them:
 
@@ -319,3 +319,259 @@ Assurance path: high-assurance
 **Blocking findings: yes, R1 and R2.** R1 changes what Question 1 promises. R2 asks only that the Response weigh the docs-only routes; the author may decline with a reason.
 
 **Coverage.** Not checked: the upgrade rehearsal (`removed-upstream 9`, the finalize exits), which I did not re-run because it needs a patched engine; the word counts of sentences A to E; the report's "20 / 23 / 23 slots" figures; the `claim-check-allow.json` line numbers and the contents of `bootstrap/SAFETY.md` and `SECURITY_MUTATIONS.md`; the 12 "edited" versus 6 "mention" split beyond R3's sweep; whether `doctrine/onboarding.md` shrinks to about 80 lines (its parts total plausibly that, unmeasured); the 4%/6%/7% growth percentages. Left for the Security Review pass: S1 to S5, whether deleting the completeness-group guard (`assert_always_on_complete` and its siblings) weakens a fail-closed protection any future always-on helper needs, leaving stale executables in existing installs (S4), the `bootstrap/security_check.py` and `scan_targets` edit, and the AST correction route. No Security Review is cleared or ruled on here.
+
+## Response -- Claude Sonnet 5.5 (author) -- 2026-10-26
+
+Answers the usual review at `ab18f99d` (REVISE; R1 and R2 blocking, R3 to R10 not), which read `ac47a584`. **I accept R1 and R3 to R10. On R2 I accept the finding and go further than it asked:** I weigh the docs-only routes below, adopt two of them beside the report line, and answer the reviewer's question. No: a list nobody is shown does not meet "actually happen when someone installs Cairn". The opening Context measured that `session-start` prints no task, and `bootstrap/BOOTSTRAP.md` never mentions the list; I re-ran both checks (below) and they still hold. The Revision that follows is the complete current contract. I wrote it at Sonnet 5.5, which is the medium tier proposal authoring needs (`AGENTS.md:194-201`). I ran no test. I left Security preflight answers S1 to S5 as the reviewer asked: the Revision restates them with two changes marked, and the Security Review judges them.
+
+**What I re-checked before answering** (HEAD `a74943e8`, Python 3.13.13, three profile installs from a clean `git archive` with `--allow-dev`):
+
+* **R1:** the install output is 141, 182 and 185 lines, and "Next steps" is line 118, 137 and 140. The last line is the lockfile line. The opening Context was wrong to say the output "ends with" the Next steps block.
+* **R2:** 11 lines in each output name files this change stops installing (the nine helper files, the log, the profile copy), which matches the reviewer's count. A grep of `bootstrap/BOOTSTRAP.md` for "onboard", "seed" and "day-one" finds nothing, and a grep of `docs/quickstart.md` for "onboard" and "day-one" finds nothing.
+* **R3:** `install_manifest(modules=None)` gives 96 rows and 44 `.py` sources, of which 9 are the mechanism; `templates/` holds 40 `.py` files, 9 of them the mechanism.
+* **R6:** `new-core-incomplete-group` appears at `bootstrap/_scaffold/upgrade.py:385`, `:830` and `:950`; `_KIND_DISPLAY_LABEL` is in the baseline and `_BLOCKED_ADDITION_KINDS` in the known-new manifest.
+* **R7:** the two added search patterns ("onboarding helper", "activation helper") find `docs/agent-team-onboarding.md:39, 56, 74`, `templates/README.md:91` and the other prose the reviewer names.
+* **AST:** the read-only `bootstrap/tests/_ast_attest.py verify` at this HEAD prints 12 changed symbols and 5 new-symbol mismatches (17). The number moves as other 0.5 work lands, so this proposal does not carry it forward; it is derived at the cut.
+
+| Finding | Disposition | What I did, and where it lands |
+|---|---|---|
+| **R1** (blocking) the report line sits where the report does not end | accept | The pointer is the last line of the run, printed from `main` after the lockfile line. `main` knows the profile and `install_onboarding`'s results, so nothing is plumbed into `print_report`. Question 1, Proposal 2 and the test now say "last line". Rev. 1, Proposal 2 and 4 |
+| **R2** (blocking on the weighing) docs-only routes unweighed | accept the weighing; adopt (ii) and (iii) | Weighed in a table; the report line stays (it reaches the person who ran the install, once), `BOOTSTRAP.md` Act II-6 gets one sentence, and `session-start` step 3 gets one bullet. Question 1 changes. Rev. 1, *How people are shown the list*, Alternatives |
+| **R3** two more count pins; 34 frozen files, not 33 | accept | Both pins and `test_security_lint.py` join the lists: frozen files touched 34, edited 13. The two pins move in the same commit (their own text says so). Targets are formulas. Rev. 1, Proposal 7, *Sequencing* |
+| **R4** E and row 9 ride a conditional seed; C's "there" has no antecedent | accept | E moves to the unconditional seed `confirm-maintainer-authority`; C is reworded ("in the roster slot") and rides the same seed for legacy as it does `fill-team-roster-day-one` for the team profile. The test runs with a non-default `agent_team`. Rev. 1, Proposal 3, Tests |
+| **R5** the text-first order turns 10 nodes red | accept | Changed: the profile-file edit lands with, or after, the deletion of the tests that read those files. `FROZEN-MISSING` is expected until the re-anchor. Rev. 1, Proposal 8 |
+| **R6** the dead kind `new-core-incomplete-group` | accept | The plan deletes the kind from `_KIND_DISPLAY_LABEL` and `_BLOCKED_ADDITION_KINDS` and the tests that pin it. Engine symbols: 18 (8 deleted, 10 changed). The Security Review reads that list. Rev. 1, Proposal 2 |
+| **R7** unlisted prose edits; "never appeared" is wider than its evidence | accept | The five edits join the lists, two search patterns join the plan's search, and the sentence is scoped to Cairn's own project. Rev. 1, Proposal 5, *Corrections* |
+| **R8** make the follow-up a named 0.5 row | accept; **settled by the Maintainer** | The Maintainer answered "Add it to 0.5" to the planning session, which added the row "`upgrade` removes untouched copies of files Cairn stopped shipping" (`dev/PLANNING.md`). It lands after this change. The upgrade guide names it. I do not fold it in. Rev. 1, Proposal 6, *Sequencing* |
+| **R9** sequencing against the sibling is one sentence | accept | Order set by the v0.5 Planning session: the NEXT_SESSION change, then this one, then the twelfth row. Pins are formulas; each implementer re-derives them from the landed tree. Rev. 1, *Sequencing* |
+| **R10** Questions 3 and 5 need a translator; the header line is 55 words | accept | Questions rewritten in plain words and by name, not by table row; the header line is shortened to 33 words. Rev. 1, *In brief* |
+| **Ruling (d)** reasons (3) to (5) against wiring `session-end` are weaker | accept | They are marked secondary. Reasons (1) and (2) decide it. Rev. 1, Alternatives |
+
+**Why Status goes to `awaiting-review`, not `awaiting-decision`.** The header declares `usual + Security Review`. The usual pass is answered; the Security Review has not run. `AGENTS.md:31-37` allows a second round for "a Security Review still open", and `doctrine/proposals.md:72-78` and `:541` send a Response and revision "back to `awaiting-review`". The next move is the Security reviewer's. The one narrower sentence, `doctrine/lifecycle.md:163-167`, says `revising` returns to `awaiting-review` only when scope widened; here the reason is the open Security Review, which `AGENTS.md` names, and the Revision also adds two prose pointers, so I did not rest the choice on that sentence alone. After the Security Review is answered the status moves to `awaiting-decision`.
+
+## Revision 1 -- Claude Sonnet 5.5 (author) -- 2026-10-26
+
+The complete current contract. It supersedes the opening *In brief*, *Proposal*, *Rationale*, *Alternatives considered*, *Documentation / doctrine surface*, *Evidence / verification plan*, *Signals*, *Scope delta* and *Assurance path* in full. *Context* stands as opened, with the corrections under *Corrections to the opening Context*. The header's `In brief` line is replaced by a shorter one; the opening wording is in git at `ac47a584`.
+
+### In brief
+
+**Your decisions.** Five questions. Each has my default; an unanswered question takes it.
+
+1. **How do people get shown the day-one list?** *Default:* three short pointers, and no new tasks. (a) The last line of the install's output says where the list is. (b) One sentence in the adoption script, `bootstrap/BOOTSTRAP.md` step II-6, tells the agent to work the list during the first change. (c) One bullet in the `session-start` routine tells an orienting session to name the first open task. *Why three:* the install writes the list, but nothing shows it afterwards. A scratch install's `session-start` printed no task, and `BOOTSTRAP.md` never mentions the list. A list nobody is shown does not meet your aim, "actually happen when someone installs Cairn". *What it costs:* the install output gets about 10 lines shorter (11 lines that name files the install no longer writes go; one line is added), and the list grows by 9, 32 and 54 words (4%, 7% and 11%). Both are expected effects, not measurements of a finished install. *Alternatives:* the last line only, which was my first version; or no pointer, which I think fails your aim.
+2. **Do you agree with what I do with each of the nine former prompts?** Two need no new text because the install already says the same: the solo "first proposal archived" prompt and the collaborative "first cross-agent review" prompt. The other seven become five sentences, A to E below: A covers the two solo second-agent prompts (they say the same), C covers the collaborative and legacy terminal prompts, and B, D and E are one prompt each. Two findings are stale: the two "first cross-agent review shipped" prompts, whose trigger fires on word matches and whose idea of a cross-agent review predates the rule that only you call one; and the clause "the second through fifth shape the steady-state" in the legacy first-proposal prompt, for which I found no measurement. I rewrite the first and drop the clause. *Default:* yes.
+3. **What do projects that already installed Cairn get?** They keep nine old files that now do nothing. If someone deletes them, the upgrade tool refuses to finish until the project fixes it by hand (measured). *Default:* no new tasks and no edits to their lists. They get the `session-start` bullet through the normal upgrade, and the upgrade guide tells them to leave the nine files alone. The new 0.5 row "`upgrade` removes untouched copies of files Cairn stopped shipping" removes them later, after this change. *Alternative:* no pointer for existing projects.
+4. **Shrink or delete `doctrine/onboarding.md`?** *Default:* shrink it in place, from 327 lines to about 80 (my estimate): the install-time model, the tour pages, the unrelated section "Dispatching an agent session" unchanged, and the cross-references. *Alternative:* delete the file and move "Dispatching an agent session" into `doctrine/roles.md`; that edits a second doctrine file for no gain I can name.
+5. **Does this change need a reason beyond your request?** Doctrine changes normally need more than one incident behind them (the rate-limit gate, `doctrine/rationale.md:443-452`). This change started from your direction, not from an incident, so I say it needs nothing more and ask for no edit to the gate. *Default:* yes, you agree; the Decision records it in one line. You answered yes to the same question on the model-tier proposal.
+
+**What changed since the opening.**
+
+* **The pointer moves to the last line of the output, and it is no longer alone.** The opening put it "after Next steps", which is not the end: Next steps is line 118, 137 and 140 of 141, 182 and 185, and the merge pass, notes and lockfile line follow. Two prose pointers join it: `BOOTSTRAP.md` II-6 and the `session-start` routine.
+* **The output shrinks, it does not grow.** 11 lines name files this change stops installing; one line is added. Expected output: 131, 172 and 175 lines.
+* **Counts corrected.** Engine symbols 18, not 16. Frozen files touched 34, not 33 (edited 13, not 12). Count pins three, not one.
+* **Sentences C and E move so no profile setting can drop them.**
+* **Order of work.** The profile-file edit lands with the deletion of the tests that read it. This change lands second, after the NEXT_SESSION change.
+
+**What stays the same.** Retire the helper, its log and the installed profile copy. Remove the always-on group from the engine. No new tasks; the seed counts stay 6, 10 and 11. Existing projects keep their nine files. `usual + Security Review`; a plan; the deliberate lane.
+
+**What I could not show.** Whether a fresh agent session names the list; I cannot run one. Any session can: install into a scratch folder, run `/session-start`, and read whether the summary names the first open task. The plan records one such run. The finished install's line counts. Whether the two adopter projects hold the nine lock records (I read neither).
+
+### Corrections to the opening Context
+
+* **"The report ends with the Next steps block"** (opening Context) is wrong. Measured at HEAD `a74943e8`: Next steps is line 118, 137 and 140 of 141, 182 and 185. The lockfile line is last.
+* **Report lengths** are 141, 182 and 185, not 142, 183 and 186; the opening figures included one provenance warning that a release checkout omits.
+* **"Have never appeared"** (the header line) is measured only in Cairn's own project: the log is 303 bytes with one commit. I did not read the two adopter projects, so the claim says Cairn's own.
+* **Count pins:** there are three, not one. `bootstrap/tests/test_notice_install.py:184` pins 96 manifest rows; the same file's `test_manifest_has_the_expected_py_source_count` pins 44 `.py` manifest sources (35 after); `bootstrap/tests/test_security_lint.py::test_templates_py_count_is_pinned` pins 40 `.py` files under `templates/` (31 after). The second file is frozen and was on neither opening list. Their own text requires the two `.py` pins to move in the same commit.
+* **Frozen files:** 15 deleted, 13 edited (the opening 12 plus `test_security_lint.py`), 6 that mention the mechanism and need no edit; 34 in all.
+* **Engine symbols:** 18. Deleted, 8, as opened. Changed, 10: the opening 8 plus `_KIND_DISPLAY_LABEL` (baseline) and `_BLOCKED_ADDITION_KINDS` (known-new). They hold the group's own failure kind, `new-core-incomplete-group` (`bootstrap/_scaffold/upgrade.py:385`, `:830`, `:950`), pinned at `bootstrap/tests/test_upgrade_side_door_parity.py:376-402`. `main` is already in the set the engine batch owes, so 17 are new to that set.
+* **Prose and test edits the opening inventory missed:** `docs/agent-team-onboarding.md:56` ("The onboarding helper does not read it") and `:72` ("worth doing for two reasons"), `templates/README.md:91`, and `bootstrap/tests/test_review_stance_in_shipped_files.py:1759`, which asserts Cairn's installed profile copy exists. Two search patterns were missing from the inventory: "onboarding helper" and "activation helper".
+* **A test reads the profile files:** `bootstrap/tests/test_active_surfacing_render.py:35` and `:83` read the real profile files (10 nodes), so removing their Row 1 sections turns them red until the test is deleted.
+
+### How people are shown the list
+
+The install writes the list and the tour pages; the question is who is sent to it. I weighed six routes.
+
+| Route | Who it reaches | What it costs | Decision |
+|---|---|---|---|
+| Last line of the install output, printed from `main` | the person or agent that ran the install, once | one `print`; `main` is already in the owed AST set; the output still shrinks by about 10 lines | adopt |
+| One sentence in `bootstrap/BOOTSTRAP.md` II-6 (Dogfood) | an agent following the adoption script, at the step where the first change is made | prose in an unfrozen file; three tests read the file and run scoped | adopt |
+| One bullet in `session-start` step 3 (`templates/skills/session-start/SKILL.md`, and Cairn's identical copy `.agents/skills/session-start/SKILL.md`) | each session that runs the routine, on new and old installs (old ones receive it in the upgrade merge) | prose in a file the NEXT_SESSION change and the drain-mode work also edit; the skill tests run; the routine is manual (`/session-start`), so it reaches the sessions an operator orients | adopt |
+| A line in `AGENTS.md` | every agent, every session | a permanent cost for a one-time list, in a file two other 0.5 changes are editing | decline; the next step if the bullet proves too weak |
+| `session-start` prints open tasks (`tools/session.py`) | the same sessions, by code | edits the module that holds the interpreter binding, a high-risk surface | decline; its own proposal if needed |
+| The list only | nobody, unless they open `dev/PLANNING.md` | none | decline: fails the aim |
+
+The sentences, with word counts from `wc -w`:
+
+* **Last line** (8 words): "Day-one tasks for your profile: dev/PLANNING.md, section Onboarding." It prints only when `install_onboarding` reports it wrote `dev/PLANNING.md`, so a missing slot never produces a false pointer. It is not printed for an install with no profile or under `--dry-run`.
+* **`BOOTSTRAP.md` II-6** (23 words): "The install also wrote the profile's day-one tasks into `dev/PLANNING.md` under Onboarding. Work through them during this dogfood run, first open task first."
+* **`session-start` step 3** (25 words): "Name the first open task under Onboarding in `dev/PLANNING.md`, if there is one. The install wrote that list, and a task leaves it when done."
+
+I did not measure whether agents follow either sentence. The bullet's reach is limited to sessions that run the routine; the always-loaded alternative is declined for cost, not for reach.
+
+### Proposal
+
+Eight parts. No new tool, gate, status or config key; one new test file.
+
+**What "at install" means.** The install does three things for onboarding, while the scaffold runs and never after. It writes the profile's seed tasks into the `onboarding-tasks` slot of `dev/PLANNING.md` (`install_onboarding`, `bootstrap/_scaffold/install.py:1282-1503`). It copies the two tour pages to `dev/modules/onboarding/`. It prints one pointer as the last line of the run. Nothing watches the project later, and nothing is added to the list later.
+
+**How first contact stays short.** (1) One list, not two: the pointers say where it is and do not repeat it. (2) No new tasks; a test pins the seed counts at 6, 10 and 11. (3) Five sentences of 9 to 21 words, 9, 32 and 54 words per profile. (4) Each sentence sits at the end of a seed the adopter reads at that moment: a tour, a roster, a coordination read, a confirmation of who holds authority. (5) The install output gets about 10 lines shorter. (6) `AGENTS.md`, which every agent loads every session, does not change. These are expected effects pinned by tests; I have not measured the finished install, because it does not exist.
+
+**1. Stop shipping and installing the helper, its log and the profile copy.** Delete the nine shipped files (`templates/modules/default-on/onboarding_activate.py` and `_onboarding/*.py`) and Cairn's nine copies in `scripts/`. Stop seeding `dev/.cairn/onboarding-activated.jsonl`; delete Cairn's copy. Stop copying the profile file to `dev/modules/onboarding/<profile>.md`, whose only reader was the helper; delete Cairn's copy. Keep the slot seeding, the `<!-- preset: <name> -->` comment (removing it would edit `_render_onboarding_slot` for no gain) and the two tour pages.
+
+**2. Remove the always-on group from the engine, with its members and its failure kind.** The group exists to keep the helper's launcher and engine together (`bootstrap/_scaffold/config.py:662-682`). With no member, `assert_always_on_complete` and its siblings check nothing, and I would not keep guard code that has no member and no test. The dead kind `new-core-incomplete-group` goes from `_KIND_DISPLAY_LABEL` and `_BLOCKED_ADDITION_KINDS`, with the branch in `_compute_upgrade` that produces it and the tests that pin it; leaving it would keep a name in a fail-closed list that no code can produce. A future always-on helper can add the registry back in the commit that adds it. `install_onboarding` keeps the slot write and the tour pages; `main` prints the last line from the results it already holds. The dry-run text that promises the profile copy (`bootstrap/_scaffold/cli.py:478-483`) and the no-profile label "helper + log only; no preset" (`:572-574`) are reworded. The engine symbols:
+
+* **Deleted, 8.** Baseline: `_ONBOARDING_HELPER_SRC_REL`, `_ONBOARDING_HELPER_DST_REL`, `_ONBOARDING_LOG_REL`, `_ONBOARDING_LOG_HEADER`. Known-new: `_ALWAYS_ON_MAPPINGS`, `missing_always_on_sources`, `assert_always_on_complete`, `_always_on_group_complete`.
+* **Changed, 10.** Baseline: `install_onboarding`, `install_manifest`, `write_install_lockfile`, `_compute_upgrade`, `main`, `_KIND_DISPLAY_LABEL`. Known-new: `_assert_mapping_ownership`, `_cmd_adopt_collisions`, `duplicate_destinations` (a docstring), `_BLOCKED_ADDITION_KINDS`.
+* **Not attested:** `scan_targets` in the frozen `bootstrap/security_check.py` loses its always-on loop.
+* **Who corrects the AST pin:** self-service repair reaches only `install_onboarding`, and only when it is the only changed symbol; a deleted pinned key is refused (`bootstrap/tests/_ast_attest.py:143-148, 321-334`). So the correction is Maintainer-run, in the single 0.5 re-anchor.
+
+**3. Profile files.** Delete the six `[trigger:]` items and the three Row 1 sections. Rewrite the preface, which describes three kinds of content, to describe one. Append sentences A to E at the seeds named. The seed counts stay 6, 10 and 11, and the report's two notes (model mapping, work-intent hooks) and every other seed stay as they are.
+
+* **A** (solo; on `skim-coordination-doctrine`, 9 words): "When you add a second agent type, walk `dev/modules/onboarding/agent-team-onboarding.md`."
+* **B** (collaborative; on `walk-dev-tour`, 17 words): "Reflections are gitignored by default; track them only if agents hand work to each other through them."
+* **C** (collaborative on `fill-team-roster-day-one`; legacy on `confirm-maintainer-authority`; 15 words each): "When you add another agent type, record it in the roster slot and walk `dev/modules/onboarding/agent-team-onboarding.md`."
+* **D** (legacy; on `walk-dev-tour`, 18 words): "Treat that first proposal as the diagnostic for calibrating the security-review, dual-language-tests and legacy-agent modules against your tree."
+* **E** (legacy; on `confirm-maintainer-authority`, 21 words): "A read from a different agent type is the Maintainer's call (`AGENTS.md` > Review); the usual review stays a fresh session."
+
+Added words: solo 9 of 209 (4%); collaborative 32 of 451 (7%); legacy 54 of 508 (11%). The seed `confirm-maintainer-authority` (`high-rigor-legacy.md:50`) is outside every `cairn:if` block, so C and E reach a legacy install whatever `agent_team` is. `fill-team-roster-day-one` (`collaborative-team.md:82`) is also unconditional. On a multi-type install C repeats the pointer the conditional seeds already carry; I accept 15 words of overlap rather than lose the pointer when a profile is overridden. What the nine become:
+
+| Former prompt | Where its content lands at install |
+|---|---|
+| `post-first-proposal` (solo, `solo-greenfield.md:58`) | nowhere new: `docs/dev-tour.md:41-55` covers `strategy/` and `reflections/`, and every profile seeds the tour |
+| `post-first-proposal-team` (`collaborative-team.md:91`) | B |
+| `post-first-proposal-legacy` (`high-rigor-legacy.md:104`) | D, without "second through fifth" |
+| `spin-up-second-agent` (solo, `solo-greenfield.md:65`) and the solo Row 1 prompt (`:87`) | A (one sentence for the two, which say the same) |
+| `post-first-cross-type` (`collaborative-team.md:97`) | nowhere new: `templates/core/AGENTS.md:91-108`, `fill-team-roster-day-one` and `read-dual-review-module` already say it |
+| `post-first-cross-type-legacy` (`high-rigor-legacy.md:111`) | E |
+| collaborative Row 1 prompt (`collaborative-team.md:124`) | C |
+| legacy Row 1 prompt (`high-rigor-legacy.md:142`) | C, and the seed `agent-team-onboarding-legacy` (`:92`) for multi-type installs |
+
+**4. Two prose pointers.** The `BOOTSTRAP.md` II-6 sentence and the `session-start` bullet, as worded above. Cairn's own copy of the skill (`.agents/skills/session-start/SKILL.md`, now byte-identical to the template) takes the same edit, and its lockfile record is re-finalized by path, as `08c946a6` did for other files. Both edits are text in unfrozen files. When the NEXT_SESSION change has landed, the bullet goes after its sentence in step 3; the drain-mode work also edits this file (step 4), so whoever lands second re-reads.
+
+**5. Doctrine and docs.** All in the governing and descriptive layers (`docs/DOCUMENTATION_PLAN.md`).
+
+* `doctrine/onboarding.md` becomes the install-time model, in its own words: "Cairn onboards once, at install. The install writes a short list of day-one tasks, chosen by the profile, into the `onboarding-tasks` slot of `dev/PLANNING.md`, and installs two tour pages beside it. Nothing activates later: no tool watches the project to decide when to add a task, and no log records what was shown." It replaces the premise at `:24-28`. Components 2 and 3, the state-file schema, the caps, the goodnight invocation, the existing-adopter recipe and the v1.x candidates go (`:61-111`, `:134-284`). Component 1 and Component 4 stay in short form; "Dispatching an agent session" (`:285-311`) stays word for word; the cross-references stay.
+* `doctrine/session-routines.md:362-393`, the goodnight step that runs the helper, is deleted.
+* `docs/agent-team-onboarding.md` and its installed copy (which `test_review_stance_in_shipped_files.py` requires to be equal): in Step 1 keep "Commit the roster edit." and delete the two sentences after it (`:39-41`); delete `:56`; in Step 4 delete item 1 (`:74-78`), change "worth doing for two reasons" (`:72`) to a single reason (it shows how a called read goes in your team), and keep "Commit the review." while deleting the trigger sentences after it (`:83-85`).
+* Reworded to match: `docs/vision.md:78`, `on-ramp/README.md:92-97`, `templates/README.md:91` (drop "the onboarding helper"), `templates/core/dev/PLANNING.md:31-47`, `bootstrap/SAFETY.md` (`:176-188`, `:246-248`), `bootstrap/_scaffold/SECURITY_MUTATIONS.md` (`:46`, `:66-70`) and `bootstrap/UPGRADE.md:75`.
+* The changelog gets one entry from the plan's owner at the serialization point.
+
+**6. Existing installs.** No engine change for them: the rehearsal in the opening Context showed `upgrade` already handles a file Cairn stops shipping (one `removed-upstream 9` line; plan, stage, apply and finalize exit 0). `bootstrap/UPGRADE.md` gets a section beside the agreement section. It says: the nine old files do nothing; leave them alone; do not delete them, because a deleted file makes a bare `upgrade --finalize` refuse (also with `--force`) and `verify_integrity` fail; no supported way to clear their lock records exists yet; the 0.5 row "`upgrade` removes untouched copies of files Cairn stopped shipping" will remove them. That row must cover the nine records here and the NEXT_SESSION record from the sibling change, and remove only a copy still equal to what Cairn shipped. The `session-start` bullet reaches existing installs in the normal upgrade merge. Their lists get no new tasks.
+
+**7. Tests.** Delete six test files (77 collected nodes). Edit ten test files and three other frozen files: `test_agreement_retired`, `test_facade_loader_cleanup`, `test_gate_manifest`, `test_hardening`, `test_onboarding_slot_substitution`, `test_review_stance_in_shipped_files` (the exemption at `:1890`, the control at `:1982`, and `:1759`), `test_security_check`, `test_upgrade_side_door_parity` (re-point the general collision tests at another tracked file and delete the group tests and the dead-kind tests), `test_notice_install` (the row pin and the `.py` pin) and `test_security_lint` (the `.py` pin); plus `bootstrap/security_check.py`, `bootstrap/tests/_gate_manifest.py` and `scaffold_ast_known_new.json`. Add `bootstrap/tests/test_install_time_onboarding.py` with the properties under *Tests required*. The targets are formulas, because the sibling change also moves the row pin: manifest rows after = rows in `install_manifest()` at the landing tree minus 9; `.py` manifest sources after = the landing tree's count minus 9 (35 today); `.py` files under `templates/` after = the landing tree's count minus 9 (31 today). The sibling adds and removes no `.py` source, so the two `.py` targets do not depend on order. The two `.py` pins move in one commit.
+
+**8. Order within this change, so no commit leaves a test red.** (a) The prose that no test reads as a trigger source: doctrine, docs, `BOOTSTRAP.md`, the `session-start` bullet. (b) The deletion of the tests that read the profile files or load the helper, then the profile-file edit, then the helper and engine removal. The profile-file edit never lands before the deletion of `test_active_surfacing_render.py` and the other tests that read the Row 1 sections. `FROZEN-MISSING` and `COLLECTION-DROPPED` are expected until the re-anchor. The plan's Boundary B mode is `full`, recorded `Certified by: pending` until the next certifying run. Nobody sets `CAIRN_FULL_SUITE=1`.
+
+**Review and plan headers.** *Security Review owed:* the change edits the scaffold engine (`config.py`, `install.py`, `upgrade.py`, `cli.py`), `bootstrap/security_check.py`, `bootstrap/SAFETY.md` and the published install manifest, each named in `AGENTS.md` ("High-risk surfaces") or in the proposal template's triggers, and it deletes a fail-closed kind. *Plan needed:* it lands across many commits and areas, and Boundary B is `full` (`doctrine/plans.md:175-203`). *Lane:* deliberate (`doctrine/lifecycle.md:47-58`).
+
+### Sequencing with the NEXT_SESSION change
+
+The v0.5 Planning session sets the landing order. Its order, 2026-10-26: (1) the NEXT_SESSION change, `dev/proposals/2026-10-26-claude-next-session-local-note.md`; (2) this change; (3) the twelfth 0.5 row, "`upgrade` removes untouched copies of files Cairn stopped shipping", which lands last, proposal first, with a separate author. I read the sibling's *Proposal* and *Questions* to find overlaps and edit none of its files; its own review is running, so its numbers may move.
+
+* **Shared manifest pin.** Both change `bootstrap/tests/test_notice_install.py:184`. The sibling removes one row (96 to 95). The target for this change is a formula: **rows at the landing tree minus 9**, which is 86 once the sibling has landed. Neither number is carried forward as fact.
+* **Shared engine files.** Both edit `bootstrap/_scaffold/config.py`, in different symbols (`_CORE_MAPPINGS` there, `_ALWAYS_ON_MAPPINGS` here), and both feed `install_manifest`.
+* **Shared prose.** Both add a section to `bootstrap/UPGRADE.md` and an entry to `CHANGELOG.md`, and both add a bullet to `session-start` step 3. The second lander appends beside the first and keeps both.
+* **Shared re-anchor.** The sibling adds `Assign:_CORE_MAPPINGS`, its 11th changed symbol, and about three frozen-file edits (`verify_stems.py` twice and `test_upgrade.py`). This change adds 18 symbols (17 new to the owed set) and 34 frozen files touched. No frozen file other than `test_notice_install.py` is edited by both, on my reading of its inventory.
+* **Who re-derives what.** Whoever implements each change records its own pins in its implementation record. This change's implementer re-derives the manifest rows, the two `.py` counts, the frozen-file set and the AST changed set from the tree after the NEXT_SESSION change has landed, and records them in the Boundary B record. The planning session re-derives the final AST changed set and frozen set at the cut with `_ast_attest.py verify` and `_gate_manifest.py verify`, in the Maintainer-run re-anchor. The 12th row's author re-derives its own set after both.
+* **Why this order.** The smaller change goes first (one engine symbol, about three new frozen-file edits, one manifest row) so the larger one re-derives against a settled tree. I see no reason to argue for the other order.
+
+### Rationale
+
+The Maintainer asked for onboarding at install, not later. The measurements agree. The delayed design has run zero times in Cairn's own project in 136 days, and its detector confuses a word match with a cross-agent review. Delivered at install, the nine prompts come to five sentences, 9 to 54 words per profile. A delay saves a new adopter at most those words, so the thing delay buys (a short first day) is small. What the design costs is nine shipped files, 1,964 lines per copy, a trigger engine to keep correct, an engine group, at least 77 test nodes, and shipped pages that tell adopters a trigger fires at the next goodnight when none does. The weakness of the opening was delivery, not content: a list in a file nobody is sent to. Three pointers, each one sentence or one line, fix that without adding a task.
+
+### Alternatives considered
+
+* **Do nothing.** The helper stays unrun. Every adopter keeps nine executables, nine lock records and nine manifest rows for a feature that has not fired. Shipped text keeps saying it works: `docs/agent-team-onboarding.md:39-41` and `:83-85` tell the adopter a trigger fires at the next goodnight, and `doctrine/session-routines.md:362-393` tells the owner to run it. You have said you do not want it delayed.
+* **Wire the helper into `session-end --handoff` (the strongest alternative I rejected).** It keeps the design and makes it run. Two reasons decide it. (1) A prose step in the `session-end` skill is the arrangement that has produced zero runs, and running it from the tool means a new subprocess in `tools/session.py` and its twin `templates/skills/_lib/session.py`, which hold the interpreter binding, a high-risk surface that would need a second Security Review. (2) The prompts would still arrive after the adopter has done a lot, which your words reject. Three secondary reasons, weaker: a wired detector could be narrowed to the three triggers used; two of the nine already say what the install says; and the saving it protects is 4% to 11% of the list.
+* **Move the content but leave the machinery.** The cheapest way to put the content at install. It loses because every adopter would keep nine executables that read profile files with no triggers. Proposal 8's order gets the early benefit without that end state.
+* **The pointers: report line only.** My opening version. It reaches the person who ran the install, once, and no later session. See *How people are shown the list*.
+* **Print the former prompts in the install output.** Adds lines to the first thing a new adopter reads, for advice meant for later. Declined on first contact.
+* **Add nine new seed tasks.** Each profile has three of the nine, so the lists would grow from 6, 10 and 11 tasks to 9, 13 and 14: 50%, 30% and 27% longer. Declined on first contact.
+* **Fold "`upgrade` removes untouched copies" into this change.** Settled by the Maintainer as its own 0.5 row, landing after this change. It adds a delete path to the upgrade engine and a second Security Review.
+
+### Documentation / doctrine surface
+
+Routed by layer, per `docs/DOCUMENTATION_PLAN.md`. *Governing:* `doctrine/onboarding.md` (rewritten as the install-time model) and `doctrine/session-routines.md` (one step removed). `AGENTS.md` and `templates/core/AGENTS.md` do not change. *Adoption script and routine:* `bootstrap/BOOTSTRAP.md` (one sentence) and the `session-start` skill (one bullet). *Descriptive:* the docs listed in Proposal 5. *Shipped templates:* the three profile files and `templates/core/dev/PLANNING.md`. *Deliberation:* this proposal, the plan and the board. The new sentences name no model or vendor (`python scripts/quality_gate.py --sub neutrality`).
+
+### Evidence / verification plan
+
+| Surface | Check | What triggers it |
+|---|---|---|
+| All edited Markdown | `python scripts/check_cairn.py`; `python scripts/claim_check.py <file>`; `python scripts/link_check.py <file>` | a person or agent, before commit (no CI) |
+| Profile files, doctrine, templates, skill, `BOOTSTRAP.md` | `python scripts/quality_gate.py --sub neutrality --sub redundancy` | a person; the certifying run before a push |
+| The seven properties below | `bootstrap/tests/test_install_time_onboarding.py` | `pytest`, scoped by the implementer; the certifying run |
+| Install and manifest | `python bootstrap/scaffold.py --dry-run --config bootstrap/profiles/<profile>.yml`; `--manifest` (rows at the landing tree minus 9, and no `onboarding` row) | a person |
+| Upgrade of an old install | `TestUpgradeLeavesAnOldHelperAlone` | `pytest` |
+| Engine symbols and frozen files | `bootstrap/tests/_ast_attest.py verify`; `bootstrap/tests/_gate_manifest.py verify` | a person, in the re-anchor ceremony; nothing runs either automatically |
+| Does a fresh session name the list? | one scratch install, `/session-start`, read the summary | the implementer, once, recorded in the implementation record; not a test |
+
+The plan's mapping repeats the search from the opening Context, with the two added patterns, on the final tree. Anything the mapping cannot bound falls back to the certifying run.
+
+#### Tests required
+
+Proposed paths:
+- `bootstrap/tests/test_install_time_onboarding.py` — the seven properties below; lands with the implementing commits.
+
+Each property has a one-line mutant, run by the plan's ledger beside an unmutated control:
+
+* `TestNoProfileSchedulesAPromptForLater`: no profile file holds a `[trigger:` line or an "Active-surfacing" heading. Mutant: add a trigger line to one profile.
+* `TestTheOnboardingListDoesNotGrow`: a real install of each profile seeds 6, 10 and 11 tasks. Mutant: add a seed.
+* `TestEveryFormerPromptHasAnInstallTimeHome`: sentences A to E appear in the installed slot of the right profiles, once with each profile's own `agent_team` and once with a non-default value. Mutant: delete one sentence; or put C back inside a `cairn:if`.
+* `TestInstallOutputEndsWithThePointerToTheList`: the last non-blank line of a profile install's output is the pointer, and no pointer is printed without a profile, under `--dry-run`, or when the slot was not written. Mutant: print it before the lockfile line.
+* `TestInstallWritesNoActivationMachinery`: none of `scripts/onboarding_activate.py`, `scripts/_onboarding/`, `dev/.cairn/onboarding-activated.jsonl` and `dev/modules/onboarding/<profile>.md` is written, and both tour pages still are. Mutant: restore one write.
+* `TestUpgradeLeavesAnOldHelperAlone`: builds an old project the way `bootstrap/tests/test_agreement_retired.py` does (a fresh install, then the nine files and their lock records added by hand), runs `upgrade --plan`, `--stage`, `--apply` and bare `--finalize`, and checks that all exit 0 and the nine files are untouched. Mutant: make the planner delete a removed file.
+* `TestAdoptionAndSessionPointersShip`: the `BOOTSTRAP.md` II-6 sentence and the `session-start` bullet are present, and the skill template equals Cairn's copy. Mutant: delete either.
+
+Scoped runs also cover the edited files in Proposal 7, the six that mention the mechanism, `test_manifest.py`, `test_skills_install.py`, `test_skills_upgrade.py`, `test_skills_security.py`, and the three tests that read `BOOTSTRAP.md` (`test_model_selection_stub.py`, `test_profile_grammar.py`, `test_scientific_check_guidance_ships.py`).
+
+#### Security preflight
+
+Restated from the opening, which the Security Review reads. Two answers change: S2 (the test list) and S3 (the pointer is printed from `main`, and two prose pointers join it). I do not re-argue S1, S4 or S5.
+
+* **S1 — Who supplied it?** The one decision this change touches is which lockfile records become `removed-upstream`: `upgrade` asks whether the record's `src` path exists in the upstream templates (`bootstrap/_scaffold/upgrade.py:521-524`). The adopter's tree supplies `src`, as for every record. The change adds no input and no channel. I did not re-audit that path's containment.
+* **S2 — Can it fail?** The checks this change relies on are the seven properties, each with a mutant above. I have run none, because the tests do not exist. The checks I delete (`assert_always_on_complete`, its siblings, and the dead kind) guarded a group that no longer exists.
+* **S3 — What fires it, over what?** `pytest` over the new file and the edited ones, run by the implementer and in the certifying run; nothing runs it on commit. The adopter-facing sentences are the `UPGRADE.md` section, the last output line, the `BOOTSTRAP.md` sentence and the skill bullet; tests pin the last line, both prose pointers and the section's key sentence ("do not delete").
+* **S4 — Which way does it break?** An upgraded project keeps nine executables that Cairn no longer refreshes or release-scans. That is stale code, not more authority: it writes only when someone runs it, through its own containment guards. A later guard fix will not reach it until the 12th row removes them. The Security Review decides whether the guide should say leave them (my proposal) or blank them (I expect `verify_integrity` then reports them modified until each is finalized by path; I measured deleting, not blanking).
+* **S5 — Who still wins?** The assumed attacker edits files in an adopter's repository. `verify_integrity` still reports an edited copy of the old helper while its lock record stays; the attacker still wins if the project then runs `--finalize <path>` on it, because the check attests what was recorded, not what is safe. This change does not alter that limit. The class is closed by enumeration (nine records), not by construction; the 12th row closes it by construction.
+
+#### Independent scientific check
+
+N/A: no scientific assumption or result touched.
+
+### Signals the change is wrong
+
+* A fresh agent session on a new install, run once as the table above says, does not name the Onboarding list even with all three pointers. Then the pointers do not reach the reader, and the next step is the declined `AGENTS.md` line or a `session-start` that prints open tasks.
+* The list grows after this lands: a seed beyond 6, 10 and 11, or a profile file regaining a `[trigger:` line. The tests pin both.
+* The install output does not shrink: the expected 131, 172 and 175 lines come out longer.
+* The real change differs from my rehearsal: `upgrade --plan` prints something other than one grouped `removed-upstream` line for the nine, or a bare `--finalize` refuses when no file was deleted.
+* The Security Review finds that stale executables left in adopters' trees, or the deleted failure kind, are not acceptable. Then the 12th row moves ahead of or into this change.
+* You or an adopter ask for a prompt to come back at a later moment. That is the recurrence that would justify a delayed design, and it would need a working trigger and a runner.
+* A sentence becomes false (for example, reflections stop being gitignored). The text test pins presence, not truth; a reader has to notice.
+
+### Scope delta
+
+**Scope delta**: preserved (the opening scope as revised; nothing removed).
+
+The baseline outcomes are: retire the helper, the triggers and the log; deliver the former prompts' content at install, rewritten where stale; replace the doctrine premise; ship in 0.5; keep first contact short. All stand. The revision adds, without trading anything: two prose pointers (`BOOTSTRAP.md`, `session-start`), the dead-kind deletion, three more count pins, and `test_security_lint.py`. The one piece of former text dropped outright is the clause "the second through fifth shape the steady-state", for which I found no basis; Question 2 puts it to you.
+
+### Assurance path
+
+**Assurance path**: high-assurance
+
+The change touches the scaffold engine, the install contract, the published install manifest, a frozen gate set, a fail-closed failure kind, and governing doctrine, each in the template's trigger list (`dev/proposals/_template.md`, "Assurance path").
+
+### Withdrawn / superseded commitments
+
+* **Opening Question 1 and Proposal 2: "one new line at the end of the install report ... after the existing Next steps block", printed from `print_report`:** superseded. The line is the last line of the run, printed from `main`. The opening premise that the output ends with Next steps was wrong (R1).
+* **"The report grows by one line (142 to 186 lines today)":** superseded. Measured 141, 182 and 185 (the opening figures included one provenance warning); expected 131, 172 and 175 after, because 11 lines naming dropped files go.
+* **"The plan chooses how `print_report` learns [that a profile seeded the slot]":** superseded: `main` holds `preset_name` and `install_onboarding`'s results.
+* **"Pointer line only" as the delivery:** replaced by three pointers (R2). The opening rejection of an `AGENTS.md` line stands.
+* **Sentence E on the conditional seed `agent-team-onboarding-legacy`, and "the second type" in E:** superseded. E moves to `confirm-maintainer-authority` and says "a different agent type". **Sentence C's "record it there":** reworded to "in the roster slot", and C now also rides `confirm-maintainer-authority` (R4).
+* **"Added words: solo 9, collaborative 29, legacy 38" (4%, 6%, 7%):** superseded by 9, 32 and 54 (4%, 7%, 11%).
+* **"Three of the nine need no new text" (opening In brief, Question 2 and Scope delta):** superseded by two. The legacy terminal prompt (opening row 9) now rides sentence C, so a legacy install with an overridden `agent_team` keeps its pointer.
+* **"16 engine symbols" and "8 deleted, 8 changed":** superseded by 18 (8 and 10). **"Frozen files touched 33; edited 12":** superseded by 34 and 13. **"One count pin":** superseded by three (R3, R6).
+* **"The 87 in the Evidence table":** withdrawn as a number. It is a formula: rows at the landing tree minus 9.
+* **Proposal 7, "the text half first (profile files, doctrine, docs) and the machinery half after":** superseded. The profile-file edit lands with, or after, the deletion of the tests that read it (R5).
+* **Strongest-alternative reasons (3) to (5):** kept only as secondary reasons; reasons (1) and (2) decide it.
+* **"Offered as a possible board row" for the follow-up that removes untouched copies:** superseded. It is a named 0.5 row that lands after this change, settled by the Maintainer ("Add it to 0.5").
+* **Question 3's default "nothing is pushed into their files" without exception:** superseded. No new tasks or list edits, but the `session-start` bullet arrives in the normal upgrade merge.
+* **Opening Questions 3 and 5 as worded, and the 55-word header summary:** replaced by the plain-word questions and a 33-word summary (R10). **"Have never appeared":** scoped to Cairn's own project (R7).
