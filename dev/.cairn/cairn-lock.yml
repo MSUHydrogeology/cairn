@@ -28,7 +28,7 @@
     },
     {
       "dst": "AGENTS.md",
-      "hash": "sha256:bb85e7e105a6bf3c0b2cc8d392bc69cb69974bdabe6882efd3758e5c8d565db3",
+      "hash": "sha256:883438b5a39c4685bd7c68f6bb9bfaa48158968c49f140777d2428c1a18a836f",
       "src": "core/AGENTS.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -166,7 +166,7 @@
     },
     {
       "dst": "dev/modules/model-selection.md",
-      "hash": "sha256:e2b61e4b50bf5527148ef997ee5d6682e4135186692c2f5a9c3d7085ec430155",
+      "hash": "sha256:a31fd4a8b641f65b991786860805837c84ff1ca75c462b31b3cbb716d8f36dcc",
       "src": "modules/team-gated/model-selection.md",
       "unrecoverable_base": true,
       "verbatim": false

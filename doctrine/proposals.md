@@ -183,8 +183,9 @@ failing-test reproduction, a self-contained helper, a docstring polish
 — is just made, with no proposal and no change note.
 
 Once accepted, the implementation is **trivial** (a single commit, a
-single area, no follow-ups, and a Boundary B that would run `bounded` —
-implemented and the proposal archived together, with no code review) or
+single area, no follow-ups, and a Boundary B that would run `bounded`,
+except that a defect repair meeting the lifecycle's three conditions stays
+trivial on a named surface — implemented and the proposal archived together, with no code review) or
 **non-trivial** (multiple commits or areas, multi-stage sequencing,
 deferred follow-ups, or Boundary B in `full` mode — it opens a plan; see
 `doctrine/plans.md`).
@@ -321,9 +322,13 @@ commit:
 
 * If the implementation will be **trivial** (single commit, single
   area, no multi-stage execution, no deferred follow-ups, and a
-  Boundary B that would run `bounded`), the implementing commit ships the
+  Boundary B that would run `bounded`, except that a defect repair meeting
+  the lifecycle's three conditions stays trivial on a named surface), the implementing commit ships the
   work AND moves the proposal to `dev/proposals/archive/` in the same
-  commit. It has no code review.
+  commit. It has no code review. The implementing commit re-reads each
+  plan-skip condition against what it actually touched. If it touched more
+  than one area, or its Boundary B would run `full`, a plan opens then, and
+  the plan-open commit archives the proposal.
 * If the implementation is **non-trivial** (lands across multiple
   commits, OR touches multiple files / areas, OR has multi-stage
   sequencing, OR carries deferred follow-ups, OR needs Boundary B in

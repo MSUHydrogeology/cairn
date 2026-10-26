@@ -182,7 +182,8 @@ obligation a security-sensitive plan declares.
   per-target rollouts).
 * Carries deferred follow-ups that need a `defer` home before
   archiving.
-* Needs Boundary B in `full` mode.
+* Needs Boundary B in `full` mode (a defect repair meeting the three
+  conditions in `doctrine/lifecycle.md` is the one exception).
 
 **Skip the plan when:**
 
@@ -193,7 +194,16 @@ obligation a security-sensitive plan declares.
 * Boundary B would run `bounded`. A change that needs `full` mode (it
   touches a contract or trust-ceremony surface, or its effects cannot be
   bounded with confidence) opens a plan, which has a `## Code review`
-  section. A change that skips the plan has no code review.
+  section. A change that skips the plan has no code review. The one
+  exception is a defect repair that meets the three conditions in
+  `doctrine/lifecycle.md` (a failing-test reproduction; it restores
+  documented or intended behaviour with no contract change; the touched
+  surface's own test family runs in the loop): it stays trivial even on a
+  named surface.
+
+The implementing commit re-reads these conditions against what it actually
+touched. If it touched more than one area, or its Boundary B would run
+`full`, a plan opens then.
 
 When in doubt, open the plan. The cost is low (one file in
 `dev/plans/`); the benefit is durable execution context for any agent
@@ -372,7 +382,10 @@ body, not a plan section, and carries the mode, the interpreter, and on
 implemented in one commit with no plan records its result the same way. A
 trivial change has no code review, so its commit body is the whole record. A
 change whose Boundary B would run in `full` mode is not trivial: it opens a
-plan.
+plan. The one exception is a defect repair that meets the lifecycle's three
+conditions (a failing-test reproduction; it restores documented or intended
+behaviour with no contract change; the touched surface's own test family runs
+in the loop): it stays trivial even on a named surface.
 
 **An already-open plan keeps the verification contract written in it.** Bounded
 mode becomes available to it only through that plan's own explicit, append-only

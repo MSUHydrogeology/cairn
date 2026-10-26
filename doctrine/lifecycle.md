@@ -214,7 +214,8 @@ review-finding sections.
 
 Not every change needs the full apparatus. A **trivial** change —
 a single commit, a single area, no deferred follow-ups, and a
-Boundary B that would run `bounded` — is implemented and has its
+Boundary B that would run `bounded` (a defect repair meeting the three
+conditions in lane 1 stays trivial even on a named surface) — is implemented and has its
 proposal archived in one commit, with no code review. A
 **non-trivial** change — landing across multiple commits, touching
 multiple areas, carrying multi-stage sequencing, leaving deferred

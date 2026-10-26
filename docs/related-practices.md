@@ -121,7 +121,7 @@ Stripped of everything shared:
 
 1. **For substantial changes, review happens before the code exists**, when
    saying "that is the wrong thing to build" is still cheap. Small changes
-   skip this and get a code review.
+   skip this and need no review.
 2. **You can check that the reviewer was independent.** The record names a
    fresh reviewer who did not write the work, so independence is a fact in the
    file rather than something taken on trust. Another model or a person adds

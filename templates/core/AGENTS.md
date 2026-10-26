@@ -245,7 +245,7 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
   **What cheap means.** Count person-steps, not machine time: high-risk, contract or hash-pinned surfaces,
   Maintainer-only steps, a Security Review, new proposal or decision make a fix not cheap;
   uncertainty about needing one also means not cheap; prescribed test runtime alone never does.
-  A change with no code review carries no easy-problem fix: nobody would read the `Defect fix:` line.
+  A change with no code review carries no easy-problem fix inside it: nobody would read the `Defect fix:` line.
 * **Scribing a Decision.** An explicitly-instructed agent may scribe and commit
   the Maintainer's Decision, bounded by three rules: **quote the authorization
   verbatim and visually isolated** in both the `## Decision` block and the
@@ -338,7 +338,10 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
     An accepted proposal implemented in one commit with no plan records its
     result the same way. A trivial change has no code review, so its commit body
     is the whole record. A change whose Boundary B would run in `full` mode is
-    not trivial: it opens a plan.
+    not trivial: it opens a plan. The one exception is a defect repair that meets the lifecycle's three
+    conditions (a failing-test reproduction; it restores documented or
+    intended behaviour with no contract change; the touched surface's own
+    test family runs in the loop): it stays trivial even on a named surface.
 
     **An already-open plan keeps the verification contract written in it.**
     Bounded mode reaches it only through that plan's own append-only revision.
