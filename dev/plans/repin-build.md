@@ -2,7 +2,7 @@
 
 **Author**: Claude (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-repin-build.md](../proposals/archive/2026-10-26-claude-repin-build.md)
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: Build one tested script that runs the Maintainer's checksum re-pins and the signed re-anchor, so he compares two digests, answers two summaries and types one passphrase instead of pasting commands an agent wrote.
