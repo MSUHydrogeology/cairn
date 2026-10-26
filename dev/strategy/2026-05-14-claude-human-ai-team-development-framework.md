@@ -1442,3 +1442,56 @@ Cairn's current structure is organically derived and load-bearing; the horizons
 extend it, they do not replace it.  Concrete moves go through the normal Cairn
 PR-flow / proposal cycle.  The guide star remains the scientist's work, not
 Cairn's growth.
+
+## Review -- Antigravity (Gemini 4 Argon, Reviewer) -- 2026-10-26
+
+*(Temporary review section per `dev/strategy/_template.md:45-55` — to be folded in inline and deleted by the author.)*
+
+```
+Reviewed commit: 747d56c9f1cc6d7a2cbab0e9f26020140a61de0d (file last modified at 68268b4b3c7501a38c7d3efc7d6f77c4314156d7)
+Target: full strategy note (`dev/strategy/2026-05-14-claude-human-ai-team-development-framework.md`)
+```
+
+**Foundations**:
+1. **Should this exist as framed?** Yes; the guide star's core thesis — delegating coding without losing control of scientific assumptions, evidence, and decisions, with all future horizons gated on comparative outside-adoption evidence — is sound, though four sections have drifted behind `0.5-dev` doctrine or contradict other parts of the same note. -- `dev/strategy/2026-05-14-claude-human-ai-team-development-framework.md:42-79`, `doctrine/dual-review.md:6-84`, `doctrine/rationale.md:189-317`
+2. **Best alternative.** Replacing the 1,444-line living note entirely with `doctrine/rationale.md` would lose the unharvested anchors (11, 12, 14, 15, 18–22), the open-gap list, and the gated horizon analysis; however, shrinking the guide star by pointing harvested anchors (1–10, 13, 16, 17) to `doctrine/rationale.md` rather than maintaining two full copies of their prose is a cleaner medium-term path. -- `doctrine/rationale.md:1-572`, `dev/strategy/2026-05-14-claude-human-ai-team-development-framework.md:110-147`
+3. **What would show it wrong.** An outside adoption against the lighter baseline showing no gain in scientific reliability or later comprehension for the added attention (the falsifier already stated in the note), or internal drift severe enough that a collaborator reading the guide star applies retired review rules. -- `dev/strategy/2026-05-14-claude-human-ai-team-development-framework.md:66-79`, `dev/strategy/2026-05-14-claude-human-ai-team-development-framework.md:186-205`
+
+### Summary judgment
+
+The October 2026 revisions (*The promise*, the 2026-08 refocus under *Restraint as design center*, Anchor 20 on operator allocation, Anchor 22 on agent supply-chain incidents, and the Anchor 16 update for Cairn Plain Language 1.0) give this document rare honesty for a methodology project. Downgrading the efficacy claim from "proven" to *"plausible, exercised here, awaiting comparative evidence"* and gating the three horizons behind one outside adoption or worked example protect Cairn from building speculative process.
+
+I found four concrete places where the text has drifted behind current `0.5-dev` files or contradicts itself, plus one structural recommendation to reduce maintenance weight.
+
+### Findings and recommendations
+
+1. **R-1 (Doctrine drift): Four passages still teach the retired two-stance (`Internal` vs. `External`) review model instead of `0.5-dev`'s single stance.**
+   * *Where*: Lines 189–197 (the peer-review table and paragraph), lines 243–249 (*What the analysis produced*), lines 345–349 (*What Cairn is today*), and lines 422–423 (*Cairn as a publishable artifact*) define Dual-Review as two stances: `Internal` ("strengthens the change within its own frame") and `External` ("makes it prove it should land; a different agent type or a human is the strongest distance and is recommended, never required").
+   * *Why it matters*: Current `0.5-dev` doctrine (`AGENTS.md:12, 59-117`, `doctrine/dual-review.md:6-84`, and `doctrine/rationale.md:398-409`) unified review into **one stance at every stage** ("on the work's side, making it better by questioning its foundations", answering three stage-specific questions in a `**Foundations**` block) and made an **External read** a Maintainer-only, per-artifact commissioned pass (`**Called by**: Maintainer ...`) that agents never select or recommend. Line 154 says operating doctrine wins when they disagree, but leaving the retired definition in four summary sections misleads readers.
+   * *Recommendation*: Revise lines 186–205, 243–249, 345–349, and 422–423 inline to state the one-stance, three-question model and the Maintainer-called External read, matching `doctrine/rationale.md:398-409`.
+
+2. **R-2 (Internal contradiction): Lines 548–568 announce a per-project efficacy-data collection move that line 1331 retired.**
+   * *Where*: `### The trust paradox of empirical-data infrastructure` (lines 548–568) opens with *"An upcoming near-term move (below) ships per-project efficacy-data collection: every Cairn deployment gathers its own data on framework efficacy locally..."* Meanwhile, `### Candidate moves` (lines 1330–1334) states: *"Retired from this list 2026-10-01: ... the per-project efficacy-data primitive, which Anchor 21's measurement discipline and the retired metrics program argue against building -- a short retrospective on existing artifacts is the instrument, not a new collection layer."*
+   * *Recommendation*: Remove lines 548–568, or replace them with a two-sentence note that any future comparative study under *The promise* (lines 66–73) uses existing repo artifacts and explicit per-occurrence consent rather than an installed collection layer.
+
+3. **R-3 (Missing half of Anchor 16 + copy defect): Anchor 16 omits the temporal comprehension floor (Naur 1985) that `doctrine/rationale.md` and `docs/plain-language.md` rely on.**
+   * *Where*: Lines 522–546 (`### Recipient-calibrated communication and the comprehension floor (Anchor 16)`).
+   * *Why it matters*:
+     1. Line 524 still says *"The anchor has two legs"* immediately before listing **Leg 1**, **Leg 2**, and **Leg 3** (added in `dc70249d`).
+     2. In `doctrine/rationale.md:223-278`, Anchor 16 includes Naur (1985), *Programming as Theory Building*, and the **temporal half of the comprehension floor**: *"a durable artifact must stand without the deliberation that produced it"* (forbidding dead deliberation coordinates such as `F5`, `CR1`, or plan-chunk test names in durable code and tests, bounded by Anchor 17 against over-narration). `docs/plain-language.md:12-13` names that exact failure as one of the three incidents behind Cairn Plain Language 1.0, but the guide star's Anchor 16 section never mentions Naur (1985) or the temporal half.
+   * *Recommendation*: Fix *"two legs"* on line 524 and add a short paragraph on Naur (1985) and the temporal half (pointing to `doctrine/rationale.md:223-278`) so both files agree on Anchor 16's scope.
+
+4. **R-4 (Stale version and inventory): Version numbers, the `doctrine/` file list, and "pre-public-flip" phrasing lag the repository.**
+   * *Where*:
+     1. Line 317 (`"Cairn is at v0.3.0"`) and line 1271 (`"Cairn v0.3 ships the static half"`): `CHANGELOG.md:124` and `CITATION.cff:22` are at **v0.4.0** (released 2026-10-20), with `0.5-dev` active.
+     2. Lines 320–322 list `doctrine/` contents as *"collaboration-stance, coordination, doc-governance, dual-review, lifecycle, rationale, roles, session-routines, and the fold-back mechanism."* No fold-back file exists in `doctrine/`, while six current files (`consolidation-review.md`, `lifecycle-contract.md`, `onboarding.md`, `plans.md`, `proposals.md`, `runtime-contract.md`) are missing from that list.
+     3. Lines 510 and 1140 refer to Cairn as *"pre-public-flip"*, whereas `CITATION.cff:24-25` already points to a public GitHub repository and Zenodo DOI (`10.5281/zenodo.23500751`).
+   * *Recommendation*: Update `v0.3.0` to `v0.4.0` (or cite `CITATION.cff` so the version does not rot on release cuts), replace the enumerated `doctrine/` file list on lines 320–322 with a pointer to `doctrine/README.md` (following line 166's own rule: *maintain the gap list, never the mapping*), and rephrase "pre-public-flip" as "pre-external-adopter".
+
+5. **R-5 (Non-blocking structural suggestion): Point harvested anchors to `doctrine/rationale.md` instead of maintaining two full expositions.**
+   * *Where*: At 1,444 lines (~106 KB), the guide star duplicates much of the prose for the harvested anchors (1–10, 13, 16, 17) that now live in `doctrine/rationale.md` (572 lines). That creates two places to update whenever an anchor evolves (as happened with Anchor 16 today).
+   * *Recommendation*: On the next major pass, keep each harvested anchor's row in the Anchor Index (lines 123–146) and a one-paragraph summary in the guide star pointing to `doctrine/rationale.md`, reserving full exposition in this file for the unharvested anchors (11, 12, 14, 15, 18–22), *The promise*, *Still open*, and the gated *Horizons*.
+
+**Coverage**:
+* **Covered**: Read all 1,444 lines of `dev/strategy/2026-05-14-claude-human-ai-team-development-framework.md` at commit `747d56c9` (last modified at `68268b4b`) and checked its claims against `AGENTS.md`, `doctrine/dual-review.md`, `doctrine/rationale.md`, `doctrine/README.md`, `docs/plain-language.md`, `dev/agent_collaboration.md`, `dev/strategy/README.md`, `dev/strategy/_template.md`, `CHANGELOG.md`, and `CITATION.cff` (Lenses #1 claims, #3 completeness, #5 cross-document consistency, #6 doc drift, #7 lifecycle, #8 domain/restraint, #9 actionable recommendations).
+* **Not covered / low confidence**: I did not re-verify external URLs or re-derive the git commit-accounting time series from raw history; prose-only review, no test suite run.
