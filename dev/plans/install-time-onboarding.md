@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-retire-delayed-onboarding-prompts.md](../proposals/archive/2026-10-26-claude-retire-delayed-onboarding-prompts.md)
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: Cairn stops shipping the helper that was meant to show onboarding prompts later; the install's day-one list carries what they said, and three short pointers say where the list is.
@@ -258,3 +258,7 @@ Operative cells revised in place (Status, Sequence, Scope delta, C1, C4, C6, SR 
 **Cold-start probe** (fresh Sonnet agent, scratch `collaborative-team` install given only the installed files): `/session-start` without `--drain` named `try-session-start-skill`, the first open Onboarding task, as the first candidate and read the list as data. Hit.
 
 **Not checked**: any full-suite or Boundary B certifying run; `test_ast_attest` and `test_gate_manifest` beyond the points above; the Windows copy-fallback path; the C3 profile text and its mutants; `dev/PLANNING.md` and `CHANGELOG.md` (the planning session's); an upgrade over a real old install other than the synthesized one.
+
+### Addendum -- C3 landed -- Claude Sonnet 5.5 (implementer) -- 2026-10-26
+
+Supersedes the "C3 NOT landed" lines above (append-only; those lines stay as the record of the stop). On the planning session's ruling (no 14th frozen edit), C3 landed in `1139f1f8`. **Departure:** sentence C sits inside the existing `cairn:if agent_team in concurrent-multi-type` region (option c), because no condition ties to the tour page itself (it ships with every profile) while the three `test_onboarding_seed_roster` assertions need the page name absent under other team shapes; so C reaches multi-type installs only, and A, B, D, E reach every shape. `test_review_stance_in_shipped_files::test_a_correctly_worded_sentence_is_not_flagged` was fixed in the same commit (its control no longer needs the deleted Row 1 text). **Tests** (3.13.13): `test_install_time_onboarding.py` 57 passed; 699 passed over it plus `test_onboarding_slot_substitution`, `test_onboarding_seed_roster`, `test_skills_onboarding`, `test_review_stance_in_shipped_files` and neighbours; the new C3 nodes fail at the parent (17 failed). `claim_check`, `link_check`, neutrality clean on the three profiles. **C3 mutants** (separate copy at `1139f1f8`, control 70 passed; none skipped, none survived): trigger line added killed; extra seed killed; sentence A, B, D, E reworded or shortened each killed; sentence C ungated killed (also by the frozen `test_onboarding_seed_roster` nodes); C gated on the wrong shape killed; C deleted killed. Scope delta note for the Maintainer: Revision 2 said C reaches every install of those profiles; it now reaches multi-type installs. **Still not done**: the 13th frozen edit's CHANGELOG/board entries and the re-anchors (planning session, Maintainer); no full or certifying run. Status set to `awaiting-code-review`.
