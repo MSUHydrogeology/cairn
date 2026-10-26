@@ -795,6 +795,15 @@ def child(rec, argv, **kw):
     return r
 
 
+#: The launcher's two lines that tell a person to load the key with ssh-add, which this
+#: key must never be; every other line, one that merely names ssh-add included, is relayed.
+ADVICE = ("that is a missing key, not a broken tool", "ssh-add <your ceremony key>")
+
+
+def is_advice(line):
+    return any(text in line for text in ADVICE)
+
+
 def relay(text):
     for line in text.splitlines():
         say(d(line))
@@ -823,6 +832,7 @@ def key_checks(rec, pub, private, fingerprint, launchctl, when):
                   start_new_session=True)
         if r.returncode == 2:
             say(f"  agent at {d(sock)}: could not ask it ({when}); shown, not refused")
+            rec.append(f"agent at {d(sock)} could not be asked ({when})")
         elif r.returncode == 0 and fingerprint in r.stdout:
             raise Refuse(f"the signing key is loaded in an agent ({when}), which would sign with no "
                          f"passphrase. Remove it with:\n  SSH_AUTH_SOCK={d(sock)} {SSHADD} -d {d(pub)}")
@@ -1065,7 +1075,7 @@ def run_ceremony(ctx, args, launchctl, rec):
                             stderr=subprocess.STDOUT)
     for raw_line in proc.stdout:
         line = raw_line.decode("utf-8", "replace").rstrip("\n")
-        if "ssh-add" not in line and "missing key, not a broken tool" not in line:
+        if not is_advice(line):
             say(d(line))
     rec.append(f"stage 2 exit {proc.wait()}")
     if proc.returncode:
@@ -1086,14 +1096,17 @@ def run_ceremony(ctx, args, launchctl, rec):
     return new, tip
 
 
-def finish(ctx, path, digest, done):
+def finish(ctx, path, digest, done, rec):
     say(f"\nrecord  {d(str(path))}\nrecord digest  {digest}")
     if done:
         new, tip = done
         branch = git_text(ctx["repo"], "symbolic-ref", "HEAD")
+        unasked = [ln for ln in rec if "could not be asked" in ln]
+        claim = ("The key was not in either agent when asked, before stage 1 and before stage 2." if not unasked
+                 else f"{len(unasked)} agent check(s) could not be asked, so the key's absence from those "
+                      f"agents is not shown; the record lists them.")
         say(f"Done: the new anchor is {new} and the new {branch} is {tip}; the anchor carries a good "
-            f"signature by the roster key.\n"
-            f"The key was not in either agent when asked, before stage 1 and before stage 2.\n"
+            f"signature by the roster key.\n{claim}\n"
             f"Publishing is yours; this tool never pushes:\n  git -C {d(str(ctx['repo']))} push --atomic "
             f"origin {branch}:{branch} {ANCHOR_REF}:{ANCHOR_REF}")
 
@@ -1132,7 +1145,7 @@ def main(argv=None, *, launchctl=launchctl_socket):
                 done = run_ceremony(ctx, args, launchctl, rec)
             finally:
                 if Path(args.ceremony_dir).is_dir():
-                    finish(ctx, *write_record(args.ceremony_dir, rec), done)
+                    finish(ctx, *write_record(args.ceremony_dir, rec), done, rec)
         if args.verb != "ceremony":
             check_head(ctx)
         return 0
@@ -1141,6 +1154,8 @@ def main(argv=None, *, launchctl=launchctl_socket):
         return 2
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+        if Path(str(sys.pycache_prefix)).name.startswith("repin-pyc-"):
+            shutil.rmtree(sys.pycache_prefix, ignore_errors=True)
 
 
 if __name__ == "__main__":

@@ -351,6 +351,7 @@ def test_the_repin_process_runs_isolated(bed):
     assert prefix.parent.resolve() == scratch.resolve() and prefix.name.startswith("repin-pyc-"), \
         "the bytecode folder is not a fresh one under the temporary folder"
     assert re.search(r"AST child isolated=True, compiled files go to \S+/pyc-\S+", out)
+    assert list(scratch.iterdir()) == [], "the run left a folder in the temporary directory"
 
 
 def test_a_planted_compiled_file_in_the_working_tree_does_not_run(bed):
@@ -432,6 +433,17 @@ except R.Refuse as exc:
 """
     r = subprocess.run([PY, "-I", "-c", code], capture_output=True, text=True, env=bed.env)
     assert "same head passes" in r.stdout and "refused" in r.stdout, r.stdout + r.stderr
+
+
+def test_only_the_launchers_two_advice_lines_are_dropped_from_the_stage_two_relay(bed):
+    code = """
+for line in ("       ssh-add <your ceremony key>", "   that is a missing key, not a broken tool. Load it and re-run:"):
+    print("ADVICE", R.is_advice(line))
+for line in ("ssh-add: could not open a connection to your authentication agent", "stage 2 refused: no good key"):
+    print("OTHER", R.is_advice(line))
+"""
+    out = snippet(bed, code)[1]
+    assert out.count("ADVICE True") == 2 and out.count("OTHER False") == 2, out
 
 
 def test_the_status_command_reads_only_the_fixed_environment_variables():

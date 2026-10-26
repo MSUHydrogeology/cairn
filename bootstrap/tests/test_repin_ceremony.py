@@ -702,6 +702,8 @@ def test_an_agent_that_cannot_be_asked_is_shown_not_refused(cbed):
     code, out = full_run(cbed, launchctl="/tmp/ra-no-such-socket")
     assert code == 0, out
     assert "could not ask it (before stage 1); shown, not refused" in out
+    flat = " ".join(out.split())
+    assert "agent check(s) could not be asked" in flat and "not in either agent when asked" not in flat
 
 
 def test_a_loaded_key_signs_with_no_prompt_which_is_why_it_is_refused(cbed, agent):
