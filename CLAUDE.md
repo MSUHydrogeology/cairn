@@ -26,6 +26,9 @@ AGENTS.md's content down here. -->
   `.agents/skills/`; `session-start` self-heals a `.claude/skills`
   symlink so this harness surfaces them as slash commands. Invoke them
   rather than improvising the routine.
+- **Pass the model on every new agent call.** An agent resumed with
+  `SendMessage` keeps the model it started with, so start a fresh
+  lower-tier agent for new work instead of resuming a higher-tier one.
 - **Durable state lives in the repo, not in tool memory.** Claude Code's
   persistent memory directory is private to this harness and is not
   shared with Codex or a human reviewer. Anything that must survive a
