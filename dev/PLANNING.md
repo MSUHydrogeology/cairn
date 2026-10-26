@@ -310,8 +310,17 @@ The LP-SR fixes (2026-10-26) add eight engine symbols to the AST re-anchor
 `_self_heal_profile_config` and `cmd_upgrade`, and the known-new
 `_check_lockfile_paths`, `_contained_lockfile_path` and `_lockfile_refusal`,
 whose bodies changed. Their new test files are also gate-root files the
-re-anchor must pin. Do not carry a list forward from this row: run `verify` on
-the final committed tree and read what it prints.
+re-anchor must pin. The Strategy session reports more, counted by it and not
+re-derived here: frozen `scripts/check_cairn.py`, `scripts/link_check.py` and
+`scripts/sync_doc_snippets.py` with the two `templates/modules/team-gated/`
+twins (commits `9ec53a43` and `dfdd0408`), and frozen
+`bootstrap/tests/test_review_stance_in_shipped_files.py` (commit `cdffeb8a`; the
+node id is unchanged, so no node is dropped). The Maintainer said of that last
+edit: "Go ahead and edit the dual-review. We need to re-anchor anyway". New
+unfrozen test files that join the next anchor include
+`test_deleted_tracked_markdown.py` and `test_writing_rules_ship.py`. Do not
+carry a list forward from this row: run `verify` on the final committed tree and
+read what it prints.
 
 This is Maintainer-only; follow `bootstrap/REANCHOR_RUNBOOK.md` and derive the
 changed set from the final committed tree.
