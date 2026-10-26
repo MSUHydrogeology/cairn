@@ -1308,6 +1308,10 @@ def _write_init_lock_profile_template(target: Path) -> int:
     placeholders for the rest, then **fail loud** (exit non-zero, no lockfile) so
     the operator completes it and re-runs."""
     profile_path = target / _PROFILE_REL
+    # The caller sends a link to a file not there yet here (`is_file()` follows
+    # the link and finds nothing), and the write below would create that file
+    # wherever the link leads.  Refuse a link at the name or above it.
+    _assert_safe_write(profile_path, target)
     inferred = _infer_init_lock_axes(target)
     modules = sorted(m for m in _MODULE_MAPPINGS
                      if (target / "dev" / "modules" / f"{m}.md").is_file())
