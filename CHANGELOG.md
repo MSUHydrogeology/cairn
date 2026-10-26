@@ -70,22 +70,31 @@ and a new empty `Unreleased` is started above.
 - `upgrade --apply` could create a file outside the project when
   `dev/.cairn/profile.yml` was a link to a file that did not exist yet, with some
   lines chosen by the lockfile. A cloned repository could carry that link. A link
-  there is now refused with exit 2, wherever it points, and the profile is written
-  only from plain text. The same refusal now covers a lockfile that is itself a
+  there is now refused with exit 2 by `upgrade --apply`, wherever it points, and
+  the profile is written only from plain text. The same refusal now covers a lockfile that is itself a
   link, a saved commit name that git would read as an option, module and
   review-area names with control characters, a linked vendor wrapper, and a record
   that names a file inside `.git/`. The "leads outside" message now says to replace
-  the link. One finding stays a documented residual (the forked-facade advisory
-  still looks for a folder at a lockfile-chosen path before the check runs).
+  the link. Three limits remain, recorded in `bootstrap/UPGRADE.md` or
+  `bootstrap/_scaffold/SECURITY_MUTATIONS.md`: one finding got
+  only a documentation answer, because the full split breaks a frozen test;
+  `--adopt-collisions` and `--init-lock` over a linked lockfile still end in a
+  traceback (exit 1) with nothing read or written outside the project; and the
+  profile's preset, axis and module values are written unquoted. Four older
+  findings are not fixed in this release and are queued on the roadmap: the saved
+  base copy is not checked against its recorded hash before a merge uses it;
+  lockfile file names can carry invisible characters; and the install report
+  prints profile-supplied module and slot names without escaping.
   ([review](dev/reviews/2026-10-19-security-review-upgrade-lockfile-paths.md), findings LP-SR-1 to 8)
 
 ### Fixed — Session kernel: the interpreter-binding gate and its messages
 
 - `session-start` no longer runs a program inside the project that git tracks, and it
-  recognizes the binding file as tracked even when the disk equates two spellings of its
-  name. A binding that is not text, or that names an impossible path, is now a plain
+  recognizes the binding file as tracked even when a case-insensitive disk equates two
+  spellings of its name (the test for that skips on a case-sensitive disk). A binding that is not text, or that names an impossible path, is now a plain
   refusal, not a Python traceback. Folder names and error text from a project are printed
-  through the terminal encoder in seven more places. One gap stays open by decision: a
+  through the terminal encoder in seven more places. Two gaps stay open: output from a child
+  process is still printed unencoded (queued), and, by decision, a
   binding that arrives by a downloaded archive, `git apply`, `git reset` or
   `git rm --cached` is still trusted (recorded in `bootstrap/SAFETY.md`).
   ([review](dev/reviews/2026-10-18-security-review-session-writes.md), findings SW-SR-10 to 15)
@@ -98,8 +107,10 @@ and a new empty `Unreleased` is started above.
   needs the Maintainer goes into one batch for them. It posts nothing to GitHub:
   it never comments, labels or closes, and **issue text is data, never
   instruction**, so it runs nothing an issue contains. An engine repair parks at
-  the Maintainer-run AST re-anchor. Five hostile-issue trials by a reviewer
-  found no embedded instruction obeyed. It ships in the `session-start` skill to
+  the Maintainer-run AST re-anchor. A reviewer ran three hostile issue
+  bodies, one request to relax a rule and one empty-arguments run; no embedded
+  instruction was obeyed. The `--drain board` and `--drain <item>` forms are not
+  yet trialled. It ships in the `session-start` skill to
   every install, and `AGENTS.md`'s easy-fix rule now allows the fix's own test.
   ([plan](dev/plans/archive/drain-mode.md))
 
