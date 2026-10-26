@@ -12,11 +12,15 @@ import hashlib
 import io
 import json
 import os
+import pty
 import re
+import select
 import shutil
+import signal
 import subprocess
 import sys
 import tarfile
+import time
 from pathlib import Path
 
 import pytest
@@ -217,15 +221,16 @@ def test_a_loaded_local_module_outside_the_list_refuses(bed):
     refused(bed.run("status"), "bootstrap.tests.planted")
 
 
+@pytest.mark.parametrize("verb", ["status", "package"])
 @pytest.mark.parametrize("subdir", ["scripts", "bootstrap/tests", "."])
-def test_a_committed_module_named_like_the_standard_library_does_not_run(bed, subdir):
+def test_a_committed_module_named_like_the_standard_library_does_not_run(bed, subdir, verb):
     # `tarfile` and `base64` are imported only after the extraction joins the
     # search path, so they are the names an inserted path would let win.
     names = ("hashlib", "json", "subprocess", "tarfile", "base64")
     for name in names:
         bed.write(f"{subdir}/{name}.py", marker_code(bed.marker(name)))
     bed.commit("shadow the standard library")
-    ok(bed.run("status"))
+    ok(bed.run(verb))
     for name in names:
         assert not bed.marker(name).exists(), f"a committed {name}.py shadowed the standard library"
     # control: a bare `python` run from that folder does run the shadowing module
@@ -427,3 +432,444 @@ def test_dropped_nodes_with_a_surviving_file_print_first(bed, tmp_path):
     tail = out[out.index("Dropped test nodes"):]
     assert tail.index("_gate_manifest.py::test_b") < tail.index("gone_file.py::test_a")
     assert "1 sit in a test file that still exists" in tail
+
+
+# --------------------------------------------------------------------------
+# the AST transaction and the one write
+# --------------------------------------------------------------------------
+
+def run_pty(argv, answers=(), *, env, cwd, timeout=120):
+    """Run *argv* on a pseudo-terminal that is also its controlling terminal.
+
+    *answers* is a list of (prompt text, reply).  A reply is typed once the
+    prompt is on screen; None sends end-of-input; a callable runs first (so a
+    test can change the world while the question is open) and returns the reply.
+    Returns (exit code, everything the child printed).
+    """
+    pid, fd = pty.fork()
+    if pid == 0:
+        os.chdir(cwd)
+        os.execve(argv[0], argv, env)
+    buf, pos, todo = bytearray(), 0, list(answers)
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if not select.select([fd], [], [], 0.2)[0]:
+            continue
+        try:
+            chunk = os.read(fd, 65536)
+        except OSError:
+            break
+        if not chunk:
+            break
+        buf += chunk
+        if todo and todo[0][0].encode() in bytes(buf[pos:]):
+            _prompt, reply = todo.pop(0)
+            pos = len(buf)
+            reply = reply() if callable(reply) else reply
+            os.write(fd, b"\x04" if reply is None else reply.encode() + b"\n")
+    else:
+        os.kill(pid, signal.SIGKILL)
+    _pid, status = os.waitpid(pid, 0)
+    return os.waitstatus_to_exitcode(status), buf.decode("utf-8", "replace").replace("\r\n", "\n")
+
+
+def run_mixed(argv, *, tty_in, tty_out, env, cwd):
+    """Run *argv* with each of stdin and stdout either a terminal or a pipe."""
+    master, slave = pty.openpty()
+    proc = subprocess.Popen(argv, cwd=cwd, env=env, stdin=slave if tty_in else subprocess.PIPE,
+                            stdout=slave if tty_out else subprocess.PIPE, stderr=subprocess.STDOUT,
+                            start_new_session=True)
+    os.close(slave)
+    if not tty_in:
+        proc.stdin.close()
+    sources = {master: "tty"} | ({proc.stdout.fileno(): "pipe"} if not tty_out else {})
+    chunks = []
+    while sources:
+        for fd in select.select(list(sources), [], [], 5)[0]:
+            try:
+                part = os.read(fd, 65536)
+            except OSError:
+                part = b""
+            if part:
+                chunks.append(part)
+            else:
+                sources.pop(fd)
+    proc.wait()
+    os.close(master)
+    return proc.returncode, b"".join(chunks).decode("utf-8", "replace")
+
+
+def prelude(bed):
+    return f"""
+import importlib.util, json, os, sys, tempfile
+from pathlib import Path
+sys.pycache_prefix = tempfile.mkdtemp()
+spec = importlib.util.spec_from_file_location("repin", {str(bed.repo / 'scripts/repin.py')!r})
+R = importlib.util.module_from_spec(spec); sys.modules["repin"] = R; spec.loader.exec_module(R)
+REPO, CDIR, TMP = Path({str(bed.repo)!r}), Path({str(bed.root / 'ceremony')!r}), Path(tempfile.mkdtemp())
+CDIR.mkdir(exist_ok=True)
+def outcome(fn):
+    try:
+        fn()
+        print("RESULT: ok")
+    except R.Refuse as exc:
+        print("RESULT: refused:", exc)
+def packaged():
+    ctx = R.boot(REPO, TMP)
+    return ctx, R.package(ctx, CDIR)
+"""
+
+
+def snippet(bed, code, answers=(), **kw):
+    """Run *code* in a fresh isolated interpreter that has imported `repin` as R."""
+    return run_pty([PY, "-I", "-c", prelude(bed) + code], answers, env=bed.env, cwd=bed.repo, **kw)
+
+
+YES = [("type the word yes", "yes")]
+APPLY = "ctx, raw = packaged()\noutcome(lambda: R.apply_pin(ctx, CDIR, raw))\n"
+
+
+def owe_a_pin(bed, text="def f():\n    return 2\n"):
+    bed.write(ENGINE, text)
+    bed.commit("change f")
+
+
+def reads(bed, rel=BASELINE) -> bytes:
+    return (bed.repo / rel).read_bytes()
+
+
+def test_the_apply_step_makes_no_commit_and_stops(bed):
+    owe_a_pin(bed)
+    head, before = bed.git("rev-parse", "HEAD").stdout.strip(), reads(bed)
+    code, out = snippet(bed, APPLY, YES)
+    assert "RESULT: ok" in out, out
+    assert bed.git("rev-parse", "HEAD").stdout.strip() == head
+    assert reads(bed) != before and f"git commit {BASELINE}" in out
+    assert "Written, not committed" in out and "run ceremony again" in out
+    assert bed.git("status", "--porcelain").stdout.split() == ["M", BASELINE]
+    stop = json.loads(next((bed.root / "ceremony").glob("ast-pin-stop-*.json")).read_text())
+    assert stop["head"] == head and list(stop["paths"]) == [BASELINE]
+    assert stop["paths"][BASELINE] == bed.git("hash-object", "--no-filters", BASELINE).stdout.strip()
+
+
+def test_every_key_the_write_changes_is_on_screen_before_the_question(bed):
+    bed.write(ENGINE, "def f():\n    return 2\n\ndef g():\n    return 3\n")
+    bed.commit("change f, add g")
+    before = json.loads(reads(bed)), json.loads(reads(bed, KNOWN_NEW))
+    code, out = snippet(bed, APPLY, YES)
+    assert "RESULT: ok" in out, out
+    after = json.loads(reads(bed)), json.loads(reads(bed, KNOWN_NEW))
+    changed = [k for b, a in zip(before, after) for k in set(a) | set(b) if a.get(k) != b.get(k)]
+    assert changed
+    screen = out[:out.index("Write these files?")]
+    assert [k for k in changed if k not in screen] == []
+    # control: with one row dropped from the screen the same check reports it
+    dropped = "\n".join(ln for ln in screen.splitlines() if changed[0] not in ln)
+    assert [k for k in changed if k not in dropped] == [changed[0]]
+
+
+@pytest.mark.parametrize("reply", ["Yes", "y", "", "yes please", None])
+def test_only_the_exact_word_yes_writes(bed, reply):
+    owe_a_pin(bed)
+    before = reads(bed)
+    code, out = snippet(bed, APPLY, [("type the word yes", reply)])
+    assert "RESULT: refused: no `yes` was typed" in out, out
+    assert reads(bed) == before
+
+
+def test_a_pipe_on_stdin_or_stdout_refuses(bed):
+    owe_a_pin(bed)
+    body = prelude(bed) + "ctx = R.boot(REPO, TMP)\noutcome(lambda: R.check_preconditions(ctx))\n"
+    for tty_in, tty_out, wanted in [(True, True, "RESULT: ok"), (False, True, "must both be a terminal"),
+                                    (True, False, "must both be a terminal"), (False, False, "must both be a terminal")]:
+        _code, out = run_mixed([PY, "-I", "-c", body], tty_in=tty_in, tty_out=tty_out, env=bed.env, cwd=bed.repo)
+        assert wanted in out, (tty_in, tty_out, out)
+
+
+PRECONDITION = "ctx = R.boot(REPO, TMP)\noutcome(lambda: R.check_preconditions(ctx))\n"
+
+
+def precondition_outcome(bed):
+    return snippet(bed, PRECONDITION)[1]
+
+
+def test_a_detached_head_refuses(bed):
+    assert "RESULT: ok" in precondition_outcome(bed)
+    bed.git("checkout", "-q", "--detach")
+    assert "HEAD is detached" in precondition_outcome(bed)
+
+
+def test_a_dirty_tracked_file_refuses_before_any_write(bed):
+    owe_a_pin(bed)
+    before = reads(bed)
+    assert "RESULT: ok" in snippet(bed, APPLY, YES)[1]
+    bed.write(BASELINE, before.decode())
+    bed.write("scripts/reanchor_ceremony.py", bed.read("scripts/reanchor_ceremony.py") + "\n# local edit\n")
+    out = snippet(bed, APPLY, YES)[1]
+    assert "tracked files differ from HEAD: scripts/reanchor_ceremony.py" in out
+    assert reads(bed) == before
+
+
+def test_a_staged_change_refuses(bed):
+    bed.write("dev/plans/widget-plan.md", "# Plan\n\n**Status**: done\n")
+    bed.git("add", "dev/plans/widget-plan.md")
+    assert "staged changes" in precondition_outcome(bed)
+
+
+@pytest.mark.parametrize("flag", ["--assume-unchanged", "--skip-worktree"])
+def test_an_index_bit_that_hides_changes_refuses(bed, flag):
+    assert "RESULT: ok" in precondition_outcome(bed)
+    bed.git("update-index", flag, "dev/plans/widget-plan.md")
+    bed.write("dev/plans/widget-plan.md", "# Plan\n\n**Status**: hidden edit\n")
+    assert bed.git("status", "--porcelain").stdout == "", "the instrument is wrong: git status shows it"
+    assert "an index bit hides changes" in precondition_outcome(bed)
+
+
+def test_a_different_interpreter_minor_refuses(bed):
+    manifest = json.loads(bed.read(MANIFEST))
+    manifest["interpreter"]["version_info"] = [3, 99, 0]
+    bed.write(MANIFEST, _dump(manifest))
+    bed.commit("pin another minor")
+    bed.git("update-ref", "refs/cairn/gate-anchor", "HEAD")
+    assert "the anchor pins 3.99" in precondition_outcome(bed)
+
+
+def test_head_moving_between_package_and_write_refuses(bed):
+    owe_a_pin(bed)
+    before = reads(bed)
+
+    def move_head():
+        bed.git("commit", "-q", "--allow-empty", "-m", "move head")
+        return "yes"
+    code, out = snippet(bed, APPLY, [("type the word yes", move_head)])
+    assert "HEAD moved" in out and reads(bed) == before
+    assert not list((bed.repo / "bootstrap/tests/fixtures").glob("*.tmp"))
+
+
+def test_a_file_changed_while_the_question_was_open_refuses(bed):
+    owe_a_pin(bed)
+
+    def edit_the_target():
+        bed.write(BASELINE, bed.read(BASELINE) + "\n")
+        return "yes"
+    code, out = snippet(bed, APPLY, [("type the word yes", edit_the_target)])
+    assert "changed while you were reading" in out
+    assert reads(bed) == (bed.read(BASELINE)).encode()
+    assert not list((bed.repo / "bootstrap/tests/fixtures").glob("*.tmp")), "a temporary file was left"
+
+
+def test_a_transaction_naming_the_gate_manifest_or_any_other_path_refuses(bed):
+    owe_a_pin(bed)
+    for victim in (MANIFEST, "scripts/repin.py", "../outside.json"):
+        code = f"""
+ctx, raw = packaged()
+txn = json.loads(raw)
+txn["outputs"][{victim!r}] = dict(txn["outputs"][{BASELINE!r}])
+raw = R.encode_txn(txn)
+R.store_txn(CDIR, raw)
+outcome(lambda: R.apply_pin(ctx, CDIR, raw))
+"""
+        _c, out = snippet(bed, code, YES)
+        assert "names paths outside" in out, (victim, out)
+    assert json.loads(reads(bed, MANIFEST))["schema"].endswith("v2")
+    assert bed.git("status", "--porcelain").stdout == ""
+    assert "RESULT: ok" in snippet(bed, APPLY, YES)[1]       # control: the baseline alone passes
+
+
+def test_an_edited_output_byte_refuses(bed):
+    owe_a_pin(bed)
+    code = """
+ctx, raw = packaged()
+txn = json.loads((CDIR / R.TXN_NAME).read_bytes())
+txn["outputs"][%r]["new_text"] = txn["outputs"][%r]["new_text"] + " "
+(CDIR / R.TXN_NAME).write_bytes(R.encode_txn(txn))
+outcome(lambda: R.apply_pin(ctx, CDIR, raw))
+""" % (BASELINE, BASELINE)
+    before = reads(bed)
+    assert "transaction file changed after it was packaged" in snippet(bed, code, YES)[1]
+    assert reads(bed) == before
+
+
+@pytest.mark.parametrize("how,needle", [("a symlink", "without following a link"),
+                                        ("owned by someone else", "only this user can write"),
+                                        ("writable by others", "only this user can write")])
+def test_an_unsafe_transaction_file_refuses(bed, how, needle):
+    owe_a_pin(bed)
+    unsafe = {"a symlink": "tx = CDIR / R.TXN_NAME\nreal = CDIR / 'real.json'\ntx.rename(real)\ntx.symlink_to(real)\n",
+              "owned by someone else": "R.os.getuid = lambda: 0\n",
+              "writable by others": "os.chmod(CDIR / R.TXN_NAME, 0o666)\n"}[how]
+    code = "ctx, raw = packaged()\n" + unsafe + "outcome(lambda: R.apply_pin(ctx, CDIR, raw))\n"
+    before = reads(bed)
+    out = snippet(bed, code, YES)[1]
+    assert f"RESULT: refused: " in out and needle in out, out
+    assert reads(bed) == before
+    # control: the same transaction file, left alone, applies
+    assert "RESULT: ok" in snippet(bed, APPLY, YES)[1]
+
+
+def test_a_symlinked_target_or_parent_is_not_followed(bed):
+    owe_a_pin(bed)
+    outside = bed.root / "outside.json"
+    outside.write_text("untouched")
+    fixtures = bed.repo / "bootstrap/tests/fixtures"
+    skip_checks = "R.check_preconditions = lambda ctx: None\n"
+    original = reads(bed)
+    # target is a symlink
+    (fixtures / "scaffold_ast_baseline.json").rename(bed.root / "kept.json")
+    (fixtures / "scaffold_ast_baseline.json").symlink_to(outside)
+    out = snippet(bed, skip_checks + "ctx = R.boot(REPO, TMP)\nraw = R.package(ctx, CDIR)\noutcome(lambda: R.apply_pin(ctx, CDIR, raw))\n", YES)[1]
+    assert "no link in its path" in out and outside.read_text() == "untouched"
+    # a parent folder is a symlink
+    (fixtures / "scaffold_ast_baseline.json").unlink()
+    (bed.root / "kept.json").rename(fixtures / "scaffold_ast_baseline.json")
+    shutil.move(str(fixtures), str(bed.root / "moved_fixtures"))
+    (bed.repo / "bootstrap/tests/fixtures").symlink_to(bed.root / "moved_fixtures")
+    out = snippet(bed, skip_checks + "ctx = R.boot(REPO, TMP)\nraw = R.package(ctx, CDIR)\noutcome(lambda: R.apply_pin(ctx, CDIR, raw))\n", YES)[1]
+    assert "no link in its path" in out
+    assert (bed.root / "moved_fixtures/scaffold_ast_baseline.json").read_bytes() == original
+
+
+def test_a_planted_temporary_name_link_is_not_followed(bed):
+    owe_a_pin(bed)
+    outside = bed.root / "outside.json"
+    outside.write_text("untouched")
+    (bed.repo / (BASELINE + ".tmp")).symlink_to(outside)
+    code, out = snippet(bed, "R.check_preconditions = lambda ctx: None\n" + APPLY, YES)
+    assert "RESULT: ok" in out and outside.read_text() == "untouched"
+
+
+def test_a_failed_second_replace_names_what_was_replaced_and_restores_nothing(bed):
+    bed.write(ENGINE, "def f():\n    return 2\n\ndef g():\n    return 3\n")
+    bed.commit("change f, add g")
+    head = bed.git("rev-parse", "HEAD").stdout.strip()
+    before = {rel: reads(bed, rel) for rel in (BASELINE, KNOWN_NEW)}
+    code = """
+real, calls = R.os.replace, []
+def flaky(src, dst):
+    if str(dst).endswith(".json") and "fixtures" in str(dst):
+        calls.append(dst)
+        if len(calls) == 2:
+            raise OSError("disk full")
+    real(src, dst)
+R.os.replace = flaky
+""" + APPLY
+    out = snippet(bed, code, YES)[1]
+    assert "Already replaced:" in out and f"git restore --source={head} --" in out
+    assert reads(bed, BASELINE) != before[BASELINE] and reads(bed, KNOWN_NEW) == before[KNOWN_NEW]
+    assert not list((bed.repo / "bootstrap/tests/fixtures").glob("*.tmp"))
+
+
+def test_an_extra_changed_path_after_the_write_refuses_and_prints_the_undo_line(bed):
+    owe_a_pin(bed)
+    head = bed.git("rev-parse", "HEAD").stdout.strip()
+    code = """
+real = R.os.replace
+def sneaky(src, dst):
+    real(src, dst)
+    if "fixtures" in str(dst):
+        Path(REPO / "dev/plans/widget-plan.md").write_text("changed behind the write")
+R.os.replace = sneaky
+""" + APPLY
+    out = snippet(bed, code, YES)[1]
+    assert "not exactly the ones named" in out and f"To undo: git restore --source={head}" in out
+    assert "dev/plans/widget-plan.md" in bed.git("status", "--porcelain").stdout, "repin must not undo it"
+
+
+def test_a_pin_that_adds_or_drops_a_baseline_key_refuses(bed):
+    owe_a_pin(bed)
+    code = """
+ctx, raw = packaged()
+txn = json.loads(raw)
+out = txn["outputs"][%r]
+new = json.loads(out["new_text"]); new["Assign:extra"] = {"digest": "0", "span": [1, 1], "type": "Assign"}
+out["new_text"] = (json.dumps(new, indent=2, sort_keys=True) + "\\n")
+out["new_sha256"] = R.sha(out["new_text"].encode())
+raw = R.encode_txn(txn); R.store_txn(CDIR, raw)
+outcome(lambda: R.apply_pin(ctx, CDIR, raw))
+""" % BASELINE
+    before = reads(bed)
+    assert "add or drop a baseline key" in snippet(bed, code, YES)[1]
+    assert reads(bed) == before
+
+
+@pytest.mark.parametrize("break_it", ["missing", "duplicate"])
+def test_a_missing_or_duplicated_symbol_is_a_review_item_never_a_pin(bed, break_it):
+    if break_it == "missing":
+        owe_a_pin(bed, "def renamed():\n    return 1\n")
+    else:
+        owe_a_pin(bed)
+        bed.write("bootstrap/_scaffold/second.py", "def f():\n    return 1\n")
+        bed.commit("define f twice")
+    out = bed.run("package")
+    assert out.returncode == 2 and "missing or defined twice" in out.stderr, out.stdout + out.stderr
+
+
+def test_a_pin_owed_to_a_plain_change_packages(bed):
+    out = ok(bed.run("package"))
+    assert "No AST pin is owed" in out
+    owe_a_pin(bed)
+    assert re.search(r"transaction digest [0-9a-f]{64}", ok(bed.run("package")))
+
+
+def test_a_closure_member_change_refuses_an_ast_pin(bed):
+    for rel, text in [("bootstrap/REANCHOR_RUNBOOK.md", "# runbook\n"), ("bootstrap/reanchor.sh", "#!/bin/sh\n"),
+                      ("dev/.cairn/allowed_signers", "x ssh-ed25519 AAAA\n")]:
+        bed.write(rel, text)
+    bed.pin("closure files appear")
+    owe_a_pin(bed)
+    assert "differ" not in ok(bed.run("package")).split("closure")[0]
+    bed.write("bootstrap/REANCHOR_RUNBOOK.md", "# runbook, edited\n")
+    bed.commit("edit the runbook")
+    r = bed.run("package")
+    assert r.returncode == 2 and "transition ceremony, not an AST pin" in r.stderr
+
+
+def test_two_trees_that_differ_only_in_a_kept_record_give_different_digests(bed, tmp_path):
+    bed.write(ENGINE, "def f():\n    return 1\n\ndef g():\n    return 1\n")
+    bed.write(BASELINE, _dump(A.digest_module(bed.repo / ENGINE)))
+    bed.pin("two symbols")
+    twin_root = tmp_path / "twin"
+    shutil.copytree(bed.root, twin_root, symlinks=True)
+    twin = Bed(twin_root)
+    owe_a_pin(bed, "def f():\n    return 2\n\ndef g():\n    return 1\n")
+    owe_a_pin(twin, "def f():\n    return 2\n\ndef g():\n    return 1\n")
+    kept = json.loads(twin.read(BASELINE))
+    kept["FunctionDef:g"]["span"] = [9, 9]
+    twin.write(BASELINE, _dump(kept))
+    twin.commit("a kept record differs")
+    digest = lambda b: re.search(r"transaction digest (\w{64})", ok(b.run("package"))).group(1)
+    assert digest(bed) != digest(twin)
+    assert digest(bed) == digest(bed)
+
+
+def test_package_in_a_detached_checkout_gives_one_digest(bed, tmp_path):
+    owe_a_pin(bed)
+    clone = tmp_path / "clone"
+    subprocess.run(["git", "clone", "-q", str(bed.repo), str(clone)], env=bed.env, check=True)
+    for ref in ("refs/cairn/gate-anchor",):
+        subprocess.run(["git", "-C", str(clone), "fetch", "-q", str(bed.repo), f"+{ref}:{ref}"], env=bed.env, check=True)
+    subprocess.run(["git", "-C", str(clone), "checkout", "-q", "--detach"], env=bed.env, check=True)
+    twin = Bed(tmp_path)
+    twin.repo = clone
+    digest = lambda b: re.search(r"transaction digest (\w{64})", ok(b.run("package"))).group(1)
+    assert digest(twin) == digest(bed)
+
+
+def test_the_known_new_file_is_named_as_a_frozen_gate_file_only_when_it_changes(bed):
+    owe_a_pin(bed)
+    assert "owes a re-anchor" not in ok(bed.run("package"))
+    bed.write(ENGINE, bed.read(ENGINE) + "\ndef g():\n    return 3\n")
+    bed.commit("add g")
+    out = ok(bed.run("package"))
+    assert "scaffold_ast_known_new.json  FunctionDef:g" in out and "owes a re-anchor" in out
+
+
+def test_package_writes_only_into_the_ceremony_folder(bed):
+    owe_a_pin(bed)
+    before = bed.tree_hash()
+    cdir = bed.root / "ceremony"
+    cdir.mkdir()
+    ok(bed.run("package"))
+    assert bed.tree_hash() == before
+    ok(bed.run("package", "--ceremony-dir", str(cdir)))
+    assert bed.tree_hash() == before and (cdir / "ast-pin-transaction.json").is_file()
