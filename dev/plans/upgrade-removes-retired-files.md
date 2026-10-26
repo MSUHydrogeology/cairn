@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-upgrade-removes-untouched-retired-files.md](../proposals/archive/2026-10-26-claude-upgrade-removes-untouched-retired-files.md)
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Waiting on Maintainer**: re-anchor at the cut (C8)
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
@@ -262,3 +262,66 @@ Sonnet 5.5. Measured today, read-only: every cited line (`upgrade.py:146, 1554, 
 * **Smoke**: a scratch project from the CLI: `--plan` printed one untouched and one kept copy with its `[flag]` line and the command; `--remove-retired` removed the untouched script, kept the edited one, exit 0; `verify_integrity` OK.
 * **Departures from the plan, for the code reviewer**: (1) a row has four fields, `(src, dst, verbatim, digests)`: the third is the manifest's script-or-Markdown column, so the evidence path comes from Cairn's data and not the record. (2) `_GIT_TIMEOUT_SECONDS` is a sixth new symbol. (3) `_remove_unchanged_file(..., None)` is a confirm-only mode, used to clear a "gone" record. (4) I read the Markdown test title as: an added line is "matches none" (evidence complete), a migrated lockfile or an unlisted or missing cache is "cannot tell"; the node name says so. (5) A Markdown copy's cached template must also be in git's last commit, not only the copy. (6) A record whose file went but whose cache would not stays, so a rerun finishes; for a "gone" record a leftover cache that will not go does not hold the record. (7) The plan's B2 node cannot run as written: a `base_cache` that leads outside makes the whole run exit 2 at the lockfile check, so the node covers that (exit 2, nothing touched), a link inside the project (kept, cannot tell) and, with no `base_cache` in the record, a link outside; the swap-after-the-decision nodes (one per delete site) carry the by-path mutants. (8) C5 rewrote two nodes the plan's mapping did not list (`test_next_session_local_note.py`, `test_install_time_onboarding.py`, unkeyed), because they pinned the old "finalize refuses a deleted retired file" behaviour; and renamed the second node of `test_agreement_retired.py` (its name said "refuses"). (9) `_compute_upgrade` runs the git gate for every caller (`--stage`, `--apply`, adoption too); there it only affects which retired label shows. (10) I removed the plan's stale "Proposed paths" entry at C1 (the file now exists). (11) The C5 commit warned that two test files had no claim; I claimed them late.
 * **Known omissions**: no Windows run (the by-path branch ran on POSIX with the predicate forced off); git 2.53.0 only (the Apple suffix cases use stand-in programs); no certifying run, no full suite, no differential oracle; no real timing race; `_after_walk` exists for a test only; the UPGRADE.md section was checked by `claim_check`, `link_check` and the pinned tests, not by a reader; the Bandit gate is `test_security_lint` (a direct `bandit` run was not compared before and after).
+
+## Code review -- Code reviewer (fresh session, Internal) -- 2026-10-26
+
+**Tier**: Internal
+**Model**: Sonnet 5.5, fresh session
+**Reviewed commit**: 16930822 (range 23a92785^..16930822; the last commit changes only this plan, so the code is the bytes of a39706f6)
+**Verdict**: one blocking finding (a process one, no code change), seven non-blocking. I found no way to make the step delete a file it should not. Status set to `revising-code`.
+
+**Foundations**
+1. *Does it do what it claims?* Yes. Across 40+ attacks it removed only listed, unchanged, git-committed regular files, and kept or refused everything else; measured in the ledger (L1-L11, G1-G5, H1-H9). Two small gaps: N1 and the guide sentence in N2.
+2. *Simpler or safer build?* No simpler one keeps the Decision's outcomes. One safer addition is N1 (tests for a by-path removal that has its own guard). The `_after_walk` hook is a production parameter used by tests only; I accept it, as the Security Review's Response did.
+3. *What would show it wrong?* A listed row whose template ships, a one-byte-off file removed, a delete through a swapped folder, a program run by git, a record cleared for a file still present. I tried each; none broke. Survivors M3 and M4c are race-window variants (below). -- falsification ledger.
+
+**Rulings on the ten departures**
+1. Four-field row: accept. The third field is the manifest's own column (checked for all 30 rows), so the evidence path comes from Cairn's data.
+2. Confirm-only mode (`expected=None`): accept; it is the least-tested path (M4c survives).
+3. `_GIT_TIMEOUT_SECONDS` is a sixth new symbol the plan's C8 list omits: confirmed (AST below). The Maintainer's authorization at the cut should come from the AST output, not the plan's list.
+4. Added line is "matches none", not "cannot tell": accept. Both keep the file; only the words differ, and the plan's test title (not a durable name) disagreed.
+5. Cached template must also be in git's last commit: **narrower than the plan**, which asks this of the copy only. Where `dev/.cairn/base/` is not committed, an untouched Markdown copy is kept. Fresh installs do commit it (v0.3.0 and v0.4.0 installs: `git add -A` took the caches). Safe, but see B1.
+6. Cache removal that fails: accept. A leftover cache that returns `False` leaves the record cleared; one that raises (only on a race) holds the record, the safe side.
+7. B2 node "cannot run as written": confirmed. A `base_cache` leading outside makes the run exit 2 at the lockfile check (H5, H5b), so nothing is reached. The outcome (nothing outside removed) is delivered by the inside-link node, the no-`base_cache` node and the post-decision swap nodes. It is still an acceptance criterion met differently: see B1.
+8. Two unkeyed test files rewritten: allowed by the plan's frozen table. I read both diffs: each flipped assertion follows the Decision (a deleted retired file is cleared, not refused), with a positive assertion kept; no check weakened. The renamed node in keyed `test_agreement_retired.py` changes a collected node id; tell the Maintainer at the cut (N5).
+9. Git gate for every `_compute_upgrade` caller: accept; it changes only which retired label shows.
+10. Stale "Proposed paths" entry: accept.
+
+**Findings**
+* **B1 -- blocking (plan text only). Two deviations are not declared.** Departure 5 narrows scope in a corner and 7 meets a criterion differently; both are deviation requests (AGENTS "Git and commit workflow"), and the range shows no Waiting line for them, only the C8 one. Fix: append a Response that names both, correct the `Scope delta` line, and add them to **Waiting on Maintainer**. Recommended default for the Maintainer: allow both (safer, outcome intact in the default install).
+* **N1 -- non-blocking. Survivors M3 and M4c.** A removal by path that runs its own guard, and an unguarded `not os.path.lexists` for the "gone" confirmation, pass all 90 nodes; they differ from the real code only in a race window the tests cannot open. Fix: a step-level node per site that swaps the folder inside a patched guard call, one for the "gone" record (swap after the decision; record must stay), and a spy node that every deletion goes through `_remove_unchanged_file`.
+* **N2 -- non-blocking. The guide over-promises.** `bootstrap/UPGRADE.md` ("Deleting by hand is fine") says `upgrade --finalize` clears a hand-deleted file's record. Bare `--finalize` over an uncommitted deletion exits 1 on the dirty-tree guard (measured). Fix: say "run `--remove-retired`, or `--finalize <path>`, or commit the deletion first". Also name the cached template in "a file your last git commit does not hold".
+* **N3 -- non-blocking.** `--finalize` over a folder at a retired name says "tracked file(s) missing on disk" (measured). Fix: use the classifier's "a link, a folder or another non-file is in the way".
+* **N4 -- non-blocking.** Under Python 3.9 the step removes the files, then dies at the lockfile write (pre-existing `Path.stat(follow_symlinks=...)` in `security.py` `_stage_exclusive`); every rerun dies the same way. `docs/quickstart.md:36` names 3.13 as the tested version. Fix: refuse before removing anything below 3.10, or `wontfix` with the quickstart line.
+* **N5 -- non-blocking.** Tell the Maintainer at C8: the renamed node in `test_agreement_retired.py`; `Assign:_GIT_TIMEOUT_SECONDS`.
+* **N6 -- non-blocking, accept.** Case-insensitive APFS: disk `Tools/` over HEAD `tools/` is removed (HEAD holds the bytes, so `git restore` returns it); HEAD `Tools/` with record `tools/` is kept.
+* **N7 -- non-blocking, accept.** The by-path branch (Windows) cannot be raced by the hook; `bootstrap/SAFETY.md` names the window.
+
+**Falsification ledger** (scratch under the scratchpad; `/Users/kendal30/conda_envs/lhm/bin/python3.13`, 3.13.13; git 2.53.0; macOS APFS; new file 90 passed, 0 skipped on the tip, control 105 with `test_security_leaf`)
+*Delete primitive* (`security.py` `_remove_unchanged_file`; each run with the `dir_fd` branch real, then forced off):
+* L1 plain file: removed, outside copy intact (both). L2 one byte changed: kept (both). L3 link at the name: raised, kept (both). L4 parent a link before the walk: raised (both).
+* L5 parent swapped for a link after the last handle opened (two depths): removed from the real folder, outside file and folder intact; `rmdir` hit the link and failed. L6 folder or FIFO at the name: raised, kept.
+* L7 hard link: only the one name goes. L8 absent: True; confirm-only: present False, absent True, linked parent raised. L9 case spelling: N6. L10 by-path race: not raced (N7). L11 `--target` a link, `.`, relative: all 30 removed, nothing outside.
+*Git call* (`upgrade.py` `_committed_copy_matches`):
+* G1 project in a subfolder of an outer repo; `.git/config` naming fsmonitor, clean/smudge, textconv, pager, sshCommand, include, hooksPath, packObjectsHook, askPass, a replace ref, and `GIT_DIR`/`GIT_CONFIG_*` in the environment: no program ran; replacement ignored; edited work tree still matches HEAD.
+* G2 same config and a `.gitattributes` filter through `--plan` and `--remove-retired`: no program ran. G3 blobless clone with an upload-pack program: engine False in 0.01 s, no program; plain git (control) ran it.
+* G4 stand-in `git` first on PATH (constant patched to 1 s): sleeper False at 1.08 s; endless output False in 0.09 s, process gone; one byte over False; 2.45.0 True; `2.44.9 (Apple Git-1)` False; `2.54.0 (Apple Git-157)` True; unparsable False; exit 128 with matching bytes False. G5 Apple `/usr/bin/git` 2.54.0 on PATH: step ran.
+*List and release line:*
+* D1 re-derived from `git archive` of both tags, `scaffold.py --manifest`, and the parent of each deleting commit: 30 rows, 55 digests, 0 differences (blob ids, verbatim column, `dst` mapped in its tag). No row `src` under `templates/`; no row `dst` shipped. D2 corrupting one digest per row: 30 of 30 killed. D3 `docs/release-process.md:96`: diff 20, manifest comparison 20.
+*Classifier and commands* (copies of a v0.3.0 install, real CLI):
+* H1 planted `base_cache` at another file: kept. H2 `migrated`: Markdown kept, scripts removed. H3 two records one cache: both kept. H4 planted plain-file records, right `dst` wrong `src`, wrong letter case: nothing removed. H5/H5b link at a name or above it: exit 2 at the lockfile check, outside intact (14 files). H6 edit plus re-recorded hash: kept. H7 untracked, or HEAD edited and work tree restored: kept. H8 `--to`: exit 2. H9 folder at the name: kept, blocked words.
+* F1 `--remove-retired --force` exit 2. F2 bare and forced `--finalize` over a one-byte-edited retired script: exit 0, lock unchanged, closing line counts it, no "attests this tree". F3 blocked plus gone records: exit 1, lock unchanged. F4 `--finalize <path>` of a gone file: record cleared.
+*Crash and real installs:*
+* K1 killed inside the lockfile write: 30 files gone, 30 records stay; rerun clears 30, `verify_integrity` OK, third run "nothing". Same shape as the plan's stop node.
+* R1 v0.3.0 install, `cli.py` edited one byte, `prompts.py` deleted by hand: `--plan` 28 untouched, 1 deleted, 1 kept with its `[flag]`; step removed 28, cleared 1, kept `cli.py`; `verify_integrity` names only `cli.py`; bare `--finalize` skips it. R2 v0.4.0 install, edited NEXT_SESSION and one script, one deleted by hand: bare `--finalize` cleared the deleted one, named the script, never named the living-state file; step removed the 7 untouched.
+*Mutants* (each a detached worktree of 16930822; new file plus `test_security_leaf` unless noted; control 105 passed; no skips in any run):
+* Killed: M1 file removal by path (2 nodes); M2 Markdown cache by path; M3b leftover cache unguarded `unlink` (swap node); M5 `unlink` by path after the walk (2); M6 `rmdir` by path (1); M7 drop `O_NOFOLLOW` on folders (1); M8 any exit-0 `cat-file` passes (4); M9 skip the digest check (8); M10 step without git gate (5); M11 plan without git gate (1); M12 finalize with git gate (1); M13 skip the cache's git check (1).
+* **Survived**: M3 leftover cache by path with its own guard; M4 "gone" confirmation by path with a guard; M4c the same unguarded. Race-window only (N1).
+*Frozen, AST, record, docs:*
+* Frozen: exactly the three keyed tests changed (`test_agreement_retired.py`, `test_security_leaf.py`, `test_upgrade_lockfile_path_containment.py`); the new file is FROZEN-NEW; two unkeyed files edited; no fixture touched. AST (3.13, read-only): 36 lines before C1, 42 now; six NEW (the plan's five plus `Assign:_GIT_TIMEOUT_SECONDS`); the lines naming the six guards are identical (only `_check_lockfile_paths`, as before).
+* Own tree (read-only worktrees): before 9 `missing:` + 16 `modified`; after 16 `modified`, 0 missing; lockfile 79 lines deleted (11 records), none added; none of the 11 files exists at the tip. Gates on the tip: neutrality and redundancy clean; Bandit gate 11 passed, one more B404/B603/B607 triple for the git call (same class as the existing ones); owners the record did not map (`test_model_tier_rule_ships`, `test_status_vocabulary_advisory`): 38 passed.
+* Guide, `SAFETY.md`, `SECURITY_MUTATIONS.md` and `--help` checked sentence by sentence against the code; the only mismatch is N2.
+
+**Boundary B record**: mode `full`, `Certified by: pending`, interpreter 3.13.13 named, tested commit a39706f6 equals the tip's code. Challenged surfaces: the Markdown cache gate (M13 killed) and the unmapped owners above. **Bounding**: ACCEPTED, with the omissions the record names (no oracle, AST and gate-manifest re-anchor are C8's).
+
+**Coverage.** Not covered: Windows; git below 2.53.0 (stand-ins only); the 1851- and 470-test figures (I never ran the broad suite); the differential oracle on `config.py`; `_gate_manifest.py verify` with collection (static only); a real timing race; Python 3.10 to 3.12 beyond one 3.12 run; `UPGRADE.md` outside the new section; the onboarding and NEXT_SESSION plans' own tests beyond the two rewritten files' diffs; `dev/measurement/maintainer-view-misses.md` was not written (outside my one file).
