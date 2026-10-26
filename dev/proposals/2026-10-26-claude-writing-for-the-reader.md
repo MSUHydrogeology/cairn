@@ -1,7 +1,7 @@
 # Cairn Plain Language: a writing standard for what agents write to people
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual
 **Plan review**: not required(one commit: one new section in the shipped collaboration doc and its Cairn copy, one pointer sentence in each `AGENTS.md`, one paragraph in `doctrine/rationale.md`, one ship test)
 **Opened**: 2026-10-26
@@ -454,3 +454,56 @@ or licence file, so no Security Review is owed.
 * Zhou, K., Hwang, J. D., Ren, X., & Sap, M. (2024). Relying on the
   unreliable: The impact of language models' reluctance to express
   uncertainty. arXiv:2401.06730
+
+## Review -- Claude Sonnet 5.5 (usual) -- 2026-10-26
+
+**Model**: Claude Sonnet 5.5. A different session from the author's, but the same agent family and a context that already held unrelated Cairn work; no cross-type distance, and not a cold start.
+
+```
+Reviewed commit: a897080685fc9dca58d2e1879266450920920222
+Target: the whole proposal, In brief through References; every tree claim read at that commit, and the Zhou et al. figure read in its arXiv abstract
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised (0 blocking, 9 non-blocking)
+**Verdict**: REVISE
+
+### Verdict in brief
+
+**Ship this, smaller and with one hole closed.** The gap is real and the rules for scientific reasoning (14 to 18) are the part worth having. No finding stops the Decision, and one revision can close all of them. Three matter most: rule 16 can push an agent to invent a number (W1); the proposal ships all 18 rules when its own evidence supports about 8 (W2); and several rules hold more than one rule, which breaks the numbering promise (W3).
+
+### Steelman
+
+Cairn tells agents to "lead plain" and names no method, so each agent invents one, and the cost is on record: three fixes to the same failure since August, the latest a rewrite of the case studies. The proposal answers with a short, versioned, citable standard, puts the full text where adopters already get it, and adds one sentence to `AGENTS.md`. Rules 14 to 18 are the strong part: they cover how an agent states what it measured, assumed and is unsure of, which no general plain-writing guide covers for this reader.
+
+### Foundations
+
+1. **Should this happen as framed?** Yes to a standard; not yet to all 18 rules. The gap is real: `AGENTS.md` names the goal and no method, and the incidents exist (`0381944f`, `e3448ed0`, three 2026-08-13 proposals). But rules 4 to 13 are general advice with "professional consensus only" evidence (proposal lines 213 to 221), and only the rules on names, terms and acronyms match the recurrences. -- `dev/proposals/2026-10-26-claude-writing-for-the-reader.md:213-221,360-364`
+2. **Best alternative.** Ship a v1.0 of about 8 rules (2, 3 and 14 to 18, plus the one rule on names and terms) and add the rest when an incident or a study earns them. Stable numbers make adding later cheap and removing costly, so this is the order that loses nothing. The proposal falls back to this itself under Signals. -- `proposal:80-81,193-196,368-370`
+3. **What would show it wrong.** The signals are the right ones, but the third has no record to count (W5), and the trial is judged by the implementer who ships it. -- `proposal:322-327,374-376`; `grep` of `dev/` finds no log of "I don't understand" pauses
+
+### Findings
+
+* **W1. Rule 16 asks for a number where an agent may have none.** It forbids bare "likely" and requires "uncertainty as a number with its source". An agent with no numeric basis has two moves: invent a figure, which is the false precision rules 14 and 17 forbid, or break rule 16. The proposal never says what to write when there is no basis. Non-blocking: v1.0 is unshipped and the fix is one sentence. *Closes on*: rule 16 gains "if you have no basis for a number, say so and say what the judgment rests on", and the trial includes one passage where no number exists.
+* **W2. The proposal's own evidence supports a smaller first version.** Strong evidence and no Cairn incident sit behind 14 to 18; incident support and weak evidence sit behind 4 to 13, and 6, 10 and 13 (examples, figures, error messages) have neither. The Question on the rate-limit gate already offers narrowing. I recommend a v1.0 without 6, 10 and 13, rules 5 and 8 merged into one rule on terms, and the rest added by a later version when something earns it. The Maintainer decides. *Closes on*: a rule-to-incident map in the proposal, or the narrowing at the Decision.
+* **W3. Several rules hold several rules, so "cite rule 7" and "a withdrawn rule keeps its number" cannot work.** Rule 7 holds five instructions (sentence length, active voice, old before new, no asides, one topic per paragraph); rule 9 holds four; rules 2, 8, 16 and 17 hold two each. A finding that cites "rule 7" does not say which one, and one clause cannot be withdrawn without the others. The proposal asks whether 18 rules are too many; counted by instruction it is over 30. *Closes on*: split the compound rules before v1.0 fixes the numbers, or say that numbers name the paragraph and not the clause.
+* **W4. The evidence for rule 18 is mixed, and the table says "Direct".** Zhou et al.'s abstract reports the 47% figure and also that "users rely heavily on LM generations, whether or not they are marked by certainty". Of the three studies cited for rule 18, only Kim et al. shows first-person uncertainty helping, in one lab task, and the proposal itself notes over-reliance "did not disappear". Rule 18 is still right: it makes an agent's checks auditable by the Maintainer even if casual readers over-rely. *Closes on*: reword the strength cell to say one study supports it and one found markers did not change reliance, and add auditability as a second ground.
+* **W5. Two triggers are a human remembering, and the proposal does not say so.** (a) The third signal counts "pauses no rarer", but nothing records pauses; `dev/measurement/maintainer-view-misses.md` shows what a counted log costs, and the proposal adds none. (b) Question 2 defaults the rules to chat, where an agent complies only if it opens `dev/agent_collaboration.md`, which `AGENTS.md` points to and does not require. `AGENTS.md` asks any named trigger to be described as what it is. *Closes on*: one sentence for each saying the trigger is the Maintainer's own report at the three-month read, and the agent choosing to follow the pointer; or put the four or five highest-yield rules in the `AGENTS.md` pointer.
+* **W6. The Verification section omits three things a no-plan, high-assurance change needs, since no plan review will catch them.**
+  * `dev/.cairn/cairn-lock.yml` records hashes for `AGENTS.md` and `dev/agent_collaboration.md`, so `verify_integrity` will report two mismatches until `python bootstrap/scaffold.py upgrade --target . --finalize AGENTS.md dev/agent_collaboration.md`. Add it.
+  * The neutrality gate denylists "Google" as a whole word and the baseline is now `fail=0`. The rationale paragraph "names the sources", and the Google style guide is one; naming it turns the gate red. Name it generically or add a `vendor-ok` marker with a reason.
+  * "Anchor 21" is cited for "never measure prose", and that is its rule, but anchor 21 exists only in the guide-star note, not in `doctrine/rationale.md`, so the paragraph would cite an anchor its own file lacks. Cite the guide-star note by path.
+  Two smaller drifts: the alternative "put the rules in `AGENTS.md`" says "about 40 more lines" while the standard is 81 lines and 688 words; and the `Plan review` header reads `not required(...)`, a value the template does not list (it offers `required(Internal)` or `required(Internal + Internal Security Review)`). *Closes on*: each corrected in the text.
+* **W7. The proposal does not say how it sits with rules that already exist.** `dev/agent_collaboration.md` already has a plain-language instruction for questions to the Maintainer, `AGENTS.md` has a commit-body shape (15 to 30 lines, verification last) that sits beside "conclusion first", and rule 18 generalizes the review coverage line ("Not covered / low confidence"). The search in "What already exists" looked outside the tree only. *Closes on*: a short paragraph naming these and saying which governs on a conflict.
+* **W8. The recurrence evidence cannot be opened as written.** The Maintainer's "impossible to use" appears only in this proposal, not in a committed record, and the three audits are described but not cited. The audits are in the body of `e3448ed0`. *Closes on*: cite the commits, and either mark the quotation as said in chat or drop the quotation marks.
+* **W9. Nit: two sentences contradict or splice.** The standard's opening says the rules limit "how text is built, not which words it uses", but rules 2 and 16 ban words ("robust", "comprehensive", a bare "likely"). The pointer clause ("the rules for how to write it are Cairn Plain Language") is spliced into a semicolon list in the middle of one sentence and "it" has no referent. *Closes on*: reword both.
+
+### Coverage
+
+**Covered.**
+* **Claims (1)**: `claim_check` is OK on the proposal; every named path resolves; the "I don't understand this yet" quotation is exact; anchor 16's origin example is at the guide-star note line 528; the three 2026-08-13 proposals and both docs rewrites exist; Zhou et al.'s 47% matches the abstract; the pointer insertion cannot break `test_comprehension_floor.py`, whose patterns are alternations on "mandatory pause", "precondition" and the rationale path.
+* **Design completeness (3)**: W1, W3. **Cross-document consistency (5)**: W7; the in-tree search used `grep` for "plain language" and "readability" with a positive control. **Drift (6)**: W6. **Lifecycle placement (7)**: W5. **Scope (8)**: W2. **Satisfiers (9)**: each finding ends in one.
+
+**Not covered / low confidence.** I did not re-run either literature search, so "found no standard anywhere" rests on the author's word. I read only the Zhou et al. abstract; the other figures (Budescu 27% to 40%, Markowitz, Steyvers, Kim) are unchecked, and the proposal says four of those rest on abstracts too. The ship test does not exist yet, so only its model was read. I did not check whether a license map needs an entry for the "CC BY 4.0" line. I did not run the suite: this is prose, and I found no test that pins these files' bytes beyond the lockfile hashes in W6. My test-reader counts (9, 42, 5) differ from the proposal's (8, 41, 4) by one each; the method differs and I did not reconcile them. I did not apply the 18 rules to a real passage, which is what the proposal's trial is for.
