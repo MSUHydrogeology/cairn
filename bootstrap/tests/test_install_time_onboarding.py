@@ -361,6 +361,7 @@ class TestUpgradeLeavesAnOldHelperAlone:
     def test_the_guide_says_do_not_delete_and_names_the_three_loose_files(self) -> None:
         guide = _flat((ROOT / UPGRADE_GUIDE).read_text(encoding="utf-8"))
         assert "**Do not delete them.**" in guide
+        assert "names every retired file your project still has" in guide
         assert "**Run `verify_integrity` before `--finalize`.**" in guide
         loose = ("Three loose files are not in the lockfile and are safe to "
                  "delete: `dev/modules/onboarding/<profile>.md`")
@@ -452,28 +453,28 @@ class TestTheOnboardingListDoesNotGrow:
 
 
 #: The five sentences that carry what the former delayed prompts said.
-#: (id, profile, task the sentence sits on, sentence, shape it needs). Wording
-#: may be polished later; a task may not be added to carry one. C names the
-#: tour page, so it appears only where the roster's own tour task does (the
-#: multi-type team shape); the others reach every shape.
+#: (id, profile, task the sentence sits on, sentence). Wording may be polished
+#: later; a task may not be added to carry one, and none sits inside a
+#: ``cairn:if``, so each reaches every install of its profile whatever its
+#: team shape.
 PAGE = "`dev/modules/onboarding/agent-team-onboarding.md`"
 SENTENCE_C = ("When you add another agent type, record it in the roster slot "
-              f"and walk {PAGE}.")
+              "and walk the agent-team tour in `dev/modules/onboarding/`.")
 FORMER_PROMPTS = (
     ("A", "solo-greenfield", "skim-coordination-doctrine",
-     f"When you add a second agent type, walk {PAGE}.", None),
+     f"When you add a second agent type, walk {PAGE}."),
     ("B", "collaborative-team", "walk-dev-tour",
      "Reflections are gitignored by default; track them only if agents hand "
-     "work to each other through them.", None),
-    ("C", "collaborative-team", "fill-team-roster-day-one", SENTENCE_C, MULTI_TYPE),
-    ("C", "high-rigor-legacy", "confirm-maintainer-authority", SENTENCE_C, MULTI_TYPE),
+     "work to each other through them."),
+    ("C", "collaborative-team", "fill-team-roster-day-one", SENTENCE_C),
+    ("C", "high-rigor-legacy", "confirm-maintainer-authority", SENTENCE_C),
     ("D", "high-rigor-legacy", "walk-dev-tour",
      "Treat that first proposal as the diagnostic for calibrating the "
      "security-review, dual-language-tests and legacy-agent modules against "
-     "your tree.", None),
+     "your tree."),
     ("E", "high-rigor-legacy", "confirm-maintainer-authority",
      "A read from a different agent type is the Maintainer's call "
-     "(`AGENTS.md` > Review); the usual review stays a fresh session.", None),
+     "(`AGENTS.md` > Review); the usual review stays a fresh session."),
 )
 #: Each profile's own team shape, then others.
 TEAM_SHAPES = {
@@ -481,10 +482,6 @@ TEAM_SHAPES = {
     "collaborative-team": (None, MULTI_TYPE, "concurrent-single-type", "single"),
     "high-rigor-legacy": (None, MULTI_TYPE, "single"),
 }
-#: The seed each profile gates on the multi-type shape; its presence says the
-#: install resolved to that shape, whatever the profile's own default is.
-MULTI_TYPE_MARKER = {"collaborative-team": "id: agent-team-onboarding]",
-                     "high-rigor-legacy": "id: agent-team-onboarding-legacy]"}
 
 
 def _task_block(slot: str, task_id: str) -> str:
@@ -495,21 +492,9 @@ def _task_block(slot: str, task_id: str) -> str:
     return _flat(m.group(1))
 
 
-def _prompt_problems(slot: str, preset: str, team: str | None) -> list[str]:
-    multi = team == MULTI_TYPE or (
-        team is None and MULTI_TYPE_MARKER.get(preset, "\0") in slot)
-    problems = []
-    for pid, prof, task, sentence, needs in FORMER_PROMPTS:
-        if prof != preset:
-            continue
-        expected = needs is None or multi
-        if (sentence in _task_block(slot, task)) != expected:
-            problems.append(f"{pid} on {task}: expected "
-                            f"{'present' if expected else 'absent'}")
-    if (not multi and preset != "solo-greenfield"
-            and "agent-team-onboarding.md" in slot):
-        problems.append("the tour page is named in a shape without its task")
-    return problems
+def _prompt_problems(slot: str, preset: str) -> list[str]:
+    return [f"{pid} on {task}" for pid, prof, task, sentence in FORMER_PROMPTS
+            if prof == preset and sentence not in _task_block(slot, task)]
 
 
 class TestEveryFormerPromptHasAnInstallTimeHome:
@@ -519,50 +504,41 @@ class TestEveryFormerPromptHasAnInstallTimeHome:
     def test_sentences_a_to_e_are_in_the_installed_slot(
             self, tmp_path: Path, preset: str, team: str | None) -> None:
         assert _install(tmp_path / "t", preset, team) == 0
-        assert _prompt_problems(_slot(tmp_path / "t"), preset, team) == []
+        assert _prompt_problems(_slot(tmp_path / "t"), preset) == []
 
     def test_a_deleted_sentence_is_reported(self, tmp_path: Path) -> None:
-        assert _install(tmp_path / "t", "high-rigor-legacy", MULTI_TYPE) == 0
+        assert _install(tmp_path / "t", "high-rigor-legacy", "single") == 0
         slot = _slot(tmp_path / "t")
-        assert _prompt_problems(slot, "high-rigor-legacy", MULTI_TYPE) == [], "control"
+        assert _prompt_problems(slot, "high-rigor-legacy") == [], "control"
         for index, label in ((5, "E"), (3, "C")):
             sentence = FORMER_PROMPTS[index][3]
             words = r"\s+".join(map(re.escape, sentence.split()))
-            found = _prompt_problems(re.sub(words, "", slot),
-                                     "high-rigor-legacy", MULTI_TYPE)
+            found = _prompt_problems(re.sub(words, "", slot), "high-rigor-legacy")
             assert len(found) == 1 and found[0].startswith(label), found
 
     @pytest.mark.parametrize("rel", PROFILE_FILES)
-    def test_only_sentence_c_sits_inside_a_conditional(self, rel: str) -> None:
-        """A sentence inside a ``cairn:if`` reaches only some installs; C is
-        the one deliberately gated, on the multi-type shape."""
+    def test_no_former_prompt_sits_inside_a_conditional(self, rel: str) -> None:
+        """A sentence inside a ``cairn:if`` reaches only some installs."""
         text = (ROOT / rel).read_text(encoding="utf-8")
-        for pid, prof, task, sentence, needs in FORMER_PROMPTS:
+        for pid, prof, task, sentence in FORMER_PROMPTS:
             if f"/{prof}.md" not in "/" + rel:
                 continue
             start = re.search(rf"^\* \[seed; id: {re.escape(task)}\]", text,
                               re.MULTILINE).start()
-            assert (len(re.findall(r"<!-- cairn:if ", text[:start]))
-                    == len(re.findall(r"<!-- cairn:endif", text[:start]))), (
-                f"the task {task} itself sits inside a cairn:if")
             region = text[start:].split("\n* [seed;", 1)[0]
             words = r"\s+".join(map(re.escape, sentence.split()))
             body = re.search(words, region)
             assert body, f"{pid} is not on {task}"
-            before = region[:body.start()]
-            inside = (len(re.findall(r"<!-- cairn:if ", before))
-                      > len(re.findall(r"<!-- cairn:endif", before)))
-            assert inside == (needs is not None), pid
-            if needs:
-                assert f"cairn:if agent_team in {needs} -->" in before
+            assert _open_conditionals(text[:start + body.start()]) == 0, (
+                f"{pid} on {task} sits inside a cairn:if")
 
-    def test_sentence_c_moved_out_of_its_conditional_is_reported(self) -> None:
+    def test_a_sentence_put_inside_a_conditional_is_reported(self) -> None:
         text = ("* [seed; id: t]\n  body\n<!-- cairn:if agent_team in x -->\n"
                 "  C sentence.\n<!-- cairn:endif -->\n")
-        before_inside = text[:text.index("  C sentence.")]
-        assert (len(re.findall(r"<!-- cairn:if ", before_inside))
-                > len(re.findall(r"<!-- cairn:endif", before_inside)))
-        flat = text.replace("<!-- cairn:if agent_team in x -->\n", "")
-        before_outside = flat[:flat.index("  C sentence.")]
-        assert (len(re.findall(r"<!-- cairn:if ", before_outside))
-                == len(re.findall(r"<!-- cairn:endif", before_outside)))
+        assert _open_conditionals(text[:text.index("  C sentence.")]) == 1
+        assert _open_conditionals("* [seed; id: t]\n  C sentence.\n") == 0
+
+
+def _open_conditionals(text: str) -> int:
+    return (len(re.findall(r"<!-- cairn:if ", text))
+            - len(re.findall(r"<!-- cairn:endif", text)))

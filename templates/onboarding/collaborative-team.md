@@ -80,10 +80,8 @@ candidates upstream early, rather than letting the practice lapse.
   agent type can be staffed; a team without an explicit roster
   has reviews no one can attribute, which the
   collaborative-team profile is sized past.
-<!-- cairn:if agent_team in concurrent-multi-type -->
   When you add another agent type, record it in the roster slot and walk
-  `dev/modules/onboarding/agent-team-onboarding.md`.
-<!-- cairn:endif -->
+  the agent-team tour in `dev/modules/onboarding/`.
 
 * [seed; id: walk-foldback-protocol]
   The fold-back practice: when the team improves the method

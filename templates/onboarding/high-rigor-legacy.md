@@ -45,10 +45,8 @@ goes live.
   apparatus should match the existing power structure, not
   invert it. A read from a different agent type is the Maintainer's call
   (`AGENTS.md` > Review); the usual review stays a fresh session.
-<!-- cairn:if agent_team in concurrent-multi-type -->
   When you add another agent type, record it in the roster slot and walk
-  `dev/modules/onboarding/agent-team-onboarding.md`.
-<!-- cairn:endif -->
+  the agent-team tour in `dev/modules/onboarding/`.
 
 * [seed; id: read-security-review-module]
   Read `dev/modules/security-review.md`. The high-rigor-legacy

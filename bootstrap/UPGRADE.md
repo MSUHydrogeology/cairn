@@ -111,9 +111,12 @@ install report ends with a line that says where they are. A project that is
 already installed needs no change for this.
 
 If your project installed Cairn before this change, `upgrade --plan` prints one
-line, `removed-upstream 9`, naming the nine files. The line is informational
-and repeats on later plans. Plan, stage and apply leave the nine files and
-their lockfile records untouched. The files do nothing unless someone runs
+`removed-upstream` line that names every retired file your project still has.
+The number on the line counts all of them, so it can be larger than nine: a
+project installed from 0.4 also has `dev/NEXT_SESSION.md`, and the line says
+`removed-upstream 10`. The nine helper files are among them. The line is
+informational and repeats on later plans. Plan, stage and apply leave the nine
+files and their lockfile records untouched. The files do nothing unless someone runs
 them.
 
 Leave the nine files where they are. **Do not delete them.** A deleted file
