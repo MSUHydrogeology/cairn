@@ -49,14 +49,6 @@
       "verbatim": false
     },
     {
-      "dst": "dev/NEXT_SESSION.md",
-      "hash": "sha256:e705160e5b617280dbfcad00b08453332b57f16ce06f8dd239375ce1672bb1cc",
-      "living_state": true,
-      "src": "core/dev/NEXT_SESSION.md",
-      "unrecoverable_base": true,
-      "verbatim": false
-    },
-    {
       "dst": "dev/PLANNING.md",
       "hash": "sha256:056a68181d220ef9ba414a616b4dd550e6bb753344d77c7f37af5aa5387e8e28",
       "living_state": true,
@@ -75,14 +67,6 @@
       "dst": "dev/agent_collaboration.md",
       "hash": "sha256:f6dc9f04f215b0e70ae0481a2c71c77416df8624f6f80efdb56cbb2d254483d3",
       "src": "core/dev/agent_collaboration.md",
-      "unrecoverable_base": true,
-      "verbatim": false
-    },
-    {
-      "dst": "dev/collaboration_agreement.md",
-      "hash": "sha256:1abc6b3f4121099f1864055683e3e78a560b1f042c01235fcc197d4b9831ca60",
-      "living_state": true,
-      "src": "core/dev/collaboration_agreement.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
@@ -271,62 +255,6 @@
       "verbatim": false
     },
     {
-      "base_hash": "sha256:96ffbb4bb647cf964397e0a12b365300b150448c876bdc784622757a6d406d4f",
-      "dst": "scripts/_onboarding/__init__.py",
-      "hash": "sha256:a870a4eb190548f450d8741310e09f57a91cdd81c75a8fcec02ceff115815adf",
-      "src": "modules/default-on/_onboarding/__init__.py",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:c0c4678fdd6df56bc3c3d0568796ad2c115b8d8999cddb5625ec42c2eaf71d5d",
-      "dst": "scripts/_onboarding/activation.py",
-      "hash": "sha256:dd62576cddf1afd72f823a8f13b118bd2b3d332b296d479334b7259ca87a305f",
-      "src": "modules/default-on/_onboarding/activation.py",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:cc5e399fbc7c1a5212a0af32481d5df559a43555356f7d901a4ccadcb768ca22",
-      "dst": "scripts/_onboarding/cli.py",
-      "hash": "sha256:470e7ff510bc9ce0ece1ecac26e08c3fb554db2560e7778b8598996f4f8f2d83",
-      "src": "modules/default-on/_onboarding/cli.py",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:d0b184798376b1c0547fb31716ad307aca3ac826a0ca2833af908912ed4a413b",
-      "dst": "scripts/_onboarding/prompts.py",
-      "hash": "sha256:d0e511f564a7e62391d848b3c3d6adaa7e543ae4e743c908c8e48f66185941ed",
-      "src": "modules/default-on/_onboarding/prompts.py",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:719598ff530db4ef235c7ddb68bc4aa0ff27ae9f593b2b67d2823df489501513",
-      "dst": "scripts/_onboarding/security.py",
-      "hash": "sha256:18680b45be60dfd7b4d2a364c0e192e5fb551e2eb45305d869172b2b276c794c",
-      "src": "modules/default-on/_onboarding/security.py",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:2df82aebc4889f7ac56086676d1937e7be38fff2c4cd556a07314eee33c3d1e2",
-      "dst": "scripts/_onboarding/shared.py",
-      "hash": "sha256:8bc99ba39dfb4f0e4195cf6a9619dd8fd7eaafce33209cd81d776c1debcadee7",
-      "src": "modules/default-on/_onboarding/shared.py",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:86dd6fea6d91e4c13c92a0a349f914890b33eb89b9ba2f002821792af9902437",
-      "dst": "scripts/_onboarding/slotparse.py",
-      "hash": "sha256:dbaa39faec64f3308d701de67ee67d697cf9d8d2424c7422f8b4775c1b88195f",
-      "src": "modules/default-on/_onboarding/slotparse.py",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:e7981225094ee2535ca15e1d30ff32c7934fa5bcb65405b6d5a031e6d1a79749",
-      "dst": "scripts/_onboarding/triggers.py",
-      "hash": "sha256:22976966021cf657557b716a141638e5702cb46d66025db5b91fb08172f0bbf4",
-      "src": "modules/default-on/_onboarding/triggers.py",
-      "verbatim": true
-    },
-    {
       "base_hash": "sha256:d8b2c72e1457c40d25e96988d2876aa4491885380482fdba3060b7a3d8ae83d0",
       "dst": "scripts/bootstrap_github_labels.py",
       "hash": "sha256:9e29302b00f58c8b126a09567fc3fba7c0ce93d6edd873f1d4cd93c3fbf4fa29",
@@ -394,13 +322,6 @@
       "dst": "scripts/link_check.py",
       "hash": "sha256:38cc90587065f504553e58f8bfe9e447185cb31af634ed54712176433a1afe7c",
       "src": "modules/team-gated/link_check.py",
-      "verbatim": true
-    },
-    {
-      "base_hash": "sha256:113cb1de3d738716ad1d758798ff2fd0485e71b036f5fe76945fd1b222e66e28",
-      "dst": "scripts/onboarding_activate.py",
-      "hash": "sha256:41d524aa54ae713bb95409504ca731aad858394e2d269124cddd98ee197c6f9b",
-      "src": "modules/default-on/onboarding_activate.py",
       "verbatim": true
     },
     {
