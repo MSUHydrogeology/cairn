@@ -43,7 +43,8 @@ shape validator -- absoluteness, schema, symlink-freedom, the executable bit --
 and deliberately not an authenticator: it establishes nothing about Python
 identity or provenance.  One check on where the file came from comes after those:
 a binding that git tracks, or that sits behind a link or inside a submodule, or
-that git cannot be asked about, is not used (see `_binding_untrusted`).  Changes to its schema,
+that git cannot be asked about, or that names a program inside the project which
+git tracks, is not used (see `_binding_untrusted`).  Changes to its schema,
 validation order, fallback disposition, warning visibility, or subprocess use
 take a Security Review.
 
@@ -542,7 +543,8 @@ def _assert_within(path: Path, base: Path) -> None:
         resolved.relative_to(base.resolve())
     except ValueError:
         raise LifecycleError(
-            f"refusing to write outside {base}: {path}"
+            f"refusing to write outside {encode_display(str(base))}: "
+            f"{encode_display(str(path))}"
         )
 
 
@@ -730,6 +732,13 @@ _BINDING_IN_SUBMODULE = (
     "interpreter.  To fix it: keep the binding outside the submodule (delete "
     "dev/.cairn/local-env.json, then re-run the Cairn scaffold install)."
 )
+_INTERPRETER_TRACKED = (
+    "the interpreter named by dev/.cairn/local-env.json is inside the project and "
+    "tracked by git, so a checkout can replace it.  It was not used: this run uses "
+    "the current interpreter.  To fix it: name an interpreter that git does not "
+    "track (delete dev/.cairn/local-env.json, then re-run the Cairn scaffold install "
+    "from the interpreter you want)."
+)
 _BINDING_UNVERIFIED = (
     "could not ask git whether dev/.cairn/local-env.json is tracked, so it was "
     "not used: this run uses the current interpreter.  Check that git works in "
@@ -773,7 +782,8 @@ def _binding_git_env() -> dict:
     return env
 
 
-def _binding_untrusted(root: Path, cfg: Path) -> Optional[str]:
+def _binding_untrusted(root: Path, cfg: Path,
+                       interpreter: Optional[Path] = None) -> Optional[str]:
     """Why the binding file *cfg* must not be used although its shape is fine,
     or ``None`` when it may be.
 
@@ -788,9 +798,15 @@ def _binding_untrusted(root: Path, cfg: Path) -> Optional[str]:
     * git's index has an entry that a case- and normalization-insensitive
       volume would open as the same file (`_canonical_caseless`).  Git's own
       case-insensitive matching is ASCII-only, so the whole index is read and
-      compared here; or
+      compared here.  Volumes differ in which spellings they equate, so a
+      folded name is not the only test: an entry that is the same file on disk
+      (same device and inode) counts too, and the refusal then names the entry
+      git tracks, so that ``git rm`` can be given the right name;
     * an entry of the index is a submodule that holds the binding's path -- the
-      files inside are another repository's, which this question cannot see; or
+      files inside are another repository's, which this question cannot see;
+    * *interpreter* (the program the binding names) lies inside the project and
+      git tracks it, or a submodule holds it: a checkout replaces an ignored
+      file in place, so the program could change without the binding changing; or
     * git cannot answer -- not installed, an error, no answer in time, output
       it does not understand.  An unanswered question is not an answer of "no".
 
@@ -801,6 +817,19 @@ def _binding_untrusted(root: Path, cfg: Path) -> Optional[str]:
         _assert_not_linked(cfg, root)
     except LifecycleError:
         return _BINDING_LINKED
+    try:
+        cfg_id = _identity(os.stat(cfg))
+        dev_id = _identity(os.lstat(root / _CAIRN_STATE_DIR[0]))
+        state_id = _identity(os.lstat(_state_dir(root)))
+    except OSError:
+        return _BINDING_UNVERIFIED
+    interpreter_target: Optional[str] = None
+    if interpreter is not None:
+        try:
+            interpreter_target = _canonical_caseless(
+                Path(interpreter).relative_to(root.resolve()).as_posix())
+        except (OSError, ValueError):
+            interpreter_target = None
     try:
         proc = subprocess.run(
             ["git", "ls-files", "-z", "--cached", "--stage"],
@@ -816,18 +845,52 @@ def _binding_untrusted(root: Path, cfg: Path) -> Optional[str]:
     if proc.returncode != 0:
         return _BINDING_UNVERIFIED
     target = _canonical_caseless(_BINDING_RELATIVE)
+    interpreter_hit = False
     for record in proc.stdout.split(b"\0"):
         if not record:
             continue
         head, tab, raw_path = record.partition(b"\t")
         if not tab or not head:
             return _BINDING_UNVERIFIED
-        folded = _canonical_caseless(raw_path.decode("utf-8", "replace"))
+        entry = raw_path.decode("utf-8", "replace")
+        folded = _canonical_caseless(entry)
+        parts = entry.split("/")
+        gitlink = head.split(b" ", 1)[0] == b"160000"
         if folded == target:
-            return _BINDING_TRACKED
-        if head.split(b" ", 1)[0] == b"160000" and target.startswith(folded + "/"):
-            return _BINDING_IN_SUBMODULE
-    return None
+            return _BINDING_TRACKED if entry == _BINDING_RELATIVE else _named(
+                _BINDING_TRACKED, entry)
+        if gitlink and target.startswith(folded + "/"):
+            return _BINDING_IN_SUBMODULE if _BINDING_RELATIVE.startswith(
+                entry + "/") else _named(_BINDING_IN_SUBMODULE, entry)
+        if len(parts) == 3 and _has_identity(root / entry, cfg_id):
+            return _named(_BINDING_TRACKED, entry)
+        if gitlink and ((len(parts) == 1 and _has_identity(root / entry, dev_id))
+                        or (len(parts) == 2 and _has_identity(root / entry, state_id))):
+            return _named(_BINDING_IN_SUBMODULE, entry)
+        if interpreter_target is not None and (
+                folded == interpreter_target
+                or (gitlink and interpreter_target.startswith(folded + "/"))):
+            interpreter_hit = True
+    return _INTERPRETER_TRACKED if interpreter_hit else None
+
+
+def _identity(st: os.stat_result) -> Tuple[int, int]:
+    """What the disk calls one file: device and inode."""
+    return (st.st_dev, st.st_ino)
+
+
+def _has_identity(path: Path, identity: Tuple[int, int]) -> bool:
+    """True if *path* (not followed, if it is a link) is the file *identity*."""
+    try:
+        return _identity(os.lstat(path)) == identity
+    except (OSError, ValueError):
+        return False
+
+
+def _named(reason: str, entry: str) -> str:
+    """*reason* with the index entry that matched, when it is not spelled as the
+    binding is: the entry is checkout data, so it is printed encoded."""
+    return f"{reason}  git tracks it as {encode_display(entry)}."
 
 
 _UNTRUSTED_WARNED = False
@@ -863,12 +926,18 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
     executed.
 
     **Where the file came from is checked last.**  A binding that passed every
-    shape check is still not used if `_binding_untrusted` says so (git tracks it,
-    it sits behind a link or inside a submodule, or git cannot be asked): the
+    shape check is still not used if `_binding_untrusted` says so (git tracks it
+    or the in-project interpreter it names, it sits behind a link or inside a
+    submodule, or git cannot be asked): the
     run goes on with the
     current interpreter, source ``"fallback-untrusted"``, and a warning that
     names the fix.  The shape checks, their order and their refusals are
-    unchanged, and nothing is run before this check.
+    unchanged, and nothing is run before this check.  The check proves only that
+    git's index does not list the file now, so a binding that arrives by a
+    downloaded archive followed by `git init`, by `git apply`, or after
+    `git reset` or `git rm --cached` is used; that is an accepted residual risk
+    (`bootstrap/SAFETY.md`), to be closed later by keeping the binding where no
+    checkout, archive or patch can put a file.
 
     A structurally-valid-but-absent path **degrades** with a warning
     (``"fallback-stale"``, below).  Every other violation **refuses before
@@ -892,7 +961,7 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
 
     try:
         data = json.loads(cfg.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, ValueError) as exc:       # ValueError: bad UTF-8, bad JSON
         raise LifecycleError(
             f"{shown_cfg} is not readable JSON: {encode_display(str(exc))}.  It must be "
             '{{"interpreter": "/abs/path/to/python"}}.'
@@ -931,7 +1000,8 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
         )
     try:
         shape = _probe_interpreter(interp)
-    except OSError as exc:                     # EACCES / ELOOP / ENAMETOOLONG
+    except (OSError, ValueError) as exc:       # EACCES / ELOOP / ENAMETOOLONG / a
+        # string that cannot be a path (a lone surrogate)
         raise LifecycleError(
             f'{shown_cfg}: "interpreter" could not be inspected '
             f'({encode_display(str(exc))}): {shown_interp}.  '
@@ -946,7 +1016,7 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
         _warn_stale_once(
             f'{shown_cfg}: recorded interpreter "{shown_interp}" no longer exists -- your '
             f"environment was likely rebuilt.  Using the current interpreter "
-            f"({sys.executable}) for this run.  {_REBIND_REMEDY}"
+            f"({encode_display(sys.executable)}) for this run.  {_REBIND_REMEDY}"
         )
         return sys.executable, "fallback-stale"
     if not interp.is_file() or not os.access(interp, os.X_OK):
@@ -954,7 +1024,7 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
             f'{shown_cfg}: "interpreter" is not an executable file: {shown_interp}.  '
             f"{_REBIND_REMEDY}"
         )
-    untrusted = _binding_untrusted(root, cfg)
+    untrusted = _binding_untrusted(root, cfg, interp)
     if untrusted is not None:
         _warn_untrusted_once(untrusted)
         return sys.executable, "fallback-untrusted"
@@ -1249,7 +1319,7 @@ def _heal_skill_symlink(dst: Path, canonical: Path) -> str:
         return "relinked"
     if dst.exists():
         _warn(
-            f"{dst} exists as a non-symlink; leaving it untouched "
+            f"{encode_display(str(dst))} exists as a non-symlink; leaving it untouched "
             "(remove it to enable the skills symlink)."
         )
         return "exists-nonsymlink"
@@ -1579,7 +1649,7 @@ class HandoffLock:
             f"{encode_display(str(agent))}, pid {encode_display(str(holder_pid))} on "
             f"{encode_display(str(holder_host))}) -- refusing a concurrent handoff to "
             "protect the single-owner roadmap-scrub invariant. If you are "
-            f"certain the holder is dead, remove {self.path} manually and retry."
+            f"certain the holder is dead, remove {encode_display(str(self.path))} manually and retry."
         )
 
     def heartbeat(self) -> None:
@@ -1683,7 +1753,7 @@ def _prune_intents(root: Path, interpreter: str, days: int, *,
         if proc.returncode != 0 and proc.stderr:
             _warn(proc.stderr.strip())
     except OSError as exc:  # pragma: no cover -- defensive
-        _warn(f"intent prune failed to run: {exc}")
+        _warn(f"intent prune failed to run: {encode_display(str(exc))}")
 
 
 def _surface_intents(root: Path, interpreter: str) -> None:
@@ -1717,7 +1787,7 @@ def _surface_intents(root: Path, interpreter: str) -> None:
         if proc.returncode != 0 and proc.stderr:
             _warn(f"intent list reported: {proc.stderr.strip()}")
     except OSError as exc:
-        _warn(f"could not run intent.py list: {exc}")
+        _warn(f"could not run intent.py list: {encode_display(str(exc))}")
 
 
 
@@ -1752,7 +1822,7 @@ def _run_evolution_infer(root: Path, interpreter: str) -> None:
         if proc.returncode != 0 and proc.stderr:
             _warn(f"evolution_infer reported: {proc.stderr.strip()}")
     except OSError as exc:
-        _warn(f"could not run evolution_infer.py: {exc}")
+        _warn(f"could not run evolution_infer.py: {encode_display(str(exc))}")
 
 
 
