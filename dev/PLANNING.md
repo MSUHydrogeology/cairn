@@ -383,7 +383,16 @@ node id is unchanged, so no node is dropped). The Maintainer said of that last
 edit: "Go ahead and edit the dual-review. We need to re-anchor anyway". New
 unfrozen test files that join the next anchor include
 `test_deleted_tracked_markdown.py`, `test_writing_rules_ship.py` and
-`test_model_tier_rule_ships.py`. Do not
+`test_model_tier_rule_ships.py`. Two Security Reviews of the 0.5 proposals add a
+condition for the re-anchor: the differential oracle's sensitive-roster list
+(`bootstrap/tests/_oracle_activation.py` about lines 34-47) names
+`bootstrap/_scaffold/`, `bootstrap/security_check.py` and
+`bootstrap/tests/_gate_manifest.py`, and `bootstrap/_scaffold/config.py`, all
+unchanged since the trust anchor `6f29519d`. The onboarding change touches the
+first three and the `NEXT_SESSION` change touches `config.py`, so the
+Maintainer's authorization for the cut must name them, or the gate stays shut
+rather than passing. Both are reported by the reviewers and not re-derived here.
+Do not
 carry a list forward from this row: run `verify` on the final committed tree and
 read what it prints.
 
