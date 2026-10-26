@@ -61,6 +61,13 @@ and a new empty `Unreleased` is started above.
 
 - The plan and proposal templates say what stays out of the file: checker scripts, run briefs and probe output. Long files are read by their `##` headings. ([issue #31](https://github.com/MSUHydrogeology/cairn/issues/31))
 
+### Fixed — The board and `session-start` flag statuses outside the vocabulary
+
+- An active proposal or plan whose status is retired (`proposed`, `executing`) or not a status
+  at all is now named in one advisory line on the board and in `session-start`. Both still list
+  it and exit as before; archived records are never flagged.
+  ([#32](https://github.com/MSUHydrogeology/cairn/issues/32))
+
 ## 0.4.0 — 2026-10-20
 
 ### Added — Defect fixes under existing promises and reuse duty

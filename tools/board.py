@@ -8,10 +8,14 @@ proposal and plan, the rows of `dev/PLANNING.md` that carry one fixed wait
 marker, and, under `--maintainer`, the active plan bodies for two fixed fence
 words. `--json` prints what authors wrote in those header lines, the title
 line and the marked roadmap rows (`schema` `"cairn-board/1"`), and derives no
-value. It makes no judgment about whether a status is legal, whether a review
-cleared, or what should happen next -- those are questions for a reader
-holding the artifact, and a tool that answered them would be asserting a
-conclusion it cannot support. `--maintainer` lists what authors *declared* as
+value. It makes no judgment about whether a review cleared or what should
+happen next -- those are questions for a reader holding the artifact, and a
+tool that answered them would be asserting a conclusion it cannot support. The
+one lookup it does make is whether an active artifact's status opens with a
+word from the published vocabulary (held in `tools/session.py`, so there is one
+list); if not, one advisory line names it as retired or unknown. That line only
+warns: every artifact is still listed, archived records are never flagged, and
+`--json` is unchanged. `--maintainer` lists what authors *declared* as
 waiting on the Maintainer, and names the plans that mention a fence but
 declare nothing; it never decides whether a wait is over.
 
@@ -76,7 +80,17 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
-def _encode(limit: int = 48):
+def _session_kernel():
+    """The session kernel, which owns the terminal encoder and the status
+    vocabulary, loaded from `tools/session.py`."""
+    path = _repo_root() / "tools" / "session.py"
+    spec = importlib.util.spec_from_file_location("_cairn_session_encoder", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _encode(limit: int = 48, module=None):
     """The one terminal encoder, loaded from the session kernel.
 
     Values here come out of files any contributor can edit, so they are
@@ -84,10 +98,7 @@ def _encode(limit: int = 48):
     to fall back on: a second, weaker path engages exactly when something is
     already wrong.
     """
-    path = _repo_root() / "tools" / "session.py"
-    spec = importlib.util.spec_from_file_location("_cairn_session_encoder", path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    module = module or _session_kernel()
 
     def cell(value: str) -> str:
         text = module.encode_display(str(value))
@@ -294,7 +305,7 @@ def _json_document(root: Path, include_archive: bool) -> Dict[str, object]:
 
 
 def _render(rows: List[Dict[str, str]], encode,
-            skipped: Optional[List[str]] = None) -> str:
+            skipped: Optional[List[str]] = None, advisory: str = "") -> str:
     cols = ["kind", "artifact"] + [f for f in _FIELDS
                                    if any(r.get(f) for r in rows)] + ["archived"]
     if not any(r.get("archived") for r in rows):
@@ -304,6 +315,8 @@ def _render(rows: List[Dict[str, str]], encode,
         lines.append("board: " + " | ".join(encode(r.get(c, "")) for c in cols))
     lines.append(f"board: {len(rows)} row(s). Derived from header blocks; the "
                  f"artifact is authoritative.")
+    if advisory:
+        lines.append(f"board: {advisory}")
     for rel in skipped or ():
         lines.append(f"board: skipped (symbolic link, not read): {encode(rel)}")
     return "\n".join(lines)
@@ -373,14 +386,19 @@ def main(argv: Optional[List[str]] = None) -> int:
             return 1
         print(json.dumps(doc, ensure_ascii=True, indent=2, sort_keys=True))
         return 0
-    encode = _encode()
+    kernel = _session_kernel()
+    encode = _encode(module=kernel)
     try:
         if args.maintainer:
             print(_render_waiting(_waiting(root), encode))
             return 0
         skipped: List[str] = []
         rows = _rows(root, args.archive, skipped)
-        print(_render(rows, encode, skipped))
+        advisory = kernel._status_advisory(
+            [(r["artifact"], r["kind"], r["Status"])
+             for r in rows if not r["archived"]],
+            _encode(limit=200, module=kernel))
+        print(_render(rows, encode, skipped, advisory))
         return 0
     except _BoardSourceError as exc:
         print(f"board: error: cannot read {encode(exc.rel)} ({exc.reason})",
