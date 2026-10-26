@@ -942,6 +942,15 @@ def test_a_symlinked_target_or_parent_is_not_followed(bed):
     assert (bed.root / "moved_fixtures/scaffold_ast_baseline.json").read_bytes() == original
 
 
+def test_a_directory_in_place_of_an_output_is_a_refusal_and_not_a_crash(bed):
+    owe_a_pin(bed)
+    code = ("R.check_preconditions = lambda ctx: None\nctx = R.boot(REPO, TMP)\nraw = R.package(ctx, CDIR)\n"
+            "p = REPO / 'bootstrap/tests/fixtures/scaffold_ast_baseline.json'\np.unlink()\np.mkdir()\n"
+            "outcome(lambda: R.apply_pin(ctx, CDIR, raw))\n")
+    out = snippet(bed, code, YES)[1]
+    assert "RESULT: refused: " in out and "Traceback" not in out, out
+
+
 def test_a_planted_temporary_name_link_is_not_followed(bed):
     owe_a_pin(bed)
     outside = bed.root / "outside.json"
