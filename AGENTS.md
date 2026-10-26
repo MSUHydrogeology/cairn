@@ -432,9 +432,10 @@ and route by layer.
 code and use or extend it, naming the search in the plan or commit body and,
 if the project has a shared-code map, naming it in the project's conventions.
 
-**Local cost-bar examples.** A one-line engine change still needs a proposal
-and Security Review, and an AST correction beyond self-service is Maintainer-run;
-a frozen-file edit owes the gate-manifest ceremony. Prescribed test runtime
+**Local cost-bar examples.** A one-line engine change needs a proposal and
+Security Review unless it is a defect repair meeting the lifecycle's three
+conditions; that repair is trivial but still ends at the Maintainer-run AST
+re-anchor. A frozen-file edit owes the gate-manifest ceremony. Prescribed test runtime
 is machine time, not a reason to defer. Ordinary prose no test or manifest
 pins is the cheap case when no other person-step is required.
 
