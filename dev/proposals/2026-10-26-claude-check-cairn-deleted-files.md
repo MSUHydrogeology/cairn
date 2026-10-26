@@ -366,3 +366,118 @@ second-round review, each by the satisfier that review names: SR1, the
 `docs/tool-usage.md`; SR2, the skip line's missing tool name, either stated as
 deliberate or passed in, with the test matching; SR3, a sentence saying the
 self-hosted `dev/.cairn/cairn-lock.yml` is not refreshed by this change.
+
+## Code review -- Claude Sonnet 5.5 (fresh session) -- 2026-10-26
+
+```
+Reviewed commit: 9ec53a43 (parent f58c5ed0, the Decision)
+Target: the implementation against the Revision of 2026-10-26 and the Decision's SR1 to SR3
+Prior findings: SR1 to SR3 (second-round review), folded in by the Decision
+Interpreter: /Users/kendal30/conda_envs/lhm/bin/python3.13 (Python 3.13.13)
+```
+
+**Tier**: usual (code review by a fresh reviewer who did not write the work; no External call)
+**Findings**: raised (one Medium, two Low)
+**Verdict**: REVISE -- the change does what it claims for a deleted file and a dangling symlink, but it turns one loud failure into a quiet wrong answer (CR1). Fix CR1, then proceed to archive.
+**Bounding**: FULL RUN REQUIRED
+
+**Foundations**:
+
+1. **Does it really do what it claims?** For the case it was built for, yes: with a tracked file deleted from disk, all three scans complete, a document linking to the deleted file is still flagged, and the skip count is printed (M1, M2; ledger rows A1 to A4). It does not hold for a file whose name git quotes (any non-ASCII name): that file is present on disk, yet it is dropped from the scan and reported as "not present on disk" (CR1; ledger row B4).
+2. **Best alternative.** The build is the simple one and I would not replace it. One small change makes it safer: ask git for NUL-separated names (`ls-files -z`), which Cairn's own `scripts/content_scan_runner.py:262` already does, so the names arrive unquoted (M7 shows this reaches the cause).
+3. **What would show it wrong.** The Revision's own signal, "a readable file is skipped". I tried to produce it and did, in the falsification ledger below (B4). The same ledger records the cases that held.
+
+### Falsification ledger
+
+Everything ran in detached worktrees of `9ec53a43` (and of its parent for the "before" side), in my scratch directory, under Python 3.13.13. The main tree was not written. `CAIRN_FULL_SUITE` was not set. Each case ran the script's real command line (`python scripts/<name>.py --root <repo>`) in a throwaway git repository.
+
+**Control runs.**
+
+| # | Control | Result |
+|---|---|---|
+| C1 | New test file, unmutated, at `9ec53a43` | 10 passed in 1.6 s |
+| C2 | The same test file copied into a worktree of the parent `f58c5ed0`, run against the unfixed scripts | 8 failed, 2 passed. The two that pass are the "explicitly named missing file still raises" nodes. The commit body's "8 of 10 failed before" is reproduced |
+| C3 | The implementer's reported bounded set (new file, `test_doc_drift_tools`, `test_link_check_exclusions`, `test_loop_fidelity_gate`, `test_check_cairn_counts`, `test_check_cairn_content`, `test_content_scan`, `test_notice_install`, `test_practice_modules`, `test_gate_manifest`, `test_security_check`) at `9ec53a43` | 425 passed in 52 s. The reported figure (425 in 51 s) reproduces |
+| C4 | Fourteen further test files that install modules, upgrade, or read the shipped scripts and were not in the reported set (`test_scaffold`, `test_upgrade`, `test_upgrade_module_additions`, `test_profiles_smoke`, `test_lockfile_provenance`, `test_reference_scripts`, `test_doc_governance`, `test_presets`, `test_security_net`, `test_security_stack`, `test_security_lint`, `test_security_verification`, `test_generated_output_scan`, `test_claim_check_module`) | 729 passed, 0 failed, 1 min 46 s. This is a targeted check of the bound, not the full suite |
+
+**A. Cases that held** (before = parent commit, after = `9ec53a43`; each across `link_check`, `sync_doc_snippets`, `check_cairn`):
+
+| # | Case | Before | After | New or old |
+|---|---|---|---|---|
+| A1 | Tracked file deleted from disk | `FileNotFoundError` in all three | completes, "skipped 1" line | the defect, fixed |
+| A2 | `--root` is a subdirectory of the repo, one deleted file inside it and one outside | `FileNotFoundError` | completes, "skipped 1" (only the file under the root is counted) | fixed |
+| A3 | Tracked `.md` is now a directory | `IsADirectoryError` | completes, "skipped 1" | fixed |
+| A4 | Unreadable but present file (mode 000) | `PermissionError` | `PermissionError` | unchanged, as the Revision's signals require |
+| A5 | Tracked symlink to a file outside the repo | `link_check` and `check_cairn` scan it and exit 0; `sync_doc_snippets` refuses ("outside the repo root") | identical | unchanged, not this change's |
+| A6 | A name with a space | scanned | scanned | unchanged |
+
+**B. Cases that failed or were left open.**
+
+| # | Case | Before | After | Verdict |
+|---|---|---|---|---|
+| B4 | A tracked `café doc.md` (non-ASCII name) that exists on disk and contains a broken link | `FileNotFoundError` (git prints the name as `"caf\303\251 doc.md"` with quotes, and the code treats those quotes as part of the path) | exit 0, "OK -- 1 Markdown file(s) scanned; no issues", and the stderr line "skipped 1 tracked Markdown file(s) not present on disk". The file was never read; its broken link is not reported | **CR1**. The old crash was a bug of its own; the filter turns it into a false pass |
+| B5 | The same repository with `ls-files -z` and NUL splitting applied by hand to all four copies, in a separate copy | not applicable | 3 files scanned, broken link flagged (exit 1) in `link_check` and `check_cairn`; the 58 tests in the new file, `test_link_check_exclusions`, `test_doc_drift_tools` and the twin-parity node all pass | the satisfier for CR1 works |
+| B6 | Cairn's own tracked tree | `git ls-files '*.md'` lists no quoted name (`git ls-files '*.md' | grep -c '^"'` prints 0) | not applicable | Cairn is not hit; an adopter with non-ASCII file names (accented or non-Latin names) is |
+
+**C. Mutation ledger (every member of the set).** The set, listed from the tree with `git grep` over `scripts`, `templates`, `bootstrap` and `tools`: `tracked_markdown()` in `scripts/link_check.py`, its twin `templates/modules/team-gated/link_check.py` (the copy `check_cairn` loads, `scripts/check_cairn.py:98` and `:136`), `scripts/sync_doc_snippets.py` and its twin, and `check_cairn`'s call site (`scripts/check_cairn.py:542`). The other `git ls-files` users are not default Markdown scans: `scripts/content_scan_runner.py` (and its twin) already uses `-z` and skips an absent file (`is_file()` then `continue`, `:358`; read, not run), `scripts/correct_pinned_digests.py:96` tests one named path, and `tools/session.py:806` reads the index with `--stage`. Each mutant was made in a separate copy and reset afterwards. "Behaviour" is the new test file; "parity" is `test_every_self_hosted_twin_stays_byte_identical_to_its_source`.
+
+| Mutant | Behaviour tests | Parity test | Result |
+|---|---|---|---|
+| Control (no mutation) | 10 pass | pass | baseline |
+| M1 filter removed, `scripts/link_check.py` | 3 fail (link_check) | fails | killed |
+| M2 filter removed, `link_check.py` template | 3 fail (check_cairn) | fails | killed |
+| M3 filter removed, `scripts/sync_doc_snippets.py` | 2 fail (sync_doc_snippets) | fails | killed |
+| M4 filter removed, `sync_doc_snippets.py` template | none | fails | killed by parity only. No behaviour test runs this copy |
+| M5 `check_cairn` back to its own unfiltered copy | 3 fail (check_cairn) | pass | killed |
+| M6 to M9 skip line removed, one copy each | 1 fails (M6, M7, M8); none (M9) | fail | killed; M9 by parity only |
+| M10, M11 `is_file()` to `exists()`, one copy only | none | fails | killed by parity only |
+| M10b `is_file()` to `exists()` in all four copies together | none | pass | **survived**; not equivalent: a tracked path that is now a directory goes back to `IsADirectoryError` in all three scripts (measured). See CR2 |
+| M12, M13 skip line printed on every run | 1 fails each | fail | killed |
+
+Tally: 14 mutants made (M1 to M13 and M10b); 13 killed (4 of those, M4, M9, M10 and M11, only by the parity test and by no behaviour test), 1 survived (M10b), 0 equivalent. The control is clean after each reset (11 passed).
+
+### Bounding verdict
+
+**FULL RUN REQUIRED.** The implementer reports a `bounded` run (425 passed in 51 s, Python 3.13, `**Certified by**: pending`), and I reproduced the number (C3). I rule it cannot stand as `bounded`, for three reasons:
+
+1. **It touches contract surfaces.** The gate manifest pins the bytes of five edited files (`frozen_files` in `bootstrap/tests/fixtures/gate_manifest.json` lists `scripts/check_cairn.py`, both `link_check.py` copies and both `sync_doc_snippets.py` copies; `_gate_manifest.py verify` at this commit reports `FROZEN-MODIFIED` and `FROZEN-OID` for each). Both templates are installed `verbatim=True` into adopters (`bootstrap/_scaffold/config.py:924-927`), so their bytes are what adopters receive and what the upgrade path hashes (`bootstrap/UPGRADE.md:229`). AGENTS.md says bounded mode refuses for "the install contract" and "the fidelity or gate manifest", and that uncertainty resolves to full. The Revision itself said the same ("the shipped templates and frozen files mean uncertainty resolves to full").
+2. **No valid record exists in the commit body.** AGENTS.md puts a no-plan change's Boundary B record in its commit body, before the commit. This commit's body says Boundary B "follow[s] separately". The 425 figure arrived later, in a report. That is a missing record, one of the triggers for a fresh full run.
+3. **CR1 changes the bytes again.** Fixing it edits the same four shipped files, which invalidates any record taken at `9ec53a43`.
+
+The challenge I made to the bound found no failure outside it: 729 tests the report left out passed (C4). That is evidence the bound was reasonable, not a reason to accept it. What "full" requires here is a scoped record with `**Certified by**: pending` and the next certifying run; I did not run the suite and will not. The record for the CR1 fix commit should carry the mode (`full`), interpreter, the tests above, and counts in its commit body.
+
+### Findings
+
+**CR1 -- Medium -- fix before archive: a present file with a non-ASCII name is skipped and reported as absent.**
+
+*Plain.* Git prints a file name containing a non-ASCII character in quotes with octal escapes (`"caf\303\251.md"`) unless asked for NUL-separated output. The scans read git's lines as paths, so a file like `café.md` was already crashing them. After this change the same file is quietly dropped: it is never read, the scan says "OK", and the only hint is a stderr line claiming the file is "not present on disk", which is false. That is the Revision's own signal ("a readable file is skipped") and the new docstring's promise ("paths that exist on disk"). Cairn's own tree has no such name (B6), so no test or gate here sees it; an adopter with accented or non-Latin file names would.
+
+*Evidence.* B4 and B5, on all three scripts.
+
+*Satisfier.* In the four `tracked_markdown()` copies, pass `-z` to `git ls-files` and split on NUL instead of newline (B5 shows it reaches the cause and breaks none of the 58 tests I ran). Add one test node: a present file with a non-ASCII name and a broken link, expecting it scanned and the link flagged (exit 1) in `link_check` and `check_cairn`. The easy-defect permission fits: the promise broken is the one this commit wrote into the docstring, the files are already edited, and no rule text changes. It is not cheap if it slides into a different design; keep it to `-z` and the split. The pre-existing crash and this false pass are the same defect, so one fix closes both.
+
+**CR2 -- Low -- non-blocking: "the path is now a directory" is not pinned, and one mutation survives.**
+
+*Plain.* The docstring says files that exist on disk; the code uses `is_file()` so a directory is skipped and counted (A3). No test fails if `is_file()` becomes `exists()` in all four copies, and then the directory case is a traceback again (M10b).
+
+*Satisfier.* One test node alongside the others: replace a tracked `.md` with a directory, expect no traceback and "skipped 1". Add it in the same commit as CR1.
+
+**CR3 -- Low -- non-blocking: the Boundary B record is missing from the commit and is labelled `bounded`.**
+
+*Plain.* See the Bounding verdict. The verification the commit body reports is Boundary A (scoped), which is fine; the Boundary B record is promised for later and the later figure is not in any commit.
+
+*Satisfier.* Put the Boundary B record (`full`, Python 3.13, tests, counts, `Certified by: pending`) in the body of the commit that fixes CR1 and CR2. Nothing else is owed by the implementer; the certifying run comes at the next integration point.
+
+### SR1 to SR3
+
+* **SR1 -- closed.** `scripts/link_check.py:49` and its template twin now read "whole tracked tree (files on disk)"; `docs/tool-usage.md` gained the sentence at its `link_check` entry; `scripts/check_cairn.py:50` says "that exists on disk". The twin-parity test passes (C3). `bootstrap/SAFETY.md:141` describes the filter, not the existence rule, and needs no change.
+* **SR2 -- closed.** The docstring of each `tracked_markdown()` says the line names no tool on purpose because `check_cairn` calls the same function. The tests assert the bare text (`skipped 2 tracked Markdown file(s) not present on disk`), and mutants M6 to M9 and M12, M13 confirm they bind it.
+* **SR3 -- closed.** The commit body says the self-hosted `dev/.cairn/cairn-lock.yml` is not refreshed and its two hashes go stale. I checked: the lock's hashes for `scripts/link_check.py` and `scripts/sync_doc_snippets.py` equal the parent commit's file bytes and differ from the new ones. The Decision asked for "a sentence", not a place; a commit body is a durable home. If the Maintainer wants it in a document the next regenerator will read, that is theirs to say.
+
+### Tests
+
+`bootstrap/tests/test_deleted_tracked_markdown.py` runs each script's real command line (a subprocess of `python scripts/<name>.py --root <repo>`, so the path a person or a hook runs, including `main()`), not a helper. The "8 of 10 failed before" claim reproduces exactly (C2). Names state the property, and the docstrings carry the reason, with no finding or chunk coordinates, as AGENTS.md asks. Gaps: no non-ASCII name (CR1), no directory (CR2), and no behaviour test reaches the `sync_doc_snippets` template copy, which only the parity test guards (M4, M9).
+
+Coverage -- **Covered**: lens 1 (claims: the 8-of-10 and 425 figures reproduced, the docstring's "exists on disk" tested against A3 and B4), lens 2 (production path: real command lines, every script), lens 3 (edge cases: A1 to A6, B4), lens 4 (silent failure: B4 is one), lens 5 (set and callers: listed from the tree, mutated), lens 6 (drift: SR1 to SR3 opened against the lock and docs), lens 7 (ordering against the queued re-anchor: `_gate_manifest.py verify` shows the five files plus the owed test file, as the commit says), lens 9 (each finding names a satisfier). **Not covered / low confidence**: I did not run the full suite, the certifying pair, or the re-anchor (not mine); I did not run an adopter install or upgrade of the changed templates (the second-round review did, at the earlier commit); I read but did not run `content_scan_runner`'s handling of an absent file; I did not test Windows paths, a sparse checkout, a submodule, or a `--root` outside any git repository (that last case raises a `CalledProcessError` before and after).
+
+**Status** stays `accepted`: this proposal has no plan, so the code review does not move it. Archiving it is the implementing-commit housekeeping that AGENTS.md and the lifecycle doctrine leave until review has passed; it is owed after CR1 to CR3 are answered.
