@@ -113,3 +113,45 @@ def test_an_explicitly_named_missing_file_still_fails_loudly(tmp_path, script):
     proc = _run(script, repo, str(repo / "gone.md"))
     assert proc.returncode != 0
     assert "FileNotFoundError" in proc.stderr, proc.stderr
+
+
+@pytest.mark.parametrize("script", _SCANS)
+def test_a_present_file_with_a_non_ascii_name_is_scanned_not_skipped(
+        tmp_path, script):
+    """Without ``-z``, git prints such a name quoted with octal escapes, so
+    the path never resolves.  The scan must read the file, not report it as
+    absent: here its broken link has to be found."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    (repo / "café doc.md").write_text(
+        "# Café\n\nSee [nothing](missing-target.md).\n", encoding="utf-8")
+    _git(repo, "add", "--all")
+    _git(repo, "commit", "-q", "-m", "seed")
+    proc = _run(script, repo)
+    assert "Traceback" not in proc.stderr, proc.stderr
+    assert "skipped" not in proc.stderr, proc.stderr
+    if script in _LINK_REPORTING_SCANS:
+        assert proc.returncode == 1, proc.stdout + proc.stderr
+        assert "missing-target.md" in proc.stderr, proc.stderr
+    else:
+        assert "1 doc(s) scanned" in proc.stdout + proc.stderr, proc.stdout
+
+
+@pytest.mark.parametrize("script", _SCANS)
+def test_a_tracked_path_that_is_now_a_directory_is_skipped_and_counted(
+        tmp_path, script):
+    """``exists()`` would let a directory through and the read would raise
+    ``IsADirectoryError``; only a regular file (or a link to one) is scanned."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    (repo / "keep.md").write_text("# Keep\n", encoding="utf-8")
+    (repo / "was-a-file.md").write_text("# Was a file\n", encoding="utf-8")
+    _git(repo, "add", "--all")
+    _git(repo, "commit", "-q", "-m", "seed")
+    (repo / "was-a-file.md").unlink()
+    (repo / "was-a-file.md").mkdir()
+    proc = _run(script, repo)
+    assert "Traceback" not in proc.stderr, proc.stderr
+    assert f"skipped 1 {_SKIP_LINE}" in proc.stderr, proc.stderr

@@ -494,11 +494,13 @@ def tracked_markdown(root: Path) -> list[Path]:
     both are dropped and counted.  The note on stderr names no tool on
     purpose: ``check_cairn`` calls this same function, so a tool-name prefix
     here would sometimes name the wrong tool."""
+    # -z: NUL-separated, unquoted names.  Without it git prints a name with
+    # non-ASCII characters quoted with octal escapes, which never resolves.
     out = subprocess.run(
-        ['git', 'ls-files', '*.md'], cwd=str(root),
+        ['git', 'ls-files', '-z', '*.md'], cwd=str(root),
         capture_output=True, text=True, check=True,
     )
-    listed = [root / line for line in out.stdout.splitlines() if line.strip()]
+    listed = [root / name for name in out.stdout.split('\0') if name]
     present = [path for path in listed if path.is_file()]
     skipped = len(listed) - len(present)
     if skipped:
