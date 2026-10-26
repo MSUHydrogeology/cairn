@@ -1069,23 +1069,38 @@ _STATUS_VOCABULARY = {
              "ready-to-archive", "archived"),
 }
 
-#: Old words that stay readable on archived records and are refused on an
-#: active one; named as retired so the reader is told what happened to them.
-_RETIRED_STATUSES = ("proposed", "reviewed", "revised", "executing")
+#: Old words that stay readable on archived records and are named "retired"
+#: on an active one. `proposed`, `reviewed` and `revised` are the three the
+#: lifecycle doctrine names (doctrine/lifecycle.md, the paragraph on the
+#: earlier flat tokens). `open`, `executing` and `review` were the plan states
+#: retired with them (commit 3defdb78, "retire the legacy status vocabulary").
+_RETIRED_STATUSES = ("proposed", "reviewed", "revised",
+                     "open", "executing", "review")
 
 #: The word a status line opens with, before any note (`awaiting-decision --
-#: ...`, `implementing (round 2)`). Underscores and digits stay inside the word,
-#: so `awaiting-decision2` is a different word from `awaiting-decision`.
-_STATUS_WORD_RE = re.compile(r"^`?(?P<word>[A-Za-z][A-Za-z0-9_-]*)")
+#: ...`, `implementing (round 2)`). Underscores, digits and hyphens stay inside
+#: the word, so `awaiting-decision2` and `awaiting-decision-x` are different
+#: words from `awaiting-decision`. The word must end at the end of the text, a
+#: space or tab, or ASCII punctuation: a non-ASCII or invisible character
+#: right after it (`awaiting-decision` plus a zero-width space) makes the word
+#: something else rather than being silently dropped.
+_STATUS_WORD_RE = re.compile(
+    r"^`?(?P<word>[A-Za-z][A-Za-z0-9_-]*)(?=\Z|[ \t]|[!-,./:-@\[-^`{-~])")
+
+#: Most names one advisory line spells out; the rest are counted.
+_ADVISORY_NAME_LIMIT = 10
 
 
 def _status_problem(kind: str, status: str) -> str:
     """`""` if `status` opens with an allowed word for `kind` ("proposal" or
     "plan"), else `"retired"` or `"unknown"`. A blank status, or this survey's
-    own placeholder for a line it could not read, has nothing to judge."""
-    if not status.strip() or status in ("(unspecified)", "(no status line)"):
+    own placeholder for a line it could not read, has nothing to judge. Bold or
+    italic asterisks around the value are not part of the word (the board hands
+    over its raw header value; session-start has already stripped them)."""
+    text = status.strip().strip("*").strip()
+    if not text or text in ("(unspecified)", "(no status line)"):
         return ""
-    match = _STATUS_WORD_RE.match(status.strip())
+    match = _STATUS_WORD_RE.match(text)
     word = match.group("word") if match else ""
     if word in _STATUS_VOCABULARY[kind]:
         return ""
@@ -1096,32 +1111,49 @@ def _status_advisory(items: List[Tuple[str, str, str]], encode) -> str:
     """One advisory line naming active artifacts whose status is outside the
     vocabulary, or `""` when there are none. `items` is `(name, kind, status)`;
     `encode` renders an untrusted value inert for the terminal, and the caller
-    adds its own line prefix. This only warns: every artifact stays listed."""
+    adds its own line prefix. This only warns: every artifact stays listed. The
+    line spells out the first ten and counts the rest."""
     found = []
+    total = 0
     for name, kind, status in items:
         problem = _status_problem(kind, status)
         if problem:
-            found.append(f"{encode(name)} ({encode(status.split()[0])}: {problem})")
-    if not found:
+            total += 1
+            if len(found) < _ADVISORY_NAME_LIMIT:
+                found.append(
+                    f"{encode(name)} ({encode(status.split()[0])}: {problem})")
+    if not total:
         return ""
-    noun = "artifact carries" if len(found) == 1 else "artifacts carry"
-    return (f"advisory -- {len(found)} active {noun} a status outside the "
-            f"vocabulary: {', '.join(found)}. The allowed statuses are in "
+    noun = "artifact carries" if total == 1 else "artifacts carry"
+    listing = ", ".join(found)
+    if total > len(found):
+        listing += f", and {total - len(found)} more"
+    return (f"advisory -- {total} active {noun} a status outside the "
+            f"vocabulary: {listing}. The allowed statuses are in "
             f"AGENTS.md > The lifecycle.")
 
 
-def _in_flight_status_advisory(root: Path) -> str:
-    """The advisory line for the open proposals and plans under `root`."""
+def _in_flight_items(root: Path) -> List[Tuple[str, str, str]]:
+    """`(kind, file name, status)` for each open proposal and plan under
+    `root`, `kind` being `"proposal"` or `"plan"`. The one walk behind the
+    in-flight list and the status advisory, so they cannot disagree about which
+    files count."""
     items: List[Tuple[str, str, str]] = []
-    for kind in ("proposals", "plans"):
-        base = root / "dev" / kind
+    for kind in ("proposal", "plan"):
+        base = root / "dev" / f"{kind}s"
         if not base.is_dir():
             continue
         for path in sorted(base.glob("*.md")):
             if path.name != "_template.md":
-                items.append((f"{kind}/{path.name}", kind[:-1],
-                              _status_of(path)))
-    return _status_advisory(items, _safe_field)
+                items.append((kind, path.name, _status_of(path)))
+    return items
+
+
+def _in_flight_status_advisory(root: Path) -> str:
+    """The advisory line for the open proposals and plans under `root`."""
+    return _status_advisory(
+        [(f"{kind}s/{name}", kind, status)
+         for kind, name, status in _in_flight_items(root)], _safe_field)
 
 
 def _in_flight(root: Path) -> List[str]:
@@ -1130,19 +1162,8 @@ def _in_flight(root: Path) -> List[str]:
     These are the live multi-agent threads the session-start move surfaces and
     the reflection-only goodnight notes as open work.
     """
-    lines: List[str] = []
-    for kind in ("proposals", "plans"):
-        base = root / "dev" / kind
-        if not base.is_dir():
-            continue
-        for path in sorted(base.glob("*.md")):
-            if path.name == "_template.md":
-                continue
-            lines.append(
-                f"{kind}/{_safe_field(path.name)} -- "
-                f"{_safe_field(_status_of(path))}"
-            )
-    return lines
+    return [f"{kind}s/{_safe_field(name)} -- {_safe_field(status)}"
+            for kind, name, status in _in_flight_items(root)]
 
 
 def _load_vendor_targets(root: Path) -> List[dict]:
