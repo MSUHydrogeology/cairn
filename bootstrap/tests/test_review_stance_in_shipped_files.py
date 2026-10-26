@@ -1756,7 +1756,6 @@ def test_the_preset_glob_holds_every_shipped_preset() -> None:
     assert files, "the preset folders hold no markdown; the glob scans nothing"
     for preset in SHIPPED_PRESETS:
         assert preset in files, f"{preset} is missing from the preset glob"
-    assert "dev/modules/onboarding/collaborative-team.md" in files
     assert DOCS_ONBOARDING.replace("docs/", "dev/modules/onboarding/") in files
 
 

@@ -1,5 +1,0 @@
-# dev/.cairn/onboarding-activated.jsonl -- progressive-onboarding
-# activation log; one JSONL line per activation; append-only.
-# Schema: {task-id, activated-at, by-agent, source-preset, trigger}.
-# Managed by scripts/onboarding_activate.py at goodnight;
-# see doctrine/onboarding.md for the mechanism.
