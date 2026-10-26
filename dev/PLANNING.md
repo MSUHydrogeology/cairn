@@ -459,6 +459,18 @@ changed set from the final committed tree.
   this finding and the `--plan`/`--stage` one, which is simple and is being
   fixed now).
 
+* **`upgrade --plan` and `--stage` crash when a tracked file has been replaced
+  by a folder.** They end in an `IsADirectoryError` traceback (`upgrade.py`, the
+  read at about line 540) instead of naming the file. Reproduced on a scratch
+  install by the twelfth-row proposal's usual review. Not a simple fix: what the
+  upgrade should report for a file turned into a folder is a design choice in
+  the engine (the twelfth row ends the crash only for the files on its retired
+  list). Queue as a defect row with its own repair. Authorization to queue it:
+  the Maintainer's 2026-10-26 rule, "Queue them if it's not simple to fix them
+  now. No need to generate more work for us later." (given for the `upgrade`
+  link findings; the planning session applies it to this finding, and the
+  Maintainer can overrule).
+
 * **The gate anchor has no signature.** `refs/cairn/gate-anchor` points to
   commit `6f29519d`, and git reports no signature on it (signature status `N`;
   `git verify-commit` exits 1; the control `git tag -v v0.4.0` exits 0, measured
