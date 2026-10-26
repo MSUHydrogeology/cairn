@@ -1447,3 +1447,12 @@ remain unchanged apart from the lifecycle Status header.
 live plan; no additional deferred item. The review's two historical module
 line citations were already out of bounds before this move and are recorded
 as inherited checker flags; the historical review is not rewritten.
+
+## Citation correction -- Claude -- 2026-10-26
+
+Two citations in the evidence list above are stale; the sections above are left as written.
+
+* The redundancy gate's first scan covers `doctrine`, `dimensions`, `on-ramp` and `docs`. That list is now `_R1_SCAN_ROOTS` at `scripts/quality_gate.py:507`, not `:498` (checked 2026-10-26).
+* The review sweep's lens 5 ("Cross-document consistency") sits in `dev/agent_collaboration.md` under "The review sweep", at `dev/agent_collaboration.md:108` (checked 2026-10-26). The `dual-review.md` line ranges no longer exist, as the "Untracked paths" note above says.
+
+The Maintainer asked for both to be fixed: "Just fix it" (chat, 2026-10-26).
