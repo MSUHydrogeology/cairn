@@ -381,38 +381,6 @@ Capture never lapses but an **empty scan is success** — most goodnights
 add nothing. A genuinely *general* (non-project) rule that surfaces here
 is a fold-back candidate (the step above), not a `RULES.md` addition.
 
-### Goodnight onboarding-trigger evaluation — when progressive onboarding is installed
-
-A deployment scaffolded from any of the three named profile presets
-(or one that has opted in via `python scripts/onboarding_activate.py
---seed`) adds one more standing goodnight step for the full-handoff
-owner, paired with the foldback-capture step above: **run the
-progressive-onboarding activation helper**.
-
-```bash
-python scripts/onboarding_activate.py        # default: scan + activate
-python scripts/onboarding_activate.py --dry-run   # show plan, no writes
-```
-
-The helper scans the deployment for fired triggers (action signals —
-the trigger matrix is enumerated in
-[`doctrine/onboarding.md`](onboarding.md)), activates the corresponding
-deferred onboarding tasks into `dev/PLANNING.md`'s `onboarding-tasks`
-slot, emits at most one active-surfacing prompt per goodnight (the UX
-caps [`onboarding.md`](onboarding.md) specifies), and appends one line
-per activation to the tracked log at
-`dev/.cairn/onboarding-activated.jsonl`. The run
-is **idempotent**: re-running on unchanged deployment state is a
-no-op, so a goodnight owner who fired the helper earlier in the day
-loses nothing by firing it again at handoff.
-
-A future `cairn-update` mini-command may fold this invocation into a
-single goodnight wrapper; until then, the helper runs as its own
-explicit step paired with foldback-capture. The progressive-onboarding
-doctrine carries the full mechanism (trigger matrix + active-surfacing
-shape + UX caps + state-file schema); this section names only the
-when (goodnight) and the who (full-handoff owner).
-
 ### Goodnight incident-tracker migration — when the incident-trackers module is installed
 
 A deployment running the **incident-trackers** module adds one more

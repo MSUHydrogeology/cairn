@@ -88,7 +88,7 @@ intended signal that a token has no contract.
 * **By hand.** Copying `core/` and the selected modules into a
   repository and filling the placeholders yourself gives you the
   kernel, but not the files the installer adds on top of it (the
-  session tools, the skills, the onboarding helper) and no lockfile,
+  session tools, the skills, the profile's day-one task list) and no lockfile,
   so the tree receives no upgrades until it runs
   `scaffold.py upgrade --init-lock` (see `on-ramp/README.md`).
 

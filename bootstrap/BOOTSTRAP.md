@@ -586,6 +586,10 @@ Run one real change through the lifecycle before declaring the
 bootstrap done. The goal is to find gaps in the customization
 before they cost real work.
 
+The install also wrote the profile's day-one tasks into `dev/PLANNING.md`
+under Onboarding. Work through them during this dogfood run, first open
+task first.
+
 The suggested first change: filling the `project-overview` and
 `project-conventions` block slots in `AGENTS.md`. These are
 non-trivial enough to warrant a proposal (they define the project's

@@ -36,9 +36,7 @@ Example (collaborative-team profile):
 <!-- cairn:end team-roster -->
 ```
 
-Commit the roster edit. The goodnight activation helper reads this
-slot to decide whether the `second-agent-type` trigger has fired, so
-filling it in is what makes the trigger fire at the next goodnight.
+Commit the roster edit.
 
 ## Step 2 -- set up the agent's `Co-Authored-By:` trailer
 
@@ -53,7 +51,7 @@ Co-Authored-By: <Agent Display Name> <noreply@<vendor-domain>>
 Fill `<Agent Display Name>` with the model the agent is running now,
 as its tool reports it. Configure the trailer in the agent's
 commit template; how you do that depends on the tool. The trailer is
-for people reading the log. The onboarding helper does not read it.
+for people reading the log.
 
 ## Step 3 -- note how capable each agent is (optional)
 
@@ -69,20 +67,12 @@ Maintainer decides.
 Open a one-line proposal (for example a CHANGELOG note) and have the
 **new** agent review it. You, the Maintainer, ask for this one read
 and name the proposal; that is what makes it a read you called. The
-first review by a second agent type is worth doing for two reasons:
+first review by a second agent type is worth doing because it shows
+how a called read goes in your team. One cycle of "the new agent found
+nothing" or "the new agent caught something the author missed" sets
+expectations.
 
-1. It checks that the activation helper sees it. The
-   `first-cross-type-review` trigger reads the proposal and plan files
-   themselves. It fires when a file's `Author` line names one agent
-   and a `## Review` section (its heading or first lines) names a
-   different one. It does not read git trailers.
-2. It shows how a called read goes in your team. One cycle of "the
-   new agent found nothing" or "the new agent caught something the
-   author missed" sets expectations.
-
-Commit the review. The next goodnight run of
-`python scripts/onboarding_activate.py` fires the trigger and
-surfaces the follow-up onboarding task.
+Commit the review.
 
 ## Step 5 -- coordinate work-intents going forward
 

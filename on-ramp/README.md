@@ -92,10 +92,10 @@ is running.
 
 A tree whose kernel was copied in by hand is still a valid install, but it
 lacks two things the installer provides, so it receives **no upgrades and no
-onboarding prompts**: a lockfile (`dev/.cairn/cairn-lock.yml`), which upgrades
+day-one task list**: a lockfile (`dev/.cairn/cairn-lock.yml`), which upgrades
 need, and the files the installer adds on top of the kernel — the session
-tools, the skills, and the onboarding helper that shows the prompts. To bring
-it under the installer:
+tools, the skills, and the profile's day-one tasks in `dev/PLANNING.md`. To
+bring it under the installer:
 
 ```
 python bootstrap/scaffold.py upgrade --target <repo> --init-lock

@@ -75,7 +75,8 @@ trust through how it is built. Five areas, each with a concrete commitment:
   maintainer and are not independent adoptions. A pre-release sweep gates every
   release, and integrity checks refuse to pass when something is wrong.
 * **User focus** — two ways in (read the guidance, or install it) and
-  progressive onboarding let you choose how deep to go.
+  a profile chosen at install, with its day-one task list, let you choose
+  how deep to go.
 * **Sustainability** — code under the MIT license; prose, templates and
   diagrams under CC BY 4.0; the brand mark alone under CC BY-ND 4.0. No vendor
   lock-in: the record is plain files in git.

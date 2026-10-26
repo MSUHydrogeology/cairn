@@ -1887,8 +1887,6 @@ _COMPLETENESS_EXEMPT = {
     "doctrine/lifecycle-contract.md":
         "history reference: one sentence, introduced by 'History:', about a "
         "plan-review tier that was retired",
-    "doctrine/onboarding.md":
-        "credit comment: it credits an earlier review's disposition by name",
 }
 _INSTALL_SET_PREFIXES = ("templates/", "dev/modules/")
 _INSTALL_SET_FILES = frozenset(_AGENTS_FILES + _LOOP_FILES)
@@ -1953,8 +1951,8 @@ def test_removing_an_exemption_is_reported() -> None:
     hits = _search_a_files(CAIRN_ROOT)
     assert _unaccounted(hits, _COMPLETENESS_EXEMPT) == [], "control: all accounted"
     smaller = {k: v for k, v in _COMPLETENESS_EXEMPT.items()
-               if k != "doctrine/onboarding.md"}
-    assert _unaccounted(hits, smaller) == ["doctrine/onboarding.md"]
+               if k != "doctrine/lifecycle-contract.md"}
+    assert _unaccounted(hits, smaller) == ["doctrine/lifecycle-contract.md"]
 
 
 def test_a_phrase_inserted_into_a_scanned_copy_is_reported(tmp_path: Path) -> None:
@@ -1979,4 +1977,4 @@ def test_exempting_an_installed_file_is_reported() -> None:
 def test_the_walk_reaches_the_roots_it_claims() -> None:
     """Confirm the instrument: it finds a known hit and walks a known file."""
     assert _SEARCH_A.search("A human fills the External tier.")
-    assert _search_a_files(CAIRN_ROOT).get("doctrine/onboarding.md", 0) >= 1
+    assert _search_a_files(CAIRN_ROOT).get("doctrine/lifecycle-contract.md", 0) >= 1
