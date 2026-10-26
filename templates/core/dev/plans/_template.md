@@ -125,6 +125,22 @@ pass whose `**Obligation**` line matches clears it, never an ordinary Internal
 pass. No tool reads that line: the next reviewer, the code reviewer and the
 Maintainer check it.
 
+## Keep the plan short
+
+The plan stays one file. Keep what goes in it small.
+
+* **Scripts and run briefs stay out.** A checker lives under `tests/` or
+  `scripts/`. A run brief is a short note or file, cited by path and commit.
+  The plan carries the criterion and the result, not the code behind them.
+* **A log entry is a pointer.** Commit bodies hold the facts. The entry names
+  the commit and adds only a decision, a finding, or a departure from the
+  criteria.
+* **Cite evidence by path, not by quotation.** A probe ledger has one line
+  per probe, with no output pasted.
+* **Read by section.** Give each pass, log or record its own `##` heading,
+  titled by what it holds and when it was written. Readers list them with
+  `grep -n '^## ' <plan>`.
+
 ## Forward-reference paths
 
 A path that does not exist yet trips `claim_check`. Declare it instead — the
