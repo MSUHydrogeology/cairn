@@ -3,7 +3,7 @@
 
 **Author**: Claude (Strategy)
 **Date**: 2026-05-14
-**Status**: living (last major revision 2026-10-01: field-currency pass against the 2026 literature, folding a fresh External assessment; Anchor 22)
+**Status**: living (last major revision 2026-10-01: field-currency pass against the 2026 literature, folding a fresh External assessment; Anchor 22. Anchor 16 updated 2026-10-26 for Cairn Plain Language 1.0)
 **Type**: living-reference
 **Audience**: maintainer + collaborating AI agents; secondary audience is a scientist implementing a human + AI development methodology on their own scientific-computing project (Cairn's reader); a future paper reader is tertiary
 
@@ -132,7 +132,7 @@ cross-cutting), and define the citation at its point of introduction.
 | **II · Trust, governance & coordination** | 3 | Trust + governance maturity (TCMM; Steinmetz et al. 2025) | "Framework anchors" |
 | | 10 | Trustworthy operation (TRUST principles; Lin et al. 2020) | Horizon 1 + "Trust as design center" |
 | | 14 | Scientific-software governance exemplars (USGS FSP; NEP/APE; LIGO/CESM/CMIP) | "Where Cairn is headed" > "Reframing the governance axis for scientific software" |
-| | 16 | Recipient-calibrated communication + the comprehension floor (Miller 2019; Kalyuga 2007; Clark & Brennan 1991; Rozenblit & Keil 2002; appropriate-reliance literature) | "Trust as design center" > "Recipient-calibrated communication and the comprehension floor" |
+| | 16 | Recipient-calibrated communication + the comprehension floor (Miller 2019; Kalyuga 2007; Clark & Brennan 1991; Rozenblit & Keil 2002; appropriate-reliance literature; uncertainty-communication literature; Cairn Plain Language 1.0) | "Trust as design center" > "Recipient-calibrated communication and the comprehension floor" |
 | | 19 | The oversight bottleneck and the theory of the firm (Coase 1937; oversight-in-practice + the 2026 OSS maintainer crisis) | "Restraint as design center" > "The 2026-08 refocus" |
 | | 20 | The operator's own allocation (Ferster & Skinner 1957; Alter 2017) | "Restraint as design center" > "The human side of restraint" |
 | | 22 | The agent supply-chain incident record (Thompson 1984; s1ngularity 2025; Clinejection 2026; "Comment and Control" 2026) | "Restraint as design center" > "Not all weight is waste" |
@@ -296,6 +296,12 @@ a table row.
 * **The default routes to ceremony** (17). Triage separates trivial from
   substantive, but in practice the heavy path is the default and the maintainer
   has to intervene to get the cheap one.
+* **The writing standard has been tried once** (16). Cairn Plain Language 1.0
+  was tried on three real passages before it landed; nothing evaluates it with
+  readers over time, as ISO 24495-1 asks, and its reasoning rules rest on the
+  literature rather than a Cairn incident. The check is the Maintainer's own
+  read about three months after landing (late January 2027): are the "I don't
+  understand this" pauses rarer, and are reviews free of style policing?
 
 Five early gaps are closed and now live in the doctrine: the bimodal AI surface
 is documented, test and documentation requirements sit in the proposal
@@ -303,7 +309,8 @@ template, the verify-before-asserting failure typology is structured, the
 write-time claim checker moved agent-output validation from reactive to
 proactive, and the comprehension floor (16) is in the file every adopter
 receives — `AGENTS.md` states that comprehension is a precondition of the
-Decision.
+Decision. Since 2026-10-26 that floor has a method as well as a goal: Cairn
+Plain Language 1.0, in the same shipped files.
 
 ## What Cairn is today
 
@@ -525,16 +532,18 @@ community-mode horizon directly address.
 
 **Leg 2 -- plain explanation is also a test of the explainer's own understanding.**  The discipline cuts both ways.  For humans this is well established: the **illusion of explanatory depth** (Rozenblit & Keil 2002, *The misunderstood limits of folk science: an illusion of explanatory depth*, Cognitive Science 26:521--562) -- people are confident they understand a bicycle or a zipper until asked to explain it step by step, at which point the understanding collapses.  Explaining plainly *tests* understanding; it does not merely deliver it.  **The same is plausibly true of AI** -- stated honestly as a well-motivated extension, not a settled result: a model can produce fluent, confident jargon that pattern-matches expertise without a correct, grounded claim beneath it, and the jargon then *shields* that claim from scrutiny -- the human's and the model's own.  This makes the plain-language requirement a **correctness check on the explainer**, not only a service to the reader, and ties it to Cairn's existing `verify-before-asserting` discipline (Anchor 3's Bias & Robustness leg): jargon can hide an unverified assertion; plain words expose it to challenge.
 
+**Leg 3 -- an agent must say how sure it is, in a form the reader can use.**  Added 2026-10-26, from the literature search behind Cairn Plain Language; this leg rests on published studies, not on a Cairn incident.  Language models rarely state uncertainty unprompted, and when asked to they are overconfident: on average 47% of their confident answers were wrong (Zhou et al. 2024, *Relying on the unreliable*, arXiv:2401.06730).  Readers overestimate the accuracy of model answers, and longer explanations raise their confidence without raising accuracy (Steyvers et al. 2025, *What large language models know and what people think they know*, Nature Machine Intelligence 7:221--231).  First-person uncertainty helps, but only partly: when a model said "I'm not sure, but...", people relied less on its wrong answers, though over-reliance did not disappear (Kim et al. 2024, ACM FAccT); Zhou et al. found users relied on model output whether or not it was marked.  How uncertainty is stated matters too.  Probability words alone are read very differently by different readers; pairing them with numeric ranges raised agreement with the intended meaning only from 27% to 40% across 25 samples in 24 countries (Budescu et al. 2014, Nature Climate Change 4:508--512), and words added to numbers do no better than numbers alone (Mandel & Irwin 2020; Dhami & Mandel 2022).  So the floor needs more than plain words: it needs the agent to separate what it measured from what it assumed, to state uncertainty as a number with its source, and to say which checks it did not make.  This also gives Leg 2 a mechanism: a first-person account of what was checked is what lets the Maintainer audit the work, even when fluent prose would otherwise carry their trust.
+
 **Worked example (the origin case).**  This anchor surfaced from a real comprehension failure during the six-proposal superplan.  The package-splitting work leaned on "AST source-motion attestation" -- opaque enough that the Maintainer had to look the term up separately, then reverse-engineer the implementing agent's function names and outputs to follow it.  In plain terms the claim was simply: *"we used Python's own structured representation of the code (its abstract syntax tree) to prove every function moved exactly once when the oversized package was split -- nothing lost, nothing altered."*  The plain version is not less precise -- it is more reviewable.  And the jargon's cost was not merely slower reading: it left the Maintainer unable to *review* the work, because the opaque surface was the only window onto it.  The thesis, in miniature.
 
 **The Cairn contribution / divergence.**  The XAI and reliance literatures study AI-to-human explanation largely in *decision-support* settings (a model advises; a human accepts or overrides).  Cairn's setting differs: a **recorded-deliberation lifecycle** in which the human must understand in order to *legitimately decide and sign*, on a durable, reviewable record.  So Cairn does what the source literatures do not -- it makes the **comprehension floor a reviewable property of the lifecycle**, the same move that turned reviewer independence into a structural, checkable tier.  "Did the human actually understand what they decided?" becomes a first-class question, not an afterthought.  Stated reflexively: this anchor was itself produced by the failure mode it names -- a jargon-dense stretch that degraded the Maintainer's review -- which is exactly the incident-grounded evidence the doctrine-evolution gate asks for.
 
-**Surfaced direction -- communication calibration -- a universal norm now, a dimension on the evidence.**  Anchor 3's *Usability* dimension remains part of the open measurement gap; this is where it gets watched -- two parts, deliberately at different maturity.
+**Surfaced direction -- communication calibration -- a universal standard now, a dimension on the evidence.**  Anchor 3's *Usability* dimension remains part of the open measurement gap; this is where it gets watched -- two parts, deliberately at different maturity.
 
-* **Settled -- the universal norm.**  Lead plain, keep precision beneath, and treat *"I don't understand this yet"* as a **mandatory pause**: a decision surface the Maintainer cannot follow is not decidable.  Every adopter, always.
-* **Observed -- heading toward a dimension.**  Treat communication calibration as its own Cairn axis (distinct from the *programming-language* axis), tuned to the reader's register -- *domain* proximity and *software* proximity.  This is **not imagined enrichment**: it is an **origin-deployment design note from real maintainer usage** (it surfaced this very session), evidence-status *observed-here, not yet externally replicated* -- the same footing the project's `deliverable` / product axis arose on.  Adopt an **existing** controlled-language grammar rather than invent one -- *Simplified Technical English* (ASD-STE100), *Attempto Controlled English*, the *Federal Plain Language Guidelines* -- so calibration is by language-*class* (undefined acronyms, nominalizations, dense embedding, abstraction-without-instance), not ad-hoc word-banning.
+* **Settled -- the universal standard: Cairn Plain Language 1.0.**  Lead plain, keep precision beneath, and treat *"I don't understand this yet"* as a **mandatory pause**: a decision surface the Maintainer cannot follow is not decidable.  Until 2026-10-26 that rule named a goal and no method, and the same failure recurred three times (the origin case above; three proposals of 2026-08-13 fixing comments, docstrings and test names; the 2026-10-23 rewrite of the reader-facing docs and case studies).  The method is now **Cairn Plain Language 1.0**: 17 numbered rules in the shipped `dev/agent_collaboration.md`, with one pointer sentence in `AGENTS.md` (proposal `dev/proposals/2026-10-26-claude-writing-for-the-reader.md`, accepted 2026-10-26).  Three choices in it answer this anchor directly.  It **limits structure, not vocabulary**, so domain terms stay and get defined, which serves both ends of Kalyuga's expertise range.  Its **reasoning rules (13 to 17)** carry Leg 3: measured, assumed and expected kept apart; numbers with units and sources; uncertainty as a number, or an explicit "I have no basis for a number"; and the agent's own account of what it checked.  It is **checked by reading, never scored**, which is Anchor 21's discipline applied to prose.  The standard is versioned, CC BY 4.0, and free of Cairn-only terms in its rules, so other projects can adopt it unchanged.  Every adopter, always.
+* **Observed -- heading toward a dimension.**  Treat communication calibration as its own Cairn axis (distinct from the *programming-language* axis), tuned to the reader's register -- *domain* proximity and *software* proximity.  This is **not imagined enrichment**: it is an **origin-deployment design note from real maintainer usage**, evidence-status *observed-here, not yet externally replicated* -- the same footing the project's `deliverable` / product axis arose on.  *Revised 2026-10-26:* the earlier text here proposed adopting an existing controlled-language grammar such as ASD-STE100 or Attempto Controlled English.  The Cairn Plain Language proposal weighed that and rejected it: a controlled vocabulary suits maintenance procedures and strips the hedges and domain terms that scientific argument is made of.  If the axis is built, its language classes start from the standard's rules (undefined terms and acronyms, stacked nouns, coined names, bare probability words), not from a word list.
 
-Two guards answer the real risks: the calibration is a **dynamic starting register, not a fixed label** -- grounding (Clark & Brennan) adjusts it turn-by-turn, so it neither ossifies nor profiles; and its evidence ledger is **score-free** -- language-*classes*, never the person.  One invariant holds throughout: **guarantee a plain layer, never strip precision** -- the record stays exact, the plain layer sits on top.  Building it (the axis's grades, the rubric, the chosen grammar) is the follow-on, gated on the next bet (a third-party adopter); the bearing -- and its origin in real use -- is fixed here.
+Two guards answer the real risks: the calibration is a **dynamic starting register, not a fixed label** -- grounding (Clark & Brennan) adjusts it turn-by-turn, so it neither ossifies nor profiles; and its evidence ledger is **score-free** -- language-*classes*, never the person.  One invariant holds throughout: **guarantee a plain layer, never strip precision** -- the record stays exact, the plain layer sits on top.  Building the axis (its grades and rubric) is the follow-on, gated on the next bet (a third-party adopter); the fixed standard is the cheaper first step, and using it will show whether a per-reader setting is needed at all.
 
 ### The trust paradox of empirical-data infrastructure
 
@@ -1297,8 +1306,8 @@ triggers need a *trend*, not a snapshot.
 
 ### Candidate moves
 
-None is queued. One gates the rest, and each of the rest would go through the
-normal proposal cycle if the gate opens:
+None is queued. One gates most of the rest; each would go through the normal
+proposal cycle when its gate or its time comes:
 
 * **The outside adoption with a pre-declared threshold** (*The promise*) --
   the one move that can turn the horizons from possibilities into work.
@@ -1308,6 +1317,11 @@ normal proposal cycle if the gate opens:
   in practice.
 * **The LHM operating case** -- carry LHM from adopted to *operating*; the
   second domain that shows what generalizes.
+* **Publishing Cairn Plain Language as a standalone standard** -- its own page
+  on the project site, a block to paste into any agent's instruction file,
+  worked before-and-after examples, its own DOI. Not behind the adoption gate,
+  but timed: the 2026-10-26 Decision waits for about three months of use in
+  Cairn, LHM and modflow_tools, so the examples come from real use.
 * **Governance-regime axis**, **self-instrumenting maturity layer**, and the
   **governed AI-community-contributor scope** -- behind the gate; community
   governance should answer actual contributors' needs, and a public release
