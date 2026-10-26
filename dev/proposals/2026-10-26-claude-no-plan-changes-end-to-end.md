@@ -1,11 +1,11 @@
 # A change with no plan: where its code review goes, and when its proposal archives
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-decision
+**Status**: awaiting-review
 **Review**: usual
-**Plan review**: required(Internal) — the change spans doctrine, a shipped template and `docs/`, and the first review showed the edit list needs checking against the tree
+**Plan review**: not required(prose edits to one rule and the docs that repeat it; the edit list is checked by the second review; the plan opens in the fast multi-stage form)
 **Opened**: 2026-10-26
-**In brief**: Make the written rules match what already works for a change that needs no plan: build it, have it code-reviewed in its proposal, then archive the proposal.
+**In brief**: Let a trivial change skip both the plan and the code review, and make the written rules say so.
 
 ## Context
 
@@ -480,3 +480,119 @@ review.
 
 **Assurance path**: high-assurance, unchanged. No engine, contract, trust root
 or licence file is touched, so no Security Review is owed.
+
+## Revision 2 -- Claude (author) -- 2026-10-26 -- on the Maintainer's direction
+
+The Maintainer answered Question 1 in chat on 2026-10-26, and said more than
+the question asked. Their words, **verbatim and visually isolated**:
+
+> "Yes to a no plan path! Always go less paperwork and fewer steps, if justified. No code review is needed for trivial changes."
+
+This replaces the design in Revision 1 (`## Revision -- Claude (author)`), so
+that section's order and exception are withdrawn. Context, Alternatives, the
+Response to RV1 to RV6 and the corrected evidence stand. This is the complete
+current contract.
+
+### What changes
+
+The conflict in the Context was that the rules both archive a no-plan change
+with its implementing commit and require a code review the archive makes
+impossible. The Maintainer's direction removes the second half, so the first
+half can stand as written.
+
+1. **A trivial change owes no code review.** "Trivial" covers both uses the
+   doctrine makes of the word: the trivial lane (a typo or one-line fix, no
+   proposal) and an accepted proposal implemented with no plan (one commit, one
+   area, no follow-ups). The sentences that give either one a review are
+   removed, and the rest of the order stands: a no-plan implementation ships and
+   archives its proposal in the implementing commit, as `doctrine/lifecycle.md:176-178`,
+   `doctrine/plans.md:88-91` and `doctrine/proposals.md:44-46` already say. No
+   named exception to append-only is needed, and the docs that say "implemented
+   and archived in one commit" stay true.
+2. **One fence, reused: a change whose Boundary B ran in full mode keeps its
+   review.** Bounded mode already refuses on a contract or trust-ceremony
+   surface and when the effects cannot be bounded (`AGENTS.md:316-326`), and
+   uncertainty resolves to `full`. So the existing fence already sorts the risky
+   no-plan change from the safe one. A trivial change recorded as `bounded` owes
+   no review. One recorded as `full` gets a fresh reviewer's read of its commit,
+   recorded in the proposal if it is still open, or in a note if the proposal
+   has archived. *Default; the Maintainer may drop this fence (Question 1).*
+3. **The "no plan" claim is tested at proposal review.** The header form from
+   Revision 1 stays: `not required(no plan: <how each of the three skip
+   conditions holds>)`, after the template's existing prefix. It matters more
+   now, because "no plan" is what removes the review. A reviewer who finds the
+   claim unsupported records a finding, as RV4 did. If the work proves not to be
+   trivial, a plan opens then.
+
+### What this costs
+
+A defect the owning tests do not see ships without a second reader until the
+certifying run, which tests regressions, not new defects. The two reviews that
+found real problems on 2026-10-26 were of changes that were not trivial under
+the triage rule: the `check_cairn` fix found a bug that silently skipped files
+with non-English names (a defect no test covered), and the Cairn Plain Language
+review found two test gaps and a dropped half-finding. Applying the triage rule
+honestly would have given both a plan and its review. So the cost falls on the
+claim, which item 3 tests, and the fence in item 2.
+
+### Edit list (the plan owns the mapping)
+
+| Area | File | Change |
+| --- | --- | --- |
+| Governing | `AGENTS.md`, `templates/core/AGENTS.md` (Boundary B, the paragraph that begins "Boundary B governs every implementation") | drop "Boundary C's Bounding verdict reviews it afterwards" for a trivial change and the closing sentence on the code reviewer's Bounding verdict for a change with no plan; add the item 2 fence |
+| Doctrine | `doctrine/lifecycle.md` (61) | the trivial lane is "code + test", no review |
+| Doctrine | `doctrine/proposals.md` (191-203) | the "no plan" clause |
+| Template | `dev/proposals/_template.md`, `templates/core/dev/proposals/_template.md` | the `Plan review` clause, after the existing prefix (`bootstrap/tests/test_review_stance_in_shipped_files.py:709-711`) |
+| Docs | `docs/dev-tour.md` (81-84 and the worked example from line 95), `docs/glossary.md` (18), `docs/quickstart.md` (15-16, 501) | the trivial lane has no code review |
+| Figure and lane summaries | `docs/assets/three-lanes-of-change.svg` (header comment, `desc`, trivial-lane text), `README.md` (44), `docs/getting-started.md` (28), `docs/index.html` (168) | the trivial lane is "the change with its test"; the figure keeps its house rules (alt text, a recorded legibility pass) |
+| Changelog | `CHANGELOG.md` | one entry |
+
+Not edited: `doctrine/lifecycle.md` 176-184 and 212-219, `doctrine/plans.md`
+88-91, and the `docs/` sentences "implemented and archived in one commit" (they
+are now true as written); the two example projects; the frozen
+`bootstrap/tests/test_quickstart_sequence.py`; `doctrine/lifecycle-contract.md`.
+`dev/agent_collaboration.md:133` and its template already say "a trivial change
+with no review owes none".
+
+### Verification
+
+* **Consistency, with controls.** Search `README.md`, `docs/`, `doctrine/`,
+  `templates/` and `AGENTS.md` for "code review" within a few lines of
+  "trivial", "typo" or "one-line", and for "Bounding verdict". Every hit is
+  edited or listed with its reason. First run the search against
+  `doctrine/lifecycle.md:61` and `docs/glossary.md:18`, which are known to
+  contain the target.
+* **Tests.** The tests near the edit sites are
+  `test_review_stance_in_shipped_files.py`, `test_verification_boundaries.py`,
+  `test_certifying_run_rule.py`, `test_scope_reduction_trap.py` and
+  `test_stewardship_rules_ship.py`; the implementer also runs every test that
+  reads a changed file, found by search. `AGENTS.md` and its template change,
+  so the lockfile step (`scaffold.py upgrade --finalize`) applies.
+* **The figure.** A re-render check at 375 and 1200 px with the legibility pass
+  recorded, as the house rules require.
+* **Gates.** `claim_check`, `link_check`, `check_cairn`, and the neutrality and
+  redundancy gates.
+* **What would show it wrong.** A change that shipped a defect a review would
+  have caught and that the triage rule called trivial.
+
+### Questions for the Maintainer
+
+1. **Keep the fence in item 2** (a change with a `full` Boundary B keeps its
+   review)? *Default:* yes. It reuses a line the doctrine already draws and
+   costs nothing for a safe change. The alternative is no review for any trivial
+   change, whatever its surface.
+2. **Does "trivial" include the trivial lane?** *Default:* yes, so a typo fix
+   no longer needs a fresh reviewer. If you meant only the no-plan
+   implementation of an accepted proposal, drop the figure, README, glossary and
+   dev-tour rows from the table.
+
+### Header and scope
+
+**Plan review**: `not required(prose edits to one rule and the docs that repeat
+it; the edit list was checked against the tree by the first review and is
+checked again by the second; the plan opens in the fast multi-stage form)`. A
+reviewer is asked to challenge it.
+
+**Scope delta**: narrowed by the Maintainer's direction. Revision 1's
+reordering and its named exception are withdrawn; no accepted scope is removed,
+because nothing was accepted. **Assurance path**: high-assurance, unchanged.
