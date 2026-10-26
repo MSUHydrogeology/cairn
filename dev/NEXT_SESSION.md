@@ -113,11 +113,12 @@ Each item names the next step and who holds it.
      * **How the earlier answers were recorded.** They lived in commit bodies
        only, and each one re-finalized the lockfile line for
        `tools/session.py`.
-     * **Where new tests go.** Put them in
-       `bootstrap/tests/test_session_binding_untracked.py`, which is not
-       frozen. Four session test files are frozen: `test_prune_tools.py`,
-       `test_session_failsafe.py`, `test_session_kernel.py` and
-       `test_session_routines.py`.
+     * **Where new tests go.** Not in
+       `bootstrap/tests/test_session_binding_untracked.py`: it is frozen (a
+       key in `frozen_files` of `bootstrap/tests/fixtures/gate_manifest.json`).
+       So are `test_prune_tools.py`, `test_session_failsafe.py`,
+       `test_session_kernel.py` and `test_session_routines.py`. Use the
+       unfrozen `bootstrap/tests/test_session_binding_gate_and_printing_hold.py`.
      * **SW-SR-11.** Give `_binding_untrusted` an optional interpreter
        argument. If the interpreter lies inside the project, run the same
        index check on it, submodule rule included, and return a fixed reason.
