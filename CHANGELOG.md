@@ -55,7 +55,7 @@ and a new empty `Unreleased` is started above.
 - `link_check.py`, `sync_doc_snippets.py` and `check_cairn.py` now skip a tracked
   Markdown file that was deleted from disk but not yet committed, and say so on
   one line, instead of failing on the first read. A file named explicitly on the
-  command line still raises. ([proposal](dev/proposals/2026-10-26-claude-check-cairn-deleted-files.md))
+  command line still raises. ([proposal](dev/proposals/archive/2026-10-26-claude-check-cairn-deleted-files.md))
 
 ## 0.4.0 — 2026-10-20
 
