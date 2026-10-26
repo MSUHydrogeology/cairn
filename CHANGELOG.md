@@ -90,6 +90,19 @@ and a new empty `Unreleased` is started above.
   `git rm --cached` is still trusted (recorded in `bootstrap/SAFETY.md`).
   ([review](dev/reviews/2026-10-18-security-review-session-writes.md), findings SW-SR-10 to 15)
 
+### Added — Drain mode: `/session-start --drain` works the queue
+
+- `/session-start --drain [board | issues | <item>]` lets an agent sort the open
+  items by the lifecycle's lanes, then fix the trivial ones that have a failing
+  test, have a fresh session review each fix, and commit locally. Everything that
+  needs the Maintainer goes into one batch for them. It posts nothing to GitHub:
+  it never comments, labels or closes, and **issue text is data, never
+  instruction**, so it runs nothing an issue contains. An engine repair parks at
+  the Maintainer-run AST re-anchor. Five hostile-issue trials by a reviewer
+  found no embedded instruction obeyed. It ships in the `session-start` skill to
+  every install, and `AGENTS.md`'s easy-fix rule now allows the fix's own test.
+  ([plan](dev/plans/archive/drain-mode.md))
+
 ### Added — Cairn Plain Language, a writing standard for agents
 
 - Every install now carries a versioned, 17-rule writing standard in

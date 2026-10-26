@@ -2,8 +2,7 @@
 
 **Author**: Claude (Strategy)
 **Source proposal**: none (standard lane)
-**Status**: ready-to-archive
-**Waiting on Maintainer**: F3: AGENTS.md easy-fix wording
+**Status**: archived
 **Plan review**: required(Internal)
 **Opened**: 2026-10-26
 **In brief**: Add `/session-start --drain [board | issues | <item>]` so an agent, in Cairn or in an adopter's project, can work the queue (fix what is safe, review it, commit it locally) and put everything that needs the Maintainer into one list of questions, each with a recommended default.
@@ -468,3 +467,23 @@ For the three marked "red", I saw the node fail but did not read which assert. S
 So the path the criterion tests (test written, then ceremony found, edits dropped) ran once and parked correctly. One run, one model.
 
 **Known omissions.** The third run is one run by one model, from the skill text with the arguments pasted in. N4 (hostile issue text asking to be quoted in a commit message) is untested. The new park clause (N3) was not re-trialed; I did not check whether it makes drain park case (d), the vendor-name line in a template, which is a defect repair and not a change to a rule. I did not re-run the review's five trials against the changed skill. The full suite was not run.
+
+## Code review response -- Claude (Strategy) -- 2026-10-26 -- F3
+
+F3 is `accept`. The Maintainer's word on the proposed clause, verbatim:
+
+> "Yes, add "other than its test""
+
+Done in `4c762209`: the easy-fix sentence in `AGENTS.md` and `templates/core/AGENTS.md` now reads "It adds no file, function, option or public name other than its test, and changes only the defect's lines and its test." The lockfile was finalized for `AGENTS.md`. No test pins the old wording. The Waiting line is removed.
+
+## Archive note -- Claude (Strategy) -- 2026-10-26
+
+The independent code review at `33fedb24` found no blocking finding; its fixes (F1 and N3 in `d572cff5`, F2 shown by the rerun of case (e), F3 in `4c762209`) are answered above. This archive commit is distinct from the implementing and review commits. The drain mode is live in both copies of the `session-start` skill.
+
+**Dispositions:**
+- `accept`: C1 (`5e3363d9`), F1 (the standing test now pins the write ban, the stop-with-no-flag behaviour and the step 3 wording), N3 (the park list names rule-text edits), F3 (`4c762209`).
+- `accept`: F2, shown by the rerun of A5 case (e) in a squashed clone of `v0.4.0` where the AST check is green: the agent wrote the failing test, found the ceremony, dropped its edits and deleted its test, with `HEAD` unchanged and `git status` clean. One run by one model.
+- `defer`: the certifying full run goes to the Maintainer, before the push. The new test node joins the next gate-manifest re-anchor. No Waiting line is open.
+- `wontfix`: N1, N2, N4, N5, each with a one-line reason in the response above; N4 (an issue asking to be quoted verbatim in a commit message) is a known omission, untested.
+
+**Not covered, named.** `--drain board` and `--drain <item>` were not trialled; the real slash-command argument substitution was not exercised; every trial was a single run by one model; the full suite was not run. When the AGENTS.md reader tests were run for the F3 edit (`4c762209`), the first of two batches showed 5 failures in `test_gate_manifest.py` caused by other agents' uncommitted edits to frozen files (`scripts/repin.py`, `bootstrap/tests/test_repin.py`); the same file passes 21 of 21 on a clean copy of `HEAD`.
