@@ -105,7 +105,7 @@ skeleton does not call for a separate `**Obligation**` line.
 
 ## Keep the proposal short
 
-The proposal stays one file. Keep what goes in it small.
+The proposal stays one file: reviews, responses and decisions are appended to it. Keep what goes in it small.
 
 * **Scripts and task briefs stay out.** A checker lives in a script or a test
   file, not in the plan. A task brief for a sub-agent is a short note or file,

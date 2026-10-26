@@ -129,7 +129,7 @@ Maintainer check it.
 
 ## Keep the plan short
 
-The plan stays one file. Keep what goes in it small.
+A plan is one file by default: reviews, responses and records are appended to it. Keep what goes in it small. When something long would crowd it, give that its own file and cite it by path.
 
 * **Scripts and task briefs stay out.** A checker lives in a script or a test
   file, not in the plan. A task brief for a sub-agent is a short note or file,
