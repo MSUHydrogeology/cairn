@@ -218,6 +218,16 @@ def _behind_by_n(cairn_root: Path, lock_commit: str | None,
             or "unknown" in (lock_commit, new_commit)):
         return ("adoption drift: behind-by-N check unavailable "
                 "(git metadata missing)")
+    # *lock_commit* is read from the project's lockfile and goes into a git
+    # argument, where a leading `-` would be an option (`--output=<path>` made
+    # `rev-list` create a file).  The lockfile writer records only a short or
+    # full hex commit (git's shortest abbreviation is 4 characters), so anything
+    # else is not comparable and git is not run.  *new_commit* is not held to
+    # this: `--to <tag>` is a legitimate value there.
+    if not (isinstance(lock_commit, str)
+            and re.fullmatch(r"[0-9a-f]{4,40}", lock_commit)):
+        return ("adoption drift: behind-by-N check unavailable "
+                "(refs not comparable)")
     if lock_commit == new_commit:
         return "adoption drift: installed tree is current with canonical"
     try:

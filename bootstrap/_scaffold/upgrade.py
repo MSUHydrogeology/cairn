@@ -129,15 +129,18 @@ def _cairn_is_git(cairn_root: Path) -> bool:
     return r.returncode == 0 and r.stdout.strip() == "true"
 
 
-def _lockfile_refusal(what: str) -> ScaffoldSecurityError:
+def _lockfile_refusal(what: str, remedy: str | None = None) -> ScaffoldSecurityError:
     """The refusal for a lockfile (project data) that names what it may not:
     one line of fact -- fixed words, plus the record's own text only when
-    escaped and cut -- and one line saying what to do about it."""
+    escaped and cut -- and what to do about it.  *remedy* replaces the default
+    advice (restore the record) where that advice would send the reader the
+    wrong way: a name that leads out through a link is mended by replacing the
+    link, and restoring the lockfile changes nothing."""
     return ScaffoldSecurityError(
-        f"{what}\n"
-        "  The lockfile is project data. Look at that record in "
-        "dev/.cairn/cairn-lock.yml (`git log -p` on it shows who changed it), "
-        "restore it from a copy you trust, then re-run.")
+        f"{what}\n  " + (remedy or (
+            "The lockfile is project data. Look at that record in "
+            "dev/.cairn/cairn-lock.yml (`git log -p` on it shows who changed it), "
+            "restore it from a copy you trust, then re-run.")))
 
 
 def _contained_lockfile_path(
@@ -162,6 +165,11 @@ def _contained_lockfile_path(
        where a read ends up, not whether a link is present.  (Writes are
        stricter and go through :func:`_assert_safe_write`: no link at all.)
 
+    For the project (not the Cairn source tree) a third check refuses a name
+    whose first part is ``.git``, in any letter case: Git's folder is not a
+    project file.  Judged on *tree*, not on the field, so that every caller of
+    the guard over the project gets it.
+
     Returns the joined path, unresolved, for the caller to read.  The refusal
     carries fixed words and the escaped, cut-short name -- never where a link
     points -- so it cannot be made to say what a file outside holds."""
@@ -172,8 +180,9 @@ def _contained_lockfile_path(
         shown = f"<{type(value).__name__}>"
     where = f"record {record}: " if record is not None else ""
 
-    def refuse(why: str) -> ScaffoldSecurityError:
-        return _lockfile_refusal(f"{where}the lockfile's {field!r} {why}: {shown}")
+    def refuse(why: str, remedy: str | None = None) -> ScaffoldSecurityError:
+        return _lockfile_refusal(
+            f"{where}the lockfile's {field!r} {why}: {shown}", remedy)
 
     shape = f"is not a plain relative file name inside {tree}"
     if not isinstance(value, str) or not value:
@@ -184,11 +193,21 @@ def _contained_lockfile_path(
     if (value.startswith("/") or "\\" in value or ":" in value.split("/", 1)[0]
             or rel.is_absolute() or ".." in rel.parts or not rel.parts):
         raise refuse(shape)
+    if tree == "the project" and rel.parts[0].lower() == ".git":
+        # Git's own folder is inside the project folder but is not a project
+        # file: a record naming it would have upgrade read, hash and replace
+        # hooks and config.  Judged on the first part, in any letter case.
+        raise refuse("is inside the .git folder, which holds Git's own data")
     joined = root / rel
     try:
         joined.resolve().relative_to(root.resolve())
     except (OSError, RuntimeError, ValueError):
-        raise refuse(f"leads outside {tree}") from None
+        raise refuse(f"leads outside {tree}", (
+            f"A folder or file on the way is a link that leads out of {tree}; "
+            "upgrade does not read or write through it. Replace the link with a "
+            f"real folder or file inside {tree}. If the record itself was "
+            "changed, restore dev/.cairn/cairn-lock.yml from a copy you trust. "
+            "Then re-run.")) from None
     return joined
 
 
@@ -200,10 +219,22 @@ def _check_lockfile_paths(
     ``dst`` and ``base_cache`` (both read from *target*) goes through
     :func:`_contained_lockfile_path`.
 
+    The lockfile's ``modules`` list is judged here too: each name is printed
+    in the report, so each must be non-empty plain text.
+
     A field a record does not carry is left to the code that needs it; this
     judges what is there and invents no requirement.  Run once, at the top of
     ``cmd_upgrade``, so that no later step -- report, stage, apply, finalize,
     adoption -- ever sees a name it would have to trust."""
+    modules = lock.get("modules")
+    if modules is not None and not (
+        isinstance(modules, list)
+        and all(isinstance(m, str) and m and m.isprintable() for m in modules)
+    ):
+        # The report prints each module name, so one that is not plain text
+        # would be typed at the operator's terminal.
+        raise _lockfile_refusal(
+            "the lockfile's 'modules' is not a list of plain module names")
     files = lock.get("files")
     if files is None:
         return
@@ -1151,16 +1182,21 @@ def _resolve_vendor_wrapper(
       whose first few lines carry the ``@AGENTS.md`` import -> resolved (a
       custom-named wrapper).
 
+    A link is never the wrapper (both tiers, judged before any read): the
+    wrapper's digest is recorded in the lockfile, and a link would make that
+    the digest of whatever file it leads to.
+
     Returns the repo-root-relative dst, or ``None`` (the caller warns rather
     than silently skipping or recording a wrong file).  The not-already-mapped
     guard (both tiers) is the false-positive backstop."""
     # Tier 1: a known vendor filename at repo root.
     for name in _KNOWN_VENDOR_WRAPPERS:
-        if name not in mapped_dsts and (target / name).is_file():
+        cand = target / name
+        if name not in mapped_dsts and cand.is_file() and not cand.is_symlink():
             return name
     # Tier 2: a custom-named root .md importing @AGENTS.md near the top.
     for md in sorted(target.glob("*.md")):
-        if md.name in mapped_dsts or not md.is_file():
+        if md.name in mapped_dsts or md.is_symlink() or not md.is_file():
             continue
         head = md.read_text(encoding="utf-8", errors="replace").splitlines()[:5]
         if any("@AGENTS.md" in line for line in head):
@@ -2156,6 +2192,38 @@ def _apply_upgrade(
               file=sys.stderr)
         return 1
     meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    # The review area is project data, so what it names is judged before any of
+    # it is printed or used: every file name must be a plain relative name
+    # inside the project, and the two version strings that are printed must be
+    # plain text.  A review area `--stage` wrote always passes.
+    plain = isinstance(meta, dict)
+    names: list[object] = []
+    if plain:
+        for key in ("staged_files", "review_only", "module_blocked", "expected_absent"):
+            value = meta.get(key, [])
+            plain = plain and isinstance(value, list)
+            names += value if isinstance(value, list) else []
+        for key in ("kinds", "new_entries"):
+            value = meta.get(key, {})
+            plain = plain and isinstance(value, dict)
+            names += list(value) if isinstance(value, dict) else []
+        for key in ("new_commit", "new_version"):
+            plain = plain and (
+                key not in meta
+                or (isinstance(meta[key], str) and meta[key].isprintable()))
+    if plain:
+        try:
+            for name in names:
+                _contained_lockfile_path(target, name, "staged name", "the project")
+        except ScaffoldSecurityError:
+            plain = False
+    if not plain:
+        raise ScaffoldSecurityError(
+            f"the staged upgrade under {_STAGING_REL}/ names a file, or a "
+            "version, that is not plain text inside the project; it is not "
+            "applied.\n"
+            f"  `upgrade --stage` writes plain names only. Remove {_STAGING_REL}/ "
+            "(it is rebuilt by `upgrade --stage`), then re-run.")
     files_dir = stage / "files"
     staged_meta = sorted(meta.get("staged_files", []))
 
@@ -2423,13 +2491,35 @@ def _self_heal_profile_config(target: Path, lock: dict[str, Any]) -> bool:
     The materialized file is a single new path outside the upgrade's staged
     write-set, so the #56 dirty-tree guard never refuses it."""
     profile_path = target / _PROFILE_REL
+    # `exists()` follows a link, so a link to a file not there yet reads as
+    # absent and the write below would create that file wherever the link
+    # leads.  Refuse a link at the name or above it, wherever it points -- the
+    # same rule as every other write -- before anything else is looked at.
+    _assert_safe_write(profile_path, target)
     if profile_path.exists():
         return False
     profile = lock.get("profile") or {}
-    axes = profile.get("axes") or {}
+    axes = (profile.get("axes") or {}) if isinstance(profile, dict) else None
+    tokens = lock.get("tokens") or {}
+    modules = lock.get("modules") or []
+    if not (isinstance(axes, dict) and isinstance(tokens, dict)
+            and isinstance(modules, list)):
+        return False  # not the shape the lockfile writer produces -- write nothing
     if not axes:
         return False  # gating-only / empty lockfile profile -- nothing to heal
-    tokens = lock.get("tokens") or {}
+    token_keys = ("project_name", "test_command", "claim_check_command",
+                  "metrics_command")
+    # Every value written must be plain text: a line break in one would start a
+    # line of its own in the file, and a non-string would be written as its
+    # Python spelling.  A lockfile that fails this is left unhealed.  (Preset,
+    # axis values and module names are written unquoted, as the differential
+    # oracle's frozen baseline writes them; the tokens are single-quoted.)
+    written = [tokens[k] for k in token_keys if tokens.get(k)]
+    written += [profile["preset"]] if profile.get("preset") else []
+    written += [axes[a] for a in _AXES if axes.get(a)]
+    written += modules
+    if not all(isinstance(v, str) and v and v.isprintable() for v in written):
+        return False
     lines = [
         "# Cairn install-config (profile.yml).",
         "# Self-healed by `upgrade` from the lockfile profile: this adopter was",
@@ -2437,8 +2527,7 @@ def _self_heal_profile_config(target: Path, lock: dict[str, Any]) -> bool:
         "# change the profile, then regenerate the lockfile.",
         "",
     ]
-    for key in ("project_name", "test_command", "claim_check_command",
-                "metrics_command"):
+    for key in token_keys:
         if tokens.get(key):
             lines.append(f"{key}: {_yaml_sq(tokens[key])}")
     lines.append("")
@@ -2447,7 +2536,6 @@ def _self_heal_profile_config(target: Path, lock: dict[str, Any]) -> bool:
     for a in _AXES:
         if axes.get(a):
             lines.append(f"{a}: {axes[a]}")
-    modules = lock.get("modules") or []
     if modules:
         lines += ["", "modules:"] + [f"  - {m}" for m in modules]
     profile_path.parent.mkdir(parents=True, exist_ok=True)
@@ -2553,6 +2641,23 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     if args.init_lock:
         return _cmd_init_lock(target, cairn_root, templates_root)
 
+    # The lockfile is read, and later written back, at one fixed name.  A link
+    # at that name (or a linked folder above it) would be followed both ways, so
+    # it is refused before anything reads the file -- ahead of `--adopt-module`
+    # too, which reads it.  A link that appears after this check is caught by
+    # the guard on each write.  `--adopt-collisions` is left to the lockfile
+    # reader's own refusal, which a pinned test expects to propagate as an
+    # exception rather than an exit code; it reads and writes nothing either way.
+    try:
+        if not args.adopt_collisions:
+            _assert_safe_write(target / _LOCKFILE_REL, target)
+    except ScaffoldSecurityError:
+        print("error: upgrade refused (containment): the lockfile "
+              f"{_LOCKFILE_REL} is a link, or sits behind one; upgrade does "
+              "not read or write through it.\n"
+              "  Replace it with a regular file, then re-run.", file=sys.stderr)
+        return 2
+
     if args.adopt_module:
         return _cmd_adopt_module(
             target, args.adopt_module, cairn_root, templates_root)
@@ -2584,10 +2689,15 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
 
     # The lockfile is project data: refuse one that names a path outside its tree
     # before the report, stage, apply, finalize or adoption reads, prints or acts
-    # on a name from it.  The advisory above runs first on purpose: it reads
-    # names only through its own contained reader, prints them escaped, and takes
-    # its comparison bytes from the engine's own registry -- so a lockfile that
-    # is about to be refused still cannot hide a forked facade.
+    # on a name from it.  The advisory above runs first on purpose, so a lockfile
+    # that is about to be refused still cannot hide a forked facade: it reads
+    # file bytes only through its own contained reader, prints names escaped, and
+    # takes its comparison bytes from the engine's own registry.  It is not
+    # inert, though.  Its candidate gate stats and globs `<dst folder>/_<name>/`
+    # at a path the lockfile chose, unchecked, so a `dst` that leads outside the
+    # project lets one yes-or-no line on the operator's terminal say whether a
+    # folder of that name holding a `.py` file exists there.  No byte is read and
+    # nothing is written.  The frozen advisory tests pin this order.
     try:
         _check_lockfile_paths(lock, target, templates_root)
     except ScaffoldSecurityError as exc:
@@ -2672,7 +2782,13 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     # from the lockfile so the config you edit exists. Only-when-absent;
     # composes with the #56 guard.
     if args.apply:
-        _self_heal_profile_config(target, lock)
+        try:
+            _self_heal_profile_config(target, lock)
+        except ScaffoldSecurityError as exc:
+            print(f"error: profile self-heal refused (containment): {exc}\n"
+                  "  replace the link with a regular file, then re-run.",
+                  file=sys.stderr)
+            return 2
 
     if args.apply:
         try:
