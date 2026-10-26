@@ -1,7 +1,7 @@
 # A change with no plan: where its code review goes, and when its proposal archives
 
 **Author**: Claude (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual
 **Plan review**: not required(prose edits to one rule and the docs that repeat it; the edit list is checked by the second review; the plan opens in the fast multi-stage form)
 **Opened**: 2026-10-26
@@ -700,3 +700,185 @@ Correctly left alone: `doctrine/dual-review.md:344-346`. It is pinned verbatim b
 ### Not covered
 
 I did not run any test, gate, or the figure's legibility check, and I did not open the figure in a renderer: I read its source only. The paragraph scan covers text the scan's pattern can match (the words "typo", "one-line" or "trivial" with "code review", "a review" or "Bounding verdict" in one paragraph); a sentence that gives a trivial change a review in other words would not appear. I did not read `docs/` pages beyond those hits, `templates/onboarding/` or `dev/modules/` beyond `dev-tour.md`. I did not check whether the Maintainer's quoted words, which the Revision gives verbatim, match the chat; that is the Decision's check. I did not look at the Response beyond the lines Revision 2 says stand.
+
+## Response -- Claude (author) -- 2026-10-26 -- second review
+
+The second review's direction is sound and I accept all five findings. RV8 and
+RV9 blocked; I take the reviewer's better version of each. Revision 3 below is
+self-contained and carries every change. It adds nothing the review did not
+see: each file in the longer edit list is one the review named, and the
+fence moves into a rule the review proposed. Under the one-round rule it goes
+to the Decision.
+
+* **RV8, accepted, the reviewer's version.** The fence leaves the Boundary B
+  label and moves into the plan triage, before implementation, where a plan
+  already has a place for a review. A change that cannot bound its effects is not
+  a no-plan change. The "recorded in a note" sentence is gone. This is also
+  fewer steps than the fence it replaces: no mode check after the fact.
+* **RV9, accepted.** Revision 3 is self-contained, carries the "no plan"
+  clause in full, and has the `### Withdrawn / superseded commitments` heading.
+  It lists what it withdraws from Revision 1, the Context and the Alternatives.
+  That Revision 1 also lacked the heading is my error, now stated.
+* **RV7, accepted.** The edit list carries every file the review found,
+  including the second copy of the dev tour and `doctrine/plans.md:362-370`.
+  The two example READMEs are edited; they are READMEs, not archived records.
+  `doctrine/dual-review.md:344-346` stays, because a frozen test pins it; the
+  plan checks whether it still reads true.
+* **RV10, accepted.** The sentence returns: the implementing commit re-reads
+  the skip conditions against what it touched, and a plan opens then if it
+  touched more than one area. The proposal-stage test missed two of two on
+  2026-10-26, so it cannot be the only test.
+* **RV11, accepted.** One sentence is added to the easy-defect rule: a change
+  with no code review carries no easy-problem fix.
+
+## Revision 3 -- Claude (author) -- 2026-10-26
+
+This is the complete current contract. It stands alone: Revision 1 and
+Revision 2 are history.
+
+### The Maintainer's direction
+
+The Maintainer, 2026-10-26, in chat, **verbatim and visually isolated**:
+
+> "Yes to a no plan path! Always go less paperwork and fewer steps, if justified. No code review is needed for trivial changes."
+
+### The problem, in brief
+
+Four doctrine statements say a change with no plan ships and archives its
+proposal in one commit, while other statements give that change a code review
+that an archived proposal cannot receive. The review of a trivial change was
+the part that did not fit.
+
+### What changes
+
+1. **A trivial change owes no code review.** "Trivial" covers both uses the
+   doctrine makes of the word: the trivial lane (a typo or one-line fix, no
+   proposal) and an accepted proposal implemented with no plan. A no-plan
+   implementation ships and archives its proposal in the implementing commit,
+   as `doctrine/lifecycle.md:176-178`, `doctrine/plans.md:88-91` and
+   `doctrine/proposals.md:44-46` already say. The sentences that give either one
+   a review are removed.
+2. **A change that cannot bound its effects opens a plan.** The plan triage
+   (`doctrine/plans.md:176-199`) gains one skip condition: Boundary B would run
+   bounded. A change on a contract or trust-ceremony surface, or one whose
+   effects cannot be bounded with confidence, fails it, so it opens a plan; the
+   plan has a `## Code review` section and the archive precondition. This
+   replaces the "full mode keeps its review" fence.
+3. **The "no plan" claim is shown, then tested twice.**
+   * *Shown.* A proposal that expects to need no plan writes its header as
+     `not required(no plan: <how each skip condition holds>)`. In the proposal
+     template the clause follows the existing
+     `{{required(Internal) | required(Internal + Internal Security Review)}}`
+     text and does not replace it. The sentence in
+     `doctrine/proposals.md:191-203` gains: *bare `not required` describes a
+     plan that skips its own review; a "no plan" claim without each skip
+     condition shown is a review finding.*
+   * *Tested at proposal review,* where a reviewer reads the claim.
+   * *Tested again at the implementing commit,* which re-reads the skip
+     conditions against what it touched. If it touched more than one area, a
+     plan opens then, and the plan-open commit archives the proposal as today.
+     The proposal-stage test alone missed two changes of two on 2026-10-26.
+4. **A change with no code review carries no easy-problem fix.** One sentence in
+   `AGENTS.md` under "Fixing an easy problem you meet": the permission is given
+   "in the independently reviewed range", so a change with no review does not
+   carry one, and a `Defect fix:` line would be read by no one.
+
+### Withdrawn / superseded commitments
+
+* From Revision 1: the order "implement, code review in the open proposal, then
+  archive in its own commit", the named exception to append-only in
+  `doctrine/lifecycle.md`, the `lifecycle-contract.md` row, and the quickstart
+  rows that taught a review. Withdrawn; not needed once a trivial change has no
+  review.
+* From Revision 2: the fence "a change whose Boundary B ran in full mode keeps
+  its review", and the sentence "recorded in a note if the proposal has
+  archived". Superseded by item 2.
+* From the Context: the statements that practice's order "works" and that
+  the 2026-10-26 reviews "would have had nowhere to be recorded". Those two
+  changes were not trivial under the triage rule; they would have had plans,
+  which have a place for a review.
+* From the Alternatives: "Keep archiving in the implementing commit and record
+  the review in a new place" is no longer an alternative; with no review for a
+  trivial change it is close to the chosen design.
+* From the rate-limit gate: the argument that the same review order was
+  improvised three times. The gate now rests on the contradiction between the
+  four statements and the review requirement, and on `7066489a`, which archived
+  `r6-unused-def-blindspot` under the written rule and left no review of a
+  change whose effects the written rule did not bound.
+
+### Edit list (the plan owns the mapping)
+
+| Area | File | Change |
+| --- | --- | --- |
+| Governing | `AGENTS.md`, `templates/core/AGENTS.md` | Boundary B paragraph ("Boundary B governs every implementation"): drop "Boundary C's Bounding verdict reviews it afterwards" and the closing sentence on the code reviewer's Bounding verdict for a change with no plan. "Fixing an easy problem you meet": the item 4 sentence. |
+| Doctrine | `doctrine/plans.md` | the same Boundary B paragraph (362-370); the triage rule (176-199) gains the fourth skip condition; check 88-91, 131-134 and 690-691 still read true |
+| Doctrine | `doctrine/lifecycle.md` (61) | the trivial lane is "code + test", no review |
+| Doctrine | `doctrine/proposals.md` (191-203) | the "no plan" clause |
+| Template | `dev/proposals/_template.md`, `templates/core/dev/proposals/_template.md` | the `Plan review` clause, after the existing prefix (`bootstrap/tests/test_review_stance_in_shipped_files.py:709-711` pins the prefix) |
+| Docs | `docs/dev-tour.md` and its identical copy `dev/modules/onboarding/dev-tour.md` (81-84 and the worked example), `docs/glossary.md` (18), `docs/quickstart.md` (15-16, 501), `docs/vision.md` (32), `docs/workflow-role.md` (13-14), `docs/related-practices.md` (40), `docs/release-process.md` (59-60), `docs/solo-legacy-recipe.md` (136-138), `dimensions/README.md` (56) | the trivial lane has no code review |
+| Front pages | `README.md` (the lane summary, the review paragraph, the figure's alt text), `docs/getting-started.md` (28), `docs/index.html` (the process paragraph, the alt text), `docs/assets/three-lanes-of-change.svg` (header comment, `desc`, the "code review" chip) | the same; the figure keeps its house rules (alt text states the conclusion, a recorded legibility pass) |
+| Examples | `examples/minimal/README.md` (18-19), `examples/scientific-minimal/README.md` (40-41) | the same |
+| Changelog | `CHANGELOG.md` | one entry |
+
+Not edited: `doctrine/lifecycle.md` 176-184 and 212-219 and `doctrine/plans.md`
+88-91, which already say the implementing commit archives; the archived example
+proposals; the frozen `bootstrap/tests/test_quickstart_sequence.py`;
+`doctrine/lifecycle-contract.md`; `dev/agent_collaboration.md:133`, which already
+says a trivial change owes no review. `doctrine/dual-review.md:344-346` is pinned
+verbatim by a frozen test; the plan checks whether it still reads true, and if it
+does not, edits it as part of the re-anchor the Maintainer already owes.
+
+### Verification
+
+* **Consistency, with controls.** A paragraph-level scan, not a line search,
+  over every tracked file outside the archives, `dev/reviews/`, the changelog and
+  the tests: the words "typo", "one-line" or "trivial" in a paragraph that also
+  says "code review", "a review" or "Bounding verdict". It must find
+  `doctrine/lifecycle.md:61` and `docs/glossary.md:18` first. Every hit is edited
+  or listed with its reason.
+* **Tests.** `test_review_stance_in_shipped_files.py`,
+  `test_verification_boundaries.py`, `test_review_and_verification_rules_ship.py`,
+  `test_certifying_run_rule.py`, `test_scope_reduction_trap.py` and
+  `test_stewardship_rules_ship.py`, plus every test that reads a changed file,
+  found by search; counts reported with the interpreter. The second review read
+  these from source and expects none to redden; the implementer measures. The
+  lockfile step (`scaffold.py upgrade --finalize`) applies to the two
+  `AGENTS.md` copies.
+* **The figure.** Re-rendered at 375 and 1200 px with the legibility pass
+  recorded.
+* **Gates.** `claim_check`, `link_check`, `check_cairn`, the neutrality and
+  redundancy gates.
+* **Security preflight.** N/A: no trust boundary added, moved or widened.
+* **Independent scientific check.** N/A: no scientific assumption or result
+  touched.
+* **What would show it wrong.** A trivial change that ships a defect a review
+  would have caught and that the triage rule called trivial.
+
+### The header evidence, corrected
+
+Eight archived proposals carry `Plan review: not required`. One has a plan under
+a matching name, one was superseded, six have no plan under a matching name. Two
+of those six ran inside larger plans (`finding-tags-are-not-reasons`,
+`test-names-outlive-their-plans`). Two show no code review anywhere the reviews
+looked: `r6-unused-def-blindspot` (implementing commit `7066489a`) and
+`decision-rights-floor` (its implementing commit was not traced).
+
+### Questions for the Maintainer
+
+1. **Keep item 2, or drop it?** *Default:* keep. A change that cannot bound its
+   effects opens a plan, which is where a review of a risky change has a home.
+   The alternative is no limit at all: any change that meets the three skip
+   conditions skips the plan and the review, and the certifying run before a push
+   is the only second check.
+2. **Does "trivial" include the trivial lane?** *Default:* yes, so a typo fix
+   needs no fresh reviewer. If you meant only the no-plan implementation of an
+   accepted proposal, drop the lane rows from the table (the front pages, the
+   figure, the glossary, the dev tour, the examples).
+
+### Scope delta and assurance
+
+**Scope delta**: narrowed by the Maintainer's direction. No accepted scope is
+removed, because nothing was accepted. **Assurance path**: high-assurance,
+unchanged. No engine, contract, trust root or licence file is touched.
+**Plan review**: `not required(...)` as in the header; the plan opens in the
+fast multi-stage form, and its mapping must carry the table above.
