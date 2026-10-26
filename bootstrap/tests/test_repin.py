@@ -276,6 +276,23 @@ def test_a_module_loaded_outside_the_list_is_refused_even_when_it_blanks_its_own
     refused(bed.run("status"), "the module planted loaded from")
 
 
+def test_the_extraction_is_never_on_the_search_path_of_a_pinned_module(bed):
+    """A pinned module that does a bare `import planted` finds nothing: if any folder of the
+    extraction were searched, a committed `planted.py` would run before the post-import
+    check could refuse it.  The file is committed in every folder an import could reach."""
+    folders = ("", "scripts/", "bootstrap/", "bootstrap/tests/")
+    for folder in folders:
+        bed.write(f"{folder}planted.py", marker_code(bed.marker()))
+    twin = "bootstrap/tests/_oracle.py"
+    bed.write(twin, bed.read(twin) + "\nimport planted\n")
+    bed.pin()
+    refused(bed.run("status"), "outside the checked list")
+    assert not bed.marker().exists(), "a committed planted.py ran inside the repin process"
+    # control: a bare `python` run in the checkout does run it, so the marker can fire
+    subprocess.run([PY, "-c", "import planted"], cwd=bed.repo, env=bed.env, check=False)
+    assert bed.marker().exists(), "the control is wrong: importing it should write the marker"
+
+
 def tree_with(bed, extra):
     """Commit HEAD's root tree plus *extra* raw entries, built with `--literally` so that git
     itself does not refuse the ones `repin` must.  Each entry is (mode, name, object id)."""
