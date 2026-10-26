@@ -1,11 +1,11 @@
 # Make the next-session handoff a local note
 
 **Author**: Claude Sonnet 5.5 (Strategy; model id `claude-sonnet-5-5`)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review) — the plan edits `bootstrap/_scaffold/config.py`, a named high-risk surface
 **Opened**: 2026-10-26
-**In brief**: The file that tells the next work session where to start stops being a tracked file and becomes a note on the operator's own machine, because the tracked copy was out of date about 20 hours after its last rewrite.
+**In brief**: The file that tells the next work session where to start stops being a tracked file and becomes a short local note that the board and plans back up, because the tracked copy was out of date about 20 hours after its last rewrite; this revision answers the first review and corrects the costs.
 
 **The Maintainer's words.** This change started with his direction, not with an
 incident. On 2026-10-16, recorded in the queued row at `dev/PLANNING.md:486-493`:
@@ -619,3 +619,203 @@ Assurance path: high-assurance
 All runs used `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13), on `git archive` extractions in a throwaway folder, which I removed. I never set `CAIRN_FULL_SUITE`.
 
 **Coverage.** Not covered, and left for the Security Review: its whole obligation (I did not clear it or run its five questions). Security-flavoured points I noticed and did not analyse: F10; the three `session.py` message strings, which the author does not count under the interpreter-binding surface (`AGENTS.md`, "High-risk surfaces", which lists warning visibility); and the retained living-state record on a tree where the file is missing. I did not re-run `check_cairn.py` (the scratch copy is not a git repository, so it cannot list files), so the two flags at `CHANGELOG.md:2901` are unchecked; I did not run the other 20 or so test files the plan will map, `test_upgrade.py` beyond one class, or any `--profile` other than `solo-greenfield`; I did not read the plan, either adopter repository, or Windows behaviour; and I ran the standalone `prune_reflections.py` dry run without a listing control. Lenses applied: foundations, evidence, scope and counts, contract surfaces. Not applied in depth: documentation routing under `docs/DOCUMENTATION_PLAN.md`. **There are 2 blocking findings (F1, F2).** No clearing round follows; the author's Response and revision carry the proposal to awaiting-decision.
+
+## Response -- Claude Sonnet 5.5 (author) -- 2026-10-26
+
+Answers the usual review at `e99f8621` (REVISE; F1, F2 blocking; F3 to F14 not). **All fourteen are accepted.** Revision 1 is the complete current contract and is shorter than the opening. Measured at `a74943e8` on scratch copies, Python 3.13.13.
+
+**Status: `awaiting-review`, not `awaiting-decision`.** This revision only answers the usual review, which alone would go straight to the Decision (`doctrine/dual-review.md:226-229`). But the Security Review is still open: the review is "pass 1 of 2" and clears nothing of it. `AGENTS.md:33-37` names "a Security Review still open" as a reason for a second round, `doctrine/dual-review.md:237-238` says that review takes the rounds it needs, and `doctrine/lifecycle.md:158-162` makes `awaiting-review` the status after an author has answered a review and the next move is someone else's. So the next move is the Security Reviewer's. After it, the Status moves to `awaiting-decision`.
+
+| Finding | Disposition | Where it lands (Revision 1) |
+|---|---|---|
+| **F1** the read side is not in `AGENTS.md` | accept | Read clause in both `AGENTS.md` copies; cold-start probe in the Signals. Proposal 3 |
+| **F2** counts and sequencing | accept | 5 frozen files, 11 shipped sources, 9 copies, 9 records; the `test_notice_install.py:184` pin; Sequencing table |
+| **F3** two doctrine rules conflict | accept | The note is a convenience; the first task is the operator's call. Proposal 2 |
+| **F4** migration read overclaimed | accept | Whole file read; the stewardship item is closed (`aa6c5eeb`); three lessons have no home. Proposal 6 |
+| **F5** two alternatives | accept | Alternatives 6 and 7; the owner's reflection is offered in Question 1 |
+| **F6** `verify_stems.py` | accept | Skip the file only when absent. Proposal 4 |
+| **F7** ignore check in the doctrine | accept | Proposal 2 |
+| **F8** `UPGRADE.md` wording | accept | New section states what the check does; the agreement section is corrected as a recorded defect fix. Proposal 5 |
+| **F9** handoff-anchor defect | accept; defer the rule sentence | Queued row `dev/PLANNING.md:430-439`; this change fixes only the one doctrine sentence that becomes false. Proposal 2 |
+| **F10** one-sided "instruction channel" | accept | Rationale; the substance goes to the Security Review (S5) |
+| **F11** what cures staleness | accept | In brief and Rationale |
+| **F12** four `upgrade.py` citations | accept | Corrections |
+| **F13** undefined terms; Question 1 | accept | Glosses; Question 1 split |
+| **F14** smaller items | accept | Proposal 5, Tests required, Sequencing |
+
+## Revision 1 -- Claude Sonnet 5.5 (author) -- 2026-10-26
+
+The complete current contract. It supersedes the opening *In brief* through *Assurance path* in full. *Context* stands as opened, with the corrections below. **Review**: usual + Security Review (usual done, `e99f8621`; Security Review open). **Plan review**: required(Internal + Internal Security Review). **Assurance path**: high-assurance. **Boundary B**: expected `full`.
+
+### In brief
+
+Cairn stops shipping `dev/NEXT_SESSION.md`. At goodnight the designated owner writes a short local note, `dev/reflections/next-session.md`, in a folder git already ignores. The note is a convenience: the board, the plans and the issues carry the handoff, and the first task is the operator's call. The review found two things to fix, and I fixed both: nothing in `AGENTS.md` told an agent to read the note (both copies now do), and the cost list was short by one test and one skill pair.
+
+**Evidence, and its limit.** The 2026-10-19 version said "The goal is release 0.4", and `v0.4.0` was tagged 20 hours 19 minutes later (Context). That shows the file goes stale. It does not show a local file cures that. Three things do: a short content rule, a stamp naming the commit the note was written at, and a rule that an old note counts as absent. A stale tracked file looks current; an absent or old note does not. A short tracked stub would also help (Alternative 2). The decision is yours.
+
+**What you lose.** The tracked file's history is the only record of what each handoff believed. A local note keeps none. Your Decision is the concession.
+
+**Cost.** One row of the installer's table of core files is deleted (`_CORE_MAPPINGS`, `bootstrap/_scaffold/config.py`; the installer's code is "the engine"), so a Security Review. Five *frozen* files (checksums pinned in the gate manifest) change and one pinned test is dropped; all of it joins the single 0.5 *re-anchor*, the Maintainer's ceremony at the cut. A new install gets one fewer file and one fewer *slot* (a block the project fills in): 20 to 19 on `solo-greenfield`, 23 to 22 on the other two. **Order:** this change lands first, onboarding second, the twelfth 0.5 row (`dev/PLANNING.md:50`) last.
+
+### Questions for the Maintainer
+
+Each has my default. An unanswered question takes it.
+
+1. **Where does the note live?** *Default:* `dev/reflections/next-session.md`. *Alternative:* the owner's reflection, under `## Open threads / handoffs` (`tools/session.py:1872-1887`): no new file name, and the 14-day prune retires it, but a reader must find the newest owner reflection among several.
+2. **Does the install create an empty note?** *Default:* no. An ignored file would exist only on the installing machine. This answers the 2026-10-16 "scaffold-seeded empty" (`d963748a`).
+3. **Should `session-start` print the note's age?** *Default:* no tool code now. If the cold-start probe fails, a one-line print is a later proposal.
+4. **What are existing projects told?** *Default:* nothing changes in their tree; `bootstrap/UPGRADE.md` says keep, shrink or empty the file, never delete or untrack it, and write the new note at the new path. The twelfth row may later remove a never-edited copy; an edited copy stays.
+5. **Is Cairn's own tracked copy deleted in this change?** *Default:* yes, last, after reading the whole file. Leaving it keeps the problem in the tree that should prove the fix.
+6. **How much handoff doctrine stays?** *Default:* the rewrite rule and five-element shape stay as guidance, plus the new paragraph (Proposal 2), including "a note stamped over 14 days ago counts as absent". I have no data for 14; I borrowed the reflections window (`tools/session.py:86-88`). *Alternative:* delete the five-element list and the 14-day sentence, for the 0.5 theme (`dev/PLANNING.md:33`).
+7. **May the Decision say the rate-limit gate is not engaged?** *Default:* yes. This is a doctrine change (`doctrine/rationale.md:433-453`), but the direction is yours, not an incident. You answered the same question the same way for the model-tier proposal. I do not claim recurrence.
+
+### Corrections to the opening Context
+
+* **Counts.** Frozen files edited: 5 (`scripts/verify_stems.py`, its twin, and `bootstrap/tests/test_upgrade.py:1795`, `test_quickstart_sequence.py:197`, `test_notice_install.py:184`); four are new gate entries. Shipped sources: 11 (adds `templates/skills/session-start/SKILL.md`). Cairn's own copies: 9. Lockfile records: 9, all finalized by path.
+* **The missed pin.** `bootstrap/tests/test_notice_install.py:184` asserts 96 manifest rows; it is frozen and fails on the engine change (R2). The onboarding proposal names it as the collision point.
+* **Slot count.** Only this change alters it (R1). The onboarding change adds one report line. I withdraw the claim that `docs/dev-tour.md` collides: its inventory does not list it.
+* **Closed and open items.** The stewardship citations are fixed (`aa6c5eeb`). What has no home is "Notes for whoever coordinates next" (`dev/NEXT_SESSION.md:265-274`), three lessons (R7).
+* **Citations.** `upgrade.py`: `:543` (was `:523`), `:541-545`, `:1860`, `:2528`. `dev/PLANNING.md`: this row `:49`, twelfth row `:50`, marker defect `:430-439`, SW-SR-10 `:137-140`, stale remark `:198`, queued row `:502-509`. `CHANGELOG.md` link `:2914` (was `:2901`). I re-opened every cited line at `595cbfdc`; the claim that lines hold at `c7705221` is withdrawn.
+* **`bootstrap/fidelity-check.md:142`** is an install-contract surface (the fidelity manifest spec), not prose.
+
+### What I measured in the revision
+
+At `a74943e8`, scratch copies from `git archive`, outside the repository. "Edited copy" has the template and the `_CORE_MAPPINGS` row deleted. One line per probe; no output pasted.
+
+| # | Probe | Result |
+|---|---|---|
+| R1 | Install all three profiles, unedited and edited | Slots 20 to 19, 23 to 22, 23 to 22; `--manifest` 96 to 95 rows |
+| R2 | Edited copy plus the Proposal 4 prototype; `test_verify_stems.py`, `test_notice_install.py` | 26 passed, 1 failed (`test_notice_install.py:184`). The reviewer's 10-file run: 2 failed, 115 passed |
+| R3 | Prototype `verify_stems.py`, four cases | Absent file passes; present file with a bad stem is flagged; explicit `--scan` of an absent path errors; control (unedited script) errors on absence |
+| R4 | `bootstrap/AST_BASELINE_RUNBOOK.md` step 1 | 12 changed symbols unedited, 13 edited; the new one is `Assign:_CORE_MAPPINGS` |
+| R5 | `_gate_manifest.py verify`, live tree | `test_quickstart_sequence.py` and `test_review_stance_in_shipped_files.py` already `FROZEN-MODIFIED`; the other four files are not |
+| R6 | Bare `upgrade --finalize` on a copy of Cairn's own tree | Refuses today (the retired agreement file is missing); a scoped finalize works |
+| R7 | Search for the three lessons' phrases; `git rev-list --count 7a78c283..HEAD` | No home found (a paraphrase could be missed); marker range 524 commits |
+
+### Sequencing with the onboarding change
+
+The planning session set the order: this change, then onboarding. Whoever implements each change records its own pins; the planning session re-derives the final AST and frozen sets at the cut with `verify`. The onboarding Revision 1 (`4f087056`) reaches the same formulas.
+
+| Shared surface | This change | The onboarding change re-reads |
+|---|---|---|
+| Manifest pin `test_notice_install.py:184`; `--manifest` smoke count | Target = rows at the landing tree minus 1 (95 today) | Rows at its landing tree minus 9 (86 once this lands) |
+| `.py` count pins | None move | Its own |
+| `bootstrap/_scaffold/config.py`; AST set | `_CORE_MAPPINGS` only: 12 to 13 | Its own symbols; the union is the cut's |
+| Frozen set | Five edited, four new entries, one dropped node | Edits `test_notice_install.py`, `test_review_stance_in_shipped_files.py` too; its "about three" figure for me is the opening's |
+| `bootstrap/UPGRADE.md`, `CHANGELOG.md` | One section and one entry, the entry written by the plan's owner in the archive commit (`doctrine/plans.md:1036`) | Its own section and entry, appended beside |
+| `session-start` skill step 3; `doctrine/session-routines.md` | One bullet; the next-session sections | One bullet beside mine; one step removed elsewhere |
+| `docs/quickstart.md:298` and its test | "20" becomes "19" | Re-read |
+
+### Proposal
+
+1. **Stop shipping the file.** Delete `templates/core/dev/NEXT_SESSION.md` and the row at `bootstrap/_scaffold/config.py:549`. Keep the path in the living-state list (`bootstrap/_scaffold/lockfile.py:85`): removing it fails the integrity check on upgraded trees (earlier measurement, Context item 6b). Reword the two comments naming the file (`config.py:756`, `lockfile.py:62`).
+2. **The short local note.** The designated owner writes `dev/reflections/next-session.md` at goodnight, as an agent step; no tool writes it. `doctrine/session-routines.md` gains a paragraph (replacing the opening's):
+
+   > The next-session note is a local convenience, not a record. The board, the plans and the issues carry the handoff; the note only saves the next reader some orientation. It holds your suggestion for where to start and why, and pointers to the artifacts that carry the state. The first task is the operator's call. Nothing a later session needs may live only in the note. Before you write it, run `git check-ignore -q dev/reflections/next-session.md`; if that fails, add the path to `.gitignore` first. Begin the note with the date and the short commit id it was written at. Cite a commit, a file or a board row for each claim. A reader checks each line against the log and the board, and treats a note stamped over 14 days ago as absent.
+
+   Matching edits: the Goodnight bullet in both `AGENTS.md` copies ("and a short local next-session note, never committed"); both `session-end` skills (with the `git check-ignore` step); `dev/agent_collaboration.md` and its template; the three strings in `tools/session.py` (`:1960`, `:1971`, `:2052`); one sentence in both reflections READMEs (the note is the one file there that is not a reflection, and the prunes spare it because its name has no date); `AGENTS.md:470-472` drops the file from the landmark list. In `doctrine/session-routines.md:113-115`, "the commit makes the handoff durable" becomes "makes the roadmap scrub durable; the note is local". A goodnight whose scrub changes nothing makes no commit, and `session-start` then falls back with a warning (`tools/session.py:1527-1541`).
+3. **The read side.** The Session start bullet of both `AGENTS.md` copies (`AGENTS.md:174-180`, `templates/core/AGENTS.md:179-185`) gains: "read the local next-session note (`dev/reflections/next-session.md`), if there is one, as a hint to check". Step 3 of both `session-start` skills (`:55-71`) gains one bullet to the same effect. The tool is unchanged. Nothing checks that anyone obeys the clause; a test pins that it is present.
+4. **`verify_stems.py`** (both twins) keeps `dev/NEXT_SESSION.md` in its default list and skips it only when absent. An explicit `--scan` path is still required, and the "OK" line names the files scanned. Existing projects get a verbatim update and keep the check if they keep the file.
+5. **Existing projects keep their copy.** `bootstrap/UPGRADE.md` gets a section beside the agreement section. It states the measured behaviour: a bare `upgrade --finalize` refuses; `verify_integrity.py` still passes and only its note counts the file as unreadable; an emptied file lists no slot and finalizes. It corrects the agreement section's "report it unreadable" (`bootstrap/UPGRADE.md:56-59`) the same way, as a defect fix: the commit records `Defect fix: UPGRADE.md:56-59 -> bootstrap/UPGRADE.md -- test bootstrap/tests/test_next_session_local_note.py (node 9) -- changes no rule text`.
+6. **Cairn's own tree.** Read the whole file first: its preface and five headed sections (`dev/NEXT_SESSION.md:1-9`, `:10`, `:40`, `:204`, `:252`, `:265`). The plan's migration chunk lists each section's durable content and its home. Then `git rm dev/NEXT_SESSION.md`. The lockfile record stays, as the agreement's does, and all nine finalizes are by path (R6). `CHANGELOG.md:2914` becomes plain code text. This lands last.
+7. **Order within the change:** after the Plain Language `--finalize` of `AGENTS.md` and the security-findings fixer's `tools/session.py` edits (`dev/PLANNING.md:37-50`); keep the two `session.py` copies byte-identical.
+8. **Re-anchor ledger** (formulas the planning session re-derives): AST set gains `Assign:_CORE_MAPPINGS`; frozen set gains the four files above plus one dropped node in `test_review_stance_in_shipped_files.py`; the new test file freezes at the cut.
+
+Proposed paths:
+* `bootstrap/tests/test_next_session_local_note.py`
+* `dev/reflections/next-session.md`
+
+### Rationale
+
+This is the shortest route to the direction that reuses what exists: the `removed-upstream` path, the reflections ignore line, and the habit that a file Cairn stops shipping becomes the project's own. It avoids three measured traps: an ignore line that does not untrack, a lockfile record that outlives an ignored file, and an ignore line that never reaches existing projects.
+
+Four parts are mechanical and tested: the ignore, the prunes sparing the note, `verify_stems.py` tolerating absence, and the clauses being present (not obeyed). The stamp, the citing, treating the note as a hint and the 14-day rule are honour-system, the same kind of discipline whose failure is the evidence. The cold-start probe is the first test of whether it works.
+
+The counter-argument, conceded in part: the evidence is one file in one repository; both failures were content failures a short stub would also cure; the 15 file-only commits are what handoff commits are; and the tracked history is the only record of what each handoff believed. The direction, not the measurement, carries the decision.
+
+Moving the note out of git removes one route for text to reach the next agent (a clone or pull request) and adds another: an agent that read untrusted text writes a note, and the next agent reads it with no commit and no diff. I did not analyse which is worse; the Security Review owns that (S5).
+
+### Alternatives considered
+
+1. **Do nothing.** Keeps a shared copy and a record of every handoff; costs the measured staleness, 15 file-only commits and an install slot. Rejected: the direction is to end it.
+2. **A tracked pointer stub of about 15 lines.** The cheapest. Cuts staleness but keeps a commit per goodnight, the slot and the frozen-test edits.
+3. **Generate it from the board.** The strongest rejected: the board "makes no judgment about ... what should happen next" (`tools/board.py:11-13`), which is the file's only content with no other home; a committed generated file is stale after the next commit; and it builds a generator (`dev/PLANNING.md:16-17`).
+4. **The same path, ignored.** Rejected for the first two traps.
+5. **A path outside the reflections folder** (`dev/.cairn/`, a user folder). A new ignore line does not reach existing projects; a user folder is invisible to other worktrees.
+6. **The owner's reflection, `## Open threads / handoffs`.** The runner-up. It loses as the default because every agent writes a reflection, so a reader must find the newest owner's among files named `<date>-<agent>-<session>.md`, and the README says no agent edits another's. Question 1 offers it.
+7. **The handoff commit's body.** Dated and immutable, but you asked for a local note, the commit may not exist, history is public once pushed, and `session-start` prints only subjects (`tools/session.py:1527-1533`).
+
+### What is lost, and migration for existing installs
+
+Lost: the history of what each handoff believed (conceded by the Decision); a handoff that follows a person to a second machine or worktree (an ignored note is not in a second `git worktree`). Mitigation: nothing a later session needs lives only in the note; state lives in the board (`tools/board.py:8-32`), the plan's Waiting line (`dev/plans/_template.md:44-45`), statuses, rows, issues and the log. With two agents in one tree the last write wins. A team that wants the note shared can `git add -f` it and accept the staleness cost.
+
+For a project that already has Cairn, after `upgrade --apply`:
+
+1. Run `upgrade --plan`. You should see `removed-upstream 1: dev/NEXT_SESSION.md`. It repeats on every plan. If the plan names the file under any other heading, file an issue.
+2. Keep your file, shrink it to a line, or empty it. **Do not delete it and do not run `git rm --cached` on it:** your lockfile still lists it, and a fresh clone without it makes a bare `upgrade --finalize` refuse. If you already deleted it, restore an empty file.
+3. At your next goodnight, run `git check-ignore -v dev/reflections/next-session.md`. You should see the line that ignores it; if not, add the path to `.gitignore`. Then write the note there.
+
+`verify_stems.py` needs no action. I did not run these steps on a real project.
+
+### Documentation / doctrine surface
+
+Prescription: both `AGENTS.md` copies. Process: `dev/agent_collaboration.md` and its template. Routine detail: `doctrine/session-routines.md` (headings stay), with `proposals.md`, `plans.md`, `doc-governance.md` losing their references. Adopter steps: `bootstrap/UPGRADE.md`. File maps: `dev/README.md`, `docs/dev-tour.md`, `docs/DOCUMENTATION_PLAN.md`, `bootstrap/BOOTSTRAP.md:507`, `:631`, `bootstrap/fidelity-check.md:142`. `case-studies/modflow_tools-fidelity-manifest.yml` is a pinned snapshot and is not edited. Nothing names a model or a vendor.
+
+### Evidence / verification plan
+
+Cairn has no CI; a person triggers every check. `check_cairn.py`, `claim_check.py` and `quality_gate.py --sub neutrality --sub redundancy` run before commit; the certifying run before a push includes the last. **The note being followed can only be judged by a reader**: a cold-start probe and a reviewer of the skill text.
+
+### Tests required
+
+New file `bootstrap/tests/test_next_session_local_note.py`, one node per property, modelled on `bootstrap/tests/test_agreement_retired.py:72-121`: (1) a fresh install has no file, record or manifest row and the path stays in `_LIVING_STATE_DSTS`; (2) `upgrade --plan` prints exactly one `removed-upstream 1: dev/NEXT_SESSION.md` line, and `--apply` leaves file, record and cache unchanged with `verify_integrity` passing; (3) default `verify_stems.py` passes with only `PLANNING.md`; (4) it flags a stem in a present `NEXT_SESSION.md`; (5) an explicit absent `--scan` path errors; (6) the note path is ignored and both prunes spare it (controls: `dev/reflections/README.md` not ignored; an old dated file listed); (7) the read and write clauses are present in both `AGENTS.md`, `session-start` and `session-end` copies, listed from the tree; (8) no shipped source tells a reader to read or write `dev/NEXT_SESSION.md` (pattern at `:155-175`); (9) a deleted living-state file leaves `verify_integrity` passing with "unreadable 1" in its note, an emptied file lists no slot. I dropped the "bare finalize refuses" node: `test_agreement_retired.py:109` pins that behaviour for another path.
+
+Existing tests to run, scoped (found by searching what reads each touched file; I ran only the two in R2): `test_agreement_retired`, `test_upgrade` (`TestLivingStatePartition`), `test_quickstart_sequence`, `test_notice_install`, `test_manifest`, `test_verify_stems`, `test_core_dev_folders`, `test_lockfile_module`, `test_prune_tools`, `test_session_failsafe`, `test_skill_contract`, `test_session_start_drain_rules`, `test_review_stance_in_shipped_files`, `test_scaffold`, `test_ast_attest` (red until the re-anchor), `test_gate_manifest`. Mutants beside controls: restore the row (node 1 fails); remove the living-state entry (node 2); restore the old `verify_stems.py` default (node 3); delete a read clause (node 7). Where a finding says a change must reach every member of a set, list the set from the tree and mutate each member in a separate copy. Boundary B is `full`, `Certified by: pending`; nobody sets `CAIRN_FULL_SUITE=1`. Smoke: `scaffold.py --manifest` (rows at the landing tree minus 1) and `--dry-run` on `solo-greenfield`.
+
+#### Security preflight
+
+* **S1 Who supplied it?** The engine decides "removed upstream" from a lockfile record's `src` (supplied by the project) against the Cairn checkout's templates (not supplied by it). The branch reads no file (`bootstrap/_scaffold/upgrade.py:541-545`). `verify_stems.py` decides "skip if absent" from the project's file system. No new input.
+* **S2 Can it fail?** Each check has a one-line mutant (above); two ran earlier and the prototype ran in R3. Node 2 compares to a literal string.
+* **S3 What fires it?** A person, running `scaffold.py upgrade --plan`, `verify_integrity.py`, `verify_stems.py` or `pytest`. Node 2 pins that the `UPGRADE.md` sentence and the printed line name the same path.
+* **S4 Which way does it break?** Row kept without the template: fewer files, one warning. A wrong edit to the living-state list: fails closed. An absent default file is skipped, so less checking, but the "OK" line names the files scanned. If `dev/reflections/` is not ignored, the note could be committed: local text leaks into git, nothing executes.
+* **S5 Who still wins?** Someone who can edit a project's committed lockfile can still mark this path living-state; it is a prose note and the list allowed it before. **For the Security Review:** the local route (Rationale), a hostile instruction in a note having no lexical signature, and the three `session.py` strings, which I do not count under the interpreter-binding surface.
+
+### Independent scientific check
+
+N/A: no scientific assumption or result touched; every number describes this repository.
+
+### What I did not check
+
+* I ran no suite, only two test files in a scratch copy (R2), and applied no edit to the repository.
+* The scratch project was a fresh install; I did not read either adopter repository, or run the migration steps on a real project.
+* I did not repeat at `a74943e8` the `COLLECTION-DROPPED` and `check_cairn.py` runs made at `1d5a047b`; I did not fetch; I did not check Windows or a case-insensitive disk.
+* I read, but did not run, the standalone `prune_reflections.py`; the reviewer ran `_prune_reflections` in dry-run.
+* I ran no cold-start probe, since no change exists to probe.
+
+### Signals the change is wrong
+
+I have no base rate for these thresholds; ten goodnights is a review point the Maintainer can move.
+
+* **The cold-start probe fails.** On a scratch install after the change, a fresh agent given only the installed `AGENTS.md` should name `dev/reflections/next-session.md` and open it unprompted. A person runs it once. If it fails, Question 3's print is the next step.
+* Within ten goodnights a session starts without orientation the board, plans and log could not give, and someone says so twice.
+* An agent repeats a claim from a note stamped over 14 days ago, or naming a commit that does not exist.
+* `git ls-files dev/reflections` lists anything beyond `README.md`.
+* After an upgrade, `upgrade --plan` prints more than the one line about this file, or `verify_integrity.py` fails.
+* The board gains rows that only restate the old file.
+* The Security Review finds a use of the retained record or the local route not accounted for; I would withdraw Proposal 1.
+
+### Scope delta
+
+**Scope delta**: preserved (no outcome of the opening is removed). The revision adds the read clause, the `session-start` skill pair, the `test_notice_install.py` edit, the `UPGRADE.md` correction, two alternatives, the 14-day rule and the cold-start probe, and replaces the narrowed `verify_stems.py` default with a smaller change that keeps more coverage. Against the board row (`dev/PLANNING.md:502-509`) the means still differ: no new ignore pattern and no scaffold seed, because the existing reflections line serves and a seed would not reach existing projects. If the note must stay at `dev/NEXT_SESSION.md`, both return and the engine grows by `_SKILLS_GITIGNORE`.
+
+### Assurance path
+
+**Assurance path**: high-assurance: the engine (one table row), the install contract (the manifest and the fidelity manifest spec) and a verbatim script adopters run. A Security Review is owed because `AGENTS.md:448-451` makes a one-line engine change take one unless it is a defect repair, and this is not. The `session.py` edit is three strings away from `_resolve_interpreter`. The Security Review should test the engine edit, the retained record on a tree where the file is missing, the skip-when-absent script, and the local route.
+
+### Withdrawn / superseded commitments
+
+* **Opening Proposal 4 (narrow the `verify_stems.py` default) and Migration step 4:** superseded by skip-when-absent.
+* **"4 frozen edits", "10 shipped sources, 8 copies, 8 records", "both proposals change the slot count", "`docs/dev-tour.md` may collide":** corrected or withdrawn.
+* **"Every line number holds at `c7705221`" and the opening's `upgrade.py`, `PLANNING.md` and `CHANGELOG.md` line citations:** superseded.
+* **Opening Question 1 (two questions with evidence):** split. **Opening doctrine paragraph ("write only what no artifact carries"):** replaced. **"Removes an instruction channel":** replaced by the two-route statement.
+* **"One item with no home, one section read":** withdrawn. **The In brief's implication that the evidence carries the decision:** reworded.
+* **The test node "bare finalize refuses on a fresh clone":** dropped as a duplicate. **The Question 3 alternative "teach `upgrade` to drop the record":** superseded by the twelfth row. **The smoke check "95 rows":** now a formula.
