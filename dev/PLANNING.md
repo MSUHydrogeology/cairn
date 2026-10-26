@@ -364,7 +364,11 @@ The LP-SR fixes (2026-10-26) add eight engine symbols to the AST re-anchor
 whose bodies changed. Two later engine edits add to that set: the repair of
 `upgrade --init-lock` (commit `5e66c74d`) changed `_write_init_lock_profile_template`,
 and engine-batch chunk C1 (commit `24400219`) changed `main` (`cli.py`) and
-`print_report` (`install.py`); the batch's chunk C2 (commit `47366b20`) changed `merge_file` and
+`print_report` (`install.py`); the repair of `--init-lock` and `--finalize`
+over links (commit `091ec219`) changed `_cmd_init_lock`,
+`_cmd_finalize_lockfile` and `cmd_upgrade` and added `_refuse_if_linked` and
+`_linked_vendor_wrapper_names`, as the Developer session derived by comparing
+the file's AST before and after; the batch's chunk C2 (commit `47366b20`) changed `merge_file` and
 `_print_upgrade_report`. Reported by the sessions that made them and confirmed
 by the engine batch's code reviewer with the read-only `_ast_attest.py verify`
 listing (10 changed symbols, 3 known-new with changed bodies, no new symbol),
@@ -412,26 +416,14 @@ changed set from the final committed tree.
 
   > "Leave the disagreement"
 
-* **`upgrade --init-lock` still reads through a link.** With no lockfile and
-  `dev/.cairn/profile.yml` linked to an existing file, it writes a lockfile in
-  the project that carries that file's values; with `dev/.cairn` linked, it reads
-  the lockfile behind the link. Nothing is written outside the project. It
-  breaks the "no read or write through a link" rule `bootstrap/UPGRADE.md`
-  states for the other paths, so taking it is a trivial-lane defect repair
-  (an engine one still ends at the Maintainer-run AST re-anchor). Found by the
-  code review of the lockfile-path fixes; `UPGRADE.md` and
-  `bootstrap/_scaffold/SECURITY_MUTATIONS.md` already say so plainly.
 * **A nested `.git` folder is not refused in an upgrade review area.** A
   hand-built review area naming `sub/.git/hooks/post-merge` is applied; the
   written promises (`SECURITY_MUTATIONS.md`, `UPGRADE.md`) cover only the root
   `.git/`, so this is not a defect repair and needs a standard change note. A
   hook is a program that git runs in that nested repository. Found by the same
   code review (its F2).
-* **`upgrade --finalize` over a linked vendor wrapper exits 1 with "missing on
-  disk" and does not name the link.** A wording gap; `--stage` and `--apply`
-  already behave. Found by the same code review (its F3).
-
-  The Maintainer's authorization to queue these three, verbatim:
+  The Maintainer's authorization to queue this row (with two others that have
+  since been built, commits `18511e42`, `091ec219` and `41bcd166`), verbatim:
 
   > "Yes, queue all three"
 
