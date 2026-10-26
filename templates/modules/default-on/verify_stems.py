@@ -6,7 +6,8 @@
 
 The Cairn ``AGENTS.md`` > "Shared communication files" convention requires
 ``PLANNING.md`` and ``NEXT_SESSION.md`` (and any adopter-added coordination
-files) to refer to proposals and plans by **filename stem, in backticks**
+files; a project that has no ``NEXT_SESSION.md`` is skipped, with a printed
+line) to refer to proposals and plans by **filename stem, in backticks**
 (e.g. ``2026-05-15-author-slug``) rather than by relative-path link -- a
 stem is invariant across the ``dev/proposals/`` -> ``dev/proposals/archive/``
 move, so an archive move needs no edit to those two files.  The cost:
@@ -48,6 +49,7 @@ complement to ``claim_check.py`` (repo-path/line-bounds) and ``link_check.py``
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import sys
 from pathlib import Path
@@ -68,6 +70,10 @@ _DEFAULT_SCANNED: tuple[Path, ...] = (
     Path("dev") / "PLANNING.md",
     Path("dev") / "NEXT_SESSION.md",
 )
+
+# The one default file that may be absent. Cairn no longer ships it, so a new
+# project has none; an existing project keeps its copy and it is scanned.
+_HANDOFF_FILE = Path("dev") / "NEXT_SESSION.md"
 
 # Roots a stem may resolve under (rglob covers the archive/ subdirs).
 STEM_ROOTS: tuple[Path, ...] = (
@@ -174,17 +180,28 @@ def main(argv: list[str] | None = None) -> int:
         "--scan", nargs="+", metavar="FILE",
         help=(
             "coordination files to scan for stems (repo-relative paths; "
-            f"default: dev/PLANNING.md dev/NEXT_SESSION.md)"
+            "default: dev/PLANNING.md, and dev/NEXT_SESSION.md unless nothing "
+            "exists at that path)"
         ),
     )
     args = parser.parse_args(argv)
 
     repo_root = Path(args.root or Path(__file__).resolve().parent.parent)
 
+    skipped: list[Path] = []
     if args.scan:
         scanned: tuple[Path, ...] = tuple(Path(f) for f in args.scan)
     else:
-        scanned = _DEFAULT_SCANNED
+        # Skip only the handoff file, only when nothing at all exists at its
+        # path: a folder or a dangling link is still reported by check_stems.
+        # An absent dev/PLANNING.md is still an error.
+        skipped = [
+            f for f in _DEFAULT_SCANNED
+            if f == _HANDOFF_FILE and not os.path.lexists(repo_root / f)
+        ]
+        scanned = tuple(f for f in _DEFAULT_SCANNED if f not in skipped)
+    for f in skipped:
+        print(f"verify_stems: skipped {f} (absent)")
 
     issues = check_stems(repo_root, scanned=scanned, verbose=args.verbose)
 
