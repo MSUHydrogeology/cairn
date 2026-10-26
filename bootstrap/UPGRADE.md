@@ -300,10 +300,13 @@ you what changed.
   then re-run. A profile that is absent or a regular file is not affected. The
   same exit-2 refusal covers a lockfile whose `modules` list holds anything but
   plain names, a staged upgrade that names a file or a version that is not plain
-  text, and a lockfile record whose `dst` or `base_cache` is inside `.git/`. `--init-lock` makes the same check for itself, before it looks for a
-  lockfile or reads the profile: a link at `dev/.cairn/profile.yml`, at
-  `dev/.cairn`, or above either one is refused with the same exit 2, whether it
-  points to a file that exists or to nothing. Two limits remain. Over a lockfile
+  text, and a lockfile record whose `dst` or `base_cache` is inside `.git/`. `--init-lock` makes the same checks, in its own order. It first refuses a
+  link at `dev/.cairn`, or above it, before it looks for a lockfile. If a
+  lockfile exists it stops there, with "already exists; nothing to migrate" and
+  exit 0, and never reads the profile. Otherwise it refuses a link at
+  `dev/.cairn/profile.yml` before it reads or writes it. Each refusal is the
+  same exit 2, whether the link points to a file that exists or to nothing.
+  Two limits remain. Over a lockfile
   that is itself a link, `--init-lock` and `--adopt-collisions` end in a Python
   traceback with exit 1 instead of the one-line refusal; nothing is read or
   written outside the project. And `--init-lock` hashes each tracked file it
