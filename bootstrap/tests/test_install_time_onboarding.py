@@ -200,3 +200,76 @@ class TestInstallLockfileRecordsKeepTheirShape:
         for record in lock["files"]:
             keys |= set(record)
         assert keys == self.RECORD_KEYS
+
+
+# --------------------------------------------------------------------------
+# The install report ends with a pointer to the day-one list.
+# --------------------------------------------------------------------------
+
+POINTER = "Day-one tasks for your profile: dev/PLANNING.md, section Onboarding."
+
+
+def _last_line(text: str) -> str:
+    return [ln for ln in text.splitlines() if ln.strip()][-1]
+
+
+class TestInstallOutputEndsWithThePointerToTheList:
+    """The refusal text goes to stderr and the pointer to stdout, so "last"
+    is read per stream: the pointer is the last non-blank stdout line on a
+    successful install, and absent whenever the list was not written or the
+    lockfile was refused."""
+
+    @pytest.mark.parametrize("preset", PROFILES)
+    def test_it_is_the_last_stdout_line_of_a_successful_profile_install(
+            self, tmp_path: Path, capsys, preset: str) -> None:
+        assert _install(tmp_path / "t", preset) == 0
+        out = capsys.readouterr().out
+        assert _last_line(out) == POINTER
+        assert out.count(POINTER) == 1
+        assert out.index("Wrote dev/.cairn/cairn-lock.yml") < out.index(POINTER)
+
+    def test_it_is_absent_without_a_profile(self, tmp_path: Path, capsys) -> None:
+        assert _install(tmp_path / "t", None) == 0
+        assert POINTER not in capsys.readouterr().out
+
+    def test_it_is_absent_under_dry_run(self, tmp_path: Path, capsys) -> None:
+        assert _install(tmp_path / "t", PROFILES[0], extra=("--dry-run",)) == 0
+        assert POINTER not in capsys.readouterr().out
+
+    def test_it_is_absent_when_this_run_did_not_write_the_list(
+            self, tmp_path: Path, capsys) -> None:
+        """A second run finds the slot already filled and writes no list, yet
+        still writes the lockfile; the profile name alone must not print it."""
+        target = tmp_path / "t"
+        assert _install(target, PROFILES[0]) == 0
+        capsys.readouterr()
+        (target / "dev/.cairn/cairn-lock.yml").unlink()
+        assert _install(target, PROFILES[0]) == 0
+        out = capsys.readouterr().out
+        assert "Wrote dev/.cairn/cairn-lock.yml" in out, "control: lock written"
+        assert POINTER not in out
+
+    def test_it_is_absent_and_the_refusal_stands_when_the_lockfile_is_refused(
+            self, tmp_path: Path, capsys) -> None:
+        target = tmp_path / "t"
+        target.mkdir()
+        (target / "AGENTS.md").write_text("# my own agents file\n", encoding="utf-8")
+        assert _install(target, PROFILES[0]) == 0
+        captured = capsys.readouterr()
+        assert "NOT written" in captured.err, "control: the lockfile was refused"
+        assert (target / "dev/PLANNING.md").is_file()
+        assert POINTER not in captured.out
+        assert "Wrote dev/.cairn/cairn-lock.yml" not in captured.out
+
+    @pytest.mark.parametrize("flags", ((), ("--dry-run",)))
+    def test_dry_run_and_no_profile_text_names_no_helper_or_profile_copy(
+            self, tmp_path: Path, capsys, flags: tuple[str, ...]) -> None:
+        assert _install(tmp_path / "t", PROFILES[0], extra=flags) == 0
+        out = capsys.readouterr().out
+        assert "onboarding_activate" not in out
+        assert "helper" not in out.lower()
+        assert f"dev/modules/onboarding/{PROFILES[0]}.md" not in out
+        assert _install(tmp_path / "u", None, extra=flags) == 0
+        out = capsys.readouterr().out
+        assert "helper + log" not in out
+        assert "onboarding_activate" not in out
