@@ -273,6 +273,28 @@ changed set from the final committed tree.
   `dev/strategy/2026-08-28-claude-repin-revitalization.md` to a reviewed proposal
   before building `repin`. Until then corrections remain manual. A called
   outside read is the Maintainer's choice, not a standing requirement.
+* **The gate anchor has no signature.** `refs/cairn/gate-anchor` points to
+  commit `6f29519d`, and git reports no signature on it (signature status `N`;
+  `git verify-commit` exits 1; the control `git tag -v v0.4.0` exits 0, measured
+  2026-10-26). `AGENTS.md` says the anchor is trustworthy because of "the
+  signature on the commit it names", which is false for the current anchor. Two
+  ways to close it: sign the anchor at the next key ceremony, or correct that
+  sentence. Which is the Maintainer's call. Found by the repin Security Review
+  (finding SR-8, in `dev/proposals/2026-10-26-claude-repin-build.md`).
+  Authorization to queue it, verbatim:
+
+  > "Yes, add both as Queued rows"
+
+* **The re-anchor ceremony passes inherited environment variables into the test
+  run it pins.** Reported by the repin Security Review, not reproduced by the
+  roadmap's author: an inherited `PYTEST_ADDOPTS` dropped 9 of 4,650 tests from
+  the pinned set and the run still exited 0, and a pre-compiled Python file
+  committed into the tree is covered by no pin. The ceremony's Stage A should
+  clear `PYTEST_*` and `PYTHON*` before it collects. Same finding, same
+  authorization as the row above. Maintainer-only ceremony code
+  (`scripts/reanchor_ceremony.py`, `bootstrap/reanchor.sh`, the launcher
+  template); the review did not examine those files, so a reproduction comes
+  first.
 * **F8: make the post-install report match the selected profile. Targeted for 0.5, in the engine batch.** A minimal
   install is asked to fill slots for modules it does not install. Classify
   obligations by the accepted profile; this touches the scaffold engine and
