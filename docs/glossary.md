@@ -15,8 +15,8 @@ exists. Reviewed independently, then decided. The unit of deliberation.
 to need one. Chunks, acceptance criteria, verification evidence.
 
 **Lanes** — the three routes a change can take, chosen before anything is
-written. *Trivial*: a typo or one-line fix gets the change, its test and one
-code review, with no proposal. *Standard*: a change whose shape is settled gets
+written. *Trivial*: a typo or one-line fix gets the change and its test, with
+no proposal and no code review. *Standard*: a change whose shape is settled gets
 a short change note, a review, then the change, its test and a code review.
 *Deliberate*: a new feature, a contract change or a high-risk surface gets a
 proposal, a review, the Maintainer's decision, a plan, a plan review, the

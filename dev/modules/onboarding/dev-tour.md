@@ -79,8 +79,7 @@ an issue on Cairn's own tracker. The template is
 ## The three lanes
 
 1. **Trivial** -- a typo or one-line fix. Make the change and its test
-   in one commit; a fresh reviewer who did not write it reviews the
-   commit. No proposal.
+   in one commit. No proposal and no code review.
 2. **Standard** -- the shape is settled, but the change is not trivial.
    Write one short change note (why, what, approach, verification,
    risk), have it reviewed, then make the change and its test, then a
@@ -96,17 +95,15 @@ commit.
 
 Suppose your README says "scientifc" where it means "scientific".
 
-**Step 1 -- fix it.** Edit the word and commit it with a message that
-says what changed. A README typo has no behavior to test, so the edit
-is the whole change.
+Edit the word and commit it with a message that says what changed. A
+README typo has no behavior to test, so the edit is the whole change.
 
-**Step 2 -- review.** A fresh reviewer who did not make the edit reads
-the commit and records one line: what they looked at and that it holds.
-A fresh session of your agent is enough. If you want another model or
-a person to look, that is your call as Maintainer.
-
-That is all: no proposal, no plan, no archive. Running this change
-through a proposal would cost more attention than the typo is worth.
+That is all: no proposal, no plan, no review, no archive. A typo fix
+that touches a contract or a high-risk surface is not trivial, so take a
+heavier lane. If you want another model or a person to look at a
+trivial change anyway, that is your call as Maintainer. Running this
+change through a proposal would cost more attention than the typo is
+worth.
 
 For the full lane from start to finish, see the toy example in Cairn's
 README ("A toy example: asking for a new feature"). It follows one

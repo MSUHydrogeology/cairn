@@ -135,7 +135,7 @@ the new code nor its tests computed.
 
 Cairn sorts every change into one of three lanes before anything is
 written. A typo or one-line fix is trivial: make the change with its
-test and get a code review, with no proposal. A change whose shape is
+test, with no proposal and no code review. A change whose shape is
 already settled gets one short change note, reviewed. A new feature, a
 contract change or a high-risk surface gets a proposal. When you are
 unsure, take the heavier lane. This keeps process off bug fixes while

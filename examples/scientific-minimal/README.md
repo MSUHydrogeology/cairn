@@ -38,7 +38,7 @@ tree with the proposal lifecycle, run by hand.
 
 Cairn first sorts a change into one of three lanes
 ([`../../doctrine/lifecycle.md`](../../doctrine/lifecycle.md)): a typo or
-one-line fix is just a commit with its test and a code review; a change
+one-line fix is just a commit with its test and no code review; a change
 with a settled shape gets a short note and a review; a new capability gets
 the full path. The change here -- *add the mass-balance invariant test and
 the residual writer to `water_budget.py`* -- adds a capability, so it took

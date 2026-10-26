@@ -54,7 +54,7 @@ what makes "the invariant core is small" an honest claim.
 
 * **The core** — present in every adoption; what makes it Cairn at
   all. Changes are sorted into three lanes: a trivial change is
-  committed with its test and a code review; a change whose shape is
+  committed with its test and no code review; a change whose shape is
   settled gets one short change note; a new feature, a contract change
   or a high-risk surface gets a proposal, a review, the Maintainer's
   decision and a plan. One person, the Maintainer, makes the final

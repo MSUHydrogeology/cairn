@@ -11,7 +11,7 @@ Cairn governs the **deliberation** around a change — the recorded,
 reviewed decision-making *upstream* of the code:
 
 * **The lifecycle.** Changes are sorted into one of three lanes. A typo or
-  one-line fix gets a test and a code review. A change with a settled shape
+  one-line fix gets a test and no review. A change with a settled shape
   gets a short change note first. Only a new feature, a contract change or a
   high-risk surface moves through propose → review → decide → implement →
   record, as append-only, git-committed artifacts (see

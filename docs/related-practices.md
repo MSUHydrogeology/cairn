@@ -38,7 +38,7 @@ changes that affect thousands of people, where a written round of review is
 cheap next to the consequences of getting it wrong. Cairn applies the same
 shape to ordinary day-to-day changes in one repository, which only works if
 the process stays light. So Cairn sorts changes into three lanes: a typo gets
-a test and a review, and only a new feature, a contract change or a
+a test and no review, and only a new feature, a contract change or a
 high-risk surface gets the full proposal. Keeping it light is a live problem,
 not a solved one.
 

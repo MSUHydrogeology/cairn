@@ -30,7 +30,7 @@ Two differentiators, both genuinely uncommon, define the method:
 
 * **An append-only, git-committed deliberation lifecycle.** Changes are
   sorted into three lanes before anything is written. A typo or one-line fix
-  gets a test and a code review. A change with a settled shape gets a short
+  gets a test and no review. A change with a settled shape gets a short
   change note and a review. A new feature, a contract change or a high-risk
   surface gets a recorded proposal, the Maintainer's decision and a plan. The
   arc of a decision can be rebuilt from `git log`, not lost when a session

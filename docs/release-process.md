@@ -57,7 +57,7 @@ a sweep slots into the matching row or proposes a new lens.
   Maintainer triage into in-scope-for-cut versus deferred, then fixes. No edits
   before the report unless trivially mechanical.
 * **Route fixes by lane.** A typo or one-line fix takes the trivial lane: the
-  change, its test, and a code review. A fix whose shape is settled takes the
+  change and its test, with no code review. A fix whose shape is settled takes the
   standard lane: a short change note, reviewed, then the change and a code
   review. A new feature, a contract change or a high-risk surface takes the
   deliberate lane: proposal, review, the Maintainer's decision, plan. Deferred

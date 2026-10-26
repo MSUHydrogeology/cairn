@@ -13,7 +13,7 @@ This page will not teach you the method in one sitting;
 
 > **A note on the example.**  The change here is a one-line README
 > tagline.  In real work that is a *trivial* change: you would make it
-> and commit it with its test and one code review.  Cairn sorts changes
+> and commit it with its test, with no code review.  Cairn sorts changes
 > into three lanes, and only the heaviest (a new feature, a contract change, a
 > high-risk surface) needs a proposal.  This recipe sends the tagline
 > down the full proposal path **on purpose**, so that you can see each
@@ -499,7 +499,7 @@ Remove-Item -Recurse -Force cairn-try
 ## What you did *not* see
 
 * **The other two lanes.**  A trivial change (a typo or one-line fix)
-  takes no proposal.  A change whose shape is already settled takes one
+  takes no proposal and no code review.  A change whose shape is already settled takes one
   short change note, reviewed, then the change and its test.  When
   unsure, take the heavier lane.  See
   [`doctrine/lifecycle.md`](../doctrine/lifecycle.md).
