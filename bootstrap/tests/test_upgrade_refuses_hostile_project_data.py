@@ -357,6 +357,59 @@ def test_init_lock_with_a_lockfile_already_there_still_changes_nothing(world):
     assert snapshot(world.project) == before
 
 
+# --- the profile file, on the report and the preview ---------------------------
+
+
+@needs_links
+@pytest.mark.parametrize("flag", ["--plan", "--stage"])
+@pytest.mark.parametrize("how", [
+    "dangling-absolute", "existing-outside-file", "existing-inside-file"])
+def test_plan_and_stage_refuse_a_profile_that_is_a_link(world, tmp_path, flag, how):
+    """`--plan` and `--stage` read `dev/.cairn/profile.yml` to size the upgrade
+    under the profile the project has now.  A link there used to be read
+    through: the command printed a warning about a file the project does not
+    own and went on at exit 0, and `--stage` wrote its review area.  Every link
+    is refused, wherever it points, with the refusal `--init-lock` prints -- the
+    rule `--apply` already keeps for this file."""
+    if how == "existing-inside-file":
+        target = world.project / "docs" / "profile-copy.yml"
+        target.write_text("# not complete\n", encoding="utf-8")
+        (world.project / PROFILE_REL).unlink(missing_ok=True)
+        link(target, world.project / PROFILE_REL)
+    else:
+        world = _profile_link_world(world, how, tmp_path)
+    profile = world.project / PROFILE_REL
+    project_before, outside_before = snapshot(world.project), snapshot(world.outside)
+    proc = upgrade(world.project, flag)
+    assert_plain_refusal(proc)
+    assert PROFILE_REL in proc.stderr, "the refusal must say which file it is about"
+    assert "Replace it with a regular file" in proc.stderr, "the refusal must say what to do"
+    assert "[warn]" not in proc.stdout + proc.stderr, "the link was read before it was refused"
+    assert profile.is_symlink(), "the link must be left as it was"
+    assert not (world.project / STAGE_REL).exists(), "a refusal must write no review area"
+    assert snapshot(world.project) == project_before, "a refusal must change nothing"
+    assert snapshot(world.outside) == outside_before, "something outside the project changed"
+
+
+@pytest.mark.parametrize("flag", ["--plan", "--stage"])
+@pytest.mark.parametrize("profile", ["regular", "absent"])
+def test_plan_and_stage_still_run_over_a_regular_or_absent_profile(world, flag, profile):
+    """An ordinary run, no link anywhere, is as it was: it exits 0, says nothing
+    about the profile, and `--stage` writes its review area."""
+    path = world.project / PROFILE_REL
+    path.unlink(missing_ok=True)
+    if profile == "regular":
+        path.write_text(_complete_profile("OrdinaryName"), encoding="utf-8")
+    before = snapshot(world.project)
+    proc = upgrade(world.project, flag)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "refus" not in proc.stderr and "[warn]" not in proc.stderr, proc.stderr
+    if flag == "--stage":
+        assert (world.project / STAGE_REL).is_dir()
+    else:
+        assert snapshot(world.project) == before, "--plan writes nothing"
+
+
 # --- the lockfile itself -------------------------------------------------------
 
 
