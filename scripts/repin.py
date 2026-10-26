@@ -955,6 +955,11 @@ def run_ceremony(ctx, args, launchctl, rec):
         raise Refuse("the launcher's digest is not the one in the review's record. Do not run it.")
     rec.append(f"launcher digest {ldigest} equals the pasted digest")
     confirm(rec, "Do the two digests match?")
+
+    def launcher_unchanged():
+        """The launcher runs twice, minutes and a prompt apart; it is hashed before each run."""
+        if sha(read_safe(launcher)) != ldigest:
+            raise Refuse("the launcher changed after its digest was compared. Nothing further was run.")
     # 2. packet, launcher, artifact and values
     try:
         state = rc.compare(repo, ctx["head"], packet)
@@ -1024,6 +1029,7 @@ def run_ceremony(ctx, args, launchctl, rec):
     if Path(field["package"]).exists():
         raise Refuse(f"{d(field['package'])} already exists; stage 1 must not overwrite it. Move it aside.")
     env = {"PATH": CHILD_PATH, "HOME": field["home"], "LC_ALL": "C"}
+    launcher_unchanged()
     r = child(rec, [SH, str(launcher), str(packet), str(values), ctx["head"]], env=env,
               start_new_session=True)
     relay(r.stdout + r.stderr)
@@ -1053,6 +1059,7 @@ def run_ceremony(ctx, args, launchctl, rec):
         f"type nothing and stop.\n{note}\nasked once, now")
     env = {"HOME": field["home"], "PATH": CHILD_PATH, "TERM": term, "LANG": "C"}
     argv = [SH, str(launcher), str(packet), str(values), ctx["head"], "--stage2", own]
+    launcher_unchanged()
     rec.append(f"ran {' '.join(argv)}")
     proc = subprocess.Popen(argv, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT)

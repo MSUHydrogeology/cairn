@@ -969,6 +969,23 @@ def popen_calls(bed):
     return calls
 
 
+@pytest.mark.parametrize("stage,question", [("one", "Do the two digests match"), ("two", "Does Summary 2")])
+def test_the_launcher_is_hashed_again_before_each_of_its_two_runs(cbed, stage, question):
+    marker = cbed.root / "launcher-ran-edited"
+    launcher = cbed.cdir / "reanchor-launcher.sh"
+
+    def edit_the_launcher():
+        launcher.write_text(launcher.read_text().replace("\n", f"\n: > {marker}\n", 1))
+        return "yes"
+    answers = [("Paste the launcher digest", cbed.launcher_digest), ("Do the two digests match", "yes"),
+               ("Does Summary 2", "yes")]
+    answers = [(q, edit_the_launcher if q == question else a) for q, a in answers]
+    code, out = drive(cbed, answers)
+    assert code == 2 and "launcher changed after its digest was compared" in out, out
+    assert not marker.exists(), "the edited launcher ran"
+    assert "Enter passphrase for" not in out
+
+
 def test_every_signing_child_gets_a_short_fixed_environment_and_a_fixed_path(cbed, agent):
     hostile = {"SSH_ASKPASS": str(agent.askpass), "DISPLAY": ":0", "EDITOR": "vi", "WAYLAND_DISPLAY": "wayland-0",
                "SSH_AUTH_SOCK": str(agent.sock)}
