@@ -1,12 +1,12 @@
 # Plan: Engine batch, the install report by profile and the slots an upgrade adds
 
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-engine-batch-f8-slots.md](../proposals/archive/2026-10-26-claude-engine-batch-f8-slots.md)
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: The install report moves the slots of modules a profile did not install to their own list (2 of 22 on `solo-greenfield`), and `upgrade --plan` and `--stage` name the slots an upgrade adds, with every printed `detail` made terminal-safe.
 
-The ordinary plan review is answered (below). The Internal Security Review is a separate pass, still owed; the ordinary pass never clears it (`AGENTS.md` > Review). It clears only through its own `## Plan review` pass whose `**Obligation**` line names it. Status stays `awaiting-plan-review` because that pass holds the plan next; it moves to `ready-to-implement` after that pass. "SR1 to SR3" below are the proposal's Security Review findings; "B.5" is item 5 of its Revision's part B.
+Both required passes are answered (below): the ordinary plan review, and the Internal Security Review at commit 98517e68, which clears the header's second clause. "SR1 to SR3" below are the proposal's Security Review findings; "B.5" is item 5 of its Revision's part B.
 
 ## Source proposal
 
@@ -15,11 +15,15 @@ The Decision (2026-10-26) accepts the proposal as revised. Q2 takes option (a): 
 ## Scope
 
 **In.** The four engine symbols the Revision names, in `bootstrap/_scaffold/`: `print_report` (`install.py:1603`), `main` (`cli.py:189`; the call at `:627`), `merge_file` (`merge.py:173`) and `_print_upgrade_report` (`upgrade.py:846`). Two new test files, `bootstrap/tests/test_install_report_slots.py` (C1) and `bootstrap/tests/test_upgrade_added_slots.py` (C2). `docs/quickstart.md:298`, `bootstrap/UPGRADE.md` (the `--plan` bullet) and `CHANGELOG.md` (`## Unreleased`).
-**Out.** `--apply` naming (Q3); reading installed files back (Q2 options b and c); a base-copy hash check (the proposal's SR6, a board matter); `dev/PLANNING.md`, which is edited only at its serialization points; `bootstrap/BOOTSTRAP.md`; the fidelity manifest.
+**Out.** `--apply` naming (Q3); reading installed files back (Q2 options b and c); a base-copy hash check (the proposal's SR6, a board matter); `dev/PLANNING.md`, which is edited only at its serialization points; `bootstrap/BOOTSTRAP.md`; the fidelity manifest. Also out, by the Maintainer's word on the Security Review's P3 (the install report's raw print of profile-supplied slot names, `install.py:1668`, `cli.py:359`, `cli.py:590`):
+
+> Queue it on the security row
+
+The planning session writes that row in `dev/PLANNING.md`; this plan does not edit it.
 
 **Rules the code must keep (from the Revision and the Security Review):**
 * No new top-level name, and no top-level import added or changed in `install.py`, `cli.py`, `merge.py` or `upgrade.py`. The AST gate does not see imports, so the code reviewer reads the diff. `parse_slots` and `SlotError` are already in `merge.py`.
-* `merge_file` reads names from its own `base_raw` and `theirs_raw` arguments and the adopter's file, never from the token-filled copies (`merge.py:194-195`). Both new parses sit in one `try` that catches `SlotError` and nothing wider, as `_transplant_slots` does (`merge.py:129`). Names fill `detail` only on `clean` and `conflict`.
+* `merge_file` reads names from its own `base_raw` and `theirs_raw` arguments and the adopter's file, never from the token-filled copies (`merge.py:194-195`). Both new parses sit in one `try` that catches `SlotError` and nothing wider, as `_transplant_slots` does (`merge.py:129`). That `try` wraps only the name-reading step and never the strict parses of the adopter's file (`merge.py:200`) or of the token-filled new text (`:202`), which must keep raising to `upgrade.py:575` so a malformed file reports `error`, not `clean`. Names fill `detail` only on `clean` and `conflict`.
 * At most 10 names per file, each cut to 80 characters (a longer one ends in `...`), then `(and N more)`. Both numbers are literals inside `merge_file`; `merge_file` returns the names unescaped. `MergeResult` is left untouched: a docstring there would be a fifth CHANGED symbol (its stale field comment, `merge.py:111`, may be corrected, as the AST ignores comments).
 * `_print_upgrade_report` prints every `detail` through `ascii(text)[1:-1]`: the `[flag]` line (`upgrade.py:889`), the review-only line (`:899`) and the new `[new slot]` line.
 * `print_report` gains one keyword `modules`, only tests membership in it, and prints module names from its own table, never from the profile's list. The table lists the seven slots in the Revision's table, including `documentation-tier-home` in both files, and carries a comment naming the `model-selection` disagreement (`BOOTSTRAP.md:418-420` against `templates/modules/team-gated/model-selection.md:10-13`).
@@ -72,7 +76,7 @@ Test names say the property. "New" tests are in the two new files; each goes thr
 3. `test_report_without_modules_argument_lists_every_slot_in_main_list` (calls `print_report` directly, the one exception): absent `modules`, no second list.
 4. `test_removing_a_module_moves_every_slot_it_fills`: a profile that removes `documentation-plan`, `claim-check`, `reflections` and `security-verification` moves their slots, `documentation-tier-home` in both files included, to the second list. `test_a_slot_with_any_installed_supplier_stays_in_main_list`: with one of the five `role-roster-additions` suppliers installed, that slot stays in the main list. This is the mutation test for "no supplier installed" against "not every supplier installed".
 5. `test_every_slot_that_says_filled_from_a_module_is_in_the_supplier_table`: scans the core templates for the phrase `Filled from the` and compares `(slot, module)` pairs with the table, so a right slot under the wrong module fails. It first asserts the scan found the six known placeholders (`templates/core/AGENTS.md` x3, `agent_collaboration.md`, the two `_template.md` files), so a re-wrapped placeholder fails the scan and cannot blind it. Mutants: swap one module in the table; re-wrap one placeholder. It reads the templates, not the table. `test_supplier_table_names_real_slots_and_real_modules`: with `modules=[]` every table slot is in the second list; each exists in a core template and each printed module is a shipped module under `templates/modules/`. Neither can see a supplier whose placeholder lacks the phrase (`coordination-additions`, `role-roster-additions`), so those two stay hand-listed. The Revision says so.
-6. `test_hostile_module_name_in_profile_prints_no_escape_byte_in_the_report` (pins; today the report prints no module names): a profile whose exact `modules:` list holds a name with an ESC byte. The assertion covers the report section only (from the `Cairn scaffold complete` banner). Mutant: print the names from `modules`; this test must fail it. The older raw print of unknown module names at `install.py:1526` is on the board's security row and is not this plan's.
+6. `test_profile_module_name_with_bidi_character_is_absent_from_the_report` (pins; today the report prints no module names). The profile loader refuses control characters, ESC included (`config.py:180-183`, `:255`), so ESC cannot reach the report through a profile; the case is a bidirectional character. A profile whose exact `modules:` list holds `zz-hostile` plus U+202E (the loader admits it). First assert exit 0 and the `Cairn scaffold complete` banner present; then assert the name, raw or `ascii()`-escaped, is absent from the report section (from the banner on). Mutant: print the names from `modules`; this test must fail it. The older raw print of unknown module names at `install.py:1526` is on the board's security row and is not this plan's.
 7. The existing `test_quickstart_sequence.py::TestLayerAStepsOneThroughThree::test_step3_install_writes_expected_kernel_and_modules` (lines 240-250) is not edited; it compares `**N unfilled block slots**` in `docs/quickstart.md:298` with the live count, so it passes after the edit to **20 unfilled block slots**, with the sentence format unchanged, and one clause says the report lists the other slots separately. It must pass: `python -m pytest bootstrap/tests/test_quickstart_sequence.py`.
 8. `scaffold.py --manifest`, captured before the first edit and after C3, is byte-identical (`cmp`). `git diff` of `bootstrap/_scaffold/SECURITY_MUTATIONS.md` is empty (no new write).
 
@@ -81,9 +85,9 @@ Test names say the property. "New" tests are in the two new files; each goes thr
 2. `test_slot_the_adopter_deleted_is_not_named` and `test_slot_the_adopter_already_has_is_not_named`. Mutants (S2): drop the old-base subtraction, or subtract only the adopter's names; the first test fails each.
 3. `test_detail_is_empty_or_exactly_the_name_list_on_clean_and_conflict` (through `merge_file`); `test_needs_value_slot_removed_and_error_carry_no_names`.
 4. `test_lockfile_token_value_carrying_a_slot_pair_adds_no_name` (SR1, through `upgrade --plan`): a token value with a slot pair, used only in the new template, gives no `[new slot]` line. Mutant: parse the token-filled text; this test must fail it.
-5. `test_new_slot_line_stays_within_its_bound` (SR2): a template with one 1 MB slot name, and one with 1,000 new slots; each `[new slot]` line is under 1,200 characters for ASCII names (8,300 worst case) and states `(and N more)`.
-6. `test_every_flag_and_new_slot_line_is_printable_ascii` (SR3): an adopter file with a filled slot whose name holds an ESC byte, removed upstream. Control: fails on today's code (the Security Review measured the raw print). A second fixture covers the new line itself, which prints names from the *new template*: an added slot whose name holds an ESC byte and a character outside the Basic Multilingual Plane (the slot pattern is `\S+`, `slotmerge.py:40`, so it parses); the `[new slot]` line must be printable ASCII under both `--plan` and `--stage`. The same test covers `malformed slots: {exc}` at `upgrade.py:577`. **The set of `detail` print sites is listed from the tree** (`grep -n "\.detail" bootstrap/_scaffold/*.py`: `:889`, `:899`, plus the new line) **and the escape is removed at each in a separate copy; each removal must fail a test** (the new line's by the second fixture). The review-only site prints fixed text today (`upgrade.py:544`, `:557`), so no real run reaches it with a hostile byte: its test calls `_print_upgrade_report` directly with a `FilePlan` whose `detail` holds an ESC. The second direct call in the plan.
-7. `test_malformed_old_base_keeps_its_status_and_prints_no_name` (pins the status; today `conflict`), `test_tree_without_base_copy_names_nothing` (`review-only`), `test_renamed_filled_slot_stays_slot_removed_and_names_no_new_slot`.
+5. `test_new_slot_line_stays_within_its_bound` (SR2): a template with one 1 MB slot name, and one with 1,000 new slots; each `[new slot]` line names at most 10 names of at most 80 characters and states `(and N more)`. Length: under 1,200 characters for names of letters, digits, `-` and `_`. For any name, the names total at most 8,018 characters (80 non-BMP characters escape to 10 each, 10 names, 9 separators of 2); the line adds fixed text and the file path, which has no cap of its own (measured 8,148 for a short path).
+6. `test_every_flag_and_new_slot_line_is_printable_ascii` (SR3): an adopter file with a filled slot whose name holds an ESC byte, removed upstream. Control: fails on today's code (the Security Review measured the raw print). A second fixture covers the new line itself, which prints names from the *new template*: an added slot whose name holds an ESC byte and a character outside the Basic Multilingual Plane (the slot pattern is `\S+`, `slotmerge.py:40`, so it parses); the `[new slot]` line must be printable ASCII under both `--plan` and `--stage`. The same test covers `malformed slots: {exc}` at `upgrade.py:577`. Each line is asserted present before its bytes are checked, and under `--stage` the check reads the whole of stdout (the report prints after the stage is written, `upgrade.py:2818-2826`). **The set of `detail` print sites is listed from the tree** (`grep -n "\.detail" bootstrap/_scaffold/*.py`: `:889`, `:899`, plus the new line) **and the escape is removed at each in a separate copy; each removal must fail a test** (the new line's by the second fixture). The review-only site prints fixed text today (`upgrade.py:544`, `:557`), so no real run reaches it with a hostile byte: its test calls `_print_upgrade_report` directly with a `FilePlan` whose `detail` holds an ESC. The second direct call in the plan.
+7. `test_malformed_adopter_file_still_reports_error_never_clean` (pins; through `upgrade --plan`): a malformed adopter file gives kind `error` and its `[flag] ... malformed slots:` line, asserted present. Mutant: catch the adopter-file parse in the new `try`; this test must fail it. `test_malformed_old_base_keeps_its_status_and_prints_no_name` (pins the status; today `conflict`), `test_tree_without_base_copy_names_nothing` (`review-only`), `test_renamed_filled_slot_stays_slot_removed_and_names_no_new_slot`.
 8. The `except` added in `merge.py` names `SlotError` only; `git diff` over the four files adds no `import` line. The sorted `note: NEW Import:` lines of `_ast_attest.py verify` are identical before and after.
 9. `test_security_leaf.py` passes unchanged. `scaffold.py --manifest` is byte-identical.
 
@@ -113,10 +117,10 @@ Test names say the property. "New" tests are in the two new files; each goes thr
 Plan-specific commands the record lists: the two new test files; `scaffold.py --manifest` byte compare; the read-only AST `verify` before and after (S0 and S1); the smoke checks (install `solo-greenfield` into a scratch folder and compare both lists with `verify_integrity --target`; repeat the proposal's upgrade reproduction on the built code).
 
 **Boundary C: what the code reviewer attacks.** Not a re-run of Boundary B.
-* The `except` clause in `merge_file`: `SlotError` only. A malformed old base must not change a status.
+* The `except` clause in `merge_file`: `SlotError` only, around the name-reading step only. A malformed old base must not change a status, and a malformed adopter file must still give `error`.
 * Token injection: parse the token-filled text in a separate copy; test 4 must fail.
 * Each `detail` print site without its escape (test 6), and the cap literals (test 5).
-* A hostile name from the profile in either report list (test 6 of C1). The supplier table against `bootstrap/BOOTSTRAP.md:418-427` and the template placeholders: a slot printed in the second list that an installed module fills; a slot of an absent module left in the main list.
+* A profile module name with a bidirectional character in either report list (test 6 of C1). The supplier table against `bootstrap/BOOTSTRAP.md:418-427` and the template placeholders: a slot printed in the second list that an installed module fills; a slot of an absent module left in the main list.
 * The import diff across the four files, and the AST set (S0 against S1).
 * That no `[new slot]` line appears for `new-core`, `needs-value`, `slot-removed`, `review-only` or `error`.
 * A recorded `Bounding` verdict is not needed (Boundary B is `full`).
@@ -191,7 +195,7 @@ All nine findings are accepted; the operative cells carry the changes (this tabl
 | 8 | "ASCII prints unchanged" | Accepted | C3.2 wording rule |
 | 9 | `MergeResult`; frozen path | Accepted | Rules (`MergeResult` untouched); frozen-file paragraph in full |
 
-Status: `awaiting-plan-review`, not `ready-to-implement`, because the Internal Security Review is still owed and holds the plan next. No Security Review is written here.
+Status was `awaiting-plan-review` because the Internal Security Review was still owed.
 
 ## Plan review -- Security Review -- 2026-10-26
 
@@ -252,3 +256,17 @@ Assurance path: high-assurance (header `required(Internal + Internal Security Re
 9. **Name the satisfier.** Each finding states one.
 
 **Coverage.** *Covered:* every `detail` print site, listed from the tree; `ascii()` over all code points; the profile loader's character rules, by reading and by two scratch installs; the cap arithmetic, by probe; the AST import exemption, by reading; the `--stage` write path, for `detail` reaching disk. *Not covered:* no built code exists, so every claim about the result is expected, not measured. I ran no test and no mutant. I did not exercise `--to <ref>`, `--adopt-collisions` or `--adopt-module` end to end. I did not read the LP-SR code review, which is uncommitted. I did not check Windows consoles or a localized `git merge-file` error, which will now print as `\u` escapes. I did not re-verify the ordinary pass's line cites. I did not measure the output volume from a lockfile with many records pointing at one template.
+
+## Response -- plan author (Security Review) -- 2026-10-26
+
+Each cited line was opened in the current tree first (`config.py:180-183` and `:255`, `merge.py:194-202`, `upgrade.py:575` and `:2818-2826`, `install.py:1668`, `cli.py:359` and `:590`); all hold. The operative cells carry the changes.
+
+| # | Answer | Where |
+|---|---|---|
+| P1 | Accepted. The loader refuses ESC, so C1.6 uses `zz-hostile` plus U+202E; exit 0 and the banner are asserted before the name's absence; the mutant stays and is now reachable | C1.6 |
+| P2 | Accepted. One rule sentence (the `try` wraps only the name-reading step, never `merge.py:200` or `:202`); a new test through `upgrade --plan` with the mutant "catch the adopter parse"; C2.6 asserts each line present before its bytes | Rules; C2.7; C2.6; Boundary C |
+| P3 | Declined for this plan, by the Maintainer's decision, not reopened: queued on the security row, which the planning session writes in `dev/PLANNING.md` | Scope, Out |
+| P4 | Accepted. 1,200 holds only for names of letters, digits, `-`, `_`; plain names total 818 and any name at most 8,018 (80 non-BMP characters escape to 800), plus the uncapped file path; 8,148 measured | C2.5 |
+| P5 | Accepted. Under `--stage`, the whole of stdout is checked | C2.6 |
+
+Status is `ready-to-implement`. The Security Review obligation (the clause in the header) is cleared by the pass at commit 98517e68; the review round was a single round, and the Maintainer decided P3.
