@@ -45,7 +45,6 @@ plan's *Scope* must name the doctrine-surface touched (or an explicit
 Descriptive layer only (`docs/quickstart.md`, `bootstrap/UPGRADE.md`) plus `CHANGELOG.md`. No `doctrine/` file and no `AGENTS.md`.
 
 Proposed paths:
-* `bootstrap/tests/test_install_report_slots.py`
 * `bootstrap/tests/test_upgrade_added_slots.py`
 
 ## Sequence
