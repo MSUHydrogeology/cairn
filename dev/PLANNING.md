@@ -127,12 +127,12 @@ Maintainer, 2026-10-26, relayed by the Developer session:
 
 > "Yes, add the security findings as a v0.5 item"
 
-* **LP-SR-1 to 8** (`dev/reviews/2026-10-19-security-review-upgrade-lockfile-paths.md`,
+* **LP-SR-1 to 8** (`dev/plans/archive/2026-10-19-security-review-upgrade-lockfile-paths.md`,
   commit `f0280ef0`; touches `bootstrap/_scaffold/upgrade.py` and `lockfile.py`).
   The serious one is LP-SR-1 (high, older than the 0.4 repair): `upgrade --apply`
   creates a file outside the project when `dev/.cairn/profile.yml` is a link to
   a file that does not exist yet, and the lockfile picks up some of its lines.
-* **SW-SR-11 to 15** (`dev/reviews/2026-10-18-security-review-session-writes.md`,
+* **SW-SR-11 to 15** (`dev/plans/archive/2026-10-18-security-review-session-writes.md`,
   commit `bf746470`; touches `templates/skills/_lib/session.py` and its twin
   `tools/session.py`: the interpreter binding, a named high-risk surface).
 * **SW-SR-10** was accepted in chat on 2026-10-19 (*"Accept in writing; move

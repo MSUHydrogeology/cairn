@@ -491,7 +491,7 @@ All 13 findings are accepted; none is declined. The pass at commit ece46a77 had 
 
 ## Response to code review -- implementer -- 2026-10-26
 
-Answers `dev/reviews/2026-10-26-code-review-repin-build.md` (reviewed commit `595cbfdc`; range `ed252bdb^..b9c58253`). Revision commits: `252e0392` (B1), `bb7a1ee8` (B2), `15e89b6c` (N1 to N6 and the N3 check), `baca8a45` (N5 follow-up test), `d3cce7c7` (N7), `6f25d630` (N8); the commit carrying this section does N9 and the Status line.
+Answers `dev/plans/archive/repin-build.code-review.md` (reviewed commit `595cbfdc`; range `ed252bdb^..b9c58253`). Revision commits: `252e0392` (B1), `bb7a1ee8` (B2), `15e89b6c` (N1 to N6 and the N3 check), `baca8a45` (N5 follow-up test), `d3cce7c7` (N7), `6f25d630` (N8); the commit carrying this section does N9 and the Status line.
 
 **Departure from the plan, authorized by the Maintainer (B2).** The Maintainer was asked directly on 2026-10-26, and answered:
 
@@ -527,7 +527,7 @@ R5's trigger and M2 now say so; the cells were changed in place only as far as t
 
 ## Implementation verification -- Claude Sonnet 5.5 (implementer) -- 2026-10-26 (second-look fixes)
 
-**Range**: `f57b6f81..5670dda9` (three commits, one per finding of `dev/reviews/2026-10-26-second-look-repin-revision.md`: N1 test only, N2 `check_first_run` prints the "No pin is owed" line, N3a stage 2 requires the new anchor to descend from the old one). **Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13). **Boundary B mode**: full. **Certified by**: pending (`CAIRN_FULL_SUITE` was not set; the last commit editing `scripts/repin.py` and the two repin test files is `5670dda9`, which the next certifying run must contain).
+**Range**: `f57b6f81..5670dda9` (three commits, one per finding of `dev/plans/archive/repin-build.second-look.md`: N1 test only, N2 `check_first_run` prints the "No pin is owed" line, N3a stage 2 requires the new anchor to descend from the old one). **Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13). **Boundary B mode**: full. **Certified by**: pending (`CAIRN_FULL_SUITE` was not set; the last commit editing `scripts/repin.py` and the two repin test files is `5670dda9`, which the next certifying run must contain).
 
 * `pytest test_repin.py test_repin_ceremony.py test_security_lint.py -q`: 193 passed (107 + 75 + 11), 297 s, in the shared checkout (other sessions' uncommitted edits present; the tests read only the files they copy into scratch repositories). Bandit on `scripts/repin.py`: 7 LOW, 0 MEDIUM or higher; `ALLOWLIST` untouched. Neutrality and redundancy gates: fail=0.
 * Mutants, each in a detached scratch worktree of `5670dda9` beside an unmutated control (all control nodes passed): N1, the extraction (root, `scripts`, `bootstrap`, `bootstrap/tests`) appended to `sys.path`, 4 of 4 killed; N2 line removed, killed; N3a ancestry check removed, killed (both the unrelated-commit and older-commit nodes). The worktree was removed.

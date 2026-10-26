@@ -149,7 +149,7 @@
         "scripts/run_security_audit.py"
       ]
     },
-    "dev/reviews/2026-08-27-code-review-c1-session-kernel.md": {
+    "dev/plans/archive/2026-08-27-code-review-c1-session-kernel.md": {
       "paths": [
         "bootstrap/tests/test_lifecycle_board.py",
         "bootstrap/tests/test_lifecycle_cli.py",
@@ -157,7 +157,7 @@
         "tools/lifecycle.py"
       ]
     },
-    "dev/reviews/2026-08-27-code-review-c5-c6-removals.md": {
+    "dev/plans/archive/2026-08-27-code-review-c5-c6-removals.md": {
       "paths": [
         "bootstrap/tests/test_lifecycle_board.py",
         "dev/.cairn/cairn_foldback.md",
@@ -280,7 +280,7 @@
         "dev/modules/dual-language-tests.md"
       ]
     },
-    "dev/reviews/2026-10-19-security-review-upgrade-lockfile-paths.md": {
+    "dev/plans/archive/2026-10-19-security-review-upgrade-lockfile-paths.md": {
       "paths": [
         "docs/notes.md",
         "docs/linkdir",
