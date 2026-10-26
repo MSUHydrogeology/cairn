@@ -265,7 +265,7 @@ owed. Hold the tag if its fingerprint/channel prerequisite is not met.
 
 ## Queued
 
-### Re-anchor the gate manifest — one frozen test changed
+### Re-anchor the gate manifest — frozen files changed
 
 The 0.4 batch this row used to list was discharged by the re-anchor at
 `6f29519d` (2026-10-20) and the AST commits `b9a901f1` and `5cbd6583`; on
@@ -278,6 +278,17 @@ proposal, a fresh-session review commit, a quoted Decision, six commits). No
 node added or dropped; no engine symbol changed. Maintainer direction:
 
 > "If I need to do a re-anchor, okay"
+
+**Also owed from 0.5 work, 2026-10-26.** The #32 code review found frozen
+`bootstrap/tests/test_board_json_contract.py` changed: its golden output gained
+the advisory line. `bootstrap/tests/_gate_manifest.py verify` reports it as
+modified, and the #32 commit is the only one that changed it. The same `verify`
+lists five other modified frozen files that the review did not trace. More are
+expected as 0.5 rows land (the model-tier proposal edits frozen
+`test_review_stance_in_shipped_files.py`, the engine-batch work edits
+`docs/quickstart.md`'s pinned count, and the security fixes may touch more).
+Do not carry a list forward from this row: run `verify` on the final committed
+tree and read what it prints.
 
 This is Maintainer-only; follow `bootstrap/REANCHOR_RUNBOOK.md` and derive the
 changed set from the final committed tree.
