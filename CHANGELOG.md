@@ -51,7 +51,7 @@ and a new empty `Unreleased` is started above.
   no such line. Every note the upgrade report prints now shows non-ASCII and
   control characters as escapes, which also covers the older `[flag]` and
   review-only lines.
-  ([plan](dev/plans/engine-batch-f8-slots.md))
+  ([plan](dev/plans/archive/engine-batch-f8-slots.md))
 
 ### Changed — Model tiers: use the lowest tier that is safe
 

@@ -1,7 +1,7 @@
 # Plan: Engine batch, the install report by profile and the slots an upgrade adds
 
-**Source proposal**: [dev/proposals/archive/2026-10-26-claude-engine-batch-f8-slots.md](../proposals/archive/2026-10-26-claude-engine-batch-f8-slots.md)
-**Status**: ready-to-archive
+**Source proposal**: [dev/proposals/archive/2026-10-26-claude-engine-batch-f8-slots.md](../../proposals/archive/2026-10-26-claude-engine-batch-f8-slots.md)
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: The install report moves the slots of modules a profile did not install to their own list (2 of 22 on `solo-greenfield`), and `upgrade --plan` and `--stage` name the slots an upgrade adds, with every printed `detail` made terminal-safe.
@@ -34,7 +34,7 @@ The planning session writes that row in `dev/PLANNING.md`; this plan does not ed
 
 <!-- cairn:slot documentation-tier-home -->
 **Doc tier home rule** — route doc and doctrine changes by layer per
-[`docs/DOCUMENTATION_PLAN.md`](../../docs/DOCUMENTATION_PLAN.md):
+[`docs/DOCUMENTATION_PLAN.md`](../../../docs/DOCUMENTATION_PLAN.md):
 cross-cutting prescription → governing layer (`AGENTS.md`);
 deliberation about what to build → deliberation layer (`dev/`);
 description of the software as it is → descriptive layer (`docs/`). A
@@ -126,6 +126,8 @@ Plan-specific commands the record lists: the two new test files; `scaffold.py --
 ## Dispositions
 
 Filled at archive-preparation. Two items are carried: the `defer` in Scope delta, and C5 (the AST and gate re-anchor), carried by the Queued re-anchor row in `dev/PLANNING.md`; the archive commit adds the four symbols and the two new test files to that row.
+
+Dispositions: defer -- the second form of Q2 option (c), reason: over the cost bar, live home: the `dev/PLANNING.md` Deferred follow-ups row "Report only live slots after the module merge", Maintainer's authorization quoted there; carried -- C5, by the Queued re-anchor row in `dev/PLANNING.md` (the archive commit added the four symbols and the two new test files to it); guard -- code-review F1 to F4 at `bootstrap/tests/test_upgrade_added_slots.py::test_conflicting_file_still_names_the_slot_the_upgrade_adds`, `::test_name_list_is_cut_after_ten_names_not_at_ten`, `::test_name_of_eighty_characters_is_kept_whole_and_one_of_eighty_one_is_cut`, `::test_reading_added_names_catches_only_the_slot_error` and `bootstrap/tests/test_install_report_slots.py::test_no_ok_line_when_only_module_supplied_slots_are_present` (commit `c5991ad2`); wontfix -- code-review O1 (older `[flag]` details are uncapped), rationale: the text comes from the adopter's own file or the release they chose, and `ascii()` escaping cannot lengthen it past a fixed multiple.
 
 ## Plan review -- Plan reviewer (fresh session, Internal) -- 2026-10-26
 

@@ -42,7 +42,7 @@ artifacts; this board does not maintain a second status table.
 | **#31** "keep it short" in the plan and proposal templates | Prose | The adopter supplied the draft and the evidence. |
 | **Model tiers: use the lowest tier that is safe** | Doctrine change: own proposal, clears the rate-limit gate | Maintainer direction, 2026-10-26: formalize a rule set for lower-tier models where possible. Scope below. Built and archived 2026-10-26 (`dev/plans/archive/model-tier-rules.md`); its one frozen-test edit and the new test file join the re-anchor owed at the cut. |
 | **Security findings from the two 0.4 Security Reviews** | Maintainer direction; a fixer answers, one code review checks, no second Security Review | LP-SR-1 to 8 and SW-SR-11 to 15, found after their repairs shipped in 0.4.0 and never fixed, plus three older problems the engine-batch Security Review found. Scope below. |
-| **Engine batch: F8 and #8 engine half** | Own proposal, Security Review, one AST re-anchor | One batch so the review and the re-anchor are paid once. Maintainer: "Engine batch is in". Rows below. |
+| **Engine batch: F8 and #8 engine half** | Own proposal, Security Review, one AST re-anchor | One batch so the review and the re-anchor are paid once. Maintainer: "Engine batch is in". Rows below. Built and archived 2026-10-26 (`dev/plans/archive/engine-batch-f8-slots.md`); its AST and gate re-anchor is owed at the cut. |
 | **`repin`** | Proposal first, from `strategy/2026-08-28-claude-repin-revitalization.md` | Maintainer: "Repin is a build". Removes the re-anchor ceremony's manual corrections. |
 | **Drain mode**, last | Settled design, `strategy/2026-08-25-claude-drain-mode.md` | Scope below. |
 
@@ -321,11 +321,13 @@ The LP-SR fixes (2026-10-26) add eight engine symbols to the AST re-anchor
 whose bodies changed. Two later engine edits add to that set: the repair of
 `upgrade --init-lock` (commit `5e66c74d`) changed `_write_init_lock_profile_template`,
 and engine-batch chunk C1 (commit `24400219`) changed `main` (`cli.py`) and
-`print_report` (`install.py`); the batch's later chunks are expected to add
-`merge_file` and `_print_upgrade_report`. Reported by the sessions that made
-them and read from the read-only `_ast_attest.py verify` listing, not derived by
-this edit. Their new test files are also gate-root files the
-re-anchor must pin. The Strategy session reports more, counted by it and not
+`print_report` (`install.py`); the batch's chunk C2 (commit `47366b20`) changed `merge_file` and
+`_print_upgrade_report`. Reported by the sessions that made them and confirmed
+by the engine batch's code reviewer with the read-only `_ast_attest.py verify`
+listing (10 changed symbols, 3 known-new with changed bodies, no new symbol),
+not derived by this edit. The engine batch's two new test files,
+`test_install_report_slots.py` and `test_upgrade_added_slots.py`, are also
+gate-root files the re-anchor must pin, as are the LP-SR test file. The Strategy session reports more, counted by it and not
 re-derived here: frozen `scripts/check_cairn.py`, `scripts/link_check.py` and
 `scripts/sync_doc_snippets.py` with the two `templates/modules/team-gated/`
 twins (commits `9ec53a43` and `dfdd0408`), and frozen
@@ -467,6 +469,7 @@ this file's history.
 | Scientific-check doctrine and deliverable axis (#19) | Revisit when the third-party trial moves, or on Maintainer direction after about ten real non-N/A checks across two projects. Guidance shipped; the doctrine sentence, axis, disciplines and governance reframe did not. | `independent-scientific-check` C1 and archive; issue #19. Details below. |
 | Watch the new review header | After ten proposal reviews, the goodnight scrub owner checks premise/alternative challenges, agent-selected outside reads, thin evidence and lost scope challenges. Put a concerning pattern to the Maintainer. | `review-stance-and-lenses` archive; quoted authority below. |
 | Watch how far proposals written at medium hold up | After ten proposal reviews, the goodnight scrub owner compares proposals written at medium with those written at high. If fewer than three of the ten were written at high, report counts only and say the comparison is not available. Put a concerning pattern to the Maintainer. | `model-tier-rules` archive (R5); the Maintainer's 2026-10-26 answer lowered proposal authoring to medium. |
+| Report only live slots after the module merge | The second form of the install-report change: print the report after the module-merge pass and drop the slots the install fills itself, so `solo-greenfield` shows 20 rather than 20 plus 2 listed apart. Not built because it moves output a frozen test pins; reason: over the cost bar. Revisit with the next change to that test. Authorization, verbatim: "Accept, leave 2 slots counted (Recommended)" | `engine-batch-f8-slots` archive, Scope delta. |
 | Decision rights after agreement removal | Offering Cairn's unsure-case rule to adopters needs its own proposal. Revisit lifecycle escalation wording when a concrete conflict reaches a decision. Neither ships in the 0.4 removal. | `remove-collaboration-agreement` Decision Q3; authority quoted below. |
 | Stable section identity and complete-set claims | A second actual rule needing section-set completeness would revive this; naming sections and proving all were handled are one scope. The retired lifecycle checker is not a promised future satisfier. | `2026-08-20-claude-review-loop-termination`, Deferred work. |
 | Entry-page feature claims drift | A second stale feature list, or an adopter hitting one, may justify a doc-drift rule. | `2026-08-10-claude-documentation-enhancement` fold-up candidates. |
