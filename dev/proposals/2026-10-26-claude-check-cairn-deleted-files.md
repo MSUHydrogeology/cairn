@@ -1,7 +1,7 @@
 # check_cairn crashes when a tracked Markdown file is deleted but not yet committed
 
 **Author**: Claude (Implementation)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Plan review**: not required(one commit: the same one-line filter in `link_check.py` and `sync_doc_snippets.py` and their shipped twins, `check_cairn.py` delegating to the fixed shared copy, one new test file; the frozen-file re-anchor is the already-queued Maintainer ceremony)
 **Opened**: 2026-10-26
@@ -351,3 +351,18 @@ M7. The change makes two more files differ from `dev/.cairn/cairn-lock.yml`. Tha
 **Implementation reminder, not a finding.** The first Boundary B run for this change must be on a committed tree (M3: five `test_gate_manifest.py` failures appear only while the edit is uncommitted).
 
 Coverage -- **Covered**: lens 1 (claims: the delegation, `_LINK_CHECK_SRC`, the twin and frozen statements, M1/M6), lens 2 (production path: M2 calls `main()` of each script), lens 3 (edge cases: deleted file, dangling symlink, clean tree, named missing path, M2), lens 4 (silent failure: the count line, M2), lens 5 (callers, docs and consumers: M1, M5, SR1), lens 6 (drift: SR1), lens 7 (ordering against the queued re-anchor: M6), lens 9 (each finding names a satisfier). **Not covered / low confidence**: I did not run the full suite or the certifying pair; I did not read the reanchor ceremony beyond `_gate_manifest.py verify`; I tested one profile (`collaborative-team`) for the adopter upgrade, not an adopter who had edited `link_check.py` locally (the merge path); I could not see any adopter-side wrapper that parses these tools' output; I did not test an unreadable file or Windows paths.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-26
+
+**ACCEPTED, with the second-round findings folded in.** The Maintainer's
+authorization, quoted **verbatim and visually isolated**:
+
+> "Accept it, with SR1–SR3 folded into implementation"
+
+*Scribe's note, separate from the quoted words.* The Revision of 2026-10-26 is
+the contract. The implementation also closes the three Low findings of the
+second-round review, each by the satisfier that review names: SR1, the
+"whole tracked tree" wording in the shipped `link_check.py` docstring and in
+`docs/tool-usage.md`; SR2, the skip line's missing tool name, either stated as
+deliberate or passed in, with the test matching; SR3, a sentence saying the
+self-hosted `dev/.cairn/cairn-lock.yml` is not refreshed by this change.
