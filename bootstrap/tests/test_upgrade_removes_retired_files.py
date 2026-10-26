@@ -252,8 +252,11 @@ def test_committed_copy_matches_ignores_a_replace_ref(
     forged = git("hash-object", "-w", "--stdin", data=b"forged\n")
     git("replace", genuine, forged)
     assert git("cat-file", "blob", "HEAD:f.py") == "forged", "the replace ref must be live"
-    if not U._committed_copy_matches(project, "f.py", b"committed\n"):
+    version = subprocess.run(["git", "--version"], capture_output=True, text=True).stdout
+    found = re.match(r"git version (\d+)\.(\d+)", version)
+    if found is None or tuple(map(int, found.groups())) < (2, 45):
         pytest.skip("this git is older than the 2.45.0 floor")
+    assert U._committed_copy_matches(project, "f.py", b"committed\n") is True
     assert U._committed_copy_matches(project, "f.py", b"forged\n") is False
 
 
