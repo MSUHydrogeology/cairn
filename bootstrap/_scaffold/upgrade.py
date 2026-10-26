@@ -2287,7 +2287,7 @@ def _cmd_finalize_lockfile(
             cleared_ids.add(id(rec))
             continue
         if judged is not None and judged["state"] == "blocked":
-            missing.append(dst_rel)
+            missing.append(f"{dst_rel}  ({judged['words']})")
             continue
         dst_abs = target / dst_rel
         if not dst_abs.is_file():

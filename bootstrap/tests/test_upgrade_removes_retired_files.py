@@ -1642,6 +1642,7 @@ def test_a_blocked_name_still_refuses_bare_finalize_with_exit_1(
         code, _out, err = _finalize(capsys, copy)
         assert code == 1, (name, err)
         assert dst in err and dst in _records(copy), name
+        assert "a link, a folder or another non-file is in the way" in err, (name, err)
 
     def dangling(copy: Path) -> str:
         _add_script(copy, write=False)
@@ -1782,3 +1783,159 @@ def test_the_upgrade_guide_and_the_printed_line_name_the_same_flag(
     # The guide's own example lines use the labels the report prints.
     for label in ("retired, untouched", "retired, already deleted", "retired, kept"):
         assert label in section and label in U._KIND_DISPLAY_LABEL.values()
+
+
+# ---------------------------------------------------------------------------
+# Every deletion goes through the guarded leaf, and a swap inside the guard changes nothing
+# ---------------------------------------------------------------------------
+
+def _swap_inside_the_guard_after_the_decision(
+    monkeypatch: pytest.MonkeyPatch, project: Path, watched: Path, folder: str,
+    outside: Path,
+) -> list[bool]:
+    """After the step has decided, the first containment check of *watched* is
+    followed by a swap of *folder* for a link to *outside*.
+
+    The check is patched where the leaf calls it and where the step module
+    calls it, so a removal that runs its own check by path is caught as well."""
+    real_guard = SEC._assert_safe_write
+    real_decide = U._classify_retired_records
+    state = {"armed": False}
+    swapped: list[bool] = []
+
+    def guard(dst: Path, target: Path) -> None:
+        real_guard(dst, target)
+        if state["armed"] and not swapped and Path(dst) == watched:
+            swapped.append(True)
+            os.rename(project / folder, project / (folder + "-moved"))
+            (project / folder).symlink_to(outside, target_is_directory=True)
+
+    def decide(*args: object, **kwargs: object) -> list:
+        decided = real_decide(*args, **kwargs)
+        state["armed"] = True
+        return decided
+
+    monkeypatch.setattr(SEC, "_assert_safe_write", guard)
+    monkeypatch.setattr(U, "_assert_safe_write", guard)
+    monkeypatch.setattr(U, "_classify_retired_records", decide)
+    return swapped
+
+
+@pytest.mark.parametrize("site", [
+    "the file", "a copy's cached template", "a leftover cached template"])
+def test_a_folder_swapped_for_a_link_inside_the_guard_leaves_the_outside_copy(
+    project: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str], site: str,
+) -> None:
+    outside = tmp_path / "outside"
+    if site == "the file":
+        dst = "scripts/_onboarding/cli.py"
+        _add_script(project, dst)
+        folder, watched = "scripts/_onboarding", project / dst
+        outside.mkdir()
+        (outside / "cli.py").write_bytes(_shipped_versions(dst)[-1])
+        victim = outside / "cli.py"
+    else:
+        dst = NEXT_SESSION if site == "a copy's cached template" else PLAIN_MARKDOWN
+        _add_markdown(project, dst, write_file=(site == "a copy's cached template"))
+        folder, watched = "dev/.cairn/base", project / "dev/.cairn/base" / dst
+        (outside / "dev" / "modules").mkdir(parents=True)
+        for rel in (NEXT_SESSION, PLAIN_MARKDOWN):
+            (outside / rel).write_bytes(_shipped_versions(rel)[-1])
+        victim = outside / dst
+    _commit_all(project)
+    swapped = _swap_inside_the_guard_after_the_decision(
+        monkeypatch, project, watched, folder, outside)
+    code, out, err = _step(capsys, project)
+    assert swapped, "the swap hook must have run"
+    assert code in (0, 2), (out, err)
+    assert victim.is_file(), f"{victim} outside the project was removed"
+
+
+def test_a_gone_record_is_kept_when_a_folder_is_swapped_for_a_link_inside_the_guard(
+    project: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    dst = "scripts/_onboarding/cli.py"
+    _add_script(project, dst, write=False)
+    (project / "scripts" / "_onboarding").mkdir()
+    (project / "scripts" / "_onboarding" / "keep.txt").write_text("mine", encoding="utf-8")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    _commit_all(project)
+    swapped = _swap_inside_the_guard_after_the_decision(
+        monkeypatch, project, project / dst, "scripts/_onboarding", outside)
+    code, out, err = _step(capsys, project)
+    assert swapped, "the swap hook must have run"
+    assert code in (0, 2), (out, err)
+    assert dst in _records(project), "absence could not be confirmed, so the record stays"
+
+
+def test_every_deletion_goes_through_the_guarded_leaf(
+    project: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str],
+) -> None:
+    _add_script(project, SCRIPT)
+    _add_script(project, "scripts/_onboarding/cli.py")
+    _add_markdown(project, NEXT_SESSION)
+    _add_markdown(project, PLAIN_MARKDOWN, write_file=False)
+    _commit_all(project)
+    real_leaf = SEC._remove_unchanged_file
+    inside: list[int] = []
+    leaf_calls: list[str] = []
+    strays: list[str] = []
+
+    def leaf(path: Path, *args: object, **kwargs: object) -> bool:
+        leaf_calls.append(Path(path).relative_to(project).as_posix())
+        inside.append(1)
+        try:
+            return real_leaf(path, *args, **kwargs)
+        finally:
+            inside.pop()
+
+    def watching(name: str, real):
+        def wrapper(path, *args: object, **kwargs: object):
+            if not inside and os.fspath(path).startswith(str(project)):
+                strays.append(f"{name}({os.fspath(path)})")
+            return real(path, *args, **kwargs)
+        return wrapper
+
+    unlink, rmdir = watching("unlink", os.unlink), watching("rmdir", os.rmdir)
+    monkeypatch.setattr(U, "_remove_unchanged_file", leaf)
+    monkeypatch.setattr(os, "unlink", unlink)
+    monkeypatch.setattr(os, "rmdir", rmdir)
+    monkeypatch.setattr(os, "remove", watching("remove", os.remove))
+    monkeypatch.setattr(shutil, "rmtree", watching("rmtree", shutil.rmtree))
+    monkeypatch.setattr(os, "supports_dir_fd", set(os.supports_dir_fd) | {unlink, rmdir})
+    code, out, err = _step(capsys, project)
+    assert code == 0, (out, err)
+    assert strays == [], "a deletion ran outside _remove_unchanged_file"
+    assert not (project / SCRIPT).exists() and not (project / NEXT_SESSION).exists()
+    expected = {SCRIPT, "scripts/_onboarding/cli.py", NEXT_SESSION,
+                f"dev/.cairn/base/{NEXT_SESSION}", PLAIN_MARKDOWN,
+                f"dev/.cairn/base/{PLAIN_MARKDOWN}"}
+    assert expected <= set(leaf_calls), sorted(expected - set(leaf_calls))
+
+
+def test_a_hand_deleted_file_is_cleared_by_the_step_or_a_scoped_finalize_and_a_bare_finalize_waits_for_the_commit(
+    project: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    _add_script(project, SCRIPT)
+    _commit_all(project)
+
+    def deleted_copy(name: str) -> Path:
+        copy = tmp_path / name
+        shutil.copytree(project, copy, symlinks=True)
+        (copy / SCRIPT).unlink()
+        return copy
+
+    bare = deleted_copy("bare")
+    code, _out, err = _finalize(capsys, bare)
+    assert code == 1, err
+    assert SCRIPT in _records(bare)
+    scoped = deleted_copy("scoped")
+    assert _finalize(capsys, scoped, SCRIPT)[0] == 0 and SCRIPT not in _records(scoped)
+    step = deleted_copy("step")
+    assert _step(capsys, step)[0] == 0 and SCRIPT not in _records(step)
+    committed = deleted_copy("committed")
+    _commit_all(committed)
+    assert _finalize(capsys, committed)[0] == 0 and SCRIPT not in _records(committed)

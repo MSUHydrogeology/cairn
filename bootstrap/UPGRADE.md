@@ -65,8 +65,8 @@ Each kept file also gets a `[flag]` line that says why. "matches none of the
 versions this Cairn knows" means the bytes differ from every copy Cairn lists:
 you changed the file, or it comes from a state Cairn does not list. "cannot show
 it is unchanged" means the evidence is missing: no cached template, a migrated
-lockfile, or a copy that your last git commit does not hold. A link or a folder
-at the name is kept too, and nothing is read through it. `--plan` writes
+lockfile, or a copy (or, for a Markdown file, its cached template) that your
+last git commit does not hold. A link or a folder at the name is kept too, and nothing is read through it. `--plan` writes
 nothing. When something can be removed, its report ends with the command below.
 
 **What `--remove-retired` does.** Run:
@@ -85,20 +85,24 @@ commit. Commit the change, then run `python bootstrap/verify_integrity.py
 --target <repo>`. You should see no `missing:` line for these files. If you do,
 run the step again: it finishes any record a stopped run left behind.
 
-**What stays.** Anything else is kept and named: a file you changed, a file your
-last commit does not hold (untracked, ignored or edited since), a link, a folder.
-A kept file is not an error. It stays in the lockfile and `verify_integrity`
-keeps checking it. To drop it, delete the file yourself and run
-`upgrade --finalize`, which clears its record. To keep your edit, leave it; run
+**What stays.** Anything else is kept and named: a file you changed, a file (or a
+Markdown file's cached template) your last commit does not hold (untracked,
+ignored or edited since), a link, a folder. A kept file is not an error. It
+stays in the lockfile and `verify_integrity` keeps checking it. To drop it,
+delete the file yourself and run `upgrade --remove-retired`, which clears its
+record. To keep your edit, leave it; run
 `upgrade --finalize <path>` to record the edit on purpose. A bare
 `upgrade --finalize` never records an edit to a retired file, with or without
 `--force`: it names the file, leaves its record, and says in its closing line how
 many records it did not record.
 
 **Deleting by hand is fine.** If you delete these files before you run the step,
-`upgrade --finalize` or `--remove-retired` clears their records. Until one of
-them runs, `verify_integrity.py` prints a `missing:` line for a deleted file
-that is not living state.
+`upgrade --remove-retired` clears their records, and so does
+`upgrade --finalize <path>` for each file you name. A bare `upgrade --finalize`
+refuses while the deletion is uncommitted, because the dirty-tree guard stops it
+(exit 1); commit the deletion first, then run it. Until a record is cleared,
+`verify_integrity.py` prints a `missing:` line for a deleted file that is not
+living state.
 
 **A leftover folder.** If `scripts/_onboarding/` holds only `__pycache__` after
 the step, it is safe to delete. Nothing imports it. Cairn has not tested that
