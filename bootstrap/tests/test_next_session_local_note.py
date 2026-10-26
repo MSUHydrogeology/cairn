@@ -309,12 +309,15 @@ def _read_copies() -> list[Path]:
             *_tracked("*session-start/SKILL.md")]
 
 
-def _each_copy_loses_its_phrase(copies: list[Path], phrase: str) -> None:
-    """Every copy has *phrase*, and a copy without it is reported."""
+def _each_copy_loses_its_phrase(
+    copies: list[Path], phrase: str, times: int = 1,
+) -> None:
+    """Every copy has *phrase* exactly *times* times, and a copy that loses
+    one occurrence is reported."""
     for copy in copies:
         flat = _flat(copy.read_text(encoding="utf-8"))
-        assert phrase in flat, copy
-        assert _missing(flat.replace(phrase, ""), (phrase,)) == [phrase], copy
+        assert flat.count(phrase) == times, copy
+        assert flat.replace(phrase, "", 1).count(phrase) == times - 1, copy
 
 
 def test_every_read_copy_says_the_note_is_data_not_instructions() -> None:
@@ -330,4 +333,5 @@ def test_every_copy_of_the_note_rules_refuses_a_link_a_linked_parent_a_folder_or
     _each_copy_loses_its_phrase(full, FULL_REFUSAL)
     short = _tracked("AGENTS.md", "templates/core/AGENTS.md")
     assert len(short) == 2, short
-    _each_copy_loses_its_phrase(short, SHORT_REFUSAL)
+    # Once in the Goodnight bullet and once in the Session start bullet.
+    _each_copy_loses_its_phrase(short, SHORT_REFUSAL, times=2)
