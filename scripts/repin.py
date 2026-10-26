@@ -20,8 +20,9 @@ unprompted.
 Every check reads the committed tree (``HEAD``), never the working tree: the
 files are extracted from raw git objects, the code this process runs is
 compared byte for byte with the signed anchor's manifest before it is
-imported, and the process itself runs isolated (``-I``) with a fresh bytecode
-folder.  A same-user edit to this file is outside what it can detect.
+imported, the ten listed files are loaded by file location and the extraction is
+never on the import path, and the process itself runs isolated (``-I``) with a
+fresh bytecode folder.  A same-user edit to this file is outside what it can detect.
 """
 import os
 import sys
@@ -36,7 +37,7 @@ if __name__ == "__main__":
 import argparse
 import ast
 import hashlib
-import importlib
+import importlib.machinery
 import importlib.util
 import io
 import json
@@ -46,6 +47,7 @@ import stat
 import subprocess
 import sysconfig
 import tempfile
+import types
 import unicodedata
 from pathlib import Path
 
@@ -203,6 +205,67 @@ def extract(repo, head, dest):
     return ents
 
 
+#: The in-process modules, each after the ones it imports.  The others in LISTED
+#: are the empty package marker (loaded first) and the AST child's module.
+LOAD = ["bootstrap.tests._oracle_trust", "bootstrap.tests._oracle", "bootstrap.tests._oracle_activation",
+        "bootstrap.tests._gate_transition", "bootstrap.tests._gate_manifest",
+        "bootstrap.tests._gate_reanchor", "bootstrap.tests._gate_preflight",
+        "scripts.reanchor_ceremony"]
+
+
+def load_listed(ext, session_path):
+    """Load the listed modules by file location under their dotted names.
+
+    The extraction never joins ``sys.path``, so nothing else in the commit can be
+    found by an import: not a ``bootstrap/__init__.py`` or ``scripts/__init__.py``,
+    and not a root ``bootstrap.py`` or ``scripts.py``.  The two parent packages are
+    empty ones made here.  Returns each loaded name with the file it came from."""
+    made = {"anchor_session": session_path}
+    for pkg in ("bootstrap", "scripts"):
+        parent = types.ModuleType(pkg)
+        parent.__path__, parent.__spec__ = [], importlib.machinery.ModuleSpec(pkg, None, is_package=True)
+        sys.modules[pkg] = made[pkg] = parent
+    try:
+        for name in ["bootstrap.tests", *LOAD]:
+            path = ext.joinpath(*name.split(".")) / "__init__.py" if name == "bootstrap.tests" else \
+                ext.joinpath(*name.split(".")).with_suffix(".py")
+            spec = importlib.util.spec_from_file_location(
+                name, path, submodule_search_locations=[] if name == "bootstrap.tests" else None)
+            mod = sys.modules[name] = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            setattr(sys.modules[name.rpartition(".")[0]], name.rpartition(".")[2], mod)
+            made[name] = path
+    except ImportError as exc:
+        raise Refuse(f"a checked module imported something outside the checked list ({d(str(exc))}). "
+                     f"Nothing further was run.")
+    return made
+
+
+def check_loaded(before, made, ext, frozen):
+    """Judge every module this boot added by where the import system loaded it from
+    (``__spec__``), never by the module's own ``__file__``, which it can reset."""
+    stdlib = [os.path.realpath(sysconfig.get_path(k)) for k in ("stdlib", "platstdlib")]
+    for name in sorted(set(sys.modules) - before):
+        origin = getattr(getattr(sys.modules[name], "__spec__", None), "origin", None)
+        if name in made:
+            ours = made[name]
+            if isinstance(ours, types.ModuleType):
+                ok = sys.modules[name] is ours and origin is None
+            else:
+                rel = os.path.relpath(ours, ext)
+                ok = (origin is not None and os.path.realpath(origin) == os.path.realpath(ours)
+                      and (name == "anchor_session" or sha(Path(ours).read_bytes()) == frozen.get(rel)))
+            if ok:
+                continue
+        elif origin in ("built-in", "frozen"):
+            continue
+        elif origin and "site-packages" not in os.path.realpath(origin) and any(
+                os.path.realpath(origin).startswith(s + os.sep) for s in stdlib):
+            continue
+        raise Refuse(f"the module {name} loaded from {d(str(origin))}, which is not on the "
+                     f"checked list. Nothing further was run.")
+
+
 def boot(repo, tmp):
     """The reading order.  Returns the context every verb works from."""
     global D
@@ -231,23 +294,11 @@ def boot(repo, tmp):
                          f"({got} against {frozen.get(rel)}). Its bytes decide what "
                          f"this tool runs, so nothing was imported. Only the by-hand "
                          f"ceremony in {RUNBOOK} anchors new bytes.")
-    # Append, never insert: appended, the standard library wins a name clash.
-    sys.path.append(str(ext))
-    mods = {"gm": "bootstrap.tests._gate_manifest", "gp": "bootstrap.tests._gate_preflight",
-            "rc": "scripts.reanchor_ceremony"}
-    ctx = {k: importlib.import_module(v) for k, v in mods.items()}
-    stdlib = [os.path.realpath(sysconfig.get_path(k)) for k in ("stdlib", "platstdlib")]
-    for name in sorted(set(sys.modules) - before):
-        f = getattr(sys.modules[name], "__file__", None)
-        if not f or os.path.realpath(f) == str(session_path.resolve()):
-            continue
-        f = os.path.realpath(f)
-        if "site-packages" not in f and any(f.startswith(s + os.sep) for s in stdlib):
-            continue
-        rel = os.path.relpath(f, ext.resolve())
-        if rel not in LISTED or sha(Path(f).read_bytes()) != frozen[rel]:
-            raise Refuse(f"the module {name} loaded from {d(f)}, which is not on the "
-                         f"checked list. Nothing further ran.")
+    made = load_listed(ext, session_path)
+    ctx = {k: sys.modules[v] for k, v in (("gm", "bootstrap.tests._gate_manifest"),
+                                          ("gp", "bootstrap.tests._gate_preflight"),
+                                          ("rc", "scripts.reanchor_ceremony"))}
+    check_loaded(before, made, ext, frozen)
     running = Path(__file__).read_bytes()
     entry = frozen.get(REPIN_REL)
     at_head = (ext / REPIN_REL).read_bytes() if (ext / REPIN_REL).is_file() else None

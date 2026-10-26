@@ -240,6 +240,42 @@ def test_a_committed_module_named_like_the_standard_library_does_not_run(bed, su
     assert bed.marker("hashlib").exists()
 
 
+@pytest.mark.parametrize("verb", ["status", "package", "ceremony"])
+@pytest.mark.parametrize("shape,bare_import", [("bootstrap/__init__.py", "bootstrap"), ("scripts/__init__.py", "scripts"),
+                                               ("scripts.py", "scripts"), ("bootstrap.py", "bootstrap")])
+def test_a_committed_parent_package_or_module_does_not_run_and_cannot_hide(bed, shape, bare_import, verb):
+    """`bootstrap` and `scripts` are plain folders in the commit.  Whatever a tracked
+    `__init__.py` or same-named module holds runs only if the import system finds it, and
+    `repin` never puts the extraction on its search path.  The payload also blanks its own
+    `__file__`, the way a check that trusts the module's word about itself is beaten."""
+    bed.write(shape, marker_code(bed.marker()) + "__file__ = None\n")
+    bed.commit("add a parent package marker")
+    args = {"status": [], "package": [],
+            "ceremony": ["--values", str(bed.root / "values"), "--ceremony-dir", str(bed.root / "cd")]}[verb]
+    r = bed.run(verb, *args)
+    if verb == "ceremony":
+        refused(r, "must both be a terminal")
+    else:
+        ok(r)
+    assert not bed.marker().exists(), f"the committed {shape} ran inside the repin process"
+    # control: a bare import from the checkout runs it, so the marker can fire
+    subprocess.run([PY, "-c", f"import {bare_import}"], cwd=bed.repo, env=bed.env, check=False)
+    assert bed.marker().exists(), "the control is wrong: importing it should write the marker"
+
+
+@pytest.mark.parametrize("hide", ["__file__ = None", "__file__ = None\n__spec__ = None"])
+def test_a_module_loaded_outside_the_list_is_refused_even_when_it_blanks_its_own_file_and_spec(bed, hide):
+    """The post-import check reads where the import system loaded a module from, not what
+    the module says about itself."""
+    twin = "bootstrap/tests/_oracle_trust.py"
+    bed.write("bootstrap/tests/planted.py", f"VALUE = 1\n{hide}\n")
+    bed.write(twin, bed.read(twin) + "\nimport importlib.util as _u, sys as _s\n"
+              "_sp = _u.spec_from_file_location('planted', __file__.replace('_oracle_trust.py', 'planted.py'))\n"
+              "_m = _u.module_from_spec(_sp)\n_s.modules['planted'] = _m\n_sp.loader.exec_module(_m)\n")
+    bed.pin()
+    refused(bed.run("status"), "the module planted loaded from")
+
+
 def test_the_repin_process_runs_isolated(bed):
     out = ok(bed.run("status"))
     line = re.search(r"^process\s+isolated=(\w+)\s+compiled files go to (\S+)$", out, re.M)
