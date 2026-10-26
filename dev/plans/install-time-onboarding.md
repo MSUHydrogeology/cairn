@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-retire-delayed-onboarding-prompts.md](../proposals/archive/2026-10-26-claude-retire-delayed-onboarding-prompts.md)
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: Cairn stops shipping the helper that was meant to show onboarding prompts later; the install's day-one list carries what they said, and three short pointers say where the list is.
@@ -322,3 +322,18 @@ Supersedes the "C3 NOT landed" lines above (append-only; those lines stay as the
 **Coverage.** Covered: lenses 1 to 7 and 9 as cited (rows 1 to 26); lens 8 only for B1's scope question. Not covered: any full or certifying run; the restore-an-install-write and refused-lockfile-pointer mutants (relied on the implementer's record); the Windows copy-fallback path; a real v0.4.0 install with a modified helper file (only the synthesized one in tests); sentence wording beyond A to E's presence and gating; `dev/PLANNING.md` and `CHANGELOG.md`; the re-anchors (C8). No second review round on code unless the B1 revision changes more than the two profile lines and their tests.
 
 **Status**: `revising-code` (B1).
+
+## Response to code review -- Claude Sonnet 5.5 (implementer) -- 2026-10-26
+
+Answers the code review above (`4a14f99c`), one loop. Fixes are in `190fbbd8` (N2) and `dd1109f0` (B1, N1). Interpreter: Python 3.13.13.
+
+* **B1 accepted.** Sentence C now reads "When you add another agent type, record it in the roster slot and walk the agent-team tour in `dev/modules/onboarding/`." with no file name, and the `cairn:if` wrapper is gone from both team profiles, so C sits outside every conditional again and reaches every install of those profiles. The departure recorded in the C3 addendum is **withdrawn**; the Scope delta stands as "preserved". `FORMER_PROMPTS` and the conditional node (now `test_no_former_prompt_sits_inside_a_conditional`) were updated; no frozen file was edited. The frozen `test_onboarding_seed_roster` nodes pass unedited. Mutants (separate copy at `dd1109f0`, control 70 passed; none skipped): C deleted in either file killed (5 failed each); C put back inside a `cairn:if` in either file killed (3 failed each); sentence A reworded killed.
+* **N1 accepted.** `bootstrap/UPGRADE.md` now says the `removed-upstream` line names every retired file the project still has and that the count can exceed nine (a 0.4 install prints 10, the handoff file included). The guide node pins the new phrase. The synthesized-project node still expects 9, which is what that fixture prints.
+* **N2 accepted (Maintainer-approved cheap fix).** The `_render_onboarding_slot` docstring no longer names the activation helper. Docstring only, code unchanged. **This adds a 19th symbol to the Maintainer's re-anchor list: `FunctionDef:_render_onboarding_slot` in `bootstrap/_scaffold/install.py`** (a baseline key that changes). `_ast_attest.py verify` now lists 36 lines, one more than the 35 recorded; the new line is that symbol.
+* **N3 accepted.** Tree state, stated: during the main scoped run in the first record the working tree carried other sessions' uncommitted edits to archived plans and proposals (the review-record move), and that run (1621 passed, 3 failed) predates `6e0bd830` and C3. The scoped set was re-run once at the end on a tree with no uncommitted tracked changes (only untracked `.claude/` and `dev/measurement/collision_log.md`) at `dd1109f0`: **1646 passed, 0 failed**, same file list as before. The certifying run on a clean tree stays pending.
+* **N4: wontfix, pre-existing.** The survivor at `bootstrap/_scaffold/upgrade.py` (`dst_rel in lock_dsts or` in the occupied-destination test) passed all nodes at the parent too; the inner lock-conflict branch pins the kind (killed). Engine not touched; equivalence not measured, so it is reported as a survivor.
+* **N5, N6:** the planning session's, at the archive commit.
+
+### Addendum -- after the code review -- Claude Sonnet 5.5 (implementer) -- 2026-10-26
+
+Appended to the verification record; nothing above is rewritten. Boundary B mode `full`; **Certified by**: pending; nobody set `CAIRN_FULL_SUITE`; no push, re-anchor or full run. Commits: `190fbbd8`, `dd1109f0`, this record. Re-anchor list change: 19th symbol `_render_onboarding_slot` (above). Not done: the certifying run, the re-anchors, `dev/PLANNING.md` and `CHANGELOG.md` (planning session). Status set to `ready-to-archive`: the only new item since the review is the approved 19th symbol, and no new defect was introduced.
