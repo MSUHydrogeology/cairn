@@ -89,6 +89,18 @@ Left out because 0.5 already carries an engine batch, a ceremony and a build;
 either can join by the Maintainer's word. **Also not in 0.5, waiting on their
 revival conditions:** #19, #13 and the deferred table.
 
+**Branch rule.** All 0.5 work happens on the `0.5-dev` branch. `master` is
+frozen at `b70ee08f`: no commits to it. The shared checkout stays on `0.5-dev`.
+Git allows a branch in only one checkout, so an agent that wants a separate
+worktree branches off with its own name (`git worktree add -b 0.5-dev-<topic>
+<path> 0.5-dev`) and merges back into `0.5-dev`. Commits are path-scoped as
+usual. Merging `0.5-dev` to `master`, and pushing either, are the Maintainer's.
+The Maintainer, 2026-10-26:
+
+> "No more edits in `master` in the Cairn repo"
+
+> "Go ahead and move all new development to 0.5-dev"
+
 **Standing direction.** The 2026-07-22 direction, *fix defects, build nothing
 new*, applies to every row above; the choices on this page are the go-ahead for
 these rows only.
