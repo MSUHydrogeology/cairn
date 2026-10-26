@@ -1,9 +1,9 @@
 # Cairn Plain Language: a writing standard for what agents write to people
 
 **Author**: Claude (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual
-**Plan review**: not required(one commit: one new section in the shipped collaboration doc and its Cairn copy, one pointer sentence in each `AGENTS.md`, one paragraph in `doctrine/rationale.md`, one ship test)
+**Plan review**: required(Internal) — if the Decision calls for a plan; expected to land in one commit with no plan (see the Revision)
 **Opened**: 2026-10-26
 **In brief**: Give every install a one-page, versioned writing standard, Cairn Plain Language, so that what an agent writes is something a scientist can understand, check and act on.
 
@@ -507,3 +507,240 @@ Cairn tells agents to "lead plain" and names no method, so each agent invents on
 * **Design completeness (3)**: W1, W3. **Cross-document consistency (5)**: W7; the in-tree search used `grep` for "plain language" and "readability" with a positive control. **Drift (6)**: W6. **Lifecycle placement (7)**: W5. **Scope (8)**: W2. **Satisfiers (9)**: each finding ends in one.
 
 **Not covered / low confidence.** I did not re-run either literature search, so "found no standard anywhere" rests on the author's word. I read only the Zhou et al. abstract; the other figures (Budescu 27% to 40%, Markowitz, Steyvers, Kim) are unchecked, and the proposal says four of those rest on abstracts too. The ship test does not exist yet, so only its model was read. I did not check whether a license map needs an entry for the "CC BY 4.0" line. I did not run the suite: this is prose, and I found no test that pins these files' bytes beyond the lockfile hashes in W6. My test-reader counts (9, 42, 5) differ from the proposal's (8, 41, 4) by one each; the method differs and I did not reconcile them. I did not apply the 18 rules to a real passage, which is what the proposal's trial is for.
+
+## Response -- Claude (author) -- 2026-10-26
+
+I accept eight findings in full and W2 in part. The revision below carries
+every change. Nothing in it widens scope: it removes one rule and tightens the
+rest, so under the one-round rule it goes to the Maintainer's Decision with no
+second review.
+
+* **W1, accepted.** Rule 16 (now 15) says what to write when there is no basis
+  for a number: say so, and say what the judgment rests on. The trial adds a
+  passage where no number exists.
+* **W2, accepted in part.** I drop the figures rule (old 10). I merge the old
+  rules 5 and 8 into one rule on terms. I keep the rest, for two reasons.
+  First, the reviewer's premise that rules 4 to 13 lack incidents does not
+  hold: the rule-to-incident map in the revision ties each kept rule except
+  the instruction rules to a committed record, and the instruction rules to
+  one incident from today. Second, old rule 6 (examples) has a study behind it
+  (Robillard & DeLine, 2011, cited in the evidence table), so "neither" was
+  not right for it. What the reviewer's narrower version would lose: the
+  rules on names, sentences and structure, which are exactly what the
+  2026-10-23 audits fixed by hand. The Maintainer decides the final size;
+  Question 5 in the revision asks.
+* **W3, accepted.** Old rule 7 held five instructions; it becomes two rules,
+  one for sentences and one for paragraphs. I keep the other compound rules,
+  because each has one topic. The standard now says what a number names: one
+  rule, with a single topic. A finding quotes the clause it cites. Withdrawing
+  or rewording a clause is a new version, with a changelog line, and does not
+  renumber.
+* **W4, accepted.** The evidence for rule 18 (now 17) is mixed, and the table
+  now says so: Kim et al. (2024) found first-person uncertainty reduced
+  reliance on wrong answers, while Zhou et al. (2024) found users relied on
+  model output whether or not it was marked as uncertain. The revision adds
+  the second ground the reviewer gave: the rule makes an agent's checks
+  auditable by the Maintainer, even when a casual reader over-relies.
+* **W5, accepted.** (a) The third signal's trigger is the Maintainer's own
+  judgment at a three-month read. No log is added, and the revision says so.
+  (b) For chat, the `AGENTS.md` pointer now carries the three reasoning rules
+  with the highest yield in one clause, so an agent that never opens the
+  collaboration doc still meets them.
+* **W6, accepted.**
+  * The verification section adds the lockfile step.
+  * The rationale paragraph names the developer style guide generically, so
+    the neutrality gate stays at 0 failures.
+  * The paragraph states the reason against a readability score in place,
+    instead of citing anchor 21, which lives only in the guide-star note.
+  * The "about 40 lines" figure becomes about 80.
+  * The `Plan review` header now uses a template value.
+* **W7, accepted.** The revision adds a paragraph on the rules that already
+  exist, and says which one governs on a conflict.
+* **W8, accepted.** The audits are cited by commit (`e3448ed0`), and so is the
+  case-study rewrite (`0381944f`). The quotation is marked as said in chat on
+  2026-10-23.
+* **W9, accepted.** Both sentences are reworded.
+
+On the coverage line: the license map needs no entry. The standard sits inside
+`agent_collaboration.md`, which is already CC BY 4.0 prose, so the version line
+only restates its licence for anyone who lifts the section out. The test-reader
+counts differ by method (file name against content). They are not load-bearing,
+and the implementer recounts by search.
+
+## Revision -- Claude (author) -- 2026-10-26
+
+This revision replaces the parts of the proposal named below. Anything not
+named stands as written above.
+
+### The standard, as revised (replaces the block quote in section 1)
+
+> ## Cairn Plain Language
+>
+> *Version 1.0. Each rule has one number and one topic. A finding cites the
+> number and quotes the clause. Numbers never change: a withdrawn rule keeps
+> its number, marked withdrawn, and a reworded rule is a new version with a
+> changelog line. Licensed CC BY 4.0.*
+>
+> Every review and decision depends on the reader understanding what an agent
+> wrote (`AGENTS.md`, the comprehension rule). These rules apply to anything
+> an agent writes for a person: chat replies, proposals, reviews, plans,
+> commit messages, documentation and error messages. They are not a word list:
+> keep your field's terms, and define them. The only words they rule out carry
+> no information: filler, vague praise, and a probability word without its
+> number.
+>
+> **Before you write**
+>
+> 1. Know who will read it and what they will do with it: decide, follow
+>    steps, review, or look something up. Write for that reader and that use.
+>
+> **Everything**
+>
+> 2. Put the conclusion first, then only what the reader needs to act on it.
+>    Leave out filler and vague praise ("robust", "comprehensive").
+> 3. Never leave out what the reader needs to decide: failures, checks you did
+>    not make, open questions, bad news.
+> 4. Use one name for one thing. Do not vary names for style, do not give two
+>    things the same name, and do not coin a name for something that already
+>    has one.
+> 5. Define a specialist term where it first matters, and keep the field's
+>    terms rather than writing around them. Spell out an acronym the first
+>    time, unless the reader uses it daily. Unpack stacked nouns: "the record
+>    of the re-anchor ceremony", not "the re-anchor ceremony record".
+> 6. Give an example for each abstraction.
+> 7. Write short sentences, one idea each, in the active voice with the actor
+>    first.
+> 8. Give each paragraph one topic, stated in its first sentence. Start from
+>    what the reader already knows, then add what is new. Do not break the main
+>    thought with an aside.
+> 9. In anything longer than a screen, use headings that say what follows and
+>    lists for parallel items. Move detail the main line does not need to its
+>    own section, and say where it is. Where several readers share a document,
+>    mark which part is for whom.
+>
+> **Instructions** (steps, runbooks, prompts to paste, install output, error
+> messages)
+>
+> 10. One action per step, in the order the reader does them, as a command:
+>     "Open…", "Run…". Put conditions and warnings before the step they apply
+>     to, especially for anything that cannot be undone.
+> 11. Say what the reader should see afterwards, and what to do if they see
+>     something else.
+> 12. An error message says what happened, why if known, and what to do next,
+>     without blaming the reader.
+>
+> **Scientific and technical reasoning** (proposals, reviews, decisions,
+> reports of results)
+>
+> 13. Say which claims were measured, which are assumed and which are
+>     expected. Never let an assumption read as a result.
+> 14. Give the number with its unit and its source, not an adjective:
+>     "2.3 mm/month, from the 2025 gauge record", not "small".
+> 15. State uncertainty as a number with its source: "±0.5 mm, from gauge
+>     error"; "about 1 chance in 5, from the 30 runs". Do not use a probability
+>     word such as "likely" on its own; readers give these words very different
+>     meanings. If you have no basis for a number, say so, and say what the
+>     judgment rests on: "I have no measure of this; I expect it to hold
+>     because the two models share a grid."
+> 16. Say whether a range shows uncertainty (the value is not known) or
+>     variability (the value really varies), and give no more precision than
+>     the evidence supports, usually one or two significant figures.
+> 17. Say how sure you are about your own work, and why, in the first person:
+>     "I ran the tests and they pass"; "I did not run this on Windows"; "I am
+>     not sure this handles feet; I found no test for it". Never let fluent
+>     prose stand in for a check you did not make.
+>
+> **Checking.** A reader who cannot follow a passage says so, and the
+> "I don't understand this yet" pause applies. A reviewer cites a broken rule
+> by number as a finding. These rules are checked by reading, never by a
+> readability score: a score becomes the target, and the cheapest way to raise
+> it is to cut the precision rules 13 to 16 protect.
+>
+> **Where other rules are more specific.** A template or rule that fixes the
+> shape of one kind of record governs that shape: a commit body's layout, a
+> review's coverage line, a question to the Maintainer. These rules govern the
+> writing inside it. The two agree by design: the coverage line is rule 17
+> applied to a review, and a question to the Maintainer in plain language is
+> rules 1 and 2 applied to a question.
+>
+> Sources: ISO 24495-1:2023; the US Federal Plain Language Guidelines;
+> ASD-STE100 (instruction rules); the studies cited in `doctrine/rationale.md`,
+> anchor 16.
+
+Seventeen rules, down from 18. Every later reference to a rule number in this
+proposal reads by the new numbers: the reasoning rules are 13 to 17.
+
+### The pointer in `AGENTS.md` (replaces section 2)
+
+In the comprehension paragraph of `AGENTS.md` and `templates/core/AGENTS.md`,
+one sentence after the sentence that ends "as a **mandatory pause**":
+
+> Cairn Plain Language, in `dev/agent_collaboration.md`, gives the rules for
+> writing plainly; in chat as everywhere, separate what you measured from what
+> you assumed, give numbers with their sources, and say what you did not
+> check.
+
+It is its own sentence, not a clause spliced into the list. The paragraph
+stays in the Review section, where `bootstrap/tests/test_comprehension_floor.py`
+requires it; that test matches on "mandatory pause", "precondition" and the
+rationale path, which this sentence leaves intact.
+
+### The rationale paragraph (amends section 3)
+
+The paragraph names its sources as "a developer documentation style guide"
+and the other sources by name, so the neutrality gate stays at 0 failures. It
+states the reason against a readability score in place, as the standard does,
+and does not cite anchor 21.
+
+### Rule-to-incident map (new; closes W2)
+
+| Rule | Incident in the record | Other support |
+| --- | --- | --- |
+| 1 reader and use | Both case studies, written for no reader in particular, rewritten for scientists (`0381944f`) | ISO 24495-1, 5.1 |
+| 2 conclusion first | The same case-study rewrite (`0381944f`) | Steyvers et al. (2025) |
+| 3 never leave out | This proposal's first text overstated Budescu et al. (2014) and left out how small the effect was; corrected in `cb280a29` | ISO 24495-1, 5.2 |
+| 4 one name, no coining | The three 2026-08-13 proposals; coined terms fixed in the docs audit (`e3448ed0`) | ISO 24495-1, 5.3 |
+| 5 terms, acronyms, noun stacks | Anchor 16's origin, "AST source-motion attestation"; undefined internal codes fixed in `e3448ed0` | ISO 24495-1, 5.3; Markowitz (2024) |
+| 6 examples | The README toy example, rewritten twice on the Maintainer's word before readers could follow it | Robillard & DeLine (2011) |
+| 7, 8 sentences, paragraphs | Dense passages fixed in `e3448ed0` | Gopen & Swan (1990); ISO 24495-1, 5.3 |
+| 9 structure | The case-study rewrite (`0381944f`) | ISO 24495-1, 5.3.6 |
+| 10, 11 instructions | None in the record before today | ISO 24495-1, 5.2.2; ASD-STE100; the Federal guidelines |
+| 12 error messages | 2026-10-26: `scripts/check_cairn.py` answered a deleted file with a raw traceback, not a message; proposal `2026-10-26-claude-check-cairn-deleted-files.md` | Nielsen Norman Group |
+| 13 to 17 reasoning | None; see *The rate-limit gate* | The evidence table |
+
+### The evidence table's rule-18 row (amends *How strong the evidence is*)
+
+The row for rule 18 (now 17) reads: **Mixed.** One study found first-person
+uncertainty reduced reliance on wrong answers (Kim et al., 2024); another found
+users relied on model output whether or not it was marked as uncertain
+(Zhou et al., 2024). The rule has a second ground that does not depend on
+either: it makes the agent's checks auditable by the Maintainer.
+
+### Corrections elsewhere
+
+* **The problem** cites the audits as `e3448ed0` and the case-study rewrite as
+  `0381944f`. The Maintainer's "impossible to use" was said in chat on
+  2026-10-23 and is in no committed record.
+* **Alternatives**, last bullet: the standard is about 80 lines, not 40.
+* **Verification, smoke checks**, adds: after the change lands, run
+  `python bootstrap/scaffold.py upgrade --target . --finalize AGENTS.md
+  dev/agent_collaboration.md` so `dev/.cairn/cairn-lock.yml` records the new
+  hashes, and confirm `verify_integrity` reports no mismatch.
+* **Verification, the trial**, adds a third passage: one where no number
+  exists, rewritten under rule 15.
+* **Signals**, third bullet: its trigger is the Maintainer's own judgment at a
+  three-month read. Nothing records the pauses, and this change adds no log.
+* **Signals**, first bullet: "cut them back to rules 2, 3 and 13 to 17".
+* **Open checks**, second bullet: "Whether 17 rules are too many."
+* **Header**: `Plan review` now uses a template value. If the Decision calls
+  for a plan, its review is `required(Internal)`; the change is expected to
+  land in one commit with no plan, recording its Boundary B result in the
+  commit body.
+
+### Question 5 for the Maintainer (new)
+
+5. **How many rules ship in v1.0?** *Default:* the 17 above. The reviewer's
+   alternative is about eight: rules 2, 3, 5 and 13 to 17. Adding a rule later
+   is cheap and removing one is costly, which favours the smaller set. What it
+   loses is the rules on names, sentences and structure, which are what the
+   recurrences were about.
