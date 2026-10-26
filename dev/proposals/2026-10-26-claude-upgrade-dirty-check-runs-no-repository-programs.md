@@ -1,7 +1,7 @@
 # Make the upgrade edit check run no program from the project's git settings
 
 **Author**: Claude Sonnet 5.5
-**Status**: revising
+**Status**: awaiting-review
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review) -- the change edits the scaffold engine (`bootstrap/_scaffold/`), a named high-risk surface, next to the git call the twelfth change added
 **Opened**: 2026-10-26
@@ -166,3 +166,103 @@ Assurance path: high-assurance
 **Checked, no defect.** Frozen tests: `TestDirtyTreeGuard` and `TestFinalizeDirtyTreeGuard` call the entry points or the one-argument helper and read stderr text, so they stay green under the contract; the oracle block is built from `collide` in `_apply_upgrade` (`upgrade.py:2689-2697`), which the change does not touch. AST symbols match the proposal. The cost rows hold (P4).
 
 **Coverage.** Not covered: git below 2.53.0 (emulated by omitting `GIT_NO_LAZY_FETCH`, not run on an old build); Windows; SHA-256; submodules, sparse checkouts, merge conflict, no-commit and glob names (the author's agreement run, not repeated); an index replaced by a link; a hung git; the Security preflight S1-S5; the plan's test nodes beyond reading their titles. No test suite run. The Security Review is still owed after the author's answer.
+
+## Response -- Claude Sonnet 5.5 (author) -- 2026-10-26
+
+Answers to the review at `2c1d82cd`. The complete contract is `## Revision 1` below; where the two differ, Revision 1 binds. I re-measured the cheap claims in a scratch repository (folder `dirtycheck-resp` under the scratchpad; git 2.53.0, Python 3.13.13, macOS); the numbers are in Revision 1, "Evidence". No engine code, test or suite was written or run.
+
+* **B1** accept with modification -- the 2.45.0 floor stays in the shared launcher. Below it, one plain `git config` read of `extensions.partialclone` and `remote.*.promisor` (measured: it ran no program) gates the four commands, and "cannot tell" answers when either key is set. I reproduced the treeless case and the design runs nothing in it. The modification: a treeless clone on a git at or above the floor also answers "cannot tell" (exit 128), a case the first text did not consider.
+* **B2** accept -- bare `--finalize` asks about the records the loop goes on to hash (living-state files and retired records that are not `untouched` are out, a renamed wrapper by its on-disk name) plus the lockfile. Question 1 now says what is lost and gained. A side effect I own: a bare finalize no longer waits for the commit of a hand-deleted retired file.
+* **N1** accept -- a mode-only edit counts: the index mode against the owner-execute bit, as git does, skipped when `core.fileMode` is false. The upgrade's replacement write keeps the old mode but strips the execute bits (`bootstrap/_scaffold/security.py:71-72`, read, not run), so a chmod-only edit would not survive an overwrite.
+* **N2** accept with modification -- disclosed as a gap, no new node: pinning a gap would pin a defect. Measured on this machine (`core.ignorecase` true): asked as `agents.md`, the check calls an edited `AGENTS.md` clean. Today's set intersection has the same gap.
+* **N3** accept -- `names=None` is the lockfile's recorded files, or an empty set with no readable lockfile; a new node carries the "untracked recorded name is not returned" property.
+* **N4** accept -- Question 2 now says it. One correction to the review's premise: `git status` calls a CRLF file clean when git wrote the checkout; for a file converted by hand it says modified with an empty `git diff` (measured).
+* **N5** accept -- one line added to the Alternatives.
+* **N6** accept -- (a) this change owns the `UPGRADE.md` "Deleting by hand" sentence as the twelfth change left it (`0f395af5`), and the twelfth change's bare-finalize node whose bare arm now exits 0; (b) `install.py` near 1648 is listed under Not in scope with its reason.
+
+## Revision 1 -- Claude Sonnet 5.5 (author) -- 2026-10-26 -- the complete current contract
+
+This replaces the Proposal, Rationale, Alternatives, Documentation, Evidence, Questions and Sequence above in full. The Context stands as written.
+
+### Contract
+
+1. **One answer, asked of the names.** `_dirty_tracked_paths(target, names=None)` returns the subset of `names` (project-relative, `/`-separated) with uncommitted changes, or `None` ("no guard") exactly as today when git cannot start or the folder is not in a work tree. `names=None` means the lockfile's recorded `dst` values, and an empty set when there is no readable lockfile. No production caller passes `None`; it keeps the frozen one-argument call working, and the plan greps for any other. `_writeset_dirty_collisions` passes the write-set.
+2. **The names for bare `--finalize`** are the records the loop at `upgrade.py:2285-2305` goes on to hash, plus `dev/.cairn/cairn-lock.yml`, which finalize rewrites. That is every record with a string `dst`, the vendor wrapper by its on-disk name (one helper shared with the loop, so the two cannot disagree), minus living-state files (`_LIVING_STATE_DSTS`; never hashed) and minus retired records that are not `untouched` (`gone` is cleared; `matches-none` and `cannot-tell` stay unrecorded; `blocked` the loop refuses in its own words). A recorded file missing on disk stays in. Effect: a dirty living-state file, a hand-deleted retired file and an edited kept retired file no longer stop a bare finalize; an edited hashed record and a modified lockfile still do.
+3. **Commands**, all through the twelfth change's launcher (moved to one module-level helper): `git -C <project>`, `-c core.fsmonitor=false -c core.hooksPath=<null device> -c core.useReplaceRefs=false`, every `GIT_*` variable removed, `GIT_NO_LAZY_FETCH=1`, `GIT_TERMINAL_PROMPT=0`, `GIT_OPTIONAL_LOCKS=0`, no input, the timeout, a byte cap, `--literal-pathspecs`. In order: `--version`; `rev-parse --is-inside-work-tree`; one `config -z --get-regexp '^(core\.filemode|extensions\.partialclone|remote\..*\.promisor)$'`; `rev-parse --verify -q HEAD` (exit 1: no commit yet); `ls-files -z -s -- <names>`; `diff-index --cached --raw -z --no-renames --no-ext-diff --no-textconv --relative HEAD -- <names>`. Names go in groups of at most 100.
+4. **The floor stays.** A git older than 2.45.0, or one whose version cannot be read, may fetch a missing object from a remote the project names, and that fetch can run the project's `uploadpack` program. Below the floor, if the config read finds `extensions.partialclone` or any `remote.*.promisor` key (any scope, any value), the answer is "cannot tell" and none of the later commands runs. With neither key, an ordinary repository has no remote to fetch from lazily, and the commands run. At or above the floor `GIT_NO_LAZY_FETCH` stops the fetch; a treeless clone (the commit history without its folder listings) then makes `diff-index` exit 128, which is "cannot tell". A blobless clone (file contents absent) is read normally.
+5. **The engine reads the files itself.** A name is **dirty** if any of these holds: it is staged against the last commit (added, changed, deleted, type-changed); it is in conflict; it is missing on disk or not a regular file; its index entry is not mode 100644 or 100755; its bytes, hashed the way git hashes a blob (SHA-1 or SHA-256 by the id's length), differ from the index; or its mode differs, meaning index 100755 against the owner-execute bit, checked on POSIX and only when `core.fileMode` is not false (git's own rule: group and other bits are ignored). A name git does not track is **not dirty**, as today.
+6. **Git there but not answering** (over 10 s, an error after the work tree was confirmed, output past the cap, a treeless clone, a partial clone below the floor): the check says so in its own words and does not guess. `--apply` and bare `--finalize` refuse with the reason and `--force`; `--stage` completes with an advisory. Today this case is silent "no guard".
+7. **Line endings.** A file whose bytes equal the index after turning every `\r\n` into `\n` counts as unchanged (Question 2).
+8. **Over-reports, both in the refusing direction, disclosed in the guide:** a clean filter (git says clean, the raw bytes differ), a tracked symbolic link (the engine cannot write through one anyway), and a CRLF file if Question 2 is answered no. **Gap, same as today:** on a case-insensitive repository a name in another letter case reads as untracked, so an edit is not seen.
+9. **Not in scope.** No new action, flag or list change; no template, install row or lockfile field; `scaffold.py --manifest` unchanged. `--force` still skips the check and runs no git. The `--apply` refusal text stays byte-identical (the differential oracle compares it); the bare-finalize text and `--finalize` help say "recorded". The twelfth change's behaviour changes in one place only: a bare finalize no longer waits for the commit of a hand-deleted retired file (item 2). `bootstrap/_scaffold/install.py` near 1648 (`git status --porcelain` on the Cairn source checkout) stays: it feeds a warning that never blocks, and that checkout's code is what the person is already running, so its git settings carry no authority the code lacks.
+
+### Rationale and alternatives
+
+The callers ask about names they hold, so a check bounded by those names is enough and costs the same however large the repository is. The programs `git status` runs (whole-tree scan, clean filters, the monitor) are what it does beyond that. Rejected: **doing nothing** leaves a program run and a silent overwrite, both live in 0.5. **A call per name to `_committed_copy_matches`** misses a file staged then reverted on disk (`git status` says `MM`), needs two more calls per differing name, and costs 8 ms a name (1.6 s for 200 names, against 0.14 s). **One batched `git cat-file --batch`** costs one process, but it also compares with the last commit only, so it misses the same staged-then-reverted file, and it needs the same floor. **Checking every tracked file** took 4.0 s for 50,000 files and reads every large data file. **`git status` with more overrides** cannot name `filter.<name>.clean`, whose key is arbitrary. **Dropping the floor** (the first text) runs a program in a treeless clone on an older git (measured below).
+
+### Documentation / doctrine surface
+
+Descriptive layer only (`docs/DOCUMENTATION_PLAN.md`). `bootstrap/SAFETY.md`: one sentence, the edit check runs no program the project names. `bootstrap/UPGRADE.md`: this change owns the "Deleting by hand is fine" sentence near line 102 as the twelfth change's code-review fix left it (a bare finalize "refuses while the deletion is uncommitted"; now false) and the finalize paragraph (the check covers the files finalize hashes and the lockfile; clean filter, link and line-ending notes; partial clones; `--force`). The twelfth change's node `test_a_hand_deleted_file_is_cleared_by_the_step_or_a_scoped_finalize_and_a_bare_finalize_waits_for_the_commit` (not keyed in the gate manifest: grep finds 0) has its bare arm rewritten here. The plan checks that no test or manifest pins the changed bytes. `CHANGELOG.md` at archive. No `doctrine/` or `AGENTS.md` text; the rate-limit gate does not apply.
+
+### Evidence / verification plan
+
+**Measured** (scratch repositories; a prototype of the commands outside the tree; git 2.53.0; Python 3.13.13). From the first round: agreement with `git status --porcelain` on ten edit states; fsmonitor and clean filter ran no program under the prototype; a blobless clone ran none; cost at 50,000 files: `git status` 92 ms, proposed 136 ms, per name 1.6 s, everything 4.0 s. Added this round:
+* **The config read runs nothing.** On a repository whose config names `core.fsmonitor`, a clean filter, `core.pager`, an `uploadpack` program and the promisor keys, the `config` call exited 0, printed nothing to stderr and wrote no marker; `git status` there wrote one (control). It found `Remote.Other.Promisor` spelled in mixed case.
+* **Treeless case reproduced.** `--filter=tree:0`, `remote.origin.uploadpack` naming a program: `rev-parse --verify HEAD` and `ls-files -s` ran nothing; `diff-index --cached HEAD` ran the program without `GIT_NO_LAZY_FETCH` and exited 128 with it. Blobless: none of the three ran it.
+* **The design runs nothing.** A stand-in `git` reporting 2.44.0 and ignoring `GIT_NO_LAZY_FETCH` (a real old build was not available): treeless and blobless clones answered "cannot tell", no program. Gate removed (the mutant): the treeless clone ran the program. At 2.53.0 the treeless clone answered "cannot tell" (128), no program. An ordinary repository with a tree object deleted and `uploadpack` named: no program.
+* **Mode.** `chmod u+x`: git and the prototype both dirty; mode check removed: the prototype misses it (the mutant is killed by this case). Group-execute only, and `core.fileMode=false` plus `chmod`: both clean.
+* **Line endings.** A CRLF file git checked out: git clean; prototype clean with Question 2's rule, dirty without. A file converted by hand: git says modified with an empty `git diff` (it trusts the changed size); the prototype with the rule says clean.
+* **Link and letter case.** An unchanged tracked link: prototype dirty, git clean. On this machine (`core.ignorecase` true), `agents.md` asked for an edited `AGENTS.md`: prototype clean, git dirty.
+
+**Reasoned, not run:** the names set of item 2 (read from `upgrade.py:2285-2305` in the current tree; no engine code written); the stripped execute bit on replacement (`security.py:71-72`); any real git older than 2.53.0; Windows; SHA-256; submodules, sparse and linked work trees; a hung git; the time of the one extra `config` process (not timed). No test suite and no in-tree mutant were run.
+
+### Tests required
+
+Behaviour is driven through `scaffold.py upgrade --stage|--apply|--finalize`. New file (new files are allowed under the gate manifest).
+
+Proposed paths:
+* `bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py`
+
+Nodes: `test_git_config_programs_never_run_during_stage_apply_or_finalize` (monitor, clean filter, textconv, pager; mutant: call `git status`); `test_a_subfolder_project_sees_its_own_edits` (mutant: drop `--relative`); `test_the_check_agrees_with_git_status_on_each_edit_state` (git's own answer is the independent expectation); `test_pattern_characters_in_a_name_match_literally`; `test_a_staged_then_reverted_file_counts_as_edited`; `test_a_missing_or_untracked_name_is_handled_as_git_status_does`; `test_an_untracked_recorded_name_is_not_returned_and_no_lockfile_gives_an_empty_set` (carries the frozen test's property); `test_a_mode_only_edit_counts_unless_filemode_is_off` (mutant: skip the mode); `test_line_endings_only_difference_counts_as_unchanged`; `test_a_git_that_does_not_answer_stops_apply_and_finalize_and_only_advises_on_stage`; `test_force_runs_no_git`; `test_bare_finalize_asks_about_the_records_it_hashes_and_the_lockfile` (living-state edit proceeds; gone retired file proceeds; kept retired edit proceeds; edited hashed record, renamed wrapper and dirty lockfile refuse; mutants: all records; drop the lockfile); `test_a_partial_clone_runs_no_upload_program_at_or_above_the_floor` (blobless and treeless); `test_below_the_floor_a_partial_clone_answers_cannot_tell_and_runs_no_program` (stand-in older `git`; mutant: remove the config gate); `test_the_launcher_is_shared_with_the_committed_copy_check`.
+
+**Frozen tests.** As in the first text (re-read at this tree): `TestDirtyTreeGuard`, `TestFinalizeDirtyTreeGuard` (edits `AGENTS.md`, a hashed record, so it still refuses) and `test_self_heal_composes_with_dirty_tree_guard` stay green unedited; oracle scenario `dirty_tree_refusal` stays `match`; no keyed test is edited, so no re-anchor is owed for tests.
+
+### Examples / smoke checks
+
+`python scripts/claim_check.py` and `python scripts/check_cairn.py` over the changed Markdown; `python scripts/quality_gate.py --sub neutrality`. Boundary B is `full` (engine, high-risk surface); `Certified by: pending`. AST symbols as in the first text; the baseline correction is Maintainer-run, once, at the cut.
+
+#### Security preflight
+
+* **S1 -- Who supplied it?** Index and last commit, file bytes and `.git/config` are all project data. The config read is used only to refuse (a promisor key means "cannot tell"); a wrong "clean" can only let the engine write where the operator's edit sits, and "dirty" only refuses.
+* **S2 -- Can it fail?** Mutants per node above; the gate-removed and mode-skipped mutants were each shown to change the prototype's answer (Evidence). None run in-tree. The agreement node's expectation is `git status` itself.
+* **S3 -- What fires it?** `upgrade --stage`, `--apply`, bare `--finalize`, over the write-set or item 2's names. `--force` and scoped `--finalize <path>` skip it. The guide sentence is written from this section by the plan.
+* **S4 -- Which way does it break?** An unreadable git, a partial clone below the floor, a treeless clone: refuse (less authority). No git or not a work tree: no guard, as today. Clean filter, link: refuse. Rule 7, a case mismatch: not protected (more authority, small).
+* **S5 -- Who still wins?** Assumed: the project controls `.git/config`, hooks, attributes and the index. Still wins: a project that rewrites its own index to look clean, and a `git` earlier on `PATH`. At or above the floor no program runs because lazy fetch is switched off and no command reads a working file; below it, that rests on one fact about git (lazy fetch needs a configured promisor remote), shown on 2.53.0 with a stand-in and not on a real older git.
+
+#### Independent scientific check
+
+N/A: no scientific assumption or result touched.
+
+### Signals the change is wrong
+
+A program from `.git/config` runs under any of the three commands, including on a treeless clone. The check calls a file clean that `git status` calls edited, apart from the disclosed gaps. A bare finalize refuses on a living-state or retired file, or runs on a modified lockfile. `--apply` is visibly slower on a large tracked tree. Windows checkouts refuse every file.
+
+**Scope delta**: preserved. The baseline is the first text. Against today's behaviour the guard narrows in one place, bare `--finalize` (Question 1); the floor, dropped in the first text, is kept.
+
+**Assurance path**: high-assurance (the scaffold engine and the twelfth change's trust-root launcher). **Plan review**: required(Internal + Internal Security Review). **Sequence**: lands after the twelfth change's code review clears, before the 0.5 cut; it needs a plan; one Maintainer-run baseline re-anchor at the cut covers both.
+
+### Questions for the Maintainer
+
+1. **Bare `--finalize` and files Cairn does not hash.** Today it refuses when any tracked file in the repository has an uncommitted edit, your own source code included. Finalize hashes only the recorded files and rewrites only the lockfile. New: it asks about the files it will hash, plus the lockfile. Lost: the refusal for an unrelated edit, which finalize never reads. Gained: no refusal for an edit to a living-state note (`NEXT_SESSION`, `PLANNING`) or for a retired file you deleted by hand, and no program run. **Default: ask about the files finalize hashes, plus the lockfile.**
+2. **A change that only alters line endings.** `git status` calls a CRLF file clean when git wrote the checkout, but the engine compares raw bytes, so without a rule every such file would read as edited. Count a file as unchanged if it differs from the index only by CRLF versus LF? Cost: a line-ending-only edit is not protected. I measured this on macOS and did not run Windows. **Default: yes.**
+3. **Git is there but does not answer, or cannot be read safely** (a treeless clone, or any partial clone with git older than 2.45.0). Stop (`--apply` and `--finalize` refuse, naming the reason and `--force`; `--stage` warns), or carry on unguarded as today? **Default: stop.**
+
+### Withdrawn / superseded commitments
+
+* Proposal 6, "no git-version floor for this check": withdrawn. A treeless clone on a git before 2.45.0 ran the project's program in `diff-index` (measured), so the floor stays, with a config-read gate below it that keeps the guard instead of giving it up.
+* Proposal 1, bare `--finalize` "passes its recorded files": replaced by item 2, the records the loop hashes plus the lockfile; living-state and kept retired files are out.
+* Proposal 3, "the rule ... bytes differ from the index": extended with the owner-execute bit (item 5), because a chmod-only edit would not survive the replacement write.
+* Proposal 4, "git does not answer": widened to name the treeless and below-floor partial-clone cases.
+* The Signals sentence "the check calls a file clean that `git status` calls edited, apart from the two stated over-reports": reworded; the over-reports and the case gap are now listed (item 8).
+* Question 2's premise that line-ending handling protects Windows: replaced by the engine comparing raw bytes (N4).
+* Not in scope, "the twelfth change's own behaviour is not widened": narrowed. A bare finalize no longer waits for the commit of a hand-deleted retired file, so this change rewrites the guide sentence near `UPGRADE.md:102` and the bare arm of the twelfth change's node for it.
