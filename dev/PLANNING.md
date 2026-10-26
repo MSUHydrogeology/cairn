@@ -89,6 +89,17 @@ Left out because 0.5 already carries an engine batch, a ceremony and a build;
 either can join by the Maintainer's word. **Also not in 0.5, waiting on their
 revival conditions:** #19, #13 and the deferred table.
 
+**Changelog.** Each row lands with its entry under `## Unreleased` in
+`CHANGELOG.md`, in the same commit or the next, in the file's entry shape (one
+or a few lines, with a link to the durable record). At the cut the section is
+renamed `## 0.5.0 — <date>` and a fresh `Unreleased` opened
+(`docs/release-process.md`). The GitHub release notes are copied from that
+section, not drafted in a separate file: the 0.4.0 draft kept as an untracked
+file went stale, with wrong profile names and a wrong repository URL that also
+reached the published notes. Those two errors are the Maintainer's to correct
+on the published release. Entries so far: Plain Language 1.0 and the
+deleted-file fix.
+
 **Branch rule.** All 0.5 work happens on the `0.5-dev` branch. `master` is
 frozen at `b70ee08f`: no commits to it. The shared checkout stays on `0.5-dev`.
 Git allows a branch in only one checkout, so an agent that wants a separate

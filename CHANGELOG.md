@@ -50,6 +50,13 @@ and a new empty `Unreleased` is started above.
   readability score. Existing installs receive it through the ordinary upgrade
   merge. ([rationale](doctrine/rationale.md), anchor 16)
 
+### Fixed — Markdown scans no longer crash on an uncommitted deletion
+
+- `link_check.py`, `sync_doc_snippets.py` and `check_cairn.py` now skip a tracked
+  Markdown file that was deleted from disk but not yet committed, and say so on
+  one line, instead of failing on the first read. A file named explicitly on the
+  command line still raises. ([proposal](dev/proposals/2026-10-26-claude-check-cairn-deleted-files.md))
+
 ## 0.4.0 — 2026-10-20
 
 ### Added — Defect fixes under existing promises and reuse duty
