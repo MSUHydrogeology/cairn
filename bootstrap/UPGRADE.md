@@ -250,13 +250,19 @@ you what changed.
   and every action reads `dev/.cairn/cairn-lock.yml`. If either one is a link,
   or `dev/.cairn` is, `upgrade` stops with exit 2 and a one-line refusal before
   it reads or writes through it. This includes a profile that is a link to a
-  file inside the project, which earlier versions wrote through: the rule is
+  file inside the project, which earlier versions accepted: the rule is
   stricter on purpose and the same for every link. Replace the link with a
   regular file, then re-run. A profile that is absent or a regular file is not
   affected. The same exit-2 refusal covers a lockfile whose `modules` list holds
   anything but plain names, a staged upgrade that names a file or a version that
   is not plain text, and a lockfile record whose `dst` or `base_cache` is inside
-  `.git/`.
+  `.git/`. Two actions do not make this check first. Over a linked lockfile,
+  `--init-lock` and `--adopt-collisions` end in a Python traceback with exit 1
+  instead of the one-line refusal; nothing is read or written outside the
+  project. `--init-lock` over a profile link that points at nothing ends the
+  same way, before it writes. `--init-lock` does still read a profile that is a
+  link to an existing file, and a lockfile behind a linked `dev/.cairn`; it
+  writes nothing outside the project.
 * **The session helper refuses links and unsafe table rows.** `tools/session.py`
   (`session-start`, `session-end`) never writes through a link or outside the
   project. If `dev/`, `dev/reflections` or `dev/.cairn` is a link, `session-end`
