@@ -1,7 +1,7 @@
 # Make the next-session handoff a local note
 
 **Author**: Claude Sonnet 5.5 (Strategy; model id `claude-sonnet-5-5`)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review) — the plan edits `bootstrap/_scaffold/config.py`, a named high-risk surface
 **Opened**: 2026-10-26
@@ -1049,3 +1049,40 @@ I have no base rate for these thresholds; ten goodnights is a review point the M
 * **Revision 2's form (a list of replaced parts):** superseded by this single contract. Nothing in Revision 2's content is dropped.
 * **Revision 1 and the opening, wherever they differ:** superseded, in particular the narrowed `verify_stems.py` default, the "add it to `.gitignore` first" remedy for any path, the `git add -f` sentence, the Question 4 clause about the twelfth row, the doctrine paragraph without the authority, "do not copy" and link-or-tracked rules, and the skip that keyed on the file being a regular file.
 * **"96 to 95" without a unit:** restated as data rows (96 to 95) and printed lines (97 to 96), as in Proposal 7.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-26
+
+**ACCEPTED, as revised, with one answer that differs from its default.** The
+Maintainer's authorization, quoted **verbatim and visually isolated**. He was
+asked: "Accept as revised with all seven defaults?" (the seven questions in
+Revision 3's In brief, each with its default). He answered:
+
+> "Accept all, except that I want upgrades to bring NEXT_SESSION in line and untrack."
+
+Asked what "untrack" means (three options: upgrade deletes the untouched file
+and clears its lockfile record; upgrade runs `git rm --cached`; upgrade only
+drops the lockfile record), he chose:
+
+> "Upgrade deletes the untouched file (Recommended)"
+
+*Scribe's note, separate from the quoted words.* "As revised" means Revision 3,
+the complete current contract, which supersedes Revisions 1 and 2 and answers the
+usual review and the Security Review. Questions 1 to 3 and 5 to 7 take their
+stated defaults. **Answer 4 differs from the default** (which said nothing
+changes in an existing project's tree): an upgrade removes an untouched
+`dev/NEXT_SESSION.md` and clears its lockfile record, so git shows a deletion for
+the adopter to commit; a changed copy is named and left in place. That behaviour
+is the engine change of the twelfth 0.5 row (`upgrade` removes untouched copies of
+files Cairn stopped shipping; `dev/NEXT_SESSION.md` is one of its eleven files),
+which lands after this change and after the onboarding change. So this change's
+own text for existing projects (the `bootstrap/UPGRADE.md` section, the changelog
+entry) must say what is true at its landing and not promise the cleanup before it
+ships: until the twelfth change lands, an existing project keeps its file; once it
+lands, an untouched file is removed. The Security Review's condition SR5 (promise
+nothing for the twelfth row) is superseded by this answer, and the plan carries
+the wording. The twelfth proposal, still in review, must keep `dev/NEXT_SESSION.md`
+among its files. The plan review stays `required(Internal + Internal Security
+Review)`. The landing order is unchanged: this change first, then onboarding, then
+the cleanup. The implementer does not edit `scaffold_ast_known_new.json` or the AST
+baseline; those belong to the Maintainer's re-anchor, whose authorization must name
+`bootstrap/_scaffold/config.py` (Security Review SR4).
