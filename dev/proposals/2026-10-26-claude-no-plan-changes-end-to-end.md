@@ -1,7 +1,7 @@
 # A change with no plan: where its code review goes, and when its proposal archives
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Plan review**: not required(prose edits to one rule and the docs that repeat it; the edit list is checked by the second review; the plan opens in the fast multi-stage form)
 **Opened**: 2026-10-26
@@ -882,3 +882,28 @@ removed, because nothing was accepted. **Assurance path**: high-assurance,
 unchanged. No engine, contract, trust root or licence file is touched.
 **Plan review**: `not required(...)` as in the header; the plan opens in the
 fast multi-stage form, and its mapping must carry the table above.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-26
+
+**ACCEPTED.** The Maintainer's authorization, quoted **verbatim and visually
+isolated**:
+
+> "Yes, scribe the Decision as accepted"
+
+*Scribe's note, separate from the quoted words.* That answered the author's
+question in chat: "Shall I scribe the Decision as accepted, with the safeguard
+kept and the typo lane included?" The same turn, the Maintainer had said:
+
+> "2. Trivial includes the typo lane"
+
+Read against Revision 3, the Decision binds as follows:
+
+* **Revision 3 is the contract.** The Maintainer's direction of 2026-10-26,
+  quoted in Revision 3, stands.
+* **Question 1: kept.** The plan triage gains the fourth skip condition,
+  *Boundary B would run bounded*.
+* **Question 2: yes.** "Trivial" includes the trivial lane, so the front pages,
+  the figure, the glossary, the dev tour and the example READMEs stay in the edit
+  list.
+* **Plan review.** The header declares `not required(...)`, to be read as a
+  plan that opens in the fast multi-stage form. The Decision does not change it.
