@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-upgrade-removes-untouched-retired-files.md](../proposals/archive/2026-10-26-claude-upgrade-removes-untouched-retired-files.md)
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: A new `upgrade` step deletes retired Cairn files that a project never edited and clears the records of ones it already deleted, so tidying up no longer breaks `--finalize` or the integrity check.
@@ -34,9 +34,6 @@ Accepted 2026-10-26 as revised, with all five defaults. **Revision 2 is the cont
 | the tests the two earlier plans add (`test_next_session_local_note.py`, the onboarding test file) | C3, C7 | unkeyed until the cut: edits free; if a cut keyed them by then, re-anchor owed (check at landing) |
 | `test_upgrade.py`, `test_upgrade_module.py`, `test_upgrade_module_additions.py`, `test_upgrade_side_door_parity.py`, `test_skills_upgrade.py`, `test_verify_integrity.py`, `test_review_stance_in_shipped_files.py` | all | keyed, not edited; scoped runs |
 | `bootstrap/_scaffold/*.py` | C1-C5 | not frozen (subfolder); AST-attested; `config.py` is on the oracle roster (`bootstrap/tests/_oracle_activation.py:34-37`) |
-
-Proposed paths:
-* `bootstrap/tests/test_upgrade_removes_retired_files.py`
 
 ## Sequence
 

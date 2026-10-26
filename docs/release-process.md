@@ -89,6 +89,24 @@ Name the interpreter alongside every suite figure — see
 sweeps are run through their own module runners rather than this list; see
 `bootstrap/SAFETY.md` for which surfaces carry which gate.
 
+**Retired files — a person runs this; nothing else fires it.** `upgrade
+--remove-retired` removes only files on the list `_RETIRED_INSTALLS` in
+`bootstrap/_scaffold/config.py`, so a template deleted without a row there
+leaves its file in every project, and nothing warns. Before each cut, run
+`git diff --name-status --no-renames --diff-filter=D <previous-tag> <new-tag> -- templates`.
+Then run the manifest comparison, which the diff cannot do and which also sees
+a template that stays while its mapping drops the destination: extract each
+tag with `git archive <tag>`, run `python bootstrap/scaffold.py --manifest` in
+each extraction, and list the destinations the old manifest has and the new one
+lacks. Add a row for each template an install could have written, with the
+SHA-256 of the template at the previous tag, at the new tag and at the commit
+before the one that deleted it (`git cat-file blob <rev>:<template>`; stop on a
+nonzero git exit, because a revision without the template would hash as the
+empty file). A template renamed to a destination still shipped needs no row:
+the comparison decides, not the diff. Control: from v0.3.0 to v0.4.0 the diff
+lists 20 templates, the collaboration agreement among them, and the comparison
+lists the same 20 destinations.
+
 Two techniques that earned their place in past runs:
 
 * **Grep the tree for the outgoing version string first.** It proves the
