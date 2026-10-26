@@ -28,7 +28,7 @@
     },
     {
       "dst": "AGENTS.md",
-      "hash": "sha256:6032ed082d7349f3d47f54a67e120d36c502f20cf54f32070f110ff5b1f61843",
+      "hash": "sha256:c1eefb7f7a0c5e2dbfe2c58bde891523633f53051b72a1c6941b605ab683c194",
       "src": "core/AGENTS.md",
       "unrecoverable_base": true,
       "verbatim": false

@@ -240,7 +240,7 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
   its docstring, tests or governing text; a note, issue or review comment does not create that promise.
   A cheap fix in a file the work already edits may restore only that promise, with its own test
   in the independently reviewed range, whether or not there is an accepted proposal or plan.
-  It adds no file, function, option or public name and changes only the defect's lines and its test.
+  It adds no file, function, option or public name other than its test, and changes only the defect's lines and its test.
   A plan's fence still wins; removing accepted scope remains a deviation; there is no date cutoff.
   **Rule text** tells a reader what to do or what a check, contract or acceptance criterion requires;
   changing it still takes the Maintainer's word, never this permission.
