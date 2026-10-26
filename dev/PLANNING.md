@@ -45,6 +45,33 @@ artifacts; this board does not maintain a second status table.
 | **Engine batch: F8 and #8 engine half** | Own proposal, Security Review, one AST re-anchor | One batch so the review and the re-anchor are paid once. Maintainer: "Engine batch is in". Rows below. Built and archived 2026-10-26 (`dev/plans/archive/engine-batch-f8-slots.md`); its AST and gate re-anchor is owed at the cut. |
 | **`repin`** | Proposal first, from `strategy/2026-08-28-claude-repin-revitalization.md` | Maintainer: "Repin is a build". Removes the re-anchor ceremony's manual corrections. |
 | **Drain mode**, last | Settled design, `strategy/2026-08-25-claude-drain-mode.md` | Scope below. |
+| **Onboarding happens at install** | Proposal first (the Developer session's author is writing `2026-10-26-claude-retire-delayed-onboarding-prompts`; it changes the premise of `doctrine/onboarding.md`) | Replace the delayed, trigger-based onboarding prompts with install-time onboarding. Scope below. |
+
+**Onboarding scope.** Maintainer direction, 2026-10-26, relayed by the Developer
+session. The first line, on the prompts that never fire:
+
+> "I don't know why we have delayed prompts at all. They should onboard when we onboard!"
+
+The correction, the same day:
+
+> "I don't want them delayed. I want them fixed so that they actually happen when someone installs Cairn."
+
+and on the release and the proposal:
+
+> "This belongs in v 0.5. Please write the proposal and coordinate with the Cairn v0.5 Planning session"
+
+The planning session also asked which release this goes in; the Maintainer's
+answer: "0.5, as a new row (Recommended)". What is measured (read-only, by the
+Developer session): nothing runs `scripts/onboarding_activate.py`; the log
+`dev/.cairn/onboarding-activated.jsonl` has no activations; two prompts are
+pending (`post-first-proposal-team`, `post-first-cross-type`). The mechanism
+(the helper and its shipped twin, the triggers, the activation log) goes; the
+prompts' content is delivered at install, rewritten where stale. The design
+question the proposal must answer: how to keep first contact short, because the
+engine batch just shortened the install report and this adds to it. Deleting
+frozen files and tests folds into the one re-anchor owed at the cut. A Security
+Review is owed if the proposal changes engine files, module tables or AST
+symbols; the proposal's author sets the header from what it finds.
 
 **Drain mode scope.** `/session-start --drain [board | issues | <item>]`.
 Triage has three levels; the Maintainer took the first two:
@@ -180,7 +207,7 @@ row below) is folded into the 0.5 cut, not paid twice. The AST correction
 precedes the gate-manifest re-anchor, as at 0.4. Maintainer-only; follow
 `bootstrap/REANCHOR_RUNBOOK.md`.
 
-**Final list: the nine rows above.** **Not in 0.5**, and still queued below
+**Final list: the ten rows above.** **Not in 0.5**, and still queued below
 unchanged: making NEXT_SESSION local and untracked, and VER-5 (a new mechanism).
 Left out because 0.5 already carries an engine batch, a ceremony and a build;
 either can join by the Maintainer's word. **Also not in 0.5, waiting on their
