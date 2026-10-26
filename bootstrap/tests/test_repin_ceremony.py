@@ -160,11 +160,12 @@ sys.addaudithook(_hook)
 """
 
 
-def drive(bed, answers, *, launchctl=None, extra=(), values=None, timeout=240, env=None, audit=False):
+def drive(bed, answers, *, launchctl=None, extra=(), values=None, timeout=240, env=None, audit=False, patch=""):
     """Run `repin ceremony` on a pseudo-terminal, with the one login-session lookup injected.
 
     With audit=True an audit hook logs every subprocess, exec and write-mode open the
-    process makes to `bed.root/audit.log`."""
+    process makes to `bed.root/audit.log`.  *patch* is code run in that child once `repin` is
+    loaded, to stand in for a failing disk, tool or child (the test's own process, never an option)."""
     argv = ["ceremony", "--values", str(values or bed.values), "--ceremony-dir", str(bed.cdir), *extra]
     hook = HOOK.format(log=str(bed.root / "audit.log")) if audit else ""
     code = f"""
@@ -173,6 +174,7 @@ sys.pycache_prefix = tempfile.mkdtemp()
 {hook}
 spec = importlib.util.spec_from_file_location("repin", {str(bed.repo / 'scripts/repin.py')!r})
 R = importlib.util.module_from_spec(spec); sys.modules["repin"] = R; spec.loader.exec_module(R)
+{patch}
 sys.exit(R.main({argv!r}, launchctl=lambda: {launchctl!r}))
 """
     scratch = bed.root / "tmp"
@@ -928,6 +930,104 @@ for name, commit, roster, fp in {[("good", anchor, str(pinned), fingerprint), ("
     verdicts = dict(re.findall(r"VERDICT (.+) (True|False)", out))
     assert verdicts == {"good": "True", "unsigned": "False", "outside": "False", "candidate roster": "False",
                         "candidate roster, its own key": "True"}, out
+
+
+def test_the_verification_after_stage_two_decides_whether_the_ceremony_is_done(cbed):
+    old = anchor_of(cbed)
+    patch = f"""
+real_vc = R.verify_checkpoint
+R.verify_checkpoint = lambda repo, commit, roster, fp: (
+    real_vc(repo, commit, roster, fp) if commit == {old!r} else (False, "B", "forced"))
+"""
+    code, out = full_run(cbed, patch=patch)
+    assert code == 2 and "does not carry a good signature" in out and "Done:" not in out, out
+    assert anchor_of(cbed) != old                                        # the signing happened; only the verdict failed
+
+
+def test_a_stage_two_that_exits_cleanly_without_moving_the_anchor_is_not_done(cbed):
+    patch = """
+real_popen = R.subprocess.Popen
+R.subprocess.Popen = lambda argv, *a, **k: real_popen(["/usr/bin/true"] if "--stage2" in argv else argv, *a, **k)
+"""
+    old = anchor_of(cbed)
+    code, out = drive(cbed, [("Paste the launcher digest", cbed.launcher_digest),
+                             ("Do the two digests match", "yes"), ("Does Summary 2", "yes")], patch=patch)
+    assert code == 2 and "did not move" in out and "Done:" not in out, out
+    assert anchor_of(cbed) == old
+
+
+def popen_calls(bed):
+    calls = []
+    for line in (bed.root / "audit.log").read_text().splitlines():
+        event, args = json.loads(line)
+        if event == "subprocess.Popen":
+            try:
+                _exe, argv, _cwd, env = ast.literal_eval(args)
+            except (ValueError, SyntaxError):
+                continue                                    # a call with a Path argument: not a signing child
+            calls.append((argv, env))
+    return calls
+
+
+def test_every_signing_child_gets_a_short_fixed_environment_and_a_fixed_path(cbed, agent):
+    hostile = {"SSH_ASKPASS": str(agent.askpass), "DISPLAY": ":0", "EDITOR": "vi", "WAYLAND_DISPLAY": "wayland-0",
+               "SSH_AUTH_SOCK": str(agent.sock)}
+    code, out = full_run(cbed, env=hostile, audit=True)
+    assert code == 0, out
+    mine = [(argv, env) for argv, env in popen_calls(cbed)
+            if argv[0] in ("/bin/sh", "/usr/bin/ssh-keygen", "/usr/bin/ssh-add")]
+    assert any("--stage2" not in argv and "reanchor-launcher.sh" in " ".join(argv) for argv, _ in mine), \
+        "the instrument is wrong: stage 1 was not seen"
+    assert len(mine) >= 8
+    for argv, env in mine:
+        allowed = {"PATH", "HOME", "LC_ALL", "LANG", "TERM"} | ({"SSH_AUTH_SOCK"} if argv[0].endswith("ssh-add") else set())
+        assert env is not None and env["PATH"] == "/usr/bin:/bin", argv
+        assert set(env) <= allowed, (argv, sorted(env))
+
+
+def test_a_launcher_that_is_not_the_packets_pair_refuses_before_any_call(cbed):
+    packet = cbed.cdir / "authorization-packet.txt"
+    launcher = cbed.cdir / "reanchor-launcher.sh"
+    other = launcher.read_text().replace(hashlib.sha256(packet.read_bytes()).hexdigest(), "f" * 64)
+    assert other != launcher.read_text(), "the instrument is wrong: the launcher does not carry the packet digest"
+    launcher.write_text(other)
+    code, out = drive(cbed, [("Paste the launcher digest", hashlib.sha256(other.encode()).hexdigest()),
+                             ("Do the two digests match", "yes")])
+    assert code == 2
+    refused_early(out, "not the pair the launcher demands")
+    assert "effective ceremony configuration" not in out
+
+
+def test_a_package_hash_the_launcher_reports_differently_refuses_before_summary_two(cbed):
+    patch = """
+real_child = R.child
+def fake(rec, argv, **kw):
+    r = real_child(rec, argv, **kw)
+    if "hash-package" in argv:
+        r.stdout = "0" * 64 + "\\n"
+    return r
+R.child = fake
+"""
+    old = anchor_of(cbed)
+    code, out = drive(cbed, [("Paste the launcher digest", cbed.launcher_digest),
+                             ("Do the two digests match", "yes")], patch=patch)
+    assert code == 2 and "disagree" in out and "Summary 2" not in out and anchor_of(cbed) == old, out
+
+
+def test_the_private_copy_of_the_artifact_is_hashed_again_before_each_call(cbed):
+    patch = """
+from pathlib import Path
+real_child = R.child
+def tamper(rec, argv, **kw):
+    r = real_child(rec, argv, **kw)
+    if "validate" in argv:
+        Path(argv[1]).write_bytes(Path(argv[1]).read_bytes() + b"\\n# changed\\n")
+    return r
+R.child = tamper
+"""
+    code, out = drive(cbed, [("Paste the launcher digest", cbed.launcher_digest),
+                             ("Do the two digests match", "yes")], patch=patch)
+    assert code == 2 and "private copy of reanchor.sh changed" in out and "Summary 2" not in out, out
 
 
 def test_only_the_exact_word_yes_writes_the_ast_pin_through_the_command(cbed):

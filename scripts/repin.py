@@ -1066,6 +1066,9 @@ def run_ceremony(ctx, args, launchctl, rec):
         raise Refuse(f"stage 2 failed (exit {proc.returncode}). Nothing was pushed.")
     # 10-11. (end of signing path) verify against the packet-pinned roster, then end
     new = git_text(repo, "rev-parse", "--verify", ANCHOR_REF + "^{commit}")
+    if new == ctx["anchor"]:
+        raise Refuse(f"stage 2 exited cleanly but the anchor did not move from {new}. Nothing was "
+                     f"signed that this tool can see. Do not push.")
     good, status, key = verify_checkpoint(repo, new, roster, fingerprint)
     if not good:
         raise Refuse(f"the new anchor {new} does not carry a good signature by {fingerprint} "

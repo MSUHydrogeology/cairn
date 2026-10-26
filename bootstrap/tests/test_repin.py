@@ -276,11 +276,80 @@ def test_a_module_loaded_outside_the_list_is_refused_even_when_it_blanks_its_own
     refused(bed.run("status"), "the module planted loaded from")
 
 
+def tree_with(bed, extra):
+    """Commit HEAD's root tree plus *extra* raw entries, built with `--literally` so that git
+    itself does not refuse the ones `repin` must.  Each entry is (mode, name, object id)."""
+    rows = [r for r in bed.git("ls-tree", "-z", "HEAD", text=False).stdout.split(b"\0") if r]
+    raw = b""
+    for row in rows:
+        meta, _, name = row.partition(b"\t")
+        mode, _kind, oid = meta.split()
+        raw += mode + b" " + name + b"\0" + bytes.fromhex(oid.decode())
+    for mode, name, oid in extra:
+        raw += mode.encode() + b" " + name.encode() + b"\0" + bytes.fromhex(oid)
+    tree = bed.git("hash-object", "-t", "tree", "-w", "--literally", "--stdin", input=raw, text=False).stdout.decode().strip()
+    commit = bed.git("commit-tree", tree, "-p", "HEAD", "-m", "raw tree").stdout.strip()
+    bed.git("update-ref", "refs/heads/main", commit)
+
+
+def blob_id(bed, data=b"x\n"):
+    return bed.git("hash-object", "-w", "--stdin", input=data, text=False).stdout.decode().strip()
+
+
+def subtree_id(bed, name, oid):
+    raw = b"100644 " + name.encode() + b"\0" + bytes.fromhex(oid)
+    return bed.git("hash-object", "-t", "tree", "-w", "--literally", "--stdin", input=raw, text=False).stdout.decode().strip()
+
+
+@pytest.mark.parametrize("kind", ["a symlink", "a submodule"])
+def test_a_tracked_symlink_or_submodule_refuses_before_import(bed, kind):
+    ok(bed.run("status"))
+    entry = ("120000", "link", blob_id(bed, b"/etc/passwd")) if kind == "a symlink" else \
+        ("160000", "sub", bed.git("rev-parse", "HEAD").stdout.strip())
+    tree_with(bed, [entry])
+    refused(bed.run("status"), "symlink or submodule")
+
+
+@pytest.mark.parametrize("name,shape", [("..", "an escaping path"), (".GIT", "a git folder name")])
+def test_an_unusable_tracked_path_refuses_and_writes_nothing_outside_the_extraction(bed, name, shape):
+    scratch = bed.root / "scratch"
+    scratch.mkdir()
+    bed.env["TMPDIR"] = str(scratch)
+    ok(bed.run("status"))
+    leaf = blob_id(bed)
+    tree_with(bed, [("40000", "..", subtree_id(bed, "escape.txt", leaf))] if name == ".." else [("100644", name, leaf)])
+    refused(bed.run("status"), "unusable path")
+    assert not list(scratch.glob("escape.txt")), "a file was written outside the extraction folder"
+
+
+def test_an_extracted_file_that_reads_back_differently_refuses(bed):
+    """A disk that stores other bytes than it was given must stop the run before anything is compared."""
+    code = """
+import builtins
+R.D = lambda value: value
+class Liar:
+    def __init__(self, fh): self.fh = fh
+    def __enter__(self): return self
+    def __exit__(self, *exc): self.fh.close()
+    def write(self, data): return self.fh.write(data + b"!")
+R.open = lambda path, mode: Liar(builtins.open(path, mode))
+head = R.git_text(REPO, "rev-parse", "HEAD")
+outcome(lambda: R.extract(REPO, head, TMP / "x"))
+"""
+    out = snippet(bed, code)[1]
+    assert "RESULT: refused: " in out and "read back from disk differs" in out, out
+
+
 def test_the_repin_process_runs_isolated(bed):
+    scratch = bed.root / "scratch"
+    scratch.mkdir()
+    bed.env["TMPDIR"] = str(scratch)
     out = ok(bed.run("status"))
     line = re.search(r"^process\s+isolated=(\w+)\s+compiled files go to (\S+)$", out, re.M)
     assert line and line.group(1) == "True"
-    assert not line.group(2).startswith(str(bed.repo))
+    prefix = Path(line.group(2))
+    assert prefix.parent.resolve() == scratch.resolve() and prefix.name.startswith("repin-pyc-"), \
+        "the bytecode folder is not a fresh one under the temporary folder"
     assert re.search(r"AST child isolated=True, compiled files go to \S+/pyc-\S+", out)
 
 
@@ -728,6 +797,98 @@ outcome(lambda: R.apply_pin(ctx, CDIR, raw))
     before = reads(bed)
     assert "transaction file changed after it was packaged" in snippet(bed, code, YES)[1]
     assert reads(bed) == before
+
+
+def test_summary_one_is_rendered_from_the_bytes_and_not_from_the_transactions_stored_text(bed):
+    """`package` prints the same rows, so only a transaction whose stored summary lies, handed
+    straight to the apply step, shows which text the apply step puts on screen."""
+    owe_a_pin(bed)
+    code = """
+ctx = R.boot(REPO, TMP)
+txn = R.build_transaction(ctx)
+txn["summary"] = ["  LYING ROW"]
+raw = R.encode_txn(txn); R.store_txn(CDIR, raw)
+outcome(lambda: R.apply_pin(ctx, CDIR, raw))
+"""
+    out = snippet(bed, code, YES)[1]
+    screen = out[:out.index("Write these files?")]
+    assert "RESULT: ok" in out and "LYING ROW" not in screen and "FunctionDef:f" in screen, out
+
+
+@pytest.mark.parametrize("field", ["new_sha256", "preimage_sha256"])
+def test_a_transaction_whose_stored_hash_does_not_match_its_bytes_refuses(bed, field):
+    owe_a_pin(bed)
+    code = f"""
+ctx = R.boot(REPO, TMP)
+txn = R.build_transaction(ctx)
+txn["outputs"][{BASELINE!r}][{field!r}] = "0" * 64
+raw = R.encode_txn(txn); R.store_txn(CDIR, raw)
+outcome(lambda: R.apply_pin(ctx, CDIR, raw))
+"""
+    before = reads(bed)
+    assert "differ from the transaction" in snippet(bed, code, YES)[1]
+    assert reads(bed) == before
+    assert "RESULT: ok" in snippet(bed, APPLY, YES)[1]                  # control: the honest transaction applies
+
+
+def test_an_output_path_that_is_not_tracked_at_head_refuses(bed):
+    """The lockfile is an allowed output only when HEAD tracks it; here it exists on disk, untracked."""
+    owe_a_pin(bed)
+    bed.write("dev/.cairn/cairn-lock.yml", "x\n")
+    code = f"""
+ctx = R.boot(REPO, TMP)
+txn = R.build_transaction(ctx)
+txn["outputs"]["dev/.cairn/cairn-lock.yml"] = dict(txn["outputs"][{BASELINE!r}], new_text="y\\n",
+    new_sha256=R.sha(b"y\\n"), preimage_sha256=R.sha(b"x\\n"))
+raw = R.encode_txn(txn); R.store_txn(CDIR, raw)
+outcome(lambda: R.apply_pin(ctx, CDIR, raw))
+"""
+    out = snippet(bed, code, YES)[1]
+    assert "not a tracked regular file with no link in its path" in out, out
+    assert bed.read("dev/.cairn/cairn-lock.yml") == "x\n" and reads(bed) == reads(bed)
+
+
+def test_a_clean_filter_cannot_hide_an_edit_from_the_tree_check(bed):
+    bed.write(".gitattributes", "dev/plans/widget-plan.md filter=hide\n")
+    bed.git("config", "filter.hide.clean", "cat >/dev/null; printf 'same\\n'")
+    bed.write("dev/plans/widget-plan.md", "same\n")
+    bed.pin()
+    assert "RESULT: ok" in precondition_outcome(bed)                      # control: clean tree passes
+    bed.write("dev/plans/widget-plan.md", "diff\n")        # same size: git trusts the stat and the filter
+    assert bed.git("status", "--porcelain").stdout == "", "the instrument is wrong: git status shows it"
+    assert "tracked files differ from HEAD: dev/plans/widget-plan.md" in precondition_outcome(bed)
+
+
+def test_bytes_that_change_while_the_files_are_replaced_are_caught_after_the_write(bed):
+    owe_a_pin(bed)
+    code = """
+real = R.os.replace
+def sneaky(src, dst):
+    real(src, dst)
+    if str(dst).endswith("scaffold_ast_baseline.json"):
+        Path(dst).write_bytes(b"other bytes\\n")
+R.os.replace = sneaky
+""" + APPLY
+    out = snippet(bed, code, YES)[1]
+    assert "not exactly the ones named, or their bytes differ from those shown" in out, out
+
+
+def test_a_second_file_that_changes_between_the_first_replace_and_its_own_refuses(bed):
+    bed.write(ENGINE, "def f():\n    return 2\n\ndef g():\n    return 3\n")
+    bed.commit("change f, add g")
+    code = """
+real, seen = R.os.replace, []
+def sneaky(src, dst):
+    real(src, dst)
+    if not seen and str(dst).endswith("scaffold_ast_baseline.json"):
+        seen.append(dst)
+        later = REPO / "bootstrap/tests/fixtures/scaffold_ast_known_new.json"
+        later.write_bytes(later.read_bytes() + b" ")
+R.os.replace = sneaky
+""" + APPLY
+    out = snippet(bed, code, YES)[1]
+    assert "changed while it was being replaced" in out and "Already replaced:" in out, out
+    assert reads(bed, KNOWN_NEW).endswith(b" ") and b"FunctionDef:g" not in reads(bed, KNOWN_NEW)
 
 
 @pytest.mark.parametrize("how,needle", [("a symlink", "without following a link"),
