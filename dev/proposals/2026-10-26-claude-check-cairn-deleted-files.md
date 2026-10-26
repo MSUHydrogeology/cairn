@@ -1,7 +1,7 @@
 # check_cairn crashes when a tracked Markdown file is deleted but not yet committed
 
 **Author**: Claude (Implementation)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual
 **Plan review**: not required(one commit: the same one-line filter in `link_check.py` and `sync_doc_snippets.py` and their shipped twins, `check_cairn.py` delegating to the fixed shared copy, one new test file; the frozen-file re-anchor is the already-queued Maintainer ceremony)
 **Opened**: 2026-10-26
@@ -293,3 +293,61 @@ Only the added material: (a) does `check_cairn` delegating to `link_check.tracke
 * "A skipped file is silent" -- superseded by the stderr count (RV4).
 * "Assurance path `high-assurance`; Boundary B `full` vs `bounded` is the Maintainer's call" -- superseded: `standard`; the mode follows the `AGENTS.md` rule (RV5).
 * "The re-anchor is a new cost of this change" -- superseded: it rides the already-queued one, if this lands first (RV2).
+
+## Review (second round, widened scope) -- Claude (Reviewer, Sonnet) -- 2026-10-26
+
+```
+Reviewed commit: 41b7f9e1
+Target: only the added material -- the Response, the Revision, and the changed Status, Plan review and In brief lines
+Prior findings: RV1 to RV5 (my first review, at c685c496)
+Assurance path: standard (as now declared)
+```
+
+**Tier**: usual
+**Findings**: raised (all Low, none blocking)
+**Verdict**: PROCEED to Decision
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The widened change is one defect fixed in all three copies, and `check_cairn` can delegate as claimed: it loads the shipped `link_check.py` template (`scripts/check_cairn.py:98` and `:136`), so a fix there reaches it. I built the whole change in a detached worktree of `41b7f9e1` and it behaves as the Revision says (M1 to M4 below).
+2. **Best alternative.** The Response took the alternative I judged strongest. A simpler path I looked for does not exist: `sync_doc_snippets.py` does not load `link_check`, so it needs its own edit, as the Revision says.
+3. **What would show it wrong.** A caller that parses the new stderr line, a one-sided twin edit, or an adopter whose upgrade breaks. I tried each: no consumer parses it (M5), a one-sided edit fails the parity test (M3), and an adopter upgrade applies cleanly (M4).
+
+### What I measured
+
+Detached worktrees of `41b7f9e1` in my scratch directory, Python 3.13 (`/Users/kendal30/conda_envs/lhm/bin/python3.13`), removed afterwards. The main tree was not written. `CAIRN_FULL_SUITE` was not set.
+
+| # | Measurement | Result |
+|---|---|---|
+| M1 | The Revision's change built by hand: `is_file()` filter plus a stderr count in `tracked_markdown()` of the four frozen-pair files; `check_cairn` loses its copy and calls `link_check.tracked_markdown(root)` | Applies cleanly. `tracked_markdown` now has no other definition or caller in the tree (`grep` over `*.py`, `*.md`, `*.json`, `*.yml`); `check_cairn` was its only outside user, at `scripts/check_cairn.py:548` |
+| M2 | The Revision's three properties, written as described, across the three scripts' real `main(["--root", ...])` (repo with one deleted file, one dangling `.md` symlink, one document linking to the deleted file) | 6 passed. Deleted-file scan completes; `link_check` and `check_cairn` exit 1 and flag `gone.md`; stderr reads `skipped 2 tracked Markdown file(s) not present on disk`; a clean repo prints no `skipped` on either stream. An explicitly named missing path still raises `FileNotFoundError` in `link_check` and `sync_doc_snippets` (and did in `check_cairn` in round one) |
+| M3 | Scoped tests on the committed change: `test_doc_drift_tools`, `test_link_check_exclusions`, `test_loop_fidelity_gate`, `test_check_cairn_counts`, `test_check_cairn_content`, `test_content_scan`, `test_notice_install`, `test_practice_modules`, `test_gate_manifest` | 299 passed, 5 failed with the edit uncommitted (all in `test_gate_manifest.py`, all `FROZEN-MODIFIED` on the working tree, the documented effect of an uncommitted frozen edit). After committing the change in the worktree: `test_gate_manifest.py` and `test_notice_install.py` 33 passed. Editing only `scripts/link_check.py` makes `test_every_self_hosted_twin_stays_byte_identical_to_its_source` fail, so the parity test does bind the pairs. `quality_gate.py --sub redundancy`: no findings |
+| M4 | An adopter: `collaborative-team` installed from the base tree into a scratch repo, then `upgrade --plan`, `--stage`, `--apply` with the changed tree | The plan reports `verbatim-update 2: scripts/link_check.py, scripts/sync_doc_snippets.py`. After apply both are byte-identical to the new templates. With a tracked `.md` deleted, the adopter's `link_check.py` and `sync_doc_snippets.py` both complete and print the skip line |
+| M5 | Who parses the new line | None found. Inside the tree, `check_cairn` calls `link_check` in-process, and `bootstrap/security_check.py:959` runs `check_cairn` and reads only its return code. The shipped templates and docs contain no subprocess consumer of either script's output (`grep` for `subprocess`, `stderr`, `hook` over `templates`, `docs`, `scripts`). The line prints only when N is above 0, and no exit code changes. Not testable from here: an adopter's own wrapper or hook |
+| M6 | The gate-manifest effect of the change as built | `_gate_manifest.py verify` reports `FROZEN-MODIFIED` and `FROZEN-OID` for exactly the five edited files. The already-owed `test_quickstart_sequence.py` entry is a sixth, as the Revision's ordering implies |
+| M7 | Pins outside the gate manifest | The self-hosted `dev/.cairn/cairn-lock.yml` records a hash for `scripts/link_check.py` and `scripts/sync_doc_snippets.py` that equals today's bytes. `verify_integrity --target .` reports a hash mismatch for them after the edit, but it already reports 21 other files in the main tree; no test I ran reads that result |
+
+### Whether each first-round finding is closed
+
+* **RV1 -- closed.** All three scripts fixed, twins edited together, `check_cairn` delegating (M1, M2, M3).
+* **RV2 -- closed.** The Revision's ordering matches M6: land before the queued re-anchor, and the PLANNING row is left for a serialization point.
+* **RV3 -- closed.** Property 2 is in the plan, and it passes in M2. Its `sync_doc_snippets` carve-out is right: that tool has no link finding.
+* **RV4 -- closed.** The `test_security_check.py` node is withdrawn and the real consumer is cited. A dangling symlink is skipped and counted (M2 shows `skipped 2`). The skip is no longer silent.
+* **RV5 -- closed.** `standard` and the Boundary B wording are corrected.
+
+The Revision's questions: (a) no caller or doc still expects the removed function (M1). (b) The upgrade path is undisturbed (M4); the one pin outside the gate manifest is the self-hosted lockfile (M7, SR3). (c) Nothing I could find parses the line (M5).
+
+### Findings
+
+**SR1 -- Low -- non-blocking: the shipped docs still say "whole tracked tree".**
+`templates/modules/team-gated/link_check.py:49` and `docs/tool-usage.md:87` describe the default scan without the new rule, and the Revision edits only the "Scanned set" line in `check_cairn.py`. Satisfier: add "that exists on disk" to the `link_check.py` docstring while that file is already open (the byte-identical twin follows by the parity test), and one clause to `docs/tool-usage.md`. Both are prose in files the work already edits, or a descriptive doc with no test pinning it.
+
+**SR2 -- Low -- non-blocking: the skip line carries no tool name.**
+Other lines from these tools start `link_check:` or `check_cairn:`. This one does not, and because `check_cairn` calls the shared function, a prefix inside it would name the wrong tool. Leaving it bare is acceptable; the Response should say that is deliberate, or take the tool name as an argument. The tests assert the text, so whichever is chosen, the test must match.
+
+**SR3 -- Low -- non-blocking: name the lockfile in the Documentation section.**
+M7. The change makes two more files differ from `dev/.cairn/cairn-lock.yml`. That is not new in kind (21 files already differ) and nothing fails, but the Revision answers question (b) only for the upgrade path. State that the self-hosted lock is not refreshed by this change, and that its refresh belongs to whoever next regenerates it.
+
+**Implementation reminder, not a finding.** The first Boundary B run for this change must be on a committed tree (M3: five `test_gate_manifest.py` failures appear only while the edit is uncommitted).
+
+Coverage -- **Covered**: lens 1 (claims: the delegation, `_LINK_CHECK_SRC`, the twin and frozen statements, M1/M6), lens 2 (production path: M2 calls `main()` of each script), lens 3 (edge cases: deleted file, dangling symlink, clean tree, named missing path, M2), lens 4 (silent failure: the count line, M2), lens 5 (callers, docs and consumers: M1, M5, SR1), lens 6 (drift: SR1), lens 7 (ordering against the queued re-anchor: M6), lens 9 (each finding names a satisfier). **Not covered / low confidence**: I did not run the full suite or the certifying pair; I did not read the reanchor ceremony beyond `_gate_manifest.py verify`; I tested one profile (`collaborative-team`) for the adopter upgrade, not an adopter who had edited `link_check.py` locally (the merge path); I could not see any adopter-side wrapper that parses these tools' output; I did not test an unreadable file or Windows paths.
