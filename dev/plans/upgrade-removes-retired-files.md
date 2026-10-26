@@ -3,7 +3,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-upgrade-removes-untouched-retired-files.md](../proposals/archive/2026-10-26-claude-upgrade-removes-untouched-retired-files.md)
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: A new `upgrade` step deletes retired Cairn files that a project never edited and clears the records of ones it already deleted, so tidying up no longer breaks `--finalize` or the integrity check.
@@ -175,3 +175,48 @@ Sonnet 5.5. Measured: the lines in `test_security_leaf.py`, `upgrade.py`, the th
 * **N7 accepted.** `_commit_lock_and_caches` is reused; the `later` tuple and `_ACTIONS` edits are listed as frozen-test edits that owe the re-anchor.
 * **N8 accepted.** The agreement cache reads "unlisted cache"; a node covers a cache another record names.
 * **N9 accepted.** "Absent" means the running tree under `--plan --to`, as the proposal's refusal of `--to` implies; a node added; C2's first bullet split in three.
+
+## Plan review -- Security Review -- 2026-10-26
+
+```
+Reviewed commit: 78d2c09ac71d7938a31f1f41ca72ea78ae2ca1c0
+Target: the whole plan, against Revision 2, SR1-SR5, R1, R2 of the source proposal
+Prior findings: plan review B1, B2, N1-N9 (not redone)
+Assurance path: high-assurance (the source proposal's)
+```
+
+**Tier**: Internal Security Review
+**Obligation**: the Internal Security Review that `**Plan review**: required(Internal + Internal Security Review)` names: the plan carries SR1 to SR5, R1 and R2 to chunks and to tests that can fail, and closes the risks of the change it schedules.
+**Model**: Opus 5.5, fresh session
+**Reviewed commit**: 78d2c09a
+**Findings**: raised (2 blocking, 9 non-blocking)
+
+**Verdict: revising-plan.** The design holds and SR1, SR3, SR4, R1 and R2 land on tests that can fail. Two delete paths have no test that fails when they are built wrong: the folder swap is staged too early to catch a delete made by path after the walk (B1), and the cached template's removal has no link or swap case (B2). Both fixes are one test node each. This pass clears the obligation once the Response adopts B1 and B2 as written; no second round.
+
+**Foundations**
+1. *Does the plan close the risk it was raised against?* Yes for the git call, the list and `--finalize`; not yet for the delete, whose swap test misses a hybrid build (B1) and whose cache call site is untested (B2). -- plan C2 bullet 4, C4 bullet 1; probe 2 below.
+2. *Simpler, safer alternative?* None that keeps the Decision's outcomes. "Clear records only, delete nothing" is safer but drops answer 1's removal; the fixes here are test nodes, not a new design. -- proposal Decision; plan Sequence.
+3. *What would show it fails?* A delete outside the project or through a link that every planned node passes; probe 2 is one. A project program run by `--plan` or the step; probe 1 found none. -- ledger.
+
+**Falsification ledger** (scratch folder under the scratchpad, removed afterwards; git 2.53.0, macOS, Python 3.13)
+1. Project in a subfolder of a repository whose `.git/config` names a monitor, a clean and smudge filter, a textconv, a pager, `core.sshCommand`, an include and a hooks folder, plus a replace ref for the file's blob: the C2 command, environment scrubbed with `env -i`, ran no program and printed the committed bytes. Without `core.useReplaceRefs=false` it printed the replacement.
+2. Hybrid delete (`os.open` with `O_NOFOLLOW` down the folders, then `os.unlink` by path): with the parent swapped for a link before the walk, the walk refused and the outside file stayed. With the swap after the walk, the outside file was deleted. Unlinking by name through the handle left it.
+3. Blobless clone, no checkout, `remote.origin.uploadpack` naming a program: with `GIT_NO_LAZY_FETCH=1`, exit 128, nothing ran. Without it, the program ran and git hung until killed, so the timeout carries weight.
+4. Read: `security.py` (`_read_regular_bytes` checks only the last name), `upgrade.py` `cmd_upgrade` order, `_commit_lock_and_caches`, `_cmd_finalize_lockfile`, `install_manifest` (all four mapping sets), `lockfile.py:83-86`, `test_security_leaf.py:32, 238-245`.
+
+**Findings**
+* **B1 -- blocking. The swap test cannot catch a delete by path made after the walk.** C2 stages the swap "inside a patched guard call", before the walk opens any folder. A build that walks, then unlinks by path passes it (probe 2), and so does a by-path `rmdir`. Fix: add a case that swaps the parent after the last folder handle opens and before the removal, for example inside the second read. Mutants: walk, then unlink by path; walk, then `rmdir` by path. Keep the guard-time case.
+* **B2 -- blocking. The cached template's removal has no link or swap test.** The step removes a cache at `dev/.cairn/base/<row dst>` in two places: with an untouched Markdown copy, and as a leftover in "gone". No node links that folder. A build that removes the cache by path, or reads it through a linked `dev/.cairn/base/`, passes every listed node. Fix: one node with `dev/.cairn/base` linked outside, holding a cache with the template's bytes. Expected: nothing outside removed, and the copy is "cannot tell". Mutant: remove the cache by path. List the delete call sites from the tree at C4 and mutate each.
+* **N1.** C2 names only `os.unlink` for the fallback test. Require `os.open`, `os.unlink`, `os.rmdir` and `os.stat` in `os.supports_dir_fd` and `O_DIRECTORY` and `O_NOFOLLOW` present. Also run the link and changed-bytes nodes with that check forced false, so the Windows branch runs on POSIX.
+* **N2.** SR5(a)'s read-only folder does not stop `unlink` for root, so that node goes falsely red there. It also passes a build that clears the record without checking afterwards. Add a case with `unlink` patched to do nothing: the record stays. Mutant: skip the check after removal.
+* **N3.** C3 lets `--plan` and the step each add the git gate. Put it in one place, a parameter of `_classify_retired_records`, and run `test_an_uncommitted_or_ignored_copy_is_kept` through both commands.
+* **N4.** The step reads the profile to rebuild a Markdown copy, but C4 does not refuse a linked profile, as `--plan` and both adoptions do (`_refuse_if_linked(target, _PROFILE_REL, ...)` in `upgrade.py`). Add it and a node.
+* **N5.** Run `git --version` with the same scrubbed environment as the `cat-file` call. Parse vendor suffixes such as "2.54.0 (Apple Git-157)" (this machine's `/usr/bin/git`), each in a node. Read at most one byte more than the copy from git's output. Name Windows' lookup of a bare `git` in the current folder beside the by-path delete in `SAFETY.md`.
+* **N6.** Proposal 5(c) skips only a copy that is "not living-state"; C5 drops that qualifier. `dev/NEXT_SESSION.md` and the collaboration agreement are living state (`lockfile.py:83-86`): `verify_integrity` skips them and `--finalize <path>` never records them. So the count and "records it" are untrue for an edited copy of either. Restore the qualifier and add a node for an edited agreement.
+* **N7.** A gate re-anchor rewrites commit ids, and C8 is one, so R1's commit-id provenance for the post-v0.4.0 digests goes red at the ceremony. Record each digest's git blob id too, and recompute from that. Also check that the row's `dst` was mapped at its revision. Add a C1 mutant for a renamed template: `src` gone, `dst` still shipped. `--no-renames` lists that as a delete, so the person's line invites the row.
+* **N8.** `test_ast_attest` is red from C1 to C8, so an unplanned edit to a guard would hide in that red. State that `_assert_safe_write`, `_read_regular_bytes`, `_stage_exclusive`, `_write_by_replacing`, `_commit_lock_and_caches` and `_check_lockfile_paths` must be absent from the changed set. Any other symbol is a deviation. The three frozen-test edits only add lines.
+* **N9.** C3's report ends with the `--remove-retired` command, which does not exist until C4. Move that line to C4.
+
+**Checked, no defect.** SR1: the argv and environment node, the in-function 2.45.0 floor and the config-program test (C2, C4). SR3: the row-path cache and shared-cache nodes. SR4: the blocked-not-gone and `--finalize` exit-1 nodes. SR5: the `--force` and closing-line nodes. R1 fails rather than skips. A planted, `migrated` or one-letter-off record only keeps a file. Records are a list, so a duplicate `dst` shares one cache and is "cannot tell". Order: lockfile last through `_commit_lock_and_caches`, rerun heals. C8 is MAINTAINER-ONLY. `_GUARDED_WRITE_FUNCS` gains `_remove_unchanged_file` at C2 and `_cmd_remove_retired` at C4. No chunk starts before both earlier plans land, and the red interval fails closed (`--finalize` refuses a missing file).
+
+**Coverage.** Covered: lens 1 (probes 1-4), 2 (nodes drive `scaffold.py`), 3 (B2, N1, N6), 4 (B1, N2, probe 3), 5 (N4, N6), 7 (N8, N9, C8 fence), 9 (each finding names its node). Not covered: no test or suite run; Windows; `safe.directory`, alternates and a `.git` file were not probed; git 2.53.0 only; no real timing race (the swap was staged); digests not recomputed; the onboarding plan was read only where this plan cites it.
