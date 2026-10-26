@@ -45,7 +45,7 @@ Not every change needs the same process. Before anything is written, a change
 is sorted into one of three lanes, and only the heaviest one carries a proposal
 and a plan:
 
-![Three lanes: most changes take a light path. A typo or one-line fix is the change with its test, then a code review. A change whose shape is settled gets a short change note and a review first. Only a new feature, a contract change or a high-risk surface gets a proposal, a review, the Maintainer's decision and a plan. When unsure, take the heavier lane; every step is a commit.](docs/assets/three-lanes-of-change.svg)
+![Three lanes: most changes take a light path. A typo or one-line fix is the change with its test and needs no review. A change whose shape is settled gets a short change note and a review first. Only a new feature, a contract change or a high-risk surface gets a proposal, a review, the Maintainer's decision and a plan. When unsure, take the heavier lane; every step is a commit.](docs/assets/three-lanes-of-change.svg)
 
 For a substantial change, the deliberate lane:
 
@@ -97,8 +97,8 @@ colleague asks *"why are ice-affected days left out of the fit?"*, the answer
 is in the review: who raised it, and why. It is a file they can open, not a
 chat that has gone.
 
-A small fix skips most of this: a typo or a one-line bug is just the change,
-its test and a code review. For real files from a small change, see the
+A small fix skips most of this: a typo or a one-line bug is just the change
+and its test, with no code review. For real files from a small change, see the
 [scientific example](examples/scientific-minimal/), where a reviewer confirms
 which test catches a flipped sign in a water-budget formula.
 

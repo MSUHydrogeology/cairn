@@ -25,7 +25,7 @@ invariant — if you want a domain-flavored example.)
 Not every change needs all five. A change is sorted into one of three lanes
 first, and the steps below are the deliberate lane, the heaviest one:
 
-![Three lanes: most changes take a light path. A typo or one-line fix is the change with its test, then a code review. A change whose shape is settled gets a short change note and a review first. Only a new feature, a contract change or a high-risk surface gets a proposal, a review, the Maintainer's decision and a plan. When unsure, take the heavier lane; every step is a commit.](assets/three-lanes-of-change.svg)
+![Three lanes: most changes take a light path. A typo or one-line fix is the change with its test and needs no review. A change whose shape is settled gets a short change note and a review first. Only a new feature, a contract change or a high-risk surface gets a proposal, a review, the Maintainer's decision and a plan. When unsure, take the heavier lane; every step is a commit.](assets/three-lanes-of-change.svg)
 
 A substantive change moves through
 [propose → review → decide → implement → record](../doctrine/lifecycle.md).

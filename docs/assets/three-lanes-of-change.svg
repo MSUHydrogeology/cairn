@@ -4,7 +4,7 @@
   a Maintainer decision and a plan.
 
   Shown: the trivial lane (a typo or a one-line fix: the change with its
-  test, then a code review); the standard lane (a change whose shape is
+  test, and no code review); the standard lane (a change whose shape is
   already settled: a short change note, its review, the change with its
   test, and a code review); and the deliberate lane (a new feature, a
   contract change or a high-risk surface: a proposal, its review, the
@@ -16,6 +16,8 @@
 
   Provenance: hand-authored SVG, no external tool; produced for the README
   and project-site visuals on the Maintainer's direction, 2026-10-23.
+  Revised 2026-10-26 under plan no-plan-changes-end-to-end: the trivial lane
+  lost its code review chip.
 
   License: Creative Commons Attribution 4.0 International (CC BY 4.0).
   See LICENSE-CC-BY.md.
@@ -26,7 +28,7 @@
 <svg viewBox="0 0 700 390" xmlns="http://www.w3.org/2000/svg"
      role="img" aria-labelledby="fig-title fig-desc">
   <title id="fig-title">Three lanes: most changes take a light path, and only a new feature, a contract change or a high-risk surface gets a proposal, a Maintainer decision and a plan.</title>
-  <desc id="fig-desc">Trivial lane, for a typo or a one-line fix: the change with its test, then a code review. Standard lane, for a change whose shape is already settled: a short change note, its review, the change with its test, then a code review. Deliberate lane, for a new feature, a contract change or a high-risk surface: a proposal, its review, the Maintainer decides, a plan, the plan's review, the change with its test, then a code review. The deliberate test is checked first; when unsure, take the heavier lane. Every step is a commit.</desc>
+  <desc id="fig-desc">Trivial lane, for a typo or a one-line fix: the change with its test, and no code review. Standard lane, for a change whose shape is already settled: a short change note, its review, the change with its test, then a code review. Deliberate lane, for a new feature, a contract change or a high-risk surface: a proposal, its review, the Maintainer decides, a plan, the plan's review, the change with its test, then a code review. The deliberate test is checked first; when unsure, take the heavier lane. Every step is a commit.</desc>
   <style>
     svg { --ink: #1f2328; }
     .lane   { fill: #f6f8fa; stroke: #d0d7de; stroke-width: 1; }
@@ -65,9 +67,7 @@
   <text x="30" y="91" class="t lwhen">a typo, a one-line fix</text>
   <rect x="186" y="61" width="118" height="36" rx="6" class="work"/>
   <text x="245" y="84" text-anchor="middle" class="t chip">change + test</text>
-  <path d="M305,79 L325,79" class="arrow"/>
-  <rect x="328" y="61" width="118" height="36" rx="6" class="review"/>
-  <text x="387" y="84" text-anchor="middle" class="t chip">code review</text>
+  <text x="322" y="84" class="t note">no proposal, no review</text>
 
   <!-- Standard -->
   <rect x="16" y="124" width="668" height="70" rx="9" class="lane"/>
