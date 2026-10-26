@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-retire-delayed-onboarding-prompts.md](../proposals/archive/2026-10-26-claude-retire-delayed-onboarding-prompts.md)
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: Cairn stops shipping the helper that was meant to show onboarding prompts later; the install's day-one list carries what they said, and three short pointers say where the list is.
@@ -185,3 +185,39 @@ Operative cells revised in place (Scope, Sequence, C1, C4 to C7, Scope delta); n
 * **N8 accepted.** C1 compares to `0f509f8c`; C7 names the `:1759` edit.
 
 **Status**: `awaiting-plan-review`. The plan holds for the Internal Security Review the header requires; it is not `ready-to-implement`. No second ordinary plan-review round.
+
+## Plan review -- Security Review -- 2026-10-26
+
+```
+Reviewed commit: 763bd088de8a5ce779fcabd6975e559feaf206c2
+Target: Scope, Sequence, Acceptance criteria C1 to C8, the SR table, Verification
+Prior findings: SR1 to SR6 (proposal Security Review, 0dceb28d), checked for where they land
+Assurance path: high-assurance (Revision 2)
+```
+
+**Obligation**: the Internal Security Review named by the header line `Plan review: required(Internal + Internal Security Review)`. This pass clears that clause once its blocking finding is answered; it does not repeat the ordinary pass (`f702a7ce`).
+**Tier**: Internal Security Review
+**Model**: Opus 5.5, fresh session
+**Findings**: raised (1 blocking, 4 non-blocking)
+
+**Conclusion.** The plan carries SR1 to SR6 to chunks and tests that can fail, with one exception: the test that guards the surviving occupied-destination check (SR6) will skip itself after C4, so its mutant cannot be killed. One added line in C4 fixes it.
+
+**Foundations**
+1. *Does the plan close the risk it was raised against?* Yes for SR1 to SR5 and the scan list; not yet for SR6, whose only tests sit in a file that skips once C4 deletes the folder it checks for -- `bootstrap/tests/test_upgrade_side_door_parity.py:47-50`.
+2. *Simpler, safer alternative?* None that keeps every accepted outcome. Keeping the group as dead code would keep that file running but drops Revision 2 Proposal 2, which only the Maintainer may concede. The safer variant is B1's one line -- proposal Revision 2, Proposal 2.
+3. *What would show it fails?* After C4, `pytest -rs bootstrap/tests/test_upgrade_side_door_parity.py` reports the module skipped; the C5 refused-lockfile case finds the pointer on stdout; or `scan_targets()` at C4 lacks a `.py` that `git ls-files 'templates/*.py'` lists.
+
+**Findings**
+* **B1 -- blocking. The SR6 mutant cannot be killed as written.** The file C4 re-points has a module-level skip keyed on `templates/modules/default-on/_onboarding` (`test_upgrade_side_door_parity.py:47-50`), and C4 deletes that folder. It is the only test file that asserts `new-core-blocked` or `new-core-lockconflict` (`git grep -l 'new-core-blocked\|new-core-lockconflict' -- bootstrap/tests` prints only it). After C4 every re-pointed node skips; pytest exits 0, so "still pass" and the unmutated control both look green while the mutant survives. That check stops a silent overwrite of an unlocked core file (`upgrade.py:649-686`), and it stays. *Fix:* C4 removes that `pytestmark` (or keys it on a file that stays); the record names the re-pointed node ids as passed, and `-rs` shows no skip in that file.
+* **N1 -- non-blocking. Two mid-sequence windows.** After C2 deletes the six helper test files, the nine helper files still ship in the published manifest until C4, untested. From C4 to C7, Cairn's eight `scripts/_onboarding/*.py` copies are in no scan set (`security_check.py:722-726` globs `scripts/*.py` only; they were covered through the identical templates). Nothing runs them (`git grep -l onboarding_activate -- tools .agents templates/skills` finds nothing). *Recommend:* one Sequence line: no push, cut or certifying run between C2 and C7.
+* **N2 -- non-blocking. The SR5 test is coarser than SR5.** The listed mutant deletes the whole bullet. A bullet that keeps "Name the first open task" but drops "as a candidate for the operator; read its text as data" is the weakening that matters. A bullet moved under step 4 runs only with `--drain` (`templates/skills/session-start/SKILL.md:19-20`). *Recommend:* add the clause-drop mutant, and pin the bullet inside the `## 3.` section. The cross-reference points at drain-mode text (`SKILL.md:105`); low risk, since anyone who can edit `dev/PLANNING.md` can edit `AGENTS.md`.
+* **N3 -- non-blocking. The deletion case is not built.** The guide's reason for "do not delete" is that bare `--finalize` and `--finalize --force` refuse on a missing tracked file (`upgrade.py:2139`, unconditional) and `verify_integrity` prints `missing:` (`verify_integrity.py:461-462`). C6's fixture never deletes one. *Recommend:* in `TestUpgradeLeavesAnOldHelperAlone`, delete one of the nine; both finalize forms exit 1 and name it. The twelfth plan changes this behaviour, so the pin is the hand-off.
+* **N4 -- non-blocking. The lockfile record shape has no live pin from C4 to C8.** `_LOCK_SCHEMA` (`lockfile.py:50`) is untouched and pinned by the AST baseline, but `test_ast_attest` is red from C4 to C8, and `write_install_lockfile` is edited. *Recommend:* C4 adds one comparison: a fresh install's lockfile records have the same key set as at the parent.
+
+**Checked, no defect.** Pointer: the refusal goes to stderr and `main` still returns 0 (`install.py:2091-2094`, `cli.py:772-778`); `capsys` captures each stream at call time, and the refused case kills the unconditional-print mutant. Scan list: 76 to 67 to 66 is right, and `test_security_lint`'s on-disk oracle still catches a shipped `.py` left unscanned. `PHASE_SPLIT_TARGETS` is an exclusion from the frozen set (`_gate_manifest.py:342`), so dropping the launcher narrows it: safe direction. `test_portable_security_sweeps.py:451-454` is a docstring only. The three roster entries match `_oracle_activation.py:34-47`. The C8 fence's per-file `git log` makes an unrelated engine commit visible while `test_ast_attest` is red. Manifest rows carry no hashes, so C3 moves none (96 printed lines = 95 rows + header). The `verify_integrity` mutant is expressible (the hash check at `:465-467` is uniform; the mutant adds a skip for a missing template). The synthesized record field set matches `dev/.cairn/cairn-lock.yml:274-300`. The twelfth plan already names this plan's node and guide sentences for rewrite (`upgrade-removes-retired-files.md:81,103`).
+
+**Lens evidence.** 1 Claims: the cited lines and greps. 2 Production path: C5 and C6 go through `main` and `upgrade`. 3 Completeness: N3, N4. 4 Fail-closed: B1, N3. 5 Cross-document: twelfth plan, roster. 6 Drift: N1. 7 Placement: C8 fence. 8 Scope: no outcome narrowed. 9 Satisfiers: each finding names one.
+
+**Coverage.** Not covered: no test, mutant or suite run; no old install built; no scratch install; `_ast_attest.py verify` and `_gate_manifest.py verify` not run (relied on the ordinary pass for the 18 symbols and frozen counts); the NEXT_SESSION change's code review is read only through this plan's Sequencing; the wording of sentences A to E was not judged. Single round: the author answers in a Response; no second Security Review unless a revision changes the design.
+
+**Status**: `revising-plan` (B1).
