@@ -235,7 +235,7 @@ tell "known and accepted" from "missed": (1) a small TOCTOU window between
 the scaffold engine's `_assert_safe_write` containment check and the write
 (the check lives in `bootstrap/_scaffold/security.py`, its single-source
 identity preserved across the split; installs made before 0.5 keep the retired
-onboarding helper, which Cairn no longer scans, until the 12th row removes it,
+onboarding helper, which Cairn no longer scans, until `upgrade --remove-retired` removes it,
 and its accepted residual risk is this same race window; the
 session kernel `tools/session.py` has it too, for a parent folder swapped for a
 link between its `_assert_not_linked` check and a write -- the last name is not
@@ -246,6 +246,23 @@ than appends, while a swapped parent remains in the accepted window; and
 (2) `check_cairn.py`'s `importlib.exec_module` of sibling tools from
 **fixed, script-relative** paths (a deliberate dogfood composition, not a
 dynamic-exec vector). See `../SECURITY.md` for the public statement.
+
+**The delete beside the write (Layer 4).** `upgrade --remove-retired` is the
+engine's only deletion of a project file, and it is held to the write's rules.
+It removes a file only if the path is on Cairn's own list, the bytes match a
+digest on that row, and the project's last commit holds the same bytes
+(`_committed_copy_matches`, which runs `git cat-file` under a fixed command and
+environment so that no program named in the project's `.git/config` runs). The
+removal itself (`_remove_unchanged_file`) calls `_assert_safe_write`, then,
+where `os.unlink` takes `dir_fd`, opens each folder down to the file without
+following links and reads, re-checks and unlinks the file by name through the
+last handle. A folder swapped for a link after that check then cannot redirect
+the removal; a same-user racer who wins the last instant can remove only a name
+inside the project. **On Windows there is no `dir_fd`**: the removal goes by
+path, and a folder swapped for a link between the check and the unlink can
+redirect it, which is the same accepted window as for the write. Windows also
+looks a bare `git` up in the current folder before `PATH`, and the scrubbed
+environment does not close that, so run the step from a folder you trust.
 
 **Documented residual risk: the interpreter binding proves only "git does not
 list it now".** The session kernel (`tools/session.py`) runs the program named

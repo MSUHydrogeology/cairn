@@ -2924,7 +2924,10 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                         "Pass PATH(s) to scope the finalize to just those "
                         "records (won't sweep a concurrent session's WIP); "
                         "bare --finalize finalizes the whole tree but refuses "
-                        "on a dirty tree without --force.")
+                        "on a dirty tree without --force. A record for a file "
+                        "Cairn stopped shipping is cleared if its file is "
+                        "gone; a copy of one that cannot be shown unchanged is "
+                        "not recorded unless you name its PATH.")
     p.add_argument("finalize_paths", nargs="*", metavar="PATH",
                    help="With --finalize: scope the write-set to these tracked "
                         "path(s) only -- the surgical finalize for one file "
@@ -2943,7 +2946,8 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                    help="Override the Layer-3 dirty-tree guard (#56): for "
                         "--apply, overwrite tracked files with uncommitted "
                         "changes in the write-set; for an unscoped --finalize, "
-                        "finalize the whole tree even when it is dirty.")
+                        "finalize the whole tree even when it is dirty. "
+                        "--remove-retired refuses it.")
     p.add_argument("--remove-retired", action="store_true",
                    help="Remove the project's untouched copies of files Cairn "
                         "stopped shipping and clear their lockfile records "
