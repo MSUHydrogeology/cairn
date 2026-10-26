@@ -255,22 +255,24 @@ you what changed.
   `ScaffoldSecurityError` traceback and exit 1. That refusal prints no
   remedy line: replace the link with a real folder, then re-run.
 * **A linked lockfile or `dev/.cairn` is refused by every action; a linked
-  `dev/.cairn/profile.yml` is refused by `--apply` and `--init-lock`.** Every
-  action reads `dev/.cairn/cairn-lock.yml`, and `upgrade --apply` writes
-  `dev/.cairn/profile.yml` when it is absent or incomplete. If the lockfile is
-  a link, or `dev/.cairn` is, `--plan`, `--stage` and `--apply` stop with exit
-  2 and a one-line refusal before they read or write through it. If the
-  profile is a link, `--apply` stops the same way before it writes through it
-  (measured with an incomplete profile, the case that makes it write one),
-  while `--plan` and `--stage` read the profile through the link, print any
-  profile warning, exit 0 and write nothing there. This includes a profile
-  that is a link to a file inside the project, which earlier versions
-  accepted: the rule is stricter on purpose and the same for every link.
-  Replace the link with a regular file, then re-run. A profile that is absent
-  or a regular file is not affected. The same exit-2 refusal covers a lockfile whose `modules` list holds
-  anything but plain names, a staged upgrade that names a file or a version that
-  is not plain text, and a lockfile record whose `dst` or `base_cache` is inside
-  `.git/`. `--init-lock` makes the same check for itself, before it looks for a
+  `dev/.cairn/profile.yml` is refused by `--plan`, `--stage`, `--apply` and
+  `--init-lock`.** Every action reads `dev/.cairn/cairn-lock.yml`; `--plan` and
+  `--stage` read `dev/.cairn/profile.yml` too, and `upgrade --apply` writes it
+  when it is absent. If the lockfile is a link, or `dev/.cairn` is, `--plan`,
+  `--stage` and `--apply` stop with exit 2 and a one-line refusal before they
+  read or write through it. If the profile is a link, those three stop the same
+  way, and so does `--init-lock`, whether the link points to a file that exists
+  or to nothing. `--finalize` never opens the profile, so a link there does not
+  stop it, and `--adopt-module` and `--adopt-collisions` still read the profile
+  through a link (measured: `--adopt-module python-security` over a link to a
+  file holding `python_package` put that value in the lockfile), so replace the
+  link before running either. This includes a profile that is a link to a file
+  inside the project, which earlier versions accepted: the rule is stricter on
+  purpose and the same for every link. Replace the link with a regular file,
+  then re-run. A profile that is absent or a regular file is not affected. The
+  same exit-2 refusal covers a lockfile whose `modules` list holds anything but
+  plain names, a staged upgrade that names a file or a version that is not plain
+  text, and a lockfile record whose `dst` or `base_cache` is inside `.git/`. `--init-lock` makes the same check for itself, before it looks for a
   lockfile or reads the profile: a link at `dev/.cairn/profile.yml`, at
   `dev/.cairn`, or above either one is refused with the same exit 2, whether it
   points to a file that exists or to nothing. Two limits remain. Over a lockfile
