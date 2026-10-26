@@ -138,8 +138,10 @@ Maintainer, 2026-10-26, relayed by the Developer session:
   `files` and `modules` structure checks before the advisory, which crashes on a
   record that is not an object. LP-SR-4 is refused in `_check_lockfile_paths`
   through a new `_check_staged_names`, not escaped in `_print_upgrade_report`.
-  New tests go in `bootstrap/tests/test_upgrade_lockfile_path_containment.py`,
-  which is not frozen.
+  New tests go in a new test file: `test_upgrade_lockfile_path_containment.py`
+  is itself frozen (the gate manifest's `frozen_files` lists it; the glob
+  `bootstrap/tests/**/*.py` freezes every test file), and the earlier note
+  saying it was not frozen was wrong, found 2026-10-26 by the fixer.
 
 **Order.** Cheap defects first (`check_cairn`, #32), then Plain Language, #31
 and the model-tier prose, then the security findings, then the engine batch (the
@@ -287,8 +289,14 @@ lists five other modified frozen files that the review did not trace. More are
 expected as 0.5 rows land (the model-tier proposal edits frozen
 `test_review_stance_in_shipped_files.py`, the engine-batch work edits
 `docs/quickstart.md`'s pinned count, and the security fixes may touch more).
-Do not carry a list forward from this row: run `verify` on the final committed
-tree and read what it prints.
+The LP-SR fixes (2026-10-26) add eight engine symbols to the AST re-anchor
+(derived with `_ast_attest.py verify` on Python 3.13.13): changed
+`_apply_upgrade`, `_behind_by_n`, `_resolve_vendor_wrapper`,
+`_self_heal_profile_config` and `cmd_upgrade`, and the known-new
+`_check_lockfile_paths`, `_contained_lockfile_path` and `_lockfile_refusal`,
+whose bodies changed. Their new test files are also gate-root files the
+re-anchor must pin. Do not carry a list forward from this row: run `verify` on
+the final committed tree and read what it prints.
 
 This is Maintainer-only; follow `bootstrap/REANCHOR_RUNBOOK.md` and derive the
 changed set from the final committed tree.
