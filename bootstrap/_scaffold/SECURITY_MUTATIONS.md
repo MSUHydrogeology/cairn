@@ -45,12 +45,12 @@ destination before any `mkdir` / `write_*` / `shutil` write:
 | `_install_one` | `_assert_safe_write` | each installed template file |
 | `write_local_env` | `_assert_safe_write` | `dev/.cairn/local-env.json` |
 | `create_dev_tree` | `_assert_safe_write` | the empty `dev/` folder set. `mkdir(parents=True)` follows a link, so every destination is checked before the first `mkdir`: a linked `dev/`, or a linked folder below it, refuses with nothing created at either end |
-| `install_onboarding` | `_assert_safe_write` | the always-on launcher + `_onboarding/` engine (installed FROM `_ALWAYS_ON_MAPPINGS`, the SSOT `install_manifest`/`scan_targets` also consume), activation log, PLANNING slot, preset source, onboarding docs. **Fail-closed before any write** on an incomplete launcher+engine completeness group (`assert_always_on_complete`, R4) |
-| `write_install_lockfile` | `_assert_safe_write` | base-template cache, `cairn-lock.yml`. **Refuses (returns `None`)** before any write on an incomplete always-on completeness group (R4 — a partial group must not yield a lockfile tracking only the present members) |
+| `install_onboarding` | `_assert_safe_write` | the PLANNING `onboarding-tasks` slot and the two onboarding tour pages (written only when a profile is selected) |
+| `write_install_lockfile` | `_assert_safe_write` | base-template cache, `cairn-lock.yml` |
 | `_emit_skill_copy_fallback` | `_assert_safe_write` | regenerated canonical skill copy, diverged-copy quarantine. A copy name is not contained by construction: a checkout can plant a link at it (a dangling one creates a file outside the tree), a link at the quarantine name (`shutil.move` moves a file *into* the folder it names) or a link to a file that already holds the canonical bytes (the copy rewrites it in place). Every copy and quarantine name is guarded for the whole set, and anything but a free name or a plain file at a name, or a file where a folder must go, is refused, all before the first write, so a refusal leaves nothing half-done. Each copy is written to a new exclusive sibling and renamed into place, and the quarantine is `os.replace`, so a link that appears after the check is replaced, not followed. A refusal is fixed words, the escaped project-relative name and a remedy line (run `session-start` or install again, because an upgrade does not redo the fan-out when run again), never where a link points; the divergence warning names the quarantined files the same escaped, project-relative way. Two windows remain, each needing a process already running on the machine, which is the model `bootstrap/SAFETY.md` accepts: a parent folder swapped for a link between the check and the write (the copy or a temporary file can land outside), and the temporary file swapped for a link between its write and the rename (that link ends up at the copy's name; nothing is written outside, and the next install refuses it) |
 | `fan_out_skills` | `_assert_fanout_contained` | vendor fan-out destination |
 | `_cmd_adopt_module` | `_assert_safe_write` | a single added module's files (missing-dst install); the base-cache + lockfile writes route through `_commit_lock_and_caches`. A `seed_gitignore` dry run before the first write refuses a linked `.gitignore` (exit 2) ahead of the lockfile commit |
-| `_cmd_adopt_collisions` | `_assert_safe_write` | the adopted collision's destination (containment re-check; never written); the base-cache + lockfile writes route through `_commit_lock_and_caches`. Resolves the adoptable occupied-destination collisions in **either** tier — module-internal (`new-module-blocked`) **and** core/always-on (`new-core-blocked`, side-door parity R5) — via the shared `_record_fork_entry` (`base_hash = upstream`, R2) |
+| `_cmd_adopt_collisions` | `_assert_safe_write` | the adopted collision's destination (containment re-check; never written); the base-cache + lockfile writes route through `_commit_lock_and_caches`. Resolves the adoptable occupied-destination collisions in **either** tier — module-internal (`new-module-blocked`) **and** core/skills (`new-core-blocked`, side-door parity R5) — via the shared `_record_fork_entry` (`base_hash = upstream`, R2) |
 | `_commit_lock_and_caches` | `_assert_safe_write` | the base-template caches **and** `cairn-lock.yml` itself — preflighted for ALL writes, then exclusively temp-staged with unpredictable names and atomically replaced, lockfile last (adopt-as-fork R4: the lockfile authority write was previously unguarded in `_cmd_adopt_module`) |
 | `_self_heal_profile_config` | `_assert_safe_write` as its second statement (the first builds the path), before it looks at anything | `dev/.cairn/profile.yml`, written on `--apply` only when absent. `exists()` follows a link, so a link to a file not there yet read as absent and the write created that file wherever the link led, with lines the lockfile chose. A link at the name, or any link above it, is refused wherever it points -- an existing target and an in-project target included, the stricter rule -- and `cmd_upgrade` turns the refusal into a plain exit 2 before `_apply_upgrade` runs. The values written (preset, axis values, module names, the four tokens) must each be a non-empty printable string, else nothing is written. A line break in a value therefore cannot start a line of its own. Preset, axis values and module names are still written unquoted, as the differential oracle's frozen baseline writes them (the tokens are single-quoted), so a printable value holding `: ` or ` #` makes a profile the loader refuses to read, on that one line |
 | `_write_init_lock_profile_template` | `_assert_safe_write` as its first statement after the path is built, before it looks at the project | `dev/.cairn/profile.yml`, written by `upgrade --init-lock` when no regular file is there. `is_file()` follows a link, so a link to a file not there yet read as "none" and the write created that file wherever the link led. A link at the name, or any link above it, is refused wherever it points. `_cmd_init_lock` makes that refusal first, at exit 2 (its row in Class D), so this guard backs up any other caller; called directly it raises `ScaffoldSecurityError`. Nothing is written outside the project. The text written is fixed (placeholders, axes read from the project's folders, module names from the engine's own registry); no lockfile chooses it |
@@ -62,22 +62,22 @@ destination before any `mkdir` / `write_*` / `shutil` write:
 
 ### Fail-closed refusals added by the side-door-parity change (writes PREVENTED, not performed)
 
-These do not write; they **refuse before a write** to close a data-loss /
-facade-without-engine surface, and are listed so the inventory stays complete:
+These do not write; they **refuse before a write** to close a data-loss
+surface, and are listed so the inventory stays complete:
 
-- **`assert_always_on_complete` / `missing_always_on_sources`** (R4): the
-  onboarding launcher + `_onboarding/` engine are a **required completeness
-  group**. Install (`install_onboarding`), lockfile write
-  (`write_install_lockfile`), and upgrade advancement (`_compute_upgrade` →
-  `new-core-incomplete-group`, an unconditional `--apply` block) each fail closed
-  on a partial group — a present facade is never delivered/tracked/advanced over
-  an absent engine member.
 - **`new-core-blocked` / `new-core-lockconflict`** (R5): the new-core enumeration
   now mirrors the new-module occupied-destination split — a genuinely-new
-  core/always-on add over an **occupied unlocked** destination (or one **owned by
+  core/skills add over an **occupied unlocked** destination (or one **owned by
   another lockfile source**) is a hard block, never a silent overwrite. This
   closes a data-loss surface that existed independently of onboarding (the prior
   new-core path never checked the destination).
+
+What this inventory no longer lists: the engine has no check for a partial
+multi-file executable. It once refused to install, record or advance the
+onboarding launcher without every member of its engine package. That group is
+gone with the helper it guarded, and nothing replaces it: a future multi-file
+executable needs its own pin (a test that names every member), as the
+portable-sweeps module has.
 
 ## Class B — guarded-by-equivalent-invariant (no direct guard, contained by construction)
 

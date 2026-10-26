@@ -273,3 +273,127 @@ class TestInstallOutputEndsWithThePointerToTheList:
         out = capsys.readouterr().out
         assert "helper + log" not in out
         assert "onboarding_activate" not in out
+
+
+# --------------------------------------------------------------------------
+# A project installed before the helper was retired keeps nine old files.
+# --------------------------------------------------------------------------
+
+import hashlib  # noqa: E402
+import subprocess  # noqa: E402
+
+from bootstrap import verify_integrity  # noqa: E402
+
+OLD_HELPER_DSTS = ("scripts/onboarding_activate.py",) + tuple(
+    f"scripts/_onboarding/{name}.py" for name in (
+        "__init__", "activation", "cli", "prompts", "security", "shared",
+        "slotparse", "triggers"))
+UPGRADE_GUIDE = "bootstrap/UPGRADE.md"
+
+
+def _sha(data: bytes) -> str:
+    return "sha256:" + hashlib.sha256(data).hexdigest()
+
+
+def _old_helper_project(target: Path) -> dict[str, bytes]:
+    """An install plus the nine retired files and their lockfile records.
+
+    The installer can no longer write them, so they are synthesized. Each
+    record has the field set of a real verbatim record (control below); the
+    source path names a template that no longer exists, which is what makes
+    the planner read it as removed upstream.
+    """
+    assert _install(target, PROFILES[0]) == 0
+    template = next(r for r in s.read_lockfile(ROOT)["files"]
+                    if r["dst"] == "scripts/claim_check.py")
+    lock = s.read_lockfile(target)
+    assert lock is not None
+    contents: dict[str, bytes] = {}
+    for dst in OLD_HELPER_DSTS:
+        data = f"# retired helper file {dst}\n".encode()
+        (target / dst).parent.mkdir(parents=True, exist_ok=True)
+        (target / dst).write_bytes(data)
+        src = ("modules/default-on/onboarding_activate.py"
+               if dst == OLD_HELPER_DSTS[0]
+               else "modules/default-on/_onboarding/" + dst.rsplit("/", 1)[1])
+        record = {"base_hash": _sha(data), "dst": dst, "hash": _sha(data),
+                  "src": src, "verbatim": True}
+        assert set(record) == set(template), "control: same field set as a real record"
+        lock["files"].append(record)
+        contents[dst] = data
+    (target / "dev/.cairn/cairn-lock.yml").write_text(
+        s._emit_lock_yaml(lock), encoding="utf-8")
+    return contents
+
+
+def _upgrade(target: Path, *flags: str) -> int:
+    return s.main(["upgrade", "--target", str(target), *flags,
+                   "--cairn-root", str(ROOT)])
+
+
+class TestUpgradeLeavesAnOldHelperAlone:
+    def test_plan_stage_apply_and_finalize_leave_the_nine_files_untouched(
+            self, tmp_path: Path, capsys) -> None:
+        target = tmp_path / "project"
+        before = _old_helper_project(target)
+        capsys.readouterr()
+        assert _upgrade(target, "--plan") == 0
+        report = capsys.readouterr().out
+        lines = [ln for ln in report.splitlines() if "removed-upstream" in ln]
+        assert len(lines) == 1 and re.search(r"removed-upstream\s+9\b", lines[0]), report
+        for flag in ("--stage", "--apply", "--finalize"):
+            assert _upgrade(target, flag) == 0, flag
+        for dst, data in before.items():
+            assert (target / dst).read_bytes() == data, dst
+        kept = {r["dst"] for r in s.read_lockfile(target)["files"]}
+        assert set(OLD_HELPER_DSTS) <= kept
+
+    @pytest.mark.parametrize("force", ((), ("--force",)))
+    def test_deleting_one_of_the_nine_makes_finalize_refuse_and_name_it(
+            self, tmp_path: Path, capsys, force: tuple[str, ...]) -> None:
+        target = tmp_path / "project"
+        _old_helper_project(target)
+        (target / OLD_HELPER_DSTS[3]).unlink()
+        capsys.readouterr()
+        assert _upgrade(target, "--finalize", *force) == 1
+        assert OLD_HELPER_DSTS[3] in capsys.readouterr().err
+
+    def test_the_guide_says_do_not_delete_and_names_the_three_loose_files(self) -> None:
+        guide = _flat((ROOT / UPGRADE_GUIDE).read_text(encoding="utf-8"))
+        assert "**Do not delete them.**" in guide
+        assert "**Run `verify_integrity` before `--finalize`.**" in guide
+        loose = ("Three loose files are not in the lockfile and are safe to "
+                 "delete: `dev/modules/onboarding/<profile>.md`")
+        assert loose in guide
+        for name in ("dev/.cairn/onboarding-activated.jsonl",
+                     "dev/modules/onboarding/agent-team-onboarding.md"):
+            assert name in guide.split(loose, 1)[1].split("No supported way", 1)[0]
+
+    def test_the_guide_names_no_prompt_that_shows_later(self) -> None:
+        guide = (ROOT / UPGRADE_GUIDE).read_text(encoding="utf-8")
+        assert "second-agent prompt" not in guide
+
+
+class TestAnEditedOldHelperFailsTheIntegrityCheck:
+    def test_a_committed_edit_to_one_of_the_nine_is_named_and_exits_one(
+            self, tmp_path: Path, capsys) -> None:
+        target = tmp_path / "project"
+        _old_helper_project(target)
+        assert verify_integrity.main(["--target", str(target)]) == 0, "control"
+
+        def git(*args: str) -> None:
+            subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t",
+                            "-c", "commit.gpgsign=false", *args],
+                           cwd=target, check=True, capture_output=True)
+
+        git("init", "-q")
+        git("add", "-A")
+        git("commit", "-q", "-m", "install")
+        edited = target / OLD_HELPER_DSTS[2]
+        edited.write_text("# edited after install\n", encoding="utf-8")
+        git("commit", "-q", "-am", "edit one retired file")
+        capsys.readouterr()
+        assert verify_integrity.main(["--target", str(target)]) == 1
+        captured = capsys.readouterr()
+        assert (f"modified (hash mismatch): {OLD_HELPER_DSTS[2]}"
+                in captured.out + captured.err)

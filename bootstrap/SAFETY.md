@@ -177,15 +177,7 @@ scales **by file class**:
   **git-hook installer `_intent/hooks.py` writes executable hooks into
   `.git/hooks/`**; each of the seven `_intent/*.py` engine files is Layer-4
   code, covered automatically because all seven are verbatim
-  `_MODULE_MAPPINGS` install specs; `onboarding_activate.py` — likewise now a
-  thin facade over the owned `_onboarding/` package (seven engine files) whose
-  **write-containment guards** (`_assert_safe_write` / `_assert_safe_read` /
-  `_assert_safe_dir_for_glob` + the `OnboardingError` / `OnboardingSecurityError`
-  taxonomy) live **single-source** in `_onboarding/security.py`; unlike the
-  others it installs via the engine function `install_onboarding()` (not
-  `_MODULE_MAPPINGS`), which fans the package out verbatim into
-  `scripts/_onboarding/` through `_assert_safe_write`, so all seven files are
-  Layer-4 code reached by the recursive `scripts/` + `bootstrap/` scan; plus
+  `_MODULE_MAPPINGS` install specs; plus
   `link_check.py`, `sync_doc_snippets.py`, and the
   `content-security` / `python-security` apparatus —
   `content_scan_runner.py`, `run_security_audit.py`; **plus the session
@@ -203,11 +195,10 @@ scales **by file class**:
   newly-extracted engine module* is covered automatically; a reviewer must
   know a change ships **as code** (Layer 4), not prose.
   **What that derivation closes, and the residuals it does not.** The manifest
-  unions the four delivery registries that reach it — `_CORE_MAPPINGS`,
-  `_SKILLS_MAPPINGS`, `_ALWAYS_ON_MAPPINGS`, `_MODULE_MAPPINGS` — so a
-  verbatim script added to `_SKILLS_MAPPINGS`, `_ALWAYS_ON_MAPPINGS` or
-  `_MODULE_MAPPINGS`, not `_MODULE_MAPPINGS` alone, is scanned with no gate
-  edit. **Two residuals remain, and both are live rather than theoretical:**
+  unions the three delivery registries that reach it — `_CORE_MAPPINGS`,
+  `_SKILLS_MAPPINGS`, `_MODULE_MAPPINGS` — so a verbatim script added to
+  `_SKILLS_MAPPINGS` or `_MODULE_MAPPINGS`, not `_MODULE_MAPPINGS` alone, is
+  scanned with no gate edit. **Two residuals remain, and both are live rather than theoretical:**
   * `_CORE_MAPPINGS` reaches the manifest but is emitted
     `verbatim=False` unconditionally (`install_manifest` builds its rows as
     `[(src, dst, False) for src, dst in _CORE_MAPPINGS]`), while
@@ -243,10 +234,9 @@ attacker; no untrusted code path), recorded here so a future reviewer can
 tell "known and accepted" from "missed": (1) a small TOCTOU window between
 the scaffold engine's `_assert_safe_write` containment check and the write
 (the check lives in `bootstrap/_scaffold/security.py`, its single-source
-identity preserved across the split; the onboarding helper's own
-`_assert_safe_write` / `_assert_safe_read` / `_assert_safe_dir_for_glob` guards,
-now single-sourced in `_onboarding/security.py` after the onboarding-split,
-share the same consciously-accepted window under the same threat model; the
+identity preserved across the split; installs made before 0.5 keep the retired
+onboarding helper, which Cairn no longer scans, until the 12th row removes it,
+and its accepted residual risk is this same race window; the
 session kernel `tools/session.py` has it too, for a parent folder swapped for a
 link between its `_assert_not_linked` check and a write -- the last name is not
 exposed, because its writes are an exclusive temp file and a rename); the

@@ -73,7 +73,7 @@ The `team-roster` slot now lives in `dev/agent_collaboration.md` under
 file, then record the expected edit with
 `python bootstrap/scaffold.py upgrade --target <repo> --finalize dev/agent_collaboration.md`.
 A slot note that still names the old file can be ignored; fill the new
-slot. Until then the second-agent prompt stays quiet.
+slot.
 
 ## A file Cairn stopped shipping: `dev/NEXT_SESSION.md`
 
@@ -101,6 +101,47 @@ A later change to `upgrade` will remove untouched copies of files Cairn
 stopped shipping. When it ships, an untouched `dev/NEXT_SESSION.md` is removed
 and its lockfile record cleared, and a changed copy is named and left in place.
 Until then, nothing in `upgrade` removes your file.
+
+## Files Cairn stopped shipping: the onboarding helper
+
+Cairn no longer installs the onboarding helper: `scripts/onboarding_activate.py`
+and the eight files in `scripts/_onboarding/`. It was meant to show onboarding
+prompts at a later goodnight. Onboarding now happens once, at install: the
+profile's day-one tasks go into `dev/PLANNING.md` under Onboarding, and the
+install report ends with a line that says where they are. A project that is
+already installed needs no change for this.
+
+If your project installed Cairn before this change, `upgrade --plan` prints one
+line, `removed-upstream 9`, naming the nine files. The line is informational
+and repeats on later plans. Plan, stage and apply leave the nine files and
+their lockfile records untouched. The files do nothing unless someone runs
+them.
+
+Leave the nine files where they are. **Do not delete them.** A deleted file
+makes `upgrade --finalize` refuse with "tracked file(s) missing on disk", with
+or without `--force`, and makes `verify_integrity.py` print a `missing:` line
+and exit 1. **Do not blank them either.** Blanking needs a finalize over nine
+executables, and a finalize records whatever is on disk.
+
+**Run `verify_integrity` before `--finalize`.** If it reports `modified` on one
+of the nine, do not finalize. Cairn no longer ships that file, so no upgrade
+changes it and `upgrade --plan` no longer flags it. A bare `--finalize` on a
+clean tree would record the edit as if you had made it on purpose. Restore the
+file from git history, then run `verify_integrity` again.
+
+Three loose files are not in the lockfile and are safe to delete:
+`dev/modules/onboarding/<profile>.md` (your profile's copy of the task list;
+the tasks themselves are in `dev/PLANNING.md`), `dev/.cairn/onboarding-activated.jsonl`
+(the helper's log), and an old `dev/modules/onboarding/agent-team-onboarding.md`
+(it tells the reader to run the helper; you can replace it with Cairn's current
+`docs/agent-team-onboarding.md`).
+
+No supported way yet clears the nine lockfile records. A later change to
+`upgrade` (the 0.5 row that removes untouched copies of files Cairn stopped
+shipping) has to cover these nine records and the `dev/NEXT_SESSION.md` record.
+It has to remove only a copy that still equals what Cairn shipped, and name a
+modified copy instead of counting it as removed. Until it ships, nothing in
+`upgrade` removes the nine files.
 
 ## The two on-disk artifacts the install leaves
 
