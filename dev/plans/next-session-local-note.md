@@ -1,5 +1,5 @@
 # Plan: Make the next-session handoff a local note
-<!-- claim-check-allow: templates/core/dev/NEXT_SESSION.md -->
+<!-- claim-check-allow: templates/core/dev/NEXT_SESSION.md, dev/NEXT_SESSION.md -->
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-next-session-local-note.md](../proposals/archive/2026-10-26-claude-next-session-local-note.md)
