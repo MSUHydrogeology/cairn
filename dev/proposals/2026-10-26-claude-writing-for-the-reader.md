@@ -761,3 +761,113 @@ Plain Language; the reasoning rules apply in chat too; publishing for other
 projects waits about three months; the rate-limit gate is met by recurrence
 for rules 1 to 12, while rules 13 to 17 rest on the literature, not on a Cairn
 incident; and version 1.0 ships all 17 rules.
+
+
+## Code review -- Claude Sonnet 5.5 (fresh session) -- 2026-10-26
+
+**Model**: claude-sonnet-5-5
+**Tier**: usual (the implementing commit of an accepted proposal, no plan; fresh session, not the implementer)
+**Reviewed**: `4a88ca82` ("Cairn Plain Language: ship the 17-rule writing standard"), 8 files, +393/-10, against its parent. The binding text is the opening proposal as amended by the Revision of 2026-10-26, then the Decision at `2f529e66`.
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13). Everything that wrote ran in detached worktrees of `4a88ca82` and of `4a88ca82^`, or in scratch installs. The main tree was only read.
+
+### Foundations
+
+1. **Does it do what it claims?** Yes. Both collaboration-doc copies equal the Revision's standard character for character (4,863 characters each, compared by script), both `AGENTS.md` diffs are pure insertions of the accepted pointer sentence, and the two lockfile hashes equal the committed blobs: see "What reproduced".
+2. **Best alternative.** The build is the simple one (one section, one sentence, one paragraph, one test). The only better version I can offer is a sharper ship test: anchor the heading at line start and pin the section's place before "Surfacing judgment calls" (findings F3, F4).
+3. **What would show it wrong.** A mutant of the shipped section, the pointer or the install that the test misses, or an install or upgrade that drops or garbles the section. I tried 26 mutants (19 killed, 7 survived, 0 shown equivalent) and four installs and upgrades: see the falsification ledger.
+
+### What reproduced
+
+* **Fidelity of the standard.** I cut the Revision's block quote from the proposal at `2f529e66`, stripped the `> ` markers, and compared it with the section in `templates/core/dev/agent_collaboration.md` and in `dev/agent_collaboration.md` at `4a88ca82`. Both are equal (4,863 characters). The two copies are equal to each other. The heading level is `##`, as the Revision gives it. The section sits between "The review sweep" and "Surfacing judgment calls to the Maintainer", as the proposal's section 1 says.
+* **The pointer.** `git diff --word-diff` of `AGENTS.md` and `templates/core/AGENTS.md` shows only added words: no word of the paragraph was removed or changed by the re-wrap. The added sentence is the Revision's, word for word, directly after "as a **mandatory pause**." and its own sentence.
+* **The rationale paragraph.** The added lines name no company or model (a grep over the added lines of the commit for the vendor names the gate knows, plus "anchor 21", finds nothing), and it does not cite anchor 21. `quality_gate.py --sub neutrality --sub redundancy` at `4a88ca82`: neutrality `fail=0 info=41`, redundancy `fail=0`, as the commit says. Its figures match the proposal's evidence section (27% to 40%, 25 samples across 24 countries, the Steyvers, Zhou and Kim findings).
+* **The lockfile.** Two lines changed: the hash of `AGENTS.md` and of `dev/agent_collaboration.md`. Both equal `shasum -a 256` of the committed blobs (`6fc2be18...`, `34603c65...`). `verify_integrity.py --target .` reports 23 violations at `4a88ca82^` including those two files, and 21 at `4a88ca82` without them. The other 21 pre-date the change and are untouched. The commit body says 19; see F5.
+* **Gates.** `claim_check.py` and `link_check.py` are clean on all six edited files. `check_cairn.py` reports the same two issues before and after (`dev/PLANNING.md:42` and `dev/reviews/2026-10-18-security-review-session-writes.md:131`), none from this change.
+* **Fresh installs.** `solo-greenfield`, `collaborative-team` and `high-rigor-legacy` each install the section once and the pointer in `AGENTS.md` (exit 0).
+
+### Falsification ledger
+
+Control: the ship test at `4a88ca82`, unmutated, in a detached worktree: **11 passed** (0.14 s). Each mutant ran in that worktree, was reset after, and was run with the same command (`pytest bootstrap/tests/test_writing_rules_ship.py`). "All" means both collaboration-doc copies (shipped and Cairn's own) were mutated alike, so the copy-agreement tests cannot catch it.
+
+| # | Mutant | Result | Caught by |
+|---|---|---|---|
+| M1 | Shipped copy: delete the `**Instructions**` heading | killed | group-heading test; own-copy-agrees test |
+| M1b | Own copy only: same | killed | own-copy-agrees test |
+| M2 | Shipped copy: `Version 1.0` to `2.0` | killed | version/heading test; own-copy-agrees test |
+| M2b | All: `Version 1.0` to `2.0` | killed | version/heading test |
+| M3 | All: `Licensed CC BY 4.0` to `Licensed MIT` | killed | version/heading test |
+| M4 | All: heading `##` demoted to `###` | **survived** | (none) |
+| M5 | All: section moved to the end of the file | **survived** | (none) |
+| M6 | All: section moved before "The review sweep" | **survived** | (none) |
+| M7 | All: delete rule 17 | killed | numbering test (1 to 17) |
+| M8 | All: reword rule 14's clause ("the number with its unit and its source") away | **survived** | (none) |
+| M9 | All: rename the reasoning group heading | killed | group-heading test |
+| M10 | All: delete the "Where other rules are more specific" paragraph | **survived** | (none) |
+| M11 | All: delete the Sources paragraph | **survived** | (none) |
+| M12 | All: renumber rule 2 as 3 | killed | numbering test |
+| M13 | Shipped `AGENTS.md`: delete the pointer | killed | installed-pointer test; shipped-source test |
+| M13b | Own `AGENTS.md`: delete the pointer | killed | own-source test |
+| M14 | Both `AGENTS.md`: move the pointer to the end of the paragraph | killed | both source-pointer tests (adjacency check) |
+| M15 | Both `AGENTS.md`: splice the pointer in as a clause (`;` for `.`) | killed | both source-pointer tests |
+| M16 | Both `AGENTS.md`: pointer names a wrong file | killed | installed and both source-pointer tests |
+| M17 | Shipped `AGENTS.md`: add "Aim for a Flesch reading ease above 60." | killed | shipped-source pointer test; readability test |
+| M18 | All: "checked by a Flesch readability score" for "never by a readability score" | killed | readability tests (both copies); installed-forbids test |
+| M19 | All: delete the "never by a readability score" sentence | killed | installed-forbids test |
+| M20 | All: "checked by a Lexile score above 900" (formula not in the test's list) | killed | installed-forbids test only |
+| M21 | All: "checked by a readability score" (no "never") | killed | readability tests; installed-forbids test |
+| M22 | All: append "Aim for a Lexile score of 900 on anything for readers." | **survived** | (none) |
+| M23 | All: delete the whole section | killed | numbering, install-unchanged, own-copy and installed-forbids tests (4 of 11 fail) |
+
+Tally: 26 mutants, **19 killed, 7 survived, 0 equivalent** (I measured no equivalence, so I claim none). The implementer's reported mutants (section deleted; pointer deleted from each `AGENTS.md`) are M23, M13 and M13b here, and I reproduce them as killed.
+
+Reading the survivors:
+
+* **M4 is a real gap.** A demoted heading (`### Cairn Plain Language`) nests the standard under "The review sweep" in every outline, and the test passes, because `_section` finds `"## Cairn Plain Language"` as a substring of `"### Cairn Plain Language"`. See F3.
+* **M5 and M6** move the section away from where the proposal's section 1 places it. The proposal's ship-test list does not ask the test to pin the place, so this is not a missed requirement, but the placement is unprotected. See F4.
+* **M8, M10, M11** change or remove text the test does not pin. This is the proposal's design: the test pins the section, version line, group headings and numbering, not the rules' wording. A rule's wording changes only by a Cairn proposal; nothing mechanical checks that. Reported so the Maintainer knows what the test does not guard.
+* **M22** is the finite-list limit of the readability check: it names formulas (`flesch`, `gunning`, `hemingway`, `smog index`, `coleman`, `grade-level score`) and the word "readability". A different metric (Lexile) is not caught. The Revision's *Checking* paragraph says the rules are checked by reading, never by a score; a test cannot enumerate every score. I do not recommend a fix.
+
+### Other checks
+
+**Boundary B (item 5).** The record is `full` with `Certified by: pending`, as AGENTS.md prescribes for a change that touches shipped templates and `AGENTS.md`. The one failure the implementer reported, `test_security_stack.py::test_a_t4_output_is_bounded`, does not read anything this commit touched: it runs a flooder subprocess through the orchestrator module `run_security_audit_boundary` and asserts on the returned status and buffer length, and the commit changes no script. The test's own comment (`test_security_stack.py:1122-1125`) records the same failure mode ("truncated+cleanup-failed" on a loaded machine, grace 5 s). I ran it three times at `4a88ca82` and three times at `4a88ca82^` in separate worktrees: 6 of 6 passed (0.19 s each). The flake reading is plausible. I did not run the full suite and did not set `CAIRN_FULL_SUITE=1`.
+
+Independently of the implementer's 43 files, I listed the test files under `bootstrap/tests/` that name `AGENTS.md`, `agent_collaboration`, `rationale.md`, `CHANGELOG` or `cairn-lock.yml` (grep -l, 59 files; the same grep without `cairn-lock.yml` gives 47, not 43) and ran all 59 at `4a88ca82` in three batches under the broad-run guard's 40-file limit: **2,985 tests passed, 0 failed, 0 skipped, xfailed or xpassed** (batches of 24, 24 and 11 files: 801, 1,641 and 543 passed). That includes `test_comprehension_floor.py`, `test_security_stack.py` (the flaky test passed in this run) and the new ship test. This is not a certifying run and does not replace one.
+
+**Adopter upgrade (item 6).** I installed `solo-greenfield` from `4a88ca82^` (a new git repository, `CHANGELOG.md` present), then ran `upgrade --plan`, `--stage` and `--apply` with `4a88ca82` as the Cairn root.
+
+* *Unedited adopter:* `AGENTS.md` and `dev/agent_collaboration.md` applied with no conflict markers. The section appears once, between "The review sweep" and "Surfacing judgment calls", equal to the shipped section; the pointer is present; `verify_integrity.py` then reports OK (47 files match); a second `--plan` reports the tree current.
+* *Adopter who edited nearby lines* (a changed phrase on the same line as "mandatory pause", and a local section inserted directly before "Surfacing judgment calls"): both files conflict, `--stage` says so, and `--apply` refuses ("staged file AGENTS.md still has conflict markers"). The conflict blocks are small and readable, and the adopter's lines are kept. This is the ordinary 3-way behaviour when two edits meet at the same point, not a defect.
+
+**The trial (item 4).** Three before-and-after rewrites are in the commit body, so the count the proposal asks for is met. Their quality is not equal:
+
+* *Passage 1* is mis-chosen and mis-read; see F1.
+* *Passage 2* (quickstart Step 1) is sound. I opened `docs/quickstart.md:73-92`: one paragraph, a pasted prompt, and no stated result, as described. The four numbered steps with an expected reply apply rules 10 and 11 as written.
+* *Passage 3* (the Windows note) introduces a claim the record does not support; see F2.
+
+The implementer's remark that passage 1 "needs a count the original never gave" points at the trial, not at rule 14: the original has no count because it is not a result.
+
+### Findings
+
+**F1 (medium; should fix before archive). Trial passage 1 rewrites a falsification criterion as a result, and the source is not a review finding.** The text rewritten is "F1. It catches nothing a careful scientist would have missed. Every failing check's record names something else that already showed the error..." at `dev/proposals/archive/2026-10-17-claude-independent-scientific-check.md:212`. It sits under "What would falsify it", introduced by "The step is wrong if:". It is a condition to test at a future revisit, not a finding, and the proposal asked for "one review finding from an archived proposal". The rewrite, "It caught nothing new: in all [N] failing-check records ([source of the count]) ...", turns the condition into a past-tense result with two blanks. That is the thing rule 13 forbids ("Never let an assumption read as a result"). The missing count is missing because nothing has been counted yet. So the trial has not tested rules 13 to 15 on a result, and its verdict "Better" is not supported for this passage. The rules do not need to change. *Satisfier:* the author appends, in the Response, either a corrected rewrite that keeps the conditional ("The step is wrong if, at the revisit, every failing check's record also names an earlier sign of the same error: an existing test, a crash, an unphysical output, or the Maintainer's own flag.") or a replacement passage that is a real finding with a real number, and says whether rules 13 to 15 improve it.
+
+**F2 (low). Trial passage 3 asserts a fact the record does not give.** The rewrite begins "No one has run these Windows steps". The original says only that the Windows commands were added in October 2026 and that "Cairn's own tests run on macOS" (`docs/quickstart.md:150-155`). I searched `CHANGELOG.md`, `dev/PLANNING.md`, `dev/NEXT_SESSION.md` and `README.md` for any statement that anyone has or has not run them: none. So the rewrite, offered as an example of rule 17, states an unchecked claim at full strength. The right form is "Cairn's own tests run on macOS; I know of no run of these Windows steps" or similar. The passage was not committed to the quickstart, so nothing shipped carries it. *Satisfier:* correct it in the same Response as F1.
+
+**F3 (low). The ship test lets a demoted heading pass (M4).** `_section` uses `text.index("## Cairn Plain Language")`, which also matches inside `### Cairn Plain Language`. The test's own docstring says the section runs "from its heading to the next level-two heading". *Satisfier:* anchor the match at line start (for example `re.search(r"^## Cairn Plain Language$", text, re.MULTILINE)`), add a one-line assertion, and re-run the mutant. This is a test-only change that restores a promise already in the test's docstring and changes no rule text; AGENTS.md's "Fixing an easy problem you meet" would cover it in a later commit that records `Defect fix: ...`. I did not make it (my one write is this section).
+
+**F4 (low). The section's place is not pinned (M5, M6).** *Satisfier:* optional; one assertion that the section's index is below that of `## Surfacing judgment calls to the Maintainer` in the installed doc. Not required by the proposal's test list.
+
+**F5 (low; record accuracy). The commit body says 19 other integrity mismatches pre-date the change; I measured 21** at `4a88ca82` (23 at the parent, minus the two cleared). The claim that both entries are gone holds. *Satisfier:* correct the figure in the Response; no code change.
+
+**F6 (low). The proposal was not archived by the implementing commit.** `doctrine/lifecycle.md:174-179` and `doctrine/proposals.md:316-320` say a one-commit implementation moves the accepted proposal to `dev/proposals/archive/` in the same commit; `4a88ca82` left it in `dev/proposals/`. I take it as deliberate, to leave room for this review, and I did not move it. *Satisfier:* the archive move is owed in its own commit once F1, F2 and F5 are answered. Doctrine has no status for "implemented, reviewed": `doctrine/lifecycle.md` gives a code review of a proposal that has no plan no Status change, so the Status line stays `accepted`.
+
+**F7 (low). The rationale paragraph drops half of the Markowitz finding.** It says simpler AI summaries "made the scientists they described seem less intelligent". The proposal's evidence section says they made the scientists "seem more credible but less intelligent" (`dev/proposals/2026-10-26-claude-writing-for-the-reader.md`, the second bullet under "How strong the evidence is, rule by rule"). The omitted half cuts against the paragraph's own argument, which is the shape of omission rule 3 and the proposal's own earlier correction (`cb280a29`) warn about. *Satisfier:* add "more credible but" in a follow-up edit to `doctrine/rationale.md`; the Maintainer's word is not needed for prose no test pins, but check first (`claim_check`, `link_check`, and a search for tests that read the paragraph).
+
+### Coverage
+
+*Covered:* fidelity of both section copies and both pointers (scripted comparison and word diff); the rationale paragraph against the proposal's evidence and the neutrality gate; the lockfile hashes against the committed blobs; the ship test, with 26 mutants against a control; the Boundary B claim (the flake's dependencies; an independent run of 59 reader files); fresh installs of the three profiles; an unedited and an edited adopter upgrade; the three trial passages against their sources.
+
+*Not covered:* I did not run the full suite or the certifying pair; `Certified by` stays `pending`. I did not check the rules' truth against the cited studies (the proposal's Open checks say the author read only some in full). I did not review the wording quality of the 17 rules themselves, which the Decision settled. I did not run the upgrade against an adopter on an older Cairn than `4a88ca82^`, nor with a customised `AGENTS.md` slot in the pointer's paragraph. Same agent type as the author, so no cross-type distance on judgement.
+
+### Verdict
+
+**APPROVE WITH FOLLOW-UPS.** The shipped change is faithful: the standard, the pointer, the rationale paragraph, the lockfile and the install and upgrade paths all check out, and no defect in the shipped bytes was found. What is owed is small and mostly in the record: F1 (a corrected trial passage, before archive), and F2 and F5 (corrections to the commit body's claims), all by an appended Response. F3 is a cheap test fix. F4, F6 and F7 are optional or process. Nothing here reopens the Decision.
