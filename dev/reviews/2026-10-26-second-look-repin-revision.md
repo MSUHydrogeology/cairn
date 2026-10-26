@@ -54,3 +54,13 @@
 **Bounding**: FULL RUN REQUIRED. The record is mode `full`, `Certified by: pending`, from a shared tree that was not clean. I ran 24 selected nodes plus probes, not the 189 it cites. The next certifying run must contain `baca8a45`.
 
 **Coverage.** Not covered: the anchored `_gate_*` modules' own lazy imports at call time (the post-import check runs once, after the load); the AST child's `sys.path.append` of `bootstrap/tests` (unchanged, standard-library names win there); the N7/N8 changes (launcher re-hash, output points); a real `launchctl`, agent or ceremony; NFD names; the 189-test record; other sessions' commits in the range.
+
+## Addendum -- fixes read -- 2026-10-26
+
+Read in full: `git diff e3cec581..5670dda9` over `scripts/repin.py` and the two repin test files (+58 lines, 3 commits: `f57b6f81`, `e37b08ac`, `5670dda9`). Detached scratch worktree of `5670dda9`, removed after; no key, anchor, ceremony or full suite.
+- **N1: fixed as recommended.** New test commits a `planted.py` in all four folders, has a pinned `_oracle.py` bare-import it, asserts refusal and no marker, with a bare-`python` control. Mutant M8 again (extraction on `sys.path`): killed.
+- **N2: fixed as recommended.** `check_first_run` prints the same line (now the constant `NOTHING_OWED`, shared with `package`) when nothing is owed; new test; mutant (line removed): killed.
+- **N3a: fixed as recommended.** `merge-base --is-ancestor <old> <new>` after the unmoved check; a failure of git itself also refuses (fail-closed). Two new cases (unrelated commit, older commit), each with the signature check forced to accept, so ancestry alone decides; mutant (check removed): both killed.
+- **False refusal on a good ceremony: none found.** A real checkpoint descends from the old anchor. 11 nodes passed on `5670dda9`: the full-ceremony test, the signing-children full run, the ordinary lockfile ceremony, the first-run tests, the unmoved and not-ahead tests, the verification test, the new N1 test.
+- **Nothing else changed a meaning.** The diff holds only these three edits and their tests.
+- **`--reviewed-commit`: `5670dda9`** is the last commit to edit the three code files, and I read the whole diff `e3cec581..5670dda9` above; the first diff `595cbfdc..e3cec581` was read in the pass above. The 189-test record and the certifying run are still pending.
