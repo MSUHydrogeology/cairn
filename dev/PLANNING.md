@@ -107,7 +107,7 @@ Maintainer, 2026-10-26, relayed by the Developer session:
   preset, axis and module values are written unquoted, because quoting fails the
   frozen differential oracle's byte comparison (a printable value containing `: `
   or ` #` makes a profile the loader refuses, on that line only). Each is
-  recorded in `bootstrap/SECURITY_MUTATIONS.md`. The Maintainer was asked
+  recorded in `bootstrap/_scaffold/SECURITY_MUTATIONS.md`. The Maintainer was asked
   whether to accept all three as documented residuals and answered:
 
   > "Accept all three (Recommended)"
