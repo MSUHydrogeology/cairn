@@ -547,3 +547,18 @@ def test_the_upgrade_guide_names_the_path_the_plan_line_prints(
     # Control: the same check finds a release, a version and a date.
     assert _release_version_or_date(
         section + " in the next release, version 1.2, by 2030") != []
+
+
+# --- Cairn's own tree -------------------------------------------------------
+
+def test_cairns_own_tree_tracks_no_handoff_file(tmp_path: Path) -> None:
+    """A session begun before the change can still write and commit the old
+    file, and nothing else flags it (it is living state, so the integrity
+    check skips it): this is the check that does."""
+    assert _git(ROOT, "ls-files", HANDOFF).stdout == ""
+    # Control: the same check in a repository that tracks one fails.
+    (tmp_path / "dev").mkdir()
+    assert _git(tmp_path, "init", "-q").returncode == 0
+    (tmp_path / HANDOFF).write_text("# note\n", encoding="utf-8")
+    _git(tmp_path, "add", HANDOFF)
+    assert _git(tmp_path, "ls-files", HANDOFF).stdout.strip() == HANDOFF
