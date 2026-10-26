@@ -1,7 +1,7 @@
 # Plan: Engine batch, the install report by profile and the slots an upgrade adds
 
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-engine-batch-f8-slots.md](../proposals/archive/2026-10-26-claude-engine-batch-f8-slots.md)
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: The install report moves the slots of modules a profile did not install to their own list (2 of 22 on `solo-greenfield`), and `upgrade --plan` and `--stage` name the slots an upgrade adds, with every printed `detail` made terminal-safe.
@@ -43,9 +43,6 @@ plan's *Scope* must name the doctrine-surface touched (or an explicit
 <!-- cairn:end documentation-tier-home -->
 
 Descriptive layer only (`docs/quickstart.md`, `bootstrap/UPGRADE.md`) plus `CHANGELOG.md`. No `doctrine/` file and no `AGENTS.md`.
-
-Proposed paths:
-* `bootstrap/tests/test_upgrade_added_slots.py`
 
 ## Sequence
 
@@ -269,3 +266,78 @@ Each cited line was opened in the current tree first (`config.py:180-183` and `:
 | P5 | Accepted. Under `--stage`, the whole of stdout is checked | C2.6 |
 
 Status is `ready-to-implement`. The Security Review obligation (the clause in the header) is cleared by the pass at commit 98517e68; the review round was a single round, and the Maintainer decided P3.
+
+## Implementation verification -- Claude (Implementation, Sonnet 5.5) -- 2026-10-26
+
+**Conclusion.** C1 to C3 are committed and their acceptance criteria hold on the evidence below. The plan's own scoped record is green: 1,178 tests passed, 0 failed, 0 skipped, in a clean copy of the final commit. Two things to read before trusting that. The AST changed set is the plan's four symbols plus one that another session's repair moved (`_write_init_lock_profile_template`, commit `5e66c74d`, after S0), so "four CHANGED" is not literally true; the accounting is in the S0 and S1 section. And `test_ast_attest.py` is red, as the plan expected until C5. **Certified by**: pending.
+
+**Boundary B mode**: full. The scaffold engine is a named high-risk surface, so bounded mode refuses (`AGENTS.md`). The full suite was not run and `CAIRN_FULL_SUITE` was never set; the next certifying run covers it. This record is scoped: the Boundary A sets the plan maps, the standing gates and the plan-specific commands.
+
+**Tested commit**: `62ade21014b8f9addff7dfcfc68b978d85da34e2` (C3, the last implementation commit).
+**Reviewed range**: base `65894797cb4401ef8f6b57e1233836b2af576457` (the commit that opened C1, before any C1 edit) to the tested commit. This plan's commits in it: C1 tests `e976524b`, C1 code `24400219`, C2 tests `dd9dcd19`, C2 code `47366b20`, C3 `62ade210`. The same range holds commits from other sessions, none of them this plan's: `5e66c74d` and `fb45584e` (the lockfile-path repair, which changed `_write_init_lock_profile_template` in `upgrade.py`), plus edits to other tests, `scripts/` and `dev/`.
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13, `PYTHONDONTWRITEBYTECODE=1`.
+**Pre-run and post-run state**: every run was in a detached `git worktree` of the tested commit (and of the range base, for the two byte comparisons), under the session scratch folder. `git status --short` there printed nothing before and after the runs, and `git rev-parse HEAD` printed the tested commit. The shared tree carried other sessions' uncommitted edits, which is why I did not run there. The scratch worktrees are removed.
+
+| Command (in the tested-commit copy) | Exit | Outcome | Elapsed |
+|---|---|---|---|
+| `pytest` on the 21 files of the plan's Boundary A sets for C1, C2 and C3: `test_install_report_slots`, `test_upgrade_added_slots`, `test_install_module`, `test_first_session_report`, `test_quickstart_sequence`, `test_security_leaf`, `test_upgrade`, `test_merge_module`, `test_slotmerge_leaf`, `test_upgrade_module`, `test_upgrade_module_additions`, `test_skills_upgrade`, `test_upgrade_lockfile_path_containment`, `test_upgrade_refuses_hostile_project_data`, `test_upgrade_side_door_parity`, `test_drift_surfacing`, `test_fork_advisory`, `test_verify_integrity`, `test_review_stance_in_shipped_files`, `test_security_lint`, `test_verification_boundaries` | 0 | 1,178 passed, 0 failed, 0 skipped, 0 xfailed, 0 xpassed (`-rsxX` reported none). `test_security_lint` ran Bandit; no skip. Of these, `test_upgrade_added_slots.py` holds 25 and `test_install_report_slots.py` 8 | 104.6 s |
+| `pytest bootstrap/tests/test_ast_attest.py` | 1 | 2 failed, 28 passed. The two failures are `test_committed_baseline_accounted_for_across_the_engine_package` and `test_ast_gate_passes_over_the_full_scaffold_module_set`, both red until C5 re-anchors; see S0 and S1 | 0.2 s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 1 | neutrality fail=0 (41 info). redundancy fail=1: `scripts/repin.py:568: R6 def apply_pin is never referenced`. That file is another session's plan (`repin-build`), not in this plan's range; the same finding appeared in the shared tree before I committed anything | not timed (a few seconds) |
+| `scaffold.py --manifest` at the range base and at the tested commit, then `cmp` | 0 and 0, `cmp` 0 | byte-identical, 7,583 bytes each | not timed |
+| `git diff 65894797 62ade210 -- bootstrap/_scaffold`, searched for added or removed lines that start with `import` or `from` | 1 (no match) | none found: no import added or changed in any engine file (control: the same search over `bootstrap/tests` finds the new test files' imports) | not timed |
+| `python scripts/claim_check.py` on `bootstrap/UPGRADE.md`, `CHANGELOG.md`, `docs/quickstart.md` | 0 | no flags on each | not timed |
+| `python scripts/check_cairn.py` and `python scripts/link_check.py` on `bootstrap/UPGRADE.md` and `CHANGELOG.md` | 0 | no issues (CHANGELOG: 2 external links not probed) | not timed |
+| `python bootstrap/tests/_gate_manifest.py verify` (read-only) | 1 | HOLD, 104 violations (8 `FROZEN-MODIFIED`, 8 `FROZEN-OID`, 88 `SKIP-XFAIL-NEW`, 0 `FROZEN-MISSING`, 0 `COLLECTION-DROPPED`), none in a path this plan edited. It is the stale manifest the board's queued re-anchor row already records: the frozen files named (`test_quickstart_sequence.py`, `test_review_stance_in_shipped_files.py`, `test_board_json_contract.py`, `scripts/check_cairn.py`, `scripts/link_check.py`) were last changed by other work (`git diff --name-only 65894797 62ade210` names none of them). The two new test files show as `FROZEN-NEW`, which is allowed | not timed |
+
+**Disposition of every non-pass.** `test_ast_attest.py` (2 failed): expected until C5, the Maintainer-run re-anchor. `redundancy fail=1`: another session's file, reported to the board, not touched here. `_gate_manifest.py verify` HOLD: stale before this plan, the Maintainer's re-anchor at the 0.5 cut. No skip, xfail or xpass appears in any run of the plan's tests.
+
+**S0 and S1 (read-only `_ast_attest.py verify`, 3.13.13).** S0 is in the C1 tests commit body (`e976524b`): CHANGED `_apply_upgrade`, `_behind_by_n`, `_resolve_vendor_wrapper`, `_self_heal_profile_config`, `cmd_upgrade`; known-new digest mismatches `_check_lockfile_paths`, `_contained_lockfile_path`, `_lockfile_refusal`. I re-ran it at the range base to be sure the list is reproducible: the same five and three. S1 on the tested commit adds exactly five CHANGED names to S0: `print_report` (`install.py`), `main` (`cli.py`), `merge_file` (`merge.py`), `_print_upgrade_report` (`upgrade.py`) and `_write_init_lock_profile_template` (`upgrade.py`). The first four are this plan's. The fifth is not: `git diff 65894797 62ade210 -U0 -- bootstrap/_scaffold/upgrade.py` shows its only hunk at line 1320 inside that function, from `5e66c74d`, which landed after S0 was taken and is the Developer session's F1 repair named in the C2 brief. No NEW symbol beyond the three known-new names; no `Assign`, `ClassDef` or `FunctionDef` is added by this plan. The sorted `note: NEW Import` lines are identical before and after (36 each). C5's derivation should expect S1 minus the lockfile-path set, not "four".
+
+**Plan-specific acceptance, by criterion.**
+* **C2.1** `test_plan_and_stage_name_a_slot_the_upgrade_adds[--plan|--stage]` passes; `test_file_without_added_slot_prints_no_new_slot_line` and `test_new_core_file_names_no_slot` pass before and after (pins).
+* **C2.2** `test_slot_the_adopter_deleted_is_not_named`, `test_slot_the_adopter_already_has_is_not_named`: mutants below.
+* **C2.3** `test_detail_is_empty_or_exactly_the_name_list_on_clean_and_conflict`; `test_needs_value_slot_removed_and_error_carry_no_names` (a pin: names are absent before and after).
+* **C2.4** `test_lockfile_token_value_carrying_a_slot_pair_adds_no_name`. A second test the plan did not list, `test_lockfile_token_value_in_the_old_template_hides_no_name`, was added after a mutant survived (below).
+* **C2.5** measured line lengths, through `merge_file` and the print format: one 1 MB name, 165 characters; 1,000 slots, 208 (10 names, `(and 990 more)`); 11 names of 80 non-BMP characters, 8,116 (the names part is 8,018, at the plan's bound, not over it); 10 names of 80 backslashes, 1,673 (above 1,200, as the plan's second statement allows).
+* **C2.6** `test_every_flag_and_new_slot_line_is_printable_ascii`, three fixtures by two flags; each asserts its line present before judging its bytes, and reads all of stdout for ESC and U+202E. The review-only site is `test_review_only_detail_is_escaped_when_printed` (the one direct call). The `detail` print sites from the tree (`grep -n "\.detail" bootstrap/_scaffold/*.py`): `upgrade.py:596` (stores it), `:892`, `:897` (the new line) and `:908`; escape removed at each of the three print sites in a separate copy, each killed (below).
+* **C2.7** `test_malformed_adopter_file_still_reports_error_never_clean`, `test_malformed_old_base_keeps_its_status_and_prints_no_name` (`conflict`, with the new slot placed next to the broken one), `test_tree_without_base_copy_names_nothing`, `test_renamed_filled_slot_stays_slot_removed_and_names_no_new_slot`: all pins, all pass before and after.
+* **C2.8** the `except` in `merge.py` names `SlotError` only; no import line in the diff (above); `note: NEW Import` lines identical.
+* **C2.9** `test_security_leaf.py` passes unchanged (in the 1,178); the manifest is byte-identical (above).
+* **C1.8** `scaffold.py --manifest` byte-identical (above); `git diff 65894797 62ade210 -- bootstrap/_scaffold/SECURITY_MUTATIONS.md` shows two hunks, from `5e66c74d` and `fb45584e`, which are the Developer's repair, not a write by this plan (`git log` over that file in the range names only those two).
+* **C3** `UPGRADE.md` sentence and `CHANGELOG.md` entry: both say "escapes", neither says ASCII prints unchanged. Lockfile: `grep '"dst"' dev/.cairn/cairn-lock.yml | grep -i "quickstart\|UPGRADE\|CHANGELOG\|_scaffold"` finds nothing (73 records; the same grep for `AGENTS.md` finds 1, so the pattern can match), so no `--finalize` is owed. The `UPGRADE.md` text is two short sentences, not one: the second carries the escape and the ten-name cap that C3.2 asks for.
+
+**Control runs (the two-commit rule).** C1: commit `e976524b` ran 4 failed, 4 passed on the unchanged engine. C2: commit `dd9dcd19` ran 15 failed, 8 passed on the unchanged engine; the 8 that passed are the pins named above. After the code, 23 passed; two tests added in the code commit (25 total): the old-template token test fails on the engine as it stood before the C2 code (checked in a scratch copy with the two engine files restored from `dd9dcd19`), the new-text token test is a pin.
+
+**Mutants, C2** (detached scratch worktree of the tested range, each against an unmutated control that passed 25 of 25; the worktree was removed). All 15 killed.
+
+| Mutant | Result | Test that failed |
+|---|---|---|
+| drop the old-base subtraction | killed | `..._adopter_deleted_is_not_named` |
+| drop the adopter subtraction | killed | `..._adopter_already_has_is_not_named` |
+| parse the token-filled new text for names | killed | `..._token_value_carrying_a_slot_pair_adds_no_name` |
+| read the old names from the token-filled base | **survived**, then killed once `..._token_value_in_the_old_template_hides_no_name` was added | that test |
+| parse the adopter file inside the new `try` | killed | `test_malformed_adopter_file_still_reports_error_never_clean` and the two malformed-adopter-file print cases |
+| catch the strict parse of the token-filled new text | **survived**, then killed once `..._token_value_that_breaks_the_new_text_still_reports_error` was added | that test |
+| escape removed at the `[flag]` line | killed | 4 of the 6 printable-ASCII cases |
+| escape removed at the review-only line | killed | `test_review_only_detail_is_escaped_when_printed` |
+| escape removed at the `[new slot]` line | killed | the added-slot cases under `--plan` and `--stage` and the longest-escape bound |
+| 11 names | killed | the bound and the `(and N more)` tests |
+| cut at 81 characters | killed | the 80-character test |
+| no cut | killed | the 80-character test |
+| no `(and N more)` | killed | the bound and the `(and N more)` tests |
+| `[new slot]` for any kind that has a detail, and a second, narrower widening | killed (both) | `test_new_core_file_names_no_slot`, the renamed-slot, malformed-adopter and no-base tests |
+
+Mutants of C1 are in `24400219`'s commit body (4 killed). I did not re-run them.
+
+**Smoke checks.** (1) `scaffold.py --config bootstrap/profiles/solo-greenfield.yml --target <scratch> --allow-dev --non-interactive` exits 0 and prints `Block slots requiring agent attention (20)` with 20 lines, then `Slots for modules this profile did not install (2)` with `role-roster-additions` (suppliers `domain-agents, legacy-agent, security-review, issue-capture, model-selection`) and `coordination-additions` (`coordination-tiers`), and the closing "Mark each `N/A`" line once. `verify_integrity.py --target <scratch>` exits 0 and says `slots checked 22, listed 20`: 20 plus 2 is 22. (2) The upgrade reproduction on the built code: a copy of `templates/` with `example-added-slot` appended to `core/dev/README.md`, `upgrade --plan` and `--stage` against that install each print `  [new slot] dev/README.md: example-added-slot -- new in this upgrade. Fill it, or write N/A: <reason>.`; the same `--plan` against the unchanged templates prints no `[new slot]` line (count 0).
+
+**Known omissions.**
+* The full suite was not run; this plan stays uncertified until a certifying run.
+* `--apply` was not exercised: the plan says it names nothing, and no test asserts `--apply` output.
+* `--to <ref>`, `--adopt-collisions` and `--adopt-module` were not run with a changed template. `merge_file` has one caller (`upgrade.py:574`), and the report function is called from the stage and plan paths only.
+* The terminal was not driven: "printable ASCII" is checked on the captured text, not on a screen, and a Windows console and a localized `git merge-file` message were not tried (the error text prints as escapes).
+* The `[new slot]` line prints `fp.dst` raw, as every other line does; a path with an invisible character is the lockfile-path batch's, not this plan's.
+* `test_install_report_slots.py` mutants were not re-run here; `docs/quickstart.md` has no new check beyond the frozen quickstart test (in the 1,178).
+* The `CHANGELOG.md` entry links the plan at `dev/plans/engine-batch-f8-slots.md`; the archive commit must repoint it to `dev/plans/archive/` (the template says the archive writes its own entry, so it may also fold or replace this one).
+* Raw prints at `install.py:1526`, `:1668` and `cli.py:359`, `:590` are untouched, as the plan's Out line says.
+* The three line cites in the plan's Scope moved: `merge_file` is at `merge.py:176` (3 lines for the corrected field comment), the strict parses at `:211` and `:213`, `_print_upgrade_report` stayed at `upgrade.py:846`, its `[flag]`, new and review-only prints at `:892`, `:897`, `:908`, and the plan's two call sites at `upgrade.py:2838` and `:2866`.
