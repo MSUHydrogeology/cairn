@@ -131,6 +131,15 @@ Maintainer, 2026-10-26, relayed by the Developer session:
      `isprintable()`.
   3. **`bootstrap/_scaffold/install.py` prints unknown profile module names
      unescaped** (about line 1526).
+  4. **The install report prints profile-supplied slot names raw**
+     (`bootstrap/_scaffold/install.py` about line 1668, and `cli.py` about
+     lines 359 and 590). Found by the engine-batch plan's Security Review: a
+     profile's token value can add slot names. Only bidirectional and invisible
+     characters get through, because the profile loader refuses control
+     characters (`config.py` about lines 180-183). It predates the engine batch,
+     which leaves it out on purpose. Authorization to queue it, verbatim:
+
+     > "Queue it on the security row"
 * **Overlap with the engine batch.** Both change functions in `upgrade.py` and
   `lockfile.py`. One fixer holds both, or they run in sequence, never in
   parallel on the same functions. Both add engine symbols to the single 0.5 AST
@@ -333,6 +342,24 @@ changed set from the final committed tree.
   `dev/strategy/2026-08-28-claude-repin-revitalization.md` to a reviewed proposal
   before building `repin`. Until then corrections remain manual. A called
   outside read is the Maintainer's choice, not a standing requirement.
+* **The session-start tool passes a child process's output through unescaped.**
+  Three raw `proc.stderr` pass-throughs and the child's stdout in
+  `tools/session.py` (and its twin `templates/skills/_lib/session.py`) are not
+  encoded. Found by the code review of the session-write fixes; the Security
+  Review's finding listed seven sites and the fix matched it, so this is a gap
+  past the finding, not a miss in the fix. Authorization to queue it, verbatim:
+
+  > "Yes, queue it (Recommended)"
+
+* **The board's Maintainer list and the status advisory disagree on a status
+  such as `awaiting-decision-x`.** The advisory flags it as unknown; the board's
+  `--maintainer` view still lists it as a wait. Making the board strict would
+  edit the frozen golden and the waits-recipe test (`test_board_json_contract.py`)
+  and fold into the re-anchor owed at the cut. The Maintainer chose to leave it.
+  Recorded so the disagreement is a known edge, not a surprise. Answer, verbatim:
+
+  > "Leave the disagreement"
+
 * **The gate anchor has no signature.** `refs/cairn/gate-anchor` points to
   commit `6f29519d`, and git reports no signature on it (signature status `N`;
   `git verify-commit` exits 1; the control `git tag -v v0.4.0` exits 0, measured
