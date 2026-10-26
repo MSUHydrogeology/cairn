@@ -101,6 +101,8 @@ own obligation. The usual pass never clears the second.
 In a proposal review, `**Tier**: Security Review` names that obligation; the
 skeleton does not call for a separate `**Obligation**` line.
 
+**Write for the reader.** Follow Cairn Plain Language (the section of `dev/agent_collaboration.md`): conclusion first, and measured, assumed and expected claims kept apart.
+
 ## Keep the proposal short
 
 The proposal stays one file. Keep what goes in it small.

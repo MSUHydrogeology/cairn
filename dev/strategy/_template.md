@@ -13,6 +13,8 @@
 > *lifecycle*, and *status × type validity* is [`README.md`](README.md); this
 > template only carries the shape.
 
+**Write for the reader.** Follow Cairn Plain Language (the section of `dev/agent_collaboration.md`): conclusion first, and measured, assumed and expected claims kept apart.
+
 ## What a strategy note is (and the one rule that defines it)
 
 `dev/strategy/` is the project's **Stage-0 "explore before you commit"**

@@ -27,6 +27,10 @@ the repository, so work can continue across sessions, tools, and collaborators.
 - Project instructions and templates that agents can read and you can edit.
 - A way to discuss substantial changes before committing to their implementation.
 - Written reviews that question assumptions and check the work against evidence.
+- A plain-language writing standard for how agents report to you:
+  [Cairn Plain Language](docs/plain-language.md) puts the conclusion first,
+  keeps what was measured apart from what was assumed, and says what was not
+  checked.
 - Guidance for testing, documentation, security, and scientific-software practice.
 - A versioned record of decisions, unfinished work, and context for the next session.
 - Installation and update tools for adapting the method to a particular project.
@@ -118,11 +122,6 @@ mistake on purpose and records that the check fails. The
 the check must state.
 
 ![A test written from the same understanding as the code can share its mistake: with an outflow sign reversed in both, they agree and the test passes. One check whose expected answer comes from elsewhere, such as an analytical solution, a conservation law aimed at the risk, a trusted observation, an independent implementation or an expert's expectation written down first, disagrees with the code and shows the mistake.](docs/assets/independent-scientific-check.svg)
-
-Agents also write what a scientist has to review. [Cairn Plain Language](docs/plain-language.md)
-is a 17-rule writing standard that installs with Cairn: conclusion first,
-measured claims kept apart from assumed ones, uncertainty as a number with its
-source, and the agent saying what it did not check.
 
 The [scientific example](examples/scientific-minimal/) shows the workflow around
 a mass-balance test. [The rationale](doctrine/rationale.md) explains the research

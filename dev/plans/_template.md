@@ -123,6 +123,8 @@ pass whose `**Obligation**` line matches clears it, never an ordinary Internal
 pass. No tool reads that line: the next reviewer, the code reviewer and the
 Maintainer check it.
 
+**Write for the reader.** Follow Cairn Plain Language (the section of `dev/agent_collaboration.md`): conclusion first, and measured, assumed and expected claims kept apart.
+
 ## Keep the plan short
 
 The plan stays one file. Keep what goes in it small.
