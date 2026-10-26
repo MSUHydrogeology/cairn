@@ -132,9 +132,8 @@ the artifact and committed, not a conversation that leaves no record.
 what is to be reviewed before handing it over (locally; committing is not
 pushing), and the review names that commit. In a working tree it shares with
 an author, a reviewer makes one write: its own review record, appended to the
-artifact or created as its own review file (plus the artifact's Status line,
-where the review moves it), claimed first if the project uses file claims,
-and committed by explicit path. Nothing else: no other edits, and no
+artifact (plus the artifact's Status line, where the review moves it), claimed
+first if the project uses file claims, and committed by explicit path. Nothing else: no other edits, and no
 `restore`, `checkout`, `stash`, `reset` or `clean`. Anything else that writes,
 such as a mutation or a scratch install, runs in a separate copy of the
 reviewed commit, in a fresh, empty folder every time: a detached
