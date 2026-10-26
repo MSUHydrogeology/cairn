@@ -11,7 +11,11 @@ works in:
   tracks it, because a branch checkout silently replaces an ignored file;
 * "the same file" is decided by asking the disk (device and inode), not only by
   comparing folded names, because disks differ in which spellings they treat as
-  one name, and the refusal names the entry git actually tracks;
+  one name, and the refusal names the entry git actually tracks, in the command
+  it gives for removing it too;
+* a disk that reports inode 0 for every file gives no identity to compare, and a
+  disk that will not answer about the binding is a refusal worded for the disk,
+  not for git;
 * a binding whose bytes are not text, or whose interpreter text cannot be a
   path, is a refusal and never a Python traceback;
 * every value a project can choose (a folder name, a file name, text inside an
@@ -98,6 +102,26 @@ def _bind(root: Path, interpreter: str) -> Path:
     return cfg
 
 
+TRACKED_OPENING = "dev/.cairn/local-env.json is tracked by git"
+
+
+def _project_whose_other_branch_tracks_the_interpreter(tmp_path: Path, name: str):
+    """A project on `main` where `env/bin/python3` is an ignored file; branch
+    `other` tracks that path, so `git checkout other` overwrites the file in
+    place.  Returns the project and the program as it stands on `main`."""
+    root = _repo(tmp_path, name)
+    (root / ".gitignore").write_text("env/\ndev/.cairn/\n", encoding="utf-8")
+    (root / "f.txt").write_text("x", encoding="utf-8")
+    _git(root, "add", "-A")
+    _git(root, "commit", "-q", "-m", "base")
+    _git(root, "checkout", "-q", "-b", "other")
+    _executable(root / "env" / "bin" / "python3")
+    _git(root, "add", "-f", "--", "env/bin/python3")
+    _git(root, "commit", "-q", "-m", "tracks the interpreter")
+    _git(root, "checkout", "-q", "main")
+    return root, _executable(root / "env" / "bin" / "python3")
+
+
 def _stub_listing(monkeypatch, *entries: str) -> None:
     """Make the one `git ls-files` question answer with these entries
     (`<mode> <path>`); anything else still runs for real."""
@@ -126,18 +150,7 @@ def test_a_checkout_that_replaces_an_in_project_interpreter_makes_it_untrusted(t
     that tracks that path overwrites it without a word.  Before the checkout the
     untracked program is used (the control); after it, git vouches for the
     path and the kernel falls back."""
-    root = _repo(tmp_path)
-    (root / ".gitignore").write_text("env/\ndev/.cairn/\n", encoding="utf-8")
-    (root / "f.txt").write_text("x", encoding="utf-8")
-    _git(root, "add", "-A")
-    _git(root, "commit", "-q", "-m", "base")
-    # the branch "other" tracks env/bin/python3; on main it is an ignored file
-    _git(root, "checkout", "-q", "-b", "other")
-    _executable(root / "env" / "bin" / "python3")
-    _git(root, "add", "-f", "--", "env/bin/python3")
-    _git(root, "commit", "-q", "-m", "tracks the interpreter")
-    _git(root, "checkout", "-q", "main")
-    program = _executable(root / "env" / "bin" / "python3")
+    root, program = _project_whose_other_branch_tracks_the_interpreter(tmp_path, "project")
     _bind(root, str(program))
 
     assert lifecycle._resolve_interpreter(root) == (str(program), "local-env.json")
@@ -172,6 +185,69 @@ def test_an_interpreter_outside_the_project_is_not_looked_up(tmp_path, monkeypat
     assert lifecycle._binding_untrusted(root, cfg, program) is None
 
 
+@pytest.mark.parametrize("respell", [str.lower, str.upper], ids=["lower", "upper"])
+def test_a_checkout_is_noticed_when_the_binding_spells_the_project_folder_in_another_case(
+        tmp_path, respell):
+    """On a disk that opens `CaseProj` and `caseproj` as one folder, the binding
+    can name the program with the folder spelled either way, while git reports
+    the spelling on disk.  The in-project test must not depend on the spelling."""
+    if not _disk_ignores_letter_case(tmp_path):
+        pytest.skip("this disk tells letter cases apart")
+    root, program = _project_whose_other_branch_tracks_the_interpreter(tmp_path, "CaseProj")
+    spelled = tmp_path.resolve() / respell("CaseProj") / "env" / "bin" / "python3"
+    assert spelled != program and spelled.is_file()
+    _bind(root, str(spelled))
+
+    assert lifecycle._resolve_interpreter(root) == (str(spelled), "local-env.json")
+
+    _git(root, "checkout", "-q", "other")
+    assert lifecycle._resolve_interpreter(root) == (sys.executable, "fallback-untrusted")
+
+
+@pytest.mark.parametrize("entry", ["Env/bin/python3", "ENV/BIN/PYTHON3"])
+def test_an_interpreter_is_found_whatever_case_the_index_spells_its_folder(tmp_path, monkeypatch, entry):
+    """Both sides of the comparison are folded.  The folder is `Env` on disk, so a
+    side left unfolded would not meet the folded index entry, even when the two
+    are spelled alike."""
+    root = _repo(tmp_path)
+    program = _executable(root / "Env" / "bin" / "python3")
+    cfg = _bind(root, str(program))
+    _stub_listing(monkeypatch, f"100755 {entry}")
+    assert lifecycle._binding_untrusted(root, cfg, program) == lifecycle._INTERPRETER_TRACKED
+
+
+def test_an_in_project_interpreter_is_found_when_the_project_is_reached_through_a_link(
+        tmp_path, monkeypatch):
+    """The binding spells the program by its real path; the kernel is started in
+    the project through a link.  The project's own path is resolved before the
+    program is looked for under it."""
+    real = _repo(tmp_path)
+    program = _executable(real / "env" / "bin" / "python3")
+    link = tmp_path.resolve() / "link"
+    link.symlink_to(real, target_is_directory=True)
+    _bind(real, str(program))
+    _stub_listing(monkeypatch, "100755 env/bin/python3")
+
+    assert lifecycle._resolve_interpreter(link) == (sys.executable, "fallback-untrusted")
+
+
+def test_the_same_project_through_a_link_still_trusts_a_program_git_does_not_list(
+        tmp_path, monkeypatch):
+    real = _repo(tmp_path)
+    program = _executable(real / "env" / "bin" / "python3")
+    link = tmp_path.resolve() / "link"
+    link.symlink_to(real, target_is_directory=True)
+    _bind(real, str(program))
+    _stub_listing(monkeypatch, "100755 env/bin/python3x")
+
+    assert lifecycle._resolve_interpreter(link) == (str(program), "local-env.json")
+
+
+def _disk_ignores_letter_case(tmp_path: Path) -> bool:
+    (tmp_path / "CaseProbe").mkdir()
+    return (tmp_path / "caseprobe").exists()
+
+
 # --- "the same file" is decided by the disk -----------------------------------
 
 
@@ -190,8 +266,10 @@ def test_a_tracked_entry_that_is_the_same_file_under_another_name_is_found_by_id
     _alias_beside(cfg, "aliasㅤ.json")
     _stub_listing(monkeypatch, "100644 dev/.cairn/aliasㅤ.json")
     reason = lifecycle._binding_untrusted(root, cfg)
-    assert reason is not None and reason.startswith(lifecycle._BINDING_TRACKED)
+    assert reason is not None and reason.startswith(TRACKED_OPENING)
     assert "git tracks it as dev/.cairn/alias\\u3164.json" in reason
+    assert "git rm dev/.cairn/alias\\u3164.json" in reason
+    assert "git rm dev/.cairn/local-env.json" not in reason
     _assert_inert(reason)
 
 
@@ -203,24 +281,43 @@ def test_a_separate_file_of_the_same_folder_is_not_taken_for_the_binding(tmp_pat
     assert lifecycle._binding_untrusted(root, cfg) is None
 
 
-def test_a_submodule_entry_that_is_the_same_folder_by_identity_is_found(tmp_path, monkeypatch):
-    """A gitlink named so that a name fold cannot equate it with `dev`, but whose
-    folder the disk says is `dev`."""
+@pytest.mark.parametrize("folder, entry, shown", [
+    (("dev",), "de\u200cv", "de\\u200cv"),
+    (("dev", ".cairn"), "dev/.ca\u200cirn", "dev/.ca\\u200cirn"),
+], ids=["dev", "dev-cairn"])
+def test_a_submodule_entry_that_is_the_same_folder_by_identity_is_found(
+        tmp_path, monkeypatch, folder, entry, shown):
+    """A gitlink named so that a name fold cannot equate it with `dev` (one part)
+    or `dev/.cairn` (two parts), but whose folder the disk says is that one."""
     root = _repo(tmp_path)
     cfg = _bind(root, "/usr/bin/true")
     real_lstat = os.lstat
-    dev = real_lstat(root / "dev")
+    held = real_lstat(root.joinpath(*folder))
 
     def lstat(path, *args, **kwargs):
-        if Path(path) == root / "de‌v":
-            return dev
+        if Path(path) == root / entry:
+            return held
         return real_lstat(path, *args, **kwargs)
 
-    _stub_listing(monkeypatch, "160000 de‌v")
+    _stub_listing(monkeypatch, f"160000 {entry}")
     monkeypatch.setattr(lifecycle.os, "lstat", lstat)
     reason = lifecycle._binding_untrusted(root, cfg)
     assert reason is not None and reason.startswith(lifecycle._BINDING_IN_SUBMODULE)
-    assert "git tracks it as de\\u200cv" in reason
+    assert f"git tracks it as {shown}" in reason
+
+
+def test_a_tracked_entry_deeper_than_three_parts_is_not_taken_for_the_binding_by_identity(
+        tmp_path, monkeypatch):
+    """Only an entry of exactly three parts can be a name of the binding's own
+    folder; a hard link further down is another file that happens to share the
+    bytes, and it cannot carry a checkout into the binding."""
+    root = _repo(tmp_path)
+    cfg = _bind(root, "/usr/bin/true")
+    deeper = cfg.parent / "sub" / "alias.json"
+    deeper.parent.mkdir()
+    os.link(cfg, deeper)
+    _stub_listing(monkeypatch, "100644 dev/.cairn/sub/alias.json")
+    assert lifecycle._binding_untrusted(root, cfg) is None
 
 
 def test_the_exact_name_gives_the_reason_without_a_second_name(tmp_path, monkeypatch):
@@ -235,8 +332,113 @@ def test_a_name_that_only_a_fold_equates_is_named_in_the_reason(tmp_path, monkey
     cfg = _bind(root, "/usr/bin/true")
     _stub_listing(monkeypatch, "100644 DEV/.Cairn/Local-Env.JSON")
     reason = lifecycle._binding_untrusted(root, cfg)
-    assert reason is not None and reason.startswith(lifecycle._BINDING_TRACKED)
+    assert reason is not None and reason.startswith(TRACKED_OPENING)
     assert "git tracks it as DEV/.Cairn/Local-Env.JSON" in reason
+    assert "git rm DEV/.Cairn/Local-Env.JSON" in reason
+    assert "git rm dev/.cairn/local-env.json" not in reason
+
+
+def test_a_submodule_named_in_another_letter_case_is_named_in_the_reason(tmp_path, monkeypatch):
+    root = _repo(tmp_path)
+    cfg = _bind(root, "/usr/bin/true")
+    _stub_listing(monkeypatch, "160000 DEV")
+    reason = lifecycle._binding_untrusted(root, cfg)
+    assert reason is not None and reason.startswith(lifecycle._BINDING_IN_SUBMODULE)
+    assert "git tracks it as DEV." in reason
+
+
+# --- a disk that does not answer ------------------------------------------------
+
+
+def _fail_once_the_link_check_has_passed(monkeypatch, function: str, target: Path) -> None:
+    """Make `os.<function>(target)` raise, but only after `_assert_not_linked` has
+    returned, so the failure falls where the binding's own identity is read."""
+    checked = []
+    real_check = lifecycle._assert_not_linked
+    real = getattr(os, function)
+
+    def check(*args, **kwargs):
+        real_check(*args, **kwargs)
+        checked.append(True)
+
+    def failing(path, *args, **kwargs):
+        if checked and Path(path) == target:
+            raise PermissionError(13, "Permission denied", str(path))
+        return real(path, *args, **kwargs)
+
+    monkeypatch.setattr(lifecycle, "_assert_not_linked", check)
+    monkeypatch.setattr(lifecycle.os, function, failing)
+
+
+@pytest.mark.parametrize("function, parts", [
+    ("stat", ("dev", ".cairn", "local-env.json")),
+    ("lstat", ("dev",)),
+    ("lstat", ("dev", ".cairn")),
+], ids=["binding", "dev", "dev-cairn"])
+def test_a_disk_that_cannot_be_asked_about_the_binding_is_a_refusal_worded_for_the_disk(
+        tmp_path, monkeypatch, function, parts):
+    """An unanswered question is not an answer of "no": the binding is not used.
+    The words must not blame git, which was never asked."""
+    root = _repo(tmp_path)
+    cfg = _bind(root, "/usr/bin/true")
+    _stub_listing(monkeypatch)
+    _fail_once_the_link_check_has_passed(monkeypatch, function, root.joinpath(*parts))
+
+    reason = lifecycle._binding_untrusted(root, cfg)
+
+    assert reason is not None, "a disk that gave no answer was taken for 'trusted'"
+    assert not reason.startswith("could not ask git")
+    assert reason == lifecycle._BINDING_DISK_UNANSWERED
+
+
+def test_the_warning_for_a_disk_that_cannot_be_asked_says_so(tmp_path, monkeypatch, capsys):
+    root = _repo(tmp_path)
+    program = _executable(root / "env" / "bin" / "python3")
+    _bind(root, str(program))
+    _stub_listing(monkeypatch)
+    _fail_once_the_link_check_has_passed(
+        monkeypatch, "stat", root / "dev" / ".cairn" / "local-env.json")
+
+    assert lifecycle._resolve_interpreter(root) == (sys.executable, "fallback-untrusted")
+    err = capsys.readouterr().err
+    assert "the disk would not answer" in err
+    assert "could not ask git" not in err
+
+
+# --- a disk that reports inode 0 ------------------------------------------------
+
+
+def _report_inode_zero(monkeypatch) -> None:
+    for name in ("stat", "lstat"):
+        def zeroed(path, *args, _real=getattr(os, name), **kwargs):
+            st = _real(path, *args, **kwargs)
+            return os.stat_result((st.st_mode, 0, st.st_dev, st.st_nlink, st.st_uid,
+                                   st.st_gid, st.st_size, int(st.st_atime),
+                                   int(st.st_mtime), int(st.st_ctime)))
+        monkeypatch.setattr(lifecycle.os, name, zeroed)
+
+
+@pytest.mark.parametrize("record, make", [
+    ("100644 a/b/c.txt", "file"),
+    ("160000 x", "folder"),
+    ("160000 x/y", "folder"),
+], ids=["three-part-file", "one-part-gitlink", "two-part-gitlink"])
+def test_a_disk_that_reports_inode_zero_gives_no_identity_to_match(tmp_path, monkeypatch, record, make):
+    """Where every file has inode 0, an unrelated tracked path would otherwise
+    "be" the binding.  Names are then the only test, and these names are not it."""
+    root = _repo(tmp_path)
+    cfg = _bind(root, "/usr/bin/true")
+    entry = record.split(" ", 1)[1]
+    if make == "file":
+        (root / entry).parent.mkdir(parents=True)
+        (root / entry).write_text("x", encoding="utf-8")
+    else:
+        (root / entry).mkdir(parents=True)
+    _stub_listing(monkeypatch, record)
+    assert lifecycle._binding_untrusted(root, cfg) is None   # real inodes: unrelated
+
+    _report_inode_zero(monkeypatch)
+    assert lifecycle._binding_untrusted(root, cfg) is None
 
 
 # --- a binding that is not text, an interpreter that is not a path -------------

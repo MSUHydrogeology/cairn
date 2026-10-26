@@ -713,13 +713,16 @@ def _probe_interpreter(interp: Path) -> str:
 #: only: nothing from the project or from git is put in them, so there is no
 #: text here to encode.  The remedy deletes the file as well as untracking it,
 #: because an untracked copy of a hostile binding would be trusted next run.
-_BINDING_TRACKED = (
+#: The one placeholder, ``{entry}``, is filled only by `_tracked_as`, with the
+#: index entry encoded.
+_BINDING_TRACKED_TEXT = (
     "dev/.cairn/local-env.json is tracked by git, so it came with the repository "
     "and was not written for this machine.  It was not used: this run uses the "
-    "current interpreter.  To fix it: git rm dev/.cairn/local-env.json (this "
+    "current interpreter.  To fix it: git rm {entry} (this "
     "deletes the file too), add it to .gitignore, commit, then re-run the Cairn "
     "scaffold install to write a binding for this machine."
 )
+_BINDING_TRACKED = _BINDING_TRACKED_TEXT.format(entry="dev/.cairn/local-env.json")
 _BINDING_LINKED = (
     "dev/.cairn/local-env.json is reached through a link, so it may not be the "
     "file written for this machine.  It was not used: this run uses the current "
@@ -743,6 +746,11 @@ _BINDING_UNVERIFIED = (
     "could not ask git whether dev/.cairn/local-env.json is tracked, so it was "
     "not used: this run uses the current interpreter.  Check that git works in "
     "this folder, then run again."
+)
+_BINDING_DISK_UNANSWERED = (
+    "the disk would not answer about dev/.cairn/local-env.json or the folders it "
+    "sits in, so it was not used: this run uses the current interpreter.  Check "
+    "that you can open dev/.cairn in this folder, then run again."
 )
 
 #: How long the question to git may take before it counts as "could not ask".
@@ -805,10 +813,12 @@ def _binding_untrusted(root: Path, cfg: Path,
     * an entry of the index is a submodule that holds the binding's path -- the
       files inside are another repository's, which this question cannot see;
     * *interpreter* (the program the binding names) lies inside the project and
-      git tracks it, or a submodule holds it: a checkout replaces an ignored
-      file in place, so the program could change without the binding changing; or
+      git tracks it, or a submodule holds it, both compared with the same fold:
+      a checkout replaces an ignored file in place, so the program could change
+      without the binding changing; or
     * git cannot answer -- not installed, an error, no answer in time, output
-      it does not understand.  An unanswered question is not an answer of "no".
+      it does not understand -- or the disk cannot answer about the binding or
+      its two folders.  An unanswered question is not an answer of "no".
 
     The question is one fixed argument list (no shell), run in *root* with
     `_binding_git_env()`, stdin closed, a time limit.
@@ -822,14 +832,16 @@ def _binding_untrusted(root: Path, cfg: Path,
         dev_id = _identity(os.lstat(root / _CAIRN_STATE_DIR[0]))
         state_id = _identity(os.lstat(_state_dir(root)))
     except OSError:
-        return _BINDING_UNVERIFIED
+        return _BINDING_DISK_UNANSWERED
     interpreter_target: Optional[str] = None
     if interpreter is not None:
         try:
-            interpreter_target = _canonical_caseless(
-                Path(interpreter).relative_to(root.resolve()).as_posix())
+            root_prefix = _canonical_caseless(root.resolve().as_posix()).rstrip("/") + "/"
         except (OSError, ValueError):
-            interpreter_target = None
+            root_prefix = None
+        folded_interpreter = _canonical_caseless(Path(interpreter).as_posix())
+        if root_prefix is not None and folded_interpreter.startswith(root_prefix):
+            interpreter_target = folded_interpreter[len(root_prefix):]
     try:
         proc = subprocess.run(
             ["git", "ls-files", "-z", "--cached", "--stage"],
@@ -857,13 +869,12 @@ def _binding_untrusted(root: Path, cfg: Path,
         parts = entry.split("/")
         gitlink = head.split(b" ", 1)[0] == b"160000"
         if folded == target:
-            return _BINDING_TRACKED if entry == _BINDING_RELATIVE else _named(
-                _BINDING_TRACKED, entry)
+            return _BINDING_TRACKED if entry == _BINDING_RELATIVE else _tracked_as(entry)
         if gitlink and target.startswith(folded + "/"):
             return _BINDING_IN_SUBMODULE if _BINDING_RELATIVE.startswith(
                 entry + "/") else _named(_BINDING_IN_SUBMODULE, entry)
         if len(parts) == 3 and _has_identity(root / entry, cfg_id):
-            return _named(_BINDING_TRACKED, entry)
+            return _tracked_as(entry)
         if gitlink and ((len(parts) == 1 and _has_identity(root / entry, dev_id))
                         or (len(parts) == 2 and _has_identity(root / entry, state_id))):
             return _named(_BINDING_IN_SUBMODULE, entry)
@@ -880,7 +891,12 @@ def _identity(st: os.stat_result) -> Tuple[int, int]:
 
 
 def _has_identity(path: Path, identity: Tuple[int, int]) -> bool:
-    """True if *path* (not followed, if it is a link) is the file *identity*."""
+    """True if *path* (not followed, if it is a link) is the file *identity*.
+
+    An inode of 0 is no answer (some disks report it for every file), so it never
+    matches: the names are then the only test."""
+    if identity[1] == 0:
+        return False
     try:
         return _identity(os.lstat(path)) == identity
     except (OSError, ValueError):
@@ -891,6 +907,12 @@ def _named(reason: str, entry: str) -> str:
     """*reason* with the index entry that matched, when it is not spelled as the
     binding is: the entry is checkout data, so it is printed encoded."""
     return f"{reason}  git tracks it as {encode_display(entry)}."
+
+
+def _tracked_as(entry: str) -> str:
+    """`_BINDING_TRACKED` for a binding that git lists as *entry*: the remedy
+    names *entry*, because ``git rm`` needs the name the index holds."""
+    return _named(_BINDING_TRACKED_TEXT.format(entry=encode_display(entry)), entry)
 
 
 _UNTRUSTED_WARNED = False
