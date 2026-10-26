@@ -252,6 +252,111 @@ def test_init_lock_never_creates_the_profile_template_through_a_link(world):
     assert f"Wrote {PROFILE_REL}" not in said
 
 
+def _no_lockfile_world(world: World) -> World:
+    """A project that has been through an install but has no lockfile, which is
+    the state `upgrade --init-lock` exists for."""
+    (world.project / LOCK_REL).unlink()
+    (world.project / PROFILE_REL).unlink(missing_ok=True)
+    return world
+
+
+def _complete_profile(name: str) -> str:
+    return f"project_name: {name}\ntest_command: pytest\npreset: solo-greenfield\n"
+
+
+@needs_links
+@pytest.mark.parametrize("how", ["existing-outside-file", "existing-inside-file", "dangling"])
+def test_init_lock_refuses_a_profile_that_is_a_link(world, how):
+    """With no lockfile, `--init-lock` read `dev/.cairn/profile.yml` and wrote a
+    lockfile carrying its values.  A link to an existing file was followed, so
+    the values written into the project's lockfile were those of a file the
+    project does not own.  Every link is refused, wherever it points: the rule
+    is the same one `--apply` keeps for this file."""
+    world = _no_lockfile_world(world)
+    profile = world.project / PROFILE_REL
+    if how == "existing-outside-file":
+        target = world.outside / "existing.yml"
+        target.write_text(_complete_profile(world.marker), encoding="utf-8")
+    elif how == "existing-inside-file":
+        target = world.project / "docs" / "profile-copy.yml"
+        target.write_text(_complete_profile(world.marker), encoding="utf-8")
+    else:
+        target = world.outside / "new-profile.yml"
+    link(target, profile)
+    project_before, outside_before = snapshot(world.project), snapshot(world.outside)
+    proc = upgrade(world.project, "--init-lock")
+    assert_plain_refusal(proc)
+    assert PROFILE_REL in proc.stderr, "the refusal must say which file it is about"
+    assert "Replace it with a regular file" in proc.stderr, "the refusal must say what to do"
+    assert world.marker not in proc.stdout + proc.stderr
+    assert not (world.project / LOCK_REL).exists(), "no lockfile may be written"
+    assert profile.is_symlink(), "the link must be left as it was"
+    assert snapshot(world.project) == project_before, "a refusal must change nothing"
+    assert snapshot(world.outside) == outside_before, "something outside the project changed"
+
+
+@needs_links
+@pytest.mark.parametrize("lockfile_behind_link", [True, False])
+def test_init_lock_refuses_a_cairn_folder_that_is_a_link(world, lockfile_behind_link):
+    """`dev/.cairn` is the folder the lockfile lives in.  Linked, `--init-lock`
+    found the lockfile behind the link and said "already exists" with exit 0 --
+    a read through the link, and a wrong answer about the project.  With
+    nothing behind the link it went on to the profile and ended in a traceback.
+    Both now stop with the one-line refusal `--plan` and `--apply` print."""
+    cairn = world.project / "dev" / ".cairn"
+    moved = world.outside / "cairn-dir"
+    shutil.copytree(cairn, moved, symlinks=True)
+    shutil.rmtree(cairn)
+    link(moved, cairn)
+    if not lockfile_behind_link:
+        (moved / "cairn-lock.yml").unlink()
+    project_before, outside_before = snapshot(world.project), snapshot(world.outside)
+    proc = upgrade(world.project, "--init-lock")
+    assert_plain_refusal(proc)
+    assert LOCK_REL in proc.stderr, "the refusal must say which file it is about"
+    assert "Replace it with a regular file" in proc.stderr, "the refusal must say what to do"
+    assert "already exists" not in proc.stdout + proc.stderr
+    assert cairn.is_symlink(), "the link must be left as it was"
+    assert snapshot(world.project) == project_before, "a refusal must change nothing"
+    assert snapshot(world.outside) == outside_before, "something outside the project changed"
+
+
+def test_init_lock_with_no_profile_still_writes_the_template(world):
+    """An ordinary run, no link anywhere, is as it was: the template is written,
+    the command exits 2 and says no lockfile was written."""
+    world = _no_lockfile_world(world)
+    proc = upgrade(world.project, "--init-lock")
+    assert proc.returncode == 2, proc.stdout + proc.stderr
+    assert proc.stdout == ""
+    assert proc.stderr.startswith(f"Wrote {PROFILE_REL}: 4 axis(es) inferred, 4 placeholder(s) to fill")
+    assert "No lockfile was written (fail-with-template)." in proc.stderr
+    assert (world.project / PROFILE_REL).is_file()
+    assert not (world.project / PROFILE_REL).is_symlink()
+    assert not (world.project / LOCK_REL).exists()
+
+
+def test_init_lock_with_a_complete_profile_still_writes_the_lockfile(world):
+    """An ordinary run, no link anywhere, is as it was: the lockfile is written
+    from the project's own profile and carries its values."""
+    world = _no_lockfile_world(world)
+    (world.project / PROFILE_REL).write_text(_complete_profile("OrdinaryName"), encoding="utf-8")
+    proc = upgrade(world.project, "--init-lock")
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    first_line = proc.stdout.splitlines()[0]
+    assert first_line.startswith(f"Wrote migrated {LOCK_REL} (") and first_line.endswith(" files).")
+    assert read_lock(world.project)["tokens"]["project_name"] == "OrdinaryName"
+
+
+def test_init_lock_with_a_lockfile_already_there_still_changes_nothing(world):
+    """An ordinary run, no link anywhere, is as it was: it says so and exits 0."""
+    before = snapshot(world.project)
+    proc = upgrade(world.project, "--init-lock")
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert proc.stdout == ""
+    assert proc.stderr == f"  [info] {LOCK_REL} already exists; nothing to migrate.\n"
+    assert snapshot(world.project) == before
+
+
 # --- the lockfile itself -------------------------------------------------------
 
 
@@ -585,6 +690,37 @@ def test_a_linked_vendor_wrapper_is_not_taken_for_the_wrapper_by_finalize(world)
     assert "missing on disk" in proc.stderr
     assert_nothing_left_the_tree(world, outside_before)
     assert record_for(read_lock(world.project), "VENDOR.md")["src"] == "core/VENDOR.md"
+
+
+@needs_links
+def test_finalize_over_a_linked_vendor_wrapper_names_the_link(world):
+    """The wrapper is not found when its file is a link, so `VENDOR.md` is
+    reported as missing -- true, and no help to someone whose `CLAUDE.md` is
+    right there.  The message now names the link and says what to do; the exit
+    code is still 1, and nothing is read through the link."""
+    (world.project / "VENDOR.md").unlink()
+    link(world.secret, world.project / "CLAUDE.md")
+    outside_before = snapshot(world.outside)
+    proc = upgrade(world.project, "--finalize", "--force")
+    said = proc.stdout + proc.stderr
+    assert proc.returncode == 1, said
+    assert "missing on disk" in proc.stderr
+    assert "CLAUDE.md is a link" in proc.stderr
+    assert "Replace it with a regular file" in proc.stderr
+    assert world.marker not in said
+    assert "Traceback" not in said
+    assert_nothing_left_the_tree(world, outside_before)
+
+
+def test_finalize_over_an_absent_vendor_wrapper_keeps_its_plain_message(world):
+    """No link: the message is the one it always was, word for word."""
+    (world.project / "VENDOR.md").unlink()
+    proc = upgrade(world.project, "--finalize", "--force")
+    assert proc.returncode == 1, proc.stdout + proc.stderr
+    assert proc.stdout == ""
+    assert proc.stderr == (
+        "error: 1 tracked file(s) missing on disk -- cannot finalize "
+        "(fix or re-install first):\n  VENDOR.md\n")
 
 
 @needs_links
