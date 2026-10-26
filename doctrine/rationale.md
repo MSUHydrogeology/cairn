@@ -276,6 +276,39 @@ The test is not *"is the reasoning recorded somewhere"* but
 **"can the next reader act on this without the record?"** — which
 usually takes one sentence, and sometimes takes none.
 
+**The method behind "lead plain" is a written standard.** "Lead
+plain" names a goal and no method, so Cairn ships one: *Cairn
+Plain Language*, a versioned set of rules in
+`dev/agent_collaboration.md`. Its wording and instruction rules
+draw on ISO 24495-1:2023 (*Plain language*, cited by clause and
+not copied), the US Federal Plain Language Guidelines, ASD-STE100
+(its rules for instructions, without its restricted dictionary)
+and a developer documentation style guide. Its rules on numbers
+and uncertainty rest on experiments with readers: Budescu et al.
+(2009, 2014) found that people give a word such as "likely" very
+different meanings, and that pairing words with numeric ranges
+helped less than hoped (judgments matching the IPCC's intended
+meaning rose from 27% to 40% across 24 countries), and Mandel &
+Irwin (2020) found that words with numbers did no better than
+numbers alone. Its rule that an agent say how sure it is about its
+own work rests on studies of how people read model output:
+Steyvers et al. (2025) found that readers overestimate model
+accuracy and that longer explanations raise their confidence
+without raising accuracy; Zhou et al. (2024) found that models
+rarely express uncertainty unprompted and are overconfident when
+asked, and that users relied on output whether or not it was
+marked uncertain; Kim et al. (2024) found that a first-person "I'm
+not sure, but..." reduced reliance on wrong answers, though not
+entirely. Two design choices follow. The standard limits how text
+is built, not which words it uses, because swapping field terms
+for simpler words would fail the expert reader (the
+expertise-reversal concern above); Markowitz (2024) found that
+simpler AI-written summaries raised lay readers' comprehension but
+made the scientists they described seem less intelligent. And it
+is checked by reading, never by a readability score: a score
+becomes the target, and the cheapest way to raise it is to cut the
+qualifiers and numbers the rules on reasoning exist to protect.
+
 This anchor is scoped to that **universal norm**. The further
 dimension — calibrating communication by the recipient's domain
 and software proximity — is observed in the guide-star but is not

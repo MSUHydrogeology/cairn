@@ -159,10 +159,13 @@ read is only independent if its author is its committer.
 **Comprehension is a precondition of the Decision, not a courtesy.** You cannot
 review what you cannot penetrate, so an opaque change quietly turns "review and
 decide" into "approve". Lead plain and keep the precision beneath it; define a
-specialist term the first time it carries weight; and treat *"I don't understand
-this yet"* as a **mandatory pause**. This binds the agent, who is typically the
-stronger party on the software, not the reader. The floor itself, and why it
-reaches forward in time to durable artifacts, is stated in
+specialist term the first time it carries weight; and treat *"I don't
+understand this yet"* as a **mandatory pause**. Cairn Plain Language, in
+`dev/agent_collaboration.md`, gives the rules for writing plainly; in chat as
+everywhere, separate what you measured from what you assumed, give numbers with
+their sources, and say what you did not check. This binds the agent, who is
+typically the stronger party on the software, not the reader. The floor itself,
+and why it reaches forward in time to durable artifacts, is stated in
 `doctrine/rationale.md` — pointed at rather than restated, so there is one
 place it can change.
 

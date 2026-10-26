@@ -198,6 +198,99 @@ the baseline, so declining it is not a reduction and owes no record
 (see `doctrine/dual-review.md` > "Review expectations — the
 scope-reduction trap").
 
+## Cairn Plain Language
+
+*Version 1.0. Each rule has one number and one topic. A finding cites the
+number and quotes the clause. Numbers never change: a withdrawn rule keeps
+its number, marked withdrawn, and a reworded rule is a new version with a
+changelog line. Licensed CC BY 4.0.*
+
+Every review and decision depends on the reader understanding what an agent
+wrote (`AGENTS.md`, the comprehension rule). These rules apply to anything
+an agent writes for a person: chat replies, proposals, reviews, plans,
+commit messages, documentation and error messages. They are not a word list:
+keep your field's terms, and define them. The only words they rule out carry
+no information: filler, vague praise, and a probability word without its
+number.
+
+**Before you write**
+
+1. Know who will read it and what they will do with it: decide, follow
+   steps, review, or look something up. Write for that reader and that use.
+
+**Everything**
+
+2. Put the conclusion first, then only what the reader needs to act on it.
+   Leave out filler and vague praise ("robust", "comprehensive").
+3. Never leave out what the reader needs to decide: failures, checks you did
+   not make, open questions, bad news.
+4. Use one name for one thing. Do not vary names for style, do not give two
+   things the same name, and do not coin a name for something that already
+   has one.
+5. Define a specialist term where it first matters, and keep the field's
+   terms rather than writing around them. Spell out an acronym the first
+   time, unless the reader uses it daily. Unpack stacked nouns: "the record
+   of the re-anchor ceremony", not "the re-anchor ceremony record".
+6. Give an example for each abstraction.
+7. Write short sentences, one idea each, in the active voice with the actor
+   first.
+8. Give each paragraph one topic, stated in its first sentence. Start from
+   what the reader already knows, then add what is new. Do not break the main
+   thought with an aside.
+9. In anything longer than a screen, use headings that say what follows and
+   lists for parallel items. Move detail the main line does not need to its
+   own section, and say where it is. Where several readers share a document,
+   mark which part is for whom.
+
+**Instructions** (steps, runbooks, prompts to paste, install output, error
+messages)
+
+10. One action per step, in the order the reader does them, as a command:
+    "Open…", "Run…". Put conditions and warnings before the step they apply
+    to, especially for anything that cannot be undone.
+11. Say what the reader should see afterwards, and what to do if they see
+    something else.
+12. An error message says what happened, why if known, and what to do next,
+    without blaming the reader.
+
+**Scientific and technical reasoning** (proposals, reviews, decisions,
+reports of results)
+
+13. Say which claims were measured, which are assumed and which are
+    expected. Never let an assumption read as a result.
+14. Give the number with its unit and its source, not an adjective:
+    "2.3 mm/month, from the 2025 gauge record", not "small".
+15. State uncertainty as a number with its source: "±0.5 mm, from gauge
+    error"; "about 1 chance in 5, from the 30 runs". Do not use a probability
+    word such as "likely" on its own; readers give these words very different
+    meanings. If you have no basis for a number, say so, and say what the
+    judgment rests on: "I have no measure of this; I expect it to hold
+    because the two models share a grid."
+16. Say whether a range shows uncertainty (the value is not known) or
+    variability (the value really varies), and give no more precision than
+    the evidence supports, usually one or two significant figures.
+17. Say how sure you are about your own work, and why, in the first person:
+    "I ran the tests and they pass"; "I did not run this on Windows"; "I am
+    not sure this handles feet; I found no test for it". Never let fluent
+    prose stand in for a check you did not make.
+
+**Checking.** A reader who cannot follow a passage says so, and the
+"I don't understand this yet" pause applies. A reviewer cites a broken rule
+by number as a finding. These rules are checked by reading, never by a
+readability score: a score becomes the target, and the cheapest way to raise
+it is to cut the precision rules 13 to 16 protect.
+
+**Where other rules are more specific.** A template or rule that fixes the
+shape of one kind of record governs that shape: a commit body's layout, a
+review's coverage line, a question to the Maintainer. These rules govern the
+writing inside it. The two agree by design: the coverage line is rule 17
+applied to a review, and a question to the Maintainer in plain language is
+rules 1 and 2 applied to a question.
+
+Sources: ISO 24495-1:2023; the US Federal Plain Language Guidelines;
+ASD-STE100 (instruction rules); the studies cited in `doctrine/rationale.md`,
+anchor 16.
+
 ## Surfacing judgment calls to the Maintainer
 
 **The Maintainer decides — and the list is finite.** Acceptance,

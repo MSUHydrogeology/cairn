@@ -38,6 +38,18 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Added — Cairn Plain Language, a writing standard for agents
+
+- Every install now carries a versioned, 17-rule writing standard in
+  `dev/agent_collaboration.md`, Cairn Plain Language 1.0. It covers what an
+  agent writes for a person, in chat as in records: conclusion first, one name
+  per thing, steps a reader can follow, and a clear line between what was
+  measured, assumed and expected. Numbers carry units and sources, and
+  uncertainty is a number, not a probability word. `AGENTS.md` points to it
+  from the comprehension rule. It is checked by reading, never by a
+  readability score. Existing installs receive it through the ordinary upgrade
+  merge. ([rationale](doctrine/rationale.md), anchor 16)
+
 ## 0.4.0 — 2026-10-20
 
 ### Added — Defect fixes under existing promises and reuse duty

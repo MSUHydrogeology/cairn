@@ -28,7 +28,7 @@
     },
     {
       "dst": "AGENTS.md",
-      "hash": "sha256:ba940524c24aa93aea9babac63cac1a2c14e4201d086fdf6cf0d11b6a2a2508b",
+      "hash": "sha256:6fc2be183e88216c3eb4fcbb204be655bbf8c72b681198dd7613c5981a1c5485",
       "src": "core/AGENTS.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -73,7 +73,7 @@
     },
     {
       "dst": "dev/agent_collaboration.md",
-      "hash": "sha256:767b2fe624e35d0256eab8fa3b06dc00c2d97a7c5881ae56e09415bc330669ab",
+      "hash": "sha256:34603c65ec1e56baf8bc3535ed560136e47e6b616fda48b8927453d97f4f8845",
       "src": "core/dev/agent_collaboration.md",
       "unrecoverable_base": true,
       "verbatim": false
