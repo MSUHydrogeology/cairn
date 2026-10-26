@@ -262,8 +262,10 @@ you what changed.
   writes it when it is absent. If the lockfile is a link, or `dev/.cairn` is,
   `--plan`, `--stage` and `--apply` stop with exit 2 and a one-line refusal
   before they read or write through it. If the profile is a link, all six stop
-  the same way, whether the link points to a file that exists or to nothing, and
-  open nothing through it. `--finalize` never opens the profile, so a link there
+  the same way (`--init-lock` on a project that already has a lockfile ends
+  earlier with "nothing to migrate", exit 0, and opens nothing), whether the
+  link points to a file that exists or to nothing, and open nothing through it.
+  `--finalize` never opens the profile, so a link there
   does not stop it: it exits 0. This includes a profile that is a link to a file
   inside the project, which earlier versions accepted: the rule is stricter on
   purpose and the same for every link. Replace the link with a regular file,
