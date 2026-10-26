@@ -1,11 +1,11 @@
 # check_cairn crashes when a tracked Markdown file is deleted but not yet committed
 
 **Author**: Claude (Implementation)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: usual
-**Plan review**: not required(one commit: a one-line filter in `scripts/check_cairn.py`, one new test, and the Maintainer-run gate-manifest re-anchor that a frozen-file edit owes)
+**Plan review**: not required(one commit: the same one-line filter in `link_check.py` and `sync_doc_snippets.py` and their shipped twins, `check_cairn.py` delegating to the fixed shared copy, one new test file; the frozen-file re-anchor is the already-queued Maintainer ceremony)
 **Opened**: 2026-10-26
-**In brief**: Make `python scripts/check_cairn.py` skip tracked Markdown files that have been deleted from disk but not yet committed, so it reports findings instead of crashing with a traceback.
+**In brief**: Make the three Markdown scans (`check_cairn`, `link_check`, `sync_doc_snippets`) skip tracked files that are deleted from disk but not yet committed, and say how many they skipped, so they report findings instead of crashing with a traceback.
 
 ## Context
 
@@ -189,3 +189,107 @@ Nothing in this change edits the gate manifest or its schema; only a pinned hash
 * **Unreadable file.** Not run. `is_file()` follows `stat`, which succeeds on an unreadable file, so it should still raise. Unverified.
 
 Coverage -- **Covered**: lens 1 (claims: M1, M2, M7), lens 2 (production path: M3 calls `main()`, not a helper), lens 3 (edge cases: deleted file, dangling symlink, explicit path, citing doc, M5), lens 4 (silent skip: RV4), lens 5 (sibling copies and consumers: M4, RV1, RV4), lens 6 (drift: file and finding counts, M2/M6; the PLANNING row, RV2), lens 7 (re-anchor placement: RV2), lens 9 (each finding names a satisfier). Lens 8 does not apply. **Not covered / low confidence**: I did not run the full suite or a certifying run (not mine to run); I did not run `bootstrap/reanchor.sh` or look past the runbook's opening and `_gate_manifest.py verify`; I did not test an unreadable file or a Windows path; I did not check whether widening to the shipped templates (RV1) disturbs the adopter upgrade path or any pin outside `_gate_manifest.py`.
+
+## Response -- Claude (author) -- 2026-10-26
+
+**Conclusion first.** I accept RV1 and widen the proposal to all three scripts and the two shipped twins. I accept RV2, RV3 and RV4 in full, and RV5 in part. Because scope widened, the status returns to `awaiting-review`: under the one-round rule the second review reads **only the added material** (the two sibling scripts, their shipped twins, the delegation, the stderr note, the PLANNING ordering). The `check_cairn.py` change reviewed in round one is unchanged.
+
+**I checked RV1 myself before widening.** All on `a8970806` plus the live tree, Python 3.13 (`/Users/kendal30/conda_envs/lhm/bin/python3.13`), nothing written to the repo:
+
+* `scripts/link_check.py:489-494` and `scripts/sync_doc_snippets.py:247-252` each carry the same four-line `tracked_markdown()` as `scripts/check_cairn.py:177-182`.
+* Run on the live tree, `python scripts/link_check.py` and `python scripts/sync_doc_snippets.py` each end in `FileNotFoundError` on the first of the two uncommitted deletions under `dev/strategy/`.
+* `cmp` reports `scripts/link_check.py` and `scripts/sync_doc_snippets.py` byte-identical to `templates/modules/team-gated/link_check.py` and `.../sync_doc_snippets.py`. `test_every_self_hosted_twin_stays_byte_identical_to_its_source` (`bootstrap/tests/test_notice_install.py:114`) fails if only one side of a pair is edited, so the twins must change together and the repository already enforces it.
+* All five files are in `frozen_files` in `bootstrap/tests/fixtures/gate_manifest.json`.
+* **Something the review did not say, and it changes the design:** `check_cairn.py` does not load `scripts/link_check.py`. It loads the shipped **template** copy (`_LINK_CHECK_SRC`, `scripts/check_cairn.py:98-101`, bound to `link_check` at `:136`). So once the template is fixed, `check_cairn` can call `link_check.tracked_markdown` and need not carry its own copy.
+
+**RV1 -- accepted, as "widen now."** Fix `tracked_markdown()` in `link_check.py` and `sync_doc_snippets.py` (each with its twin), and have `check_cairn.py` call the shared one and drop its own copy. The review's cost note holds: a second review of the added material, and a shipped-template change. I did not choose "keep it narrow": the siblings crash today, and one of them ships.
+
+**RV2 -- accepted.** The change lands **before** the queued re-anchor so one ceremony pins everything. `dev/PLANNING.md` (the row "Re-anchor the gate manifest -- one frozen test changed", around line 100) will then be wrong in two ways: more than one frozen file changed, and the changed set is five files plus one new test file. I do not edit that row in the proposal commit or the implementation commit (shared files change only at serialization points). I ask the Maintainer to have the goodnight scrub rewrite it once the implementation commit exists, and the re-anchor derives its changed set from the final committed tree, as the runbook says.
+
+**RV3 -- accepted.** The test now asserts that a surviving document linking to the deleted file still exits 1 with that link flagged. The live `PLANNING.md:42` check is demoted from an acceptance criterion to a one-off observation: it is not reproducible once the other agent's deletion is committed.
+
+**RV4 -- accepted, three parts.**
+* The `test_security_check.py` node does not run `check_cairn`. I withdraw it from the owning-test list. The real consumer is `security_check.run_check_cairn` (`bootstrap/security_check.py:959-972`), which runs `scripts/check_cairn.py` on the live tree in the release security check, and `docs/release-process.md:84` names the same command. That strengthens the motivation and is now cited.
+* **Dangling symlink: skip it, and say so.** A tracked `.md` symlink whose target is gone is, like a deleted file, a path with nothing to read. It is skipped and counted in the note below. Raising would put the traceback back for a state the scan cannot do anything with.
+* **The skip is no longer silent.** When one or more paths are skipped, `tracked_markdown()` writes one line to stderr: `skipped N tracked Markdown file(s) not present on disk`. It writes nothing when N is 0. The tests assert both.
+
+**RV5 -- accepted in part.** `standard`: no schema or manifest field changes, only pinned hashes, through the ceremony every frozen edit owes. I drop the claim that the re-anchor is a contract change. On Boundary B I accept the correction: the record is scoped, with `Certified by: pending`, and the certifying run covers the full suite. I do not pre-declare `bounded`; at implementation the mapping decides, and the shipped templates and frozen files mean uncertainty resolves to `full`.
+
+**Observation (M6, the gate is red on a clean checkout).** Agreed, and kept out of this proposal. I am not queuing the row myself; the Maintainer or the goodnight scrub can.
+
+## Revision -- Claude (author) -- 2026-10-26
+
+This is the complete current contract. It replaces the Proposal, Evidence and Assurance sections above; earlier sections stay as history.
+
+### What changes
+
+One defect, three copies. `git ls-files '*.md'` lists a file whose deletion is not yet committed, and each scan then reads it and raises. Fix it once in the shared checker and in the one sibling that does not share it:
+
+| File | Change |
+| --- | --- |
+| `templates/modules/team-gated/link_check.py` and `scripts/link_check.py` (byte-identical pair) | `tracked_markdown()` keeps only paths where `is_file()` is true. If any were dropped, print one stderr line giving the count. |
+| `templates/modules/team-gated/sync_doc_snippets.py` and `scripts/sync_doc_snippets.py` (byte-identical pair) | The same change to its own copy. It does not load `link_check`, so it keeps its own function. |
+| `scripts/check_cairn.py` (Cairn-only, no twin) | Delete its own `tracked_markdown()` (`:177-182`) and call `link_check.tracked_markdown(root)` at `:548`. Update the "Scanned set" line at `:50` to say tracked files **that exist on disk**. |
+
+Files named explicitly on a command line are unchanged: a named path that does not exist still raises. The one function's behaviour is: tracked, regular-file-or-symlink-to-a-file paths pass; deleted paths and dangling symlinks are dropped and counted.
+
+No new public name is added; one function is removed from `check_cairn.py` (nothing in `bootstrap/tests` references `tracked_markdown`; searched with `grep -rn tracked_markdown bootstrap/tests`, no match).
+
+Proposed paths:
+- `bootstrap/tests/test_deleted_tracked_markdown.py`
+
+### Tests required
+
+One new file, `bootstrap/tests/test_deleted_tracked_markdown.py` (a new file, because the existing `check_cairn` test files are frozen). Each test builds a temporary git repository, commits Markdown, deletes or breaks a file on disk without committing, and calls the script's real `main(["--root", <tmp>])`. Parametrized over the three scripts (`link_check`, `sync_doc_snippets`, `check_cairn`), three properties, so nine small nodes at most:
+
+1. **A deleted tracked file does not crash the default scan.** Fails before the fix with `FileNotFoundError`, passes after.
+2. **A surviving document that links to the deleted file is still flagged** (exit 1, `[link]` finding naming the deleted target). This pins that the filter hides the missing file, not the finding. For `sync_doc_snippets`, which has no link finding, the assertion is that it completes and does not touch the deleted path; the finding assertion applies to `link_check` and `check_cairn`.
+3. **The skip is reported, a dangling symlink counts, and a clean tree prints nothing.** One commit deletes a file and adds a dangling `.md` symlink: stderr contains `skipped 2 tracked Markdown file(s) not present on disk`; a clean repo prints no such line; an explicitly named missing path still raises.
+
+Twin parity needs no new test: `test_every_self_hosted_twin_stays_byte_identical_to_its_source` fails if either side of a pair is edited alone.
+
+**Owning tests to re-run, scoped** (found by what imports or runs the touched files): `bootstrap/tests/test_doc_drift_tools.py`, `test_link_check_exclusions.py`, `test_loop_fidelity_gate.py`, `test_check_cairn_counts.py`, `test_check_cairn_content.py`, `test_content_scan.py`, `test_notice_install.py`, `test_practice_modules.py` (references `sync_doc_snippets`), `test_gate_manifest.py`, and the new file. The Boundary B mode is decided at implementation by the `AGENTS.md` rule (uncertainty resolves to `full`); the change's record is scoped with `**Certified by**: pending`, and the next certifying run covers the full suite.
+
+**Smoke:** `python scripts/check_cairn.py`, `python scripts/link_check.py` and `python scripts/sync_doc_snippets.py --check` each complete on a tree with an uncommitted deletion (a one-off observation, not an acceptance criterion). Before the re-anchor: `python bootstrap/tests/_gate_manifest.py verify` is expected to report `FROZEN-MODIFIED` for the five edited files and `COLLECTION-ADDED` for the new nodes.
+
+### Re-anchor ordering
+
+This change lands **before** the queued gate-manifest re-anchor (`dev/PLANNING.md`, "Re-anchor the gate manifest"), so one Maintainer-run ceremony pins the already-owed `test_quickstart_sequence.py` change and these five files together. If the re-anchor runs first, this change costs a second one. The PLANNING row's wording ("one frozen test changed", "no engine symbol changed") needs rewriting at the next serialization point; the implementer does not edit it. A CHANGELOG entry for the shipped `link_check` and `sync_doc_snippets` change is likewise written at a serialization point.
+
+### Documentation / doctrine surface
+
+No doctrine or rule text. The `check_cairn.py` "Scanned set" docstring line changes as above. The shipped-script change reaches adopters through the normal template upgrade path; I did not test that path, and the second reviewer is asked to look at it (see below).
+
+### Signals the change is wrong
+
+* Property 1 passes before the fix (the test did not reproduce the crash).
+* Property 2 fails to flag the link, or the run stops reporting a finding it reported before (the filter hid something).
+* A readable file is skipped, or an unreadable-but-present file stops raising (`is_file()` is true for it, so it should still raise; unverified, as in round one).
+* Any twin pair differs after the edit (the parity test names it).
+* An adopter's `link_check` run changes output on a clean tree (the note must print nothing when N is 0).
+
+### Scope delta
+
+**Scope delta**: preserved
+
+The baseline outcome (`check_cairn` completes with an uncommitted deletion) is delivered. The widening adds outcomes; nothing opened with is dropped.
+
+### Assurance path
+
+**Assurance path**: standard
+
+Per RV5. The change adds no subprocess, parsing or path handling beyond an `is_file()` test on paths git already returned, and adds one stderr line. What it does touch that the first version did not: two shipped templates, which is why the second review is requested.
+
+### Questions for the second review
+
+Only the added material: (a) does `check_cairn` delegating to `link_check.tracked_markdown` leave any caller or doc that still expects its own function; (b) does editing the two shipped templates disturb the adopter upgrade or any pin outside the gate manifest (round one did not cover this); (c) is the stderr note safe for any caller that parses stderr or stdout of these scripts.
+
+### Withdrawn / superseded commitments
+
+* "Fix `check_cairn.py` only; the sibling scripts are 'not needed'" -- withdrawn: both crash the same way (RV1).
+* "`test_security_check.py::test_check_cairn_fails_closed_when_the_interpreter_cannot_be_spawned` is an owning test" -- withdrawn: it never runs `check_cairn` (RV4).
+* "The live `dev/PLANNING.md:42` finding is part of the acceptance check" -- superseded by the property-2 test (RV3).
+* The test file name `bootstrap/tests/test_check_cairn_deleted_files.py` in the first Proposal -- superseded by `bootstrap/tests/test_deleted_tracked_markdown.py`, which covers all three scripts.
+* "A skipped file is silent" -- superseded by the stderr count (RV4).
+* "Assurance path `high-assurance`; Boundary B `full` vs `bounded` is the Maintainer's call" -- superseded: `standard`; the mode follows the `AGENTS.md` rule (RV5).
+* "The re-anchor is a new cost of this change" -- superseded: it rides the already-queued one, if this lands first (RV2).
