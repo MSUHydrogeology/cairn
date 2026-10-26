@@ -1,7 +1,7 @@
 # Build `repin`: one tested tool for the routine re-pins, replacing the blocked runner
 
 **Author**: Claude (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review) — the plan edits what the Maintainer's re-anchor trusts and writes into the tree, so its plan review needs the Security pass too
 **Opened**: 2026-10-26
@@ -405,3 +405,251 @@ Reads, not probes: `refs/cairn/gate-anchor` names `6f29519d`, whose commit has n
 **Clearing.** This Security Review does not clear at `d65f4e6b`. It clears on conditions: the author's Response, in its complete current contract, adopts SR-1 to SR-4 as stated, or an alternative that meets each "Closed when" line. The Maintainer at the Decision and the plan's Internal Security Review, already declared in the header, check that they are carried. No second proposal-stage Security pass is needed unless the Response keeps a manifest writer (SR-2's alternative) or replaces the S1 design, which would be new material. SR-5 to SR-7 do not block; the plan carries them. The Status stays `revising`.
 
 **Coverage line.** I read the proposal, pass 1, the cited lines of `_gate_manifest.py`, `_ast_attest.py`, `test_ast_attest.py`, `_gate_preflight.py:590-640`, `_gate_reanchor.py` (header, Stage A, the environment scrub), `_guard.py`, `encode_display`, the old runner's header and lockfile planner, the outside review's CPD-3, CPD-5, CPD-6 and redesign, and the runbook's two-stage, transition and posture sections. I did not read `scripts/reanchor_ceremony.py`, `bootstrap/reanchor.sh` or the launcher template, so I did not check whether the stage-1 report groups dropped nodes or shows the anchor's signature state. I did not trace `_gate_preflight.py`'s own import closure, test the compiled-file path against the real suite (scratch package only), check whether pytest's assertion rewriting touches `_gate_manifest.py` during collection, re-measure pass 1's provenance figures, or read R4's lockfile logic past `scripts/correct_pinned_digests.py:245`. The pseudo-terminal probe ran on macOS only. I ran no test from the suite and never set `CAIRN_FULL_SUITE`.
+
+## Response -- Claude (author) -- 2026-10-26
+
+I accept all eleven usual findings and all seven security findings, two of them with a variation. The Revision below is the complete current contract. Two things changed the design most: `repin` no longer writes the gate manifest (SR-2), and everything it reads comes from a `git archive` extraction of one commit, checked against the anchor before any of it runs (SR-1, SR-4). I also took in the Maintainer's feedback of 2026-10-26, quoted in the Revision.
+
+**Usual review (pass 1)**
+
+* **F1, accepted.** The manifest pin is not keyless. It stays in the key ceremony; `repin` only reads the manifest. The "acts" are restated per pin, and the Maintainer is asked in Q8.
+* **F2, accepted.** Manifest `status` is a static comparison and says it does not check collection. There is no `--collect`, and no manifest `package`.
+* **F3, accepted.** "Preserved" is gone. The Scope delta lists every criterion of the 2026-08-28 note that is not fully carried, each for the Maintainer to concede or refuse. The launcher template stays a question to the Maintainer (Q7), with the loss stated.
+* **F4, accepted, through SR-3.** The rendered report is inside the transaction bytes.
+* **F5, accepted with a variation.** The replay is optional for the AST pin, with the commit-body line `Replay: matched <code> | not run`. I did not make it required for the manifest, because `repin` no longer writes the manifest, so there is nothing to replay. Q1.
+* **F6, accepted.** The provenance rule is written once, below, with its measured figures.
+* **F7, accepted, with a correction.** Each report names its own fixture's last-pin commit. `REKEYED` and `DROPPED` are not class names in `bootstrap/tests/_ast_attest.py` (grep finds neither); I used them loosely. The Revision uses the real names: `CHANGED`, `MISSING`, `DUPLICATE`, `NEW`.
+* **F8, accepted, through SR-4.** `package` reads an extraction, so the dirty-tree refusal and the untracked-file class go away.
+* **F9, accepted, through SR-1.** Both copies of the rule are settled: it is read from the tree only after its bytes equal the anchor's, and "changes" are measured against the anchor.
+* **F10, accepted with a variation.** The stop line is a per-chunk size budget. The numbers are my choice, not a measure (Q5).
+* **F11, accepted.** Three terms are glossed once, "pin" names the fixture write, "re-anchor" names only the ref move. I cannot date or source the "Authoring tier" quote and it appears nowhere else, so the Revision does not repeat it; the Maintainer can confirm it.
+
+**Security Review**
+
+* **SR-1, accepted as stated.** The six-step reading order is contract text. Three tests are added, each with its control.
+* **SR-2, accepted (the first alternative).** No `repin` path writes `gate_manifest.json`. An AST pin that also changes the frozen `scaffold_ast_known_new.json` owes a ceremony. The chunks are re-cut.
+* **SR-3, accepted as stated.** `apply` renders the report itself from the bytes it will write.
+* **SR-4, accepted as stated.**
+* **SR-5, accepted into the plan,** non-blocking, with one variation: tests build a scratch repository with its own anchor, so `apply` can be tested without ever touching the real tree.
+* **SR-6, accepted into the plan,** non-blocking.
+* **SR-7, accepted,** and applies only if R4 is built.
+* **SR-8 (the unsigned anchor commit; inherited `PYTEST_*` variables and force-added compiled files in the ceremony).** Outside this proposal. The coordinator is putting both to the Maintainer as separate roadmap rows. I do not add them here.
+
+## Revision -- Claude (author) -- 2026-10-26
+
+### Maintainer input
+
+The Maintainer, relayed by the Developer session, 2026-10-26. This is input to the revision, not a Decision:
+
+> "I noticed that the gate anchor ceremony didn't use a key, but honestly it's still too damned complicated for me to properly execute in a meaningful way."
+
+Three things follow. (1) The success test is the Maintainer's report that a pin was doable, so the ceremony part below is written to that test. (2) The Maintainer has not said which part is hard: the commands, knowing what to check, or the key. That is Q9. (3) The current anchor commit is unsigned (measured by the Security Review with `git cat-file commit`), which fits what the Maintainer saw. Whether it should be signed is the SR-8 row, outside this proposal. Every report prints the anchor's signature state on its first line.
+
+### In plain terms
+
+**What changes.** Today a pin means the Maintainer pastes commands an agent wrote that day. After this build, one committed tool, `repin`, computes what changed in the AST baseline, shows it on one screen, and writes the new pin only after the Maintainer types a short code from that screen. For the gate manifest it only shows what changed; the key ceremony still writes it.
+
+**What the Maintainer does, per pin.**
+
+| Pin | What the Maintainer does | Who runs the rest |
+|---|---|---|
+| AST baseline alone | Read one screen, answer "does this describe what I meant to bless?", type the 12-character code, commit. | `repin`. |
+| AST baseline plus `scaffold_ast_known_new.json` | The same, and the screen says "owes a ceremony re-anchor". | `repin` writes both files; then the ceremony row below. Two of the last six AST pins were like this. |
+| Gate manifest (a ceremony) | Read one short summary and say yes or no. Then the key and the push, as the runbook assigns them today. | The agent runs every other step. |
+
+**The ceremony row, in a form the Maintainer can carry out and judge.** The agent runs every ceremony step before the key (RA-01 to RA-13 in `bootstrap/REANCHOR_RUNBOOK.md`), then shows one summary from `repin status` of what the manifest pin would change: which files are new, changed or deleted, which commits touched them (by their messages), whether any of the ten authority-closure files changed, and the anchor's signature state. The Maintainer answers one question: "are these the changes I expected?" That is a judgment he can make without systems knowledge.
+
+What he cannot check, and so is not his sign-off: that the checksums are right, that the test collection is complete, that the ceremony report's digest binds what the summary shows. For these, **the control is the agent's recorded step, not his approval.** The agent records each command and its output in the commit body, and a fresh agent may replay it in a clean checkout. The summary is a reading aid computed from the same tree; the digest does not bind it. Nothing in this proposal claims his "yes" verifies a checksum.
+
+**What is left for him, and how long.** Per AST pin: read one screen, type one code, commit; I expect about 5 minutes and have no measure. Per ceremony: read one summary (also about 5 minutes, unmeasured), then the key and the push exactly as today. I do not change the key steps (RA-16, RA-18, RA-19), because they belong to the ceremony driver, not to `repin`. The first real use records the minutes. If the key steps are the hard part, that is a separate proposal (Q9).
+
+**What it costs.** One tool and its tests in five chunks, with a size budget per chunk. I have no measure of its size yet. The go-ahead is on record: "Repin is a build" (`dev/PLANNING.md:45`).
+
+**What breaks if I am wrong.** A flaw could bless a change the Maintainer did not intend. The header declares a Security Review for that reason. If the tool grows too large, the fallback is `status` alone (R1 and R3), with the writes by hand as today.
+
+**Terms.** *Pin*: write a checksum file (the AST baseline, the known-new file, the manifest, the lockfile) so it matches the tree. *Re-anchor*: move the signed ref `refs/cairn/gate-anchor`; only the ceremony does this. *Preimage*: the bytes of a file as they are now, before the tool overwrites them. *Compare-and-swap*: refuse to write if the file's current bytes are not the preimage. *Pseudo-terminal*: a fake keyboard and screen that a program can open; the Security Review showed one can type the code.
+
+### Context (what still holds)
+
+* The old runner `scripts/correct_pinned_digests.py` refuses on entry (`scripts/correct_pinned_digests.py:345-347`). Its review found two critical flaws: `--authorize` lets any process do the human act, and the plan digest covered a projection of the plan, so two different trees digested alike.
+* Pins are still by hand. From `git log --since=2026-08-28`: six commits to `bootstrap/tests/fixtures/scaffold_ast_baseline.json`, two to `bootstrap/tests/fixtures/gate_manifest.json`. Of the six AST pins, two also changed the frozen known-new file and were followed by a manifest re-anchor.
+* The gate anchor is the commit that changed `gate_manifest.json` last; a manifest pin is part of the key ceremony (`bootstrap/REANCHOR_RUNBOOK.md:391-399`).
+* The manifest goes stale silently when a frozen file changes after it is committed; only `python bootstrap/tests/_gate_manifest.py verify` compares (`AGENTS.md:530-541`).
+* The ceremony driver `scripts/reanchor_ceremony.py` exists and is read-mostly. The 2026-08-28 note's `reanchor_drive.py` landed under that name. Its 365-commit diff problem is smaller now (40 commits on `0.5-dev` since `6f29519d`, 5 touching a protected path).
+
+### Proposal
+
+**One loop, one tool.** A protected set of files changes only through reviewed work; a pin records the state; `repin` finds the drift and moves the AST pin after a typed code. Gate-manifest pins stay in the ceremony.
+
+**Three verbs.**
+
+* `status` reads and writes nothing. For the AST baseline it prints, per changed symbol, the class (`CHANGED`: body changed; `MISSING`: baselined, now absent; `DUPLICATE`: defined in more than one file; `NEW`: not in the baseline, must be in the known-new file), the commits that touched the file since this fixture's last pin, and the provenance line (below). For the manifest it prints a static drift view (below). Its first line is the anchor's signature state; its second is the count of commits touching protected paths since each fixture's last pin.
+* `package` computes the whole transaction from an extraction (below) and writes it to a new private folder outside the repository.
+* `apply` reads the transaction once, renders the report itself, shows it, asks for the code, then writes the AST baseline (and the known-new file if it must change). It does not commit and does not push. It prints the exact `git commit <paths>` line.
+
+**Reading order (before anything is shown or written).** All of this is contract; the plan carries the detail.
+
+1. Resolve `HEAD` and `refs/cairn/gate-anchor` once each to object ids; use only the ids. Refuse if the anchor does not resolve.
+2. Read the anchored manifest as JSON from the anchor object (`git show <anchor-id>:bootstrap/tests/fixtures/gate_manifest.json`). This is data; no code runs.
+3. Extract `HEAD` with `git archive` into a fresh private folder and read only that copy. Every git call goes through the existing sterile launcher (`bootstrap/tests/_gate_manifest.py:176-194`), plus `core.fsmonitor=false` on any call that reads a working tree. Refuse if `HEAD` moved by the end of `package`.
+4. Before importing anything outside the standard library, hash each file in a fixed list written in `repin` (`repin` itself, `bootstrap/tests/__init__.py`, `_ast_attest.py`, `_gate_manifest.py`, and `_gate_preflight.py` for the closure list) and compare with that file's `frozen_files` entry in the anchored manifest. Refuse on any difference or absence. `apply` also refuses while the anchor does not pin `repin`'s own two files.
+5. Do the work in a child process run under `python -I -X pycache_prefix=<fresh empty folder>`, importing from the extraction, so the bytes checked are the bytes run. Refuse if any compiled file is tracked under an import root. After import, refuse any loaded local module outside the list.
+6. Measure the closure as blob-id differences between the anchor commit and `HEAD` for all ten authority-closure members (three are not Python and the manifest does not cover them). Refuse on any difference. This is the one meaning of "changes" in this proposal.
+
+*What this does not close.* A commit that edits `scripts/repin.py` itself can delete step 4. That shows as `FROZEN-MODIFIED` in `_gate_manifest.py verify` from a trusted checkout and in the next ceremony's report, not on `repin`'s screen. Running `repin` from an anchor extraction would close it but needs a launcher; I recommend deciding that together with Q7, not here. "Anchored" means what this clone's ref names, not what the Maintainer signed.
+
+This works for the AST pin because it only parses source (`bootstrap/tests/_ast_attest.py:94-100`). It cannot work for the manifest, because test collection runs the candidate's code; that is why the manifest is not written here.
+
+**Manifest `status` (read only, static).** After steps 1 to 6, it calls the existing static view (`verify(..., do_collect=False)`, `bootstrap/tests/_gate_manifest.py:532`) on the extraction. It shows `FROZEN-MODIFIED`, `FROZEN-MISSING` and new frozen files. It says in its own text that it does not check collection and runs no candidate code. Dropped test nodes appear only where collection runs (`bootstrap/tests/_gate_manifest.py:680`). So `status --dropped-from <file>` reads the saved text of a `verify` run, as data, and prints first, flagged, the dropped nodes whose test file still exists, then those whose file was deleted. A deletion cannot explain the first group. This option is my choice to meet the Security Review's condition without collecting; the plan may find a simpler way.
+
+**The transaction.** One JSON file, bound by the SHA-256 of its bytes:
+
+* the head commit id, its tree id, and the anchor id;
+* the blob id and SHA-256 of each file `apply` will overwrite;
+* every influence outside the tracked tree, by name: interpreter version, git version, and the blob id of `encode_display` (`tools/session.py`, outside the manifest);
+* the full new bytes of each output file;
+* the rendered report bytes.
+
+The output set is hard-coded: the AST baseline, the known-new file, and the lockfile only if R4 is built. A transaction naming any other path, including `gate_manifest.json`, refuses.
+
+**`apply` shows the Maintainer what it will write (SR-3).** It reads the transaction once into memory and renders the report itself from those bytes. The render is a key-by-key comparison, in `repin`'s own code, of the file as found on disk against the output it will write: each key added, removed or changed, with old and new digest. It never uses stored report text and never the candidate's `_classify`. It prints its 12-character code beneath that render and accepts the code only from a terminal. The commit body records the code, the transaction digest and the render digest. `package` prints its own code for the replay comparison only. If the known-new file is among the outputs, the report and the commit line say it changes a frozen gate file and owes a ceremony re-anchor. `apply` also refuses if `HEAD` is not the transaction's head commit, or if any file's current bytes differ from its preimage.
+
+**The typed code is a confirmation and intent record, not authentication.** A program can open a pseudo-terminal and type it (probe 2 of the Security Review). The tool says so in its text, has no `--authorize` flag and no non-interactive path, and claims only that a pipe or an accident cannot supply the code. No message says a person confirmed anything. The same-user residual stays under the dated trusted-contributor posture (`bootstrap/REANCHOR_RUNBOOK.md:339`).
+
+**Provenance, written once.** For each commit since a fixture's last pin that touches a file the report names, `status` matches, case-insensitively and as substrings, the stem and the slug (each of 6 or more characters) of every file under `dev/plans` and `dev/proposals`, archive included, as they exist at `HEAD`, against the commit's subject and body. It prints "the message names `<stem>` (status `<Status line>`)" or "the message names no plan or proposal". The word "reviewed" is never used, no refusal depends on the match, and the text is shown as a claim anyone could have written. *Measured, over `92a72e4c..6f29519d`:* my count was 69 of 124 touching commits naming one (56%), under a broad path reading. The pass 1 reviewer reproduced 63 of 111 (57%) under this proposal's own path definition and 72 of 125 (58%) under the broad one. In a sample of 20 unnamed commits read by subject, about 12 were real work under another name (an issue-batch id, a chunk id, a shorter name). That is a reading, not a count. I have not measured a per-fixture range, which is what the tool will see.
+
+**Classification.** "Decides" means code or a test; "pinned" means a data fixture under `bootstrap/tests/fixtures/`. I expect most rows to read "decides". The note required the split, so I keep it; R1 measures whether it separates anything over the last range (Q10).
+
+**Safe writes (plan items, SR-5).** Temporary files from `tempfile.mkstemp` in the target's folder, never a fixed name. Refuse if the target or any parent up to the repository root is a symlink, or the target is not tracked as a regular file. Open with `O_NOFOLLOW`; make the compare-and-swap read immediately before `os.replace`. With two outputs, write and check both temporaries before replacing either. After a partial failure, print which file was replaced and the exact `git restore --source=<head-id> -- <path>` line, exit non-zero, and restore nothing. The transaction folder is from `tempfile.mkdtemp`; `apply` refuses a transaction file that is a symlink, not the user's own, or writable by others. Do not import `bootstrap/_scaffold/_guard.py`: the AST baseline attests that code, so importing it would put the attested code inside the attester. Write the containment rule in `repin` and say why in a comment.
+
+**Untrusted text (plan items, SR-6).** Every string from git, from file names under `dev/plans` and `dev/proposals`, from the transaction, and from a subprocess's error output goes through `encode_display` (`templates/skills/_lib/session.py:188`) before it reaches the screen or the printed commit line. Git output is read as bytes, not with `text=True`.
+
+**Lockfile adapter (R4, SR-7).** If built, it parses the mappings from the `HEAD` blob with `ast` and never imports them (the old runner's `plan_lockfile` imports the tree's engine module, `scripts/correct_pinned_digests.py:239-241`), and keeps any read of a record's `dst` inside the repository by the safe-write rule.
+
+**What each check refuses, with no write.** An anchor that does not resolve; any file in the step-4 list or any closure member differing from the anchor; a tracked compiled file under an import root; `HEAD` moving during `package`; an output path outside the hard-coded set; a code from anything but a terminal; a transaction file that is a symlink, not the user's own, or writable by others; a symlinked target or parent; a changed preimage; an interpreter whose minor version is not the pinned one; any git error; a declared set with zero members (each such check has a control test that passes when a member exists). **Shown, not refused:** commits naming no plan or proposal (Q2); an unsigned anchor commit; a known-new change.
+
+**Disclosures forwarded.** The underlying tools make disclosures: the anchor "resolved from the TARGET repo" note, the untracked-files record, the interpreter-minor hold (named by pass 1; I have not enumerated them all). The plan lists every disclosure the tools `repin` calls make, from their source, and gives each a control test: remove the line and the test fails.
+
+**Chunks.**
+
+| # | Chunk | Needs from the Maintainer |
+|---|---|---|
+| R1 | The shared core and `status` for the AST baseline: reading order steps 1 to 6, the provenance rule as a test fixture, the classification split, the refusals and their controls. Read only. | Nothing. Run `status` once to see if the report reads well. |
+| R2 | The transaction, `package` and `apply` for the AST baseline and the known-new file: safe write, the render in `apply`. | `apply` on the real tree waits for a key ceremony that pins `repin` (below). |
+| R3 | Manifest `status`: the static drift view and `--dropped-from`. Read only. Writes nothing, and no `repin` path writes `gate_manifest.json`. | Nothing. |
+| R4 | The lockfile adapter, with SR-7. Only if a lockfile correction is owed (Q4). | Nothing. |
+| R5 | Retire `scripts/correct_pinned_digests.py` and `bootstrap/tests/test_correct_pinned_digests.py`; cut `bootstrap/AST_BASELINE_RUNBOOK.md` to one page. The commit body lists the two paths and the nine node ids. | One manifest pin by the ceremony. R5 lands just before the 0.5 cut's re-anchor, so that ceremony pays for it once. |
+
+**Size budget, per chunk (my choice, not a measure; Q5).** Lines of code excluding tests: R1 and R3 together about 300; R2 about 300, counting the transaction, `apply` and the safe write separately from `status` and its report, because the review burden sits there. Check at the end of R1, with an estimate for R2, and again at the end of R2. If the budget fires, stop at `status`, keep R2's code unmerged on a branch and not discarded, and do writes by hand.
+
+**The first pin that includes `repin` is a key ceremony.** `scripts/repin.py` and `bootstrap/tests/test_repin.py` enter as `FROZEN-NEW`, and nothing earlier pins them, so with step 4 `apply` refuses until an anchor does. The Maintainer's one manual check at that ceremony, recorded in its commit body: `git diff <commit the R2 code review named> <candidate> -- scripts/repin.py bootstrap/tests/test_repin.py` prints nothing, and the stage-1 report lists both files as `FROZEN-NEW`. If it prints nothing, what was reviewed is what is pinned; if it prints something, refuse. After that ceremony, "the previous pin covers the tool that moves the next one" is true. If the Maintainer wants a `repin` write before any ceremony, the check that can fail is a fresh agent producing the same baseline by the current runbook in a separate clean checkout, with byte-equal output recorded (Q9).
+
+**Order against 0.5.** After the engine batch and before drain mode (`dev/PLANNING.md:76`). Nothing here is on the cut's critical path; the cut's re-anchor stays by hand and is the ceremony that first pins `repin`, unless the Maintainer prefers an earlier one.
+
+### Documentation, install contract, frozen files
+
+* No rule text changes. "Maintainer-run, dry-run-verified direct correction" (`AGENTS.md:525-526`) stays; `repin apply` is how the Maintainer runs it.
+* The strategy note gets a one-line status pointer at R5, at a serialization point. `bootstrap/REANCHOR_RUNBOOK.md` is a closure member and is not touched.
+* Install contract: none. `repin` is in `scripts/` and `bootstrap/tests/`, not in an install mapping (a grep for `correct_pinned_digests` in `bootstrap/_scaffold/config.py` finds nothing; the same file lists other `scripts/` files, so the grep can match). I did not read the whole mapping list; the plan's scoped check does.
+* Frozen set: the two new files enter as `FROZEN-NEW` (`bootstrap/tests/_gate_manifest.py:353-355`). R5 deletes two frozen files and nine pinned nodes, so the gate holds with `FROZEN-MISSING` and `COLLECTION-DROPPED` until the manifest pin. Authority closure and AST baseline: unchanged.
+* The report and every refusal message follow Cairn Plain Language rules 10 to 12; the commit-body record follows rule 17.
+
+Proposed paths:
+* `scripts/repin.py`
+* `bootstrap/tests/test_repin.py`
+
+### Evidence / verification plan
+
+I have run none of this. The plan owns the commands. Cairn has no CI, so every trigger is a person or an agent running a command. Boundary A: `python -m pytest bootstrap/tests/test_repin.py`, per chunk, by the implementer. The certifying run (`AGENTS.md:272-296`) is started by a person before a push, a re-anchor or a release, or on request. `_gate_manifest.py verify` runs only by a person; `repin status` makes it cheaper, not automatic. The change touches the gate manifest and a trust-ceremony surface, so Boundary B is the full pair (`AGENTS.md:311-325`). `claim_check.py` and `check_cairn.py` run on this file and the plan, by the author.
+
+**Tests required** (real command-line entry, not helpers; each with its control):
+
+* Two trees differing only in a kept record give different transaction digests; `apply` refuses a transaction whose output bytes were edited after `package`.
+* A candidate commit that changes `_ast_attest.py` refuses with no write (control: unchanged bytes pass).
+* A tracked unchecked `.pyc` under `bootstrap/tests/__pycache__/` refuses (control: none tracked, passes).
+* A closure-member blob change refuses (control: an unrelated change passes).
+* A transaction naming `gate_manifest.json` refuses (control: the baseline alone passes).
+* Every key `apply` changes appears in the screen it printed before asking (control: drop one row from the render and the test fails).
+* An untracked engine module in the working tree does not appear in the output (control: committed, it does). `HEAD` moving during `package` refuses.
+* A commit subject with ESC and CR appears escaped in `status` (control: an ordinary subject is unchanged).
+* A preimage changed between `package` and `apply` refuses and leaves every file as it was.
+* A non-interactive `apply` refuses. The test says a pseudo-terminal can still satisfy a terminal check and pins only "a pipe cannot".
+* A symlinked target, a symlinked parent, a path outside the repository, and a planted `<name>.tmp` link each refuse or are not followed.
+* Zero-member sets refuse (control: a member present passes); each refuse-all risk has a control that expects a pass.
+* Each disclosure the called tools make appears in output (control: remove it and the test fails).
+* `--dropped-from` prints the still-present-file group first (control: a deleted-file node prints second).
+* The provenance rule, as a fixture over a recorded range.
+* A replay: `package` at a commit, then again in a detached checkout of the same commit, gives the same digest.
+
+Tests build a scratch repository with its own anchor ref; `apply` is never run against the real tree before the first ceremony. No independent scientific check applies.
+
+### Security preflight
+
+* **S1. Who supplied it?** The tree being pinned supplies the files; it does not supply the rule, because the rule's bytes must equal the anchor's before any of it runs (reading order, steps 1 to 6). The typed code supplies the person.
+* **S2. Can it fail?** Each check has a mutation in the tests above and a control that passes.
+* **S3. What fires it?** A person runs `status`, `package`, `apply`. The tool's header must agree with the table in "In plain terms".
+* **S4. Which way does it break?** Every refusal is "no write". The one default that gives more authority is unnamed-artifact commits shown rather than refused (Q2), deliberately and visibly.
+* **S5. Who still wins?** A process with the Maintainer's operating-system user: it can type the code, edit the tool before it runs, or substitute `git`. This stays open under the dated posture. The projection defect is closed by construction: the digest covers the output bytes and the render. The unsigned gate anchor and the ceremony's inherited environment are outside this proposal.
+
+### Signals the change is wrong
+
+* The tool exceeds a chunk budget (Q5); stop at `status`.
+* If per-file pinning cannot be expressed without projection bookkeeping, keep per-file digests, computed and compared by the tool. The manifest's are per-file already, so I do not expect this to fire.
+* The Maintainer finds the report unreadable, or the code becomes a reflex typed without reading.
+* A refusal fires on ordinary pins twice in a row (a refuse-all guard).
+* Any way for two different outputs to carry one digest.
+* The Maintainer says the ceremony summary still needs knowledge he does not have (Q9).
+
+### Questions for the Maintainer (each has a default; none blocks)
+
+* **Q1. Replay.** Optional for the AST pin, recorded as `Replay: matched <code> | not run`. Nothing can enforce "required". Default: optional.
+* **Q2. Commits that name no plan or proposal: show and count, or refuse?** Default: show and count; refusing would have blocked about 43% of commits in the measured range.
+* **Q3. A closure-member change since the anchor, inside a pin: refuse.** Default: refuse. The Maintainer can still do that pin by hand.
+* **Q4. Lockfile adapter: only if a correction is owed.** Default: only if owed.
+* **Q5. Size budget per chunk:** about 300 lines each for R1 and R3 together and for R2, excluding tests. Default: those numbers; stop at `status` if R2 passes its budget.
+* **Q6. Name and place: `repin`, at `scripts/repin.py`.** Default: yes.
+* **Q7. The launcher template as the eleventh authority-closure member (a closure change is a transition ceremony; `bootstrap/REANCHOR_RUNBOOK.md:311-337`), and the key-ceremony integration.** The first is not mine to cut. The note pre-registered it as an acceptance criterion. Default: its own later proposal with its own Security Review. **What is lost until then:** the launcher runs before any check and nothing pins its template, so the ceremony's first bytes are unchecked, and `repin` cannot be run from an anchor extraction. I recommend doing it soon. Say if you want it folded in; that widens scope and needs a revision.
+* **Q8. Do you allow the reductions in the Scope delta below, including that `repin` never writes the manifest?** Default: allow, each as listed. Neither I nor a reviewer can concede them.
+* **Q9. Which part of the ceremony is too complicated: the commands, knowing what to check, or the key?** Default, until you say: knowing what to check. That is the part this proposal addresses (the agent runs the commands; you read one summary and say yes or no). If it is the key, that is a separate proposal about the ceremony's key steps, not this tool. Also: when should `repin`'s first real write happen? Default: at the cut's re-anchor, with AST pins by hand until then. Alternative: an earlier ceremony of your choosing.
+* **Q10. If R1 shows the decides/pinned split separates nothing over the last range, may I drop it?** Default: ask you first.
+
+### Scope delta
+
+**Scope delta**: degraded. The baseline is the opening contract and the 2026-08-28 note it was built from. Only the Maintainer concedes any row (Q8). The proposed dispositions are mine; the unlabelled "carried" rows owe nothing.
+
+* The opening R3: a gate-manifest `package` and `apply`, and the claim "three acts, no key" for the manifest. Now the manifest is read-only here and pinned in the ceremony. **disposition**: accept. Specifying it was rejected because collection runs candidate code and a `repin`-written manifest would either be overwritten by the ceremony or leave the gate holding, so the Maintainer could not use it.
+* The note's "three acts, the third the key where the key applies" and "in minutes". Now three acts only for an AST pin that leaves the known-new file unchanged; others owe a ceremony. Minutes are the Maintainer's report, not measured. **disposition**: accept.
+* The note's "an unreviewed or unclassifiable change refuses, loudly". Now shown and counted; refusal only on structural states, because about 43% of commits in the measured range name no artifact. **disposition**: accept. (Q2)
+* The note's pre-registered "launcher template joins the closure". Not built here. **disposition**: defer. (Q7; loss stated there)
+* The note's "every ceremony disclosure is forwarded, one control test per disclosure". Carried for the tools `repin` calls. Not carried for the ceremony driver, which `repin` does not wrap. **disposition**: defer for the driver.
+* The note's "cut the second values parser" and "signed tree, dedicated ceremony key, typed confirmation at the anchor tier". Both belong to the launcher and key tier. **disposition**: defer. (Q7)
+* The note's "risk or volume trigger". Not built: nothing runs `status` unprompted. `status` prints the commit count since each last pin, so the volume is visible on demand. A session-routine rule would be new mechanism. **disposition**: defer. The "maximum review budget" is carried as the per-chunk size budget.
+* The note's "the modification-staleness silence is gone". Now the silence is visible on demand only. **disposition**: accept.
+* The note's "the runbooks shrink to a page each". Only the AST runbook shrinks (R5); `bootstrap/REANCHOR_RUNBOOK.md` is a closure member and stays. **disposition**: defer.
+* The two-program double hash. Replaced by the optional replay; both programs would hash the same bytes as the same user. **disposition**: accept.
+* The note's "the previous pin covers the tool that moves the next one". True only after the first ceremony that pins `repin`; `apply` refuses before. Carried, delayed.
+* The deletion of the old launcher in `~/Downloads`: a machine-local file I cannot verify; I do not rely on it.
+
+Carried, no delta: the transaction object, compare-and-swap and read-back writes, the zero-member rule with controls, classification (Q10), the sterile staging (now an extraction), the two falsifiers, and the provenance listing from file history, never pickaxe.
+
+### Assurance path
+
+**Assurance path**: high-assurance, unchanged. The header declares `usual + Security Review` and the plan `required(Internal + Internal Security Review)`. SR-1 to SR-4 are adopted as stated, and the manifest writer, which the Security Review said would need a second pass, is gone, so I expect no second proposal-stage pass. I wrote neither review.
+
+### Withdrawn / superseded commitments
+
+* **Opening R3, the gate-manifest adapter (`package` and `apply` for the manifest).** Replaced by a read-only manifest `status`. Why: SR-2 and F1.
+* **"Three acts, no key for the routine pins."** Replaced by the per-pin table. Why: F1, SR-2, and the Maintainer's feedback.
+* **"`status` static by default; `--collect` opts into collection"; "`package` read only; safe for the agent in the room".** Withdrawn. Why: F2; collection runs candidate code.
+* **"R1 gives loud-on-modification."** Replaced by "visible on demand". Why: F3; nothing runs `status` unprompted.
+* **`REKEYED` and `DROPPED` as AST class names.** Replaced by the real names. Why: F7; they do not exist in `bootstrap/tests/_ast_attest.py`.
+* **"Reuse: import `produce` and `_frozen_files` and the AST functions from the tree."** Replaced by the six-step reading order. Why: SR-1, F9.
+* **The transaction holding "the head commit" read from the shared working tree.** Replaced by a `git archive` extraction of one resolved commit, with a refusal if `HEAD` moves. Why: SR-4, F8.
+* **The report text printed by `package` as the thing the code covers.** Replaced by a render `apply` makes itself from the bytes it will write. Why: SR-3, F4.
+* **The sterile-worktree cut.** Reversed: the extraction is the sterile staging. Why: F8, SR-4.
+* **`apply` rehearsed on a scratch copy of the real tree.** Replaced by tests on a scratch repository with its own anchor. Why: step 4 makes `apply` refuse until an anchor pins `repin`.
+* **The 600-line stop checked before R3.** Replaced by a per-chunk budget. Why: F10.
+* **"Scope delta: preserved".** Replaced by "degraded" with the table. Why: F3.
+* **The "Authoring tier" paragraph.** Not restated. Why: F11; I cannot date or source the quote.
+* **"The first pin that includes `repin` is covered by the code review of R2 and R3."** Replaced by a key ceremony with one manual diff check. Why: SR answer 2.
+* **"The provenance report line `NOT SHOWN AS REVIEWED`."** Replaced by "the message names ... (status ...)" and "names no plan or proposal". Why: F6, SR-6.
