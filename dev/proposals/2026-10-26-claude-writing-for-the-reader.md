@@ -350,3 +350,78 @@ or license file, so no Security Review is owed.
   reviewer should confirm the claims made from them here.
 * Whether the 17 rules are too many. The review should name any that do not
   earn their place.
+
+## Author's addendum -- Claude (author) -- 2026-10-26 -- a second literature check
+
+Added before any review, so the reviewer reads it with the opening text. A
+second search, through the Consensus research agent over peer-reviewed papers
+(thread: https://consensus.app/search/i-am-drafting-a-short-plain-language-writing-stand/-YIk55gaRdm4VnanpzKYbA/),
+confirmed the novelty finding: no standard combines plain-language rules for
+AI-written text, instructions and scientific reasoning for technical readers.
+It changes one rule, proposes one more, and corrects one citation.
+
+**Rule 14 changes: the number alone, not number then word.** The opening
+text followed EFSA (2019): number first, word second. Newer experimental work
+finds the word adds nothing and can hurt. Words and numbers together did no
+better than numbers alone, and both beat words alone (Mandel & Irwin, 2020,
+*Judgment and Decision Making*, preprint doi:10.31234/osf.io/hm7zu). Pairing
+probability words with numeric ranges can confuse readers and delay decisions
+(Dhami & Mandel, 2022, *Trends in Cognitive Sciences*,
+doi:10.1016/j.tics.2022.03.002). Bracketed numbers raised agreement with a
+standard's intended meanings from 32% to 66%, still well short of full
+agreement (Wintle, Fraser, Wills, Nicholson & Fidler, 2019, *PLoS ONE* 14,
+doi:10.1371/journal.pone.0213522). The proposed replacement for rule 14:
+
+> 14. State uncertainty as a number with its source: "±0.5 mm, from gauge
+>     error", "about 1 chance in 5, from the 30 runs". Do not use probability
+>     words ("likely", "probably") on their own; readers give them very
+>     different meanings.
+
+Question 3 changes accordingly. *Default:* the number alone.
+
+**A proposed rule 18: say how sure you are about your own work.** Language
+models rarely express uncertainty unprompted, and when prompted they are
+overconfident: an average of 47% of their confident answers were wrong (Zhou,
+Hwang, Ren & Sap, 2024, arXiv:2401.06730). First-person uncertainty ("I'm not
+sure, but...") reduced people's reliance on wrong answers and raised their
+accuracy, though it did not remove over-reliance (Kim, Liao, Vorvoreanu,
+Ballard & Vaughan, 2024, *ACM FAccT*, doi:10.1145/3630106.3658941). Explanations
+that match the model's real confidence narrow the gap between what people
+trust and what is right (Steyvers et al., 2025). This is the one rule aimed at
+the agent as the writer, and it has the most direct evidence of any:
+
+> 18. Say how sure you are about your own work, and why, in the first person:
+>     "I ran the tests and they pass", "I did not run this on Windows", "I am
+>     not sure this handles feet; I found no test for it". Never let fluent
+>     prose stand in for a check you did not make.
+
+It sits under *Scientific and technical reasoning*. It also restates, for
+writing, the existing doctrine to verify before asserting.
+
+**A caveat for the general rules (1 to 8).** Simpler AI-written summaries
+improved lay readers' comprehension, but made the scientists seem more
+credible and *less intelligent* (Markowitz, 2024, *PNAS Nexus* 3,
+doi:10.1093/pnasnexus/pgae387). The evidence for plain language comes mostly
+from lay readers, not experts. This supports rule 3 (keep the field's terms)
+and the anchor's expertise-reversal concern; it is not a reason to drop rules
+1 to 8, but the evidence for them is weaker for expert readers than for
+newcomers, and the instruction rules (9 to 11) have the weakest direct
+evidence of the three groups.
+
+**Supporting evidence for rule 12 (measured, assumed, expected).** In
+observational studies in a general medical journal, 20% used causal language
+inconsistently, and some authors moved from an association straight to a
+recommendation without stating the assumption (Bertizzolo, Schroter,
+Dechartres & Goetghebeur, 2021, *BMJ Open* 11, doi:10.1136/bmjopen-2020-043339).
+Claim frameworks and the hedging literature already separate observations from
+inferences (Blake, 2010, *Journal of Biomedical Informatics* 43(2):173–189;
+Hyland, 1995). Neither states the measured, assumed and expected split.
+
+**Citation correction.** Steyvers et al. is *Nature Machine Intelligence*
+7:221–231, doi:10.1038/s42256-024-00976-7 (volume 7 is the 2025 volume; the
+search index dates it 2024). Budescu, Por, Broomell & Smithson (2014) is
+confirmed as cited: *Nature Climate Change* 4(6):508–512.
+
+**Still unconfirmed:** the full EFSA author list; Robillard & DeLine (2011),
+Fischhoff & Davis (2014), Kuhn (2014) and Gopen & Swan (1990) were not in the
+second search's results and rest on the first search.
