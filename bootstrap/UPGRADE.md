@@ -265,13 +265,16 @@ you what changed.
   affected. The same exit-2 refusal covers a lockfile whose `modules` list holds
   anything but plain names, a staged upgrade that names a file or a version that
   is not plain text, and a lockfile record whose `dst` or `base_cache` is inside
-  `.git/`. Two actions do not make this check first. Over a linked lockfile,
-  `--init-lock` and `--adopt-collisions` end in a Python traceback with exit 1
-  instead of the one-line refusal; nothing is read or written outside the
-  project. `--init-lock` over a profile link that points at nothing ends the
-  same way, before it writes. `--init-lock` does still read a profile that is a
-  link to an existing file, and a lockfile behind a linked `dev/.cairn`; it
-  writes nothing outside the project.
+  `.git/`. `--init-lock` makes the same check for itself, before it looks for a
+  lockfile or reads the profile: a link at `dev/.cairn/profile.yml`, at
+  `dev/.cairn`, or above either one is refused with the same exit 2, whether it
+  points to a file that exists or to nothing. Two limits remain. Over a lockfile
+  that is itself a link, `--init-lock` and `--adopt-collisions` end in a Python
+  traceback with exit 1 instead of the one-line refusal; nothing is read or
+  written outside the project. And `--init-lock` hashes each tracked file it
+  finds, a linked one included, so a link at one of those files puts the digest
+  of the file behind it in the new lockfile (measured with `AGENTS.md`); nothing
+  is written outside the project.
 * **The session helper refuses links and unsafe table rows.** `tools/session.py`
   (`session-start`, `session-end`) never writes through a link or outside the
   project. If `dev/`, `dev/reflections` or `dev/.cairn` is a link, `session-end`
