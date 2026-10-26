@@ -45,6 +45,7 @@ from bootstrap._scaffold import lockfile as LF  # noqa: E402
 from bootstrap._scaffold import upgrade as UP  # noqa: E402
 from bootstrap.tests.test_upgrade_lockfile_path_containment import (  # noqa: E402
     LOCK_REL,
+    SCAFFOLD,
     STAGE_REL,
     World,
     _ACTIONS,
@@ -408,6 +409,129 @@ def test_plan_and_stage_still_run_over_a_regular_or_absent_profile(world, flag, 
         assert (world.project / STAGE_REL).is_dir()
     else:
         assert snapshot(world.project) == before, "--plan writes nothing"
+
+
+# --- the profile file, on the two adoption actions -------------------------------
+
+#: Values the linked file holds that no output may show and no lockfile may take.
+_LINKED_PACKAGE = "OUTSIDEPKG"
+_LINKED_AXIS = "OUTSIDESECRETVALUE"
+
+#: Per action: its flags, and the text of a profile it would read.  The module
+#: adoption seeds a token from a complete profile and writes it to the lockfile;
+#: the collision adoption prints an invalid axis value from an incomplete one.
+_ADOPTIONS = {
+    "adopt-module": (
+        ("--adopt-module", "python-security"),
+        _complete_profile("Linked") + f"python_package: {_LINKED_PACKAGE}\n"),
+    "adopt-collisions": (_DUMMY_ADOPTION, f"age: {_LINKED_AXIS}\n"),
+}
+
+#: Runs the real launcher with every `open()` of the process written to a log, so
+#: a test can tell a read through a link from a refusal that read nothing.
+_AUDITED_LAUNCH = '''
+import os, runpy, sys
+seen = []
+def hook(event, args):
+    if event == "open":
+        try:
+            seen.append(os.fsdecode(args[0]))
+        except TypeError:
+            pass  # a descriptor number, not a name
+sys.addaudithook(hook)
+script, log, *argv = sys.argv[1:]
+sys.argv = [script, *argv]
+sys.path.insert(0, os.path.dirname(script))
+try:
+    runpy.run_path(script, run_name="__main__")
+finally:
+    with open(log, "w", encoding="utf-8") as fh:
+        fh.write("\\n".join(seen))
+'''
+
+
+def upgrade_audited(world: World, *flags: str) -> tuple[subprocess.CompletedProcess[str], list[str]]:
+    """`upgrade` on the real command line, plus every name the process opened."""
+    log = world.outside.parent / "opened.log"
+    runner = world.outside.parent / "audited_launch.py"
+    runner.write_text(_AUDITED_LAUNCH, encoding="utf-8")
+    proc = subprocess.run(
+        [sys.executable, str(runner), str(SCAFFOLD), str(log), "upgrade", *flags,
+         "--target", str(world.project), "--cairn-root", str(CAIRN_ROOT)],
+        capture_output=True, text=True, timeout=300, cwd=str(world.project.parent),
+        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    return proc, log.read_text(encoding="utf-8").splitlines()
+
+
+@needs_links
+@pytest.mark.parametrize("action", sorted(_ADOPTIONS))
+@pytest.mark.parametrize("how", [
+    "existing-outside-file", "existing-inside-file", "dangling"])
+def test_adoptions_refuse_a_profile_that_is_a_link(world, action, how):
+    """`--adopt-module` read `dev/.cairn/profile.yml` for the module's tokens and
+    put the value it found in the lockfile; `--adopt-collisions` read it to size
+    the upgrade and printed a value from it.  Over a link, both took text from a
+    file the project does not own.  Every link is refused, wherever it points,
+    before the profile is opened, with the refusal the other actions print."""
+    flags, text = _ADOPTIONS[action]
+    profile = world.project / PROFILE_REL
+    profile.unlink(missing_ok=True)
+    if how == "existing-outside-file":
+        target = world.outside / "existing.yml"
+        target.write_text(text, encoding="utf-8")
+    elif how == "existing-inside-file":
+        target = world.project / "docs" / "profile-copy.yml"
+        target.write_text(text, encoding="utf-8")
+    else:
+        target = world.outside / "new-profile.yml"
+    link(target, profile)
+    project_before, outside_before = snapshot(world.project), snapshot(world.outside)
+    proc, opened = upgrade_audited(world, *flags)
+    said = proc.stdout + proc.stderr
+    assert_plain_refusal(proc)
+    assert PROFILE_REL in proc.stderr, "the refusal must say which file it is about"
+    assert "Replace it with a regular file" in proc.stderr, "the refusal must say what to do"
+    assert _LINKED_PACKAGE not in said and _LINKED_AXIS not in said, "text from the linked file was shown"
+    assert "[warn]" not in said, "the link was read before it was refused"
+    assert not [name for name in opened if Path(name).name in {"profile.yml", target.name}], (
+        "the profile was opened through the link")
+    assert profile.is_symlink(), "the link must be left as it was"
+    assert snapshot(world.project) == project_before, "a refusal must change nothing"
+    assert snapshot(world.outside) == outside_before, "something outside the project changed"
+
+
+@pytest.mark.parametrize("profile", ["regular", "absent"])
+@pytest.mark.parametrize("action", sorted(_ADOPTIONS))
+def test_adoptions_still_run_over_a_regular_or_absent_profile(world, action, profile):
+    """No link anywhere: the module adoption takes its token from a regular
+    profile and stops, naming the token, when there is none; the collision
+    adoption stops at its own check of the typed digests.  Neither mentions a
+    link.  The regular case also shows the audit log can see the profile being
+    read, so its absence in the refusals above means something."""
+    flags, text = _ADOPTIONS[action]
+    path = world.project / PROFILE_REL
+    path.unlink(missing_ok=True)
+    if profile == "regular":
+        path.write_text(text, encoding="utf-8")
+    lock_before = (world.project / LOCK_REL).read_bytes()
+    proc, opened = upgrade_audited(world, *flags)
+    said = proc.stdout + proc.stderr
+    assert "is a link" not in said and "Traceback" not in said, said[-600:]
+    if action == "adopt-module" and profile == "regular":
+        assert proc.returncode == 0, said[-600:]
+        lock = read_lock(world.project)
+        assert "python-security" in lock["modules"]
+        assert lock["tokens"]["python_package"] == _LINKED_PACKAGE
+    elif action == "adopt-module":
+        assert proc.returncode == 2, said[-600:]
+        assert "requires token(s) python_package" in proc.stderr
+        assert (world.project / LOCK_REL).read_bytes() == lock_before
+    else:
+        assert proc.returncode == 1, said[-600:]
+        assert "authorized set must be EXACTLY" in proc.stderr
+        assert (world.project / LOCK_REL).read_bytes() == lock_before
+    assert (any(Path(name).name == "profile.yml" for name in opened)) == (profile == "regular")
 
 
 # --- the lockfile itself -------------------------------------------------------
