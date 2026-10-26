@@ -1,9 +1,9 @@
 # A change with no plan: where its code review goes, and when its proposal archives
 
 **Author**: Claude (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual
-**Plan review**: not required(no plan: one commit, three doctrine files and one template pair, no follow-ups; the change is prose in four areas that share one rule, and the reviewer is asked to challenge that claim)
+**Plan review**: required(Internal) — the change spans doctrine, a shipped template and `docs/`, and the first review showed the edit list needs checking against the tree
 **Opened**: 2026-10-26
 **In brief**: Make the written rules match what already works for a change that needs no plan: build it, have it code-reviewed in its proposal, then archive the proposal.
 
@@ -306,3 +306,177 @@ So the true count of "no plan and no review found" is two, not four, and one of 
 I did not run any test or gate (no full suite, per the rule, and no scoped run: the "nothing reddens" statements are read from the test sources). I did not write the edit in a copy to see which sentences a test pins, which would settle RV6 by measurement. I did not read `docs/` beyond the archive-timing phrasing, the example projects beyond their READMEs and archived proposals, or the plan template for whether a short plan is allowed, which is what could make RV2's cost larger than I state. I did not trace the implementing commit of `decision-rights-floor`. The scope delta (preserved) and assurance path (high-assurance) look right to me and I did not challenge them further.
 
 No quota applies: RV1 to RV4 are what I would want answered before the Decision, and RV5 and RV6 are corrections.
+
+## Response -- Claude (author) -- 2026-10-26
+
+I accept all six findings. RV2 changes my mind about the design's framing but
+not its choice, and the reasons are costed below. The revision carries every
+change, so the proposal goes to the Decision. It adds nothing the review did
+not see: every file in the enlarged edit list is one the review named, and the
+only new sentence is the exception that RV1 asked for. By the one-round rule
+that needs no second review.
+
+* **RV1, accepted.** The revision adds the exception as a stated sentence in
+  `doctrine/lifecycle.md`, with its reason, and points the code review of a
+  change with no plan at the plan template's `## Code review` skeleton instead of
+  copying it into the proposal template. My earlier reading was that the
+  review "changes" the accepted proposal; the reviewer is right that the rule
+  should say what it allows, because I was relying on an improvised practice.
+* **RV2, accepted as a fair alternative; not adopted, with its costs shown.**
+  Fast multi-stage gives the same three commits (plan-open and implementation,
+  code review, plan archive) as the proposal's order (implement, code review,
+  archive). The difference is one artifact. The plan template is 453 lines
+  (`dev/plans/_template.md`), the smallest archived plan is 185 lines
+  (`dev/plans/archive/adopter-entry-doc-refresh.md`), and `docs/quickstart.md`
+  would have to teach it in the first walkthrough. A one-commit prose edit does
+  not earn that, and a rule that makes small changes expensive is the failure
+  Cairn's restraint principle names. The Maintainer's Question 1 below puts the
+  choice where it belongs. If the Maintainer prefers always-plan, the
+  alternative's edit list is in the review (RV2) and the revision's file set
+  carries over almost whole.
+* **RV3, accepted.** The edit list now includes the four `docs/` pages, the
+  `docs/quickstart.md` lines named, and the sentences the old grep missed. The
+  two example projects and their archived proposals stay as they are: they are
+  dated records of the old order. The frozen `test_quickstart_sequence.py`
+  exercises git moves, not the doctrine text, and stays unedited; the
+  quickstart's toy change says plainly that it skips the code review a real
+  change gets. The consistency check is rewritten to match wrapped lines.
+* **RV4, accepted.** This proposal's own "no plan" claim fails the triage rule
+  it states. The header now reads `required(Internal)`: the change spans
+  doctrine, a shipped template and `docs/`, and a plan review is the right
+  place to verify the edit mapping, which the first review showed was short by
+  seven files.
+* **RV5, accepted.** The counts are corrected, and `7066489a`, which archived
+  `r6-unused-def-blindspot` in its implementing commit as the written rule says
+  and left no code review, is cited as the case that shows the harm.
+* **RV6, accepted.** The template constraint and the retired contract checker
+  are carried into the revision. The `lifecycle-contract.md` row is dropped.
+
+## Revision -- Claude (author) -- 2026-10-26
+
+This is the complete current contract. It replaces the Proposal, Documentation
+and Evidence sections above, and the header's `Plan review` line. Context and
+Alternatives stand, with the corrections noted in the Response.
+
+### What changes
+
+For an accepted proposal that meets all three skip conditions of the plan
+triage rule (`doctrine/plans.md:189-192`), the written order becomes:
+
+1. **Implement.** The implementing commit ships the work and records its
+   Boundary B result in its body (`AGENTS.md:332-340`, unchanged). It does not
+   archive the proposal.
+2. **Code review, in the proposal.** A reviewer who is not the implementer
+   appends `## Code review -- <reviewer> -- <date>` to the still-open accepted
+   proposal, using the plan template's `## Code review` skeleton
+   (`dev/plans/_template.md:423`). The author's answer is `## Code review
+   response`, in the existing grammar (`doctrine/proposals.md:467-470`). The
+   status stays `accepted`.
+3. **Archive, in its own commit,** once the review has closed, with the link
+   maintenance that already applies. No archive before a code review has
+   occurred.
+4. **If the change proves not to be trivial,** a plan opens at that point and
+   its plan-open commit archives the proposal as today.
+
+**The named exception.** `doctrine/lifecycle.md` after the paragraph that ends
+at line 184 gains: *a code review of a change with no plan, and the author's
+answer, are appended to the accepted proposal before it archives. They record
+how the work was checked and do not amend the Decision.* This sits beside the
+existing claim-marker exception to append-only and is bounded the same way: a
+section is added, no earlier text is edited.
+
+**The "no plan" claim.** A proposal that expects to need no plan writes its
+header as `not required(no plan: <how each of the three skip conditions
+holds>)`. In the proposal template the clause follows the existing
+`{{required(Internal) | required(Internal + Internal Security Review)}}` text
+and does not replace it (`bootstrap/tests/test_review_stance_in_shipped_files.py:709-711`
+requires that prefix). The sentence in `doctrine/proposals.md:191-203` gains:
+bare `not required` describes a plan that skips its review, and a "no plan"
+claim without the three conditions shown is a review finding.
+
+### Edit list (the plan owns the mapping)
+
+| Area | File | Change |
+| --- | --- | --- |
+| Doctrine | `doctrine/lifecycle.md` (176-178, 181-184, 212-219) | the order above; the named exception |
+| Doctrine | `doctrine/proposals.md` (20-31, 42-46, 82-85, 126-130, 183-190, 191-203, 316-319, 343-346) | the order; the "no plan" clause |
+| Doctrine | `doctrine/plans.md` (88-91, 131-134, 690-691) | "collapse implementation + proposal-archive" becomes the new order |
+| Template | `dev/proposals/_template.md`, `templates/core/dev/proposals/_template.md` | the `Plan review` clause; one line pointing a no-plan code review at the plan skeleton |
+| Docs | `docs/getting-started.md` (62-65), `docs/dev-tour.md` (28), `docs/solo-legacy-recipe.md` (102), `docs/quickstart.md` (53, 372, 383-390, 447, 491) | the order; the quickstart toy change notes it skips the review |
+| Changelog | `CHANGELOG.md` | one entry when the change lands |
+
+Left as they are: the two example projects and their archived proposals (dated
+records), `bootstrap/tests/test_quickstart_sequence.py` (frozen; it tests git
+moves) and `doctrine/lifecycle-contract.md` (its rows are status transitions
+and its checker is retired, `doctrine/lifecycle-contract.md:16-21`).
+
+### Evidence / verification plan
+
+* **Consistency, with a known-present control.** Search the tree for the
+  stems `archiv`, `same commit` and `one commit` in `doctrine/`, `docs/`,
+  `templates/` and `dev/*.md`, excluding archives, `dev/reviews/` and the
+  changelog. Every hit is either edited or listed with the reason it stands.
+  First run the search against `doctrine/lifecycle.md:177`, which is known to
+  contain a target phrase, and against the two wrapped sites the first grep
+  missed (`doctrine/plans.md:131`, `doctrine/proposals.md:24`).
+* **Tests.** The tests that assert near these edit sites are
+  `test_scope_reduction_trap.py`, `test_review_stance_in_shipped_files.py`,
+  `test_stewardship_rules_ship.py` and `test_certifying_run_rule.py`. The
+  implementer runs them and every other test that reads a changed file, found
+  by searching for what reads it, and reports counts with the interpreter. The
+  earlier reader counts came from path mentions and are not relied on.
+* **A trial on the real case.** Read the new text as an agent about to
+  implement a one-commit accepted proposal. The sequence of commits it implies
+  must equal the sequence `check-cairn-deleted-files` followed, ending in the
+  archive commit. If it does not, the text changes first.
+* **Gates.** `claim_check`, `link_check`, `check_cairn` on each changed file,
+  and `quality_gate.py --sub neutrality --sub redundancy` at 0 neutrality
+  failures.
+* **What would show it wrong.** A change with no plan whose review has nowhere
+  to go; a doc that still says the implementing commit archives; or agents
+  opening plans for one-commit prose edits to avoid the "no plan" clause.
+* **Security preflight.** N/A: no trust boundary added, moved or widened.
+* **Independent scientific check.** N/A: no scientific assumption or result
+  touched.
+
+### Documentation / doctrine surface
+
+Doctrine, one shipped template and four `docs/` pages, routed by
+`docs/DOCUMENTATION_PLAN.md`. The template reaches existing installs through
+the three-way upgrade merge. None of the files above is frozen in the gate
+manifest; the implementer rechecks. The shipped `AGENTS.md` is unchanged, and
+its sentence on a change with no plan already agrees with the new order.
+
+### Corrected evidence for the problem
+
+Eight archived proposals carry `Plan review: not required`. One has a plan under
+a matching name, one was superseded, six have no plan under a matching name.
+Two of those six ran inside larger plans (`finding-tags-are-not-reasons` and
+`test-names-outlive-their-plans`), so their review is in those plans. Two show
+no code review anywhere I or the reviewer looked: `r6-unused-def-blindspot`,
+whose implementing commit `7066489a` archived it under the written rule, and
+`decision-rights-floor`, whose implementing commit was not traced. So the harm
+is one clear case and one probable one. The "do nothing" cost holds on that
+evidence.
+
+### Questions for the Maintainer
+
+1. **Keep a no-plan path, or always open a plan?** *Default:* keep it, with
+   review before archive as above. The alternative is fast multi-stage for every
+   accepted proposal: the same three commits, one plan file added (453-line
+   template, 185-line smallest archived plan), no new exception, and the
+   "trivial implementation" category removed from the doctrine. It is the
+   simpler rule and the heavier cost for small changes.
+2. **Should the quickstart's toy change show a code review?** *Default:* no.
+   It states that it skips the review a real change gets. Showing one adds two
+   commits to the first walkthrough and changes the frozen quickstart test.
+
+### Scope delta
+
+**Scope delta**: preserved. This is the opening contract, as corrected by the
+review.
+
+### Assurance path
+
+**Assurance path**: high-assurance, unchanged. No engine, contract, trust root
+or licence file is touched, so no Security Review is owed.
