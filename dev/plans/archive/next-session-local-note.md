@@ -2,8 +2,8 @@
 <!-- claim-check-allow: templates/core/dev/NEXT_SESSION.md, dev/NEXT_SESSION.md -->
 
 **Author**: Claude Sonnet 5.5 (Strategy)
-**Source proposal**: [dev/proposals/archive/2026-10-26-claude-next-session-local-note.md](../proposals/archive/2026-10-26-claude-next-session-local-note.md)
-**Status**: ready-to-archive
+**Source proposal**: [dev/proposals/archive/2026-10-26-claude-next-session-local-note.md](../../proposals/archive/2026-10-26-claude-next-session-local-note.md)
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: Cairn stops shipping the file that tells the next work session where to start; the owner writes a short local note instead, so a stale tracked copy can no longer mislead an agent.

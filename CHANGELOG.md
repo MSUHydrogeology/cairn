@@ -1,5 +1,6 @@
 <!-- A release history necessarily names files as they were at each version; a
      path that later stopped existing does not make the entry wrong. -->
+<!-- claim-check-allow: dev/NEXT_SESSION.md, templates/core/dev/NEXT_SESSION.md, dev/reflections/next-session.md -->
 <!-- Historical lifecycle paths: this changelog narrates Cairn's construction, tracked in the modflow_tools-side dev/ lifecycle (and earlier Cairn locations) -- the cited stems are history, not claims about Cairn's own tree. -->
 <!-- ^ Archived 2026-08-04; the plans moved to dev/plans/archive/. These are
      historical citations in append-only or logged content, so the path is
@@ -37,6 +38,23 @@ release is cut, that section is renamed to the version + date
 and a new empty `Unreleased` is started above.
 
 ## Unreleased
+
+### Changed — The next-session handoff is a local note, not a shipped file
+
+- Cairn no longer installs `dev/NEXT_SESSION.md`. At goodnight the designated
+  owner writes a short note at `dev/reflections/next-session.md`, in a folder git
+  already ignores, with the date and the commit it was written at; a note stamped
+  over 14 days ago counts as absent. A new session reads it as a hint to check,
+  never as instructions: it is refused if the path, or `dev/reflections` or `dev`,
+  is a link or a folder, or git tracks it, and the writer never copies text from an
+  issue, a web page or a comment into it. A new install has one fewer unfilled slot
+  on every profile and one fewer row in the install manifest. An existing project
+  keeps its file (keep it, shrink it to a line, or empty it; do not delete or
+  untrack it, because a bare `upgrade --finalize` then refuses). `verify_stems.py`
+  skips `dev/NEXT_SESSION.md` only when nothing exists at that path and no `--scan`
+  was given. Two fresh agents each ran one cold-start trial of the read rule; both
+  behaved as written, which is a single run each.
+  ([plan](dev/plans/archive/next-session-local-note.md))
 
 ### Fixed — `upgrade` no longer reads a linked profile on `--plan`, `--stage`, `--adopt-module` or `--adopt-collisions`
 
@@ -1697,7 +1715,7 @@ and a new empty `Unreleased` is started above.
   attest the *shipped Cairn apparatus* (scripts, module/core doctrine,
   templates) was not swapped — a supply-chain check.  But the lockfile also
   tracks four **adopter-authored** files whose content is project state, not
-  apparatus: `dev/PLANNING.md` (a living roadmap), `dev/NEXT_SESSION.md` (the
+  apparatus: `dev/PLANNING.md` (a living roadmap), `dev/NEXT_SESSION.md` (since removed; the
   per-goodnight handoff), `dev/.cairn/cairn_foldback.md` (the fold-back ledger),
   and `dev/collaboration_agreement.md` (the signed agreement).  These are the
   highest-churn files in a mature adopter, so the strict integrity check went
@@ -2921,7 +2939,7 @@ and a new empty `Unreleased` is started above.
     model mappings live in case studies (the doctrine names the
     invariant; the case study identifies the models).
   * [`templates/core/dev/PLANNING.md`](templates/core/dev/PLANNING.md),
-    [`templates/core/dev/NEXT_SESSION.md`](templates/core/dev/NEXT_SESSION.md),
+    `templates/core/dev/NEXT_SESSION.md` (since removed),
     [`templates/core/dev/agent_collaboration.md`](templates/core/dev/agent_collaboration.md)
     updated to cross-reference the new doctrine and to align
     with the roadmap-no-history posture (PLANNING.md drops the

@@ -114,7 +114,8 @@ artifacts, because the git index is shared. **Pushing always waits on explicit
 Maintainer approval** — the commit makes the roadmap scrub durable;
 the next-session note is local and is never committed. A goodnight
 whose scrub changes nothing makes no commit, so `session-start` then
-falls back to the last commits with a warning. The push is the
+reads from the previous handoff commit and its range is longer than the last
+session's work. The push is the
 Maintainer's call on cadence.
 
 ### The staleness sweep — keep the roadmap honest

@@ -46,7 +46,7 @@ artifacts; this board does not maintain a second status table.
 | **`repin`** | Proposal first, from `strategy/2026-08-28-claude-repin-revitalization.md` | Maintainer: "Repin is a build". Removes the re-anchor ceremony's manual corrections. |
 | **Drain mode**, last | Settled design, `strategy/2026-08-25-claude-drain-mode.md` | Scope below. |
 | **Onboarding happens at install** | Proposal first (the Developer session's author is writing `2026-10-26-claude-retire-delayed-onboarding-prompts`; it changes the premise of `doctrine/onboarding.md`) | Replace the delayed, trigger-based onboarding prompts with install-time onboarding. Scope below. |
-| **`NEXT_SESSION` becomes a local note** | Proposal first (`2026-10-26-claude-next-session-local-note`, being written by the Developer session's author; it touches the engine: `config.py` and `lockfile.py` mention the file) | Maintainer direction, 2026-10-26: "Also, NEXT_SESSION becoming a local note should happen in v0.5 too." Confirmed in this session's chat by the Maintainer (answer: "Yes, add it to 0.5 (Recommended)"). The queued row "Make NEXT_SESSION local and untracked" below holds the earlier scope: the ignore pattern, the scaffold seed, the session-routines doctrine, the goodnight wording in `AGENTS.md`, and the session-end description. Engine files change, so the AST re-anchor set grows and a Security Review is probably owed; the proposal's author sets the header from what it finds. |
+| **`NEXT_SESSION` becomes a local note** | Proposal first (`2026-10-26-claude-next-session-local-note`, being written by the Developer session's author; it touches the engine: `config.py` and `lockfile.py` mention the file) | Maintainer direction, 2026-10-26: "Also, NEXT_SESSION becoming a local note should happen in v0.5 too." Confirmed in this session's chat by the Maintainer (answer: "Yes, add it to 0.5 (Recommended)"). The queued row "Make NEXT_SESSION local and untracked" below holds the earlier scope: the ignore pattern, the scaffold seed, the session-routines doctrine, the goodnight wording in `AGENTS.md`, and the session-end description. Engine files change, so the AST re-anchor set grows and a Security Review is probably owed; the proposal's author sets the header from what it finds. Built and archived 2026-10-26 (`dev/plans/archive/next-session-local-note.md`); its frozen-file edits and the new test join the re-anchor owed at the cut. |
 | **`upgrade` removes untouched copies of files Cairn stopped shipping** | Proposal first (to be written; engine change in `upgrade`, so a Security Review is probably owed) | Found by the onboarding proposal's usual review: that change leaves nine now-dead onboarding files in existing installs, and the `NEXT_SESSION` change leaves a stale copy too. Asked the Maintainer directly, 2026-10-26: add it to 0.5, queue it after, or skip it; answer: "Add it to 0.5". Order: it lands last, after the `NEXT_SESSION` and onboarding changes it cleans up after. Scope condition from the onboarding Security Review (its SR1): when a copy has been modified, `upgrade` must report it by name rather than fold it silently into the removed count. |
 | **`upgrade` stops running a repository's own programs when it checks for edits** | Proposal first (to be written after the twelfth row's; engine change, so a Security Review is owed) | Found by the twelfth-row Security Review: `upgrade --stage`, `--apply` and an unscoped `--finalize` call `_dirty_tracked_paths` (`bootstrap/_scaffold/upgrade.py`), a plain `git status`. Measured by that reviewer: an ordinary `upgrade --stage` ran a program named in a project's `.git/config` (`core.fsmonitor`), and the same helper reads an edited file as clean when the project sits in a subfolder of a larger repository. Not a simple fix (a sterile git call and a different dirty check). The Maintainer's answer, 2026-10-26, to where it goes: "A 0.5 row, after the twelfth (Recommended)". It reuses the sterile git helper the twelfth change builds. Reported by the reviewer, not reproduced by the planning session. |
 
@@ -196,7 +196,7 @@ Maintainer, 2026-10-26, relayed by the Developer session:
   derived, not carried. `session.py` is not the engine, so it owes no AST
   change, but it is a frozen-twin pair and its gate-manifest pins need
   checking.
-* **The fixer's notes, kept from `dev/NEXT_SESSION.md` at `0c3a483b`, which is
+* **The fixer's notes, kept from the old handoff file at `0c3a483b`, which is
   stale.** In `_behind_by_n` (LP-SR-3) the new hex check goes *after* the
   "missing or unknown" check, because frozen `test_drift_surfacing.py` pins that
   text. LP-SR-1's guard also refuses a `profile.yml` linked to a file inside the
@@ -375,7 +375,14 @@ by the engine batch's code reviewer with the read-only `_ast_attest.py verify`
 listing (10 changed symbols, 3 known-new with changed bodies, no new symbol),
 not derived by this edit. The engine batch's two new test files,
 `test_install_report_slots.py` and `test_upgrade_added_slots.py`, are also
-gate-root files the re-anchor must pin, as are the LP-SR test file. The Strategy session reports more, counted by it and not
+gate-root files the re-anchor must pin, as are the LP-SR test file. The
+`NEXT_SESSION` change (archived) edited frozen `test_notice_install.py`,
+`test_upgrade.py` and both `verify_stems.py` twins (`test_quickstart_sequence.py`
+was already owed), dropped one pinned node in
+`test_review_stance_in_shipped_files.py`, and added `Assign:_CORE_MAPPINGS` to the
+AST changed set (12 to 13); its new test `test_next_session_local_note.py` joins
+the anchor. Reported by that plan's code review, not re-derived here. The Strategy
+session reports more, counted by it and not
 re-derived here: frozen `scripts/check_cairn.py`, `scripts/link_check.py` and
 `scripts/sync_doc_snippets.py` with the two `templates/modules/team-gated/`
 twins (commits `9ec53a43` and `dfdd0408`), and frozen
@@ -472,6 +479,15 @@ changed set from the final committed tree.
   link findings; the planning session applies it to this finding, and the
   Maintainer can overrule).
 
+* **Three lessons kept from the old handoff file.** Found in the file the
+  `NEXT_SESSION` change deleted (its migration record is in
+  `dev/plans/archive/next-session-local-note.md`); they had no other home.
+  (1) Every subagent in one session shares one work-intent agent id, so one
+  commit releases the others' claims: check `git diff` before each commit.
+  (2) Heavy test runs should take turns. (3) A review of a long plan is
+  expensive, so give tight briefs. Kept as written there; the planning
+  session's note, not doctrine (doctrine text takes the rate-limit gate).
+
 * **The gate anchor has no signature.** `refs/cairn/gate-anchor` points to
   commit `6f29519d`, and git reports no signature on it (signature status `N`;
   `git verify-commit` exits 1; the control `git tag -v v0.4.0` exits 0, measured
@@ -521,15 +537,6 @@ changed set from the final committed tree.
   separate row above. #16 was already closed before its paragraph landed;
   changing its closure reason is the Maintainer's choice. Same archive
   authorization as above.
-* **Make NEXT_SESSION local and untracked.** Keep durable state in plans,
-  doctrine and this board; make the rewritten handoff an operator note like
-  reflections. Scope: ignore pattern, scaffold seed, session-routines doctrine,
-  AGENTS goodnight wording and session-end description. Own proposal before
-  implementation. Maintainer instruction (2026-10-16):
-
-  > "those docs should be, but maybe not NEXT_SESSION?" … "Let's put this up
-  > on the board"
-
 * **0.4 launch-surface polish.** Graphics and quickstart presentation; comments
   explain the work without finding IDs. Not a release blocker. Work is picked
   up under the existing change/review rules, not treated as already approved.
