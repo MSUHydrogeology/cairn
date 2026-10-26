@@ -1,7 +1,7 @@
 # Plan: Engine batch, the install report by profile and the slots an upgrade adds
 
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-engine-batch-f8-slots.md](../proposals/archive/2026-10-26-claude-engine-batch-f8-slots.md)
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: The install report moves the slots of modules a profile did not install to their own list (2 of 22 on `solo-greenfield`), and `upgrade --plan` and `--stage` name the slots an upgrade adds, with every printed `detail` made terminal-safe.
