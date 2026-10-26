@@ -57,6 +57,10 @@ and a new empty `Unreleased` is started above.
   one line, instead of failing on the first read. A file named explicitly on the
   command line still raises. ([proposal](dev/proposals/2026-10-26-claude-check-cairn-deleted-files.md))
 
+### Added — "Keep the plan short" and "Keep the proposal short" in the templates
+
+- The plan and proposal templates say what stays out of the file: checker scripts, run briefs and probe output. Long files are read by their `##` headings. ([issue #31](https://github.com/MSUHydrogeology/cairn/issues/31))
+
 ## 0.4.0 — 2026-10-20
 
 ### Added — Defect fixes under existing promises and reuse duty
