@@ -38,6 +38,18 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Changed — Model tiers: use the lowest tier that is safe
+
+- Every install now says which model tier a job needs. The lane sets the lowest
+  tier that may write the work: trivial and standard changes and proposal
+  drafting at medium, with Security Review and the bright-line work always at
+  high. A stronger model from the same maker now counts as the independent
+  check, so a team that uses one vendor can still satisfy it; a model at the
+  same tier does not. `AGENTS.md` carries the rule for every profile, not only
+  the two that install the model-selection module: name the model at every
+  spawn, escalate one tier on failure, and never go to a lower tier across a
+  data-governance boundary. A reviewer flags work written below its floor.
+
 ### Fixed — `upgrade` no longer writes, reads or prints through project data it cannot trust
 
 - `upgrade --apply` could create a file outside the project when

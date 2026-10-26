@@ -40,7 +40,7 @@ artifacts; this board does not maintain a second status table.
 | `check_cairn` deleted-file crash | Proposal `2026-10-26-claude-check-cairn-deleted-files`, awaiting review | Defect; one commit. |
 | **#32** board and `session-start` accept retired statuses | Maintainer direction, 2026-10-23 | Defect. Lands before drain mode, which reads the board. |
 | **#31** "keep it short" in the plan and proposal templates | Prose | The adopter supplied the draft and the evidence. |
-| **Model tiers: use the lowest tier that is safe** | Doctrine change: own proposal, clears the rate-limit gate | Maintainer direction, 2026-10-26: formalize a rule set for lower-tier models where possible. Scope below. |
+| **Model tiers: use the lowest tier that is safe** | Doctrine change: own proposal, clears the rate-limit gate | Maintainer direction, 2026-10-26: formalize a rule set for lower-tier models where possible. Scope below. Built and archived 2026-10-26 (`dev/plans/archive/model-tier-rules.md`); its one frozen-test edit and the new test file join the re-anchor owed at the cut. |
 | **Security findings from the two 0.4 Security Reviews** | Maintainer direction; a fixer answers, one code review checks, no second Security Review | LP-SR-1 to 8 and SW-SR-11 to 15, found after their repairs shipped in 0.4.0 and never fixed, plus three older problems the engine-batch Security Review found. Scope below. |
 | **Engine batch: F8 and #8 engine half** | Own proposal, Security Review, one AST re-anchor | One batch so the review and the re-anchor are paid once. Maintainer: "Engine batch is in". Rows below. |
 | **`repin`** | Proposal first, from `strategy/2026-08-28-claude-repin-revitalization.md` | Maintainer: "Repin is a build". Removes the re-anchor ceremony's manual corrections. |
@@ -68,8 +68,8 @@ always high; put the sub-agent default in `AGENTS.md` so every profile gets it,
 not only the two that install the module; require the model to be named
 explicitly at every spawn, with escalation by one tier on failure; and decide
 in the proposal whether to relax the condition that lets a cheaper author work
-under a check, which today requires a different maker's model and so is closed
-to a single-vendor adopter. Measurement needs no new machinery: every review
+under a check (relaxed 2026-10-26: a stronger model from the same maker now
+counts). Measurement needs no new machinery: every review
 already records its model. The standing rule is written down once in the
 repository, not left in an agent's private memory.
 
@@ -327,7 +327,8 @@ twins (commits `9ec53a43` and `dfdd0408`), and frozen
 node id is unchanged, so no node is dropped). The Maintainer said of that last
 edit: "Go ahead and edit the dual-review. We need to re-anchor anyway". New
 unfrozen test files that join the next anchor include
-`test_deleted_tracked_markdown.py` and `test_writing_rules_ship.py`. Do not
+`test_deleted_tracked_markdown.py`, `test_writing_rules_ship.py` and
+`test_model_tier_rule_ships.py`. Do not
 carry a list forward from this row: run `verify` on the final committed tree and
 read what it prints.
 
@@ -436,6 +437,7 @@ this file's history.
 | Agents taking their own review turns (#13) | After a recorded two-agent drive, propose a design meeting MA-2's four conditions; account for stale statuses and multiple holders. | `maintainer-attention` scope delta; issue #13 remains open. |
 | Scientific-check doctrine and deliverable axis (#19) | Revisit when the third-party trial moves, or on Maintainer direction after about ten real non-N/A checks across two projects. Guidance shipped; the doctrine sentence, axis, disciplines and governance reframe did not. | `independent-scientific-check` C1 and archive; issue #19. Details below. |
 | Watch the new review header | After ten proposal reviews, the goodnight scrub owner checks premise/alternative challenges, agent-selected outside reads, thin evidence and lost scope challenges. Put a concerning pattern to the Maintainer. | `review-stance-and-lenses` archive; quoted authority below. |
+| Watch how far proposals written at medium hold up | After ten proposal reviews, the goodnight scrub owner compares proposals written at medium with those written at high. If fewer than three of the ten were written at high, report counts only and say the comparison is not available. Put a concerning pattern to the Maintainer. | `model-tier-rules` archive (R5); the Maintainer's 2026-10-26 answer lowered proposal authoring to medium. |
 | Decision rights after agreement removal | Offering Cairn's unsure-case rule to adopters needs its own proposal. Revisit lifecycle escalation wording when a concrete conflict reaches a decision. Neither ships in the 0.4 removal. | `remove-collaboration-agreement` Decision Q3; authority quoted below. |
 | Stable section identity and complete-set claims | A second actual rule needing section-set completeness would revive this; naming sections and proving all were handled are one scope. The retired lifecycle checker is not a promised future satisfier. | `2026-08-20-claude-review-loop-termination`, Deferred work. |
 | Entry-page feature claims drift | A second stale feature list, or an adopter hitting one, may justify a doc-drift rule. | `2026-08-10-claude-documentation-enhancement` fold-up candidates. |
