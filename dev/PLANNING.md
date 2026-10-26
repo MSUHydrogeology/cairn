@@ -99,6 +99,21 @@ Maintainer, 2026-10-26, relayed by the Developer session:
   back and forth on the Security Review"* and *"For now let's just do the
   single-round Security Review for these"*. A fixer answers the findings and one
   code review checks the answer.
+* **Three accepted residuals from the LP-SR fixes, 2026-10-26.** The fixer
+  closed LP-SR-3, 4, 6, 7 and 8 fully and left three limits: LP-SR-5 got only
+  the documentation answer, not the full split, because the split breaks a
+  frozen pin; a linked lockfile on `--adopt-collisions` still ends in a
+  traceback, because a frozen test expects an exception there; and the profile's
+  preset, axis and module values are written unquoted, because quoting fails the
+  frozen differential oracle's byte comparison (a printable value containing `: `
+  or ` #` makes a profile the loader refuses, on that line only). Each is
+  recorded in `bootstrap/SECURITY_MUTATIONS.md`. The Maintainer was asked
+  whether to accept all three as documented residuals and answered:
+
+  > "Accept all three (Recommended)"
+
+  Nothing more is built for them in 0.5. The code review of the fixer's answer is
+  still to land; a finding there can reopen one.
 * **Three older problems found by the engine-batch Security Review**
   (`dev/proposals/2026-10-26-claude-engine-batch-f8-slots.md`, commit `e92ad324`).
   Reported by that review; the roadmap's author reproduced none of them. All
