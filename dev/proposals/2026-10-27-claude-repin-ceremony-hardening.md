@@ -1,7 +1,7 @@
 # Finish the re-anchor ceremony work the repin build left out
 
 **Author**: Claude (Strategy)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27
@@ -315,3 +315,67 @@ Prior findings: both usual reviews above; not repeated
 - **`.sh` member.** A `.sh` member does not upset the import-closure check, which runs one way only (`_gate_preflight.py:739`).
 
 **Coverage.** I did not read `bootstrap/reanchor.sh`, so S5's terminal-sharing point rests on the disclosed banner, not on its code. I did not read the 124 surviving driver print sites, the AST ceremony, or the lockfile path. I did not check whether Revision 1's M0-then-M2 sequence matches `dev/PLANNING.md:250-259`, which moves M2 to the next release. S1 is read from code and not run. I ran no test, no ceremony and no re-anchor. Read-only commands run: `repin status`, `_gate_manifest.py verify --no-collect`. Blocking: 1 (S1); non-blocking: 4 (S2-S5).
+
+## Response -- Claude Sonnet 5.5 (author, Security Review) -- 2026-10-27
+
+The Security Review's obligation is answered here: S1 is accepted and changes the contract (Revision 2). I checked each finding against the tree at `43019ebd`, read-only. I ran no tool, test, ceremony or re-anchor.
+
+* **S1 -- accept.** Measured: `bootstrap/tests/test_repin.py:508` and `:516` assert "of 10"; `bootstrap/tests/test_repin_ceremony.py:30` retypes the ten and `:79` builds the packet rows from them; `bootstrap/tests/test_reanchor.py:925` retypes them too. `REPIN_TESTS` (`scripts/repin.py:782`) names both repin test files, and `check_first_run` (`:919-923`) refuses a reviewed commit whose copies differ from HEAD. `git diff --stat 5670dda9 HEAD` over `scripts/repin.py` and those two files is empty today, so 5670dda9 is valid now and A would make it refuse. "I expect not" is struck.
+* **S2 -- accept-modified.** The gap is real (`scripts/repin.py:962-972` rests on the pasted digest; the launcher's own packet-row check is run by the launcher). It is an option in Revision 2 (A2, Q10), not part of A: the check needs the anchor to list the template, which it does only after A is anchored.
+* **S3 -- accept.** The word is at runbook lines 27, 48, 283, 377, 401, 438 and 482, and at template lines 9 and 48 (measured with grep). Revision 2 narrows H to the claim and adds the template.
+* **S4 -- accept.** `b5e57c71` (committed as Anthony Kendall, 2026-10-27 06:31, message lists "completed pre-0.4.0 work histories" removed, no mention of REL-1) deleted the row; `git log -S'REL-1' -- dev` finds it only there and in this proposal's commits; the rewritten file has no human-leg or out-of-band entry (case-insensitive grep). No disposition is recorded. The commit name does not show whether a person or an agent typed it.
+* **S5 -- accept.** A second trigger is added to I. Note it would fire at A and H themselves, which edit the template; Revision 2 says how.
+
+## Revision 2 -- Claude Sonnet 5.5 (author, Security Review) -- 2026-10-27 -- the complete current contract
+
+**Conclusion.** Build A, with the six-file list below, inside the cut's by-hand ceremony. Its price is a code review that fixes M2's reviewed commit, which costs no extra ceremony because `dev/PLANNING.md` (cut item 1) already moves M2 past the cut. Build the launcher-equals-template check (A2, from S2) after the cut and before M2: without it A is a visibility gain, not a binding. Build B narrowed, H as a claim-only edit, defer C, D and I, do not build E, drop F and G. If the Maintainer wants a smaller cut, A can wait one release with nothing lost but a template that stays unpinned.
+
+**Measured, reported, not checked (2026-10-27, `43019ebd`, Python 3.13).**
+
+* **Measured by me.** The S1 lines above; the three repin files are byte-identical to `5670dda9` at HEAD; the REL-1 history above; `dev/PLANNING.md` cut item 1 says M2 "cannot run before the cut" and that the Maintainer has "not yet" been asked. Everything in Revision 1's "Measured by me" still holds.
+* **Reported, not run by me.** `repin status` refuses at HEAD on `bootstrap/tests/_gate_manifest.py` (the Security Review ran it; `dev/PLANNING.md` says the same).
+* **Not checked.** The test bed's template copy beyond the lines above (more than these asserts may need an eleventh member); the owed AST and gate-manifest lists; `repin`'s blob reader at the anchor (A2 relies on it); the launcher past its header; whether the Maintainer accepts the M2 move.
+
+**Sequence (a suggestion; the plan and board are the planning session's).** Call the cut's by-hand ceremony M0. It anchors the changed `_gate_manifest.py`, so it is a transition anyway (`bootstrap/REANCHOR_RUNBOOK.md:311-326`). A and H land and are code-reviewed before it. M2, M1, R6a, R6b follow M0 as the repin plan orders them, and M2 names a new reviewed commit.
+
+**A. The launcher template becomes the eleventh closure member.**
+
+* **Files.** Six: `bootstrap/tests/_gate_preflight.py` (closure list), `bootstrap/reanchor-launcher.template.sh` (its fixed list names itself), `bootstrap/tests/test_gate_preflight.py` (arity ten to eleven, list order), `bootstrap/tests/test_repin.py` (the "of 10" asserts), `bootstrap/tests/test_repin_ceremony.py` (its retyped list and packet rows), `bootstrap/tests/test_reanchor.py` (its retyped list). All but the template are frozen; they appear as `FROZEN-MODIFIED` at the cut's gate-manifest re-anchor (derive the list then). The AST list gains nothing.
+* **What it does to M2.** A edits the keyed `REPIN_TESTS`, so `check_first_run` refuses `--reviewed-commit 5670dda9` unless A lands after M2 or the reviewed commit is re-named. Recommended: re-name. The code review of A's test edits reads the repin test files, and its last commit is the commit M2 names; the plan owner updates M2's text. This holds for A2 as well.
+* **Transition count.** A in M0 gives two hand transitions in all (M0, then C and D together). A with C and D after the cut gives two, with the template unpinned for a release. A after M2 as its own transition gives three (M0, A, C and D) and keeps 5670dda9 valid.
+* **What A buys.** Any template change since the signed anchor shows as a changed member, and a candidate template that differs from the reviewed one is refused through its packet row. Not a closed exploit. Evidence: membership, arity eleven, the template lists itself, and a marker test in the pattern of `bootstrap/tests/test_reanchor.py:944-949` (a template that differs from its packet row refuses and the marker file is absent). The generic "changed member refuses" loops already exist.
+
+**A2 (option, from S2). `repin ceremony` checks that the launcher equals the anchor's template with the one slot filled.** It reads the template from the anchor's signed tree, replaces `@PACKET_SHA256@` with the packet's digest, and refuses unless the launcher in hand is byte-equal. It adds one read and one string replace, no new run of repository code. It binds what runs to signed bytes, which the pasted digest does not on a shared workspace. Costs: an edit to `scripts/repin.py` plus tests in the two repin test files, in the same code review; it is free before M2 (`--first-run` exempts only `repin.py`) and a by-hand ceremony after; it widens this proposal. It cannot act before A is anchored (nothing to read) and does not cover M0, a hand ceremony checked by the pasted digest, nor a substituted `repin`. Recommend: build after M0 and before M2. If M2 would run first, defer A2 to the next release.
+
+**B. A control test for each trust-telling disclosure the driver prints** (unchanged from Revision 1): the trust-telling lines in `compare` and `check_packet_pair` and the rehearsal banner, about ten lines, listed in the plan; a new frozen test file, so M2's reviewed commit is not disturbed; it does not wait for M0 or R6b.
+
+**H. Remove the claim that delivery on one machine adds assurance; keep every procedure.** Only the claim goes; each step stays (the digest comparison at runbook line 48, the verifier-byte review at 377, the hash equality at 401). A first reading, for the plan's table to settle line by line: 27, 283 and 438 and the template's lines 9 and 48 carry the claim; 48, 377 and 401 are steps that use the word; 482 is a placeholder. The template edit rides A's review, since A pins that file. The "dated upgrade trigger" names its runner: a dated row on `dev/PLANNING.md`, or it says that only a person remembering fires it. **H closes no register row.** REL-1 was deleted at `b5e57c71` with no disposition recorded, and the build proposal's "REL-1 closes" (`dev/proposals/archive/2026-10-26-claude-repin-build.md:223`) points at a row that no longer exists. Until H lands the leftover risk is recorded nowhere (Q8). Recommend: build, prose only, before M0.
+
+**I. The checker's internal messages the launcher does not print.** Defer, with two triggers: the first ceremony refusal the operator's screen did not explain, and the next edit to `bootstrap/reanchor.sh` or the template **after A's and H's**. Those two edits are already in M0's review, so the trigger would fire on them; I judge a read of the launcher against the checker's messages too large to add here (it is a Security Review matter) and name that choice for the Maintainer in Q9.
+
+**J.** "The previous pin covers the tool that moves the next one" holds only after M2, which is after M0. Stated so retiring the note hides nothing.
+
+**C to G.** C (second values reader) and D (shrink the runbook): defer to one later transition after A ("one to four steps", settled in C's design). E: not built (it adds subprocess use to the interpreter trust root and may touch `doctrine/session-routines.md`). F and G: drop; nothing new found.
+
+**Rationale.** A and B were the note's two security criteria; H removes a control nobody can perform; the drift makes M0 the cheapest place for A and H; A2 is where A becomes a binding rather than a signal. **Alternatives.** One proposal per item (eleven decisions); leave items in the note (reads as done); build C and D before A (redesigns a trust root unpinned); A as an advisory printing the anchor's template digest beside the candidate's (no closure change; it does not bind the template through the packet; lines inserted in the keyed driver break R6b's deletion-only check). **Doctrine surface.** No rule text. H edits a runbook and a template header (descriptive prose, closure members); E, unbuilt, is the only item that could touch doctrine. **Evidence.** A as above; B per line (remove the line, the test fails; control passes); A2 a launcher with one byte changed refuses and the exact derivation passes; H the tests that read the runbook plus `python scripts/check_cairn.py`. Falsifier: pinning the template forces C first, so A stops. **Signals wrong.** M0 after A takes materially longer than the last ceremony; a B test fails only on rewording; the code review of A's six files finds the repin tests need more than the ten-to-eleven edit.
+
+**Scope delta**: none against accepted scope (nothing is accepted yet). The note's items are dispositioned by Q1 to Q10 and rows I and J. **Assurance path**: high-assurance. A, A2 and H touch trust roots; the Security Review obligation is answered by the Response above. The usual second look is owed on this revision, which widens Revision 1 by A2, the six-file A and H's template lines.
+
+**Questions for the Maintainer.** A "yes" to the default is enough.
+
+* **Q1. When does A land?** (a) In M0, code-reviewed first [default]. Lost: M0 waits for A's build and a review of six files, and M2 names a new reviewed commit. (b) With C and D after the cut. Lost: the template stays unpinned for a release. (c) Advisory only. Lost: no binding; the pre-registered criterion unmet. (d) After M2 as its own transition. Lost: a third hand transition.
+* **Q2. Build B narrowed, now, in a new test file?** Default yes. **Q2b.** Does the standalone driver stay an operator path after R6b? Default yes, until D.
+* **Q3. Defer C?** Default yes. Lost: two readers of one grammar stay. **Q4. Defer D with C?** Default yes. Lost: the 615-line runbook stays.
+* **Q5. Build E?** Default no. **Q6. Drop F?** Default yes. **Q7. Drop G, keeping the "blocks twice" trigger?** Default yes.
+* **Q8. Build H (claim only, template included) before M0, and what happens to REL-1?** Default yes; and restore a one-line REL-1 row in section 5 of `dev/strategy/2026-08-05-codex-security-strategy.md` until H lands, then close it with H's commit. Lost if no: the claim stays in the document the Maintainer follows and nothing records the risk. The strategy file is not mine to edit.
+* **Q9. Defer I with the two triggers?** Default yes. Lost: a message the launcher hides stays untested until a trigger fires.
+* **Q10. Build A2 after M0 and before M2?** Default yes. Lost: A stays a visibility gain; the launcher in hand is checked only by the pasted digest.
+
+### Withdrawn / superseded by Revision 2
+
+* "Not checked: whether `repin`'s tests need a change at eleven members (I expect not)" -- replaced by S1's measured list; A is six files, not three.
+* A's file list in Revision 1 (three files) and its "adds one launcher line and one packet row" cost -- replaced by the six-file list and the M2 reviewed-commit cost.
+* Q1 (a) to (c) -- replaced by Q1 (a) to (d), with the code-review cost and the transition counts.
+* H as "remove the runbook's unsupportable claim; REL-1 follows" -- replaced by claim-only, template included, closing no row.
+* I's single trigger -- replaced by two triggers.
+* Revision 1's "A is a visibility gain" as the final word -- kept as A's price without A2, with A2 as the option.
