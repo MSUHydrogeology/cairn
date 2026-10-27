@@ -1,8 +1,8 @@
 # Plan: upgrade removes untouched copies of retired files
 
 **Author**: Claude Sonnet 5.5 (Strategy)
-**Source proposal**: [dev/proposals/archive/2026-10-26-claude-upgrade-removes-untouched-retired-files.md](../proposals/archive/2026-10-26-claude-upgrade-removes-untouched-retired-files.md)
-**Status**: ready-to-archive
+**Source proposal**: [dev/proposals/archive/2026-10-26-claude-upgrade-removes-untouched-retired-files.md](../../proposals/archive/2026-10-26-claude-upgrade-removes-untouched-retired-files.md)
+**Status**: archived
 **Waiting on Maintainer**: re-anchor at the cut (C8)
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26

@@ -73,7 +73,7 @@ and a new empty `Unreleased` is started above.
   20 files Cairn's v0.3.0 installs carried that v0.4.0 no longer ships, the nine
   onboarding files and the handoff file. Python 3.13 and git 2.53.0 were the tested
   versions; Windows and older git are not covered.
-  ([plan](dev/plans/upgrade-removes-retired-files.md))
+  ([plan](dev/plans/archive/upgrade-removes-retired-files.md))
 
 ### Changed — Onboarding happens at install; the delayed prompts are gone
 

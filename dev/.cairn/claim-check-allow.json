@@ -290,7 +290,7 @@
         "dev/modules/dual-language-tests.md"
       ]
     },
-    "dev/plans/upgrade-removes-retired-files.md": {
+    "dev/plans/archive/upgrade-removes-retired-files.md": {
       "paths": [
         "dev/NEXT_SESSION.md"
       ]
