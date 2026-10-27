@@ -49,6 +49,7 @@ artifacts; this board does not maintain a second status table.
 | **`NEXT_SESSION` becomes a local note** | Proposal first (`2026-10-26-claude-next-session-local-note`, being written by the Developer session's author; it touches the engine: `config.py` and `lockfile.py` mention the file) | Maintainer direction, 2026-10-26: "Also, NEXT_SESSION becoming a local note should happen in v0.5 too." Confirmed in this session's chat by the Maintainer (answer: "Yes, add it to 0.5 (Recommended)"). The queued row "Make NEXT_SESSION local and untracked" below holds the earlier scope: the ignore pattern, the scaffold seed, the session-routines doctrine, the goodnight wording in `AGENTS.md`, and the session-end description. Engine files change, so the AST re-anchor set grows and a Security Review is probably owed; the proposal's author sets the header from what it finds. Built and archived 2026-10-26 (`dev/plans/archive/next-session-local-note.md`); its frozen-file edits and the new test join the re-anchor owed at the cut. |
 | **`upgrade` removes untouched copies of files Cairn stopped shipping** | Proposal first (to be written; engine change in `upgrade`, so a Security Review is probably owed) | Found by the onboarding proposal's usual review: that change leaves nine now-dead onboarding files in existing installs, and the `NEXT_SESSION` change leaves a stale copy too. Asked the Maintainer directly, 2026-10-26: add it to 0.5, queue it after, or skip it; answer: "Add it to 0.5". Order: it lands last, after the `NEXT_SESSION` and onboarding changes it cleans up after. Scope condition from the onboarding Security Review (its SR1): when a copy has been modified, `upgrade` must report it by name rather than fold it silently into the removed count. Built and archived 2026-10-27 (`dev/plans/archive/upgrade-removes-retired-files.md`); the Maintainer allowed its departures 5 and 7. Its re-anchor entries are in the plan (frozen edits, six new engine symbols, one renamed node in `test_agreement_retired.py`). |
 | **`upgrade` stops running a repository's own programs when it checks for edits** | Proposal first (to be written after the twelfth row's; engine change, so a Security Review is owed) | Found by the twelfth-row Security Review: `upgrade --stage`, `--apply` and an unscoped `--finalize` call `_dirty_tracked_paths` (`bootstrap/_scaffold/upgrade.py`), a plain `git status`. Measured by that reviewer: an ordinary `upgrade --stage` ran a program named in a project's `.git/config` (`core.fsmonitor`), and the same helper reads an edited file as clean when the project sits in a subfolder of a larger repository. Not a simple fix (a sterile git call and a different dirty check). The Maintainer's answer, 2026-10-26, to where it goes: "A 0.5 row, after the twelfth (Recommended)". It reuses the sterile git helper the twelfth change builds. Reported by the reviewer, not reproduced by the planning session. Proposal reviewed twice and accepted 2026-10-27 (`dev/proposals/archive/2026-10-26-claude-upgrade-dirty-check-runs-no-repository-programs.md`); plan opened the same day (`dev/plans/upgrade-edit-check-no-repository-programs.md`), awaiting plan review. |
+| **Re-anchor ceremony hardening** (the repin note's unbuilt items) | Proposal accepted 2026-10-27 (`dev/proposals/2026-10-27-claude-repin-ceremony-hardening.md`, moves to the archive when its plan opens) | Maintainer, 2026-10-27, closing the repin strategy note: "Let's just go ahead and finish out the repin strategy note with any un-built items as a final proposal for v0.5" (relayed by Strategy). Decision 2026-10-27: build A (the launcher template joins the files the gate trusts) in the cut's ceremony, code-reviewed first; build B (narrowed control tests, new test file) and H (claim-only prose edit) before the cut; A2 after the cut and before M2; C, D, I deferred; E not built; F, G dropped; REL-1 stays deleted. Plan being opened. |
 
 **Onboarding, the Maintainer's words.** Direction of 2026-10-26, relayed by the
 Developer session. On the prompts that never fire:
@@ -247,16 +248,23 @@ these rows only.
 Written 2026-10-26 by the planning session (updated 2026-10-27: the twelfth plan's allowances and the thirteenth Decision are done), in the order to do it. Nothing in
 this list has been run by an agent.
 
-1. **Your `repin` steps** (`dev/plans/repin-build.md`): **measured 2026-10-27,
-   `repin` refuses at the current HEAD.** `python scripts/repin.py status`
-   stops at boot because `bootstrap/tests/_gate_manifest.py` no longer equals
-   the anchor's entry (commit `fa86e2cb`, the onboarding change, deleted two
-   lines of it). Every verb stops there, so step M2 (`--first-run
-   --reviewed-commit 5670dda9`) cannot run before the cut, and neither can the
-   steps that follow it (M1, R6a, R6b). The 0.5 re-anchors are then done by
-   hand under `bootstrap/REANCHOR_RUNBOOK.md`, as at 0.4, and they anchor the
-   new bytes; `repin`'s first real use moves to the next release. Your call:
-   confirm that, or tell me to do something else. Not yet put to you.
+1. **Your `repin` steps** (`dev/plans/repin-build.md`). **Route chosen
+   2026-10-27: an early hand re-anchor, then `repin`.** Measured that day,
+   `repin` refuses at the current HEAD: `python scripts/repin.py status` stops at
+   boot because `bootstrap/tests/_gate_manifest.py` no longer equals the anchor's
+   entry (commit `fa86e2cb`). You asked: "Can we re-anchor the one changed file
+   and then run repin?" and chose "Early hand ceremony, then repin". The order:
+   (a) the repin-hardening change (A: the launcher template joins the closure,
+   plus H and B) is built and code-reviewed, because A edits
+   `bootstrap/tests/_gate_preflight.py`, one of the ten files `repin` compares;
+   (b) a certifying run on the clean tree; (c) **your hand ceremony** under
+   `bootstrap/REANCHOR_RUNBOOK.md`, which re-signs the whole manifest and the AST
+   pin at that HEAD, not one file; (d) then M2 (`--first-run`, naming a new
+   reviewed commit: the last commit of A's code review), M1, R6a; (e) the cut's
+   own re-anchor through `repin`. R6b edits `scripts/reanchor_ceremony.py`, so it
+   forces one more hand step, and so would any other edit to the ten files after
+   (c). A2 (the launcher equals the anchor's template) comes after the cut and
+   before M2.
 2. **The re-anchors, once, at the end**: the AST attestation and the gate
    manifest. Derive the lists with `_ast_attest.py verify` and
    `_gate_manifest.py verify` on Python 3.13.x, not from the rows below. Your
