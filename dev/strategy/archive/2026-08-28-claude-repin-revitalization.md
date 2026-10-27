@@ -374,3 +374,22 @@ agent's inventory):
   pins without reintroducing projection-digest bookkeeping, tier-1 keeps
   per-file digests — computed and compared by the tool, never by hand.
 
+
+## Closure — carried out and handed on — 2026-10-27
+
+The build is `scripts/repin.py` under the plan
+[`dev/plans/repin-build.md`](../../plans/repin-build.md), from the accepted
+proposal [`2026-10-26-claude-repin-build`](../../proposals/archive/2026-10-26-claude-repin-build.md).
+The Maintainer closed this note on 2026-10-27 ("finish out the repin strategy
+note with any un-built items as a final proposal for v0.5. Then we can entirely
+retire the note").
+
+* **Built:** the drift report, the transaction and safe write, the key checks
+  and two signing stages, the lockfile adapter, and the classification split.
+* **Still to run (Maintainer-only):** the first real ceremony (M2) and the steps
+  after it, listed in the plan.
+* **Unbuilt items:** all moved to
+  [`dev/proposals/2026-10-27-claude-repin-ceremony-hardening.md`](../../proposals/2026-10-27-claude-repin-ceremony-hardening.md),
+  each with a recommendation. Nothing in this note is still open.
+* **Closed without work:** the old launcher in `~/Downloads` no longer exists
+  (checked 2026-10-27).
