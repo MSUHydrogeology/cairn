@@ -4,7 +4,9 @@
      headings (`Source proposal` through `Verification`) below the rule into
      `dev/plans/<slug>.md`, replace every prompt with your answer (or `N/A`),
      and do NOT copy template commentary or the later-stage `Dispositions`,
-     `Plan review`, and `Code review` sections at the bottom. -->
+     `Plan review`, and `Code review` sections at the bottom. Re-read this file
+     before you write or revise a plan: its word budgets ("Keep the plan
+     short") and copy rules change. -->
 
 # Plan template
 

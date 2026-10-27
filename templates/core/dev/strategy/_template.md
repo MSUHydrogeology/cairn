@@ -1,7 +1,9 @@
 <!-- Author tip: a strategy doc is INLINE-REVISED, not append-only (the
      opposite of a proposal). Fold reviews in and remove them; keep the doc a
      clean artifact. The deliberation lives in git log + transient review
-     sections, never as blow-by-blow residue in the body. See README.md. -->
+     sections, never as blow-by-blow residue in the body. See README.md.
+     Re-read this file before you write or revise a strategy note: its word
+     budget and copy rules change. -->
 
 # Strategy-note template
 
