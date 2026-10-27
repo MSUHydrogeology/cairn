@@ -1068,7 +1068,7 @@ def test_the_launcher_is_hashed_again_before_each_of_its_two_runs(cbed, stage, q
 real_child = R.child
 def edit_after_the_first_child(rec, argv, **kw):
     r = real_child(rec, argv, **kw)
-    if "validate" in argv:
+    if "--validate" in argv:
         from pathlib import Path
         p = Path({str(launcher)!r})
         p.write_text(p.read_text().replace("\\n", "\\n: > {marker}\\n", 1))
@@ -1115,7 +1115,7 @@ def test_a_package_hash_the_launcher_reports_differently_refuses_before_summary_
 real_child = R.child
 def fake(rec, argv, **kw):
     r = real_child(rec, argv, **kw)
-    if "hash-package" in argv:
+    if "--hash-package" in argv:
         r.stdout = "0" * 64 + "\\n"
     return r
 R.child = fake
@@ -1126,20 +1126,29 @@ R.child = fake
     assert code == 2 and "disagree" in out and "Summary 2" not in out and anchor_of(cbed) == old, out
 
 
-def test_the_private_copy_of_the_artifact_is_hashed_again_before_each_call(cbed):
-    patch = """
+@pytest.mark.parametrize("command", ["--validate", "--hash-package", "--show-report"])
+def test_the_launcher_is_hashed_again_before_each_reading_command(cbed, command):
+    """validate, hash-package and show-report each start the launcher, so each is preceded by a hash of
+    it: an edit made after the one before is refused before the next command runs."""
+    marker = cbed.root / "launcher-ran-edited"
+    launcher = cbed.cdir / "reanchor-launcher.sh"
+    patch = f"""
 from pathlib import Path
 real_child = R.child
-def tamper(rec, argv, **kw):
+def tamper_after(rec, argv, **kw):
     r = real_child(rec, argv, **kw)
-    if "validate" in argv:
-        Path(argv[1]).write_bytes(Path(argv[1]).read_bytes() + b"\\n# changed\\n")
+    if {str(command)!r} in argv:
+        p = Path({str(launcher)!r})
+        p.write_text(p.read_text().replace("\\n", "\\n: > {marker}\\n", 1))
     return r
-R.child = tamper
+R.child = tamper_after
 """
     code, out = drive(cbed, [("Paste the launcher digest", cbed.launcher_digest),
-                             ("Do the two digests match", "yes")], patch=patch)
-    assert code == 2 and "private copy of reanchor.sh changed" in out and "Summary 2" not in out, out
+                             ("Do the two digests match", "yes"),
+                             ("Does Summary 2", "yes")], patch=patch)
+    assert code == 2 and "launcher changed after its digest was compared" in out, out
+    assert not marker.exists(), "the edited launcher ran"
+    assert "Enter passphrase for" not in out
 
 
 def test_only_the_exact_word_yes_writes_the_ast_pin_through_the_command(cbed):

@@ -1122,19 +1122,17 @@ def run_ceremony(ctx, args, launchctl, rec):
                      "its one slot. Do not run it. Nothing was run.")
     check_record(ctx, sha(read_safe(packet)), ldigest)
     rec.append(f"record {RECORD_REL} names the read commit, this packet, this launcher and these files")
-    copy = tmp / "artifact" / "reanchor.sh"
-    copy.parent.mkdir()
-    copy.write_bytes(art)
 
-    def artifact(command):
-        if sha(copy.read_bytes()) != want:
-            raise Refuse("the private copy of reanchor.sh changed since it was hashed.")
+    def reading(command):
+        """validate, show-report and hash-package run through the launcher, which verifies the
+        artifact and reads the values file before the artifact starts; the launcher is hashed first."""
+        launcher_unchanged()
         env = {"PATH": CHILD_PATH, "HOME": field["home"], "LC_ALL": "C"}
-        return child(rec, [SH, str(copy), command, str(values)], env=env)
-    r = artifact("validate")
+        return child(rec, [SH, str(launcher), str(packet), str(values), ctx["head"], "--" + command], env=env)
+    r = reading("validate")
     if r.returncode:
         relay(r.stdout + r.stderr)
-        raise Refuse("reanchor.sh validate refused the values file. No report was shown.")
+        raise Refuse("the launcher's validate refused the values file. No report was shown.")
     # 3. roster and anchor
     # The packet's member rows were compared with HEAD above, the roster's included,
     # so this copy is the roster the packet pins.
@@ -1186,11 +1184,11 @@ def run_ceremony(ctx, args, launchctl, rec):
     # 7. Summary 2
     package_file = Path(field["package"])
     own = sha(read_safe(package_file))
-    theirs = [t for t in artifact("hash-package").stdout.split() if len(t) == 64 and t.isalnum()]
+    theirs = [t for t in reading("hash-package").stdout.split() if len(t) == 64 and t.isalnum()]
     if theirs[:1] != [own]:
         raise Refuse("the launcher's hash of the package and this program's disagree.")
     say("\nSummary 2: what you are about to sign")
-    relay(artifact("show-report").stdout)
+    relay(reading("show-report").stdout)
     manifest_status(ctx)
     say(f"authority files changed since the anchor: 0 of {len(ctx['closure'])}\n"
         f"anchor signature: {'good, by a roster key' if status == 'G' else 'unsigned (first run)'}\n"

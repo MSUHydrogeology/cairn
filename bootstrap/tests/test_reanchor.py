@@ -40,16 +40,49 @@ EXECUTABLE_KEYS = ("env", "git", "python", "mktemp", "mkdir", "shasum",
                    "sort", "cat")
 
 
-def _run(*args: str, env: dict | None = None) -> subprocess.CompletedProcess:
-    """Invoke the artifact the way the ceremony does: `/bin/sh <artifact>`.
+#: The artifact commands that take the thirteen recorded values.
+VALUE_COMMANDS = ("validate", "stage1", "stage2", "show-report", "hash-package")
+
+
+def _values_args(path) -> list[str]:
+    """The thirteen values of a CLEAN values file, in the schema's order.
+
+    This is what the launcher does for the artifact: it reads the file once and
+    hands the values over as arguments. A file with a missing or repeated key is
+    never handed over -- the launcher refuses it first -- so a test that needs
+    one goes through the launcher, and this helper asserts rather than guesses.
+    """
+    found: dict[str, str] = {}
+    for line in Path(path).read_text(encoding="utf-8").splitlines():
+        if line and not line.startswith("#"):
+            key, _, value = line.partition(" ")
+            assert key not in found, f"{key} repeated: use the launcher"
+            found[key] = value
+    assert sorted(found) == sorted(SCHEMA_KEYS), (
+        f"{sorted(set(SCHEMA_KEYS) ^ set(found))} differ: use the launcher")
+    return [found[k] for k in SCHEMA_KEYS]
+
+
+def _artifact_argv(args) -> list[str]:
+    """`command <values-file> ...` becomes `command <13 values> ...`."""
+    args = list(args)
+    if len(args) >= 2 and args[0] in VALUE_COMMANDS and os.path.isfile(args[1]):
+        args[1:2] = _values_args(args[1])
+    return args
+
+
+def _run(*args: str, env: dict | None = None,
+         cwd=None) -> subprocess.CompletedProcess:
+    """Invoke the artifact the way the launcher does: `/bin/sh <artifact>`, the
+    values as its first arguments.
 
     Literally `/bin/sh`, as everywhere else in this ceremony -- a
     non-interactive `/bin/sh` reads no startup file, which is what makes the
     child clean.
     """
-    return subprocess.run(["/bin/sh", str(_ARTIFACT), *args],
+    return subprocess.run(["/bin/sh", str(_ARTIFACT), *_artifact_argv(args)],
                           capture_output=True, text=True, check=False,
-                          env=env)
+                          env=env, cwd=cwd)
 
 
 def _assert_refused(r: subprocess.CompletedProcess, needle: str) -> None:
@@ -168,101 +201,105 @@ class TestTheCleanCase:
 
 
 # --------------------------------------------------------------------------
-# one node per refusal in the closed schema
+# one node per refusal in the closed schema -- the launcher is the only reader
 # --------------------------------------------------------------------------
 
-class TestTheGrammarRefuses:
+class TestTheLauncherRefusesTheGrammar:
+    """The values file is read once, by the launcher, before any candidate byte
+    runs. Every node asserts the refusal AND that no candidate code started."""
 
-    def test_an_unknown_key_refuses(self, bed):
+    def test_an_unknown_key_refuses(self, ceremony):
         """The schema is closed. An unrecognised key is not an extra setting,
         it is a values file this contract did not review."""
-        _assert_refused(
-            _run("validate", _write_values(
-                bed, extra_lines=("candidate_oid deadbeef",))),
-            "unknown key")
+        r = _launch(ceremony, values=_write_values(
+            ceremony["bed"], extra_lines=("candidate_oid deadbeef",)))
+        _assert_no_candidate_code_ran(ceremony, r, "unknown key")
 
-    def test_a_duplicate_key_refuses(self, bed):
+    def test_a_duplicate_key_refuses(self, ceremony):
         """Last-wins and first-wins are both silent answers to a disagreement
         the operator has not noticed they wrote."""
-        _assert_refused(
-            _run("validate", _write_values(bed, extra_lines=("git /bin/sh",))),
-            "duplicate key")
+        r = _launch(ceremony, values=_write_values(
+            ceremony["bed"], extra_lines=("git /bin/sh",)))
+        _assert_no_candidate_code_ran(ceremony, r, "duplicate key")
 
     @pytest.mark.parametrize("key", SCHEMA_KEYS)
-    def test_every_missing_key_refuses(self, bed, key):
+    def test_every_missing_key_refuses(self, ceremony, key):
         """No ambient fallback, proven key by key rather than in general."""
-        _assert_refused(_run("validate", _write_values(bed, drop=(key,))),
-                        f"missing required key '{key}'")
+        r = _launch(ceremony, values=_write_values(
+            ceremony["bed"], drop=(key,), name=f"values-drop-{key}"))
+        _assert_no_candidate_code_ran(
+            ceremony, r, f"missing required key '{key}'")
 
-    def test_a_key_with_no_value_refuses(self, bed):
-        _assert_refused(
-            _run("validate", _write_values(bed, extra_lines=("home",))),
-            "key and no value")
+    def test_a_key_with_no_value_refuses(self, ceremony):
+        r = _launch(ceremony, values=_write_values(
+            ceremony["bed"], extra_lines=("home",)))
+        _assert_no_candidate_code_ran(ceremony, r, "key and no value")
 
-    def test_a_relative_path_refuses(self, bed):
+    def test_a_relative_path_refuses(self, ceremony):
         """A relative path names a different file depending on where the
         ceremony was started."""
-        _assert_refused(
-            _run("validate", _write_values(bed, override={"git": "bin/git"})),
-            "not an absolute path")
+        r = _launch(ceremony, values=_write_values(
+            ceremony["bed"], override={"git": "bin/git"}))
+        _assert_no_candidate_code_ran(ceremony, r, "not an absolute path")
 
-    def test_leading_whitespace_refuses(self, bed):
-        _assert_refused(
-            _run("validate", _write_values(bed, extra_lines=(" home /tmp",))),
-            "begins with whitespace")
+    def test_leading_whitespace_refuses(self, ceremony):
+        r = _launch(ceremony, values=_write_values(
+            ceremony["bed"], extra_lines=(" home /tmp",)))
+        _assert_no_candidate_code_ran(ceremony, r, "begins with whitespace")
 
-    def test_trailing_whitespace_refuses_rather_than_being_trimmed(self, bed):
+    def test_trailing_whitespace_refuses_rather_than_being_trimmed(
+            self, ceremony):
         """Trimming would silently change a path into a different path that
         happens to exist."""
-        _assert_refused(
-            _run("validate", _write_values(
-                bed, override={"home": str(bed["dir"]) + " "})),
-            "ends with whitespace")
+        r = _launch(ceremony, values=_write_values(
+            ceremony["bed"],
+            override={"home": str(ceremony["dir"]) + " "}))
+        _assert_no_candidate_code_ran(ceremony, r, "ends with whitespace")
 
-    def test_a_control_character_refuses(self, bed):
-        _assert_refused(
-            _run("validate", _write_values(
-                bed, override={"home": str(bed["dir"]) + "\tx"})),
-            "control character")
+    def test_a_control_character_refuses(self, ceremony):
+        r = _launch(ceremony, values=_write_values(
+            ceremony["bed"],
+            override={"home": str(ceremony["dir"]) + "\tx"}))
+        _assert_no_candidate_code_ran(ceremony, r, "control character")
 
-    def test_crlf_endings_refuse(self, bed):
+    def test_crlf_endings_refuse(self, ceremony):
         """The contract says LF. A CR at the end of every line is what a file
         edited on the wrong platform looks like, and it would otherwise turn
         every path into a path with an invisible byte on the end."""
-        path = Path(_write_values(bed))
+        path = Path(_write_values(ceremony["bed"]))
         path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
-        _assert_refused(_run("validate", str(path)), "control character")
+        r = _launch(ceremony, values=str(path))
+        _assert_no_candidate_code_ran(ceremony, r, "control character")
 
-    def test_a_hash_after_column_zero_is_part_of_the_value(self, bed):
+    def test_a_hash_after_column_zero_is_part_of_the_value(self, ceremony):
         """`#` is a comment marker only at column 0. Anywhere else it is a
         legal character in a path, and treating it as a comment would silently
         truncate one."""
-        odd = bed["dir"] / "ho#me"
+        odd = ceremony["dir"] / "ho#me"
         odd.mkdir()
-        _assert_refused(
-            _run("validate", _write_values(
-                bed, override={"home": f"{odd} # trailing note"})),
-            "not an existing directory")
+        r = _launch(ceremony, values=_write_values(
+            ceremony["bed"], override={"home": f"{odd} # trailing note"}))
+        _assert_no_candidate_code_ran(
+            ceremony, r, "not an existing directory")
 
-    def test_an_over_long_line_refuses(self, bed):
-        _assert_refused(
-            _run("validate", _write_values(
-                bed, extra_lines=("home /" + "a" * 5000,))),
-            "the bound is 4096")
+    def test_an_over_long_line_refuses(self, ceremony):
+        r = _launch(ceremony, values=_write_values(
+            ceremony["bed"], extra_lines=("home /" + "a" * 5000,)))
+        _assert_no_candidate_code_ran(ceremony, r, "exceeds 4096 bytes")
 
-    def test_an_over_large_file_refuses(self, bed):
+    def test_an_over_large_file_refuses(self, ceremony):
         """Bounded before it is trusted. The comment lines below are individually
         legal, so only the file bound can stop this one."""
         filler = tuple(f"# {'x' * 200}" for _ in range(400))
-        _assert_refused(
-            _run("validate", _write_values(bed, extra_lines=filler)),
-            "exceeds 65536 bytes")
+        r = _launch(ceremony, values=_write_values(
+            ceremony["bed"], extra_lines=filler))
+        _assert_no_candidate_code_ran(ceremony, r, "exceeds 65536 bytes")
 
-    def test_a_wrong_schema_version_refuses(self, bed):
-        _assert_refused(
-            _run("validate", _write_values(
-                bed, override={"schema": "cairn-ceremony-values/v2"})),
-            "and nothing else")
+    def test_a_wrong_schema_version_refuses(self, ceremony):
+        r = _launch(ceremony, values=_write_values(
+            ceremony["bed"],
+            override={"schema": "cairn-ceremony-values/v2"}))
+        _assert_no_candidate_code_ran(ceremony, r, "and nothing else")
 
 
 class TestTheRequiredStatesRefuse:
@@ -367,8 +404,26 @@ class TestTheValuesFileIsParsedNeverExecuted:
 
     These are the nodes that would catch the whole design being wrong rather
     than one rule being wrong: a values file that can execute is not a data
-    contract, it is a second script nobody reviewed.
+    contract, it is a second script nobody reviewed. The launcher reads the
+    file; the artifact takes the values as arguments and must treat each one
+    as text just the same.
     """
+
+    def test_the_launcher_takes_every_expansion_literally(self, ceremony):
+        """Each hostile value would leave a marker if the reader expanded it.
+        The launcher is the only reader, so it is held to the same four
+        properties as the artifact's argument checks below."""
+        for label, payload in (
+                ("substitution", f"$(touch {ceremony['dir']}/SUB)"),
+                ("backtick", f"`touch {ceremony['dir']}/TICK`"),
+                ("glob", str(ceremony["dir"] / "*")),
+                ("variable", "$HOME")):
+            r = _launch(ceremony, values=_write_values(
+                ceremony["bed"], override={"git": payload},
+                name=f"values-{label}"))
+            _assert_no_candidate_code_ran(ceremony, r, "git:")
+        assert not (ceremony["dir"] / "SUB").exists()
+        assert not (ceremony["dir"] / "TICK").exists()
 
     def test_a_command_substitution_in_a_value_is_taken_literally(self, bed):
         """If the value were expanded, the marker would not exist and the path
@@ -403,17 +458,19 @@ class TestTheValuesFileIsParsedNeverExecuted:
             bed, override={"git": "$CAIRN_TEST_INJECTED"}), env=env)
         _assert_refused(r, "not an absolute path")
 
-    def test_the_artifact_contains_no_eval_or_source(self):
+    def test_neither_the_artifact_nor_the_launcher_contains_eval_or_source(
+            self):
         """A source-level statement of the same property. The behavioural nodes
-        above prove the parser as written does not expand; this one fails the
+        above prove the reader as written does not expand; this one fails the
         moment someone adds a construct that could."""
-        text = _ARTIFACT.read_text(encoding="utf-8")
-        code = "\n".join(l for l in text.splitlines()
-                         if not l.lstrip().startswith("#"))
-        for banned in ("eval ", "eval\t", "source ", ". \""):
-            assert banned not in code, (
-                f"the artifact contains {banned!r}; the values file must be "
-                f"parsed, never executed")
+        for path in (_ARTIFACT, _LAUNCHER_TEMPLATE):
+            text = path.read_text(encoding="utf-8")
+            code = "\n".join(l for l in text.splitlines()
+                             if not l.lstrip().startswith("#"))
+            for banned in ("eval ", "eval\t", "source ", ". \""):
+                assert banned not in code, (
+                    f"{path.name} contains {banned!r}; the values file must "
+                    f"be parsed, never executed")
 
     def test_the_source_scan_would_notice_a_real_eval(self):
         """Mutation check for the node above: if the comment stripper ate
@@ -426,34 +483,31 @@ class TestTheValuesFileIsParsedNeverExecuted:
 
 class TestThereIsNoAmbientFallback:
 
-    def test_an_absent_field_is_not_filled_from_an_EXPORTED_V_VARIABLE(self, bed):
+    def test_an_absent_field_is_not_filled_from_an_EXPORTED_L_VARIABLE(
+            self, ceremony):
         """The reader's own variable name, exported, is a second channel.
 
-        The schema check asks `[ -n "${V_key+s}" ]` -- *is this variable set* --
+        The schema check asks `[ -n "${L_key+s}" ]` -- *is this variable set* --
         and an exported environment variable answers exactly as a values-file
-        line does. Before the reader zeroed its outputs, `V_python=/bin/echo`
+        line does. Before the reader zeroed its outputs, an exported `L_shasum`
         satisfied the missing-key refusal for a values file that never named
-        python, and `$V_python` is what executes the checker. Worse, the
-        disclosure print then showed the injected value beneath the heading
-        "nothing below was discovered", so the operator's stop-point asserted
-        the opposite of what had happened.
-
-        The sibling node above models PATH and builds its environment from
-        `dict(os.environ)`, so it could never have matched this shape. Reproduced
-        2026-08-27; see the launcher-template external security review.
+        shasum, and that program then ran inside the pre-candidate window.
+        Every one of the thirteen is checked, because the reader's unset list
+        is what makes each of them true.
         """
-        for key, var in (("python", "V_python"), ("git", "V_git"),
-                         ("shasum", "V_shasum")):
+        assert Path("/bin/echo").is_file(), (
+            "this node is vacuous unless the injected value would pass the "
+            "executable check that follows the schema check")
+        for key in SCHEMA_KEYS:
             env = dict(os.environ)
-            env[var] = "/bin/echo"
-            assert Path("/bin/echo").is_file(), (
-                "this node is vacuous unless the injected value would pass the "
-                "executable check that follows the schema check")
-            _assert_refused(
-                _run("validate", _write_values(bed, drop=(key,)), env=env),
-                f"missing required key '{key}'")
+            env[f"L_{key}"] = "/bin/echo"
+            r = _launch(ceremony, values=_write_values(
+                ceremony["bed"], drop=(key,), name=f"values-no-{key}"),
+                env=env)
+            _assert_no_candidate_code_ran(
+                ceremony, r, f"missing required key '{key}'")
 
-    def test_an_absent_executable_field_is_not_filled_from_PATH(self, bed):
+    def test_an_absent_executable_field_is_not_filled_from_PATH(self, ceremony):
         """The field is dropped while PATH still resolves the tool perfectly
         well. Refusing anyway is the whole point: ambient discovery is what let
         a replacement utility vouch for bytes it had just rewritten."""
@@ -461,16 +515,17 @@ class TestThereIsNoAmbientFallback:
         env["PATH"] = "/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin"
         assert shutil.which("git", path=env["PATH"]), (
             "this node is vacuous unless PATH really could supply git")
-        _assert_refused(
-            _run("validate", _write_values(bed, drop=("git",)), env=env),
-            "missing required key 'git'")
+        r = _launch(ceremony, values=_write_values(
+            ceremony["bed"], drop=("git",)), env=env)
+        _assert_no_candidate_code_ran(ceremony, r, "missing required key 'git'")
 
-    def test_an_absent_home_field_is_not_filled_from_the_environment(self, bed):
+    def test_an_absent_home_field_is_not_filled_from_the_environment(
+            self, ceremony):
         env = dict(os.environ)
-        env["HOME"] = str(bed["dir"])
-        _assert_refused(
-            _run("validate", _write_values(bed, drop=("home",)), env=env),
-            "missing required key 'home'")
+        env["HOME"] = str(ceremony["dir"])
+        r = _launch(ceremony, values=_write_values(
+            ceremony["bed"], drop=("home",)), env=env)
+        _assert_no_candidate_code_ran(ceremony, r, "missing required key 'home'")
 
 
 # --------------------------------------------------------------------------
@@ -538,10 +593,12 @@ class TestTheCommandSurface:
         assert r.returncode != 0
         assert "unknown command" in r.stderr
 
-    def test_validate_requires_exactly_one_values_file(self, bed):
+    def test_validate_requires_exactly_the_thirteen_values(self, bed):
         r = _run("validate")
         assert r.returncode != 0
-        assert "exactly one argument" in r.stderr
+        assert "13 recorded values" in r.stderr
+        r = _run("validate", *_values_args(_write_values(bed)), "extra")
+        assert r.returncode != 0 and "13 recorded values" in r.stderr
 
     def test_the_artifact_passes_a_shell_syntax_check(self):
         """This repository has no shell standing gate, so the artifact carries
@@ -608,7 +665,8 @@ def staged(bed, tmp_path):
 
 def _run_staged(staged, *args, env=None, record=True):
     child = dict(env or os.environ)
-    r = subprocess.run(["/bin/sh", str(staged["artifact"]), *args],
+    r = subprocess.run(["/bin/sh", str(staged["artifact"]),
+                        *_artifact_argv(args)],
                        capture_output=True, text=True, check=False, env=child)
     invocation = None
     if record and staged["record"].exists():
@@ -691,7 +749,7 @@ class TestStage1RunsTheCheckerWithTheRecordedValues:
         shutil.copy2(_ARTIFACT, lonely / "reanchor.sh")
         r = subprocess.run(
             ["/bin/sh", str(lonely / "reanchor.sh"), "stage1",
-             _write_values(bed)],
+             *_values_args(_write_values(bed))],
             capture_output=True, text=True, check=False)
         _assert_refused(r, "not beside this artifact")
 
@@ -822,10 +880,18 @@ class TestHashPackage:
         r = _run("hash-package", _write_values(bed))
         _assert_refused(r, "does not exist")
 
-    def test_hash_package_takes_exactly_one_argument(self, bed):
+    def test_a_stage_given_fewer_than_thirteen_values_names_the_thirteen(
+            self, bed, staged):
+        values = _values_args(_write_values(bed))
+        for stage in ("stage1", "stage2"):
+            r, inv = _run_staged(staged, stage, *values[:12])
+            _assert_refused(r, "13 recorded values")
+            assert inv is None, "the checker ran on an incomplete value list"
+
+    def test_hash_package_takes_exactly_the_thirteen_values(self, bed):
         r = _run("hash-package")
         assert r.returncode != 0
-        assert "exactly one argument" in r.stderr
+        assert "13 recorded values" in r.stderr
 
 
 class TestShowReport:
@@ -1199,13 +1265,16 @@ def _instantiate(state, packet_text, *, packet_bytes=None, digest=None):
     return digest
 
 
-def _launch(state, *, ref=None, values=None, packet=None):
+def _launch(state, *, ref=None, values=None, packet=None, mode=(), env=None,
+            cwd=None):
+    """The launcher, as the Maintainer runs it. `mode` is the optional fourth
+    argument(s): `("--stage2", digest)`, `("--show-report",)`, and so on."""
     return subprocess.run(
         ["/bin/sh", str(state["launcher"]),
          str(packet or state["packet_path"]),
          values or _write_values(state["bed"]),
-         ref or state["oid"]],
-        capture_output=True, text=True, check=False)
+         ref or state["oid"], *mode],
+        capture_output=True, text=True, check=False, env=env, cwd=cwd)
 
 
 def _assert_no_candidate_code_ran(state, r, needle):
@@ -1469,13 +1538,11 @@ class TestThePacketCarriesNoAuthorityItShouldNot:
 
 
 class TestTheLauncherReaderRefusesBeforeAnyCandidateByte:
-    """The launcher needs git, shasum, cat, mktemp and mkdir BEFORE it can
-    verify the artifact -- and the artifact's parser is candidate code it has
-    not yet cleared. So it has its own reader, and these nodes prove the reader
-    refuses with the marker still absent."""
+    """The launcher needs git, shasum, cat, mktemp, mkdir and env BEFORE it can
+    verify the artifact, and it is the only reader of the values file. These
+    nodes prove its reader refuses with the marker still absent."""
 
-    @pytest.mark.parametrize("key", ("git", "shasum", "cat", "mktemp",
-                                     "mkdir", "env"))
+    @pytest.mark.parametrize("key", EXECUTABLE_KEYS)
     def test_a_malicious_executable_value_leaves_the_marker_absent(
             self, ceremony, key):
         """Not merely 'refuses' -- refuses BEFORE anything runs. A reader that
@@ -1490,8 +1557,7 @@ class TestTheLauncherReaderRefusesBeforeAnyCandidateByte:
         r = _launch(ceremony, values=values)
         _assert_no_candidate_code_ran(ceremony, r, "is not executable")
 
-    @pytest.mark.parametrize("key", ("git", "shasum", "cat", "mktemp",
-                                     "mkdir", "env"))
+    @pytest.mark.parametrize("key", EXECUTABLE_KEYS)
     def test_an_absent_executable_value_leaves_the_marker_absent(
             self, ceremony, key):
         values = _write_values(
@@ -1500,63 +1566,340 @@ class TestTheLauncherReaderRefusesBeforeAnyCandidateByte:
         r = _launch(ceremony, values=values)
         _assert_no_candidate_code_ran(ceremony, r, "does not exist")
 
-    @pytest.mark.parametrize("key", ("git", "shasum", "cat", "mktemp",
-                                     "mkdir", "env", "checkout"))
-    def test_a_missing_field_refuses_with_no_ambient_fallback(
-            self, ceremony, key):
-        values = _write_values(ceremony["bed"], drop=(key,),
-                               name=f"values-drop-{key}")
-        r = _launch(ceremony, values=values)
-        _assert_no_candidate_code_ran(ceremony, r, f"missing required key '{key}'")
+
+def _logging_tools(bed, log) -> dict:
+    """A stand-in for each of the eight programs: it records its own name and
+    its arguments, then runs the real program. A program that starts leaves a
+    line; one that never starts leaves none."""
+    stand_ins = {}
+    for key in EXECUTABLE_KEYS:
+        stub = Path(bed["dir"]) / f"logging-{key}"
+        stub.write_text(
+            f'#!/bin/sh\nprintf "%s %s\\n" {key} "$*" >> "{log}"\n'
+            f'exec "{bed["values"][key]}" "$@"\n')
+        stub.chmod(0o755)
+        stand_ins[key] = str(stub)
+    return stand_ins
 
 
-class TestTheTwoValuesParsersAgree:
-    """A parity matrix. The launcher's reader and the artifact's parser are two
-    implementations of one grammar, and two parsers of one artifact that drift
-    is a defect this repository has already had.
+def _logged_programs(log) -> list[str]:
+    return ([ln.split(" ", 1)[0] for ln in Path(log).read_text().splitlines()]
+            if Path(log).exists() else [])
 
-    Neither may accept a value the other refuses.
-    """
 
-    #: One damaged values file per rule in the closed grammar, plus `cat`.
-    @pytest.mark.parametrize("label,kwargs", [
-        ("relative-path", {"override": {"git": "bin/git"}}),
-        ("relative-cat", {"override": {"cat": "bin/cat"}}),
-        ("leading-whitespace", {"extra_lines": (" git /bin/sh",)}),
-        ("trailing-whitespace", {"override": {"git": "/bin/sh "}}),
-        ("control-character", {"override": {"git": "/bin/sh\tx"}}),
-        ("no-value", {"extra_lines": ("git",)}),
-        ("duplicate-git", {"extra_lines": ("git /bin/sh",)}),
-        ("duplicate-cat", {"extra_lines": ("cat /bin/cat",)}),
-        ("missing-git", {"drop": ("git",)}),
-        ("missing-cat", {"drop": ("cat",)}),
-        ("over-long-line", {"extra_lines": ("git /" + "a" * 5000,)}),
-        ("non-executable-cat", {}),          # filled in below
-    ])
-    def test_both_parsers_refuse_the_same_values_file(self, ceremony, bed,
-                                                      tmp_path, label, kwargs):
-        if label == "non-executable-cat":
-            plain = tmp_path / "plain-cat"
+class TestHostileValuesStartNoProgram:
+    """Every hostile values file is refused by the real launcher before ANY of
+    the programs the file names has started. Each of the eight stand-ins logs a
+    call; a refusal that came after one of them ran would show in the log."""
+
+    #: One damaged file per rule, over every key it applies to.
+    @staticmethod
+    def _hostile(bed, tools):
+        cases = []
+        for key in SCHEMA_KEYS:
+            cases.append((f"missing {key}", {"drop": (key,)}))
+            value = tools.get(key, bed["values"][key])
+            cases.append((f"duplicate {key}",
+                          {"extra_lines": (f"{key} {value}",)}))
+        for key in EXECUTABLE_KEYS:
+            plain = Path(bed["dir"]) / f"plain-{key}"
             plain.write_text("#!/bin/sh\n")
             plain.chmod(0o644)
-            kwargs = {"override": {"cat": str(plain)}}
-        values = _write_values(bed, name=f"values-{label}", **kwargs)
+            cases += [(f"not executable {key}", {"override": {key: str(plain)}}),
+                      (f"absent {key}", {"override": {
+                          key: str(Path(bed["dir"]) / "nope")}}),
+                      (f"directory {key}", {"override": {
+                          key: str(bed["dir"])}})]
+        cases += [
+            ("unknown key", {"extra_lines": ("candidate_oid deadbeef",)}),
+            ("no value", {"extra_lines": ("git",)}),
+            ("leading whitespace", {"extra_lines": (" home /tmp",)}),
+            ("control character", {"extra_lines": ("home /tmp\tx",)}),
+            ("over long", {"extra_lines": ("home /" + "a" * 5000,)}),
+            ("wrong schema", {"override": {
+                "schema": "cairn-ceremony-values/v2"}}),
+            ("package parent missing", {"override": {
+                "package": str(Path(bed["dir"]) / "nodir" / "p.json")}}),
+            ("not a worktree top level", {"override": {
+                "checkout": str(Path(bed["values"]["checkout"]) / "sub")}}),
+        ]
+        (Path(bed["values"]["checkout"]) / "sub").mkdir(exist_ok=True)
+        return cases
 
-        artifact = _run("validate", values)
-        assert artifact.returncode != 0, (
-            f"the ARTIFACT accepted {label!r}, which the launcher refuses")
+    def test_a_refusal_comes_before_any_program_starts(self, ceremony):
+        log = ceremony["dir"] / "programs.log"
+        tools = _logging_tools(ceremony["bed"], log)
+        clean = _launch(ceremony, values=_write_values(
+            ceremony["bed"], override=tools, name="values-clean"))
+        assert clean.returncode == 0 and ceremony["marker"].exists(), (
+            f"the clean file did not reach the artifact:\n{clean.stderr}")
+        assert _logged_programs(log), (
+            "the stand-ins logged nothing on the clean path, so an empty log "
+            "below would prove nothing")
+        ceremony["marker"].unlink()
+        failures = []
+        for label, kwargs in self._hostile(ceremony["bed"], tools):
+            log.unlink(missing_ok=True)
+            kwargs = dict(kwargs)
+            kwargs["override"] = {**tools, **kwargs.get("override", {})}
+            r = _launch(ceremony, values=_write_values(
+                ceremony["bed"], name="values-hostile", **kwargs))
+            if (r.returncode == 0 or _logged_programs(log)
+                    or ceremony["marker"].exists()):
+                failures.append((label, r.returncode, _logged_programs(log)))
+        assert not failures, failures
 
-        launcher = _launch(ceremony, values=values)
-        assert launcher.returncode != 0, (
-            f"the LAUNCHER accepted {label!r}, which the artifact refuses")
+
+class TestTheLauncherStartsSixProgramsAndNoMore:
+    """`bootstrap/SAFETY.md` fixes the programs that run before the first
+    candidate byte at six: env, git, shasum, mktemp, mkdir, cat. The values file
+    now names eight, and the launcher is its only reader, so the two it reads
+    for the artifact alone -- python and sort -- must never start here."""
+
+    SIX = {"env", "git", "shasum", "mktemp", "mkdir", "cat"}
+
+    @pytest.mark.parametrize("mode", [(), ("--validate",), ("--show-report",),
+                                      ("--hash-package",)])
+    def test_only_the_six_start_before_the_artifact(self, ceremony, mode):
+        log = ceremony["dir"] / "programs.log"
+        tools = _logging_tools(ceremony["bed"], log)
+        values = _write_values(ceremony["bed"], override=tools)
+        # A PATH that finds nothing: a program reached by bare name fails.
+        r = _launch(ceremony, values=values, mode=mode,
+                    env={"PATH": str(ceremony["dir"] / "no-such-bin")})
+        assert r.returncode == 0 and ceremony["marker"].exists(), (
+            f"the artifact was not reached:\n{r.stderr}")
+        assert set(_logged_programs(log)) == self.SIX
+
+    def test_a_trace_of_the_launcher_names_no_other_program(self, ceremony):
+        """The log above sees only the eight values-file programs. A seventh
+        reached by bare name (`date`, `sed`, `cut`) would leave no line there
+        and, with an empty PATH, would fail without stopping the launcher. The
+        shell's own trace lists every command it runs, so this reads that."""
+        import re
+        log = ceremony["dir"] / "programs.log"
+        tools = _logging_tools(ceremony["bed"], log)
+        values = _write_values(ceremony["bed"], override=tools)
+        r = subprocess.run(
+            ["/bin/sh", "-x", str(ceremony["launcher"]),
+             str(ceremony["packet_path"]), values, ceremony["oid"]],
+            capture_output=True, text=True, check=False,
+            env={"PATH": str(ceremony["dir"] / "no-such-bin")})
+        assert r.returncode == 0 and ceremony["marker"].exists(), r.stderr[-800:]
+        source = _LAUNCHER_TEMPLATE.read_text(encoding="utf-8")
+        functions = set(re.findall(r"^(\w+)\(\) \{", source, re.M))
+        shell_words = {":", "[", "break", "case", "cd", "continue", "exec",
+                       "exit", "export", "printf", "pwd", "read", "return",
+                       "set", "shift", "unset"}
+        programs = set()
+        for line in r.stderr.splitlines():
+            found = re.match(r"^\++ (\S+)", line)
+            if not found:
+                continue
+            word = found.group(1).strip("'\"")
+            if (re.match(r"[A-Za-z_][A-Za-z0-9_]*=", word)
+                    or word in shell_words or word in functions):
+                continue
+            programs.add(word)
+        # `git` is an argument of `env -i ...`, so the trace shows `env` start it.
+        assert programs == {tools[k] for k in self.SIX - {"git"}}, sorted(programs)
+        assert "git" in _logged_programs(log)
+
+    def test_the_second_stage_starts_the_same_six(self, ceremony):
+        log = ceremony["dir"] / "programs.log"
+        tools = _logging_tools(ceremony["bed"], log)
+        values = _write_values(ceremony["bed"], override=tools)
+        r = _launch(ceremony, values=values, mode=("--stage2", "0" * 64),
+                    env={"PATH": str(ceremony["dir"] / "no-such-bin")})
+        assert r.returncode == 0 and ceremony["marker"].exists(), r.stderr
+        assert set(_logged_programs(log)) == self.SIX
+
+
+def _use_the_real_artifact(state, *, also=None):
+    """Replace the stub artifact in the candidate with the shipped one (and
+    any other candidate file in *also*), and re-issue the packet and launcher
+    over it."""
+    repo = state["repo"]
+    (repo / "bootstrap/reanchor.sh").write_bytes(_ARTIFACT.read_bytes())
+    for rel, text in (also or {}).items():
+        (repo / rel).write_text(text)
+    for args in (["add", "-A"],
+                 ["-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm",
+                  "real artifact"]):
+        subprocess.run(["git", "-C", str(repo), *args], check=True,
+                       capture_output=True)
+    state["oid"] = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"], capture_output=True,
+        text=True, check=True).stdout.strip()
+    _instantiate(state, _compose_packet(state))
+    return state
+
+
+class TestTheReadingCommandsRunThroughTheLauncher:
+    """`validate`, `show-report` and `hash-package` start the artifact only
+    after the launcher has verified it, and hand it the values already checked."""
+
+    def test_validate_prints_the_configuration_the_launcher_read(self, ceremony):
+        _use_the_real_artifact(ceremony)
+        r = _launch(ceremony, mode=("--validate",))
+        assert r.returncode == 0, r.stderr
+        assert "OK: the values satisfy the closed schema" in r.stdout
+        for key, value in ceremony["bed"]["values"].items():
+            assert value in r.stdout, f"{key} not shown"
+
+    def test_hash_package_hashes_with_the_launchers_own_shasum(self, ceremony):
+        import hashlib
+        _use_the_real_artifact(ceremony)
+        log = ceremony["dir"] / "programs.log"
+        tools = _logging_tools(ceremony["bed"], log)
+        package = Path(ceremony["bed"]["values"]["package"])
+        payload = b'{"schema": "cairn-authorization-package/v1"}\n'
+        package.write_bytes(payload)
+        r = _launch(ceremony, mode=("--hash-package",), values=_write_values(
+            ceremony["bed"], override=tools))
+        assert r.returncode == 0, r.stderr
+        assert hashlib.sha256(payload).hexdigest() in r.stdout
+        assert f"shasum -a 256 {package}" in log.read_text().splitlines()
+
+    @pytest.mark.parametrize("steady", [False, True])
+    def test_the_stages_receive_the_values_the_launcher_read(
+            self, ceremony, steady):
+        """Both the transition path (the closure differs from the anchor) and
+        the steady-state path start the artifact with the thirteen values."""
+        import json
+        repo = ceremony["repo"]
+        record = ceremony["dir"] / "invocation.json"
+        roster = subprocess.run(
+            ["git", "-C", str(repo), "show",
+             "refs/cairn/gate-anchor:dev/.cairn/allowed_signers"],
+            capture_output=True, text=True, check=True).stdout
+        _use_the_real_artifact(ceremony, also={
+            "dev/.cairn/allowed_signers": roster,
+            "bootstrap/tests/_gate_preflight.py":
+                _RECORDING_CHECKER.replace("@RECORD@", str(record))})
+        if steady:
+            subprocess.run(["git", "-C", str(repo), "update-ref",
+                            "refs/cairn/gate-anchor", ceremony["oid"]],
+                           check=True, capture_output=True)
+        values = ceremony["bed"]["values"]
+        stage1 = _launch(ceremony)
+        assert stage1.returncode == 0, stage1.stderr
+        assert ("steady state" in stage1.stdout) == steady, stage1.stdout
+        argv = json.loads(record.read_text())["argv"]
+        assert argv[0] == "stage1"
+        assert argv[argv.index("--repo") + 1] == values["checkout"]
+        assert argv[argv.index("--package-out") + 1] == values["package"]
+        assert argv[argv.index("--signing-key") + 1] == values["signing_key"]
+        assert ("--reviewed-candidate" in argv) == (not steady)
+        record.unlink()
+        Path(values["package"]).write_text("{}\n")
+        stage2 = _launch(ceremony, mode=("--stage2", "ab" * 32))
+        assert stage2.returncode == 0, stage2.stderr
+        argv = json.loads(record.read_text())["argv"]
+        assert argv[0] == "stage2"
+        assert argv[argv.index("--package") + 1] == values["package"]
+        assert argv[argv.index("--confirm-package-sha256") + 1] == "ab" * 32
+
+    def test_show_report_renders_through_the_launcher(self, ceremony):
+        import json
+        _use_the_real_artifact(ceremony)
+        Path(ceremony["bed"]["values"]["package"]).write_text(json.dumps({
+            "schema": "cairn-authorization-package/v1",
+            "range_report": TestShowReport._minimal_report()}))
+        r = _launch(ceremony, mode=("--show-report",))
+        assert r.returncode == 0, r.stderr
+        assert "bootstrap/tests/frozen_0.py" in r.stdout
+
+    @pytest.mark.parametrize("mode", ["--validate", "--show-report",
+                                      "--hash-package"])
+    def test_a_packet_that_does_not_match_refuses_before_the_artifact(
+            self, ceremony, mode):
+        rows = [(_sha256_file(ceremony["repo"] / rel), rel) for rel in CLOSURE]
+        rows[2] = ("a" * 64, rows[2][1])
+        _instantiate(ceremony, _compose_packet(
+            ceremony, rows=rows, artifact_sha="a" * 64))
+        r = _launch(ceremony, mode=(mode,))
+        _assert_no_candidate_code_ran(ceremony, r, "does not match the reviewed")
+
+    def test_an_unknown_fourth_argument_is_a_usage_error(self, ceremony):
+        r = _launch(ceremony, mode=("--bless-everything",))
+        assert r.returncode == 2 and "usage:" in r.stderr
         assert not ceremony["marker"].exists()
 
-    def test_both_parsers_accept_the_same_clean_file(self, ceremony, bed):
-        """The other direction. A parity suite of refusals alone would pass if
-        one parser refused everything."""
-        values = _write_values(bed, name="values-clean")
-        assert _run("validate", values).returncode == 0
-        assert _launch(ceremony, values=values).returncode == 0
+
+class TestTheLauncherAndTheArtifactRefuseTheSameBadValues:
+    """The launcher checks each value before the artifact exists; the artifact
+    keeps the same state checks for a value handed to it directly. Two
+    implementations of one set of rules: neither may accept a value the other
+    refuses, for every key, and both accept the clean file."""
+
+    @staticmethod
+    def _bad_values(bed):
+        dir_ = Path(bed["dir"])
+        cases = []
+        for key in EXECUTABLE_KEYS:
+            plain = dir_ / f"plain-{key}"
+            plain.write_text("#!/bin/sh\n")
+            plain.chmod(0o644)
+            link = dir_ / f"link-{key}"
+            link.symlink_to(bed["values"][key])
+            cases += [(f"relative {key}", {key: "bin/x"}),
+                      (f"absent {key}", {key: str(dir_ / "nope")}),
+                      (f"directory {key}", {key: str(dir_)}),
+                      (f"not executable {key}", {key: str(plain)}),
+                      (f"symlink {key}", {key: str(link)})]
+        sub = Path(bed["values"]["checkout"]) / "sub"
+        sub.mkdir(exist_ok=True)
+        checkout_link = dir_ / "checkout-link"
+        checkout_link.symlink_to(bed["values"]["checkout"])
+        key_link = dir_ / "key-link.pub"
+        key_link.symlink_to(bed["values"]["signing_key"])
+        parent_link = dir_ / "parent-link"
+        parent_link.symlink_to(dir_)
+        cases += [
+            ("relative checkout", {"checkout": "rel/path"}),
+            ("checkout not a top level", {"checkout": str(sub)}),
+            ("checkout a symlink", {"checkout": str(checkout_link)}),
+            ("relative signing_key", {"signing_key": "rel/key.pub"}),
+            ("signing_key a directory", {"signing_key": str(dir_)}),
+            ("signing_key a symlink", {"signing_key": str(key_link)}),
+            ("relative package", {"package": "rel/p.json"}),
+            ("package parent missing", {"package": str(dir_ / "no" / "p.json")}),
+            ("package parent a symlink",
+             {"package": str(parent_link / "p.json")}),
+            ("relative home", {"home": "rel/home"}),
+            ("home not a directory", {"home": bed["values"]["signing_key"]}),
+            ("wrong schema", {"schema": "cairn-ceremony-values/v2"}),
+        ]
+        return cases
+
+    #: A relative path that EXISTS from where the command starts: only an
+    #: absolute-path rule refuses it, because every other check finds it fine.
+    @staticmethod
+    def _relative_but_existing(bed):
+        return [("relative checkout that exists from here",
+                 {"checkout": "checkout"}, Path(bed["dir"]))]
+
+    def test_both_refuse_the_same_values_and_accept_the_clean_file(
+            self, ceremony):
+        bed = ceremony["bed"]
+        disagreements = []
+        cases = [(label, override, None)
+                 for label, override in self._bad_values(bed)]
+        cases += self._relative_but_existing(bed)
+        for label, override, cwd in cases:
+            values = _write_values(bed, override=override, name="values-bad")
+            artifact = _run("validate", values, cwd=cwd)
+            launcher = _launch(ceremony, values=values, cwd=cwd)
+            if artifact.returncode == 0 or launcher.returncode == 0:
+                disagreements.append((label, artifact.returncode,
+                                      launcher.returncode))
+        assert not disagreements, (
+            "a value one of them accepts and the other refuses (label, "
+            f"artifact exit, launcher exit): {disagreements}")
+        clean = _write_values(bed, name="values-clean")
+        assert _run("validate", clean).returncode == 0
+        assert _launch(ceremony, values=clean).returncode == 0
         assert ceremony["marker"].exists()
 
 
@@ -1875,7 +2218,7 @@ class TestTheReproducedLauncherDoesNotDriftFromTheRealOne:
     #: either file: a check derived from one side agrees with that side by
     #: construction, which is not a check.
     STEPS = (
-        ("reads your values file with its **own** parser", "read_values"),
+        ("reads your values file with its **only** parser", "read_values"),
         ("bound into itself",                              "$PACKET_SHA256"),
         ("re-hashes the snapshot",                         "$_rp_d2"),
         ("own fixed list",                                 "$EXPECTED_PATHS"),
@@ -2066,13 +2409,14 @@ class TestTheMaintainerCanPerformTheWholeCeremony:
             before_anchor, "stage 1 moved a ref; it holds no key and moves nothing"
 
         # --- the two steps that are the Maintainer's judgement --------------
-        artifact = _REPO / "bootstrap/reanchor.sh"
-        report = self._sh(artifact, "show-report", values, cwd=repo)
+        report = self._sh(launcher, packet, values, head, "--show-report",
+                          cwd=repo)
         assert report.returncode == 0, report.stderr
         assert before_anchor in report.stdout and before_head in report.stdout, (
             "the report does not name the state being authorized")
 
-        digest_out = self._sh(artifact, "hash-package", values, cwd=repo)
+        digest_out = self._sh(launcher, packet, values, head, "--hash-package",
+                              cwd=repo)
         assert digest_out.returncode == 0, digest_out.stderr
         confirmed = next(w for w in digest_out.stdout.split()
                          if len(w) == 64 and all(c in "0123456789abcdef"

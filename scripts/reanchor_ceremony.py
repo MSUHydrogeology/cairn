@@ -120,10 +120,9 @@ def sha256_file(path: Path) -> str:
 # the values file -- two fields, positionally, and NOT a validating parse
 # ---------------------------------------------------------------------------
 #
-# The launcher's reader and the artifact's reader are the two parsers of this
-# grammar, bound by a parity test. A third would be a third thing to drift, so
-# this reads the two fields it needs to know WHERE to look and validates
-# nothing. `reanchor.sh validate <values>` is the check.
+# The launcher is the one validating reader of this grammar. A second would be
+# a second thing to drift, so this reads the fields it needs to know WHERE to
+# look and validates nothing. The launcher's `--validate` is the check.
 
 def values_field(values: Path, key: str) -> str | None:
     for line in values.read_text().splitlines():
@@ -499,8 +498,8 @@ def main() -> int:
     say("")
     say(f"    /bin/sh {launcher} {packet} {args.values} {candidate}")
     say("")
-    say("  Stage 1 ends by printing the show-report and hash-package commands for")
-    say("  the verified copy of the artifact. Run those, not the copy in your")
+    say("  Stage 1 ends by printing the --show-report and --hash-package commands")
+    say("  for the same launcher. Run those, not a copy of the artifact in your")
     say("  working tree: nothing has checked that one. Read the report, then")
     say("  compute the package digest.")
     say("")

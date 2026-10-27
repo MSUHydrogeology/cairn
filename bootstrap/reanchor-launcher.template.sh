@@ -86,7 +86,10 @@ usage() {
         '  add  --stage2 <digest>  to run the SIGNING stage. It repeats the' \
         '  whole verification into a fresh directory rather than reusing the' \
         '  one stage 1 left behind -- candidate code ran while that one sat' \
-        '  on disk.' >&2
+        '  on disk.' \
+        '' \
+        '  add  --validate, --show-report or --hash-package  to run that' \
+        '  command in the artifact, after the same verification.' >&2
 }
 
 # --------------------------------------------------------------------------
@@ -127,6 +130,11 @@ require_executable() {
     [ -x "$2" ] || die "$1: '$2' is not executable"
 }
 
+require_directory() {
+    require_absolute "$1" "$2"
+    [ -d "$2" ] || die "$1: '$2' is not an existing directory"
+}
+
 is_hex64() {
     case $1 in
         *[!0123456789abcdef]*) return 1 ;;
@@ -135,19 +143,27 @@ is_hex64() {
 }
 
 # --------------------------------------------------------------------------
-# THE LAUNCHER'S OWN VALUES READER -- pre-candidate
+# THE LAUNCHER'S VALUES READER -- the only reader, pre-candidate
 # --------------------------------------------------------------------------
 #
-# The artifact has a values parser, and this is deliberately a second one.
-# It has to be: the launcher needs `git`, `shasum`, `cat`, `mktemp` and `mkdir`
-# BEFORE it can verify the artifact, and the artifact's parser is candidate code
-# it has not yet cleared. A launcher that used it would be running the thing it
-# is about to check.
+# This is the ONLY parser of the values file. The artifact does not read the
+# file: it is handed the thirteen values as arguments, after this reader has
+# checked every one. That is deliberate. The launcher needs `git`, `shasum`,
+# `cat`, `mktemp`, `mkdir` and `env` BEFORE it can verify the artifact, so it
+# cannot borrow a parser from candidate code it has not yet cleared -- and with
+# one reader there is no second grammar to drift from this one.
 #
-# So this reader implements the SAME closed grammar and the SAME refusals, with
-# NO ambient fallback -- and a parity test asserts the two agree on every rule,
-# in both directions: neither may accept a value the other refuses. Two parsers
-# of one artifact that drift is a defect this repository has already had.
+# The grammar is closed: one `key value` record per line, thirteen keys, each
+# once, no ambient fallback. Every refusal below happens before any program is
+# started. The artifact keeps its own argument checks, so a value handed to it
+# directly is still refused when it is not a usable path.
+
+SCHEMA_VERSION='cairn-ceremony-values/v1'
+
+dup_check() {
+    [ -z "$1" ] || die "duplicate key '$2' at line $3; a values file states" \
+        "each field once, so a second one is an unresolved disagreement"
+}
 
 read_values() {
     # Zero every output BEFORE reading. The checks below ask
@@ -155,11 +171,10 @@ read_values() {
     # variable answers yes exactly as a values-file line does. Without this,
     # `L_shasum=/path/to/mine` in the environment satisfies the missing-key
     # refusal for a values file that never names shasum, and that program then
-    # runs inside the pre-candidate window, hashing the packet. Reproduced
-    # 2026-08-27 with a marker program; see
-    # dev/reviews/2026-08-27-external-security-review-launcher-template.md
-    # finding L-1. The values file is the only channel; this makes it so.
-    unset L_checkout L_git L_shasum L_mktemp L_mkdir L_cat L_env
+    # runs inside the pre-candidate window, hashing the packet. The values file
+    # is the only channel; this makes it so.
+    unset L_checkout L_schema L_signing_key L_package L_home L_env L_git \
+          L_python L_mktemp L_mkdir L_shasum L_sort L_cat
 
     _rv_file=$1
     require_regular_file "values file" "$_rv_file"
@@ -197,48 +212,78 @@ read_values() {
         _rv_key=${_rv_line%% *}
         _rv_value=${_rv_line#* }
 
-        # The launcher reads only the fields IT uses. Every other key belongs to
-        # the artifact's own parser, which runs on the same file afterwards --
-        # so an unknown key is not accepted here, it is simply not this
-        # reader's business, and the artifact refuses it. Duplicates of the
-        # fields below still refuse here, because this reader would otherwise
-        # silently take one of two disagreeing values.
+        # A literal `case` arm per key, so an unknown key reaches only the
+        # refusal and no value is ever expanded or used as a variable name.
         case $_rv_key in
-        checkout) [ -z "${L_checkout+s}" ] || die "duplicate key 'checkout'"
-                  L_checkout=$_rv_value ;;
-        git)      [ -z "${L_git+s}" ]      || die "duplicate key 'git'"
-                  L_git=$_rv_value ;;
-        shasum)   [ -z "${L_shasum+s}" ]   || die "duplicate key 'shasum'"
-                  L_shasum=$_rv_value ;;
-        mktemp)   [ -z "${L_mktemp+s}" ]   || die "duplicate key 'mktemp'"
-                  L_mktemp=$_rv_value ;;
-        mkdir)    [ -z "${L_mkdir+s}" ]    || die "duplicate key 'mkdir'"
-                  L_mkdir=$_rv_value ;;
-        cat)      [ -z "${L_cat+s}" ]      || die "duplicate key 'cat'"
-                  L_cat=$_rv_value ;;
-        env)      [ -z "${L_env+s}" ]      || die "duplicate key 'env'"
-                  L_env=$_rv_value ;;
+        schema)      dup_check "${L_schema+s}"      schema      "$_rv_lineno"; L_schema=$_rv_value ;;
+        checkout)    dup_check "${L_checkout+s}"    checkout    "$_rv_lineno"; L_checkout=$_rv_value ;;
+        signing_key) dup_check "${L_signing_key+s}" signing_key "$_rv_lineno"; L_signing_key=$_rv_value ;;
+        package)     dup_check "${L_package+s}"     package     "$_rv_lineno"; L_package=$_rv_value ;;
+        home)        dup_check "${L_home+s}"        home        "$_rv_lineno"; L_home=$_rv_value ;;
+        env)         dup_check "${L_env+s}"         env         "$_rv_lineno"; L_env=$_rv_value ;;
+        git)         dup_check "${L_git+s}"         git         "$_rv_lineno"; L_git=$_rv_value ;;
+        python)      dup_check "${L_python+s}"      python      "$_rv_lineno"; L_python=$_rv_value ;;
+        mktemp)      dup_check "${L_mktemp+s}"      mktemp      "$_rv_lineno"; L_mktemp=$_rv_value ;;
+        mkdir)       dup_check "${L_mkdir+s}"       mkdir       "$_rv_lineno"; L_mkdir=$_rv_value ;;
+        shasum)      dup_check "${L_shasum+s}"      shasum      "$_rv_lineno"; L_shasum=$_rv_value ;;
+        sort)        dup_check "${L_sort+s}"        sort        "$_rv_lineno"; L_sort=$_rv_value ;;
+        cat)         dup_check "${L_cat+s}"         cat         "$_rv_lineno"; L_cat=$_rv_value ;;
+        *)
+            die "unknown key '$_rv_key' at line $_rv_lineno. The schema is" \
+                "closed: an unrecognised key is not an extra setting, it is a" \
+                "values file this contract did not review" ;;
         esac
     done < "$_rv_file"
 
     # NO AMBIENT FALLBACK. Absent means refuse, never "find it on PATH".
-    [ -n "${L_checkout+s}" ] || die "values file: missing required key 'checkout'"
-    [ -n "${L_git+s}" ]      || die "values file: missing required key 'git'"
-    [ -n "${L_shasum+s}" ]   || die "values file: missing required key 'shasum'"
-    [ -n "${L_mktemp+s}" ]   || die "values file: missing required key 'mktemp'"
-    [ -n "${L_mkdir+s}" ]    || die "values file: missing required key 'mkdir'"
-    [ -n "${L_cat+s}" ]      || die "values file: missing required key 'cat'"
-    [ -n "${L_env+s}" ]      || die "values file: missing required key 'env'"
+    [ -n "${L_schema+s}" ]      || die "values file: missing required key 'schema'"
+    [ -n "${L_checkout+s}" ]    || die "values file: missing required key 'checkout'"
+    [ -n "${L_signing_key+s}" ] || die "values file: missing required key 'signing_key'"
+    [ -n "${L_package+s}" ]     || die "values file: missing required key 'package'"
+    [ -n "${L_home+s}" ]        || die "values file: missing required key 'home'"
+    [ -n "${L_env+s}" ]         || die "values file: missing required key 'env'"
+    [ -n "${L_git+s}" ]         || die "values file: missing required key 'git'"
+    [ -n "${L_python+s}" ]      || die "values file: missing required key 'python'"
+    [ -n "${L_mktemp+s}" ]      || die "values file: missing required key 'mktemp'"
+    [ -n "${L_mkdir+s}" ]       || die "values file: missing required key 'mkdir'"
+    [ -n "${L_shasum+s}" ]      || die "values file: missing required key 'shasum'"
+    [ -n "${L_sort+s}" ]        || die "values file: missing required key 'sort'"
+    [ -n "${L_cat+s}" ]         || die "values file: missing required key 'cat'"
 
-    require_absolute "checkout" "$L_checkout"
+    [ "$L_schema" = "$SCHEMA_VERSION" ] || die \
+        "schema is '$L_schema'; this launcher reads '$SCHEMA_VERSION' and" \
+        "nothing else"
+
+    # --- required states, one per key ---------------------------------------
+    require_directory "checkout" "$L_checkout"
     no_symlink_on_path "checkout" "$L_checkout"
-    [ -d "$L_checkout" ] || die "checkout: '$L_checkout' is not a directory"
+    [ -e "$L_checkout/.git" ] || die \
+        "checkout: '$L_checkout' is not a worktree top level (no .git entry)." \
+        "git -C discovers UPWARD, so a path beneath a repository would" \
+        "otherwise bless a repository never named"
+
+    # Shape only. That the key PARSES as a public key is established at stage 1
+    # by the checker, which runs `ssh-keygen -l -f` on it.
+    require_regular_file "signing_key" "$L_signing_key"
+
+    # The package LEAF is stage-dependent -- absent at stage 1, present at
+    # stage 2 -- so only its parent is judged here.
+    require_absolute "package" "$L_package"
+    _rv_pkg_parent=${L_package%/*}
+    [ -n "$_rv_pkg_parent" ] || _rv_pkg_parent=/
+    require_directory "package parent" "$_rv_pkg_parent"
+    no_symlink_on_path "package parent" "$_rv_pkg_parent"
+
+    require_directory "home" "$L_home"
+
+    require_executable "env" "$L_env"
     require_executable "git" "$L_git"
-    require_executable "shasum" "$L_shasum"
+    require_executable "python" "$L_python"
     require_executable "mktemp" "$L_mktemp"
     require_executable "mkdir" "$L_mkdir"
+    require_executable "shasum" "$L_shasum"
+    require_executable "sort" "$L_sort"
     require_executable "cat" "$L_cat"
-    require_executable "env" "$L_env"
 }
 
 # --------------------------------------------------------------------------
@@ -444,9 +489,25 @@ ROWS
 # the same reviewed packet, into a FRESH directory: re-resolve, re-verify every
 # closure blob, re-extract, re-check the artifact digest. It costs one extra
 # pass and removes the entire class.
+#
+# THE THREE READING MODES run through this launcher for the same reason. The
+# artifact reads no values file; it is handed the values this launcher has
+# already checked, and it is handed them only after this launcher has verified
+# the artifact's own bytes. So the commands that show the report and hash the
+# package start the artifact through the same verification as a stage does,
+# rather than from a copy nothing has checked.
 STAGE2_CONFIRM=''
+MODE=''
 if [ "$#" -eq 5 ] && [ "$4" = "--stage2" ]; then
     STAGE2_CONFIRM=$5
+    set -- "$1" "$2" "$3"
+elif [ "$#" -eq 4 ]; then
+    case $4 in
+        --validate)     MODE=validate ;;
+        --show-report)  MODE=show-report ;;
+        --hash-package) MODE=hash-package ;;
+        *) usage; exit 2 ;;
+    esac
     set -- "$1" "$2" "$3"
 fi
 [ "$#" -eq 3 ] || { usage; exit 2; }
@@ -627,18 +688,30 @@ printf '\n'
 # code starts, so there is no post-candidate step for candidate code to
 # influence. It also means $T is not cleaned up here -- it cannot be, the
 # artifact is running out of it.
+# The thirteen checked values, in the schema's order, are the artifact's first
+# arguments after its command. The artifact reads no file of its own.
+set -- "$L_schema" "$L_checkout" "$L_signing_key" "$L_package" "$L_home" \
+       "$L_env" "$L_git" "$L_python" "$L_mktemp" "$L_mkdir" "$L_shasum" \
+       "$L_sort" "$L_cat"
+
+if [ -n "$MODE" ]; then
+    # No transition arguments: these commands read the package and the values
+    # and decide nothing about a closure change.
+    exec /bin/sh "$T/$ARTIFACT_REL" "$MODE" "$@"
+fi
+
 if [ -n "$STAGE2_CONFIRM" ]; then
     # Same verified extraction discipline, a different stage. The manifest is
     # composed afresh above from the same packet and the same resolution, so
     # stage 2 revalidates against bytes this invocation produced -- not against
     # a file left behind by the invocation that ran candidate code.
     if [ -n "$CLOSURE_CHANGED" ]; then
-        exec /bin/sh "$T/$ARTIFACT_REL" stage2 "$VALUES_PATH" \
+        exec /bin/sh "$T/$ARTIFACT_REL" stage2 "$@" \
             --confirm-package-sha256 "$STAGE2_CONFIRM" \
             --review-manifest "$MANIFEST" \
             --reviewed-candidate "$RESOLVED"
     fi
-    exec /bin/sh "$T/$ARTIFACT_REL" stage2 "$VALUES_PATH" \
+    exec /bin/sh "$T/$ARTIFACT_REL" stage2 "$@" \
         --confirm-package-sha256 "$STAGE2_CONFIRM"
 fi
 
@@ -650,11 +723,12 @@ fi
 CAIRN_LAUNCHER=$0
 CAIRN_PACKET=$PACKET_PATH
 CAIRN_CANDIDATE=$CANDIDATE_REF
-export CAIRN_LAUNCHER CAIRN_PACKET CAIRN_CANDIDATE
+CAIRN_VALUES=$VALUES_PATH
+export CAIRN_LAUNCHER CAIRN_PACKET CAIRN_CANDIDATE CAIRN_VALUES
 
 if [ -n "$CLOSURE_CHANGED" ]; then
-    exec /bin/sh "$T/$ARTIFACT_REL" stage1 "$VALUES_PATH" \
+    exec /bin/sh "$T/$ARTIFACT_REL" stage1 "$@" \
         --review-manifest "$MANIFEST" \
         --reviewed-candidate "$RESOLVED"
 fi
-exec /bin/sh "$T/$ARTIFACT_REL" stage1 "$VALUES_PATH"
+exec /bin/sh "$T/$ARTIFACT_REL" stage1 "$@"

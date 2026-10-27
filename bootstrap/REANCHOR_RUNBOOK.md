@@ -58,7 +58,7 @@ resolved `git` is a version-pinned Cellar path, so **a toolchain upgrade breaks
 it**. Re-run `validate` after upgrading git, python, or the coreutils:
 
 ```
-sh bootstrap/reanchor.sh validate /path/to/your/values
+sh <launcher> <packet> <values> <candidate-ref> --validate
 ```
 
 The refusal you get from a stale path is correct. Fix the path; do not relax
@@ -86,7 +86,8 @@ from the candidate OID the launcher resolved itself. Nothing in it is
 read from the candidate. That is what removes the last point at which a human or
 an agent had to assemble an authority input by hand.
 
-**"How do I read the report?"** `sh bootstrap/reanchor.sh show-report <values>`.
+**"How do I read the report?"** Run the launcher with `--show-report`:
+`sh <launcher> <packet> <values> <candidate-ref> --show-report`.
 The digest you confirm binds a *state*, and the report is that state.
 A confirmed digest over an unread report authorizes something you have not seen,
 so this step is not optional politeness — it is the only step at which you
@@ -110,10 +111,10 @@ Everything in this phase runs on **reviewed bytes** — the launcher the review
 produced, the packet bound into it, and your own values file. No candidate byte
 executes until the last step of it.
 
-* **[RA-01]** Your values file is read by the launcher's *own* reader, under the
-  same closed grammar the ceremony artifact uses. It is deliberately a second
-  parser: the launcher needs `git`, `shasum` and `cat` before it can verify the
-  artifact, and the artifact's parser is candidate code it has not yet cleared.
+* **[RA-01]** Your values file is read by the launcher, and only by the
+  launcher, under a closed grammar. The launcher needs `git`, `shasum` and `cat`
+  before it can verify the artifact, so it cannot use candidate code to read the
+  file; it checks every value and hands the artifact the checked values.
 * **[RA-02]** The packet on disk is hashed and compared against the digest bound
   into the launcher. This is the comparison that makes the pair a pair.
 * **[RA-03]** The packet is snapshotted into memory and **re-hashed**, and the
@@ -150,8 +151,8 @@ executes until the last step of it.
 #### Between the stages — the part that is yours
 
 ```
-sh bootstrap/reanchor.sh show-report    <values>
-sh bootstrap/reanchor.sh hash-package   <values>
+sh <launcher> <packet> <values> <candidate-ref> --show-report
+sh <launcher> <packet> <values> <candidate-ref> --hash-package
 ```
 
 * **[RA-14]** Read the report. The digest binds a state; this is the state.
@@ -166,7 +167,7 @@ sh bootstrap/reanchor.sh hash-package   <values>
 #### The command that signs
 
 ```
-sh bootstrap/reanchor.sh stage2 <values> --confirm-package-sha256 <the digest you computed>
+sh <launcher> <packet> <values> <candidate-ref> --stage2 <the digest you computed>
 ```
 
 * **[RA-17]** The package is validated against **your** digest, and stage 2
@@ -293,7 +294,7 @@ The shape of it, in the order it runs:
 
 | | what it does | why it is *there* and not later |
 |---|---|---|
-| 1 | reads your values file with its **own** parser | it needs `git`, `shasum` and `cat` before it can verify the artifact, and the artifact's parser is candidate code it has not yet cleared |
+| 1 | reads your values file with its **only** parser | it needs `git`, `shasum` and `cat` before it can verify the artifact, so it reads the file itself and hands the artifact the checked values |
 | 2 | hashes the packet, compares against the digest **bound into itself** | this is the comparison that makes the launcher and the packet a pair |
 | 3 | snapshots the packet and **re-hashes the snapshot** | detects a byte the shell could not carry, and a rewrite between the two reads |
 | 4 | compares the packet's member set against its **own fixed list** | everything else validates the packet against itself; only a fixed list catches a packet that dropped a member |

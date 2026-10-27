@@ -1,8 +1,9 @@
 # Cairn re-anchor ceremony -- values file (TEMPLATE)
 #
 # Copy this file OUTSIDE the repository, fill in every value, and pass the copy
-# to bootstrap/reanchor.sh. It is mutable operational configuration, not
-# authority: it carries no secret material and no authority value. The reviewed
+# to the launcher, which is the only reader of it: it checks every line, then
+# hands the ceremony artifact the thirteen values. It is mutable operational
+# configuration, not authority: it carries no secret material and no authority value. The reviewed
 # candidate OID and the ceremony artifact's digest deliberately are NOT here --
 # they arrive through the reviewed launcher, because a value that decides what
 # is trusted must not sit in a file the ceremony itself invites you to edit.
@@ -32,11 +33,11 @@
 # /opt/homebrew/bin/git is a symlink into a version-pinned Cellar path, and this
 # schema refuses it. Resolve it once (for example with `readlink -f`) and record
 # what comes out. That also means the entry GOES STALE at the next toolchain
-# upgrade, when the Cellar path changes -- so re-run `validate` after any
-# upgrade of git, python or the coreutils. The refusal you get is correct and
+# upgrade, when the Cellar path changes -- so run the launcher with `--validate`
+# after any upgrade of git, python or the coreutils. The refusal you get is correct and
 # is not a reason to loosen the rule.
 
-# The exact schema token this artifact reads. Any other value refuses.
+# The exact schema token the launcher reads. Any other value refuses.
 schema cairn-ceremony-values/v1
 
 # The repository being blessed. Must be a worktree TOP LEVEL: `git -C`

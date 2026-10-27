@@ -24,15 +24,9 @@ export LC_ALL
 set -u
 
 #: The exact schema token. An unknown version refuses rather than being
-#: best-effort parsed: a values file written for a different contract is not a
-#: values file with a problem, it is an unreviewed input.
+#: best-effort accepted: values written for a different contract are not values
+#: with a problem, they are an unreviewed input.
 SCHEMA_VERSION='cairn-ceremony-values/v1'
-
-#: Grammar bounds, from the accepted contract. Byte-oriented, which is why
-#: LC_ALL=C is set above -- under a UTF-8 locale `${#line}` counts characters
-#: and the bound would silently be larger than it says.
-MAX_LINE_BYTES=4096
-MAX_FILE_BYTES=65536
 
 refuse() {
     printf 'REFUSE: %s\n' "$*" >&2
@@ -134,144 +128,39 @@ require_directory() {
 }
 
 # --------------------------------------------------------------------------
-# the values parser
+# the thirteen values, handed in as arguments
 # --------------------------------------------------------------------------
 #
-# PARSED, NEVER EXECUTED. The loop below uses shell builtins only: no `source`,
-# no `eval`, no command substitution, and no expansion of any value it reads.
-# Every read value reaches exactly one place -- a variable assignment from a
-# quoted parameter -- and every dispatch is a literal `case` arm.
+# THIS ARTIFACT READS NO VALUES FILE. The launcher is the only reader of that
+# file: it checks every line and every path before any candidate byte runs, and
+# starts this artifact with the thirteen checked values as its first arguments,
+# in the schema's order:
 #
-# The `case` IS the closed schema. There is no table lookup and no dynamic
-# variable name, because both would need `eval`; the cost is one arm per key
-# and the benefit is that an unknown key cannot reach anything but the `*`
-# refusal.
+#   schema checkout signing_key package home env git python mktemp mkdir
+#   shasum sort cat
+#
+# The checks below are kept anyway, so a value handed to this artifact directly
+# is refused when it is not a usable path. They are the same states the
+# launcher's reader requires, and a test holds the two to the same refusals.
 
-dup_check() {
-    if [ -n "$1" ]; then
-        refuse "duplicate key '$2' at line $3; a values file states each" \
-               "field once, so a second one is an unresolved disagreement"
-    fi
-}
+take_values() {
+    [ "$#" -ge 13 ] || refuse "this command takes the 13 recorded values and" \
+        "then its options; run it through the launcher, which supplies them" \
+        "from your values file"
 
-parse_values() {
-    _pv_file=$1
-
-    require_absolute "values file" "$_pv_file"
-    no_symlink_on_path "values file" "$_pv_file"
-    if [ ! -f "$_pv_file" ]; then
-        refuse "values file: '$_pv_file' is not an existing regular file"
-    fi
-
-    # Zero every output BEFORE reading, because the schema check below asks
-    # `[ -n "${V_key+s}" ]` -- "is this variable set" -- and an exported
-    # environment variable answers yes just as loudly as a values-file line.
-    # Without this, `V_python=/bin/echo` in the environment satisfies the
-    # "missing required key 'python'" refusal for a values file that never
-    # mentions python, and $V_python is what executes the checker below.
-    # The disclosure print then shows the injected value under the heading
-    # "nothing below was discovered", so the operator's stop-point asserts the
-    # opposite of what happened. Reproduced 2026-08-27; see
-    # dev/reviews/2026-08-27-external-security-review-launcher-template.md
-    # finding L-10. The values file is the ONLY channel; this line is what
-    # makes that true rather than merely stated.
-    unset V_schema V_checkout V_signing_key V_package V_home V_env V_git \
-          V_python V_mktemp V_mkdir V_shasum V_sort V_cat
-
-    _pv_total=0
-    _pv_lineno=0
-
-    # `IFS=` and `-r` together are what make this verbatim: without them the
-    # shell would strip surrounding whitespace and interpret backslashes, and a
-    # path would silently stop being the path that was recorded.
-    while IFS= read -r _pv_line || [ -n "$_pv_line" ]; do
-        _pv_lineno=$((_pv_lineno + 1))
-        _pv_len=${#_pv_line}
-        _pv_total=$((_pv_total + _pv_len + 1))
-
-        if [ "$_pv_len" -gt "$MAX_LINE_BYTES" ]; then
-            refuse "line $_pv_lineno is $_pv_len bytes; the bound is" \
-                   "$MAX_LINE_BYTES"
-        fi
-        if [ "$_pv_total" -gt "$MAX_FILE_BYTES" ]; then
-            refuse "the values file exceeds $MAX_FILE_BYTES bytes"
-        fi
-
-        # Control characters refuse everywhere, which is also how LF endings
-        # are enforced: a CRLF file carries a CR at the end of every line.
-        case $_pv_line in
-            *[[:cntrl:]]*)
-                refuse "line $_pv_lineno contains a control character" ;;
-        esac
-
-        # Blank and comment first, so the leading-whitespace rule below reports
-        # what it is actually about rather than firing on an indented comment
-        # and sending the operator to look at the wrong rule.
-        if [ -z "$_pv_line" ]; then
-            continue
-        fi
-        case $_pv_line in
-            '#'*) continue ;;
-        esac
-
-        case $_pv_line in
-            ' '*)
-                refuse "line $_pv_lineno begins with whitespace; a record" \
-                       "starts at column 0 and a comment marker is only a" \
-                       "comment at column 0" ;;
-        esac
-        case $_pv_line in
-            *' ')
-                refuse "line $_pv_lineno ends with whitespace. It is refused" \
-                       "rather than trimmed: trimming would silently change" \
-                       "a path" ;;
-        esac
-        case $_pv_line in
-            *' '*) ;;
-            *) refuse "line $_pv_lineno has a key and no value" ;;
-        esac
-
-        _pv_key=${_pv_line%% *}
-        _pv_value=${_pv_line#* }
-
-        case $_pv_key in
-        schema)      dup_check "${V_schema+s}"      schema      "$_pv_lineno"; V_schema=$_pv_value ;;
-        checkout)    dup_check "${V_checkout+s}"    checkout    "$_pv_lineno"; V_checkout=$_pv_value ;;
-        signing_key) dup_check "${V_signing_key+s}" signing_key "$_pv_lineno"; V_signing_key=$_pv_value ;;
-        package)     dup_check "${V_package+s}"     package     "$_pv_lineno"; V_package=$_pv_value ;;
-        home)        dup_check "${V_home+s}"        home        "$_pv_lineno"; V_home=$_pv_value ;;
-        env)         dup_check "${V_env+s}"         env         "$_pv_lineno"; V_env=$_pv_value ;;
-        git)         dup_check "${V_git+s}"         git         "$_pv_lineno"; V_git=$_pv_value ;;
-        python)      dup_check "${V_python+s}"      python      "$_pv_lineno"; V_python=$_pv_value ;;
-        mktemp)      dup_check "${V_mktemp+s}"      mktemp      "$_pv_lineno"; V_mktemp=$_pv_value ;;
-        mkdir)       dup_check "${V_mkdir+s}"       mkdir       "$_pv_lineno"; V_mkdir=$_pv_value ;;
-        shasum)      dup_check "${V_shasum+s}"      shasum      "$_pv_lineno"; V_shasum=$_pv_value ;;
-        sort)        dup_check "${V_sort+s}"        sort        "$_pv_lineno"; V_sort=$_pv_value ;;
-        cat)         dup_check "${V_cat+s}"         cat         "$_pv_lineno"; V_cat=$_pv_value ;;
-        *)
-            refuse "unknown key '$_pv_key' at line $_pv_lineno. The schema is" \
-                   "closed: an unrecognised key is not an extra setting, it" \
-                   "is a values file this contract did not review" ;;
-        esac
-    done < "$_pv_file"
-
-    # NO AMBIENT FALLBACK. An absent field refuses here. It is never filled
-    # from PATH, HOME, Git config or any other ambient source -- ambient
-    # discovery is what let a substituted repository answer for the named one,
-    # and a replacement utility vouch for bytes it had just rewritten.
-    [ -n "${V_schema+s}" ]      || refuse "missing required key 'schema'"
-    [ -n "${V_checkout+s}" ]    || refuse "missing required key 'checkout'"
-    [ -n "${V_signing_key+s}" ] || refuse "missing required key 'signing_key'"
-    [ -n "${V_package+s}" ]     || refuse "missing required key 'package'"
-    [ -n "${V_home+s}" ]        || refuse "missing required key 'home'"
-    [ -n "${V_env+s}" ]         || refuse "missing required key 'env'"
-    [ -n "${V_git+s}" ]         || refuse "missing required key 'git'"
-    [ -n "${V_python+s}" ]      || refuse "missing required key 'python'"
-    [ -n "${V_mktemp+s}" ]      || refuse "missing required key 'mktemp'"
-    [ -n "${V_mkdir+s}" ]       || refuse "missing required key 'mkdir'"
-    [ -n "${V_shasum+s}" ]      || refuse "missing required key 'shasum'"
-    [ -n "${V_sort+s}" ]        || refuse "missing required key 'sort'"
-    [ -n "${V_cat+s}" ]         || refuse "missing required key 'cat'"
+    V_schema=$1
+    V_checkout=$2
+    V_signing_key=$3
+    V_package=$4
+    V_home=$5
+    V_env=$6
+    V_git=$7
+    V_python=$8
+    V_mktemp=$9
+    V_mkdir=${10}
+    V_shasum=${11}
+    V_sort=${12}
+    V_cat=${13}
 
     if [ "$V_schema" != "$SCHEMA_VERSION" ]; then
         refuse "schema is '$V_schema'; this artifact reads" \
@@ -322,7 +211,7 @@ parse_values() {
 # the effective configuration
 # --------------------------------------------------------------------------
 
-#: Printed on EVERY path that reads the values file, not only on `validate`.
+#: Printed on EVERY command that takes the values, not only on `validate`.
 #: The contract requires the Maintainer to see what will be used *before stage
 #: 1*, and a stop-point on a command nobody runs is not a stop-point: the
 #: launcher invokes `stage1` directly and never `validate`.
@@ -333,7 +222,8 @@ parse_values() {
 #: imply a redaction that does not exist.
 print_effective_configuration() {
     printf '%s\n' "== effective ceremony configuration =="
-    printf '%s\n' "  (read from $1 -- nothing below was discovered)"
+    printf '%s\n' "  (recorded in your values file, read once by the launcher --"
+    printf '%s\n' "   nothing below was discovered)"
     printf '\n'
     printf '  %-12s %s\n' 'schema'      "$V_schema"
     printf '  %-12s %s\n' 'checkout'    "$V_checkout"
@@ -436,11 +326,9 @@ take_transition_options() {
 }
 
 cmd_stage1() {
-    [ "$#" -ge 1 ] || refuse "stage1 takes the values file, then options"
-    _s1_values=$1
-    shift
+    take_values "$@"
+    shift 13
     take_transition_options "$@"
-    parse_values "$_s1_values"
     require_checker
 
     # THE SIGNING KEY MUST BE ONE THE ANCHORED ROSTER NAMES.
@@ -503,7 +391,7 @@ ROSTER
 
     # The stop-point, and it is a real one: everything that could refuse has
     # already refused, so what prints here is exactly what will run.
-    print_effective_configuration "$_s1_values"
+    print_effective_configuration
 
     set -- stage1 \
         --repo "$V_checkout" \
@@ -539,11 +427,24 @@ ROSTER
     # worse -- go looking for a manifest to supply and hand-write one, which is
     # the exact act this whole design exists to remove.
     if [ "$_s1_status" -eq 0 ]; then
+        _s1_via_launcher=''
+        if [ -n "${CAIRN_LAUNCHER-}" ] && [ -n "${CAIRN_PACKET-}" ] \
+           && [ -n "${CAIRN_VALUES-}" ]; then
+            _s1_via_launcher=yes
+        fi
         printf '\n%s\n' "== next: confirm, then sign =="
         printf '%s\n' "  1. read what you are authorizing:"
-        printf '%s\n' "       sh $0 show-report $_s1_values"
+        if [ -n "$_s1_via_launcher" ]; then
+            printf '%s\n' "       sh $CAIRN_LAUNCHER $CAIRN_PACKET $CAIRN_VALUES ${CAIRN_CANDIDATE-<candidate-ref>} --show-report"
+        else
+            printf '%s\n' "       re-run YOUR LAUNCHER with:  --show-report"
+        fi
         printf '%s\n' "  2. compute the digest yourself:"
-        printf '%s\n' "       sh $0 hash-package $_s1_values"
+        if [ -n "$_s1_via_launcher" ]; then
+            printf '%s\n' "       sh $CAIRN_LAUNCHER $CAIRN_PACKET $CAIRN_VALUES ${CAIRN_CANDIDATE-<candidate-ref>} --hash-package"
+        else
+            printf '%s\n' "       re-run YOUR LAUNCHER with:  --hash-package"
+        fi
         printf '%s\n' "  3. make the ceremony key available, and only now"
         printf '%s\n' "  4. sign and move both refs:"
         # PRINT THE LAUNCHER COMMAND, NOT THIS ARTIFACT'S.
@@ -555,10 +456,10 @@ ROSTER
         # --stage2 path exists precisely to avoid that, and an earlier version
         # of this block printed the wrong one: the code had the property and
         # the instructions walked the operator around it.
-        if [ -n "${CAIRN_LAUNCHER-}" ] && [ -n "${CAIRN_PACKET-}" ]; then
+        if [ -n "$_s1_via_launcher" ]; then
             printf '%s\n' "       sh $CAIRN_LAUNCHER \\"
             printf '%s\n' "         $CAIRN_PACKET \\"
-            printf '%s\n' "         $_s1_values \\"
+            printf '%s\n' "         $CAIRN_VALUES \\"
             printf '%s\n' "         ${CAIRN_CANDIDATE-<candidate-ref>} \\"
             printf '%s\n' "         --stage2 <the digest from step 2>"
             printf '\n%s\n' "  Same launcher, same packet, same values -- plus"
@@ -576,10 +477,8 @@ ROSTER
 }
 
 cmd_stage2() {
-    [ "$#" -ge 3 ] || refuse "stage2 takes the values file and" \
-                             "--confirm-package-sha256 <digest>"
-    _s2_values=$1
-    shift
+    take_values "$@"
+    shift 13
     _s2_confirm=''
     _s2_rest_manifest=''
     _s2_rest_candidate=''
@@ -606,7 +505,6 @@ cmd_stage2() {
         "compare it to what stage 1 printed. No digest inside the package can" \
         "satisfy this, because a package can carry its own digest"
 
-    parse_values "$_s2_values"
     require_checker
     TRANSITION_MANIFEST=$_s2_rest_manifest
     TRANSITION_CANDIDATE=$_s2_rest_candidate
@@ -632,7 +530,7 @@ cmd_stage2() {
         printf '\n'
     fi
 
-    print_effective_configuration "$_s2_values"
+    print_effective_configuration
 
     set -- stage2 \
         --repo "$V_checkout" \
@@ -667,9 +565,9 @@ cmd_stage2() {
 # --------------------------------------------------------------------------
 
 cmd_hash_package() {
-    [ "$#" -eq 1 ] || refuse "hash-package takes exactly one argument:" \
-                             "the values file"
-    parse_values "$1"
+    [ "$#" -eq 13 ] || refuse "hash-package takes exactly the 13 recorded" \
+                              "values and nothing else"
+    take_values "$@"
     require_regular_file "package" "$V_package"
 
     # Over the BYTES ON DISK, with the recorded shasum. Never a digest read
@@ -684,9 +582,9 @@ cmd_hash_package() {
 }
 
 cmd_show_report() {
-    [ "$#" -eq 1 ] || refuse "show-report takes exactly one argument:" \
-                             "the values file"
-    parse_values "$1"
+    [ "$#" -eq 13 ] || refuse "show-report takes exactly the 13 recorded" \
+                              "values and nothing else"
+    take_values "$@"
     require_regular_file "package" "$V_package"
 
     # A confirmed digest over an unread report authorizes something you have
@@ -969,15 +867,19 @@ print_step_ids() {
 }
 
 usage() {
-    # NOT a heredoc into `cat`. `usage` runs before any values file has been
-    # parsed, so the validated `cat` path does not exist yet -- and invoking
+    # NOT a heredoc into `cat`. `usage` runs before any value has been
+    # checked, so the validated `cat` path does not exist yet -- and invoking
     # `cat` by bare name would reach for it through ambient PATH, which is the
     # unbound-executable gap this contract closes everywhere else. `printf` is
     # a shell builtin and reaches for nothing.
     printf '%s\n' \
-        'usage: reanchor.sh <command> <values-file> [options]' \
+        'usage: reanchor.sh <command> <the 13 recorded values> [options]' \
         '' \
-        '  validate       parse the values file, refuse on any violation, and' \
+        '  The launcher runs this and supplies the values, in the schema order' \
+        '  of bootstrap/reanchor-values.example. Run it through the launcher:' \
+        '  nothing has checked a copy you start by hand.' \
+        '' \
+        '  validate       refuse any value that is not a usable path, and' \
         '                 print the complete effective configuration' \
         '  stage1         probe the key channel, run the checks, write the' \
         '                 authorization package. Holds no key.' \
@@ -1005,12 +907,13 @@ main() {
 
     case $_main_cmd in
     validate)
-        if [ "$#" -ne 1 ]; then
-            refuse "validate takes exactly one argument: the values file"
+        if [ "$#" -ne 13 ]; then
+            refuse "validate takes exactly the 13 recorded values and nothing" \
+                   "else"
         fi
-        parse_values "$1"
-        print_effective_configuration "$1"
-        printf '%s\n' "OK: the values file satisfies the closed schema."
+        take_values "$@"
+        print_effective_configuration
+        printf '%s\n' "OK: the values satisfy the closed schema."
         ;;
     stage1)
         cmd_stage1 "$@"

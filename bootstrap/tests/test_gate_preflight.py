@@ -1792,6 +1792,19 @@ def _values_file(repo: Path, *, name: str = "ceremony-values",
     return str(path)
 
 
+def _artifact_values(values_file: str) -> list[str]:
+    """The thirteen values of a values file in the schema's order: what the
+    launcher hands the artifact as its first arguments after the command. The
+    artifact reads no values file of its own."""
+    found = {}
+    for line in Path(values_file).read_text(encoding="utf-8").splitlines():
+        key, _, value = line.partition(" ")
+        found[key] = value
+    return [found[k] for k in ("schema", "checkout", "signing_key", "package",
+                               "home", "env", "git", "python", "mktemp",
+                               "mkdir", "shasum", "sort", "cat")]
+
+
 def _packet_text(repo: Path, oid: str, *, rows=None) -> str:
     """Compose the authorization packet the review delivers.
 
@@ -1874,27 +1887,6 @@ def _stage2_script(repo: Path, confirmed: str, *, values: str | None = None,
                     ["/bin/sh", str(launcher), str(packet),
                      values or _values_file(repo), head,
                      "--stage2", confirmed])
-
-
-def _stage2_script_direct(repo: Path, confirmed: str, *,
-                          values: str | None = None, oid: str | None = None,
-                          manifest: str | None = None) -> str:
-    """The signing command, as the operator runs it.
-
-    Stage 2 is invoked on the ARTIFACT rather than through the launcher: the
-    launcher's whole job is the pre-candidate verification that precedes stage
-    1, and by stage 2 that work is done and the package is what is being acted
-    on. The artifact re-extracts and re-verifies its own bytes rather than
-    reusing stage 1's.
-    """
-    artifact = _REPO / "bootstrap/reanchor.sh"
-    parts = ["/bin/sh", str(artifact), "stage2",
-             values or _values_file(repo),
-             "--confirm-package-sha256", confirmed]
-    if oid is not None:
-        assert manifest, "a transition stage 2 needs the manifest stage 1 composed"
-        parts += ["--review-manifest", manifest, "--reviewed-candidate", oid]
-    return " ".join(shlex.quote(p) for p in parts)
 
 
 def _runbook_ceremony_script(repo: Path, *, oid: str | None = None,
@@ -4012,7 +4004,8 @@ class TestCandidateCodeCannotSignFromStageOne:
         with _scratch_agent(tmp_path) as (sock, pub):
             artifact = self._stage(tmp_path, pub, out)
             r = subprocess.run(
-                ["/bin/sh", str(artifact), "stage1", _values_file(repo)],
+                ["/bin/sh", str(artifact), "stage1",
+                 *_artifact_values(_values_file(repo))],
                 capture_output=True, text=True, check=False,
                 env={**os.environ, "SSH_AUTH_SOCK": sock})
             assert r.returncode == 0, r.stderr[-2000:]
