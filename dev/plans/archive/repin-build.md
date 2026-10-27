@@ -1,8 +1,8 @@
 # Plan: Build `repin`, one script for the re-anchor ceremony
 
 **Author**: Claude (Strategy)
-**Source proposal**: [dev/proposals/archive/2026-10-26-claude-repin-build.md](../proposals/archive/2026-10-26-claude-repin-build.md)
-**Status**: ready-to-archive
+**Source proposal**: [dev/proposals/archive/2026-10-26-claude-repin-build.md](../../proposals/archive/2026-10-26-claude-repin-build.md)
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: Build one tested script that runs the Maintainer's checksum re-pins and the signed re-anchor, so he compares two digests, answers two summaries and types one passphrase instead of pasting commands an agent wrote.
@@ -532,3 +532,7 @@ R5's trigger and M2 now say so; the cells were changed in place only as far as t
 * `pytest test_repin.py test_repin_ceremony.py test_security_lint.py -q`: 193 passed (107 + 75 + 11), 297 s, in the shared checkout (other sessions' uncommitted edits present; the tests read only the files they copy into scratch repositories). Bandit on `scripts/repin.py`: 7 LOW, 0 MEDIUM or higher; `ALLOWLIST` untouched. Neutrality and redundancy gates: fail=0.
 * Mutants, each in a detached scratch worktree of `5670dda9` beside an unmutated control (all control nodes passed): N1, the extraction (root, `scripts`, `bootstrap`, `bootstrap/tests`) appended to `sys.path`, 4 of 4 killed; N2 line removed, killed; N3a ancestry check removed, killed (both the unrelated-commit and older-commit nodes). The worktree was removed.
 * Omissions: no ceremony, key, anchor, AST or gate-manifest re-anchor was run, read or touched; N3a's test stubs the signature check so the ancestry check alone decides (a real older or unrelated roster-signed commit was not built); the mutation harness is in the session scratchpad, not committed.
+
+## Closing note -- the planning session -- 2026-10-27
+
+Archived with its Maintainer-only steps (M1, M2, R6a, R6b, M3) unrun. They are superseded, not dropped: `repin` refused at HEAD from the onboarding change on (measured 2026-10-27), and the Maintainer asked for the re-anchoring to be rewritten around what they can do, so the live home of the remaining work is `dev/plans/archive/ceremony-without-external-review.md` and "The 0.5 cut" in `dev/PLANNING.md`. That plan deleted the old driver path and the digest corrector this plan cites. `repin` has not been used on a real ceremony.
