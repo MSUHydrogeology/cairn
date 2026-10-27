@@ -4,7 +4,7 @@
 **worked examples** an adopter (or a new contributor) can run, read, and
 learn from -- a library, a toolkit, a modeling apparatus. Team-gated (and
 the narrowest-applicability of the practice modules), so a preset
-(`governance presets`, P4) selects it where worked examples earn their
+(`governance presets`) selects it where worked examples earn their
 keep rather than every adoption carrying it.
 **Adds to:** an examples-discipline note in the adopting repo's examples
 guide (and a cross-reference from `dev/agent_collaboration.md`).

@@ -139,8 +139,7 @@ dispatcher never reads that content.
 
 **At v1, `_LIVING_STATE_DSTS` is empty and no `"living_state"` registry
 entry exists.** No capability plan may add one until the Maintainer
-ratifies the living-state narrowing (`B3`, shared between
-`api-web-security-modules` and `security-verification-activation`).
+ratifies the living-state narrowing.
 
 ## Recovery from INCOMPLETE or DEGRADED
 

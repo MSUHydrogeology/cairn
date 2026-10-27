@@ -3,7 +3,7 @@
 **Selected when:** the project ships documentation that *describes code*
 (a config reference, API docs, inline examples) and wants it to stay true
 as the code changes. Broadly applicable; team-gated so a preset
-(`governance presets`, P4) turns it on for the profiles that warrant it.
+(`governance presets`) turns it on for the profiles that warrant it.
 **Adds to:** a drift-prevention note in the adopting repo's docs guide
 (and a cross-reference from `dev/agent_collaboration.md`), **plus two
 runnable, stdlib-only scripts** the scaffold installs into the target's

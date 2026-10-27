@@ -3,7 +3,7 @@
 **Selected when:** the project carries automated tests (or intends to)
 and wants a coherent **test-tier scheme** rather than an undifferentiated
 `tests/` pile. Broadly applicable; team-gated so a preset
-(`governance presets`, P4) turns it on for the profiles that warrant it
+(`governance presets`) turns it on for the profiles that warrant it
 rather than every adoption paying for it by default.
 **Adds to:** a test-doctrine note in the adopting repo's `tests/` guide
 (and a cross-reference from `dev/agent_collaboration.md`).

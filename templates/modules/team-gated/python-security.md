@@ -104,7 +104,7 @@ to invoke it:
 
 It composes the adopter's self-audit passes in order:
 
-1. **Integrity preflight (SR-1).** Before any pass, it verifies its own
+1. **Integrity preflight.** Before any pass, it verifies its own
    apparatus and policy inputs against the install lockfile. A run from a tree
    whose scanner / runner / allowlist / baseline / roots-manifest / gate
    scripts are not lockfile-clean **refuses** rather than runs — the one guard

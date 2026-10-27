@@ -76,7 +76,7 @@ goodnight, not computed in the fail-safe commit hot path).
   strict improvement over the all-hand-migration baseline (no regression for
   warn-mode adopters), with a known follow-up to also auto-record `occurred`
   for a warn-mode proceed past a provably-different live session's claim.
-* **Best-effort & fail-safe (R1):** the append never blocks, slows, or fails a
+* **Best-effort & fail-safe:** the append never blocks, slows, or fails a
   commit; on any error it warns visibly and skips (the commit is unaffected). It
   only ever *appends a row* — never a `git reset` or index mutation.
 * **The tracker is auto-created** if absent (with a default `**Rolling window**:
