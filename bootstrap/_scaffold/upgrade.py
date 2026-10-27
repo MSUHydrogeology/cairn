@@ -2241,7 +2241,11 @@ def _cmd_finalize_lockfile(
     # the integrity record. Require an explicit write-set (`--finalize <path>
     # ...`) or --force. Fail-soft when the tree is unreadable (guard -> None).
     if only is None and not force:
-        dirty = _dirty_tracked_paths(target)
+        try:
+            dirty = _dirty_tracked_paths(target)
+        except _EditCheckCannotTell as exc:
+            print(_cannot_tell_refusal("--finalize", exc.reason), file=sys.stderr)
+            return 1
         if dirty:
             print(
                 "error: refusing --finalize (#56 dirty-tree guard): the work "
@@ -2360,6 +2364,29 @@ def _cmd_finalize_lockfile(
           f"committed on-disk content. `verify_integrity` now attests this tree "
           f"(the base cache / upgrade ancestor is unchanged).")
     return 0
+
+
+class _EditCheckCannotTell(Exception):
+    """The edit check could not tell whether a file has unsaved edits.
+
+    ``reason`` is a fixed sentence written by the engine, never git's output: it
+    is printed to a terminal, and the project controls what git would say.  The
+    callers decide what to do (``--apply`` and a bare ``--finalize`` stop,
+    ``--stage`` advises).  It derives from ``Exception`` alone, never ``OSError``
+    or ``ValueError``: ``--stage`` swallows both around the check, which would
+    turn "could not tell" back into a silent "clean"."""
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
+
+
+def _cannot_tell_refusal(flag: str, reason: str) -> str:
+    """The refusal ``--apply`` and a bare ``--finalize`` print when the edit check
+    could not tell: the reason, and the one way past it."""
+    return (f"error: refusing {flag}: the edit check could not tell whether the "
+            f"files it would change have unsaved edits: {reason}\n  fix that and "
+            "re-run, or pass --force to go ahead without the check.")
 
 
 def _working_file_differs(
@@ -2766,7 +2793,11 @@ def _apply_upgrade(
     #     concurrent session's in-flight work. Scoped to tracked paths (benign
     #     untracked / gitignored dirt does not trip it); --force overrides.
     if not force:
-        collide = _writeset_dirty_collisions(target, staged_meta)
+        try:
+            collide = _writeset_dirty_collisions(target, staged_meta)
+        except _EditCheckCannotTell as exc:
+            print(_cannot_tell_refusal("--apply", exc.reason), file=sys.stderr)
+            return 1
         if collide:
             print(
                 f"error: refusing --apply: it would overwrite {len(collide)} "
@@ -3319,6 +3350,12 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                 (stage / _STAGE_META).read_text(encoding="utf-8"))
             _collide = _writeset_dirty_collisions(
                 target, _meta.get("staged_files", []))
+        except _EditCheckCannotTell as exc:
+            _collide = []
+            print(f"\n  [advisory] the edit check could not tell whether the "
+                  f"staged files have unsaved edits: {exc.reason}\n  --apply "
+                  "will stop until it can; pass --force to apply without the "
+                  "check.", file=sys.stderr)
         except (OSError, ValueError):
             _collide = []
         if _collide:

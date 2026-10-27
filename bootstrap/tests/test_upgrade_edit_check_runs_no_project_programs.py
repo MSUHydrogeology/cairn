@@ -172,3 +172,215 @@ def test_an_index_entry_that_is_not_a_plain_file_is_edited(tmp_path: Path) -> No
     assert _differs(tmp_path) is False, "the control"
     for mode in ("120000", "160000", "100664", "040000", ""):
         assert _differs(tmp_path, mode=mode) is True, mode
+
+
+# ---------------------------------------------------------------------------
+# A real project, and a stand-in `git` that logs what is asked of it
+# ---------------------------------------------------------------------------
+
+import shutil  # noqa: E402
+
+from bootstrap import scaffold as s  # noqa: E402
+
+ROOT = Path(__file__).resolve().parent.parent.parent
+REAL_GIT = shutil.which("git")
+needs_git = pytest.mark.skipif(REAL_GIT is None, reason="needs a real git")
+PROFILE = (
+    "project_name: EditCheckTest\n"
+    "test_command: pytest\n"
+    "preset: solo-greenfield\n"
+)
+IDENTITY = ["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"]
+
+
+def _git(project: Path, *args: str, check: bool = True) -> str:
+    done = subprocess.run(
+        ["git", "-C", str(project), *IDENTITY, *args],
+        capture_output=True, text=True, check=check)
+    return done.stdout.strip()
+
+
+def _commit_all(project: Path, message: str = "state") -> None:
+    _git(project, "add", "-A")
+    _git(project, "commit", "-q", "--allow-empty", "-m", message)
+
+
+@pytest.fixture(scope="module")
+def pristine_install(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """A fresh install of this Cairn, committed in git; tests copy it."""
+    base = tmp_path_factory.mktemp("pristine")
+    target = base / "project"
+    target.mkdir()
+    profile = base / "profile.yml"
+    profile.write_text(PROFILE, encoding="utf-8")
+    assert s.main(["--config", str(profile), "--target", str(target),
+                   "--cairn-root", str(ROOT), "--allow-dev"]) == 0
+    _git(target, "init", "-q", "-b", "main")
+    _commit_all(target, "install")
+    return target
+
+
+@pytest.fixture
+def project(pristine_install: Path, tmp_path: Path) -> Path:
+    copy = tmp_path / "project"
+    shutil.copytree(pristine_install, copy, symlinks=True)
+    return copy
+
+
+def _upgrade(capsys: pytest.CaptureFixture[str], project: Path, *flags: str,
+             ) -> tuple[int, str, str]:
+    code = s.main(["upgrade", "--target", str(project), *flags,
+                   "--cairn-root", str(ROOT)])
+    captured = capsys.readouterr()
+    return code, captured.out, captured.err
+
+
+def _diverge_agents(project: Path) -> None:
+    """Edit AGENTS.md (and its cached base) so an upgrade stages a change to it.
+
+    The file is then uncommitted: the write-set and the unsaved edit overlap."""
+    base = project / "dev" / ".cairn" / "base" / "AGENTS.md"
+    base.write_text(base.read_text().replace("# AGENTS.md", "# OLD", 1))
+    agents = project / "AGENTS.md"
+    agents.write_text(
+        agents.read_text().replace("# AGENTS.md", "# OLD", 1) + "\n<!-- keep me -->\n")
+
+
+def _stage(capsys: pytest.CaptureFixture[str], project: Path) -> None:
+    code, out, err = _upgrade(capsys, project, "--stage")
+    assert code == 0, (out, err)
+
+
+def _stand_in_git(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *,
+                  version: str = "git version 2.54.0 (Apple Git-157)",
+                  answers: dict[str, str] | None = None,
+                  name: str = "standin") -> Path:
+    """Put a `git` first on `PATH` that logs every call, then runs the real git.
+
+    *answers* maps a call, written `<subcommand> <first argument after it>` as a
+    shell `case` pattern (for example `ls-files*` or `rev-parse --verify`), to a
+    shell snippet that replaces the real git for that call. Each call writes
+    `<n>.argv` and `<n>.env` under the returned folder; global options (`-C`,
+    `-c`, `--literal-pathspecs`) are skipped to find the subcommand."""
+    log = tmp_path / name / "log"
+    log.mkdir(parents=True)
+    bindir = tmp_path / name / "bin"
+    bindir.mkdir()
+    cases = "".join(f"  {pattern}) {snippet};;\n" for pattern, snippet in (answers or {}).items())
+    script = bindir / "git"
+    script.write_text(
+        "#!/bin/sh\n"
+        f"n=$(ls '{log}'/*.argv 2>/dev/null | wc -l | tr -d ' ')\n"
+        f"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > '{log}'/$n.argv\n"
+        f"env > '{log}'/$n.env\n"
+        f"[ \"$1\" = --version ] && {{ printf '%s\\n' '{version}'; exit 0; }}\n"
+        "parse() {\n"
+        "  while [ $# -gt 0 ]; do\n"
+        "    case \"$1\" in\n"
+        "      -C|-c) shift 2;;\n"
+        "      -*) shift;;\n"
+        "      *) SUB=\"$1\"; ARG1=\"$2\"; return;;\n"
+        "    esac\n"
+        "  done\n"
+        "}\n"
+        "parse \"$@\"\n"
+        "case \"$SUB $ARG1\" in\n"
+        f"{cases}"
+        f"  *) exec '{REAL_GIT}' \"$@\";;\n"
+        "esac\n",
+        encoding="utf-8")
+    script.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{bindir}{os.pathsep}{os.environ['PATH']}")
+    monkeypatch.setattr(U, "_GIT_FLOOR_MET", None)
+    return log
+
+
+def _logged_calls(log: Path) -> list[list[str]]:
+    return [argv.read_text(encoding="utf-8").splitlines()
+            for argv in sorted(log.glob("*.argv"), key=lambda p: int(p.stem))]
+
+
+def _subcommand(call: list[str]) -> str:
+    """`<subcommand> <first argument after it>` of one logged call."""
+    rest = list(call)
+    while rest:
+        if rest[0] in ("-C", "-c"):
+            rest = rest[2:]
+        elif rest[0].startswith("-"):
+            rest = rest[1:]
+        else:
+            return " ".join(rest[:2])
+    return ""
+
+
+EDIT_CHECK_COMMANDS = ("ls-files", "diff-index", "status", "config", "rev-parse --verify",
+                       "rev-parse --is-inside-work-tree")
+
+
+def _edit_check_calls(log: Path) -> list[str]:
+    return [_subcommand(c) for c in _logged_calls(log)
+            if any(_subcommand(c).startswith(k) for k in EDIT_CHECK_COMMANDS)]
+
+
+# ---------------------------------------------------------------------------
+# "Could not tell" is stopped or advised, never read as clean
+# ---------------------------------------------------------------------------
+
+REASON = "git did not answer within the time allowed (a stand-in sentence)"
+
+
+def _cannot_tell(*_args: object, **_kwargs: object) -> object:
+    raise U._EditCheckCannotTell(REASON)
+
+
+@needs_git
+@posix_only
+def test_each_caller_stops_or_advises_when_the_check_cannot_tell(
+    project: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _commit_all(project)
+    _diverge_agents(project)
+    _stage(capsys, project)
+    lock_before = (project / U._LOCKFILE_REL).read_bytes()
+    agents_before = (project / "AGENTS.md").read_bytes()
+    monkeypatch.setattr(U, "_dirty_tracked_paths", _cannot_tell)
+
+    code, out, err = _upgrade(capsys, project, "--apply")
+    assert code == 1, (out, err)
+    assert REASON in err and "--force" in err
+    assert (project / "AGENTS.md").read_bytes() == agents_before, "--apply wrote anyway"
+    assert (project / U._STAGING_REL).exists(), "the stage was cleaned anyway"
+
+    code, out, err = _upgrade(capsys, project, "--finalize")
+    assert code == 1, (out, err)
+    assert REASON in err and "--force" in err
+    assert (project / U._LOCKFILE_REL).read_bytes() == lock_before, "--finalize wrote anyway"
+
+    code, out, err = _upgrade(capsys, project, "--stage")
+    assert code == 0, (out, err)
+    assert "[advisory]" in err and REASON in err and "--force" in err
+    assert (project / U._STAGING_REL / "files" / "AGENTS.md").exists()
+
+
+@needs_git
+@posix_only
+def test_force_runs_no_git(
+    project: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _commit_all(project)
+    _diverge_agents(project)
+    _stage(capsys, project)
+    log = _stand_in_git(tmp_path, monkeypatch)
+    # The control: without --force the same stop-before-writing run does ask.
+    code, _out, _err = _upgrade(capsys, project, "--apply")
+    assert code == 1
+    assert _edit_check_calls(log), "the unforced check must ask git"
+    after_control = len(_logged_calls(log))
+    code, out, err = _upgrade(capsys, project, "--apply", "--force")
+    assert code == 0, (out, err)
+    code, out, err = _upgrade(capsys, project, "--finalize", "--force")
+    assert code == 0, (out, err)
+    asked = [_subcommand(c) for c in _logged_calls(log)[after_control:]
+             if any(_subcommand(c).startswith(k) for k in EDIT_CHECK_COMMANDS)]
+    assert asked == [], f"--force asked git: {asked}"
