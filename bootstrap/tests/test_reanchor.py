@@ -920,12 +920,13 @@ class TestEveryPublicCommandIsExercised:
 
 _LAUNCHER_TEMPLATE = _REPO / "bootstrap/reanchor-launcher.template.sh"
 
-#: The ten authority-closure members, in LC_ALL=C order. Retyped rather than
+#: The authority-closure members, in LC_ALL=C order. Retyped rather than
 #: imported so the launcher, the runbook and the checker are three independent
 #: statements of one set: importing would make this test agree with whatever
 #: the code says, which is not a check.
 CLOSURE = (
     "bootstrap/REANCHOR_RUNBOOK.md",
+    "bootstrap/reanchor-launcher.template.sh",
     "bootstrap/reanchor.sh",
     "bootstrap/tests/_gate_manifest.py",
     "bootstrap/tests/_gate_preflight.py",
@@ -955,8 +956,8 @@ def _sha256_file(path) -> str:
 
 @pytest.fixture
 def ceremony(bed, tmp_path):
-    """A complete launcher bed: a candidate repository carrying all ten closure
-    members, a packet composed over them, and a launcher instantiated with that
+    """A complete launcher bed: a candidate repository carrying every closure
+    member, a packet composed over them, and a launcher instantiated with that
     packet's digest -- exactly the pair the review delivers."""
     repo = Path(bed["values"]["checkout"])
     marker = tmp_path / "CANDIDATE-CODE-RAN"
@@ -1179,6 +1180,28 @@ class TestTheClosureIsVerifiedAtTheResolvedOid:
         _instantiate(ceremony, _compose_packet(ceremony, rows=rows))
         r = _launch(ceremony)
         _assert_no_candidate_code_ran(ceremony, r, "does not match the reviewed")
+
+    def test_a_launcher_template_that_changed_after_the_packet_refuses_before_candidate_code_runs(
+            self, ceremony):
+        """The packet was composed over the reviewed template. A candidate
+        whose template differs by one byte must be refused through that row,
+        before any candidate code can run: the launcher is the template with
+        a slot filled, so a changed template is a different launcher."""
+        repo = ceremony["repo"]
+        template = repo / "bootstrap/reanchor-launcher.template.sh"
+        template.write_text(template.read_text() + "#\n")
+        subprocess.run(["git", "-C", str(repo), "-c", "user.email=t@t",
+                        "-c", "user.name=t", "commit", "-qam",
+                        "template changed after the packet"],
+                       check=True, capture_output=True)
+        changed = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "HEAD"],
+            capture_output=True, text=True, check=True).stdout.strip()
+        assert changed != ceremony["oid"]
+        r = _launch(ceremony, ref=changed)
+        _assert_no_candidate_code_ran(
+            ceremony, r, "does not match the reviewed")
+        assert "reanchor-launcher.template.sh" in r.stderr
 
     def test_a_dropped_member_refuses_against_the_fixed_set(self, ceremony):
         """Everything the packet says validates it against ITSELF. A packet
