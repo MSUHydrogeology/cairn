@@ -494,9 +494,13 @@ def main() -> int:
     say("  `python scripts/repin.py ceremony` for an ordinary one. By hand, run")
     say("  each command on one line, in this order.")
     say("")
-    say("  Stage 1 runs candidate code with the key away:")
+    home = values_field(args.values, "home") or "<home>"
+    short = f'env -i HOME={home} PATH=/usr/bin:/bin TERM="$TERM" LANG=C'
+    say("  Every launcher command starts under a short environment, so that no")
+    say("  variable of yours reaches the programs the launcher runs. Stage 1")
+    say("  runs candidate code with the key away:")
     say("")
-    say(f"    /bin/sh {launcher} {packet} {args.values} {candidate}")
+    say(f"    {short} /bin/sh {launcher} {packet} {args.values} {candidate}")
     say("")
     say("  Stage 1 ends by printing the --show-report and --hash-package commands")
     say("  for the same launcher. Run those, not a copy of the artifact in your")
@@ -507,9 +511,7 @@ def main() -> int:
     say("  an agent for it, and start it with a short environment that holds no")
     say("  key socket:")
     say("")
-    home = values_field(args.values, "home") or "<home>"
-    say(f'    env -i HOME={home} PATH=/usr/bin:/bin TERM="$TERM" LANG=C '
-        f"/bin/sh {launcher} {packet} {args.values} {candidate} --stage2 <package-digest>")
+    say(f"    {short} /bin/sh {launcher} {packet} {args.values} {candidate} --stage2 <package-digest>")
     say("")
     say("  Then push both refs. Pushing is never implied.")
     return 0

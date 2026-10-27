@@ -404,6 +404,7 @@ class TestThePrintedCommandsAreTheOnesThatWork:
         forms = self._commands(out)
         assert len(forms) == 2, out
         launcher_forms = {"stage 1": forms[0], "stage 2": forms[1]}
+        assert forms[0][:forms[0].index("/bin/sh")] == forms[1][:forms[1].index("/bin/sh")]
         assert "--stage2" in forms[1] and "--stage2" not in forms[0]
         real = scratch.root / "real-launcher.sh"
         real.write_text(
@@ -423,9 +424,10 @@ class TestThePrintedCommandsAreTheOnesThatWork:
         stage1 = ["/bin/sh", str(ceremony / "reanchor-launcher.sh"),
                   str(ceremony / "authorization-packet.txt"), str(values),
                   scratch.candidate]
-        assert forms[0] == stage1
-        i = forms[1].index("/bin/sh")
-        assert forms[1][i:] == stage1 + ["--stage2", "<package-digest>"]
-        # stage 2 starts under the short environment the page shows, with the home from the values file
-        assert forms[1][:i] == ["env", "-i", f"HOME={scratch.root}/home", "PATH=/usr/bin:/bin",
-                                "TERM=$TERM", "LANG=C"], forms[1][:i]
+        i = forms[0].index("/bin/sh")
+        assert forms[0][i:] == stage1
+        assert forms[1][forms[1].index("/bin/sh"):] == stage1 + ["--stage2", "<package-digest>"]
+        # both start under the short environment the page shows, with the home from the values file
+        for form in forms:
+            assert form[:form.index("/bin/sh")] == ["env", "-i", f"HOME={scratch.root}/home",
+                                                    "PATH=/usr/bin:/bin", "TERM=$TERM", "LANG=C"], form

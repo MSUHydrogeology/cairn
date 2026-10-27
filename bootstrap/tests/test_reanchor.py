@@ -694,10 +694,11 @@ class TestStage1RunsTheCheckerWithTheRecordedValues:
             bed["values"]["signing_key"]
 
     @pytest.mark.parametrize("via_launcher", (False, True))
-    def test_the_next_step_it_prints_starts_stage_two_under_a_short_environment(
+    def test_every_next_step_it_prints_starts_the_launcher_under_a_short_environment(
             self, bed, staged, via_launcher):
-        """The signer must not inherit the key socket, so every place that tells him how to start
-        stage 2 shows the short environment, with the home the values file names."""
+        """The signer must not inherit the key socket, and the launcher's own programs (the system
+        `shasum` is a Perl script) must not read his variables, so every place that tells him how to
+        start the launcher shows the short environment, with the home the values file names."""
         env = {k: v for k, v in os.environ.items() if not k.startswith("CAIRN_")}
         if via_launcher:
             env.update(CAIRN_LAUNCHER="/x/launcher.sh", CAIRN_PACKET="/x/packet.txt",
@@ -708,7 +709,10 @@ class TestStage1RunsTheCheckerWithTheRecordedValues:
         short = f'env -i HOME={bed["values"]["home"]} PATH=/usr/bin:/bin TERM="$TERM" LANG=C /bin/sh'
         assert short in text, text[-900:]
         if via_launcher:
-            assert f"{short} /x/launcher.sh /x/packet.txt /x/values {'c' * 40} --stage2" in text
+            for step in ("--show-report", "--hash-package", "--stage2"):
+                assert f"{short} /x/launcher.sh /x/packet.txt /x/values {'c' * 40} {step}" in text, step
+        else:
+            assert text.count("under env -i as below") == 2
 
     def test_stage1_prints_the_effective_configuration_before_running(
             self, bed, staged):

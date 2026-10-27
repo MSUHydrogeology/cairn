@@ -5,78 +5,79 @@
 > ends at the marker line; below it is reference, except Phase 5, the push, which
 > is the last step and is yours.
 
-**What your comparisons prove.** The anchor moves only to the commit you name,
-signed by your key, and nothing changed between what the reader read and what
-you sign. They do **not** prove the change is safe: a harmful change that the
-reader and the scanners both miss would pass. Handing you a file on the machine
-you sign on adds no assurance; the comparisons do. Run all commands from your
-checkout.
+**What your yes protects.** Against honest agent mistakes: the anchor moves only
+to the commit a fresh reader read. It does **not** protect against code running
+as you, such as a malicious local agent or the candidate's own tests, which stage
+1 runs on this machine: it can fool every comparison here and leave files that
+stage 2 loads while you type the key's passphrase. H below catches a change to two
+files, not Python's library folder or your tools.
 
 ### Prerequisites
 The instantiated launcher and the authorization packet (from the builder), your
-values file, your ceremony key (in no agent), and the candidate ref `$CAND`: the
-reader's record, `dev/ceremony-record.md`, is its tip commit. `$REV` is the
-record's `read-commit` line, the commit the reader read.
+values file, your ceremony key (in no agent), and the candidate ref `$CAND`, whose
+tip commit is the reader's record, `dev/ceremony-record.md`. Set `REV` to its
+`read-commit` line (R0 prints it). Make the values file once: copy
+`bootstrap/reanchor-values.example` outside the repository, naming each tool by its
+real file, never a link. It goes stale, and that is not a malfunction: a toolchain
+upgrade breaks it, the refusal is correct: fix the path, run `--validate`.
 
-### 1. Your values file, once
-Copy `bootstrap/reanchor-values.example` outside the repository and fill it in.
-It names each tool by its real file, never a link; a toolchain upgrade breaks
-it. That goes stale, and that is not a malfunction: the refusal is correct, so
-fix the path and run `--validate`.
+### 1. Before stage 1: what was read (no candidate code has run yet)
+Each result must equal what is said; any difference: stop. `g` is git without
+replace entries, hooks or filters, and `L` the launcher, each in an empty environment.
+```
+g() { env -i HOME=/nonexistent GIT_NO_LAZY_FETCH=1 <git> --no-replace-objects -c core.useReplaceRefs=false -c core.hooksPath=/dev/null -c core.fsmonitor=false -C <checkout> "$@"; }
+L() { env -i HOME=<home> PATH=/usr/bin:/bin TERM="$TERM" LANG=C /bin/sh <launcher> <packet> <values> "$@"; }
+# R0  the record, read from the commit: read-commit, packet-sha256, launcher-sha256
+g cat-file blob $CAND:dev/ceremony-record.md
+# R1  prints the candidate's id, then $REV, and nothing else
+g rev-list --parents -n1 $CAND
+# R2  prints only dev/ceremony-record.md
+g diff-tree --no-renames --name-only -r $REV $CAND
+# R4  prints SAME
+diff <(g cat-file blob $CAND:dev/ceremony-record.md | grep '^member ' | sort) <(grep '^member ' <packet> | sort) && echo SAME || echo DIFFERENT
+# E5  both print SAME: the launcher is the reviewed template with one slot filled
+g diff-tree --quiet --no-renames $REV $CAND -- bootstrap/reanchor-launcher.template.sh && echo SAME || echo DIFFERENT
+g cat-file blob $CAND:bootstrap/reanchor-launcher.template.sh | sed "s/@PACKET_SHA256@/$(shasum -a 256 <packet> | cut -c1-64)/" | cmp - <launcher> && echo SAME || echo DIFFERENT
+# E7  second and later (the first has none): the last line is the anchor's scan digest; the report's must equal it
+L $CAND --scan-digest
+# H   write both digests down; step 3 must print the same two
+shasum -a 256 <values> <python>
+# K   neither lists your key
+ssh-add -l; SSH_AUTH_SOCK=$(launchctl getenv SSH_AUTH_SOCK) ssh-add -l
+```
 
 ### 2. Stage 1, with no key
 ```
-sh <launcher> <packet> <values> $CAND --validate
-sh <launcher> <packet> <values> $CAND
-sh <launcher> <packet> <values> $CAND --show-report
+L $CAND --validate
+L $CAND
+L $CAND --show-report
 ```
-Read the page `--show-report` prints, then answer its five yes/no questions
-(Y1 to Y5); any no stops here.
+Read what `--show-report` prints and answer its five yes/no questions (Y1 to Y5);
+any no stops here.
 
 ### 3. Compare, then sign
-Each command's result must equal what is said. Any difference: stop.
 ```
-# E1  equals `launcher-sha256` in the record and the reader's hand-off
-shasum -a 256 <launcher>
-# E2  equals the page's candidate id
-git rev-parse HEAD
-# E3  equals the page's package sha256
-sh <launcher> <packet> <values> $CAND --hash-package
-# E4  your key's fingerprint is on the page's roster list
+# E1  equals `launcher-sha256` in the record and the reader's hand-off; R3 equals `packet-sha256`
+shasum -a 256 <launcher> <packet>
+# E2  equals the report's candidate id
+g rev-parse HEAD
+# E3  equals the report's package sha256
+L $CAND --hash-package
+# E4  your key's fingerprint is on the report's roster list
 ssh-keygen -lf <key.pub>
-# E5  both print SAME
-git diff --quiet $REV $CAND -- bootstrap/reanchor-launcher.template.sh && echo SAME || echo DIFFERENT
-git show $CAND:bootstrap/reanchor-launcher.template.sh | sed "s/@PACKET_SHA256@/$(shasum -a 256 <packet> | cut -c1-64)/" | cmp - <launcher> && echo SAME || echo DIFFERENT
-# E6  equals the page's path for that tool, for every tool in your values file
+# E6  equals the report's path for that tool, for every tool in your values file
 readlink -f "$(command -v <tool>)"
-# E7  second and later ceremonies only: equals the page's scan digest
-E=$(mktemp -d) && git archive refs/cairn/gate-anchor bootstrap | tar -x -C "$E" && <python> -E -s "$E/bootstrap/tests/_gate_preflight.py" scan-digest --repo <checkout>
-# R1  the record sits directly on what was read: prints $REV
-git rev-parse HEAD^
-# R2  prints only dev/ceremony-record.md
-git diff --name-only HEAD^ HEAD
-# R3  equals `packet-sha256` in the record
-shasum -a 256 <packet>
-# R4  prints SAME
-diff <(grep '^member ' dev/ceremony-record.md | sort) <(grep '^member ' <packet> | sort) && echo SAME || echo DIFFERENT
 ```
-Just before stage 2, repeat E1 and E6, and check `ssh-add -l` does **not** list
-your key. Then run stage 2 with no key socket in its environment; the signer
-asks for the key's passphrase once. Do not `ssh-add` the key. Pass the digest
-from E3:
+Just before stage 2 repeat E1, E6, H and K: nothing may differ from step 1. Stage
+2 asks for the passphrase once. Do not `ssh-add` the key. Pass E3's digest:
 ```
 env -i HOME=<home> PATH=/usr/bin:/bin TERM="$TERM" LANG=C /bin/sh <launcher> <packet> <values> $CAND --stage2 <digest>
+# V   good: exit 0 and `Good "git" signature for <name> with` your key's fingerprint (E4); else no push
+g -c gpg.format=ssh -c gpg.ssh.program=/usr/bin/ssh-keygen -c gpg.ssh.allowedSignersFile=<checkout>/dev/.cairn/allowed_signers verify-commit refs/cairn/gate-anchor
 ```
-Then publish both refs in one atomic push (Phase 5, below).
-
-### The first ceremony
-The anchor still holds the old text, so no tool of this design can run it and
-E7 has no anchored scan: it rests on the builder, the reader and the record,
-and the page and record say so. You authorize it in your own words, naming
-`bootstrap/_scaffold/`, `bootstrap/security_check.py`,
-`bootstrap/tests/_gate_manifest.py`, and the dropped test nodes by count and
-commit, and you name the known manifest and AST failures as the Y4 allowance.
-Nothing in this page calls `_gate_reanchor.py promote`; it stays callable.
+Bad is any `error`, `No principal matched`, another fingerprint, a non-zero exit
+or no output: do not push. Then publish both refs in one atomic push (Phase 5, below). Nothing in
+this page calls `_gate_reanchor.py promote`; it stays callable.
 <!-- end of page -->
 
 <!-- `dev/.cairn/trusted-activation.yml` and `dev/.cairn/promotion-authorization.yml`
@@ -85,18 +86,40 @@ Nothing in this page calls `_gate_reanchor.py promote`; it stays callable.
      dev/.cairn/claim-check-allow.json on 2026-08-27; this note names them so a
      reader still learns why the paths do not resolve. -->
 
+## The first ceremony
+
+The anchor still holds the old text, so no tool of this design can run it and E7
+has no anchored scan: it rests on the builder, the reader and the record, and the
+report and record say so. You authorize it in your own words, naming
+`bootstrap/_scaffold/`, `bootstrap/security_check.py`,
+`bootstrap/tests/_gate_manifest.py` and the dropped test nodes by count and
+commit, and you name the known manifest and AST failures as the Y4 allowance.
+
+## The packet, for whoever builds one by hand
+
+`repin packet` writes the packet and the launcher for an ordinary ceremony. By
+hand, the packet is one record per line, no control characters, each line under
+4096 bytes, blank lines and `#` lines ignored: `schema cairn-authorization-packet/v1`;
+`provenance <text, at most 120 characters>`; `artifact bootstrap/reanchor.sh`;
+`artifact_sha256 <64 hex>`; then one `member <64 hex> <path>` per closure file, in
+`LC_ALL=C` order, exactly the eleven the launcher template lists as its fixed
+member set. It carries no candidate id. Its SHA-256 replaces `@PACKET_SHA256@`, the
+one slot in the template, and that file is the launcher.
+
 ## What each comparison protects, and what it does not
 
 | Check | It protects | It does not |
 |---|---|---|
 | E1, R3 | you run the launcher and packet the reader recorded | that the reader read well |
-| E2 | the commit you sign is the commit on the page | that the commit is safe |
-| E3 | the package you confirm is the bytes the page described | that the package is harmless |
+| E2 | the commit you sign is the commit the report describes | that the commit is safe |
+| E3 | the package you confirm is the bytes the report described | that the package is harmless |
 | E4 | your key is one the anchored roster lists | which key a later roster adds |
-| E5 | the launcher is the reviewed template with one slot filled | that the template is safe |
+| E5, R1 to R4 | the answers come from git objects read before stage 1 starts the candidate's tests, with no replace entry, hook or filter, not from repository state those tests could have written; the launcher is the reviewed template with one slot filled; the record is the one commit on what was read and names this packet, launcher and these files | that the template is safe; what the reader wrote in the record; code already running as you |
 | E6 | the programs run before any candidate byte are the ones you named | the bytes of those programs: a tool you own can be replaced |
-| E7 | the digest the page prints is the one the anchor's own code computes over this range | that the hits listed on the page are the scan behind that digest (it binds the digest only, and the page's line saying who made the scan is the report's own claim); a change that matches no scan pattern; the first ceremony, which has no anchored scan |
-| R1 to R4 | the record is the one commit on what was read, and names this packet, launcher and these files | what the reader wrote in it |
+| E7 | the digest the report prints is the one the anchor's own checker computes over this range, started by the launcher from raw objects before any candidate byte | that the hits listed in the report are the scan behind that digest (it binds the digest only, and the report's line saying who made the scan is the report's own claim); a change that matches no scan pattern; test files and pytest settings, which stage 1 runs and the scan does not read; the first ceremony, which has no anchored scan |
+| H | the values file and the Python are the bytes they were before stage 1 | Python's library folder, your other tools, or a change made and undone between the two hashes |
+| K | no agent, the login session's included, holds your key when you run stage 1 and stage 2 | an agent started in between |
+| V | the new anchor carries a good signature by a key the roster lists | that the key was yours alone: you compare its fingerprint with E4 |
 | Y1 to Y5 | your own judgement | Y1 is a statement of the reader's; you cannot check it |
 
 Delivering a file to the machine you sign on adds no assurance of its own. The
@@ -133,7 +156,7 @@ mistaken for the stronger claim.
 | RA-14 | you read the page (`--show-report`) |
 | RA-15 | you hash the package yourself (`--hash-package`) |
 | RA-16 | the key stays in no agent (the **N4** precondition); you make the pre-signing checks |
-| RA-17 | stage 2 validates the package against your digest and re-verifies its own bytes; no candidate code runs |
+| RA-17 | stage 2 validates the package against your digest and re-verifies its own bytes; it starts no candidate test, but files stage 1 left on this machine can still be loaded (see H) |
 | RA-18 | the checkpoint is signed and branch and anchor move in one transaction |
 | RA-19 | the two refs are published in one atomic push |
 

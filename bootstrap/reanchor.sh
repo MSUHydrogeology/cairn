@@ -435,15 +435,15 @@ ROSTER
         printf '\n%s\n' "== next: confirm, then sign =="
         printf '%s\n' "  1. read what you are authorizing:"
         if [ -n "$_s1_via_launcher" ]; then
-            printf '%s\n' "       sh $CAIRN_LAUNCHER $CAIRN_PACKET $CAIRN_VALUES ${CAIRN_CANDIDATE-<candidate-ref>} --show-report"
+            printf '%s\n' "       env -i HOME=$V_home PATH=/usr/bin:/bin TERM=\"\$TERM\" LANG=C /bin/sh $CAIRN_LAUNCHER $CAIRN_PACKET $CAIRN_VALUES ${CAIRN_CANDIDATE-<candidate-ref>} --show-report"
         else
-            printf '%s\n' "       re-run YOUR LAUNCHER with:  --show-report"
+            printf '%s\n' "       re-run YOUR LAUNCHER, under  env -i  as below, with:  --show-report"
         fi
         printf '%s\n' "  2. compute the digest yourself:"
         if [ -n "$_s1_via_launcher" ]; then
-            printf '%s\n' "       sh $CAIRN_LAUNCHER $CAIRN_PACKET $CAIRN_VALUES ${CAIRN_CANDIDATE-<candidate-ref>} --hash-package"
+            printf '%s\n' "       env -i HOME=$V_home PATH=/usr/bin:/bin TERM=\"\$TERM\" LANG=C /bin/sh $CAIRN_LAUNCHER $CAIRN_PACKET $CAIRN_VALUES ${CAIRN_CANDIDATE-<candidate-ref>} --hash-package"
         else
-            printf '%s\n' "       re-run YOUR LAUNCHER with:  --hash-package"
+            printf '%s\n' "       re-run YOUR LAUNCHER, under  env -i  as below, with:  --hash-package"
         fi
         printf '%s\n' "  3. check that no agent lists your key (ssh-add -l); do not load it"
         printf '%s\n' "  4. sign and move both refs (the signer asks for the passphrase):"

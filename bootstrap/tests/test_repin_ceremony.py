@@ -1338,9 +1338,9 @@ def runbook_page() -> str:
     return parts[0]
 
 
-def page_commands():
-    """(label, command) for each command line in a fenced block of the page. A `# E1 ...` comment names
-    the commands under it, and a block's first commands have no label."""
+def page_lines():
+    """(label, line) for each line in a fenced block of the page.  A `# E1 ...` comment line names the
+    commands under it; a block's first commands have no label."""
     found = []
     for block in runbook_page().split("```")[1::2]:
         label = None
@@ -1352,24 +1352,49 @@ def page_commands():
     return found
 
 
+def page_helpers():
+    """The shell functions the page defines once (`g`, `L`): the Maintainer's shell holds them when he
+    runs the commands below them."""
+    return [line for _lab, line in page_lines() if re.match(r"[gL]\(\) \{", line)]
+
+
+def page_commands():
+    return [(lab, line) for lab, line in page_lines() if not re.match(r"[gL]\(\) \{", line)]
+
+
+#: One command runs several checks, so a second label names it too.
+PAGE_ALIASES = {"R3": "E1"}
+
+
 def page_command(label):
+    label = PAGE_ALIASES.get(label, label)
     commands = [c for lab, c in page_commands() if lab == label]
     assert commands, f"the page has no command labelled {label}"
     return commands
 
 
-def run_page_command(bed, command, *, tool=None, digest="0" * 64, path=None, extra_env=None):
-    """One command from the page, with its placeholders filled for the scratch bed and run in the
-    checkout under bash, the way the Maintainer's shell reads it."""
+def fill_page_command(bed, command, *, tool=None, digest="0" * 64):
+    values = dict(line.partition(" ")[::2] for line in bed.values.read_text().splitlines())
     fill = {"<launcher>": bed.cdir / "reanchor-launcher.sh", "<packet>": bed.cdir / "authorization-packet.txt",
             "<values>": bed.values, "<key.pub>": str(bed.key) + ".pub", "<checkout>": bed.repo, "<home>": bed.home,
-            "<python>": os.path.realpath(sys.executable), "<tool>": tool or "", "<digest>": digest}
+            "<python>": values["python"], "<git>": values["git"], "<tool>": tool or "", "<digest>": digest}
     for placeholder, value in fill.items():
         command = command.replace(placeholder, str(value))
-    env = {"PATH": path or os.environ["PATH"], "HOME": str(bed.home), "LC_ALL": "C",
-           "CAND": bed.git("rev-parse", "HEAD").stdout.strip(), "REV": bed.git("rev-parse", "HEAD^").stdout.strip(),
-           **(extra_env or {})}
-    return subprocess.run(["/bin/bash", "-c", command], cwd=bed.repo, env=env, capture_output=True, text=True)
+    return command
+
+
+def page_env(bed, path=None, extra_env=None):
+    return {"PATH": path or os.environ["PATH"], "HOME": str(bed.home), "LC_ALL": "C",
+            "CAND": bed.git("rev-parse", "HEAD").stdout.strip(), "REV": bed.git("rev-parse", "HEAD^").stdout.strip(),
+            **(extra_env or {})}
+
+
+def run_page_command(bed, command, *, tool=None, digest="0" * 64, path=None, extra_env=None, shell="/bin/bash"):
+    """One command from the page, with its placeholders filled for the scratch bed and run in the
+    checkout the way the Maintainer's shell reads it, after the shell functions the page defines."""
+    script = "\n".join(fill_page_command(bed, c, tool=tool, digest=digest) for c in [*page_helpers(), command])
+    return subprocess.run([shell, "-c", script], cwd=bed.repo, env=page_env(bed, path, extra_env),
+                          capture_output=True, text=True)
 
 
 def tool_dir(bed, tmp_path):
@@ -1394,7 +1419,7 @@ def test_the_page_is_at_most_eighty_lines_above_its_marker():
 def test_the_page_drops_the_hand_steps_and_says_nothing_calls_promote():
     text = (REAL / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
     assert "## Phase 4" not in text and "update-ref" not in text and "obtain this document" not in text
-    assert "Nothing in this page calls `_gate_reanchor.py promote`" in runbook_page()
+    assert "Nothing in this page calls `_gate_reanchor.py promote`" in " ".join(runbook_page().split())
     assert "promote" in (REAL / "bootstrap/tests/_gate_reanchor.py").read_text(encoding="utf-8")
 
 
@@ -1403,12 +1428,15 @@ def test_each_comparison_on_the_page_gives_the_value_it_is_compared_with(cbed, t
     package = Path(cbed.cdir / "package.json")
     package.write_bytes(b'{"schema": "cairn-authorization-package/v1"}\n')
     head, record = cbed.git("rev-parse", "HEAD").stdout.strip(), (cbed.repo / RECORD).read_text()
+    rev = cbed.git("rev-parse", "HEAD^").stdout.strip()
 
     def ran(label, **kw):
         r = run_page_command(cbed, page_command(label)[0], **kw)
         assert r.returncode == 0, (label, r.stdout, r.stderr)
         return r.stdout.strip()
-    assert ran("E1").split()[0] == f"{cbed.launcher_digest}" and f"launcher-sha256 {cbed.launcher_digest}" in record
+    launcher_line, packet_line = ran("E1").splitlines()
+    assert launcher_line.split()[0] == f"{cbed.launcher_digest}" and f"launcher-sha256 {cbed.launcher_digest}" in record
+    assert f"packet-sha256 {packet_line.split()[0]}" in record
     assert ran("E2") == head
     assert hashlib.sha256(package.read_bytes()).hexdigest() in ran("E3")
     fingerprint = re.search(r"SHA256:\S+", ran("E4"))[0]
@@ -1426,11 +1454,13 @@ def test_each_comparison_on_the_page_gives_the_value_it_is_compared_with(cbed, t
             ["readlink", plain], capture_output=True, text=True).stdout.strip(), (
             "the control: a `readlink` without -f stops at the first link")
     anchor = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
-    assert ran("E7", path=os.environ["PATH"]) == P.scan_digest(P.range_scan(anchor, head, repo=cbed.repo))
-    assert ran("R1") == cbed.git("rev-parse", "HEAD^").stdout.strip() in record
+    assert ran("E7").splitlines()[-1] == P.scan_digest(P.range_scan(anchor, head, repo=cbed.repo))
+    assert ran("R0") == record.strip()
+    assert ran("R1") == f"{head} {rev}"
     assert ran("R2") == RECORD
-    assert f"packet-sha256 {ran('R3').split()[0]}" in record
     assert ran("R4") == "SAME"
+    sha = lambda path: hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    assert [line.split()[0] for line in ran("H").splitlines()] == [sha(cbed.values), sha(values["python"])]
 
 
 def test_the_three_stage_one_commands_on_the_page_each_do_what_the_page_says(cbed):
@@ -1470,10 +1500,16 @@ def test_the_stage_two_command_stage_one_prints_is_the_one_the_page_shows(cbed):
     assert shlex.split(printed[0]) == shlex.split(page)
 
 
+def checker_digest(bed):
+    from bootstrap.tests import _gate_preflight as P
+    anchor = bed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
+    return P.scan_digest(P.range_scan(anchor, bed.git("rev-parse", "HEAD").stdout.strip(), repo=bed.repo))
+
+
 def test_the_page_command_that_scans_ignores_what_the_environment_and_the_home_folder_would_load(cbed, tmp_path):
     """E7 runs the anchor's own code as the Maintainer.  A module on `PYTHONPATH` or a `.pth` file in
     his user site would run first, in the anchor's code's place, unless the interpreter is told to
-    ignore both (`-E -s`).  The control runs the same planted bytes without those flags."""
+    ignore both.  The control runs the same planted bytes with a plain interpreter."""
     cbed.add_record()
     marker = tmp_path / "ran"
     planted = tmp_path / "planted"
@@ -1483,51 +1519,139 @@ def test_the_page_command_that_scans_ignores_what_the_environment_and_the_home_f
                                env={"HOME": str(cbed.home)}, capture_output=True, text=True).stdout.strip()
     Path(user_site).mkdir(parents=True)
     (Path(user_site) / "planted.pth").write_text(f'import pathlib; pathlib.Path({str(marker)!r}).write_text("site")\n')
+    plain = subprocess.run([sys.executable, "-c", "import hashlib"], env={"PYTHONPATH": str(planted), "HOME": str(cbed.home)},
+                           capture_output=True)
+    assert marker.exists(), "the control saw no planted code, so the node proves nothing"
+    marker.unlink()
     (command,) = page_command("E7")
     ran = run_page_command(cbed, command, extra_env={"PYTHONPATH": str(planted)})
     assert ran.returncode == 0 and not marker.exists(), (ran.stderr, marker.exists() and marker.read_text())
-    for flag in (" -E", " -s"):
-        loose = run_page_command(cbed, command.replace(flag, "", 1), extra_env={"PYTHONPATH": str(planted)})
-        assert marker.exists(), f"the control without{flag} saw no planted code, so the node proves nothing"
-        marker.unlink(missing_ok=True)
+    assert ran.stdout.splitlines()[-1] == checker_digest(cbed)
 
 
 def test_a_candidate_checker_that_hides_the_scan_cannot_change_what_the_page_prints(cbed):
-    """E7 extracts the anchor's own code. A candidate whose checker lies about the digest does not move
-    it; the control extracts from the candidate instead and sees the lie."""
-    from bootstrap.tests import _gate_preflight as P
+    """E7 runs the anchor's own code. A candidate whose checker lies about the digest does not move
+    it; the control runs the candidate's checker directly and sees the lie."""
     guard = 'if __name__ == "__main__":'
     source = cbed.read("bootstrap/tests/_gate_preflight.py")
     assert source.count(guard) == 1
     cbed.write("bootstrap/tests/_gate_preflight.py",
                source.replace(guard, "scan_digest = lambda scan: '0' * 64\n\n" + guard))
     cbed.commit("a checker that hides the scan")
-    anchor = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
-    head = cbed.git("rev-parse", "HEAD").stdout.strip()
-    honest = P.scan_digest(P.range_scan(anchor, head, repo=cbed.repo))
+    cbed.make_packet()
+    honest = checker_digest(cbed)
     (command,) = page_command("E7")
-    assert run_page_command(cbed, command).stdout.strip() == honest != "0" * 64
-    from_candidate = run_page_command(cbed, command.replace("refs/cairn/gate-anchor", "HEAD"))
-    assert from_candidate.stdout.strip() == "0" * 64, "the control did not see the lie, so the node proves nothing"
+    ran = run_page_command(cbed, command)
+    assert ran.returncode == 0 and ran.stdout.splitlines()[-1] == honest != "0" * 64, ran
+    direct = subprocess.run([sys.executable, "-E", "-s", str(cbed.repo / "bootstrap/tests/_gate_preflight.py"),
+                             "scan-digest", "--repo", str(cbed.repo)], capture_output=True, text=True)
+    assert direct.stdout.strip() == "0" * 64, "the control did not see the lie, so the node proves nothing"
+
+
+def test_a_replace_entry_or_a_filter_in_the_repository_cannot_change_the_checker_the_page_runs(cbed, tmp_path):
+    """The two ways the page's old extraction could be steered from inside the candidate's `.git`
+    folder: a replace entry swaps the anchor's checker blob, and a filter named in
+    `.git/info/attributes` rewrites it as `git archive` writes it out.  The controls run the old
+    spellings and show each one was effective."""
+    cbed.add_record()
+    honest = checker_digest(cbed)
+    checker = "bootstrap/tests/_gate_preflight.py"
+    evil = cbed.git("hash-object", "-w", "--stdin", input="print('EVIL-CHECKER')\n").stdout.strip()
+    anchor_blob = cbed.git("rev-parse", f"refs/cairn/gate-anchor:{checker}").stdout.strip()
+    cbed.git("replace", anchor_blob, evil)
+    marker = tmp_path / "filter-ran"
+    (cbed.repo / ".git/info").mkdir(exist_ok=True)
+    (cbed.repo / ".git/info/attributes").write_text("bootstrap/** filter=evil\n")
+    cbed.git("config", "filter.evil.smudge", f"sh -c 'echo ran > {marker}; echo print\\(1\\)'")
+    cbed.git("config", "filter.evil.clean", "cat")
+    assert "EVIL-CHECKER" in cbed.git("cat-file", "blob", f"refs/cairn/gate-anchor:{checker}").stdout, (
+        "the control: plain git returns the substitute")
+    subprocess.run(["git", "-C", str(cbed.repo), "archive", "refs/cairn/gate-anchor", "bootstrap"],
+                   capture_output=True, check=True)
+    assert marker.exists(), "the control: `git archive` runs the filter in this repository"
+    marker.unlink()
+    (command,) = page_command("E7")
+    ran = run_page_command(cbed, command)
+    assert ran.returncode == 0 and ran.stdout.splitlines()[-1] == honest and "EVIL-CHECKER" not in ran.stdout, ran
+    assert not marker.exists(), "a filter ran while the anchor's checker was written out"
+
+
+def test_a_replace_entry_cannot_hide_an_unread_commit_from_the_record_checks(cbed):
+    """The record says it sits on REV, and R1 is the proof.  A replace entry on the record commit
+    that shows REV as its parent fools a plain `git rev-parse HEAD^` (the control); the page's
+    command reads the real parent, an unread commit, and so does R2's file list."""
+    read = cbed.git("rev-parse", "HEAD").stdout.strip()
+    cbed.write("unread.txt", "a commit nobody read\n")
+    unread = cbed.commit("an unread commit")
+    cbed.add_record(read=read)
+    cand = cbed.git("rev-parse", "HEAD").stdout.strip()
+    tree = cbed.git("rev-parse", "HEAD^{tree}").stdout.strip()
+    fake = cbed.git("commit-tree", tree, "-p", read, "-m", "record", input="").stdout.strip()
+    cbed.git("replace", cand, fake)
+    control = cbed.git("rev-parse", "HEAD^").stdout.strip()
+    assert control == read, "the control: plain `git rev-parse HEAD^` is fooled"
+    extra = {"REV": read}
+    ran = run_page_command(cbed, page_command("R1")[0], extra_env=extra)
+    assert ran.stdout.split() == [cand, unread], ran
+    assert unread != read
+    listed = run_page_command(cbed, page_command("R2")[0], extra_env=extra).stdout.split()
+    assert sorted(listed) == sorted([RECORD, "unread.txt"]), listed
+
+
+def test_a_deletion_renamed_into_the_record_is_listed_by_the_record_check(cbed):
+    """A file deleted in the same commit that adds a near-copy of it as the record is one rename to
+    git's rename detection, so a plain `git diff --name-only` lists only the record (the control).
+    The page's command turns rename detection off and lists both paths."""
+    note = "".join(f"line {i} of a note somebody wrote\n" for i in range(40))
+    cbed.write("dev/old-note.md", note)
+    read = cbed.commit("a note")
+    cbed.git("rm", "-q", "dev/old-note.md")
+    cbed.write(RECORD, f"# Ceremony record\nread-commit {read}\n" + note)
+    cbed.git("add", RECORD)
+    cbed.git("commit", "-q", "-m", "the record, and a deletion")
+    plain = cbed.git("diff", "--name-only", "HEAD^", "HEAD").stdout.split()
+    assert plain == [RECORD], "the control: git's rename detection hides the deletion"
+    listed = run_page_command(cbed, page_command("R2")[0], extra_env={"REV": read}).stdout.split()
+    assert sorted(listed) == sorted([RECORD, "dev/old-note.md"]), listed
+
+
+def test_a_replace_entry_cannot_make_a_tampered_launcher_equal_the_reviewed_template(cbed):
+    """E5 compares the launcher with the template at the candidate.  A replace entry that swaps the
+    template's blob for the tampered launcher's bytes makes the old command say SAME (the control);
+    the page's command reads the real blob and says DIFFERENT."""
+    cbed.add_record()
+    template = "bootstrap/reanchor-launcher.template.sh"
+    launcher = cbed.cdir / "reanchor-launcher.sh"
+    packet = cbed.cdir / "authorization-packet.txt"
+    slot = hashlib.sha256(packet.read_bytes()).hexdigest()
+    with open(launcher, "ab") as fh:
+        fh.write(b"#\n")
+    tampered_template = launcher.read_text().replace(slot, "@PACKET_SHA256@")
+    swap = cbed.git("hash-object", "-w", "--stdin", input=tampered_template).stdout.strip()
+    cbed.git("replace", cbed.git("rev-parse", f"HEAD:{template}").stdout.strip(), swap)
+    old = (f"git show HEAD:{template} | sed \"s/@PACKET_SHA256@/$(shasum -a 256 {packet} | cut -c1-64)/\""
+           f" | cmp - {launcher} && echo SAME || echo DIFFERENT")
+    fooled = subprocess.run(["/bin/bash", "-c", old], cwd=cbed.repo, env=page_env(cbed), capture_output=True, text=True)
+    assert fooled.stdout.strip() == "SAME", "the control: the old command is fooled"
+    assert run_page_command(cbed, page_command("E5")[1]).stdout.strip() == "DIFFERENT"
 
 
 @pytest.mark.parametrize("damage", ["packet", "member", "extra path", "wrong parent", "template", "launcher byte"])
 def test_each_check_on_the_page_notices_the_damage_it_is_for(cbed, damage):
     if damage == "packet":
         cbed.add_record(packet="f" * 64)
-        said = run_page_command(cbed, page_command("R3")[0]).stdout.split()[0]
+        said = run_page_command(cbed, page_command("R3")[0]).stdout.split()[1]
         assert f"packet-sha256 {said}" not in (cbed.repo / RECORD).read_text()
     elif damage == "member":
         cbed.add_record(members={"bootstrap/tests/_oracle.py": "e" * 64})
         assert run_page_command(cbed, page_command("R4")[0]).stdout.split()[-1] == "DIFFERENT"
     elif damage == "extra path":
         cbed.add_record(also={"slipped-in.txt": "x\n"})
-        assert run_page_command(cbed, page_command("R2")[0]).stdout.split() == [RECORD, "slipped-in.txt"] or \
-            run_page_command(cbed, page_command("R2")[0]).stdout.split() == ["slipped-in.txt", RECORD]
+        assert sorted(run_page_command(cbed, page_command("R2")[0]).stdout.split()) == sorted([RECORD, "slipped-in.txt"])
     elif damage == "wrong parent":
         cbed.add_record(read="1" * 40)
         said = re.search(r"read-commit (\w+)", (cbed.repo / RECORD).read_text())[1]
-        assert run_page_command(cbed, page_command("R1")[0]).stdout.strip() != said
+        assert run_page_command(cbed, page_command("R1")[0], extra_env={"REV": said}).stdout.split()[1] != said
     elif damage == "template":
         cbed.add_record()
         template = "bootstrap/reanchor-launcher.template.sh"
@@ -1563,7 +1687,7 @@ def test_the_runbook_names_no_ref_that_no_live_step_creates_and_says_what_follow
               if "gate-authorization" in p.read_text(encoding="utf-8")]
     assert makers == [], f"{makers} now name the ref; the runbook should say how that step makes it"
     assert "gate-authorization" not in text
-    head = " ".join(text[:text.index("**What your comparisons prove.**")].replace("> ", " ").split())
+    head = " ".join(text[:text.index("**What your yes protects.**")].replace("> ", " ").split())
     assert "below it is reference, except Phase 5, the push, which is the last step" in head
     assert "is not a step" not in head
 
@@ -1580,3 +1704,154 @@ def test_neither_the_page_nor_the_artifact_tells_anyone_to_load_the_key():
     assert "ssh-add <your ceremony key>" not in artifact and "Load it and re-run" not in artifact
     assert "ssh-add -l" in page and "Do not `ssh-add` the key" in page
 
+
+
+def page_order():
+    """Each labelled command's position, and the position of the first unlabelled one (stage 1)."""
+    lines = [lab for lab, _line in page_commands()]
+    return {lab: lines.index(lab) for lab in lines if lab}, lines.index(None)
+
+
+def test_the_checks_that_read_repository_state_run_before_stage_one_starts_the_candidates_tests():
+    """Stage 1 runs the candidate's own tests as the Maintainer, so anything they could write (a replace
+    entry, a filter, a file in the checkout) is not to be read by a check run after them."""
+    at, stage_one = page_order()
+    before = ["R0", "R1", "R2", "R4", "E5", "E7", "H", "K"]
+    assert all(at[label] < stage_one for label in before), (before, at, stage_one)
+    assert all(at[label] > stage_one for label in ("E1", "E2", "E3", "E4", "E6")), at
+    plain_git_after_stage_one = [c for lab, c in page_commands()[stage_one:] if re.search(r"(^|[ (|])git ", c)]
+    assert plain_git_after_stage_one == [], plain_git_after_stage_one
+
+
+def test_every_page_command_that_runs_git_runs_it_through_the_sterile_helper():
+    """No page command may call `git` bare: it would read the checkout's replace entries and
+    configuration."""
+    (helper,) = [h for h in page_helpers() if h.startswith("g()")]
+    for flag in ("env -i", "GIT_NO_LAZY_FETCH=1", "--no-replace-objects", "core.useReplaceRefs=false",
+                 "core.hooksPath=/dev/null", "core.fsmonitor=false", "-C <checkout>", "<git>"):
+        assert flag in helper, flag
+    bare = [c for _lab, c in page_commands() if re.search(r"(^|[ (|`])git ", c)]
+    assert bare == [], bare
+
+
+def test_every_page_command_that_starts_the_launcher_does_so_under_an_empty_environment(cbed, tmp_path):
+    """The launcher's own programs run before any candidate byte, and the system `shasum` is a Perl
+    script that reads `PERL5OPT`.  Every launcher command starts under `env -i`, so a variable in his
+    shell reaches none of them.  The stand-in `shasum` records what it was started with."""
+    cbed.add_record()
+    log = tmp_path / "shasum-environment"
+    stub = tmp_path / "recording-shasum"
+    stub.write_text(f'#!/bin/sh\nenv > "{log}"\nexec /usr/bin/shasum "$@"\n')
+    stub.chmod(0o755)
+    cbed.values.write_text("\n".join(f"shasum {stub}" if line.startswith("shasum ") else line
+                                    for line in cbed.values.read_text().splitlines()) + "\n")
+    hostile = {"PROBE_VARIABLE": "reached", "PERL5OPT": "-Mstrict", "SSH_AUTH_SOCK": "/tmp/sock"}
+    subprocess.run([str(stub), "-a", "256", str(cbed.values)], env={**page_env(cbed), **hostile},
+                   capture_output=True)
+    assert "PROBE_VARIABLE=reached" in log.read_text(), "the control: the stand-in sees what it is given"
+    log.unlink()
+    for command in ("L $CAND --validate", "L $CAND --scan-digest"):
+        ran = run_page_command(cbed, command, extra_env=hostile)
+        assert ran.returncode == 0, (command, ran.stdout, ran.stderr)
+        names = {line.split("=", 1)[0] for line in log.read_text().splitlines()}
+        assert names.isdisjoint(hostile), (command, names)
+        assert "HOME=" + str(cbed.home) in log.read_text().splitlines()
+        log.unlink()
+    for _lab, line in page_lines():
+        if "/bin/sh <launcher>" in line:
+            assert line.startswith(("env -i ", "L() { env -i ")), line
+
+
+def test_the_page_says_in_plain_words_what_the_yes_protects_and_what_stage_one_leaves_behind():
+    page = " ".join(runbook_page().split())
+    assert "Against honest agent mistakes: the anchor moves only to the commit a fresh reader read." in page
+    assert "does **not** protect against code running as you, such as a malicious local agent or the " \
+           "candidate's own tests" in page
+    assert "can fool every comparison here and leave files that stage 2 loads while you type the key's " \
+           "passphrase" in page
+    assert "H below catches a change to two files, not Python's library folder or your tools" in page
+    assert "repeat E1, E6, H and K: nothing may differ from step 1" in page
+
+
+def test_the_page_verifies_the_new_anchor_with_one_command_and_says_what_good_and_bad_look_like():
+    (command,) = page_command("V")
+    assert command.startswith("g -c gpg.format=ssh -c gpg.ssh.program=/usr/bin/ssh-keygen ")
+    assert "-c gpg.ssh.allowedSignersFile=<checkout>/dev/.cairn/allowed_signers" in command
+    assert command.endswith(" verify-commit refs/cairn/gate-anchor")
+    page = " ".join(runbook_page().split())
+    assert "good: exit 0 and `Good \"git\" signature for <name> with` your key's fingerprint (E4); else no push" in page
+    assert ("Bad is any `error`, `No principal matched`, another fingerprint, a non-zero exit or no output: "
+            "do not push") in page
+
+
+def test_the_verify_command_passes_on_a_good_signature_and_fails_on_each_bad_one(cbed):
+    """The bed's anchor is signed by the throwaway key, which its roster lists."""
+    fingerprint = re.search(r"SHA256:\S+", run_page_command(cbed, page_command("E4")[0]).stdout)[0]
+    (command,) = page_command("V")
+    good = run_page_command(cbed, command)
+    assert good.returncode == 0 and 'Good "git" signature for ' in good.stderr + good.stdout, good
+    assert fingerprint in good.stderr + good.stdout, "the fingerprint printed is not the key's (E4)"
+    roster = "dev/.cairn/allowed_signers"
+    kept = cbed.read(roster)
+    cbed.write(roster, "")
+    nobody = run_page_command(cbed, command)
+    assert nobody.returncode != 0 and "No principal matched" in nobody.stderr + nobody.stdout, nobody
+    cbed.write(roster, kept)
+    other = cbed.outside_key()
+    cbed.write(roster, "x@example " + " ".join((Path(str(other) + ".pub")).read_text().split()[:2]) + "\n")
+    wrong = run_page_command(cbed, command)
+    assert wrong.returncode != 0 and "No principal matched" in wrong.stderr + wrong.stdout, wrong
+    assert 'signature for ' not in wrong.stderr + wrong.stdout, "a key not on the roster has no name to show"
+    cbed.write(roster, kept)
+    cbed.unsigned_anchor()
+    unsigned = run_page_command(cbed, command)
+    assert unsigned.returncode != 0 and 'Good "git" signature' not in unsigned.stderr + unsigned.stdout, unsigned
+
+
+def test_the_key_check_on_the_page_lists_a_key_held_in_the_environments_agent_or_the_login_sessions(
+        cbed, agent, tmp_path):
+    """K asks both places an agent can be: the socket in his shell, and the one the login session
+    holds.  Each case loads the key into a scratch agent and reaches it by one route only."""
+    (command,) = page_command("K")
+    fingerprint = re.search(r"SHA256:\S+", run_page_command(cbed, page_command("E4")[0]).stdout)[0]
+    stubs = tmp_path / "stubs"
+    stubs.mkdir()
+    (stubs / "launchctl").write_text(f'#!/bin/sh\n[ "$1 $2" = "getenv SSH_AUTH_SOCK" ] && echo {agent.sock}\n')
+    (stubs / "launchctl").chmod(0o755)
+    path = f"{stubs}:{os.environ['PATH']}"
+    empty = run_page_command(cbed, command, path=path)
+    assert fingerprint not in empty.stdout + empty.stderr, "the control: an agent with no key lists none"
+    agent.load()
+    by_environment = run_page_command(cbed, command, path=os.environ["PATH"], extra_env={"SSH_AUTH_SOCK": str(agent.sock)})
+    assert fingerprint in by_environment.stdout, by_environment
+    by_login_session = run_page_command(cbed, command, path=path)
+    assert fingerprint in by_login_session.stdout, by_login_session
+    neither = run_page_command(cbed, command, path=os.environ["PATH"])
+    assert fingerprint not in neither.stdout + neither.stderr, "the control: no route to the agent lists nothing"
+
+
+@pytest.mark.skipif(not os.path.exists("/bin/zsh"), reason="no zsh on this host")
+def test_the_commands_that_run_before_stage_one_give_the_same_answers_in_zsh(cbed):
+    cbed.add_record()
+    for label in ("R0", "R1", "R2", "R4", "E5", "H"):
+        for command in page_command(label):
+            answers = {shell: run_page_command(cbed, command, shell=shell) for shell in ("/bin/bash", "/bin/zsh")}
+            assert answers["/bin/zsh"].returncode == answers["/bin/bash"].returncode == 0, (label, answers)
+            assert answers["/bin/zsh"].stdout == answers["/bin/bash"].stdout, label
+
+
+def test_the_packet_grammar_the_runbook_gives_a_hand_builder_is_the_one_the_launcher_parses():
+    text = (REAL / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
+    section = " ".join(text[text.index("## The packet, for whoever builds one by hand"):
+                            text.index("## What each comparison protects")].split())
+    template = LAUNCHER_TEMPLATE.read_text(encoding="utf-8")
+    for word in ("schema cairn-authorization-packet/v1", "provenance", "artifact bootstrap/reanchor.sh",
+                 "artifact_sha256", "member", "@PACKET_SHA256@"):
+        assert word in section and word.split()[0] in template, word
+    listed = template[template.index("EXPECTED_PATHS='") + len("EXPECTED_PATHS='"):].split("'", 1)[0].split()
+    assert len(listed) == 11 and "exactly the eleven the launcher template lists" in section
+    assert f"PACKET_SCHEMA='{'cairn-authorization-packet/v1'}'" in template
+    assert "at most 120 characters" in section and "[ ${#P_provenance} -le 120 ]" in template
+    assert "under 4096 bytes" in section and "MAX_LINE_BYTES=4096" in template
+    assert "LC_ALL=C" in section and "LC_ALL=C" in template
+    assert "It carries no candidate id." in section and "must carry NO candidate" in template
