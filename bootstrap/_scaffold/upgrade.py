@@ -2366,6 +2366,12 @@ def _cmd_finalize_lockfile(
         if new_hash != rec.get("hash"):
             changed += 1
         rec["hash"] = new_hash
+        if judged is not None:
+            # A retired file's living-state flag is one verify_integrity no
+            # longer honours (an old install's fold-back ledger).  The hash is
+            # recorded now, so drop the flag and the file is checked like any
+            # kept file; left in place it fails the whole tree as a tamper.
+            rec.pop("living_state", None)
     if missing:
         print(f"error: {len(missing)} tracked file(s) missing on disk -- cannot "
               f"finalize (fix or re-install first):\n  " + "\n  ".join(missing),
