@@ -1301,7 +1301,7 @@ def page_command(label):
     return commands
 
 
-def run_page_command(bed, command, *, tool=None, digest="0" * 64, path=None):
+def run_page_command(bed, command, *, tool=None, digest="0" * 64, path=None, extra_env=None):
     """One command from the page, with its placeholders filled for the scratch bed and run in the
     checkout under bash, the way the Maintainer's shell reads it."""
     fill = {"<launcher>": bed.cdir / "reanchor-launcher.sh", "<packet>": bed.cdir / "authorization-packet.txt",
@@ -1310,19 +1310,23 @@ def run_page_command(bed, command, *, tool=None, digest="0" * 64, path=None):
     for placeholder, value in fill.items():
         command = command.replace(placeholder, str(value))
     env = {"PATH": path or os.environ["PATH"], "HOME": str(bed.home), "LC_ALL": "C",
-           "CAND": bed.git("rev-parse", "HEAD").stdout.strip(), "REV": bed.git("rev-parse", "HEAD^").stdout.strip()}
+           "CAND": bed.git("rev-parse", "HEAD").stdout.strip(), "REV": bed.git("rev-parse", "HEAD^").stdout.strip(),
+           **(extra_env or {})}
     return subprocess.run(["/bin/bash", "-c", command], cwd=bed.repo, env=env, capture_output=True, text=True)
 
 
 def tool_dir(bed, tmp_path):
     """A folder of links named for the values file's tools, so `command -v` finds a link, as it does
-    for git on a Homebrew host."""
-    folder = tmp_path / "linkbin"
+    for git on a Homebrew host.  Each link points, by a relative path, at a second link: a plain
+    `readlink` then prints a path that is neither absolute nor the tool, and only `-f` follows both."""
+    folder, hop = tmp_path / "linkbin", tmp_path / "hop"
     folder.mkdir()
+    hop.mkdir()
     for line in bed.values.read_text().splitlines():
         key, _, value = line.partition(" ")
         if key in RUNBOOK_TOOLS:
-            (folder / key).symlink_to(value)
+            (hop / key).symlink_to(value)
+            (folder / key).symlink_to(f"../hop/{key}")
     return f"{folder}:/usr/bin:/bin"
 
 
@@ -1361,12 +1365,55 @@ def test_each_comparison_on_the_page_gives_the_value_it_is_compared_with(cbed, t
         plain = subprocess.run(["/bin/bash", "-c", f"command -v {tool}"], env={"PATH": links},
                                capture_output=True, text=True).stdout.strip()
         assert plain != values[tool], "the control: a plain `command -v` finds a link the values file refuses"
+        assert ran("E6", tool=tool, path=links) != subprocess.run(
+            ["readlink", plain], capture_output=True, text=True).stdout.strip(), (
+            "the control: a `readlink` without -f stops at the first link")
     anchor = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
     assert ran("E7", path=os.environ["PATH"]) == P.scan_digest(P.range_scan(anchor, head, repo=cbed.repo))
     assert ran("R1") == cbed.git("rev-parse", "HEAD^").stdout.strip() in record
     assert ran("R2") == RECORD
     assert f"packet-sha256 {ran('R3').split()[0]}" in record
     assert ran("R4") == "SAME"
+
+
+def test_the_three_stage_one_commands_on_the_page_each_do_what_the_page_says(cbed):
+    """The commands the page opens with, run as typed: the validate, the stage 1 run and the report."""
+    cbed.add_record()
+    validate, stage1, report = [c for lab, c in page_commands() if lab is None and "--stage2" not in c]
+    assert validate.endswith("--validate") and report.endswith("--show-report") and "--" not in stage1
+    package = cbed.cdir / "package.json"
+    ran = run_page_command(cbed, validate)
+    assert ran.returncode == 0 and "OK: the values satisfy the closed schema" in ran.stdout, ran
+    assert not package.exists(), "the validate step wrote the package"
+    ran = run_page_command(cbed, stage1)
+    assert ran.returncode == 0 and "STAGE 1 COMPLETE" in ran.stderr + ran.stdout, ran
+    digest = hashlib.sha256(package.read_bytes()).hexdigest()
+    assert f"package sha256 : {digest}" in ran.stderr + ran.stdout
+    ran = run_page_command(cbed, report)
+    assert ran.returncode == 0 and f"package sha256   {digest}" in ran.stdout, ran
+    assert "== your answers, yes or no ==" in ran.stdout
+
+
+def test_the_page_command_that_scans_ignores_what_the_environment_and_the_home_folder_would_load(cbed, tmp_path):
+    """E7 runs the anchor's own code as the Maintainer.  A module on `PYTHONPATH` or a `.pth` file in
+    his user site would run first, in the anchor's code's place, unless the interpreter is told to
+    ignore both (`-E -s`).  The control runs the same planted bytes without those flags."""
+    cbed.add_record()
+    marker = tmp_path / "ran"
+    planted = tmp_path / "planted"
+    planted.mkdir()
+    (planted / "hashlib.py").write_text(f'open({str(marker)!r}, "a").write("path")\nraise ImportError\n')
+    user_site = subprocess.run([sys.executable, "-c", "import site; print(site.getusersitepackages())"],
+                               env={"HOME": str(cbed.home)}, capture_output=True, text=True).stdout.strip()
+    Path(user_site).mkdir(parents=True)
+    (Path(user_site) / "planted.pth").write_text(f'import pathlib; pathlib.Path({str(marker)!r}).write_text("site")\n')
+    (command,) = page_command("E7")
+    ran = run_page_command(cbed, command, extra_env={"PYTHONPATH": str(planted)})
+    assert ran.returncode == 0 and not marker.exists(), (ran.stderr, marker.exists() and marker.read_text())
+    for flag in (" -E", " -s"):
+        loose = run_page_command(cbed, command.replace(flag, "", 1), extra_env={"PYTHONPATH": str(planted)})
+        assert marker.exists(), f"the control without{flag} saw no planted code, so the node proves nothing"
+        marker.unlink(missing_ok=True)
 
 
 def test_a_candidate_checker_that_hides_the_scan_cannot_change_what_the_page_prints(cbed):
@@ -1437,3 +1484,4 @@ def test_neither_the_page_nor_the_artifact_tells_anyone_to_load_the_key():
     page, artifact = runbook_page(), (REAL / "bootstrap/reanchor.sh").read_text(encoding="utf-8")
     assert "ssh-add <your ceremony key>" not in artifact and "Load it and re-run" not in artifact
     assert "ssh-add -l" in page and "Do not `ssh-add` the key" in page
+
