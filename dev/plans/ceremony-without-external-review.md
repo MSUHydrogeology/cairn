@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-27-claude-ceremony-without-external-review.md](../proposals/archive/2026-10-27-claude-ceremony-without-external-review.md)
-**Status**: implementing
+**Status**: awaiting-code-review
 **Waiting on Maintainer**: first ceremony (final chunk)
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27
@@ -198,3 +198,25 @@ Range `8a4e7508..26b8709c`: C1 `2f4c8a1b`, C2 `dd92e83c`, C2b `ae1d47c2`, C3 `fe
 **Choices the plan left open.** The report names who made the scan (`scan_checker`), not an anchored digest in the package, so the package schema is untouched. "Decides" also holds `bootstrap/tests/__init__.py` and `_ast_attest.py`, which `repin` byte-compares. The existing "control: show-report nodes pass" holds for all but the cut node. `test_repin_ceremony.py`: `drive()` commits a good record first.
 
 **Not verified.** The E and Y commands as typed; stage 1 through the launcher on real keys; the full suite; `python bootstrap/security_check.py`; C5 to C7b.
+
+## Implementation verification (C5 to C7b) -- Claude Sonnet 5.5 -- 2026-10-27
+
+Range `77f3e5d1..3ed66cf4`: C5 `95021c2d`, C6 `b748de2d`, C7 `8df7e2a2`, C7b `3ed66cf4`. Interpreter `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13). **Boundary B mode**: full; **Certified by**: pending. No push, suite, ceremony, launcher run or `security_check.py`. Owners and mutants ran in detached worktrees holding HEAD plus only the chunk's files, each beside a control.
+
+* Tree: clean apart from two untracked paths that are not mine. Skipped nodes in any run: 0.
+* C5 reproduced: `PYTEST_ADDOPTS=--ignore=<file>` into the direct `evidence` call kept 5321 of 5346 nodes and exited 0; the same under the `env -i ... python -E -s` form `reanchor.sh` uses kept 5346. The launcher itself was not run, so the `dev/PLANNING.md` row closes on that form (the planning session edits it). `-B` not added. 6 mutants killed.
+* C6 falsifier did not fire: six programs before the first `exec` (a log node and a shell-trace node), no new grammar.
+* C6 parity: a 77-case matrix over all 13 keys, old artifact parser against the new launcher reader, agreed and accepted the clean file; measured in a copy before the parser went, not committed; its control (one launcher check deleted) failed.
+* C6 mutants: 71, 70 killed, 1 equivalent, measured: deleting the package-absolute check alone passes because the package-parent check recovers it; deleting both is killed.
+* C6 owners: 914 passed (`test_reanchor`, `test_repin_ceremony`, `test_repin`, driver disclosures, `test_gate_preflight`, `test_ceremony_review_report`, `test_security_lint` (Bandit node ran), `test_security_check`, `test_gate_reanchor`).
+* C7: 79 lines above the marker, held by `test_the_page_is_at_most_eighty_lines_above_its_marker`; file 296 lines. Every page command runs in a scratch bed; 27 mutants killed (SSH_AUTH_SOCK added, push block deleted, each E and R command altered); owners 918 passed.
+* C7b: 10 mutants killed (the phrase put back in each file, the pinned sentence reversed); on the parent commit the new entries fail for doctrine, template and checker. Owners 1398 passed.
+* Gates: neutrality, redundancy, `claim_check`, `link_check` clean; `check_cairn` only the four prior `repin-build` citations (not edited).
+* `_ast_attest.py verify`, read-only: output identical before and after (59 symbols red, as the plan says). `_gate_manifest.py verify --no-collect`, read-only: matches the plan's table; no new entry.
+* Closure files edited: launcher template, `reanchor.sh`, runbook. Keyed files edited: `_gate_preflight.py`, `scripts/reanchor_ceremony.py`, `test_gate_preflight.py`, `test_reanchor.py`, `test_review_stance_in_shipped_files.py` (all already `FROZEN-MODIFIED`).
+* Dropped nodes against `77f3e5d1`, by collection: 62 ids, 93 added. `test_gate_preflight` 4, `test_reanchor` 54 (25 grammar nodes renamed under the launcher class, 13 parity nodes replaced by one, 7 missing-field nodes moved, 5 below, 4 renamed singles), `test_repin` 1, `test_repin_ceremony` 2, `test_review_stance` 1 (label renamed). Against the stale committed manifest: 168 ids, nine of them `test_correct_pinned_digests`.
+* Runbook-reading nodes dropped, by id: `test_gate_preflight::TestLoaderTrustBoundary::test_the_acquisition_command_resists_git_dir_redirection`; `TestRunbookPublicationText::{test_the_anchor_is_created_with_a_reflog_and_the_fixed_reason, test_the_authorization_ref_is_created_without_a_reflog, test_the_authorization_ref_is_retired_by_expected_old_value}`; `test_reanchor::TestTheReproducedLauncherDoesNotDriftFromTheRealOne::{test_every_reproduced_step_is_still_in_the_launcher, test_no_ceremony_loader_block_survives_in_the_runbook (kept under a new class), test_the_reproduced_order_matches_the_launchers_order, test_the_reproduction_says_it_is_not_the_authority, test_the_runbook_keeps_the_first_use_review_history}`.
+
+**Choices the plan left open.** The pin's label was renamed to name its property (two ids). `repin` lost its filter for the artifact's ssh-add advice, which nothing prints now. The record path joined the runbook's entry in `dev/.cairn/claim-check-allow.json` (a forward reference), and a line citation in `dev/measurement/tag-pass-dispositions.md` lost its number. The runbook dropped the launcher reproduction, the rationale list and the first-use history with the old phases.
+
+**Not verified.** The page's commands in the Maintainer's own shell and with real keys; stage 1 and stage 2 through the launcher on a real anchor; the full suite; `security_check.py`.
