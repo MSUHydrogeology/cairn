@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-27-claude-ceremony-without-external-review.md](../proposals/archive/2026-10-27-claude-ceremony-without-external-review.md)
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Waiting on Maintainer**: first ceremony (final chunk)
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27
@@ -85,3 +85,31 @@ C1 to C7 land as **one reviewed range**: C2, C5, C6 and C7 edit closure members,
 **Boundary B mode: `full`** (trust-ceremony surface). The record is scoped: `**Certified by**: pending`. Nobody sets `CAIRN_FULL_SUITE`. Interpreter `/Users/kendal30/conda_envs/lhm/bin/python3.13`.
 
 **After C7:** one code review; a Security Review that reads the launcher and artifact whole, the checker's changed hunks, `repin`'s verb and launcher check, the driver diff, the `security_check.py` hunk and the one-page runbook; a certifying run; builder and reader; C8. **Not measured:** a real ceremony; the several-day cost is assumed.
+
+## Plan review -- Claude Sonnet 5.5 (Internal, fresh session) -- 2026-10-27
+
+**Tier**: Internal. **Reviewed commit**: 91102afc. **Verdict**: three blocking, six non-blocking; Status to `revising-plan`. The Security Review is separate.
+
+**Foundations**
+1. *Delivers Revision 3?* In shape yes: each chunk maps to a Revision 3 chunk (plan `:59-71`); three outcomes lack an owner (B1 to B3). Backing: closure is 11 files, 7 Python (`_gate_preflight.py:627-639`); `scripts/repin.py:1026-1029` refuses closure changes.
+2. *Simpler path?* Same chunks. C4's record check stays only if B1 is settled; else the C8 hand comparison carries it.
+3. *Shows it cannot deliver?* A record whose digests change when committed (B1); a candidate scan that hides a hit yet passes the compare (B2). Read-only: `verify --no-collect` agrees with the plan's table (`gate_manifest.json:533-541` holds the nine nodes); AST verify is red on 59 lines; `bootstrap/_scaffold` has no diff from 91102afc.
+
+### Blocking
+
+**B1. The record has no home, and committing it moves HEAD.** C4's record check is a good owner for the proposal's condition, but the plan gives no path or format. A record inside the candidate cannot name that commit's packet digest (circular); one committed on top makes HEAD differ from the candidate, and E2 compares `git rev-parse HEAD`. *Fix*: state the path, the digest lines, and that the record sits one commit above the candidate it names; give `repin`, E2 and C8 that rule; list the check for the Security Review.
+
+**B2. C2 does not say whose code computes the transition scan.** "Recomputed from `raw_tree(anchor)`" can mean the candidate's checker scanning the anchor's files. Revision 3 requires the anchor's own checker, extracted. *Fix*: say so; add a node where the candidate's scan hides a hit and the compare still stops, and the mutant "compute with the candidate's checker".
+
+**B3. E6 and the Y-answers print nowhere.** Revision 3 says the page prints each values-file tool path. `show-report` (`reanchor.sh:686-748`) prints none; C7 only says "the page holds E6". *Fix*: C2 prints them, with a node; or say E6 is prose only. Name the chunk that prints Y1 to Y5.
+
+### Non-blocking
+
+* **N1.** C1 adds seven members to Bandit; C2 and C5 edit them, yet their owners omit `test_security_lint`. *Fix*: add it; re-run the Bandit node at the last commit.
+* **N2.** C2 has no node or mutant for unprintable-text refusal, the sensitive-roster and new-file scope, or the "not line-scanned" list; the pattern list has no home. *Fix*: add them.
+* **N3.** C7: the 80-line ceiling has no check, and Phase 5 alone is 67 lines (`REANCHOR_RUNBOOK.md:542-608`), so the push block may not fit. *Fix*: a marked end line, a counting node, and the expected whole-file length told to the Maintainer (Q3 promised one page). Add a grep, with a control, for leftover External-review wording (`_gate_preflight.py:9`, `test_reanchor.py:1790`); `SECURITY.md:237` is in Revision 2's list.
+* **N4.** C6 is droppable only until C7 lands; the Security Review follows C7. *Fix*: keep C6's mode commands in one runbook block, so a late drop edits only it.
+* **N5.** C8: say who runs stage 1 and the SAME commands, that no agent loads the key, the trusted-machine statement, and the Y4 allowance for the known manifest and AST reds. Save the re-derived dropped-node list in the record so his words cite it by count and commit.
+* **N6.** E1 to E6, SAME, Summary 2 and "stage 2" are unglossed. *Fix*: gloss them once.
+
+**Coverage.** Read-only. Not run: suite, Bandit, ceremony, `repin`. Not checked: the 54 LOW count, the six-program count, the C6 parity matrix, whether chunks stay green (hardening was red between chunks). Budgets measured: body 867, criteria at most 117 per chunk.
