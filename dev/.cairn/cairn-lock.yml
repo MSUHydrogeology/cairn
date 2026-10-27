@@ -101,7 +101,7 @@
     },
     {
       "dst": "dev/modules/doc-drift-prevention.md",
-      "hash": "sha256:f948c8594bc861981b305a0a842a66ffe6fc1d6600bc444fed45f0bd62f85db6",
+      "hash": "sha256:d523e0638e29ecc775b57f8113984e94aff1dc7b66452c55f8fe181816b4d9d9",
       "src": "modules/team-gated/doc-drift-prevention.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -122,14 +122,14 @@
     },
     {
       "dst": "dev/modules/examples-gallery.md",
-      "hash": "sha256:412b14c9ed145bcd0120c963549575bccbf8a9aab4e9ca412e1767284d076052",
+      "hash": "sha256:eaa0627fe18ab136aa6fb75aeb68086a2d42cfb0a0ecb528e3f37fa026c73e70",
       "src": "modules/team-gated/examples-gallery.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/modules/incident-trackers.md",
-      "hash": "sha256:9a4623f68c9404249c18b90b0cc8aee54ecdd59be64d270b7206643b35714006",
+      "hash": "sha256:bde3f3e1f02f18335fc0f65eedf18c4a11f28fe553b9e3d5cb24e2291668d5e1",
       "src": "modules/default-on/incident-trackers.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -179,7 +179,7 @@
     },
     {
       "dst": "dev/modules/testing-discipline.md",
-      "hash": "sha256:d273698c33a2533e874ec2857ffaf420b86a581e9d2ada131e478610066a460b",
+      "hash": "sha256:c90918bed9ea597640a9c737a1fbc539fe72962dd05626e6b671110dc2906710",
       "src": "modules/team-gated/testing-discipline.md",
       "unrecoverable_base": true,
       "verbatim": false
