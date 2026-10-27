@@ -21,6 +21,7 @@ import stat
 import subprocess
 import sys
 import threading
+import time
 import warnings
 from pathlib import Path
 
@@ -254,6 +255,7 @@ def _stage(capsys: pytest.CaptureFixture[str], project: Path) -> None:
 def _stand_in_git(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *,
                   version: str = "git version 2.54.0 (Apple Git-157)",
                   answers: dict[str, str] | None = None,
+                  ignore_lazy_fetch: bool = False,
                   name: str = "standin") -> Path:
     """Put a `git` first on `PATH` that logs every call, then runs the real git.
 
@@ -261,7 +263,9 @@ def _stand_in_git(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *,
     shell `case` pattern (for example `ls-files*` or `rev-parse --verify`), to a
     shell snippet that replaces the real git for that call. Each call writes
     `<n>.argv` and `<n>.env` under the returned folder; global options (`-C`,
-    `-c`, `--literal-pathspecs`) are skipped to find the subcommand."""
+    `-c`, `--literal-pathspecs`) are skipped to find the subcommand.
+    *ignore_lazy_fetch* makes the stand-in behave like a git that does not know
+    `GIT_NO_LAZY_FETCH`: the real git is run with it removed."""
     log = tmp_path / name / "log"
     log.mkdir(parents=True)
     bindir = tmp_path / name / "bin"
@@ -286,7 +290,8 @@ def _stand_in_git(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *,
         "parse \"$@\"\n"
         "case \"$SUB $ARG1\" in\n"
         f"{cases}"
-        f"  *) exec '{REAL_GIT}' \"$@\";;\n"
+        f"  *) {'unset GIT_NO_LAZY_FETCH; ' if ignore_lazy_fetch else ''}"
+        f"exec '{REAL_GIT}' \"$@\";;\n"
         "esac\n",
         encoding="utf-8")
     script.chmod(0o755)
@@ -384,3 +389,232 @@ def test_force_runs_no_git(
     asked = [_subcommand(c) for c in _logged_calls(log)[after_control:]
              if any(_subcommand(c).startswith(k) for k in EDIT_CHECK_COMMANDS)]
     assert asked == [], f"--force asked git: {asked}"
+
+
+# ---------------------------------------------------------------------------
+# The prelude: is there a repository, and what do its settings say
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def repo(tmp_path: Path) -> Path:
+    """A repository with one commit, the smallest project the prelude can judge."""
+    folder = tmp_path / "repo"
+    folder.mkdir()
+    _git(folder, "init", "-q", "-b", "main")
+    (folder / "a.txt").write_text("one\n")
+    _commit_all(folder, "first")
+    return folder.resolve()
+
+
+def _first_call_is_the_version(log: Path) -> None:
+    assert _logged_calls(log)[0] == ["--version"], _logged_calls(log)
+
+
+@needs_git
+@posix_only
+def test_git_that_will_not_start_is_no_guard_and_git_that_does_not_answer_is_cannot_tell(
+    repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = os.environ["PATH"]
+    # Control: the repository is there and git answers.
+    assert U._edit_check_prelude(repo) == (True, False, True)
+    # A `.git` is present, but there is no git to ask: nothing can be guarded.
+    nowhere = tmp_path / "no-git-here"
+    nowhere.mkdir()
+    monkeypatch.setenv("PATH", str(nowhere))
+    monkeypatch.setattr(U, "_GIT_FLOOR_MET", None)
+    assert U._edit_check_prelude(repo) is None
+    # A git that starts and then hangs at the work-tree question: not "no guard".
+    monkeypatch.setenv("PATH", path)
+    monkeypatch.setattr(U, "_GIT_TIMEOUT_SECONDS", 0.5)
+    log = _stand_in_git(tmp_path, monkeypatch, answers={
+        "rev-parse --is-inside-work-tree": "exec sleep 5"})
+    started = time.monotonic()
+    with pytest.raises(U._EditCheckCannotTell):
+        U._edit_check_prelude(repo)
+    assert time.monotonic() - started < 4, "the check must not wait for a hung git"
+    _first_call_is_the_version(log)
+    # The same hang at the version question.
+    log = _stand_in_git(tmp_path, monkeypatch, name="slow-version")
+    (tmp_path / "slow-version" / "bin" / "git").write_text(
+        "#!/bin/sh\nexec sleep 5\n", encoding="utf-8")
+    with pytest.raises(U._EditCheckCannotTell):
+        U._edit_check_prelude(repo)
+
+
+@needs_git
+@posix_only
+def test_a_repository_git_will_not_confirm_is_cannot_tell_and_no_repository_is_no_guard(
+    repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _git(repo, "config", "core.bare", "true")
+    with pytest.raises(U._EditCheckCannotTell):
+        U._edit_check_prelude(repo)
+    _git(repo, "config", "core.bare", "false")
+    assert U._edit_check_prelude(repo) == (True, False, True), "the control"
+    log = _stand_in_git(tmp_path, monkeypatch, answers={
+        "rev-parse --is-inside-work-tree": "exit 128"})
+    with pytest.raises(U._EditCheckCannotTell):
+        U._edit_check_prelude(repo)
+    _first_call_is_the_version(log)
+    plain = tmp_path / "plain"
+    plain.mkdir()
+    assert not any(os.path.lexists(folder / ".git") for folder in (plain, *plain.parents))
+    before = len(_logged_calls(log))
+    assert U._edit_check_prelude(plain.resolve()) is None
+    assert len(_logged_calls(log)) == before, "with no .git anywhere git is not asked"
+
+
+CONFIG_CASES = [
+    ("no key at all", None, 1, (True, False, True)),
+    ("filemode false", b"core.filemode\nfalse\0", 0, (False, False, True)),
+    ("filemode valueless is true", b"core.filemode\0", 0, (True, False, True)),
+    ("filemode zero", b"core.filemode\n0\0", 0, (False, False, True)),
+    ("filemode non-zero number", b"core.filemode\n2\0", 0, (True, False, True)),
+    ("filemode empty is false", b"core.filemode\n\0", 0, (False, False, True)),
+    ("last filemode wins, true", b"core.filemode\nfalse\0core.filemode\ntrue\0", 0,
+     (True, False, True)),
+    ("last filemode wins, false", b"core.filemode\ntrue\0core.filemode\nOFF\0", 0,
+     (False, False, True)),
+    ("filemode banana", b"core.filemode\nbanana\0", "raises", None),
+    ("autocrlf true", b"core.autocrlf\ntrue\0", 0, (True, True, True)),
+    ("autocrlf valueless is true", b"core.autocrlf\0", 0, (True, True, True)),
+    ("autocrlf input is not crlf", b"core.autocrlf\ninput\0", 0, (True, False, True)),
+    ("autocrlf false", b"core.autocrlf\nfalse\0", 0, (True, False, True)),
+    ("autocrlf maybe", b"core.autocrlf\nmaybe\0", "raises", None),
+    ("eol crlf", b"core.eol\nCRLF\0", 0, (True, True, True)),
+    ("eol lf", b"core.eol\nlf\0", 0, (True, False, True)),
+    ("eol native follows the platform", b"core.eol\nnative\0", 0,
+     (True, os.name == "nt", True)),
+    ("eol unknown", b"core.eol\nweird\0", "raises", None),
+    ("eol valueless", b"core.eol\0", "raises", None),
+    ("autocrlf input with eol crlf", b"core.autocrlf\ninput\0core.eol\ncrlf\0", 0,
+     (True, True, True)),
+    ("the config call fails", None, 129, "raises"),
+    ("the config call fails with 2", b"core.filemode\nfalse\0", 2, "raises"),
+]
+
+
+@needs_git
+@posix_only
+@pytest.mark.parametrize("label, output, code, expected", CONFIG_CASES,
+                         ids=[c[0] for c in CONFIG_CASES])
+def test_the_config_answer_is_read_as_git_reads_it(
+    repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    label: str, output: bytes | None, code: int | str, expected: object,
+) -> None:
+    answer = tmp_path / "config-answer"
+    answer.write_bytes(output or b"")
+    exit_code = code if isinstance(code, int) else 0
+    expected = "raises" if code == "raises" else expected
+    log = _stand_in_git(tmp_path, monkeypatch, answers={
+        "config*": f"cat '{answer}'; exit {exit_code}"})
+    if expected == "raises" or expected is None and code not in (0, 1):
+        with pytest.raises(U._EditCheckCannotTell):
+            U._edit_check_prelude(repo)
+    else:
+        assert U._edit_check_prelude(repo) == expected
+    _first_call_is_the_version(log)
+
+
+def _treeless_clone(tmp_path: Path, name: str) -> Path:
+    """A clone that holds the commits but not the folder listings, with no
+    checkout: reading its last commit's tree makes git fetch from the origin."""
+    origin = tmp_path / f"{name}-origin"
+    origin.mkdir()
+    _git(origin, "init", "-q", "-b", "main")
+    _git(origin, "config", "uploadpack.allowFilter", "true")
+    _git(origin, "config", "uploadpack.allowAnySHA1InWant", "true")
+    (origin / "a.txt").write_text("one\n")
+    _commit_all(origin, "first")
+    clone = tmp_path / f"{name}-clone"
+    subprocess.run(["git", "clone", "-q", "--filter=tree:0", "--no-checkout",
+                    origin.as_uri(), str(clone)], check=True, capture_output=True)
+    return clone.resolve()
+
+
+def _fetch_marker(clone: Path, marker: Path) -> None:
+    """Make the clone's remote run a program that leaves *marker* behind."""
+    exec_path = subprocess.run(["git", "--exec-path"], capture_output=True, text=True,
+                               check=True).stdout.strip()
+    program = clone.parent / (clone.name + "-uploadpack.sh")
+    program.write_text(
+        f"#!/bin/sh\ntouch '{marker}'\nexec '{exec_path}/git-upload-pack' \"$@\"\n")
+    program.chmod(0o755)
+    _git(clone, "config", "remote.origin.uploadpack", str(program))
+
+
+PARTIAL_CLONE_KEYS = [
+    ("extensions.partialclone", "origin"),
+    ("remote.origin.promisor", "true"),
+    ("remote.origin.partialclonefilter", "tree:0"),
+    ("core.partialclonefilter", "tree:0"),
+]
+
+
+@needs_git
+@posix_only
+@pytest.mark.parametrize("key, value", PARTIAL_CLONE_KEYS, ids=[k for k, _ in PARTIAL_CLONE_KEYS])
+def test_below_the_floor_a_partial_clone_answers_cannot_tell_and_runs_no_program(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, key: str, value: str,
+) -> None:
+    clone = _treeless_clone(tmp_path, "case")
+    own = {"extensions.partialclone", "remote.origin.promisor", "remote.origin.partialclonefilter"}
+    for other in own - {key}:
+        _git(clone, "config", "--unset", other, check=False)
+    _git(clone, "config", key, value)
+    marker = tmp_path / "program-ran"
+    _fetch_marker(clone, marker)
+    log = _stand_in_git(tmp_path, monkeypatch, version="git version 2.44.0",
+                        ignore_lazy_fetch=True)
+    with pytest.raises(U._EditCheckCannotTell):
+        U._edit_check_prelude(clone)
+    _first_call_is_the_version(log)
+    later = [_subcommand(c) for c in _logged_calls(log)
+             if _subcommand(c).split(" ")[0] in ("ls-files", "diff-index")
+             or _subcommand(c).startswith("rev-parse --verify")]
+    assert later == [], later
+    assert not marker.exists(), "a program the project names ran"
+
+
+@needs_git
+@posix_only
+def test_below_the_floor_a_project_with_no_partial_clone_setting_is_still_guarded(
+    repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    log = _stand_in_git(tmp_path, monkeypatch, version="git version 2.44.0")
+    assert U._edit_check_prelude(repo) == (True, False, True)
+    _first_call_is_the_version(log)
+
+
+@needs_git
+@posix_only
+def test_the_launcher_is_shared_with_the_committed_copy_check(
+    repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("GIT_DIR", str(tmp_path / "elsewhere"))
+    monkeypatch.setenv("GIT_NO_LAZY_FETCH", "0")
+    monkeypatch.setenv("git_ssh_command", "lower-case spelling")
+    log = _stand_in_git(tmp_path, monkeypatch)
+    assert U._committed_copy_matches(repo, "a.txt", b"one\n") is True
+    assert U._edit_check_prelude(repo) == (True, False, True)
+    _first_call_is_the_version(log)
+    calls = _logged_calls(log)
+    numbered = [(n, c) for n, c in enumerate(calls) if c != ["--version"]]
+    cat_file = [(n, c) for n, c in numbered if "cat-file" in c]
+    prelude = [(n, c) for n, c in numbered if "cat-file" not in c]
+    assert len(cat_file) == 1 and len(prelude) >= 3
+
+    def environment(n: int) -> dict[str, str]:
+        lines = (log / f"{n}.env").read_text(encoding="utf-8").splitlines()
+        return {k: v for k, v in (l.split("=", 1) for l in lines if "=" in l)
+                if k.upper().startswith("GIT_")}
+
+    prefix = cat_file[0][1][:8]
+    assert prefix == ["-C", str(repo), "-c", "core.fsmonitor=false",
+                      "-c", f"core.hooksPath={os.devnull}",
+                      "-c", "core.useReplaceRefs=false"][:8]
+    wanted = {"GIT_NO_LAZY_FETCH": "1", "GIT_TERMINAL_PROMPT": "0", "GIT_OPTIONAL_LOCKS": "0"}
+    for n, call in [cat_file[0], *prelude]:
+        assert call[:8] == prefix, call
+        assert environment(n) == wanted, (call, environment(n))

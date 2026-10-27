@@ -2381,6 +2381,118 @@ class _EditCheckCannotTell(Exception):
         self.reason = reason
 
 
+def _git_config_bool(value: str | None) -> bool | None:
+    """A git setting read as git reads a boolean: no value, ``true``, ``yes``,
+    ``on`` or a non-zero integer is true; empty, ``false``, ``no``, ``off`` or
+    ``0`` is false; anything else is ``None`` (git itself refuses to run)."""
+    if value is None:
+        return True
+    text = value.lower()
+    if text in ("true", "yes", "on"):
+        return True
+    if text in ("false", "no", "off", ""):
+        return False
+    try:
+        return int(text, 10) != 0
+    except ValueError:
+        return None
+
+
+def _edit_check_prelude(target: Path) -> tuple[bool, bool, bool] | None:
+    """What the edit check must know about the repository before it reads the
+    index, or ``None`` for "no guard".
+
+    *target* is the resolved project folder.  Every question goes through
+    `_git_in_project` (nothing the project names can run), in this order: (a) a
+    file-system look, with no git, for a ``.git`` file or folder in the project or
+    any folder above it; (b) the version floor; (c) ``rev-parse
+    --is-inside-work-tree``; (d) one ``config -z --get-regexp`` for the settings the
+    check reads and for any partial-clone key; (e) ``rev-parse --verify -q HEAD``.
+
+    Returns ``(filemode, fold_crlf, has_head)``: whether the executable bit is
+    tracked, whether a line-ending-only difference counts as unchanged (only where
+    the project's settings ask for CRLF), and whether the project has a commit.
+    ``None`` -- no guard -- when no ``.git`` is found or git cannot be started at
+    any step.  Raises `_EditCheckCannotTell` when git started but did not answer in
+    time or printed more than the check reads, does not confirm a work tree after a
+    ``.git`` was found (another owner, ``core.bare=true``, a damaged repository),
+    fails or answers unreadably after the work tree was confirmed, or is below the
+    floor in a project that has a partial-clone setting (a git older than 2.45.0
+    would fetch a missing file from a remote the project names, and that fetch can
+    run the project's program)."""
+    import os
+
+    if not any(os.path.lexists(folder / ".git") for folder in (target, *target.parents)):
+        return None
+
+    def ask(args: list[str], limit: int) -> tuple[int, bytes] | None:
+        got = _git_in_project(target, args, limit)
+        if got == _GIT_NO_ANSWER:
+            raise _EditCheckCannotTell(
+                "git did not answer in time, or printed more than the check reads")
+        return None if got == _GIT_NOT_STARTED else got  # type: ignore[return-value]
+
+    _git_floor_met()
+    if _GIT_FLOOR_MET == _GIT_NOT_STARTED:
+        return None
+    if _GIT_FLOOR_MET == _GIT_NO_ANSWER:
+        raise _EditCheckCannotTell(
+            "git did not answer in time, or printed more than the check reads")
+
+    inside = ask(["rev-parse", "--is-inside-work-tree"], 4096)
+    if inside is None:
+        return None
+    if inside[0] != 0 or inside[1].strip() != b"true":
+        raise _EditCheckCannotTell(
+            "git would not confirm that this folder is a work tree (a repository "
+            "owned by another user, a bare or damaged one)")
+
+    unreadable = _EditCheckCannotTell(
+        "git's settings for this project could not be read as git reads them")
+    config = ask(["config", "-z", "--get-regexp",
+                  r"core\.filemode|core\.autocrlf|core\.eol|promisor|partialclone"],
+                 1 << 20)
+    if config is None:
+        return None
+    if config[0] not in (0, 1):
+        raise unreadable
+    settings: dict[str, str | None] = {}
+    for record in config[1].split(b"\0"):
+        if record:
+            key, has_value, value = record.decode("utf-8", "surrogateescape").partition("\n")
+            settings[key] = value if has_value else None
+
+    if _GIT_FLOOR_MET == "below" and any(
+            "promisor" in key or "partialclone" in key for key in settings):
+        raise _EditCheckCannotTell(
+            "this project is a partial clone and the git on PATH is older than "
+            "2.45.0, which could fetch missing files from a remote the project names")
+
+    def flag(key: str, default: bool) -> bool:
+        if key not in settings:
+            return default
+        parsed = _git_config_bool(settings[key])
+        if parsed is None:
+            raise unreadable
+        return parsed
+
+    filemode = flag("core.filemode", True)
+    autocrlf_input = (settings.get("core.autocrlf") or "").lower() == "input"
+    fold_crlf = False if autocrlf_input else flag("core.autocrlf", False)
+    if "core.eol" in settings:
+        eol = (settings["core.eol"] or "").lower()
+        if eol not in ("crlf", "lf", "native"):
+            raise unreadable
+        fold_crlf = fold_crlf or eol == "crlf" or (eol == "native" and os.name == "nt")
+
+    head = ask(["rev-parse", "--verify", "-q", "HEAD"], 1 << 20)
+    if head is None:
+        return None
+    if head[0] not in (0, 1):
+        raise unreadable
+    return filemode, fold_crlf, head[0] == 0
+
+
 def _cannot_tell_refusal(flag: str, reason: str) -> str:
     """The refusal ``--apply`` and a bare ``--finalize`` print when the edit check
     could not tell: the reason, and the one way past it."""
@@ -2594,6 +2706,21 @@ def _git_floor_met() -> bool:
     return _GIT_FLOOR_MET == "met"
 
 
+def _git_in_project(
+    project: Path, args: list[str], limit: int,
+) -> tuple[int, bytes] | str:
+    """`_run_git_sterile` for a command about *project*, with the three overrides
+    every question about a project's repository carries: no file-system monitor
+    (a program the project names), no hooks folder, no replace refs (a project
+    could point a name at other content).  The one place the list is written."""
+    import os
+
+    return _run_git_sterile(
+        ["-C", str(project), "-c", "core.fsmonitor=false",
+         "-c", f"core.hooksPath={os.devnull}", "-c", "core.useReplaceRefs=false",
+         *args], limit)
+
+
 def _committed_copy_matches(project_root: Path, rel_path: str, data: bytes) -> bool:
     """Does the project's last commit hold *rel_path* with exactly *data*?
 
@@ -2615,19 +2742,14 @@ def _committed_copy_matches(project_root: Path, rel_path: str, data: bytes) -> b
     Callers outside this module may reuse it unchanged; it reads nothing but git's
     answer and writes nothing.
     """
-    import os
-
     if (not isinstance(rel_path, str) or not rel_path or not isinstance(data, bytes)
             or rel_path.startswith("/") or "\0" in rel_path or "\n" in rel_path
             or any(part in ("", ".", "..") for part in rel_path.split("/"))):
         return False
     if not _git_floor_met():
         return False
-    answer = _run_git_sterile(
-        ["-C", str(project_root), "-c", "core.fsmonitor=false",
-         "-c", f"core.hooksPath={os.devnull}", "-c", "core.useReplaceRefs=false",
-         "cat-file", "blob", f"HEAD:./{rel_path}"],
-        len(data) + 1)
+    answer = _git_in_project(
+        project_root, ["cat-file", "blob", f"HEAD:./{rel_path}"], len(data) + 1)
     return not isinstance(answer, str) and answer[0] == 0 and answer[1] == data
 
 
