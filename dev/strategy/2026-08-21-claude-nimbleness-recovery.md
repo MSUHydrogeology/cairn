@@ -94,6 +94,6 @@ These principles from the original recovery note are settled doctrine and govern
 
 Use these four practical health checks (no new ledger required):
 * **Adopter defect turnaround:** Reported bug → committed fix with test in **1–2 sessions**.
-* **Artifact readable at a glance:** Proposals open in **≤150 lines** (before appended reviews); plans stay **≤350 lines** (`0.5-dev` plans are currently **277–364 lines**).
+* **Artifact readable at a glance (measured in words, not lines):** Proposals and plans open in **≤ 1,000 words (~6 KB)** before appended reviews; `Acceptance criteria` stays **≤ 150 words per chunk**; each appended review pass or response stays **≤ 600 words (~4 KB)**; and strategy notes stay **≤ 1,500 words (~10 KB)**.
 * **Maintainer time spent on substance:** The Maintainer decides direction, science, and security boundaries from the opening plain-language summary, rather than refereeing multi-round wording disputes or running manual scratch scripts.
 * **Deliberation vs. product balance:** On adopter repositories (`modflow_tools`, `LHM`, `Assai`) and Cairn alike, shipped code, science, and reader-facing documentation outpace `dev/` deliberation volume.

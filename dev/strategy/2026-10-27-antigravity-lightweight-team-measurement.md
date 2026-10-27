@@ -5,7 +5,7 @@
 **Date**: 2026-10-27
 **Status**: settled
 **Type**: product-strategy
-**Surfaces this would feed**: [`tools/gauge.py`](../../tools/gauge.py); [`scripts/token_budget.py`](../../scripts/token_budget.py); [`tools/audit_report.py`](../../tools/audit_report.py); [`dev/proposals/_template.md`](../proposals/_template.md); [`dev/plans/_template.md`](../plans/_template.md); [`dev/measurement/README.md`](../measurement/README.md)
+**Surfaces this would feed**: [`tools/gauge.py`](../../tools/gauge.py); [`scripts/token_budget.py`](../../scripts/token_budget.py); [`tools/audit_report.py`](../../tools/audit_report.py); [`dev/proposals/_template.md`](../proposals/_template.md); [`dev/plans/_template.md`](../plans/_template.md); [`dev/strategy/_template.md`](_template.md); [`dev/measurement/README.md`](../measurement/README.md)
 
 ## Conclusion first
 
@@ -79,18 +79,17 @@ Measuring the October 2026 (`0.5-dev`) proposals and plans by **bytes and words*
 
 ---
 
-## Why "Keep it short" (`3ba6aba1`) needs a 1-bullet fix for `0.5` — and why it is easy
+## Why "Keep it short" (`3ba6aba1`) needed a word-budget & anti-boilerplate fix for `0.5`
 
-On `2026-10-26`, commit `3ba6aba1` added `## Keep the proposal short` and `## Keep the plan short` to the four template files (`dev/proposals/_template.md`, `templates/core/dev/proposals/_template.md`, `dev/plans/_template.md`, `templates/core/dev/plans/_template.md`).
+On `2026-10-26`, commit `3ba6aba1` added `## Keep the proposal short` and `## Keep the plan short` to the four proposal and plan template files (`dev/proposals/_template.md`, `templates/core/dev/proposals/_template.md`, `dev/plans/_template.md`, `templates/core/dev/plans/_template.md`).
 
 **Why it didn't curb the 72 KB files:**
-1. It says *"Keep what goes in it small"* and *"Scripts and task briefs stay out"*, but gives **no word or byte target** for the opening body, for `## Acceptance criteria`, or for an appended `## Review` / `## Response` pass.
-2. It encourages `grep -n '^## ' <plan>` ("Read by section"), which helps readers skip sections, **but agents still write 2,000-word `Acceptance criteria` cells and 1,800-word review passes** on unwrapped lines.
+1. **No word or byte target:** It said *"Keep what goes in it small"* and *"Scripts and task briefs stay out"*, but gave no word or byte ceiling for the opening body, for `## Acceptance criteria`, or for an appended `## Review` / `## Response` pass — nor did `dev/strategy/_template.md` have a size target.
+2. **"Copy everything below the rule" copied 300 lines of boilerplate:** The top comment of every template told authors to *"Copy everything below the rule"*, causing agents to copy tutorial commentary and empty later-stage reference skeletons (`## Review`, `## Response`, `## Decision`, `## Dispositions`, `## Plan review`, `## Code review`) straight into new proposals and plans.
 
-**Why fixing it right now is cheap (no frozen test touched):**
-* As verified in [`dev/plans/archive/2026-10-26-review-keep-it-short-templates.md`](../plans/archive/2026-10-26-review-keep-it-short-templates.md#falsification-ledger) (lines 139–146), **no frozen test in `bootstrap/tests/` pins the wording of `## Keep the proposal short` or `## Keep the plan short`** (`test_board_json_contract.py` only requires that the section sit above the `---` rule and hold no `---` line).
-* Adding one explicit **word-budget bullet** to `## Keep the proposal short` and `## Keep the plan short` in the four `_template.md` files (and finalizing the two lockfile hashes in `dev/.cairn/cairn-lock.yml`) requires **zero frozen-test edits** and **zero gate-manifest re-anchors**:
-  > * **Count words, not lines — never unwrap lines to look short.** Aim for **≤ 1,000 words (~6 KB)** for an opening proposal or plan body, **≤ 150 words per chunk** in `Acceptance criteria` (state what must hold, not how to code it), and **≤ 600 words (~4 KB)** per review pass or response.
+**Why the `0.5` template fix is cheap (zero frozen tests touched):**
+* As verified in [`dev/plans/archive/2026-10-26-review-keep-it-short-templates.md`](../plans/archive/2026-10-26-review-keep-it-short-templates.md#falsification-ledger) and across all 17 template-reading suites in `bootstrap/tests/`, no frozen test pins the top HTML comment, `## Keep the proposal/plan short`, or the tutorial prose inside `## Dispositions`, `## Response`, and `## Decision`.
+* Updating all six templates (`dev/proposals/_template.md`, `templates/core/dev/proposals/_template.md`, `dev/plans/_template.md`, `templates/core/dev/plans/_template.md`, `dev/strategy/_template.md`, and `templates/core/dev/strategy/_template.md`) to set explicit word budgets, forbid copying template commentary or later-stage skeletons, and trim 42 lines of unpinned boilerplate requires **zero frozen-test edits** and **zero gate-manifest re-anchors**.
 
 ---
 
@@ -100,30 +99,36 @@ On `2026-10-26`, commit `3ba6aba1` added `## Keep the proposal short` and `## Ke
 |---|---|---|---|
 | **Option A: Do nothing** | Keep `token_budget.py`, `gauge.py`, and `audit_report.py` as they are. | Zero code changes. | Line-count Goodharting continues; `gauge.py` misreports Cairn's product share (`3%`); no visibility into artifact token sizes, review pass counts, or model-tier usage. |
 | **Option B: Reintroduce a lifecycle metrics store** | Emit JSONL rows at each commit/transition into `dev/measurement/` and maintain CSV snapshots. | Historical time-series store. | Recreates the exact machinery debt retired in August 2026 (merge conflicts, dirty trees, schema drift). Violates the nimbleness principle. |
-| **Option C (Recommended): Zero-machinery "Team Pulse" inside existing read-only tools** | Compute artifact tokens/words, review pass counts, and model-tier mix on demand directly from git and existing file headers in `tools/gauge.py` (or `scripts/token_budget.py` + `tools/audit_report.py`). | **Zero new files, zero agent workflow steps, zero prose-scraping fragility**; catches token bloat, model-tier drift, and excessive reviews in one command. | Requires ~60–80 lines of stdlib Python across existing non-frozen scripts in `tools/` / `scripts/`. |
+| **Option C (Recommended): Immediate `0.5` template fix + `v0.6` zero-machinery "Team Pulse" in existing tools** | Land the template word-budget and anti-boilerplate fixes in `0.5`; in `v0.6`, compute artifact words/tokens, review pass counts (including standalone side-files), and model-tier mix on demand in `tools/gauge.py` and `tools/audit_report.py`, and ship an `archive/` subfolder inside `dev/measurement/`. | **Zero agent workflow steps, zero metrics store, no side-file loophole**; catches token bloat, model-tier drift, and excessive reviews in one command. | Requires ~80 lines of stdlib Python across `tools/gauge.py`, `tools/audit_report.py`, and `bootstrap/_scaffold/install.py` in `v0.6`. |
 
 ---
 
-## Recommendation: A Four-Part Lightweight Upgrade
+## Recommendation: Immediate `0.5` Fix + Three `v0.6` Items
 
-### 1. Immediate `0.5` fix: Add the word-budget bullet to `## Keep the proposal/plan short`
-* Edit the `## Keep the proposal short` and `## Keep the plan short` sections in `dev/proposals/_template.md`, `templates/core/dev/proposals/_template.md`, `dev/plans/_template.md`, and `templates/core/dev/plans/_template.md` to state explicit word/byte budgets (opening body **≤ 1,000 words / ~6 KB**; `Acceptance criteria` **≤ 150 words/chunk**; review pass **≤ 600 words / ~4 KB**) and ban line-unwrapping to game line counts.
-* Update the two line-count targets in [`dev/strategy/2026-08-21-claude-nimbleness-recovery.md`](2026-08-21-claude-nimbleness-recovery.md#how-to-judge-whether-cairn-is-staying-nimble) (line 97) to state **words / KB alongside lines** so the strategy note itself does not incentivize unwrapped lines.
+### 1. Landed in `0.5`: Word budgets and anti-boilerplate rules across all six `_template.md` files
+* Updated `dev/proposals/_template.md`, `templates/core/dev/proposals/_template.md`, `dev/plans/_template.md`, `templates/core/dev/plans/_template.md`, `dev/strategy/_template.md`, and `templates/core/dev/strategy/_template.md` to:
+  * **State explicit word/byte budgets and ban line-unwrapping:** opening proposal or plan body **≤ 1,000 words (~6 KB)**; `## Acceptance criteria` **≤ 150 words per chunk**; each appended review pass or response **≤ 600 words (~4 KB)**; strategy note **≤ 1,500 words (~10 KB)**.
+  * **Stop boilerplate copying:** replaced *"Copy everything below the rule"* in the top comment and body with explicit instructions to copy only the opening headings, replace prompts with answers or a one-line `N/A`, and **never copy template commentary or later-stage sections (`Review`, `Response`, `Decision`, `Dispositions`, `Plan review`, `Code review`)** into a new artifact; trimmed 42 lines of unpinned tutorial prose from `## Dispositions`, `## Response`, and `## Decision`.
+* Updated [`dev/strategy/2026-08-21-claude-nimbleness-recovery.md`](2026-08-21-claude-nimbleness-recovery.md#how-to-judge-whether-cairn-is-staying-nimble) to state artifact health targets in words and KB rather than lines.
 
-### 2. Upgrade `tools/gauge.py` to report bytes/tokens, fix `product` bucketing, and print a `--pulse` summary
+### 2. Recommended for `v0.6`: Upgrade `tools/gauge.py` to report words/tokens, fix `product` bucketing, and print a `--pulse` summary
 Keep `tools/gauge.py` as the single on-demand command the Maintainer runs to check team health:
 * **Fix Cairn's path classification:** Classify `bootstrap/_scaffold/`, `bootstrap/scaffold.py`, and `.zenodo.json` as `product` (since the scaffold installer/upgrader *is* Cairn's shipped software product), so `product share` reflects shipped adopter value vs. `dev/` and test machinery.
-* **Report KB / estimated tokens alongside lines:** `git log --numstat` measures lines; adding byte/word counts for touched files stops unwrapped lines from hiding volume.
+* **Report words and estimated tokens alongside lines:** `git log --numstat` measures lines; adding word/byte counts for touched files stops unwrapped lines from hiding volume.
 * **Add a `--pulse` (or default bottom block) summary over `--since <date>`:** Scanning `dev/proposals/` and `dev/plans/` files touched since `--since`, print four lines:
-  1. **Artifact size (words & est. tokens):** median and max opening body vs. appended reviews (flagging any proposal/plan over `4,000` words / `~25 KB`).
-  2. **Review passes per artifact:** median and max `## Review` / `## Plan review` / `## Code review` / `## Security review` headings per file (flagging any artifact with `> 2` passes).
+  1. **Artifact size (words & est. tokens):** median and max opening body vs. appended reviews (flagging any change whose combined proposal/plan + side-files exceed `4,000` words / `~25 KB`).
+  2. **Review passes per change:** median and max `## Review` / `## Plan review` / `## Code review` / `## Security review` passes (including standalone review side-files, flagging any artifact with `> 2` passes).
   3. **Model-tier mix:** count of `high` (Opus / Pro), `medium` (Sonnet / Flash), `low` (Haiku / Flash-Lite), and `unspecified` across `**Author**:`, `**Model**:`, and `## ... review --` headers.
   4. **Always-on + deliberation prompt tax:** current token count of `AGENTS.md` + wrapper (`token_budget.py`) plus `dev/agent_collaboration.md` + `_template.md`.
 
-### 3. Fix `tools/audit_report.py` on side-files and oversize/over-reviewed plans
-* Skip `*.code-review.md` and `*.second-look.md` side-files when enumerating plans in `dev/plans/archive/` (or attach their counts to the parent plan stem) so `audit_report.py` stops emitting false-positive "no review section / no risk answer" warnings on standalone review files.
-* Add two advisory warnings for the *upper* bound: warn when an archived plan exceeds `3` total review passes or `8,000` words (`~50 KB`).
+### 3. Recommended for `v0.6`: Attribute standalone review side-files to their parent artifact in `tools/audit_report.py` and `tools/gauge.py` (never ignore them)
+* **Why standalone review files must never be ignored:** If `audit_report.py` or `gauge.py` skipped standalone `*.code-review.md`, `*.second-look.md`, or `2026-10-26-code-review-*.md` files, agents could circumvent word/byte budgets and review-pass limits by splitting reviews into side-files.
+* **What to do in `v0.6`:**
+  * Resolve every standalone review side-file in `dev/plans/` and `dev/proposals/` (and their `archive/` subfolders) to its parent plan or proposal (by filename stem or target link) and **add its word/byte count and review-pass count into the parent artifact's totals** before evaluating size or review-round thresholds.
+  * Emit an explicit warning on any **orphan** standalone review file that cannot be linked to a parent artifact, and warn when any change's combined total (parent + side-files) exceeds `3` review passes or `4,000` words (`~25 KB`).
 
-### 4. Archive closed one-off records out of `dev/measurement/`
+### 4. Recommended for `v0.6`: Add an `archive/` folder to `dev/measurement/` and ship it to adopters
 * [`dev/measurement/README.md`](../measurement/README.md) states: *"Not an archive. Historical / closed records live under `dev/**/archive/`. This folder is live measurement, not a graveyard of finished work."*
-* Move the closed July–August one-off files (`attestation-replay-failures.md`, `gitleaks-version-support.md`, `pip-audit-closure-ratio.md`, `tag-pass-dispositions.md`, `queued-issue-drafts.md`, `suite-cost.md`, `suite-runs.jsonl`) to an `archive/` subfolder (checking `claim_check.py` and test references first), leaving only the active incident trackers (`collision_log.md`, `maintainer-view-misses.md`, `review-floor-deviations.md`) and `README.md`.
+* **What to do in `v0.6`:**
+  1. **In Cairn's own tree:** Create an `archive/` subfolder inside `dev/measurement/` (with `.gitkeep`) and move the closed July–August one-off records (`attestation-replay-failures.md`, `gitleaks-version-support.md`, `pip-audit-closure-ratio.md`, `tag-pass-dispositions.md`, `queued-issue-drafts.md`, `suite-cost.md`, `suite-runs.jsonl`) there, leaving only the active incident trackers (`collision_log.md`, `maintainer-view-misses.md`, `review-floor-deviations.md`) and `README.md` at the top level.
+  2. **Make sure it ships to adopters:** Update `create_dev_tree` and the `incident-trackers` module in [`bootstrap/_scaffold/install.py`](../../bootstrap/_scaffold/install.py), [`templates/modules/default-on/incident-trackers.md`](../../templates/modules/default-on/incident-trackers.md), and [`dev/measurement/README.md`](../measurement/README.md) so scaffolding or upgrading `incident-trackers` creates the `archive/` subfolder (with `.gitkeep`) inside `dev/measurement/` in adopter repositories as well.
