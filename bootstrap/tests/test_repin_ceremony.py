@@ -1609,6 +1609,7 @@ def test_a_deletion_renamed_into_the_record_is_listed_by_the_record_check(cbed):
     cbed.write(RECORD, f"# Ceremony record\nread-commit {read}\n" + note)
     cbed.git("add", RECORD)
     cbed.git("commit", "-q", "-m", "the record, and a deletion")
+    cbed.git("config", "diff.renames", "true")
     plain = cbed.git("diff", "--name-only", "HEAD^", "HEAD").stdout.split()
     assert plain == [RECORD], "the control: git's rename detection hides the deletion"
     listed = run_page_command(cbed, page_command("R2")[0], extra_env={"REV": read}).stdout.split()
@@ -1760,6 +1761,47 @@ def test_every_page_command_that_starts_the_launcher_does_so_under_an_empty_envi
     for _lab, line in page_lines():
         if "/bin/sh <launcher>" in line:
             assert line.startswith(("env -i ", "L() { env -i ")), line
+
+
+def test_a_git_variable_in_the_shell_cannot_point_the_page_commands_at_another_repository(cbed, tmp_path):
+    """`g` runs under `env -i`, so `GIT_DIR` and its kin in his shell steer nothing.  The control runs
+    the same variable against a plain `git -C`, which it does steer."""
+    cbed.add_record()
+    elsewhere = tmp_path / "elsewhere"
+    subprocess.run(["git", "init", "-q", str(elsewhere)], check=True)
+    hostile = {"GIT_DIR": str(elsewhere / ".git"), "GIT_WORK_TREE": str(elsewhere)}
+    plain = subprocess.run(["git", "-C", str(cbed.repo), "rev-parse", "HEAD"], env={**page_env(cbed), **hostile},
+                           capture_output=True, text=True)
+    assert plain.returncode != 0 or plain.stdout.strip() != cbed.git("rev-parse", "HEAD").stdout.strip(), (
+        "the control: GIT_DIR steers a plain git")
+    ran = run_page_command(cbed, page_command("R1")[0], extra_env=hostile)
+    assert ran.stdout.split()[0] == cbed.git("rev-parse", "HEAD").stdout.strip(), ran
+
+
+def test_a_repository_configuration_cannot_make_the_verify_command_say_good(cbed, tmp_path):
+    """The signer program and the roster are repository configuration keys: pointing the first at a
+    script that says yes made a commit signed by a stranger report good.  V names both on its own
+    command line, which outranks the repository.  The control shows the same bytes fool a bare
+    `git verify-commit`."""
+    stranger = cbed.outside_key()
+    roster = tmp_path / "strangers-roster"
+    roster.write_text("x@example " + " ".join(Path(str(stranger) + ".pub").read_text().split()[:2]) + "\n")
+    liar = tmp_path / "says-yes"
+    liar.write_text('#!/bin/sh\ncase "$*" in *find-principals*) echo x@example;; '
+                    '*) echo "Good \\"git\\" signature for x@example with ED25519 key SHA256:fake";; esac\nexit 0\n')
+    liar.chmod(0o755)
+    cbed.git("-c", f"user.signingkey={stranger}.pub", "-c", "commit.gpgsign=true", "-c", "gpg.format=ssh",
+             "commit", "-q", "--allow-empty", "-m", "signed by a stranger")
+    cbed.git("update-ref", "refs/cairn/gate-anchor", cbed.git("rev-parse", "HEAD").stdout.strip())
+    cbed.git("config", "gpg.format", "ssh")
+    cbed.git("config", "gpg.ssh.program", str(liar))
+    cbed.git("config", "gpg.ssh.allowedSignersFile", str(roster))
+    bare = subprocess.run(["git", "-C", str(cbed.repo), "verify-commit", "refs/cairn/gate-anchor"],
+                          env=page_env(cbed), capture_output=True, text=True)
+    assert bare.returncode == 0 and "Good" in bare.stderr, ("the control: a bare verify-commit is fooled", bare)
+    (command,) = page_command("V")
+    ran = run_page_command(cbed, command)
+    assert ran.returncode != 0 and 'signature for ' not in ran.stderr + ran.stdout, ran
 
 
 def test_the_page_says_in_plain_words_what_the_yes_protects_and_what_stage_one_leaves_behind():

@@ -2157,6 +2157,7 @@ class TestTheAnchorsOwnScanRunsBeforeAnyCandidateByte:
     @pytest.mark.parametrize("name,kind", [
         ("bootstrap/tests/has space.py", "file"),
         ("bootstrap/tests/quo\"te.py", "file"),
+        ("bootstrap/tests/dots..py", "file"),
         ("bootstrap/tests/linked.py", "symlink")])
     def test_an_entry_that_is_not_a_plain_regular_file_refuses(
             self, ceremony, name, kind):
