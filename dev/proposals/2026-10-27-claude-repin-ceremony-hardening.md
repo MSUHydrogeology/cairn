@@ -1,7 +1,7 @@
 # Finish the re-anchor ceremony work the repin build left out
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27
@@ -423,3 +423,19 @@ Prior findings: both usual reviews and the Security Review; not repeated
 Q1's four options each state a loss and a count; the M2 reviewed-commit cost is correctly traced to `REPIN_TESTS`; A2's limits (no help at M0, none against a substituted `repin`) are stated; H is now claim-only and says it closes no row; the recommendation, defaults and counts agree with each other apart from N1.
 
 **Coverage line.** I did not read the launcher, `reanchor.sh`, the 124 driver print sites, or `test_repin_ceremony.py` past line 35. I did not verify the packet-row construction at `test_repin_ceremony.py:79`, the `_gate_manifest.py:350-358` freeze globs, or whether the AST list truly gains nothing from A. I ran no test, repin verb, ceremony or re-anchor; M2's refusal after A is read from code. `claim_check.py`: no flags. No Security Review was done or cleared. Blocking: 0; non-blocking: 4.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-27
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated**. He was asked Question 1, Question 8, and whether to accept the other defaults (Q2, Q2b, Q3 to Q7, Q9, Q10), and then, separately, whether to scribe and commit this Decision with those answers. He answered:
+
+> "In the cut's ceremony (Recommended)"  (Q1: item A lands in the cut's by-hand ceremony, code-reviewed first)
+
+> "Leave it deleted"  (Q8: the REL-1 row is not restored; this is not the default)
+
+> "Accept all defaults (Recommended)"  (the rest: build B narrowed in a new test file; the standalone driver stays an operator path until D; defer C and D; do not build E; drop F and G; defer I with its two triggers; build H, claim only, before the cut; build A2 after the cut and before M2)
+
+> "Accept and commit (Recommended)"  (disposition)
+
+He also answered a separate question about how the 0.5 cut is run, which is not part of this Decision and is recorded in `dev/PLANNING.md`: "Early hand ceremony, then repin".
+
+*Scribe's note, separate from the quoted words.* "As revised" means Revision 2, the complete current contract, which supersedes Revisions 0 and 1 and answers the two usual reviews and the Security Review (answered by its Response; no second round). The second look (5ceae1b9) left four non-blocking notes; none changes the choices above. Because Q8 is "leave it deleted", the sentence in Q8 about restoring a REL-1 row is not carried out, and H closes no register row. The plan review stays `required(Internal + Internal Security Review)`. No implementer edits `scaffold_ast_known_new.json`, the AST baseline, the gate manifest or the gate anchor; every re-anchor is the Maintainer's. A plan is opened in a separate commit, which archives this proposal.
