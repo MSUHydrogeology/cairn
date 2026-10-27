@@ -832,28 +832,90 @@ class TestShowReport:
     """A confirmed digest over an unread report authorizes something you have
     not seen. This is the command that makes the report readable."""
 
-    def _package(self, bed, *, paths_per_class=3):
-        pkg = Path(bed["values"]["package"])
-        by_class = {
-            "frozen": [f"bootstrap/tests/frozen_{i}.py"
-                       for i in range(paths_per_class)],
-            "outside_coverage": [f"docs/note_{i}.md"
-                                 for i in range(paths_per_class)],
+    @staticmethod
+    def _minimal_report(paths_per_class=3, **over):
+        """A report of the current schema, written by hand so a single field can
+        be damaged; the real one is exercised through `_real_package`."""
+        paths = []
+        for cls, stem, role in (("frozen", "bootstrap/tests/frozen_%d.py", "pinned"),
+                                ("outside-coverage", "docs/note_%d.md", "other")):
+            for i in range(paths_per_class):
+                paths.append({"bytes_b64": "", "display": stem % i,
+                              "class": cls, "role": role, "change": "modified",
+                              "mode": "100644", "scanned": False})
+        scan = {"patterns": [n for n, _ in P.SCAN_PATTERNS],
+                "counts": {n: 0 for n, _ in P.SCAN_PATTERNS},
+                "hits": [], "listed": [], "scanned": [],
+                "not_line_scanned": {"frozen": paths_per_class,
+                                     "outside-coverage": paths_per_class}}
+        report = {
+            "schema": P.RANGE_REPORT_SCHEMA,
+            "anchor": "a" * 40, "candidate_head": "b" * 40,
+            "branch": "master", "expected_old": "c" * 40,
+            "manifest_sha256": "d" * 64,
+            "paths": paths,
+            "counts": {"frozen": paths_per_class,
+                       "outside-coverage": paths_per_class},
+            "by_role": {"decides": [], "pinned": [p["display"] for p in paths
+                                                  if p["role"] == "pinned"],
+                        "other": [p["display"] for p in paths
+                                  if p["role"] == "other"]},
+            "role_counts": {"decides": 0, "pinned": paths_per_class,
+                            "other": paths_per_class},
+            "scan": scan, "scan_checker": "candidate",
+            "signers": {"anchor": ["me@x ssh-ed25519 SHA256:AAA"],
+                        "candidate": ["me@x ssh-ed25519 SHA256:AAA"]},
+            "signatures": {"total": 3, "unsigned": 0},
         }
+        report.update(over)
+        return report
+
+    def _package(self, bed, report=None, *, paths_per_class=3):
+        pkg = Path(bed["values"]["package"])
         pkg.write_text(__import__("json").dumps({
             "schema": "cairn-authorization-package/v1",
-            "range_report": {
-                "anchor": "a" * 40,
-                "candidate_head": "b" * 40,
-                "branch": "master",
-                "expected_old": "c" * 40,
-                "manifest_sha256": "d" * 64,
-                "by_class": by_class,
-                "counts": {k: len(v) for k, v in by_class.items()},
-                "signatures": {"total": 3, "unsigned": 0},
-            },
+            "range_report": report if report is not None
+            else self._minimal_report(paths_per_class),
         }, indent=2))
         return _write_values(bed)
+
+    def _real_package(self, bed, *, plant=True):
+        """A package holding a report the real checker derived over a real
+        range in the bed's checkout: a planted line, a new script, an
+        executable, and a second key added to the roster."""
+        import json
+        checkout = Path(bed["values"]["checkout"])
+
+        def git(*a):
+            return subprocess.run(
+                ["git", "-C", str(checkout), "-c", "user.email=t@t",
+                 "-c", "user.name=t", "-c", "commit.gpgsign=false", *a],
+                check=True, capture_output=True, text=True).stdout.strip()
+
+        anchor = git("rev-parse", "HEAD")
+        (checkout / "bootstrap/tests").mkdir(parents=True)
+        (checkout / "bootstrap/tests/_oracle.py").write_text(
+            "a = 1\n" + ("import subprocess\n" if plant else ""))
+        (checkout / "scripts").mkdir()
+        (checkout / "scripts/tool.sh").write_text("echo hi\n")
+        (checkout / "scripts/tool.sh").chmod(0o755)
+        second = Path(bed["dir"]) / "second_key"
+        subprocess.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f",
+                        str(second), "-C", "other"], check=True,
+                       capture_output=True)
+        fields = (Path(bed["dir"]) / "second_key.pub").read_text().split()
+        roster = checkout / "dev/.cairn/allowed_signers"
+        roster.write_text(roster.read_text()
+                          + f"other@x {fields[0]} {fields[1]}\n")
+        git("add", "-A")
+        git("commit", "-qm", "range")
+        head = git("rev-parse", "HEAD")
+        report = P.range_review_report(
+            anchor, head, branch="refs/heads/main", expected_old=head,
+            repo=checkout, prospective_manifest=b"{}\n")
+        Path(bed["values"]["package"]).write_text(json.dumps(
+            {"schema": "cairn-authorization-package/v1", "range_report": report}))
+        return _write_values(bed), report
 
     def test_the_report_renders_what_is_being_authorized(self, bed):
         r = _run("show-report", self._package(bed))
@@ -864,17 +926,131 @@ class TestShowReport:
 
     def test_the_counts_are_rendered(self, bed):
         r = _run("show-report", self._package(bed))
-        assert "frozen" in r.stdout and "outside_coverage" in r.stdout
+        assert "frozen" in r.stdout and "outside-coverage" in r.stdout
 
-    def test_a_long_class_is_bounded_and_SAYS_it_was_bounded(self, bed):
-        """Bounded, not silently truncated. A cut list that does not say it was
-        cut reads as 'that was all of it' -- which is exactly the wrong thing to
-        believe about a set of changes you are authorizing."""
+    def test_no_class_is_cut_however_long(self, bed):
+        """Nothing a Maintainer authorizes is hidden behind a count. A cut list
+        that does not say it was cut reads as 'that was all of it', and one
+        that does say so still hides what it cut."""
         r = _run("show-report", self._package(bed, paths_per_class=120))
         assert r.returncode == 0, r.stderr
-        assert "NOT SHOWN" in r.stdout, (
-            "a bounded render must name what it dropped")
-        assert "80 more" in r.stdout, r.stdout[-1500:]
+        assert "NOT SHOWN" not in r.stdout
+        for i in (0, 39, 40, 119):
+            assert f"bootstrap/tests/frozen_{i}.py" in r.stdout
+            assert f"docs/note_{i}.md" in r.stdout
+
+    def test_roles_modes_and_changes_are_shown_for_every_path(self, bed):
+        values, report = self._real_package(bed)
+        r = _run("show-report", values)
+        assert r.returncode == 0, r.stderr
+        assert "decides (2):" in r.stdout   # the oracle module and the roster
+        decides_line = next(l for l in r.stdout.splitlines()
+                            if l.endswith("bootstrap/tests/_oracle.py"))
+        assert "added" in decides_line
+        tool_line = next(l for l in r.stdout.splitlines()
+                         if l.endswith("scripts/tool.sh"))
+        assert "100755" in tool_line
+
+    def test_every_scan_hit_is_shown_with_its_pattern_and_none_is_cut(self, bed):
+        hits = [{"path": "bootstrap/tests/_oracle.py", "line": i,
+                 "pattern": "process-start", "text": f"import subprocess  # {i}"}
+                for i in range(1, 151)]
+        report = self._minimal_report()
+        report["scan"] = dict(report["scan"], hits=hits)
+        r = _run("show-report", self._package(bed, report))
+        assert r.returncode == 0, r.stderr
+        assert "every scan hit (150)" in r.stdout
+        for i in (1, 41, 150):
+            assert (f"bootstrap/tests/_oracle.py:{i} [process-start] "
+                    f"import subprocess  # {i}") in r.stdout
+
+    def test_listed_blobs_and_unscanned_classes_are_named(self, bed):
+        report = self._minimal_report()
+        report["scan"] = dict(report["scan"], listed=[
+            {"path": "scripts/link.py", "reason": "mode 120000"}])
+        r = _run("show-report", self._package(bed, report))
+        assert "scripts/link.py  mode 120000" in r.stdout
+        assert "not line-scanned: frozen, 3" in r.stdout
+
+    def test_the_package_digest_and_candidate_id_are_printed(self, bed):
+        import hashlib
+        values = self._package(bed)
+        r = _run("show-report", values)
+        digest = hashlib.sha256(Path(bed["values"]["package"]).read_bytes()
+                                ).hexdigest()
+        assert f"package sha256   {digest}" in r.stdout
+        assert f"candidate id     {'b' * 40}" in r.stdout
+
+    def test_every_roster_fingerprint_is_listed_and_a_change_is_flagged(self, bed):
+        values, report = self._real_package(bed)
+        r = _run("show-report", values)
+        assert "ROSTER CHANGED" in r.stdout
+        for line in report["signers"]["candidate"]:
+            assert line in r.stdout
+        added = [l for l in r.stdout.splitlines() if l.startswith("      added ")]
+        assert len(added) == 1 and "other@x" in added[0]
+        same = _run("show-report", self._package(bed))
+        assert "roster unchanged" in same.stdout and "ROSTER CHANGED" not in same.stdout
+
+    def test_each_tool_path_in_the_values_file_is_printed(self, bed):
+        r = _run("show-report", self._package(bed))
+        for tool in EXECUTABLE_KEYS:
+            line = next((l for l in r.stdout.splitlines()
+                         if l.split()[:1] == [tool]), None)
+            assert line is not None, f"{tool} is not listed:\n{r.stdout}"
+            assert line.split()[1] == bed["values"][tool], line
+
+    def test_the_scan_digest_is_the_checkers_digest_of_the_reports_scan(self, bed):
+        values, report = self._real_package(bed)
+        r = _run("show-report", values)
+        assert f"scan digest      {P.scan_digest(report['scan'])}" in r.stdout
+
+    def test_a_scan_not_made_by_the_anchors_checker_is_not_computed(self, bed):
+        r = _run("show-report", self._package(bed))
+        line = next(l for l in r.stdout.splitlines() if "anchored scan" in l)
+        assert "not computed" in line and "equal" not in line
+
+    def test_a_report_that_does_not_say_who_scanned_is_not_computed(self, bed):
+        report = self._minimal_report()
+        del report["scan_checker"]
+        r = _run("show-report", self._package(bed, report))
+        assert r.returncode == 0, r.stderr
+        line = next(l for l in r.stdout.splitlines() if "anchored scan" in l)
+        assert "not computed" in line and "equal" not in line
+
+    def test_a_scan_made_by_the_anchors_checker_says_so(self, bed):
+        report = self._minimal_report(scan_checker="anchor")
+        r = _run("show-report", self._package(bed, report))
+        line = next(l for l in r.stdout.splitlines() if "anchored scan" in l)
+        assert "equal" in line and "not computed" not in line
+
+    @pytest.mark.parametrize("n", (1, 2, 3, 4, 5))
+    def test_each_question_is_a_numbered_yes_no_line(self, bed, n):
+        r = _run("show-report", self._package(bed))
+        assert any(l.startswith(f"  Y{n}  [yes/no]") for l in r.stdout.splitlines()), (
+            r.stdout[-900:])
+
+    @pytest.mark.parametrize("where", ("hit text", "path", "signer"))
+    def test_unprintable_text_is_refused_and_nothing_is_shown(self, bed, where):
+        report = self._minimal_report()
+        if where == "hit text":
+            report["scan"] = dict(report["scan"], hits=[
+                {"path": "a.py", "line": 1, "pattern": "nosec",
+                 "text": "x \x1b[31m red"}])
+        elif where == "path":
+            report["paths"][0]["display"] = "docs/\u202egnp.md"
+        else:
+            report["signers"]["candidate"] = ["me@x \x07 ssh-ed25519 SHA256:A"]
+        r = _run("show-report", self._package(bed, report))
+        assert r.returncode != 0
+        assert "unprintable" in r.stderr
+        assert r.stdout == "", "part of a refused report was shown"
+
+    def test_a_report_of_another_schema_is_refused(self, bed):
+        report = self._minimal_report(schema="cairn-range-review/v1")
+        r = _run("show-report", self._package(bed, report))
+        assert r.returncode != 0 and "cairn-range-review/v2" in r.stderr
+        assert r.stdout == ""
 
     def test_a_package_with_no_report_refuses(self, bed):
         Path(bed["values"]["package"]).write_text('{"schema": "x"}\n')

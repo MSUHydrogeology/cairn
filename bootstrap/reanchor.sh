@@ -697,56 +697,181 @@ cmd_show_report() {
     # a JSON reader written in `sed` is a second parser of an authority
     # artifact, and the two would disagree eventually. The script below is part
     # of this reviewed artifact, exactly like the shell around it.
+    # Nothing is printed until every field has been checked: a report with an
+    # unprintable byte or a missing section is refused whole, never rendered
+    # in part. The Python below holds no apostrophe, because it sits inside a
+    # single-quoted shell string.
     "$V_python" -E -s -c '
-import json, sys
+import hashlib, json, sys
 
-LIMIT = 40          # per class; anything dropped is COUNTED, never silent
+SCHEMA = "cairn-range-review/v2"
+ROLES = ("decides", "pinned", "other")
+TOOLS = ("env", "git", "python", "mktemp", "mkdir", "shasum", "sort", "cat")
+
+
+def refuse(why):
+    sys.stderr.write("REFUSE: " + why + chr(10))
+    raise SystemExit(1)
+
+
+def text(value, what):
+    # Printable ASCII only. Every string in the report is meant to arrive
+    # already escaped, so a byte outside this range is not text to show: it is
+    # a report that could rewrite what the reader sees.
+    if not isinstance(value, str):
+        refuse("the report field " + what + " is not text")
+    for ch in value:
+        if not 0x20 <= ord(ch) < 0x7F:
+            refuse("the report field " + what + " holds an unprintable"
+                   " character; nothing was shown")
+    return value
+
+
+def need(container, key, kind, what):
+    if not isinstance(container, dict) or not isinstance(container.get(key), kind):
+        refuse("the report has no usable " + what)
+    return container[key]
+
 
 with open(sys.argv[1], "rb") as fh:
-    pkg = json.load(fh)
+    raw = fh.read()
+pkg = json.loads(raw)
+package_digest = hashlib.sha256(raw).hexdigest()
+tools = sys.argv[2:]
+if len(tools) != len(TOOLS):
+    refuse("show-report was not given the tool paths")
 
 report = pkg.get("range_report")
 if report is None:
-    sys.stderr.write("REFUSE: the package carries no range report" + chr(10))
-    raise SystemExit(1)
+    refuse("the package carries no range report")
+if report.get("schema") != SCHEMA:
+    refuse("this page reads " + SCHEMA + " and nothing else; the report says "
+           + repr(report.get("schema")))
 
-print("== what you are authorizing ==")
-print()
-print("  anchor          %s" % report.get("anchor"))
-print("  candidate head  %s" % report.get("candidate_head"))
-print("  branch          %s" % report.get("branch"))
-print("  expected old    %s" % report.get("expected_old"))
-print("  manifest sha256 %s" % report.get("manifest_sha256"))
-print()
-
-counts = report.get("counts") or {}
-print("  changed paths by class:")
-for name in sorted(counts):
-    print("    %-24s %d" % (name, counts[name]))
-print()
-
-by_class = report.get("by_class") or {}
-for name in sorted(by_class):
-    paths = by_class[name] or []
-    if not paths:
-        continue
-    print("  %s (%d):" % (name, len(paths)))
-    for p in paths[:LIMIT]:
-        print("    %s" % p)
-    if len(paths) > LIMIT:
-        # Named, not hidden. A truncated list that does not say it was
-        # truncated reads as "that was all of it".
-        print("    ... and %d more NOT SHOWN (bounded at %d per class)"
-              % (len(paths) - LIMIT, LIMIT))
-    print()
-
+paths = need(report, "paths", list, "path list")
+counts = need(report, "counts", dict, "class counts")
+role_counts = need(report, "role_counts", dict, "role counts")
+scan = need(report, "scan", dict, "line scan")
+signers = need(report, "signers", dict, "signer list")
 sig = report.get("signatures") or {}
+hits = need(scan, "hits", list, "scan hits")
+listed = need(scan, "listed", list, "scan list")
+scanned = need(scan, "scanned", list, "scanned paths")
+not_scanned = need(scan, "not_line_scanned", dict, "not-line-scanned counts")
+scan_counts = need(scan, "counts", dict, "scan counts")
+anchor_signers = need(signers, "anchor", list, "anchored signer list")
+cand_signers = need(signers, "candidate", list, "candidate signer list")
+
+out = []
+add = out.append
+
+
+def row(label, value, what):
+    add("  %-16s %s" % (label, text(value, what)))
+
+
+add("== what you are authorizing ==")
+add("")
+row("candidate id", report.get("candidate_head"), "candidate_head")
+row("anchor", report.get("anchor"), "anchor")
+row("branch", report.get("branch"), "branch")
+row("expected old", report.get("expected_old"), "expected_old")
+row("manifest sha256", report.get("manifest_sha256"), "manifest_sha256")
+row("package sha256", package_digest, "package digest")
+add("")
+
+add("  allowed_signers fingerprints (compare yours with ssh-keygen -lf):")
+for name, group in (("anchored", anchor_signers), ("candidate", cand_signers)):
+    add("    " + name + " roster (" + str(len(group)) + "):")
+    for line in group:
+        add("      " + text(line, "signer"))
+gone = [x for x in anchor_signers if x not in cand_signers]
+came = [x for x in cand_signers if x not in anchor_signers]
+if gone or came:
+    add("    ROSTER CHANGED: a key signs later anchors only if it is listed here")
+    for x in came:
+        add("      added   " + text(x, "signer"))
+    for x in gone:
+        add("      removed " + text(x, "signer"))
+else:
+    add("    roster unchanged")
+add("")
+
+add("  tools this ceremony runs, from your values file (compare each with"
+    " readlink -f of command -v):")
+for tool, path in zip(TOOLS, tools):
+    add("    %-8s %s" % (tool, text(path, "tool " + tool)))
+add("")
+
+add("  changed paths by class:")
+for name in sorted(counts):
+    add("    %-24s %d" % (text(name, "class"), counts[name]))
+add("  changed paths by role:")
+for name in ROLES:
+    add("    %-24s %d" % (name, role_counts.get(name, 0)))
+add("")
+
+for role in ROLES:
+    group = [e for e in paths if isinstance(e, dict) and e.get("role") == role]
+    if not group:
+        continue
+    add("  %s (%d):" % (role, len(group)))
+    for e in group:
+        mode = e.get("mode") or "-"
+        add("    %-8s %-6s %-16s %s" % (
+            text(str(e.get("change")), "change"), text(str(mode), "mode"),
+            text(str(e.get("class")), "class"), text(e.get("display"), "path")))
+    add("")
+if len(paths) != sum(role_counts.values()):
+    refuse("the role counts do not add up to the path list")
+
+add("  line scan: added lines in the paths that decide what runs, in the"
+    " sensitive roster and in new files under scripts/ and bootstrap/")
+add("    scanned paths: %d" % len(scanned))
+for name in text(" ".join(map(str, scan.get("patterns", []))), "patterns").split():
+    add("    %-14s %d hit(s)" % (name, scan_counts.get(name, 0)))
+add("")
+add("  every scan hit (%d), none cut:" % len(hits))
+for h in hits:
+    add("    %s:%s [%s] %s" % (text(h.get("path"), "hit path"), h.get("line"),
+                               text(h.get("pattern"), "hit pattern"),
+                               text(h.get("text"), "hit text")))
+add("")
+add("  listed, not line-scanned as text (%d):" % len(listed))
+for x in listed:
+    add("    %s  %s" % (text(x.get("path"), "listed path"),
+                        text(x.get("reason"), "listed reason")))
+for cls in sorted(not_scanned):
+    add("  not line-scanned: %s, %d" % (text(cls, "class"), not_scanned[cls]))
+add("")
+
+canon = json.dumps(scan, sort_keys=True, separators=(",", ":"),
+                   ensure_ascii=True).encode("ascii")
+add("  scan digest      " + hashlib.sha256(canon).hexdigest())
+if report.get("scan_checker") == "anchor":
+    add("  anchored scan    computed by the anchor own checker (equal by"
+        " construction)")
+else:
+    add("  anchored scan    not computed here: a candidate checker made this"
+        " scan. Run the anchored command and compare its digest with this one.")
+add("")
+
 if sig:
-    print("  signatures over the range:")
+    add("  signatures over the range:")
     for k in sorted(sig):
-        print("    %-24s %s" % (k, sig[k]))
-    print()
-' "$V_package"
+        add("    %-24s %s" % (text(str(k), "signature key"), sig[k]))
+    add("")
+
+add("== your answers, yes or no ==")
+add("  Y1  [yes/no]  The record says its author wrote nothing in this range.")
+add("                (a statement; you cannot check it)")
+add("  Y2  [yes/no]  The gate-file changes listed above are the ones the plan names.")
+add("  Y3  [yes/no]  Every scan hit above has a one-line plain explanation in the record.")
+add("  Y4  [yes/no]  Every scanner and the certifying run passed, or each failure")
+add("                is named in an earlier allowance.")
+add("  Y5  [yes/no]  This is your own machine and your signing key is not loaded.")
+print(chr(10).join(out))
+' "$V_package" "$V_env" "$V_git" "$V_python" "$V_mktemp" "$V_mkdir" "$V_shasum" "$V_sort" "$V_cat"
 }
 
 # --------------------------------------------------------------------------
