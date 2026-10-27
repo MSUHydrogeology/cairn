@@ -1,8 +1,8 @@
 <!-- cairn-internal-ref-allow: doctrine/coordination.md doctrine/lifecycle.md reason=published methodology citations -->
 # Cairn — development roadmap
 
-Current work and follow-ups, reviewed 2026-10-19. Plans and proposals own their
-designs and evidence; this board names the remaining work and its next move.
+Current work and follow-ups, release queue organized 2026-10-27.
+Plans and proposals own their designs and evidence; this board names the remaining work and its next move.
 Completed work leaves the board. The commit history retains earlier versions.
 
 ## Where the project stands
@@ -293,38 +293,7 @@ this list has been run by an agent.
    cut"). Before publishing, check the page's URL, profile names and commands
    against the tree.
 
-### v0.6 (Candidate directions)
-
-Theme candidates: **Nimbleness recovery, lightweight measurement, and unified doctrine.**
-
-| Work | Gate | Notes |
-|---|---|---|
-| **Lightweight team measurement** | Proposal first | Strategy note: `dev/strategy/2026-10-27-antigravity-lightweight-team-measurement.md`. Three items: (1) upgrade `tools/gauge.py` to fix product bucketing and add `--pulse` (artifact words/tokens, review passes, model-tier mix, prompt tax); (2) update `tools/audit_report.py` and `tools/gauge.py` to attribute and sum standalone review side-files into their parent proposal/plan (closing the side-file length/pass loophole); (3) add an `archive/` subfolder to `dev/measurement/` and ship it with `.gitkeep` to adopters via `bootstrap/_scaffold/install.py` and the `incident-trackers` module. |
-| **Nimbleness 1: Compress governing files and unfreeze prose-wording tests** | Doctrine change, AST/gate re-anchor | Strategy note: `dev/strategy/2026-08-21-claude-nimbleness-recovery.md` (Item 1). Strip tutorial commentary from proposal/plan templates into `doctrine/proposals.md` and `doctrine/plans.md`; rule-flush `AGENTS.md` and `dev/agent_collaboration.md`; relax regex tests in `bootstrap/tests/` to check core rule concepts rather than word-for-word paragraphs. |
-| **Nimbleness 2: Single compact artifact for standard multi-step work** | Proposal first, lifecycle doctrine | Strategy note: `dev/strategy/2026-08-21-claude-nimbleness-recovery.md` (Item 2). Allow standard 2–3 chunk work to carry its compact chunk/test plan directly in the proposal (one file, one pre-code review, one Maintainer Decision -> `ready-to-implement`), ending double proposal+plan ceremony for routine changes. |
-| **Nimbleness 3: Narrow gate-manifest freezing to security and trust tests** | Security Review, trust-apparatus change | Strategy note: `dev/strategy/2026-08-21-claude-nimbleness-recovery.md` (Item 3) and `dev/strategy/2026-08-05-codex-security-strategy.md` [TRU-4]. Name actual security and trust-apparatus test files explicitly in `bootstrap/tests/_gate_manifest.py` instead of freezing all 195 `bootstrap/tests/**/*.py` files, removing re-anchor debt from routine feature/doc test maintenance. |
-| **Nimbleness 4: Return-on-Attention accounting** | Lifecycle doctrine | Strategy note: `dev/strategy/2026-08-21-claude-nimbleness-recovery.md` (Item 4). Add Maintainer steps & follow-ups spawned at Decision; add one sentence on whether the delivered outcome repaid review/ceremony cost at archive. |
-| **Nimbleness 5: Move link-check and doctrine-ref allow comments to config** | Tooling | Strategy note: `dev/strategy/2026-08-21-claude-nimbleness-recovery.md` (Item 5). Move inline HTML `link-check-allow` and `cairn-internal-ref-allow` comments out of Markdown file headers into configuration, completing the August sweep pattern. |
-| **`doctrine/` and `docs/`: examine how they relate** | Proposal first | Promoted from deferred follow-ups. Question for a proposal: which file is the single place each rule lives, and do the others only point at it? The four-layer model is stated in both `docs/DOCUMENTATION_PLAN.md` and `doctrine/README.md`; the defect-repair carve-out is restated across `doctrine/lifecycle.md`, `plans.md`, `proposals.md` and `AGENTS.md`; prescriptive rules sit in three places (`doctrine/`, `AGENTS.md`, `dev/agent_collaboration.md`) and `docs/plain-language.md` summarizes rules in `dev/agent_collaboration.md`. Check whether restatements disagree and provide clear single-source routing. Maintainer authorization, 2026-10-27: "Yes, queue it for v0.6 and fix the index". |
-| **Extend coordinates rule to shipped prose, and scan for it** | Proposal first, rate-limit gate | Promoted from deferred follow-ups (deferred 2026-10-27 for next release planning). (1) One sentence in the durable-artifacts rule (`AGENTS.md`, reasoning in `doctrine/rationale.md`) so it covers shipped module docs, docs and release notes, using the test the ceremony scan already uses; (2) warning-only scan of shipped files against a named list of live ids in `scripts/check_cairn.py`. Maintainer: "Defer the new rule on coordinates for later bringing back up in PLANNING". |
-| **Ceremony consolidation: shrink runbook to a page & cut second values reader** | Security Review, closure change | Promoted from deferred follow-ups (`dev/proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md` items C and D). Shrink `bootstrap/REANCHOR_RUNBOOK.md` to a single page and cut the launcher's second values reader together, so the closure is re-pinned once. |
-| **Unify shipped-executable discovery [VER-5]** | Proposal first | Promoted from queued work. One traversal for install, manifest, security scan and upgrade. |
-| **Windows native support clarity** | Docs / front door | Maintainer confirmation, 2026-10-27: *"Yes, Windows support is native. I use it all the time on my projects"*. State native Windows support upfront in `README.md` and `docs/getting-started.md`. |
-| **Document 0-rejections proposal optic** | Docs / lifecycle | Maintainer direction, 2026-10-27: *"Let's add the 0-rejected note somewhere in the docs for v0.6. It's not really a requirement, and other projects have rejected proposals. But yes, basically an idea only happens because of a chat leading to it and many never make it to proposals!"*. Add note to proposal docs/lifecycle explaining Cairn's 0-rejected archive history. |
-| **Public-surface metadata alignment & CONTRIBUTING.md** | Front door / metadata | Strategy note: `dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md`. Align `CITATION.cff` title ("methodology, not a framework") with `README.md` and `AGENTS.md`; ship a standard `CONTRIBUTING.md` for outside contributors. Maintainer authorization, 2026-10-27: *"Yes, add the public-surface metadata alignment + contributing items"*. |
-| **Outside-adopter interview & testimonial (Stid)** | Adopter evidence | Strategy note: `dev/strategy/2026-10-27-antigravity-adopter-survey-instrument.md`. Prepare an interview question set and survey instrument (staged until after 0.5) to gather qualitative feedback, measure friction points, and capture a testimonial. Maintainer direction, 2026-10-27: *"I do have an outside adopter (Stid). Let's go ahead and get an interview set of questions for him, and he can give us a testimonial"*. |
-| **Automate the work tracker from `board.py --json`** | Tooling / hosted sync | Strategy note: `dev/strategy/2026-10-26-claude-work-tracker-and-the-board.md`. Build a generator script to derive hosted tracker rows automatically from `tools/board.py --json`, `git`, and `gh` rather than hand-keeping 60 hosted rows, and optionally add a `passes` field to `cairn-board/1`. Maintainer authorization, 2026-10-27: *"Yes, let's put automating the work tracker on the v0.6 list"*. |
-| **Security cluster strategic items** | Security Review, trust-apparatus | Strategy note: `dev/strategy/2026-08-05-codex-security-strategy.md`. Four items: (1) **Trust root ceremony tidy (`[TRU-4 / TRU-5 / TRU-7]`)**: sign anchor commit or align `AGENTS.md`, scrub `PYTEST_*`/`PYTHON*` in Stage A, and add `git push origin refs/cairn/gate-anchor` to runbook; (2) **Security dispatcher out-of-the-box (`[VER-3]`)**: admit `check_cairn.py` to `run_security_verification.py` runner registry; (3) **Private vulnerability reporting route (`[REL-6]`)**: enable GitHub Private Vulnerability Reporting, state it in `SECURITY.md`, and link in `README.md`; (4) **Terminal escaping hygiene (`[BND-4]`)**: escape module/slot names in install report, reject invisible Unicode in lockfile paths, and encode `tools/session.py` child output. Maintainer authorization, 2026-10-27: *"Let's add those security items to v0.6"*. |
-| **Move interpreter binding into `.git`** | Proposal first | Promoted from queued work (SW-SR-10 follow-up). Move `.cairn/local-env.json` out of the working tree into `.git/`. Maintainer instruction, 2026-10-27: *"Do those three queued items as well"*. |
-| **Fix `session-start` handoff marker mismatch** | Trivial defect fix | Promoted from queued work. Default marker in `tools/session.py` (and twin) is `Goodnight`, while Cairn handoff commits begin `Handoff`, printing a misleading 500+ commit range. Change default to match `Handoff`. Maintainer instruction, 2026-10-27: *"Do those three queued items as well"*. |
-| **Handle directory collisions in `upgrade --plan`/`--stage`** | Defect fix, engine | Promoted from queued work. Report a clean conflict instead of crashing with `IsADirectoryError` when an adopter replaces a tracked file with a directory. Maintainer instruction, 2026-10-27: *"Do those three queued items as well"*. |
-| **Judicious testing & simulation verification** | Proposal first, doctrine & suite consolidation | Strategy note: `dev/strategy/2026-10-27-antigravity-judicious-testing-and-simulation-verification.md`. Two parts: (1) **Consolidate Cairn's own test suite** (`bootstrap/tests/`, currently 87,197 lines vs. 31,124 product lines = `2.80x`) by ending plan-named test files, pruning dominated/change-detector tests toward `<= 1.50x`, and tracking test-to-product ratio in `tools/gauge.py --pulse`; (2) **Ship adopter doctrine for scientific testing** covering equivalence-regime tables, subsumption, the **Micro-Grid Principle** (*shrink the domain, never mock the physics*), and the **Three Verification Timescales** for long-running simulation models (connecting to Issue #19). |
-| **Module first-use activation work lists** | Proposal first, adopter onboarding | Connect module adoption to an executable work queue. When conditional modules are installed or adopted (e.g., `architecture-review`, `content-security`, `api-access-security`, `python-security`), generate module-specific activation seed tasks into `dev/PLANNING.md`'s `onboarding-tasks` slot (e.g., "Conduct first architecture review using the architecture-review rubric -> produce baseline strategy note in `dev/strategy/`", "Run baseline content security scan and populate allowlist", "Configure API access policy"). Turns module adoption from passive file placement into an actionable implementation roadmap. |
-| **Module utilization audit & prompt-driven capability induction** | Proposal first, agent workflow | Audit whether installed modules are actually exercised in practice, and bridge the prompt gap: for every installed capability (e.g., `incident-trackers`, `lifecycle-metrics`, `issue-capture`, `model-selection`, `doc-drift-prevention`), build explicit prompt-driven workflows into `tools/session.py` (`session-start`), `AGENTS.md`, or lifecycle templates that induce the LLM agent to invoke and maintain built capabilities rather than leaving them dormant. |
-
-## Queued
-
-### Re-anchor the gate manifest — frozen files changed
+#### Existing 0.5 gate-manifest re-anchor debt
 
 Owed since 2026-10-23: frozen `bootstrap/tests/test_quickstart_sequence.py`
 changed so its scripted steps match `docs/quickstart.md` (an `awaiting-review`
@@ -400,7 +369,48 @@ changed set from the final committed tree.
 
 **Waiting on Maintainer**: run the gate-manifest re-anchor
 
-### Other queued work (reviewed Oct 2026)
+### v0.6 — Make existing capabilities work right
+
+**Release boundary (Maintainer direction, 2026-10-27):** correct and complete
+what Cairn already ships. This includes making installed modules findable and
+adding a suitable onboarding/activation task for each. It includes existing
+behavior defects, security corrections, doctrine consistency and test-suite
+maintenance. It does not add work to the 0.5 finalization scope.
+
+**Recommended cut:** ship when the existing-module discovery and first-use path
+works end to end, the v0.6 defect/security queue is dispositioned through its
+own lifecycle, and the selected consistency and maintenance work is verified.
+Use the existing release and certification ceremony. New mechanisms and new
+adopter guidance below are v0.7 work; a release assignment grants no proposal
+Decision, scope deviation, push or publication authority.
+
+**Suggested order:** queued defects/security work; module discovery and onboarding;
+doctrine routing before compression; narrow test freezing before consolidation.
+Check the current 0.5 implementation before reviving a ceremony correction.
+
+| Work | Gate | Notes |
+|---|---|---|
+| **Nimbleness 1: Compress governing files and unfreeze prose-wording tests** | Doctrine change, AST/gate re-anchor | Strategy note: `dev/strategy/2026-08-21-claude-nimbleness-recovery.md` (Item 1). Strip tutorial commentary from proposal/plan templates into `doctrine/proposals.md` and `doctrine/plans.md`; rule-flush `AGENTS.md` and `dev/agent_collaboration.md`; relax regex tests in `bootstrap/tests/` to check core rule concepts rather than word-for-word paragraphs. |
+| **Nimbleness 3: Narrow gate-manifest freezing to security and trust tests** | Security Review, trust-apparatus change | Strategy note: `dev/strategy/2026-08-21-claude-nimbleness-recovery.md` (Item 3) and `dev/strategy/2026-08-05-codex-security-strategy.md` [TRU-4]. Name actual security and trust-apparatus test files explicitly in `bootstrap/tests/_gate_manifest.py` instead of freezing all 195 `bootstrap/tests/**/*.py` files, removing re-anchor debt from routine feature/doc test maintenance. |
+| **`doctrine/` and `docs/`: examine how they relate** | Proposal first | Promoted from deferred follow-ups. Question for a proposal: which file is the single place each rule lives, and do the others only point at it? The four-layer model is stated in both `docs/DOCUMENTATION_PLAN.md` and `doctrine/README.md`; the defect-repair carve-out is restated across `doctrine/lifecycle.md`, `plans.md`, `proposals.md` and `AGENTS.md`; prescriptive rules sit in three places (`doctrine/`, `AGENTS.md`, `dev/agent_collaboration.md`) and `docs/plain-language.md` summarizes rules in `dev/agent_collaboration.md`. Check whether restatements disagree and provide clear single-source routing. Maintainer authorization, 2026-10-27: "Yes, queue it for v0.6 and fix the index". |
+| **Ceremony consolidation: shrink runbook to a page & cut second values reader** | Security Review, closure change | Reconcile against the 0.5 ceremony plan before opening work; carry only genuinely unbuilt corrections. Promoted from deferred follow-ups (`dev/proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md` items C and D). Shrink `bootstrap/REANCHOR_RUNBOOK.md` to a single page and cut the launcher's second values reader together, so the closure is re-pinned once. |
+| **Unify shipped-executable discovery [VER-5]** | Proposal first | Promoted from queued work. One traversal for install, manifest, security scan and upgrade. |
+| **Windows native support clarity** | Docs / front door | Maintainer confirmation, 2026-10-27: *"Yes, Windows support is native. I use it all the time on my projects"*. State native Windows support upfront in `README.md` and `docs/getting-started.md`. |
+| **Document 0-rejections proposal optic** | Docs / lifecycle | Maintainer direction, 2026-10-27: *"Let's add the 0-rejected note somewhere in the docs for v0.6. It's not really a requirement, and other projects have rejected proposals. But yes, basically an idea only happens because of a chat leading to it and many never make it to proposals!"*. Add note to proposal docs/lifecycle explaining Cairn's 0-rejected archive history. |
+| **Public-surface metadata alignment & CONTRIBUTING.md** | Front door / metadata | Strategy note: `dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md`. Align `CITATION.cff` title ("methodology, not a framework") with `README.md` and `AGENTS.md`; ship a standard `CONTRIBUTING.md` for outside contributors. Maintainer authorization, 2026-10-27: *"Yes, add the public-surface metadata alignment + contributing items"*. |
+| **Security cluster strategic items** | Security Review, trust-apparatus | Strategy note: `dev/strategy/2026-08-05-codex-security-strategy.md`. Four items: (1) **Trust root ceremony tidy (`[TRU-4 / TRU-5 / TRU-7]`)**: sign anchor commit or align `AGENTS.md`, scrub `PYTEST_*`/`PYTHON*` in Stage A, and add `git push origin refs/cairn/gate-anchor` to runbook; (2) **Security dispatcher out-of-the-box (`[VER-3]`)**: admit `check_cairn.py` to `run_security_verification.py` runner registry; (3) **Private vulnerability reporting route (`[REL-6]`)**: enable GitHub Private Vulnerability Reporting, state it in `SECURITY.md`, and link in `README.md`; (4) **Terminal escaping hygiene (`[BND-4]`)**: escape module/slot names in install report, reject invisible Unicode in lockfile paths, and encode `tools/session.py` child output. Maintainer authorization, 2026-10-27: *"Let's add those security items to v0.6"*. |
+| **Move interpreter binding into `.git`** | Proposal first | Promoted from queued work (SW-SR-10 follow-up). Move `.cairn/local-env.json` out of the working tree into `.git/`. Maintainer instruction, 2026-10-27: *"Do those three queued items as well"*. |
+| **Fix `session-start` handoff marker mismatch** | Trivial defect fix | Promoted from queued work. Default marker in `tools/session.py` (and twin) is `Goodnight`, while Cairn handoff commits begin `Handoff`, printing a misleading 500+ commit range. Change default to match `Handoff`. Maintainer instruction, 2026-10-27: *"Do those three queued items as well"*. |
+| **Handle directory collisions in `upgrade --plan`/`--stage`** | Defect fix, engine | Promoted from queued work. Report a clean conflict instead of crashing with `IsADirectoryError` when an adopter replaces a tracked file with a directory. Maintainer instruction, 2026-10-27: *"Do those three queued items as well"*. |
+| **Maintain and consolidate Cairn’s existing test suite** | Proposal first; security/trust-test changes retain their gates | Strategy: `dev/strategy/2026-10-27-antigravity-judicious-testing-and-simulation-verification.md` and its temporary review. Organize tests by maintained behavior, reuse fixtures and prune only with preserved property/fault-detection evidence. Treat line ratios as diagnostics rather than deletion quotas. Depends on the freezing-scope decision (Nimbleness 3). New adopter scientific-testing guidance belongs to v0.7. |
+| **Module first-use activation work lists** | Proposal first, existing-module onboarding | Complete onboarding for existing installed/adopted modules: add an appropriate first-use task for each module, with an actionable command or artifact and expected result. Connect module adoption to the existing work queue. When conditional modules are installed or adopted (e.g., `architecture-review`, `content-security`, `api-access-security`, `python-security`), generate module-specific activation seed tasks into `dev/PLANNING.md`'s `onboarding-tasks` slot (e.g., "Conduct first architecture review using the architecture-review rubric -> produce baseline strategy note in `dev/strategy/`", "Run baseline content security scan and populate allowlist", "Configure API access policy"). Turns module adoption from passive file placement into an actionable implementation roadmap. |
+| **Installed modules are findable and used** | Proposal first; existing capability repair | Audit module discovery through an installed Cairn tree, including the installed module inventory, entry points and agent-facing pointers. Make existing capabilities findable and ensure their documented invocation paths work. Connect relevant existing modules to session/lifecycle prompts without inventing new capability or making every module a mandatory ceremony. Maintainer direction, 2026-10-27: "Making the modules actually "findable" by a Cairn install, properly adding an onboarding task for each, those are v0.6". |
+
+#### v0.6 queued corrections and release follow-through
+
+The detailed evidence and authorizations below are retained from the queue.
+Overlapping summary rows above are one scope, not additional work. Existing
+0.5 release follow-through may close earlier; it does not expand 0.5.
 
 * **The session-start tool passes a child process's output through unescaped.**
   Three raw `proc.stderr` pass-throughs and the child's stdout in
@@ -410,15 +420,6 @@ changed set from the final committed tree.
   past the finding, not a miss in the fix. Authorization to queue it, verbatim:
 
   > "Yes, queue it (Recommended)"
-
-* **The board's Maintainer list and the status advisory disagree on a status
-  such as `awaiting-decision-x`.** The advisory flags it as unknown; the board's
-  `--maintainer` view still lists it as a wait. Making the board strict would
-  edit the frozen golden and the waits-recipe test (`test_board_json_contract.py`)
-  and fold into the re-anchor owed at the cut. The Maintainer chose to leave it.
-  Recorded so the disagreement is a known edge, not a surprise. Answer, verbatim:
-
-  > "Leave the disagreement"
 
 * **A nested `.git` folder is not refused in an upgrade review area.** A
   hand-built review area naming `sub/.git/hooks/post-merge` is applied; the
@@ -431,12 +432,6 @@ changed set from the final committed tree.
 
   > "Yes, queue all three"
 
-* **`session-start` prints a 508-commit range because its default marker does
-  not match Cairn's handoff commits.** Promoted to `v0.6 (Candidate directions)`
-  on Maintainer instruction (2026-10-27: *"Do those three queued items as well"*).
-  The default marker in `tools/session.py` (about lines 2076-2080) is `Goodnight`,
-  but Cairn's handoff commits begin `Handoff`. Edits the session kernel and its twin.
-
 * **`upgrade --init-lock` records the digest of the file behind a linked
   tracked file.** A linked `AGENTS.md` puts the digest of its target into the
   new lockfile. Nothing is written outside the project, and `bootstrap/UPGRADE.md`
@@ -448,21 +443,6 @@ changed set from the final committed tree.
   simple to fix them now. No need to generate more work for us later." (given for
   this finding and the `--plan`/`--stage` one, which is simple and is being
   fixed now).
-
-* **`upgrade --plan` and `--stage` crash when a tracked file has been replaced
-  by a folder.** Promoted to `v0.6 (Candidate directions)` on Maintainer
-  instruction (2026-10-27: *"Do those three queued items as well"*). They end
-  in an `IsADirectoryError` traceback (`upgrade.py` about line 540) instead of
-  naming the file. Needs engine collision handling.
-
-* **Three lessons kept from the old handoff file.** Found in the file the
-  `NEXT_SESSION` change deleted (its migration record is in
-  `dev/plans/archive/next-session-local-note.md`); they had no other home.
-  (1) Every subagent in one session shares one work-intent agent id, so one
-  commit releases the others' claims: check `git diff` before each commit.
-  (2) Heavy test runs should take turns. (3) A review of a long plan is
-  expensive, so give tight briefs. Kept as written there; the planning
-  session's note, not doctrine (doctrine text takes the rate-limit gate).
 
 * **The gate anchor has no signature.** `refs/cairn/gate-anchor` points to
   commit `6f29519d`, and git reports no signature on it (signature status `N`;
@@ -495,6 +475,49 @@ changed set from the final committed tree.
   bootstrap block cold against the pushed tag using a machine and roster not
   supplied by this repository (`dev/plans/archive/release-authenticity.md`,
   `docs/release-process.md`).
+
+### v0.7 — New capabilities and adopter feedback
+
+Build on the corrected v0.6 baseline. These are scheduled candidates, each
+retaining its proposal, review and Maintainer gates. Earlier v0.6 candidate
+assignments below are superseded by this release split, not discarded scope.
+The adopter survey/interview happens after v0.6; its strategy note's earlier
+post-0.5 timing is superseded here. No outreach or testimonial publication is
+authorized by this roadmap.
+
+| Work | Gate | Notes |
+|---|---|---|
+| **Lightweight team measurement** | Proposal first | Strategy note: `dev/strategy/2026-10-27-antigravity-lightweight-team-measurement.md`. Three items: (1) upgrade `tools/gauge.py` to fix product bucketing and add `--pulse` (artifact words/tokens, review passes, model-tier mix, prompt tax); (2) update `tools/audit_report.py` and `tools/gauge.py` to attribute and sum standalone review side-files into their parent proposal/plan (closing the side-file length/pass loophole); (3) add an `archive/` subfolder to `dev/measurement/` and ship it with `.gitkeep` to adopters via `bootstrap/_scaffold/install.py` and the `incident-trackers` module. |
+| **Nimbleness 2: Single compact artifact for standard multi-step work** | Proposal first, lifecycle doctrine | Strategy note: `dev/strategy/2026-08-21-claude-nimbleness-recovery.md` (Item 2). Allow standard 2–3 chunk work to carry its compact chunk/test plan directly in the proposal (one file, one pre-code review, one Maintainer Decision -> `ready-to-implement`), ending double proposal+plan ceremony for routine changes. |
+| **Nimbleness 4: Return-on-Attention accounting** | Lifecycle doctrine | Strategy note: `dev/strategy/2026-08-21-claude-nimbleness-recovery.md` (Item 4). Add Maintainer steps & follow-ups spawned at Decision; add one sentence on whether the delivered outcome repaid review/ceremony cost at archive. |
+| **Nimbleness 5: Move link-check and doctrine-ref allow comments to config** | Tooling | Strategy note: `dev/strategy/2026-08-21-claude-nimbleness-recovery.md` (Item 5). Move inline HTML `link-check-allow` and `cairn-internal-ref-allow` comments out of Markdown file headers into configuration, completing the August sweep pattern. |
+| **Extend coordinates rule to shipped prose, and scan for it** | Proposal first, rate-limit gate | Promoted from deferred follow-ups (deferred 2026-10-27 for next release planning). (1) One sentence in the durable-artifacts rule (`AGENTS.md`, reasoning in `doctrine/rationale.md`) so it covers shipped module docs, docs and release notes, using the test the ceremony scan already uses; (2) warning-only scan of shipped files against a named list of live ids in `scripts/check_cairn.py`. Maintainer: "Defer the new rule on coordinates for later bringing back up in PLANNING". |
+| **Outside-adopter interview & testimonial (Stid)** | Adopter evidence | Strategy note: `dev/strategy/2026-10-27-antigravity-adopter-survey-instrument.md`. Refine the drafted interview question set and survey instrument (staged until after v0.6) to gather qualitative feedback, measure friction points, and capture a testimonial. Maintainer direction, 2026-10-27: *"I do have an outside adopter (Stid). Let's go ahead and get an interview set of questions for him, and he can give us a testimonial"*. Timing superseded by Maintainer direction, 2026-10-27: survey after v0.6; no outreach authorized by scheduling. |
+| **Automate the work tracker from `board.py --json`** | Tooling / hosted sync | Strategy note: `dev/strategy/2026-10-26-claude-work-tracker-and-the-board.md`. Build a generator script to derive hosted tracker rows automatically from `tools/board.py --json`, `git`, and `gh` rather than hand-keeping 60 hosted rows, and optionally add a `passes` field to `cairn-board/1`. Maintainer authorization, 2026-10-27: *"Yes, let's put automating the work tracker on the v0.6 list"*. |
+| **Adopter scientific-testing and simulation-verification guidance** | Proposal first; compose with existing modules | Strategy: `dev/strategy/2026-10-27-antigravity-judicious-testing-and-simulation-verification.md`. Extend testing-discipline with regime/boundary selection and appropriately scaled verification; reconcile scope and execution-cost schemes and qualify micro-grid claims before promotion. Cairn’s own suite maintenance stays in v0.6. |
+| **Architecture-review support for legacy and new systems** | Proposal first; adopter capability expansion | Strategy: `dev/strategy/2026-10-27-codex-adopter-engineering-practices.md`. Extend the existing rubric to help legacy, new and mixed systems establish appropriate engineering practices; connect to testing-discipline. Existing-module discovery/onboarding repairs stay in v0.6. |
+
+## Retained operating notes and accepted limits
+
+These are observations or an explicitly accepted edge, not new feature tasks.
+
+* **The board's Maintainer list and the status advisory disagree on a status
+  such as `awaiting-decision-x`.** The advisory flags it as unknown; the board's
+  `--maintainer` view still lists it as a wait. Making the board strict would
+  edit the frozen golden and the waits-recipe test (`test_board_json_contract.py`)
+  and fold into the re-anchor owed at the cut. The Maintainer chose to leave it.
+  Recorded so the disagreement is a known edge, not a surprise. Answer, verbatim:
+
+  > "Leave the disagreement"
+
+* **Three lessons kept from the old handoff file.** Found in the file the
+  `NEXT_SESSION` change deleted (its migration record is in
+  `dev/plans/archive/next-session-local-note.md`); they had no other home.
+  (1) Every subagent in one session shares one work-intent agent id, so one
+  commit releases the others' claims: check `git diff` before each commit.
+  (2) Heavy test runs should take turns. (3) A review of a long plan is
+  expensive, so give tight briefs. Kept as written there; the planning
+  session's note, not doctrine (doctrine text takes the rate-limit gate).
 
 ## Deferred follow-ups (durable home)
 
