@@ -259,3 +259,45 @@ Range `77f3e5d1..3ed66cf4`: C5 `95021c2d`, C6 `b748de2d`, C7 `8df7e2a2`, C7b `3e
 **Bounding**: ACCEPTED for the scoped record (counts re-measured); the fixes change closure bytes, so the certifying run follows them.
 
 **Coverage.** Not run: suite, ceremony, real keys, `security_check.py`, C1 to C4 mutants. Not read whole: `test_ceremony_review_report.py`.
+
+## Response to code review -- Claude Sonnet 5.5 (implementer, fresh session) -- 2026-10-27
+
+Reviewed `88ad4a55`; fixes at `263ea7d2`, `30967490`, `73d2feaa`, `87a4cd31`. All nine findings are answered; none is queued or wontfix. Status stays `revising-code`: the Security Review of the code follows, and the planning session moves it.
+
+**Blocking**
+* **B1 fixed (`263ea7d2`).** I listed every printed field from the tree. Two printed raw (hit `line`, signature values); both now go through `text()`. Counts go through a new `count()`. The test puts an escape-and-bidi probe at every value and key position of a report holding every field kind (about 110 positions); the shared-roster line and the eight tool paths (a real executable in an escape-named folder) have their own probes. Related gap found in the same set: a path with an unlisted role was silently left off the page; it is now refused. Not in your finding; added because a hidden path is worse than a raw one.
+* **B2 fixed (`30967490`).** One node runs the three opening commands as typed. E6's links now take two hops by relative path, so plain `readlink` fails; E7 runs against a planted `PYTHONPATH` module and a user-site `.pth` file, each with a control that loads it when `-E` or `-s` is removed.
+* **B3 fixed (`73d2feaa`).** Every tracked `.pyc` or `__pycache__` file in the candidate tree, touched or not, is a hit named `compiled-file`; the reader must explain it. **The checker does not refuse it.** Reason: `raw_tree` is shared by other readers, `repin` already refuses for an ordinary ceremony, and a hit stops the Maintainer at Y3. Tested through the hand path (`raw_tree` holds the file; the report names it).
+
+**Non-blocking**
+* **N1 fixed (`87a4cd31`).** One node gives the launcher a link, a link-parent folder, a relative path, a directory and a missing file; three mutants of the check are killed.
+* **N2 fixed (`73d2feaa`).** Past 10,000 lines together a file is listed ("too many lines to compare") and every new line counts as added. The brief said "list as not line-scanned"; I kept the line scanned as well, because listing alone would let padding hide a hit. 109 s became 0.27 s on the same shape (150k lines).
+* **N3 judged; pattern added, page says what it misses (`73d2feaa`, `87a4cd31`).** A `shell-command` pattern matches rm mv cp chmod chown ln tee ssh-add ssh-keygen at the start of a command. Cheap, and a hit means something. Prose, brackets and backticks do not match (I first included them and saw five false hits on the real range). The page now says what the scan finds and does not.
+* **N4 fixed (`87a4cd31`).** The page says the report SAYS who made the scan, that only E7 tests it, and that E7 binds the digest, not the hits; the table cell says the same.
+* **N5 fixed (`87a4cd31`).** Stage 1's next-step text (both branches) and the driver print the page's `env -i` form. The header says below the marker is reference except Phase 5; Phase 5 no longer names `refs/cairn/gate-authorization`. The launcher's usage line names `--stage2` but is not a command, so I left it.
+* **N6 fixed (`73d2feaa`).** The comment no longer cites a gone step.
+
+**One commit per step, not met.** B3, N2, N3 and N6 share a function and a test file; N1, N3's page lines, N4 and N5 share files. I committed each group together, and said so in the bodies.
+
+**Not done:** the Security Review; any ceremony; the certifying run, which covers these closure-byte changes.
+
+## Implementation verification (code-review fixes) -- Claude Sonnet 5.5 -- 2026-10-27
+
+Range `26a15ff1..87a4cd31` (`263ea7d2`, `30967490`, `73d2feaa`, `87a4cd31`). Interpreter `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13). **Boundary B mode**: full; **Certified by**: pending. No push, suite, ceremony, key access or `security_check.py`; `CAIRN_FULL_SUITE` never set. The fixes change closure bytes (`reanchor.sh`, the runbook) and keyed files (`_gate_preflight.py`, `scripts/reanchor_ceremony.py`, `test_reanchor.py`), so the single certifying run after the ceremony covers them.
+
+* Tree: clean apart from two untracked paths that are not mine. Skipped nodes in any run: 0.
+* Owners, run in a detached copy holding HEAD plus the changed files: `test_reanchor` 217 and `test_repin_ceremony` 105 passed; `test_gate_preflight`, `test_repin`, driver disclosures, `test_ceremony_review_report` (52), `test_security_lint` (Bandit node ran), `test_security_check`, `test_gate_reanchor` 635 passed.
+* Each fix's new nodes fail on the parent: the unprintable-text node (B1), the E6 and E7 nodes (B2, as mutants), the compiled and bound nodes (B3, N2).
+* Mutants, each in a fresh detached copy beside a green control; a skipped node counted as a survivor:
+  * B1: 11 killed, 1 equivalent, measured: dropping one `count()` call leaves `%d`, which refuses a string; `%d` to `%s` on that line is killed.
+  * B2: 8 killed (E6 without `-f`, E7 without `-E`, without `-s`, E7 from HEAD, and four typos in the opening commands).
+  * B3, N2, N3: 15 killed (each compiled rule, the count, the pattern name, the bound, the listing, each shell alternative).
+  * N1: 3 killed. N4, N5, N3's page lines: 12 killed (wording, the `env -i` form, the home, the driver, the runbook sentences).
+  * Total: 49 killed, 1 equivalent, 0 survived.
+* Measured: 150k near-identical lines, 109 s per the review, 0.27 s now. Real anchor to HEAD: 73 hits, 0.2 s, one `shell-command`, no compiled file tracked.
+* The runbook page is 79 of 80 lines above its marker, held by `test_the_page_is_at_most_eighty_lines_above_its_marker`; the file is 294 lines.
+* `_ast_attest.py verify`, read-only: output identical to the parent's (59 symbols red). `_gate_manifest.py verify --no-collect`, read-only: no new entry; `_gate_preflight.py` and `test_gate_preflight.py` were already `FROZEN-MODIFIED`.
+* Gates: neutrality and redundancy clean; `claim_check` and `link_check` on the runbook clean; `check_cairn` only the four prior `repin-build` citations (not edited).
+* Frozen or closure files edited: closure `reanchor.sh` and the runbook; keyed `_gate_preflight.py`, `scripts/reanchor_ceremony.py`, `test_reanchor.py`. Not edited: the launcher template, `_scaffold`, the AST baseline, the gate manifest, the anchor, `PLANNING.md`, `CHANGELOG.md`.
+
+**Not verified.** The page's commands in the Maintainer's own shell or with real keys; the full suite; `security_check.py`; a scan over a candidate that really carries a compiled file through `gather_evidence`.
