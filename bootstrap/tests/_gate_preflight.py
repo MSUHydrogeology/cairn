@@ -1739,6 +1739,15 @@ RESIDUAL -- this stage EXECUTES CANDIDATE CODE.
 """
 
 
+#: Variables that steer which tests pytest collects or which plugins it loads.
+#: An inherited `PYTEST_ADDOPTS="--ignore=<file>"` made the pinned collection
+#: drop a file's nodes while the run still exited 0, so a smaller suite was
+#: pinned as if it were the whole one. Named one by one rather than every
+#: `PYTEST_*`: pytest itself sets `PYTEST_CURRENT_TEST` while a test runs.
+_COLLECTION_STEERING_VARIABLES = ("PYTEST_ADDOPTS", "PYTEST_PLUGINS",
+                                  "PYTEST_DISABLE_PLUGIN_AUTOLOAD")
+
+
 def gather_evidence(candidate_ref: str = "HEAD", *, repo: Path = _REPO,
                     out=sys.stderr) -> dict:
     """Produce the evidence artifact by running the **candidate's** manifest
@@ -1777,6 +1786,16 @@ def gather_evidence(candidate_ref: str = "HEAD", *, repo: Path = _REPO,
             # actual capability. A future caller reaching the producer by any
             # other route still stops here.
             refuse_if_sealed("launching the candidate's manifest producer")
+            # Checked on the environment the producer actually receives. The
+            # ceremony's own launch starts under `env -i`, so only a direct
+            # call can carry these in; it refuses by name rather than pin a
+            # collection some inherited option shrank.
+            steering = [k for k in _COLLECTION_STEERING_VARIABLES if k in env]
+            if steering:
+                raise PreflightError(
+                    f"{', '.join(steering)} is set in the environment and "
+                    f"changes which tests pytest collects; refusing to pin a "
+                    f"collection it may have reduced. Unset it and run again")
             proc = subprocess.run(
                 [sys.executable, "-E", "-s",
                  "bootstrap/tests/_gate_manifest.py", "produce"],

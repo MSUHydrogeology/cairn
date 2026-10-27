@@ -828,6 +828,27 @@ class TestEvidenceStage:
         assert art["manifest"]["saw_home"] != str(Path.home()), (
             "HOME must be redirected away from the real home directory")
 
+    @pytest.mark.parametrize("name", ["PYTEST_ADDOPTS", "PYTEST_PLUGINS",
+                                      "PYTEST_DISABLE_PLUGIN_AUTOLOAD"])
+    def test_a_variable_that_steers_collection_refuses_and_runs_no_producer(
+            self, tmp_path, monkeypatch, name):
+        marker = tmp_path / "producer-ran"
+        repo = _evidence_repo(
+            tmp_path, f"open({str(marker)!r}, 'w').close()\n")
+        monkeypatch.setenv(name, "--ignore=bootstrap/tests")
+        with pytest.raises(P.PreflightError, match=name):
+            P.gather_evidence("HEAD", repo=repo,
+                              out=__import__("io").StringIO())
+        assert not marker.exists(), "the producer must not start"
+
+    def test_the_variable_pytest_sets_for_itself_does_not_refuse(
+            self, tmp_path, monkeypatch):
+        repo = _evidence_repo(tmp_path)
+        monkeypatch.setenv("PYTEST_CURRENT_TEST", "x::y (call)")
+        art = P.gather_evidence("HEAD", repo=repo,
+                                out=__import__("io").StringIO())
+        assert art["manifest"]["collection"]["node_count"] == 1
+
     def test_residual_is_printed_and_claims_no_containment(self, tmp_path):
         repo = _evidence_repo(tmp_path)
         buf = __import__("io").StringIO()
