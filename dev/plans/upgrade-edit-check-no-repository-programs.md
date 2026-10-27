@@ -146,6 +146,7 @@ Prior findings: proposal Security Review B1, N1-N5 (0e4bfc42), adopted in Revisi
 **Tier**: Internal Security Review
 **Obligation**: plan review of the scaffold engine's edit check (a high-risk surface, Security Review owed by the plan header `required(Internal + Internal Security Review)`)
 **Model**: Opus 5.5, fresh session
+**Committed**: this pass's text was first carried, unread, into `5094a977` (the ordinary reviewer's commit of the shared file); the commit that adds this line is its own attribution. B1 here and the ordinary pass's B1 were found independently.
 **Findings**: raised (2 blocking, 5 non-blocking)
 **Verdict**: revising-plan. The command set is sound: with the plan's arguments and environment, no program the project names ran (P1). Two fail-closed rules are stated in the plan but not pinned, and an implementer could miss either one and get a wrong "clean" or a wrong "no guard": a git that does not start versus a git that does not answer (B1), and "cannot tell" at every git step, not one (B2). Both fixes are test and wording changes in C1, C4 and C5. This pass clears the obligation once the revision adopts B1 and B2 as written. There is no second round.
 
