@@ -103,7 +103,7 @@ and a new empty `Unreleased` is started above.
   tests cover it (a scratch repository, a throwaway key). It has not run on a real
   ceremony: its first use is the 0.5 cut itself. The anchor's commit is still
   unsigned (queued on the roadmap).
-  ([plan](dev/plans/repin-build.md))
+  ([plan](dev/plans/archive/repin-build.md))
 
 ### Added — `upgrade --remove-retired` removes untouched copies of files Cairn stopped shipping
 

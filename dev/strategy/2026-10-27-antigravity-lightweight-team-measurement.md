@@ -62,7 +62,7 @@ Measuring the October 2026 (`0.5-dev`) proposals and plans by **bytes and words*
 * **Why line counts fell by 32% while token counts barely moved (-8%):** When line count was treated as the size target (e.g., "plans ≤ 350 lines"), agents stopped wrapping lines at 80 columns and wrote single 400–1,000-character lines. For example:
   * [`dev/plans/archive/repin-ceremony-hardening.md`](../plans/archive/repin-ceremony-hardening.md) is **315 lines**, which looks compact — but it is **71,901 bytes (10,561 words / ~17,975 tokens)**, averaging **228 characters per line**.
   * [`dev/plans/archive/upgrade-edit-check-no-repository-programs.md`](../plans/archive/upgrade-edit-check-no-repository-programs.md) is **297 lines** — and **72,926 bytes (10,341 words / ~18,231 tokens)**, averaging **245 characters per line**.
-  * [`dev/plans/repin-build.md`](../plans/repin-build.md) is **534 lines** — and **110,895 bytes (16,583 words / ~27,724 tokens)**.
+  * [`dev/plans/archive/repin-build.md`](../plans/archive/repin-build.md) is **534 lines** — and **110,895 bytes (16,583 words / ~27,724 tokens)**.
 * **Where the tokens inside a 72 KB (~18,000-token) plan actually go:** A section-by-section breakdown of those three plans shows two culprits:
   1. **`## Acceptance criteria` alone is 13.7 KB to 27.4 KB (2,000 to 3,859 words)** — because plan-review and security-review findings are folded in by bolting more specification clauses onto each chunk paragraph.
   2. **Appended reviews, responses, and verification blocks take 42 KB to 70 KB (6,500 to 10,800 words)** — single review passes run 1,200 to 4,326 words (`8 KB–27.7 KB`) each.
