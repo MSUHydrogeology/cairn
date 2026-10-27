@@ -655,7 +655,7 @@ verifier exit status and pinned policy.
 and every member is recorded rather than resolved
 
 The re-anchor ceremony runs a launcher (`bootstrap/reanchor-launcher.template.sh`,
-instantiated by review) which verifies an authorization packet and the authority
+instantiated by the builder and read by a fresh local reader) which verifies an authorization packet and the authority
 closure **before** the first candidate byte executes. Everything the launcher
 runs in that window is *pre-candidate*: it decides whether candidate code starts,
 so a substituted one is not caught by anything downstream.

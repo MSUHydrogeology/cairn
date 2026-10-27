@@ -1113,16 +1113,17 @@ _ANCHOR_4 = (
 
 #: label -> (file, pattern): statements the doctrine must carry.
 _DOCTRINE_OBLIGATIONS = {
-    "one-standing-call-survives-and-it-is-the-maintainers": (
+    "the-reanchor-ceremony-requires-no-external-read": (
         DOCTRINE_DUAL_REVIEW,
-        r"One standing call survives, and it is the Maintainer's\. The re-anchor "
-        r"ceremony \(bootstrap/REANCHOR_RUNBOOK\.md\) requires its launcher to be "
-        r"read by an External Security review\. The ceremony's own record sets "
-        r"that requirement, the Maintainer chooses the reader each time, and no "
-        r"agent selects or substitutes for it\. That review's record carries "
-        r"Called by with the Maintainer's commissioning words, and it is a "
-        r"Security Review: it clears the launcher obligation by being one, not "
-        r"by its distance\. Nothing else in the procedure works this way"),
+        r"No standing call survives\. The re-anchor ceremony "
+        r"\(bootstrap/REANCHOR_RUNBOOK\.md\) asks for no External read\. A fresh "
+        r"local session that wrote nothing in the range reads the change and "
+        r"runs fixed scanners, and the Maintainer compares printed values and "
+        r"signs\. Each ceremony's record states that the reader is a session of "
+        r"the builder's own vendor, and that this is a statement git cannot "
+        r"check\. The Maintainer may still ask for an External read of one named "
+        r"artifact under the rule above; the ceremony never requires one, and no "
+        r"agent selects or substitutes for it"),
     "boundary-c-names-the-no-plan-accepted-proposal": (
         DOCTRINE_DUAL_REVIEW,
         r"a plan's Implementation verification section, or, where the "
@@ -1197,6 +1198,21 @@ _DOCTRINE_FORBIDDEN = {
     "escalate-to-the-external-review-tier": (
         DOCTRINE_PLANS, r"escalate to the external",
         "Escalate to the External-review tier for scientific risk."),
+    # The re-anchor ceremony asks for no outside reader. A shell comment can
+    # wrap the phrase across a `#`, so the pattern allows it.
+    **{f"{name}-asks-for-no-external-security-review": (
+        rel, r"external[\s#]+security[\s#]+review",
+        "The launcher is read by an External Security review.")
+       for name, rel in (
+           ("dual-review", DOCTRINE_DUAL_REVIEW),
+           ("safety", "bootstrap/SAFETY.md"),
+           ("security", "SECURITY.md"),
+           ("runbook", "bootstrap/REANCHOR_RUNBOOK.md"),
+           ("artifact", "bootstrap/reanchor.sh"),
+           ("launcher-template", "bootstrap/reanchor-launcher.template.sh"),
+           ("checker", "bootstrap/tests/_gate_preflight.py"),
+           ("driver", "scripts/reanchor_ceremony.py"),
+           ("repin", "scripts/repin.py"))},
     "recommended-wherever-it-can-be-staffed": (
         DOCTRINE_DUAL_REVIEW, r"recommended wherever it can be staffed",
         "A different agent type is recommended wherever it can be staffed."),

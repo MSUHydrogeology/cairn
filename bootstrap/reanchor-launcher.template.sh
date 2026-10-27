@@ -2,23 +2,23 @@
 #
 # THE RE-ANCHOR LAUNCHER -- REVIEWED SOURCE, NOT THE OPERATIVE COPY.
 #
-# This file is the text an External Security review reads. The copy the
-# Maintainer runs is produced by that review: it fills the ONE slot below with
-# the SHA-256 of the authorization packet it reviewed alongside these bytes, and
-# records the resulting launcher's own digest. The two travel together,
-# directly to the Maintainer.
+# This file is the text a fresh local reader reads: a session that wrote nothing
+# in the range, with fixed scanners beside it. The copy the Maintainer runs is
+# built from it by the builder, who fills the ONE slot below with the SHA-256 of
+# the authorization packet and records the resulting launcher's own digest. The
+# two travel together; the Maintainer's comparisons bind that copy to this text.
 #
 # WHY THE SLOT IS THE ONLY ONE. Reviewed bytes must stay constant while
 # late-bound values arrive as arguments -- the same split the recorded hash set
 # already uses. The candidate OID is an ARGUMENT, never a literal, which is what
-# lets the review happen before the candidate commit exists. If it were a slot,
-# the reviewed bytes would change every ceremony and the review would be of
-# something nobody ran.
+# lets the packet be built before the candidate commit exists. If it were a
+# slot, the reviewed bytes would change every ceremony and what was read would
+# be something nobody ran.
 #
-# WHAT THE MAINTAINER VERIFIES: the launcher's digest, which the review already
-# records. That one comparison covers the packet too, because the packet's
+# WHAT THE MAINTAINER VERIFIES: the launcher's digest, which the record already
+# names. That one comparison covers the packet too, because the packet's
 # digest is bound into these bytes. Altering the launcher changes the digest the
-# review recorded; altering the packet fails the comparison below.
+# record names; altering the packet fails the comparison below.
 #
 # THE PACKET IS AN AUTHORITY INPUT, not a carrier -- its rows decide which
 # candidate bytes may execute. What makes it safe is the binding, not its
@@ -29,7 +29,7 @@ export LC_ALL
 
 set -u
 
-#: Filled by the review that produced the operative launcher. An unfilled
+#: Filled by the builder who produced the operative launcher. An unfilled
 #: template refuses: the placeholder is not 64 hex characters, so the comparison
 #: below cannot pass by accident.
 PACKET_SHA256='@PACKET_SHA256@'
@@ -323,7 +323,7 @@ read_packet() {
     is_hex64 "$PACKET_SHA256" || die \
         "this launcher's embedded packet digest is not 64 hex characters" \
         "('$PACKET_SHA256'). An UNFILLED TEMPLATE is not an operative" \
-        "launcher: the review that reviewed these bytes is what fills it"
+        "launcher: the builder who built these bytes is what fills it"
 
     # --- step 1: hash the file --------------------------------------------
     _rp_d1=$("$L_SHASUM" -a 256 "$_rp_path") || die "cannot hash the packet"
@@ -334,7 +334,7 @@ read_packet() {
     [ "$_rp_d1" = "$PACKET_SHA256" ] || die \
         "the packet does not match the digest bound into this launcher." \
         "Expected $PACKET_SHA256, got $_rp_d1. Either these are not the two" \
-        "artifacts the review delivered as a pair, or one of them changed"
+        "artifacts the builder delivered as a pair, or one of them changed"
 
     # --- step 2: snapshot, preserving trailing bytes -----------------------
     # `$(...)` strips every trailing newline; appending a sentinel and removing
@@ -420,7 +420,7 @@ parse_packet() {
 " ;;
         candidate)
             # NOT a schema mistake -- a contract violation. The packet is
-            # OID-free BY DESIGN: that is what lets the review produce it
+            # OID-free BY DESIGN: that is what lets the builder produce it
             # before the candidate commit exists. A packet naming an OID is a
             # packet from a different contract.
             die "packet line $_pp_lineno: the packet must carry NO candidate" \
@@ -614,7 +614,7 @@ ART_GOT=${ART_GOT%% *}
     "the extracted ceremony artifact does not match the reviewed digest"
 
 # --- COMPOSE the review manifest -------------------------------------------
-# Composed, not sourced. Every value here comes from the packet -- the review's
+# Composed, not sourced. Every value here comes from the packet -- the builder's
 # output -- or from the resolution this launcher performed itself.
 # NOTHING is read from the candidate. This is what removes the last point where
 # a human or an agent had to assemble an authority input.
@@ -635,7 +635,7 @@ MANIFEST=$T/review-manifest.txt
 # which the objective forbids in the same breath as it asks for one command.
 #
 # The distinction is not a flag and must not become one: transition mode exists
-# ONLY to carry a closure change an external review approved, and the checker
+# ONLY to carry a closure change a reader has read and a record names, and the checker
 # refuses it when there is nothing to carry. So the mode is MEASURED, not
 # chosen: every closure member is compared at the anchor and at the resolved
 # candidate, and a single difference makes this a transition.

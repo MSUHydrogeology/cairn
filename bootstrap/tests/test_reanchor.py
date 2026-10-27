@@ -1230,7 +1230,7 @@ def ceremony(bed, tmp_path):
 
 def _compose_packet(state, *, rows=None, artifact_rel="bootstrap/reanchor.sh",
                     artifact_sha=None, extra=(), schema=None,
-                    provenance="External Security Review, test fixture"):
+                    provenance="builder and reader, test fixture"):
     repo = state["repo"]
     if rows is None:
         rows = [(_sha256_file(repo / rel), rel) for rel in CLOSURE]
@@ -2242,8 +2242,8 @@ class TestTheMaintainerCanPerformTheWholeCeremony:
         digest, or improvising a reader -- and without any control being weaker
         than it was before.
 
-    This node starts from **only** what the External Security review delivers
-    (the instantiated launcher and the packet bound into it) plus a values file
+    This node starts from **only** what the builder delivers (the
+    instantiated launcher and the packet bound into it) plus a values file
     the Maintainer wrote once, and runs the ceremony to the two-ref
     transaction. Nothing here fills a placeholder, composes an authority input,
     or reads a digest out of the artifact that carries it.
@@ -2280,7 +2280,7 @@ class TestTheMaintainerCanPerformTheWholeCeremony:
         return str(path)
 
     def _review_delivers(self, repo, oid):
-        """What the External Security review hands over, out of band: a packet
+        """What the builder hands over: a packet
         and a launcher instantiated with that packet's digest.
 
         Composed here the way the review composes it -- from the closure at the
@@ -2298,7 +2298,7 @@ class TestTheMaintainerCanPerformTheWholeCeremony:
             "bootstrap/reanchor.sh"]
         packet_text = "\n".join(
             ["schema cairn-authorization-packet/v1",
-             "provenance External Security Review, end-to-end node",
+             "provenance builder and reader, end-to-end node",
              "artifact bootstrap/reanchor.sh",
              f"artifact_sha256 {artifact_sha}"]
             + [f"member {sha} {rel}" for sha, rel in members]) + "\n"

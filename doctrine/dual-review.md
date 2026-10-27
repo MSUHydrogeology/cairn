@@ -82,14 +82,14 @@ reasoning behind it.
   checks the quote mechanically; the next reviewer and the Maintainer at
   the Decision are the check.
 
-**One standing call survives, and it is the Maintainer's.** The re-anchor
-ceremony (`bootstrap/REANCHOR_RUNBOOK.md`) requires its launcher to be read by
-an External Security review. The ceremony's own record sets that requirement,
-the Maintainer chooses the reader each time, and no agent selects or
-substitutes for it. That review's record carries `**Called by**` with the
-Maintainer's commissioning words, and it is a Security Review: it clears the
-launcher obligation by being one, not by its distance. Nothing else in the
-procedure works this way.
+**No standing call survives.** The re-anchor ceremony
+(`bootstrap/REANCHOR_RUNBOOK.md`) asks for no External read. A fresh local
+session that wrote nothing in the range reads the change and runs fixed
+scanners, and the Maintainer compares printed values and signs. Each ceremony's
+record states that the reader is a session of the builder's own vendor, and that
+this is a statement git cannot check. The Maintainer may still ask for an
+External read of one named artifact under the rule above; the ceremony never
+requires one, and no agent selects or substitutes for it.
 
 **Legacy records keep their wording.** An archived record keeps its
 `External` tokens and passes. A legacy `(External)` label on a pass nobody

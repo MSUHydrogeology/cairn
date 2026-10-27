@@ -1050,7 +1050,7 @@ class TestApplyTakesNoArtifact:
     self-digest authenticates a file.** A bundle carrying its own digest beside
     its own values is worthless -- re-hashing a tampered manifest agreed with
     itself. Authority comes from outside the artifact: for the review manifest,
-    from a recorded external review; for the stage-1 package, from a digest the
+    from the packet the builder bound into the launcher; for the stage-1 package, from a digest the
     Maintainer confirms over the exact bytes written.
     """
 
@@ -1073,7 +1073,7 @@ class TestApplyTakesNoArtifact:
         m = P.parse_review_manifest(
             "schema cairn-review-manifest/v1\n"
             "candidate " + "a" * 40 + "\n"
-            "provenance external security review 2026-08-12\n"
+            "provenance builder and reader 2026-08-12\n"
             "member " + "b" * 64 + " bootstrap/tests/_gate_preflight.py\n")
         assert set(m) == {"schema", "candidate", "provenance", "members"}, (
             "the review manifest must carry no field that vouches for itself")
@@ -1823,7 +1823,7 @@ def _packet_text(repo: Path, oid: str, *, rows=None) -> str:
         members = rows
     artifact = dict((rel, sha) for sha, rel in members)["bootstrap/reanchor.sh"]
     lines = ["schema cairn-authorization-packet/v1",
-             "provenance External Security Review, test fixture",
+             "provenance builder and reader, test fixture",
              "artifact bootstrap/reanchor.sh",
              f"artifact_sha256 {artifact}"]
     lines += [f"member {sha} {rel}" for sha, rel in members]
@@ -2583,7 +2583,7 @@ class TestKeyLoadPhaseSentinel:
 
 def _review_manifest(repo: Path, oid: str, *, members=None,
                      schema="cairn-review-manifest/v1",
-                     provenance="external security review 2026-08-12") -> str:
+                     provenance="builder and reader 2026-08-12") -> str:
     """A well-formed manifest over the candidate's real closure bytes."""
     import hashlib
     rows = [f"schema {schema}", f"candidate {oid}", f"provenance {provenance}"]
@@ -2979,7 +2979,7 @@ class TestTransitionRefusesWithoutADelta:
     """"First use" was never mechanically one-time
     -- the delta condition recurs on every authority change -- so the mode is
     named the **reviewed-authority transition** and is gated on the delta
-    itself, at the cost of a fresh external review each time."""
+    itself, at the cost of a fresh reading each time."""
 
     def _closure_repo(self, tmp_path, change: bool):
         """An anchor and a candidate whose authority closures differ (or not).

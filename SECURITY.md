@@ -165,7 +165,9 @@ The re-anchor ceremony runs as **two separate processes**, not one paused one.
   that run. Nothing else in the ceremony asks you to withhold something, so
   nothing else is this easy to get backwards.
 * Between the stages the Maintainer confirms the package's digest independently,
-  reads the report it carries, and *only then* makes the ceremony key available.
+  reads the report it carries, repeats the pre-signing checks, and *only then*
+  runs stage 2. The key is added to no agent at any point: the signer asks for
+  its passphrase once, at stage 2.
 * **Stage 2** re-extracts and hash-verifies its own checker bytes, seals
   candidate execution before deriving anything, validates the package against
   the confirmed digest, and signs. No candidate code runs in it at any point.
@@ -231,11 +233,14 @@ the one thing the two-stage split exists to prevent.
 
 * **An unauthorized second person with write access can create an unsigned
   intermediate commit** indistinguishable from an agent commit by signature
-  status alone. The checkpoint is safe only because the Maintainer reviews the
-  preflight result and controls the signing act.
+  status alone. The checkpoint is safe only because the Maintainer compares the
+  printed values and controls the signing act.
 * **Signing authenticates a key, not a person or a process.**
 * **The report proves what a scanner can prove.** It makes the authorized state
   bounded and inspectable; it does not establish that anyone read every diff.
+  The ceremony asks for no outside reader: a fresh local session of the
+  builder's own vendor reads the change and fixed scanners run, so a harmful
+  change that both miss is not stopped by the ceremony.
 
 **This posture is dated to the solo trusted-contributor model and expires**
 when the checkout is not solely Maintainer-controlled, when another human gains

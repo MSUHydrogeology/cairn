@@ -800,7 +800,7 @@ print_steps() {
         'launcher will run is a recorded, symlink-free, executable regular file'
 
     printf '%-8s %-13s %-14s %s\n' 'RA-02' 'pre-candidate' 'launcher' \
-        'the packet on disk is the packet the review bound into the launcher'
+        'the packet on disk is the packet the builder bound into the launcher'
     printf '%-8s %-13s %-14s %s\n' 'RA-03' 'pre-candidate' 'launcher' \
         'the bytes parsed are the bytes hashed -- detects a lossy snapshot and a'
     printf '%-8s %-13s %-14s %s\n' '' '' '' \

@@ -6,7 +6,7 @@ disposable scratchpad script -- which returned a wrong answer on its second use,
 and whose unsequenced handoff advanced ``refs/cairn/gate-anchor`` to a commit
 containing no blessing. See the archived proposal
 ``dev/proposals/archive/2026-08-03-claude-gate-reanchor-preflight.md`` and its
-plan for the three External Security Review rounds behind this design.
+plan for the security review rounds behind this design.
 
 **This module decides nothing.** It computes, refuses, and reports. Every
 repository-mutating step -- installing the manifest, committing it, advancing the
@@ -870,7 +870,7 @@ def authority_closure_delta(anchor: str, candidate: str, *,
     """Which authority-closure members differ between anchor and candidate.
 
     The transition exists **because** the closure changed. With no delta there
-    is nothing for an external review to have reviewed, and running the mode
+    is nothing for a reader to have read, and running the mode
     anyway would make it a flag rather than a ceremony.
     """
     delta: dict[str, tuple] = {}
@@ -1009,7 +1009,7 @@ def revalidate_transition(manifest: dict, reviewed_candidate: str, head: str,
             "the authority closure is identical at the anchor and the "
             "candidate, so there is no reviewed transition to perform. This "
             "mode is not a flag: it exists only to carry a closure change that "
-            "an external review has approved. There is no steady-state loader "
+            "a fresh reader has read and the record names. There is no steady-state loader "
             "to switch to: the launcher MEASURES the mode by comparing the "
             "closure at the anchor against the candidate, so this refusal "
             "means it measured no change. Re-run without expecting one.")
@@ -3130,7 +3130,7 @@ def stage1(*, repo: Path = _REPO, package_out: Path,
     # runs. Both orderings are load-bearing.
     #
     # Before the checks, because the closure check has to know which byte
-    # changes an external review admitted -- placed after, it refused every real
+    # changes the reader's record admitted -- placed after, it refused every real
     # transition and the mode was unreachable (see `check_authority_closure`).
     # Before `gather_evidence`, because there is no reason to execute candidate
     # code for a transition whose manifest does not hold up.
@@ -3249,7 +3249,7 @@ def apply_now(*, repo: Path = _REPO,
     A bundle carrying its own digests was established to be a
     corruption check, not tamper evidence: both value and digest come from the
     same editable JSON, and an execution probe re-hashed a tampered manifest and
-    had it anchored. External review then rejected both an out-of-band digest
+    had it anchored. An outside review then rejected both an out-of-band digest
     argument (file-write and terminal access are one practical authority domain
     on a single-user machine, and it burdens the operator with a 64-character
     provenance) and a signed check artifact (agents already hold the Maintainer's
