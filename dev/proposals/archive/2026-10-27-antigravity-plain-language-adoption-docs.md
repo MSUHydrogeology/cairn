@@ -311,3 +311,40 @@ In `doctrine/rationale.md` under **Anchor 16** ("The method behind 'lead plain' 
 > "Yes, check each one (Recommended)"  (condition on the implementation: authors, year, title and DOI of every bibliography entry are checked against the web; the implementation record lists each entry as confirmed, corrected or dropped; an entry that cannot be confirmed is cut and reported to the Maintainer)
 
 *Scribe's note, separate from the quoted words.* "As revised" means the "Complete current contract" in the Response, which answers the usual review (F1 to F6). No reviewer has read the revision's new text (the verbatim block, the tables, the bibliography); the Maintainer chose to accept without a second look and to add the reference check above. The change is for 0.5. The proposal expects one commit and no plan; the implementing commit re-reads that against what it touches (`docs/plain-language.md` and `doctrine/rationale.md`, prose only, no frozen test), and a plan opens if it touches more. The page's own evidence table calls the proposal's "Independent scientific check: N/A" into question, since the page publishes empirical claims; the implementation record says what was verified. Nothing else lands in this commit.
+
+## Implementation record -- Claude Sonnet 5.5 (implementer) -- 2026-10-27
+
+Prose only: `docs/plain-language.md` and `doctrine/rationale.md` (Anchor 16), plus this archive move. No test, frozen file, code or shipped template was touched, so no plan opened. Rules 1 to 17 and the four group headings in the page's block equal `dev/agent_collaboration.md:216-275` (scripted comparison, 60 lines, identical).
+
+### Reference check the Decision required
+
+Every entry's authors, year, title, venue and identifier were checked on 2026-10-27 against Crossref, the publisher page, the arXiv or ACL record, or a search result that names the record. Result: **22 confirmed, 5 corrected, 3 partly verified, 0 dropped.** The page carries 30 sources; every in-text citation has an entry and every entry is cited (ASD-STE100, ISO 24495-1 and the style guide by name).
+
+Corrected (the page says what the source says, not what the contract said):
+
+* Bertizzolo et al. (2021): first author is Olarte Parra; cited as Olarte Parra et al.
+* Liang et al. (2025): the published title is "Quantifying large language model usage in scientific papers", *Nature Human Behaviour* 9(12), 2599-2609; the preprint title is the contract's.
+* Mandel & Irwin: published 2021 in *Judgment and Decision Making* 16(2), 363-393, doi:10.1017/s1930297500008603; 2020 is the preprint.
+* Zhou et al. (2024): published at ACL 2024, pp. 3623-3643, doi:10.18653/v1/2024.acl-long.198; the arXiv ID is kept.
+* ICMJE: the current version is January 2026 and the AI text is section V.A (not II.A.4); cited as 2026 with that section's URL.
+
+Partly verified (named on the page as such):
+
+* Budescu et al. (2014): authors, title, venue, pages, "25 samples, 24 countries, 17 languages" and the direction of the effect confirmed; the figures 27% to 40% were not on any open page. They stay because an earlier full-text read recorded them (commit message of `cb280a29`); the page says so.
+* COPE (2023): the official page returned 403; title, month and content confirmed from secondary summaries; URL corrected to the `guidance/cope-position` path.
+* Federal Plain Language Guidelines (2011): Revision 1, May 2011 confirmed from copies; `plainlanguage.gov/guidelines` now redirects to Digital.gov's guide series, which the page names as the successor.
+
+Confirmed as listed: ASD-STE100 Issue 9 (Jan 2025); Blake 2010; Budescu 2009; Dhami & Mandel 2022; EFSA 2019; Fischhoff & Davis 2014; the developer documentation style guide (title, URL, licence); Gopen & Swan 1990; Hyland 1998; ISO 24495-1:2023 (1st ed.); Kim et al. 2024; Kobak et al. 2025; Kuhn 2014; Lu et al. 2024; Markowitz 2024; Messeri & Crockett 2024; Neusesser & Sunwall 2023 (14 May 2023); Diátaxis (author named by secondary sources, not by the site); Robillard & DeLine 2011 (online Dec 2010, volume year 2011); Steyvers et al. 2025; Walters & Wilder 2023; Wintle et al. 2019.
+
+### Claims reworded because the source does not say them
+
+The contract's four findings were rewritten to what each abstract supports: Markowitz (2024) showed lay comprehension rose and scientists seemed less intelligent, not that expert comprehension fell; Steyvers et al. (2025) and Lu et al. (2024) are not evidence that polished prose inflates peer-review scores, and "paper laundering" is not in either, so it is gone; Dhami & Mandel (2022) say attaching imprecise numbers to words does little to reduce misunderstanding, not that it slows decisions; the "10%-22%" figure became Kobak's 13.5% of 2024 abstracts and Liang's "up to 22%" for computer science. Kalyuga and the other three uncited sources stay out.
+
+### Boundary B record
+
+* **Boundary B mode**: bounded. **Interpreter**: Python 3.13.13 (`/Users/kendal30/conda_envs/lhm/bin/python3.13`). **Certified by**: pending.
+* **Touched surfaces**: `docs/plain-language.md` (prose, one fenced block, no executable snippet), `doctrine/rationale.md` (one paragraph in Anchor 16). Both ordinary prose; no contract surface (install contract, fidelity or gate manifest, lockfile schema, `scaffold.py --manifest`) and no trust-ceremony surface; neither file is in `dev/.cairn/cairn-lock.yml`.
+* **Tests run**: the 12 doc-reading files the contract lists (`test_writing_rules_ship`, `test_comprehension_floor`, `test_review_stance_in_shipped_files`, `test_incident_trackers_module`, `test_replacement_tools`, `test_doc_governance`, `test_doc_drift_tools`, `test_documentation_plan_module`, `test_board_json_contract`, `test_skills_matrix`, `test_presets`, `test_link_check_exclusions`): 668 passed. The search for other owners (`grep -rl "plain-language\|rationale.md" bootstrap/tests`) found five files; four are in that list, and the fifth is the gate-manifest fixture, which lists test node ids and does not hash these files.
+* **Gates**: `quality_gate.py --sub neutrality --sub redundancy` neutrality `fail=0` (the one vendor name on the page, in a bibliography title, sits inside the `vendor-ok` block), redundancy `fail=0`; `claim_check.py` on each file, no flags; `link_check.py` on both, no issues; `check_cairn.py` OK (165 files).
+* **Why bounded**: prose only; the readers of these two files are the tests above and the gates. The suite was not run in full.
+* **Not covered**: no reviewer has read the new text (Decision note). The 27%/40% figures and the ISO clause numbers (a licensed text) could not be re-checked on the open web. The existing Anchor 16 paragraph still writes "Mandel & Irwin (2020)" and "27% to 40%"; this change did not edit it.

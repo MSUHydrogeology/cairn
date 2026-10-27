@@ -310,6 +310,24 @@ is checked by reading, never by a readability score: a score
 becomes the target, and the cheapest way to raise it is to cut the
 qualifiers and numbers the rules on reasoning exist to protect.
 
+The same literature shows what plain prose must guard against when
+an agent writes science. Word counts in over 15 million PubMed
+abstracts (Kobak et al., 2025, doi:10.1126/sciadv.adt3813) and in
+about 1.1 million preprints and papers (Liang et al., 2025,
+doi:10.1038/s41562-025-02273-8) show a sharp rise in style words
+such as "delves". Two widely used commercial language models
+fabricated 18% to 55% of the references in the literature reviews
+they wrote, and 24% to 43% of the real ones had substantive errors
+(Walters & Wilder, 2023, doi:10.1038/s41598-023-41032-5). An
+automated-science system's papers held hallucinated results that its
+own reviewer caught only in part (Lu et al., 2024, arXiv:2408.06292),
+and Messeri & Crockett (2024, doi:10.1038/s41586-024-07146-0) argue
+that such tools can leave scientists believing they understand more
+than they do. These studies describe the problem; none tests Cairn's
+rules against it. The evidence table, the 30-source reference list and
+a project-neutral copy of the rules are in
+[docs/plain-language.md](../docs/plain-language.md).
+
 This anchor is scoped to that **universal norm**. The further
 dimension — calibrating communication by the recipient's domain
 and software proximity — is observed in the guide-star but is not
