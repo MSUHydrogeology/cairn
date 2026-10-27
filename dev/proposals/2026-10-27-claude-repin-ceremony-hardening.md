@@ -1,7 +1,7 @@
 # Finish the re-anchor ceremony work the repin build left out
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27
@@ -275,3 +275,43 @@ This answers both reviews (the first at `e949eec3`, the second at `7ec08e55`). I
 * "No rule text changes" as a blanket line -- now true of A, B, H, I and J; E is the named exception (N3).
 * "M3 is the steady-state by-hand ceremony" (implicit in the opening cut) -- replaced by M0 and the drift (R2).
 * "Scope delta: preserved" -- replaced (N5, R5).
+
+## Security Review -- Claude Opus 5.5 (fresh session) -- 2026-10-27
+
+```
+Reviewed commit: 0655aaff (Revision 1); tree read at 0655aaff, read-only
+Target: Revision 1's A, B, H, I, J and the C-G dispositions, against the ceremony's trust root
+Prior findings: both usual reviews above; not repeated
+```
+
+**Obligation**: Security Review of the re-anchor ceremony hardening (the proposal's header `Review: usual + Security Review`; the ceremony, the authority closure and the by-hand transition are trust-ceremony surfaces)
+
+**Conclusion.** Nothing in Revision 1 makes the ceremony easier to subvert than today: A, B and H add no new read or run of repository bytes, and the deferrals keep today's state. One blocking finding: A's price is wrong. It forces edits to both of `repin`'s own test files, which makes M2's `--reviewed-commit` refuse, and the Revision says it expects not (S1). A also buys less than "binding": the launcher that runs is still checked only by the pasted digest (S2). Status moves to `revising`. Findings: 1 blocking, 4 non-blocking.
+
+### Foundations
+
+1. **Should it exist as framed?** Yes. A and H tighten the closure and remove an unperformable claim; B pins disclosures. No item weakens a performed check. Backing: launcher packet-row loop `bootstrap/reanchor-launcher.template.sh:530-546`; mode measurement `:584-596`; no new exec in A/B/H (closure check reads bytes only, `bootstrap/tests/_gate_preflight.py:700-744`).
+2. **Safer or simpler option.** For A: keep the closure change and also have `repin` (pinned code that runs before the launcher) check that the launcher equals the anchor's template with the one slot filled by the packet digest. Only that binds what runs to signed bytes. Backing: `scripts/reanchor_ceremony.py:266-321` checks only that the digest appears in the text (:292) and that `unset L_checkout` appears (:304); `scripts/repin.py:962-972` relies on a pasted digest.
+3. **What would show it wrong.** A plan for A that does not edit `bootstrap/tests/test_repin.py` and `bootstrap/tests/test_repin_ceremony.py` and still passes them; or a launcher run whose candidate template differs from its packet row but still reaches candidate code. Backing: S1's lines; the marker pattern at `bootstrap/tests/test_reanchor.py:944-949`.
+
+### Findings
+
+**S1 (blocking). A breaks M2 as written, and Revision 1 says it expects not.** Measured from code, not run: `test_repin.py:508` and `:516` assert "of 10 authority files". `test_repin_ceremony.py:30` retypes the ten, and `:79` builds the bed's packet from them. After A, `compare()` reads eleven members from the template (`scripts/reanchor_ceremony.py:156-177`) and reports the template's packet row as missing (:238-240), so `check_packet_pair` fails. Both files are `REPIN_TESTS` (`scripts/repin.py:782`), and `check_first_run` refuses any reviewed commit whose copies differ from HEAD (:919-923). So after A, M2's `--reviewed-commit 5670dda9` refuses, the same trap Revision 1 avoids for B by using a new file (its "B, Where"), and that `dev/plans/repin-build.md` R6b already fences. `test_reanchor.py:925` retypes the ten as well. *Fix:* add the three test files to A's file list. Add to Q1(a)'s "Lost" that A needs a code review of the two repin test edits, and that M2's `--reviewed-commit` becomes the commit that review names. Strike "I expect not" from "Not checked".
+
+**S2 (N). Say who checks the launcher that runs.** A pins the template in the repository. It does not check the operative launcher. The packet-row check of the template is done by that same launcher (`template:537-543`), so a substituted launcher would skip it, and steady state rests on the pasted digest (`repin.py:965-970`). On one machine, that digest's record sits in a workspace any actor can write (note :304-316). Revision 1 already calls this "a visibility gain, not an exploit closed", which is accurate. *Fix (recommend, author decides):* add the derivation check from Foundations 2 to `repin`, in the same review S1 forces. It adds no new run of repository code (one read and one string replace), and it gives A the binding the note asked for. Also, for A's evidence, use a marker test: a template that differs from its packet row refuses before candidate code runs (marker absent). That is in place of the checker-level check only.
+
+**S3 (N). H: right direction, scope it by claim, not by word.** Removing a claim nobody can perform strengthens the record; it weakens nothing as long as each procedure stays. Measured: the runbook says "out-of-band" at 27, 48, 283, 377, 401, 438 and 482. Line 48 (digest compare) and line 377 (review the verifier bytes) are steps; 27 and 438 are rationale. Line 482 is a placeholder. The same delivery claim sits in the template header (`template:8-9`, `:48`), which A puts into the signed closure in the same ceremony. *Fix:* the plan gives a table of each line (claim or step), deletes only the claims, and covers the template's two lines too, since A edits that file anyway. The "dated upgrade trigger" names what runs it (a board row with a date), or says that only a person remembering triggers it (`AGENTS.md`, "Name the trigger").
+
+**S4 (N). REL-1: found; it was deleted from the register today, with no disposition.** `git log -S"[REL-1]"` shows the row removed from `dev/strategy/2026-08-05-codex-security-strategy.md` by `b5e57c71` (2026-10-27, "rewrite security strategy"). The rewritten gap list (:114-120) carries TRU-4/5/7 and nothing on the human leg or the out-of-band claim. So "REL-1 follows" from H closes no row, and if H is deferred the leftover risk is recorded nowhere. *Fix:* H cites `b5e57c71`, and Q8 asks whether to record REL-1 closed by that rewrite, or restore a one-line row in section 5 until H lands.
+
+**S5 (N). I's trigger fires at the worst moment.** "A refusal the screen did not explain" happens mid-ceremony, which is when `AGENTS.md` (fresh-clone passage) says routing around a refusal is tempting. Deferring I opens no spoofing path I could find. Candidate code at stage one already shares the operator's terminal; that is disclosed and its banner is tested (Revision 1, "Measured by me"). *Fix:* add a second trigger: the next edit to `bootstrap/reanchor.sh` or the template.
+
+### Checked and sound
+- **Measured.** `repin status` at HEAD refuses on `_gate_manifest.py` (e4c25061 against 1226747d), which matches the reported drift.
+- **Not a new trust load.** A adds no oracle authorization entry: neither `_gate_preflight.py` nor the template is on `SENSITIVE_ROSTER` (`bootstrap/tests/_oracle_activation.py:34-47`).
+- **Same ceremony.** A and H add to the reviewer's diff at the cut's by-hand ceremony, which already carries the twelfth- and thirteenth-row engine changes (`dev/PLANNING.md:260-264`). They do not add to the Maintainer's comparisons: still one launcher digest (runbook :48).
+- **C and D deferred.** The second values reader stays bound by its parity test, and A pins it.
+- **J is accurate**, with S1's newer reviewed commit added.
+- **`.sh` member.** A `.sh` member does not upset the import-closure check, which runs one way only (`_gate_preflight.py:739`).
+
+**Coverage.** I did not read `bootstrap/reanchor.sh`, so S5's terminal-sharing point rests on the disclosed banner, not on its code. I did not read the 124 surviving driver print sites, the AST ceremony, or the lockfile path. I did not check whether Revision 1's M0-then-M2 sequence matches `dev/PLANNING.md:250-259`, which moves M2 to the next release. S1 is read from code and not run. I ran no test, no ceremony and no re-anchor. Read-only commands run: `repin status`, `_gate_manifest.py verify --no-collect`. Blocking: 1 (S1); non-blocking: 4 (S2-S5).
