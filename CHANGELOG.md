@@ -109,6 +109,28 @@ and a new empty `Unreleased` is started above.
   behaved as written, which is a single run each.
   ([plan](dev/plans/archive/next-session-local-note.md))
 
+### Fixed — `upgrade` no longer runs programs named in a project's git settings when it checks for unsaved edits
+
+- `upgrade --stage`, `--apply` and a bare `--finalize` check whether you have
+  edited a file before they write or hash it. That check used `git status`,
+  which can run programs a repository's git settings name (a file-system
+  monitor, a clean filter, a text converter, a hook). It now asks git only for
+  the index and the last commit, reads each file itself, and runs none of
+  them. It also reads a project that sits in a subfolder of a larger
+  repository correctly; before, an edited file could read as clean there. A
+  bare `--finalize` asks only about the files it hashes plus the lockfile, so
+  an unrelated dirty file elsewhere no longer blocks it. When git cannot be
+  asked or cannot be trusted (a repository git refuses, a partial clone older
+  than git 2.45.0, a git that takes longer than 10 seconds), `--apply` and a
+  bare `--finalize` stop, say why and name `--force`; `--stage` prints a
+  warning and goes on. The limits are in `bootstrap/UPGRADE.md`: the check can
+  call a file edited that git calls clean (a clean filter, a tracked link), and
+  where git settings ask for CRLF line endings an edit that changes only line
+  endings counts as unchanged. A `git` earlier on `PATH` is still trusted.
+  Python 3.13 and git 2.53.0 were the tested versions; Windows and older git
+  are not covered.
+  ([plan](dev/plans/archive/upgrade-edit-check-no-repository-programs.md))
+
 ### Fixed — `upgrade` no longer reads a linked profile on `--plan`, `--stage`, `--adopt-module` or `--adopt-collisions`
 
 - `upgrade --plan`, `--stage`, `--adopt-module` and `--adopt-collisions` now stop with exit 2

@@ -1,8 +1,8 @@
 # Plan: the upgrade edit check runs no program from the project's git settings
 
 **Author**: Claude Sonnet 5.5 (Strategy)
-**Source proposal**: [dev/proposals/archive/2026-10-26-claude-upgrade-dirty-check-runs-no-repository-programs.md](../proposals/archive/2026-10-26-claude-upgrade-dirty-check-runs-no-repository-programs.md)
-**Status**: ready-to-archive
+**Source proposal**: [dev/proposals/archive/2026-10-26-claude-upgrade-dirty-check-runs-no-repository-programs.md](../../proposals/archive/2026-10-26-claude-upgrade-dirty-check-runs-no-repository-programs.md)
+**Status**: archived
 **Waiting on Maintainer**: re-anchor at the cut (C8, MAINTAINER-ONLY)
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27
