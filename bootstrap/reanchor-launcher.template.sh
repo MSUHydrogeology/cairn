@@ -5,8 +5,8 @@
 # This file is the text an External Security review reads. The copy the
 # Maintainer runs is produced by that review: it fills the ONE slot below with
 # the SHA-256 of the authorization packet it reviewed alongside these bytes, and
-# records the resulting launcher's own digest. The two travel together, out of
-# band, directly to the Maintainer.
+# records the resulting launcher's own digest. The two travel together,
+# directly to the Maintainer.
 #
 # WHY THE SLOT IS THE ONLY ONE. Reviewed bytes must stay constant while
 # late-bound values arrive as arguments -- the same split the recorded hash set
@@ -45,7 +45,7 @@ MAX_LINE_BYTES=4096
 #: ITSELF; none of it establishes WHICH FILES the authority closure consists of.
 #: A packet that dropped a member or added one parses cleanly and hashes
 #: correctly -- it is a well-formed packet describing a different closure. Only
-#: a fixed, reviewed, out-of-band list can catch that, and it must be compared
+#: a fixed, reviewed list can catch that, and it must be compared
 #: by these bytes rather than by anything the candidate provides.
 #:
 #: Compared with the shell's own string equality -- no `cmp`, no `diff` -- so no
@@ -554,7 +554,7 @@ ART_GOT=${ART_GOT%% *}
 
 # --- COMPOSE the review manifest -------------------------------------------
 # Composed, not sourced. Every value here comes from the packet -- the review's
-# out-of-band output -- or from the resolution this launcher performed itself.
+# output -- or from the resolution this launcher performed itself.
 # NOTHING is read from the candidate. This is what removes the last point where
 # a human or an agent had to assemble an authority input.
 MANIFEST=$T/review-manifest.txt
