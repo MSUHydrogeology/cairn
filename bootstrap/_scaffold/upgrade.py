@@ -22,6 +22,7 @@ import argparse
 import re
 import sys
 from pathlib import Path
+from collections.abc import Iterable
 from typing import Any, NamedTuple
 
 from .config import (
@@ -2179,6 +2180,47 @@ def _cmd_remove_retired(
     return 0
 
 
+def _disk_dst(target: Path, rec: dict[str, Any], mapped: set[Any]) -> str | None:
+    """The name finalize hashes for lockfile record *rec*: its ``dst``, or for the
+    vendor wrapper the file the adopter renamed it to (``CLAUDE.md`` for the
+    recorded ``VENDOR.md``).  ``None`` for a record with no string ``dst``.  Names
+    only; the caller decides whether to write it back to the record.  One rule for
+    the hashing loop and for the edit check's list, so the two cannot disagree."""
+    dst_rel = rec.get("dst")
+    if not isinstance(dst_rel, str) or not dst_rel:
+        return None
+    if rec.get("src") == "core/VENDOR.md" and not (target / dst_rel).is_file():
+        resolved = _resolve_vendor_wrapper(target, mapped)
+        if resolved is not None:
+            return resolved
+    return dst_rel
+
+
+def _finalize_hash_names(
+    target: Path, lock: dict[str, Any], retired: dict[int, dict[str, Any]],
+) -> list[str]:
+    """The files a bare ``--finalize`` is about to hash, plus the lockfile it
+    rewrites: the names its dirty-tree guard asks git about.
+
+    Every record with a string ``dst`` (the vendor wrapper by its on-disk name, a
+    file missing on disk included), minus living-state files (the loop never hashes
+    them) and minus retired records that are not ``untouched`` (cleared, refused or
+    left unrecorded, never hashed).  An edit to any other file is none of
+    finalize's business."""
+    files = lock.get("files") or []
+    mapped = {r.get("dst") for r in files}
+    names: list[str] = []
+    for rec in files:
+        dst_rel = _disk_dst(target, rec, mapped)
+        if dst_rel is None or dst_rel in _LIVING_STATE_DSTS:
+            continue
+        judged = retired.get(id(rec))
+        if judged is not None and judged["state"] != "untouched":
+            continue
+        names.append(dst_rel)
+    return [*names, _LOCKFILE_REL]
+
+
 def _cmd_finalize_lockfile(
     target: Path,
     lock: dict[str, Any],
@@ -2199,11 +2241,14 @@ def _cmd_finalize_lockfile(
     left untouched -- the surgical finalize for one file (e.g. after a
     single-file pull-down) that will not sweep a concurrent session's WIP into
     the lockfile.  When ``only`` is ``None`` (the whole-tree form) the **#56
-    dirty-tree guard** refuses on a tree carrying tracked-uncommitted changes
-    unless ``force`` (``--force``): an unscoped finalize on a dirty tree
-    silently advances the hash of *every* drifted tracked file -- including
-    another agent's uncommitted edits -- blessing un-reviewed content into the
-    integrity record.
+    dirty-tree guard** refuses while a file this finalize would hash, or the
+    lockfile it rewrites, has uncommitted changes, unless ``force``
+    (``--force``): an unscoped finalize silently advances the hash of *every*
+    drifted recorded file -- including another agent's uncommitted edits --
+    blessing un-reviewed content into the integrity record.  An edit to a file
+    finalize does not hash (living-state notes, a retired file left unrecorded) is
+    none of its business.  If git cannot be relied on to say, it stops too and
+    names ``--force`` (`_EditCheckCannotTell`).
 
     The upgrade ancestor is left untouched: ``base_cache`` / ``base_hash`` (the
     clean-install baseline the 3-way merge + ``classify_verbatim`` fork
@@ -2239,19 +2284,22 @@ def _cmd_finalize_lockfile(
     # dirty tree advances the hash of *every* drifted tracked file -- including a
     # concurrent session's uncommitted WIP -- blessing un-reviewed content into
     # the integrity record. Require an explicit write-set (`--finalize <path>
-    # ...`) or --force. Fail-soft when the tree is unreadable (guard -> None).
+    # ...`) or --force. No guard when there is no repository or no git; "cannot
+    # tell" stops.
     if only is None and not force:
         try:
-            dirty = _dirty_tracked_paths(target)
+            dirty = _dirty_tracked_paths(
+                target, _finalize_hash_names(target, lock, retired))
         except _EditCheckCannotTell as exc:
             print(_cannot_tell_refusal("--finalize", exc.reason), file=sys.stderr)
             return 1
         if dirty:
             print(
-                "error: refusing --finalize (#56 dirty-tree guard): the work "
-                f"tree has {len(dirty)} tracked file(s) with uncommitted "
-                "changes, and an unscoped finalize would advance the lockfile "
-                "hash for all of them (including a concurrent session's WIP):\n"
+                "error: refusing --finalize (#56 dirty-tree guard): "
+                f"{len(dirty)} recorded file(s) (the lockfile included) have "
+                "uncommitted changes, and an unscoped finalize would advance "
+                "the lockfile hash for them (including a concurrent session's "
+                "WIP):\n"
                 "  " + "\n  ".join(sorted(dirty)) +
                 "\n  re-run scoped to the file(s) you mean to finalize "
                 "(`--finalize <path> ...`), or pass --force to finalize the "
@@ -2263,16 +2311,14 @@ def _cmd_finalize_lockfile(
     wrapper_links: list[tuple[str, str]] = []   # (the wrapper's record, the link found)
     matched: set[str] = set()
     for rec in files:
-        dst_rel = rec.get("dst")
-        if not isinstance(dst_rel, str) or not dst_rel:
-            continue
-        orig_dst = dst_rel  # lockfile-recorded dst, pre rename-resolution
         # Resolve a renamed vendor wrapper: the lockfile records VENDOR.md but
         # the adopter renamed it (CLAUDE.md, ...).
-        if rec.get("src") == "core/VENDOR.md" and not (target / dst_rel).is_file():
-            resolved = _resolve_vendor_wrapper(target, mapped)
-            if resolved is not None:
-                rec["dst"] = dst_rel = resolved
+        dst_rel = _disk_dst(target, rec, mapped)
+        if dst_rel is None:
+            continue
+        orig_dst = rec["dst"]  # lockfile-recorded dst, pre rename-resolution
+        if dst_rel != orig_dst:
+            rec["dst"] = dst_rel
         # Scoped finalize: skip records outside the named write-set. A scope name
         # may be EITHER the on-disk dst or the lockfile-recorded one -- they
         # differ for a renamed vendor wrapper (#45: lock records VENDOR.md, disk
@@ -2381,6 +2427,18 @@ class _EditCheckCannotTell(Exception):
         self.reason = reason
 
 
+def _ask_git(project: Path, args: list[str], limit: int) -> tuple[int, bytes] | None:
+    """One question to git about *project* for the edit check: ``(exit code,
+    output)``; ``None`` when git cannot be started (nothing to guard with);
+    `_EditCheckCannotTell` when it started and did not answer in time or printed
+    *limit* bytes or more."""
+    got = _git_in_project(project, args, limit)
+    if got == _GIT_NO_ANSWER:
+        raise _EditCheckCannotTell(
+            "git did not answer in time, or printed more than the check reads")
+    return None if got == _GIT_NOT_STARTED else got  # type: ignore[return-value]
+
+
 def _git_config_bool(value: str | None) -> bool | None:
     """A git setting read as git reads a boolean: no value, ``true``, ``yes``,
     ``on`` or a non-zero integer is true; empty, ``false``, ``no``, ``off`` or
@@ -2426,11 +2484,7 @@ def _edit_check_prelude(target: Path) -> tuple[bool, bool, bool] | None:
         return None
 
     def ask(args: list[str], limit: int) -> tuple[int, bytes] | None:
-        got = _git_in_project(target, args, limit)
-        if got == _GIT_NO_ANSWER:
-            raise _EditCheckCannotTell(
-                "git did not answer in time, or printed more than the check reads")
-        return None if got == _GIT_NOT_STARTED else got  # type: ignore[return-value]
+        return _ask_git(target, args, limit)
 
     _git_floor_met()
     if _GIT_FLOOR_MET == _GIT_NOT_STARTED:
@@ -2552,65 +2606,125 @@ def _working_file_differs(
     return not (fold_crlf and blob_id(data.replace(b"\r\n", b"\n")) == index_id)
 
 
-def _dirty_tracked_paths(target: Path) -> set[str] | None:
-    """The set of **tracked, uncommitted** paths in ``target`` (repo-root
-    relative), or ``None`` when ``target`` is not a git work tree / git is
-    absent (fail-soft: no guard when the tree cannot be read).
+#: Names the edit check puts in one `ls-files` / `diff-index` call.
+_EDIT_CHECK_GROUP_SIZE = 100
 
-    Untracked (``??``) and ignored (``!!``) entries are **excluded** -- the
-    Layer-3 dirty-tree guard (#56) is keyed on the upgrade write-set, and a
-    guard that tripped on scratch or gitignored files would false-positive
-    (the proposal's "signals wrong"). Both sides of a rename
-    (``R  old -> new``) are reported -- either colliding with the write-set
-    is a real overwrite hazard.
-    """
-    import subprocess
 
-    def _git(*args: str) -> subprocess.CompletedProcess[str] | None:
+def _dirty_tracked_paths(
+    target: Path, names: Iterable[str] | None = None,
+) -> set[str] | None:
+    """The subset of *names* (project-relative, ``/``-separated) with unsaved
+    edits, or ``None`` for "no guard" (no ``.git`` above the project, or git cannot
+    be started).  Raises `_EditCheckCannotTell` when git started but cannot be
+    relied on to answer.
+
+    ``names=None`` means the lockfile's recorded ``dst`` values (an empty set when
+    there is no readable lockfile).  A name is in git's normal form before it is
+    asked about (``./A.md`` is ``A.md``; an empty name is skipped), matched to
+    git's answer by exact name -- the children of a tracked folder are not the
+    folder -- and reported in the spelling the caller gave.  A name git does not
+    track is not edited: untracked and ignored files never trip the guard.
+
+    A name is edited when it is staged against the last commit (or the project has
+    no commit and the name is in the index), in conflict, or its working file
+    differs (`_working_file_differs`).  The questions are the index
+    (``ls-files -z -s``) and the last commit (``diff-index --cached --raw``), in
+    groups of `_EDIT_CHECK_GROUP_SIZE` names, with ``--literal-pathspecs``; the
+    working files are read by the engine, so no program the project names runs --
+    ``git status`` would run its file-system monitor and clean filters.  The
+    settings and the version floor come from `_edit_check_prelude`.  Any step that
+    hangs, prints past its cap, exits non-zero or prints what cannot be parsed is
+    "cannot tell", whatever the group.
+
+    Known gaps: a name in another letter case on a case-insensitive disk reads as
+    untracked; a line-ending-only edit counts as unchanged where the project's
+    settings ask for CRLF."""
+    from pathlib import PurePosixPath
+
+    try:
+        project = target.resolve()
+    except (OSError, RuntimeError) as exc:
+        raise _EditCheckCannotTell("the project folder could not be resolved") from exc
+    if names is None:
         try:
-            return subprocess.run(
-                ["git", "-C", str(target), *args],
-                capture_output=True, text=True, timeout=10, check=False,
-            )
-        except (OSError, subprocess.SubprocessError):
-            return None
-
-    inside = _git("rev-parse", "--is-inside-work-tree")
-    if inside is None or inside.returncode != 0 \
-            or inside.stdout.strip() != "true":
-        return None  # not a checkout / git absent -- no guard
-    status = _git("status", "--porcelain")
-    if status is None or status.returncode != 0:
+            lock = read_lockfile(project)
+        except (ScaffoldSecurityError, OSError):
+            lock = None
+        names = [r["dst"] for r in (lock or {}).get("files") or []
+                 if isinstance(r, dict) and isinstance(r.get("dst"), str)]
+    spelled: dict[str, list[str]] = {}
+    for name in names:
+        if isinstance(name, str) and name and "\0" not in name:
+            normal = PurePosixPath(name).as_posix()
+            if normal != ".":
+                spelled.setdefault(normal, []).append(name)
+    if not spelled:
+        return set()
+    facts = _edit_check_prelude(project)
+    if facts is None:
         return None
-
-    def _unquote(p: str) -> str:
-        return p[1:-1] if len(p) >= 2 and p[0] == '"' and p[-1] == '"' else p
-
-    dirty: set[str] = set()
-    for line in status.stdout.splitlines():
-        if len(line) < 4:
-            continue
-        code = line[:2]
-        if code in ("??", "!!"):
-            continue  # untracked / ignored -- benign dirt
-        path = line[3:]
-        if " -> " in path:  # rename / copy: both sides count
-            old, new = path.split(" -> ", 1)
-            dirty.add(_unquote(old))
-            dirty.add(_unquote(new))
-        else:
-            dirty.add(_unquote(path))
-    return dirty
+    filemode, fold_crlf, has_head = facts
+    unreadable = _EditCheckCannotTell(
+        "git's list of the project's files could not be read")
+    ordered = list(spelled)
+    edited: set[str] = set()
+    for start in range(0, len(ordered), _EDIT_CHECK_GROUP_SIZE):
+        group = ordered[start:start + _EDIT_CHECK_GROUP_SIZE]
+        # A path under 4,096 bytes plus about 100 for mode, id and stage.
+        limit = 65_536 + 4_200 * len(group)
+        listed = _ask_git(project, ["--literal-pathspecs", "ls-files", "-z", "-s",
+                                    "--", *group], limit)
+        if listed is None:
+            return None
+        if listed[0] != 0:
+            raise unreadable
+        entries: dict[str, list[tuple[str, str, str]]] = {}
+        for record in listed[1].split(b"\0"):
+            if not record:
+                continue
+            head, tab, path = record.decode("utf-8", "surrogateescape").partition("\t")
+            fields = head.split(" ")
+            if not tab or len(fields) != 3:
+                raise unreadable
+            entries.setdefault(path, []).append((fields[0], fields[1], fields[2]))
+        staged: set[str] = set()
+        if has_head:
+            diff = _ask_git(project, [
+                "--literal-pathspecs", "diff-index", "--cached", "--raw", "-z",
+                "--no-renames", "--no-ext-diff", "--no-textconv", "--relative",
+                "HEAD", "--", *group], limit)
+            if diff is None:
+                return None
+            if diff[0] != 0:
+                raise _EditCheckCannotTell(
+                    "git could not compare the index with the last commit (a "
+                    "partial clone without its folder listings, or a damaged "
+                    "repository)")
+            fields = diff[1].split(b"\0")
+            if fields and fields[-1] == b"":
+                fields.pop()
+            if len(fields) % 2 or any(not f.startswith(b":") for f in fields[0::2]):
+                raise _EditCheckCannotTell(
+                    "git's comparison with the last commit could not be read")
+            staged = {p.decode("utf-8", "surrogateescape") for p in fields[1::2]}
+        for normal in group:
+            rows = entries.get(normal, [])
+            if normal in staged or any(stage != "0" for _m, _i, stage in rows):
+                edited.add(normal)
+            elif rows and (not has_head or _working_file_differs(
+                    project, normal, rows[0][0], rows[0][1], filemode, fold_crlf)):
+                edited.add(normal)
+    return {name for normal in edited for name in spelled[normal]}
 
 
 def _writeset_dirty_collisions(
     target: Path, staged_files: list[str],
 ) -> list[str]:
     """The sorted intersection of the upgrade write-set (``staged_files``) with
-    the target's tracked-uncommitted paths. Empty when the tree is clean, the
-    write-set is disjoint from the dirt, or the tree is unreadable
-    (fail-soft)."""
-    dirty = _dirty_tracked_paths(target)
+    the files that have unsaved edits (`_dirty_tracked_paths`).  Empty when none is
+    edited, the write-set is disjoint from the edits, or there is no guard.  Lets
+    `_EditCheckCannotTell` through: the caller decides what that means."""
+    dirty = _dirty_tracked_paths(target, staged_files)
     if not dirty:
         return []
     return sorted(set(staged_files) & dirty)
@@ -3157,7 +3271,8 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                         "Pass PATH(s) to scope the finalize to just those "
                         "records (won't sweep a concurrent session's WIP); "
                         "bare --finalize finalizes the whole tree but refuses "
-                        "on a dirty tree without --force. A record for a file "
+                        "while a recorded file it would hash, or the lockfile, "
+                        "has uncommitted changes, unless --force. A record for a file "
                         "Cairn stopped shipping is cleared if its file is "
                         "gone; a copy of one that cannot be shown unchanged is "
                         "not recorded unless you name its PATH.")

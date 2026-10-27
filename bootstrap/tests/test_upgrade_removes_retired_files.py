@@ -1921,7 +1921,7 @@ def test_every_deletion_goes_through_the_guarded_leaf(
     assert expected <= set(leaf_calls), sorted(expected - set(leaf_calls))
 
 
-def test_a_hand_deleted_file_is_cleared_by_the_step_or_a_scoped_finalize_and_a_bare_finalize_waits_for_the_commit(
+def test_a_hand_deleted_file_is_cleared_by_the_step_a_scoped_finalize_or_a_bare_finalize(
     project: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str],
 ) -> None:
     _add_script(project, SCRIPT)
@@ -1935,8 +1935,8 @@ def test_a_hand_deleted_file_is_cleared_by_the_step_or_a_scoped_finalize_and_a_b
 
     bare = deleted_copy("bare")
     code, _out, err = _finalize(capsys, bare)
-    assert code == 1, err
-    assert SCRIPT in _records(bare)
+    assert code == 0, err
+    assert SCRIPT not in _records(bare), "the deletion is not a file finalize hashes"
     scoped = deleted_copy("scoped")
     assert _finalize(capsys, scoped, SCRIPT)[0] == 0 and SCRIPT not in _records(scoped)
     step = deleted_copy("step")

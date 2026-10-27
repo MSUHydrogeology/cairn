@@ -641,3 +641,609 @@ def test_the_launcher_is_shared_with_the_committed_copy_check(
     for n, call in [cat_file[0], *prelude]:
         assert call[:8] == prefix, call
         assert environment(n) == wanted, (call, environment(n))
+
+
+# ---------------------------------------------------------------------------
+# The check itself
+# ---------------------------------------------------------------------------
+
+def _write(path: Path, text: str | bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(text if isinstance(text, bytes) else text.encode("utf-8"))
+
+
+def _edited_project(project: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Commit the install, edit AGENTS.md, and stage an upgrade that rewrites it."""
+    _commit_all(project)
+    _diverge_agents(project)
+    _stage(capsys, project)
+
+
+def _version_precedes_the_check(log: Path) -> None:
+    """The version floor is read before the first question about the repository."""
+    kinds = [_subcommand(c) or c[0] for c in _logged_calls(log)]
+    asked = [n for n, kind in enumerate(kinds) if kind.split(" ")[0] in
+             ("rev-parse", "config", "ls-files", "diff-index", "status")]
+    assert asked and "--version" in kinds[:asked[0]], kinds
+
+
+FAILURES = {
+    "hang": "exec sleep 5",
+    "over the cap": "head -c 3000000 /dev/zero; exit 0",
+}
+STEPS = {
+    "settings": ("config*", 2),
+    "last commit": ("rev-parse --verify", 2),
+    "index": ("ls-files*", 1),
+    "comparison": ("diff-index*", 1),
+}
+
+
+@needs_git
+@posix_only
+@pytest.mark.parametrize("failure", [*FAILURES, "non-zero exit"])
+@pytest.mark.parametrize("step", list(STEPS))
+def test_every_git_step_that_fails_is_cannot_tell(
+    project: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch, step: str, failure: str,
+) -> None:
+    pattern, bad_exit = STEPS[step]
+    snippet = FAILURES.get(failure, f"exit {bad_exit}")
+    _edited_project(project, capsys)
+    agents = (project / "AGENTS.md").read_bytes()
+    monkeypatch.setattr(U, "_GIT_TIMEOUT_SECONDS", 0.5)
+    log = _stand_in_git(tmp_path, monkeypatch, answers={pattern: snippet})
+    code, out, err = _upgrade(capsys, project, "--apply")
+    assert code == 1, (out, err)
+    assert "could not tell" in err and "--force" in err, err
+    assert (project / "AGENTS.md").read_bytes() == agents, "--apply wrote anyway"
+    assert (project / U._STAGING_REL).exists()
+    _version_precedes_the_check(log)
+
+
+@needs_git
+@posix_only
+def test_the_unfailing_stand_in_lets_the_check_find_the_edit(
+    project: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The control for the failing steps: the same stand-in, answering nothing
+    itself, leaves the real refusal (the file named, no "could not tell")."""
+    _edited_project(project, capsys)
+    log = _stand_in_git(tmp_path, monkeypatch)
+    code, out, err = _upgrade(capsys, project, "--apply")
+    assert code == 1, (out, err)
+    assert "AGENTS.md" in err and "could not tell" not in err
+    _version_precedes_the_check(log)
+
+
+@needs_git
+@posix_only
+@pytest.mark.parametrize("failure", ["non-zero exit", "over the cap", "hang"])
+@pytest.mark.parametrize("step", ["index", "comparison"])
+def test_a_failure_in_a_later_group_is_cannot_tell(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, step: str, failure: str,
+) -> None:
+    repository = tmp_path / "many"
+    repository.mkdir()
+    _git(repository, "init", "-q", "-b", "main")
+    names = [f"f{n:03d}.txt" for n in range(150)]
+    for name in names:
+        _write(repository / name, name)
+    _commit_all(repository)
+    repository = repository.resolve()
+    counter = tmp_path / "count"
+    pattern = STEPS[step][0]
+    fail = {"non-zero exit": "exit 1", **FAILURES}[failure]
+    monkeypatch.setattr(U, "_GIT_TIMEOUT_SECONDS", 0.5)
+    snippet = (f"n=$(cat '{counter}' 2>/dev/null || echo 0); echo $((n+1)) > '{counter}'; "
+               f"if [ \"$n\" -ge 1 ]; then {fail}; fi; exec '{REAL_GIT}' \"$@\"")
+    log = _stand_in_git(tmp_path, monkeypatch, answers={pattern: snippet})
+    with pytest.raises(U._EditCheckCannotTell):
+        U._dirty_tracked_paths(repository, names)
+    assert int(counter.read_text()) == 2, "the first group must have answered"
+    _version_precedes_the_check(log)
+
+
+@needs_git
+@posix_only
+def test_apply_goes_on_with_no_git_and_stops_when_git_does_not_answer(
+    project: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _edited_project(project, capsys)
+    path = os.environ["PATH"]
+    nowhere = tmp_path / "no-git-here"
+    nowhere.mkdir()
+    # A `.git` is there and the edit is real, but there is no git to ask.
+    monkeypatch.setenv("PATH", str(nowhere))
+    monkeypatch.setattr(U, "_GIT_FLOOR_MET", None)
+    assert U._dirty_tracked_paths(project, ["AGENTS.md"]) is None
+    # The same project, a git that hangs at the work-tree question.
+    monkeypatch.setenv("PATH", path)
+    monkeypatch.setattr(U, "_GIT_TIMEOUT_SECONDS", 0.5)
+    log = _stand_in_git(tmp_path, monkeypatch, answers={
+        "rev-parse --is-inside-work-tree": "exec sleep 5"})
+    code, out, err = _upgrade(capsys, project, "--apply")
+    assert code == 1 and "could not tell" in err and "--force" in err, (out, err)
+    _version_precedes_the_check(log)
+
+
+def _program(folder: Path, name: str, marker: Path, body: str = "") -> Path:
+    """A program that leaves *marker* behind when it runs."""
+    program = folder / name
+    program.write_text(f"#!/bin/sh\ntouch '{marker}'\n{body}\n", encoding="utf-8")
+    program.chmod(0o755)
+    return program
+
+
+@needs_git
+@posix_only
+def test_git_config_programs_never_run_during_stage_apply_or_finalize(
+    project: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    programs = tmp_path / "programs"
+    programs.mkdir()
+    markers = {kind: tmp_path / f"ran-{kind}" for kind in
+               ("monitor", "filter", "textconv", "external", "pager", "hook")}
+    _write(project / ".gitattributes", "* filter=mark diff=mark\n")
+    _commit_all(project)
+    for kind, config in (
+            ("monitor", ("core.fsmonitor", "{}")), ("filter", ("filter.mark.clean", "{} %f")),
+            ("textconv", ("diff.mark.textconv", "{}")), ("external", ("diff.external", "{}")),
+            ("pager", ("core.pager", "{}"))):
+        body = "cat" if kind in ("filter", "textconv") else ""
+        program = _program(programs, kind, markers[kind], body)
+        _git(project, "config", config[0], config[1].format(program))
+    hook = _program(programs, "hook", markers["hook"])
+    _git(project, "config", "core.hooksPath", str(programs))
+    for name in ("pre-commit", "post-checkout", "post-index-change"):
+        (programs / name).write_bytes(hook.read_bytes())
+        (programs / name).chmod(0o755)
+    # The control: git's own `status` and `diff` do run the project's programs.
+    _diverge_agents(project)
+    subprocess.run(["git", "-C", str(project), "status", "--porcelain"],
+                   capture_output=True, check=True)
+    for flags in ([], ["--no-ext-diff"]):
+        subprocess.run(["git", "-C", str(project), "diff", *flags, "HEAD"],
+                       capture_output=True, check=True)
+    ran = {kind for kind, marker in markers.items() if marker.exists()}
+    assert {"monitor", "filter", "textconv", "external"} <= ran, ran
+    for marker in markers.values():
+        marker.unlink(missing_ok=True)
+    assert _upgrade(capsys, project, "--stage")[0] == 0
+    code, _out, err = _upgrade(capsys, project, "--apply")
+    assert code == 1 and "AGENTS.md" in err, err
+    code, _out, err = _upgrade(capsys, project, "--finalize")
+    assert code == 1 and "AGENTS.md" in err, err
+    assert [k for k, marker in markers.items() if marker.exists()] == []
+
+
+def _subfolder_project(tmp_path: Path) -> tuple[Path, Path]:
+    """A repository whose root is above the project: (root, project)."""
+    root = tmp_path / "root"
+    project = root / "sub" / "proj"
+    project.mkdir(parents=True)
+    _git(root, "init", "-q", "-b", "main")
+    return root.resolve(), project.resolve()
+
+
+@needs_git
+@posix_only
+def test_a_subfolder_project_sees_its_own_edits(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    root, project = _subfolder_project(tmp_path)
+    for name in ("clean.txt", "worked.txt", "staged.txt", "d/inner.txt"):
+        _write(project / name, name)
+    _write(root / "outside.txt", "outside")
+    _commit_all(root)
+    _write(project / "worked.txt", "edited in the working tree")
+    _write(project / "staged.txt", "edited and staged")
+    _git(root, "add", "sub/proj/staged.txt")
+    _write(root / "outside.txt", "an edit above the project")
+    names = ["clean.txt", "worked.txt", "staged.txt", "d/inner.txt", "outside.txt"]
+    assert U._dirty_tracked_paths(project, names) == {"worked.txt", "staged.txt"}
+
+
+def _states_repository(tmp_path: Path) -> tuple[Path, dict[str, str]]:
+    """A repository with one file in each edit state `git status` tells apart.
+
+    Returns the repository and a map from file name to the state it is in."""
+    repository = tmp_path / "states"
+    repository.mkdir()
+    _git(repository, "init", "-q", "-b", "main")
+    base = {name: f"{name}\n" for name in (
+        "clean.txt", "modified.txt", "staged.txt", "reverted.txt", "deleted.txt",
+        "staged_delete.txt", "typechange.txt", "a[b]*.txt", "pat.txt", ":(top)pat.txt",
+        "conflict.txt", "decoy.txt")}
+    for name, text in base.items():
+        _write(repository / name, text)
+    _write(repository / ".gitignore", "ignored.txt\n")
+    _commit_all(repository, "base")
+    _git(repository, "checkout", "-q", "-b", "other")
+    _write(repository / "conflict.txt", "other side\n")
+    _commit_all(repository, "other")
+    _git(repository, "checkout", "-q", "main")
+    _write(repository / "conflict.txt", "our side\n")
+    _commit_all(repository, "ours")
+    _git(repository, "merge", "-q", "other", check=False)
+    # The working file is put back to the common ancestor's text: only the
+    # unresolved index entries (and git's own bookkeeping) still say "conflict".
+    _write(repository / "conflict.txt", base["conflict.txt"])
+    states = {"conflict.txt": "conflict"}
+    _write(repository / "modified.txt", "modified in the working tree\n")
+    states["modified.txt"] = "modified"
+    _write(repository / "staged.txt", "staged edit\n")
+    _git(repository, "add", "--", "staged.txt")
+    states["staged.txt"] = "staged"
+    _write(repository / "reverted.txt", "staged edit\n")
+    _git(repository, "add", "--", "reverted.txt")
+    _write(repository / "reverted.txt", base["reverted.txt"])
+    states["reverted.txt"] = "staged then reverted"
+    (repository / "deleted.txt").unlink()
+    states["deleted.txt"] = "deleted"
+    _git(repository, "rm", "-q", "--", "staged_delete.txt")
+    states["staged_delete.txt"] = "staged delete"
+    _write(repository / "staged_add.txt", "new\n")
+    _git(repository, "add", "--", "staged_add.txt")
+    states["staged_add.txt"] = "staged add"
+    (repository / "typechange.txt").unlink()
+    (repository / "typechange.txt").symlink_to("clean.txt")
+    states["typechange.txt"] = "type change to a link"
+    _write(repository / "a[b]*.txt", "pattern characters, edited\n")
+    states["a[b]*.txt"] = "pattern characters"
+    _write(repository / ":(top)pat.txt", "magic prefix, edited\n")
+    states[":(top)pat.txt"] = "magic prefix"
+    _write(repository / "scratch.txt", "untracked\n")
+    _write(repository / "ignored.txt", "ignored\n")
+    return repository.resolve(), states
+
+
+def _status_edited(repository: Path) -> set[str]:
+    """What plain `git status` calls edited: everything but untracked and ignored."""
+    done = subprocess.run(["git", "-C", str(repository), "status", "--porcelain", "-z"],
+                          capture_output=True, check=True)
+    names = set()
+    for record in done.stdout.split(b"\0"):
+        if record and record[:2] not in (b"??", b"!!"):
+            names.add(record[3:].decode("utf-8"))
+    return names
+
+
+@needs_git
+@posix_only
+def test_the_check_agrees_with_git_status_on_each_edit_state(tmp_path: Path) -> None:
+    repository, states = _states_repository(tmp_path)
+    asked = ["clean.txt", "decoy.txt", "pat.txt", "scratch.txt", "ignored.txt", ".gitignore",
+             "gone.txt", *states]
+    expected = _status_edited(repository)
+    assert expected == set(states), (expected, states)
+    assert U._dirty_tracked_paths(repository, asked) == expected
+    # No commit yet: every name in the index counts as staged, as `git status` says.
+    fresh = tmp_path / "fresh"
+    fresh.mkdir()
+    _git(fresh, "init", "-q", "-b", "main")
+    _write(fresh / "added.txt", "a")
+    _write(fresh / "loose.txt", "b")
+    _git(fresh, "add", "--", "added.txt")
+    assert _status_edited(fresh.resolve()) == {"added.txt"}
+    assert U._dirty_tracked_paths(fresh.resolve(), ["added.txt", "loose.txt"]) == {"added.txt"}
+
+
+@needs_git
+@posix_only
+def test_pattern_characters_in_a_name_match_literally(tmp_path: Path) -> None:
+    repository, _states = _states_repository(tmp_path)
+    for name in ("a[b]*.txt", ":(top)pat.txt"):
+        assert U._dirty_tracked_paths(repository, [name]) == {name}, name
+    assert U._dirty_tracked_paths(repository, ["pat.txt"]) == set(), "the decoy stays clean"
+    # Staged and left as staged: the working file now equals the index, so only the
+    # comparison with the last commit can see the edit.
+    for name in ("a[b]*.txt", ":(top)pat.txt"):
+        subprocess.run(["git", "--literal-pathspecs", "-C", str(repository), "add", "--", name],
+                       check=True, capture_output=True)
+        assert U._dirty_tracked_paths(repository, [name]) == {name}, name
+
+
+@needs_git
+@posix_only
+def test_a_staged_then_reverted_file_counts_as_edited(tmp_path: Path) -> None:
+    repository = tmp_path / "r"
+    repository.mkdir()
+    _git(repository, "init", "-q", "-b", "main")
+    for name in ("kept.txt", "staged.txt", "reverted.txt"):
+        _write(repository / name, "committed\n")
+    _commit_all(repository)
+    _write(repository / "staged.txt", "staged\n")
+    _write(repository / "reverted.txt", "staged\n")
+    _git(repository, "add", "--", "staged.txt", "reverted.txt")
+    _write(repository / "reverted.txt", "committed\n")
+    names = ["kept.txt", "staged.txt", "reverted.txt"]
+    assert U._dirty_tracked_paths(repository.resolve(), names) == {"staged.txt", "reverted.txt"}
+
+
+@needs_git
+@posix_only
+def test_a_missing_or_untracked_name_is_handled_as_git_status_does(tmp_path: Path) -> None:
+    repository = tmp_path / "r"
+    repository.mkdir()
+    _git(repository, "init", "-q", "-b", "main")
+    _write(repository / "tracked.txt", "t")
+    _write(repository / ".gitignore", "ignored.txt\n")
+    _commit_all(repository)
+    (repository / "tracked.txt").unlink()
+    _write(repository / "untracked.txt", "u")
+    _write(repository / "ignored.txt", "i")
+    names = ["tracked.txt", "untracked.txt", "ignored.txt", "never-there.txt"]
+    assert U._dirty_tracked_paths(repository.resolve(), names) == {"tracked.txt"}
+    assert _status_edited(repository.resolve()) == {"tracked.txt"}
+
+
+@needs_git
+@posix_only
+def test_names_not_in_git_normal_form_or_naming_a_folder_are_matched_exactly(
+    tmp_path: Path,
+) -> None:
+    repository = tmp_path / "r"
+    repository.mkdir()
+    _git(repository, "init", "-q", "-b", "main")
+    for name in ("A.md", "d/b.md", "d/c.md"):
+        _write(repository / name, name)
+    _commit_all(repository)
+    _write(repository / "A.md", "edited")
+    _write(repository / "d" / "b.md", "edited")
+    repository = repository.resolve()
+    assert U._dirty_tracked_paths(repository, ["./A.md", "d//b.md", "d/c.md"]) == {
+        "./A.md", "d//b.md"}
+    assert U._dirty_tracked_paths(repository, ["d"]) == set(), "a folder is not its children"
+    assert U._dirty_tracked_paths(repository, ["", "."]) == set()
+
+
+@needs_git
+@posix_only
+def test_an_untracked_recorded_name_is_not_returned_and_no_lockfile_gives_an_empty_set(
+    tmp_path: Path,
+) -> None:
+    repository = tmp_path / "r"
+    repository.mkdir()
+    _git(repository, "init", "-q", "-b", "main")
+    _write(repository / "a.txt", "a")
+    _commit_all(repository)
+    _write(repository / "stray.txt", "x")
+    repository = repository.resolve()
+    assert U._dirty_tracked_paths(repository, ["stray.txt"]) == set()
+    assert U._dirty_tracked_paths(repository) == set(), "no lockfile, no names"
+
+
+@needs_git
+@posix_only
+def test_with_no_names_the_lockfiles_recorded_names_are_asked_about(
+    project: Path,
+) -> None:
+    _commit_all(project)
+    assert U._dirty_tracked_paths(project) == set()
+    _write(project / "AGENTS.md", (project / "AGENTS.md").read_text() + "\nedited\n")
+    assert U._dirty_tracked_paths(project) == {"AGENTS.md"}
+
+
+@needs_git
+@posix_only
+def test_names_go_in_groups_of_at_most_100(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository = tmp_path / "r"
+    repository.mkdir()
+    _git(repository, "init", "-q", "-b", "main")
+    names = [f"n{n:03d}.txt" for n in range(250)]
+    for name in names:
+        _write(repository / name, name)
+    _commit_all(repository)
+    log = _stand_in_git(tmp_path, monkeypatch)
+    assert U._dirty_tracked_paths(repository.resolve(), names) == set()
+    for command in ("ls-files", "diff-index"):
+        calls = [c for c in _logged_calls(log) if _subcommand(c).startswith(command)]
+        sizes = [len(c) - 1 - c.index("--") for c in calls]
+        assert sizes == [100, 100, 50], (command, sizes)
+
+
+@needs_git
+@posix_only
+def test_core_filemode_false_makes_a_mode_only_edit_not_count(tmp_path: Path) -> None:
+    repository = tmp_path / "r"
+    repository.mkdir()
+    _git(repository, "init", "-q", "-b", "main")
+    _write(repository / "run.sh", "echo hi\n")
+    _commit_all(repository)
+    (repository / "run.sh").chmod(0o755)
+    repository = repository.resolve()
+    assert U._dirty_tracked_paths(repository, ["run.sh"]) == {"run.sh"}
+    assert _status_edited(repository) == {"run.sh"}
+    _git(repository, "config", "core.filemode", "false")
+    assert _status_edited(repository) == set()
+    assert U._dirty_tracked_paths(repository, ["run.sh"]) == set()
+
+
+@needs_git
+@posix_only
+@pytest.mark.parametrize("settings, folds", [
+    ([], False),
+    ([("core.autocrlf", "true")], True),
+    ([("core.eol", "crlf")], True),
+    ([("core.autocrlf", "input")], False),
+    ([("core.autocrlf", "false"), ("core.eol", "lf")], False),
+])
+def test_line_endings_rule_applies_only_when_settings_ask_for_crlf(
+    tmp_path: Path, settings: list[tuple[str, str]], folds: bool,
+) -> None:
+    repository = tmp_path / "r"
+    repository.mkdir()
+    _git(repository, "init", "-q", "-b", "main")
+    _write(repository / "f.txt", "a\nb\n")
+    _commit_all(repository)
+    for key, value in settings:
+        _git(repository, "config", key, value)
+    _write(repository / "f.txt", b"a\r\nb\r\n")
+    assert U._dirty_tracked_paths(repository.resolve(), ["f.txt"]) == (
+        set() if folds else {"f.txt"})
+    _write(repository / "f.txt", b"a\r\nb\r\nc\r\n")
+    assert U._dirty_tracked_paths(repository.resolve(), ["f.txt"]) == {"f.txt"}
+
+
+@needs_git
+@posix_only
+def test_a_replace_ref_cannot_hide_a_staged_edit(tmp_path: Path) -> None:
+    repository = tmp_path / "r"
+    repository.mkdir()
+    _git(repository, "init", "-q", "-b", "main")
+    _write(repository / "f.txt", "committed\n")
+    _commit_all(repository, "first")
+    first = _git(repository, "rev-parse", "HEAD")
+    _git(repository, "checkout", "-q", "-b", "forge")
+    _write(repository / "f.txt", "staged\n")
+    _commit_all(repository, "forged")
+    forged = _git(repository, "rev-parse", "HEAD")
+    _git(repository, "checkout", "-q", "main")
+    _write(repository / "f.txt", "staged\n")
+    _git(repository, "add", "--", "f.txt")
+    # With replace refs honoured, the last commit reads as the staged tree and the
+    # staged edit disappears: git itself says the index is clean.
+    _git(repository, "replace", first, forged)
+    plain = subprocess.run(["git", "-C", str(repository), "diff-index", "--cached", "--raw",
+                            "HEAD"], capture_output=True, text=True, check=True).stdout
+    assert plain == "", "the replace ref must be live"
+    assert U._dirty_tracked_paths(repository.resolve(), ["f.txt"]) == {"f.txt"}
+
+
+@needs_git
+@posix_only
+def test_a_partial_clone_runs_no_upload_program_at_or_above_the_floor(
+    tmp_path: Path,
+) -> None:
+    # A blobless clone with a checkout: everything the check needs is here.
+    origin = tmp_path / "blob-origin"
+    origin.mkdir()
+    _git(origin, "init", "-q", "-b", "main")
+    _git(origin, "config", "uploadpack.allowFilter", "true")
+    _git(origin, "config", "uploadpack.allowAnySHA1InWant", "true")
+    _write(origin / "a.txt", "one\n")
+    _commit_all(origin, "first")
+    blobless = tmp_path / "blobless"
+    subprocess.run(["git", "clone", "-q", "--filter=blob:none", origin.as_uri(),
+                    str(blobless)], check=True, capture_output=True)
+    marker = tmp_path / "blobless-ran"
+    _fetch_marker(blobless, marker)
+    assert U._dirty_tracked_paths(blobless.resolve(), ["a.txt"]) == set()
+    assert not marker.exists(), "a program the project names ran (blobless)"
+    # A treeless clone with no checkout: git would have to fetch the last commit's
+    # folder listings. With lazy fetch off it cannot, and the check says so.
+    treeless = _treeless_clone(tmp_path, "tree")
+    marker = tmp_path / "treeless-ran"
+    _fetch_marker(treeless, marker)
+    with pytest.raises(U._EditCheckCannotTell):
+        U._dirty_tracked_paths(treeless, ["a.txt"])
+    assert not marker.exists(), "a program the project names ran (treeless)"
+
+
+# ---------------------------------------------------------------------------
+# Bare `--finalize` asks about what it hashes, plus the lockfile
+# ---------------------------------------------------------------------------
+
+import copy  # noqa: E402
+
+RETIRED_ROWS = {row[1]: row for row in U._RETIRED_INSTALLS}
+RETIRED_SCRIPT = "scripts/onboarding_activate.py"
+RETIRED_SCRIPT_2 = "scripts/foldback_suggest.py"
+LIVING_STATE = "dev/PLANNING.md"
+
+
+def _shipped_script(dst: str) -> bytes:
+    """The last version of the retired script *dst* that Cairn shipped, from its
+    git history by the blob id the engine's own list carries."""
+    blob = RETIRED_ROWS[dst][3][-1][2]
+    return subprocess.run(["git", "-C", str(ROOT), "cat-file", "blob", blob],
+                          capture_output=True, check=True).stdout
+
+
+def _add_retired_script(project: Path, dst: str, data: bytes, *, write: bool = True) -> None:
+    """Model a project from an older Cairn that still holds the retired script *dst*."""
+    if write:
+        _write(project / dst, data)
+    digest = "sha256:" + hashlib.sha256(data).hexdigest()
+    lock = s.read_lockfile(project)
+    lock["files"].append({"dst": dst, "src": RETIRED_ROWS[dst][0], "verbatim": True,
+                          "hash": digest, "base_hash": digest})
+    (project / U._LOCKFILE_REL).write_text(s._emit_lock_yaml(lock), encoding="utf-8")
+
+
+def _copy_of(project: Path, tmp_path: Path, name: str) -> Path:
+    folder = tmp_path / name
+    shutil.copytree(project, folder, symlinks=True)
+    return folder
+
+
+@needs_git
+@posix_only
+def test_bare_finalize_asks_about_the_records_it_hashes_and_the_lockfile(
+    project: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    shipped = _shipped_script(RETIRED_SCRIPT)
+    _add_retired_script(project, RETIRED_SCRIPT, shipped)
+    _add_retired_script(project, RETIRED_SCRIPT_2, _shipped_script(RETIRED_SCRIPT_2) + b"# mine\n")
+    (project / "VENDOR.md").rename(project / "CLAUDE.md")
+    _commit_all(project)
+
+    def lets_finalize_run(name: str, edit) -> None:
+        folder = _copy_of(project, tmp_path, name)
+        edit(folder)
+        code, out, err = _upgrade(capsys, folder, "--finalize")
+        assert code == 0, (name, out, err)
+
+    def refuses(name: str, edit, named: str) -> None:
+        folder = _copy_of(project, tmp_path, name)
+        edit(folder)
+        lock = (folder / U._LOCKFILE_REL).read_bytes()
+        code, out, err = _upgrade(capsys, folder, "--finalize")
+        assert code == 1 and named in err, (name, out, err)
+        assert "recorded file" in err and "tracked file" not in err
+        assert (folder / U._LOCKFILE_REL).read_bytes() == lock, "a refused finalize wrote"
+
+    def append(path: str):
+        return lambda folder: (folder / path).write_text(
+            (folder / path).read_text() + "\nan edit\n")
+
+    lets_finalize_run("living-state", append(LIVING_STATE))
+    lets_finalize_run("hand-deleted", lambda folder: (folder / RETIRED_SCRIPT).unlink())
+    lets_finalize_run("kept-retired", lambda folder: (folder / RETIRED_SCRIPT_2).write_bytes(
+        b"edited again, not committed\n"))
+    refuses("hashed", append("NOTICE.md"), "NOTICE.md")
+    refuses("renamed-wrapper", append("CLAUDE.md"), "CLAUDE.md")
+    refuses("lockfile", lambda folder: (folder / U._LOCKFILE_REL).write_text(
+        (folder / U._LOCKFILE_REL).read_text() + "# a note\n"), U._LOCKFILE_REL)
+
+    lock = s.read_lockfile(project)
+    lock["files"].append({"dst": "", "src": "core/NOTICE.md", "hash": "sha256:0"})
+    lock["files"].append({"src": "core/NOTICE.md", "hash": "sha256:0"})
+    before = copy.deepcopy(lock)
+    names = U._finalize_hash_names(project, lock, {})
+    assert lock == before, "naming the files wrote to the lock"
+    assert "CLAUDE.md" in names and "VENDOR.md" not in names, "the wrapper by its on-disk name"
+    assert U._LOCKFILE_REL in names and "" not in names
+    assert LIVING_STATE not in names
+
+
+@needs_git
+@posix_only
+@pytest.mark.parametrize("step", ["index", "comparison"])
+def test_git_output_that_cannot_be_read_is_cannot_tell(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, step: str,
+) -> None:
+    repository = tmp_path / "r"
+    repository.mkdir()
+    _git(repository, "init", "-q", "-b", "main")
+    _write(repository / "a.txt", "a")
+    _commit_all(repository)
+    _stand_in_git(tmp_path, monkeypatch, answers={
+        STEPS[step][0]: "printf 'this is not what git prints'; exit 0"})
+    with pytest.raises(U._EditCheckCannotTell):
+        U._dirty_tracked_paths(repository.resolve(), ["a.txt"])
