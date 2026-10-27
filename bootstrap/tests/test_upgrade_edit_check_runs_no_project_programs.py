@@ -270,7 +270,8 @@ def _stand_in_git(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *,
     log.mkdir(parents=True)
     bindir = tmp_path / name / "bin"
     bindir.mkdir()
-    cases = "".join(f"  {pattern}) {snippet};;\n" for pattern, snippet in (answers or {}).items())
+    cases = "".join(f"  {pattern.replace(' ', chr(92) + ' ')}) {snippet};;\n"
+                    for pattern, snippet in (answers or {}).items())
     script = bindir / "git"
     script.write_text(
         "#!/bin/sh\n"
@@ -438,6 +439,28 @@ def test_git_that_will_not_start_is_no_guard_and_git_that_does_not_answer_is_can
     log = _stand_in_git(tmp_path, monkeypatch, name="slow-version")
     (tmp_path / "slow-version" / "bin" / "git").write_text(
         "#!/bin/sh\nexec sleep 5\n", encoding="utf-8")
+    with pytest.raises(U._EditCheckCannotTell):
+        U._edit_check_prelude(repo)
+
+
+@needs_git
+@posix_only
+@pytest.mark.parametrize("step", ["rev-parse --is-inside-work-tree", "config",
+                                  "rev-parse --verify"])
+def test_git_that_cannot_start_or_does_not_answer_at_any_step_is_no_guard_or_cannot_tell(
+    repo: Path, monkeypatch: pytest.MonkeyPatch, step: str,
+) -> None:
+    real = U._run_git_sterile
+
+    def fails_at_the_step(outcome: str):
+        def run(args: list[str], limit: int) -> object:
+            return outcome if step in " ".join(args) else real(args, limit)
+        return run
+
+    assert U._edit_check_prelude(repo) == (True, False, True), "the control"
+    monkeypatch.setattr(U, "_run_git_sterile", fails_at_the_step(U._GIT_NOT_STARTED))
+    assert U._edit_check_prelude(repo) is None
+    monkeypatch.setattr(U, "_run_git_sterile", fails_at_the_step(U._GIT_NO_ANSWER))
     with pytest.raises(U._EditCheckCannotTell):
         U._edit_check_prelude(repo)
 
