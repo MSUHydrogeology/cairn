@@ -1,15 +1,34 @@
 # Tool usage — worked examples
 
-Cairn ships a few small scripts that use only Python's standard library.
-Each one does a cheap, mechanical check so you do not have to remember it.
-They advise; none of them blocks your work. This page shows how to run each
-one and what to do with its output.
+Cairn ships a small set of scripts that use only Python's standard library.
+Orientation and coordination tools (`tools/session.py`, `tools/board.py`,
+`tools/intent.py`) report repository state without blocking your work.
+Verification and security scripts (`scripts/claim_check.py`,
+`scripts/link_check.py`, `scripts/run_portable_security_sweeps.py`) exit
+non-zero when they find a broken path, a broken link, or a security finding.
+This page shows how to run each tool and how to read its output.
 
 Install paths below are the defaults; substitute your own if your profile
 placed them elsewhere. Tools marked *(team-gated)* install only when their
 module is selected.
 
-## claim_check — verify path / line claims
+## tools/session.py — orient at session start and close out at session end *(default-on)*
+
+**What it does.** Gathers the mechanical context at the start and end of a
+working session: commits since the last handoff, working-tree status, active
+proposals and plans, active file claims, and the resolved Python interpreter.
+At session end, `--drain` releases any file claims held by your agent.
+
+```bash
+python tools/session.py session-start
+python tools/session.py session-end --agent "<your-agent>" --drain
+```
+
+**What to do.** Run `session-start` at the beginning of a session and read only
+the in-flight proposals or plans relevant to your task. Run `session-end` when
+wrapping up a session so the next session starts from a clean state.
+
+## scripts/claim_check.py — verify path and line claims *(default-on: claim-check)*
 
 **What it does.** Reads a Markdown proposal, plan or doc and flags file paths
 that do not exist and line numbers that are out of range. Run it while you
@@ -32,10 +51,11 @@ claim_check: ... -- 1 hard flag(s):
   ...:42: [path] cited path does not resolve: `frontend/helpre/util.py`
 ```
 
-**What to do.** Fix a hard flag before committing (a real broken path, or a
-forward-reference you must *mark* with a `Proposed/Untracked/External-repo
-paths:` line, or — for a single cross-document citation — a document-scoped
-`<!-- claim-check-allow: <glob> -->` directive).
+**What to do.** Fix a hard flag before committing: correct a typo in the path
+or line range, list a planned or external path under a
+`Proposed/Untracked/External-repo paths:` line in the document, or declare a
+document-scoped path exemption in `dev/.cairn/claim-check-allow.json` (or a
+one-off `<!-- claim-check-allow: <glob> -->` directive).
 
 ## tools/intent.py — claim work before editing *(team-gated: coordination-tiers)*
 
@@ -160,47 +180,40 @@ admission is a reviewed source change.
 
 *This script is for Cairn's own maintainers. It is not installed in your project, so skip this section unless you work on Cairn itself.*
 
-**What it does.** The **live-invariant** leg of the three-kind numeric-claim
-discipline. When `claim_check` retired its category-D count soft-flag, the
-*decision-irrelevant* and *snapshot* kinds were handled by doctrine (approximate;
-date) — but a count cited as **present fact** and prone to drift (a headline
-file size re-quoted across docs as it changes) is registered in a code-side
-registry (`scripts/measurements.py`) and re-measured here. **Not installed into
-adopters** (not in `_CORE_MAPPINGS`); it dogfoods on Cairn's own docs.
-
-A doc annotates the number with `<!-- verify: <key> -->` **immediately after the
-number it verifies** (RR1 — the verifier reads the number directly preceding the
-annotation on that line; for a `Snapshot`, put the `as_of` date before the number
-or after the annotation, not between them). The annotation carries **only a
-registry key** — never a path, never a command — so there is no document-supplied
-path and no shell surface (every measurement is root-contained; `git` runs
-`shell=False`).
+**What it does.** Checks that numbers cited as current facts in Cairn's own
+documentation still match the repository. Each checked number is registered in
+`scripts/measurements.py` and followed in the Markdown file by an HTML comment
+naming its registry key: `<!-- verify: <key> -->` placed immediately after the
+number on the same line. The comment holds only a registry key—never a file
+path or shell command—so checking a document never runs arbitrary commands.
 
 ```bash
 python scripts/verify_counts.py docs/tool-usage.md
 ```
 
-Two kinds dispatch from the registry: an **`Invariant`** is re-measured today and
-the annotated number compared to it (a mismatch is **drift**); a **`Snapshot`** is
-**never re-measured** — only its value-equality and the presence of the ISO
-`as_of` date on the line are checked (re-running would erase the evidence the
-snapshot is). An `Invariant` whose `root` is an **absent** sibling checkout
-degrades to a **visible** `SKIPPED (root absent: …)` (a distinct non-clean exit
-status), never a silent pass; an **unregistered** key is **refused**.
+The registry supports two entry types:
 
-Worked example (the number and its annotation share one physical line, per RR1):
+* **`Invariant`** — re-measured against the live tree every time `verify_counts.py`
+  runs. If the number in the document no longer matches the measured value, the
+  script exits non-zero. If an entry depends on a sibling checkout that is not
+  present on disk, the script reports `SKIPPED (root absent: …)` with a distinct
+  non-zero exit code rather than passing silently.
+* **`Snapshot`** — a historical measurement tied to an ISO `as_of` date on the
+  same line (placed before the number or after the comment, not between them).
+  The script checks that the number and date match the recorded snapshot without
+  re-measuring the live tree.
+
+Worked example (the number and its comment share one line):
 
 > Cairn's `claim_check` watch file is currently 1704 lines `<!-- verify: claim_check_watch_file_lines -->`.
 
-`verify_counts` re-measures it and flags that line if the two ever diverge.
+`verify_counts.py` re-measures that file and flags the line above if the line
+count changes.
 
-**What to do.** Keep the registry **small** (soft cap ~10 keys) and each
-measurement cheap (a bounded stdlib scan or `git log` range) — there is no cache
-by design. If the verifier ever runs slowly or the registry churns more than the
-docs drift, that is the **curation-tax kill-signal**: shrink or freeze the
-registry, do not accelerate it. Most numbers are decision-irrelevant — approximate
-them; reserve a registered invariant for the few that are cited as live fact and
-genuinely drift.
+**What to do.** Keep `scripts/measurements.py` small (around 10 keys or fewer)
+and each measurement fast. Most numbers in prose do not need a registered check:
+use approximate wording or a dated snapshot unless a number must stay exact as
+the tree changes.
 
 ## See also
 

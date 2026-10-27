@@ -1,9 +1,9 @@
 # Cairn — vision and charter
 
 > Cairn's **purpose, design centers, and anti-scope** — what the project is
-> for and what it refuses to become. The `README.md` is the front door;
-> `doctrine/rationale.md` is the research grounding. This page is distilled
-> from longer strategy notes under `dev/strategy/`.
+> for and what it refuses to become. [`README.md`](../README.md) is the front door;
+> [`doctrine/rationale.md`](../doctrine/rationale.md) is the research grounding. This page is distilled
+> from longer strategy notes under [`dev/strategy/`](../dev/strategy/).
 
 ## Purpose
 
@@ -119,26 +119,15 @@ and recorded before they ship. It does not claim to be peer-reviewed science; it
 claims to be *grounded in* peer-reviewed work on human-AI software
 development and *explicit about where it diverges*.
 
-And this charter is **the agenda, not the authorization.** Stating a
-direction here does not by itself authorize it. In particular, nothing here
-authorizes — absent its own proposal, review, and Maintainer Decision:
-
-* adding a new `dimensions/` axis, or changing the role roster, the
-  lifecycle, or the review stance;
-* any public-surface action (pushing, tagging a release, changing the
-  repository's settings) — those are Maintainer-performed.
-
-Cairn's current structure is organically derived and load-bearing; horizons
-*extend* it, they do not replace it. Concrete moves go through the normal
-proposal cycle.
+This charter describes Cairn's direction rather than authorizing individual
+changes: changes to the methodology, dimensions, or public release surface still
+go through the normal proposal, review, and Maintainer Decision lifecycle.
 
 ## Where the rest lives
 
 This charter is deliberately compact. The fuller record:
 
-* **Rationale + research grounding** (the framework anchors,
-  follows-and-diverges) — `doctrine/rationale.md`, `docs/further-reading.md`.
-* **Front door** (what it is, how to adopt) — the repository `README.md`.
-* **Direction** (the live roadmap + release path) — `dev/PLANNING.md`.
-* **The strategy notes** this page was distilled from — under
-  `dev/strategy/`.
+* **Rationale and research grounding** — [`doctrine/rationale.md`](../doctrine/rationale.md) and [`docs/further-reading.md`](further-reading.md).
+* **Front door** (what it is, how to adopt) — [`README.md`](../README.md).
+* **Direction** (the live roadmap and release path) — [`dev/PLANNING.md`](../dev/PLANNING.md).
+* **The strategy notes** this page was distilled from — [`dev/strategy/`](../dev/strategy/).

@@ -105,14 +105,12 @@ it is about the project's *becoming* -- aspiration, decisions in
 progress, and the method of deciding -- **not** about the
 software as it exists today.
 
-**Cairn's own `dev/` tree is in place** (it was Goal 1 of the 0.3
-milestone).  Cairn's own deliberation artifacts about its design
-live there: proposals under `dev/proposals/` (decided ones in
-`dev/proposals/archive/`) and plans under `dev/plans/`.  The
-fold-back proposal behind this file stays in the reference
-deployment.  This file's worked examples reference
-`cairn/dev/proposals/` and `cairn/dev/plans/`, which exist today
-as the deliberation layer's two working directories.
+**Cairn's own `dev/` tree** holds Cairn's deliberation artifacts about its
+design: proposals under `dev/proposals/` (decided ones in
+`dev/proposals/archive/`) and plans under `dev/plans/`. The initial fold-back
+proposal behind this file stays in the reference deployment. This file's worked
+examples reference `cairn/dev/proposals/` and `cairn/dev/plans/`, which are the
+deliberation layer's two working directories.
 
 Cairn ships `cairn/templates/core/dev/` as the **template** an
 adopter installs into their own tree; that is the *adopter-side*
@@ -121,9 +119,10 @@ deliberation layer, not Cairn's own.
 ### 4. Descriptive layer -- "How does the methodology work -- how do I use or extend it?"  (`docs/`)
 
 Documentation of Cairn *as it exists today*, by audience
-(getting-started, quickstart, dev-tour, agent-team-onboarding,
-workflow-role, further-reading, release-process, related-practices,
-glossary).  Its defining property: it
+(`getting-started`, `quickstart`, `plain-language`, `tool-usage`,
+`build-a-board-view`, `dev-tour`, `agent-team-onboarding`,
+`solo-legacy-recipe`, `workflow-role`, `further-reading`,
+`release-process`, `related-practices`, `glossary`). Its defining property: it
 **describes current reality** -- it neither prescribes how to build
 nor deliberates what to build.
 

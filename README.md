@@ -130,19 +130,38 @@ and experience behind the method, including its limitations.
 ## Adapt it to your project
 
 A short analysis script and a long-lived simulation model need different amounts
-of structure. Cairn uses project profiles and optional modules to choose what
+of structure. Cairn uses project profiles (`solo-greenfield`,
+`collaborative-team`, `high-rigor-legacy`) and optional modules to choose what
 gets installed. Start with the smallest configuration that fits the work.
 
-The installed instructions and templates are ordinary files in your repository.
-Some refer to Cairn's published doctrine; your project conventions and local
-instructions remain yours to change. Updates use a merge process so local
-customizations can be retained, with conflicts resolved explicitly.
+An install writes ordinary files into your repository:
 
-See [the on-ramp](on-ramp/README.md) for choosing a profile and
+- **`AGENTS.md` and `VENDOR.md`** — the operational rules your agent reads
+  (`VENDOR.md` is renamed to the file your tool loads automatically, such as
+  `CLAUDE.md` or `GEMINI.md`).
+- **`dev/`** — templates for proposals and plans, roadmap boards, and one guide
+  per installed module, plus `dev/.cairn/` to store the lockfile and install
+  state.
+- **`tools/` and `scripts/`** — standard-library Python helpers for session
+  handoffs (`tools/session.py`), reading the board (`tools/board.py`),
+  coordinating file edits (`tools/intent.py`), checking file and line citations
+  (`scripts/claim_check.py`), checking Markdown links (`scripts/link_check.py`),
+  and scanning agent-instruction files (`scripts/run_portable_security_sweeps.py`).
+
+Your project conventions and local instructions remain yours to change. Updates
+use a three-way merge so local customizations are retained, with conflicts
+resolved explicitly.
+
+See [the on-ramp](on-ramp/README.md) for choosing a profile,
+[tool usage](docs/tool-usage.md) for the command-line helpers, and
 [the glossary](docs/glossary.md) for unfamiliar terms. Useful adaptations can
 be proposed back to Cairn.
 
 ## Getting started
+
+**What you need:** Python 3.13+, Git, and any AI coding agent that can read
+and write files in a directory. Cairn uses only the Python standard library
+(zero third-party packages).
 
 **Try it on a disposable repository.** The
 [quickstart](docs/quickstart.md) walks through one small change with one human
@@ -154,9 +173,14 @@ Then choose how much to adopt:
 
 - **Read the guidance.** Use [the doctrine](doctrine/) as a handbook without
   installing anything.
-- **Install it.** Follow [the bootstrap procedure](bootstrap/BOOTSTRAP.md).
-  The Python scaffold installs the files selected by your project profile;
-  you and your agent then customize them for the repository.
+- **Install it into a project.** Copy a starter profile from
+  [`bootstrap/profiles/`](bootstrap/profiles/), preview what it will write, and
+  run the installer (full walkthrough in [the bootstrap procedure](bootstrap/BOOTSTRAP.md)):
+
+  ```bash
+  python bootstrap/scaffold.py --config profile.yml --target /path/to/your-repo --summary
+  python bootstrap/scaffold.py --config profile.yml --target /path/to/your-repo
+  ```
 
 For an existing scientific codebase, the
 [readiness report](templates/codebase-readiness-report.md) helps identify gaps

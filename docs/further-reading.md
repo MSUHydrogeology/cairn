@@ -80,13 +80,13 @@ honest:
   as distinct activities), see Oberkampf & Roy (2010), *Verification
   and Validation in Scientific Computing* (Cambridge UP,
   ISBN 9780521113601), and the W3C PROV-DM provenance data model (2013).
-  *Why it matters:* Cairn's Dual-Review and the verify-before-asserting
-  discipline guard against structural and factual errors in the
-  deliberation record. Catching *scientific* error — a wrong physical
-  result that looks structurally correct — is the open gap named in
-  `doctrine/rationale.md` > "Where the rationale is still thin." These
-  resources define what a deeper scientific-correctness interlock would
-  need to satisfy; Cairn does not yet ship one.
+  *Why it matters:* For any change that touches a scientific assumption,
+  Cairn's proposal and plan templates require one **Independent scientific
+  check** (an expected value from an analytical solution, conservation law,
+  observation, independent implementation, or prior expert expectation, paired
+  with a purposeful failing run). That check catches a mistake on a single
+  change, but it is not a full verification, validation, and uncertainty-
+  quantification (VVUQ) programme — these resources teach that broader craft.
 
 ---
 

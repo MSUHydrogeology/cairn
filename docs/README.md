@@ -27,6 +27,10 @@ New to Cairn? Start with the [quickstart](quickstart.md).
 
 * [The on-ramp](../on-ramp/README.md) -- two ways in: read the guidance, or
   install it.
+* [Bootstrap procedure](../bootstrap/BOOTSTRAP.md) -- how to assess a codebase,
+  choose a profile, and run the installer.
+* [Upgrading an install](../bootstrap/UPGRADE.md) -- how to pull a newer Cairn
+  release into an adopted repository without losing local edits.
 * [Dimensions](../dimensions/README.md) -- how the setup changes with the
   codebase and the team.
 * [Solo legacy recipe](solo-legacy-recipe.md) -- one person adopting Cairn on
