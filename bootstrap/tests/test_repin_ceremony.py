@@ -27,7 +27,8 @@ from bootstrap.tests.test_repin import (  # noqa: F401 -- `template` is a fixtur
     BASELINE, ENGINE, KNOWN_NEW, LISTED, MANIFEST, PY, REAL, Bed, _dump, run_mixed, run_pty, template)
 
 PASSPHRASE = "throwaway-passphrase-for-tests"
-CLOSURE = ["bootstrap/REANCHOR_RUNBOOK.md", "bootstrap/reanchor.sh", "bootstrap/tests/_gate_manifest.py",
+CLOSURE = ["bootstrap/REANCHOR_RUNBOOK.md", "bootstrap/reanchor-launcher.template.sh", "bootstrap/reanchor.sh",
+           "bootstrap/tests/_gate_manifest.py",
            "bootstrap/tests/_gate_preflight.py", "bootstrap/tests/_gate_reanchor.py",
            "bootstrap/tests/_gate_transition.py", "bootstrap/tests/_oracle.py",
            "bootstrap/tests/_oracle_activation.py", "bootstrap/tests/_oracle_trust.py",
@@ -46,7 +47,7 @@ def sh(*args, cwd, env):
 
 
 class CeremonyBed(Bed):
-    """The R1 bed plus a signing key, a roster, the real closure files and the launcher pair."""
+    """The scratch repository `Bed` builds, plus a signing key, a roster, the real closure files and the launcher pair."""
 
     @property
     def cdir(self):
