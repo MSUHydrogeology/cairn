@@ -224,16 +224,16 @@ python bootstrap/verify_integrity.py --target <repo>            # 4. verify
 
   *What it can get wrong.* It can call a file edited that git calls clean: one
   a clean filter rewrites, a tracked link, a checkout set to CRLF line endings
-  only by `.gitattributes`, a stray empty `.git` folder, or a file marked
-  skip-worktree or assume-unchanged (the check compares the file's bytes with
-  the index; reasoned, not measured). It can call a file unchanged that git
+  only by `.gitattributes`, or a file marked skip-worktree or assume-unchanged
+  (the check compares the file's bytes with the index; reasoned, not measured). It can call a file unchanged that git
   calls modified: a name written in another letter case on a case-insensitive
   disk reads as untracked, and where `core.autocrlf=true` or `core.eol=crlf` is
   set, **an edit that changes only line endings counts as unchanged**.
 
   *When it cannot tell.* If git is a partial clone and older than 2.45.0, a
   treeless clone, a repository git refuses (another owner, a bare repository),
-  or slower than 10 seconds, the check says it could not tell. `--apply` and a
+  a damaged or empty `.git` folder with no valid repository above it, or
+  slower than 10 seconds, the check says it could not tell. `--apply` and a
   bare `--finalize` then stop, print the reason and name `--force`; `--stage`
   completes and prints the advisory.
 
