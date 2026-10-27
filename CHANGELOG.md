@@ -38,6 +38,20 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Changed — `docs/plain-language.md` is a full adoption page for Cairn Plain Language
+
+- The page now holds a project-neutral block of the 17 rules that another
+  project can copy as it is, the rule-by-rule evidence table, and a 30-source
+  bibliography; `doctrine/rationale.md` (Anchor 16) gains the grounding in the
+  literature on AI-assisted scientific writing. The implementer checked every
+  entry against the publisher, DOI and arXiv records: 22 confirmed, 5
+  corrected (an author, two titles, a publication year, and the ICMJE
+  section), 3 only partly verified (and the page says so), none dropped. Some
+  sentences were reworded because the sources do not say what the draft said.
+  No reviewer has read the new text. ISO clause numbers come from an earlier
+  read of a licensed copy and were not re-checked.
+  ([proposal](dev/proposals/archive/2026-10-27-antigravity-plain-language-adoption-docs.md))
+
 ### Changed — The re-anchor ceremony protects its launcher template, and says what delivering the launcher proves
 
 - The launcher template (`bootstrap/reanchor-launcher.template.sh`) is now the

@@ -289,7 +289,7 @@ and uncertainty rest on experiments with readers: Budescu et al.
 different meanings, and that pairing words with numeric ranges
 helped less than hoped (judgments matching the IPCC's intended
 meaning rose from 27% to 40% across 24 countries), and Mandel &
-Irwin (2020) found that words with numbers did no better than
+Irwin (2021) found that words with numbers did no better than
 numbers alone. Its rule that an agent say how sure it is about its
 own work rests on studies of how people read model output:
 Steyvers et al. (2025) found that readers overestimate model
