@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-upgrade-dirty-check-runs-no-repository-programs.md](../proposals/archive/2026-10-26-claude-upgrade-dirty-check-runs-no-repository-programs.md)
-**Status**: implementing
+**Status**: awaiting-code-review
 **Waiting on Maintainer**: re-anchor at the cut (C8, MAINTAINER-ONLY)
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27
@@ -23,9 +23,6 @@ Accepted 2026-10-27 as revised. **Revision 2 is the complete contract** and supe
 **Reuse.** Searched `git grep -n 'subprocess\.\(run\|Popen\|check_output\)' -- bootstrap/_scaffold`: eight hits in four files; the one sterile launcher is the `run_git` inside `_committed_copy_matches` (`upgrade.py`), which C1 lifts to module level and C4 and C5 call. Searched `git grep -n -i 'autocrlf\|hash-object\|ls-files\|diff-index\|literal-pathspecs' -- bootstrap tools scripts templates/skills`: `scripts/repin.py` and `bootstrap/security_check.py` hash through `git hash-object` (it reads the working file, so it can run a filter; both sit outside the standard-library-only engine package) and `scripts/content_scan_runner.py` uses `--literal-pathspecs`; none is importable, so the blob hash is written in Python (`hashlib`). Reused as they are: `_read_regular_bytes` and `_assert_safe_write` (`security.py`, called not edited), `_classify_retired_records`, `_LIVING_STATE_DSTS`, `_resolve_vendor_wrapper`, `_GIT_TIMEOUT_SECONDS`, the `.git` environment scrub. New: a module-level launcher and one floor cache, a working-file comparison, a prelude, a names helper for bare `--finalize`.
 
 **Doctrine surface.** Descriptive layer only: `bootstrap/SAFETY.md`, `bootstrap/UPGRADE.md`, `bootstrap/_scaffold/SECURITY_MUTATIONS.md`, and the `--help` text. `CHANGELOG.md` and `dev/PLANNING.md` are the planning session's, at archive. No `doctrine/` or `AGENTS.md` text; the rate-limit gate does not apply.
-
-Proposed paths:
-* `bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py`
 
 **Frozen files, derived** on 2026-10-27 from the globs in `_frozen_files` (`bootstrap/tests/_gate_manifest.py`), the 195 `frozen_files` keys of `bootstrap/tests/fixtures/gate_manifest.json`, and a read-only `python bootstrap/tests/_gate_manifest.py verify --no-collect`. "Owes a re-anchor" would mean this plan adds an entry; none does. The planning session re-derives at the cut.
 
@@ -218,3 +215,39 @@ All 15 findings (Security Review: B1, B2, N1-N5; Internal: B1, B2, N1-N6) are ac
 * **Internal N6: accept.** C7: reader search over `UPGRADE.md`, `SAFETY.md` and `SECURITY_MUTATIONS`, hits run; skip-worktree and assume-unchanged disclosed (reasoned, not measured); frozen table gains `test_skills_upgrade.py`, plus `test_reanchor.py` and `test_install_module.py`, which I found keyed while checking the C7 readers.
 
 Not checked: that the new nodes are writable as stated (no implementation exists); the SHA-1 behaviour of Bandit (taken from the Internal review); git absent on `PATH` as a test setup on this machine.
+
+## Implementation verification -- Claude Sonnet 5.5 (Implementation) -- 2026-10-27
+
+**Tested range**: `3678ff69..477b17ee` (C1 `5fee7b16`, C2 `991dea17`, C3 `ea59d872`, C4 `43019ebd` with a test repair `50f068c6`, C5+C6 `804af266`, C7 `477b17ee`). **Tested SHA**: `477b17ee`, in a detached worktree (clean before and after; the shared tree carries other sessions' uncommitted prose, none in this plan's files).
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13); git 2.53.0; macOS. **Boundary B mode**: `full` (engine, launcher, `cmd_upgrade`), met by this scoped record. **Certified by**: pending. `CAIRN_FULL_SUITE` was never set.
+
+**Boundary A, final run (clean worktree at `477b17ee`, 3.13.13)**
+* 2107 passed, 0 skipped, 0 xfail, 0 xpass, 237 s: the new file (82 nodes), every file the chunks map, and the owners found by `git grep -l '_committed_copy_matches\|_GIT_TIMEOUT_SECONDS'`, `'_assert_safe_write\|_read_regular_bytes'`, `'upgrade.*--apply\|--finalize'` and `'UPGRADE.md\|SAFETY.md\|SECURITY_MUTATIONS'` over `bootstrap/tests`.
+* Per chunk at its commit (3.13.13, 0 skipped): C1 170 passed; C2 486; C3 266; C4 208, then 41 in the new file after the repair; C5+C6 1113 (82 in the new file after two late nodes); C7 1124.
+* `test_security_lint` passes with no allowlist edit (SHA-1 carries `usedforsecurity=False`). `test_oracle.py::test_oracle_privileged_workflows_preserved` passed before C1 and in every later run (so `dirty_tree_refusal` stayed `match`).
+* The 12 keyed tests the plan lists were run and not edited. The one edited collected node is in the unkeyed `test_upgrade_removes_retired_files.py`: renamed `test_a_hand_deleted_file_is_cleared_by_the_step_a_scoped_finalize_or_a_bare_finalize`, bare arm now exit 0 and a cleared record.
+
+**Greps**: `git grep -n 'git_floor_met' -- bootstrap` finds only the function name; one `subprocess.Popen` in `upgrade.py`; no `status` call in `upgrade.py` (control before C5: one); `_dirty_tracked_paths(` has no production caller without `names` except the default inside `_writeset_dirty_collisions`' callers (all pass names) and the one-argument call in `test_upgrade.py`.
+
+**Mutants** (each in a detached worktree of the committed tree beside a green control of the same nodes; killed = a node failed; a skipped node would count as survived and none skipped)
+* C1: old reset line left in the version helper: killed (14 failed; control 24 passed).
+* C2: read with `Path.read_bytes`, drop `_assert_safe_write`, always SHA-1, skip the mode, always fold CRLF, accept any index mode: 6 killed; drop `usedforsecurity=False`: killed by `test_security_lint` (1 failed), as the plan says.
+* C3: apply reads "cannot tell" as clean, finalize reads it as clean, stage refuses, subclass `ValueError` with the dedicated clause removed, subclass `ValueError` with the clause after the generic one, check run under `--force` in apply, in finalize: 7 killed.
+* C4 (after the repair): timeout at a step read as "did not start", timeout at the version read as "did not start", "did not start" at a step read as "cannot tell", the same at the version read, refusal read as no guard, config exit 1 as an error, other non-zero as no keys, unknown boolean accepted, config gate removed, Revision 1's exact key names, a second override list without `useReplaceRefs`: 11 killed. Before the repair two of these survived because the stand-in's `case` pattern was a shell syntax error; the repair is `50f068c6`.
+* C5: failure read as empty at each of settings, last commit, index, comparison (hang) and at each (non-zero exit), a later-group non-zero at index and at comparison, unparseable index skipped, unparseable comparison as empty, `status --porcelain` in place of `ls-files`, drop `--relative`, drop `--literal-pathspecs` at the index call and at the comparison call, skip `diff-index`, raw names, one call for all names, ignore the filemode key, always fold CRLF, replace refs honoured, lazy fetch left on: 23 killed.
+* C5 survivor: **ignore the conflict stage alone: survived** (82 passed). A conflicted name is also listed by `diff-index` (status `U`), which recovers it; with that route removed as well the node goes red, but that second mutation also breaks the staged states, so it is not a clean equivalence measurement. Reported as survived.
+* C6: ask about all records, drop the lockfile, wrapper by its recorded name, `_disk_dst` writes the record, a variant that asks about living state: 5 killed.
+* Not mutated: a hang in a later group (tested by `test_a_failure_in_a_later_group_is_cannot_tell`, shares the `_ask_git` branch the first-group hang mutants break).
+
+**AST (read-only `_ast_attest.py verify`, 3.13.13)**: the six guard lines are identical to before C1 at C1, C3, C5 and the last commit (only `_check_lockfile_paths` appears, as before). Changed set versus the plan's list: newly CHANGED `_dirty_tracked_paths`, `_writeset_dirty_collisions`; already CHANGED and edited again `_apply_upgrade`, `_cmd_finalize_lockfile`, `cmd_upgrade`; NEW as listed: `_run_git_sterile`, `_git_floor_met`, `_GIT_FLOOR_MET`, `_working_file_differs`, `_EditCheckCannotTell`, `_edit_check_prelude`, `_finalize_hash_names`, `_disk_dst`, `_EDIT_CHECK_GROUP_SIZE`. **Beyond the plan's list** (small helpers and constants): `_GIT_NOT_STARTED`, `_GIT_NO_ANSWER`, `_git_in_project`, `_ask_git`, `_git_config_bool`, `_cannot_tell_refusal`. 59 non-note lines now, 43 before.
+**Gate manifest (read-only `verify --no-collect`)**: this plan adds `FROZEN-NEW` for the new test file and for the unkeyed `test_upgrade_removes_retired_files.py` (already `FROZEN-NEW`); the 65 `FROZEN-MODIFIED/MISSING/OID` lines name no file this range touched (`git log 3678ff69..HEAD` on the four keyed `test_upgrade*`/`test_security_lint` files is empty).
+**Cost smoke** (62 names, scratch repository of 5,000 tracked files, median of 5, 3.13.13): old check 0.027 s, new check 0.055 s.
+**Prose gates**: `claim_check` on `UPGRADE.md`, `SAFETY.md`, `SECURITY_MUTATIONS.md`, `upgrade.py`: OK. `quality_gate --sub neutrality --sub redundancy`: fail=0 and fail=0. `link_check`: 3 issues in `templates/modules/default-on/documentation-plan.md`, a file not touched. `check_cairn` and `claim_check` on the plan flagged the `Proposed paths:` declaration as stale now that the test file exists; I removed that two-line declaration (the only plan text changed apart from Status and this section), after which both are clean.
+
+**Notes for the reviewer and the planning session**
+* C4's callers-driven arms (git absent gives no refusal, a hang at the work-tree question stops `--apply`) could not run before the wiring existed; C4's nodes call the prelude directly, and `test_apply_goes_on_with_no_git_and_stops_when_git_does_not_answer` lands with C5+C6.
+* "`--version` is the first logged call" holds in the prelude-level nodes. In the nodes driven through `scaffold.py` the assertion is weaker (the version call precedes the first question about the repository), because I did not check whether the engine makes an earlier `git` call; `test_force_runs_no_git` asserts no edit-check command, not a first call.
+* A `git` that cannot be started at the index or comparison step (after the prelude passed) returns "no guard", the same as the prelude's steps; the plan names only the prelude. A reviewer may prefer "cannot tell" there.
+* The pager program is in the config of `test_git_config_programs_never_run_during_stage_apply_or_finalize` but cannot fire without a terminal, so that node's control does not prove the pager arm.
+* Not measured: git older than 2.53.0 (stand-ins only), Windows, SHA-256 beyond the one hash node (ran, git has the option), submodules, sparse checkouts, linked work trees, the full suite.
+* C8 (re-anchors) was not touched; the owed items for the Maintainer are the renamed node above and the symbols listed under AST.
