@@ -38,6 +38,26 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Added — `repin`, one tested tool for the routine re-pins of the gate (not yet used on a real ceremony)
+
+- `scripts/repin.py` replaces the hand-made corrections in the re-anchor
+  ceremony with three commands: `status` says what is owed, `package` shows what
+  would change, and `ceremony` walks the steps up to the point where the
+  Maintainer types the signing passphrase. The Maintainer still runs the
+  ceremony. The script never reads, stores or passes the passphrase, and it
+  never commits the AST pin: it stops and tells the Maintainer to commit it.
+  It reads the code it runs from the anchor commit's tree, never from the
+  working tree, and compares ten gate modules byte for byte with the anchor
+  before running any of them. It refuses a dirty or staged tree, a detached
+  `HEAD`, a tracked compiled file, a link in the tree, files git has been told to
+  ignore changes in, and a final step that does not move the anchor forward.
+  `--first-run` shows a lockfile-only correction without refusing on it. Two
+  Security Reviews, a code review and a second look checked the build, and 193
+  tests cover it (a scratch repository, a throwaway key). It has not run on a real
+  ceremony: its first use is the 0.5 cut itself. The anchor's commit is still
+  unsigned (queued on the roadmap).
+  ([plan](dev/plans/repin-build.md))
+
 ### Added — `upgrade --remove-retired` removes untouched copies of files Cairn stopped shipping
 
 - `scaffold.py upgrade --target <repo> --remove-retired` removes a project's copy

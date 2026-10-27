@@ -252,9 +252,11 @@ this list has been run by an agent.
    must also be in git's last commit) and departure 7 (the plan's node for a
    `base_cache` that leads outside cannot run as written; the case is covered
    another way). Recommended: allow both; both are safer than the plan.
-2. **Decisions still to come**: the thirteenth row's proposal (the edit check
-   that runs no repository program) reaches you after its reviews, with three
-   questions and defaults.
+2. **A Decision waiting**: the thirteenth row's proposal (the edit check that runs
+   no repository program), `dev/proposals/2026-10-26-claude-upgrade-dirty-check-runs-no-repository-programs.md`,
+   is `awaiting-decision`: both reviews are answered, with three questions and
+   defaults at the top. After your Decision it gets a plan, a build and a code
+   review.
 3. **Your `repin` steps**, in this order: M2 (the first real ceremony,
    `--first-run --reviewed-commit 5670dda9`), M1, R6a, R6b, then M3 (by hand,
    `bootstrap/REANCHOR_RUNBOOK.md`). The steps and their preconditions are in
