@@ -300,6 +300,15 @@ Theme candidates: **Nimbleness recovery, lightweight measurement, and unified do
 | **Extend coordinates rule to shipped prose, and scan for it** | Proposal first, rate-limit gate | Promoted from deferred follow-ups (deferred 2026-10-27 for next release planning). (1) One sentence in the durable-artifacts rule (`AGENTS.md`, reasoning in `doctrine/rationale.md`) so it covers shipped module docs, docs and release notes, using the test the ceremony scan already uses; (2) warning-only scan of shipped files against a named list of live ids in `scripts/check_cairn.py`. Maintainer: "Defer the new rule on coordinates for later bringing back up in PLANNING". |
 | **Ceremony consolidation: shrink runbook to a page & cut second values reader** | Security Review, closure change | Promoted from deferred follow-ups (`dev/proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md` items C and D). Shrink `bootstrap/REANCHOR_RUNBOOK.md` to a single page and cut the launcher's second values reader together, so the closure is re-pinned once. |
 | **Unify shipped-executable discovery [VER-5]** | Proposal first | Promoted from queued work. One traversal for install, manifest, security scan and upgrade. |
+| **Windows native support clarity** | Docs / front door | Maintainer confirmation, 2026-10-27: *"Yes, Windows support is native. I use it all the time on my projects"*. State native Windows support upfront in `README.md` and `docs/getting-started.md`. |
+| **Document 0-rejections proposal optic** | Docs / lifecycle | Maintainer direction, 2026-10-27: *"Let's add the 0-rejected note somewhere in the docs for v0.6. It's not really a requirement, and other projects have rejected proposals. But yes, basically an idea only happens because of a chat leading to it and many never make it to proposals!"*. Add note to proposal docs/lifecycle explaining Cairn's 0-rejected archive history. |
+| **Public-surface metadata alignment & CONTRIBUTING.md** | Front door / metadata | Strategy note: `dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md`. Align `CITATION.cff` title ("methodology, not a framework") with `README.md` and `AGENTS.md`; ship a standard `CONTRIBUTING.md` for outside contributors. Maintainer authorization, 2026-10-27: *"Yes, add the public-surface metadata alignment + contributing items"*. |
+| **Outside-adopter interview & testimonial (Stid)** | Adopter evidence | Prepare an interview question set and conduct a structured interview with outside adopter Stid to gather qualitative feedback, measure friction points, and capture a testimonial. Maintainer direction, 2026-10-27: *"I do have an outside adopter (Stid). Let's go ahead and get an interview set of questions for him, and he can give us a testimonial"*. |
+| **Automate the work tracker from `board.py --json`** | Tooling / hosted sync | Strategy note: `dev/strategy/2026-10-26-claude-work-tracker-and-the-board.md`. Build a generator script to derive hosted tracker rows automatically from `tools/board.py --json`, `git`, and `gh` rather than hand-keeping 60 hosted rows, and optionally add a `passes` field to `cairn-board/1`. Maintainer authorization, 2026-10-27: *"Yes, let's put automating the work tracker on the v0.6 list"*. |
+| **Security cluster strategic items** | Security Review, trust-apparatus | Strategy note: `dev/strategy/2026-08-05-codex-security-strategy.md`. Four items: (1) **Trust root ceremony tidy (`[TRU-4 / TRU-5 / TRU-7]`)**: sign anchor commit or align `AGENTS.md`, scrub `PYTEST_*`/`PYTHON*` in Stage A, and add `git push origin refs/cairn/gate-anchor` to runbook; (2) **Security dispatcher out-of-the-box (`[VER-3]`)**: admit `check_cairn.py` to `run_security_verification.py` runner registry; (3) **Private vulnerability reporting route (`[REL-6]`)**: enable GitHub Private Vulnerability Reporting, state it in `SECURITY.md`, and link in `README.md`; (4) **Terminal escaping hygiene (`[BND-4]`)**: escape module/slot names in install report, reject invisible Unicode in lockfile paths, and encode `tools/session.py` child output. Maintainer authorization, 2026-10-27: *"Let's add those security items to v0.6"*. |
+| **Move interpreter binding into `.git`** | Proposal first | Promoted from queued work (SW-SR-10 follow-up). Move `.cairn/local-env.json` out of the working tree into `.git/`. Maintainer instruction, 2026-10-27: *"Do those three queued items as well"*. |
+| **Fix `session-start` handoff marker mismatch** | Trivial defect fix | Promoted from queued work. Default marker in `tools/session.py` (and twin) is `Goodnight`, while Cairn handoff commits begin `Handoff`, printing a misleading 500+ commit range. Change default to match `Handoff`. Maintainer instruction, 2026-10-27: *"Do those three queued items as well"*. |
+| **Handle directory collisions in `upgrade --plan`/`--stage`** | Defect fix, engine | Promoted from queued work. Report a clean conflict instead of crashing with `IsADirectoryError` when an adopter replaces a tracked file with a directory. Maintainer instruction, 2026-10-27: *"Do those three queued items as well"*. |
 
 ## Queued
 
@@ -411,15 +420,10 @@ changed set from the final committed tree.
   > "Yes, queue all three"
 
 * **`session-start` prints a 508-commit range because its default marker does
-  not match Cairn's handoff commits.** The default marker in `tools/session.py`
-  (about lines 2076-2080) is `Goodnight`, but Cairn's handoff commits begin
-  `Handoff`, so the "commits since the last handoff" list runs back to commit
-  `7a78c283`. Reported by the `NEXT_SESSION` proposal's author and not yet
-  verified; the proposal's reviewer is to measure it. A trivial-lane defect
-  repair when taken; it edits the session kernel and its twin, so a fresh
-  reviewer reads it. Authorization to queue it, verbatim:
-
-  > "Yes, queue it (Recommended)"
+  not match Cairn's handoff commits.** Promoted to `v0.6 (Candidate directions)`
+  on Maintainer instruction (2026-10-27: *"Do those three queued items as well"*).
+  The default marker in `tools/session.py` (about lines 2076-2080) is `Goodnight`,
+  but Cairn's handoff commits begin `Handoff`. Edits the session kernel and its twin.
 
 * **`upgrade --init-lock` records the digest of the file behind a linked
   tracked file.** A linked `AGENTS.md` puts the digest of its target into the
@@ -434,16 +438,10 @@ changed set from the final committed tree.
   fixed now).
 
 * **`upgrade --plan` and `--stage` crash when a tracked file has been replaced
-  by a folder.** They end in an `IsADirectoryError` traceback (`upgrade.py`, the
-  read at about line 540) instead of naming the file. Reproduced on a scratch
-  install by the twelfth-row proposal's usual review. Not a simple fix: what the
-  upgrade should report for a file turned into a folder is a design choice in
-  the engine (the twelfth row ends the crash only for the files on its retired
-  list). Queue as a defect row with its own repair. Authorization to queue it:
-  the Maintainer's 2026-10-26 rule, "Queue them if it's not simple to fix them
-  now. No need to generate more work for us later." (given for the `upgrade`
-  link findings; the planning session applies it to this finding, and the
-  Maintainer can overrule).
+  by a folder.** Promoted to `v0.6 (Candidate directions)` on Maintainer
+  instruction (2026-10-27: *"Do those three queued items as well"*). They end
+  in an `IsADirectoryError` traceback (`upgrade.py` about line 540) instead of
+  naming the file. Needs engine collision handling.
 
 * **Three lessons kept from the old handoff file.** Found in the file the
   `NEXT_SESSION` change deleted (its migration record is in
