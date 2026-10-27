@@ -263,81 +263,9 @@ this list has been run by an agent.
    release notes copied from the changelog section (rename `## Unreleased` to
    `## 0.5.0 — <date>`).
 
-### 0.4 cut (Maintainer direction, 2026-10-19)
-
-| Work | Remaining condition before the cut |
-|---|---|
-| Four security repairs: .gitignore seed guard, session-kernel writes, committed interpreter binding, engine copy fallback | Final review findings dispositioned; their repair and review records are the evidence. |
-| `neutrality-and-upgrade-slots`, `independent-scientific-check`, `review-stance-and-lenses`, `board-as-basis` | Archived; retain their final-byte contributions in the ceremony register below. |
-| `model-mapping-install-path` | Archived; retain its final-byte contributions in the ceremony register below. |
-| README disclosure | State that 0.4 has not had an outside correctness trial. |
-| Release assurance | Certify the final committed batch, perform the Maintainer's AST correction **before** the gate-manifest re-anchor, and complete the release sweeps in `docs/release-process.md`. |
-
-**Archived alongside 0.4:** `stewardship-and-reuse`.
-**After 0.4:** a draft strategy on Cairn and Assai, removed from Cairn on 2026-10-26 (`6ea4d4d7`).
-
-The release choices remain on record, verbatim:
-
-> "The roadmap says Cairn goes public only after the external test: a
-> consenting third-party science project runs the bootstrap end to end. That's
-> blocked on finding the third party. What do you want to do?" — **"Waive it
-> for 0.4"** ("Go public once the batch lands. The README says plainly that it
-> hasn't yet had an outside test. The waiver goes on record in your words.")
->
-> "You decided to remove the collaboration agreement 'before 0.4'. The template
-> still ships it, and five shipped files reference it. Include that removal in
-> this release?" — **"Yes, before the cut (Recommended)"**
->
-> "Do the AST and gate-manifest re-anchors at the release cut, rather than
-> once after model-mapping as you chose before?" — **"Yes, at the cut
-> (Recommended)"**
-
-The later change that added the two plans to the cut, verbatim:
-
-> "I think the model_mapping_install_path should be implemented prior to 0.4"
-
-Asked "Model-mapping into 0.4: you'd set board-as-basis to go before it. What
-about board-as-basis?", the Maintainer chose **"Both into 0.4"** ("Keep your
-order (board-as-basis, then model-mapping) and ship both."). He added:
-
-> "But, I'll have another agent develop them"
-
-### Public launch — Maintainer-gated
-
-After the batch and release checks:
-
-1. Check that the private mirror renders correctly.
-2. Confirm the recorded signing-key fingerprint and two publication channels
-   still agree **before the tag**. The release-authenticity record says both
-   channels and the forge signing-key endpoint were established on 2026-08-04;
-   this is revalidation, not an outstanding first publication. If a channel
-   fails, follow the fallback in `bootstrap/PROVENANCE.md` before signing.
-3. Make the repository public and set its template-repository flag, on the
-   Maintainer's explicit go-ahead. Pushing remains separately authorized.
-4. Create the signed `v0.4.0` tag (`git tag -s`).
-5. Run the bootstrap block cold against the pushed tag, using a machine and
-   roster not supplied by this repository. This is release-authenticity's
-   acceptance check.
-6. Only after that check, enable Zenodo integration and deposition.
-7. Commit the issued DOI to `CITATION.cff`.
-8. Archive the original `cairn_methodology_repo` construction plan through
-   lasting-truth migration.
-
-Before making the repository public, run the full-history secret scan and
-review what the history and GitHub issues expose. Detailed release procedure:
-`docs/release-process.md`; sequencing authority and rationale:
-`dev/plans/archive/release-authenticity.md`. That plan released the tag, cold
-run and Zenodo steps to this sequence before it archived; the cold run remains
-owed. Hold the tag if its fingerprint/channel prerequisite is not met.
-
 ## Queued
 
 ### Re-anchor the gate manifest — frozen files changed
-
-The 0.4 batch this row used to list was discharged by the re-anchor at
-`6f29519d` (2026-10-20) and the AST commits `b9a901f1` and `5cbd6583`; on
-2026-10-23 `bootstrap/tests/_gate_manifest.py verify` reported the committed
-tree intact (195 frozen files, 4612 pinned nodes) under Python 3.13.
 
 Owed since 2026-10-23: frozen `bootstrap/tests/test_quickstart_sequence.py`
 changed so its scripted steps match `docs/quickstart.md` (an `awaiting-review`
@@ -415,10 +343,6 @@ changed set from the final committed tree.
 
 ### Other queued work (reviewed Oct 2026)
 
-* **Make re-pinning usable. Targeted for 0.5, as a build.** Promote
-  `dev/strategy/2026-08-28-claude-repin-revitalization.md` to a reviewed proposal
-  before building `repin`. Until then corrections remain manual. A called
-  outside read is the Maintainer's choice, not a standing requirement.
 * **The session-start tool passes a child process's output through unescaped.**
   Three raw `proc.stderr` pass-throughs and the child's stdout in
   `tools/session.py` (and its twin `templates/skills/_lib/session.py`) are not
@@ -514,36 +438,15 @@ changed set from the final committed tree.
   (`scripts/reanchor_ceremony.py`, `bootstrap/reanchor.sh`, the launcher
   template); the review did not examine those files, so a reproduction comes
   first.
-* **F8: make the post-install report match the selected profile. Targeted for 0.5, in the engine batch.** A minimal
-  install is asked to fill slots for modules it does not install. Classify
-  obligations by the accepted profile; this touches the scaffold engine and
-  needs its own proposal and Security Review. Deferred from
-  `adopter-path-consolidation` Revision 2, on:
-
-  > "Accept Revision 2 as written. Defer the install-report fix (F8) to the
-  > board. No second review round; External floor waived."
-
-* **Name upgrade-added slots (#8, engine half). Targeted for 0.5, in the engine batch.** The integrity command's
-  advisory note shipped; `upgrade` still does not distinguish newly added
-  slots from all unfilled placeholders. Revival: an upgrade-engine change
-  already owing a re-anchor, or an adopter missing a new slot. The current
-  engine batch meets the first trigger: the Maintainer should choose at the
-  cut whether this stays after 0.4 or joins an accepted plan. Keep the separate
-  warning trigger: users filling slots reflexively with `cairn:customized`.
-  Owner/evidence: `neutrality-and-upgrade-slots`, Decision Q2 and archive.
-  Authorization is the A/B/C/D quote above and the archive instruction:
-
-  > "Go ahead and archive those plans, provided follow-up has a permanent home."
-
 * **Close GitHub #2 and #8 after their fixes are pushed.** The local
-  neutrality/slot-note work is archived; this is tracker follow-through, not
-  permission to push or close issues now. #8's engine suggestion remains the
-  separate row above. #16 was already closed before its paragraph landed;
-  changing its closure reason is the Maintainer's choice. Same archive
-  authorization as above.
-* **0.4 launch-surface polish.** Graphics and quickstart presentation; comments
-  explain the work without finding IDs. Not a release blocker. Work is picked
-  up under the existing change/review rules, not treated as already approved.
+  neutrality/slot-note work and #8's engine half (`dev/plans/archive/engine-batch-f8-slots.md`)
+  are archived; this is tracker follow-through, not permission to push or close
+  issues now. #16 was already closed before its paragraph landed; changing its
+  closure reason is the Maintainer's choice.
+* **Cold bootstrap acceptance run against the pushed release tag.** Run the
+  bootstrap block cold against the pushed tag using a machine and roster not
+  supplied by this repository (`dev/plans/archive/release-authenticity.md`,
+  `docs/release-process.md`).
 * **Unify shipped-executable discovery [VER-5].** One traversal for install,
   manifest, security scan and upgrade. A proposed build, not permission to
   introduce a new mechanism; take its proposal when prioritized.
@@ -563,7 +466,7 @@ this file's history.
 | Report only live slots after the module merge | The second form of the install-report change: print the report after the module-merge pass and drop the slots the install fills itself, so `solo-greenfield` shows 20 rather than 20 plus 2 listed apart. Not built because it moves output a frozen test pins; reason: over the cost bar. Revisit with the next change to that test. Authorization, verbatim: "Accept, leave 2 slots counted (Recommended)" | `engine-batch-f8-slots` archive, Scope delta. |
 | Decision rights after agreement removal | Offering Cairn's unsure-case rule to adopters needs its own proposal. Revisit lifecycle escalation wording when a concrete conflict reaches a decision. Neither ships in the 0.4 removal. | `remove-collaboration-agreement` Decision Q3; authority quoted below. |
 | Stable section identity and complete-set claims | A second actual rule needing section-set completeness would revive this; naming sections and proving all were handled are one scope. The retired lifecycle checker is not a promised future satisfier. | `2026-08-20-claude-review-loop-termination`, Deferred work. |
-| Entry-page feature claims drift | A second stale feature list, or an adopter hitting one, may justify a doc-drift rule. | `2026-08-10-claude-documentation-enhancement` fold-up candidates. |
+| Entry-page feature claims drift | A second stale feature list, or an adopter hitting one, may justify a doc-drift rule. | `dev/strategy/archive/2026-08-10-claude-documentation-enhancement.md` fold-up candidates. |
 | Withdrawal ledgers can lose the reasoning | Synthesize on an independent recurrence or a Maintainer call; preserve the distinction between a corrected contract and a summary that re-derives its rejected argument. Also test invariants against their claimed space, not vacuous wording. | `scanner-claim-scope` revisions/reviews; original observations Aug 20. |
 | Delegated verification multiplies broad runs | On the next fan-out plan or change to brief composition, reassess the working practice: the spawner verifies after joining; leaves receive scoped tasks. The run ledger was retired, so there is no promised collector. | `review-efficient-lifecycle` H1 observations, Aug 13–19; board history contains the 13-run count and its limits. |
 | Pre-reviewing a revision | Revisit on a justified later proposal-review round or a Maintainer choice of workflow. Earlier probes found defects but one fix silently reduced accepted scope; every suggested fix still needs the purpose/scope check. | Aug 19 observations; no new review round or doctrine is authorized here. |
@@ -573,8 +476,9 @@ this file's history.
 | Context-aware quickstart | Propose a trimmed scaffold next-step path when the adopter need recurs. | `adopter-entry-doc-refresh` deferred follow-up (Jun 2026). |
 | More adopter-facing count checks | Extend the existing verify-count guard beyond the quickstart's two counts when another live count needs it. | `adopter-entry-doc-refresh` deferred follow-up (Jun 2026). |
 
-Authorizations for the first, second and fourth rows are the A/B/C/D Decision
-and agreement-removal acceptance quoted above. Monitoring authority, verbatim:
+Authorizations for the first, second and fourth rows are in their archived
+plans (`maintainer-attention`, `independent-scientific-check`,
+`remove-collaboration-agreement`). Monitoring authority, verbatim:
 
 > "Yes, we should keep watching."
 
@@ -589,9 +493,11 @@ batch, retained under this authorization:
 ### External correctness trial and scientific-check evidence
 
 A consenting scientific repository that did not contribute the doctrine still
-needs to run the bootstrap end to end. **It does not block 0.4 publication**:
-the release waiver above is not a completed trial. Revival: enroll a willing
-third party. This also revives the scientific-check/axis review (#19).
+needs to run the bootstrap end to end. **It does not block 0.4 publication**
+(waived 2026-10-19: *"Waive it for 0.4 — Go public once the batch lands. The
+README says plainly that it hasn't yet had an outside test."*), and that
+release waiver is not a completed trial. Revival: enroll a willing third
+party. This also revives the scientific-check/axis review (#19).
 
 The C1 blind trial covered two plans. One check targeted a different real risk;
 the other was drafted with and without a data-status prompt. It did not
