@@ -130,6 +130,15 @@ produces the confidence the cut rests on.
   Do not "fix" that difference.
 * `CHANGELOG.md` — rename `## Unreleased` to `## <version> — <date>`, and open
   a fresh empty `Unreleased` above it.
+* **The GitHub release notes** — copied from that renamed changelog section,
+  never drafted in a separate file: a kept draft goes stale (the 0.4.0 draft
+  did, and its wrong repository URL and profile names reached the published
+  notes). Above the copied section, write a short summary paragraph at release
+  time, once the section is final: in plain words, what changed for someone who
+  has already installed Cairn, and what they need to do about it. Then check
+  the page against the tree: the repository URL, the profile names and every
+  command it shows. Record the commit id the security gate checked, with the
+  gate output (`bootstrap/PROVENANCE.md`).
 * An **annotated tag**, signed or on a Maintainer-approved release commit on
   the protected branch, then push.
 * **After Zenodo mints the version DOI** for the new release, record it in the

@@ -276,7 +276,10 @@ this list has been run by an agent.
    Boundary B), before the push. Nothing in the tree is certified yet.
 4. **Your push**, the merge of `0.5-dev` into `master`, the tag, and the
    release notes copied from the changelog section (rename `## Unreleased` to
-   `## 0.5.0 — <date>`).
+   `## 0.5.0 — <date>`), with a short summary paragraph above it that I draft
+   at release time once the section is final (`docs/release-process.md`, "The
+   cut"). Before publishing, check the page's URL, profile names and commands
+   against the tree.
 
 ## Queued
 
