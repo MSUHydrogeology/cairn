@@ -51,6 +51,7 @@ MAX_LINE_BYTES=4096
 #: Compared with the shell's own string equality -- no `cmp`, no `diff` -- so no
 #: utility joins the pre-candidate trust set for this check.
 EXPECTED_PATHS='bootstrap/REANCHOR_RUNBOOK.md
+bootstrap/reanchor-launcher.template.sh
 bootstrap/reanchor.sh
 bootstrap/tests/_gate_manifest.py
 bootstrap/tests/_gate_preflight.py

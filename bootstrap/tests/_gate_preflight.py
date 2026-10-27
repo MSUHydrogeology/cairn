@@ -70,6 +70,10 @@ _ALLOWED_SIGNERS_REL = "dev/.cairn/allowed_signers"
 #: the roster are, because the same argument applies: its bytes decide what
 #: executes at the next ceremony.
 _ARTIFACT_REL = "bootstrap/reanchor.sh"
+#: The reviewed source of the launcher the Maintainer runs. The launcher is
+#: this file with one slot filled, and it decides what runs before this checker
+#: exists, so a change to the source has to show as a changed member.
+_LAUNCHER_TEMPLATE_REL = "bootstrap/reanchor-launcher.template.sh"
 
 #: **There is deliberately no signing epoch here.** A `_SIGNING_EPOCH` constant
 #: used to sit at this line and decide which commits were exempt from a
@@ -612,6 +616,13 @@ def declared_authority_closure() -> list[str]:
     the runbook used to *hold* the procedure as prose the operator retyped, and
     now the artifact *is* the procedure. Bytes that decide what executes at the
     next ceremony belong in the closure whatever language they are written in.
+
+    The launcher template joins for the same reason, one step earlier still: the
+    launcher is that template with a single slot filled, and it runs before the
+    checker is loaded. It holds the fixed member list the packet is compared
+    against, so a template change decides what a ceremony accepts. Without a
+    row for it, nothing would show that the reviewed source and the source in
+    the candidate differ.
     """
     return [
         "bootstrap/tests/_gate_preflight.py",     # this checker
@@ -623,6 +634,7 @@ def declared_authority_closure() -> list[str]:
         "bootstrap/tests/_oracle_trust.py",
         _RUNBOOK_REL,                             # canonical invocation source
         _ARTIFACT_REL,                            # the procedure itself
+        _LAUNCHER_TEMPLATE_REL,                   # what runs before this checker
         _ALLOWED_SIGNERS_REL,                     # pinned key set
     ]
 

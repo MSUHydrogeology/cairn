@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md](../proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md)
-**Status**: ready-to-implement
+**Status**: implementing
 **Waiting on Maintainer**: hand re-anchor after this lands
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27

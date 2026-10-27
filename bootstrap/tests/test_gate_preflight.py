@@ -183,6 +183,7 @@ class TestAuthorityClosure:
     @pytest.mark.parametrize("member", [
         "bootstrap/tests/_gate_preflight.py",   # the checker itself
         "bootstrap/REANCHOR_RUNBOOK.md",        # the invocation source
+        "bootstrap/reanchor-launcher.template.sh",  # the launcher's source
         "dev/.cairn/allowed_signers",           # the pinned key set
     ])
     def test_a_changed_member_routes_to_review(self, tmp_path, member):
@@ -1659,7 +1660,7 @@ class TestThreeCommandIntegration:
 #: The first-use hash set the loader verifies against. Recorded by the
 #: Maintainer at first use; the fixtures compute their own.
 #:
-#: **All ten authority-closure members, not the seven importable modules.**
+#: **Every authority-closure member, not only the importable modules.**
 #: This helper carried only the Python modules, while the authority closure
 #: also contains `REANCHOR_RUNBOOK.md` and
 #: `dev/.cairn/allowed_signers`, so the tests exercised a checklist narrower
@@ -4091,10 +4092,17 @@ class TestTheCeremonyArtifactIsAClosureMember:
     #: Retyped, not imported. A count derived from the thing under test agrees
     #: with it by construction; this is the statement that a member silently
     #: added or dropped has to disagree with.
-    EXPECTED_MEMBERS = 10
+    EXPECTED_MEMBERS = 11
 
     def test_the_artifact_is_in_the_declared_closure(self):
         assert "bootstrap/reanchor.sh" in P.declared_authority_closure()
+
+    def test_the_launcher_template_is_in_the_declared_closure(self):
+        """The launcher the Maintainer runs is this file with one slot filled,
+        and it runs before the checker is loaded. A template that is not a
+        member can change without any row showing it."""
+        assert ("bootstrap/reanchor-launcher.template.sh"
+                in P.declared_authority_closure())
 
     def test_the_closure_has_exactly_the_expected_arity(self):
         actual = len(P.declared_authority_closure())
