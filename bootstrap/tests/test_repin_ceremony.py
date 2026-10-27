@@ -1897,3 +1897,18 @@ def test_the_packet_grammar_the_runbook_gives_a_hand_builder_is_the_one_the_laun
     assert "under 4096 bytes" in section and "MAX_LINE_BYTES=4096" in template
     assert "LC_ALL=C" in section and "LC_ALL=C" in template
     assert "It carries no candidate id." in section and "must carry NO candidate" in template
+
+
+def test_the_record_checks_read_committed_objects_and_not_files_a_stage_one_run_could_rewrite(cbed):
+    """Stage 1 runs the candidate's tests in the checkout, so any file in the working tree may be
+    rewritten before a later check reads it.  The checks that name a commit read that commit's
+    objects: rewriting the record and the template on disk changes none of their answers."""
+    cbed.add_record()
+    labels = ("R0", "R1", "R2", "R4")
+    commands = [c for label in labels for c in page_command(label)] + [page_command("E5")[1]]
+    before = [run_page_command(cbed, c).stdout for c in commands]
+    assert all(before), before
+    (cbed.repo / RECORD).write_text("# Ceremony record\nread-commit " + "0" * 40 + "\nmember " + "0" * 64 + " nowhere\n")
+    template = cbed.repo / "bootstrap/reanchor-launcher.template.sh"
+    template.write_text(template.read_text() + "# rewritten after stage 1\n")
+    assert [run_page_command(cbed, c).stdout for c in commands] == before
