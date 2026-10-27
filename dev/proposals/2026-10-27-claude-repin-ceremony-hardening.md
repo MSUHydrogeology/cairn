@@ -128,3 +128,62 @@ Assurance path: high-assurance (not contested)
 Ten closure members (`_gate_preflight.py:600-625`; arity test test_gate_preflight.py:4094). Template is not a member (grep of the list: no match). `~/Downloads/cairn-m2-codex-round2-20260819` does not exist (`ls` fails), so that item is closed. The launcher's second reader exists (template:151) and RA-01, RA-03, RA-08, RA-15 are real runbook steps (runbook:113-158). `claim_check.py`: no flags. The instrument can match: the same grep finds `reanchor.sh` in test_reanchor.py.
 
 **Coverage line.** I did not read the launcher template beyond its fixed list, the 81 driver print sites individually, `_gate_preflight.py` beyond the closure function, or `reanchor.sh`. I did not check whether the 5670dda9 reviewed commit constrains A's landing beyond what M2's text says, nor the lockfile or AST ceremonies. No Security Review was done or cleared. I ran no tests, no tool, no re-anchor. Blocking: 2 (B1, B2); non-blocking: 5 (N1-N5).
+
+## Review -- Claude Sonnet 5.5 (usual, fresh session) -- 2026-10-27
+
+```
+Reviewed commit: e949eec3 (the proposal as it stands after the first Internal review); tree checked at 03b31d55
+Target: the whole proposal, against the source note, the build proposal's Scope delta, dev/plans/repin-build.md and the tree
+Prior findings: the first Internal review above (B1, B2, N1-N5). I do not repeat them; I say where I agree and where a premise is wrong.
+Assurance path: high-assurance (not contested)
+```
+
+**Tier**: usual (the Security Review is a separate pass by another reviewer; not done and not cleared here). **Verdict**: REVISE. **Findings**: 2 blocking (R1, R2), 3 non-blocking (R3-R5).
+
+**Conclusion.** Every fact in Context is true except one (R3), and building A and B for 0.5 and deferring C and D is sound. Two things must change before the Decision. The proposal says every unbuilt item is named, and at least three are not (R1). And the first review's cost of A rests on a premise the tree contradicts: M3 is already a closure transition (R2).
+
+### Foundations
+
+1. **Should it exist as framed, doing nothing included?** Yes. The note is retired on the claim "Nothing in this note is still open" (note :391-393), so an incomplete list loses items for good. Backing: R1; the build's Scope delta (build proposal :1240-1255) compared item by item.
+2. **Strongest alternative.** Do A together with C and D as one closure change after 0.5. It saves a second hand transition on the same launcher (R4). It costs one release with the template unpinned, which the Maintainer's by-hand digest comparison (runbook :48) partly covers. Backing: `git diff 6f29519d HEAD -- bootstrap/tests/_gate_manifest.py` (R2) and runbook :48.
+3. **What would show it wrong.** A's marginal cost (a rebuilt launcher and one more reviewed member) turning out larger than the Maintainer's report of the last ceremony; or the omitted items (R1) needing a decision the proposal already made by silence. Backing: proposal Signals section; the note's out-of-band passage (:304-316).
+
+### Check 1: unbuilt items in the note against A-G
+
+Matched: RD-3 template (A), disclosure criterion (B), second parser (C), runbooks shrink (D), staleness silence and risk trigger (E), dedicated key and typed confirmation (F), sterile worktree (G), `~/Downloads` launcher (closed, `ls` fails), the signed tree and double hash (build accepted, build :1244). Built, not unbuilt: classification, transaction, protected-set rule, lockfile adapter, zero-member rule (build :1258). Not matched:
+
+**R1 (blocking). Four items are dropped silently.**
+(a) The note says to **delete the claim** that out-of-band delivery on one machine adds assurance, and add a dated upgrade trigger (note :304-316). The runbook still makes the claim (`bootstrap/REANCHOR_RUNBOOK.md` :27, :48, :283, :377, :401, :438). It is a closure member, so it belongs with D, and a written control naming a party who does not exist is the note's own definition of worse than none.
+(b) The build's Scope delta keeps "not for the checker's internal messages the launcher does not print" (build :1246). B covers only "each line the driver prints".
+(c) The note's success criterion that REL-1 closes under disposition (a) (note :362-364). I could not find the register row (grep of `dev/` finds REL-1 only in the note, the build and one reflection), so I cannot say whether it is open.
+(d) "The previous pin covers the tool that moves the next one" (build :1247) is closed only by M2. Say that in one line so the retirement hides nothing.
+*Fix:* add (a)-(d) as rows, each with a recommendation and a question or a "closed by X" line. Drop the "every unbuilt item is named" claim until they are in.
+
+### Check 2: the facts in Context (measured, Python 3.13.13)
+
+True: `declared_authority_closure()` returns 10 members and the template is not one; `read_values` is at template :151 and the "deliberately a second one" comment at :140; `values_field` at `scripts/reanchor_ceremony.py:146`; `scripts/repin.py:952` calls `rc.values_field`; the runbook is 615 lines; the `~/Downloads` directory is gone; commit `4206505e` exists and is an ancestor of HEAD. Not true as written: R3.
+
+**R2 (blocking). M3 is already a closure transition, so A is cheaper than the first review said.** `bootstrap/tests/_gate_manifest.py` is a closure member, and it differs from the anchor `6f29519d` by two deleted lines (commit `fa86e2cb`, `git diff 6f29519d HEAD`). So `repin ceremony` will refuse the closure difference and M3 is by hand either way (repin.py:1027; PLANNING :250-252). A's marginal cost is then an eleventh packet row and a launcher rebuilt from a template that lists itself, not "the first transition". The Response to the first review's B1 should be written from this. Second, and outside this proposal, read from code and not run: `boot()` byte-compares the 10 `LISTED` files at HEAD with the anchor's entries on every verb, `_gate_manifest.py` is one of them (scripts/repin.py:62-67, :290-295), so M2 as planned (`--first-run --reviewed-commit 5670dda9`) looks like it refuses at today's HEAD. Someone should run `python scripts/repin.py status` and tell the plan owner before the Maintainer's steps start.
+
+### Check 3 and 4: recommendations and Scope delta
+
+Build A and B: sound, with R2 correcting A's price and the first review's B2 on B. Measured for B: `repin` calls four driver functions, not `rehearse` (grep of `rc.` in repin.py: `compare`, `check_packet_pair`, `packet_artifact_digest`, `values_field`). After R6b the driver's `main` stays as a read-only preflight (reanchor_ceremony.py:681-760, 172 `say`/`head` lines by my grep). B is small only if written against that remainder. Defer C and D: sound, and PLANNING :476-479 now carries the rows (03b31d55). Drop F and G: sound; G's trigger is on the board. E at default no: sound.
+
+**R3 (non-blocking). "Four steps serve the second reader" is overstated.** Context :20 and C say RA-01, RA-03, RA-08, RA-15 exist only to service it. The runbook text says that of RA-01 only (:113-118). RA-03 and RA-08 are re-hash checks (:119, :134). RA-15 is the digest the Maintainer computes, which the build restored on purpose (build Rev. 3, "six steps including the digest comparison"). The note itself says "three" at :198 and lists four at :128. *Fix:* "one to four, counted in C's design".
+
+**R4 (non-blocking). A first, then C and D, costs two hand transitions on the same launcher.** A pins bytes that C will change, and C and D are closure edits too. This is acceptable, because a pin in the meantime is worth something, but the Q3 and Q4 text should say that two transitions, not one, is the price.
+
+**R5 (non-blocking). Scope delta wording.** "Preserved" is literally true (the note's items are not accepted scope) but reads as "nothing is lost". With R1 fixed, say "none against accepted scope; the note's items are dispositioned by Q1-Q7 and R1's rows". The first review's N5 says the same.
+
+### Falsification ledger
+
+| Probe | Result |
+|---|---|
+| Re-run `declared_authority_closure()` | 10, template absent; matches the proposal |
+| Open each cited line (template :140, :151; driver :146; repin :952) | all four say what the proposal says |
+| `git diff 6f29519d HEAD` over all 10 members plus the template | one differs (`_gate_manifest.py`); R2 |
+| Grep runbook for "out-of-band" | at least six live uses; R1(a) |
+| Grep tests for driver disclosure strings | none named for `rehearse`; repin's own are at test_repin_ceremony.py:777-810 |
+| Instrument can match | the same grep finds the repin disclosures, so an empty result for `rehearse` is real |
+
+**Coverage line.** I did not run `repin status` or any test, so R2's M2 refusal is read from code, not shown. I did not read the launcher past :138-160, the 172 driver print sites one by one, the security strategy (REL-1 state), `reanchor.sh`, or the plan's chunk text beyond R6b and M2. I did not check the 25-commit threshold, nor the lockfile and AST ceremonies. No Security Review was done or cleared. A second author claim (`claude-d8d22f62`, "Response and Revision 1") was open on this file when I claimed it; this review reads e949eec3, not that Response. Blocking: 2; non-blocking: 3.
