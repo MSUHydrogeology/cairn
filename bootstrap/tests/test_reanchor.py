@@ -689,6 +689,23 @@ class TestStage1RunsTheCheckerWithTheRecordedValues:
         assert argv[argv.index("--signing-key") + 1] == \
             bed["values"]["signing_key"]
 
+    @pytest.mark.parametrize("via_launcher", (False, True))
+    def test_the_next_step_it_prints_starts_stage_two_under_a_short_environment(
+            self, bed, staged, via_launcher):
+        """The signer must not inherit the key socket, so every place that tells him how to start
+        stage 2 shows the short environment, with the home the values file names."""
+        env = {k: v for k, v in os.environ.items() if not k.startswith("CAIRN_")}
+        if via_launcher:
+            env.update(CAIRN_LAUNCHER="/x/launcher.sh", CAIRN_PACKET="/x/packet.txt",
+                       CAIRN_VALUES="/x/values", CAIRN_CANDIDATE="c" * 40)
+        r, _inv = _run_staged(staged, "stage1", _write_values(bed), env=env)
+        assert r.returncode == 0, r.stderr
+        text = " ".join((r.stdout + r.stderr).replace("\\\n", " ").split())
+        short = f'env -i HOME={bed["values"]["home"]} PATH=/usr/bin:/bin TERM="$TERM" LANG=C /bin/sh'
+        assert short in text, text[-900:]
+        if via_launcher:
+            assert f"{short} /x/launcher.sh /x/packet.txt /x/values {'c' * 40} --stage2" in text
+
     def test_stage1_prints_the_effective_configuration_before_running(
             self, bed, staged):
         """The contract puts the stop-point *before stage 1*, and the launcher
@@ -1038,6 +1055,12 @@ class TestShowReport:
         assert "scripts/link.py  mode 120000" in r.stdout
         assert "not line-scanned: frozen, 3" in r.stdout
 
+    def test_the_page_says_what_the_scan_finds_and_what_it_does_not(self, bed):
+        r = _run("show-report", self._package(bed))
+        assert "what this finds: an added call, write, command or compiled file" in r.stdout
+        assert "what it does not: a harmful change that matches no pattern, or a check that was removed." in " ".join(
+            r.stdout.split())
+
     def test_the_package_digest_and_candidate_id_are_printed(self, bed):
         import hashlib
         values = self._package(bed)
@@ -1088,7 +1111,9 @@ class TestShowReport:
         report = self._minimal_report(scan_checker="anchor")
         r = _run("show-report", self._package(bed, report))
         line = next(l for l in r.stdout.splitlines() if "anchored scan" in l)
-        assert "equal" in line and "not computed" not in line
+        assert "SAYS the anchor" in line and "only your E7 command tests that" in line
+        assert "E7 binds this digest, not the hits listed above" in line
+        assert "not computed" not in line and "equal" not in line
 
     @pytest.mark.parametrize("n", (1, 2, 3, 4, 5))
     def test_each_question_is_a_numbered_yes_no_line(self, bed, n):
@@ -1656,6 +1681,30 @@ class TestTheLauncherReaderRefusesBeforeAnyCandidateByte:
             name=f"values-absent-{key}")
         r = _launch(ceremony, values=values)
         _assert_no_candidate_code_ran(ceremony, r, "does not exist")
+
+
+    def test_a_values_file_that_is_not_a_plain_absolute_regular_file_refuses(self, ceremony):
+        """The path to the file the launcher reads is itself checked, before it is read: a link
+        could be swapped for another file between the Maintainer's check and the run, and a
+        relative path means whatever the working folder makes it."""
+        good = Path(_write_values(ceremony["bed"], name="values-plain"))
+        real_dir = ceremony["dir"] / "real"
+        real_dir.mkdir()
+        (real_dir / "values").write_text(good.read_text())
+        (ceremony["dir"] / "linkdir").symlink_to(real_dir)
+        (ceremony["dir"] / "link-values").symlink_to(good)
+        ok = _launch(ceremony, values=str(good))
+        assert ok.returncode == 0 and ceremony["marker"].exists(), ok.stderr       # the control
+        cases = [("symbolic link", str(ceremony["dir"] / "link-values"), None),
+                 ("symbolic link", str(ceremony["dir"] / "linkdir" / "values"), None),
+                 ("not an absolute path", good.name, ceremony["dir"]),
+                 ("not a regular file", str(real_dir), None),
+                 ("does not exist", str(ceremony["dir"] / "nowhere"), None)]
+        for needle, values, cwd in cases:
+            ceremony["marker"].unlink(missing_ok=True)
+            r = _launch(ceremony, values=values, cwd=cwd)
+            _assert_no_candidate_code_ran(ceremony, r, needle)
+            assert "values file" in r.stderr, (values, r.stderr)
 
 
 def _logging_tools(bed, log) -> dict:

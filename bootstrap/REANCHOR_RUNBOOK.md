@@ -1,9 +1,9 @@
 # Supervised re-anchor runbook (differential-oracle gate)
 
 > **Maintainer-only.** Agents build the packet and read the change; **you**
-> compare, answer and sign. No agent signs, loads your key or pushes (Phase 5
-> is yours too). The page ends at the marker line; what follows explains it and
-> is not a step.
+> compare, answer and sign. No agent signs, loads your key or pushes. The page
+> ends at the marker line; below it is reference, except Phase 5, the push, which
+> is the last step and is yours.
 
 **What your comparisons prove.** The anchor moves only to the commit you name,
 signed by your key, and nothing changed between what the reader read and what
@@ -95,7 +95,7 @@ Nothing in this page calls `_gate_reanchor.py promote`; it stays callable.
 | E4 | your key is one the anchored roster lists | which key a later roster adds |
 | E5 | the launcher is the reviewed template with one slot filled | that the template is safe |
 | E6 | the programs run before any candidate byte are the ones you named | the bytes of those programs: a tool you own can be replaced |
-| E7 | the scan the anchor's own code computes is the one on the page | a change that matches no scan pattern, or the first ceremony, which has no anchored scan |
+| E7 | the digest the page prints is the one the anchor's own code computes over this range | that the hits listed on the page are the scan behind that digest (it binds the digest only, and the page's line saying who made the scan is the report's own claim); a change that matches no scan pattern; the first ceremony, which has no anchored scan |
 | R1 to R4 | the record is the one commit on what was read, and names this packet, launcher and these files | what the reader wrote in it |
 | Y1 to Y5 | your own judgement | Y1 is a statement of the reader's; you cannot check it |
 
@@ -239,9 +239,7 @@ behalf.
 * **Explicit refspecs.** Not `--all`, not `--mirror`, and not whatever
   `push.default` resolves to: the ceremony names the two refs it publishes, so
   the set is read off this page rather than out of a config file the ceremony
-  does not control. It is also what keeps `refs/cairn/gate-authorization`
-  unpublished — the ref is absent because the refspecs are a closed list, not
-  because something is expected to filter it out.
+  does not control.
 
 **Step 2 — there is no two-push fallback.** If the atomic push is rejected,
 **stop and report incomplete publication.** Do not re-push ref-by-ref, do not

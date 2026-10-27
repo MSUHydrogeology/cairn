@@ -1394,6 +1394,25 @@ def test_the_three_stage_one_commands_on_the_page_each_do_what_the_page_says(cbe
     assert "== your answers, yes or no ==" in ran.stdout
 
 
+def test_the_stage_two_command_stage_one_prints_is_the_one_the_page_shows(cbed):
+    """He is told the command to sign with in two places, and each must name the same short
+    environment: a printed form without `env -i` hands the signer the key socket."""
+    import shlex
+    cbed.add_record()
+    stage1 = [c for lab, c in page_commands() if lab is None and "--stage2" not in c][1]
+    ran = run_page_command(cbed, stage1)
+    printed = [line.strip() for line in (ran.stderr + ran.stdout).replace("\\\n", " ").splitlines()
+               if "--stage2" in line and "<the digest from step 2>" in line]
+    assert len(printed) == 1 and printed[0].startswith("env -i "), (printed, ran.stderr + ran.stdout)
+    (page,) = [c for lab, c in page_commands() if lab is None and "--stage2" in c]
+    fill = {"<home>": cbed.home, "<launcher>": cbed.cdir / "reanchor-launcher.sh",
+            "<packet>": cbed.cdir / "authorization-packet.txt", "<values>": cbed.values,
+            "$CAND": cbed.git("rev-parse", "HEAD").stdout.strip(), "<digest>": "<the digest from step 2>"}
+    for placeholder, value in fill.items():
+        page = page.replace(placeholder, str(value))
+    assert shlex.split(printed[0]) == shlex.split(page)
+
+
 def test_the_page_command_that_scans_ignores_what_the_environment_and_the_home_folder_would_load(cbed, tmp_path):
     """E7 runs the anchor's own code as the Maintainer.  A module on `PYTHONPATH` or a `.pth` file in
     his user site would run first, in the anchor's code's place, unless the interpreter is told to
@@ -1478,6 +1497,25 @@ def test_the_stage_two_command_on_the_page_is_the_one_repin_runs(cbed):
     assert sorted(n for n, _ in named) == sorted(env), "the page and repin give the signer different variables"
     assert "SSH_AUTH_SOCK" not in env
     assert argv[:1] == [words[len(named) + 2]] and argv[-2] == "--stage2" == words[-2]
+
+
+def test_the_runbook_names_no_ref_that_no_live_step_creates_and_says_what_follows_its_page():
+    text = (REAL / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
+    makers = [p for p in [*(REAL / "scripts").glob("*.py"), REAL / "bootstrap/reanchor.sh",
+                          REAL / "bootstrap/reanchor-launcher.template.sh"]
+              if "gate-authorization" in p.read_text(encoding="utf-8")]
+    assert makers == [], f"{makers} now name the ref; the runbook should say how that step makes it"
+    assert "gate-authorization" not in text
+    head = " ".join(text[:text.index("**What your comparisons prove.**")].replace("> ", " ").split())
+    assert "below it is reference, except Phase 5, the push, which is the last step" in head
+    assert "is not a step" not in head
+
+
+def test_the_table_says_e7_binds_the_digest_and_not_the_hits_listed():
+    text = (REAL / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
+    (row,) = [line for line in text.splitlines() if line.startswith("| E7 |")]
+    assert "binds the digest only" in row and "not the scan behind that digest" not in row
+    assert "report's own claim" in row
 
 
 def test_neither_the_page_nor_the_artifact_tells_anyone_to_load_the_key():

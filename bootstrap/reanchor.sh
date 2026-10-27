@@ -457,17 +457,19 @@ ROSTER
         # of this block printed the wrong one: the code had the property and
         # the instructions walked the operator around it.
         if [ -n "$_s1_via_launcher" ]; then
-            printf '%s\n' "       sh $CAIRN_LAUNCHER \\"
+            printf '%s\n' "       env -i HOME=$V_home PATH=/usr/bin:/bin TERM=\"\$TERM\" LANG=C /bin/sh $CAIRN_LAUNCHER \\"
             printf '%s\n' "         $CAIRN_PACKET \\"
             printf '%s\n' "         $CAIRN_VALUES \\"
             printf '%s\n' "         ${CAIRN_CANDIDATE-<candidate-ref>} \\"
             printf '%s\n' "         --stage2 <the digest from step 2>"
             printf '\n%s\n' "  Same launcher, same packet, same values -- plus"
-            printf '%s\n'   "  --stage2. It verifies everything again into a new"
+            printf '%s\n'   "  --stage2, under a short environment with no key socket. It"
+            printf '%s\n'   "  verifies everything again into a new"
             printf '%s\n'   "  directory rather than trusting this one, and"
             printf '%s\n'   "  composes its own manifest, so you pass none."
         else
-            printf '%s\n' "       re-run YOUR LAUNCHER with:  --stage2 <the digest from step 2>"
+            printf '%s\n' "       re-run YOUR LAUNCHER with:  --stage2 <the digest from step 2>,"
+            printf '%s\n' "       started as  env -i HOME=$V_home PATH=/usr/bin:/bin TERM=\"\$TERM\" LANG=C /bin/sh"
             printf '\n%s\n' "  Run the launcher, not this artifact: stage 2 must"
             printf '%s\n'   "  re-verify into a fresh directory rather than reuse"
             printf '%s\n'   "  the one candidate code just ran in."
@@ -735,6 +737,10 @@ if len(paths) != sum(count(v, "role count") for v in role_counts.values()):
 
 add("  line scan: added lines in the paths that decide what runs, in the"
     " sensitive roster and in new files under scripts/ and bootstrap/")
+add("    what this finds: an added call, write, command or compiled file that"
+    " matches a fixed pattern list.")
+add("    what it does not: a harmful change that matches no pattern, or a check"
+    " that was removed.")
 add("    scanned paths: %d" % len(scanned))
 for name in text(" ".join(map(str, scan.get("patterns", []))), "patterns").split():
     add("    %-14s %d hit(s)" % (name, count(scan_counts.get(name, 0), "scan count")))
@@ -759,11 +765,12 @@ canon = json.dumps(scan, sort_keys=True, separators=(",", ":"),
                    ensure_ascii=True).encode("ascii")
 add("  scan digest      " + hashlib.sha256(canon).hexdigest())
 if report.get("scan_checker") == "anchor":
-    add("  anchored scan    computed by the anchor own checker (equal by"
-        " construction)")
+    add("  anchored scan    the report SAYS the anchor own checker made this"
+        " scan; only your E7 command tests that. E7 binds this digest, not the"
+        " hits listed above.")
 else:
-    add("  anchored scan    not computed here: a candidate checker made this"
-        " scan. Run the anchored command and compare its digest with this one.")
+    add("  anchored scan    not computed here: the report says a candidate"
+        " checker made this scan. Run E7 and compare its digest with this one.")
 add("")
 
 if sig:

@@ -315,7 +315,7 @@ def _preflight_output(driver, scratch, capsys, monkeypatch, *, pair_ok):
     """Run the driver's `main` over the scratch repository with the two slow,
     separately tested halves stubbed, and return what it printed."""
     values = scratch.root / "values"
-    values.write_text(f"checkout {scratch.repo}\n", encoding="utf-8")
+    values.write_text(f"checkout {scratch.repo}\nhome {scratch.root}/home\n", encoding="utf-8")
     monkeypatch.setattr(driver, "rehearse", lambda repo, state: True)
     monkeypatch.setattr(driver, "check_packet_pair",
                         lambda state, packet, launcher: pair_ok)
@@ -376,7 +376,7 @@ class TestThePrintedCommandsAreTheOnesThatWork:
 
     def _commands(self, out):
         return [shlex.split(line) for line in out.splitlines()
-                if line.startswith("    /bin/sh ")]
+                if line.startswith(("    /bin/sh ", "    env -i "))]
 
     def test_nothing_says_the_materials_come_from_outside(
             self, driver, scratch, capsys, monkeypatch):
@@ -392,7 +392,7 @@ class TestThePrintedCommandsAreTheOnesThatWork:
         out, _ = _preflight_output(driver, scratch, capsys, monkeypatch,
                                    pair_ok=True)
         assert "reanchor.sh" not in "\n".join(
-            line for line in out.splitlines() if line.startswith("    /bin/sh "))
+            line for line in out.splitlines() if line.startswith(("    /bin/sh ", "    env -i ")))
 
     def test_each_printed_launcher_form_is_accepted_by_the_real_launcher(
             self, driver, scratch, capsys, monkeypatch):
@@ -410,7 +410,7 @@ class TestThePrintedCommandsAreTheOnesThatWork:
             (_REPO / _TEMPLATE_REL).read_text(encoding="utf-8").replace(
                 _SLOT, "0" * 64), encoding="utf-8")
         for name, form in launcher_forms.items():
-            argv = ["/bin/sh", str(real), *form[2:]]
+            argv = ["/bin/sh", str(real), *form[form.index("/bin/sh") + 2:]]
             if name == "stage 2":
                 argv[argv.index("--stage2") + 1] = "f" * 64
             proc = subprocess.run(argv, capture_output=True, text=True,
@@ -424,4 +424,8 @@ class TestThePrintedCommandsAreTheOnesThatWork:
                   str(ceremony / "authorization-packet.txt"), str(values),
                   scratch.candidate]
         assert forms[0] == stage1
-        assert forms[1] == stage1 + ["--stage2", "<package-digest>"]
+        i = forms[1].index("/bin/sh")
+        assert forms[1][i:] == stage1 + ["--stage2", "<package-digest>"]
+        # stage 2 starts under the short environment the page shows, with the home from the values file
+        assert forms[1][:i] == ["env", "-i", f"HOME={scratch.root}/home", "PATH=/usr/bin:/bin",
+                                "TERM=$TERM", "LANG=C"], forms[1][:i]

@@ -504,9 +504,12 @@ def main() -> int:
     say("  compute the package digest.")
     say("")
     say("  Stage 2 asks for the key's passphrase once. Do not load the key into")
-    say("  an agent for it.")
+    say("  an agent for it, and start it with a short environment that holds no")
+    say("  key socket:")
     say("")
-    say(f"    /bin/sh {launcher} {packet} {args.values} {candidate} --stage2 <package-digest>")
+    home = values_field(args.values, "home") or "<home>"
+    say(f'    env -i HOME={home} PATH=/usr/bin:/bin TERM="$TERM" LANG=C '
+        f"/bin/sh {launcher} {packet} {args.values} {candidate} --stage2 <package-digest>")
     say("")
     say("  Then push both refs. Pushing is never implied.")
     return 0
