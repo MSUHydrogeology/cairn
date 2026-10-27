@@ -1,7 +1,7 @@
 # Let a fresh local agent read the re-anchor ceremony's code, and ask the Maintainer only for what he can do
 
 **Author**: Claude Sonnet 5.5 (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27
@@ -361,3 +361,34 @@ I (checker messages the launcher does not print): stay deferred, trigger kept (t
 * Revision 1's chunk 2 (a new report tool as a twelfth closure member) and the closure growing to 12: replaced by extending the existing report (B1).
 * Revision 1's chunk order (one reader third, driver cleanup fifth): reordered (B4).
 * The unscoped added-line scan and "every count zero or explained" (B2); two sensitive-roster entries in Q2 (B3); "the page binds his yes by a mechanism the plan picks" (replaced by the package digest he types); the allowlist fix for the evidence environment (replaced by reproduce-then-refuse); "I superseded by the page" (I stays deferred).
+
+## Security Review -- Claude Opus 5.5 (fresh session) -- 2026-10-27
+
+**Obligation**: Security Review of the re-anchor ceremony rewrite, the removal of the External-review requirement, and the chunk list that changes the gate's authority closure (the proposal's header `Review: usual + Security Review`; trust-ceremony surfaces)
+**Reviewed**: `ced40d64`, Revision 2. **Verdict**: safe to plan after two text fixes; `revising`. Cleared by a Response adopting B1 and B2.
+
+**Foundations**
+1. *Exist?* Yes: in ordinary ceremonies A2 and repin's closure refusal make the page's code signed code (`scripts/repin.py:289-294`, `:1027`).
+2. *Safer option.* In transitions, compute the scan with the anchor's checker (B1).
+3. *Wrong if* a transition whose new checker reports zero hits on its own dangerous change passes every check he can do. The design allows it (`bootstrap/reanchor-launcher.template.sh:531-547`, `:636-660`).
+
+### Blocking
+
+**B1. The residual omits transitions.** Every closure change runs by hand (`repin.py:1027`). There the launcher is the candidate's template (`SAME` compares it with candidate history), and the checker, scan and page are candidate code. So "closure change unreported: still stopped" holds only in ordinary ceremonies. Plainly: **his digests prove which commit is blessed, not what is in it.** A compromised builder or reader (C2 is a statement) can make every copy he compares. The scan sees added calls, not removed checks. *Fix*: say so; from the second ceremony, run the transition scan from the anchor's tree.
+
+**B2. The values file has no owner.** Today it is "You, once" (`bootstrap/REANCHOR_RUNBOOK.md:50`, `:54-62`). It names the `git` and `shasum` that compute every closure digest before candidate code (`template:540`). Revision 2 and chunk 7's runbook omit it. If an agent writes it, those checks run agent-chosen programs. *Fix*: keep it his, as equalities: the page prints each path and he compares it with `command -v <tool>`.
+
+### Non-blocking
+
+* **N1.** Diff raw blobs, not `git diff`: a `.gitattributes` `-diff` makes a file binary, so zero lines. List undecodable or oversized blobs and modes 100755, 120000, 160000. Never truncate hits. Encode new fields with `_display_path` (`_gate_preflight.py:1147`); the hand-path renderer prints raw (`reanchor.sh:701-745`), so make it refuse non-printable text.
+* **N2.** Scan scope misses `scripts/repin.py` and `scripts/reanchor_ceremony.py` (run in his shell next ceremony, `repin.py:289`) and `bootstrap/tests/conftest.py` (runs at stage 1). Scan every *decides* path.
+* **N3. Chunk 6.** The artifact keeps its path checks on arguments, or calling it directly skips validation. Rendering the report in the launcher needs `python`, a seventh executable, so a launcher mode must re-verify, then exec the artifact. Test the falsifier: the `"$L_*"` set before the first `exec` is six (no such test; `test_reanchor.py:1961` is a comment). Replace the parity test (`:1360`) with hostile values files refused by the real launcher before any program runs.
+* **N4. Chunk 5.** Pytest sets `PYTEST_CURRENT_TEST`, so refusing any `PYTEST_*` breaks in-process callers (`test_gate_preflight.py`). Name the steering variables.
+* **N5.** `repin packet` cannot boot in a transition (`repin status` stops). Read git objects before boot, or say the first packet is hand-built.
+* **N6.** Print every `allowed_signers` fingerprint and flag a change; an added key signs later anchors.
+* **N7.** Stage 2 says `ssh-add` and forwards `SSH_AUTH_SOCK` (`reanchor.sh:652`, `:661`); repin forbids it (`repin.py:801-803`). The runbook page holds the exact stage-2 command, not candidate output.
+* **N8.** Bandit skips when absent (`test_security_lint.py:149`); the record shows it ran. Chunk 1 is sound (blocks at MEDIUM; roster has it, `_oracle_activation.py:46`). Re-derive Q2 from the final tree.
+
+**Verified**: anchor unsigned (`%G?` N); stage 2 requires `G`, a roster principal and the probed fingerprint (`_gate_preflight.py:2690-2712`); Q2 covers today's range (9 `_scaffold` + 2).
+
+**Coverage.** Read-only commands only; no suite, ceremony or Bandit run. Not checked: Phases 0 and 4, the launcher's full values reader, stage-1 host tampering.
