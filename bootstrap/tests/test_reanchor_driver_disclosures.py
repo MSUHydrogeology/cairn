@@ -24,7 +24,6 @@ import hashlib
 import importlib.util
 import subprocess
 import sys
-import types
 from pathlib import Path
 
 import pytest
@@ -148,6 +147,9 @@ class TestTheClosureTableNamesWhatDiffers:
         driver.compare(same.repo, same.candidate, None)
         out = _printed(capsys)
         assert f"0 of {len(same.members)} members changed" in out
+        template_digest = hashlib.sha256(
+            (_REPO / _TEMPLATE_REL).read_bytes()).hexdigest()
+        assert f"template    {template_digest[:12]}" in out
         assert "TRANSITION" not in out
         assert not any(line.startswith(" *") for line in out.splitlines())
 
@@ -219,6 +221,8 @@ class TestThePairCheck:
         launcher = scratch.launcher(packet)
         assert driver.check_packet_pair(self.NO_PROBLEMS, packet, launcher) is True
         out = _printed(capsys)
+        assert f"sha256 {hashlib.sha256(packet.read_bytes()).hexdigest()}" in out
+        assert f"sha256 {hashlib.sha256(launcher.read_bytes()).hexdigest()}" in out
         assert "comparison will hold" in out
         assert "carries the environment-injection fix" in out
         assert "!!" not in out
@@ -271,7 +275,6 @@ class TestTheRehearsalSaysItExecutesCandidateCode:
 
     @pytest.mark.parametrize("load_path", [
         "nothing else",
-        "a leftover module of that name",
         "the real checker's directory on sys.path",
     ])
     def test_the_banner_is_printed_before_anything_candidate_owned_loads(
@@ -282,14 +285,13 @@ class TestTheRehearsalSaysItExecutesCandidateCode:
         state = driver.compare(scratch.repo, scratch.candidate, None)
         capsys.readouterr()
 
-        if load_path == "a leftover module of that name":
-            monkeypatch.setitem(
-                sys.modules, "_gate_preflight",
-                types.ModuleType("_gate_preflight"))
         if load_path == "the real checker's directory on sys.path":
             monkeypatch.syspath_prepend(str(_REPO / "bootstrap" / "tests"))
         # None makes `import _gate_preflight` raise on every path, so the
-        # rehearsal stops at the import that follows the banner.
+        # rehearsal stops at the import that follows the banner. It also
+        # replaces any module of that name an earlier test left behind, which
+        # is why a "leftover module" case is not a separate parameter: it would
+        # run the same statements as the first.
         monkeypatch.setitem(sys.modules, "_gate_preflight", None)
 
         with pytest.raises(SystemExit):
