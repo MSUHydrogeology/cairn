@@ -33,9 +33,11 @@ from __future__ import annotations
 import argparse
 import contextlib
 import base64
+import difflib
 import hashlib
 import json
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -1135,7 +1137,7 @@ def _is_ancestor(ancestor: str, descendant: str, *, repo: Path = _REPO) -> bool:
 # being authorized bounded and inspectable.  Signature counts travel as
 # **diagnostics**, never as an authorization verdict.
 
-RANGE_REPORT_SCHEMA = "cairn-range-review/v1"
+RANGE_REPORT_SCHEMA = "cairn-range-review/v2"
 
 #: Exhaustive and mutually exclusive by construction.  A path in none of the
 #: first four is `outside-coverage`, reported **in full** rather than counted:
@@ -1241,6 +1243,301 @@ def _signature_census(anchor: str, head: str, *, repo: Path = _REPO) -> dict:
     }
 
 
+# --------------------------------------------------------------------------
+# what the range report says about each changed path: its role, and the lines
+# an author added to the paths that decide what a ceremony runs
+# --------------------------------------------------------------------------
+
+_RANGE_ROLES = ("decides", "pinned", "other")
+
+#: Paths outside the authority closure that still decide what runs at a
+#: ceremony. `repin` byte-compares the first four with the anchor before it
+#: imports anything; `conftest.py` runs at stage 1 whenever pytest collects.
+_DECIDES_BEYOND_CLOSURE = (
+    "scripts/repin.py",
+    "scripts/reanchor_ceremony.py",
+    "bootstrap/tests/__init__.py",
+    "bootstrap/tests/_ast_attest.py",
+    "bootstrap/tests/conftest.py",
+)
+
+#: The fixed line patterns an added line is matched against, by name. This is
+#: an enumeration and ages: it finds an added call or write, never a harmful
+#: change that matches none of them, and never a check that was removed. Each
+#: pattern is bounded (no unbounded quantifier over a candidate line) because
+#: the lines are candidate bytes.
+SCAN_PATTERNS: tuple[tuple[str, "re.Pattern[bytes]"], ...] = tuple(
+    (name, re.compile(rx)) for name, rx in (
+        ("process-start",
+         rb"\bsubprocess\b|\bPopen\b"
+         rb"|\bos\.(?:system|popen|exec\w{1,8}|spawn\w{1,8}|posix_spawn\w{0,4}|fork)\b"
+         rb"|\bpty\.spawn\b|(?:^|[;&|(])\s{0,40}exec\s{1,8}[\"'$/]"),
+        ("network",
+         rb"\b(?:socket|urllib|urlopen|http\.client|httplib|ftplib|smtplib"
+         rb"|telnetlib|curl|wget)\b"
+         rb"|\bgit\s{1,8}(?:\S{1,40}\s{1,8}){0,4}(?:push|fetch|pull|clone|ls-remote)\b"),
+        ("dynamic-code",
+         rb"\b(?:eval|exec|compile)\s{0,8}\(|\b__import__\b|\bimportlib\b"
+         rb"|\bpickle\.loads?\b|\bmarshal\.loads?\b|\bctypes\b|\brunpy\b"
+         rb"|(?:^|[;&|(])\s{0,40}eval\s"),
+        ("shell-true", rb"\bshell\s{0,8}=\s{0,8}True\b"),
+        ("file-write",
+         rb"\.write_(?:text|bytes)\s{0,8}\("
+         rb"|\bopen\s{0,8}\([^)]{0,200}[\"'][rwab+]{0,3}[wax+][rwab+]{0,3}[\"']"
+         rb"|\bos\.(?:write|remove|unlink|rename|replace|rmdir"
+         rb"|removedirs|makedirs|mkdir|chmod|chown|symlink|link|truncate)\b"
+         rb"|\bshutil\.\w{1,24}"
+         rb"|\.(?:unlink|rmdir|mkdir|touch|chmod|symlink_to|hardlink_to)\s{0,8}\("
+         rb"|(?<![-=>0-9&<|])(?:>>|>)\s{0,8}(?:[\"']?\$|/(?!dev/null)|~)"),
+        ("nosec", rb"nosec\b"),
+    ))
+
+#: A blob larger than this is listed, not read: the report must not hold a
+#: candidate-sized file in memory to look for a line in it.
+SCAN_MAX_BLOB_BYTES = 1 << 20
+
+#: Added files under these roots are scanned (outside `bootstrap/tests/`).
+_SCAN_NEW_FILE_ROOTS = ("scripts/", "bootstrap/")
+_SCAN_NEW_FILE_EXCLUDED = ("bootstrap/tests/",)
+
+#: Tree modes a changed path is listed for, beyond a plain file.
+_LISTED_MODES = ("100755", "120000", "160000")
+
+
+def _path_role(rel: str, cls: str, decides: frozenset) -> str:
+    """decides / pinned / other, from the same policy the classes use.
+
+    *decides*: the closure plus the files the driver runs. *pinned*: any other
+    frozen file. The sensitive roster is a separate question (it widens what is
+    scanned and what the Maintainer must name), so it is not a role."""
+    if rel in decides:
+        return "decides"
+    if cls == "frozen":
+        return "pinned"
+    return "other"
+
+
+def _blob_sizes(shas: list[str], *, repo: Path = _REPO) -> list[int | None]:
+    """Object sizes in one `cat-file --batch-check`, None for a missing object."""
+    if not shas:
+        return []
+    p = _git("cat-file", "--batch-check=%(objecttype) %(objectsize)", repo=repo,
+             want_bytes=True, stdin="".join(f"{s}\n" for s in shas).encode())
+    if p.returncode != 0:
+        raise PreflightError(
+            f"could not size {len(shas)} blob(s): "
+            f"{(p.stderr or b'').decode('utf-8', 'replace').strip()}")
+    lines = (p.stdout or b"").decode("ascii", "replace").splitlines()
+    if len(lines) != len(shas):
+        raise PreflightError("cat-file --batch-check returned the wrong number "
+                             "of records")
+    out: list[int | None] = []
+    for ln in lines:
+        parts = ln.split()
+        out.append(int(parts[1]) if len(parts) == 2 and parts[0] == "blob"
+                   and parts[1].isdigit() else None)
+    return out
+
+
+def _added_lines(old: bytes | None, new: bytes) -> list[tuple[int, bytes]]:
+    """(1-based line number in *new*, line) for every line *new* adds to *old*.
+
+    Computed over the raw blobs, never through `git diff`: a `-diff` attribute
+    in the candidate's own tree makes git print "Binary files differ" and no
+    lines at all, which would let a changed file report zero added lines."""
+    new_lines = new.split(b"\n")
+    if old is None:
+        return list(enumerate(new_lines, 1))
+    old_lines = old.split(b"\n")
+    sm = difflib.SequenceMatcher(None, old_lines, new_lines, autojunk=False)
+    out: list[tuple[int, bytes]] = []
+    for tag, _i1, _i2, j1, j2 in sm.get_opcodes():
+        if tag in ("replace", "insert"):
+            out.extend((j + 1, new_lines[j]) for j in range(j1, j2))
+    return out
+
+
+def _scan_range(anchor_tree: str, candidate_tree: str, changed: list[bytes],
+                classes: dict[bytes, str], decides: frozenset, *,
+                repo: Path = _REPO) -> tuple[dict, dict[bytes, dict]]:
+    """The line scan over a range, and the per-path facts the report carries.
+
+    Scope: every *decides* path, every sensitive-roster path, and every file the
+    range adds under `scripts/` or `bootstrap/` outside the tests. Everything
+    else is counted by class and named in the report's path list, never
+    silently skipped. Every hit is kept, escaped as :func:`_display_path`
+    escapes a path; nothing is truncated."""
+    old_ents = {rel: (mode, sha) for mode, sha, rel in
+                _tree_entries(anchor_tree, repo=repo)}
+    new_ents = {rel: (mode, sha) for mode, sha, rel in
+                _tree_entries(candidate_tree, repo=repo)}
+    facts: dict[bytes, dict] = {}
+    to_read: list[tuple[bytes, str, str | None]] = []   # raw, new sha, old sha
+    listed: list[tuple[bytes, str]] = []
+    not_scanned: dict[str, int] = {}
+    scanned_raw: list[bytes] = []
+
+    for raw in changed:
+        rel = raw.decode("utf-8", errors="surrogateescape")
+        old, new = old_ents.get(rel), new_ents.get(rel)
+        change = "added" if old is None else "deleted" if new is None else "modified"
+        mode = new[0] if new else None
+        in_scope = (rel in decides or R.A.is_sensitive(rel)
+                    or (change == "added"
+                        and rel.startswith(_SCAN_NEW_FILE_ROOTS)
+                        and not rel.startswith(_SCAN_NEW_FILE_EXCLUDED)))
+        facts[raw] = {"change": change, "mode": mode, "scanned": False}
+        if mode in _LISTED_MODES:
+            listed.append((raw, f"mode {mode}"))
+        if not in_scope:
+            cls = classes[raw]
+            not_scanned[cls] = not_scanned.get(cls, 0) + 1
+            continue
+        if change == "deleted":
+            listed.append((raw, "deleted, nothing added"))
+        elif mode in ("100644", "100755"):
+            to_read.append((raw, new[1], old[1] if old and old[0] in
+                            ("100644", "100755") else None))
+        # a symlink or gitlink is listed above and has no text to scan
+
+    shas = [x for _r, n, o in to_read for x in ((n, o) if o else (n,))]
+    sizes = dict(zip(shas, _blob_sizes(shas, repo=repo)))
+    readable: list[tuple[bytes, str, str | None]] = []
+    for raw, nsha, osha in to_read:
+        if sizes[nsha] is None:
+            listed.append((raw, "unreadable"))
+        elif sizes[nsha] > SCAN_MAX_BLOB_BYTES:
+            listed.append((raw, "oversized"))
+        else:
+            # an oversized *old* blob only means every new line counts as added
+            readable.append((raw, nsha, osha if osha and sizes.get(osha) is not None
+                             and sizes[osha] <= SCAN_MAX_BLOB_BYTES else None))
+    wanted = sorted({x for _r, n, o in readable for x in (n, o) if x})
+    blobs = dict(zip(wanted, _batch_blobs(wanted, repo=repo)))
+
+    hits: list[dict] = []
+    for raw, nsha, osha in readable:
+        new_bytes = blobs[nsha]
+        try:
+            if b"\0" in new_bytes:
+                raise ValueError("NUL byte")
+            new_bytes.decode("utf-8")
+        except ValueError:
+            listed.append((raw, "unreadable"))
+            continue
+        facts[raw]["scanned"] = True
+        scanned_raw.append(raw)
+        for lineno, line in _added_lines(blobs.get(osha) if osha else None,
+                                         new_bytes):
+            for name, rx in SCAN_PATTERNS:
+                if rx.search(line):
+                    hits.append({"path": _display_path(raw), "line": lineno,
+                                 "pattern": name, "text": _display_path(line),
+                                 "_k": (raw, lineno, name)})
+    hits.sort(key=lambda h: h["_k"])
+    for h in hits:
+        del h["_k"]
+    listed.sort()
+    scan = {
+        "patterns": [n for n, _ in SCAN_PATTERNS],
+        "counts": {n: sum(1 for h in hits if h["pattern"] == n)
+                   for n, _ in SCAN_PATTERNS},
+        "hits": hits,
+        "listed": [{"path": _display_path(r), "reason": why}
+                   for r, why in listed],
+        "scanned": [_display_path(r) for r in sorted(scanned_raw)],
+        "not_line_scanned": dict(sorted(not_scanned.items())),
+    }
+    return scan, facts
+
+
+def scan_digest(scan: dict) -> str:
+    """SHA-256 over the canonical form of a scan -- the number the Maintainer
+    compares between the page and the anchor's own checker."""
+    return hashlib.sha256(json.dumps(
+        scan, sort_keys=True, separators=(",", ":"),
+        ensure_ascii=True).encode("ascii")).hexdigest()
+
+
+_KEY_TYPE = re.compile(r"(?:ssh-[a-z0-9-]+|ecdsa-sha2-[a-z0-9]+|sk-[a-z0-9@.-]+)")
+
+
+def _signer_lines(commit: str, *, repo: Path = _REPO) -> list[str]:
+    """One line per roster entry at *commit*: principal, key type, fingerprint.
+
+    The fingerprint is the one `ssh-keygen -lf` prints (SHA-256 of the decoded
+    key, base64 without padding), computed here so no tool joins the trust set.
+    A line that does not parse is shown as such, never dropped."""
+    blob = _blob_at(commit, _ALLOWED_SIGNERS_REL, repo=repo)
+    if blob is None:
+        return []
+    out = []
+    for raw in blob.split(b"\n"):
+        line = raw.strip()
+        if not line or line.startswith(b"#"):
+            continue
+        fields = line.split()
+        shown = None
+        for i, f in enumerate(fields):
+            try:
+                kt = f.decode("ascii")
+            except UnicodeDecodeError:
+                continue
+            if i >= 1 and _KEY_TYPE.fullmatch(kt) and i + 1 < len(fields):
+                try:
+                    key = base64.b64decode(fields[i + 1], validate=True)
+                except ValueError:
+                    break
+                fp = base64.b64encode(hashlib.sha256(key).digest()).decode()
+                shown = (f"{_display_path(fields[0])} {kt} "
+                         f"SHA256:{fp.rstrip('=')}")
+                break
+        out.append(shown or f"UNPARSEABLE {_display_path(line)}")
+    return sorted(out)
+
+
+def _running_checker_is_anchors(anchor: str, *, repo: Path = _REPO) -> bool:
+    """True when the bytes of this very file equal the anchor's copy -- so the
+    scan was computed by the anchor's own checker, not by candidate code."""
+    blob = _blob_at(anchor, "bootstrap/tests/_gate_preflight.py", repo=repo)
+    try:
+        return blob is not None and blob == Path(__file__).read_bytes()
+    except OSError:
+        return False
+
+
+def _changed_with_classes(anchor_tree: str, candidate_tree: str, frozen: set,
+                          cascade: set, phase: set, manifest_rel: str, *,
+                          repo: Path = _REPO):
+    """The changed raw paths, each one's class, and the set of deciding paths."""
+    decides = frozenset(declared_authority_closure()) | frozenset(
+        _DECIDES_BEYOND_CLOSURE)
+    changed = _changed_paths(anchor_tree, candidate_tree, repo=repo)
+    classes: dict[bytes, str] = {}
+    seen: set = set()
+    for raw in changed:
+        if raw in seen:
+            raise PreflightError(
+                f"duplicate path in the changed set: {_display_path(raw)!r}")
+        seen.add(raw)
+        rel = raw.decode("utf-8", errors="surrogateescape")
+        _verify_display(raw, _display_path(raw))
+        classes[raw] = _classify_path(rel, frozen, cascade, phase, manifest_rel)
+    return changed, classes, decides
+
+
+def range_scan(anchor: str, head: str, *, repo: Path = _REPO) -> dict:
+    """The line scan alone, for the anchored `scan-digest` command."""
+    anchor_tree = _resolve_tree(anchor, repo=repo)
+    candidate_tree = _resolve_tree(head, repo=repo)
+    changed, classes, decides = _changed_with_classes(
+        anchor_tree, candidate_tree, set(G._frozen_files(repo)),
+        set(G.CASCADE_MUTABLE), set(G.PHASE_SPLIT_TARGETS), G._MANIFEST_REL,
+        repo=repo)
+    return _scan_range(anchor_tree, candidate_tree, changed, classes, decides,
+                       repo=repo)[0]
+
+
 def range_review_report(anchor: str, head: str, *, branch: str,
                         expected_old: str, repo: Path = _REPO,
                         prospective_manifest: bytes | None = None) -> dict:
@@ -1253,20 +1550,23 @@ def range_review_report(anchor: str, head: str, *, branch: str,
     anchor_tree = _resolve_tree(anchor, repo=repo)
     candidate_tree = _resolve_tree(head, repo=repo)
 
+    changed, classes, decides = _changed_with_classes(
+        anchor_tree, candidate_tree, frozen, cascade, phase, manifest_rel,
+        repo=repo)
+    scan, facts = _scan_range(anchor_tree, candidate_tree, changed, classes,
+                              decides, repo=repo)
+
     entries: list[dict] = []
-    seen: set = set()
-    for raw in _changed_paths(anchor_tree, candidate_tree, repo=repo):
-        if raw in seen:
-            raise PreflightError(
-                f"duplicate path in the changed set: {_display_path(raw)!r}")
-        seen.add(raw)
+    for raw in changed:
         rel = raw.decode("utf-8", errors="surrogateescape")
-        display = _display_path(raw)
-        _verify_display(raw, display)
         entries.append({
             "bytes_b64": base64.b64encode(raw).decode("ascii"),
-            "display": display,
-            "class": _classify_path(rel, frozen, cascade, phase, manifest_rel),
+            "display": _display_path(raw),
+            "class": classes[raw],
+            "role": _path_role(rel, classes[raw], decides),
+            "change": facts[raw]["change"],
+            "mode": facts[raw]["mode"],
+            "scanned": facts[raw]["scanned"],
         })
 
     # Ordering is by RAW BYTES, never the display or a decoded string: two
@@ -1276,6 +1576,8 @@ def range_review_report(anchor: str, head: str, *, branch: str,
 
     by_class = {name: [e["display"] for e in entries if e["class"] == name]
                 for name in _RANGE_CLASSES}
+    by_role = {name: [e["display"] for e in entries if e["role"] == name]
+               for name in _RANGE_ROLES}
     # A live defect, found in `2df83d2`:
     # this read the manifest **already in the worktree**, while `apply` commits
     # `authoritative_manifest(...)` -- a different artifact with a different
@@ -1301,6 +1603,17 @@ def range_review_report(anchor: str, head: str, *, branch: str,
         "paths": entries,
         "by_class": by_class,
         "counts": {name: len(by_class[name]) for name in _RANGE_CLASSES},
+        "by_role": by_role,
+        "role_counts": {name: len(by_role[name]) for name in _RANGE_ROLES},
+        "scan": scan,
+        # whether the scan above came from the anchor's own checker; a
+        # candidate checker is judged only by the digest the Maintainer compares
+        "scan_checker": ("anchor" if _running_checker_is_anchors(anchor, repo=repo)
+                         else "candidate"),
+        "signers": {
+            "anchor": _signer_lines(anchor, repo=repo),
+            "candidate": _signer_lines(head, repo=repo),
+        },
         "signatures": _signature_census(anchor, head, repo=repo),
     }
 
@@ -3350,6 +3663,14 @@ def main(argv: list[str] | None = None) -> int:
     s1.add_argument("--reviewed-candidate", default=None,
                     help="TRANSITION MODE: the commit OID the loader resolved")
 
+    sd = sub.add_parser(
+        "scan-digest",
+        help="print the SHA-256 of the line scan over anchor..candidate; "
+             "read-only. Run from the anchor's own extracted checker and "
+             "compare with the page's number")
+    sd.add_argument("--repo", default=None, help=_REPO_HELP)
+    sd.add_argument("--anchor", default=_ANCHOR_REF)
+    sd.add_argument("--candidate", default="HEAD")
     a = sub.add_parser(
         "stage2",
         help="STAGE 2 -- no candidate code; validates the confirmed package, "
@@ -3382,6 +3703,16 @@ def main(argv: list[str] | None = None) -> int:
     except PreflightError as exc:
         sys.stderr.write(f"[REFUSE ] {exc}\n")
         return 2
+
+    if args.cmd == "scan-digest":
+        try:
+            scan = range_scan(_resolve(args.anchor, repo=repo),
+                              _resolve(args.candidate, repo=repo), repo=repo)
+        except PreflightError as exc:
+            sys.stderr.write(f"[REFUSE ] {exc}\n")
+            return 2
+        sys.stdout.write(scan_digest(scan) + "\n")
+        return 0
 
     if args.cmd == "evidence":
         try:
