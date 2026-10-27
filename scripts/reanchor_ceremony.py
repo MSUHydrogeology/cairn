@@ -8,29 +8,11 @@ authorization package is spent. An operator who learns at stage 1 that the state
 is refused has paid a full authorization package to be told something that was
 free.
 
-WITHOUT ``--run`` IT RUNS NO STAGE: it reports, and prints the commands. With
-``--run`` it performs them, under three conditions an adversarial review of an
-earlier version established the hard way.
-
-**One: it never renders the report from unverified bytes.** The runbook's
-``reanchor.sh show-report`` reads the working-tree artifact, which nothing has
-checked at that point. Here the artifact is hashed against the packet's
-``artifact_sha256`` first, and a mismatch refuses.
-
-**Two: it never manufactures the confirmation.** Stage 2 asks the operator to
-supply the package digest, and the artifact says why: no digest inside the
-package can satisfy it, because a package can carry its own digest. An earlier
-version computed that number and passed it, so stage 2 compared the driver's
-arithmetic against the driver's arithmetic -- tautologically true, and the one
-check requiring a human act could no longer fail. Now the digest is computed
-**twice, by two different programs** -- the ceremony's own ``hash-package`` and
-this tool's ``hashlib`` -- both are shown, and a disagreement refuses. That is
-two sources on one machine, which is what one machine can honestly offer. It is
-not an out-of-band third party and this tool does not pretend it is.
-
-**Three: no exit status is discarded.** The earlier version printed "the report
-below is the state your signature will bind", ignored a non-zero exit, and asked
-for confirmation of a report that was never rendered.
+IT RUNS NO STAGE: it reports, and prints the launcher commands. The ceremony
+itself is run by `scripts/repin.py ceremony` (ordinary ceremonies) or by hand
+from the runbook (a transition). Three helpers here are also called by
+`repin`: `values_field`, `compare` and `check_packet_pair`, and
+`packet_artifact_digest`.
 
 IT NEVER TOUCHES KEY MATERIAL, and it NEVER PUSHES.
 
@@ -160,9 +142,9 @@ def closure_members(repo: Path, candidate: str) -> list[str]:
     template is the reviewed statement of what the closure consists of.
 
     Read from the OBJECT STORE at the candidate, not from the working tree. The
-    template is the pre-candidate trust root and is NOT itself a closure member,
-    so nothing in this repository pins it; naming the commit is the only thing
-    that makes these bytes identifiable to a reviewer.
+    template is itself a closure member (the packet carries a row for it), so
+    its bytes are pinned like the rest; naming the commit is what makes them
+    identifiable to a reviewer.
     """
     blob = blob_at(repo, candidate, TEMPLATE_REL)
     if blob is None:
@@ -173,7 +155,7 @@ def closure_members(repo: Path, candidate: str) -> list[str]:
         start = text.index(marker) + len(marker)
         end = text.index("'", start)
     except ValueError:
-        stop(f"cannot find EXPECTED_PATHS in {template}")
+        stop(f"cannot find EXPECTED_PATHS in {TEMPLATE_REL}")
     return [line for line in text[start:end].splitlines() if line.strip()]
 
 
@@ -417,7 +399,7 @@ def rehearse(repo: Path, state: dict) -> bool:
     say("  not a proof that nothing else exists:")
     say("")
     say("    * the values file parse and every path predicate in it")
-    say("      -> rehearsable: run `reanchor.sh validate <values>`")
+    say("      -> stage 1 prints the effective configuration before any check runs")
     say("    * the signing key's own validation (that it parses, and that its")
     say("      fingerprint is in allowed_signers)")
     say("      -> rehearsable: `ssh-keygen -lf <key>`, compare by eye")
@@ -436,106 +418,6 @@ def rehearse(repo: Path, state: dict) -> bool:
     return True
 
 
-# ---------------------------------------------------------------------------
-# running the stages
-# ---------------------------------------------------------------------------
-
-def ask(question: str) -> bool:
-    """A yes/no the operator answers with the whole word.
-
-    ``y`` is not accepted. The questions this asks are the ceremony's only
-    human decisions, and a single keystroke is too easy to give to the wrong one.
-    """
-    try:
-        answer = input(f"\n{question}\n  type 'yes' to continue, "
-                       f"anything else to stop: ").strip()
-    except (EOFError, KeyboardInterrupt):
-        say("\nstopping -- nothing further was run.")
-        return False
-    if answer == "yes":
-        return True
-    say("stopping -- nothing further was run.")
-    return False
-
-
-def child_env(*, allow_agent: bool) -> dict:
-    """The environment a stage runs in.
-
-    ``V_*`` and ``L_*`` are removed because they are the two values readers'
-    output namespaces, and an exported one used to satisfy a presence check that
-    a values-file line was supposed to be the only way to satisfy. Both readers
-    now unset their own; this removes them a step earlier.
-
-    The agent socket is the stage boundary itself: stage 1 REFUSES if it finds
-    it could sign, and stage 2 cannot proceed without it.
-    """
-    env = {k: v for k, v in os.environ.items()
-           if not k.startswith(("V_", "L_"))}
-    env["LC_ALL"] = "C"
-    if not allow_agent:
-        env.pop("SSH_AUTH_SOCK", None)
-        env.pop("SSH_AGENT_PID", None)
-    return env
-
-
-def run_stage(cmd: list[str], *, allow_agent: bool,
-              capture: bool = False) -> tuple[int, str]:
-    say(f"\n  running: {' '.join(cmd)}")
-    say(f"  {rule()}")
-    result = subprocess.run(cmd, env=child_env(allow_agent=allow_agent),
-                            check=False,
-                            capture_output=capture, text=capture)
-    if capture:
-        sys.stdout.write(result.stdout or "")
-        sys.stderr.write(result.stderr or "")
-    say(f"  {rule()}")
-    say(f"  exit {result.returncode}")
-    return result.returncode, (result.stdout or "" if capture else "")
-
-
-def key_fingerprint(pub: Path) -> str | None:
-    """The SHA256 fingerprint of a public key, or None if it cannot be read."""
-    r = subprocess.run(["ssh-keygen", "-lf", str(pub)],
-                       capture_output=True, text=True, check=False)
-    if r.returncode != 0:
-        return None
-    for token in r.stdout.split():
-        if token.startswith("SHA256:"):
-            return token
-    return None
-
-
-def key_in_agent(fingerprint: str | None) -> bool | None:
-    """Is this key loaded? True / False / None when the agent cannot be asked.
-
-    Distinguishing "not loaded" from "cannot tell" matters at the end of the
-    ceremony: an unconditional `ssh-add -d` on a key that was never in the
-    agent returns "agent refused operation", which reads as a failure to put
-    the key away at the exact moment an operator is most alarmed by one.
-    """
-    if fingerprint is None:
-        return None
-    r = subprocess.run(["ssh-add", "-l"], capture_output=True, text=True,
-                       check=False)
-    if r.returncode == 2:          # cannot connect to the agent
-        return None
-    if r.returncode == 1:          # connected; holds nothing
-        return False
-    return fingerprint in r.stdout
-
-
-def key_away(private: Path, fingerprint: str | None) -> None:
-    """Say what to do about the key, based on where it actually is."""
-    state = key_in_agent(fingerprint)
-    if state is True:
-        say(f"    ssh-add -d {private}")
-    elif state is False:
-        say("    the ceremony key is NOT in the agent -- nothing to put away.")
-        say("    (If it had been, this would name the ssh-add to run.)")
-    else:
-        say(f"    ssh-add -d {private}   # could not query the agent to check")
-
-
 def packet_artifact_digest(packet: Path) -> str | None:
     for line in packet.read_text().splitlines():
         if line.startswith("artifact_sha256 "):
@@ -543,139 +425,8 @@ def packet_artifact_digest(packet: Path) -> str | None:
     return None
 
 
-def drive(repo: Path, values: Path, packet: Path, launcher: Path,
-          candidate: str) -> int:
-    package_field = values_field(values, "package")
-    if package_field is None:
-        stop(f"{values} has no 'package' field")
-    package = Path(package_field)
-
-    # THE ARTIFACT THAT RENDERS THE REPORT IS CHECKED BEFORE IT RUNS.
-    artifact = repo / ARTIFACT_REL
-    want = packet_artifact_digest(packet)
-    got = sha256_file(artifact)
-    if want is None:
-        stop("the packet has no artifact_sha256 row")
-    if want != got:
-        stop(f"{ARTIFACT_REL} in the working tree is {got[:12]}, but the packet "
-             f"authorizes {want[:12]}. The launcher would refuse to start it, "
-             f"and this tool will not render the report from it either.")
-    say(f"\n  {ARTIFACT_REL} matches the packet's artifact_sha256 ({got[:12]}),")
-    say("  so the report below is rendered by bytes the packet authorizes.")
-
-    head("Stage 1 -- the key must be unreachable")
-    say("""
-  Stage 1 runs the checks and writes the authorization package. It holds no
-  key, and it REFUSES if it finds it could sign -- so if a passphrase prompt
-  appears, DECLINE IT. The prompt is the ceremony asking whether the key is
-  reachable; answering it makes the probe succeed, which is the failure case.
-
-  This tool removes SSH_AUTH_SOCK from stage 1's environment.""")
-
-    if package.exists():
-        stop(f"the package leaf {package} already exists; stage 1 requires it "
-             f"absent. Move it aside, then re-run.")
-    if not ask("Run stage 1 now?"):
-        return 1
-
-    code, _ = run_stage(["/bin/sh", str(launcher), str(packet), str(values),
-                         candidate], allow_agent=False)
-    if code != 0:
-        stop("stage 1 did not succeed. Nothing was signed and no ref moved.", code)
-    if not package.exists():
-        stop(f"stage 1 reported success but {package} is not there")
-
-    head("The report -- the one judgement in this ceremony")
-    say("""
-  Everything else here is arithmetic. This is not. A confirmed digest over an
-  unread report authorizes a state nobody looked at.""")
-    code, _ = run_stage(["/bin/sh", str(artifact), "show-report", str(values)],
-                        allow_agent=False)
-    if code != 0:
-        stop(f"show-report exited {code}, so no report was rendered. Refusing "
-             f"to ask you to confirm something that was never displayed.", code)
-
-    head("The package digest, computed twice")
-    code, out = run_stage(["/bin/sh", str(artifact), "hash-package", str(values)],
-                          allow_agent=False, capture=True)
-    if code != 0:
-        stop(f"hash-package exited {code}", code)
-    ceremony_digest = ""
-    for token in out.split():
-        if len(token) == 64 and all(c in "0123456789abcdef" for c in token):
-            ceremony_digest = token
-            break
-    own_digest = sha256_file(package)
-
-    say("")
-    say(f"  ceremony (hash-package)   {ceremony_digest or '(none found)'}")
-    say(f"  this tool (hashlib)       {own_digest}")
-    say("")
-    if ceremony_digest != own_digest:
-        stop("the two computations DISAGREE. That is either a package being "
-             "rewritten underneath this process or a defect in one of the two "
-             "programs. Either way the ceremony stops.")
-    say("  They agree. Two programs, two implementations, one file -- which is")
-    say("  what a single machine can honestly offer. It is NOT an out-of-band")
-    say("  confirmation by a second party, and this tool does not claim it is.")
-    say("")
-    say("  Confirm it a third way if you want to:")
-    say(f"    shasum -a 256 {package}")
-
-    if not ask("Does the report above describe what you intend to bless?"):
-        return 1
-
-    head("Load the ceremony key now -- and not before")
-    signing = values_field(values, "signing_key") or "<your key>"
-    private = signing[:-4] if signing.endswith(".pub") else signing
-    say("")
-    say("  Until this moment the key-at-rest precondition held, and stage 1")
-    say("  proved it could not sign. Loading earlier would collapse the")
-    say("  boundary the two stages exist to create.")
-    say("")
-    say(f"    ssh-add {private}")
-    say("")
-    say("  EITHER WAY WORKS. The signer will use the agent if the key is in")
-    say("  it, and otherwise read the key file and prompt you for the")
-    say("  passphrase directly. This tool reports which it sees rather than")
-    say("  insisting on one:")
-    say("")
-    fp = key_fingerprint(Path(signing))
-    state = key_in_agent(fp)
-    say(f"    ceremony key fingerprint   {fp or '(could not read)'}")
-    if state is True:
-        say("    in the agent               yes")
-    elif state is False:
-        say("    in the agent               no -- stage 2 will prompt you")
-    else:
-        say("    in the agent               could not ask the agent")
-    if not os.environ.get("SSH_AUTH_SOCK"):
-        say("    SSH_AUTH_SOCK              unset in this shell")
-
-    if not ask("Ready for stage 2?"):
-        return 1
-
-    code, _ = run_stage(["/bin/sh", str(launcher), str(packet), str(values),
-                         candidate, "--stage2", own_digest], allow_agent=True)
-    if code != 0:
-        say("")
-        say("  Stage 2 did not succeed. Deal with the key before anything else:")
-        key_away(Path(private), fp)
-        return code
-
-    head("Done -- and NOT published")
-    say("\n  The branch and the anchor moved in one transaction, locally.")
-    say("\n  Two things remain, and both are yours:")
-    say("")
-    say("  1. The key:")
-    key_away(Path(private), fp)
-    say("")
-    say("  2. Publish both refs -- this is the step that makes it real:")
-    say(f"    git push origin HEAD '+{ANCHOR_REF}:{ANCHOR_REF}'")
-    say("\n  This tool does not push, ever.")
-    return 0
-
-
+# ---------------------------------------------------------------------------
+# the command line
 # ---------------------------------------------------------------------------
 
 def main() -> int:
@@ -685,9 +436,6 @@ def main() -> int:
     parser.add_argument("--values", type=Path, required=True)
     parser.add_argument("--ceremony-dir", type=Path, required=True)
     parser.add_argument("--candidate", default="HEAD")
-    parser.add_argument("--run", action="store_true",
-                        help="perform the ceremony after the preflight clears. "
-                             "Without this, the preflight reports and stops.")
     args = parser.parse_args()
 
     if not args.values.exists():
@@ -739,34 +487,29 @@ def main() -> int:
         return 1
     if not pair_ok:
         say("  The tree is fine; the materials are not. The packet and launcher")
-        say("  are produced together by the review that reads them, and")
-        say("  delivered out of band.")
+        say("  are produced together: by `python scripts/repin.py packet` in an")
+        say("  ordinary ceremony, by hand in a transition (see the runbook).")
         return 1
 
-    if args.run:
-        return drive(repo, args.values, packet, launcher, candidate)
-
-    say("  Preflight only. Add --run to perform the ceremony, or run it by")
-    say("  hand with the commands below.")
+    say("  Preflight only: this tool runs no stage. The ceremony is")
+    say("  `python scripts/repin.py ceremony` for an ordinary one. By hand, run")
+    say("  each command on one line, in this order.")
     say("")
-    say(f"    /bin/sh {launcher} \\")
-    say(f"        {packet} \\")
-    say(f"        {args.values} \\")
-    say(f"        {candidate}")
+    say("  Stage 1 runs candidate code with the key away:")
     say("")
-    say("  Then read the report, and compute the package digest yourself.")
-    say("  These two are the artifact's own subcommands, not the launcher's:")
+    say(f"    /bin/sh {launcher} {packet} {args.values} {candidate}")
     say("")
-    say(f"    /bin/sh {repo / ARTIFACT_REL} show-report  {args.values}")
-    say(f"    /bin/sh {repo / ARTIFACT_REL} hash-package {args.values}")
+    say("  Stage 1 ends by printing the show-report and hash-package commands for")
+    say("  the verified copy of the artifact. Run those, not the copy in your")
+    say("  working tree: nothing has checked that one. Read the report, then")
+    say("  compute the package digest.")
     say("")
-    say("  THEN load the key -- not before. Stage 1 refuses if it finds it can")
-    say("  sign, and that refusal is the N4 precondition doing its job.")
+    say("  Stage 2 asks for the key's passphrase once. Do not load the key into")
+    say("  an agent for it.")
     say("")
-    say(f"    /bin/sh {launcher} {packet} {args.values} {candidate} \\")
-    say("        --stage2 <the digest you computed>")
+    say(f"    /bin/sh {launcher} {packet} {args.values} {candidate} --stage2 <package-digest>")
     say("")
-    say("  Then put the key away, and push. Pushing is never implied.")
+    say("  Then push both refs. Pushing is never implied.")
     return 0
 
 

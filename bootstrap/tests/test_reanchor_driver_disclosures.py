@@ -301,3 +301,127 @@ class TestTheRehearsalSaysItExecutesCandidateCode:
         assert not marker.exists(), (
             "the scratch candidate's module was loaded: the rehearsal ran "
             "candidate code before this test could stop it")
+
+
+# ---------------------------------------------------------------------------
+# the driver runs no stage, and what it prints is typed commands that work
+# ---------------------------------------------------------------------------
+
+import re  # noqa: E402
+import shlex  # noqa: E402
+
+
+def _preflight_output(driver, scratch, capsys, monkeypatch, *, pair_ok):
+    """Run the driver's `main` over the scratch repository with the two slow,
+    separately tested halves stubbed, and return what it printed."""
+    values = scratch.root / "values"
+    values.write_text(f"checkout {scratch.repo}\n", encoding="utf-8")
+    monkeypatch.setattr(driver, "rehearse", lambda repo, state: True)
+    monkeypatch.setattr(driver, "check_packet_pair",
+                        lambda state, packet, launcher: pair_ok)
+    monkeypatch.setattr(sys, "argv", [
+        "reanchor_ceremony.py", "--values", str(values),
+        "--ceremony-dir", str(scratch.root / "ceremony"),
+        "--candidate", scratch.candidate])
+    driver.main()
+    return _printed(capsys), values
+
+
+class TestTheDriverRunsNoStage:
+
+    def test_nothing_under_scripts_runs_a_stage_or_names_the_retired_corrector(self):
+        pattern = re.compile(r"def drive\b|--run\b|correct_pinned_digests")
+        # the instrument can match: the pattern finds each of its three targets
+        for sample in ("def drive(repo)", "add --run to go", "correct_pinned_digests.py"):
+            assert pattern.search(sample), sample
+        found = [f"{p.name}:{n}" for p in sorted((_REPO / "scripts").glob("*.py"))
+                 for n, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1)
+                 if pattern.search(line)]
+        assert found == []
+
+    def test_the_run_option_is_refused_as_unknown(self, driver, scratch, monkeypatch,
+                                                  capsys):
+        values = scratch.root / "values"
+        values.write_text(f"checkout {scratch.repo}\n", encoding="utf-8")
+        monkeypatch.setattr(sys, "argv", ["x", "--values", str(values),
+                                          "--ceremony-dir", str(scratch.root),
+                                          "--run"])
+        with pytest.raises(SystemExit) as exc:
+            driver.main()
+        assert exc.value.code == 2
+        assert "unrecognized arguments: --run" in capsys.readouterr().err
+
+
+class TestTheClosureListIsReadFromTheTemplate:
+
+    def test_a_candidate_template_with_no_member_list_stops_naming_the_template(
+            self, driver, scratch, capsys):
+        """The message used to name a variable that did not exist, so the stop
+        the operator needed was a NameError instead."""
+        (scratch.repo / _TEMPLATE_REL).write_text("no list here\n", encoding="utf-8")
+        _git(scratch.repo, "commit", "-qam", "template without a list")
+        bare = _git(scratch.repo, "rev-parse", "HEAD")
+        with pytest.raises(SystemExit):
+            driver.closure_members(scratch.repo, bare)
+        assert f"cannot find EXPECTED_PATHS in {_TEMPLATE_REL}" in _printed(capsys)
+
+    def test_the_launcher_template_is_a_member_and_the_docstring_agrees(
+            self, driver):
+        members = _members()
+        assert _TEMPLATE_REL in members
+        assert "NOT itself a closure member" not in driver.closure_members.__doc__
+
+
+class TestThePrintedCommandsAreTheOnesThatWork:
+
+    def _commands(self, out):
+        return [shlex.split(line) for line in out.splitlines()
+                if line.startswith("    /bin/sh ")]
+
+    def test_nothing_says_the_materials_come_from_outside(
+            self, driver, scratch, capsys, monkeypatch):
+        out, _ = _preflight_output(driver, scratch, capsys, monkeypatch,
+                                   pair_ok=False)
+        assert "out of band" not in out
+        assert "repin" in out and "packet" in out
+
+    def test_no_printed_command_runs_the_working_tree_copy_of_the_artifact(
+            self, driver, scratch, capsys, monkeypatch):
+        """Every file under the closure is candidate code until the launcher
+        has checked it, so the driver must not tell a person to run one."""
+        out, _ = _preflight_output(driver, scratch, capsys, monkeypatch,
+                                   pair_ok=True)
+        assert "reanchor.sh" not in "\n".join(
+            line for line in out.splitlines() if line.startswith("    /bin/sh "))
+
+    def test_each_printed_launcher_form_is_accepted_by_the_real_launcher(
+            self, driver, scratch, capsys, monkeypatch):
+        """Run each printed form through the real launcher template: the
+        arguments must parse (the launcher refuses later, on the absent packet,
+        rather than printing its usage text)."""
+        out, values = _preflight_output(driver, scratch, capsys, monkeypatch,
+                                        pair_ok=True)
+        forms = self._commands(out)
+        assert len(forms) == 2, out
+        launcher_forms = {"stage 1": forms[0], "stage 2": forms[1]}
+        assert "--stage2" in forms[1] and "--stage2" not in forms[0]
+        real = scratch.root / "real-launcher.sh"
+        real.write_text(
+            (_REPO / _TEMPLATE_REL).read_text(encoding="utf-8").replace(
+                _SLOT, "0" * 64), encoding="utf-8")
+        for name, form in launcher_forms.items():
+            argv = ["/bin/sh", str(real), *form[2:]]
+            if name == "stage 2":
+                argv[argv.index("--stage2") + 1] = "f" * 64
+            proc = subprocess.run(argv, capture_output=True, text=True,
+                                  check=False)
+            assert proc.returncode != 0
+            assert "usage:" not in proc.stderr, (name, proc.stderr)
+            assert "REFUSE:" in proc.stderr, (name, proc.stderr)
+        # and each names the pieces in the launcher's own argument order
+        ceremony = scratch.root / "ceremony"
+        stage1 = ["/bin/sh", str(ceremony / "reanchor-launcher.sh"),
+                  str(ceremony / "authorization-packet.txt"), str(values),
+                  scratch.candidate]
+        assert forms[0] == stage1
+        assert forms[1] == stage1 + ["--stage2", "<package-digest>"]
