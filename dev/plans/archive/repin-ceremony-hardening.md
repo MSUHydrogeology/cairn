@@ -1,8 +1,8 @@
 # Plan: finish the re-anchor ceremony hardening that the repin build left out
 
 **Author**: Claude Sonnet 5.5 (Strategy)
-**Source proposal**: [dev/proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md](../proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md)
-**Status**: ready-to-archive
+**Source proposal**: [dev/proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md](../../proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md)
+**Status**: archived
 **Waiting on Maintainer**: hand re-anchor after this lands
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27

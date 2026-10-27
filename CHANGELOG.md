@@ -38,6 +38,20 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+### Changed — The re-anchor ceremony protects its launcher template, and says what delivering the launcher proves
+
+- The launcher template (`bootstrap/reanchor-launcher.template.sh`) is now the
+  eleventh file the ceremony's checker protects: a changed template shows up as
+  a changed file and is refused through its packet row. The runbook, the
+  template's header and two checker comments no longer say that handing the
+  launcher over on a separate path adds assurance. Every step stays, and the
+  check that matters, comparing the launcher with the reviewed template, is
+  spelled out as two commands that print `SAME` or `DIFFERENT`. New tests pin
+  the trust warnings the ceremony driver prints. This does not yet make the
+  tool check that the launcher in hand equals the template: that stays a step
+  the Maintainer does by hand. Python 3.13.13 was the tested version.
+  ([plan](dev/plans/archive/repin-ceremony-hardening.md))
+
 ### Added — `repin`, one tested tool for the routine re-pins of the gate (not yet used on a real ceremony)
 
 - `scripts/repin.py` replaces the hand-made corrections in the re-anchor
