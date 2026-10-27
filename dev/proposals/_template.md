@@ -1,5 +1,9 @@
-<!-- The proposal template. Copy everything below the rule into
-     `dev/proposals/<YYYY-MM-DD>-<author>-<slug>.md`. -->
+<!-- The proposal template. Copy only the opening header and section
+     headings (`Context` through `Assurance path`) below the rule into
+     `dev/proposals/<YYYY-MM-DD>-<author>-<slug>.md`, replace every prompt
+     with your answer (or a one-line `N/A`), and do NOT copy template
+     commentary or the later-stage `Review`, `Response`, and `Decision`
+     skeletons at the bottom. -->
 
 # Proposal template
 
@@ -125,6 +129,16 @@ skeleton does not call for a separate `**Obligation**` line.
 
 The proposal stays one file: reviews, responses and decisions are appended to it. Keep what goes in it small.
 
+* **Count words, not lines — never unwrap lines to look short.** Keep an
+  opening proposal to **≤ 1,000 words (~6 KB)** and each appended review pass
+  or response to **≤ 600 words (~4 KB)**. Wrap prose normally; putting a
+  paragraph on one 400-character line to lower `wc -l` saves zero tokens.
+* **Never copy template boilerplate or later-stage sections.** Copy only the
+  opening headings (`## Context` through `## Assurance path`) below the rule;
+  replace prompts and gated blocks (`Security preflight`, `Independent
+  scientific check`) with your answer or a one-line `N/A: ...`, and never copy
+  template instructions, slot comments, or the `## Review`, `## Response`, and
+  `## Decision` skeletons until that lifecycle step occurs.
 * **Scripts and task briefs stay out.** A checker lives in a script or a test
   file, not in the plan. A task brief for a sub-agent is a short note or file,
   cited by path and commit.
@@ -386,9 +400,10 @@ Plus the two non-surface triggers: the **by-file license split**, and the
 shipped template).
 <!-- cairn:end assurance-path-triggers -->
 
-## Review -- {{reviewer}} -- {{YYYY-MM-DD}}
+<!-- Later-stage sections — do NOT copy into a new proposal; append each
+     section only when that lifecycle step occurs. -->
 
-The four-field review basis is mandatory, so a later reader knows what was read:
+## Review -- {{reviewer}} -- {{YYYY-MM-DD}}
 
 ```
 Reviewed commit: <full commit id>
@@ -415,38 +430,23 @@ test, line or command that backs it):
 3. **What would show it wrong.** {{what would make the author withdraw}} -- <evidence>
 
 Lead with the strongest version of what the proposal is trying to do, then the
-findings. Mark each blocking or non-blocking, and say what evidence would close
-it. A reviewer answering a Response must also verify its withdrawal ledger.
+findings (blocking or non-blocking, with the evidence that closes each). If
+answering a Response, also verify its withdrawal ledger.
 
 ## Response -- {{author}} -- {{YYYY-MM-DD}}
 
-A disposition per finding, then the complete current contract.
-Ship one complete current contract with the Response, every time — not
-conditionally, and not a diff against what the proposal was.
-Earlier sections remain immutable history; the newest reviewed revision binds.
-
-Each revision's headings sit at the left margin — an H3 nested inside a prior
-section is not a new revision, and the checker reads position, not intent.
-
-Each revision ends with a ledger headed exactly
-`### Withdrawn / superseded commitments` — written as a real H3 in your
-proposal, not here, where it would make every scaffolded copy look like it
-already had one.
-
-List every commitment the revision drops or replaces, one per line, with why.
-If nothing was withdrawn, only a written `None` distinguishes an empty ledger
-from a forgotten one. The checker confirms a ledger is present and parseable;
-it never verifies that the ledger is complete — that is the reviewer's job, and
-it is why the ledger is read rather than counted.
+One disposition per finding, followed by the complete current contract at
+left-margin headings (not a diff against the opening proposal, and not nested
+as H3s inside an earlier section). End the revision with a real H3 headed
+`### Withdrawn / superseded commitments` listing every dropped or replaced
+commitment with why, or `None` if nothing was withdrawn.
 
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
 
 **{{ACCEPTED | REJECTED | SUPERSEDED}}.** The Maintainer's authorization,
-quoted **verbatim and visually isolated**:
+quoted **verbatim and visually isolated** (no paraphrase):
 
 > "{{the authorizing words}}"
 
-Paraphrase is not permitted here — it admits drift, condition-softening, and
-hallucinated approval. Explanatory prose is fine, kept clearly separate from
-the quoted words. An agent may scribe a Decision only on an unambiguous
-instruction, and the commit carries nothing else.
+An agent may scribe a Decision only on an unambiguous instruction, and the
+commit carries nothing else.

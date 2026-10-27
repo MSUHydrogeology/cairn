@@ -5,15 +5,18 @@
 
 # Strategy-note template
 
-> **This is the `dev/strategy/` template.** To open a strategy note, copy
-> the section template below the rule into
-> `dev/strategy/<YYYY-MM-DD>-<author>-<short-slug>.md`, fill it, and commit.
+> **This is the `dev/strategy/` template.** To open a strategy note, copy only
+> the header and section headings below the rule into
+> `dev/strategy/<YYYY-MM-DD>-<author>-<short-slug>.md`, replace the prompts with
+> your content (do not copy template instructions), and commit.
 > The doctrine above the rule is reference — read it once, then work from the
 > sections below. The single source of truth for the folder's *kinds*,
 > *lifecycle*, and *status × type validity* is [`README.md`](README.md); this
 > template only carries the shape.
 
 **Write for the reader.** Follow Cairn Plain Language (the section of `dev/agent_collaboration.md`): conclusion first, and measured, assumed and expected claims kept apart.
+
+**Keep the strategy note short.** Count words, not lines — never unwrap lines to look short. Keep a standard strategy note to **≤ 1,500 words (~10 KB)**, fold reviews in inline rather than appending review logs, and replace the section prompts below the rule rather than copying boilerplate.
 
 ## What a strategy note is (and the one rule that defines it)
 

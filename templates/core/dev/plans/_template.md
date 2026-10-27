@@ -1,8 +1,10 @@
 <!-- cairn-internal-ref-allow: doctrine/plans.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- cairn-internal-ref-allow: doctrine/lifecycle.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- The plan template. Copy everything below the rule into
-     `dev/plans/<slug>.md`. Keep it short: a plan is a working
-     document, not a second proposal. -->
+<!-- The plan template. Copy only the opening header and operative section
+     headings (`Source proposal` through `Verification`) below the rule into
+     `dev/plans/<slug>.md`, replace every prompt with your answer (or `N/A`),
+     and do NOT copy template commentary or the later-stage `Dispositions`,
+     `Plan review`, and `Code review` sections at the bottom. -->
 
 # Plan template
 
@@ -131,6 +133,17 @@ Maintainer check it.
 
 A plan is one file by default: reviews, responses and records are appended to it. Keep what goes in it small. When something long would crowd it, give that its own file and cite it by path.
 
+* **Count words, not lines — never unwrap lines to look short.** Keep an
+  opening plan body to **≤ 1,000 words (~6 KB)**, `## Acceptance criteria` to
+  **≤ 150 words per chunk** (state what must hold when the chunk is done, not
+  line-by-line code instructions), and each appended review pass or response to
+  **≤ 600 words (~4 KB)**. Wrap prose normally; long unwrapped lines save zero
+  tokens.
+* **Never copy template boilerplate or later-stage sections.** Copy only the
+  operative headings (`## Source proposal` through `## Verification`), replace
+  prompts and slot blocks with your plan's specifics (or a one-line `N/A`), and
+  do not copy template instructions or the `## Dispositions`, `## Plan review`,
+  and `## Code review` sections until those lifecycle steps occur.
 * **Scripts and task briefs stay out.** A checker lives in a script or a test
   file, not in the plan. A task brief for a sub-agent is a short note or file,
   cited by path and commit.
@@ -334,52 +347,24 @@ tests, executable templates, or** fixtures; a **trust ceremony that explicitly
 requires** one applies; or there is a **concrete reason to distrust or falsify**
 the evidence.
 
+<!-- Later-stage sections — do NOT copy into a new plan; append each
+     section only when that lifecycle step occurs. -->
+
 ## Dispositions
 
-*Filled at archive-preparation, and this section is why the plan cannot archive
-without it.* Every **explicitly-deferred follow-up** this plan carries takes one
-recorded disposition: `accept` (fixed in scope), `guard (<path>::<node>)` (homed
-in something that **executes** and names the node -- a comment is not eligible,
-because comments do not fire), `wontfix` (explicit non-action, with a
-rationale), or `defer`.
-
-**Every deferred item is recorded in `dev/PLANNING.md` or appended to the
-open plan that takes it, requires the Maintainer's authorization quoted
-verbatim, and names its reason:** it needs a Maintainer decision, belongs to
-work already in motion (name the receiving plan), or is over the cost bar.
-For in-motion work the quote also authorizes its addition to the receiving
-scope. "Non-blocking", "nit" and a reviewer's suggested home are not reasons.
-See `doctrine/lifecycle.md` > "Archive precondition" for the cost/eligibility
-rule. Writing the disposition is not performing the deposit. An item left
-only in a plan that then archives is invisible to anyone looking for outstanding work, and archived artifacts are
-not scanned by default -- so it is not deferred, it is lost. Present `defer`
-requests as **one batch**; that batching keeps the Maintainer gate affordable.
-When you put the batch to the Maintainer, write the Waiting line
-(`**Waiting on Maintainer**: <what>`) in the header block, beside Status, and
-delete it when they answer.
-
-**Archived files are records, not to-do lists.** Nothing still to be done may
-have an archived file as its **only home**. A live home is an open proposal or
-plan that names the item in its own text, an issue by number, or a board row;
-a pointer to an archived file, or to a plan that is not open yet, is not a live
-home. The archive commit writes its own changelog entry, so no line is left
-owed to the next session. An archiving plan carries no Waiting line: a wait
-still open at archive moves to a board row marked with the Waiting line.
-
-Record the outcome as a `Dispositions: ...` line so it reconstructs from the
-durable record alone. **An append re-opens the attestation**: this section is
-append-only, so if you add content after writing the line, restate or amend it.
-
-Two eligibility rules bound the choice: a follow-up that **reaches an adopter,
-blocks a release, or needs a Decision** cannot be `wontfix`; and one **named by
-a closed artifact's disposition block** cannot be `wontfix` without the
-Maintainer.
-
-**Nothing mechanical checks any of this.** The lifecycle planner that once
-parsed for a `Dispositions:` block was retired in August 2026; the enforcer is a
-reviewer opening the artifact at archive-preparation. The full rule, including
-why, is `doctrine/lifecycle.md` > "Archive precondition" and
-`doctrine/plans.md` > "Lasting-truth migration doctrine".
+*Appended at archive-preparation (`doctrine/lifecycle.md` > "Archive
+precondition" and `doctrine/plans.md` > "Lasting-truth migration
+doctrine").* Record one `Dispositions: ...` line per deferred follow-up:
+`accept` (fixed in scope), `guard (<path>::<node>)` (homed in an executing
+test/check, never a comment), `wontfix` (with rationale; ineligible if it
+reaches an adopter, blocks a release, needs a Decision, or was named by a
+closed artifact's disposition block without Maintainer approval), or `defer`
+(deposited in `dev/PLANNING.md` or an open plan, with the Maintainer's
+verbatim authorization and reason: needs a decision, belongs to in-motion
+work, or exceeds the cost bar). Present `defer` requests as one batch and set
+`**Waiting on Maintainer**: <what>` in the header until answered; an archiving
+plan carries no Waiting line and leaves no item homed only in an archived
+file.
 
 ## Plan review -- <reviewer> -- <YYYY-MM-DD>
 
