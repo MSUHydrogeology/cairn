@@ -2,89 +2,98 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-27-claude-ceremony-without-external-review.md](../proposals/archive/2026-10-27-claude-ceremony-without-external-review.md)
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Waiting on Maintainer**: first ceremony (final chunk)
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27
-**In brief**: A fresh agent and automated scanners replace the outside reviewer of the re-anchor ceremony, the report gets a plain page, the runbook shrinks to one page, and the Maintainer only compares digests and signs.
-
-The Security Review is a separate pass; the ordinary pass never clears it.
+**In brief**: A fresh agent and automated scanners replace the outside reviewer of the re-anchor ceremony, and the Maintainer compares digests on a plain page and signs.
 
 ## Source proposal
 
-Accepted 2026-10-27 as revised (Decision `c88e4a62`). **Revision 3 is the whole contract**, with the Revision 2 sections it names. His six answers: yes to lifting the driver-cleanup and runbook-cut fences; yes to authorizing the first ceremony in his own words at that ceremony; the one-page runbook stays a pinned closure member; chunk 6 is built (last, droppable); no stale-pin warning; a fresh same-vendor reader is acceptable, stated in each record.
+Accepted 2026-10-27 as revised (Decision `c88e4a62`); **Revision 3 is the whole contract**, with the Revision 2 sections it names. His six answers: both fences lifted; he authorizes the first ceremony in his words then; the runbook stays pinned; chunk 6 built; no stale-pin warning; a fresh same-vendor reader accepted, stated in each record.
 
 ## Scope
 
-**In.** Chunks C1 to C7 (Revision 3 chunks 1 to 7) and C8, the ceremony. **Out.** `bootstrap/_scaffold/`, `scaffold_ast_known_new.json`, the AST baseline, `gate_manifest.json`, the gate anchor (an implementer never edits or moves them), `dev/PLANNING.md`, `CHANGELOG.md` (the planning session's), and `_gate_reanchor.py promote` (stays callable).
+**In.** C1 to C7b (Revision 3's chunks 1 to 7, with 2 and 7 split) and C8, the ceremony. **Out.** `bootstrap/_scaffold/`, `scaffold_ast_known_new.json`, the AST baseline, `gate_manifest.json`, the gate anchor (never edited or moved by an implementer), `dev/PLANNING.md`, `CHANGELOG.md`.
 
-**Rules for implementers.** Every implementer, editor and reviewer first reads the current `dev/plans/_template.md` and its word budgets. Tests, comments and docstrings carry no finding ids, chunk letters or plan coordinates. Each chunk's first criterion: `python tools/intent.py list` shows no other claim on its files. A mutant is one deliberate break in its own detached worktree beside an unmutated control; a skipped node is a survivor (`pytest -rs`). Nobody runs a ceremony, a re-anchor or a signing.
+**Rules for implementers.** Everyone first reads the current `dev/plans/_template.md` and its word budgets. Tests, comments and docstrings carry no finding ids, chunk letters or plan coordinates. Start each chunk with `python tools/intent.py list` showing no other claim on its files. A mutant is one deliberate break in its own detached worktree beside an unmutated control; a skipped node or unmeasured equivalence is a survivor. Nobody runs a ceremony, re-anchor or signing.
 
-**Reuse.** Searched `git grep -n "raw_tree\|_batch_blobs\|_blob_at\|_classify_path\|is_sensitive" -- bootstrap scripts`: C2 reuses them, extends `scan_targets()` rather than adding a scanner, and adds no closure member. C4 generalizes the test helpers `_compose_packet` and `_instantiate` (`test_reanchor.py:989-1006`); `repin` keeps its own blob reader because it runs before the checker loads. One placement the proposal left open: its condition that a test compares the record's digests lands in C4.
+**Reuse.** Searched `git grep -n "raw_tree\|_batch_blobs\|_blob_at\|_classify_path\|is_sensitive" -- bootstrap scripts`: C2 reuses them. C4 generalizes the test helpers `_compose_packet` and `_instantiate` (`test_reanchor.py:989-1006`); `repin` keeps its own blob reader (it runs before the checker loads).
 
-**Doctrine / descriptive surface.** `bootstrap/REANCHOR_RUNBOOK.md`, `doctrine/dual-review.md:85-91`, `SECURITY.md:167,:234`, `bootstrap/SAFETY.md:657-658`, template and artifact comments. Rule text in them changes only as the Maintainer's Decision above authorizes; `SECURITY_MUTATIONS.md` says only past reviews (no change).
+**Doctrine / descriptive surface.** `bootstrap/REANCHOR_RUNBOOK.md`, `doctrine/dual-review.md:85-91`, `SECURITY.md:167,:234`, `bootstrap/SAFETY.md:657-658`, template and artifact comments. Rule text changes only as the Maintainer's Decision above authorizes. `SECURITY_MUTATIONS.md`: no change.
+
+**Plain glosses.** He compares: E1 the launcher's digest (fingerprint) with the record's; E2 the page's commit with his `git rev-parse HEAD`; E3 the two package digests; E4 his key's fingerprint with the page's list; E5 both SAME commands print SAME (1: the candidate's launcher template is the reviewed one; 2: the launcher is that template with one slot filled); E6 each tool path in his values file with `readlink -f "$(command -v <tool>)"` (plain `command -v git` is a symlink the file refuses); E7 the scan digest the anchor's own code prints with the page's. Y1 to Y5 are his yes/no answers. Summary 2 is `repin`'s last screen before signing; stage 2 is the signing run.
+
+**The record.** `dev/ceremony-record.md`, one fixed path: the commit the reader read (R), the packet, launcher and 11 member digests, the reader's statements. It is the candidate's tip: committed on R, changing only that file. The packet holds no commit id by design (`bootstrap/reanchor-launcher.template.sh:376-383`), so naming digests is not circular. `repin` (C4) and, for hand runs, the page (C7) check that `HEAD^` equals R, `git diff --name-only HEAD^ HEAD` prints only that path, and the digests match; E2 compares his `HEAD`. It binds what is signed to what was read plus one file; without it a later commit (to `bootstrap/_scaffold/`, say) passes E1 to E6, since the packet pins only 11 files.
+
+**Transitions (second and later).** The anchored runbook prints one command that extracts the anchor's own `bootstrap/tests` into an empty folder and runs its checker's `scan-digest` (C2); he compares it with the page's (E7), so candidate code does not judge itself. The first ceremony has no anchored scan; the page and record say it rests on builder and reader.
 
 Proposed paths:
 * `bootstrap/tests/test_ceremony_review_report.py`
+* `dev/ceremony-record.md`
 
 **Frozen files and AST, derived 2026-10-27** from `_frozen_files` globs, the 195 keys of `gate_manifest.json` and read-only `verify --no-collect`.
 
-| File | Chunk | State |
-|---|---|---|
-| `security_check.py`, `_gate_preflight.py`, `test_gate_preflight.py`, `test_reanchor.py`, `test_review_stance_in_shipped_files.py` | 1, 2, 5, 6, 7 | keyed, already FROZEN-MODIFIED: no new entry |
-| `scripts/reanchor_ceremony.py` | 3 | keyed; new FROZEN-MODIFIED |
-| `correct_pinned_digests.py` and its test | 3 | keyed; new FROZEN-MISSING, nine COLLECTION-DROPPED |
-| `scripts/repin.py`, `test_repin*.py`, the new test file | 4, 1-6 | unkeyed: FROZEN-NEW, free |
-| `reanchor.sh`, launcher template, runbook | 2, 6, 7 | closure, not globbed: pinned by the packet |
+| File | State |
+|---|---|
+| `security_check.py`, `_gate_preflight.py`, `test_gate_preflight.py`, `test_reanchor.py`, `test_review_stance_in_shipped_files.py` | keyed, already FROZEN-MODIFIED: no new entry |
+| `scripts/reanchor_ceremony.py` | keyed; new FROZEN-MODIFIED |
+| `correct_pinned_digests.py`, its test | keyed; new FROZEN-MISSING, nine nodes dropped, plus C7's |
+| `scripts/repin.py`, `test_repin*.py`, the new test file | unkeyed: FROZEN-NEW, free |
+| `reanchor.sh`, launcher template, runbook | closure, not globbed: pinned by the packet |
 
-Plus the runbook-reading nodes C7 drops (derived at the cut). **AST:** none expected. Read-only `_ast_attest.py verify` covers only `bootstrap/_scaffold/*.py` (59 lines red today, from the range); no chunk edits that directory. Save its output before C1 and after the last commit; they must match.
+**AST:** none expected. `_ast_attest.py verify` covers only `bootstrap/_scaffold/*.py` (59 lines red today); no chunk edits it. Save its output before C1 and after the last commit; they must match.
 
 ## Sequence
 
-C1 to C7 land as **one reviewed range**: C2, C5, C6 and C7 edit closure members, so `scripts/repin.py:1027` refuses any ordinary ceremony from C2 on and one hand ceremony pins them all. Each chunk is green on its mapped tests; the manifest and AST gates are already red and stay red until C8, so this plan adds to the owed list, not to a new kind of red. Two commits never split: C6's parser removal with all its callers, and C7's prose with the tests that read it.
+C1 to C7b land as **one reviewed range**: C2, C2b, C5, C6 and C7 edit closure members, so `scripts/repin.py:1027` refuses ordinary ceremonies from C2 on; one hand ceremony pins all. Each chunk is green on its mapped tests (the manifest and AST gates are already red). Never split: C6's parser removal and its callers; C7's page and its tests. C6 is droppable only until C7 lands: its mode commands sit in one runbook block, so a later drop reverts C6 and edits that block alone.
 
 | # | Chunk | Gate |
 |---|---|---|
-| C1 | Scanner coverage: seven closure Python members | none |
-| C2 | Report items in `range_review_report` and `reanchor.sh` | none |
+| C1 | Scanner coverage | none |
+| C2 | Report items, `scan-digest` | none |
+| C2b | The page (`reanchor.sh`) | after C2 |
 | C3 | Driver cleanup | none |
-| C4 | `repin`: `packet` verb, launcher check, Summary 2, record check | after C3 |
-| C5 | Evidence environment: reproduce, then refuse | none |
-| C6 | One values reader (last code chunk, droppable) | after C1-C5 |
-| C7 | Prose and tests; runbook to one page | after C6 |
+| C4 | `repin`: packet, launcher, record | after C3 |
+| C5 | Evidence environment | none |
+| C6 | One values reader | after C1-C5 |
+| C7 | Runbook page, exact commands | after C6 |
+| C7b | Doctrine prose | after C7 |
 | C8 | The ceremony | **MAINTAINER-ONLY** |
 
 ## Acceptance criteria
 
-**C1.** `scan_targets()` lists the seven `bootstrap/tests` Python closure members. A node in `bootstrap/tests/test_ceremony_review_report.py` compares them with `declared_authority_closure()` (a new Python member fails it). Control: Bandit on the seven (54 LOW, measured today) leaves `test_security_lint.py::test_no_blocking_security_findings` passed; the record shows that node ran, not skipped, and the Bandit version. A planted `subprocess.run(..., shell=True)` in a scratch copy of one member blocks. Mutants (each beside the control): drop one member; drop the comparison.
+**C1.** `scan_targets()` lists the seven `bootstrap/tests` Python closure members. A node in `bootstrap/tests/test_ceremony_review_report.py` compares them with `declared_authority_closure()` (a new member fails it). Control: Bandit on the seven (54 LOW, measured today) leaves `test_security_lint.py::test_no_blocking_security_findings` passed; the record shows that node ran, not skipped, and cites `python bootstrap/security_check.py` (it fails closed without Bandit). A planted `shell=True` in a scratch copy blocks. Re-run `test_security_lint` after C2 and C5 and at the last commit. Mutants: drop one member; drop the comparison.
 
-**C2.** Schema `cairn-range-review/v2`; stage 2's re-derivation still matches. Each path has a role (decides, pinned, other). Scan per Revision 3 over raw blobs: a `-diff` attribute still scans; unreadable or oversized blobs and modes 100755, 120000, 160000 are listed; all hits are shown; each pattern prints a count, zeros included. Every `allowed_signers` fingerprint is printed and a change flagged. The renderer encodes new fields and refuses unprintable text. In a transition the scan is recomputed from `raw_tree(anchor)` and compared; a difference stops; an anchor with no scan prints "not computed" and never "equal". Nodes: planted line per pattern; zero-hit control; the three transition cases. Mutants: use `git diff`; truncate hits; skip one decides path; drop the flag.
+**C2.** Schema `cairn-range-review/v2`; stage 2's re-derivation still matches. Each path has a role (decides, pinned, other). Scan over raw blobs with a fixed pattern list in `_gate_preflight.py` (process start, network, dynamic code, `shell=True`, file writes, `nosec`): a `-diff` attribute still scans; unreadable or oversized blobs and modes 100755, 120000, 160000 are listed; every hit is kept, escaped as `_display_path` does; counts per pattern include zeros. Scanned: decides paths, the sensitive roster, new `scripts/` and `bootstrap/` files outside tests; the rest is listed "not line-scanned: class, N". `scan-digest` prints SHA-256 of the canonical scan. Nodes: a planted line per pattern; zero-hit control; scope (roster file scanned, test file listed); a candidate scan that hides a hit gives a digest unequal to the anchor-code run. Mutants: `git diff`; truncate; skip a decides path; drop `nosec`; drop the roster; run `scan-digest` from the candidate's checker (the hiding node must then fail).
 
-**C3.** `git grep -n "def drive\|--run\|correct_pinned_digests" -- scripts` finds nothing (control: the parent finds them). The undefined `template`, the stale docstring, the "out of band" sentence and the printed commands are fixed; a node runs each printed command form against the real artifact; a candidate with no `EXPECTED_PATHS` stops with the template path. The nine dropped ids are listed from the fixture. The code review reads the whole driver diff. Mutant: restore the undefined name.
+**C2b.** `show-report` prints, with no per-class cut (today 40, `reanchor.sh:703`): roles, hits, modes, every `allowed_signers` fingerprint with a change flagged, the candidate id, package digest, each tool path the values file names (E6), the scan digest (E7), and Y1 to Y5 as numbered yes/no lines. Text with unprintable bytes is refused. A report with no anchored scan prints "not computed", never "equal". Control: existing `show-report` nodes pass. Nodes: one per element. Mutants: cut at 40; print raw bytes; print "equal" when not computed; drop the E6 lines; drop a Y line.
 
-**C4.** `repin packet` writes the packet and the launcher (the anchor's template with the slot filled), byte-equal to the helper's output on the same tree; in a transition it refuses and writes nothing. A launcher differing by one byte from the anchor's template refuses before any child runs; control: the derived one passes. Summary 2 prints the new report items; the prompt says "the record". A missing record, or one whose packet, launcher or member digest differs, refuses. Nodes in the unkeyed repin tests. Mutants: skip the launcher check; skip each record digest.
+**C3.** `git grep -n "def drive\|--run\|correct_pinned_digests" -- scripts` finds nothing (control: the parent finds them). The undefined `template`, stale docstring, "out of band" sentence and printed commands are fixed; a node runs each printed command form against the real artifact; a candidate with no `EXPECTED_PATHS` stops naming the template path. `values_field`, `compare`, `check_packet_pair` and `packet_artifact_digest` stay (`repin` calls them, `scripts/repin.py:952-988`); `test_repin*.py` pass. Nine dropped ids listed from the fixture. The code review reads the whole driver diff. Mutant: restore the undefined name.
 
-**C5.** Reproduce first: `PYTEST_ADDOPTS` into `gather_evidence` directly and through the launcher; commit the result. If only the direct call drops nodes, `dev/PLANNING.md` closes that row. Direct call refuses `PYTEST_ADDOPTS`, `PYTEST_PLUGINS`, `PYTEST_DISABLE_PLUGIN_AUTOLOAD`, one node each; control: `PYTEST_CURRENT_TEST` set does not refuse. `-B` only if a committed compiled file is shown to load. Mutants: drop each name; refuse every `PYTEST_*`.
+**C4.** `repin packet` writes the packet and the launcher (the anchor's template, slot filled), byte-equal to the helper's output on the same tree; in a transition it refuses and writes nothing. A launcher one byte off the anchor's template refuses before any child runs. Summary 2 prints the C2b lines; the prompt says "the record". Record check per Scope, one node each: missing record; `HEAD^` not R; any other path changed; a differing packet, launcher or member digest. Control: a good record passes. Mutants: skip each of the four; write in a transition; skip the launcher check.
 
-**C6.** Parity matrix over all 13 keys passes both ways before the artifact's parser goes; then hostile values files are refused by the real launcher before any stand-in program logs a call. A node counts programs before the first `exec`: six (`env git shasum mktemp mkdir cat`). The artifact keeps its own argument checks (a bad path refuses when called directly). `hash-package` uses the launcher's `shasum`. Callers changed: `repin.py:1001,1056,1060`, `reanchor.sh:544-546`, runbook, `test_reanchor.py`, `test_repin_ceremony.py`. **Falsifier:** a seventh program or a new grammar drops this chunk. Mutant: add a seventh.
+**C5.** Reproduce first: `PYTEST_ADDOPTS` into `gather_evidence` directly and through the launcher; commit the result. If only the direct call drops nodes, the `dev/PLANNING.md` row closes. The direct call refuses `PYTEST_ADDOPTS`, `PYTEST_PLUGINS`, `PYTEST_DISABLE_PLUGIN_AUTOLOAD`, one node each; control: `PYTEST_CURRENT_TEST` set does not refuse. `-B` only if a committed compiled file is shown to load. Mutants: drop each name; refuse every `PYTEST_*`.
 
-**C7.** Operative runbook page at most 80 lines (my figure); Phase 0 steps 1-4 and Phase 4 gone; the atomic push, transition-mode and dated-posture text kept, so the file is not one page (named to the Maintainer). The page holds the values-file step and E6, the launcher command, the exact stage-2 command (no `ssh-add`; the artifact's advice text is edited to match), the push, the first-ceremony authorization. Edited with their tests: `test_gate_preflight.py:1936,3081,5569-5687`, `test_reanchor.py:1603-1720`, `test_review_stance_in_shipped_files.py:1117-1126`, `doctrine/dual-review.md`, `SAFETY.md`, `SECURITY.md`, comments. Dropped nodes are listed. Mutant: delete the push block; its node fails.
+**C6.** Parity matrix over all 13 keys passes both ways before the artifact's parser goes; then hostile values files are refused by the real launcher before any stand-in program logs a call. A node counts programs before the first `exec`: six (`env git shasum mktemp mkdir cat`). The artifact keeps its argument checks (a bad path refuses when called directly). `hash-package` uses the launcher's `shasum`. Callers changed: `repin.py:1001,1056,1060`, `reanchor.sh:544-546`, runbook, `test_reanchor.py`, `test_repin_ceremony.py`. **Falsifier:** a seventh program or a new grammar drops this chunk. Mutants: add a seventh; delete one key's check (the hostile file must then be killed).
 
-**C8.** Fence below.
+**C7.** The page is at most 80 lines above `<!-- end of page -->` (a node counts); kept text (atomic push, transition mode, dated posture) sits below, whole file about 250 to 300 lines (told to the Maintainer; his Q3 answer pinned it, not its length). Phase 0 steps 1 to 4 and Phase 4 are gone. The page says nothing calls `_gate_reanchor.py promote`, which stays. The page holds each exact command: E1 to E7, SAME (1) and (2), the record checks, and before stage 2 a launcher re-hash, a repeat of E6 and `ssh-add -l` not listing his key. Stage 2 runs under `env -i HOME=<home> PATH=/usr/bin:/bin TERM="$TERM" LANG=C`, no `SSH_AUTH_SOCK`; the artifact's `ssh-add` advice is edited to match. Nodes: stage-2 variable names equal `repin`'s (`scripts/repin.py:1075`). Mutants: add `SSH_AUTH_SOCK`; delete the push block. Dependent tests (`test_gate_preflight.py:1936,3081,5569-5687`, `test_reanchor.py:1603-1720`) edited; dropped nodes listed.
 
-**C8 fence (MAINTAINER-ONLY).** Builder agent hand-builds the first packet and launcher; a distinct fresh reader reads the diff, runs the scanners with planted controls, states that it is a same-vendor fresh session that wrote nothing in the range (a statement, not checkable) and commits the record before he signs. He authorizes in his words, naming `bootstrap/_scaffold/`, `bootstrap/security_check.py`, `bootstrap/tests/_gate_manifest.py` and the dropped nodes re-derived from the final tree (`_gate_manifest.py verify`). He compares E1-E6 and runs the exact stage-2 command. Stage 2 should sign the new anchor (`git verify-commit` with the roster); if it does not, the `AGENTS.md` sentence is corrected instead.
+**C7b.** `doctrine/dual-review.md:85-91` and its pinned sentence (`test_review_stance_in_shipped_files.py:1117-1126`) change together; `SAFETY.md`, `SECURITY.md` and template, artifact and checker comments say a fresh local reader plus scanners, not an outside review. `git grep -n -i "external security review"` over those files finds no requirement (control: the parent does; history lines named in the commit). Gates: `check_cairn.py`, `claim_check.py`, `link_check.py`, neutrality and redundancy.
+
+**C8 fence (MAINTAINER-ONLY).** The builder (a fresh session, key not loaded: `ssh-add -l` shows nothing of his) hand-builds the first packet and launcher and runs stage 1 on his trusted machine; a distinct fresh reader reads the diff, runs the scanners with planted controls, states it is a same-vendor session that wrote nothing in the range (a statement, not checkable), saves the re-derived dropped-node list, and commits the record on the candidate before he signs. He authorizes in his words, naming `bootstrap/_scaffold/`, `bootstrap/security_check.py`, `bootstrap/tests/_gate_manifest.py` and that list by count and commit, and names the known manifest and AST reds as the Y4 allowance. He runs the SAME commands and E1 to E6, then stage 2. It should sign the new anchor; if not, the `AGENTS.md` sentence is corrected instead.
 
 ## Scope delta
 
-**Scope delta**: degraded, one unit as accepted: the standing outside reader is replaced by the fresh local reader; **disposition**: guard. Nothing else is cut. C6 may drop only through its falsifier, with the Maintainer told.
+**Scope delta**: degraded, one unit as accepted: the outside reader is replaced by the fresh local reader; **disposition**: guard. C6 drops only through its falsifier, with the Maintainer told.
 
 ## Verification
 
-**Boundary A**, owners re-found by `git grep -l '<symbol>' -- bootstrap/tests` at each landing: C1 `test_security_check`, `test_security_lint`, `test_scaffold_substrate`; C2, C5 `test_gate_preflight`, the new file, `test_reanchor`; C3 `test_reanchor_driver_disclosures`, `test_repin*`; C4 `test_repin*`; C6 `test_reanchor`, `test_repin_ceremony`; C7 those, `test_review_stance_in_shipped_files`, `check_cairn.py`, `claim_check.py`, `link_check.py`, `quality_gate.py --sub neutrality --sub redundancy`.
+**Boundary A**, owners re-found by `git grep -l '<symbol>' -- bootstrap/tests` at each landing: C1, C2, C5 `test_security_check`, `test_security_lint`, `test_gate_preflight`, the new file; C2b, C6 `test_reanchor`, `test_repin_ceremony`; C3, C4 `test_reanchor_driver_disclosures`, `test_repin*`; C7, C7b those, `test_review_stance_in_shipped_files`, the prose gates.
 
-**Boundary B mode: `full`** (trust-ceremony surface). The record is scoped: `**Certified by**: pending`. Nobody sets `CAIRN_FULL_SUITE`. Interpreter `/Users/kendal30/conda_envs/lhm/bin/python3.13`.
+**Boundary B mode: `full`** (trust-ceremony surface); record scoped, `**Certified by**: pending`; nobody sets `CAIRN_FULL_SUITE`; interpreter `/Users/kendal30/conda_envs/lhm/bin/python3.13`.
 
-**After C7:** one code review; a Security Review that reads the launcher and artifact whole, the checker's changed hunks, `repin`'s verb and launcher check, the driver diff, the `security_check.py` hunk and the one-page runbook; a certifying run; builder and reader; C8. **Not measured:** a real ceremony; the several-day cost is assumed.
+**After C7b:** one code review; a Security Review reading the launcher and artifact whole, the changed checker hunks, `repin`'s new checks, the driver diff and the runbook; a certifying run; C8.
 
 ## Plan review -- Claude Sonnet 5.5 (Internal, fresh session) -- 2026-10-27
 
@@ -142,3 +151,29 @@ C1 to C7 land as **one reviewed range**: C2, C5, C6 and C7 edit closure members,
 **What still gets past.** First ceremony: every copy he compares comes from the builder, reader or candidate code; his checks prove agreement, not safety. Always: a harmful change matching no pattern, or a removed check, passes if the reader misses it. Stage 1 runs candidate code as him and can replace a tool he owns (`/opt/homebrew`); E6 compares paths, not bytes.
 
 **Coverage.** Read-only: `repin status`, `verify --no-collect`, `claim_check`. Not run: suite, Bandit, mutants, `_ast_attest verify`. Not read: C6's reader, `_scrubbed_environ`, stage 2's checker.
+
+## Response to plan review -- Claude Sonnet 5.5 (author) -- 2026-10-27
+
+I checked each point in the tree. "Measured" is a command I ran, "read" is code I read, "not run" is a design nothing has exercised yet. The operative cells above are revised in place; this table points at them. Status moves to `ready-to-implement`: SB1 to SB3 and B1 to B3 are adopted.
+
+**Internal pass**
+* **B1 accept-modified (and SB2).** The reviews disagreed; the tree decides. Read: the packet is commit-id-free by design (`reanchor-launcher.template.sh:376-383`), so a record inside the candidate can name digests and the commit it read without naming itself. I took SB2's design over "one commit above": there HEAD would differ from the candidate and E2 would compare the wrong commit. Scope "The record": fixed path, tip commit on R, `HEAD^` equals R, diff shows only the record. C4 and C7 own the checks.
+* **B2 accept.** The anchor's code computes the scan (`scan-digest`, C2); see SB1.
+* **B3 accept.** C2b prints E6 paths and Y1 to Y5, a node for each; C7 holds the commands.
+* **N1 accept.** C1 and the Boundary A line add `test_security_lint`, re-run after C2, C5 and at the last commit.
+* **N2 accept.** C2 names the pattern list's home (`_gate_preflight.py`) and adds scope and "not line-scanned" nodes; C2b adds the unprintable-text node and mutant.
+* **N3 accept-modified.** C7 adds a marked end line and a counting node. Whole file about 250 to 300 lines (assumed from today's kept sections: 28, 114 and 67 lines, read), told to the Maintainer. C7b greps for leftover requirement wording, with a control.
+* **N4 accept.** Sequence: C6 is droppable only until C7; one runbook block.
+* **N5 accept.** C8: who runs stage 1, key not loaded, the Y4 allowance, the dropped-node list saved in the record.
+* **N6 accept.** Glosses in Scope.
+
+**Security pass**
+* **SB1 accept.** Read: in a transition every part of the page is candidate code (`scripts/repin.py:1027`). C2 adds `scan-digest` to the checker; C7's page holds the command that extracts the anchor's own tree and runs it (E7); C2b prints the page's digest. Node: a candidate scan that hides a hit gives an unequal digest. The compare is his, so the node tests the digests, not his eyes; mutant: run it from the candidate's checker. The first ceremony has no anchored scan and says so.
+* **SB2 accept.** As B1.
+* **SB3 accept.** Measured: `command -v git` is a symlink (`/opt/homebrew/bin/git`), and the values example refuses symlinks (`reanchor-values.example:30-36`), so E6 uses `readlink -f`. Read: the artifact forwards the key-agent socket (`reanchor.sh:655-661`), `repin` does not (`repin.py:1075`). C7 holds each exact command, the pre-stage-2 re-hash, E6 repeat, `ssh-add -l`, and `env -i`, with a node comparing variable names with `repin`'s. Not run: the commands.
+* **SN1 accept.** `nosec` joins C2's patterns; C1 cites `security_check.py` (read: fails closed, `:862`).
+* **SN2 accept.** Read: `show-report` counts but hides past 40 (`reanchor.sh:703`); C2b removes the cut; hits are escaped.
+* **SN3 accept.** Added mutants: C2b ("equal" when not computed), C4 (write in a transition), C6 (a key check deleted); C3 already had the `EXPECTED_PATHS` one. Unmeasured equivalence is a survivor (Rules).
+* **SN4 accept.** C3 keeps the four driver functions `repin` calls (read: `repin.py:952-988`).
+
+**Not checked:** the E and Y commands as typed; whether the code can build the record check without a new closure member (C4 sits in `repin`, which is not one).
