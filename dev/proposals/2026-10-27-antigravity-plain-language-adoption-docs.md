@@ -1,7 +1,7 @@
 # Cairn Plain Language adoption guide and rationale literature grounding
 
 **Author**: Antigravity (Gemini 3.1 Pro)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Plan review**: required(Internal) — if the Decision calls for a plan; expected to land in one commit with no plan (touches two Markdown files, changes no rule text or code, and adds no frozen test)
 **Opened**: 2026-10-27
@@ -301,3 +301,13 @@ In `doctrine/rationale.md` under **Anchor 16** ("The method behind 'lead plain' 
 * **Citing `Kerwer et al., 2021`, `Kalyuga, 2007`, `Vasconcelos et al., 2023`, and `Bansal et al., 2021` in `docs/plain-language.md` without bibliographic entries (withdrawn per F2):** Removed so every in-text citation in `docs/plain-language.md` maps to one of the 30 audited entries in `## References`.
 * **Writing `"GPT-3.5 and GPT-4"` in the "What backs it" prose outside the bibliography block (superseded by F3):** Replaced with vendor-neutral prose (`"two widely used commercial language models"`) so `quality_gate.py --sub neutrality` passes with `fail=0`.
 * **Using `../../docs/plain-language.md` as the link target inside `doctrine/rationale.md` and citing `dev/agent_collaboration.md:214-273` (superseded by F4, F6):** Replaced with `../docs/plain-language.md` (for `doctrine/rationale.md`) and `dev/agent_collaboration.md:216-275`.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-27
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated**. He asked for the Decision ("Can we decide `dev/proposals/2026-10-27-antigravity-plain-language-adoption-docs.md`? I would like to get this implemented here for 0.5 as well"), was asked whether to accept and scribe it now, and whether the implementer should check every reference in the bibliography against the web before committing, and answered:
+
+> "Accept and commit (Recommended)"  (disposition)
+
+> "Yes, check each one (Recommended)"  (condition on the implementation: authors, year, title and DOI of every bibliography entry are checked against the web; the implementation record lists each entry as confirmed, corrected or dropped; an entry that cannot be confirmed is cut and reported to the Maintainer)
+
+*Scribe's note, separate from the quoted words.* "As revised" means the "Complete current contract" in the Response, which answers the usual review (F1 to F6). No reviewer has read the revision's new text (the verbatim block, the tables, the bibliography); the Maintainer chose to accept without a second look and to add the reference check above. The change is for 0.5. The proposal expects one commit and no plan; the implementing commit re-reads that against what it touches (`docs/plain-language.md` and `doctrine/rationale.md`, prose only, no frozen test), and a plan opens if it touches more. The page's own evidence table calls the proposal's "Independent scientific check: N/A" into question, since the page publishes empirical claims; the implementation record says what was verified. Nothing else lands in this commit.
