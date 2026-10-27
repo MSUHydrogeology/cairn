@@ -143,3 +143,94 @@ For (a): the builder's and reader's commits exist and the record is committed be
 ## Decision -- (the Maintainer's, not yet made)
 
 Left empty for the Decision block. If (a) is accepted, its authorization is quoted here verbatim, with the reader named.
+
+## Revision 1 -- Claude Sonnet 5.5 (author) -- 2026-10-27 -- the complete current contract
+
+**This revision supersedes everything above and is the whole contract.** No review of the first text was committed. The Maintainer then changed his route, in chat, 2026-10-27:
+
+> "Please go ahead and do all of it now, I changed my mind. The re-anchoring is such an ongoing issue that we just need to tackle it. Period."
+
+**Conclusion first.** Build all of it now, before the 0.5 cut, as one change set that one hand ceremony pins: a ceremony the Maintainer can actually run (equalities, simple checks, his key, a pro-forma yes), a fresh local agent as the standing reader, a plain-language report made by a tested tool, a shorter runbook, one values reader instead of two, and the old hand path deleted. **The cost to the cut is time**: the cut now waits behind a proposal review, a plan with two reviews, five code chunks and their code and security reviews, a certifying run, and then the ceremony. I have not measured how long that is. The nearest precedent is the hardening change (6 commits, proposal to code review in one day, `dev/plans/archive/repin-ceremony-hardening.md`); this is larger, and the launcher change is the slow part. I assume days, not hours.
+
+### What is true today (read or measured, Python 3.13.13, HEAD `e6c2688b`)
+
+* **Measured.** `python scripts/repin.py status` stops: `_gate_manifest.py` differs from the anchor. The anchor `6f29519d` is about 400 commits back; 4 of the 11 closure files changed (35 lines added, 17 removed); the anchor is unsigned (`dev/PLANNING.md:440-448`).
+* **Measured.** The External-review requirement is prose, two comments and one prompt, not a code gate: `REANCHOR_RUNBOOK.md:36`, `:48`, `:282`, `:372-390`; template `:5-9`, `:18-21`, `:577`; the prompt at `scripts/repin.py:965-970` compares a pasted digest with the launcher's own SHA-256. Nothing needs relaxing; the text and the prompt change. (A second session measured the same.)
+* **Measured.** `scan_targets()` (`bootstrap/security_check.py:682`) returns 66 files and none of the 11 closure members. Running Bandit on the 7 Python members gives 54 findings, all LOW (27 `B603`, 20 `B607`, 7 `B404`; no MEDIUM or HIGH), so adding them to the gate passes today and would catch an added `eval` or `shell=True`. It would **not** catch a new, ordinary subprocess call (LOW, not blocking), nor anything in the shell and Markdown members.
+* **Read, not run.** `repin` already prints which closure files differ (`scripts/repin.py:415-431`) and the commits behind each; the stage-1 report sorts paths into five gate-policy classes (`bootstrap/tests/_gate_preflight.py:1138-1145`, `:1203-1222`). Not present anywhere I searched: a decides-versus-pinned split, an added-line scan, an executable-file list.
+* **Read.** The driver has an undefined name in an error path (`template`, `scripts/reanchor_ceremony.py:176`, should be `TEMPLATE_REL`), a stale docstring (`:163`, "NOT itself a closure member", false since the launcher template joined), and the "delivered out of band" print (`:743`). `repin ceremony` refuses any closure change (`scripts/repin.py:1027-1029`).
+* **Read, not reproduced.** The queued report that the ceremony's test collection inherits the caller's environment (`dev/PLANNING.md:452-460`): `gather_evidence` in the checker copies `os.environ` minus only `PYTHONPATH` and `PYTHONHOME` and runs the candidate's manifest producer with `-E -s` (`bootstrap/tests/_gate_preflight.py:1461-1472`). `-E` ignores `PYTHON*` variables, not `PYTEST_ADDOPTS`, so the reported drop of 9 of 4,650 tests with exit 0 is plausible from the code. The row names the driver, `reanchor.sh` and the template; the code that builds the environment is in the checker, a closure member.
+* **Not checked.** Whether Phases 0 and 4 of the runbook (`:197-449`, `:453-538`) are still a live path; chunk 7 must settle it before it deletes them.
+
+### The Maintainer's part (unchanged from his words)
+
+He confirms equalities, runs a few printed commands, reads a plain page, supplies the ceremony key, and gives a pro-forma yes. The steps that ask more are removed or handed to an agent: External sourcing, "exercise judgement" at the report (`REANCHOR_RUNBOOK.md:89-93`, `:157`; driver `:588`), reviewing verifier bytes and hand-hashing six modules (`:372-390`), the sterile acquisition command (`:203-225`), hand-run steps 2 to 4 and Phase 4 if live (`:392-436`, `:457-538`), `SECURITY.md:167` and `:234`.
+
+### The local agent, and what it is trusted under
+
+Two fresh-session agents, distinct from each other and from every author of the range: a **builder** (packet, launcher with its one slot filled) and a **reader** (reads the closure diff in full, runs the scanners, writes a committed record). Neither implemented the change.
+
+* **C1 trusted machine** (a statement; the page prints host, user, checkout path; he answers).
+* **C2 fresh and distinct sessions** (a statement; git cannot show it, since every agent commit carries his git identity; the record names sessions and models).
+* **C3 record committed before signing and bound to bytes** (test: the record's packet, launcher and 12 member digests equal those in hand; a missing or older record refuses).
+* **C4 the named list**, from the report tool: new executable files; added lines that start a process, touch the network or write a file; every change to the gate's own files; every scanner finding; non-zero counts explained in plain words.
+* **C5 the instrument can fail**: each pattern and scanner is shown catching a planted bad line in a scratch copy before its "none" is believed; the record says which members only an agent read (the shell and Markdown ones).
+* **C6 the key stays out of every agent** (the two-stage split and dedicated key, `SECURITY.md:148-231`, unchanged).
+
+### The pro-forma page
+
+Printed by the report tool during the ceremony. **He compares:** E1 the launcher digest printed equals the one in the committed record and in the reader's chat hand-off; E2 the commit id equals his `git rev-parse HEAD`; E3 the two package digests agree; E4 the key fingerprint equals `ssh-keygen -lf` of his key; E5 the two `SAME` commands print `SAME`. **He answers:** Y1 the record exists, is committed, and is by a session that is not an author; Y2 the gate-file changes listed are the ones the plan said this release makes; Y3 every C4 count is zero or explained; Y4 every scanner and the certifying run passed, or each failure is named in an earlier allowance; Y5 this is his own machine and the key is not loaded yet. **A yes means** the numbers match what he asked for and a fresh agent says in writing nothing dangerous was added; **not** that he audited code. A no stops everything. His yes is a typed act bound to the page he read (the plan picks the mechanism; one candidate is typing the page's digest into stage 2); a yes bound to no page is refused.
+
+### Chunks, in order
+
+Proposed paths:
+* `scripts/closure_report.py`
+* `bootstrap/tests/test_closure_report.py`
+
+1. **Scanner coverage (code, small).** `scan_targets()` gains the 7 Python closure members, with a test that every Python closure member is scanned and a planted-line control. `security_check.py` is on the oracle's sensitive roster, so his authorization names it.
+2. **The report tool (code, new).** `scripts/closure_report.py` with its tests in `bootstrap/tests/test_closure_report.py`, read-only, reading git objects only and never importing or running candidate code. It prints the C4 list and the page, with *decides* = the closure members and the files the ceremony imports, *pinned* = other frozen files (using the checker's own path classes, not a second definition), *other* = the rest; the added-line scan over a fixed pattern list; the executable-file list. **It becomes the twelfth closure member**, or nothing pins the tool that tells him what he is blessing: the template's `EXPECTED_PATHS`, the checker's declared closure and the three retyped lists (11 to 12) change, as the template's own addition did.
+3. **One values reader (code, the launcher).** The launcher stays the only parser, as it must (it reads values before it can trust anything). It gains three modes (`validate`, `show-report`, `hash-package`) that verify and extract exactly as now, then run the artifact with the parsed values passed as fixed arguments; the artifact's own parser and the parity test are deleted, and `repin` and the report call the launcher modes. **Constraints:** the pre-candidate set of six executables (`bootstrap/SAFETY.md:654-700`) must not grow; no new grammar. **Falsifier:** if a mode needs a seventh executable or any parse beyond today's grammar, stop and keep two readers. This is my design, not a reviewed one; the Security Review attacks it. The driver's `values_field` (`:146`) stays; it reads fields without validating and says so.
+4. **The launcher check by the tool (code, A2).** `repin ceremony` reads the template from the anchor's signed tree, fills the slot with the packet's digest and refuses unless the launcher in hand is byte-equal; its Summary 2 includes the page; the `:965` prompt text changes. It cannot act in the first ceremony (the anchor holds the old template), so E5 covers that one.
+5. **Driver cleanup (code, deletions and fixes).** Delete `drive()` and `--run`, `scripts/correct_pinned_digests.py` (421 lines) and its test; fix `:163`, `:176`, `:743`. This lifts the earlier plan's fence on that edit (Q1) and its deletion-only check cannot hold (the print and the undefined name are not deletions), so the code review reads the whole driver diff instead.
+6. **The evidence environment (code, reproduction first).** First a test that sets `PYTEST_ADDOPTS` to deselect tests, runs `gather_evidence` on a scratch tree, and shows the collected set shrinking while the exit status stays 0; if it does not reproduce, the chunk records that and stops. Then the fix: build the producer's environment from a short allowlist rather than subtracting two names (an unlisted variable then means absent, the safe side), and, if a committed pre-compiled file is shown to load, run with `-B` and refuse one in the raw tree. The reproduction also decides whether the second half of the report is real. It edits the checker, so it joins the single transition.
+7. **Prose last.** The runbook to one page around the tool (D: roughly the launcher command, the page, the key, the push, and the first-ceremony authorization); template and artifact comments; `doctrine/dual-review.md:85-91`; `bootstrap/SAFETY.md:657-658`; `SECURITY.md:167`, `:234`, `:237`; the record format and where the record lives (the plan decides; not in the retired reviews folder). Deliberately untouched: `_gate_preflight.py` wording that says "external review" (`:1010`, `:2801`), unless a chunk already edits that file.
+
+Then: one code review of chunks 1 to 7 together; **a Security Review that reads** the launcher in full, `reanchor.sh` in full, `closure_report.py` in full, the checker's changed hunks (including `gather_evidence`'s environment), `repin`'s A2 hunk, the driver diff, the `security_check.py` hunk, and the runbook page as the thing he is told to do; a certifying run; the builder and reader; then the ceremony. Chunks 1 to 6 are code; 7 is prose.
+
+### The first ceremony: the bootstrap problem
+
+No reviewed launcher built by the new process exists before the new process does, and the anchor still holds the old text and the old closure, so the first ceremony is a transition that no tool of the new design can run (`repin` refuses at boot; A2 has no anchored template). **How it is authorized:** his Decision on this proposal, quoted verbatim there, says the first ceremony runs under the new text before that text is anchored, with a builder and a reader as above, the record committed first, his only parts E1 to E5, Y1 to Y5 and the key, and the sensitive-roster entries named (`bootstrap/security_check.py` and `bootstrap/tests/_gate_manifest.py`). **What he does by hand, once:** the commands the launcher's stage 1 prints (launcher, show-report, hash-package, stage 2 with his digest), the `SAME` commands, `git verify-commit refs/cairn/gate-anchor`, and the push; nothing else. Then M2, M1, R6a and the cut's own re-anchor through `repin`, as `dev/PLANNING.md` lists.
+
+### Items he asked about, with a recommendation each
+
+* **I (checker messages the launcher does not print): superseded by the page; keep its trigger.** Default: yes.
+* **E (stale-pin warning at session start): do not build.** It adds subprocess use to the interpreter trust root (`templates/skills/_lib/session.py`) and may touch session-routine doctrine; cheap ceremonies make the silence matter less. Default: no. Lost: staleness stays visible only on demand.
+* **Unsigned anchor (`dev/PLANNING.md:440-448`): close it by this ceremony.** Stage 2 signs the new anchor, so `AGENTS.md`'s "signature on the commit it names" becomes true; no text edit. Default: yes. If stage 2 does not sign, the sentence is corrected instead.
+
+### Assurance, honestly
+
+**Still stopped:** accident; a careless or confused agent; a closure change slipping in unreported (the packet pins 12 digests; the launcher measures a transition, `template:570-612`); candidate code running while the key is loaded; a stale or wrongly signed anchor; any agent moving the anchor alone, because only his key can. **No longer stopped:** a malicious change from a compromised session or poisoned input that a same-vendor fresh agent and the pattern list both miss. The old design put an outside reader there. The key still decides whether the anchor moves; what he is told when he turns it is no longer cross-checked from outside. New here: the report tool is unanchored code at the first ceremony (read by two fresh agents, not signed), and the pattern list is by enumeration, so it ages.
+**Signals this is wrong:** a planted bad line the report misses; a record digest and a printed one disagreeing without explanation; the launcher growing a seventh executable; a later outside read finding a dangerous change the reader passed; zeros from an instrument that could not match.
+
+### Scope delta
+
+**Scope delta**: degraded, one unit: the standing External reader is replaced by the fresh local reader. **disposition**: guard (it stays the Maintainer's call under `doctrine/dual-review.md`; only the standing requirement goes). Every outcome in his words and in the second brief is in. E is not built and I is superseded (recorded above, with defaults); each carries **disposition**: wontfix for E, accept for I.
+
+**Assurance path**: `high-assurance`. **Review**: usual + Security Review. **Plan review**: required(Internal + Internal Security Review). **Status**: awaiting-review.
+
+### Questions for the Maintainer
+
+1. **Lift the plan's MAINTAINER-ONLY fence on the driver cleanup's edit** (agents write it; the ceremony stays yours)? Default: yes. If not: the cleanup waits for you to write it, and the old driver path stays through the first ceremony.
+2. **Authorize the first ceremony under the new, not-yet-anchored text**, in your own words at the Decision, naming the two sensitive-roster entries? Default: yes. If not: there is no way to run the first transition.
+3. **Make the report tool a twelfth closure member?** Default: yes. If not: it is unpinned and a later edit could change what the page says.
+4. **Build the one-reader launcher change (chunk 3) in this batch?** Default: yes, with its falsifier. If not: two readers and a parity test remain, and the Security Review has a smaller launcher to read.
+5. **Build the session-start stale-pin warning (E)?** Default: no.
+6. **Is a same-vendor fresh reader acceptable as the standing reader, with the record stating that plainly?** Default: yes. If you want a different model as reader, we gain a little distance and lose the ability to run a ceremony on a day that model is unavailable.
+
+### Withdrawn / superseded commitments
+
+* The interim route (a), and options (b) to (d) as written: withdrawn by the Maintainer's words above; everything is built now.
+* "No runbook, launcher or doctrine text changes first": superseded; the text and closure members change first so one transition pins them.
+* "Template `EXPECTED_PATHS` untouched": superseded; it gains the report tool.
+* The deferral of D, C and I; the report verb "after the cut": superseded; D and C are in, I is superseded by the page.
+* "Rewrite as a later transition" and the options table: superseded by the chunks above.
