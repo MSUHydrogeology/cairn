@@ -34,6 +34,7 @@ CLOSURE = ["bootstrap/REANCHOR_RUNBOOK.md", "bootstrap/reanchor-launcher.templat
            "bootstrap/tests/_oracle_activation.py", "bootstrap/tests/_oracle_trust.py",
            "dev/.cairn/allowed_signers"]
 MAPS = "bootstrap/_scaffold/maps.py"
+RECORD = "dev/ceremony-record.md"
 LAUNCHER_TEMPLATE = REAL / "bootstrap/reanchor-launcher.template.sh"
 
 pytestmark = pytest.mark.skipif(not (shutil.which("ssh-keygen") and shutil.which("ssh-agent")),
@@ -74,18 +75,53 @@ class CeremonyBed(Bed):
         self.values = self.root / "values"
         self.values.write_text("".join(f"{k} {v}\n" for k, v in values.items()))
 
-    def make_packet(self, artifact_sha=None):
-        """What the review delivers: a packet over the HEAD closure and the launcher bound to it."""
+    def make_packet(self, artifact_sha=None, *, provenance="test bed", into=None):
+        """What `repin packet` produces: a packet over the HEAD closure and the launcher bound to it."""
         sha = lambda b: hashlib.sha256(b).hexdigest()
+        into = into or self.cdir
         rows = "".join(f"member {sha((self.repo / r).read_bytes())} {r}\n" for r in sorted(CLOSURE))
-        packet = ("schema cairn-authorization-packet/v1\nprovenance test bed\nartifact bootstrap/reanchor.sh\n"
+        packet = (f"schema cairn-authorization-packet/v1\nprovenance {provenance}\nartifact bootstrap/reanchor.sh\n"
                   f"artifact_sha256 {artifact_sha or sha((self.repo / 'bootstrap/reanchor.sh').read_bytes())}\n"
                   + rows)
-        (self.cdir / "authorization-packet.txt").write_text(packet)
+        (into / "authorization-packet.txt").write_text(packet)
         launcher = LAUNCHER_TEMPLATE.read_text().replace("@PACKET_SHA256@", sha(packet.encode()))
-        (self.cdir / "reanchor-launcher.sh").write_text(launcher)
-        self.launcher_digest = sha(launcher.encode())
-        return self.launcher_digest
+        (into / "reanchor-launcher.sh").write_text(launcher)
+        if into == self.cdir:
+            self.launcher_digest = sha(launcher.encode())
+        return sha(launcher.encode())
+
+    def add_record(self, *, read=None, packet=None, launcher=None, members=None, also=None):
+        """The reader's record, committed alone on HEAD (the commit read): the packet and launcher
+        digests from the ceremony folder and each closure file's digest at HEAD.  Each argument
+        damages one part, and *also* writes more paths into the same commit."""
+        sha = lambda b: hashlib.sha256(b).hexdigest()
+        head = self.git("rev-parse", "HEAD").stdout.strip()
+        rows = {r: sha(self.git("show", f"HEAD:{r}", text=False).stdout) for r in CLOSURE}
+        rows.update(members or {})
+        lines = ["# Ceremony record", f"read-commit {read or head}",
+                 f"packet-sha256 {packet or sha((self.cdir / 'authorization-packet.txt').read_bytes())}",
+                 f"launcher-sha256 {launcher or sha((self.cdir / 'reanchor-launcher.sh').read_bytes())}",
+                 *[f"member {d} {r}" for r, d in sorted(rows.items())],
+                 "The reader wrote nothing in this range (a statement, not checkable)."]
+        paths = [RECORD]
+        self.write(RECORD, "\n".join(lines) + "\n")
+        for rel, text in (also or {}).items():
+            self.write(rel, text)
+            paths.append(rel)
+        self.git("add", "--", *paths)
+        self.git("commit", "-q", "-m", "record", "--", *paths)
+        self.recorded = (self.git("rev-parse", "HEAD").stdout.strip(), self.packet_and_launcher())
+        return self.recorded[0]
+
+    def packet_and_launcher(self):
+        return tuple(hashlib.sha256((self.cdir / n).read_bytes()).hexdigest()
+                     for n in ("authorization-packet.txt", "reanchor-launcher.sh"))
+
+    def ensure_record(self):
+        """A good record at the tip, unless one already is for these files."""
+        head = self.git("rev-parse", "HEAD").stdout.strip()
+        if getattr(self, "recorded", None) != (head, self.packet_and_launcher()):
+            self.add_record()
 
     def unsigned_anchor(self, *, drop_repin=False):
         """The hand-made anchor the first ceremony starts from: unsigned, perhaps not pinning repin."""
@@ -161,12 +197,17 @@ sys.addaudithook(_hook)
 """
 
 
-def drive(bed, answers, *, launchctl=None, extra=(), values=None, timeout=240, env=None, audit=False, patch=""):
+def drive(bed, answers, *, launchctl=None, extra=(), values=None, timeout=240, env=None, audit=False, patch="",
+          record=True):
     """Run `repin ceremony` on a pseudo-terminal, with the one login-session lookup injected.
 
     With audit=True an audit hook logs every subprocess, exec and write-mode open the
     process makes to `bed.root/audit.log`.  *patch* is code run in that child once `repin` is
-    loaded, to stand in for a failing disk, tool or child (the test's own process, never an option)."""
+    loaded, to stand in for a failing disk, tool or child (the test's own process, never an option).
+    The reader's record is committed first unless *record* is False, so a test that is about
+    something else starts from a ceremony the record check passes."""
+    if record:
+        bed.ensure_record()
     argv = ["ceremony", "--values", str(values or bed.values), "--ceremony-dir", str(bed.cdir), *extra]
     hook = HOOK.format(log=str(bed.root / "audit.log")) if audit else ""
     code = f"""
@@ -236,7 +277,8 @@ def test_a_launcher_digest_that_differs_from_the_pasted_one_refuses(cbed):
     before = anchor_of(cbed)
     code, out = drive(cbed, [("Paste the launcher digest", "0" * 64)])
     assert code == 2
-    refused_early(out, "not the one in the review's record")
+    refused_early(out, "not the one in the record")
+    assert "Paste the launcher digest from the record:" in out       # the prompt names the record, not a review
     assert not moved(cbed, before) and not (cbed.cdir / "package.json").exists()
     assert full_run(cbed)[0] == 0                       # control: the matching digest passes
 
@@ -477,6 +519,7 @@ def test_an_ordinary_ceremony_applies_a_lockfile_only_correction_and_stops(cbed)
     cbed.sign = False
     sh("ssh-keygen", "-q", "-p", "-P", "", "-N", PASSPHRASE, "-f", str(cbed.key), cwd=cbed.root, env=cbed.env)
     cbed.make_packet()
+    cbed.ensure_record()                                          # the reader's record is the tip
     before, head = (cbed.repo / LOCKFILE).read_bytes(), cbed.git("rev-parse", "HEAD").stdout.strip()
     code, out = drive(cbed, [("Paste the launcher digest", cbed.launcher_digest),
                              ("Do the two digests match", "yes"), ("Write these files?", "yes")])
@@ -511,7 +554,8 @@ def test_an_owed_ast_pin_is_written_the_stop_line_printed_and_a_rerun_proceeds(c
     cbed.git("commit", "-q", "-m", "AST pin", BASELINE)
     code, out = full_run(cbed)
     assert code == 0, out
-    assert "matches a stop record" in out and cbed.git("log", "-1", "--format=%s", "HEAD~1").stdout.strip() == "AST pin"
+    # the new checkpoint sits on the reader's record, which sits on the pin commit
+    assert "matches a stop record" in out and cbed.git("log", "-1", "--format=%s", "HEAD~2").stdout.strip() == "AST pin"
 
 
 def rerun_check(cbed, first_run=False):
@@ -796,7 +840,8 @@ def test_each_stage_one_disclosure_appears_in_the_output(cbed):
 
 
 SUMMARY_TWO = ["== what you are authorizing ==", "signatures over the range:", "Gate manifest drift", "authority files changed since the anchor",
-               "anchor signature: good, by a roster key", "signing key fingerprint: SHA256:", "package digest: "]
+               "anchor signature: good, by a roster key", "signing key fingerprint: SHA256:", "package digest: ",
+               "every scan hit (", "scan digest ", "tools this ceremony runs", "Y1  [yes/no]", "Y5  [yes/no]"]
 
 
 def test_summary_two_shows_each_disclosure(cbed):
@@ -905,7 +950,7 @@ def test_a_committed_module_named_like_the_standard_library_does_not_run_in_a_ce
         cbed.write(f"{subdir}/{name}.py", f"\nopen({str(cbed.root / ('ran-' + name))!r}, 'w').close()\n")
     cbed.commit("shadow the standard library")
     code, out = drive(cbed, [("Paste the launcher digest", "0" * 64)])
-    assert code == 2 and "not the one in the review's record" in out, out
+    assert code == 2 and "not the one in the record" in out, out
     assert not list(cbed.root.glob("ran-*"))
     if subdir == "scripts":                       # nothing in scripts/ is imported by stage 1's collection
         code, out = full_run(cbed)
@@ -1005,6 +1050,8 @@ def popen_calls(bed):
 
 @pytest.mark.parametrize("stage,question", [("one", "Do the two digests match"), ("two", "Does Summary 2")])
 def test_the_launcher_is_hashed_again_before_each_of_its_two_runs(cbed, stage, question):
+    """The edit lands after the launcher was compared with the anchor's template (so that check
+    cannot be what refuses): after the first child for stage one, at the last question for stage two."""
     marker = cbed.root / "launcher-ran-edited"
     launcher = cbed.cdir / "reanchor-launcher.sh"
 
@@ -1013,8 +1060,22 @@ def test_the_launcher_is_hashed_again_before_each_of_its_two_runs(cbed, stage, q
         return "yes"
     answers = [("Paste the launcher digest", cbed.launcher_digest), ("Do the two digests match", "yes"),
                ("Does Summary 2", "yes")]
-    answers = [(q, edit_the_launcher if q == question else a) for q, a in answers]
-    code, out = drive(cbed, answers)
+    patch = ""
+    if stage == "two":
+        answers = [(q, edit_the_launcher if q == question else a) for q, a in answers]
+    else:
+        patch = f"""
+real_child = R.child
+def edit_after_the_first_child(rec, argv, **kw):
+    r = real_child(rec, argv, **kw)
+    if "validate" in argv:
+        from pathlib import Path
+        p = Path({str(launcher)!r})
+        p.write_text(p.read_text().replace("\\n", "\\n: > {marker}\\n", 1))
+    return r
+R.child = edit_after_the_first_child
+"""
+    code, out = drive(cbed, answers, patch=patch)
     assert code == 2 and "launcher changed after its digest was compared" in out, out
     assert not marker.exists(), "the edited launcher ran"
     assert "Enter passphrase for" not in out
@@ -1090,3 +1151,108 @@ def test_only_the_exact_word_yes_writes_the_ast_pin_through_the_command(cbed):
 
 def reads_of(bed):
     return (bed.repo / BASELINE).read_bytes()
+
+
+# --------------------------------------------------------------------------
+# `packet`, the launcher against the anchor's template, and the reader's record
+# --------------------------------------------------------------------------
+
+def packet_into(bed, name="made"):
+    out = bed.root / name
+    out.mkdir()
+    return out, bed.run("packet", "--ceremony-dir", str(out))
+
+
+def test_packet_writes_the_same_bytes_as_the_test_helper_on_the_same_tree(cbed):
+    out, r = packet_into(cbed)
+    assert r.returncode == 0, r.stdout + r.stderr
+    theirs = cbed.root / "helper"
+    theirs.mkdir()
+    cbed.make_packet(provenance="repin packet", into=theirs)
+    for name in ("authorization-packet.txt", "reanchor-launcher.sh"):
+        assert (out / name).read_bytes() == (theirs / name).read_bytes(), name
+    packet_digest = hashlib.sha256((out / "authorization-packet.txt").read_bytes()).hexdigest()
+    assert packet_digest in (out / "reanchor-launcher.sh").read_text()      # the slot is filled with it
+    assert f"sha256 {packet_digest}" in r.stdout and cbed.git("rev-parse", "HEAD").stdout.strip() in r.stdout
+
+
+def test_packet_refuses_a_ceremony_that_changes_an_authority_file_and_writes_nothing(cbed):
+    ok, control = packet_into(cbed, "control")                      # control: the unchanged tree writes
+    assert control.returncode == 0 and len(list(ok.iterdir())) == 2
+    cbed.write("bootstrap/REANCHOR_RUNBOOK.md", cbed.read("bootstrap/REANCHOR_RUNBOOK.md") + "\nchanged\n")
+    cbed.commit("a transition")
+    out, r = packet_into(cbed)
+    assert r.returncode == 2 and "transition ceremony" in r.stderr, r.stdout + r.stderr
+    assert list(out.iterdir()) == []
+
+
+def test_packet_refuses_a_folder_that_already_holds_one_and_changes_nothing(cbed):
+    out, first = packet_into(cbed)
+    assert first.returncode == 0
+    before = {n: (out / n).read_bytes() for n in ("authorization-packet.txt", "reanchor-launcher.sh")}
+    again = cbed.run("packet", "--ceremony-dir", str(out))
+    assert again.returncode == 2 and "already holds" in again.stderr
+    assert {n: (out / n).read_bytes() for n in before} == before
+
+
+def test_a_launcher_one_byte_off_the_anchors_template_refuses_before_any_child_runs(cbed):
+    marker = cbed.root / "A-CHILD-RAN"
+    patch = f"""
+real_child = R.child
+def spy(rec, argv, **kw):
+    open({str(marker)!r}, "w").close()
+    return real_child(rec, argv, **kw)
+R.child = spy
+"""
+    launcher = cbed.cdir / "reanchor-launcher.sh"
+    launcher.write_text(launcher.read_text() + "#\n")             # one added line, the packet digest untouched
+    digest = hashlib.sha256(launcher.read_bytes()).hexdigest()
+    code, out = drive(cbed, [("Paste the launcher digest", digest), ("Do the two digests match", "yes")], patch=patch)
+    assert code == 2
+    refused_early(out, "not the anchor's launcher template")
+    assert not marker.exists(), "a child ran before the launcher was compared with the anchor's template"
+    cbed.make_packet()                                              # control: the unchanged launcher runs children
+    assert full_run(cbed, audit=False, patch=patch)[0] == 0 and marker.exists()
+
+
+def record_refusal(bed, needle, **damage):
+    before = anchor_of(bed)
+    bed.add_record(**damage.pop("record", {}))
+    for step in damage.get("then", ()):
+        step()
+    code, out = drive(bed, [("Paste the launcher digest", bed.launcher_digest), ("Do the two digests match", "yes")],
+                      record=False)
+    assert code == 2, out
+    refused_early(out, needle)
+    assert not moved(bed, before) and not (bed.cdir / "package.json").exists()
+    bed.add_record()                                                # control: a good record on top passes
+    assert full_run(bed)[0] == 0
+
+
+def test_a_ceremony_with_no_record_refuses(cbed):
+    code, out = drive(cbed, [("Paste the launcher digest", cbed.launcher_digest),
+                             ("Do the two digests match", "yes")], record=False)
+    assert code == 2
+    refused_early(out, "dev/ceremony-record.md is not committed at HEAD")
+    assert full_run(cbed)[0] == 0                                   # control
+
+
+def test_a_record_that_names_another_commit_than_the_one_below_it_refuses(cbed):
+    record_refusal(cbed, "the reader read", record={"read": "0" * 40})
+
+
+def test_a_record_with_another_commit_on_top_of_it_refuses(cbed):
+    def another():
+        cbed.write("later.txt", "after the record\n")
+        cbed.commit("a commit after the record")
+    record_refusal(cbed, "the reader read", then=(another,))
+
+
+def test_a_record_commit_that_changes_another_path_refuses(cbed):
+    record_refusal(cbed, "changes more than the record", record={"also": {"sneaked.txt": "not the record\n"}})
+
+
+@pytest.mark.parametrize("part,damage", [("packet", {"packet": "0" * 64}), ("launcher", {"launcher": "1" * 64}),
+                                         ("a member", {"members": {"bootstrap/reanchor.sh": "2" * 64}})])
+def test_a_record_that_names_other_digests_refuses(cbed, part, damage):
+    record_refusal(cbed, "differ from the ones dev/ceremony-record.md names", record=damage)

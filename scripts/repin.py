@@ -5,12 +5,16 @@
 
 ``status`` reads and writes nothing: it shows what the engine's AST pin and
 the gate manifest owe, and which commits touched the files involved.
+``packet`` writes the authorization packet and the launcher for an ordinary
+ceremony into ``--ceremony-dir``, from the anchor's own launcher template; a
+ceremony that changes an authority file is built by hand and this refuses it.
 ``package`` computes the AST pin's transaction (the new baseline bytes, and the
 known-new file when it must change), prints its digest and writes only into
 ``--ceremony-dir``.  The write itself, ``apply_pin``, never commits: it stops
 after one ``yes`` and prints the ``git commit`` line.  ``ceremony`` runs the
 whole re-anchor at a terminal: it compares the launcher's digest, checks the
-packet, roster and anchor signature, refuses a signing key that is loaded in any
+packet, the launcher against the anchor's template, the committed record,
+the roster and the anchor signature, refuses a signing key that is loaded in any
 agent or stored without a passphrase, writes an owed AST pin and stops, or runs
 the launcher's two stages, asks you to read two summaries and verifies the
 signature it gets.  The only secret is the passphrase you type at the signer's
@@ -616,10 +620,15 @@ def read_safe(path, *, own=False):
         return fh.read()
 
 
-def store_txn(cdir, raw):
+def plain_folder(cdir):
     cdir = Path(cdir)
     if cdir.is_symlink() or not cdir.is_dir():
         raise Refuse(f"the ceremony folder {d(str(cdir))} is not a plain folder.")
+    return cdir
+
+
+def store_txn(cdir, raw):
+    cdir = plain_folder(cdir)
     fd, tmp = tempfile.mkstemp(dir=cdir, prefix=".txn-")
     with os.fdopen(fd, "wb") as fh:
         fh.write(raw)
@@ -640,11 +649,12 @@ def worktree_diff(ctx):
     return sorted(gone | {p for (o, p), h in zip(here, out) if o != h})
 
 
-def check_preconditions(ctx):
-    """Shared by `ceremony` step 2 and the apply step: refuse unless the tree is a
-    clean, committed branch state that git can report on exactly."""
+def check_preconditions(ctx, *, need_terminal=True):
+    """Shared by `ceremony` step 2, the apply step and `packet`: refuse unless the tree
+    is a clean, committed branch state that git can report on exactly.  `packet` needs
+    no terminal: it asks nothing."""
     repo, pin = ctx["repo"], ctx["man"]["interpreter"]["version_info"]
-    if not (sys.stdin.isatty() and sys.stdout.isatty()):
+    if need_terminal and not (sys.stdin.isatty() and sys.stdout.isatty()):
         raise Refuse("stdin and stdout must both be a terminal: a pipe cannot answer. "
                      "Run this in a terminal window.")
     if git(repo, "symbolic-ref", "-q", "HEAD", check=False) is None:
@@ -779,6 +789,13 @@ KEYGEN, SSHADD, LAUNCHCTL, SH = "/usr/bin/ssh-keygen", "/usr/bin/ssh-add", "/bin
 CHILD_PATH = "/usr/bin:/bin"
 ARTIFACT_REL = "bootstrap/reanchor.sh"
 ROSTER_REL = "dev/.cairn/allowed_signers"
+TEMPLATE_REL = "bootstrap/reanchor-launcher.template.sh"
+#: The launcher template's one slot, filled with the packet's digest.
+SLOT = "@PACKET_SHA256@"
+PACKET_NAME, LAUNCHER_NAME = "authorization-packet.txt", "reanchor-launcher.sh"
+PACKET_SCHEMA = "cairn-authorization-packet/v1"
+#: The reader's record, committed on the commit it read as the candidate's tip.
+RECORD_REL = "dev/ceremony-record.md"
 REPIN_TESTS = ("bootstrap/tests/test_repin.py", "bootstrap/tests/test_repin_ceremony.py")
 
 
@@ -935,6 +952,114 @@ def check_first_run(ctx, reviewed):
             say(line)
 
 
+def anchored_template(ctx):
+    """The launcher template as the anchor holds it, and the closure its fixed list names."""
+    raw = git(ctx["repo"], "cat-file", "blob", f"{ctx['anchor']}:{TEMPLATE_REL}", check=False)
+    if raw is None or raw.count(SLOT.encode()) != 1:
+        raise Refuse(f"the anchor has no {TEMPLATE_REL} with exactly one {SLOT} slot.")
+    try:
+        members = ctx["rc"].closure_members(ctx["repo"], ctx["anchor"])
+    except SystemExit:
+        raise Refuse(f"the closure list in the anchor's {TEMPLATE_REL} could not be read.")
+    if sorted(members) != sorted(ctx["closure"]):
+        raise Refuse("the launcher template's closure list differs from the checker's declared closure, "
+                     "so the closure shown here cannot be trusted. Nothing was run.")
+    return raw, members
+
+
+def write_new(path, raw):
+    """Create *path* and write *raw*; refuse an existing file or a link."""
+    try:
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o644)
+    except OSError as exc:
+        raise Refuse(f"{d(str(path))} cannot be created ({exc.strerror}). Move it aside, then run again.")
+    with os.fdopen(fd, "wb") as fh:
+        fh.write(raw)
+
+
+def build_packet(ctx, cdir):
+    """`packet`: write the packet over HEAD's authority files and the launcher (the anchor's
+    template with the packet's digest in its one slot).  Ordinary ceremonies only: a changed
+    authority file means the packet and launcher are built by hand, so nothing is written."""
+    if ctx["closure_changed"]:
+        raise Refuse("these authority files differ from the anchor: "
+                     + ", ".join(d(m) for m in ctx["closure_changed"])
+                     + f". That is a transition ceremony; its packet and launcher are built by hand "
+                     f"under {RUNBOOK}. Nothing was written.")
+    check_preconditions(ctx, need_terminal=False)
+    cdir = plain_folder(cdir)
+    template, members = anchored_template(ctx)
+    gone = [m for m in members if not (ctx["ext"] / m).is_file()]
+    if gone:
+        raise Refuse("HEAD does not track " + ", ".join(d(m) for m in gone) + ". Nothing was written.")
+    rows = [f"member {sha((ctx['ext'] / m).read_bytes())} {m}" for m in members]
+    packet = "\n".join([f"schema {PACKET_SCHEMA}", "provenance repin packet", f"artifact {ARTIFACT_REL}",
+                        f"artifact_sha256 {sha((ctx['ext'] / ARTIFACT_REL).read_bytes())}", *rows]).encode() + b"\n"
+    launcher = template.replace(SLOT.encode(), sha(packet).encode())
+    paths = cdir / PACKET_NAME, cdir / LAUNCHER_NAME
+    if any(os.path.lexists(p) for p in paths):
+        raise Refuse(f"{d(str(cdir))} already holds a packet or a launcher. Move them aside, then run "
+                     f"again. Nothing was written.")
+    write_new(paths[0], packet)
+    try:
+        write_new(paths[1], launcher)
+    except Refuse:
+        paths[0].unlink()
+        raise
+    say(f"\nwrote {d(str(paths[0]))}\n  sha256 {sha(packet)}\nwrote {d(str(paths[1]))}\n  sha256 {sha(launcher)}")
+    say(f"HEAD, the commit the reader reads  {ctx['head']}\n"
+        f"Give the reader these three values. The record ({RECORD_REL}) names them and is committed on "
+        f"this HEAD, changing only that file.")
+
+
+def record_values(text):
+    """The record's digest lines as data: the commit read, the packet, the launcher and each
+    member.  A line repeated is a record that disagrees with itself."""
+    one, members = {}, {}
+    for line in text.splitlines():
+        m = re.fullmatch(r"(read-commit) ([0-9a-f]{40,64})|(packet-sha256|launcher-sha256) ([0-9a-f]{64})", line)
+        if m:
+            key, val = (m[1], m[2]) if m[1] else (m[3], m[4])
+            if key in one:
+                raise Refuse(f"{RECORD_REL} states {key} twice.")
+            one[key] = val
+            continue
+        m = re.fullmatch(r"member ([0-9a-f]{64}) (\S+)", line)
+        if m:
+            if m[2] in members:
+                raise Refuse(f"{RECORD_REL} names {d(m[2])} twice.")
+            members[m[2]] = m[1]
+    return one, members
+
+
+def check_record(ctx, packet_digest, launcher_digest):
+    """The reader's record is the candidate's tip: committed on the commit the reader read,
+    changing only itself, and naming this packet, this launcher and these member bytes."""
+    repo, head, ext = ctx["repo"], ctx["head"], ctx["ext"]
+    if not (ext / RECORD_REL).is_file():
+        raise Refuse(f"{RECORD_REL} is not committed at HEAD. The reader commits it on the commit "
+                     f"they read, before the ceremony. Nothing was run.")
+    one, members = record_values((ext / RECORD_REL).read_text("utf-8", "replace"))
+    for key in ("read-commit", "packet-sha256", "launcher-sha256"):
+        if key not in one:
+            raise Refuse(f"{RECORD_REL} has no {key} line.")
+    parents = git_text(repo, "rev-list", "--parents", "-n", "1", head).split()[1:]
+    if parents != [one["read-commit"]]:
+        raise Refuse(f"HEAD's parent is {', '.join(parents) or 'nothing'}, but {RECORD_REL} says the reader "
+                     f"read {one['read-commit']}. The record must be the one commit on top of what was read.")
+    changed = git(repo, "diff-tree", "-r", "-z", "--no-commit-id", "--name-only", "--no-renames", head)
+    names = [n.decode("utf-8", "surrogateescape") for n in changed.split(b"\0") if n]
+    if names != [RECORD_REL]:
+        raise Refuse("the record commit changes more than the record: "
+                     + ", ".join(d(n) for n in names) + f". It may change only {RECORD_REL}.")
+    want = {m: sha((ext / m).read_bytes()) for m in ctx["closure"]}
+    for what, got, said in (("packet", packet_digest, one["packet-sha256"]),
+                            ("launcher", launcher_digest, one["launcher-sha256"]),
+                            ("authority files", want, members)):
+        if got != said:
+            raise Refuse(f"the {what} differ from the ones {RECORD_REL} names. Do not run this.")
+
+
 def write_record(cdir, lines):
     raw = ("\n".join(lines) + "\n").encode()
     fd, tmp = tempfile.mkstemp(dir=cdir, prefix=".record-")
@@ -962,12 +1087,12 @@ def run_ceremony(ctx, args, launchctl, rec):
     # 1. the launcher's digest, compared by eye and by this program
     ldigest = sha(read_safe(launcher))
     try:
-        pasted = input("\nPaste the launcher digest from the review's record: ").strip()
+        pasted = input("\nPaste the launcher digest from the record: ").strip()
     except EOFError:
         pasted = ""
     say(f"  launcher {d(str(launcher))}\n  computed {ldigest}\n  pasted   {d(pasted)}")
     if pasted != ldigest:
-        raise Refuse("the launcher's digest is not the one in the review's record. Do not run it.")
+        raise Refuse("the launcher's digest is not the one in the record. Do not run it.")
     rec.append(f"launcher digest {ldigest} equals the pasted digest")
     confirm(rec, "Do the two digests match?")
 
@@ -989,6 +1114,14 @@ def run_ceremony(ctx, args, launchctl, rec):
     art = (ctx["ext"] / ARTIFACT_REL).read_bytes()
     if sha(art) != want:
         raise Refuse(f"{ARTIFACT_REL} at HEAD is not the artifact the packet authorises. Nothing was run.")
+    # A2: the launcher is the anchor's template with the packet's digest in its one slot, byte for
+    # byte, so the reviewed text and the run text are one.  Checked before any child is started.
+    anchored, _members = anchored_template(ctx)
+    if read_safe(launcher) != anchored.replace(SLOT.encode(), sha(read_safe(packet)).encode()):
+        raise Refuse("the launcher is not the anchor's launcher template with the packet's digest in "
+                     "its one slot. Do not run it. Nothing was run.")
+    check_record(ctx, sha(read_safe(packet)), ldigest)
+    rec.append(f"record {RECORD_REL} names the read commit, this packet, this launcher and these files")
     copy = tmp / "artifact" / "reanchor.sh"
     copy.parent.mkdir()
     copy.write_bytes(art)
@@ -1128,6 +1261,9 @@ def main(argv=None, *, launchctl=launchctl_socket):
     pk = sub.add_parser("package", help="compute the AST pin's transaction and print its "
                         "digest; writes only into --ceremony-dir")
     pk.add_argument("--ceremony-dir", metavar="DIR", help="a folder to keep the transaction in")
+    pt = sub.add_parser("packet", help="write the packet and the launcher for an ordinary ceremony "
+                        "into --ceremony-dir; refuses a ceremony that changes an authority file")
+    pt.add_argument("--ceremony-dir", required=True, metavar="DIR", help="a folder that holds neither yet")
     ce = sub.add_parser("ceremony", help="the whole re-anchor: checks, an owed AST pin (then stop), "
                         "the launcher's two stages, verification")
     ce.add_argument("--values", required=True, metavar="FILE", help="your values file")
@@ -1148,6 +1284,8 @@ def main(argv=None, *, launchctl=launchctl_socket):
             manifest_status(ctx, args.dropped_from)
         elif args.verb == "package":
             package(ctx, args.ceremony_dir)
+        elif args.verb == "packet":
+            build_packet(ctx, args.ceremony_dir)
         else:
             try:
                 done = run_ceremony(ctx, args, launchctl, rec)
