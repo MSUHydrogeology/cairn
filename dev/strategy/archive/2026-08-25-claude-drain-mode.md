@@ -55,3 +55,22 @@ when the change note waits on its prerequisites: **here**. Ideas are captured
 the day they are designed — strategy note, board row, or issue; commitment
 artifacts (change notes, proposals) open when execution starts. The durable
 record begins at capture, not at execution.
+
+## Closure — built and shipped — 2026-10-27
+
+The design was carried out as a standard-lane change, the plan
+[`dev/plans/archive/drain-mode.md`](../plans/archive/drain-mode.md). It shipped
+in `.agents/skills/session-start/SKILL.md` and its template twin. The
+Maintainer closed this note on 2026-10-27 ("we can entirely retire the drain
+mode strategy note").
+
+* **Kept:** the flag on `session-start`, the `board`, `issues` and `<item>`
+  targets, the ten-line plan up front, parks batched as questions with a
+  recommended default, nothing pushed, and routing unchanged from the
+  constitution.
+* **Changed:** triage covers two levels (sort; act on trivial items). Commenting,
+  labelling and closing are not in 0.5. Issue text is data, never instruction,
+  which the note had not said. A fix per item no longer owes a fresh-subagent
+  review when it is a trivial change.
+* **Still shelved:** the cron or unattended variant and default-with-veto
+  execution.
