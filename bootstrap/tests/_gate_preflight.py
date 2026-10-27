@@ -2327,8 +2327,8 @@ def write_package(path: Path, pkg: dict) -> str:
     recursive or silently excludes a field nobody named -- and either way it is
     the same self-digest mistake as the handoff bundle described in
     :func:`transition`, one layer down. Authority comes from
-    a digest the Maintainer carries out of band, computed over bytes that
-    already exist.
+    a digest the Maintainer computes independently of this tool, over bytes
+    that already exist.
 
     `O_EXCL` on a fresh path, a restrictive mode, and a refusal on a symlinked
     parent or leaf: a package written over something else, or through a link, is
@@ -2350,9 +2350,9 @@ def write_package(path: Path, pkg: dict) -> str:
     finally:
         os.close(fd)
     # BARE lowercase hex, deliberately, not this module's `sha256:`-prefixed
-    # form. The Maintainer carries this digest out of band and compares it by
-    # eye against `shasum -a 256` output, which is bare. A prefix the operator
-    # has to mentally strip mid-ceremony is a place to make a mistake, and the
+    # form. The Maintainer compares this digest by eye
+    # against `shasum -a 256` output, which is bare. A prefix the operator has
+    # to mentally strip mid-ceremony is a place to make a mistake, and the
     # ceremony's own recorded commands use `shasum` throughout.
     return hashlib.sha256(body).hexdigest()
 

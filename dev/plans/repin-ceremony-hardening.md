@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md](../proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md)
-**Status**: ready-to-archive
+**Status**: awaiting-code-review
 **Waiting on Maintainer**: hand re-anchor after this lands
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27
@@ -19,7 +19,7 @@ The Internal Security Review is a separate pass from the ordinary plan review. A
 
 **Reuse.** Searched `git grep -n 'declared_authority_closure\|EXPECTED_PATHS' -- bootstrap scripts`: one list in the checker, one in the template, and one retyped in each of three test files (`test_gate_preflight.py:4094`, `test_reanchor.py:927`, `test_repin_ceremony.py:30`); C1 to C3 extend those, no new list. Nothing in `bootstrap/tests` tests the driver's printed text (`git grep -n 'check_packet_pair\|reanchor_ceremony' -- bootstrap/tests` hits only copies of the file into a bed), so B has no near-duplicate; it builds its own scratch repository rather than import `CeremonyBed` (needs `ssh-keygen`) or `Bed` (copies `repin`).
 
-**"Out-of-band" sites left as they are.** `git grep -n -i 'out.of.band' -- bootstrap scripts` finds 58 lines in 19 files. H (Decision-scoped) edits the runbook (C4) and the template (C5) only. Left over: `bootstrap/tests/_gate_preflight.py` (16 lines, among them the delivery claims at `:2318` and `:2341` and the printed "REVIEW REQUIRED, out-of-band" at `:1386`), the driver (3 lines; `:743` is R6b's, see C5) and 13 other files. `_gate_preflight.py` is one of the ten listed files and C1 edits it before the ceremony anyway; fixing those lines after it costs one more hand ceremony. **Widening H to them is the Maintainer's call**, not this plan's.
+**"Out-of-band" sites left as they are.** `git grep -n -i 'out.of.band' -- bootstrap scripts` finds 58 lines in 19 files. H (Decision-scoped) edits the runbook (C4) and the template (C5) only. Left over: `bootstrap/tests/_gate_preflight.py` (16 lines, among them the delivery claims at `:2318` and `:2341` and the printed "REVIEW REQUIRED, out-of-band" at `:1386`), the driver (3 lines; `:743` is R6b's, see C5) and 13 other files. `_gate_preflight.py` is one of the ten listed files and C1 edits it before the ceremony anyway; fixing those lines after it costs one more hand ceremony. **Widening H to them is the Maintainer's call**, not this plan's. **Update, 2026-10-27:** the Maintainer widened H to the two comments in `_gate_preflight.py` (see the last section); of the delivery claims, only the driver's `:743` and `:163` remain, and R6b's writer owns both.
 
 **Doctrine surface.** None: no `doctrine/` or `AGENTS.md` text (descriptive prose only), so the rate-limit gate does not apply; no descriptive page states the closure's size or members.
 
@@ -272,3 +272,20 @@ Tested SHA `c7fdce92` (the tree is the range plus `afd8c95d`, a plan-text commit
 * New mutants: packet digest line, launcher digest line, template identity line: 3 killed, 0 survived, 0 equivalent (control 14 passed); D10 without the `None` line: 2 failed of 2 parameters.
 * C7 commands: 5 outputs measured in a scratch repository (`/private/tmp/claude-501/-Users-kendal30-Code-cairn/66d87e18-52ca-44fc-b226-0817c96bdc10/scratchpad/c7.sh`), listed in B1 above.
 * Not verified: a real packet and launcher; the by-hand ceremony; a certifying run; `test_gate_manifest.py`. Files edited in this response: the plan and `bootstrap/tests/test_reanchor_driver_disclosures.py` only (a new, FROZEN-NEW file); no closure member, no frozen keyed file, no `scripts/` file. The M2 commit stays `5293f570` (`git diff --stat 5293f570 HEAD` over the three repin files: nothing).
+
+## Maintainer-authorized widening of H -- Claude Sonnet 5.5 (Implementation) -- 2026-10-27
+
+The Maintainer was asked "Widen H to the two checker comments?" and answered:
+
+> Yes, before the hand ceremony
+
+Two edits, comment and docstring text only, both in `bootstrap/tests/_gate_preflight.py` (`write_package`). The `write_package` docstring said the Maintainer "carries" the digest "out of band"; it now says the Maintainer computes it "independently of this tool" (the true meaning, as in C4 at runbook `:377`). The comment on the bare-hex return dropped "carries this digest out of band and" (a plain drop, as in C5); the comparison against `shasum -a 256` stays. No code line and no string a test reads changed. The driver's `:743` and `:163` are not touched (R6b's writer owns both). `:1398`, the printed "REVIEW REQUIRED, out-of-band", is not a delivery claim and stays.
+
+`_gate_preflight.py` is a keyed frozen file this plan already edited, so no new re-anchor entry is owed; its bytes change again, so the hand ceremony pins the new bytes. M2's `--reviewed-commit` stays `5293f570`: `git diff --stat 5293f570 HEAD -- scripts/repin.py bootstrap/tests/test_repin.py bootstrap/tests/test_repin_ceremony.py` prints nothing, and this commit touches none of the three.
+
+Scoped verification (interpreter `/Users/kendal30/conda_envs/lhm/bin/python3.13`, 3.13.13):
+* Search for the old words (`git grep -n` on "carries out of band", "carries this digest", "computed over bytes that"): only the two sites; no test reads them. The only test that reads this file's source (`test_no_candidate_editable_epoch_constant_survives`) looks for a `_SIGNING_EPOCH` name.
+* AST of the file before and after, with docstrings blanked: equal (the docstring edit is the only AST difference).
+* `test_gate_preflight.py` 320, `test_reanchor.py` 191, `test_repin.py` 107, `test_repin_ceremony.py` 75, `test_reanchor_driver_disclosures.py` 14: 707 passed, none skipped, xfailed or xpassed (`-rfsxX`).
+* Gates: `quality_gate.py --sub neutrality --sub redundancy` fail=0 / fail=0; `check_cairn.py` OK; `claim_check.py` on the plan: no flags.
+* Not run: `test_ast_attest.py` baseline (the engine package is untouched); `_gate_manifest.py verify` (already reports the owed re-anchor on many frozen files, so it cannot show this edit); a certifying run.
