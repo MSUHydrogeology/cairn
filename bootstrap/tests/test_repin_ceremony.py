@@ -24,7 +24,8 @@ import pytest
 
 from bootstrap.tests import _ast_attest as A
 from bootstrap.tests.test_repin import (  # noqa: F401 -- `template` is a fixture
-    BASELINE, ENGINE, KNOWN_NEW, LISTED, MANIFEST, PY, REAL, Bed, _dump, run_mixed, run_pty, template)
+    BASELINE, ENGINE, KNOWN_NEW, LISTED, MANIFEST, PY, REAL, Bed, _dump, a_copy_of_this_interpreter, run_mixed,
+    run_pty, template)
 
 PASSPHRASE = "throwaway-passphrase-for-tests"
 CLOSURE = ["bootstrap/REANCHOR_RUNBOOK.md", "bootstrap/reanchor-launcher.template.sh", "bootstrap/reanchor.sh",
@@ -1149,6 +1150,62 @@ R.child = tamper_after
     assert code == 2 and "launcher changed after its digest was compared" in out, out
     assert not marker.exists(), "the edited launcher ran"
     assert "Enter passphrase for" not in out
+
+
+@pytest.fixture
+def own_python(cbed, tmp_path):
+    """A values file that names a copy of this interpreter, so a test may change the copy."""
+    binary, _packages = a_copy_of_this_interpreter(tmp_path)
+    lines = [f"python {binary}" if line.startswith("python ") else line
+             for line in cbed.values.read_text().splitlines()]
+    values = cbed.root / "values-with-copied-python"
+    values.write_text("\n".join(lines) + "\n")
+    return binary, values
+
+
+def test_a_ceremony_that_names_a_copied_python_runs_to_the_end(cbed, own_python):
+    """The control for the nodes below: the copy is a working interpreter, so a refusal there is the check."""
+    _binary, values = own_python
+    code, out = full_run(cbed, values=values)
+    assert code == 0, out
+
+
+@pytest.mark.parametrize("what", ["values file", "python"])
+@pytest.mark.parametrize("stage,question", [("one", "Do the two digests match"), ("two", "Does Summary 2")])
+def test_the_values_file_and_the_python_are_hashed_again_before_each_of_the_two_runs(
+        cbed, own_python, what, stage, question):
+    """Stage one runs the candidate's tests as the Maintainer, so either file may change before stage
+    two, when the key is typed.  The change lands after the first comparison (so that cannot be what
+    refuses): after the first child for stage one, at the last question for stage two.  Nothing
+    further runs, and no passphrase is asked for."""
+    binary, values = own_python
+    target = values if what == "values file" else binary
+
+    def change():
+        with open(target, "ab") as fh:
+            fh.write(b"\n# changed\n" if what == "values file" else b"\0")
+    answers = [("Paste the launcher digest", cbed.launcher_digest), ("Do the two digests match", "yes"),
+               ("Does Summary 2", "yes")]
+    patch = ""
+    if stage == "two":
+        answers = [(q, (lambda: (change(), "yes")[1]) if q == question else a) for q, a in answers]
+    else:
+        patch = f"""
+real_child = R.child
+def change_after_the_first_child(rec, argv, **kw):
+    r = real_child(rec, argv, **kw)
+    if "--validate" in argv:
+        with open({str(target)!r}, "ab") as fh:
+            fh.write({(b"\n# changed\n" if what == "values file" else b"\0")!r})
+    return r
+R.child = change_after_the_first_child
+"""
+    before = anchor_of(cbed)
+    code, out = drive(cbed, answers, patch=patch, values=values)
+    assert code == 2 and "changed after the ceremony started" in out, out
+    assert ("the values file" if what == "values file" else "the python") in out.split("changed after")[0][-60:]
+    assert "Enter passphrase for" not in out and anchor_of(cbed) == before
+    assert ("STAGE 1 COMPLETE" in out) == (stage == "two"), "the change must land before stage one for 'one'"
 
 
 def test_only_the_exact_word_yes_writes_the_ast_pin_through_the_command(cbed):

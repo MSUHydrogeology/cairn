@@ -23,6 +23,7 @@ from pathlib import Path
 import pytest
 
 from bootstrap.tests import _gate_preflight as P
+from bootstrap.tests.test_repin import a_copy_of_this_interpreter
 
 _REPO = Path(__file__).resolve().parents[2]
 _ARTIFACT = _REPO / "bootstrap/reanchor.sh"
@@ -2035,28 +2036,6 @@ _ANCHOR_CHECKER = (
     "print('ANCHOR-CHECKER', 'no_site=%d' % sys.flags.no_site, "
     "'isolated=%d' % sys.flags.ignore_environment, *sys.argv[1:])\n")
 _CHECKER_PATH = "bootstrap/tests/_gate_preflight.py"
-
-
-def a_copy_of_this_interpreter(tmp_path):
-    """A copy of this interpreter laid out the way a virtual environment is, so
-    it has a packages folder of its own that a test may write to while the real
-    one is never touched.  It still sees this interpreter's installed packages.
-    Returns (binary, packages folder); skips only when the copy cannot start."""
-    real = Path(os.path.realpath(sys.executable))
-    root = tmp_path / "copy"
-    (root / "bin").mkdir(parents=True)
-    binary = root / "bin" / "python"
-    shutil.copy2(real, binary)
-    (root / "pyvenv.cfg").write_text(
-        f"home = {real.parent}\ninclude-system-site-packages = true\n")
-    packages = (root / "lib" / f"python{sys.version_info.major}."
-                f"{sys.version_info.minor}" / "site-packages")
-    packages.mkdir(parents=True)
-    probe = subprocess.run([str(binary), "-E", "-s", "-c", "pass"], env={},
-                           capture_output=True)
-    if probe.returncode != 0:
-        pytest.skip("this interpreter cannot be copied and run")
-    return binary, packages
 
 
 def _interpreter_with_a_planted_pth_file(tmp_path):

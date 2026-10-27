@@ -1065,9 +1065,9 @@ def run_ceremony(ctx, args, launchctl, rec):
     cdir, values = Path(args.ceremony_dir), Path(args.values)
     check_preconditions(ctx)
     packet, launcher = cdir / "authorization-packet.txt", cdir / "reanchor-launcher.sh"
-    field = {k: rc.values_field(values, k) for k in ("checkout", "signing_key", "package", "home")}
+    field = {k: rc.values_field(values, k) for k in ("checkout", "signing_key", "package", "home", "python")}
     if None in field.values() or Path(field["checkout"]).resolve() != repo:
-        raise Refuse("the values file must name checkout, signing_key, package and home, and its "
+        raise Refuse("the values file must name checkout, signing_key, package, home and python, and its "
                      "checkout must be this repository.")
     pub = field["signing_key"]
     private = pub[:-4] if pub.endswith(".pub") else pub
@@ -1087,10 +1087,23 @@ def run_ceremony(ctx, args, launchctl, rec):
     rec.append(f"launcher digest {ldigest} equals the pasted digest")
     confirm(rec, "Do the two digests match?")
 
+    # The python the values file names, and the values file itself, are files stage 1's candidate
+    # tests can rewrite before stage 2 starts them with the key about to be typed. Hashing them
+    # before each run catches a change to those two files only; the interpreter's library folder
+    # and the other tools stay as writable as before, so this is not containment.
+    watched = {"the values file": values, "the python the values file names": Path(field["python"])}
+    seen = {name: sha(read_safe(path)) for name, path in watched.items()}
+    rec.append("values file digest " + seen["the values file"] + ", python digest "
+               + seen["the python the values file names"])
+
     def launcher_unchanged():
-        """The launcher runs twice, minutes and a prompt apart; it is hashed before each run."""
+        """The launcher runs twice, minutes and a prompt apart; it, the values file and the python
+        are hashed before each run."""
         if sha(read_safe(launcher)) != ldigest:
             raise Refuse("the launcher changed after its digest was compared. Nothing further was run.")
+        for name, path in watched.items():
+            if sha(read_safe(path)) != seen[name]:
+                raise Refuse(f"{name} changed after the ceremony started. Nothing further was run.")
     # 2. packet, launcher, artifact and values
     try:
         state = rc.compare(repo, ctx["head"], packet)

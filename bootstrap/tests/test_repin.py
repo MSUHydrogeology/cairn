@@ -565,6 +565,28 @@ def test_dropped_nodes_with_a_surviving_file_print_first(bed, tmp_path):
 # the AST transaction and the one write
 # --------------------------------------------------------------------------
 
+def a_copy_of_this_interpreter(tmp_path):
+    """A copy of this interpreter laid out the way a virtual environment is, so
+    it has a packages folder of its own that a test may write to while the real
+    one is never touched.  It still sees this interpreter's installed packages.
+    Returns (binary, packages folder); skips only when the copy cannot start."""
+    real = Path(os.path.realpath(sys.executable))
+    root = tmp_path / "copy"
+    (root / "bin").mkdir(parents=True)
+    binary = root / "bin" / "python"
+    shutil.copy2(real, binary)
+    (root / "pyvenv.cfg").write_text(
+        f"home = {real.parent}\ninclude-system-site-packages = true\n")
+    packages = (root / "lib" / f"python{sys.version_info.major}."
+                f"{sys.version_info.minor}" / "site-packages")
+    packages.mkdir(parents=True)
+    probe = subprocess.run([str(binary), "-E", "-s", "-c", "pass"], env={},
+                           capture_output=True)
+    if probe.returncode != 0:
+        pytest.skip("this interpreter cannot be copied and run")
+    return binary, packages
+
+
 def run_pty(argv, answers=(), *, env, cwd, timeout=120):
     """Run *argv* on a pseudo-terminal that is also its controlling terminal.
 
