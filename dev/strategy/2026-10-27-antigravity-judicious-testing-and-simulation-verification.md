@@ -131,3 +131,70 @@ On 2026-10-27, each journal/conference entry's authors, year, title, venue, volu
 * American Society of Mechanical Engineers (ASME). (2019). *ASME V&V 10-2019: Standard for Verification and Validation in Computational Solid Mechanics*. New York: ASME. [Record]
 * American Society of Mechanical Engineers (ASME). (2021). *ASME V&V 20-2009 (R2021): Standard for Verification and Validation in Computational Fluid Dynamics and Heat Transfer*. New York: ASME. [Record]
 * Oberkampf, W. L., & Roy, C. J. (2010). *Verification and Validation in Scientific Computing*. Cambridge: Cambridge University Press. doi:10.1017/CBO9780511760396 [Record]
+
+## Review
+
+**Temporary**: author to fold accepted comments into the note and remove this section.
+**Reviewer**: Codex (GPT-6; exact runtime variant unavailable)
+**Role**: Strategy reviewer
+**Date**: 2026-10-27
+**Reviewed commit**: 9383f3c209fb4580b2bbf3059b970fbf28abd1e4
+
+**Foundations**
+
+1. The direction is worth pursuing: the existing module organizes tests but
+   explicitly leaves test-writing craft elsewhere; guidance on scientific
+   verification could fill that gap —
+   [testing-discipline](../../templates/modules/team-gated/testing-discipline.md),
+   “Learn it deeply,” and this note's Summary.
+2. A simpler path is to extend testing-discipline and let architecture review
+   diagnose the need, retaining the proposed scientific content while avoiding
+   another framework —
+   [adopter engineering strategy](2026-10-27-codex-adopter-engineering-practices.md),
+   “Give testing a clear home.”
+3. The recommendation should change if consolidation loses fault detection,
+   or representative large runs expose defects absent from the small checks;
+   its present universal claims need narrower wording before promotion — this
+   note's Method and Findings 2–3.
+
+**Blocking before promotion**
+
+* **Separate adopter support from Cairn self-development.** Keep the two
+  deliverables explicit. Numerical verification is an adopter capability;
+  Cairn's own suite consolidation has a separate justification. Name
+  testing-discipline as the existing home and architecture-review as the
+  assessment connection. Satisfier: revise Recommendation and explain how
+  these modules compose without imposing simulation practice on Cairn itself.
+* **Replace unsupported universal claims with testable expectations.** Findings 2
+  calls information gain “strictly submodular” and assigns “zero bits” to
+  further examples without defining an information measure or fault model.
+  Findings 3 says a mass-balance or boundary defect “will show up” on a tiny
+  grid. The note supplies no measurement establishing these universal claims.
+  Satisfier: describe these as selection heuristics, name their limits, and
+  retain larger checks for scale, accumulated error and parallel execution.
+* **Make deletion conditional on preserved evidence.** The 1.50× ratio is a
+  proposed target, not evidence that a test is redundant. Path/link validation
+  cannot by itself replace an assertion about a rule's meaning. Satisfier:
+  identify the property each removed test owns and its retained replacement;
+  treat the ratio as a diagnostic and compare fault detection and maintenance
+  cost. This preserves useful consolidation rather than conceding its outcome.
+* **Reconcile the tier schemes.** Existing testing-discipline derives tiers
+  from location; this note suggests timing tiers and optional markers. A small
+  workflow test and a slow solver test show why scope and cost are different
+  properties. Satisfier: explain their relationship and collection triggers;
+  present timing thresholds as project-selected budgets until measured.
+
+**Non-blocking**
+
+* Retain a boundary between numerical verification and validation against
+  observations. Conservation and convergence checks do not alone establish
+  suitability for a scientific use. Satisfier: state what each benchmark can
+  establish and what independent scientific evidence remains needed.
+
+**Coverage**: covered claims (Findings 2–3), design completeness and scientific
+scope (the two deliverables and simulation examples), cross-document
+consistency and lifecycle placement (testing-discipline and architecture-review),
+and satisfiers (each comment above). Not covered: production-path execution,
+fail-closed behavior, remeasurement of suite counts, full-text verification of
+cited literature, mutation experiments or an adopter trial. This is a strategy
+read, not implementation certification; no tests were run for the review.
