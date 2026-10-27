@@ -1,19 +1,19 @@
-# Cairn security strategy: boundaries, evidence, and open gaps
+# Cairn security strategy: boundaries, evidence, and forward-looking gaps
 
 **Author**: Codex (Strategy), Antigravity (Strategy)
 **Model**: GPT-5 (Codex), Gemini 3.1 Pro
-**Date**: 2026-08-05; rewritten around `0.5-dev` 2026-10-27
+**Date**: 2026-08-05; updated 2026-10-27
 **Status**: living
 **Type**: living-reference
 **Surfaces this feeds**: [`dev/PLANNING.md`](../PLANNING.md); [`SECURITY.md`](../../SECURITY.md); [`bootstrap/SAFETY.md`](../../bootstrap/SAFETY.md); [`bootstrap/PROVENANCE.md`](../../bootstrap/PROVENANCE.md); [`bootstrap/UPGRADE.md`](../../bootstrap/UPGRADE.md)
 
 ## Summary
 
-Cairn's goal is practical: **help scientists build and release secure software without turning security assurance into an endless ceremony.**
+Cairn's security goal is practical: **help scientists build and release secure software without turning security assurance into an endless ceremony.**
 
-Because Cairn's templates and scripts are installed into an adopter's repository and loaded by their AI agents as instructions, **template integrity and path containment are security properties.** Cairn enforces those properties through standard-library-only Python tools, fail-closed path and symlink guards, content and static-analysis scanners, and Maintainer-run release ceremonies.
+Because Cairn's templates and scripts are installed into an adopter's repository and loaded by their AI agents as instructions, **template integrity and path containment are security properties.** Cairn defends those properties with standard-library-only Python tools, fail-closed path and symlink guards, content and static-analysis scanners, and Maintainer-run release ceremonies.
 
-This document states Cairn's current security posture, the six design principles that govern security work, the five boundary clusters (`[BND]`, `[VER]`, `[TRU]`, `[REC]`, `[REL]`), and the **Live residual register** of open gaps and revival triggers. Historical records of completed security work live in [`CHANGELOG.md`](../../CHANGELOG.md) and `dev/plans/archive/`.
+This document states Cairn's security posture, the six design principles that govern security work, the five boundary clusters (`[BND]`, `[VER]`, `[TRU]`, `[REC]`, `[REL]`), the **six strategic gaps** we should address next, and the **Live residual register** of triggered items.
 
 ---
 
@@ -56,93 +56,111 @@ Every security capability, boundary, or open gap belongs to one of five clusters
 
 ### 1. `[BND]` Input, execution, and containment boundaries
 **Question:** Can repository-controlled input choose what Cairn reads, writes, deletes, executes, or prints raw to the terminal?
-* **Current controls:**
-  * **Write containment (`Class A` / `Class B` in [`bootstrap/_scaffold/SECURITY_MUTATIONS.md`](../../bootstrap/_scaffold/SECURITY_MUTATIONS.md)):** Every install and upgrade write routes through `_assert_safe_write` or `_assert_fanout_contained`, staging via exclusive sibling files (`_stage_exclusive`, `_write_by_replacing`). `upgrade --remove-retired` unlinks untouched retired files through `O_NOFOLLOW` directory descriptors after verifying SHA-256 digests against Cairn's built-in table and a sterile `git cat-file` check.
-  * **Read containment (`Class D` in [`bootstrap/_scaffold/SECURITY_MUTATIONS.md`](../../bootstrap/_scaffold/SECURITY_MUTATIONS.md)):** `upgrade` validates lockfile paths (`_contained_lockfile_path`), refuses symlinked profiles and lockfiles (`_refuse_if_linked`), refuses symlinked review areas (`_assert_stage_has_no_links`), and validates `cairn_commit` as lowercase hex before invoking `git`.
+* **Standing boundary:**
+  * **Write containment (`Class A` / `Class B` in [`bootstrap/_scaffold/SECURITY_MUTATIONS.md`](../../bootstrap/_scaffold/SECURITY_MUTATIONS.md)):** Every install and upgrade write routes through `_assert_safe_write` or `_assert_fanout_contained`, staging via exclusive sibling files (`_stage_exclusive`, `_write_by_replacing`). `upgrade --remove-retired` unlinks untouched retired files through `O_NOFOLLOW` directory descriptors after verifying SHA-256 digests against Cairn's built-in table and a sterile `git` read.
+  * **Read containment (`Class D` in [`bootstrap/_scaffold/SECURITY_MUTATIONS.md`](../../bootstrap/_scaffold/SECURITY_MUTATIONS.md)):** `upgrade` validates lockfile paths (`_contained_lockfile_path`), refuses symlinked profiles and lockfiles (`_refuse_if_linked`), refuses symlinked review areas (`_assert_stage_has_no_links`), validates `cairn_commit` as lowercase hex, and runs target-repo `git` checks with repository hooks/monitors disabled.
   * **Session & orientation boundaries:** [`tools/session.py`](../../tools/session.py) (and its template twin) refuses tracked project binaries when resolving the local Python interpreter, terminal-encodes untrusted git and path strings via `encode_display`, refuses symlinked or tracked `next-session.md` notes in `dev/reflections/`, and treats issue/board text in `/session-start --drain` strictly as data, never instructions.
   * **Network boundaries:** `api-access-security` and `web-hosting-security` share a standard-library HTTP client that resolves DNS once, rejects private/out-of-class address sets, re-verifies the connected peer IP after connect, never follows redirects, and restricts agent-run checks to loopback (`127.0.0.1` / `::1`).
 
 ### 2. `[VER]` Verification capabilities and coverage
 **Question:** What security evidence can an adopter or Maintainer gather, what files does each check inspect, and can coverage silently narrow?
-* **Current controls:**
+* **Standing boundary:**
   * **Default-on content scanning (`content-security`) and local verification dispatcher (`security-verification`):** `scripts/check_cairn.py` scans templates and docs for hidden Unicode, bidirectional overrides, and prompt-injection patterns; `run_security_verification.py` dispatches admitted local runners with a stripped environment and fixed `0 / 5 / 10 / 20` exit codes.
   * **Language and portable sweeps:** `python-security` (Bandit + `pip-audit` against OSV) and `portable-security-sweeps` (offline Gitleaks with binary digest verification before launch).
   * **Design-time preflight:** Proposal templates include a 5-question security preflight block for changes touching untrusted input, filesystem/process boundaries, or trust roots.
 
 ### 3. `[TRU]` Trust roots and provenance
 **Question:** Which material is allowed to say *"these are the expected bytes or authorized identities,"* and how is trust in that material established?
-* **Current controls:**
+* **Standing boundary:**
   * **Release provenance ([`bootstrap/PROVENANCE.md`](../../bootstrap/PROVENANCE.md)):** Signed release tags verified via `bootstrap/container/verify-ref.sh` in an isolated workspace with `fetch.fsckObjects=true`.
   * **Gate manifest, AST attestation, and `repin` ([`bootstrap/REANCHOR_RUNBOOK.md`](../../bootstrap/REANCHOR_RUNBOOK.md), [`scripts/repin.py`](../../scripts/repin.py)):** `bootstrap/tests/_gate_manifest.py` and `_ast_attest.py` pin frozen test files and scaffold engine AST symbols against `refs/cairn/gate-anchor`. `scripts/repin.py` (`status`, `package`, `ceremony`) loads verifier code directly from the anchor commit's tree and walks the Maintainer up to the passphrase-signed ceremony step.
   * **Install integrity ([`bootstrap/verify_integrity.py`](../../bootstrap/verify_integrity.py)):** Fail-closed SHA-256 check of installed files against the target's `dev/.cairn/cairn-lock.yml` (detects unilateral modification and reports unfilled template slots to stderr).
 
 ### 4. `[REC]` Deliberation authority and record integrity
 **Question:** Can a tool or untrusted text mutate lifecycle state, forge a review, or impersonate Maintainer authorization?
-* **Current controls:**
+* **Standing boundary:**
   * **Commit-mediated, append-only lifecycle ([`AGENTS.md`](../../AGENTS.md)):** Reviews read a committed tree, never a shared working directory, and are self-committed by the reviewing session. Reviewer independence is enforced by doctrine and Maintainer inspection, not by a name-matching script.
   * **Verbatim Decision scribing:** Any scribed Maintainer Decision or scope allowance must quote the Maintainer's words verbatim in both the artifact and the commit body.
 
 ### 5. `[REL]` Release evidence, disclosure, and ceremonies
 **Question:** What finite check blocks a release, who runs it, and how are vulnerabilities reported?
-* **Current controls:**
+* **Standing boundary:**
   * **Single local release gate ([`bootstrap/security_check.py`](../../bootstrap/security_check.py)):** Materializes a detached checkout from committed Git blobs (`git hash-object --stdin`), verifies clean pre/post repo state, runs Bandit + `check_cairn.py` with zero unallowlisted MEDIUM+ findings and allowlist-liveness checks, runs `bootstrap/tests` with `CAIRN_RELEASE_GATE_ACTIVE=1` (where any skip/xfail/xpass fails the run), and runs `scripts/quality_gate.py`.
 
 ---
 
-## Live residual register (open gaps and revival triggers)
+## Six forward-looking strategic gaps
 
-Each entry below is an open gap we want to close or a deliberate residual with the trigger that revives it. A row leaves this register only when a change closes it with a test or when a measurement shows the subject no longer exists.
+Looking past individual bug fixes, six structural gaps remain where Cairn's architecture can be simplified and hardened at the root:
 
-### Active for `0.5`
-* **`[BND-3]` `upgrade` dirty-tree check runs a target repository's `core.fsmonitor` hook.** `_dirty_tracked_paths` in `bootstrap/_scaffold/upgrade.py` runs a plain `git status`, which can execute a program configured in a target repo's `.git/config` (`core.fsmonitor`) and misreads dirty files when the project sits in a subdirectory. *Status:* Proposal accepted 2026-10-27 ([`2026-10-26-claude-upgrade-dirty-check-runs-no-repository-programs.md`](../proposals/archive/2026-10-26-claude-upgrade-dirty-check-runs-no-repository-programs.md)); reuses the sterile git helper from `upgrade --remove-retired`.
-* **`[REL-3 / TRU-4]` First live run of `scripts/repin.py` and the `0.5` AST/gate-manifest re-anchor.** `repin` is built and tested against scratch repos; its first real ceremony run is the `0.5` cut (`dev/PLANNING.md`).
+### 1. One shared sterile `git` runner for untrusted repositories (`[BND-3 / TRU-6]`)
+* **The pattern:** Cairn has repeatedly discovered `git` execution hazards one call site at a time—first `fetch.fsckObjects` in `verify-ref.sh`, then option injection in `_behind_by_n`, then repository hooks/filters in `upgrade --remove-retired`, and then `core.fsmonitor` in `_dirty_tracked_paths`.
+* **Strategic fix:** Extract one shared sterile `git` helper used by every Cairn tool that inspects a target repository. That helper should always strip `GIT_*` environment variables, set `GIT_TERMINAL_PROMPT=0` and `GIT_OPTIONAL_LOCKS=0`, disable repository-controlled executables (`-c core.fsmonitor=false -c core.hooksPath=/dev/null -c core.useReplaceRefs=false`), and enforce `--` path separators and a hard timeout.
 
-### Queued gaps (concrete improvements to schedule)
-* **`[BND-1 / BND-6]` Verify the saved base copy against `base_hash` before 3-way merge (`SR6`).** `upgrade` does not check that the cached file in `dev/.cairn/` still matches the lockfile's `base_hash` before merging, so a corrupted or crafted base copy can silently drop an adopter edit or an upstream fix. *Fix:* verify `base_hash` at `--plan`, `--stage`, and `--apply`, falling back to a manual (`review-only`) merge on mismatch (`dev/PLANNING.md`).
-* **`[BND-2 / BND-6]` Refuse nested `.git/` paths in an upgrade review area.** `_contained_lockfile_path` refuses `.git/` at the project root, but a crafted review area naming `sub/.git/hooks/post-merge` is not yet refused (`dev/PLANNING.md`).
-* **`[BND-2 / BND-6]` Decide how `upgrade --init-lock` handles a symlinked tracked file.** Currently `--init-lock` hashes a tracked module file (such as `AGENTS.md`) through a symlink if one sits there, recording the target's digest in the new lockfile (`dev/PLANNING.md`, `SECURITY_MUTATIONS.md`). Needs a proposal choosing whether to refuse or record the link state.
-* **`[BND-4]` Escape profile-supplied module/slot names in install reports, invisible characters in lockfile paths, and child-process output in `session.py`.**
+### 2. True upstream-anchored integrity and merge verification (`[TRU-1 / BND-1]`)
+* **The pattern:** Both `verify_integrity.py` and `upgrade` still trust state stored inside the target repository in two places:
+  1. `verify_integrity.py` compares installed files only against the target's own `dev/.cairn/cairn-lock.yml`, so an edit that rewrites both a file and `cairn-lock.yml` passes as `OK`.
+  2. `upgrade` does not verify the cached base copy in `dev/.cairn/` against `base_hash` before running a 3-way merge (`SR6`), so a corrupted or modified base copy can silently drop an adopter edit or an upstream fix.
+* **Strategic fix:** Verify `base_hash` before every `--plan`, `--stage`, and `--apply` merge (falling back to a manual `review-only` merge on mismatch), and teach `verify_integrity.py` to cross-check verbatim-shipped files directly against the caller's trusted `CAIRN_ROOT` checkout.
+
+### 3. Move local interpreter state out of the working tree into `.git/cairn/` (`[BND-3 / TRU-5]`)
+* **The pattern:** `dev/.cairn/local-env.json` is an untracked, gitignored file inside the working tree that names the Python interpreter `session-start` runs. Because it lives in the working tree, an extracted archive, `git apply`, `git reset`, or `git rm --cached` can plant it without `git ls-files` noticing (`SW-SR-10`), and git-based staleness checks cannot observe it (`RB5-6`).
+* **Strategic fix:** Store local-only machine binding state under `.git/cairn/` (outside the working tree, so archives and patches cannot write it) or pair it with a tracked witness digest.
+
+### 4. Make the default-on security dispatcher useful out of the box (`[VER-3 / SP8-3]`)
+* **The pattern:** `security-verification` (`run_security_verification.py`) ships default-on in every install, but its admitted runner registry ships empty (`CHANGELOG.md`), so running the documented verification command on a stock install always exits `5` (`INCOMPLETE`). Meanwhile, credentialed local runners (`api-access-security`, `web-hosting-security`) can never report `CLEAN` through the dispatcher because it strips all credential environment variables (`SP8-3`).
+* **Strategic fix:** Admit the default-on `content-security` (`check_cairn.py`) runner into the dispatcher registry so a fresh install gets a meaningful, working check out of the box, and define an explicit ordinal-derived credential pass-through mode for loopback `api-access-security` runs.
+
+### 5. Close the remaining trust-root ceremony gaps (`[TRU-4 / TRU-5 / TRU-7]`)
+* **The pattern:** `scripts/repin.py` automates the arithmetic of updating the AST and gate-manifest pins, but four small gaps remain around the anchor and test runner itself:
+  1. `refs/cairn/gate-anchor` is currently an unsigned commit (`SR-8`), contradicting `AGENTS.md`'s statement that the anchor is trusted by its commit signature.
+  2. Stage A of the re-anchor ceremony inherits `PYTEST_*` and `PYTHON*` environment variables, which can silently deselect tests during pin collection.
+  3. `bootstrap/REANCHOR_RUNBOOK.md` never instructs the Maintainer to push `refs/cairn/gate-anchor` to `origin` (`[TRU-7]`), leaving the anchor single-machine only.
+  4. `_frozen_files` does not cover a repository-root `conftest.py` / `pytest.ini`, and `security_check.py` does not assert that `bootstrap/tests/conftest.py` actually loaded (which `--noconftest` would bypass).
+* **Strategic fix:** Address all four in one trust-ceremony tidy pass: sign the anchor commit (or align `AGENTS.md`), scrub `PYTEST_*`/`PYTHON*` in Stage A, add the explicit `git push origin refs/cairn/gate-anchor:refs/cairn/gate-anchor` step to `REANCHOR_RUNBOOK.md`, and assert in release mode that `bootstrap/tests/conftest.py` loaded with no root pytest config override.
+
+### 6. A working private vulnerability disclosure route (`[REL-6]`)
+* **The pattern:** [`SECURITY.md`](../../SECURITY.md) instructs reporters to report vulnerabilities *"privately to the maintainer"* without naming a contact address or mechanism, and [`README.md`](../../README.md) does not link to `SECURITY.md`.
+* **Strategic fix:** Enable GitHub Private Vulnerability Reporting on the repository, state that route in `SECURITY.md`, and add a one-line security link in `README.md`.
+
+---
+
+## Live residual register
+
+Smaller queued items and triggered residuals live here until their boundary is next touched or their revival condition fires. A row leaves this register only when closed with a test or when measurement shows its subject no longer exists.
+
+### Queued boundary & output hygiene
+* **`[BND-2 / BND-6]` Nested `.git/` paths in an upgrade review area.** `_contained_lockfile_path` refuses `.git/` at the project root, but a crafted review area naming `sub/.git/hooks/post-merge` is not yet refused (`dev/PLANNING.md`).
+* **`[BND-2 / BND-6]` Symlinked tracked files in `upgrade --init-lock`.** `--init-lock` currently hashes a tracked module file (such as `AGENTS.md`) through a symlink if one sits there, recording the target's digest in the new lockfile (`dev/PLANNING.md`, `SECURITY_MUTATIONS.md`). Needs a proposal choosing whether to refuse or record the link state.
+* **`[BND-4]` Terminal escaping for install reports, lockfile filenames, and `session.py` child output.**
   1. `bootstrap/_scaffold/install.py` and `cli.py` print unknown module names and profile-supplied slot names without terminal escaping (`dev/PLANNING.md`).
   2. `_contained_lockfile_path` uses Python's `str.isprintable()`, which admits some invisible/bidirectional Unicode characters (`dev/PLANNING.md`).
   3. `tools/session.py` (and its skill twin) passes three `proc.stderr` streams and child `stdout` through without `encode_display` (`dev/PLANNING.md`).
-* **`[TRU-1]` Anchor `verify_integrity.py` against a trusted `CAIRN_ROOT` for verbatim files.** Today `verify_integrity.py` reads expected hashes from the target's own `dev/.cairn/cairn-lock.yml`, which detects accidental or unilateral edits (`SECURITY.md` and `doctrine/runtime-contract.md` state this limit plainly) but not an attacker who rewrites both a file and `cairn-lock.yml`. *Goal:* cross-check verbatim-installed files against the operator's trusted `CAIRN_ROOT` checkout while distinguishing legitimate forks.
-* **`[TRU-4 / TRU-5]` Sign the `refs/cairn/gate-anchor` commit and strip `PYTEST_*`/`PYTHON*` in the re-anchor ceremony.**
-  1. `refs/cairn/gate-anchor` (`6f29519d`) is currently unsigned (`git verify-commit` exits 1), whereas `AGENTS.md` states the anchor is trusted by the signature on the commit it names (`SR-8`, `dev/PLANNING.md`). Either sign the anchor commit at the ceremony or update the claim in `AGENTS.md`.
-  2. The re-anchor ceremony's Stage A inherits `PYTEST_*` and `PYTHON*` environment variables, which can drop tests from the pinned collection without failing (`dev/PLANNING.md`).
-  3. `bootstrap/REANCHOR_RUNBOOK.md` documents updating `refs/cairn/gate-anchor` locally via `git update-ref` but does not yet document pushing `refs/cairn/*` to the remote (`[TRU-7]`).
-* **`[TRU-4]` Protect root pytest configuration and `--noconftest` in release mode.**
-  1. `_frozen_files` freezes `bootstrap/tests/conftest.py` using five globs, but a repository-root `conftest.py`, `pytest.ini`, or `pyproject.toml` outside those globs would still be loaded by pytest.
-  2. Passing `--noconftest` skips `bootstrap/tests/conftest.py` (which enforces the release-mode fail-on-skip rule). A release run should assert that its own conftest loaded and that no root pytest config or `PYTEST_PLUGINS`/`PYTEST_ADDOPTS` overrides are present.
-  3. Explicitly list the 16 trust-apparatus files (`conftest.py`, `_gate_*.py`, `_ast_attest.py`, `_oracle*.py`, `_loader_proto.py` and their tests) in `AGENTS.md` > High-risk surfaces before ever narrowing the `bootstrap/tests/**/*.py` contract-surface glob.
-* **`[REL-6]` Name a concrete private vulnerability reporting route in `SECURITY.md` and `README.md`.** `SECURITY.md` currently says *"report privately to the maintainer"* without naming a mechanism (such as GitHub Private Vulnerability Reporting) or linking it from `README.md`. Requires the Maintainer to verify the repository setting is enabled on GitHub.
+* **`[TRU-4]` Explicitly name the 16 trust-apparatus files in `AGENTS.md`.** `conftest.py`, `_gate_*.py`, `_ast_attest.py`, `_oracle*.py`, `_loader_proto.py`, and their `test_*` files are currently protected as contract surfaces only via the blanket `bootstrap/tests/**/*.py` glob. List them explicitly in `AGENTS.md` > High-risk surfaces before ever narrowing that glob.
 
 ### Triggered residuals (wait for their trigger before opening work)
 * **`[BND-1]` Profile authority & lockfile schema validation (`_LOCK_SCHEMA`).**
   * Unknown module names under `modules:` in `profile.yml` are not yet rejected at parse time (*trigger:* first mistyped-module report or edit to `expand_preset`).
   * `_infer_init_lock_axes` infers `human_team` from whether `CONTRIBUTING.md` exists (*trigger:* next edit to `--init-lock` axis inference).
   * `read_lockfile` does not yet reject unknown `_LOCK_SCHEMA` versions on read (*trigger:* next lockfile schema change or `[TRU-1]` trusted-source anchoring).
-* **`[BND-3 / TRU-5]` Local interpreter binding (`dev/.cairn/local-env.json`) residuals.**
-  * Accepted residual `SW-SR-10` ([`bootstrap/SAFETY.md`](../../bootstrap/SAFETY.md)): an untracked binding arriving via a downloaded archive, `git apply`, `git reset`, or `git rm --cached` is trusted until a future post-`0.5` proposal moves the binding into `.git/`.
+* **`[BND-3]` Symlink check/use race, facade-loader links, and `B607` relative `git` lookups.**
   * `_has_symlink_component` has a check/use race if a local process swaps a parent directory between the symlink walk and execution (*trigger:* next edit to interpreter resolution in `session.py`).
-* **`[BND-3]` Facade-loader symlink checks and `B607` relative `git` lookups.**
   * Facade submodule loader symlink checks and partial `sys.modules` cleanup on failed import (*trigger:* next change to the scaffold facade loader).
   * `session.py` invokes `git` by name (`B607` LOW×2) rather than absolute path (*trigger:* an adopter PATH-hijack report or lowering the Bandit blocking floor to LOW).
 * **`[VER-1]` Content-scanner Unicode coverage limits.**
   * Curated 12-member Greek homoglyph denylist (waiting on stdlib `unicodedata` exposing UTS #39 confusables) and unflagged whole-script Cyrillic (avoiding false positives on international names).
   * `_scan_unicode` reports at most one finding per category per line (*trigger:* a demonstrated multi-hit-per-line bypass).
 * **`[VER-3]` Security test and catalog hygiene.**
-  * `test_a_t6_descendants_do_not_outlive_the_timeout` in `test_security_stack.py` uses a time-window absence check rather than a process-group probe, so a slow machine can pass by timeout (*trigger:* **must fix before enabling parallel pytest `-n auto`**).
+  * `test_a_t6_descendants_do_not_outlive_the_timeout` in `test_security_stack.py` uses a time-window absence check rather than a process-group probe (*trigger:* **must fix before enabling parallel pytest `-n auto`**).
   * `test_detached_checkout_excludes_an_ignored_pytest_override` in `test_security_check.py` fails unless `PYTHONDONTWRITEBYTECODE=1` is set when `__pycache__` is present (*trigger:* next edit to `security_check.py`'s detached-checkout guard).
   * `test_security_verification.py` child-env test should account for CPython auto-injecting `LC_CTYPE="C.UTF-8"` when absent from the parent environment; `test_verify_ref.py` has two nodes sensitive to prior-test state in a full-suite run (*trigger:* next edit to either test file).
-  * Derive `templates/modules/README.md` catalog rows (`api-access-security`, `web-hosting-security`, `portable-security-sweeps`, `dependency-advisory-coverage`) and `content_scan_roots.txt` vendor-wrapper paths mechanically from the scaffold mappings (*trigger:* next module addition).
-* **`[VER-4 / SP8-3]` Dispatcher & scanner extensions.**
-  * `portable-security-sweeps` runs via its own command (`run_portable_security_sweeps.py`) rather than through `run_security_verification.py` (`LT-2`, accepted by Maintainer).
-  * `api-access-security` and `web-hosting-security` cannot report `CLEAN` through `run_security_verification.py` when credentials are required because the dispatcher strips credential env vars (`SP8-3`; *trigger:* proposal defining dispatcher behavior for credentialed local checks).
-  * Conda-native package vulnerability scanning remains open until an offline/zero-dependency advisory source (such as Grype + Syft) is evaluated against conda-forge build strings.
+  * Derive `templates/modules/README.md` catalog rows and `content_scan_roots.txt` vendor-wrapper paths mechanically from the scaffold mappings (*trigger:* next module addition).
+* **`[VER-4]` Conda-native package advisory scanning.**
+  * `python-security` audits Python distributions via `pip-audit`; conda-managed native packages (`openssl`, `krb5`, `hdf5`, etc.) remain out of scope until an offline or zero-dependency advisory authority (such as Grype + Syft) is evaluated against conda-forge build strings.
 * **`[VER-5]` Unify shipped-executable discovery and multi-script install tests.**
   * Replace separate traversal helpers across install, manifest, security scan, and upgrade with one `shipped_executables()` source (`dev/PLANNING.md`).
   * Populate `_MULTI_SCRIPT_MODULES` in `bootstrap/tests/test_reference_scripts.py` for the remaining multi-file modules beyond `issue-capture` (`coordination-tiers`, `api-access-security`, `web-hosting-security`, `claim-check`, `content-security`, `doc-drift-prevention`).
-* **`[TRU-2 / TRU-3]` Source-to-install provenance (`FA-R1`, `RA3`, `RA6`) and Zenodo fingerprint (`REL-4`).**
+* **`[TRU-2 / TRU-3 / REL-4]` Source-to-install provenance (`FA-R1`, `RA3`, `RA6`) and Zenodo fingerprint.**
   * `--cairn-root` in the fork advisory is caller-designated rather than cryptographically verified, and `cairn-lock.yml` provenance fields (`source_repository`, `source_licenses`) are declared rather than signed (*trigger:* when an adopter verifies an install from a checkout they did not clone and verify themselves).
   * Either record the release signing key fingerprint in the Zenodo deposition metadata at release time or mark channel 3 in `bootstrap/PROVENANCE.md` as prospective.
 * **`[REL-5 / RB5]` Loop-fidelity prefix scope and release-bar staleness helpers.**
