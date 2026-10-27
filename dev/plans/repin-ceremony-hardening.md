@@ -1,0 +1,121 @@
+# Plan: finish the re-anchor ceremony hardening that the repin build left out
+
+**Author**: Claude Sonnet 5.5 (Strategy)
+**Source proposal**: [dev/proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md](../proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md)
+**Status**: awaiting-plan-review
+**Waiting on Maintainer**: hand re-anchor after this lands
+**Plan review**: required(Internal + Internal Security Review)
+**Opened**: 2026-10-27
+**In brief**: The launcher's reviewed source becomes one of the files the re-anchor ceremony protects, the trust warnings the ceremony driver prints get tests, and the runbook stops claiming that handing a file over on one machine adds assurance.
+
+The Internal Security Review is a separate pass from the ordinary plan review, and the ordinary pass never clears it. The surfaces are the authority closure, the launcher and the runbook (trust roots of the ceremony).
+
+## Source proposal
+
+Accepted 2026-10-27 as revised (Decision `308e8059`). **Revision 2 is the complete contract.** The Maintainer's answers: A lands in the cut's ceremony, code-reviewed first; B narrowed, in a new test file; the standalone driver stays an operator path until D; C, D and I deferred; E not built; F and G dropped; H is a claim-only edit before the cut; A2 comes after the cut and before M2; the REL-1 row is not restored. He also chose the cut route (`dev/PLANNING.md`, "The 0.5 cut", item 1): an early hand re-anchor, then `repin`.
+
+## Scope
+
+**In.** A (the launcher template `bootstrap/reanchor-launcher.template.sh` joins `declared_authority_closure()` as the eleventh member, and the six files Revision 2 names): C1 to C3. H (the claim, not the steps): C4 and C5. B (a control test for each trust-telling disclosure): C6. C7 is the Maintainer's hand ceremony.
+**Out.** A2 (below, a later row); C, D, I (deferred by the Decision); E, F, G; `scripts/repin.py`, `scripts/reanchor_ceremony.py`, `bootstrap/reanchor.sh`, `bootstrap/_scaffold/` (no chunk edits them); `dev/PLANNING.md` and `CHANGELOG.md` (the planning session's). No chunk edits `bootstrap/tests/fixtures/scaffold_ast_known_new.json`, the AST baseline, `bootstrap/tests/fixtures/gate_manifest.json` or `refs/cairn/gate-anchor`; every re-anchor is the Maintainer's.
+
+**Order, binding on the cut.** The early hand ceremony anchors the changed `bootstrap/tests/_gate_manifest.py`, and `scripts/repin.py` byte-compares ten listed files (`LISTED`, `scripts/repin.py:60-66`) with the anchor before it imports anything. So **everything that edits one of those ten files, or a closure member, must land before the hand ceremony**, or it forces another one. In this change that is A (`_gate_preflight.py` is listed and a member; the template becomes a member) and H (the runbook and the template are members). B edits neither and may land before or after. Order: C1 to C6, code review of that range, a certifying run, C7. Any other row that edits the ten files (the planning session's) must join that order too.
+
+**Reuse.** Searched `git grep -n 'declared_authority_closure\|EXPECTED_PATHS' -- bootstrap scripts`: one list in the checker, one in the template, and one retyped in each of three test files (`test_gate_preflight.py:4094`, `test_reanchor.py:927`, `test_repin_ceremony.py:30`); C1 to C3 extend those, no new list. Searched `git grep -n 'check_packet_pair\|reanchor_ceremony' -- bootstrap/tests`: nothing tests the driver's printed text (hits only copy the file into a bed), so B has no near-duplicate. B builds its own small scratch repository rather than import `CeremonyBed` (needs `ssh-keygen` and a signed anchor) or `Bed` (copies `repin`). Searched `git grep -n -i 'out.of.band' -- bootstrap scripts`: ten sites in the runbook and template (table in C4), and three in the driver (two honest disclaimers, and `:743`, handled under C5).
+
+**Doctrine surface.** None: no `doctrine/` or `AGENTS.md` text, so the rate-limit gate does not apply. Descriptive prose only: `bootstrap/REANCHOR_RUNBOOK.md` and the template's comments (both closure members). No descriptive page states the closure's size or members (`git grep -n -i 'authority closure\|closure member' -- bootstrap/*.md docs doctrine` lists only runbook sentences that do not list it).
+
+Proposed paths:
+* `bootstrap/tests/test_reanchor_driver_disclosures.py`
+
+**Frozen files, derived** on 2026-10-27 at `804af266` from the globs in `_frozen_files` (`bootstrap/tests/_gate_manifest.py`), the 195 `frozen_files` keys of the fixture, and a read-only `python bootstrap/tests/_gate_manifest.py verify --no-collect`. The hand ceremony re-signs the whole manifest at its HEAD, so these edits do not need an entry of their own; the table says what the Maintainer will see.
+
+| File | Chunk | Keyed? | At the re-anchor |
+|---|---|---|---|
+| `bootstrap/tests/_gate_preflight.py` | C1 | keyed (and one of the ten `repin` lists) | `FROZEN-MODIFIED` + `FROZEN-OID`; clean at HEAD today |
+| `bootstrap/tests/test_gate_preflight.py`, `bootstrap/tests/test_reanchor.py` | C1, C3 | keyed | same; new nodes show as `COLLECTION-ADDED`, none renamed or dropped |
+| `bootstrap/tests/test_repin.py`, `bootstrap/tests/test_repin_ceremony.py` | C2 | not keyed (print `FROZEN-NEW` today) | edits free; keyed at this ceremony |
+| `bootstrap/tests/test_reanchor_driver_disclosures.py` (new) | C6 | no | `FROZEN-NEW`, allowed |
+| the template, the runbook | C1, C4, C5 | not frozen (the globs match Python only) | no manifest entry; both are closure members, so packet rows |
+| `scripts/reanchor_ceremony.py`, `scripts/repin.py`, `bootstrap/tests/_gate_manifest.py` | none | keyed / not / keyed | not edited. `_gate_manifest.py` is `FROZEN-MODIFIED` already: that is the drift the ceremony exists to clear |
+
+**AST.** A, H and B change no engine symbol. Checked two ways: the AST gate reads `bootstrap/_scaffold/*.py` only (`bootstrap/tests/test_ast_attest.py:78`) and none of the files above is there; and chunk C6's last criterion runs `git diff --name-only <base>..HEAD -- bootstrap/_scaffold` over this plan's commits, expecting nothing (control: the same command over `4206505e..HEAD` prints `upgrade.py` today). The ceremony's AST pin also carries other plans' engine edits; the planning session derives that list with `_ast_attest.py verify`, not from here. Neither `_gate_preflight.py` nor the template is on the oracle's `SENSITIVE_ROSTER` (`bootstrap/tests/_oracle_activation.py:34-47`), so A adds no authorization entry.
+
+## Sequence
+
+How to work: directly on `0.5-dev`, commit by explicit path, `export PYTHONDONTWRITEBYTECODE=1`, interpreter `/Users/kendal30/conda_envs/lhm/bin/python3.13`. **Every chunk's first criterion:** `python tools/intent.py list` shows no other claim on its files; if one does, report and wait. A **mutant** is one deliberate break in its own detached worktree beside an unmutated control of the same nodes; a node that skips counts as survived (`pytest -rs`). Test names state the property, not the finding.
+
+| # | Chunk | Gate | Ships |
+|---|---|---|---|
+| C1 | A: the template joins the closure; the checker's tests | none | `_gate_preflight.py`, the template's fixed list, `test_gate_preflight.py` |
+| C2 | A: the two `repin` test files at eleven | none | `test_repin.py`, `test_repin_ceremony.py` |
+| C3 | A: `test_reanchor.py` at eleven, plus a refusal node | none | `test_reanchor.py` |
+| C4 | H: the runbook, claim only | none | prose |
+| C5 | H: the template's comments, claim only | none | prose |
+| C6 | B: one control test per driver disclosure | none | new test file |
+| C7 | The hand re-anchor ceremony | **MAINTAINER-ONLY**, not for an agent | re-signed manifest, AST pin, anchor |
+
+## Acceptance criteria
+
+**C1.** (a) `declared_authority_closure()` lists `bootstrap/reanchor-launcher.template.sh`, named by a constant beside the runbook's; its docstring says why the file belongs (it decides what runs before the checker exists). (b) The template's `EXPECTED_PATHS` gains the same path in `LC_ALL=C` order, between `bootstrap/REANCHOR_RUNBOOK.md` and `bootstrap/reanchor.sh` (`-` sorts before `.`). (c) `test_gate_preflight.py`: `EXPECTED_MEMBERS` (`:4094`) 10 to 11, still retyped; the comment at `:1662` stops naming a count; new node `test_the_launcher_template_is_in_the_declared_closure`; the template added to the parameters of `test_a_changed_member_routes_to_review` (`:183`).
+* Control: `pytest bootstrap/tests/test_gate_preflight.py` passes before C1 and after (318 nodes plus 2 new in the scratch run below). That file also holds the nodes that tie the three lists together (`test_the_launcher_expects_exactly_the_declared_closure`, `test_the_launcher_list_is_in_LC_ALL_C_order`), so "the template lists itself" is carried by them and no extra node is written.
+* **Reproduction of what A breaks (measured, scratch copy).** With C1 alone: `test_reanchor.py` 9 nodes fail, `test_repin.py` 1 (`test_status_shows_a_closure_member_that_differs_from_the_anchor`), `test_repin_ceremony.py` 59 (every refusal I read says the packet has no row for the template: the driver's own D1 line). The implementer saves the three failing lists after C1; C2 and C3 clear exactly those.
+* Mutants (each beside the control): **M1** drop the template from `declared_authority_closure()` only, killed by `test_the_closure_has_exactly_the_expected_arity` and `test_the_launcher_expects_exactly_the_declared_closure`; **M2** drop it from `EXPECTED_PATHS` only, killed by the launcher-equals-declared node; **M3** put it after `reanchor.sh` in `EXPECTED_PATHS`, killed by the order node; **M4** skip it inside `check_authority_closure`, killed only by the new `[bootstrap/reanchor-launcher.template.sh]` parameter (the 3-member loop survives it: measured).
+* Boundary A: that file; owners found by `git grep -l '_gate_preflight\|reanchor-launcher' -- bootstrap/tests scripts`.
+
+**C2.** `test_repin.py` asserts "of 11" at `:508` and `:516`; `test_repin_ceremony.py` `CLOSURE` (`:30`) gains the template in sorted position, so the packet rows (`make_packet`, `:79`) and the bed's closure follow; the bed already commits the template (`:128`). No edit to `scripts/repin.py`.
+* Control: both files pass in full and `pytest -rs` shows no skip (they skip without `ssh-keygen`, and a skip is not a pass). The node that removes `_oracle_trust.py` from the bed's template list (`:319`) still refuses, which shows `repin` rejects a template list that differs from the checker's.
+* **Reviewed commit for M2.** `scripts/repin.py:919-923` refuses `--reviewed-commit` unless `scripts/repin.py` and both files equal HEAD's. So `5670dda9` stops being valid at C2. `git diff --stat <last commit editing any of the three> HEAD -- scripts/repin.py bootstrap/tests/test_repin.py bootstrap/tests/test_repin_ceremony.py` must print nothing; the code review's last commit that touches them is the commit M2 names (and the A2 row's, if it lands first). The implementer records that id in the plan.
+* Mutant **M5**: leave `CLOSURE` at ten, killed (the 59 nodes are the control for "this edit was needed").
+
+**C3.** `test_reanchor.py`: `CLOSURE` (`:927`) gains the template; the two comments that say "ten" (`:923`, `:958`) stop naming a count; new node `test_a_launcher_template_that_changed_after_the_packet_refuses_before_candidate_code_runs` (commit a one-byte change to the candidate's template after the packet is composed; the launcher refuses with "does not match the reviewed" and the marker file is absent, the pattern of `:944-949`). Control: `test_the_happy_path_reaches_candidate_code` passes (marker present). Mutant **M6**: the launcher's per-row digest check skipped for the template path, killed by the new node (measured: 1 failed, 190 passed, beside 191 passed for the control). `pytest bootstrap/tests/test_reanchor.py` passes (190 nodes before, 191 after in the scratch run).
+
+**C4 (H, runbook).** Edit by this table; every step stays. "Claim" means a sentence that says delivery on one machine adds assurance; the word is removed with it, the step beside it is not. Line numbers are at `804af266`.
+
+| Line | What it says | Kind | Edit |
+|---|---|---|---|
+| 27 | first-use bootstrap is "once, supervised, out-of-band" | claim | drop "out-of-band" |
+| 48 | row 1: delivered out of band, digest verified against the review's record | step with a claim | drop "out of band"; keep the verification |
+| 283 | launcher "produced and delivered out of band" | claim | drop the two words; keep "verify the digest of *that* file against *that* record" |
+| 377 | step 1: "Review the exact verifier bytes out-of-band" | step | keep the step, drop the word |
+| 401 | "the out-of-band-authorized values" | step | "the authorized values"; the equality check stays |
+| 438 | "Why this is not circular": reviewed out-of-band | claim | drop the word; the argument rests on step 1's hashes equalling step 2's pins |
+| 482 | `<out-of-band-trusted-ref>` in a command | placeholder, a different mechanism | unchanged |
+
+Add one sentence, dated 2026-10-27: revisit this section if the ceremony gains an external or hardware-backed authority, and only a person remembering fires that (no job does; `AGENTS.md` "Name the trigger"). No sentence says H closes REL-1: the row was deleted at `b5e57c71` and the Decision leaves it deleted.
+* `git diff --word-diff -U0 -- bootstrap/REANCHOR_RUNBOOK.md` shows only deleted words from the table and the added sentence. `grep -n -i 'out.of.band' bootstrap/REANCHOR_RUNBOOK.md` prints `:482` only (control: seven lines before).
+* The tests that read the runbook pass: `test_gate_preflight.py`, `test_reanchor.py`, `test_review_stance_in_shipped_files.py` (it searches this file for "External review" phrasing: add none). `check_cairn.py`, `claim_check.py`, `link_check.py` clean.
+
+**C5 (H, template comments).** Three comment edits in a closure member: `:8-9` ("travel together, out of band, directly to the Maintainer"), `:48` ("a fixed, reviewed, out-of-band list") and `:556` ("the review's out-of-band output"); the "WHAT THE MAINTAINER VERIFIES" step stays. `:556` is a third site the proposal did not list. `git diff -U0 <C5>^ <C5> -- bootstrap/reanchor-launcher.template.sh | grep '^[-+][^-+]' | grep -v '^[-+]#'` prints nothing (control: the same command over C1's commit prints the added path). `test_the_launcher_passes_a_shell_syntax_check` and the C3 nodes pass. The same words in `scripts/reanchor_ceremony.py:743` ("delivered out of band") are not touched: the driver is a listed, keyed file, and R6b already edits it, so the planning session passes that line (and the stale sentence at `:163`, "NOT itself a closure member", which A makes false) to R6b's writer.
+
+**C6 (B).** New file `bootstrap/tests/test_reanchor_driver_disclosures.py`. Each node builds a small scratch repository (the real template at a candidate, stub members, `refs/cairn/gate-anchor`), calls the driver's `compare`, `check_packet_pair` or `rehearse`, and asserts the return value and one stable phrase of the printed line (not the whole sentence). The ten disclosures, from `scripts/reanchor_ceremony.py` at `804af266`: **D1** a packet with no row for a member (`:239-240`); **D2** a packet row that differs from the candidate (`:241-244`); **D3** a packet naming a member the closure does not (`:258-259`; D1 to D3 reach the reader through the loop at `:318-320`, which the node also asserts); **D4** the `*` marker and "N of M members changed" (`:248`, `:252-253`); **D5** the TRANSITION note (`:254-256`); **D6** packet or launcher absent (`:269-279`); **D7** the unfilled slot (`:288-290`); **D8** the launcher lacks this packet's digest (`:292-297`); **D9** the pre-fix launcher, "DO NOT RUN" (`:310-316`); **D10** the rehearsal banner "THAT EXECUTES CANDIDATE CODE" (`:330-344`, driven against a repository with no checker so it stops after the banner and runs no candidate code). Considered and left out: the rehearsal's "checking its own arithmetic" lines, which `repin` does not show and which are not the banner.
+* Control: one node for a matching pair (`check_packet_pair` returns true and says the pair holds) beside D1 to D9, and the file passes unmutated (`-rs`, no skip).
+* Mutants, one per disclosure: delete the statement(s) named in the D, in a detached copy of the driver; each must kill its own node (**M7** to **M16**). A node that fails only on a reworded line and never on a removal is a defect (the proposal's own signal).
+* `git diff --name-only <base>..HEAD -- bootstrap/_scaffold` prints nothing. The file is not added to the `security` marker family (`bootstrap/tests/security_manifest.py` lists no `repin` test either).
+
+**C7 (MAINTAINER-ONLY; not for an agent).** The hand re-anchor under `bootstrap/REANCHOR_RUNBOOK.md`. Gate: the code review of C1 to C6 is done with its findings answered, and a certifying run (`AGENTS.md`, Verification boundaries) contains the review's last commit; its known reds are the owed gate-manifest and AST ones, which the planning session names. **Waiting line** stays as written. **Fence:** no chunk, and no agent, edits `scaffold_ast_known_new.json`, the AST baseline, `gate_manifest.json` or `refs/cairn/gate-anchor`.
+What the Maintainer re-checks because of A:
+* The packet has **eleven** member rows, the template second (after the runbook, before `reanchor.sh`); it can no longer be a ten-row packet.
+* The launcher must be the template at the candidate with only the slot filled. At this ceremony nothing checks that but the review and the pasted digest (A2 cannot cover a hand ceremony); the Maintainer or the reviewer diffs the launcher against the template.
+* The reviewer's read covers the template's `EXPECTED_PATHS` line and the three comment edits (C5), and the runbook sentences (C4). Still one launcher digest to compare.
+* The old launcher cannot be reused: its fixed list has ten paths.
+* The re-anchor lists gain `_gate_preflight.py`, `test_gate_preflight.py` and `test_reanchor.py` as `FROZEN-MODIFIED`, the two repin test files and the new test file as keyed or `FROZEN-NEW`; the AST list gains nothing from this plan.
+* After it: M2 names the commit recorded under C2, then M1 and R6a; R6b edits the driver and forces one more hand step.
+
+## Later row: A2 (not built here)
+
+`repin ceremony` reads the template from the anchor's signed tree, fills the one slot with the packet's digest, and refuses unless the launcher in hand is byte-equal (Revision 2, "A2"). It edits `scripts/repin.py` and both repin test files, needs its own code review, and cannot run before C7 anchors the template (nothing to read). The Decision sequences it "after the cut and before M2"; it is not removed, it is a later row. **The planning session owes a board row** for it (this plan does not edit `dev/PLANNING.md`); M2's `--reviewed-commit` then names A2's review commit, not C2's.
+
+## Scope delta
+
+**Scope delta**: preserved. Every outcome the Decision builds before the cut (A, B narrowed, H claim-only) is a chunk above; A2 is sequenced after the cut by the Decision itself, not dropped here, and its row is the planning session's. C, D and I are deferred by the Decision ("Accept all defaults"); this plan adds no deferral of its own.
+
+## Verification
+
+**Boundary A** is the mapping under each chunk; the implementer re-finds owners at the landing tree with the `git grep -l` named there, and says so when a surface has none. Standing gates: `check_cairn.py`, `claim_check.py` on the plan and any prose chunk, `link_check.py`, `quality_gate.py --sub neutrality --sub redundancy`.
+
+**Boundary B mode: `full`.** A edits the closure and the launcher (trust-ceremony surfaces), so bounded mode refuses. The record is scoped: `**Certified by**: pending` until the next certifying run on a clean committed tree under Python 3.13.x. **Nobody sets `CAIRN_FULL_SUITE=1`.** After C6 the implementer appends `## Implementation verification -- <agent> -- <date>` with the template's fields, the three failing lists after C1, the mutants beside their controls, the `bootstrap/_scaffold` diff check and the gate-manifest list. No agent runs a re-anchor.
+
+**Measured while writing, in a scratch copy** (a `git archive` of `84952c4d` made into its own repository with five empty commits, Python 3.13): baseline `test_reanchor.py` 190 passed, `test_repin.py` 107, `test_repin_ceremony.py` 75, `test_gate_preflight.py` 317 passed and 1 failed (`TestRangeReviewReport::test_the_digest_moves_when_a_path_or_class_moves`, which needs real history); with C1 to C3 applied by hand, `test_reanchor.py` 191 passed, `test_repin.py` 107, `test_repin_ceremony.py` 75, `test_gate_preflight.py -k closure` 25. M1, M2, M3, M4 and M6 were run there and killed as stated. **Not measured:** anything in the real tree, C4 to C6 (not built), the certifying run, M5 and M7 to M16 (named, not run), and the full list of causes behind the 59 nodes (one cause read, not all).
+
+**What the code reviewer should attack.** A closure member that is a shell file (the import check runs one way only, `_gate_preflight.py:739`); a launcher that passes the new row check but runs a template other than the one reviewed; a test edit that goes beyond ten-to-eleven (the proposal's own signal that A is bigger than it looks, and the Falsifier: if pinning the template forces the launcher's values reader to change first, A stops and returns to the Maintainer); a step the H diff removed; a D node that passes with its line deleted. List each set from the tree (the three retyped lists, the runbook's seven sites), not the diff.

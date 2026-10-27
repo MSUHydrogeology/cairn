@@ -389,7 +389,7 @@ retire the note").
 * **Still to run (Maintainer-only):** the first real ceremony (M2) and the steps
   after it, listed in the plan.
 * **Unbuilt items:** all moved to
-  [`dev/proposals/2026-10-27-claude-repin-ceremony-hardening.md`](../../proposals/2026-10-27-claude-repin-ceremony-hardening.md),
+  [`dev/proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md`](../../proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md),
   each with a recommendation. Nothing in this note is still open.
 * **Closed without work:** the old launcher in `~/Downloads` no longer exists
   (checked 2026-10-27).
