@@ -373,3 +373,29 @@ Range `843d9346..21512427` (`d9302a0e`, `a1be27ac`, `96142cb0`, `2be1c8c4`, `d90
 * Closure files edited: launcher template (a mode; `EXPECTED_PATHS` untouched), `reanchor.sh`, the runbook, `_gate_preflight.py`. Keyed files edited (all already `FROZEN-MODIFIED`): `_gate_preflight.py`, `scripts/reanchor_ceremony.py`, `test_reanchor.py`. Unkeyed: `scripts/repin.py`, `test_repin.py`, `test_repin_ceremony.py`, `test_ceremony_review_report.py`, the driver test. Not edited: `_scaffold`, the AST baseline, the gate manifest, the anchor, `PLANNING.md`, `CHANGELOG.md`.
 
 **Not verified.** The page in the Maintainer's own shell (zsh and bash are tested on the pre-stage-1 checks, not interactively); stage 1 and stage 2 on a real anchor with real keys; the full suite; `security_check.py`; a scan over a candidate that carries a compiled file through a real stage 1.
+
+## Security second look -- Claude Opus 5.5 (fresh session) -- 2026-10-27
+
+**Reviewed commit**: `c37b427a` (range `843d9346..c37b427a`, new code only). Probes ran in scratch repositories; no key, suite or ceremony.
+
+**Conclusion.** The launcher mode, `repin`'s hashing and the top warning hold. One break: the page's `g` lets a repository pager rewrite what R0 to R2 show.
+
+**Ledger** (git 2.53, python 3.13.13):
+1. `--scan-digest` on a hand-built packet and launcher: prints the anchor checker's digest, exit 0.
+2. Crafted anchor entries: `..` tree, gitlink, symlink refused, nothing written outside `$T/anchor`; mode 100755, `-dash`, a `Tests` case twin, a `bootstrapX` sibling harmless (`bootstrap/reanchor-launcher.template.sh:703-737`).
+3. The anchor ref is a literal (`:70`); the candidate cannot choose the tree. Read.
+4. `pager.cat-file`, `pager.rev-list`, `pager.diff-tree` in `.git/config`, run at a terminal (`script`): the program ran and R0, R1, R2 printed its text; `--no-pager` clean; no terminal: clean.
+5. `diff.external`, textconv, attribute filters, `core.fsmonitor`, `core.sshCommand`, `core.hooksPath`: no marker over R0 to R2, E5, E2 (control: plain `git diff` ran it).
+6. V on an anchor with a PGP signature and a repository `gpg.program`: the program ran, printed `Good "git" signature`, exit 0; pinning `gpg.program`, `gpg.openpgp.program`, `gpg.x509.program` to `/usr/bin/false`: exit 1, no marker.
+7. The `launchctl` stand-ins come first on `PATH` and `page_env` carries no real `SSH_AUTH_SOCK` (`bootstrap/tests/test_repin_ceremony.py:1386-1389`, `:1859-1866`): read, not run.
+8. Runbook diff: E1/R3, E2, E3, E4, E6 remain; nothing protective dropped.
+9. Python's user-writable library still loads under `-S`, as H's row says.
+10. Programs before `exec`: still six; scan mode ends at `exit` (`:737`) on anchored bytes, so the falsifier is not triggered (judgement).
+
+**Findings.**
+* **B1.** `g` (`bootstrap/REANCHOR_RUNBOOK.md:28`) has no `--no-pager`; ledger 4 breaks the claim at `:117` ("not from repository state those tests could have written"). Fix: add `--no-pager`; a node with a terminal and a pager setting.
+* **N1.** V (`:76`) pins only the SSH program (ledger 6). It needs a ref moved after stage 2, which is code running as you, so not blocking. Fix: pin the three programs to `/usr/bin/false`.
+* **N2.** In scan mode the anchor's checker runs `/usr/bin/git` from `PATH`, not the values file's git; E6's row (`:118`) says otherwise. Fix: say so.
+* **N3.** H's row (`:120`) omits a process stage 1 left running, which can change either file after the second hash; `repin`'s check (`scripts/repin.py:1094-1106`) is check-then-use. Fix: add it.
+
+**Coverage.** Not covered: zsh, `security_check.py`, scan internals, a real stage 1 or 2.
