@@ -59,7 +59,7 @@ record begins at capture, not at execution.
 ## Closure — built and shipped — 2026-10-27
 
 The design was carried out as a standard-lane change, the plan
-[`dev/plans/archive/drain-mode.md`](../plans/archive/drain-mode.md). It shipped
+[`dev/plans/archive/drain-mode.md`](../../plans/archive/drain-mode.md). It shipped
 in `.agents/skills/session-start/SKILL.md` and its template twin. The
 Maintainer closed this note on 2026-10-27 ("we can entirely retire the drain
 mode strategy note").
