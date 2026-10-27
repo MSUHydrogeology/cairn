@@ -13,19 +13,18 @@ stage 2 loads while you type the key's passphrase. H below catches a change to t
 files, not Python's library folder or your tools.
 
 ### Prerequisites
-The instantiated launcher and the authorization packet (from the builder), your
-values file, your ceremony key (in no agent), and the candidate ref `$CAND`, whose
-tip commit is the reader's record, `dev/ceremony-record.md`. Set `REV` to its
-`read-commit` line (R0 prints it). Make the values file once: copy
-`bootstrap/reanchor-values.example` outside the repository, naming each tool by its
-real file, never a link. It goes stale, and that is not a malfunction: a toolchain
-upgrade breaks it, the refusal is correct: fix the path, run `--validate`.
+The instantiated launcher and the authorization packet (from the builder), your values file, your
+ceremony key (in no agent), and the candidate ref `$CAND`, whose tip commit is the reader's record,
+`dev/ceremony-record.md`. Set `REV` to its `read-commit` line (R0 prints it). Make the values file
+once: copy `bootstrap/reanchor-values.example` outside the repository, naming each tool by its real
+file, never a link. It goes stale, and that is not a malfunction: a toolchain upgrade breaks it, the
+refusal is correct: fix the path, run `--validate`.
 
 ### 1. Before stage 1: what was read (no candidate code has run yet)
 Each result must equal what is said; any difference: stop. `g` is git without
-replace entries, hooks or filters, and `L` the launcher, each in an empty environment.
+replace entries, hooks, filters or a pager, and `L` the launcher, each in an empty environment.
 ```
-g() { env -i HOME=/nonexistent GIT_NO_LAZY_FETCH=1 <git> --no-replace-objects -c core.useReplaceRefs=false -c core.hooksPath=/dev/null -c core.fsmonitor=false -C <checkout> "$@"; }
+g() { env -i HOME=/nonexistent GIT_NO_LAZY_FETCH=1 <git> --no-pager --no-replace-objects -c core.useReplaceRefs=false -c core.hooksPath=/dev/null -c core.fsmonitor=false -C <checkout> "$@"; }
 L() { env -i HOME=<home> PATH=/usr/bin:/bin TERM="$TERM" LANG=C /bin/sh <launcher> <packet> <values> "$@"; }
 # R0  the record, read from the commit: read-commit, packet-sha256, launcher-sha256
 g cat-file blob $CAND:dev/ceremony-record.md
@@ -38,7 +37,7 @@ diff <(g cat-file blob $CAND:dev/ceremony-record.md | grep '^member ' | sort) <(
 # E5  both print SAME: the launcher is the reviewed template with one slot filled
 g diff-tree --quiet --no-renames $REV $CAND -- bootstrap/reanchor-launcher.template.sh && echo SAME || echo DIFFERENT
 g cat-file blob $CAND:bootstrap/reanchor-launcher.template.sh | sed "s/@PACKET_SHA256@/$(shasum -a 256 <packet> | cut -c1-64)/" | cmp - <launcher> && echo SAME || echo DIFFERENT
-# E7  second and later (the first has none): the last line is the anchor's scan digest; the report's must equal it
+# E7  second and later (the first has none): the last line is the anchor's scan digest, which the report's must equal; runs `/usr/bin/git`, not the one in your values file
 L $CAND --scan-digest
 # H   write both digests down; step 3 must print the same two
 shasum -a 256 <values> <python>
@@ -68,12 +67,13 @@ ssh-keygen -lf <key.pub>
 # E6  equals the report's path for that tool, for every tool in your values file
 readlink -f "$(command -v <tool>)"
 ```
-Just before stage 2 repeat E1, E6, H and K: nothing may differ from step 1. Stage
-2 asks for the passphrase once. Do not `ssh-add` the key. Pass E3's digest:
+Just before stage 2 repeat E1, E6, H and K: nothing may differ from step 1. Check
+`ps -axo pid,command` for anything stage 1 left running (a look, not proof).
+Stage 2 asks for the passphrase once. Do not `ssh-add` the key. Pass E3's digest:
 ```
 env -i HOME=<home> PATH=/usr/bin:/bin TERM="$TERM" LANG=C /bin/sh <launcher> <packet> <values> $CAND --stage2 <digest>
 # V   good: exit 0 and `Good "git" signature for <name> with` your key's fingerprint (E4); else no push
-g -c gpg.format=ssh -c gpg.ssh.program=/usr/bin/ssh-keygen -c gpg.ssh.allowedSignersFile=<checkout>/dev/.cairn/allowed_signers verify-commit refs/cairn/gate-anchor
+g -c gpg.format=ssh -c gpg.ssh.program=/usr/bin/ssh-keygen -c gpg.program=/usr/bin/false -c gpg.openpgp.program=/usr/bin/false -c gpg.x509.program=/usr/bin/false -c gpg.ssh.allowedSignersFile=<checkout>/dev/.cairn/allowed_signers verify-commit refs/cairn/gate-anchor
 ```
 Bad is any `error`, `No principal matched`, another fingerprint, a non-zero exit
 or no output: do not push. Then publish both refs in one atomic push (Phase 5, below). Nothing in
@@ -115,9 +115,9 @@ one slot in the template, and that file is the launcher.
 | E3 | the package you confirm is the bytes the report described | that the package is harmless |
 | E4 | your key is one the anchored roster lists | which key a later roster adds |
 | E5, R1 to R4 | the answers come from git objects read before stage 1 starts the candidate's tests, with no replace entry, hook or filter, not from repository state those tests could have written; the launcher is the reviewed template with one slot filled; the record is the one commit on what was read and names this packet, launcher and these files | that the template is safe; what the reader wrote in the record; code already running as you |
-| E6 | the programs run before any candidate byte are the ones you named | the bytes of those programs: a tool you own can be replaced |
+| E6 | the programs run before any candidate byte are the ones you named | the bytes of those programs: a tool you own can be replaced; and `--scan-digest` (E7) runs the anchor's checker with `/usr/bin/git` from `PATH`, not the git your values file names |
 | E7 | the digest the report prints is the one the anchor's own checker computes over this range, started by the launcher from raw objects before any candidate byte | that the hits listed in the report are the scan behind that digest (it binds the digest only, and the report's line saying who made the scan is the report's own claim); a change that matches no scan pattern; test files and pytest settings, which stage 1 runs and the scan does not read; the first ceremony, which has no anchored scan |
-| H | the values file and the Python are the bytes they were before stage 1 | Python's library folder, your other tools, or a change made and undone between the two hashes |
+| H | the values file and the Python are the bytes they were before stage 1 | Python's library folder, your other tools, or a change made and undone between the two hashes; nor a process stage 1 left running, which could change either file after the second hash, because `repin` only checks the hash and cannot stop it |
 | K | no agent, the login session's included, holds your key when you run stage 1 and stage 2 | an agent started in between |
 | V | the new anchor carries a good signature by a key the roster lists | that the key was yours alone: you compare its fingerprint with E4 |
 | Y1 to Y5 | your own judgement | Y1 is a statement of the reader's; you cannot check it |

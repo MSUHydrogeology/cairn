@@ -1729,7 +1729,7 @@ def test_every_page_command_that_runs_git_runs_it_through_the_sterile_helper():
     configuration."""
     (helper,) = [h for h in page_helpers() if h.startswith("g()")]
     for flag in ("env -i", "GIT_NO_LAZY_FETCH=1", "--no-replace-objects", "core.useReplaceRefs=false",
-                 "core.hooksPath=/dev/null", "core.fsmonitor=false", "-C <checkout>", "<git>"):
+                 "core.hooksPath=/dev/null", "core.fsmonitor=false", "-C <checkout>", "<git>", "--no-pager"):
         assert flag in helper, flag
     bare = [c for _lab, c in page_commands() if re.search(r"(^|[ (|`])git ", c)]
     assert bare == [], bare
@@ -1826,6 +1826,42 @@ def test_the_page_verifies_the_new_anchor_with_one_command_and_says_what_good_an
             "do not push") in page
 
 
+@pytest.mark.parametrize("program_key,armor", [("gpg.program", "PGP SIGNATURE"),
+                                               ("gpg.openpgp.program", "PGP SIGNATURE"),
+                                               ("gpg.x509.program", "SIGNED MESSAGE")])
+def test_a_signature_program_named_in_the_repository_cannot_make_the_verify_command_say_good(
+        cbed, tmp_path, program_key, armor):
+    """V pins the SSH signer, but git picks the program by the kind of signature on the commit: an
+    anchor carrying a PGP or X.509 signature goes to the program the repository's configuration
+    names.  V pins all three, so none of them runs.  The control shows a bare `verify-commit` believes
+    the stand-in, which prints the same words a good SSH signature does."""
+    marker = tmp_path / "signer-ran"
+    liar = tmp_path / "says-yes"
+    fingerprint = "A" * 40
+    liar.write_text(f'#!/bin/sh\necho ran >> "{marker}"\necho "[GNUPG:] NEWSIG"\n'
+                    'echo "[GNUPG:] GOODSIG AAAA x@example"\n'
+                    f'echo "[GNUPG:] VALIDSIG {fingerprint} 2026-01-01 1767225600 0 4 0 1 8 00 {fingerprint}"\n'
+                    'echo "[GNUPG:] TRUST_ULTIMATE"\n'
+                    'echo "Good \\"git\\" signature for x@example with ED25519 key SHA256:fake" >&2\nexit 0\n')
+    liar.chmod(0o755)
+    head = cbed.git("cat-file", "commit", "HEAD").stdout
+    headers, _, message = head.partition("\n\n")
+    signature = f"-----BEGIN {armor}-----\n\nAAAA\n-----END {armor}-----"
+    forged = headers + "\ngpgsig " + signature.replace("\n", "\n ") + "\n\n" + message
+    forged_id = cbed.git("hash-object", "-t", "commit", "-w", "--stdin", input=forged).stdout.strip()
+    cbed.git("update-ref", "refs/cairn/gate-anchor", forged_id)
+    cbed.git("config", program_key, str(liar))
+    bare = subprocess.run(["git", "-C", str(cbed.repo), "verify-commit", "refs/cairn/gate-anchor"],
+                          env=page_env(cbed), capture_output=True, text=True)
+    assert bare.returncode == 0 and 'Good "git" signature' in bare.stderr and marker.exists(), (
+        "the control: a bare verify-commit is fooled", bare)
+    marker.unlink()
+    (command,) = page_command("V")
+    ran = run_page_command(cbed, command)
+    assert ran.returncode != 0 and 'Good "git" signature' not in ran.stderr + ran.stdout, ran
+    assert not marker.exists(), "the repository's signature program ran"
+
+
 def test_the_verify_command_passes_on_a_good_signature_and_fails_on_each_bad_one(cbed):
     """The bed's anchor is signed by the throwaway key, which its roster lists."""
     fingerprint = re.search(r"SHA256:\S+", run_page_command(cbed, page_command("E4")[0]).stdout)[0]
@@ -1848,6 +1884,59 @@ def test_the_verify_command_passes_on_a_good_signature_and_fails_on_each_bad_one
     cbed.unsigned_anchor()
     unsigned = run_page_command(cbed, command)
     assert unsigned.returncode != 0 and 'Good "git" signature' not in unsigned.stderr + unsigned.stdout, unsigned
+
+
+def run_page_command_on_a_terminal(bed, command, helpers=None):
+    """Like `run_page_command`, but standard output is a pseudo-terminal, the one place git starts a
+    pager.  Returns (exit status, what the terminal received)."""
+    import pty
+    script = "\n".join(fill_page_command(bed, c) for c in [*(helpers or page_helpers()), command])
+    master, slave = pty.openpty()
+    try:
+        child = subprocess.Popen(["/bin/bash", "-c", script], cwd=bed.repo, env=page_env(bed), stdout=slave,
+                                 stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
+        os.close(slave)
+        slave = None
+        received = b""
+        while True:
+            try:
+                chunk = os.read(master, 4096)
+            except OSError:
+                break
+            if not chunk:
+                break
+            received += chunk
+        return child.wait(timeout=60), received.decode(errors="replace").replace("\r\n", "\n")
+    finally:
+        os.close(master)
+        if slave is not None:
+            os.close(slave)
+
+
+def test_a_pager_named_in_the_repository_configuration_cannot_change_what_the_git_commands_print(cbed, tmp_path):
+    """git starts a pager named in the repository's own configuration when its output is a terminal,
+    and that pager replaces what is printed.  The page's helper turns pagers off.  The control runs the
+    same commands without that flag and shows the planted program runs and changes the output."""
+    cbed.add_record()
+    marker = tmp_path / "pager-ran"
+    planted = tmp_path / "planted-pager"
+    planted.write_text(f'#!/bin/sh\necho ran >> "{marker}"\necho PLANTED-OUTPUT\n')
+    planted.chmod(0o755)
+    commands = [c for label in ("R0", "R1", "R2", "E2", "V") for c in page_command(label)]
+    honest = [run_page_command_on_a_terminal(cbed, c) for c in commands]
+    assert all(out for _status, out in honest[:4]), honest
+    for key in ("core.pager", "pager.cat-file", "pager.rev-list", "pager.diff-tree", "pager.rev-parse",
+                "pager.verify-commit"):
+        cbed.git("config", key, str(planted))
+    (helper,) = [h for h in page_helpers() if h.startswith("g()")]
+    without_flag = helper.replace(" --no-pager", "")
+    assert without_flag != helper, "the helper turns pagers off"
+    _status, fooled = run_page_command_on_a_terminal(cbed, commands[1], helpers=[without_flag])
+    assert marker.exists() and fooled.strip() == "PLANTED-OUTPUT", ("the control: without the flag the pager runs", fooled)
+    marker.unlink()
+    after = [run_page_command_on_a_terminal(cbed, c) for c in commands]
+    assert after == honest
+    assert not marker.exists(), "the planted pager ran"
 
 
 def test_the_key_check_on_the_page_lists_a_key_held_in_the_environments_agent_or_the_login_sessions(
