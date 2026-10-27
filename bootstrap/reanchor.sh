@@ -623,6 +623,14 @@ def text(value, what):
     return value
 
 
+def count(value, what):
+    # A number the page prints with %d. Anything else is refused by name rather
+    # than left to fail inside a format string.
+    if isinstance(value, bool) or not isinstance(value, int):
+        refuse("the report field " + what + " is not a count")
+    return value
+
+
 def need(container, key, kind, what):
     if not isinstance(container, dict) or not isinstance(container.get(key), kind):
         refuse("the report has no usable " + what)
@@ -701,14 +709,18 @@ add("")
 
 add("  changed paths by class:")
 for name in sorted(counts):
-    add("    %-24s %d" % (text(name, "class"), counts[name]))
+    add("    %-24s %d" % (text(name, "class"), count(counts[name], "class count")))
 add("  changed paths by role:")
 for name in ROLES:
-    add("    %-24s %d" % (name, role_counts.get(name, 0)))
+    add("    %-24s %d" % (name, count(role_counts.get(name, 0), "role count")))
 add("")
 
+for e in paths:
+    if not isinstance(e, dict) or e.get("role") not in ROLES:
+        refuse("a changed path has no role this page lists, so it would not"
+               " be shown")
 for role in ROLES:
-    group = [e for e in paths if isinstance(e, dict) and e.get("role") == role]
+    group = [e for e in paths if e.get("role") == role]
     if not group:
         continue
     add("  %s (%d):" % (role, len(group)))
@@ -718,18 +730,19 @@ for role in ROLES:
             text(str(e.get("change")), "change"), text(str(mode), "mode"),
             text(str(e.get("class")), "class"), text(e.get("display"), "path")))
     add("")
-if len(paths) != sum(role_counts.values()):
+if len(paths) != sum(count(v, "role count") for v in role_counts.values()):
     refuse("the role counts do not add up to the path list")
 
 add("  line scan: added lines in the paths that decide what runs, in the"
     " sensitive roster and in new files under scripts/ and bootstrap/")
 add("    scanned paths: %d" % len(scanned))
 for name in text(" ".join(map(str, scan.get("patterns", []))), "patterns").split():
-    add("    %-14s %d hit(s)" % (name, scan_counts.get(name, 0)))
+    add("    %-14s %d hit(s)" % (name, count(scan_counts.get(name, 0), "scan count")))
 add("")
 add("  every scan hit (%d), none cut:" % len(hits))
 for h in hits:
-    add("    %s:%s [%s] %s" % (text(h.get("path"), "hit path"), h.get("line"),
+    add("    %s:%s [%s] %s" % (text(h.get("path"), "hit path"),
+                               text(str(h.get("line")), "hit line"),
                                text(h.get("pattern"), "hit pattern"),
                                text(h.get("text"), "hit text")))
 add("")
@@ -738,7 +751,8 @@ for x in listed:
     add("    %s  %s" % (text(x.get("path"), "listed path"),
                         text(x.get("reason"), "listed reason")))
 for cls in sorted(not_scanned):
-    add("  not line-scanned: %s, %d" % (text(cls, "class"), not_scanned[cls]))
+    add("  not line-scanned: %s, %d" % (text(cls, "class"),
+                                       count(not_scanned[cls], "not-scanned count")))
 add("")
 
 canon = json.dumps(scan, sort_keys=True, separators=(",", ":"),
@@ -755,7 +769,8 @@ add("")
 if sig:
     add("  signatures over the range:")
     for k in sorted(sig):
-        add("    %-24s %s" % (text(str(k), "signature key"), sig[k]))
+        add("    %-24s %s" % (text(str(k), "signature key"),
+                                text(str(sig[k]), "signature value")))
     add("")
 
 add("== your answers, yes or no ==")

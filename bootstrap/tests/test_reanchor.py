@@ -1112,6 +1112,97 @@ class TestShowReport:
         assert "unprintable" in r.stderr
         assert r.stdout == "", "part of a refused report was shown"
 
+    @staticmethod
+    def _every_field_report():
+        """A report with every kind of field filled in, so that each place the page could print
+        candidate text holds some."""
+        report = TestShowReport._minimal_report()
+        report["paths"].append({"bytes_b64": "", "display": "bootstrap/tests/_oracle.py",
+                                "class": "frozen", "role": "decides", "change": "added",
+                                "mode": "100755", "scanned": True})
+        report["role_counts"]["decides"] = 1
+        report["counts"]["frozen"] += 1
+        report["scan"] = dict(
+            report["scan"], scanned=["bootstrap/tests/_oracle.py"],
+            hits=[{"path": "bootstrap/tests/_oracle.py", "line": 7, "pattern": "nosec", "text": "x  # nosec"}],
+            listed=[{"path": "scripts/link.py", "reason": "mode 120000"}])
+        report["signers"] = {"anchor": ["me@x ssh-ed25519 SHA256:AAA", "old@x ssh-ed25519 SHA256:OLD"],
+                             "candidate": ["me@x ssh-ed25519 SHA256:AAA", "new@x ssh-ed25519 SHA256:NEW"]}
+        report["signatures"] = {"total": 3, "unsigned": 0, "bad": 1}
+        return report
+
+    @staticmethod
+    def _positions(node, where=()):
+        """Every place in a JSON value that holds a string or a number, as ("value", path); and every
+        dictionary key, as ("key", path to the key)."""
+        if isinstance(node, dict):
+            for k, v in node.items():
+                yield ("key", where + (k,))
+                yield from TestShowReport._positions(v, where + (k,))
+        elif isinstance(node, list):
+            for i, v in enumerate(node):
+                yield from TestShowReport._positions(v, where + (i,))
+        else:
+            yield ("value", where)
+
+    def test_no_field_of_the_report_can_put_unprintable_text_on_the_page(self, bed):
+        """The page is what he reads before signing, and every field of the report is candidate
+        bytes.  Whichever field carries an escape byte or a bidirectional override, the page
+        refuses whole or never shows it; a field that prints raw would let a report redraw
+        what he sees."""
+        import copy
+        hostile = "\x1b[31m\u202e"
+        base = self._every_field_report()
+        control = _run("show-report", self._package(bed, copy.deepcopy(base)))
+        assert control.returncode == 0, control.stderr
+        positions = list(self._positions(base))
+        assert len(positions) > 100, "the report is too thin to cover every field"
+        shown, refused = 0, 0
+        for kind, where in positions:
+            report = copy.deepcopy(base)
+            holder = report
+            for step in where[:-1]:
+                holder = holder[step]
+            if kind == "value":
+                holder[where[-1]] = hostile
+            else:
+                holder[hostile] = holder.pop(where[-1])
+            r = _run("show-report", self._package(bed, report))
+            assert "\x1b" not in r.stdout + r.stderr and "\u202e" not in r.stdout + r.stderr, (
+                kind, where, r.stdout)
+            assert r.returncode == 0 or r.stdout == "", (kind, where, r.stdout)
+            refused += r.returncode != 0
+            shown += r.returncode == 0
+        assert refused > 40 and shown > 0, (refused, shown)
+        # a roster line both rosters share is printed on its own, not as an addition or a removal
+        for name in ("anchor", "candidate"):
+            base["signers"][name][0] = hostile
+        r = _run("show-report", self._package(bed, base))
+        assert r.returncode != 0 and r.stdout == "" and "\x1b" not in r.stderr
+        # the eight tool paths come from the values file, not from the report: a real executable
+        # whose folder name holds an escape byte is a path the launcher accepts and the page must not show
+        folder = Path(bed["dir"]) / "bin\x1b[31m"
+        folder.mkdir()
+        wrapper = folder / "tool"
+        wrapper.write_text(f'#!/bin/sh\nexec {sys.executable} "$@"\n')
+        wrapper.chmod(0o755)
+        for tool in EXECUTABLE_KEYS:
+            self._package(bed, copy.deepcopy(self._every_field_report()))
+            r = _run("show-report", _write_values(bed, override={tool: str(wrapper)}))
+            assert r.returncode != 0 and r.stdout == "" and "unprintable" in r.stderr, (tool, r.stderr)
+
+    def test_a_changed_path_with_a_role_the_page_does_not_list_is_refused_not_hidden(self, bed):
+        report = self._every_field_report()
+        report["paths"][0]["role"] = "elsewhere"
+        r = _run("show-report", self._package(bed, report))
+        assert r.returncode != 0 and "would not be shown" in r.stderr and r.stdout == ""
+
+    def test_a_count_that_is_not_a_number_is_refused_by_name(self, bed):
+        report = self._every_field_report()
+        report["scan"]["counts"]["nosec"] = "7"
+        r = _run("show-report", self._package(bed, report))
+        assert r.returncode != 0 and "is not a count" in r.stderr and r.stdout == ""
+
     def test_a_report_of_another_schema_is_refused(self, bed):
         report = self._minimal_report(schema="cairn-range-review/v1")
         r = _run("show-report", self._package(bed, report))
