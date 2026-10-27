@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md](../proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md)
-**Status**: implementing
+**Status**: awaiting-code-review
 **Waiting on Maintainer**: hand re-anchor after this lands
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27
@@ -23,7 +23,7 @@ The Internal Security Review is a separate pass from the ordinary plan review. A
 
 **Doctrine surface.** None: no `doctrine/` or `AGENTS.md` text (descriptive prose only), so the rate-limit gate does not apply; no descriptive page states the closure's size or members.
 
-Proposed paths:
+New file (built in the sixth chunk):
 * `bootstrap/tests/test_reanchor_driver_disclosures.py`
 
 **Frozen files, derived** on 2026-10-27 at `804af266` from the globs in `_frozen_files` (`bootstrap/tests/_gate_manifest.py`), the 195 `frozen_files` keys of the fixture, and a read-only `python bootstrap/tests/_gate_manifest.py verify --no-collect`. The hand ceremony re-signs the whole manifest at its HEAD, so these edits need no entry of their own; the table says what the Maintainer will see.
@@ -185,3 +185,33 @@ All twelve findings are answered; none is wontfix, and B1 is adopted as written.
 * **N11 -- accept.** Reuse is corrected, and a new paragraph records the leftover sites (58 lines, 19 files; `_gate_preflight.py` `:1386`, `:2318`, `:2341`). Widening H is the Maintainer's call; I added that C1 edits that file anyway, so fixing the lines now costs no extra ceremony.
 
 Also added: C2 rewords the `:49` docstring ("The R1 bed") to say what the bed is, and "How to work" bars finding ids, chunk letters and other plan coordinates from tests, comments and docstrings. Not checked: whether those edits satisfy the test suite (nothing built).
+
+## Implementation verification -- Claude Sonnet 5.5 (Implementation) -- 2026-10-27
+
+**Certified by**: pending. **Boundary B mode**: full (trust-ceremony surface), met by this scoped record plus the next certifying run. Nobody set `CAIRN_FULL_SUITE=1`; nothing pushed. Interpreter for every figure: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13), `PYTHONDONTWRITEBYTECODE=1`.
+
+**Range and commits.** `5f36b0f0` (C1), `5293f570` (C2), `fccefaab` (C3), `b0178fc1` (C4), `8fb140fa` (C5), `abb96297` (C6); other sessions' commits sit between them, none touch these files. C1 to C3 are three commits, one landing: red between C1 and C3 as the plan said, nothing pushed or run as a certifying run inside it. Last commit touching `scripts/repin.py` or either repin test file: `5293f570` (C2); M2's `--reviewed-commit` is for the code review to record, not me.
+**Clean pre/post.** The main tree carried other sessions' uncommitted edits (an engine file, a proposal, a plan, `docs/release-process.md`), so every figure below was measured in a detached `git worktree` of `abb96297` (`git status --short` empty before; nothing written). The tree is not clean for a certifying run.
+
+**Tests (mapped set, worktree of `abb96297`, `-rfsxX`, wall time in parentheses, run in parallel).**
+* `test_gate_preflight.py` 320 passed (142 s); `test_reanchor.py` 191 (30 s); `test_repin.py` 107 (117 s); `test_repin_ceremony.py` 75 (219 s); `test_reanchor_driver_disclosures.py` 15 (8 s); `test_review_stance_in_shipped_files.py` 462 (3 s); `test_security_marker.py` 9 (39 s); `test_gate_manifest.py` 21 (40 s). Total 1200 passed; 0 skipped, 0 xfail, 0 xpass (no `SKIPPED`/`XFAIL`/`XPASS` line in any output).
+* Owners found with `git grep -l '_gate_preflight\|reanchor-launcher\|REANCHOR_RUNBOOK' -- bootstrap/tests scripts bootstrap/*.py`; `security_check.py`, `repin.py` and the driver only read or name these files.
+* After C1 alone (worktree of `5f36b0f0`): `test_reanchor.py` 9 failed (`test_the_happy_path_reaches_candidate_code`, `test_a_trailing_newline_survives_the_snapshot`, `test_a_member_that_differs_at_the_candidate_refuses`, `test_an_unresolvable_candidate_refuses`, three artifact-row refusals, `test_both_parsers_accept_the_same_clean_file`, `test_the_launcher_list_matches_this_tests_own`), `test_repin.py` 1 (`test_status_shows_a_closure_member_that_differs_from_the_anchor`), `test_repin_ceremony.py` 59 (every node that builds the bed). C2 and C3 cleared exactly those; the measured 9 + 1 + 59 equals the plan's.
+* Gates on the tree: `quality_gate.py --sub neutrality --sub redundancy` fail=0 / fail=0; `check_cairn.py`, `claim_check.py` on the runbook, template, new test and plan: no flags (the plan's `Proposed paths:` label had gone stale once the file existed, so this commit renames the label to a plain statement); `link_check.py` 3 issues, all in `templates/modules/default-on/documentation-plan.md`, a file this range does not touch.
+
+**Mutants, C1 to C3 (worktree of `fccefaab`, beside an unmutated control that passed: 16 selected gate-preflight nodes, 191 reanchor, full repin-ceremony file).**
+* M1 killed (4: arity, launcher-equals-declared, template-in-closure, and the template parameter of the changed-member node); M2 killed (1: launcher-equals-declared); M3 killed (2: launcher-equals-declared, LC_ALL=C order); M4 killed by the new template parameter only (1); M5 killed (59 failed); M6 killed by the new launcher node only (1 failed, 190 passed; control 191 passed). None survived, none equivalent.
+
+**Mutants, C6 (21, one worktree each of `abb96297`, beside a control that passed 15 of 15; killed = a named node failed; no skip).** Finer than the plan's eleven plus four: a table cell and a recorded problem are separate lines.
+* Statement deleted: packet row missing (problem not recorded; table cell not marked: 2), row differs (2), extra member (1), changed-member star (1), count line (1; a second node also fails), transition note (1), packet absent (the ABSENT line; the "without both" lines: 2), launcher absent (1), unfilled slot (1), other packet digest (1), no environment fix (1), rehearsal banner (killed in all 3 load-path cases). 15 killed.
+* Printed line kept, `ok = False` dropped: unfilled slot, other digest, no environment fix (1 each), and the shared loop for the three packet faults (3 nodes die). 4 killed. `return False` turned to `True` for packet absent and for launcher absent: 2 killed.
+* Survived 0; equivalent 0. Instrument check: with the `sys.modules` entry removed the scratch candidate's module loads and the marker file is written, so the absent-marker assertion could fail.
+
+**Other checks.**
+* `git diff --name-only c353fcec..abb96297 -- bootstrap/_scaffold scripts` prints nothing (control: `4206505e..HEAD -- bootstrap/_scaffold` prints `SECURITY_MUTATIONS.md` and `upgrade.py`). Neither `scripts/repin.py` nor the driver was edited.
+* Runbook: `grep -n -i 'out.of.band'` prints `:489` only (control: 7 lines at `HEAD` before C4). Template: the non-comment filter over C5 prints nothing (control over C1: prints the added path); `sh -n` clean.
+* AST, read-only `python bootstrap/tests/_ast_attest.py verify <baseline> --known-new <known_new> bootstrap/_scaffold/*.py`: exit 1 at both `c353fcec` and `abb96297` with byte-identical output (owed re-anchors from other plans' engine edits); this range adds nothing, as expected.
+* Gate manifest, read-only `_gate_manifest.py verify --no-collect`: exit 1 at both; the range adds `FROZEN-MODIFIED` and `FROZEN-OID` for `bootstrap/tests/_gate_preflight.py`, `bootstrap/tests/test_gate_preflight.py` and `bootstrap/tests/test_reanchor.py` (65 to 71 violations) and `FROZEN-NEW` for `bootstrap/tests/test_reanchor_driver_disclosures.py`. `test_repin.py` and `test_repin_ceremony.py` print `FROZEN-NEW` before and after (keyed at the ceremony).
+* Frozen files this change edits, for the re-anchor: the three keyed files above, `test_repin.py` and `test_repin_ceremony.py` (not yet keyed), the new test file. The template and the runbook are closure members, not frozen.
+
+**Not verified / omitted.** No full suite and no certifying run. C7 untouched. The driver's stale docstring and print, and the other "out of band" sites the plan lists as left over, are untouched by design. D10 was exercised with the checker import stopped; a real run of the rehearsal against a real candidate was not made.
