@@ -99,8 +99,9 @@ many records it did not record.
 **Deleting by hand is fine.** If you delete these files before you run the step,
 `upgrade --remove-retired` clears their records, and so does
 `upgrade --finalize <path>` for each file you name. A bare `upgrade --finalize`
-refuses while the deletion is uncommitted, because the dirty-tree guard stops it
-(exit 1); commit the deletion first, then run it. Until a record is cleared,
+clears them too, without waiting for a commit: a deleted retired file is not one
+of the files a bare finalize hashes, so the edit check (see "The edit check"
+under `--apply`) does not ask about it. Until a record is cleared,
 `verify_integrity.py` prints a `missing:` line for a deleted file that is not
 living state.
 
@@ -207,6 +208,35 @@ python bootstrap/verify_integrity.py --target <repo>            # 4. verify
   with markers, or with outstanding review-only files, is never applied —
   only a resolved tree advances the lockfile.
 
+  **The edit check.** Before it swaps anything, `--apply` asks whether any file
+  it would overwrite has changes you have not committed, staged or not, and if
+  one does it stops and names the files (exit 1). Commit or set those edits
+  aside, or pass `--force` to overwrite them; `--force` skips the check and runs
+  no git. `--stage` runs the same check and only prints an `[advisory]` line. A
+  bare `--finalize` runs it over the files it is about to hash plus the
+  lockfile it rewrites, so an edit to a file finalize does not hash (a
+  living-state note such as `dev/NEXT_SESSION.md`) does not stop it, and the
+  scoped form (`--finalize <path>`) skips it. The check asks git for the index
+  and the last commit and reads each file itself, so it runs no program your
+  repository's git settings name (a file-system monitor, a clean filter, a text
+  converter, a hook). With no `.git` folder at or above the project, or no git
+  installed, there is nothing to check and the command goes on.
+
+  *What it can get wrong.* It can call a file edited that git calls clean: one
+  a clean filter rewrites, a tracked link, a checkout set to CRLF line endings
+  only by `.gitattributes`, a stray empty `.git` folder, or a file marked
+  skip-worktree or assume-unchanged (the check compares the file's bytes with
+  the index; reasoned, not measured). It can call a file unchanged that git
+  calls modified: a name written in another letter case on a case-insensitive
+  disk reads as untracked, and where `core.autocrlf=true` or `core.eol=crlf` is
+  set, **an edit that changes only line endings counts as unchanged**.
+
+  *When it cannot tell.* If git is a partial clone and older than 2.45.0, a
+  treeless clone, a repository git refuses (another owner, a bare repository),
+  or slower than 10 seconds, the check says it could not tell. `--apply` and a
+  bare `--finalize` then stop, print the reason and name `--force`; `--stage`
+  completes and prints the advisory.
+
   **The completion gate.** An upgrade is **not complete** until every
   review-only / customized file has been reconciled against the new upstream.
   `--apply` enforces this: it **fail-closes** (mirroring the conflict-marker
@@ -273,9 +303,10 @@ slot**, so read before you record.
    as it is now.
 4. **Then record the file:** `python bootstrap/scaffold.py upgrade --target
    <repo> --finalize <path>`. This records the whole file, not only your
-   slot. The scoped form (with a path) also skips the dirty-tree guard that a
-   bare `--finalize` applies, so it records whatever is on disk at that
-   moment. Commit the lockfile afterwards.
+   slot. The scoped form (with a path) also skips the edit check that a bare
+   `--finalize` applies to the files it hashes and the lockfile (see "The edit
+   check" under `--apply`), so it records whatever is on disk at that moment.
+   Commit the lockfile afterwards.
 
 This section describes the command. It does not claim that any command shows
 you what changed.

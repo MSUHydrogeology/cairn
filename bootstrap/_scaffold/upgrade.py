@@ -2881,9 +2881,10 @@ def _apply_upgrade(
     acknowledges them.
 
     ``force`` (the ``--force`` flag) overrides the Layer-3 dirty-tree guard
-    (#56): ``--apply`` refuses when its write-set would overwrite a tracked
-    file the adopter has uncommitted edits in (a concurrent session's
-    in-flight work)."""
+    (#56) and runs no git: ``--apply`` refuses when its write-set would overwrite
+    a tracked file the adopter has uncommitted edits in (a concurrent session's
+    in-flight work), and stops, naming ``--force``, when the edit check cannot
+    tell (`_EditCheckCannotTell`)."""
     import json
     import shutil
     stage = target / _STAGING_REL
@@ -3027,7 +3028,8 @@ def _apply_upgrade(
     # (f) Layer-3 dirty-tree guard (#56): refuse to overwrite a tracked path
     #     the adopter has uncommitted edits in -- applying would clobber a
     #     concurrent session's in-flight work. Scoped to tracked paths (benign
-    #     untracked / gitignored dirt does not trip it); --force overrides.
+    #     untracked / gitignored dirt does not trip it); --force overrides and
+    #     skips every git call.
     if not force:
         try:
             collide = _writeset_dirty_collisions(target, staged_meta)
@@ -3291,10 +3293,12 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                         "proceeds (the #44 completion gate is fail-closed "
                         "without this).")
     p.add_argument("--force", action="store_true",
-                   help="Override the Layer-3 dirty-tree guard (#56): for "
-                        "--apply, overwrite tracked files with uncommitted "
-                        "changes in the write-set; for an unscoped --finalize, "
-                        "finalize the whole tree even when it is dirty. "
+                   help="Override the Layer-3 dirty-tree guard (#56) and skip "
+                        "its git check: for --apply, overwrite tracked files "
+                        "with uncommitted changes in the write-set; for an "
+                        "unscoped --finalize, finalize even when a recorded "
+                        "file it hashes, or the lockfile, has uncommitted "
+                        "changes. Also the way past a check that cannot tell. "
                         "--remove-retired refuses it.")
     p.add_argument("--remove-retired", action="store_true",
                    help="Remove the project's untouched copies of files Cairn "

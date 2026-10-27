@@ -264,6 +264,14 @@ redirect it, which is the same accepted window as for the write. Windows also
 looks a bare `git` up in the current folder before `PATH`, and the scrubbed
 environment does not close that, so run the step from a folder you trust.
 
+**The edit check beside it.** The check that stops `upgrade --apply` or a bare
+`--finalize` from overwriting a file with unsaved edits, and warns under
+`--stage`, runs no program the project names either: it asks git only for the
+index and the last commit through the same launcher (fixed overrides, a scrubbed
+environment, lazy fetch off), never runs `git status`, and reads each file
+itself through `_assert_safe_write` and `_read_regular_bytes`; when git cannot be
+relied on to answer, it stops and names `--force` instead of guessing.
+
 **Documented residual risk: the interpreter binding proves only "git does not
 list it now".** The session kernel (`tools/session.py`) runs the program named
 in `dev/.cairn/local-env.json`. It does so at `session-start`; at
