@@ -1276,7 +1276,14 @@ SCAN_PATTERNS: tuple[tuple[str, "re.Pattern[bytes]"], ...] = tuple(
         ("process-start",
          rb"\bsubprocess\b|\bPopen\b"
          rb"|\bos\.(?:system|popen|exec\w{1,8}|spawn\w{1,8}|posix_spawn\w{0,4}|fork)\b"
-         rb"|\bpty\.spawn\b|(?:^|[;&|(])\s{0,40}exec\s{1,8}[\"'$/]"),
+         rb"|\bpty\.spawn\b|(?:^|[;&|(])\s{0,40}exec\s{1,8}[\"'$/]"
+         # `from os import system as s` names the call without `os.`; a shell
+         # or interpreter handed a command string with `-c` starts a program.
+         rb"|\bfrom\s{1,8}os\s{1,8}import\s{1,8}[^#\n]{0,120}"
+         rb"\b(?:system|popen|exec\w{1,8}|spawn\w{1,8}|posix_spawn\w{0,4}|fork)\b"
+         rb"|(?:^|[;&|(])\s{0,40}(?:(?:\S{1,80}/)?env\s{1,8})?(?:\S{1,80}/)?"
+         rb"(?:sh|bash|zsh|dash|ksh|python3?(?:\.\d{1,2})?)"
+         rb"\s{1,8}(?:-[A-Za-z]{1,8}\s{1,8}){0,4}-c\b"),
         ("network",
          rb"\b(?:socket|urllib|urlopen|http\.client|httplib|ftplib|smtplib"
          rb"|telnetlib|curl|wget)\b"
@@ -1284,7 +1291,11 @@ SCAN_PATTERNS: tuple[tuple[str, "re.Pattern[bytes]"], ...] = tuple(
         ("dynamic-code",
          rb"\b(?:eval|exec|compile)\s{0,8}\(|\b__import__\b|\bimportlib\b"
          rb"|\bpickle\.loads?\b|\bmarshal\.loads?\b|\bctypes\b|\brunpy\b"
-         rb"|(?:^|[;&|(])\s{0,40}eval\s"),
+         rb"|(?:^|[;&|(])\s{0,40}eval\s"
+         # pytest reads `pytest_plugins` from a conftest and imports each name;
+         # a shell `source` or `.` runs a file in the calling shell.
+         rb"|\bpytest_plugins\b"
+         rb"|(?:^|[;&|(])\s{0,40}(?:source|\.)\s{1,8}[\"'$/.~]"),
         ("shell-true", rb"\bshell\s{0,8}=\s{0,8}True\b"),
         ("file-write",
          rb"\.write_(?:text|bytes)\s{0,8}\("
@@ -1296,13 +1307,17 @@ SCAN_PATTERNS: tuple[tuple[str, "re.Pattern[bytes]"], ...] = tuple(
          rb"|(?<![-=>0-9&<|])(?:>>|>)\s{0,8}(?:[\"']?\$|/(?!dev/null)|~)"),
         ("nosec", rb"nosec\b"),
         # A shell command that deletes, moves, copies, relinks or re-modes a
-        # file, or touches an ssh key, at the start of a command. Lines in a
+        # file, touches an ssh key, or writes a git ref, at the start of a command. Lines in a
         # script or runbook; a mention inside a quoted string, a bracket or
         # backticks in prose does not start a command and does not match. A name followed by `=`, `(`, `.` or `,`
         # is an assignment or a call in other languages, not this command.
         ("shell-command",
          rb"(?:^|[;&|]|\$\(|\b(?:then|do|else))\s{0,40}(?:sudo\s{1,8})?"
-         rb"(?:rm|mv|cp|chmod|chown|ln|tee|ssh-add|ssh-keygen)"
+         rb"(?:(?:rm|mv|cp|chmod|chown|ln|tee|ssh-add|ssh-keygen)"
+         # a git command that writes a ref, an object substitute, the
+         # configuration or the working tree
+         rb"|git\s{1,8}(?:\S{1,40}\s{1,8}){0,4}(?:update-ref|replace|symbolic-ref|config"
+         rb"|reset|filter-branch|gc|prune|clean|checkout|restore))"
          rb"\s{1,8}(?![=(\[.,:\s])"),
     ))
 
@@ -1809,6 +1824,19 @@ def gather_evidence(candidate_ref: str = "HEAD", *, repo: Path = _REPO,
     refuse_if_sealed("the evidence stage")
     out.write(_EVIDENCE_RESIDUAL + "\n")
     candidate = _resolve(candidate_ref, repo=repo)
+
+    # Python loads a tracked compiled file in place of its source, so the tests
+    # that run below would not be the source a reader read. Refused here, where
+    # it would run, and not only listed in the report, because the reader
+    # cannot judge from a source diff what a compiled file does.
+    compiled = sorted(rel for _m, _s, rel in _tree_entries(candidate, repo=repo)
+                      if _is_compiled(rel))
+    if compiled:
+        raise PreflightError(
+            f"the candidate tracks {len(compiled)} compiled file(s), e.g. "
+            f"{_display_path(compiled[0].encode('utf-8', 'surrogateescape'))}: "
+            f"Python would run them in place of their source. Remove them "
+            f"from the commit, then run again")
 
     # Materialized from raw objects, not `git archive`: the archive path honours
     # in-tree `.gitattributes`, so a tracked file marked `export-ignore` was

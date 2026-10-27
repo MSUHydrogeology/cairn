@@ -222,6 +222,43 @@ class TestLineScan:
             {"bootstrap/reanchor.sh": "echo hi\n" + line + "\n"})
         assert _hits(_report(repo, a, h)) == [], line
 
+    @pytest.mark.parametrize("path,line,pattern", [
+        ("bootstrap/reanchor.sh", "git update-ref refs/cairn/gate-anchor $new", "shell-command"),
+        ("bootstrap/reanchor.sh", "git -C \"$repo\" replace $old $new", "shell-command"),
+        ("bootstrap/reanchor.sh", "x && git config core.hooksPath /tmp/h", "shell-command"),
+        ("bootstrap/tests/_oracle.py", "from os import system as s", "process-start"),
+        ("bootstrap/tests/_oracle.py", "from os import path, popen", "process-start"),
+        ("bootstrap/reanchor.sh", "sh -c \"$payload\"", "process-start"),
+        ("bootstrap/reanchor.sh", "/usr/bin/env python3 -E -s -c 'import x'", "process-start"),
+        ("bootstrap/reanchor.sh", "  /bin/bash -c \"$x\"", "process-start"),
+        ("bootstrap/reanchor.sh", "source ./helper.sh", "dynamic-code"),
+        ("bootstrap/reanchor.sh", ". \"$dir/helper.sh\"", "dynamic-code"),
+        ("bootstrap/tests/conftest.py", "pytest_plugins = [\"planted\"]", "dynamic-code"),
+    ])
+    def test_a_line_that_starts_code_by_another_spelling_is_a_hit(
+            self, tmp_path, path, line, pattern):
+        repo, a, h = _make_range(tmp_path, {path: "a = 1\n"},
+                                 {path: "a = 1\n" + line + "\n"})
+        assert [x[2] for x in _hits(_report(repo, a, h))] == [pattern], line
+
+    @pytest.mark.parametrize("line", [
+        "the sh -c form is described in the runbook",
+        "check `sh -c` before you run it",
+        "from os import path, sep",
+        "from . import helper",
+        "# source: the reader's note",
+        "1. a numbered list item",
+        "git status",
+        "git commit -m x",
+        "python3 script.py",
+        "dash = 3",
+    ])
+    def test_prose_and_ordinary_lines_do_not_hit_the_other_spellings(self, tmp_path, line):
+        repo, a, h = _make_range(
+            tmp_path, {"bootstrap/reanchor.sh": "echo hi\n"},
+            {"bootstrap/reanchor.sh": "echo hi\n" + line + "\n"})
+        assert _hits(_report(repo, a, h)) == [], line
+
     def test_every_deciding_path_is_scanned(self, tmp_path):
         files = {rel: "a = 1\n" for rel in _decides_paths()}
         repo, a, h = _make_range(
@@ -363,6 +400,32 @@ class TestTrackedCompiledFiles:
             tmp_path, {"bootstrap/tests/_oracle.py": "a = 1\n", self._PYC: b"\x00compiled"},
             {"README.md": "x\n"})
         assert _hits(_report(repo, a, h)) == [(self._PYC, 0, "compiled-file")]
+
+    def test_the_evidence_stage_refuses_a_tracked_compiled_file_before_anything_runs(
+            self, tmp_path, monkeypatch):
+        """The tests it would run are not the source a reader read, so the stage stops
+        where they would start; listing the file for the reader to explain is not enough."""
+        import io
+        repo, _a, h = _make_range(
+            tmp_path, {"bootstrap/tests/_oracle.py": "a = 1\n"}, {self._PYC: b"\x00compiled"})
+
+        real_run = P.subprocess.run
+
+        def started(argv, *args, **kw):
+            assert argv[0] != sys.executable, "the candidate's producer started"
+            return real_run(argv, *args, **kw)
+        monkeypatch.setattr(P.subprocess, "run", started)
+        with pytest.raises(P.PreflightError, match=r"1 compiled file\(s\).*_oracle\.cpython"):
+            P.gather_evidence(h, repo=repo, out=io.StringIO())
+
+    def test_the_evidence_stage_goes_on_to_the_producer_when_nothing_compiled_is_tracked(
+            self, tmp_path):
+        """The control: the same stage on a tree with no compiled file is not stopped there."""
+        import io
+        repo, _a, h = _make_range(
+            tmp_path, {"bootstrap/tests/_oracle.py": "a = 1\n"}, {"README.md": "x\n"})
+        with pytest.raises(P.PreflightError, match="manifest producer failed"):
+            P.gather_evidence(h, repo=repo, out=io.StringIO())
 
     def test_a_pycache_folder_and_a_pyc_suffix_each_count_and_lookalikes_do_not(self, tmp_path):
         counted = ["pkg/__pycache__/data.txt", "stale.pyc", "a/b/c.pyc"]
