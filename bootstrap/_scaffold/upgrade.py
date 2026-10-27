@@ -2426,102 +2426,131 @@ def _writeset_dirty_collisions(
     return sorted(set(staged_files) & dirty)
 
 
-#: Seconds `_committed_copy_matches` lets a git child run, version check and
-#: object read together.  A module constant so a test can shorten it.
+#: Seconds one git child may run, version check and object read alike.  A module
+#: constant so a test can shorten it.
 _GIT_TIMEOUT_SECONDS = 10.0
 
+#: What `_run_git_sterile` reports besides an answer: git could not be started at
+#: all, or it started and gave no answer in time (a hang, or output at the cap).
+_GIT_NOT_STARTED = "not started"
+_GIT_NO_ANSWER = "no answer"
 
-def _committed_copy_matches(project_root: Path, rel_path: str, data: bytes) -> bool:
-    """Does the project's last commit hold *rel_path* with exactly *data*?
+#: The one `git --version` outcome, read once per process: ``"met"`` (2.45.0 or
+#: later), ``"below"`` (older, or an unreadable version), `_GIT_NOT_STARTED` or
+#: `_GIT_NO_ANSWER`; ``None`` until read.  A test forgets it by setting ``None``.
+_GIT_FLOOR_MET: str | None = None
 
-    The one place the engine asks git about a project file, built so that nothing
-    the project controls can run a program or change the answer.  It runs
-    ``git -C <project> -c core.fsmonitor=false -c core.hooksPath=<null device>
-    -c core.useReplaceRefs=false cat-file blob HEAD:./<rel_path>`` with every
-    ``GIT_*`` variable removed from the environment and ``GIT_NO_LAZY_FETCH=1``,
-    ``GIT_TERMINAL_PROMPT=0`` and ``GIT_OPTIONAL_LOCKS=0`` set, no input, and at
-    most ``_GIT_TIMEOUT_SECONDS`` seconds.  Git reads the committed object and no
-    working-tree file (``git status`` would run the project's filter and monitor
-    programs), and ``./`` names the file from the project folder, so a project
-    inside a repository subfolder is judged by its own names.  ``False`` -- keep
-    the file -- on anything but exit 0 and exactly *data*: a hang, output longer
-    than *data* (reading stops one byte past it), a missing commit, a name that is
-    not a plain project path.
 
-    A git older than 2.45.0, the first to honour ``GIT_NO_LAZY_FETCH``, would fetch
-    a missing object from a remote the project names, and may run its program.
-    ``git --version`` is read once per process, with the same environment, timeout
-    and a byte cap; an older or unreadable git is ``False`` and ``cat-file`` is
-    never run.  The answer is kept on the function (``git_floor_met``), so every
-    caller gets the floor and a test can forget it.
+def _run_git_sterile(args: list[str], limit: int) -> tuple[int, bytes] | str:
+    """Run ``git`` with *args* and nothing the project controls in its environment.
 
-    Callers outside this module may reuse it unchanged; it reads nothing but git's
-    answer and writes nothing.
-    """
+    Every ``GIT_*`` variable is removed and ``GIT_NO_LAZY_FETCH=1``,
+    ``GIT_TERMINAL_PROMPT=0`` and ``GIT_OPTIONAL_LOCKS=0`` set; there is no input,
+    no stderr, and at most ``_GIT_TIMEOUT_SECONDS`` seconds.  Three results:
+    ``(exit code, output)`` when git ran and finished with fewer than *limit* bytes;
+    `_GIT_NOT_STARTED` when it could not be launched (not installed, not
+    executable); `_GIT_NO_ANSWER` when it started but did not finish in time or
+    printed *limit* bytes or more.  The two are different answers to a caller that
+    must decide whether to guard: a missing git leaves nothing to ask, a git that
+    hangs leaves a question unanswered."""
     import os
     import subprocess
     import threading
     import time
 
+    env = {k: v for k, v in os.environ.items() if not k.upper().startswith("GIT_")}
+    env.update(GIT_NO_LAZY_FETCH="1", GIT_TERMINAL_PROMPT="0", GIT_OPTIONAL_LOCKS="0")
+    deadline = time.monotonic() + _GIT_TIMEOUT_SECONDS
+    try:
+        proc = subprocess.Popen(
+            ["git", *args], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL, env=env)
+    except (OSError, ValueError):
+        return _GIT_NOT_STARTED
+    got: list[bytes] = []
+
+    def pump() -> None:
+        try:
+            got.append(proc.stdout.read(limit))
+        except (OSError, ValueError):
+            pass
+
+    reader = threading.Thread(target=pump, daemon=True)
+    reader.start()
+    try:
+        reader.join(max(deadline - time.monotonic(), 0))
+        if reader.is_alive() or not got or len(got[0]) >= limit:
+            return _GIT_NO_ANSWER
+        try:
+            code = proc.wait(timeout=max(deadline - time.monotonic(), 0.01))
+        except subprocess.TimeoutExpired:
+            return _GIT_NO_ANSWER
+        return code, got[0]
+    finally:
+        if proc.poll() is None:
+            proc.kill()
+        proc.wait()
+        if not reader.is_alive():
+            proc.stdout.close()
+
+
+def _git_floor_met() -> bool:
+    """Is the git on ``PATH`` 2.45.0 or later, the first to honour
+    ``GIT_NO_LAZY_FETCH``?
+
+    An older git would fetch a missing object from a remote the project names, and
+    that fetch can run the project's ``uploadpack`` program.  ``git --version`` is
+    read once per process through `_run_git_sterile`; an unreadable version fails.
+    The outcome stays in ``_GIT_FLOOR_MET``, so a caller can tell "git would not
+    start" from "git did not answer" from "git is too old"."""
+    global _GIT_FLOOR_MET
+    if _GIT_FLOOR_MET is None:
+        answer = _run_git_sterile(["--version"], 256)
+        if isinstance(answer, str):
+            _GIT_FLOOR_MET = answer
+        else:
+            found = re.match(rb"git version (\d+)\.(\d+)\.(\d+)", answer[1])
+            ok = (answer[0] == 0 and found is not None
+                  and tuple(int(n) for n in found.groups()) >= (2, 45, 0))
+            _GIT_FLOOR_MET = "met" if ok else "below"
+    return _GIT_FLOOR_MET == "met"
+
+
+def _committed_copy_matches(project_root: Path, rel_path: str, data: bytes) -> bool:
+    """Does the project's last commit hold *rel_path* with exactly *data*?
+
+    The one place the engine asks git about a committed file, built so that nothing
+    the project controls can run a program or change the answer.  It runs
+    ``git -C <project> -c core.fsmonitor=false -c core.hooksPath=<null device>
+    -c core.useReplaceRefs=false cat-file blob HEAD:./<rel_path>`` through
+    `_run_git_sterile`.  Git reads the committed object and no working-tree file
+    (``git status`` would run the project's filter and monitor programs), and
+    ``./`` names the file from the project folder, so a project inside a repository
+    subfolder is judged by its own names.  ``False`` -- keep the file -- on anything
+    but exit 0 and exactly *data*: a hang, output longer than *data* (reading stops
+    one byte past it), git that will not start, a missing commit, a name that is not
+    a plain project path.
+
+    A git below the floor (`_git_floor_met`) is ``False`` without ``cat-file``
+    being run.
+
+    Callers outside this module may reuse it unchanged; it reads nothing but git's
+    answer and writes nothing.
+    """
+    import os
+
     if (not isinstance(rel_path, str) or not rel_path or not isinstance(data, bytes)
             or rel_path.startswith("/") or "\0" in rel_path or "\n" in rel_path
             or any(part in ("", ".", "..") for part in rel_path.split("/"))):
         return False
-    env = {k: v for k, v in os.environ.items() if not k.upper().startswith("GIT_")}
-    env.update(GIT_NO_LAZY_FETCH="1", GIT_TERMINAL_PROMPT="0", GIT_OPTIONAL_LOCKS="0")
-
-    def run_git(args: list[str], limit: int) -> tuple[int, bytes] | None:
-        """``(exit code, output)``; ``None`` if git did not finish in time, could not
-        run, or printed *limit* bytes or more."""
-        deadline = time.monotonic() + _GIT_TIMEOUT_SECONDS
-        try:
-            proc = subprocess.Popen(
-                ["git", *args], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL, env=env)
-        except (OSError, ValueError):
-            return None
-        got: list[bytes] = []
-
-        def pump() -> None:
-            try:
-                got.append(proc.stdout.read(limit))
-            except (OSError, ValueError):
-                pass
-
-        reader = threading.Thread(target=pump, daemon=True)
-        reader.start()
-        try:
-            reader.join(max(deadline - time.monotonic(), 0))
-            if reader.is_alive() or not got or len(got[0]) >= limit:
-                return None
-            try:
-                code = proc.wait(timeout=max(deadline - time.monotonic(), 0.01))
-            except subprocess.TimeoutExpired:
-                return None
-            return code, got[0]
-        finally:
-            if proc.poll() is None:
-                proc.kill()
-            proc.wait()
-            if not reader.is_alive():
-                proc.stdout.close()
-
-    floor_met = getattr(_committed_copy_matches, "git_floor_met", None)
-    if floor_met is None:
-        answer = run_git(["--version"], 256)
-        found = re.match(rb"git version (\d+)\.(\d+)\.(\d+)", answer[1]) if answer else None
-        floor_met = bool(
-            answer and answer[0] == 0 and found
-            and tuple(int(n) for n in found.groups()) >= (2, 45, 0))
-        _committed_copy_matches.git_floor_met = floor_met  # type: ignore[attr-defined]
-    if not floor_met:
+    if not _git_floor_met():
         return False
-    answer = run_git(
+    answer = _run_git_sterile(
         ["-C", str(project_root), "-c", "core.fsmonitor=false",
          "-c", f"core.hooksPath={os.devnull}", "-c", "core.useReplaceRefs=false",
          "cat-file", "blob", f"HEAD:./{rel_path}"],
         len(data) + 1)
-    return answer is not None and answer[0] == 0 and answer[1] == data
+    return not isinstance(answer, str) and answer[0] == 0 and answer[1] == data
 
 
 def _apply_upgrade(

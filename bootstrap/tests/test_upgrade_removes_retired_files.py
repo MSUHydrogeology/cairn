@@ -129,7 +129,7 @@ posix_only = pytest.mark.skipif(
 
 def _reset_git_floor(monkeypatch: pytest.MonkeyPatch) -> None:
     """Forget the once-per-process `git --version` answer."""
-    monkeypatch.setattr(U._committed_copy_matches, "git_floor_met", None, raising=False)
+    monkeypatch.setattr(U, "_GIT_FLOOR_MET", None)
 
 
 def _stand_in_git(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *,
@@ -300,8 +300,13 @@ def _version_answer(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, version: st
     project = tmp_path / "project"
     project.mkdir()
     monkeypatch.setenv("DATA", "payload")
+    # A cache left warm by an earlier node would hide the stand-in's version, so
+    # the answer is read cold here: warm it first, and the stand-in must clear it.
+    monkeypatch.setattr(U, "_GIT_FLOOR_MET", "met")
     log = _stand_in_git(tmp_path, monkeypatch, version=version)
-    return U._committed_copy_matches(project, "a.py", b"payload"), log
+    answer = U._committed_copy_matches(project, "a.py", b"payload")
+    assert _logged_calls(log)[0] == ["--version"], "the version must be the first call"
+    return answer, log
 
 
 @posix_only
