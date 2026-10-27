@@ -89,7 +89,11 @@ usage() {
         '  on disk.' \
         '' \
         '  add  --validate, --show-report or --hash-package  to run that' \
-        '  command in the artifact, after the same verification.' >&2
+        '  command in the artifact, after the same verification.' \
+        '' \
+        '  add  --scan-digest  to print the scan digest the ANCHOR'"'"'s own' \
+        '  checker computes over the range, after the same verification;' \
+        '  no candidate byte runs.' >&2
 }
 
 # --------------------------------------------------------------------------
@@ -133,6 +137,13 @@ require_executable() {
 require_directory() {
     require_absolute "$1" "$2"
     [ -d "$2" ] || die "$1: '$2' is not an existing directory"
+}
+
+is_hex40_or_64() {
+    case $1 in
+        *[!0123456789abcdef]*) return 1 ;;
+    esac
+    [ ${#1} -eq 40 ] || [ ${#1} -eq 64 ]
 }
 
 is_hex64() {
@@ -506,6 +517,7 @@ elif [ "$#" -eq 4 ]; then
         --validate)     MODE=validate ;;
         --show-report)  MODE=show-report ;;
         --hash-package) MODE=hash-package ;;
+        --scan-digest)  MODE=scan-digest ;;
         *) usage; exit 2 ;;
     esac
     set -- "$1" "$2" "$3"
@@ -671,6 +683,59 @@ else
     printf '               at the anchor and the candidate\n'
 fi
 printf '\n'
+
+# --- THE ANCHOR'S OWN SCAN, run before any candidate byte -------------------
+# `--scan-digest` runs the checker the ANCHOR holds, not the candidate's: a
+# candidate that hides a hit from its own scan cannot move this number. The
+# anchor's `bootstrap` tree is written out with `cat-file blob` by blob id,
+# through the sterile git child. It is never taken from `git archive` or a
+# checkout, which read attributes, so a filter in the repository's own
+# `.git/info/attributes` or a replace entry cannot change the bytes that run.
+# Only regular files are written, and a name outside a plain character set
+# refuses rather than being quoted or cleaned.
+#
+# The checker starts under `-E -s -S`: no `PYTHON*` variable, no user site, and
+# no `site` import at all, so a `.pth` file in the interpreter's packages folder
+# is never read. The environment is emptied (`PATH` is the stage's own).
+#
+# What it does NOT cover: the interpreter's standard library and the tools it
+# starts are still files the same user can write.
+if [ "$MODE" = scan-digest ]; then
+    ANCHOR_OID=$(sterile_git rev-parse --verify --end-of-options \
+                 "$ANCHOR_REF^{commit}") || die "cannot resolve the anchor"
+    case $ANCHOR_OID in
+        *[!0123456789abcdef]*) die "the resolved anchor is not an object id" ;;
+    esac
+    ANCHOR_TREE=$(sterile_git ls-tree -r "$ANCHOR_OID" bootstrap) \
+        || die "cannot list the anchor's bootstrap tree"
+    [ -n "$ANCHOR_TREE" ] || die "the anchor holds no bootstrap tree"
+    TAB=$(printf '\t')
+    while IFS= read -r ENTRY || [ -n "$ENTRY" ]; do
+        [ -n "$ENTRY" ] || continue
+        META=${ENTRY%%"$TAB"*}
+        REL=${ENTRY#*"$TAB"}
+        case $META in
+            "100644 blob "*|"100755 blob "*) BLOB=${META#* blob } ;;
+            *) die "the anchor's bootstrap tree holds an entry that is not a regular file" ;;
+        esac
+        is_hex40_or_64 "$BLOB" || die "the anchor lists a blob that is not an object id"
+        case $REL in
+            /*|*..*|'') die "the anchor holds an unsafe path" ;;
+            *[!ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._/+@=-]*)
+                die "the anchor holds a path with an unusual character" ;;
+        esac
+        "$L_mkdir" -p "$T/anchor/${REL%/*}" || die "cannot create $T/anchor/${REL%/*}"
+        sterile_git cat-file blob "$BLOB" > "$T/anchor/$REL" \
+            || die "cannot read the anchor's blob for '$REL'"
+    done <<ENTRIES
+$ANCHOR_TREE
+ENTRIES
+    "$L_env" -i PATH=/usr/bin:/bin HOME="$L_home" \
+        "$L_python" -E -s -S "$T/anchor/bootstrap/tests/_gate_preflight.py" \
+        scan-digest --repo "$L_checkout" --anchor "$ANCHOR_OID" \
+        --candidate "$RESOLVED"
+    exit $?
+fi
 
 # --- ONLY NOW does candidate code start ------------------------------------
 # Everything above ran on reviewed bytes: this launcher, the packet bound into

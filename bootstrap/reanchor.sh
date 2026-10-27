@@ -414,7 +414,7 @@ ROSTER
     "$V_env" -i \
         PATH=/usr/bin:/bin \
         HOME="$V_home" \
-        "$V_python" -E -s "$CHECKER" "$@"
+        "$V_python" -E -s -S "$CHECKER" "$@"
     _s1_status=$?
 
     # HAND THE OPERATOR THE NEXT COMMAND, exactly as it must be typed.
@@ -557,7 +557,7 @@ cmd_stage2() {
         PATH=/usr/bin:/bin \
         HOME="$V_home" \
         SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}" \
-        "$V_python" -E -s "$CHECKER" "$@"
+        "$V_python" -E -s -S "$CHECKER" "$@"
 }
 
 # --------------------------------------------------------------------------
@@ -599,7 +599,7 @@ cmd_show_report() {
     # unprintable byte or a missing section is refused whole, never rendered
     # in part. The Python below holds no apostrophe, because it sits inside a
     # single-quoted shell string.
-    "$V_python" -E -s -c '
+    "$V_python" -E -s -S -c '
 import hashlib, json, sys
 
 SCHEMA = "cairn-range-review/v2"
@@ -867,7 +867,9 @@ print_steps() {
     printf '%-8s %-13s %-14s %s\n' 'RA-17' 'stage 2' 'stage2' \
         'the confirmed package is validated against YOUR digest, re-extracted'
     printf '%-8s %-13s %-14s %s\n' '' '' '' \
-        'and re-verified; no candidate code runs in this stage'
+        'and re-verified; it starts no candidate test, but files stage 1 left'
+    printf '%-8s %-13s %-14s %s\n' '' '' '' \
+        'on this machine can still be loaded: see the runbook'
     printf '%-8s %-13s %-14s %s\n' 'RA-18' 'stage 2' 'stage2' \
         'the checkpoint is signed and branch and anchor move in ONE transaction'
     printf '%-8s %-13s %-14s %s\n' 'RA-19' 'after' '(Maintainer)' \

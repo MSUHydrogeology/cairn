@@ -638,7 +638,10 @@ class TestTheCommandSurface:
 #: that needed an inherited variable could only work by weakening it.
 _RECORDING_CHECKER = '''\
 import json, os, sys
-record = {"argv": sys.argv[1:], "env": dict(os.environ)}
+record = {"argv": sys.argv[1:], "env": dict(os.environ),
+          "flags": {"no_site": sys.flags.no_site,
+                    "ignore_environment": sys.flags.ignore_environment,
+                    "no_user_site": sys.flags.no_user_site}}
 with open(r"@RECORD@", "w") as fh:
     json.dump(record, fh)
 print("[stub] checker invoked")
@@ -814,6 +817,36 @@ class TestStage2IsTheStageThatSigns:
                              "--confirm-package-sha256", "abc123")
         _assert_refused(r, "does not exist")
         assert inv is None
+
+
+class TestTheArtifactStartsEveryPythonWithoutSite:
+    """The interpreter starts under `-E -s -S`. Stage 1 runs the candidate's
+    own tests as the Maintainer, so a `.pth` file left in the interpreter's
+    packages folder is code that the next start would otherwise run, with the
+    key loaded in stage 2. `-S` skips the folder; the control shows the file
+    is read without it."""
+
+    @pytest.mark.parametrize("command", ["stage1", "stage2", "show-report"])
+    def test_a_pth_file_in_the_packages_folder_runs_in_no_start(
+            self, bed, staged, tmp_path, command):
+        binary, marker = _interpreter_with_a_planted_pth_file(tmp_path)
+        values = _write_values(bed, override={"python": str(binary)})
+        if command == "show-report":
+            Path(bed["values"]["package"]).write_text(__import__("json").dumps({
+                "schema": "cairn-authorization-package/v1",
+                "range_report": TestShowReport._minimal_report()}))
+            r, _inv = _run_staged(staged, command, values)
+            assert r.returncode == 0 and "bootstrap/tests/frozen_0.py" in r.stdout
+        else:
+            if command == "stage2":
+                Path(bed["values"]["package"]).write_text('{"schema": "x"}\n')
+            extra = (("--confirm-package-sha256", "abc123")
+                     if command == "stage2" else ())
+            r, inv = _run_staged(staged, command, values, *extra)
+            assert r.returncode == 0, r.stderr
+            assert inv["flags"] == {"no_site": 1, "ignore_environment": 1,
+                                    "no_user_site": 1}
+        assert not marker.exists(), "a .pth file ran in the ceremony's interpreter"
 
 
 class TestTransitionModeTakesBothInputsOrNeither:
@@ -1965,6 +1998,208 @@ class TestTheReadingCommandsRunThroughTheLauncher:
         r = _launch(ceremony, mode=("--bless-everything",))
         assert r.returncode == 2 and "usage:" in r.stderr
         assert not ceremony["marker"].exists()
+
+
+def _git_out(repo, *args, env=None, data=None) -> str:
+    return subprocess.run(["git", "-C", str(repo), *args], check=True,
+                          capture_output=True, input=data,
+                          env=env).stdout.decode("utf-8", errors="replace")
+
+
+def _move_the_anchor_onto(state, files: dict) -> str:
+    """A new anchor commit holding *files* (path -> text) beside everything
+    the old anchor held, made with plumbing only: the worktree, the index and
+    the candidate commit are untouched.  Returns the new anchor's id."""
+    repo = state["repo"]
+    old = _git_out(repo, "rev-parse", "refs/cairn/gate-anchor").strip()
+    index = str(Path(state["dir"]) / "scratch-index")
+    env = {**os.environ, "GIT_INDEX_FILE": index}
+    _git_out(repo, "read-tree", old, env=env)
+    for rel, text in files.items():
+        blob = _git_out(repo, "hash-object", "-w", "--stdin", data=text.encode()
+                        if isinstance(text, str) else text).strip()
+        mode = "100755" if rel.endswith(".sh") else "100644"
+        _git_out(repo, "update-index", "--add", "--cacheinfo",
+                 f"{mode},{blob},{rel}", env=env)
+    tree = _git_out(repo, "write-tree", env=env).strip()
+    new = _git_out(repo, "-c", "user.email=t@t", "-c", "user.name=t",
+                   "commit-tree", tree, "-p", old, "-m", "the anchor").strip()
+    _git_out(repo, "update-ref", "refs/cairn/gate-anchor", new)
+    return new
+
+
+#: Stands in for the anchor's checker: prints what it was asked and which
+#: interpreter flags it ran under, so a test sees which bytes ran and how.
+_ANCHOR_CHECKER = (
+    "import sys, hashlib\n"
+    "print('ANCHOR-CHECKER', 'no_site=%d' % sys.flags.no_site, "
+    "'isolated=%d' % sys.flags.ignore_environment, *sys.argv[1:])\n")
+_CHECKER_PATH = "bootstrap/tests/_gate_preflight.py"
+
+
+def a_copy_of_this_interpreter(tmp_path):
+    """A copy of this interpreter laid out the way a virtual environment is, so
+    it has a packages folder of its own that a test may write to while the real
+    one is never touched.  It still sees this interpreter's installed packages.
+    Returns (binary, packages folder); skips only when the copy cannot start."""
+    real = Path(os.path.realpath(sys.executable))
+    root = tmp_path / "copy"
+    (root / "bin").mkdir(parents=True)
+    binary = root / "bin" / "python"
+    shutil.copy2(real, binary)
+    (root / "pyvenv.cfg").write_text(
+        f"home = {real.parent}\ninclude-system-site-packages = true\n")
+    packages = (root / "lib" / f"python{sys.version_info.major}."
+                f"{sys.version_info.minor}" / "site-packages")
+    packages.mkdir(parents=True)
+    probe = subprocess.run([str(binary), "-E", "-s", "-c", "pass"], env={},
+                           capture_output=True)
+    if probe.returncode != 0:
+        pytest.skip("this interpreter cannot be copied and run")
+    return binary, packages
+
+
+def _interpreter_with_a_planted_pth_file(tmp_path):
+    """The copy above with a `.pth` file planted in its packages folder.
+    Returns (binary, marker): the marker file appears when the interpreter reads
+    the `.pth` file, and the control inside shows that it does under `-E -s`
+    alone."""
+    binary, packages = a_copy_of_this_interpreter(tmp_path)
+    marker = tmp_path / "pth-ran"
+    (packages / "planted.pth").write_text(
+        f"import pathlib; pathlib.Path({str(marker)!r}).write_text('ran')\n")
+    subprocess.run([str(binary), "-E", "-s", "-c", "pass"], env={},
+                   capture_output=True)
+    assert marker.exists(), (
+        "the control: under -E -s alone the planted .pth file runs")
+    marker.unlink()
+    return binary, marker
+
+
+class TestTheAnchorsOwnScanRunsBeforeAnyCandidateByte:
+    """`--scan-digest` runs the checker the anchor holds.  The anchor's files
+    are read as raw objects, so nothing the candidate repository carries in its
+    own `.git` folder (a replace entry, an attributes file with a filter, a
+    configuration key) can change the bytes that run, and the interpreter is
+    told to read no environment, no user site and no `site` module."""
+
+    @staticmethod
+    def _scan(ceremony, files=None, *, values=None, env=None):
+        _move_the_anchor_onto(ceremony, {_CHECKER_PATH: _ANCHOR_CHECKER,
+                                         **(files or {})})
+        return _launch(ceremony, mode=("--scan-digest",), values=values,
+                       env=env)
+
+    def test_the_anchors_checker_runs_over_the_resolved_range(self, ceremony):
+        r = self._scan(ceremony)
+        anchor = _git_out(ceremony["repo"], "rev-parse",
+                          "refs/cairn/gate-anchor").strip()
+        assert r.returncode == 0, r.stderr
+        assert r.stdout.splitlines()[-1] == (
+            f"ANCHOR-CHECKER no_site=1 isolated=1 scan-digest --repo "
+            f"{ceremony['bed']['values']['checkout']} --anchor {anchor} "
+            f"--candidate {ceremony['oid']}")
+        assert not ceremony["marker"].exists(), "the candidate's artifact ran"
+
+    def test_the_candidates_own_checker_is_never_the_one_that_runs(self, ceremony):
+        """The candidate's copy is a stub that is not even Python; had it run,
+        the mode would have failed instead of printing the anchor's line."""
+        assert _git_out(ceremony["repo"], "show",
+                        f"{ceremony['oid']}:{_CHECKER_PATH}").startswith("stub")
+        assert "ANCHOR-CHECKER" in self._scan(ceremony).stdout
+
+    def test_a_replace_entry_cannot_swap_the_anchors_checker(self, ceremony):
+        repo = ceremony["repo"]
+        self._scan(ceremony)
+        anchor_blob = _git_out(repo, "rev-parse",
+                               f"refs/cairn/gate-anchor:{_CHECKER_PATH}").strip()
+        evil = _git_out(repo, "hash-object", "-w", "--stdin",
+                        data=b"print('REPLACED-CHECKER')\n").strip()
+        _git_out(repo, "replace", anchor_blob, evil)
+        control = _git_out(repo, "cat-file", "blob",
+                           f"refs/cairn/gate-anchor:{_CHECKER_PATH}")
+        assert "REPLACED-CHECKER" in control, (
+            "the control: plain git does return the substitute")
+        r = _launch(ceremony, mode=("--scan-digest",))
+        assert r.returncode == 0, r.stderr
+        assert "REPLACED-CHECKER" not in r.stdout and "ANCHOR-CHECKER" in r.stdout
+
+    def test_a_filter_in_the_repository_cannot_rewrite_the_anchors_checker(
+            self, ceremony):
+        repo = ceremony["repo"]
+        marker = ceremony["dir"] / "filter-ran"
+        info = repo / ".git/info"
+        info.mkdir(exist_ok=True)
+        (info / "attributes").write_text("bootstrap/** filter=evil\n")
+        _git_out(repo, "config", "filter.evil.smudge",
+                 f"sh -c 'echo ran > {marker}; echo print\\(1\\)'")
+        _git_out(repo, "config", "filter.evil.clean", "cat")
+        self._scan(ceremony)
+        archive = subprocess.run(
+            ["git", "-C", str(repo), "archive", "refs/cairn/gate-anchor",
+             "bootstrap"], capture_output=True, check=True).stdout
+        assert marker.exists(), (
+            "the control: `git archive` does run the filter on this repository")
+        marker.unlink()
+        r = _launch(ceremony, mode=("--scan-digest",))
+        assert r.returncode == 0, r.stderr
+        assert not marker.exists(), "a filter ran while the anchor was written"
+        assert "ANCHOR-CHECKER" in r.stdout and archive
+
+    def test_an_environment_variable_cannot_put_code_before_the_checker(
+            self, ceremony, tmp_path):
+        marker = tmp_path / "path-ran"
+        planted = tmp_path / "planted"
+        planted.mkdir()
+        (planted / "hashlib.py").write_text(
+            f"open({str(marker)!r}, 'w').write('ran')\n")
+        control = subprocess.run(
+            [sys.executable, "-S", "-c", "import hashlib"], capture_output=True,
+            env={"PYTHONPATH": str(planted)})
+        assert marker.exists() and control.returncode == 0, (
+            "the control: without -E the planted module is imported")
+        marker.unlink()
+        r = self._scan(ceremony, env={**os.environ, "PYTHONPATH": str(planted)})
+        assert r.returncode == 0 and "ANCHOR-CHECKER" in r.stdout, r.stderr
+        assert not marker.exists()
+
+    def test_a_pth_file_in_the_interpreters_packages_folder_does_not_run(
+            self, ceremony, tmp_path):
+        binary, marker = _interpreter_with_a_planted_pth_file(tmp_path)
+        values = _write_values(ceremony["bed"], override={"python": str(binary)})
+        r = self._scan(ceremony, values=values)
+        assert r.returncode == 0 and "ANCHOR-CHECKER" in r.stdout, r.stderr
+        assert not marker.exists(), "a .pth file ran before the anchor's checker"
+
+    @pytest.mark.parametrize("name,kind", [
+        ("bootstrap/tests/has space.py", "file"),
+        ("bootstrap/tests/quo\"te.py", "file"),
+        ("bootstrap/tests/linked.py", "symlink")])
+    def test_an_entry_that_is_not_a_plain_regular_file_refuses(
+            self, ceremony, name, kind):
+        repo = ceremony["repo"]
+        old = _git_out(repo, "rev-parse", "refs/cairn/gate-anchor").strip()
+        index = str(Path(ceremony["dir"]) / "scratch-index")
+        env = {**os.environ, "GIT_INDEX_FILE": index}
+        _git_out(repo, "read-tree", old, env=env)
+        for rel, text in {_CHECKER_PATH: _ANCHOR_CHECKER, name: "../x"}.items():
+            blob = _git_out(repo, "hash-object", "-w", "--stdin",
+                            data=text.encode()).strip()
+            mode = "120000" if kind == "symlink" and rel == name else "100644"
+            _git_out(repo, "update-index", "--add", "--cacheinfo",
+                     f"{mode},{blob},{rel}", env=env)
+        tree = _git_out(repo, "write-tree", env=env).strip()
+        new = _git_out(repo, "-c", "user.email=t@t", "-c", "user.name=t",
+                       "commit-tree", tree, "-p", old, "-m", "odd").strip()
+        _git_out(repo, "update-ref", "refs/cairn/gate-anchor", new)
+        r = _launch(ceremony, mode=("--scan-digest",))
+        assert r.returncode != 0 and "REFUSE:" in r.stderr, r.stdout
+        assert "ANCHOR-CHECKER" not in r.stdout
+
+    def test_an_anchor_with_no_checker_fails_and_prints_no_digest(self, ceremony):
+        r = _launch(ceremony, mode=("--scan-digest",))
+        assert r.returncode != 0
+        assert "ANCHOR-CHECKER" not in r.stdout
 
 
 class TestTheLauncherAndTheArtifactRefuseTheSameBadValues:
