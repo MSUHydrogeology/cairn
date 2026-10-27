@@ -28,7 +28,7 @@
     },
     {
       "dst": "AGENTS.md",
-      "hash": "sha256:5d5a6326e8684a805fe274429b1816f8f7393fca1875fb68c13a33afc1b6d255",
+      "hash": "sha256:babd4db6d7dc38f98921be3be11fafc4fd1181153f5d440d6a8118c9c0e3dd65",
       "src": "core/AGENTS.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -186,14 +186,14 @@
     },
     {
       "dst": "dev/plans/_template.md",
-      "hash": "sha256:86275df0f50d0041ae85e349834df45e32170c532c04f1cc842b4bfdf9f00822",
+      "hash": "sha256:cc0b20ee66ea151e44508535d09b7f1639f9cbbf0a04f8aa0969b293ae622a3c",
       "src": "core/dev/plans/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/proposals/_template.md",
-      "hash": "sha256:201284710257482b9ac41880951619b72fc0e227e3a263ef0e889068f90477a9",
+      "hash": "sha256:08eeeeb58bc13de267d94688049aa1d1c926f44b1df9872058b5c7e8878b7dd5",
       "src": "core/dev/proposals/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -221,7 +221,7 @@
     },
     {
       "dst": "dev/strategy/_template.md",
-      "hash": "sha256:6c58248d536c2cb26f40a4ad27af342c24d37e0cde6e32a64d10552abc04aa90",
+      "hash": "sha256:2cbfea23ffdab62621644af1fb869abdfba155f37c7055c83c3cc9729e12aa30",
       "src": "core/dev/strategy/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
