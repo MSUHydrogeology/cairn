@@ -542,6 +542,11 @@ def raw_tree(commit: str, *, repo: Path = _REPO):
     candidate-steerable. Non-regular entries refuse rather than being
     written: a symlink can redirect a write out of the destination, and a
     gitlink names content this repository does not hold.
+
+    A tracked compiled file (``.pyc``, ``__pycache__``) is materialized, not
+    refused: other readers share this tree, and the ceremony's range scan
+    reports each one as a hit the reader must explain (``scripts/repin.py``
+    refuses them outright for an ordinary ceremony).
     """
     entries = _tree_entries(commit, repo=repo)
     irregular = [(m, rel) for m, _s, rel in entries if m not in _REGULAR_MODES]
@@ -1290,7 +1295,26 @@ SCAN_PATTERNS: tuple[tuple[str, "re.Pattern[bytes]"], ...] = tuple(
          rb"|\.(?:unlink|rmdir|mkdir|touch|chmod|symlink_to|hardlink_to)\s{0,8}\("
          rb"|(?<![-=>0-9&<|])(?:>>|>)\s{0,8}(?:[\"']?\$|/(?!dev/null)|~)"),
         ("nosec", rb"nosec\b"),
+        # A shell command that deletes, moves, copies, relinks or re-modes a
+        # file, or touches an ssh key, at the start of a command. Lines in a
+        # script or runbook; a mention inside a quoted string, a bracket or
+        # backticks in prose does not start a command and does not match. A name followed by `=`, `(`, `.` or `,`
+        # is an assignment or a call in other languages, not this command.
+        ("shell-command",
+         rb"(?:^|[;&|]|\$\(|\b(?:then|do|else))\s{0,40}(?:sudo\s{1,8})?"
+         rb"(?:rm|mv|cp|chmod|chown|ln|tee|ssh-add|ssh-keygen)"
+         rb"\s{1,8}(?![=(\[.,:\s])"),
     ))
+
+#: The scan also reports every tracked compiled Python file in the candidate's
+#: tree, changed or not, under this name beside the line patterns.
+COMPILED_PATTERN = "compiled-file"
+
+#: Two blobs with more lines than this together are not compared line by line:
+#: the comparison is quadratic, about 2 s at this size and 8 s at double it for
+#: near-identical lines. Every line of the new blob then counts as added, so
+#: nothing is hidden, and the path is listed.
+_DIFF_MAX_LINES = 10_000
 
 #: A blob larger than this is listed, not read: the report must not hold a
 #: candidate-sized file in memory to look for a line in it.
@@ -1339,6 +1363,17 @@ def _blob_sizes(shas: list[str], *, repo: Path = _REPO) -> list[int | None]:
     return out
 
 
+def _is_compiled(rel: str) -> bool:
+    """A tracked path Python would load in place of its source: the rule
+    ``scripts/repin.py`` refuses on."""
+    return rel.endswith(".pyc") or "__pycache__" in rel.split("/")
+
+
+def _too_many_lines_to_diff(old: bytes | None, new: bytes) -> bool:
+    return (old is not None
+            and old.count(b"\n") + new.count(b"\n") + 2 > _DIFF_MAX_LINES)
+
+
 def _added_lines(old: bytes | None, new: bytes) -> list[tuple[int, bytes]]:
     """(1-based line number in *new*, line) for every line *new* adds to *old*.
 
@@ -1346,7 +1381,7 @@ def _added_lines(old: bytes | None, new: bytes) -> list[tuple[int, bytes]]:
     in the candidate's own tree makes git print "Binary files differ" and no
     lines at all, which would let a changed file report zero added lines."""
     new_lines = new.split(b"\n")
-    if old is None:
+    if old is None or _too_many_lines_to_diff(old, new):
         return list(enumerate(new_lines, 1))
     old_lines = old.split(b"\n")
     sm = difflib.SequenceMatcher(None, old_lines, new_lines, autojunk=False)
@@ -1427,6 +1462,8 @@ def _scan_range(anchor_tree: str, candidate_tree: str, changed: list[bytes],
             continue
         facts[raw]["scanned"] = True
         scanned_raw.append(raw)
+        if _too_many_lines_to_diff(blobs.get(osha) if osha else None, new_bytes):
+            listed.append((raw, "too many lines to compare; every line scanned as added"))
         for lineno, line in _added_lines(blobs.get(osha) if osha else None,
                                          new_bytes):
             for name, rx in SCAN_PATTERNS:
@@ -1434,14 +1471,23 @@ def _scan_range(anchor_tree: str, candidate_tree: str, changed: list[bytes],
                     hits.append({"path": _display_path(raw), "line": lineno,
                                  "pattern": name, "text": _display_path(line),
                                  "_k": (raw, lineno, name)})
+    # Python loads a compiled file in place of its source, so a reader of the
+    # source would not be reading what runs. Every tracked one is a hit, whether
+    # or not this range touched it (it is in the tree that would be blessed).
+    for rel in sorted(r for r in new_ents if _is_compiled(r)):
+        raw = rel.encode("utf-8", "surrogateescape")
+        hits.append({"path": _display_path(raw), "line": 0,
+                     "pattern": COMPILED_PATTERN,
+                     "text": "tracked compiled file: Python runs it in place of its source",
+                     "_k": (raw, 0, COMPILED_PATTERN)})
     hits.sort(key=lambda h: h["_k"])
     for h in hits:
         del h["_k"]
     listed.sort()
     scan = {
-        "patterns": [n for n, _ in SCAN_PATTERNS],
+        "patterns": [n for n, _ in SCAN_PATTERNS] + [COMPILED_PATTERN],
         "counts": {n: sum(1 for h in hits if h["pattern"] == n)
-                   for n, _ in SCAN_PATTERNS},
+                   for n in [n for n, _ in SCAN_PATTERNS] + [COMPILED_PATTERN]},
         "hits": hits,
         "listed": [{"path": _display_path(r), "reason": why}
                    for r, why in listed],
@@ -1674,7 +1720,7 @@ def check_anchor_position(anchor: str, head: str, report: Report, *,
 def check_authority_modules(anchor: str, report: Report, *,
                             repo: Path = _REPO,
                             admitted_authority: dict | None = None) -> None:
-    """The six Stage-B modules, recorded and compared (Phase 0 step 1).
+    """The six Stage-B modules, recorded and compared.
 
     A change is **not** a silent pass and **not** an ordinary refusal: it is
     ``review`` -- those bytes need genuine out-of-band human review, which no

@@ -64,6 +64,7 @@ _PLANTED = {
     "shell-true": "run(cmd, shell=True)",
     "file-write": "target.write_text(data)",
     "nosec": "x = 1  # nosec",
+    "shell-command": 'rm -rf "$HOME"',
 }
 
 
@@ -182,8 +183,44 @@ class TestLineScan:
             {"bootstrap/tests/_oracle.py": "a = 1\nb = 2\n"})
         scan = _report(repo, a, h)["scan"]
         assert scan["hits"] == []
-        assert scan["counts"] == {name: 0 for name, _ in P.SCAN_PATTERNS}
+        assert scan["counts"] == {name: 0 for name in
+                                  [n for n, _ in P.SCAN_PATTERNS] + ["compiled-file"]}
+        assert scan["patterns"] == [n for n, _ in P.SCAN_PATTERNS] + ["compiled-file"], (
+            "the page prints one line per name here, so a name left out prints no zero")
         assert scan["scanned"] == ["bootstrap/tests/_oracle.py"]
+
+    @pytest.mark.parametrize("line", [
+        'if [ -n "$x" ]; then rm -rf "$HOME"; fi',
+        "  mv a b",
+        "cd x && cp a b",
+        "sudo chmod 777 /etc/x",
+        "echo y | tee /etc/x",
+        "ssh-add -d key",
+        "ssh-keygen -p -f key",
+        "ln -s a b",
+        "true || chown root x",
+    ])
+    def test_a_shell_command_that_changes_files_or_keys_is_a_hit(self, tmp_path, line):
+        repo, a, h = _make_range(
+            tmp_path, {"bootstrap/reanchor.sh": "echo hi\n"},
+            {"bootstrap/reanchor.sh": "echo hi\n" + line + "\n"})
+        assert [x[2] for x in _hits(_report(repo, a, h))] == ["shell-command"], line
+
+    @pytest.mark.parametrize("line", [
+        "printf '%s\\n' \"run rm -rf later\"",       # a word inside a string
+        "cp = 3",                                      # a variable, not a command
+        "ln(x)",
+        "(ssh-add -l) lists the keys",                  # brackets and backticks in prose
+        "check `ssh-add -l` first",
+        "rm.append(y)",
+        "# remove it: rm is not run here",
+        "farm -x",
+    ])
+    def test_prose_and_other_languages_do_not_make_a_shell_command_hit(self, tmp_path, line):
+        repo, a, h = _make_range(
+            tmp_path, {"bootstrap/reanchor.sh": "echo hi\n"},
+            {"bootstrap/reanchor.sh": "echo hi\n" + line + "\n"})
+        assert _hits(_report(repo, a, h)) == [], line
 
     def test_every_deciding_path_is_scanned(self, tmp_path):
         files = {rel: "a = 1\n" for rel in _decides_paths()}
@@ -305,6 +342,88 @@ class TestLineScan:
         assert rep["scan"]["listed"] == [
             {"path": "bootstrap/tests/_oracle.py",
              "reason": "deleted, nothing added"}]
+
+
+class TestTrackedCompiledFiles:
+    """Python loads a compiled file in place of its source, so a reader of the source is not
+    reading what runs.  The scan reports every tracked one, whether or not the range touched it."""
+
+    _PYC = "bootstrap/tests/__pycache__/_oracle.cpython-313.pyc"
+
+    def test_a_compiled_file_added_in_the_range_is_a_hit(self, tmp_path):
+        repo, a, h = _make_range(
+            tmp_path, {"bootstrap/tests/_oracle.py": "a = 1\n"},
+            {self._PYC: b"\x00compiled"})
+        rep = _report(repo, a, h)
+        assert _hits(rep) == [(self._PYC, 0, "compiled-file")]
+        assert rep["scan"]["counts"]["compiled-file"] == 1
+
+    def test_a_compiled_file_the_range_did_not_touch_is_still_a_hit(self, tmp_path):
+        repo, a, h = _make_range(
+            tmp_path, {"bootstrap/tests/_oracle.py": "a = 1\n", self._PYC: b"\x00compiled"},
+            {"README.md": "x\n"})
+        assert _hits(_report(repo, a, h)) == [(self._PYC, 0, "compiled-file")]
+
+    def test_a_pycache_folder_and_a_pyc_suffix_each_count_and_lookalikes_do_not(self, tmp_path):
+        counted = ["pkg/__pycache__/data.txt", "stale.pyc", "a/b/c.pyc"]
+        lookalikes = ["pkg/my__pycache__/data.txt", "notes/pyc.md", "x.pyc.txt", "pycache/x.py"]
+        repo, a, h = _make_range(tmp_path, {"README.md": "x\n"},
+                                 {rel: b"x\n" for rel in counted + lookalikes})
+        assert sorted(p for p, _l, n in _hits(_report(repo, a, h)) if n == "compiled-file") == sorted(counted)
+
+    def test_the_tree_a_hand_ceremony_materializes_holds_the_file_and_the_report_names_it(self, tmp_path):
+        """A hand ceremony reads the tree through `raw_tree`, which does not refuse a compiled file
+        (`repin` does, for an ordinary one); the report is what tells the reader it is there."""
+        repo, a, h = _make_range(
+            tmp_path, {"bootstrap/tests/_oracle.py": "a = 1\n"}, {self._PYC: b"\x00compiled"})
+        with P.raw_tree(h, repo=repo) as tree:
+            assert (tree / self._PYC).read_bytes() == b"\x00compiled"
+        assert (self._PYC, 0, "compiled-file") in _hits(_report(repo, a, h))
+
+    def test_a_hostile_compiled_path_is_escaped(self, tmp_path):
+        repo, a, h = _make_range(tmp_path, {"README.md": "x\n"},
+                                 {"__pycache__/\x1b[31mx.pyc": b"x"})
+        (path, _l, _n), = _hits(_report(repo, a, h))
+        assert all(0x20 <= ord(c) < 0x7F for c in path) and "\x1b" not in path
+
+
+class TestTheLineComparisonIsBounded:
+
+    def test_a_file_past_the_limit_is_listed_and_every_new_line_is_scanned(self, tmp_path):
+        filler = "x = 1\n" * (P._DIFF_MAX_LINES // 2 + 10)
+        repo, a, h = _make_range(
+            tmp_path, {"bootstrap/tests/_oracle.py": filler},
+            {"bootstrap/tests/_oracle.py": filler + "import subprocess\n"})
+        rep = _report(repo, a, h)
+        assert _hits(rep) == [("bootstrap/tests/_oracle.py", P._DIFF_MAX_LINES // 2 + 11, "process-start")]
+        assert {"path": "bootstrap/tests/_oracle.py",
+                "reason": "too many lines to compare; every line scanned as added"} in rep["scan"]["listed"]
+
+    def test_a_file_past_the_limit_cannot_hide_a_planted_line_among_moved_ones(self, tmp_path):
+        """Counting every line as added means an unchanged line that matches a pattern is a hit
+        too: more noise, never less."""
+        filler = "x = 1\n" * (P._DIFF_MAX_LINES // 2 + 10)
+        repo, a, h = _make_range(
+            tmp_path, {"bootstrap/tests/_oracle.py": "import subprocess\n" + filler},
+            {"bootstrap/tests/_oracle.py": "import subprocess\n" + filler + "y = 2\n"})
+        assert [x[2] for x in _hits(_report(repo, a, h))] == ["process-start"]
+
+    def test_a_large_near_identical_file_is_scanned_in_seconds(self, tmp_path):
+        import time
+        filler = "x = 1\n" * 60000
+        repo, a, h = _make_range(
+            tmp_path, {"bootstrap/tests/_oracle.py": filler},
+            {"bootstrap/tests/_oracle.py": filler + "z = 3\n"})
+        began = time.monotonic()
+        _report(repo, a, h)
+        assert time.monotonic() - began < 20
+
+    def test_a_file_under_the_limit_is_still_compared_line_by_line_and_not_listed(self, tmp_path):
+        repo, a, h = _make_range(
+            tmp_path, {"bootstrap/tests/_oracle.py": "import subprocess\nx = 1\n"},
+            {"bootstrap/tests/_oracle.py": "import subprocess\nx = 1\ny = 2\n"})
+        rep = _report(repo, a, h)
+        assert _hits(rep) == [] and rep["scan"]["listed"] == []
 
 
 class TestAnchoredScanDigest:
