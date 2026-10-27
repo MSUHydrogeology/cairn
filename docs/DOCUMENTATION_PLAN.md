@@ -66,8 +66,10 @@ how something is built or organized**.  The layer has two ranges:
 * **Cross-cutting governing doctrine** -- prescription that applies
   to every Cairn contributor regardless of task.  In Cairn:
   * `cairn/doctrine/` -- Cairn's **published methodology doctrine**
-    (rationale, session-routines, lifecycle, doc-governance,
-    dual-review, fold-back, onboarding, rate-limit-gate, roles).
+    (rationale, which also holds the rate-limit gate; lifecycle and
+    its contract; proposals; plans; dual-review; roles; collaboration-stance;
+    coordination; session-routines; onboarding; doc-governance; runtime-contract;
+    consolidation-review).
     These files are the doctrine Cairn ships *as content* to every
     adopter -- not installed into the adopter's tree, but cited
     from `cairn/templates/core/AGENTS.md` references and read in

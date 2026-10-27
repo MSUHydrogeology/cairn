@@ -17,11 +17,18 @@ understand the method; copy `templates/` to adopt it.
 |------|-------------------------|
 | `README.md` (this file) | How is doctrine organized; what is the documentation model? |
 | `lifecycle.md` | How does a change move from idea to shipped — the proposal and plan lifecycles? |
+| `lifecycle-contract.md` | What are the legal states, the legal transitions, and the authority each transition needs? |
+| `proposals.md` | What is specific to a proposal — its sections, review passes and Decision? |
+| `plans.md` | What is specific to a plan — chunks, plan review, code review and archive? |
 | `dual-review.md` | How is a change reviewed — one stance at every stage, and how distance is recorded? |
 | `roles.md` | Who does what — the role roster and how it scales with the team? |
 | `collaboration-stance.md` | How do the team's agents engage each other — the collaborative-skeptic conduct stance? |
 | `coordination.md` | How do concurrent contributors coordinate without colliding? |
 | `session-routines.md` | How does a work session start and end so context survives handoff? |
+| `onboarding.md` | How does a new project get oriented — once, at install? |
+| `doc-governance.md` | Where does a piece of documentation or doctrine content live? |
+| `runtime-contract.md` | What must an adopter provide to run the scaffold engine — the Python floor and the tested matrix? |
+| `consolidation-review.md` | What does the manual half of the redundancy gate check? |
 | `rationale.md` | Why this method at all — the framework anchors and the gap analysis behind it? |
 
 The invariant core is small by design. A project running Cairn
