@@ -679,6 +679,20 @@ def _detached_checkout(head: str) -> Iterator[Path]:
                         f"({(proc.stderr or '').strip() or 'git worktree remove failed'})")
 
 
+# The Python members of the ceremony's authority closure
+# (``_gate_preflight.declared_authority_closure()``), repo-relative. Spelled out
+# here because this module cannot import test-tree code; kept honest by a test.
+_CEREMONY_CLOSURE_PY: tuple[str, ...] = (
+    "bootstrap/tests/_gate_preflight.py",
+    "bootstrap/tests/_gate_manifest.py",
+    "bootstrap/tests/_gate_reanchor.py",
+    "bootstrap/tests/_gate_transition.py",
+    "bootstrap/tests/_oracle_activation.py",
+    "bootstrap/tests/_oracle.py",
+    "bootstrap/tests/_oracle_trust.py",
+)
+
+
 def scan_targets() -> list[str]:
     """The executable surface to scan, derived from Cairn's source of truth:
     every **verbatim** (byte-for-byte, un-substituted) ``.py`` in the
@@ -725,6 +739,12 @@ def scan_targets() -> list[str]:
             str(p.relative_to(CAIRN_ROOT))
             for p in engine_pkg.rglob("*.py")
         )
+    # The Python files that decide what a re-anchor ceremony blesses and runs.
+    # They live under bootstrap/tests/, which the globs above leave out on
+    # purpose (attack fixtures), so they are named one by one; a test compares
+    # this tuple with the checker's own declared closure so a new member
+    # cannot go unscanned.
+    targets.update(_CEREMONY_CLOSURE_PY)
     # Every verbatim .py the scaffold ACTUALLY installs, from the published
     # install manifest -- the same enumeration adopters depend on through
     # `scaffold.py --manifest`. Two facts here are load-bearing:

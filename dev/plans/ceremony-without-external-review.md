@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-27-claude-ceremony-without-external-review.md](../proposals/archive/2026-10-27-claude-ceremony-without-external-review.md)
-**Status**: ready-to-implement
+**Status**: implementing
 **Waiting on Maintainer**: first ceremony (final chunk)
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27
@@ -29,7 +29,6 @@ Accepted 2026-10-27 as revised (Decision `c88e4a62`); **Revision 3 is the whole 
 **Transitions (second and later).** The anchored runbook prints one command that extracts the anchor's own `bootstrap/tests` into an empty folder and runs its checker's `scan-digest` (C2); he compares it with the page's (E7), so candidate code does not judge itself. The first ceremony has no anchored scan; the page and record say it rests on builder and reader.
 
 Proposed paths:
-* `bootstrap/tests/test_ceremony_review_report.py`
 * `dev/ceremony-record.md`
 
 **Frozen files and AST, derived 2026-10-27** from `_frozen_files` globs, the 195 keys of `gate_manifest.json` and read-only `verify --no-collect`.
