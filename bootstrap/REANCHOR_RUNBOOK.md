@@ -24,7 +24,7 @@ Because Stage B pins the executing verifier code against `P`'s frozen gate
 manifest, the **current** `P` must already pin those verifier modules. The
 existing anchored manifests do **not** (the Stage-B modules were introduced later
 and read as `FROZEN-NEW`). Establishing a `P` that pins them is itself a
-trust-root transition — so it is done **once, supervised, out-of-band**, never
+trust-root transition — so it is done **once, supervised**, never
 silently by the promotion command (round-6 Finding 1).
 
 ---
@@ -45,7 +45,7 @@ package.
 
 | | what | where it comes from |
 |---|---|---|
-| 1 | **The instantiated launcher** | The External Security review that read it. Delivered out of band, with its SHA-256, which you verify against the review's record before running it. |
+| 1 | **The instantiated launcher** | The External Security review that read it. Delivered with its SHA-256, which you verify against the review's record before running it. |
 | 2 | **The authorization packet** | The same review, as a pair with the launcher. You do not verify it separately — its digest is bound into the launcher, so checking the launcher's digest covers both. |
 | 3 | **Your values file** | You, once. Copy `bootstrap/reanchor-values.example`, fill it in outside the repository, and keep it. See the refresh note below. |
 | 4 | **The ceremony key** | You. Dedicated, encrypted at rest, in no agent, used for nothing else — the **N4** precondition, and the one fence in this ceremony that no code can enforce. See `SECURITY.md` > *The ceremony key is dedicated*. |
@@ -280,7 +280,7 @@ block to edit and no instruction to mis-follow.
 
 > **Do not copy this.** It is here so you can read what you are about to run.
 > The launcher you actually run is the one the External Security review
-> produced and delivered out of band, with its SHA-256 recorded in that
+> produced and delivered, with its SHA-256 recorded in that
 > review — and its bytes differ from these by exactly one filled slot. Verify
 > the digest of *that* file against *that* record. A launcher assembled from
 > this document is a launcher nobody reviewed.
@@ -374,7 +374,8 @@ security review of the exact checker bytes and this invocation text, with the
 reviewed hashes recorded by the Maintainer alongside who compared them and at
 which commit.
 
-1. **Review the exact verifier bytes out-of-band.** The Maintainer reviews and
+1. **Review the exact verifier bytes and compute their hashes yourself** (`shasum -a 256`,
+   independently of the tool, before and apart from step 2). The Maintainer reviews and
    records the sha256 of each Stage-B authority module *at the reviewed commit*:
 
    * `bootstrap/tests/_gate_reanchor.py`
@@ -398,7 +399,7 @@ which commit.
 
    `produce()` frozen-hashes every `bootstrap/tests/**/*.py` — so the new manifest
    **pins all six Stage-B verifier modules** (they move from `FROZEN-NEW` to
-   pinned). Confirm the pinned hashes equal the out-of-band-authorized values from
+   pinned). Confirm the pinned hashes equal the values you recorded in
    step 1 before committing — that equality is what makes this a *reviewed* pin and
    not a self-generated one.
 
@@ -435,11 +436,17 @@ which commit.
    The reflog remains a **local, mutable diagnostic** — see *Audit trail*.
 
 **Why this is not circular / self-authorizing.** The verifier code is pinned by a
-commit the Maintainer authored and reviewed out-of-band (step 1's recorded
+commit the Maintainer authored and reviewed separately (step 1's recorded
 hashes == step 2's produced pins), confirmed by the externally-anchored
 gate-manifest verify (step 3). The promotion command never creates `P`; it only
 *reads* it. The new verifier code is trusted because the Maintainer blessed its
 exact bytes, not because it asserted its own trust.
+
+**Dated 2026-10-27.** Handing a file to the Maintainer on the machine the
+ceremony runs on adds no assurance of its own; the assurance is the review and
+the digest you compare. Revisit this section if the ceremony gains an external
+or hardware-backed authority. Nothing observes that: no job fires this, and
+only a person remembering it does.
 
 ---
 
