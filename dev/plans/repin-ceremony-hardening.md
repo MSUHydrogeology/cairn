@@ -289,3 +289,27 @@ Scoped verification (interpreter `/Users/kendal30/conda_envs/lhm/bin/python3.13`
 * `test_gate_preflight.py` 320, `test_reanchor.py` 191, `test_repin.py` 107, `test_repin_ceremony.py` 75, `test_reanchor_driver_disclosures.py` 14: 707 passed, none skipped, xfailed or xpassed (`-rfsxX`).
 * Gates: `quality_gate.py --sub neutrality --sub redundancy` fail=0 / fail=0; `check_cairn.py` OK; `claim_check.py` on the plan: no flags.
 * Not run: `test_ast_attest.py` baseline (the engine package is untouched); `_gate_manifest.py verify` (already reports the owed re-anchor on many frozen files, so it cannot show this edit); a certifying run.
+
+## Code review (widening of H) -- Claude Sonnet 5.5 (fresh session) -- 2026-10-27
+
+**Reviewed commit**: `308877ab` (the two wording edits in `write_package`, `bootstrap/tests/_gate_preflight.py`). Short second look; the main change was cleared at `8a58f862`.
+
+**Foundations**
+1. Does it do what it claims? Yes: two comment/docstring edits, no code change (`git show 308877ab -- bootstrap/tests/_gate_preflight.py`; AST of `308877ab^` and `308877ab` equal with docstrings blanked).
+2. Simpler or safer? No simpler build exists; a plain drop (comment) and a one-phrase swap (docstring) is the smallest edit that removes the claim.
+3. What would show it wrong? A test reading either phrase, a changed behaviour, or a touched repin file: `git grep` of the old and new phrases over `bootstrap/tests scripts`, the `5293f570` diff and the two scoped runs found none (ledger below).
+
+**Falsification ledger**
+* Scope: Maintainer's words ("Yes, before the hand ceremony", to "Widen H to the two checker comments?") cover two checker comments; the diff touches exactly those two sites plus the plan. Nothing else.
+* AST with docstrings blanked, python3.13: equal. Printed output and strings a test reads: unchanged (no test greps the old phrases; the other `by eye` hits are in `scripts/`, untouched).
+* Truth at both sites: `write_package` returns a digest of the bytes it wrote and asks nothing of a channel; "computes independently of this tool" is what the Maintainer does with `shasum -a 256`. The comment keeps the true part (compared by eye against `shasum` output). Both read true.
+* Every step and assurance kept: the external-digest rule, `O_EXCL`, symlink refusals, bare hex are all in the diff's unchanged lines.
+* `:1398` "REVIEW REQUIRED, out-of-band": names a human review of bytes, not how a digest is delivered; leaving it is right.
+* `scripts/repin.py`, `test_repin.py`, `test_repin_ceremony.py`: `git diff --stat 5293f570 308877ab` empty, so M2's reviewed commit stays `5293f570`.
+* Re-anchor: keyed frozen file already edited by this plan; bytes change again and the hand ceremony pins the new bytes. No finding ids or plan coordinates added to the durable file.
+* Detached worktree of `308877ab`, python3.13.13: `test_gate_preflight.py` 320 + `test_reanchor.py` 191 = 511 passed (130 s). Worktree removed.
+
+**Findings**: Blocking: 0. Non-blocking: 1.
+* N1: the rewrapped comment leaves a short line ("by eye" ending a line, `:2353`). Cosmetic; leave it, since re-editing would change the bytes again for no gain.
+
+**Coverage**: did not run the full suite, a re-anchor, `repin ceremony`, `test_ast_attest.py`, `_gate_manifest.py verify`, or the two repin test files (the author's 107 and 75 stand on an unchanged `5293f570` range); did not review the remaining out-of-band sites the plan leaves (driver `:743`, `:163`).
