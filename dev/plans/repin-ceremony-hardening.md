@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md](../proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md)
-**Status**: revising-code
+**Status**: ready-to-archive
 **Waiting on Maintainer**: hand re-anchor after this lands
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27
@@ -253,3 +253,22 @@ Also added: C2 rewords the `:49` docstring ("The R1 bed") to say what the bed is
 **For the Maintainer.** (1) B1 changes one sentence in the plan, not a file in the range. (2) The "delivery adds assurance" wording still sits in `_gate_preflight.py` (`:2330`, `:2353`, "out of band") and in the driver (`:743`); the runbook no longer says it, so a reader sees both. Editing the checker's two comments now costs no extra ceremony only if done before the hand ceremony and reviewed first; widening H stays his call.
 
 **Coverage.** Not covered: a real `rehearse` against a real candidate (D10 is stopped at the import by design); the launcher past `EXPECTED_PATHS` and the verification loop (`template:40-75`, `:500-552`); `reanchor.sh`; the by-hand ceremony and C7's second command against a real packet and real launcher (run only against a locally filled copy); `test_gate_manifest.py`; every other "out-of-band" file (13 files, read by count only); whether the mutants' equivalents could exist among the 28 survivors (none was argued or measured equivalent).
+
+## Response to code review -- Claude Sonnet 5.5 (Implementation, fresh session) -- 2026-10-27
+
+All four findings answered; B1 is fixed and measured, and Status moves to `ready-to-archive` (no clearing round). The Decision is not reopened. Commits: `afd8c95d` (B1), `c7fdce92` (N1, N2).
+
+* **B1 -- accept.** C7 (`:86`) now ends both commands in `&& echo SAME || echo DIFFERENT` and says a command that prints nothing, or whose last line is not `SAME`, has not passed. Measured in a scratch repository on the real template: first command `SAME` (identical commits) and `DIFFERENT` (one differing line); second `SAME` (filled launcher), `cmp: EOF on stdin` then `DIFFERENT` (one byte appended), `differ: char 1537, line 35` then `DIFFERENT` (slot filled with another digest). `grep` for `diff --quiet`, `cmp -` and "no output" finds neither command nor the claim in the runbook or the template, so neither is edited (no closure member changed).
+* **N1 -- accept.** `test_a_matching_pair_is_accepted_and_says_so` asserts both `sha256` lines; the unchanged-closure node asserts the template identity line. Mutants in detached worktrees of `c7fdce92` beside a control (14 passed): delete the packet `sha256` say (`scripts/reanchor_ceremony.py:283`) killed (1 failed, in the matching-pair node); the launcher one (`:285`) killed (same node); the template identity statement (`:212-213`) killed (1 failed, in the unchanged-closure node). Survived 0, equivalent 0.
+* **N2 -- accept, drop the duplicate.** The "leftover module" parameter set an entry the next statement replaced with `None`, so it ran the same statements as "nothing else"; it is removed (with the unused `types` import) and the comment says why. Two parameters remain, which differ in the real `sys.path` entry. Measured in a worktree of `c7fdce92`: with the `None` line removed both remaining parameters fail (2 failed, 12 passed), so each is still sensitive.
+* **N3 -- accept, passed to the driver-cleanup writer (not edited here).** The writer must know: the docstring at `scripts/reanchor_ceremony.py:163` is stale (the template is now a closure member), and `:176` formats an undefined `template`, so a template with no `EXPECTED_PATHS` raises `NameError` instead of refusing; neither is a deletion-only fix. The `:743` print is the third spot.
+* **Recorded, one line (the review's note):** `bootstrap/tests/_gate_preflight.py` `:2330` and `:2353` and the driver's `:743` still carry the "delivery adds assurance" wording; widening H to them is the Maintainer's call, and `_gate_preflight.py` is edited before the hand ceremony only if he says so.
+
+## Implementation verification (addendum) -- Claude Sonnet 5.5 (Implementation) -- 2026-10-27
+
+Tested SHA `c7fdce92` (the tree is the range plus `afd8c95d`, a plan-text commit; `git status` showed only untracked `.claude/` and `dev/measurement/collision_log.md`). Interpreter `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13), `PYTHONDONTWRITEBYTECODE=1`, `-rfsxX`: no skip, xfail or xpass. **Certified by**: pending. **Boundary B mode**: full for the range (record above); these two commits are text and one test file. `CAIRN_FULL_SUITE` not set.
+* `test_reanchor_driver_disclosures.py` 14 passed (was 15; one duplicate parameter dropped); `test_reanchor.py` 191; `test_gate_preflight.py` 320; `test_repin.py` 107; `test_repin_ceremony.py` 75, all passed.
+* Gates: `quality_gate.py --sub neutrality --sub redundancy` fail=0 / fail=0; `check_cairn.py` OK; `claim_check.py` on the plan and the test: no flags; `link_check.py` 3 issues, all in `templates/modules/default-on/documentation-plan.md`, untouched.
+* New mutants: packet digest line, launcher digest line, template identity line: 3 killed, 0 survived, 0 equivalent (control 14 passed); D10 without the `None` line: 2 failed of 2 parameters.
+* C7 commands: 5 outputs measured in a scratch repository (`/private/tmp/claude-501/-Users-kendal30-Code-cairn/66d87e18-52ca-44fc-b226-0817c96bdc10/scratchpad/c7.sh`), listed in B1 above.
+* Not verified: a real packet and launcher; the by-hand ceremony; a certifying run; `test_gate_manifest.py`. Files edited in this response: the plan and `bootstrap/tests/test_reanchor_driver_disclosures.py` only (a new, FROZEN-NEW file); no closure member, no frozen keyed file, no `scripts/` file. The M2 commit stays `5293f570` (`git diff --stat 5293f570 HEAD` over the three repin files: nothing).
