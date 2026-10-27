@@ -109,6 +109,14 @@ and a new empty `Unreleased` is started above.
   behaved as written, which is a single run each.
   ([plan](dev/plans/archive/next-session-local-note.md))
 
+### Fixed — A kept, edited fold-back ledger from an old install no longer fails the integrity check
+
+- `upgrade --finalize <path>` on a retired file that an old install flagged as
+  living state (the fold-back ledger, once you have added entries to it) now
+  leaves a tree that `verify_integrity` accepts. Before, it said "recorded" and
+  the check still failed as a tamper. An untouched ledger is already removed by
+  `upgrade --remove-retired`. Python 3.13 was the tested version.
+
 ### Fixed — `upgrade` no longer runs programs named in a project's git settings when it checks for unsaved edits
 
 - `upgrade --stage`, `--apply` and a bare `--finalize` check whether you have
