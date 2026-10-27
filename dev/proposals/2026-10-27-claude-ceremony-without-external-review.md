@@ -1,7 +1,7 @@
 # Let a fresh local agent read the re-anchor ceremony's code, and ask the Maintainer only for what he can do
 
 **Author**: Claude Sonnet 5.5 (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27
@@ -392,3 +392,158 @@ I (checker messages the launcher does not print): stay deferred, trigger kept (t
 **Verified**: anchor unsigned (`%G?` N); stage 2 requires `G`, a roster principal and the probed fingerprint (`_gate_preflight.py:2690-2712`); Q2 covers today's range (9 `_scaffold` + 2).
 
 **Coverage.** Read-only commands only; no suite, ceremony or Bandit run. Not checked: Phases 0 and 4, the launcher's full values reader, stage-1 host tampering.
+
+## Response to the Security Review -- Claude Sonnet 5.5 (author) -- 2026-10-27
+
+I checked each point in the tree first. "Measured" is a command I ran,
+"read" is code I read.
+
+* **B1 accept.** Read: `scripts/repin.py:289-294`, `:1027` make any closure
+  change a by-hand ceremony, so the launcher, checker, scan and page all come
+  from the candidate. Revision 3 says so and adds a condition from the second
+  ceremony: the anchor's checker recomputes the scan.
+* **B2 accept.** Read: the values file names the `git` and `shasum` that hash
+  every closure blob before candidate code runs (launcher template `:540`;
+  runbook `:50`). It stays the Maintainer's; the page prints each path and he
+  compares it with `command -v`; chunk 7 keeps that step.
+* **N1 accept.** Measured in a scratch repository: a `-diff` attribute makes
+  `git diff -U0` print only "Binary files differ", so zero lines. Chunk 2
+  diffs raw blobs, lists unreadable or oversized blobs and modes 100755,
+  120000, 160000, never truncates, encodes new fields, and the hand-path
+  renderer refuses unprintable text.
+* **N2 accept.** Scan covers every *decides* path, which includes
+  `scripts/repin.py`, `scripts/reanchor_ceremony.py` and
+  `bootstrap/tests/conftest.py` (read: the file exists).
+* **N3 accept.** The artifact keeps its own argument checks; the launcher
+  mode re-verifies and then runs the artifact, because the launcher cannot
+  render without `python`. A test fails if a seventh program appears before
+  the first `exec`. The parity test (`test_reanchor.py:1360`) is replaced by
+  hostile values files refused by the real launcher.
+* **N4 accept.** Pytest sets `PYTEST_CURRENT_TEST` itself (assumed from
+  pytest's behaviour, not run), so chunk 5 refuses only the steering
+  variables.
+* **N5 accept.** Read: `repin` stops at boot when a listed file differs, so
+  `repin packet` cannot run in a transition. The first packet is hand-built;
+  the launcher's per-row digest check verifies it.
+* **N6 accept.** The page prints every `allowed_signers` fingerprint and
+  flags any change since the anchor.
+* **N7 accept.** Read: `reanchor.sh:652-661` advises `ssh-add` and forwards
+  `SSH_AUTH_SOCK`, while `repin.py:801-803` strips that advice. The page holds
+  the exact stage-2 command, and chunk 7 edits the artifact's advice text.
+* **N8 accept.** Read: `test_security_lint.py:149` skips when Bandit is
+  absent locally; the record must show the Bandit line ran. Q2 is
+  re-derived from the final tree.
+
+## Revision 3 -- Claude Sonnet 5.5 (author) -- 2026-10-27 -- the complete current contract
+
+**Conclusion first.** Build all of it before the 0.5 cut, as Revision 2, with these changes. Revision 2's sections "What is true
+today", "The Maintainer's part, and the agent's", "The page, and what the
+scan covers", "The first ceremony" and "Other queued items" stand as
+written, except where this revision says otherwise. His words are quoted in
+Revision 2.
+
+**What his yes protects, and what it does not.** It protects this: the
+anchor moves only to the exact commit he named, signed with his own key,
+and nothing changed between what the agents read and what ran. It does
+not protect against a harmful change the agents wrote or missed. His
+digests prove which commit is blessed, not what is in it.
+
+**What a transition cannot give (corrects Revision 2).** A ceremony that
+changes any of the 11 closure files runs by hand, because
+`scripts/repin.py:1027` refuses it. There, the launcher, checker, scan and
+page are all candidate code, so "an unreported closure change is still
+stopped" holds only in ordinary ceremonies. Two controls follow. **From
+the second transition on, the scan is computed by the anchor's checker,
+extracted from the anchor's tree, and compared with the candidate's;
+a difference stops the ceremony.** The first ceremony has no such anchor,
+so it rests on the builder, the reader and the record, and says so.
+
+**The values file stays his.** It names the `git` and `shasum` that hash
+every closure blob before candidate code runs. He fills it once, outside
+the repository. The page prints each tool path and he compares it with
+`command -v <tool>`; this is equality E6. No agent writes it.
+
+### Chunks, in order (1 to 6 code, 7 prose)
+
+1. **Scanner coverage.** `scan_targets()` gains the 7 Python closure
+   members, with a planted-line control. The record shows the Bandit run
+   line, because the test skips silently when Bandit is absent.
+2. **Report items.** `range_review_report` and its renderer gain the
+   role label (decides, pinned, other), the executable list and the line
+   scan. Diff raw blobs, not `git diff`. List unreadable or oversized
+   blobs and modes 100755, 120000, 160000; never truncate hits; encode new
+   fields; refuse unprintable text. Scan every *decides* path (closure,
+   `scripts/repin.py`, `scripts/reanchor_ceremony.py`,
+   `bootstrap/tests/conftest.py`), the sensitive roster, and new files
+   under `scripts/` and `bootstrap/` outside tests; list all else by class
+   and name, as "not line-scanned". Print every `allowed_signers`
+   fingerprint and flag a change. Add the anchor-checker recomputation
+   above. No new closure member.
+3. **Driver cleanup.** Delete `drive()`, `--run`,
+   `scripts/correct_pinned_digests.py` and its test; fix the stale
+   docstring, the undefined `template`, and the printed commands.
+4. **`repin`.** A `packet` verb for ordinary ceremonies (it cannot run in
+   a transition, so the first packet is hand-built and the launcher
+   verifies every row); A2; Summary 2 shows the report; the prompt says
+   "the record".
+5. **Evidence environment.** Reproduce first, directly and through the
+   launcher. On the launcher path `env -i` already empties the
+   environment, so the direct call is the likely only hit. Refuse
+   `PYTEST_ADDOPTS`, `PYTEST_PLUGINS` and `PYTEST_DISABLE_PLUGIN_AUTOLOAD`,
+   not every `PYTEST_*` (pytest sets `PYTEST_CURRENT_TEST` itself); add
+   `-B` only if a committed compiled file is shown to load.
+6. **One values reader; last code chunk, droppable.** The launcher stays
+   the only parser. First extend the parity matrix to all 13 keys; then
+   replace it with hostile values files refused by the real launcher
+   before any program runs. The artifact keeps its own argument checks.
+   Launcher modes re-verify, then run the artifact, since the launcher
+   cannot render without `python`. A test counts the programs used before
+   the first `exec` and fails at seven. **Falsifier:** a seventh program
+   or a new grammar drops this chunk; nothing depends on it.
+7. **Prose and tests.** The runbook becomes one page: the values-file
+   step and E6, the launcher command, the page, the exact stage-2 command
+   (no `ssh-add`; the artifact's advice text is edited to match), the
+   push, and the first-ceremony authorization. The deletions, kept parts
+   and dependent tests are as Revision 2 chunk 7 lists them. The runbook
+   stays a closure member.
+
+Then: one code review; a Security Review reading the launcher and artifact
+whole, the checker's changed hunks, `repin`'s verb and A2, the driver diff
+and the runbook; a certifying run; builder and reader; the ceremony.
+**Cost to the cut: time, assumed several working days, not measured;**
+causes of delay as in Revision 2.
+
+### Questions for the Maintainer
+
+1. **Lift two fences: R6b's (agents write the driver cleanup) and the
+   deferral of the runbook cut?** Default: yes. If not: you write it or
+   wait, and the old driver path stays through the first ceremony.
+2. **Authorize the first ceremony under the new, not-yet-anchored text,**
+   in your words, naming the three sensitive-roster groups
+   (`bootstrap/_scaffold/`, `bootstrap/security_check.py`,
+   `bootstrap/tests/_gate_manifest.py`) and the dropped test nodes,
+   re-derived from the final tree? Default: yes. If not: no way to run the
+   first transition.
+3. **Keep the one-page runbook a pinned closure member?** Default: yes.
+   If not: what you are told could change without a transition.
+4. **Build the one-reader launcher change (chunk 6)?** Default: yes. It
+   removes one of two parsers of your values file; no gain at the
+   ceremony. If not: two parsers remain.
+5. **Build the session-start stale-pin warning?** Default: no. Lost:
+   staleness stays visible only on demand.
+6. **Is a same-vendor fresh reader acceptable as the standing reader?**
+   Default: yes, stated in each record. Another model adds distance, costs
+   availability.
+
+**Scope delta**: degraded, one unit: the standing External reader is
+replaced by the fresh local reader; **disposition**: guard. **Assurance
+path**: `high-assurance`. **Review**: usual + Security Review. **Plan
+review**: required(Internal + Internal Security Review).
+
+### Withdrawn / superseded commitments
+
+* Revision 2's claim that a closure change is "still stopped" in every
+  ceremony: now true only in ordinary ones.
+* Chunk 7's runbook without the values-file step: it keeps that step.
+* Chunk 5's refusal of every `PYTEST_*` variable: only the steering ones.
+* The narrower scan scope and `git diff`-based scanning.
