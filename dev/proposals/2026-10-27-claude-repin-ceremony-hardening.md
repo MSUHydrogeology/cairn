@@ -1,7 +1,7 @@
 # Finish the re-anchor ceremony work the repin build left out
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27
@@ -90,3 +90,41 @@ Each has a recommended default. A "yes" to the default is enough.
 * **Q5. Build E (a warning at session start when a pin is stale)? If so, after how many protected-path commits since the last pin?** Default: no. If yes, the earlier ceremony ran at 362 commits stale and 74 changed files, and the build proposal measured 5 commits since the last pin; I would pick 25, but I have no evidence for it.
 * **Q6. Drop F (dedicated ceremony key and anchor-tier confirmation)?** Default: yes, the earlier Decision stands.
 * **Q7. Drop G (sterile worktree), keeping the "blocks twice" trigger?** Default: yes.
+
+## Review -- Claude Sonnet 5.5 (Internal, fresh session) -- 2026-10-27
+
+```
+Reviewed commit: e9bf23de (proposal text); tree checked at a0f31a8e
+Target: the whole proposal, read against scripts/repin.py, scripts/reanchor_ceremony.py, bootstrap/REANCHOR_RUNBOOK.md, dev/PLANNING.md and dev/plans/repin-build.md
+Prior findings: none
+Assurance path: high-assurance (not contested)
+```
+
+**Conclusion.** The seven-item split is sound and the drops (F, G) and the closed item are right. Two blocking findings: A's cost to the 0.5 cut is not stated (so Q1 cannot be answered), and B is not yet described precisely enough to plan. Everything else is non-blocking.
+
+### Foundations
+
+1. **Should it exist as framed, doing nothing included?** Yes, with changes. Doing nothing leaves the note's two pre-registered criteria open, and the note is retired (dev/strategy/archive/2026-08-28-claude-repin-revitalization.md:346-349). But A and B are not equally urgent or equally priced (B1, B2). Backing: scripts/reanchor_ceremony.py:156-169 (template read, pinned by nothing); no test names the driver's rehearsal banner (grep of bootstrap/tests/test_*.py for "rehearse"/"READ THIS BEFORE" finds none).
+2. **Strongest alternative.** Build A as an advisory instead: have the driver and `repin package` print the template's digest at the anchor next to the candidate's and flag a difference. No closure change, no transition ceremony, no new packet. Cost: the anchor's signature does not cover the template as a listed member, so the packet does not bind it. Backing: the driver already prints the candidate's template digest (scripts/reanchor_ceremony.py:211-214) and reads blobs at the anchor (:231).
+3. **What would make me withdraw.** If the plan finds that A makes M3 a first-ever by-hand transition needing a new packet and launcher review that cannot land before the cut, A moves after the cut. Backing: bootstrap/REANCHOR_RUNBOOK.md:311-326 (a closure change is a transition and needs a reviewed member set), repin.py:1027 (`repin ceremony` refuses any closure difference).
+
+### Findings
+
+**B1 (blocking). A's effect on the cut is unstated.** "Rides the 0.5 re-anchor" does not say which one. Measured from the tree: A edits `_gate_preflight.py` (closure list), the launcher template (its fixed list at EXPECTED_PATHS must name itself; test_gate_preflight.py:4119-4131 compares the two), and the closure-arity test (:4094, 10 to 11). `_gate_preflight.py` is byte-compared by `repin` (bootstrap/tests/test_repin.py:40), so `repin ceremony` refuses after A until a ceremony anchors it. A therefore turns M3 (dev/PLANNING.md:250-252) from a steady-state by-hand ceremony into the first transition by hand: a reviewed eleven-member packet and a launcher rebuilt from the changed template (runbook :36-48). Order is also forced: A cannot land before M2 (its reviewed commit is 5670dda9) or it makes M2 refuse, the same trap plan B1 caught for R6b. The proposal's "ceremony lengthens" signal (Signals) is the only cost it names, and it is not weighed against the 0.5 cut or "plain, short". *Fix:* add a short "What A does to the cut" paragraph: sequence (after M2, before M3), what M3 becomes, what the packet and the gate-manifest list gain, and one more Q1 option: build A after the cut, with what that loses (template unpinned for one release). Keep the default, but let the Maintainer see the price.
+
+**B2 (blocking). B is not described precisely enough to plan, and its size is asserted.** (a) R6b deletes `drive()` and `--run` (dev/plans/repin-build.md:108; driver lines 546-680, 81 of the file's 176 `say`/`head` lines). B should be written against the post-R6b driver or it tests code about to go; the proposal does not mention R6b. (b) `repin` calls the driver only for `compare`, `check_packet_pair`, `values_field` (scripts/repin.py:980-985); it does not call `rehearse`. `repin` already carries one control test per stage-one and summary disclosure, including "EXECUTES CANDIDATE CODE" (test_repin_ceremony.py:777-810). So the failure the note opened with is already covered on the `repin` path, and "the driver's disclosures are untested" is true (measured) only for what the driver prints on its own path. (c) The note's criterion was "forwarded by the friendly surface"; B quietly changes it to "driver prints are tested". Say so. *Fix:* list the surviving disclosure lines now (a cheap grep, with the count), say whether the standalone driver stays an operator path after R6b, and if it does not, ask whether B shrinks to `compare`'s transition note. Replace "small" with that count.
+
+**N1. Say precisely what A buys.** "Pinned by nothing" is true of the repository, but the launcher cannot verify its own bytes (the operative file differs from the template by one filled slot, runbook :282-283), and its digest is already compared by the Maintainer (:48). What A adds is that a template change since the signed anchor is a visible closure difference and a transition, and that a candidate whose template differs from the reviewed one is refused through the packet row. Also, the "changed template refuses" test is mostly already generic: per-member loops exist (test_gate_preflight.py:1782, :2623). The new tests are membership, arity and the template-lists-itself check. Size A on that.
+
+**N2. Frozen-surface cost of B and A is not named.** New and edited files under `bootstrap/tests/` are frozen by glob (bootstrap/tests/_gate_manifest.py:354-355), so B owes a gate-manifest entry at the cut as well (AGENTS.md, "frozen-file edit owes the gate-manifest ceremony"). The Documentation section names a frozen file for A only.
+
+**N3. E touches a named high-risk surface and maybe doctrine.** `session-start` runs through `templates/skills/_lib/session.py` (self-hosted `tools/session.py`), which owns the interpreter trust root; running `repin status` from it is new subprocess use, a Security Review trigger (AGENTS.md, local interpreter binding). The Assurance path lists A, B and C only. A new orientation line may also change `doctrine/session-routines.md`, contradicting "No rule text changes". If E stays at default no, a one-line note suffices.
+
+**N4. Questions: say what is lost.** Q1 and Q2 have the doing-nothing cost in Rationale but not beside the question. Q3 and Q4 should say that deferring keeps two parsers of one grammar (the injection hole was fixed twice) and the 615-line runbook for now. Q5's 362-commit and 74-file figures match the note (:221); the threshold of 25 is, as stated, unevidenced, which is honest.
+
+**N5. Scope delta wording.** "Preserved" sits beside "C to G not recommended". Nothing accepted is removed here, so say "none against accepted scope; the note's items are dispositioned by Q3-Q7". The build proposal's own review caught the same word used loosely.
+
+### Checked and sound
+Ten closure members (`_gate_preflight.py:600-625`; arity test test_gate_preflight.py:4094). Template is not a member (grep of the list: no match). `~/Downloads/cairn-m2-codex-round2-20260819` does not exist (`ls` fails), so that item is closed. The launcher's second reader exists (template:151) and RA-01, RA-03, RA-08, RA-15 are real runbook steps (runbook:113-158). `claim_check.py`: no flags. The instrument can match: the same grep finds `reanchor.sh` in test_reanchor.py.
+
+**Coverage line.** I did not read the launcher template beyond its fixed list, the 81 driver print sites individually, `_gate_preflight.py` beyond the closure function, or `reanchor.sh`. I did not check whether the 5670dda9 reviewed commit constrains A's landing beyond what M2's text says, nor the lockfile or AST ceremonies. No Security Review was done or cleared. I ran no tests, no tool, no re-anchor. Blocking: 2 (B1, B2); non-blocking: 5 (N1-N5).
