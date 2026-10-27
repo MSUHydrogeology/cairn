@@ -2,7 +2,7 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-27-claude-ceremony-without-external-review.md](../proposals/archive/2026-10-27-claude-ceremony-without-external-review.md)
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Waiting on Maintainer**: first ceremony (final chunk)
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27
@@ -220,3 +220,42 @@ Range `77f3e5d1..3ed66cf4`: C5 `95021c2d`, C6 `b748de2d`, C7 `8df7e2a2`, C7b `3e
 **Choices the plan left open.** The pin's label was renamed to name its property (two ids). `repin` lost its filter for the artifact's ssh-add advice, which nothing prints now. The record path joined the runbook's entry in `dev/.cairn/claim-check-allow.json` (a forward reference), and a line citation in `dev/measurement/tag-pass-dispositions.md` lost its number. The runbook dropped the launcher reproduction, the rationale list and the first-use history with the old phases.
 
 **Not verified.** The page's commands in the Maintainer's own shell and with real keys; stage 1 and stage 2 through the launcher on a real anchor; the full suite; `security_check.py`.
+
+## Code review -- Claude Sonnet 5.5 (fresh session) -- 2026-10-27
+
+**Reviewed commit**: 88ad4a55 (range `8a4e7508..88ad4a55`). **Verdict**: three blocking, six non-blocking; Status to `revising-code`. The Security Review of the code still follows.
+
+**Foundations**
+1. *Does it do what it claims?* Mostly. Owners re-run in a detached copy: 953 passed, 0 skipped (3.13.13). Frozen and AST deltas match the plan (AST output equals the parent's). All 16 deciding paths scan; all 11 record members and 13 values keys refuse. Three claims fail (B1 to B3).
+2. *Simpler or safer build?* Same build; the fixes are small guards.
+3. *What breaks it?* An escape byte in a report field (B1), a typo in the page's first commands (B2), a committed compiled file (B3).
+
+### Blocking
+**B1. Two printed fields skip the unprintable-text refusal.** `reanchor.sh:732` (hit `line`) and `:758` (signature values) print raw; an ESC byte reached the page. `test_unprintable_text_is_refused_and_nothing_is_shown` covers three fields. *Fix*: `text(str(..))` on both; parametrize over every printed field.
+
+**B2. Not every page command is one a test runs.** The three stage-1 commands (`REANCHOR_RUNBOOK.md:29-31`) run in no node; E6 without `-f` and E7 without `-E` still pass. Here plain `readlink` prints `../Cellar/...`, not a path. *Fix*: run that block through the real launcher; give E6's links two hops; run E7 with a hostile `PYTHONPATH`.
+
+**B3. A committed compiled file runs in the evidence stage, unflagged.** An unchecked-hash `.pyc` under `bootstrap/tests/__pycache__/` ran in place of its source through `gather_evidence` (marker written; `-B` does not stop it). `repin` refuses it (`scripts/repin.py:189`); hand ceremonies, the first included, use `raw_tree` (`_gate_preflight.py:538`) and the scan lists it nowhere. *Fix*: list tracked `.pyc`/`__pycache__` paths in the scan as "compiled", or refuse them in `raw_tree`.
+
+### Non-blocking
+* **N1.** Deleting `require_regular_file "values file"` (launcher) survives 310 nodes; a symlinked, relative or link-parent values path is then accepted. Add one parametrized node.
+* **N2.** `_added_lines` is quadratic: 109 s on one 1 MiB file. Past about 20k lines, count every new line as added.
+* **N3.** `rm -rf $HOME` added to `reanchor.sh` gives 0 hits. Add shell words (`rm mv cp chmod ln tee ssh-add ssh-keygen`) for `.sh` paths.
+* **N4.** E7 binds a digest, not the hit list shown, and "equal by construction" (`reanchor.sh:748`) is a candidate-written claim. Say so in the table's E7 cell; reword.
+* **N5.** The page calls what follows its marker "not a step", yet sends him to Phase 5, which names `refs/cairn/gate-authorization`, made by no live step. Stage 1's next-step block (`reanchor.sh:435-470`) and the driver print stage 2 without `env -i`, unlike the page.
+* **N6.** `_gate_preflight.py:1677` cites a gone "Phase 0 step 1".
+
+**Open choices** (label rename, `repin`'s lost filter, `scan_checker`, tenth dropped node, wider "decides" set, allow-list entry): fine.
+
+**Equivalents, measured.** C6: dropping the package-absolute check passes 310 nodes; dropping it with the parent check is killed. C2: skipping `_oracle_trust.py` as deciding passes; also skipping it from the roster is killed.
+
+**Falsification ledger** (detached copies)
+* 59 launcher mutants (13 keys, grammar, packet binds): survivors package-absolute (equivalent) and values-file state (N1).
+* 25 page mutants: survivors validate, run, show-report, E6, E7 `-E`, `ls-remote`.
+* 16 deciding paths, each given a planted line: all found; nosec, rename, mode-only, binary, symlink, 60 hits kept or listed.
+* Hostile file name and `\x1b` text: escaped in the scan; B1 fields not.
+* 11 record members each damaged: all refused.
+
+**Bounding**: ACCEPTED for the scoped record (counts re-measured); the fixes change closure bytes, so the certifying run follows them.
+
+**Coverage.** Not run: suite, ceremony, real keys, `security_check.py`, C1 to C4 mutants. Not read whole: `test_ceremony_review_report.py`.
