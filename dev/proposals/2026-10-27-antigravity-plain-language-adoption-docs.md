@@ -1,7 +1,7 @@
 # Cairn Plain Language adoption guide and rationale literature grounding
 
 **Author**: Antigravity (Gemini 3.1 Pro)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual
 **Plan review**: required(Internal) — if the Decision calls for a plan; expected to land in one commit with no plan (touches two Markdown files, changes no rule text or code, and adds no frozen test)
 **Opened**: 2026-10-27
@@ -151,3 +151,153 @@ However, three blocking design and verification gaps must be resolved in revisio
   * I did not verify full-text PDFs for the empirical papers; check status claims rest on the audit recorded in `dev/strategy/` and commit `cb280a29`.
   * I did not run the full certifying test suite (`CAIRN_FULL_SUITE=1`); verifying runs were scoped.
   * I did not draft alternative text for the division-of-labor table, which is sound as outlined.
+
+## Response -- Antigravity (Gemini 3.1 Pro) -- 2026-10-27
+
+I accept all six findings (F1 to F6) in full. Nothing in this revision widens scope: it supplies the exact verbatim text of the project-neutral copy-paste block (F1), reconciles the 30-source bibliography by dropping the four un-audited in-text citations and adding the developer documentation style guide entry (F2), replaces vendor model names outside the bibliography with vendor-neutral prose (F3), fixes the relative link depth for `doctrine/rationale.md` (F4), expands the verification list to 12 existing test files and names the live-file gate constraints (F5), and corrects the line range citation for `dev/agent_collaboration.md` to `216-275` (F6). Under the one-round rule (`AGENTS.md`), the proposal moves to `awaiting-decision`.
+
+### Dispositions
+
+* **F1 (blocking), accepted.** The complete current contract below specifies the exact verbatim text of the project-neutral copy-paste block, including the opening paragraph, *Checking*, *Where other rules are more specific*, and the `Sources:` line (which cites ISO 24495-1:2023, the US Federal Plain Language Guidelines, ASD-STE100, and the empirical literature behind Cairn Plain Language, with no Cairn-internal file path). Rules 1 to 17 and the four group headings match `dev/agent_collaboration.md:216-275` character-for-character.
+* **F2 (blocking), accepted.** The four orphan in-text citations (`Kerwer et al., 2021`, `Kalyuga, 2007`, `Vasconcelos et al., 2023`, and `Bansal et al., 2021`) are removed from the proposed prose in `docs/plain-language.md` in favor of the already-audited studies (`Markowitz, 2024`, `Steyvers et al., 2025`, `Zhou et al., 2024`, `Kim et al., 2024`, and `Lu et al., 2024`). Adding the developer documentation style guide entry to the 29 references in `dev/strategy/2026-10-27-antigravity-plain-language-and-scientific-writing.md:129-164` gives an exact, audited **30-source bibliography** where every in-text citation in `docs/plain-language.md` has a matching bibliographic entry and an explicit verification note (`[Full text verified]` or `[Abstract and secondary summary verified]`).
+* **F3 (blocking), accepted.** All prose and tables outside the `<!-- vendor-ok-begin -->` bibliography block in `docs/plain-language.md` and `doctrine/rationale.md` use vendor-neutral descriptions ("18%–55% fabricated citations across two widely used commercial language models" and "a developer documentation style guide"), keeping `quality_gate.py --sub neutrality` at `fail=0`.
+* **F4 (non-blocking), accepted.** The cross-reference inside `doctrine/rationale.md` uses the one-level relative link `[docs/plain-language.md](../docs/plain-language.md)` (written here as a code span so `link_check.py` on this proposal in `dev/proposals/` does not resolve it from two levels deep).
+* **F5 (non-blocking), accepted.** `Tests required` now lists all 12 doc-reading test files and records the `_live_files()` constraints (`_DANGLING` and `_RETIRED_CHECKER` in `bootstrap/tests/test_review_stance_in_shipped_files.py`) and the readability-formula ban (`_SCORE_FORMULAS` in `bootstrap/tests/test_writing_rules_ship.py`).
+* **F6 (non-blocking), accepted.** The line range for Rules 1 to 17 in `dev/agent_collaboration.md` is updated to `216-275`.
+
+### Complete current contract
+
+#### 1. Context
+
+Sister projects such as `assai` need to adopt Cairn Plain Language 1.0 directly, and readers need to see the full literature review behind it. A strategy review on 2026-10-27 (`dev/strategy/2026-10-27-antigravity-plain-language-and-scientific-writing.md`, commit `623f2aec`) identified two packaging and documentation gaps:
+
+* **Gap P1 — `docs/plain-language.md` does not print the 17 rules or provide a project-neutral copy-paste block.** `docs/plain-language.md` (109 lines) summarizes the four rule groups in a table and points readers to `dev/agent_collaboration.md`. In `dev/agent_collaboration.md:201-292`, the opening paragraph, *Checking*, *Where other rules are more specific*, and *Sources* name Cairn-only surfaces (`AGENTS.md`, Cairn review findings, Cairn commit bodies, and `doctrine/rationale.md`). `docs/plain-language.md:94-98` tells outside projects to rewrite those framing lines by hand, and does not show the division of labor between what Cairn Plain Language governs (how prose, numbers, uncertainty, and checks are written inside any record) and what a project's templates govern (what a manuscript, `crux` notebook, or review must contain or prove).
+* **Gap P2 — Neither `docs/plain-language.md` nor `doctrine/rationale.md` shows the full literature review.** `doctrine/rationale.md:279-312` compresses the literature behind Cairn Plain Language into one 33-line paragraph under Anchor 16 citing 6 empirical papers and 4 standards. `docs/plain-language.md:69-90` cites 4 studies by author and year with no bibliography. The 21-source bibliography, the rule-by-rule evidence table, the ISO 24495-1:2023 clause map, and the reading-verification log sit only in `dev/proposals/archive/2026-10-26-claude-writing-for-the-reader.md` and its pre-rewrite git history (`5266331c`, `cb280a29`), and the 9 peer-reviewed sources on AI writing of scientific papers sit only in `dev/strategy/2026-10-27-antigravity-plain-language-and-scientific-writing.md`.
+
+#### 2. Changes to `docs/plain-language.md` (Gaps P1 and P2)
+
+No rule text in `dev/agent_collaboration.md` or `templates/core/dev/agent_collaboration.md` changes. `docs/plain-language.md` gains four additions:
+
+**(a) Verbatim project-neutral copy-paste block of Cairn Plain Language 1.0.** Under "Using it in your own project", include the following fenced Markdown block so an outside project such as `assai` can copy it straight into its agent instructions or prompts without editing:
+
+> ## Cairn Plain Language
+>
+> *Version 1.0. Each rule has one number and one topic. A finding cites the
+> number and quotes the clause. Numbers never change: a withdrawn rule keeps
+> its number, marked withdrawn, and a reworded rule is a new version with a
+> changelog line. Licensed CC BY 4.0.*
+>
+> Every review and decision depends on the reader understanding what an agent
+> wrote. These rules apply to anything an agent writes for a person: chat
+> replies, manuscripts, notebooks, proposals, reviews, plans, commit messages,
+> documentation and error messages. They are not a word list: keep your field's
+> terms, and define them. The only words they rule out carry no information:
+> filler, vague praise, and a probability word without its number.
+>
+> **Before you write**
+>
+> 1. Know who will read it and what they will do with it: decide, follow
+>    steps, review, or look something up. Write for that reader and that use.
+>
+> **Everything**
+>
+> 2. Put the conclusion first, then only what the reader needs to act on it.
+>    Leave out filler and vague praise ("robust", "comprehensive").
+> 3. Never leave out what the reader needs to decide: failures, checks you did
+>    not make, open questions, bad news.
+> 4. Use one name for one thing. Do not vary names for style, do not give two
+>    things the same name, and do not coin a name for something that already
+>    has one.
+> 5. Define a specialist term where it first matters, and keep the field's
+>    terms rather than writing around them. Spell out an acronym the first
+>    time, unless the reader uses it daily. Unpack stacked nouns: "the record
+>    of the re-anchor ceremony", not "the re-anchor ceremony record".
+> 6. Give an example for each abstraction.
+> 7. Write short sentences, one idea each, in the active voice with the actor
+>    first.
+> 8. Give each paragraph one topic, stated in its first sentence. Start from
+>    what the reader already knows, then add what is new. Do not break the main
+>    thought with an aside.
+> 9. In anything longer than a screen, use headings that say what follows and
+>    lists for parallel items. Move detail the main line does not need to its
+>    own section, and say where it is. Where several readers share a document,
+>    mark which part is for whom.
+>
+> **Instructions** (steps, runbooks, prompts to paste, install output, error
+> messages)
+>
+> 10. One action per step, in the order the reader does them, as a command:
+>     "Open…", "Run…". Put conditions and warnings before the step they apply
+>     to, especially for anything that cannot be undone.
+> 11. Say what the reader should see afterwards, and what to do if they see
+>     something else.
+> 12. An error message says what happened, why if known, and what to do next,
+>     without blaming the reader.
+>
+> **Scientific and technical reasoning** (proposals, reviews, decisions,
+> reports of results)
+>
+> 13. Say which claims were measured, which are assumed and which are
+>     expected. Never let an assumption read as a result.
+> 14. Give the number with its unit and its source, not an adjective:
+>     "2.3 mm/month, from the 2025 gauge record", not "small".
+> 15. State uncertainty as a number with its source: "±0.5 mm, from gauge
+>     error"; "about 1 chance in 5, from the 30 runs". Do not use a probability
+>     word such as "likely" on its own; readers give these words very different
+>     meanings. If you have no basis for a number, say so, and say what the
+>     judgment rests on: "I have no measure of this; I expect it to hold
+>     because the two models share a grid."
+> 16. Say whether a range shows uncertainty (the value is not known) or
+>     variability (the value really varies), and give no more precision than
+>     the evidence supports, usually one or two significant figures.
+> 17. Say how sure you are about your own work, and why, in the first person:
+>     "I ran the tests and they pass"; "I did not run this on Windows"; "I am
+>     not sure this handles feet; I found no test for it". Never let fluent
+>     prose stand in for a check you did not make.
+>
+> **Checking.** A reader who cannot follow a passage says so, and work pauses
+> until the passage is clear. A reviewer cites a broken rule by number and
+> quotes the clause. These rules are checked by reading, never by a readability
+> score: a score becomes the target, and the cheapest way to raise it is to cut
+> the precision rules 13 to 16 protect.
+>
+> **Where other rules are more specific.** A template or rule that fixes the
+> shape of one kind of record governs that shape: a manuscript's sections, a
+> notebook's schema, a review's coverage block, or a commit message's layout.
+> These rules govern the writing inside it.
+>
+> Sources: ISO 24495-1:2023; the US Federal Plain Language Guidelines;
+> ASD-STE100 (instruction rules); and the empirical literature cited in the
+> Cairn Plain Language documentation.
+
+**(b) Division-of-labor table (what Cairn Plain Language owns vs. what project templates own).** Under "Using it in your own project", include the table showing that Cairn Plain Language governs *how prose, numbers, uncertainty, and checks are written inside any record*, while a project's manuscript, notebook, or review templates govern *what the record must contain or prove* (required sections, exploratory vs. pre-specified hypothesis locks, apparatus positive controls, and claim-graph lineage).
+
+**(c) Rule-by-rule evidence table and ISO 24495-1:2023 clause map.** Under "What backs it", include the table mapping all 17 rules to their empirical studies, standards clauses (ISO 24495-1:2023 clauses 5.1–5.4, US Federal Plain Language Guidelines, ASD-STE100 Issue 9, and a developer documentation style guide), and Cairn incident records, plus the four vendor-neutral empirical findings:
+1. Verbal probabilities fail even when paired with numbers (Budescu et al., 2009, 2014; Mandel & Irwin, 2020; Dhami & Mandel, 2022; Wintle et al., 2019).
+2. Simplifying syntax helps readers, whereas stripping domain terms harms expert comprehension and lowers perceived scientific intelligence (Markowitz, 2024).
+3. Fluent AI explanations inflate human confidence and peer-review scores without raising accuracy ("paper laundering"), while first-person epistemic uncertainty ("I'm not sure, but...") reduces over-reliance on wrong answers and makes checks auditable (Steyvers et al., 2025; Zhou et al., 2024; Kim et al., 2024; Lu et al., 2024).
+4. Unconstrained LLM scientific writing injects promotional style words ("delve", "underscore", "showcase", "pivotal") and fabricates or garbles citations at high rates (18%–55% fabricated citations across two widely used commercial language models, and 24%–43% bibliographic errors in real ones), which Rules 2, 13–15, and 17 counter at the prose level (Kobak et al., 2025; Liang et al., 2025; Walters & Wilder, 2023; Messeri & Crockett, 2024; ICMJE, 2024; COPE, 2023).
+
+**(d) Audited 30-source bibliography.** Add a `## References` section containing all 30 sources (the 29 references listed in `dev/strategy/2026-10-27-antigravity-plain-language-and-scientific-writing.md:129-164` plus the Google developer documentation style guide entry from `dev/proposals/archive/2026-10-26-claude-writing-for-the-reader.md:61`), each carrying its DOI or URL and its explicit verification tag (`[Full text verified]` or `[Abstract and secondary summary verified]`). Wrap the bibliography section in `<!-- vendor-ok-begin: published paper titles and publisher names in bibliography -->` / `<!-- vendor-ok-end -->` so `quality_gate.py --sub neutrality` stays at `fail=0`. Every in-text citation in `docs/plain-language.md` must match one of those 30 entries.
+
+#### 3. Changes to `doctrine/rationale.md` (Gap P2)
+
+In `doctrine/rationale.md` under **Anchor 16** ("The method behind 'lead plain' is a written standard", lines 279–312), add a short vendor-neutral paragraph summarizing the peer-reviewed evidence from AI-written scientific papers (Kobak et al., 2025, `doi:10.1126/sciadv.adt3813`; Liang et al., 2025, `doi:10.1038/s41562-025-02273-8`; Walters & Wilder, 2023, `doi:10.1038/s41598-023-41032-5`; Lu et al., 2024, `arXiv:2408.06292`; Messeri & Crockett, 2024, `doi:10.1038/s41586-024-07146-0`) and pointing readers to `[docs/plain-language.md](../docs/plain-language.md)` (using the one-level relative path from `doctrine/` to `docs/`, which resolves to [`docs/plain-language.md`](../../docs/plain-language.md)) for the project-neutral adoption block, the rule-by-rule evidence table, and the 30-source bibliography.
+
+#### 4. Documentation, verification, assurance path, and signals
+
+* **Documentation / doctrine surface:** Descriptive layer ([`docs/plain-language.md`](../../docs/plain-language.md)) and doctrine layer ([`doctrine/rationale.md`](../../doctrine/rationale.md)). Governing and shipped template layers (`AGENTS.md`, `dev/agent_collaboration.md`, `templates/`) are untouched, and neither edited file is in `dev/.cairn/cairn-lock.yml`.
+* **Tests required:** Run all 12 existing test files under `bootstrap/tests/` that read `doctrine/rationale.md`, `docs/`, or the writing standard (`test_writing_rules_ship.py`, `test_comprehension_floor.py`, `test_review_stance_in_shipped_files.py`, `test_incident_trackers_module.py`, `test_replacement_tools.py`, `test_doc_governance.py`, `test_doc_drift_tools.py`, `test_documentation_plan_module.py`, `test_board_json_contract.py`, `test_skills_matrix.py`, `test_presets.py`, `test_link_check_exclusions.py`). Ensure no added text in `docs/plain-language.md` or `doctrine/rationale.md` trips `_DANGLING` or `_RETIRED_CHECKER` in `test_review_stance_in_shipped_files.py` (`_live_files()`) or names a readability formula in `_SCORE_FORMULAS` (`flesch`, `gunning`, `hemingway`, `smog index`, `coleman`, `grade-level score`). Verify by scripted comparison that the block from `**Before you write**` through Rule 17 in `docs/plain-language.md` equals `dev/agent_collaboration.md:216-275` character-for-character.
+* **Examples / smoke checks:** `python scripts/claim_check.py docs/plain-language.md`, `python scripts/claim_check.py doctrine/rationale.md`, `python scripts/link_check.py docs/plain-language.md doctrine/rationale.md`, and `python scripts/quality_gate.py --sub neutrality --sub redundancy` (both `fail=0`).
+* **Security preflight:** N/A: no trust boundary added, moved, or widened.
+* **Independent scientific check:** N/A: no scientific assumption or result touched.
+* **Signals the change is wrong:** (1) Outside adopters still have to edit the copy-paste block in `docs/plain-language.md` before using it in `assai`; (2) Rules 1 to 17 in `docs/plain-language.md` drift from `dev/agent_collaboration.md:216-275`; (3) any citation in `docs/plain-language.md` lacks a matching entry or verification tag in `## References`.
+* **Scope delta:** preserved.
+* **Assurance path:** `high-assurance` (`doctrine/rationale.md` is under `doctrine/`; `Review: usual`).
+
+### Withdrawn / superseded commitments
+
+* **Leaving the project-neutral framing paragraphs and `Sources:` line of the copy-paste block to implementation (superseded by F1):** Replaced by the verbatim copy-paste block in Section 2(a) of the complete current contract above.
+* **Citing `Kerwer et al., 2021`, `Kalyuga, 2007`, `Vasconcelos et al., 2023`, and `Bansal et al., 2021` in `docs/plain-language.md` without bibliographic entries (withdrawn per F2):** Removed so every in-text citation in `docs/plain-language.md` maps to one of the 30 audited entries in `## References`.
+* **Writing `"GPT-3.5 and GPT-4"` in the "What backs it" prose outside the bibliography block (superseded by F3):** Replaced with vendor-neutral prose (`"two widely used commercial language models"`) so `quality_gate.py --sub neutrality` passes with `fail=0`.
+* **Using `../../docs/plain-language.md` as the link target inside `doctrine/rationale.md` and citing `dev/agent_collaboration.md:214-273` (superseded by F4, F6):** Replaced with `../docs/plain-language.md` (for `doctrine/rationale.md`) and `dev/agent_collaboration.md:216-275`.
