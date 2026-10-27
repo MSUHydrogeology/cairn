@@ -113,3 +113,32 @@ C1 to C7 land as **one reviewed range**: C2, C5, C6 and C7 edit closure members,
 * **N6.** E1 to E6, SAME, Summary 2 and "stage 2" are unglossed. *Fix*: gloss them once.
 
 **Coverage.** Read-only. Not run: suite, Bandit, ceremony, `repin`. Not checked: the 54 LOW count, the six-program count, the C6 parity matrix, whether chunks stay green (hardening was red between chunks). Budgets measured: body 867, criteria at most 117 per chunk.
+
+## Plan review -- Claude Opus 5.5 (Internal Security Review, fresh session) -- 2026-10-27
+
+**Obligation**: plan review of the re-anchor ceremony rewrite and its chunk list (trust-ceremony surfaces; Security Review owed by the plan header `required(Internal + Internal Security Review)`)
+**Reviewed commit**: 3e73c5dc. **Verdict**: three blocking, four non-blocking; stays `revising-plan`. Cleared by a revision adopting SB1 to SB3.
+
+**Foundations**
+1. *Delivers Revision 3?* Ordinary ceremonies yes: repin runs only anchored code (`scripts/repin.py:289-294`, `:1027`). The transition control and the record do not (SB1, SB2).
+2. *Safer build?* Anchor code computes the transition scan as one more digest he compares; the record is the candidate's last commit (`bootstrap/reanchor-launcher.template.sh:376-383`).
+3. *Shows it wrong?* A second-transition candidate whose `reanchor.sh` skips the comparison passes his checks; so does a post-read commit to `bootstrap/_scaffold/` (the packet pins only 11 files) (plan `:61`; template `:612-660`).
+
+### Blocking
+
+**SB1. Candidate code drives the transition scan** (extends B2). In a transition the launcher, artifact and checker are the candidate's, so it decides whether the anchor's checker is called and what "equal" prints. *Fix*: the anchored runbook prints one command that extracts the anchor's own code (`git show refs/cairn/gate-anchor:...`, `python -I`, empty folder) and prints a scan digest; he compares it with the page's (E7). Mutant: the candidate's artifact omits the comparison; E7 still stops.
+
+**SB2. Nothing binds what the reader read to what he signs** (resolves B1). B1's premise is wrong, measured: the packet holds no commit id (template `:376-383`), so a record inside the candidate can name packet, launcher and member digests. *Fix*: the record is the candidate's tip commit, changing only the record file at one fixed path, and names the commit it read. Checks: `git rev-parse HEAD^` equals it; `git diff --name-only HEAD^ HEAD` prints only the record path; SAME command (1)'s `$REV` is it. C4 runs these in ordinary ceremonies; the page prints them for hand runs.
+
+**SB3. No chunk owns the commands for E1 to E6** (extends B3). Measured: the two SAME commands exist only in `dev/plans/archive/repin-ceremony-hardening.md:86`. E6 cannot pass here: `command -v git` gives `/opt/homebrew/bin/git`, a symlink the values file refuses (`bootstrap/reanchor-values.example:30-36`). *Fix*: C7's page holds each exact command; E6 uses `readlink -f "$(command -v <tool>)"`. Before stage 2 he re-hashes the launcher and repeats E6, as repin does (`scripts/repin.py:974-977`), and `ssh-add -l` must not list his key (Y5 becomes a check). Stage 2 starts `env -i HOME=<home> PATH=/usr/bin:/bin TERM="$TERM" LANG=C`, so no agent socket reaches the signer (`bootstrap/reanchor.sh:661` forwards it; `scripts/repin.py:1075` does not).
+
+### Non-blocking
+
+* **SN1.** C1: `# nosec` silences Bandit; the seven hold none (measured). Add `nosec` to C2's patterns. The record cites `python bootstrap/security_check.py`, which fails closed without Bandit (`:862`).
+* **SN2.** C2: `show-report` cuts each class at 40 (`reanchor.sh:703`); never cut hits or roles. Hit text is candidate bytes: escape it as `_display_path` does.
+* **SN3.** Missing mutants: `repin packet` writes nothing in a transition; "not computed" never prints "equal"; hostile values refused before any program; no `EXPECTED_PATHS` stops. Add: equivalence measured, else a survivor.
+* **SN4.** (g) holds (plan `:19`, `:21`). C3 keeps the four driver functions repin calls (`scripts/repin.py:952-988`).
+
+**What still gets past.** First ceremony: every copy he compares comes from the builder, reader or candidate code; his checks prove agreement, not safety. Always: a harmful change matching no pattern, or a removed check, passes if the reader misses it. Stage 1 runs candidate code as him and can replace a tool he owns (`/opt/homebrew`); E6 compares paths, not bytes.
+
+**Coverage.** Read-only: `repin status`, `verify --no-collect`, `claim_check`. Not run: suite, Bandit, mutants, `_ast_attest verify`. Not read: C6's reader, `_scrubbed_environ`, stage 2's checker.
