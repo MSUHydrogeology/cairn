@@ -1856,19 +1856,23 @@ def test_the_key_check_on_the_page_lists_a_key_held_in_the_environments_agent_or
     holds.  Each case loads the key into a scratch agent and reaches it by one route only."""
     (command,) = page_command("K")
     fingerprint = re.search(r"SHA256:\S+", run_page_command(cbed, page_command("E4")[0]).stdout)[0]
-    stubs = tmp_path / "stubs"
-    stubs.mkdir()
-    (stubs / "launchctl").write_text(f'#!/bin/sh\n[ "$1 $2" = "getenv SSH_AUTH_SOCK" ] && echo {agent.sock}\n')
-    (stubs / "launchctl").chmod(0o755)
-    path = f"{stubs}:{os.environ['PATH']}"
-    empty = run_page_command(cbed, command, path=path)
+    def stub_launchctl(folder, answer):
+        """A stand-in for the login session's lookup, so no test asks the real one."""
+        folder.mkdir()
+        (folder / "launchctl").write_text(f'#!/bin/sh\n[ "$1 $2" = "getenv SSH_AUTH_SOCK" ] && echo "{answer}"\nexit 0\n')
+        (folder / "launchctl").chmod(0o755)
+        return f"{folder}:{os.environ['PATH']}"
+    login_session_has_it = stub_launchctl(tmp_path / "with-agent", agent.sock)
+    login_session_has_none = stub_launchctl(tmp_path / "without-agent", "")
+    empty = run_page_command(cbed, command, path=login_session_has_it)
     assert fingerprint not in empty.stdout + empty.stderr, "the control: an agent with no key lists none"
     agent.load()
-    by_environment = run_page_command(cbed, command, path=os.environ["PATH"], extra_env={"SSH_AUTH_SOCK": str(agent.sock)})
+    by_environment = run_page_command(cbed, command, path=login_session_has_none,
+                                      extra_env={"SSH_AUTH_SOCK": str(agent.sock)})
     assert fingerprint in by_environment.stdout, by_environment
-    by_login_session = run_page_command(cbed, command, path=path)
+    by_login_session = run_page_command(cbed, command, path=login_session_has_it)
     assert fingerprint in by_login_session.stdout, by_login_session
-    neither = run_page_command(cbed, command, path=os.environ["PATH"])
+    neither = run_page_command(cbed, command, path=login_session_has_none)
     assert fingerprint not in neither.stdout + neither.stderr, "the control: no route to the agent lists nothing"
 
 
