@@ -1,7 +1,7 @@
 # Let a fresh local agent read the re-anchor ceremony's code, and ask the Maintainer only for what he can do
 
 **Author**: Claude Sonnet 5.5 (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27
@@ -547,3 +547,13 @@ review**: required(Internal + Internal Security Review).
 * Chunk 7's runbook without the values-file step: it keeps that step.
 * Chunk 5's refusal of every `PYTEST_*` variable: only the steering ones.
 * The narrower scan scope and `git diff`-based scanning.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-27
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated**. He was asked whether to accept Revision 3 and scribe the Decision now, and whether to accept the six defaults of its questions, and answered:
+
+> "Accept and commit (Recommended)"  (disposition)
+
+> "Accept all six defaults (Recommended)"  (Q1 yes: the fences on the driver cleanup and the runbook cut are lifted; Q2 yes: he will authorize the first ceremony under the new text; Q3 yes: the one-page runbook stays a pinned closure member; Q4 yes: build the one-values-reader launcher change, the last and droppable chunk; Q5 no: no session-start stale-pin warning; Q6 yes: a fresh same-vendor reader is acceptable as the standing reader, stated in each record)
+
+*Scribe's note, separate from the quoted words.* "As revised" means Revision 3, the complete current contract, which answers the usual review and the Security Review (its Obligation is answered by the Response adopting both blocking findings; no second round). The earlier "Decision" heading in this file is the author's empty placeholder and is not edited. Earlier in the session, in chat, he also said: "Please go ahead and do all of it now, I changed my mind. The re-anchoring is such an ongoing issue that we just need to tackle it. Period." Q2 is a yes to a future act: the authorization for the first ceremony is still his own words at that ceremony, naming the three sensitive-roster groups (`bootstrap/_scaffold/`, `bootstrap/security_check.py`, `bootstrap/tests/_gate_manifest.py`) and the dropped test nodes, re-derived from the final tree. The plan review stays `required(Internal + Internal Security Review)`. The implementer never edits `scaffold_ast_known_new.json`, the AST baseline, the gate manifest or the gate anchor, and never runs a ceremony, a re-anchor or a signing. A plan is opened in a separate commit, which archives this proposal. Nothing else lands in this commit.
