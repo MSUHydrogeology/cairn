@@ -1,7 +1,7 @@
 # Finish the re-anchor ceremony work the repin build left out
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27
@@ -379,3 +379,47 @@ The Security Review's obligation is answered here: S1 is accepted and changes th
 * H as "remove the runbook's unsupportable claim; REL-1 follows" -- replaced by claim-only, template included, closing no row.
 * I's single trigger -- replaced by two triggers.
 * Revision 1's "A is a visibility gain" as the final word -- kept as A's price without A2, with A2 as the option.
+
+## Second look -- Claude Sonnet 5.5 (Internal, fresh session) -- 2026-10-27
+
+```
+Reviewed commit: 48f1252c (Revision 2); tree read-only at HEAD
+Target: only the material the first usual reviews could not have read: Revision 1's H, I, J and Revision 2's changes (six-file A, M2 consequence, A2, narrowed H, I's second trigger, REL-1, Q1/Q8/Q10)
+Prior findings: both usual reviews and the Security Review; not repeated
+```
+
+**Conclusion.** Revision 2 is coherent, matches the tree where I checked it, and the Maintainer can decide it. No blocking findings; four non-blocking. Status moves to `awaiting-decision`. This pass is not a Security Review and clears nothing of that obligation.
+
+### Foundations
+
+1. **Should it exist as framed?** Yes. Nothing else gives the retired note's unbuilt items a lifecycle, and Revision 2 now prices A and A2 honestly. Backing: `dev/PLANNING.md:46` points at this proposal; `scripts/repin.py:782` and `:919-923`.
+2. **Strongest alternative.** Do nothing to the closure in 0.5 (Q1(b)) and bring A, A2, C, D together after the cut. It costs a release with the template unpinned and avoids re-naming M2's reviewed commit. The proposal offers it as Q1(b) with the loss stated. Backing: proposal Q1.
+3. **What would make the author withdraw.** A's code review finding the repin tests need more than the ten-to-eleven edit (the proposal's own signal), or the Maintainer rejecting the M2 move so M2 runs first, which makes A land after M2 (Q1(d)). Backing: `dev/PLANNING.md:251-259`.
+
+### Probes (measured unless marked)
+
+| Claim | Result |
+|---|---|
+| Six-file list exists; "of 10" asserts; retyped ten | True: `test_repin.py:508,516`; `test_repin_ceremony.py:30` (ten); `test_reanchor.py:~921-925` (ten, "Retyped rather than imported"); `scripts/repin.py:782` `REPIN_TESTS` is both repin test files |
+| `git diff --stat 5670dda9 HEAD` over `repin.py` and its two tests is empty | True. Control: the same command against `6f29519d` for `_gate_manifest.py` shows 2 deletions, so the instrument can match |
+| 5670dda9 would refuse after A | True from code: `check_first_run` compares blobs of `repin.py` and `REPIN_TESTS` (`scripts/repin.py:919-923`); A edits both tests. Read, not run |
+| Cut item 1 says repin refuses at HEAD (`fa86e2cb`) and moves M2 past the cut | True: `dev/PLANNING.md:248-262`; it also says the Maintainer has "not yet" been asked, as Revision 2 reports |
+| REL-1 row deleted at `b5e57c71` with no disposition | True: old file line 1194 is the row; the commit message does not mention it; the rewritten strategy file has no REL-1 or out-of-band entry. Q8's "section 5" resolves (`### 5. [REL]`, strategy file line 85) |
+| Transition counts (A in M0: 2; A with C+D after the cut: 2; A after M2: 3) | Internally consistent with Q1(a), (b), (d) |
+| A2 "free before M2" | Consistent with `check_first_run` comparing against the reviewed commit; read, not run |
+| Withdrawn ledger | Honest for what it lists; gaps in N3 |
+
+### Findings (all non-blocking)
+
+**N1. Q10 does not say it depends on Q1.** A2 "cannot act before A is anchored" and is "after M0, before M2". That holds only under Q1(a). Under Q1(b), (c) or (d) the Q10 default of "yes" has no slot (Revision 2 says "if M2 would run first, defer A2" but only in A2's text). *Fix:* add "only if Q1 is (a); otherwise defer" to Q10, so a "yes to all defaults" answer is self-consistent.
+
+**N2. Revision 2's questions lost the what-is-lost clauses that Revision 1 had.** Q2, Q2b, Q5, Q6 and Q7 have a default but no "Lost" (Revision 1's Q2 to Q7 had them, and Revision 2 calls itself the complete contract). A reader who only reads Revision 2 cannot weigh them. *Fix:* restore the one-line "Lost" from Revision 1 for those five.
+
+**N3. Revision 2's scope delta and ledger drop two things Revision 1 stated.** (a) Revision 1's two moved recommendations (A conditional; B narrowed with "wontfix for the wider reading") are no longer listed; Revision 2's B says only "unchanged from Revision 1". (b) Revision 1's "the by-hand M3 still follows R6b" disappears with no ledger line; the plan's M3 (`dev/plans/repin-build.md:58` and `:108`) is not mentioned in Revision 2. Nothing is hidden (Revision 1 stays in the file) but the "complete current contract" is not complete. *Fix:* two lines in the scope delta; one ledger line for M3.
+
+**N4. Plainness.** Revision 2 leans on `M0`, `FROZEN-MODIFIED`, "keyed" and "closure" with the definition of M0 mid-page. The Conclusion reads clearly; the Sequence paragraph should come before A's file list, and `M0` is the author's name, not the board's (it appears nowhere in `dev/PLANNING.md`), so say once that it is the cut's closure re-anchor. The file is 381 lines; being append-only it cannot be trimmed, but Revision 2 repeats Revision 1's B and C to G text.
+
+### Checked and sound
+Q1's four options each state a loss and a count; the M2 reviewed-commit cost is correctly traced to `REPIN_TESTS`; A2's limits (no help at M0, none against a substituted `repin`) are stated; H is now claim-only and says it closes no row; the recommendation, defaults and counts agree with each other apart from N1.
+
+**Coverage line.** I did not read the launcher, `reanchor.sh`, the 124 driver print sites, or `test_repin_ceremony.py` past line 35. I did not verify the packet-row construction at `test_repin_ceremony.py:79`, the `_gate_manifest.py:350-358` freeze globs, or whether the AST list truly gains nothing from A. I ran no test, repin verb, ceremony or re-anchor; M2's refusal after A is read from code. `claim_check.py`: no flags. No Security Review was done or cleared. Blocking: 0; non-blocking: 4.
