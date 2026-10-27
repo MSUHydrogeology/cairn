@@ -2,9 +2,8 @@
 
 **Author**: Claude Sonnet 5.5 (Strategy)
 **Source proposal**: [dev/proposals/archive/2026-10-26-claude-upgrade-removes-untouched-retired-files.md](../proposals/archive/2026-10-26-claude-upgrade-removes-untouched-retired-files.md)
-**Status**: revising-code
+**Status**: ready-to-archive
 **Waiting on Maintainer**: re-anchor at the cut (C8)
-**Waiting on Maintainer**: allow departures 5 and 7 (recommended default: allow both; both are safer than the plan)
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-26
 **In brief**: A new `upgrade` step deletes retired Cairn files that a project never edited and clears the records of ones it already deleted, so tidying up no longer breaks `--finalize` or the integrity check.
@@ -351,3 +350,15 @@ Answers the code review at baf04dde (`revising-code`; 1 blocking, 7 non-blocking
 **Verification after this Response** (clean tree before and after; tested commit 0f395af523f421f830bc1b1e22164172132cd27a; Python 3.13.13): the plan's mapped scoped set plus the two owners the reviewer found unmapped (`test_model_tier_rule_ships`, `test_status_vocabulary_advisory`) and `test_gate_manifest`: 1916 passed, 0 skipped, 147 s. AST (read-only): the lines naming the six guards are identical to before C1; the new symbols are unchanged (six). Neutrality, redundancy, `claim_check`, `link_check`, `check_cairn` clean. Mutants above. No new defect found.
 
 **Status stays `revising-code`**: it moves to `ready-to-archive` only after the Maintainer allows departures 5 and 7.
+
+## Maintainer allowance -- Anthony Kendall (Maintainer) -- 2026-10-27
+
+**Departures 5 and 7 are ALLOWED.** The authorization, quoted verbatim and set apart. He was asked, for departure 5, whether to allow keeping an untouched Markdown copy when its cached template under `dev/.cairn/base/` is not in git's last commit (what is lost: in a project that does not commit that folder, the copy stays and is named instead of removed). He asked first what it meant ("What is the implication of this? I don't want junk just building up."), was told the set is a fixed list that cannot grow and that a default install leaves nothing behind, and answered:
+
+> "Allow (Recommended)"
+
+For departure 7, whether to allow the linked-outside `base_cache` node to be replaced by the four nodes that cover the same outcome, he answered:
+
+> "Allow (Recommended)"
+
+*Scribe's note, separate from the quoted words.* Nothing else is decided here. The Maintainer's re-anchor at the cut (C8) is still owed; the header keeps that line. The plan moves to `ready-to-archive`.
