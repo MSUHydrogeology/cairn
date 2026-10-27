@@ -1,8 +1,8 @@
 # Plan: re-anchor ceremony without an outside reader
 
 **Author**: Claude Sonnet 5.5 (Strategy)
-**Source proposal**: [dev/proposals/archive/2026-10-27-claude-ceremony-without-external-review.md](../proposals/archive/2026-10-27-claude-ceremony-without-external-review.md)
-**Status**: ready-to-archive
+**Source proposal**: [dev/proposals/archive/2026-10-27-claude-ceremony-without-external-review.md](../../proposals/archive/2026-10-27-claude-ceremony-without-external-review.md)
+**Status**: archived
 **Waiting on Maintainer**: first ceremony (final chunk)
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-27

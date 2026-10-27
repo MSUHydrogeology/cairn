@@ -52,6 +52,25 @@ and a new empty `Unreleased` is started above.
   read of a licensed copy and were not re-checked.
   ([proposal](dev/proposals/archive/2026-10-27-antigravity-plain-language-adoption-docs.md))
 
+### Changed — The re-anchor ceremony needs no outside reviewer: your part is equalities, a key and a yes
+
+- The runbook is one page of exact commands. You compare digests, run a few
+  checks before stage 1, read a plain report (which files decide behaviour and
+  which are only pinned, a line scan of added text, new and executable files,
+  signer fingerprints) and say yes; a fresh agent builds the packet and a
+  different one reads it. The scan now covers the gate's own seven Python
+  files, and in a transition the anchor's own checker recomputes it so you can
+  compare the two. The old hand path (`drive()`, `--run`,
+  the digest-correcting script, runbook Phases 0 and 4) is gone, the
+  launcher is the only reader of the values file, and the evidence run refuses
+  collection-steering `pytest` variables. `repin packet` builds the packet for
+  ordinary ceremonies. Not yet used on a real ceremony. Your yes protects
+  against honest agent mistakes: the anchor moves only to the commit a fresh
+  reader read. It does not protect against code running as you, such as a
+  malicious local agent or the candidate's own tests. Python 3.13.13 was the
+  tested version; zsh and a real stage 1 and 2 were not tested.
+  ([plan](dev/plans/archive/ceremony-without-external-review.md))
+
 ### Changed — The re-anchor ceremony protects its launcher template, and says what delivering the launcher proves
 
 - The launcher template (`bootstrap/reanchor-launcher.template.sh`) is now the
