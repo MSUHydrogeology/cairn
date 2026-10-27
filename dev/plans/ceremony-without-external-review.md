@@ -301,3 +301,39 @@ Range `26a15ff1..87a4cd31` (`263ea7d2`, `30967490`, `33a41673`, `87a4cd31`). Int
 * Frozen or closure files edited: closure `reanchor.sh` and the runbook; keyed `_gate_preflight.py`, `scripts/reanchor_ceremony.py`, `test_reanchor.py`. Not edited: the launcher template, `_scaffold`, the AST baseline, the gate manifest, the anchor, `PLANNING.md`, `CHANGELOG.md`.
 
 **Not verified.** The page's commands in the Maintainer's own shell or with real keys; the full suite; `security_check.py`; a scan over a candidate that really carries a compiled file through `gather_evidence`.
+
+## Security Review of the code -- Claude Opus 5.5 (fresh session) -- 2026-10-27
+
+**Obligation**: Security Review of the re-anchor ceremony code (launcher template, reanchor.sh, the checker's report and scan, repin's packet verb and launcher check, the driver, the evidence environment and the runbook page), named by the plan's gate "a Security Review reading the launcher and artifact whole, the checker's changed hunks, repin's verb and A2, the driver diff and the runbook".
+
+**Reviewed commit**: `efb7be4c` (code as at `87a4cd31`); the brief's `5f9d93b2` lacks fixes `33a41673` and `87a4cd31`. Probes ran in scratch repositories; no key.
+
+**Conclusion.** The launcher holds; the page does not. Its hand checks run plain `git` after stage 1 ran the candidate's tests as you, and stage 1 can leave code stage 2 runs.
+
+**Foundations.**
+1. Claims: the launcher's reader, packet and extraction hold (`bootstrap/reanchor-launcher.template.sh:168-287`, `:443`, `:592-614`); the page's "nothing changed between what the reader read and what you sign" does not (ledger 3-6).
+2. Safer: every check needing no page runs before stage 1, with `scripts/repin.py`'s sterile `_GIT_FLAGS`; E7 as a launcher mode extracting by `cat-file`, like `:599`.
+3. Breaks it: ledger 3-6.
+
+**Ledger** (git 2.53, python 3.13.13):
+1. Values reader: 12 hostile files (NUL, duplicate, `$`, symlink, relative, preset `L_shasum`, others) all refused before any program.
+2. `sh -x --validate`: cat, mkdir, mktemp, shasum, env, git run before `exec`; `/usr/bin/shasum` is Perl, run with the caller's environment.
+3. E7 form, `git replace` on the anchor's checker: the substitute is extracted.
+4. E7 form, `.git/info/attributes` smudge filter: the program ran and rewrote the checker.
+5. R1 with a replace ref printed `$REV`; the real parent was unread. R2 hid a deletion renamed into the record; repin's `diff-tree --no-renames` shows it.
+6. A `.pth` ran under `-E -s`, not `-S`. The recorded python, its site-packages and `/opt/homebrew/bin` (ahead of `/usr/bin`) are user-writable.
+7. Scan misses `git update-ref refs/cairn/gate-anchor`, `git replace`, `from os import system as s`, `sh -c`, `python -c`, `source`, `pytest_plugins`.
+8. show-report refuses unprintable fields; stage 2 binds HEAD to the package.
+
+**Findings.**
+* **B1.** E5, E7, R1, R2, R4 (`bootstrap/REANCHOR_RUNBOOK.md:47-61`) trust repository state stage-1 code can write (ledger 3-5), the failure deleted Phase 0 avoided. Fix: run them before stage 1, sterile: `rev-list --parents -n1`, `diff-tree --no-renames`, `git show $CAND:dev/ceremony-record.md`, E7 by launcher mode.
+* **B2.** RA-17 (`:136`) says no candidate code runs in stage 2; the old "sequencing is not containment" warning was deleted. Stage-1 code can write a `.pth`, the python or the values file, which stage 2 runs as you type the passphrase. Fix: restore the warning; add `-S` to checker starts; `shasum` values file and python before stage 1 and again before stage 2.
+* **B3.** Revision 3's first ceremony includes "the page's exact verify command"; the page has none. Fix: add `verify-commit refs/cairn/gate-anchor` after stage 2, with `-c gpg.ssh.program=/usr/bin/ssh-keygen`.
+* **N1.** Compiled files are hits, not refusals; Y3 asks only for an explanation you cannot judge. Refuse them, as repin does.
+* **N2.** Add ledger 7's patterns; say test files and pytest settings run at stage 1 unscanned.
+* **N3.** Check no agent holds the key before stage 1, launchd's included (`SSH_AUTH_SOCK=$(launchctl getenv SSH_AUTH_SOCK) ssh-add -l`).
+* **N4.** Start every launcher command under `env -i` (ledger 2); give the first builder the packet grammar.
+
+**What your yes protects.** Against honest agent mistakes: the anchor moves to the commit a fresh reader read. Not against code running as you (a malicious agent, or the candidate's tests), which can fool every comparison here.
+
+**Coverage.** Not covered: `security_check.py`; unchanged checker code; a real stage-1 run; zsh; the driver beyond its diff.
