@@ -284,6 +284,13 @@ this list has been run by an agent.
    cut"). Before publishing, check the page's URL, profile names and commands
    against the tree.
 
+### v0.6 (Candidate directions)
+
+| Work | Gate | Notes |
+|---|---|---|
+| **Lightweight team measurement** | Proposal first | Strategy note: `dev/strategy/2026-10-27-antigravity-lightweight-team-measurement.md`. Three v0.6 recommendations: (1) upgrade `tools/gauge.py` to fix product bucketing and add `--pulse` (artifact words/tokens, review passes, model-tier mix, prompt tax); (2) update `tools/audit_report.py` and `tools/gauge.py` to attribute and sum standalone review side-files into their parent proposal/plan (closing the side-file length/pass loophole); (3) add an `archive/` subfolder to `dev/measurement/` and ship it with `.gitkeep` to adopters via `bootstrap/_scaffold/install.py` and the `incident-trackers` module. |
+| **`doctrine/` and `docs/`: examine how they relate** | Proposal first | Deferred item: examine single-source home for rules and routing between descriptive docs and governing doctrine (`doctrine/README.md`, `docs/DOCUMENTATION_PLAN.md`). |
+
 ## Queued
 
 ### Re-anchor the gate manifest — frozen files changed
