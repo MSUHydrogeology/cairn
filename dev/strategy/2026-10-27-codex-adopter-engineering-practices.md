@@ -13,6 +13,7 @@ Cairn should help scientific projects establish the engineering practices their
 work needs. That does not mean Cairn itself needs every practice, or that its
 methodology must teach every engineering technique. The Maintainer identified
 the adopter architecture-review module as a promising home for this capability.
+The Maintainer also directed that it support both legacy and new systems.
 
 Three questions must stay separate: what Cairn's own tooling needs; what Cairn
 helps adopters establish; and what specialist resources should teach. Testing
@@ -107,7 +108,14 @@ scheme before recommending new labels or directories.
 
 ## Recommendation
 
-Explore option 2 in one proposal. Keep implementation guidance optional and
+Explore option 2 in one proposal. Make architecture-review flexible enough for
+both legacy and new systems. For legacy systems, assess existing boundaries,
+constraints and failure evidence before recommending changes. For new systems,
+help choose boundaries, contracts and verification approaches before those
+choices become expensive to reverse. Use the same five lenses with prompts
+that distinguish observed behavior from proposed design; allow mixed cases,
+such as a new subsystem within a legacy application. Revise the current
+accreted-architecture selection condition as part of that proposal. Keep implementation guidance optional and
 project-specific. Preserve one home for each practice and reuse existing
 review lenses. Do not infer that every adopter need is a Cairn self-development
 requirement. Cairn should demonstrate only the practices relevant to its own
@@ -121,9 +129,8 @@ architecture review into a broad compliance exercise.
 
 ## Open questions
 
-* Should support extend to deliberate greenfield design? The current module
-  explicitly targets accreted architecture; broadening that selection condition
-  needs a proposal, not an incidental wording edit.
+* Which prompts should differ between legacy assessment and new-system design,
+  and how can one rubric support both without duplicating guidance?
 * What is the smallest useful set of examples, and which specialist references
   should they point to?
 * Can an existing assessment record carry the practice choices without another
