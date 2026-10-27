@@ -2362,6 +2362,57 @@ def _cmd_finalize_lockfile(
     return 0
 
 
+def _working_file_differs(
+    project: Path, name: str, index_mode: str, index_id: str,
+    check_mode: bool, fold_crlf: bool,
+) -> bool:
+    """Does the working file *name* count as edited against its index entry?
+
+    Reads nothing through git, so no program the project names can run: the
+    engine hashes the file itself.  *project* is the resolved project folder and
+    *name* a ``/``-separated path inside it; *index_mode* and *index_id* are the
+    index entry's mode and object id as ``git ls-files -s`` prints them.
+
+    Edited when: the entry is not a plain file (mode other than 100644 or
+    100755, so a link or a submodule); a link sits at the name or above it
+    (`_assert_safe_write`, which refuses to follow one); the name is missing or not
+    a regular file; the bytes, hashed as git hashes a blob, differ from the id; or,
+    with *check_mode* on a platform that has the bit, the owner-execute bit differs
+    from the entry's mode.  With *fold_crlf*, bytes that equal the entry once every
+    ``\\r\\n`` becomes ``\\n`` count as unchanged.  A refusal from either guard, an
+    OS error or a link loop is "edited", never an error: this answers for a person
+    deciding whether to overwrite, and "cannot be shown unchanged" is the safe side.
+    """
+    import hashlib
+    import os
+
+    if index_mode not in ("100644", "100755"):
+        return True
+    path = project / name
+    try:
+        _assert_safe_write(path, project)
+        data = _read_regular_bytes(path)
+        mode = path.lstat().st_mode if data is not None and check_mode else 0
+    except (ScaffoldSecurityError, OSError, RuntimeError):
+        return True
+    if data is None:
+        return True
+    if check_mode and os.name != "nt" and bool(mode & 0o100) != (index_mode == "100755"):
+        return True
+
+    def blob_id(content: bytes) -> str | None:
+        header = b"blob %d\0" % len(content)
+        if len(index_id) == 40:
+            return hashlib.sha1(header + content, usedforsecurity=False).hexdigest()
+        if len(index_id) == 64:
+            return hashlib.sha256(header + content).hexdigest()
+        return None
+
+    if blob_id(data) == index_id:
+        return False
+    return not (fold_crlf and blob_id(data.replace(b"\r\n", b"\n")) == index_id)
+
+
 def _dirty_tracked_paths(target: Path) -> set[str] | None:
     """The set of **tracked, uncommitted** paths in ``target`` (repo-root
     relative), or ``None`` when ``target`` is not a git work tree / git is
