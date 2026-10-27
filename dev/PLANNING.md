@@ -247,10 +247,16 @@ these rows only.
 Written 2026-10-26 by the planning session (updated 2026-10-27: the twelfth plan's allowances and the thirteenth Decision are done), in the order to do it. Nothing in
 this list has been run by an agent.
 
-1. **Your `repin` steps**, in this order: M2 (the first real ceremony,
-   `--first-run --reviewed-commit 5670dda9`), M1, R6a, R6b, then M3 (by hand,
-   `bootstrap/REANCHOR_RUNBOOK.md`). The steps and their preconditions are in
-   `dev/plans/repin-build.md`.
+1. **Your `repin` steps** (`dev/plans/repin-build.md`): **measured 2026-10-27,
+   `repin` refuses at the current HEAD.** `python scripts/repin.py status`
+   stops at boot because `bootstrap/tests/_gate_manifest.py` no longer equals
+   the anchor's entry (commit `fa86e2cb`, the onboarding change, deleted two
+   lines of it). Every verb stops there, so step M2 (`--first-run
+   --reviewed-commit 5670dda9`) cannot run before the cut, and neither can the
+   steps that follow it (M1, R6a, R6b). The 0.5 re-anchors are then done by
+   hand under `bootstrap/REANCHOR_RUNBOOK.md`, as at 0.4, and they anchor the
+   new bytes; `repin`'s first real use moves to the next release. Your call:
+   confirm that, or tell me to do something else. Not yet put to you.
 2. **The re-anchors, once, at the end**: the AST attestation and the gate
    manifest. Derive the lists with `_ast_attest.py verify` and
    `_gate_manifest.py verify` on Python 3.13.x, not from the rows below. Your
