@@ -175,7 +175,7 @@ and a new empty `Unreleased` is started above.
   base copy is not checked against its recorded hash before a merge uses it;
   lockfile file names can carry invisible characters; and the install report
   prints profile-supplied module and slot names without escaping.
-  ([review](dev/plans/archive/2026-10-19-security-review-upgrade-lockfile-paths.md), findings LP-SR-1 to 8)
+  ([review](dev/plans/archive/2026-10-19-security-review-upgrade-lockfile-paths.md), eight findings)
 
 ### Fixed — Session kernel: the interpreter-binding gate and its messages
 
@@ -187,7 +187,7 @@ and a new empty `Unreleased` is started above.
   process is still printed unencoded (queued), and, by decision, a
   binding that arrives by a downloaded archive, `git apply`, `git reset` or
   `git rm --cached` is still trusted (recorded in `bootstrap/SAFETY.md`).
-  ([review](dev/plans/archive/2026-10-18-security-review-session-writes.md), findings SW-SR-10 to 15)
+  ([review](dev/plans/archive/2026-10-18-security-review-session-writes.md), six findings)
 
 ### Added — Drain mode: `/session-start --drain` works the queue
 
