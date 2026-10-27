@@ -1,7 +1,7 @@
 # Make the upgrade edit check run no program from the project's git settings
 
 **Author**: Claude Sonnet 5.5
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review) -- the change edits the scaffold engine (`bootstrap/_scaffold/`), a named high-risk surface, next to the git call the twelfth change added
 **Opened**: 2026-10-26
@@ -394,3 +394,17 @@ A program from `.git/config` runs under any of the three commands, including on 
 * Revision 1 item 3, the config read as pass or fail: exit 1 is "no keys"; booleans follow git's rules.
 * The floor cache on `_committed_copy_matches` and its test reset: replaced by one cache in the shared launcher.
 * Question 2 reworded (CRLF only where settings ask) and Question 3 widened (a refused repository). Item 8's gap list gained a `.gitattributes`-only checkout and a stray `.git` folder.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-27
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated**. He was asked three questions (each with its default) and then, separately, whether to accept Revision 2 as it stands and scribe the Decision now. He answered:
+
+> "Yes, recorded files + lockfile (Recommended)"  (Question 1: bare `--finalize` asks git only about the files it hashes plus the lockfile)
+
+> "Yes (Recommended)"  (Question 2: where git settings ask for CRLF, a line-ending-only difference counts as unchanged)
+
+> "Stop (Recommended)"  (Question 3: when git does not answer or cannot be read safely, `--apply` and `--finalize` stop, naming the reason and `--force`; `--stage` only warns)
+
+> "Accept and commit (Recommended)"  (disposition)
+
+*Scribe's note, separate from the quoted words.* "As revised" means Revision 2, the complete current contract, which supersedes Revision 1 and answers the usual review and the Security Review (obligation cleared by the pass at 0e4bfc42). The plan review stays `required(Internal + Internal Security Review)`. The implementer does not edit `scaffold_ast_known_new.json`, the AST baseline, the gate manifest or the gate anchor; the Maintainer's one re-anchor at the cut covers this change and must name the oracle-sensitive files (`bootstrap/_scaffold/`, including `config.py`). A plan is opened in a separate commit, which archives this proposal.
