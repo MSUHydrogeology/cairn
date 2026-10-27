@@ -275,8 +275,17 @@ this list has been run by an agent.
    authorization must name the differential oracle's sensitive-roster entries
    the 0.5 changes touch: `bootstrap/_scaffold/` (including `config.py`),
    `bootstrap/security_check.py` and `bootstrap/tests/_gate_manifest.py`.
-3. **A certifying run** on the clean committed tree (the pair in `AGENTS.md`,
-   Boundary B), before the push. Nothing in the tree is certified yet.
+3. **One certifying run**, after the ceremony, on the clean committed tree (the
+   pair in `AGENTS.md`, Boundary B), before the push. Nothing in the tree is
+   certified yet. The earlier run (2026-10-27, `b15dda53`, Python 3.13.13: 5,291
+   passed, 2 failed, both the owed AST attestation tests; 20 minutes with other
+   agents running) is not repeated before the ceremony. The Maintainer, 2026-10-27,
+   on running it again before and after the ceremony: "It's silly to run multiple 20
+   minute certifying runs like that" and "Literally nothing changes between steps 3
+   and 7". The code does not change between them; only the pin fixtures, the
+   ceremony record and the release edits do, and those are what the one run must
+   see. This waives the "before the Maintainer's re-anchor ceremony" trigger in
+   `AGENTS.md` for this release.
 4. **Your push**, the merge of `0.5-dev` into `master`, the tag, and the
    release notes copied from the changelog section (rename `## Unreleased` to
    `## 0.5.0 — <date>`), with a short summary paragraph above it that I draft
