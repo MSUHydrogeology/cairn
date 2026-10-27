@@ -2146,6 +2146,22 @@ class TestTheAnchorsOwnScanRunsBeforeAnyCandidateByte:
         assert r.returncode == 0 and "ANCHOR-CHECKER" in r.stdout, r.stderr
         assert not marker.exists()
 
+    def test_the_anchors_checker_starts_with_none_of_the_callers_variables(self, ceremony):
+        """The launcher may be started bare, so the mode empties the environment itself: the
+        checker is handed `PATH` and `HOME` and nothing else of the caller's."""
+        hostile = {"SSH_AUTH_SOCK": "/tmp/an-agent", "GIT_DIR": "/tmp/elsewhere", "PROBE_VARIABLE": "reached",
+                   "PERL5OPT": "-Mstrict", "LD_PRELOAD": "/tmp/x.so"}
+        checker = "import os\nprint('ENVIRONMENT', *sorted(os.environ))\n"
+        _move_the_anchor_onto(ceremony, {_CHECKER_PATH: checker})
+        direct = subprocess.run([sys.executable, "-S", "-c", checker], capture_output=True, text=True,
+                                env={**os.environ, **hostile})
+        assert set(hostile) <= set(direct.stdout.split()), (
+            "the control: the same script run bare sees every hostile variable")
+        r = _launch(ceremony, mode=("--scan-digest",), env={**os.environ, **hostile})
+        assert r.returncode == 0, r.stderr
+        names = r.stdout.splitlines()[-1].split()[1:]
+        assert {"PATH", "HOME"} <= set(names) and set(names).isdisjoint(hostile), names
+
     def test_a_pth_file_in_the_interpreters_packages_folder_does_not_run(
             self, ceremony, tmp_path):
         binary, marker = _interpreter_with_a_planted_pth_file(tmp_path)
