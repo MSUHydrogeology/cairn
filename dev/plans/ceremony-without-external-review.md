@@ -176,3 +176,25 @@ I checked each point in the tree. "Measured" is a command I ran, "read" is code 
 * **SN4 accept.** C3 keeps the four driver functions `repin` calls (read: `repin.py:952-988`).
 
 **Not checked:** the E and Y commands as typed; whether the code can build the record check without a new closure member (C4 sits in `repin`, which is not one).
+
+## Implementation verification (C1 to C4) -- Claude Sonnet 5.5 -- 2026-10-27
+
+Range `8a4e7508..26b8709c`: C1 `2f4c8a1b`, C2 `dd92e83c`, C2b `ae1d47c2`, C3 `fed00f7b`, C4 `26b8709c`. Interpreter `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13), Bandit 1.9.4. **Boundary B mode**: full; **Certified by**: pending. No push, no suite, no ceremony. Mutants ran in detached worktrees beside a control.
+
+* Tree before and after: clean apart from two untracked paths that are not mine (`.claude/`, `dev/measurement/collision_log.md`).
+* C1: `scan_targets()` names the seven members; `test_ceremony_review_report.py` compares them with the closure. Mutants: drop a member, drop the union, add a closure member: 3 killed.
+* C1: Bandit on the seven finds 54 LOW; `test_security_lint.py::test_no_blocking_security_findings` ran, not skipped, after C1, C2 and C4. A planted `shell=True` blocks; on the parent it passes. `python bootstrap/security_check.py` not run (a release command).
+* C2: `test_ceremony_review_report.py` 25 nodes. 21 mutants killed (`git diff`, truncate, skip a deciding path, drop `nosec`, drop the roster, and more); 1 equivalent, measured: skipping `_oracle_trust.py` as a deciding path passes, skipping it from the roster too is killed.
+* C2: over the real anchor to HEAD the scan reports 64 hits in 0.3 s; read as noise level, not as findings.
+* C2b: `TestShowReport` 24 nodes; 17 mutants killed (cut at 40, raw bytes, "equal" unearned, E6 lines, Y lines, and more).
+* C3: grep for `def drive|--run|correct_pinned_digests` over `scripts/`: 6 lines on `ae1d47c2`, 0 now. 7 mutants killed, including the undefined name.
+* C4: 13 mutants killed (each record check and each digest kind, a write in a transition, the launcher check, packet bytes, the prompt).
+* Tests: C2 owners 873 passed; C3 owners 203 passed; C4 owners 571 passed (`test_repin_ceremony`, `test_repin`, `test_reanchor`, driver disclosures, the new file, `test_security_lint`, `test_security_check`). 0 skipped, 0 failed.
+* `_ast_attest.py verify`, read-only: output identical before and after (59 symbols red, as the plan says).
+* `_gate_manifest.py verify --no-collect`, read-only: matches the plan's table (`reanchor_ceremony.py` new MODIFIED; `correct_pinned_digests.py` and its test MISSING; the rest NEW).
+* Dropped nodes: nine in `gate_manifest.json:533-541`, plus `test_reanchor.py::TestShowReport::test_a_long_class_is_bounded_and_SAYS_it_was_bounded` (the cut it tested is gone; replaced by `test_no_class_is_cut_however_long`).
+* Gates: neutrality and redundancy clean. `check_cairn` flags four citations of the deleted files in `dev/plans/repin-build.md` (ready-to-archive); not edited.
+
+**Choices the plan left open.** The report names who made the scan (`scan_checker`), not an anchored digest in the package, so the package schema is untouched. "Decides" also holds `bootstrap/tests/__init__.py` and `_ast_attest.py`, which `repin` byte-compares. The existing "control: show-report nodes pass" holds for all but the cut node. `test_repin_ceremony.py`: `drive()` commits a good record first.
+
+**Not verified.** The E and Y commands as typed; stage 1 through the launcher on real keys; the full suite; `python bootstrap/security_check.py`; C5 to C7b.
