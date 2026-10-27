@@ -898,19 +898,19 @@ def test_the_signing_path_never_reads_the_terminal_or_the_environment(cbed):
     assert any(t in signing_region().replace("note =", "getpass.getpass()\nnote =", 1) for t in TRIPWIRE)
 
 
-def test_the_launchers_ssh_add_advice_is_never_relayed(cbed):
+def test_nothing_in_a_ceremony_tells_anyone_to_load_the_key(cbed):
     code, out = full_run(cbed)
     assert code == 0
-    assert "does not apply here" in out and "ssh-add <your ceremony key>" not in out
+    assert "never be loaded into an agent" in out and "ssh-add <your ceremony key>" not in out
     assert "Load it and re-run" not in out
-    cut = "\n".join(ln for ln in out.splitlines() if "does not apply here" not in ln)
-    assert "does not apply here" not in cut                 # control: the check reads the line
+    cut = "\n".join(ln for ln in out.splitlines() if "never be loaded into an agent" not in ln)
+    assert "never be loaded into an agent" not in cut       # control: the check reads the line
 
 
 def test_the_note_is_printed_again_after_a_stage_two_failure(cbed):
     code, out = drive(cbed, [("Paste the launcher digest", cbed.launcher_digest), ("Do the two digests match", "yes"),
                              ("Does Summary 2", "yes")] + [("Enter passphrase for", "wrong")] * 3)
-    assert code == 2 and out.count("does not apply here") == 2 and "Load it and re-run" not in out
+    assert code == 2 and out.count("never be loaded into an agent") == 2 and "Load it and re-run" not in out
 
 
 def test_stage_one_has_no_terminal_and_the_probe_prompts_with_one(cbed):
@@ -1265,3 +1265,175 @@ def test_a_record_commit_that_changes_another_path_refuses(cbed):
                                          ("a member", {"members": {"bootstrap/reanchor.sh": "2" * 64}})])
 def test_a_record_that_names_other_digests_refuses(cbed, part, damage):
     record_refusal(cbed, "differ from the ones dev/ceremony-record.md names", record=damage)
+
+
+# ---------------------------------------------------------------------------
+# the runbook page: every command on it, run
+# ---------------------------------------------------------------------------
+
+RUNBOOK_PAGE_END = "<!-- end of page -->"
+RUNBOOK_TOOLS = ("env", "git", "python", "mktemp", "mkdir", "shasum", "sort", "cat")
+
+
+def runbook_page() -> str:
+    parts = (REAL / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8").split(RUNBOOK_PAGE_END)
+    assert len(parts) == 2, "the runbook must carry its end-of-page marker exactly once"
+    return parts[0]
+
+
+def page_commands():
+    """(label, command) for each command line in a fenced block of the page. A `# E1 ...` comment names
+    the commands under it, and a block's first commands have no label."""
+    found = []
+    for block in runbook_page().split("```")[1::2]:
+        label = None
+        for line in block.splitlines():
+            if line.startswith("# "):
+                label = line[2:].split()[0]
+            elif line.strip():
+                found.append((label, line))
+    return found
+
+
+def page_command(label):
+    commands = [c for lab, c in page_commands() if lab == label]
+    assert commands, f"the page has no command labelled {label}"
+    return commands
+
+
+def run_page_command(bed, command, *, tool=None, digest="0" * 64, path=None):
+    """One command from the page, with its placeholders filled for the scratch bed and run in the
+    checkout under bash, the way the Maintainer's shell reads it."""
+    fill = {"<launcher>": bed.cdir / "reanchor-launcher.sh", "<packet>": bed.cdir / "authorization-packet.txt",
+            "<values>": bed.values, "<key.pub>": str(bed.key) + ".pub", "<checkout>": bed.repo, "<home>": bed.home,
+            "<python>": os.path.realpath(sys.executable), "<tool>": tool or "", "<digest>": digest}
+    for placeholder, value in fill.items():
+        command = command.replace(placeholder, str(value))
+    env = {"PATH": path or os.environ["PATH"], "HOME": str(bed.home), "LC_ALL": "C",
+           "CAND": bed.git("rev-parse", "HEAD").stdout.strip(), "REV": bed.git("rev-parse", "HEAD^").stdout.strip()}
+    return subprocess.run(["/bin/bash", "-c", command], cwd=bed.repo, env=env, capture_output=True, text=True)
+
+
+def tool_dir(bed, tmp_path):
+    """A folder of links named for the values file's tools, so `command -v` finds a link, as it does
+    for git on a Homebrew host."""
+    folder = tmp_path / "linkbin"
+    folder.mkdir()
+    for line in bed.values.read_text().splitlines():
+        key, _, value = line.partition(" ")
+        if key in RUNBOOK_TOOLS:
+            (folder / key).symlink_to(value)
+    return f"{folder}:/usr/bin:/bin"
+
+
+def test_the_page_is_at_most_eighty_lines_above_its_marker():
+    assert len(runbook_page().splitlines()) <= 80
+
+
+def test_the_page_drops_the_hand_steps_and_says_nothing_calls_promote():
+    text = (REAL / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
+    assert "## Phase 4" not in text and "update-ref" not in text and "obtain this document" not in text
+    assert "Nothing in this page calls `_gate_reanchor.py promote`" in runbook_page()
+    assert "promote" in (REAL / "bootstrap/tests/_gate_reanchor.py").read_text(encoding="utf-8")
+
+
+def test_each_comparison_on_the_page_gives_the_value_it_is_compared_with(cbed, tmp_path):
+    cbed.add_record()
+    package = Path(cbed.cdir / "package.json")
+    package.write_bytes(b'{"schema": "cairn-authorization-package/v1"}\n')
+    head, record = cbed.git("rev-parse", "HEAD").stdout.strip(), (cbed.repo / RECORD).read_text()
+
+    def ran(label, **kw):
+        r = run_page_command(cbed, page_command(label)[0], **kw)
+        assert r.returncode == 0, (label, r.stdout, r.stderr)
+        return r.stdout.strip()
+    assert ran("E1").split()[0] == f"{cbed.launcher_digest}" and f"launcher-sha256 {cbed.launcher_digest}" in record
+    assert ran("E2") == head
+    assert hashlib.sha256(package.read_bytes()).hexdigest() in ran("E3")
+    fingerprint = re.search(r"SHA256:\S+", ran("E4"))[0]
+    from bootstrap.tests import _gate_preflight as P
+    assert any(fingerprint in line for line in P._signer_lines(head, repo=cbed.repo)), "the key is not on the roster list"
+    assert [run_page_command(cbed, c).stdout.strip() for c in page_command("E5")] == ["SAME", "SAME"]
+    links = tool_dir(cbed, tmp_path)
+    values = dict(line.partition(" ")[::2] for line in cbed.values.read_text().splitlines())
+    for tool in RUNBOOK_TOOLS:
+        assert ran("E6", tool=tool, path=links) == os.path.realpath(values[tool]), tool
+        plain = subprocess.run(["/bin/bash", "-c", f"command -v {tool}"], env={"PATH": links},
+                               capture_output=True, text=True).stdout.strip()
+        assert plain != values[tool], "the control: a plain `command -v` finds a link the values file refuses"
+    anchor = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
+    assert ran("E7", path=os.environ["PATH"]) == P.scan_digest(P.range_scan(anchor, head, repo=cbed.repo))
+    assert ran("R1") == cbed.git("rev-parse", "HEAD^").stdout.strip() in record
+    assert ran("R2") == RECORD
+    assert f"packet-sha256 {ran('R3').split()[0]}" in record
+    assert ran("R4") == "SAME"
+
+
+def test_a_candidate_checker_that_hides_the_scan_cannot_change_what_the_page_prints(cbed):
+    """E7 extracts the anchor's own code. A candidate whose checker lies about the digest does not move
+    it; the control extracts from the candidate instead and sees the lie."""
+    from bootstrap.tests import _gate_preflight as P
+    guard = 'if __name__ == "__main__":'
+    source = cbed.read("bootstrap/tests/_gate_preflight.py")
+    assert source.count(guard) == 1
+    cbed.write("bootstrap/tests/_gate_preflight.py",
+               source.replace(guard, "scan_digest = lambda scan: '0' * 64\n\n" + guard))
+    cbed.commit("a checker that hides the scan")
+    anchor = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
+    head = cbed.git("rev-parse", "HEAD").stdout.strip()
+    honest = P.scan_digest(P.range_scan(anchor, head, repo=cbed.repo))
+    (command,) = page_command("E7")
+    assert run_page_command(cbed, command).stdout.strip() == honest != "0" * 64
+    from_candidate = run_page_command(cbed, command.replace("refs/cairn/gate-anchor", "HEAD"))
+    assert from_candidate.stdout.strip() == "0" * 64, "the control did not see the lie, so the node proves nothing"
+
+
+@pytest.mark.parametrize("damage", ["packet", "member", "extra path", "wrong parent", "template", "launcher byte"])
+def test_each_check_on_the_page_notices_the_damage_it_is_for(cbed, damage):
+    if damage == "packet":
+        cbed.add_record(packet="f" * 64)
+        said = run_page_command(cbed, page_command("R3")[0]).stdout.split()[0]
+        assert f"packet-sha256 {said}" not in (cbed.repo / RECORD).read_text()
+    elif damage == "member":
+        cbed.add_record(members={"bootstrap/tests/_oracle.py": "e" * 64})
+        assert run_page_command(cbed, page_command("R4")[0]).stdout.split()[-1] == "DIFFERENT"
+    elif damage == "extra path":
+        cbed.add_record(also={"slipped-in.txt": "x\n"})
+        assert run_page_command(cbed, page_command("R2")[0]).stdout.split() == [RECORD, "slipped-in.txt"] or \
+            run_page_command(cbed, page_command("R2")[0]).stdout.split() == ["slipped-in.txt", RECORD]
+    elif damage == "wrong parent":
+        cbed.add_record(read="1" * 40)
+        said = re.search(r"read-commit (\w+)", (cbed.repo / RECORD).read_text())[1]
+        assert run_page_command(cbed, page_command("R1")[0]).stdout.strip() != said
+    elif damage == "template":
+        cbed.add_record()
+        template = "bootstrap/reanchor-launcher.template.sh"
+        cbed.write(template, cbed.read(template) + "#\n")
+        cbed.commit("the candidate's launcher template differs from the one read")
+        assert run_page_command(cbed, page_command("E5")[0]).stdout.split()[-1] == "DIFFERENT"
+    else:
+        cbed.add_record()
+        with open(cbed.cdir / "reanchor-launcher.sh", "ab") as fh:
+            fh.write(b"#")
+        assert run_page_command(cbed, page_command("E5")[1]).stdout.split()[-1] == "DIFFERENT"
+        said = re.search(r"launcher-sha256 (\w+)", (cbed.repo / RECORD).read_text())[1]
+        assert run_page_command(cbed, page_command("E1")[0]).stdout.split()[0] != said
+
+
+def test_the_stage_two_command_on_the_page_is_the_one_repin_runs(cbed):
+    code, out = full_run(cbed, audit=True)
+    assert code == 0, out
+    (argv, env), = [(a, e) for a, e in popen_calls(cbed) if "--stage2" in a]
+    (page,) = [c for lab, c in page_commands() if lab is None and "--stage2" in c]
+    words = page.split()
+    assert words[:2] == ["env", "-i"]
+    named = [w.split("=", 1) for w in words[2:] if re.fullmatch(r"[A-Z]+=.*", w)]
+    assert sorted(n for n, _ in named) == sorted(env), "the page and repin give the signer different variables"
+    assert "SSH_AUTH_SOCK" not in env
+    assert argv[:1] == [words[len(named) + 2]] and argv[-2] == "--stage2" == words[-2]
+
+
+def test_neither_the_page_nor_the_artifact_tells_anyone_to_load_the_key():
+    page, artifact = runbook_page(), (REAL / "bootstrap/reanchor.sh").read_text(encoding="utf-8")
+    assert "ssh-add <your ceremony key>" not in artifact and "Load it and re-run" not in artifact
+    assert "ssh-add -l" in page and "Do not `ssh-add` the key" in page

@@ -815,15 +815,6 @@ def child(rec, argv, **kw):
     return r
 
 
-#: The launcher's two lines that tell a person to load the key with ssh-add, which this
-#: key must never be; every other line, one that merely names ssh-add included, is relayed.
-ADVICE = ("that is a missing key, not a broken tool", "ssh-add <your ceremony key>")
-
-
-def is_advice(line):
-    return any(text in line for text in ADVICE)
-
-
 def relay(text):
     for line in text.splitlines():
         say(d(line))
@@ -1199,8 +1190,7 @@ def run_ceremony(ctx, args, launchctl, rec):
         raise Refuse("the package was rewritten after you read the report. Nothing was signed.")
     # 8-9. (signing path) key checks again, then stage 2 with the terminal attached and a short environment
     key_checks(rec, pub, private, fingerprint, launchctl, "before stage 2")
-    note = ("The launcher's advice to load the key with ssh-add does not apply here: this key must "
-            "never be loaded into an agent.")
+    note = "This key must never be loaded into an agent: the signer asks for its passphrase itself."
     say(f"\nYou will be asked for the key's passphrase once, now. If you are asked at any other point, "
         f"type nothing and stop.\n{note}\nasked once, now")
     env = {"HOME": field["home"], "PATH": CHILD_PATH, "TERM": term, "LANG": "C"}
@@ -1211,8 +1201,7 @@ def run_ceremony(ctx, args, launchctl, rec):
                             stderr=subprocess.STDOUT)
     for raw_line in proc.stdout:
         line = raw_line.decode("utf-8", "replace").rstrip("\n")
-        if not is_advice(line):
-            say(d(line))
+        say(d(line))
     rec.append(f"stage 2 exit {proc.wait()}")
     if proc.returncode:
         say(note)

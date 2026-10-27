@@ -452,17 +452,6 @@ except R.Refuse as exc:
     assert "same head passes" in r.stdout and "refused" in r.stdout, r.stdout + r.stderr
 
 
-def test_only_the_launchers_two_advice_lines_are_dropped_from_the_stage_two_relay(bed):
-    code = """
-for line in ("       ssh-add <your ceremony key>", "   that is a missing key, not a broken tool. Load it and re-run:"):
-    print("ADVICE", R.is_advice(line))
-for line in ("ssh-add: could not open a connection to your authentication agent", "stage 2 refused: no good key"):
-    print("OTHER", R.is_advice(line))
-"""
-    out = snippet(bed, code)[1]
-    assert out.count("ADVICE True") == 2 and out.count("OTHER False") == 2, out
-
-
 def test_the_status_command_reads_only_the_fixed_environment_variables():
     """A tripwire, not a proof: no environment variable steers a check.  The reads are
     the filter that strips the environment for git, the agent socket the key check

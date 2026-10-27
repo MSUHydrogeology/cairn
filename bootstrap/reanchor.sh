@@ -15,7 +15,7 @@
 #
 # WHAT THIS FILE IS NOT. It is not the trust root. It is candidate code, and it
 # is started only after the launcher has verified its bytes against the digest
-# bound into the launcher at review time. It never loads a key, and stage 1
+# bound into the launcher when the packet was built. It never loads a key, and stage 1
 # refuses if it finds it can sign.
 
 LC_ALL=C
@@ -266,14 +266,14 @@ print_effective_configuration() {
 #:   agent socket buys it nothing while handing that candidate code a live
 #:   signing channel. The channel is removed, not measured.
 #:
-#:   stage 2 forwards `SSH_AUTH_SOCK`, because stage 2 is the stage that signs.
-#:   Without it `git commit-tree` invokes the signer with no controlling
-#:   terminal, falls back to `ssh-askpass`, and dies naming a path that does
-#:   not exist on a stock host.
+#:   stage 2 forwards `SSH_AUTH_SOCK` if its caller has one, because stage 2 is
+#:   the stage that signs. The runbook runs it with none: the key stays in no
+#:   agent, and the signer asks for its passphrase on the terminal. A signer
+#:   with neither a socket nor a terminal falls back to `ssh-askpass` and dies
+#:   naming a path that does not exist on a stock host.
 #:
-#: So the key is made available BETWEEN the stages and put away after. A later
-#: cleanup that made these two blocks symmetric would break the ceremony in one
-#: direction and the boundary in the other.
+#: A later cleanup that made these two blocks symmetric would break the
+#: ceremony in one direction and the boundary in the other.
 
 require_checker() {
     if [ ! -e "$CHECKER" ]; then
@@ -445,8 +445,8 @@ ROSTER
         else
             printf '%s\n' "       re-run YOUR LAUNCHER with:  --hash-package"
         fi
-        printf '%s\n' "  3. make the ceremony key available, and only now"
-        printf '%s\n' "  4. sign and move both refs:"
+        printf '%s\n' "  3. check that no agent lists your key (ssh-add -l); do not load it"
+        printf '%s\n' "  4. sign and move both refs (the signer asks for the passphrase):"
         # PRINT THE LAUNCHER COMMAND, NOT THIS ARTIFACT'S.
         #
         # Stage 2 must re-extract into a FRESH directory. Candidate code ran in
@@ -512,21 +512,21 @@ cmd_stage2() {
 
     require_regular_file "package" "$V_package"
 
-    # SAY THE KEY IS MISSING, rather than letting the signer say it badly.
+    # SAY WHY THERE IS NO AGENT SOCKET, rather than letting it look like a fault.
     #
-    # Without the key in the agent, `git commit-tree` has no controlling
-    # terminal, falls back to ssh-askpass, and dies naming
+    # The key stays in no agent, so the stage is run with no socket and the
+    # signer asks for the passphrase on the terminal. Without a terminal,
+    # `git commit-tree` falls back to ssh-askpass and dies naming
     # `/usr/X11R6/bin/ssh-askpass` -- a path that does not exist on a stock
     # host and names nothing an operator can act on. Measured twice on
     # 2026-08-19, once per ceremony attempt.
     #
-    # A note rather than a refusal: an operator may legitimately be about to
-    # answer a terminal prompt, and this stage's job is to sign, not to police
+    # A note rather than a refusal: this stage's job is to sign, not to police
     # how the key is supplied.
     if [ -z "${SSH_AUTH_SOCK-}" ]; then
-        printf '%s\n' "   NOTE: no agent socket. If signing fails naming ssh-askpass,"
-        printf '%s\n' "   that is a missing key, not a broken tool. Load it and re-run:"
-        printf '%s\n' "       ssh-add <your ceremony key>"
+        printf '%s\n' "   NOTE: no agent socket, as intended: the key stays in no agent."
+        printf '%s\n' "   If signing fails naming ssh-askpass, this stage had no terminal"
+        printf '%s\n' "   to ask for the passphrase on; run it from a terminal."
         printf '\n'
     fi
 
@@ -543,16 +543,14 @@ cmd_stage2() {
     fi
 
     printf '%s\n' "== stage 2: confirm, sign, and move both refs in ONE transaction =="
-    printf '%s\n' "   (the key must be available NOW, and put away afterwards)"
+    printf '%s\n' "   (the signer asks for the key's passphrase once, below)"
     printf '%s\n' "   IF YOU ARE ASKED FOR A PASSPHRASE HERE: **ENTER IT**."
     printf '%s\n' "   This is the opposite of stage 1. Same prompt, other stage,"
-    printf '%s\n' "   other answer -- which is why loading the key first is easier:"
-    printf '%s\n' "       ssh-add <your ceremony key>"
+    printf '%s\n' "   other answer. Do not load the key into an agent."
     printf '\n'
 
-    # SSH_AUTH_SOCK IS forwarded here, and only here. See the block comment
-    # above: stage 2 signs, and without the socket the signer has no terminal
-    # and dies on a missing ssh-askpass.
+    # SSH_AUTH_SOCK is forwarded here, and only here, when the caller has one.
+    # See the block comment above.
     "$V_env" -i \
         PATH=/usr/bin:/bin \
         HOME="$V_home" \
@@ -842,7 +840,7 @@ print_steps() {
     printf '%-8s %-13s %-14s %s\n' 'RA-15' 'between' 'hash-package' \
         'the digest is computed over the bytes on disk, by you'
     printf '%-8s %-13s %-14s %s\n' 'RA-16' 'between' '(Maintainer)' \
-        'the ceremony key is made available -- the one act that stays human'
+        'the key stays in no agent: you repeat the checks that bind what you sign'
 
     printf '%-8s %-13s %-14s %s\n' 'RA-17' 'stage 2' 'stage2' \
         'the confirmed package is validated against YOUR digest, re-extracted'
@@ -851,7 +849,7 @@ print_steps() {
     printf '%-8s %-13s %-14s %s\n' 'RA-18' 'stage 2' 'stage2' \
         'the checkpoint is signed and branch and anchor move in ONE transaction'
     printf '%-8s %-13s %-14s %s\n' 'RA-19' 'after' '(Maintainer)' \
-        'the key is put away, and the two refs are published in one atomic push'
+        'the two refs are published in one atomic push'
     printf '\n'
 }
 

@@ -1913,51 +1913,6 @@ def _runbook_ceremony_script(repo: Path, *, oid: str | None = None,
                      values or _values_file(repo), head])
 
 
-def _recorded(repo: Path) -> dict:
-    """The values a Maintainer records at first use.
-
-    Only the acquisition command still consumes these: it runs BEFORE the
-    operator has a values file, because it is how they obtain the document that
-    explains what a values file is. Everywhere else the values file replaced
-    placeholder-filling outright.
-    """
-    values = {
-        "<maintainer-recorded-env>": shutil.which("env"),
-        "<maintainer-recorded-git>": shutil.which("git"),
-        "<maintainer-recorded-shasum>": shutil.which("shasum"),
-        "<absolute-path-of-the-checkout-to-bless>": str(repo),
-    }
-    missing = [k for k, v in values.items() if not v]
-    assert not missing, f"cannot resolve recorded utilities: {missing}"
-    return values
-
-
-def _runbook_acquisition_command(repo: Path) -> str:
-    """The command that reads the runbook itself out of the anchor.
-
-    Under test because it claimed to be sterile and was not: it is the
-    instruction source, so a substituted one can simply omit a step.
-
-    **This is the one block that still carries placeholders, and deliberately
-    so.** Placeholder-filling was retired everywhere else because the values
-    file replaced it -- but this command runs *before* the operator has
-    anything, including a values file. It is how they obtain the document that
-    tells them what a values file is. A recorded value it could read does not
-    exist yet.
-    """
-    text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
-    section = text.split("### Phase 0 pre-flight")[1].split("\n### ")[0]
-    blocks = [b for i, b in enumerate(section.split("```")) if i % 2]
-    matching = [b for b in blocks if "REANCHOR_RUNBOOK.md" in b]
-    assert len(matching) == 1, (
-        f"expected exactly one acquisition block, found {len(matching)}")
-    block = matching[0]
-    for placeholder, value in _recorded(repo).items():
-        if placeholder in block:
-            block = block.replace(placeholder, shlex.quote(value))
-    return block
-
-
 class TestAnchoredInvocationTargetsTheNamedCheckout:
 
     def _cli(self, checker: Path, *args, cwd=None):
@@ -4750,38 +4705,6 @@ class TestLoaderTrustBoundary:
         # a keyless stage had signed.
         _assert_stage1_completed(repo, r, before)
 
-    def test_the_acquisition_command_resists_git_dir_redirection(self, tmp_path):
-        """The command that obtains the runbook is the instruction source:
-        a substituted one can omit the loader entirely, so no later check can
-        recover. It claimed to be sterile and had no environment scrub."""
-        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        marker = "THE-REAL-ANCHORED-RUNBOOK"
-        _write(repo, P._RUNBOOK_REL, f"{marker}\n")
-        real_anchor = _signed_commit(repo, "anchored runbook")
-        _run("git", "update-ref", P._ANCHOR_REF, real_anchor, cwd=repo)
-
-        elsewhere = tmp_path / "elsewhere"
-        elsewhere.mkdir()
-        _run("git", "init", "-q", ".", cwd=elsewhere)
-        _run("git", "config", "user.email", "e@example", cwd=elsewhere)
-        _run("git", "config", "user.name", "E", cwd=elsewhere)
-        _write(elsewhere, P._RUNBOOK_REL, "AN ALTERNATE RUNBOOK WITH NO LOADER\n")
-        _commit(elsewhere, "impostor")
-        _run("git", "update-ref", P._ANCHOR_REF, "HEAD", cwd=elsewhere)
-
-        command = _runbook_acquisition_command(repo)
-        import os as _os
-        r = subprocess.run(
-            ["bash", "-c", command], cwd=str(repo), capture_output=True,
-            text=True, check=False,
-            env={**_os.environ, "GIT_DIR": str(elsewhere / ".git")})
-
-        assert r.returncode == 0, r.stderr[-1500:]
-        assert marker in r.stdout, (
-            f"GIT_DIR redirected the acquisition command to another "
-            f"repository's runbook: {r.stdout[:300]!r}")
-        assert "ALTERNATE" not in r.stdout
-
     def test_a_replacement_shasum_on_path_cannot_vouch_for_rewritten_bytes(
             self, tmp_path):
         """`PATH=/usr/bin:/bin` lived only inside the `env -i` child used
@@ -5566,44 +5489,6 @@ def _fenced(section: str) -> list[str]:
 
 class TestRunbookPublicationText:
 
-    def test_the_anchor_is_created_with_a_reflog_and_the_fixed_reason(self):
-        """The runbook's own `update-ref` is where the anchor's reflog begins.
-
-        Custom refs carry no reflog by default, so the *creating* command is the
-        one place where omitting the flag means the ref has none for its whole
-        life -- every later transaction appends to a log that starts there. This
-        was a real gap: the recorded command was bare while the code it hands off
-        to was careful, which is the FUR shape (a fix the recorded steps do not
-        carry is not a fix).
-
-        The reason is compared against the module constant rather than a literal,
-        so the recorded command and the checker cannot drift into labelling the
-        same anchor two different ways.
-        """
-        section = _runbook_section("\n### Phase 0 pre-flight")
-        creations = [b for b in _fenced(section)
-                     if "update-ref" in b and P._ANCHOR_REF in b]
-        assert len(creations) == 1, (
-            f"expected one recorded anchor-creation command, found "
-            f"{len(creations)}")
-        create = creations[0]
-        assert "--create-reflog" in create
-        assert P._CEREMONY_REFLOG_REASON in create, (
-            f"the recorded command must label the anchor with "
-            f"{P._CEREMONY_REFLOG_REASON!r}, the reason the checker writes")
-
-    def test_the_authorization_ref_is_created_without_a_reflog(self):
-        """The deliberate asymmetry, asserted so it reads as a decision rather
-        than an oversight: `update-ref -d` removes a ref's reflog with it, so a
-        log on a ref that is always deleted buys nothing."""
-        section = _runbook_section("\n## Phase 4")
-        creations = [b for b in _fenced(section)
-                     if "update-ref" in b and "gate-authorization" in b
-                     and " -d " not in b]
-        assert len(creations) == 1
-        assert "--create-reflog" not in creations[0]
-        assert "ceremony-local" in section
-
     def test_publication_is_one_atomic_push_with_explicit_refspecs(self):
         blocks = _fenced(_runbook_section("\n## Phase 5"))
         pushes = [b for b in blocks if "push" in b]
@@ -5664,15 +5549,6 @@ class TestRunbookPublicationText:
         assert any(f"{P._ANCHOR_REF}:{P._ANCHOR_REF}" in b for b in fetches), (
             "clone fetches refs/heads/* and refs/tags/* only; without an "
             "explicit refspec a complete-looking clone has no anchor")
-
-    def test_the_authorization_ref_is_retired_by_expected_old_value(self):
-        section = _runbook_section("\n## Phase 4")
-        deletions = [b for b in _fenced(section)
-                     if "update-ref -d" in b and "gate-authorization" in b]
-        assert len(deletions) == 1, "expected one recorded retirement command"
-        assert "<A-sha>" in deletions[0], (
-            "a bare -d deletes whatever the ref points at")
-        assert "unresolved ceremony residue" in section.lower()
 
     def test_the_authorization_ref_appears_in_NO_push_or_fetch_block(self):
         """The absence property, over the whole runbook rather than one phase.

@@ -68,7 +68,8 @@
     "bootstrap/REANCHOR_RUNBOOK.md": {
       "paths": [
         "dev/.cairn/trusted-activation.yml",
-        "dev/.cairn/promotion-authorization.yml"
+        "dev/.cairn/promotion-authorization.yml",
+        "dev/ceremony-record.md"
       ]
     },
     "bootstrap/SAFETY.md": {

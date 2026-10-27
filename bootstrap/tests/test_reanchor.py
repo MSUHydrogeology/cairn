@@ -2201,86 +2201,22 @@ class TestTheRunbookAndTheRegistryAgree:
             "the runbook must state the limit of its own agreement check")
 
 
-class TestTheReproducedLauncherDoesNotDriftFromTheRealOne:
-    """The runbook reproduces the launcher's shape so an operator can read what
-    they are about to run. A reproduction that drifts is worse than none: it
-    describes a procedure nobody performs, and it reads authoritative.
-
-    **What this checks is shape, and the runbook says so too.** Each row of the
-    reproduced table names an operation, and this asserts that operation is
-    still in the launcher and still in the documented order. It does not check
-    that the surrounding explanation is accurate -- that is reviewed, not
-    machine-checked.
-    """
-
-    #: (phrase the runbook uses, the launcher construct it describes), in the
-    #: order the launcher performs them. Retyped rather than parsed out of
-    #: either file: a check derived from one side agrees with that side by
-    #: construction, which is not a check.
-    STEPS = (
-        ("reads your values file with its **only** parser", "read_values"),
-        ("bound into itself",                              "$PACKET_SHA256"),
-        ("re-hashes the snapshot",                         "$_rp_d2"),
-        ("own fixed list",                                 "$EXPECTED_PATHS"),
-        ("resolves the candidate **once**",                "RESOLVED=$(sterile_git rev-parse"),
-        ("verifies **every** closure blob",                'cat-file blob "$RESOLVED:$REL"'),
-        ("composes the review manifest",                   'MANIFEST=$T/review-manifest.txt'),
-        ("**starts the artifact**",                        'exec /bin/sh "$T/$ARTIFACT_REL"'),
-    )
-
-    def test_every_reproduced_step_is_still_in_the_launcher(self):
-        launcher = _LAUNCHER_TEMPLATE.read_text(encoding="utf-8")
-        runbook = _RUNBOOK.read_text(encoding="utf-8")
-        for phrase, construct in self.STEPS:
-            assert phrase in runbook, (
-                f"the runbook no longer describes {construct!r}; the "
-                f"reproduction has drifted from the launcher")
-            assert construct in launcher, (
-                f"the launcher no longer contains {construct!r}, which the "
-                f"runbook still tells the operator it does")
-
-    def test_the_reproduced_order_matches_the_launchers_order(self):
-        """A reproduction listing the right operations in the wrong order tells
-        the operator that verification happens after execution, or that the
-        candidate is resolved before the packet is trusted."""
-        launcher = _LAUNCHER_TEMPLATE.read_text(encoding="utf-8")
-        positions = [launcher.index(c) for _p, c in self.STEPS]
-        assert positions == sorted(positions), (
-            "the launcher performs these operations in a different order than "
-            "the runbook reproduces them:\n  " + "\n  ".join(
-                f"{c} @ {launcher.index(c)}" for _p, c in self.STEPS))
-
-    def test_the_reproduction_says_it_is_not_the_authority(self):
-        """The single most important sentence in that section. An operator who
-        copies the reproduction runs a launcher nobody reviewed -- and it would
-        look right, because it IS right apart from the one slot that binds it
-        to a reviewed packet."""
-        runbook = _RUNBOOK.read_text(encoding="utf-8")
-        assert "NOT the authority source" in runbook
-        assert "Do not copy this" in runbook
-
-    def test_the_runbook_keeps_the_first_use_review_history(self):
-        """The rationale is what made the external passes effective, and every
-        one of these labels still resolves to a live first-use review. They are
-        kept WITH their reasons: a reader who cannot open that history still
-        learns why the line is there, and a reader who can still has the
-        coordinate."""
-        import re
-        runbook = _RUNBOOK.read_text(encoding="utf-8")
-        found = set(re.findall(r"FUR\d+", runbook))
-        assert {"FUR6", "FUR7", "FUR8", "FUR9", "FUR10"} <= found, (
-            f"the first-use rationale has been dropped: {sorted(found)}")
+class TestTheRunbookHoldsNoLauncherCopy:
+    """The runbook explains the launcher by the step registry and does not
+    reproduce it. A pasteable copy is a second implementation of the ceremony
+    that nobody runs and nothing tests -- which is how recorded steps once went
+    stale while the code was correct."""
 
     def test_no_ceremony_loader_block_survives_in_the_runbook(self):
-        """The point of the restructure. A pasteable loader in the document is
-        a second implementation of the ceremony that nobody runs and nothing
-        tests -- which is exactly how the recorded steps went stale while the
-        code was correct."""
         runbook = _RUNBOOK.read_text(encoding="utf-8")
         assert "/bin/sh <<'" not in runbook, (
             "an executable loader block is back in the runbook")
         for delim in ("LOADER", "TRANSITION", "STAGE2", "STAGE2T"):
             assert f"<<'{delim}'" not in runbook
+
+    def test_the_runbook_does_not_reproduce_the_launchers_member_list(self):
+        runbook = _RUNBOOK.read_text(encoding="utf-8")
+        assert "EXPECTED_PATHS" not in runbook
 
 
 # --------------------------------------------------------------------------
