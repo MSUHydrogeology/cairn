@@ -2,6 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-governing-text-single-source.md
 **Status**: implementing
+**Waiting on Maintainer**: Routing and two conflicting prescriptions
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Map where rules come from and reach adopters before choosing how to reduce repeated editing.
@@ -309,3 +310,55 @@ folder, where present, uses the same dated stem and archives with the plan.
 This is a path migration, not a scope or lifecycle change. Historical review
 and evidence citations retain the paths valid at their named commits; current
 link destinations and operative targets use the dated paths.
+
+
+## C1 refreshed decision packet -- Codex (Strategy, gpt-6.1-sol high) -- 2026-10-28
+
+**Source snapshot**: `e9928009078b666b753b3b0502af14d9d2421922`, after
+model-floor archive and scoped-verification ordinary/Security reviews. The
+latter remains held on its prescribed ceremony; this packet waives nothing.
+C1 now reaches C2's fence; its Waiting line names the grouped routing/conflict
+choice. No operative rule, source proposal or prior review was edited.
+
+**Packet**: the settled strategy note is
+`dev/strategy/2026-10-28-codex-governing-text-inventory.md`. The existing section
+TSV preserves 195 baseline records and adds current coordinates/section-purpose
+judgments (190 document headings, five fenced examples; 6,125 current lines).
+The owned `operative-obligations.tsv` maps 55 obligation groups, including two
+conflicts and 21 partial installed homes; `editing-baseline.tsv` records 21
+measurements. These names resolve inside this plan's same-stem evidence folder.
+
+**Recommendation**: public methodology explanation/reference under `docs/`,
+with complete installed operation and project-local `dev/rules/`. Ask the
+Maintainer explicitly to confirm the current shipped coordination default
+(block only provably different live claims, warn on stale/tokenless claims,
+retain warn/confirm choices) and current exact, document-wide typed path
+declarations. These replace different published defaults/restrictions; routing
+approval alone cannot authorize their loss. Partial-duty rows remain no-cut
+barriers until their complete appropriate local owner/pointer is established.
+No proposed duty loss is silently accepted.
+
+**Verification**: canonical Python 3.13.13. Fresh empty-target CLI installs from
+an exact Git archive of the snapshot, using the two named profiles and
+`--non-interactive --allow-dev`, exited 0: 69 files in 0.117s and 101 in 0.095s.
+Both contain the local governing/template/rules/documentation/skill homes and
+omit doctrine. Current floor clauses occur in both outputs; the complete source
+`Scope delta` section survives unchanged in each installed plan template. An
+initial invocation refused missing target directories; creating empty targets
+resolved that setup refusal. No host security tool or hook was run.
+
+All 195 original section fields remain unchanged; current heading coordinates,
+55 obligation IDs/source anchors/related test paths and baseline counts were
+validated directly against committed bytes. Historical owner results are
+identified in the baseline, not presented as fresh passes. No duplicate owner
+suite, full suite, mutation or ceremony ran. Claim/link/check_cairn pass on the
+note and this plan; neutrality/redundancy have zero failures (43 informational
+neutrality entries). Reader search found no tests/scripts importing these
+inventory artifacts, beside its known doctrine-path positive control.
+
+**Next move / limits**: C2's exact Maintainer choice belongs in this plan before
+any rule relocation/deletion/reconciliation. The two example editing baselines
+are measured before consolidation; no after-change saving is claimed. C3 still
+owes source/twin semantic comparison and positive plus removed/inverted installed
+controls for changed obligations, and its trust-test sequencing fence remains.
+Any subsequent affected source delta requires refresh before acting on C2.
