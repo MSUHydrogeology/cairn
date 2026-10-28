@@ -1,160 +1,145 @@
 # v0.6 decision master — editing burden and nimbleness first
 
 **Author**: Codex (Coordination)
-**Model**: GPT-6 (exact runtime variant unavailable)
+**Model**: GPT-6; coordination switched to Terra by Maintainer on 2026-10-28
 **Date**: 2026-10-28
 **Status**: living
 **Type**: living-reference
-**Surfaces this would feed**: Maintainer decisions on the linked proposals; subsequent accepted plans; the v0.6 roadmap.
+**Surfaces this would feed**: Maintainer decisions and actions on the five accepted v0.6 plans and the roadmap.
 
 ## Purpose and authority
 
-One place to resume the v0.6 drain while the Maintainer is away. Start with
-editing burden and nimbleness; preserve the release boundary: make existing
-capabilities work in v0.6, add capabilities in v0.7. The
-[roadmap](../PLANNING.md) remains the scope inventory and the proposal records
-remain authoritative for their own status and contract. This master is a
-briefing, not a Decision or a replacement board.
+This is the consolidated decision packet for the nimbleness-first v0.6 batch.
+The Maintainer authorized continuous reviews and handoffs without check-ins.
+The [roadmap](../PLANNING.md) remains the scope inventory; each linked plan owns
+its contract and status. This briefing grants no approval and replaces no
+Decision. Pushing, publishing, repository settings changes and issue closure
+remain unauthorized.
 
-The Maintainer authorized delegated work and continuous handoffs on October 28.
-This briefing grants no approval: proposal Decisions and explicit plan fences
-remain authoritative. Pushing, publishing, settings changes and issue closure
-are not authorized.
+Keep the release boundary: v0.6 makes existing capabilities work; v0.7 adds
+capabilities and adopter research. This five-plan batch does not finish v0.6.
 
-## Accepted batch and execution order
+## Delivered work and current holds
 
-All five proposals were accepted in committed Maintainer Decisions:
-`63e315fa` (model floors), `f110d263` (verification), `cca436a9` (test trust),
-`cea1299d` (test maintenance), and `439c7b34` (governing text).
-The Maintainer then instructed: “Okay, go ahead with all five in the order you
-deem most appropriate”. Opening each plan archived its accepted source unchanged.
-Use `python tools/board.py` for current lifecycle status rather than treating
-this briefing as another status board.
+| Plan | Result |
+|---|---|
+| [Model floors](../plans/archive/2026-10-28-model-floor-alignment.md) | Implemented, independently reviewed and archived. Local vendor assignments and shipped generic task floors align; 574 mapped passes under Python 3.13.13. Certification/re-anchor debt remains live in the roadmap. |
+| [Scoped verification](../plans/2026-10-28-scoped-change-verification.md) | Implemented; 2,700 collected/executed nodes reconciled, five guard cases passed, environment-denied security cases passed with required local capability. Independent example adjudication and ordinary/Security reviews completed. Both reviews hold completion for the prescribed frozen-file ceremony. Later naming examples corrected with 656 mapped passes under Python 3.13.13. |
+| [Governing text](../plans/2026-10-28-governing-text-single-source.md) | Refreshed section/obligation map, editing baseline and actual installs support the routing/conflict choice below. No rule moved or deleted. |
+| [Test trust boundary](../plans/2026-10-28-test-trust-boundary.md) | Refreshed factual inventory and high-tier classification are ready for exact roster approval. Existing protection remains active. |
+| [Ordinary test maintenance](../plans/2026-10-28-ordinary-test-maintenance.md) | Reviewed plan; implementation cannot start because the chosen board file contains security defenses and remains protected. |
 
-| Order | Plan | Accepted outcome and remaining constraint |
-|---|---|---|
-| 1 | [Model floors](../plans/archive/2026-10-28-model-floor-alignment.md) | Implemented and code-reviewed task floors and Cairn-only assignments, including Antigravity; certification/re-anchor pending |
-| 2 | [Change verification / issue #33](../plans/2026-10-28-scoped-change-verification.md) | Implemented; split evidence covers 2,700 collected/executed nodes; independent example adjudication complete; code review holds closure for the required frozen-file ceremony |
-| 3, parallel inventory | [Governing text](../plans/2026-10-28-governing-text-single-source.md) | Establish why each home exists and compare doctrine with docs/dev/rules; the Maintainer chooses routing before rule relocation/deletion |
-| 4 | [Test trust boundary](../plans/2026-10-28-test-trust-boundary.md) | Exact protected roster requires Maintainer approval; root/re-anchor remains Maintainer-only; narrower assurance loss already accepted |
-| 5 | [Ordinary test maintenance](../plans/2026-10-28-ordinary-test-maintenance.md) | Follows implemented trust boundary and board-file eligibility; references the test-practice strategy and updates the existing testing module |
+The source Decisions are `63e315fa`, `f110d263`, `cca436a9`, `cea1299d` and
+`439c7b34`. All five plans were authorized; their later explicit fences remain.
+Use `python tools/board.py --maintainer` for declared next moves.
 
-The trust Decision explicitly accepts loss of blanket ordinary-test byte
-protection and ordinary-node deletion/rename/new-marker HOLDs. Actual
-release-mode skip/xfail/xpass refusal remains. Ordinary pytest code can still
-influence protected execution; do not claim equivalent tamper resistance.
-The ordinary test pilot stops for a scope decision if its file remains protected.
+## Remaining decisions and actions
 
-The approved testing-module update stays within existing maintenance practice;
-new simulation guidance remains v0.7. No plan waives its recorded fence.
+### 1. Governing-text routing and two conflicting prescriptions
 
-## Remaining Maintainer decisions and actions
-
-I will carry reviews, fixes and handoffs forward without check-ins. The explicit
-fences below remain; recommendations are prepared here before asking for a decision.
-
-| Item | Recommendation / choice | Readiness |
-|---|---|---|
-| Governing-text routing | Put public explanation/reference under the proposed methodology home; retain complete duties in installed operating files and project-specific rules in `dev/rules/`. Alternative: retain the current split. Moving loses the familiar doctrine landmark and requires citation migration. | C1 semantic mapping and post-review refresh in progress; no relocation authorized |
-| Exact protected-test roster | Approve the refreshed, source-bound roster before narrowing. Initial proposal: 90 protected Python paths, 51 ordinary test files; retain other existing protection. | Counts and hashes must be refreshed after verification review; initial counts are not approval targets |
-| Test-maintenance pilot scope | Separately authorize extracting the two ordinary clusters into an ordinary file while retaining security cases and helpers. Alternative: retain the protected file and pause the pilot. | Initial classification protects the board file; extraction adds review and ceremony work and is not authorized |
-| Frozen-file ceremony / trust installation | Perform the applicable existing Maintainer ceremony on the final reviewed tree; keep certification and root changes explicit. | Verification code review records this as an unmet required check; trust-boundary installation comes after roster approval and implementation |
+**Recommend:** move public explanation/reference to the proposed methodology
+home under docs; keep complete operating duties in usable installed files and
+project-specific rules in `dev/rules/`. A separate published methodology has a
+purpose, but the inventory found no delivery requirement for the distinct
+`doctrine/` location. Moving costs the familiar landmark and citation migration;
+a rename alone saves no editing.
 
 Proposed path: `docs/methodology/` (not yet created).
 
-These are recommendations and pending actions, not scribed Decisions. Exact
-roster evidence and final review dispositions will replace provisional facts.
+The [inventory and recommendation](2026-10-28-codex-governing-text-inventory.md)
+map 190 document headings plus five fenced examples, 55 obligation groups and
+21 editing measurements. Fresh installs wrote 69/101 files, without doctrine.
+They reveal two conflicts requiring **separate explicit assent within this
+routing choice**, rather than an implied wording cleanup:
 
-## What the doctrine question means
-
-Measured from [doctrine's index](../../doctrine/README.md), the
-[documentation plan](../../docs/DOCUMENTATION_PLAN.md) and installer mappings:
-`doctrine/` is published in Cairn's repository but is not copied into an
-adopter's tree. Its stated purpose is explaining the invariant methodology and
-its reasons. Installed operating files are intended to put that method into
-practice; descriptive docs help people enter and use it.
-
-That distinction does not itself justify every current boundary. Rules and
-explanations repeat across the layers. Reading Cairn without installing it is also an intended adoption path, recorded
-in the archived adopter-path-consolidation proposal. The inventory must
-establish which content
-needs a separate public reference, whether doctrine should remain separate
-from docs, how installed references are reached, and how many places an actual
-rule change requires editing. Preserve adopter access and semantics; do not
-choose folder structure merely to reach a line-count target.
-
-## Work sequence
-
-Fresh ordinary and Security plan reviews precede implementation where required.
-Luna executes reviewed plans; Terra independently reviews code. Sol handles
-Security Reviews and new strategy or premise judgments.
-
-Serialize changes to shared governing files. Governing-text inventory can run
-alongside model/verification work because it gathers evidence rather than moving
-rules. Settle the test-protection boundary before ordinary test deletion or
-renaming; narrowing only the byte glob would leave collection HOLDs in place.
-Use scoped measurements for the pilot; a full-suite speedup is measured only at
-the next authorized whole-tree integration run, not by creating another broad run.
-
-Maintain the existing release and certification ceremonies. Root changes,
-re-anchors and routing decisions remain the Maintainer's actions; pushing,
-publishing, issue closure and repository settings changes are not authorized.
-Other v0.6 groups, including module discovery and onboarding, remain in the
-[roadmap](../PLANNING.md). The five-plan batch does not claim to finish v0.6.
-
-## Open-issue triage
-
-Read-only GitHub issue inventory on October 28 returned four open issues:
-
-| Issue | Disposition for this drain |
+| Conflict | Recommended choice and conceded prescription |
 |---|---|
-| #31 — keep proposals/plans short | Already implemented and reviewed: commits `3ba6aba1`, `1f938bcc`, `06f32930`. Do not repeat the fix. Closure draft below |
-| #32 — retired/unknown status advisories | Already implemented and reviewed: `a773e753`, `50b5fbdf`, `9bb423c2`. Do not repeat the fix. Closure draft below |
-| #33 — scoped certification versus full-suite execution | Premise check found contradictory actionable clauses in the current templates. The linked change-verification proposal addresses them; `787c558e` only changes push wording |
-| #19 — scientific deliverable/governance axes | Exploratory new capability and conditionally deferred in the roadmap. Keep outside this first v0.6 batch; no new axis is authorized |
+| Coordination defaults | Confirm shipped behavior: block a provably different live session's claim; warn on stale/tokenless cases; retain deliberate warn/confirm modes and opt-in hooks. Retire the different published advisory/warn/confirm default. |
+| Path declarations | Confirm existing checker behavior: an explicitly declared literal path may recur document-wide, with exact matching and provenance. Retire the published line/block-only restriction. Siblings, descendants, look-alikes and malformed declarations stay unexempted; no checker rewrite. |
 
-Suggested closure text for #31: “The keep-it-short guidance is implemented in
-the proposal and plan templates, with review and author response recorded in
-3ba6aba1, 1f938bcc and 06f32930. Closing the delivered request; optional tooling
-ideas are not claimed as implemented.”
+Retain all 21 partial-reach obligation groups until a complete appropriate
+installed home and usable pointer are demonstrated. Generic prompts or upstream
+citations do not replace those duties. Alternatives are retaining the current
+publication split, or settling routing while leaving conflicting/partial
+obligations untouched. No accepted duty may be lost by consolidation. C3 must
+show an actual simpler edit using the two recorded baselines before claiming
+improvement; affected frozen tests still wait for the trust-boundary work.
 
-Suggested closure text for #32: “The board and session tools now report active
-retired or unknown statuses as advisories while retaining listings. The
-implementation and follow-ups are recorded in a773e753 and 50b5fbdf, with
-review at 9bb423c2. Closing the delivered request.”
+### 2. Approve the exact initial test-protection roster
 
-These are drafts for the Maintainer, not posted comments or closure actions.
+**Recommend:** approve the [refreshed proposed roster](../plans/2026-10-28-test-trust-boundary/c1b-refresh-roster.json)
+at commit `fd1c820e`, raw SHA-256
+`02435039b9325950671a715df269194d345a9696d2ecb585c4818614ed868dee`.
+The [classification evidence](../plans/2026-10-28-test-trust-boundary/c1b-refresh-classification-evidence.json)
+contains every file's reason and preserved mechanisms.
 
-## Additional reproduced choice: handoff marker
+It protects **78 test files plus 12 Python controls**, leaving **51 test files
+ordinary**. The refreshed census has 5,490 nodes in 129 test files: 3,954 in
+protected files and 1,536 in ordinary files. The effective frozen set would
+change from 197 to 147 paths while preserving the other existing protection.
+These are proposed memberships, not an installed boundary or measured speedup.
 
-Luna reproduced the mismatch in a scratch adopter history containing a
-`Handoff:` commit: the default looked for `Goodnight` and printed fallback
-history. However, `doctrine/session-routines.md` requires a handoff commit
-without prescribing its subject, and the existing owner test expects
-`Goodnight`. `tools/session.py` already offers `--handoff-marker`. No code was
-changed: a global default change is a convention decision, not a demonstrated
-restoration of the generic contract. Recommended immediate use in Cairn is
-the existing explicit marker option; decide a canonical/compatible convention
-before changing every adopter's default. The v0.6 roadmap item remains open.
+The accepted trust Decision already concedes blanket ordinary-test byte and
+node/marker HOLD protection. Ordinary Python can still influence protected
+execution; narrower protection is not equivalent tamper resistance. Actual
+release skip/xfail/xpass refusal stays. Roster approval authorizes neither
+installation nor a waiver of existing ceremony/review obligations. Alternative:
+retain the current boundary and leave narrowing paused.
 
-## Work record and limits
+### 3. Allow a preparatory extraction for the maintenance pilot
 
-Current default staffing follows the Maintainer's latest October 28 direction:
+**Recommend:** separately authorize relocating only the two named ordinary
+methods from the protected board-test file, preserving their class/method names,
+and updating the pilot's path. Keep protected helpers and all security cases in
+the original file. The exact methods, helpers and witnesses are in the
+classification evidence above; the adjacent anti-forgery method stays protected.
 
-| Tier | OpenAI | Claude | Work |
-|---|---|---|---|
-| High | Sol | Opus | Strategy, premise/novel-design judgment, Security Reviews |
-| Medium | Terra | Sonnet | Proposal/plan authoring and ordinary reviews |
-| Low | Luna | Haiku | Implementation of reviewed plans, including high-risk/non-trivial chunks; trivial work and authorized Decision scribing |
+Proposed path: `bootstrap/tests/test_board_json_values.py` (not yet created).
 
-Antigravity maps high/medium/low to Argon/Pro/Flash under Decision `63e315fa`.
-All three vendor mappings are Cairn-local assignments; shipped tiers remain
-generic. No Astra or Fable by default. The remaining Astra subagent was stopped after
-read-only work; completed reviews retain their true attribution and are not
-repeated. The staffing Decision at `63e315fa` now authorizes the local assignments and
-the reviewed task floors. These local assignments are the Maintainer's choice, not benchmark results.
-Decision scribing still needs unambiguous disposition and commit authorization.
+This adds extraction, dependency/fault evidence, independent ordinary/Security
+reads and the applicable protected-node transition/ceremony. It is new scope,
+not already authorized by approving the roster. Alternatives: leave the pilot
+waiting, or explicitly accept the outcome loss of a protected-lane pilot. No
+other test family is silently substituted. The existing testing-module update
+remains required; new simulation guidance stays v0.7.
 
-Other v0.6 groups remain queued. Plans and their verification records own
-implementation claims; no suite-wide speedup or new scientific evidence is
-claimed. Prose gates check this briefing, not its linked engineering evidence.
+### 4. Complete the prescribed Maintainer ceremonies
+
+The verification plan remains `revising-code`; ordinary review `f19f4f53`,
+Security review `9d813013` and author response `e9928009` preserve the hold.
+Its declared next move is the existing frozen-file ceremony: inspect
+`python bootstrap/tests/_gate_manifest.py verify` within
+`bootstrap/REANCHOR_RUNBOOK.md`, resolve and record discrepancies, then obtain
+the applicable Maintainer disposition. This briefing authorizes no manifest
+edit, signing, root change or waiver. Certification remains pending.
+
+The trust plan separately requires reviewed implementation after roster approval,
+then its Maintainer-only authority transition/re-anchor and steady-state proof.
+No narrowed boundary or ordinary pilot becomes active before those conditions.
+
+### 5. Queued convention choice: session handoff marker
+
+A scratch history reproduced the default `Goodnight` search missing a `Handoff:`
+commit; the documented generic handoff obligation does not prescribe a subject.
+**Recommend:** use the existing `--handoff-marker` option in Cairn now and settle
+a canonical/compatible convention before changing adopters' default. No code
+changed; this remains queued rather than blocking the four actions above.
+
+## Issue triage, staffing and close-out
+
+Read-only issue triage found #31 and #32 already implemented and reviewed;
+closure remains the Maintainer's action. #33 is addressed by scoped verification,
+with its ceremony hold still open. #19 is new scientific-governance capability
+outside this batch and remains deferred/v0.7.
+
+Staffing follows the Maintainer: **Terra coordinates and handles ordinary reviews;
+Luna implements reviewed plans; Sol handles strategy, premise/novel-design and
+Security judgment.** Cairn-local high/medium/low assignments are Sol/Terra/Luna,
+Opus/Sonnet/Haiku and Argon/Pro/Flash. Shipped tiers remain vendor-neutral.
+Decision scribing requires unambiguous disposition and commit authorization.
+
+Completed strategy explorations archive with their owned evidence once their
+purpose is discharged. This master stays current until its coordinating role is
+retired; active v0.7 explorations remain live. Plans and their records own the
+engineering evidence. Prose gates validate this briefing, not certification or
+suite-wide performance. No full suite or push was performed for this handoff.
