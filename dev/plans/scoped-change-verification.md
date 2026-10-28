@@ -69,3 +69,72 @@ Use `/Users/kendal30/conda_envs/lhm/bin/python3.13`. Boundary A and final-commit
 
 **Covered**: claims and execution path (#1-2: F1 and F3); completeness and refusal (#3-4: F1-F3); consistency and drift (#5-6: plan Scope and mapped test files); lifecycle and scope (#7-8: F2 and source Current contract); satisfiers (#9: each finding).
 **Not covered / low confidence**: no implementation, example verdict, tests, security ceremony or full suite was run; this pass does not discharge the separate Internal Security Review.
+
+
+## Plan review -- Codex gpt-6.1-sol high (Security Reviewer) -- 2026-10-28
+
+```
+Reviewed commit: 865175bc62bd74cbbd87ea84076f22d42f0dc7e7
+Target: operative plan; accepted source Current contract and Decision at f110d263
+Prior findings: none (ordinary pass at b0fbb948 read for coordination)
+Assurance path: required(Internal + Internal Security Review)
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Does it deliver the Decision?** Mostly: C1 preserves required checks,
+   separate certification and older-plan contracts; C2 retains independent
+   judgment without a parser. Its execution and record-preservation criteria
+   need the corrections below. -- plan C1-C2; source `## Current contract`.
+2. **Best alternative.** Keep the two chunks, existing reviewer role and
+   existing guard tests; make execution and immutable evidence explicit rather
+   than adding a selector or approval stage. --
+   `bootstrap/tests/test_broad_run_guard.py::_run`;
+   `bootstrap/tests/test_verification_boundaries.py`.
+3. **What would show it wrong.** A collected-but-unexecuted required selection,
+   accepted missing security check, or rewritten historical verification record
+   would defeat the promised safeguard. -- plan C2; source `## Current contract`.
+
+**SR1 -- Blocking: collection does not prove the split checks ran.** C2 requires
+matching collected unions but does not explicitly require executing every split
+invocation. The guard exempts collection, and its file span is computed after
+selection; the existing late-deselection test demonstrates why file counts alone
+cannot prove coverage. This independently supports ordinary F1. **Satisfier:**
+require all split invocations to execute within the limit, preserve their
+selection arguments, results and executed-test union, and reconcile that union
+with the original collected selection. Identify the checks exercising known
+cross-family paths; a matching collection alone cannot close acceptance.
+Keep the no-override and incomplete-coverage refusal. --
+`bootstrap/tests/conftest.py::_refuse_broad_run_if_warranted`;
+`bootstrap/tests/test_broad_run_guard.py::test_the_guard_refusal_follows_a_late_deselection`.
+
+**SR2 -- Blocking: require preservation of the evidence being trusted.** C1's
+trivial-lane “evidence” omits the clean-candidate condition and required commit
+fields; separate certification “by SHA” does not require appending rather than
+rewriting. These are ordinary F2's security consequences. **Satisfier:** name
+otherwise-clean candidate bytes or a separate copy; search, commands, counts,
+interpreter, outcomes and omissions in the trivial commit body; and a later
+append-only certification entry keyed by SHA. Distinguish implementation
+verification from pending tree certification while preserving accepted plans'
+written obligations and archives. -- source `## Current contract`; plan C1.
+
+The omission exercise correctly accepts only passing complete evidence and
+rejects missing consumers/security checks through the existing reviewer role.
+Ceremony preservation is implementable: the release command reaches detached
+committed phases, including Bandit, release-mode pytest and quality gates;
+re-anchor retains its launcher and Maintainer signing steps. C1 must preserve
+those paths, alongside conditional push certification (ordinary F3). --
+`bootstrap/security_check.py::main`, `::_phases`;
+`bootstrap/REANCHOR_RUNBOOK.md`; plan Verification.
+
+**Covered**: claims/execution/completeness/refusal (#1-4: SR1-SR2 and C2);
+consistency/drift (#5-6: source contract, mapped rule tests and ordinary F3);
+lifecycle/scope/satisfiers (#7-9: existing reviewer, ceremony entry points and
+SR1-SR2). **Not covered / low confidence**: no implementation, illustrative
+verdicts, tests or ceremonies executed; no full suite. Coverage truth remains a
+reviewer judgment, and undiscovered dependencies remain possible.
