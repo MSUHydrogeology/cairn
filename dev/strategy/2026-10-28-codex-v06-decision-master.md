@@ -68,10 +68,10 @@ improvement; affected frozen tests still wait for the trust-boundary work.
 
 ### 2. Approve the exact initial test-protection roster
 
-**Recommend:** approve the [refreshed proposed roster](../plans/2026-10-28-test-trust-boundary/c1b-refresh-roster.json)
-at commit `fd1c820e`, raw SHA-256
-`02435039b9325950671a715df269194d345a9696d2ecb585c4818614ed868dee`.
-The [classification evidence](../plans/2026-10-28-test-trust-boundary/c1b-refresh-classification-evidence.json)
+**Recommend:** approve the [refreshed proposed roster](../plans/2026-10-28-test-trust-boundary/c1b-roster-6cc95fa7.json)
+at commit `884e6d53`, raw SHA-256
+`188fa76d82744be571bdc7ca91a43d605776b9df5ba0ac729e2cf22af66b8cc4`.
+The [classification evidence](../plans/2026-10-28-test-trust-boundary/c1b-evidence-6cc95fa7.json)
 contains every file's reason and preserved mechanisms.
 
 It protects **78 test files plus 12 Python controls**, leaving **51 test files
