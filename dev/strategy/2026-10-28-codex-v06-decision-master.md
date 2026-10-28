@@ -16,12 +16,10 @@ capabilities work in v0.6, add capabilities in v0.7. The
 remain authoritative for their own status and contract. This master is a
 briefing, not a Decision or a replacement board.
 
-The Maintainer authorized proposal/plan work and delegation on October 28,
-then asked for as much work as possible without decisions and a master for
-later review. A general tendency to approve recommendations grants no specific
-acceptance. No proposal is accepted by this document. Plans begin after the
-proposal Decision; no agent pushes, publishes, changes repository settings or
-closes issues under this drain.
+The Maintainer authorized delegated work and continuous handoffs on October 28.
+This briefing grants no approval: proposal Decisions and explicit plan fences
+remain authoritative. Pushing, publishing, settings changes and issue closure
+are not authorized.
 
 ## Accepted batch and execution order
 
@@ -36,7 +34,7 @@ this briefing as another status board.
 | Order | Plan | Accepted outcome and remaining constraint |
 |---|---|---|
 | 1 | [Model floors](../plans/archive/2026-10-28-model-floor-alignment.md) | Implemented and code-reviewed task floors and Cairn-only assignments, including Antigravity; certification/re-anchor pending |
-| 2 | [Change verification / issue #33](../plans/2026-10-28-scoped-change-verification.md) | Scoped change evidence, separate tree certification, trivial-lane exception and preserved ceremony duties; shared-file edits follow model-floor code review |
+| 2 | [Change verification / issue #33](../plans/2026-10-28-scoped-change-verification.md) | Implemented; split evidence covers 2,700 collected/executed nodes; independent example adjudication complete; code review holds closure for the required frozen-file ceremony |
 | 3, parallel inventory | [Governing text](../plans/2026-10-28-governing-text-single-source.md) | Establish why each home exists and compare doctrine with docs/dev/rules; the Maintainer chooses routing before rule relocation/deletion |
 | 4 | [Test trust boundary](../plans/2026-10-28-test-trust-boundary.md) | Exact protected roster requires Maintainer approval; root/re-anchor remains Maintainer-only; narrower assurance loss already accepted |
 | 5 | [Ordinary test maintenance](../plans/2026-10-28-ordinary-test-maintenance.md) | Follows implemented trust boundary and board-file eligibility; references the test-practice strategy and updates the existing testing module |
@@ -49,6 +47,23 @@ The ordinary test pilot stops for a scope decision if its file remains protected
 
 The approved testing-module update stays within existing maintenance practice;
 new simulation guidance remains v0.7. No plan waives its recorded fence.
+
+## Remaining Maintainer decisions and actions
+
+I will carry reviews, fixes and handoffs forward without check-ins. The explicit
+fences below remain; recommendations are prepared here before asking for a decision.
+
+| Item | Recommendation / choice | Readiness |
+|---|---|---|
+| Governing-text routing | Put public explanation/reference under the proposed methodology home; retain complete duties in installed operating files and project-specific rules in `dev/rules/`. Alternative: retain the current split. Moving loses the familiar doctrine landmark and requires citation migration. | C1 semantic mapping and post-review refresh in progress; no relocation authorized |
+| Exact protected-test roster | Approve the refreshed, source-bound roster before narrowing. Initial proposal: 90 protected Python paths, 51 ordinary test files; retain other existing protection. | Counts and hashes must be refreshed after verification review; initial counts are not approval targets |
+| Test-maintenance pilot scope | Separately authorize extracting the two ordinary clusters into an ordinary file while retaining security cases and helpers. Alternative: retain the protected file and pause the pilot. | Initial classification protects the board file; extraction adds review and ceremony work and is not authorized |
+| Frozen-file ceremony / trust installation | Perform the applicable existing Maintainer ceremony on the final reviewed tree; keep certification and root changes explicit. | Verification code review records this as an unmet required check; trust-boundary installation comes after roster approval and implementation |
+
+Proposed path: `docs/methodology/` (not yet created).
+
+These are recommendations and pending actions, not scribed Decisions. Exact
+roster evidence and final review dispositions will replace provisional facts.
 
 ## What the doctrine question means
 
@@ -137,14 +152,9 @@ All three vendor mappings are Cairn-local assignments; shipped tiers remain
 generic. No Astra or Fable by default. The remaining Astra subagent was stopped after
 read-only work; completed reviews retain their true attribution and are not
 repeated. The staffing Decision at `63e315fa` now authorizes the local assignments and
-the reviewed task floors. Family names
-were checked against [official OpenAI documentation](https://developers.openai.com/api/docs/guides/model-selection);
-these local tier assignments are the Maintainer's choice, not benchmark results.
+the reviewed task floors. These local assignments are the Maintainer's choice, not benchmark results.
 Decision scribing still needs unambiguous disposition and commit authorization.
 
-This is the nimbleness-first batch, not a completed v0.6 release. Other roadmap
-groups remain queued. Plans and their recorded verification own implementation
-claims; no suite-wide speedup or new scientific evidence is claimed here. Proposal authors/reviewers own their records and commits. Claims,
-links and applicable prose gates check this master; they do not verify the
-engineering claims in the linked proposals. Do not mistake a populated board
-for delivered functionality.
+Other v0.6 groups remain queued. Plans and their verification records own
+implementation claims; no suite-wide speedup or new scientific evidence is
+claimed. Prose gates check this briefing, not its linked engineering evidence.
