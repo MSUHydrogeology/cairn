@@ -1,7 +1,7 @@
 # Plan: Test trust boundary
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-test-trust-boundary.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Protect the tests that defend trust while reporting ordinary test changes without requiring a new trust anchor.
@@ -165,3 +165,11 @@ before implementation.
 | F1, S1 | Accepted | Sequence; C1a–C1c |
 | F2, S2 | Accepted | C2–C3; Verification |
 | F3, S3 | Accepted | Documentation / doctrine surface; Verification |
+
+## Implementation log -- C1a factual inventory -- Codex (Luna, low) -- 2026-10-28
+
+Measured the committed source tree `7f12a3f648c525446b041f523ae967b4f1d20cae`. A read-only archive collection with `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest --collect-only -q --disable-warnings bootstrap/tests` collected 5,479 node IDs across 129 test files; all 129 test files yielded nodes. The syntactic dependency scan covers all 141 Python paths under `bootstrap/tests`, resolving import candidates against 227 repository Python paths and recording fixture definitions/arguments, dynamic-load calls and path-like literals with exact matches separated from basename candidates. The exact node list and per-file hashes/references are in `dev/plans/test-trust-boundary/c1a-node-inventory.jsonl` and `c1a-dependency-inventory.json`.
+
+The source manifest has 17 entries and the accepted contract adds 10 distinct test paths (27-floor union). Existing byte-freeze discovery yields 197 paths across its five source patterns; seven Python authority-closure members are joined by the runbook, launcher, re-anchor script and allowed-signers file (11 total). The inventory records the fixture files and excluded frozen paths. Positive controls found a collected `test_gate_manifest.py` node and the `conftest.py` manifest load. Collection only ran; no test body ran and `CAIRN_FULL_SUITE` was not set.
+
+This is factual input, not a completed protected-set decision. The high-tier pass still needs to decide which import/collection/execution dependencies require protected membership beyond the already-required floor, how to treat path-level fixtures and helper modules, and which new trust helpers enter authority closure. The scan is syntactic and does not establish runtime reachability or security classification.
