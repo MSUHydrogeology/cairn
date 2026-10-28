@@ -1,7 +1,7 @@
 # Align model floors with the current team roster
 
 **Author**: Codex gpt-6-sol (Proposal)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
@@ -390,3 +390,50 @@ benchmark, scientific result, detector, or approval gate is asserted.
 * Prior “bright-line work stays high inside a plan” is replaced by high judgment
   versus low execution to preserve low high-risk implementation. Prior S1/S5
   are replaced by the provenance and hostile-input account above.
+
+## Review -- Codex gpt-6-astra (Security closure) -- 2026-10-28
+
+```
+Reviewed commit: 4073cc2809be9c4649c4f84e9709d609f5a362a4
+Target: Response to Security Review and Revised proposal 2
+Prior findings: SR1 and SR2 from 4b8ff2dd2501ced29b8b63f4b6f67da3cd32d9fc
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the revised boundary permits low execution of settled high-risk work while reserving new security judgment and Security Review for high; independent review and Maintainer fences remain -- `dev/proposals/2026-10-28-codex-model-floor-alignment.md:328-344`.
+2. **Best alternative.** Keep this task-based distinction rather than a blanket high floor for any high-risk path; align the existing bright-line and cost-rule paragraphs so a path label cannot silently restore the exception -- `dev/proposals/2026-10-28-codex-model-floor-alignment.md:348-356`.
+3. **What would show it wrong.** A low-tier task making an unreviewed security decision, or a forged approval relay inducing scribing, would expose the boundary's failure; the revision now names these residual failures rather than claiming machine prevention -- `dev/proposals/2026-10-28-codex-model-floor-alignment.md:368-385`.
+
+Both satisfiers are met in the committed contract:
+
+* **SR1 closed.** “Rule and boundary” distinguishes execution from judgment,
+  expressly includes high-risk chunks at low, retains existing safeguards, and
+  separates the default from below-floor checks. “Delivery and evidence” names
+  both module copies and their bright-line/cost-rule paragraphs for alignment.
+* **SR2 closed.** S1 identifies trusted Maintainer direction, committed plan
+  scope, agent briefs and self-supplied classification. S5 identifies hostile
+  task text, forged approval relays and residual failure when source checks
+  fail. S2/S3 disclaim automatic capability or authority validation. Scribing
+  still requires direct authorization and the existing quotation/commit rules.
+
+The withdrawal ledger explicitly replaces the incompatible blanket high rule
+and incomplete provenance account. It preserves the requested execution scope;
+no new detector, permission gate or review obligation is introduced.
+
+This clears the proposal's existing Security Review obligation. It does not
+accept the proposal on the Maintainer's behalf or clear the future plan's
+Security Review. Status is `revising` for the author's handoff to
+`awaiting-decision`, following the current proposal template's lifecycle.
+
+**Covered:** SR1/SR2 design, authority, failure modes and satisfiers; cross-copy
+commitments and withdrawal accounting, all in Revised proposal 2 at the reviewed
+commit. The original review's other coverage and limitations remain.
+**Not covered / low confidence:** no implementation, model benchmark or attack
+execution was reviewed; the classification boundary still depends on human and
+agent judgment. No implementation tests or full suite were run.
