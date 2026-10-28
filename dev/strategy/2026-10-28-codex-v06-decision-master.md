@@ -76,9 +76,11 @@ contains every file's reason and preserved mechanisms.
 
 It protects **78 test files plus 12 Python controls**, leaving **51 test files
 ordinary**. The refreshed census has 5,490 nodes in 129 test files: 3,954 in
-protected files and 1,536 in ordinary files. The effective frozen set would
-change from 197 to 147 paths while preserving the other existing protection.
-These are approved memberships, not an installed boundary or measured speedup.
+protected files and 1,536 in ordinary files. The approved classification
+projected 147 frozen paths from the current 197. The implementation adds one
+protected roster-data file, making the prospective total 148; that figure awaits
+final verification. Approved test membership is unchanged. The boundary is not
+yet installed, and no speedup has been measured.
 
 The accepted trust Decision already concedes blanket ordinary-test byte and
 node/marker HOLD protection. Ordinary Python can still influence protected
