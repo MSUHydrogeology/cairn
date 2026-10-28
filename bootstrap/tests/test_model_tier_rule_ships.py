@@ -234,7 +234,7 @@ def test_the_different_maker_condition_is_gone_and_same_tier_is_excluded() -> No
     assert SHIPPED_MODULE in violations(mutant)
 
 
-def test_proposal_authoring_is_medium_and_proposal_review_stays_high() -> None:
+def test_proposal_authoring_and_ordinary_review_are_medium() -> None:
     """Task floors, rather than lifecycle lanes, determine each assignment."""
     expected = {
         "Strategy / Research": "high",
