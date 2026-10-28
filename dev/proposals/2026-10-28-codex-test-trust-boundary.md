@@ -6,7 +6,7 @@
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Keep security and trust tests under the signed gate while letting ordinary test maintenance proceed without a re-anchor ceremony.
-**Waiting on Maintainer**: Decide whether to accept protected-only freezing and the loss of ordinary-test byte protection and node/marker HOLDs.
+**Waiting on Maintainer**: accept narrower test protection and its stated assurance loss
 
 ## Context
 

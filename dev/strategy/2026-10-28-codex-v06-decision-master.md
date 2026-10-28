@@ -23,13 +23,20 @@ acceptance. No proposal is accepted by this document. Plans begin after the
 proposal Decision; no agent pushes, publishes, changes repository settings or
 closes issues under this drain.
 
-## First decision batch
+## Decision batch
+
+The model-floor, governing-text, test-trust and test-maintenance proposals
+have completed their required reviews and author responses and are awaiting
+decision. The verification proposal is completing review/response steps. Consult
+`python tools/board.py --maintainer` for the current declared waits.
 
 | Item | Recommended next choice | Why / cost of being wrong |
 |---|---|---|
 | [Model floors](../proposals/2026-10-28-codex-model-floor-alignment.md) | Align the written floors with the Maintainer's current staffing direction, after resolving review obligations | Removes unnecessary model-cost escalation; an inadequate floor can miss defects, so retain independent review, security treatment and escalation |
-| [Doctrine purpose and governing-text audit](../proposals/2026-10-28-codex-governing-text-single-source.md) | Audit first; choose routing at a Maintainer fence before moving or deleting rules | Avoids shortening files by hiding obligations from adopters; premature routing could preserve the wrong structure or lose rules |
+| [Doctrine purpose and governing-text inventory](../proposals/2026-10-28-codex-governing-text-single-source.md) | Inventory first; choose routing at a Maintainer fence before moving or deleting rules | Avoids shortening files by hiding obligations from adopters; premature routing could preserve the wrong structure or lose rules |
 | [Test trust boundary](../proposals/2026-10-28-codex-test-trust-boundary.md) | Consider a protected security/trust roster covering both bytes and collection identity; decide only with Security Review evidence | Removes routine test-edit ceremony debt; it deliberately gives up blanket freezing of ordinary pytest code that can influence other tests |
+| [Ordinary test maintenance pilot](../proposals/2026-10-28-codex-ordinary-test-maintenance.md) | Pilot one evidenced ordinary board-test cluster after the protected roster is settled | Reuse setup and preserve fault detection; eligibility must exclude protected files and helpers, and one pilot does not prove suite-wide speedup |
+| [Change verification / issue #33](../proposals/2026-10-28-codex-scoped-change-verification.md) | Replace contradictory operative full-suite instructions with scoped change evidence and separate tree certification | Avoids repeated per-change runs; integration regressions may appear later, and prescribed ceremony checks must remain |
 
 Read the final author responses and Security Reviews in each artifact before
 deciding. Ordinary reviews alone do not clear an outstanding security pass.
@@ -44,7 +51,9 @@ its reasons. Installed operating files are intended to put that method into
 practice; descriptive docs help people enter and use it.
 
 That distinction does not itself justify every current boundary. Rules and
-explanations repeat across the layers. The audit must establish which content
+explanations repeat across the layers. Reading Cairn without installing it is also an intended adoption path, recorded
+in the archived adopter-path-consolidation proposal. The inventory must
+establish which content
 needs a separate public reference, whether doctrine should remain separate
 from docs, how installed references are reached, and how many places an actual
 rule change requires editing. Preserve adopter access and semantics; do not
@@ -78,7 +87,7 @@ Read-only GitHub issue inventory on October 28 returned four open issues:
 |---|---|
 | #31 — keep proposals/plans short | Already implemented and reviewed: commits `3ba6aba1`, `1f938bcc`, `06f32930`. Do not repeat the fix. Closure draft below |
 | #32 — retired/unknown status advisories | Already implemented and reviewed: `a773e753`, `50b5fbdf`, `9bb423c2`. Do not repeat the fix. Closure draft below |
-| #33 — scoped certification versus full-suite execution | Relevant to burden reduction. Needs its own premise check and proposal; commit `787c558e` changes push wording but does not settle the scoped-certification design |
+| #33 — scoped certification versus full-suite execution | Premise check found contradictory actionable clauses in the current templates. The linked change-verification proposal addresses them; `787c558e` only changes push wording |
 | #19 — scientific deliverable/governance axes | Exploratory new capability and conditionally deferred in the roadmap. Keep outside this first v0.6 batch; no new axis is authorized |
 
 Suggested closure text for #31: “The keep-it-short guidance is implemented in
@@ -93,13 +102,35 @@ review at 9bb423c2. Closing the delivered request.”
 
 These are drafts for the Maintainer, not posted comments or closure actions.
 
+## Additional reproduced choice: handoff marker
+
+Luna reproduced the mismatch in a scratch adopter history containing a
+`Handoff:` commit: the default looked for `Goodnight` and printed fallback
+history. However, `doctrine/session-routines.md` requires a handoff commit
+without prescribing its subject, and the existing owner test expects
+`Goodnight`. `tools/session.py` already offers `--handoff-marker`. No code was
+changed: a global default change is a convention decision, not a demonstrated
+restoration of the generic contract. Recommended immediate use in Cairn is
+the existing explicit marker option; decide a canonical/compatible convention
+before changing every adopter's default. The v0.6 roadmap item remains open.
+
 ## Work record and limits
 
-The first batch uses Sol for authoring and ordinary reviews, Astra for strategy
-and Security Reviews, and Luna for inventory and, after plan approval,
-implementation. These assignments follow explicit October 28 chat direction;
-the durable model-floor proposal is still a proposal. Decision scribing is
-low-tier work only after the required unambiguous authorization.
+Current default staffing follows the Maintainer's latest October 28 direction:
+
+| Tier | OpenAI | Claude | Work |
+|---|---|---|---|
+| High | Sol | Opus | Strategy, premise/novel-design judgment, Security Reviews |
+| Medium | Terra | Sonnet | Proposal/plan authoring and ordinary reviews |
+| Low | Luna | Haiku | Implementation of reviewed plans, including high-risk/non-trivial chunks; trivial work and authorized Decision scribing |
+
+No Astra or Fable by default. The remaining Astra subagent was stopped after
+read-only work; completed reviews retain their true attribution and are not
+repeated. The staffing proposal records this revised family assignment at
+`639196fe`; it remains a proposal rather than a scribed Decision. Family names
+were checked against [official OpenAI documentation](https://developers.openai.com/api/docs/guides/model-selection);
+these local tier assignments are the Maintainer's choice, not benchmark results.
+Decision scribing still needs unambiguous disposition and commit authorization.
 
 No implementation, suite-consolidation outcome or new scientific evidence is
 claimed. Proposal authors/reviewers own their records and commits. Claims,
