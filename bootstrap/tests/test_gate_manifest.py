@@ -98,10 +98,10 @@ def test_verify_holds_on_dropped_node(produced, tmp_path, capsys, monkeypatch):
     # Drop an actual node owned by a protected file.
     victim = next(n for n in tampered["collection"]["node_ids"]
                   if n.startswith("bootstrap/tests/test_ast_attest.py::"))
-    tampered["collection"]["node_ids"].remove(victim)
     mp = _write_manifest(tmp_path, tampered)
     ids = set(produced["collection"]["node_ids"]) - {victim}
-    monkeypatch.setattr(G, "_collect", lambda repo=_REPO: (sorted(ids), [], 0))
+    marked = produced["collection"]["skip_xfail_marked"]
+    monkeypatch.setattr(G, "_collect", lambda repo=_REPO: (sorted(ids), marked, 0))
     assert G.verify(mp, anchor_ref=None, repo=_REPO) == 1
     assert "COLLECTION-DROPPED" in capsys.readouterr().err
 
@@ -142,6 +142,8 @@ def test_ordinary_file_and_node_deltas_are_notes(produced, tmp_path, capsys, mon
     tampered = copy.deepcopy(produced)
     ordinary = "bootstrap/tests/test_agreement_retired.py"
     tampered["ordinary_test_files"][ordinary] = "0" * 64
+    removed_file = "bootstrap/tests/test_removed_ordinary.py"
+    tampered["ordinary_test_files"][removed_file] = "3" * 64
     mp = _write_manifest(tmp_path, tampered)
     original = G._ordinary_test_files(_REPO, produced["protected_roster"])
     monkeypatch.setattr(G, "_ordinary_test_files", lambda repo, roster: {
@@ -160,7 +162,7 @@ def test_ordinary_file_and_node_deltas_are_notes(produced, tmp_path, capsys, mon
     output = capsys.readouterr().err
     assert f"UNPROTECTED-CHANGED: {ordinary}" in output
     assert "UNPROTECTED-NEW: bootstrap/tests/test_new_ordinary.py" in output
-    assert f"UNPROTECTED-REMOVED: {ordinary}" in output
+    assert f"UNPROTECTED-REMOVED: {removed_file}" in output
     assert "COLLECTION-ORDINARY-DROPPED" in output
     assert "SKIP-XFAIL-ORDINARY" in output
 
