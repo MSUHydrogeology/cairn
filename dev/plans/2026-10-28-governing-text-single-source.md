@@ -403,3 +403,27 @@ unexempted. This choice supersedes the published line/block-only restriction.
 The previously recorded routing and coordination choices remain in force. C3's
 sequencing and verification gates still apply; no rules or tools change in this
 record.
+
+## Implementation verification -- C3 path declarations -- Codex (Luna, low) -- 2026-10-28
+
+Implemented the focused documentation correction in source commit
+`7682214db06e922a67d2a218f0cb53f79d6c3c22`. On that commit, the tracked tree
+was clean before and after checks; the only status entries were the pre-existing
+untracked `.claude/` and `dev/measurement/collision_log.md`. Python 3.13.13 ran
+`PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -p no:cacheprovider -q
+bootstrap/tests/test_claim_check_module.py bootstrap/tests/test_scope_reduction_trap.py`:
+167 passed in 0.28 seconds. The owning claim-check tests cover document-wide
+exact reuse, provenance, sibling/descendant/look-alike rejection, malformed
+wildcards, conflicting marker kinds and the existing-file boundary. The scope
+reduction test file also reads the changed proposal doctrine. `python
+scripts/check_cairn.py doctrine/plans.md doctrine/proposals.md` passed for both
+files. The source scan shows that all parsed typed declarations, including a
+standalone marker-line declaration, enter the exact document registry;
+`registry_block` controls only lifecycle liveness. No existing test directly
+checks a standalone marker's recurrence outside its line.
+
+No frozen test or checker code changed. No actual install, security ceremony,
+full suite or whole-tree verification ran. The test-trust-boundary plan remains
+implementing at its Maintainer roster gate. This record covers only the path
+instruction correction; C3's other outcomes and the plan's completion remain
+open.
