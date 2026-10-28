@@ -1,15 +1,13 @@
 # model-selection tier-to-model mapping (Cairn model-selection module).
 #
-# Cairn's own mapping, filled by hand on 2026-10-18 at the Maintainer's
-# instruction. Re-verify with:
+# Cairn's own mapping, assigned by the Maintainer on 2026-10-28.
+# These dated assignments are by family name, not benchmarks. Re-verify with:
 #
 #   python scripts/check_model_selection.py
 #
 # Record schema: dev/modules/model-selection.md > "Mapping-record schema".
-# Models are named by family, never by version: each row means the latest
-# release of that family (Maintainer, 2026-10-18), so a new version needs no edit.
-# These rows bind tiers by name, not by measurement, and each `source` says
-# so. Re-rank when `re_verification_trigger` fires.
+# Models are named by family, never by version. Each row binds a tier by
+# Maintainer assignment, not by measurement. Add one row per assigned family.
 #
 # Model names here are this repository's own configuration under dev/, which
 # the vendor-neutrality gate does not scan. The shipped stub and the
@@ -17,20 +15,56 @@
 
 mapping:
   - tier: high
-    model: "Opus"              # Claude (Anthropic), latest release
-    date_verified: "2026-10-18"
-    task_family: "strategy, research, premise-checking, proposal review, Security Review"
-    source: "Maintainer's assignment, 2026-10-18 -- by name, not benchmarked"
+    model: "Opus"
+    date_verified: "2026-10-28"
+    task_family: "strategy, research, premise-checking, novel design, security judgment and Security Review"
+    source: "Maintainer assignment, 2026-10-28 -- family name, not benchmarked"
+    re_verification_trigger: a release that changes which family fits the tier
+  - tier: high
+    model: "Sol"
+    date_verified: "2026-10-28"
+    task_family: "strategy, research, premise-checking, novel design, security judgment and Security Review"
+    source: "Maintainer assignment, 2026-10-28 -- family name, not benchmarked"
+    re_verification_trigger: a release that changes which family fits the tier
+  - tier: high
+    model: "Argon"
+    date_verified: "2026-10-28"
+    task_family: "strategy, research, premise-checking, novel design, security judgment and Security Review"
+    source: "Maintainer assignment, 2026-10-28 -- family name, not benchmarked"
     re_verification_trigger: a release that changes which family fits the tier
   - tier: medium
-    model: "Sonnet"            # Claude (Anthropic), latest release
-    date_verified: "2026-10-18"
-    task_family: "proposal authoring, implementation, plan review, code review, routine authoring"
-    source: "Maintainer's assignment, 2026-10-18 -- by name, not benchmarked"
+    model: "Sonnet"
+    date_verified: "2026-10-28"
+    task_family: "ordinary proposal authoring and ordinary proposal, plan and code reviews"
+    source: "Maintainer assignment, 2026-10-28 -- family name, not benchmarked"
+    re_verification_trigger: a release that changes which family fits the tier
+  - tier: medium
+    model: "Terra"
+    date_verified: "2026-10-28"
+    task_family: "ordinary proposal authoring and ordinary proposal, plan and code reviews"
+    source: "Maintainer assignment, 2026-10-28 -- family name, not benchmarked"
+    re_verification_trigger: a release that changes which family fits the tier
+  - tier: medium
+    model: "Pro"
+    date_verified: "2026-10-28"
+    task_family: "ordinary proposal authoring and ordinary proposal, plan and code reviews"
+    source: "Maintainer assignment, 2026-10-28 -- family name, not benchmarked"
     re_verification_trigger: a release that changes which family fits the tier
   - tier: low
-    model: "Haiku"             # Claude (Anthropic), latest release
-    date_verified: "2026-10-18"
-    task_family: "the trivial lane: typos, wording, link fixes, docstring and comment cleanup"
-    source: "Maintainer's assignment, 2026-10-18 -- by name, not benchmarked"
+    model: "Haiku"
+    date_verified: "2026-10-28"
+    task_family: "execution of accepted reviewed plans, trivial implementation, authorized Decision scribing"
+    source: "Maintainer assignment, 2026-10-28 -- family name, not benchmarked"
+    re_verification_trigger: a release that changes which family fits the tier
+  - tier: low
+    model: "Luna"
+    date_verified: "2026-10-28"
+    task_family: "execution of accepted reviewed plans, trivial implementation, authorized Decision scribing"
+    source: "Maintainer assignment, 2026-10-28 -- family name, not benchmarked"
+    re_verification_trigger: a release that changes which family fits the tier
+  - tier: low
+    model: "Flash"
+    date_verified: "2026-10-28"
+    task_family: "execution of accepted reviewed plans, trivial implementation, authorized Decision scribing"
+    source: "Maintainer assignment, 2026-10-28 -- family name, not benchmarked"
     re_verification_trigger: a release that changes which family fits the tier

@@ -572,8 +572,11 @@ complete.
 
 **Model-selection mapping** (only if `model-selection` was installed)
 - [ ] `python scripts/check_model_selection.py` exits 0. If not, ask the Maintainer which
-      model family fills each tier (high, medium, low) and record one row per tier, naming
-      the family and never a version; do not guess.
+      model family fills each tier (high, medium, low). Record one row per assigned
+      family using the existing mapping schema, naming the family and never a version;
+      add rows when several families fill a tier. Record the Maintainer assignment and
+      date. The check validates shape and placeholders, not the assignment or benchmark
+      evidence. A person runs this check when filling the mapping; it is not automatic.
 
 **Dogfood gate (see Step II-6)**
 - [ ] At least one real change has gone through the installed

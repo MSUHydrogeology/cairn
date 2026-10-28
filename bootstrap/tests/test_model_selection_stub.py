@@ -18,6 +18,7 @@ import builtins
 import io
 import importlib.util
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -1141,7 +1142,9 @@ class TestAcceptanceChecklistNamesTheMappingCheck:
         text = (CAIRN_ROOT / "bootstrap/BOOTSTRAP.md").read_text(encoding="utf-8")
         assert "**Model-selection mapping** (only if `model-selection` was installed)" in text
         assert "`python scripts/check_model_selection.py` exits 0" in text
-        assert "the family and never a version; do not guess" in text
+        normalized = " ".join(text.split())
+        assert "each tier (high, medium, low)" in normalized
+        assert "add rows when several families fill a tier" in normalized
         assert "Four classes of match are **expected and allowed**" in text
         assert "the filled tier-to-model mapping" in text
 
@@ -1152,10 +1155,10 @@ class TestShippedWordsArePinnedByExactString:
         installed = (CAIRN_ROOT / "dev/modules/model-selection.md").read_bytes()
         assert installed == template
         text = " ".join(template.decode("utf-8").split())
-        assert "nothing reads `date_verified`" in text
-        assert "no routine reads it" in text
-        assert "surfaced by an existing routine" not in text
-        assert "after that a person does, because nothing runs it automatically" in text
+        assert "not a benchmark claim" in text
+        assert "It checks shape, not truth or authorization" in text
+        assert "because nothing does so automatically" in text
+        assert "add another row for every additional family assigned to that tier" in text
 
     @pytest.mark.parametrize("preset", ("collaborative-team", "high-rigor-legacy"))
     def test_waiting_line_in_both_presets(self, preset: str) -> None:
@@ -1164,6 +1167,9 @@ class TestShippedWordsArePinnedByExactString:
         )
         assert "**Waiting on Maintainer**: fill the model mapping" in text
         assert "id: fill-model-selection-mapping" in text
+        normalized = " ".join(text.split())
+        assert "add rows for additional families assigned to a tier" in normalized
+        assert "This is an assignment, not a benchmark claim" in normalized
 
 
 class TestFamilyNotVersionReachesEverySite:
@@ -1189,10 +1195,42 @@ class TestFamilyNotVersionReachesEverySite:
             ("engine", "Name the family, never a version"),
             ("engine", "model family, not a version"),
             ("engine", "# Name the model family, never a version"),
-            ("bootstrap", "the family and never a version"),
-            ("collaborative", "(the family, never a version)"),
-            ("legacy", "(the family, never a version)"),
+            ("bootstrap", "naming the family and never a version"),
+            ("collaborative", "naming the family and never a version"),
+            ("legacy", "naming the family and never a version"),
             ("module", "name the model family, never a version"),
         )
         for name, phrase in expected:
             assert phrase in normalized[name], (name, phrase)
+
+    def test_installed_module_explains_extra_family_rows(self, tmp_path: Path) -> None:
+        assert _scaffold(tmp_path) == 0
+        installed = (tmp_path / "dev/modules/model-selection.md").read_text(
+            encoding="utf-8"
+        )
+        assert "add another row for every additional family assigned to that tier" in " ".join(installed.split())
+
+
+class TestThisRepositorysMappingAssignments:
+    def test_each_maintainer_assigned_family_has_the_intended_task_tier(self) -> None:
+        path = CAIRN_ROOT / "dev/.cairn/model-selection-mapping.yml"
+        text = path.read_text(encoding="utf-8")
+        rows = re.findall(
+            r"(?ms)^  - tier: (high|medium|low)\n"
+            r"    model: \"?([^\"\n]+)\"?\n"
+            r"    date_verified: \"(\d{4}-\d{2}-\d{2})\"\n"
+            r"    task_family: \"([^\n]+)\"\n"
+            r"    source: \"([^\n]+)\"",
+            text,
+        )
+        assert {(tier, model) for tier, model, *_ in rows} == {
+            ("high", "Opus"), ("medium", "Sonnet"), ("low", "Haiku"),
+            ("high", "Sol"), ("medium", "Terra"), ("low", "Luna"),
+            ("high", "Argon"), ("medium", "Pro"), ("low", "Flash"),
+        }
+        assert len(rows) == 9
+        for _tier, _model, date, task, source in rows:
+            assert date == "2026-10-28"
+            assert "Maintainer assignment, 2026-10-28" in source
+            assert "not benchmarked" in source
+            assert task and "lane" not in task

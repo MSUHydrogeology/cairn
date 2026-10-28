@@ -162,27 +162,30 @@ labels** (high / medium / low capability); each adopting team
 maps the labels to its specific model lineup in its own
 configuration.
 
-The default mapping:
+The task sets the default floor; the lane governs the process used
+to do and review the work, not the model tier. Apply these task
+floors:
 
-* **High-stakes roles** — Strategy / Research (research,
-  premise-checking and novel design; proposal authoring is
-  standard-stakes, below), proposal review (the premise is still
-  movable, and a wrong one is cheapest to catch there), Security
-  Review, Maintainer scribing — require the **high-capability tier**
-  by default. The Maintainer may lower the floor for a specific
-  session or sub-domain by explicit Decision; the default is high.
-* **Standard-stakes roles** — Implementation for non-trivial
-  work (the standard lane, and the deliberate lane's plan chunks),
-  proposal authoring, plan review, code review (whose floor is also
-  **not the implementing agent**) — accept the **medium-capability
-  tier**; high-tier is permitted when available but not required. A
-  premise-check inside a proposal is its own task, spawned at high,
-  its result handed to the medium draft.
-* **Low-stakes roles** — Implementation of trivial chunks (the
-  trivial lane), User Agent for routine workflow exercise,
-  non-substantive doc tweaks, and docstring and comment cleanup
-  (below) — accept the **lower-capability tier**; higher tiers are
-  not required.
+* **High-capability tier** — strategy and research, premise-checking,
+  genuinely novel design, security or trust-boundary judgment, and
+  Security Review. A task that makes one of these judgments stays high
+  even when it appears inside an ordinary proposal or implementation.
+* **Medium-capability tier** — ordinary proposal authoring and ordinary
+  proposal, plan and code reviews. Code review also requires a fresh
+  reviewer who did not implement the work. A premise-check inside a
+  proposal is a separate high-tier task; its result is handed to the
+  medium-tier author.
+* **Low-capability tier** — executing an accepted, reviewed plan,
+  including non-trivial and high-risk chunks; trivial implementation;
+  and scribing a Decision when the Maintainer has explicitly authorized
+  the scribing. High capability is permitted but not required for these
+  tasks. The task's review and security obligations remain in force.
+
+The Maintainer may raise a task's floor. Lowering a task below its
+default floor requires an explicit Maintainer Decision naming the task,
+the lowered floor, the rationale and the scope. A low-tier execution
+floor grants no authority to decide, review, waive a fence or make a
+security judgment.
 
 **Docstring and comment cleanup, and related edits, may be written at low.**
 This covers an edit that changes only docstrings, comments and other
@@ -193,14 +196,10 @@ this project's `AGENTS.md` names as high-risk it also owes the Security Review
 that surface already requires, at high. Nothing in this row lowers a review or
 removes a Security Review.
 
-The lane is the measure of risk (`lifecycle.md`, "Three lanes"): a
-trivial-lane change is written at low, a standard-lane change at
-medium, and a deliberate-lane change at its role's floor. An adopter
-may raise a floor; lowering one below the module's row takes a
-Maintainer Decision. Cairn's
-doctrine names the invariant (a floor exists, by role and lane); the
-adopter's project-specific placement on the complexity axis
-(`dimensions/complexity.md`) determines the numerical mapping.
+An adopter maps these generic tiers to its own model lineup. The
+doctrine sets floors by task; the lifecycle lane still sets the
+proposal, plan and review process. Neither lane nor risk label alone
+changes a task's floor.
 
 **Diversity within tier.** Where multiple models meet a tier's
 floor, a different *model architecture* than the author's is

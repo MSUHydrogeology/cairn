@@ -203,11 +203,16 @@ Decision authority and is the one role that is not interchangeable. Other roles
 capable agent fills; name your role before substantive work, and if it is not
 explicit, ask. The roster is in `dev/agent_collaboration.md`.
 
-* **Model tier.** Use the lowest-capability model that can do the task
-  safely: low for the trivial lane, medium for the standard lane, the
-  role's floor for the deliberate lane. Proposal authoring is medium;
-  Security Review, proposal review, premise-checking and other bright-line
-  work stay high. Never downshift across a data-governance boundary.
+* **Model tier.** The task sets the capability floor; the lane governs
+  the process, not the tier. High covers strategy, premise-checking,
+  novel design, security or trust-boundary judgment, and Security Review.
+  Medium covers ordinary proposal authoring and ordinary proposal, plan
+  and code reviews. Low covers execution of an accepted, reviewed plan,
+  including high-risk chunks, trivial implementation, and Decision scribing
+  explicitly authorized by the Maintainer. Execution at low does not lower
+  its review or security obligations or grant authority to decide, waive a
+  fence, or make a security judgment. Never downshift across a data-governance
+  boundary.
   **Name the model at every spawn**. Author and reviewer names carry the
   model. If lowered work fails its check, or a review blocks on a defect it should
   have caught, re-run once one tier up. A reviewer who sees work written

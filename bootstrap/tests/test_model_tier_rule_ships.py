@@ -7,7 +7,7 @@ Four properties, each read from the files an adopter receives:
   and a profile that installs no model-selection module still receives it;
 * the "different maker" condition is gone from every place that stated it, and
   a model at the same tier as the author is still not a sufficient check;
-* proposal authoring is a medium-tier task, with proposal review still high;
+* task floors control authorship, review, execution and authorized scribing;
 * the check that finds a missing clause is itself shown to fire on a mutant,
   beside a control run on the real text.
 
@@ -37,15 +37,22 @@ MODULE_COPIES = [SHIPPED_MODULE, OWN_MODULE]
 #: whitespace collapsed, so a re-wrapped line does not hide it.
 _RULE_CLAUSES = {
     "names-the-rule": "**Model tier.**",
-    "lowest-capability-model": (
-        "Use the lowest-capability model that can do the task safely"),
-    "the-lane-sets-the-tier": (
-        "low for the trivial lane, medium for the standard lane, the role's "
-        "floor for the deliberate lane"),
-    "proposal-authoring-is-medium": "Proposal authoring is medium;",
-    "bright-line-work-stays-high": (
-        "Security Review, proposal review, premise-checking and other "
-        "bright-line work stay high."),
+    "task-sets-floor-lane-sets-process": (
+        "The task sets the capability floor; the lane governs the process, "
+        "not the tier."),
+    "high-judgment-stays-high": (
+        "High covers strategy, premise-checking, novel design, security or "
+        "trust-boundary judgment, and Security Review."),
+    "ordinary-authoring-and-reviews-are-medium": (
+        "Medium covers ordinary proposal authoring and ordinary proposal, "
+        "plan and code reviews."),
+    "accepted-plan-execution-is-low-even-high-risk": (
+        "Low covers execution of an accepted, reviewed plan, including "
+        "high-risk chunks, trivial implementation"),
+    "decision-scribing-needs-authorization": (
+        "Decision scribing explicitly authorized by the Maintainer."),
+    "low-execution-keeps-review-security-obligations": (
+        "Execution at low does not lower its review or security obligations"),
     "no-downshift-across-data-governance": (
         "Never downshift across a data-governance boundary."),
     "name-the-model-at-every-spawn": "**Name the model at every spawn**",
@@ -67,14 +74,6 @@ _RETIRED_CONDITION = {
         r"\*\*and\*\* (?:is )?a different model architecture"
     ),
 }
-
-#: The one sentence that says how a proposal's premise-check is tiered. It must
-#: read the same in every place that states the proposal-authoring tier.
-_PREMISE_CHECK = (
-    "A premise-check inside a proposal is its own task, spawned at high, its "
-    "result handed to the medium draft."
-)
-
 
 def _flat(text: str) -> str:
     """Collapse whitespace and blockquote markers so a re-wrap hides nothing."""
@@ -132,6 +131,24 @@ def _retired_condition(text: str) -> list[str]:
 def test_both_agents_copies_carry_the_model_tier_rule(rel: str) -> None:
     """Every project reads `AGENTS.md`, so the rule must be in each source copy."""
     assert _missing_rule_clauses(_roles_section(_read(rel))) == []
+
+
+def test_task_floors_reject_lane_based_assignment_and_unreviewed_low_authority() -> None:
+    """Wrong task tiers or omitted safeguards fail beside the real rule control."""
+    real = _flat(_roles_section(_read(OWN_AGENTS)))
+    assert _missing_rule_clauses(real) == []  # control
+    mutants = (
+        real.replace("Low covers execution of an accepted, reviewed plan",
+                     "Medium covers execution of an accepted, reviewed plan"),
+        real.replace("including high-risk chunks", "only trivial chunks"),
+        real.replace("explicitly authorized by the Maintainer", "at the agent's discretion"),
+        real.replace("does not lower its review or security obligations",
+                     "removes its review and security obligations"),
+        real.replace("The task sets the capability floor; the lane governs the process",
+                     "The lane sets the capability floor; the task governs the process"),
+    )
+    for mutant in mutants:
+        assert _missing_rule_clauses(mutant), "wrong-property control survived"
 
 
 def test_the_rule_reads_the_same_in_both_copies() -> None:
@@ -218,24 +235,89 @@ def test_the_different_maker_condition_is_gone_and_same_tier_is_excluded() -> No
 
 
 def test_proposal_authoring_is_medium_and_proposal_review_stays_high() -> None:
-    """Authoring a proposal is medium; reviewing one, and a premise-check, stay high."""
+    """Task floors, rather than lifecycle lanes, determine each assignment."""
+    expected = {
+        "Strategy / Research": "high",
+        "Security judgment / Security Review": "high",
+        "Ordinary proposal authoring": "medium",
+        "Ordinary proposal review": "medium",
+        "Plan review": "medium",
+        "Code review": "medium",
+        "Accepted-plan execution": "low",
+        "Trivial implementation": "low",
+        "Authorized Decision scribing": "low",
+        "User Agent (routine workflow)": "low",
+        "Non-substantive doc tweaks": "low",
+        "Docstring and comment cleanup, and related edits": "low",
+    }
+
+    def task_floors(text: str) -> dict[str, str]:
+        flat = _flat(text)
+        start = flat.index("**Default tier-by-task mapping:**")
+        end = flat.index("**Docstring and comment cleanup", start)
+        table = flat[start:end]
+        return dict(re.findall(r"\| ([^|]+) \| (high|medium|low) \|", table))
+
+    expected_fanout = {
+        "Single search / retrieval": "low",
+        "Single-source extraction / parsing": "low",
+        "Mechanical transform / formatting": "low",
+        "Authorized Decision scribing": "low",
+        "Accepted, reviewed plan execution": "low",
+        "Ordinary authoring or review": "medium",
+        "Strategy, premise-checking or novel design": "high",
+        "Security judgment or Security Review": "high",
+    }
+
+    def fanout_floors(text: str) -> dict[str, str]:
+        flat = _flat(text)
+        start = flat.index("| Task type (fan-out leaf) | Default floor |")
+        end = flat.index("**Verification tier follows", start)
+        table = flat[start:end]
+        return dict(re.findall(r"\| ([^|]+) \| (low|medium|high)(?:[^|]*) \|", table))
+
     for rel in MODULE_COPIES:
-        flat = _flat(_read(rel))
-        assert re.search(r"\| Proposal authoring \| medium \|", flat), rel
-        assert re.search(r"\| Proposal review \| high \|", flat), rel
-        assert _PREMISE_CHECK in flat, rel
+        text = _read(rel)
+        assert task_floors(text) == expected, rel
+        flat = _flat(text)
+        assert "A premise-check is a separate high-tier task" in flat, rel
+        assert "low-tier execution floor grants no authority to decide" in flat, rel
+        assert "Fresh reviewer who did not implement the work" in flat, rel
+        assert fanout_floors(text) == expected_fanout, rel
+        assert "High-judgment tasks never downshift" in flat, rel
     assert _read(SHIPPED_MODULE) == _read(OWN_MODULE)
 
-    roles = _read(ROLES)
-    standard = re.search(
-        r"\* \*\*Standard-stakes roles\*\*(.*?)\n\* \*\*Low-stakes", roles, re.S)
-    high = re.search(
-        r"\* \*\*High-stakes roles\*\*(.*?)\n\* \*\*Standard-stakes", roles, re.S)
-    assert standard and high
-    assert "proposal authoring" in _flat(standard.group(1))
-    assert _PREMISE_CHECK in _flat(standard.group(1))
-    assert "proposal review" in _flat(high.group(1))
-    assert "proposal authoring is standard-stakes" in _flat(high.group(1))
+    # Controls: the former stage-based floors, and low authorized scribing
+    # without its authorization condition, each fail the semantic mapping.
+    source = _read(OWN_MODULE)
+    assert task_floors(source) == expected
+    wrong_review = source.replace(
+        "| Ordinary proposal review | medium |", "| Ordinary proposal review | high |")
+    wrong_execution = source.replace(
+        "| Accepted-plan execution | low |", "| Accepted-plan execution | medium |")
+    assert task_floors(wrong_review) != expected
+    assert task_floors(wrong_execution) != expected
+    wrong_security = source.replace(
+        "| Security judgment / Security Review | high |",
+        "| Security judgment / Security Review | medium |",
+    )
+    assert task_floors(wrong_security) != expected
+    wrong_fanout_execution = source.replace(
+        "| Accepted, reviewed plan execution | low, including high-risk chunks |",
+        "| Accepted, reviewed plan execution | medium, including high-risk chunks |",
+    )
+    assert fanout_floors(wrong_fanout_execution) != expected_fanout
+
+    roles = _flat(_read(ROLES))
+    assert "The task sets the default floor; the lane governs the process" in roles
+    assert "**High-capability tier** — strategy and research, premise-checking" in roles
+    assert "security or trust-boundary judgment, and Security Review" in roles
+    assert "**Medium-capability tier** — ordinary proposal authoring and ordinary" in roles
+    assert "**Low-capability tier** — executing an accepted, reviewed plan" in roles
+    assert "including non-trivial and high-risk chunks" in roles
+    assert "when the Maintainer has explicitly authorized the scribing" in roles
 
     for rel in AGENTS_COPIES:
-        assert "Proposal authoring is medium;" in _flat(_read(rel))
+        flat = _flat(_read(rel))
+        assert _missing_rule_clauses(_roles_section(_read(rel))) == []
+        assert "Medium covers ordinary proposal authoring and ordinary proposal, plan and code reviews." in flat

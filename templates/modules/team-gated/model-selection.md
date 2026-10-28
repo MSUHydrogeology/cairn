@@ -30,32 +30,27 @@ models they actually use.
 
 Merged into the adopter's role/configuration documentation:
 
-> **Capability-tier labels (adopter-local).** Map your model
-> lineup onto three tier labels. Use the *strongest* model your
-> team has access to as `high-capability tier`; pick a middle
-> tier with broadly-comparable reasoning capability but lower
-> cost for routine work as `medium-capability tier`; pick a
-> fast / inexpensive tier for trivial work as `low-capability
-> tier`. Where multiple vendors are available, list at least
-> one model per vendor at each tier you populate — that keeps a
-> different model architecture available when the Maintainer
-> assigns one or asks for more distance. Diversity within a tier
+> **Capability-tier labels (adopter-local).** Map the generic high,
+> medium and low capability tiers to your own model lineup. The task
+> sets the model floor; the lifecycle lane governs the process, not
+> the tier. Where several families fill a tier, add a mapping row
+> for each family using the existing schema. Diversity within a tier
 > (`doctrine/roles.md`) is useful distance on request, never a
 > default an agent applies.
 >
-> **Default tier-by-role mapping:**
+> **Default tier-by-task mapping:**
 >
-> | Role | Default floor | Notes |
+> | Task | Default floor | Notes |
 > |------|---------------|-------|
-> | Strategy / Research | high | Research, premise-checking, novel design. High-stakes by default; Maintainer Decision may lower. |
-> | Proposal authoring | medium | A premise-check inside a proposal is its own task, spawned at high, its result handed to the medium draft. |
-> | Proposal review | high | The premise is still movable, and a wrong one is cheapest to catch here. |
-> | Security Review | high | Focused-mode pass on a high-risk surface; its floor does not follow the stage it attaches to. |
-> | Maintainer scribing | high | Decision-of-record artifacts; capability floor matches Strategy. |
-> | Implementation (non-trivial) | medium | The standard lane, and the deliberate lane's plan chunks. High permitted; not required. |
-> | Plan review | medium | Same as Implementation. |
-> | Code review | medium | Floor is "not the implementing agent"; tier is medium-or-higher. |
-> | Implementation (trivial chunks) | low | The trivial lane: single commit, single area, no follow-ups. |
+> | Strategy / Research | high | Includes premise-checking and genuinely novel design. |
+> | Security judgment / Security Review | high | Includes judgment on security or trust boundaries, regardless of lane. |
+> | Ordinary proposal authoring | medium | A premise-check is a separate high-tier task; its result is handed to the medium-tier author. |
+> | Ordinary proposal review | medium | Raise to high when the review performs a premise-check, novel design or security judgment. |
+> | Plan review | medium | Raise to high only for a high-tier judgment within its scope. |
+> | Code review | medium | Fresh reviewer who did not implement the work; raise to high for a high-tier judgment within its scope. |
+> | Accepted-plan execution | low | Includes non-trivial and high-risk chunks; review, security and Maintainer fences still apply. |
+> | Trivial implementation | low | The process lane remains trivial; a task that makes a high-tier judgment keeps that floor. |
+> | Authorized Decision scribing | low | Only when the Maintainer explicitly authorizes it; quote the authorization verbatim and keep the Decision commit exclusive. |
 > | User Agent (routine workflow) | low | Concrete-mode workflow exercise, capture only. |
 > | Non-substantive doc tweaks | low | Typo / wording / linkfix. |
 > | Docstring and comment cleanup, and related edits | low | The writing step only; the paragraph below says what stays unchanged. |
@@ -69,37 +64,38 @@ Merged into the adopter's role/configuration documentation:
 > that surface already requires, at high. Nothing in this row lowers a review or
 > removes a Security Review.
 >
-> **Override discipline.** Lowering a high-stakes floor for a
-> specific session or sub-domain requires an explicit Maintainer
-> Decision recorded on the artifact (proposal or plan); the
-> Decision names the role, the lowered floor, the rationale, and
-> the scope. Raising a low-stakes role's tier is unrestricted.
+> **Override discipline.** The Maintainer may raise a task's floor.
+> Lowering a task below its default floor requires an explicit
+> Maintainer Decision recorded on the artifact (proposal or plan);
+> it names the task, lowered floor, rationale and scope. A low-tier
+> execution floor grants no authority to decide, review, waive a
+> fence or make a security judgment.
 
 ## Orchestrated work — tiering the fan-out (template content)
 
 The role→tier table above governs the **human-role roster**. Orchestrated
-sub-agents — the fan-out a single call can spawn — are tiered by **task type**,
-not by inheriting the orchestrator's tier. This is where the largest
-model-cost multiplier lives: one orchestration call can spawn many sub-agent
-calls, and by most tooling defaults each silently inherits the orchestrator's
-(frontier) tier.
+sub-agents — the fan-out a single call can spawn — use the same **task floors**,
+not the orchestrator's tier or the lifecycle lane. A leaf's assignment does
+not transfer the orchestrator's authority or its review obligations.
 
-> **Tier the fan-out by task type, not by inheritance.** A sub-agent gets its
+> **Tier the fan-out by task, not by inheritance.** A sub-agent gets its
 > capability floor from *its own task* and does not silently inherit the
-> orchestrator's tier. Bounded leaves default to **low or medium**; the
-> **high** floor is reserved for where judgment concentrates — the
-> orchestration/synthesis **root**, and verification of **high-stakes claims**.
+> orchestrator's tier. Executing an accepted, reviewed plan is low, including
+> high-risk chunks; ordinary authoring and reviews are medium; strategy,
+> premise-checking, novel design and security judgment or Security Review are
+> high. A task may contain more than one kind of work: assign the floor for
+> the judgment it performs.
 >
 > | Task type (fan-out leaf) | Default floor |
 > |---|---|
 > | Single search / retrieval | low |
 > | Single-source extraction / parsing | low |
-> | Mechanical transform / formatting / scribing | low |
-> | Routine verification of a bounded claim | medium |
-> | Generative authoring (non-trivial, reviewed) | medium |
-> | Synthesis / orchestration root | high |
-> | Verification of a bright-line / high-stakes claim | high |
-> | Bright-line task (see below) | high — never downshift |
+> | Mechanical transform / formatting | low |
+> | Authorized Decision scribing | low |
+> | Accepted, reviewed plan execution | low, including high-risk chunks |
+> | Ordinary authoring or review | medium |
+> | Strategy, premise-checking or novel design | high |
+> | Security judgment or Security Review | high — never downshift |
 >
 > **Verification tier follows claim-stakes, not "decisiveness."** Which
 > verification vote turns out decisive is unknowable until after it runs, so
@@ -139,9 +135,9 @@ calls, and by most tooling defaults each silently inherits the orchestrator's
 > architecture. Sending the context packet to a second maker's model crosses the
 > data-governance gate below, so that gate applies first.
 >
-> **Bright-line tasks never downshift — even as a fan-out leaf.** Security
-> Review, the high-risk trust boundaries, premise-checking, and genuinely novel
-> design stay at the high floor regardless of orchestration context. The one
+> **High-judgment tasks never downshift — even as a fan-out leaf.** Security
+> Review, security or trust-boundary judgment, premise-checking, and genuinely
+> novel design stay at the high floor regardless of orchestration context. The one
 > exception is the docstring-and-comment cleanup row above, and only for its
 > writing step: it lowers no review and no Security Review. One missed subtle
 > failure there dwarfs a session of token savings.
@@ -160,28 +156,24 @@ calls, and by most tooling defaults each silently inherits the orchestrator's
 > tasks, not by assumption; tiering by task *type* is preferred over dynamic
 > cost cascades, whose escalation overhead can exceed the saving.
 
-> **Mapping-record schema — bind to measured capability, dated.** Tier *labels*
-> are only a capability proxy: product-line names (Pro / Flash / mini) track
-> capability within a *co-released* lineup, not across release generations or
-> vendors — a newer mid-line model routinely out-benchmarks an older flagship
-> until that flagship's next release flips it back. So bind each tier to the
-> *currently top-benchmarking* model per vendor by **measurement, not name**,
-> and record it in the adopter-local mapping file, never in this
-> doctrine. Each mapping row carries: `model`, `tier`, `date-verified`,
-> `task-family`, `source/benchmark`, `accepted-quality-threshold`, `price-basis`,
-> `re-verification-trigger`. Re-rank on a low-frequency housekeeping pass;
-> the `date-verified` stamp lets a reader see staleness, and no routine reads it.
+> **Mapping-record schema — record dated Maintainer assignments.** The
+> adopter's mapping names the model family assigned to each tier and the
+> Maintainer who made that assignment. Each row uses the existing fields:
+> `model`, `tier`, `date_verified`, `task_family` and `source`; optional
+> fields such as `re_verification_trigger` may record when to revisit it.
+> Add a row for each additional family assigned to a tier. The mapping is an
+> assignment, not a benchmark claim, and no routine authenticates it.
 
 **Filling the mapping.** The adopter-local mapping is
-`dev/.cairn/model-selection-mapping.yml`: one row per tier you populate (high, medium,
-low), copying the shape of the seeded row. In `model`, name the model family, never a
-version; the latest release of that family is meant, so a new release does not make a row
-stale, and a release that changes which family fits a tier does. Say in `source` who made
-the assignment. `python scripts/check_model_selection.py` exits 0 once no placeholder
-remains and at least one row exists. It checks shape, not truth, and nothing reads
-`date_verified`, so noticing a stale mapping is yours to do. The installing agent runs the
-check at the acceptance step; after that a person does, because nothing runs it
-automatically.
+`dev/.cairn/model-selection-mapping.yml`: at least one row per tier you populate (high,
+medium, low), copying the shape of the seeded row. In `model`, name the model family,
+never a version; add another row for every additional family assigned to that tier. Put
+the Maintainer assignment and date in `source` and `date_verified`. The assignment does
+not claim benchmark evidence. `python scripts/check_model_selection.py` exits 0 once no
+placeholder remains and at least one row exists. It checks shape, not truth or
+authorization, and nothing reads `date_verified`; a person checks the assignment. The
+installing agent runs the check at acceptance; after that a person runs it because
+nothing does so automatically.
 
 ## Notes on the gating
 

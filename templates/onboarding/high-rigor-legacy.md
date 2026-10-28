@@ -110,7 +110,10 @@ goes live.
 * [seed; id: fill-model-selection-mapping]
   **Waiting on Maintainer**: fill the model mapping
   If `dev/.cairn/model-selection-mapping.yml` exists, ask the Maintainer which model
-  family fills each tier (high, medium, low), record one row per tier (the family, never
-  a version), and run `python scripts/check_model_selection.py`. Delete the Waiting line
-  when it passes.
+  family fills each tier (high, medium, low). Record one row per assigned family using
+  the existing schema, naming the family and never a version; add rows for additional
+  families assigned to a tier, and record the Maintainer assignment and date. This is an
+  assignment, not a benchmark claim. Run `python scripts/check_model_selection.py` when
+  filling the mapping; it checks shape and placeholders, not the assignment. Delete the
+  Waiting line when it passes.
 <!-- cairn:endif -->

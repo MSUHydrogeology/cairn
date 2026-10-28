@@ -920,14 +920,15 @@ _FILE_OBLIGATIONS = {
 #: The capability floors, in both copies of the model-selection module.
 _MODEL_OBLIGATIONS = {
     "proposal-review-floor-is-high":
-        r"\| Proposal review \| high \| The premise is still movable, and a "
-        r"wrong one is cheapest to catch here\. \|",
+        r"\| Ordinary proposal review \| medium \| Raise to high when the "
+        r"review performs a premise-check, novel design or security judgment\. \|",
     "plan-review-floor-is-medium":
         r"\| Plan review \| medium \|",
     "code-review-floor-is-medium-and-not-the-implementing-agent":
-        r"\| Code review \| medium \| Floor is .not the implementing agent.",
+        r"\| Code review \| medium \| Fresh reviewer who did not implement the work; "
+        r"raise to high for a high-tier judgment within its scope\.",
     "security-review-floor-is-high":
-        r"\| Security Review \| high \|",
+        r"\| Security judgment / Security Review \| high \|",
     "cleanup-may-be-written-at-low":
         r"Docstring and comment cleanup, and related edits, may be written at "
         r"low\. This covers an edit that changes only docstrings, comments and "
@@ -966,7 +967,7 @@ _MODEL_OBLIGATIONS = {
         r"changes, architecture decisions, irreversible migrations, or large "
         r"/ diffuse edits a reviewer would have to re-derive to check",
     "bright-line-keeps-the-high-risk-trust-boundaries":
-        r"Security Review, the high-risk trust boundaries, premise-checking, "
+        r"Security Review, security or trust-boundary judgment, premise-checking, "
         r"and genuinely novel design stay at the high floor",
     "the-cleanup-row-is-the-only-exception-and-only-for-the-writing-step":
         r"The one exception is the docstring-and-comment cleanup row above, "
@@ -1051,8 +1052,8 @@ def test_the_old_role_rows_are_gone(rel: str) -> None:
     rows = [l.lstrip("> ") for l in _text(rel).splitlines()]
     assert not any(l.startswith("| External Review") for l in rows)
     assert not any(l.startswith("| Internal Review") for l in rows)
-    assert any(l.startswith("| Proposal review") for l in rows), (
-        "control: the table has the new stage rows")
+    assert any(l.startswith("| Ordinary proposal review") for l in rows), (
+        "control: the table has the task-based review row")
 
 
 def _roster_names(text: str) -> list[str]:
