@@ -8,10 +8,12 @@ Completed work leaves the board. The commit history retains earlier versions.
 ## Where the project stands
 
 <!-- cairn:slot project-status -->
-Cairn is at **v0.4.0**, its first public release (tagged 2026-10-20), self-hosting
-and used in LHM and modflow_tools. The external correctness trial remains open;
-it was expressly waived as a condition of publishing 0.4. **0.5 is laid out
-below.**
+Cairn is at **v0.5.0** (tagged 2026-10-28; its release gate was waived, see the v0.6
+row on `PYTEST_ADDOPTS`), self-hosting and used in LHM and modflow_tools. v0.4.0
+was the first public release (2026-10-20). The external correctness trial remains
+open; it was expressly waived as a condition of publishing 0.4. **0.6 work happens
+on branch `0.6-dev`.** The 0.5 sections below are a record of what shipped and
+are due to leave this board (a v0.6 row queues that).
 
 Standing direction: **postdoc-first** and **fix defects, build nothing new**
 (Maintainer, 2026-07-22). A new tool or mechanism needs its own go-ahead.
@@ -28,7 +30,7 @@ artifacts; this board does not maintain a second status table.
 
 ## Release path
 
-### 0.5 (Maintainer direction, 2026-10-26)
+### 0.5 (Maintainer direction, 2026-10-26) -- released as v0.5.0 on 2026-10-28
 
 **Theme: plain, short, and fits the install.** The Maintainer, on the theme:
 
@@ -246,43 +248,21 @@ Maintainer, 2026-10-26:
 new*, applies to every row above; the choices on this page are the go-ahead for
 these rows only.
 
-### The 0.5 cut: what waits on the Maintainer
+### The 0.5 cut (done 2026-10-28)
 
-Written 2026-10-26 by the planning session (updated 2026-10-27: the twelfth plan's allowances and the thirteenth Decision are done), in the order to do it. Nothing in
-this list has been run by an agent.
+Written 2026-10-26, closed out 2026-10-28. What happened, in the order it ran:
 
-1. **Both ceremonies are done (2026-10-28).** The anchor `refs/cairn/gate-anchor`
-   is commit `443de20f81169fabe36c4ca3cc620206f7850254`, signed by your key and
-   pushed with `0.5-dev`: the first ceremony moved the trust root to the new design
-   (`2433453c`), the second pinned the AST attestation (`000b0e9a`). Your two
-   authorizations and the results are appended to
-   `dev/plans/archive/ceremony-without-external-review.md`; the scripts and records
-   are in `dev/measurement/ceremony-scripts-2026-10-28/`. `repin status` runs
-   and shows no pin owed. Still owed: one certifying run, release preparation,
-   and your merge, tag and release page.
-2. **The re-anchors, once, at the end**: the AST attestation and the gate
-   manifest. Derive the lists with `_ast_attest.py verify` and
-   `_gate_manifest.py verify` on Python 3.13.x, not from the rows below. Your
-   authorization must name the differential oracle's sensitive-roster entries
-   the 0.5 changes touch: `bootstrap/_scaffold/` (including `config.py`),
-   `bootstrap/security_check.py` and `bootstrap/tests/_gate_manifest.py`.
-3. **One certifying run**, after the ceremony, on the clean committed tree (the
-   pair in `AGENTS.md`, Boundary B), before the push. Nothing in the tree is
-   certified yet. The earlier run (2026-10-27, `b15dda53`, Python 3.13.13: 5,291
-   passed, 2 failed, both the owed AST attestation tests; 20 minutes with other
-   agents running) is not repeated before the ceremony. The Maintainer, 2026-10-27,
-   on running it again before and after the ceremony: "It's silly to run multiple 20
-   minute certifying runs like that" and "Literally nothing changes between steps 3
-   and 7". The code does not change between them; only the pin fixtures, the
-   ceremony record and the release edits do, and those are what the one run must
-   see. This waives the "before the Maintainer's re-anchor ceremony" trigger in
-   `AGENTS.md` for this release.
-4. **Your push**, the merge of `0.5-dev` into `master`, the tag, and the
-   release notes copied from the changelog section (rename `## Unreleased` to
-   `## 0.5.0 — <date>`), with a short summary paragraph above it that I draft
-   at release time once the section is final (`docs/release-process.md`, "The
-   cut"). Before publishing, check the page's URL, profile names and commands
-   against the tree.
+1. **Two ceremonies** (2026-10-28): anchor `2433453c` (the new trust-root design)
+   then `443de20f` (the AST pin). Authorizations and results are at the end of
+   `dev/plans/archive/ceremony-without-external-review.md`; scripts and records are
+   in `dev/measurement/ceremony-scripts-2026-10-28/`.
+2. **One certifying run**, green at `7c910851` (Python 3.13.13, 5,479 passed, 24
+   minutes 55 seconds). The Maintainer waived the earlier pre-ceremony run
+   (2026-10-27: "It's silly to run multiple 20 minute certifying runs like that").
+3. **Release**: `3bb27388` (version, date, changelog), tag `v0.5.0` signed by the
+   Maintainer, version DOI `10.5281/zenodo.23731834` (`91fd0579`). The release
+   security gate failed closed (15 failed) and was waived by the Maintainer; the
+   correction is a v0.6 row.
 
 #### Existing 0.5 gate-manifest re-anchor debt
 
@@ -358,7 +338,7 @@ read what it prints.
 This is Maintainer-only; follow `bootstrap/REANCHOR_RUNBOOK.md` and derive the
 changed set from the final committed tree.
 
-**Waiting on Maintainer**: run the gate-manifest re-anchor
+**Done 2026-10-28**: both ceremonies ran (anchor `443de20f`); `_gate_manifest.py verify` reads OK (197 frozen files, 5,479 pinned nodes).
 
 ### v0.6 — Make existing capabilities work right
 
@@ -463,6 +443,7 @@ Overlapping summary rows above are one scope, not additional work. Existing
 | **The collision log and rate-limit gate miss same-file sweeps** | Proposal first (work-intent tooling; `templates/modules/team-gated/_intent/conflict.py`) | Found 2026-10-27 from the goodnight gate output ("tracker `dev/measurement/collision_log.md`: 23 incident row(s), 0 'occurred' in the 14-day window"). Measured: all 23 rows are `prevented` (12 in the 14-day window, 1 dated today); `occurred` is written only when someone knowingly overrides a claim (`conflict.py:914`). So the gate's "0 occurred" is correct by its definition and still understates what happened: two reviewers wrote one plan file and `5094a977` carried both sections, and claims were released by another session's commit, with no row. Question for a proposal: what should the gate count as a same-file collision (a commit whose diff holds text from a claim it did not hold), and how is it detected. Also touches the deferred row "Shared working-tree writes", whose trigger has met. Maintainer, 2026-10-27: *"If you feel there are follow-ups, please put them into the Queue for v0.6 and we can triage them later"*. |
 | **The ceremony as two commands: `reanchor` and `repin`** | Proposal first (launcher and checker changes; closure members; Security Review) | After the first ceremony: the Maintainer's parts were typed by hand from a page and the Y1 to Y5 questions are printed and read by no program (checked 2026-10-28). Target: the checks before stage 1, stage 1, the comparisons (E1 to E6, H, K), stage 2 and the signature check run as one script that prints each raw value next to the expected one, compares the shas itself, asks for the passphrase once and records the approval; the Maintainer runs it, confirms the shas it shows, enters the passphrase, and runs the push. The scripts for both ceremonies (`precheck.sh`, `stage1.sh`, `compare.sh`, `stage2.sh`, `push.sh`, `repin1.sh`, `repin2.sh`, the AST correction) are kept in `dev/measurement/ceremony-scripts-2026-10-28/` with a README; they were tested on stand-in values files and hard-code the two candidates. The second ceremony added: `repin` needs a reader's record before it can write an AST pin; it refuses a baselined symbol that is missing (a reviewed deletion), so four deletions needed a by-hand correction and a second signing (`repin` should carry reviewed deletions); a hand edit of the AST fixtures trips `check_stop_records`; the values file's `package` leaf must not exist, so a second ceremony needs a new name. The launcher cannot verify its own bytes, so E5 stays a separate check. Maintainer, 2026-10-28: *"That is what this entire automated routine is for, but here we are pretending that I am doing something"* and *"I could definitely do a `reanchor` and a `repin` and confirm shas and enter my passphrase"*. |
 | **The release gate and the evidence stage disagree about `PYTEST_ADDOPTS`** | Proposal first (the fix touches the gate's own files: `bootstrap/security_check.py`, the preflight closure member or a frozen test; Security Review; a ceremony to re-pin) | On 2026-10-28 `python bootstrap/security_check.py` run on a clean detached copy of `3bb27388` (the 0.5.0 release commit; Python 3.13.13) failed closed at its last phase: 15 failed, 5,464 passed in 19 minutes 34 seconds, all in `test_gate_preflight.py` and `test_ceremony_review_report.py`, all with the message that `PYTEST_ADDOPTS` is set and the evidence stage refuses to pin a collection it may have reduced. The gate itself sets `PYTEST_ADDOPTS="-p no:cacheprovider"` for its test child (`bootstrap/security_check.py`, `_release_child_env`), and the refusal in `bootstrap/tests/_gate_preflight.py` (`_COLLECTION_STEERING_VARIABLES`) came with the ceremony rewrite. The same suite passed 5,479 in the certifying run at `7c910851` (Python 3.13.13, no variable set, 24 minutes 55 seconds with nothing else running), so this is read as a defect in the gate's setup, not in the code under test; that reading was not tested by running the gate without the variable. Likely fix: the preflight accepts exactly `-p no:cacheprovider` and nothing else, or the gate passes the option another way (the order-independence sub-gate's grandchild also inherits the variable); either must keep the refusal of `--ignore=` and plugin variables. The 0.5.0 release was cut with this gate failure waived. Maintainer, 2026-10-28: *"Let's release it now. It's safe and secure. Record this as an item for v0.6 to correct."* The waiver covers only the 0.5.0 cut. |
+| **Prune the 0.5 sections from this board** | Housekeeping, own commit | 0.5.0 shipped 2026-10-28, and "Completed work leaves the board". The 0.5 table and "The 0.5 cut" (to the v0.6 heading) are a record, not a queue. Before deleting, move anything unbuilt into the v0.6 table: the ceremony-hardening items A2, C, D, I (see the first row of "Re-anchor ceremony hardening"), and read each row's gate cell for "later row" wording. The commit history keeps the old text. Raised at the 2026-10-28 handoff. |
 | **First-ceremony page and report fixes** | Docs and checker prose, closure members (one ceremony to pin) | From the first ceremony and its reader (2026-10-28): the page says "Run E7" where the first ceremony has none; the report lists `reanchor.sh` as "not line-scanned" though its 4 hits were scanned; the page does not say that the stage-1 key probe waits 10 seconds for you to decline the passphrase prompt by pressing Return (it timed out once); the page's helper `g` breaks in zsh when `g` is an alias, so the page should say to run in `bash --noprofile --norc`; the Y1 to Y5 questions are not read or recorded by any program; the scan's file classes come from the files on disk, so deleted pinned files show as outside coverage and the digest can depend on stray files; a literal-string `shell=True` rates LOW and passes Bandit's MEDIUM gate; the report's authorization wording asks the Maintainer to author text instead of affirming a prepared one; the `compare.sh` process look listed an unrelated orphaned test process (a temp-folder shell blocked on a FIFO), so the look should filter to the ceremony's own processes. Evidence: `dev/measurement/ceremony-scripts-2026-10-28/`. Maintainer, 2026-10-28: *"That is what this entire automated routine is for, but here we are pretending that I am doing something"* and *"I could definitely do a `reanchor` and a `repin` and confirm shas and enter my passphrase"*. |
 
 ### v0.7 — New capabilities and adopter feedback
