@@ -1,12 +1,11 @@
 # Align model floors with the current team roster
 
 **Author**: Codex gpt-6-sol (Proposal)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Set model capability floors by the work each agent does so routine reviews and planned implementation use the intended tiers.
-**Waiting on Maintainer**: accept, reject, or revise the role floors
 
 ## Context
 
@@ -525,3 +524,11 @@ assignment and adds no scope or capability claim, so it does not widen the
 reviewed proposal or reopen the cleared Security obligation. Status remains
 `awaiting-decision`; the future plan's Internal and Internal Security reviews
 remain required if accepted.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-28
+
+**ACCEPTED.** The Maintainer's authorization, quoted **verbatim and visually isolated**:
+
+> "1. Accept, and the vendor mapping is for Cairn only. It does not ship vendor-specific tiers. Add Antigravity: Argon/Pro/Flash."
+>
+> "Go ahead and scribe my decisions, and I will pass these back to the Codex agent to oversee implementation of."
