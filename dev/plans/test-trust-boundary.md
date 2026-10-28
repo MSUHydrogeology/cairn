@@ -173,3 +173,54 @@ Measured the committed source tree `7f12a3f648c525446b041f523ae967b4f1d20cae`. A
 The source manifest has 17 entries and the accepted contract adds 10 distinct test paths (27-floor union). Existing byte-freeze discovery yields 197 paths across its five source patterns; seven Python authority-closure members are joined by the runbook, launcher, re-anchor script and allowed-signers file (11 total). The inventory records the fixture files and excluded frozen paths. Positive controls found a collected `test_gate_manifest.py` node and the `conftest.py` manifest load. Collection only ran; no test body ran and `CAIRN_FULL_SUITE` was not set.
 
 This is factual input, not a completed protected-set decision. The high-tier pass still needs to decide which import/collection/execution dependencies require protected membership beyond the already-required floor, how to treat path-level fixtures and helper modules, and which new trust helpers enter authority closure. The scan is syntactic and does not establish runtime reachability or security classification.
+
+## Implementation log -- C1b proposed classification -- Codex (Sol, high) -- 2026-10-28
+
+The exact proposed roster is `dev/plans/test-trust-boundary/c1b-proposed-roster.json`;
+per-file reasons, source hashes, code witnesses, imports, dynamic-load expressions,
+fixture candidates and census deltas are in
+`dev/plans/test-trust-boundary/c1b-classification-evidence.json`. Both are
+**proposed-not-approved** deliberation data, never candidate authority. Source:
+`2ed8ddabc80c985ebc93171c7e628a7ec070459f`. Roster raw SHA-256:
+`fc0d99bf361534cce21cb7923223d751589d0fc2e3207e27108327a8e8671803`.
+
+The recommendation protects 78 test files and all 12 controlling Python modules,
+and leaves 51 test files ordinary: all 141 current Python paths are classified,
+including the 27-file required test floor. It preserves the seven fixture paths'
+existing protection mechanisms, including both existing self/cascade exceptions,
+and the 57 non-test frozen paths. No helper is introduced; the existing
+11-member authority closure is unchanged. A future roster-deciding helper must
+join it. The currently excluded intent-tool test is proposed for protected
+admission because it contains hostile-link and temporary-write defenses; C2 must
+reconcile its existing exception. These bytes install nothing.
+
+The measured prospective frozen union is 147 paths versus today's 197: 51 ordinary
+test files leave byte freezing and one previously excluded test joins. This may
+reduce ceremony work for ordinary maintenance; no timing or assurance equivalence
+was measured. Ordinary Python can still affect protected execution, and the
+syntactic dependency inventory does not close that accepted influence risk.
+
+The board file remains protected: its planted-encoder and linked-source cases
+are actual defenses. The two-node maintenance pilot therefore remains blocked.
+The evidence recommends one grouped Maintainer scope request: separately review
+extraction of the two ordinary clusters to a new ordinary file, retaining the
+security cases and helpers in the protected file, with a pilot-path allowance,
+scoped fault evidence and applicable review/ceremony costs. No pilot edit or
+substitution is authorized here.
+
+C1c is **not ready**. Refresh the census, dependencies, hashes and exact proposal
+after the model-floor and scoped-verification code reviews finish; only then
+present the refreshed roster for approval. The approval fence has not been reached.
+
+Verification used `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13):
+collect-only on the named commit's archive returned 5,482 nodes in 129 files
+(exit 0; 3.40 seconds), without running test bodies. Data assertions passed for
+all 141 source hashes, the disjoint/exhaustive partition, required floor,
+reconstructed node census, witness line bounds and roster hash. The existing
+C1a node list plus the recorded delta reconstructs this census exactly. A
+reader search across Python under tests, scripts and templates found no readers
+of these plan/data names; a known gate-manifest import was the positive control.
+Claim check and the plan-scoped prose/link/content check passed; neutrality had
+zero failures and 43 informational exemptions. No executable snippet changed,
+no full suite ran and certification remains pending. Shared unrelated edits
+were excluded from the commit; measured source came only from the named commit.
