@@ -1,12 +1,11 @@
 # Narrow the gate's test-file freeze without hiding test loss
 
 **Author**: Codex (Sol), Proposal author
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Keep security and trust tests under the signed gate while letting ordinary test maintenance proceed without a re-anchor ceremony.
-**Waiting on Maintainer**: accept narrower test protection and its stated assurance loss
 
 ## Context
 
@@ -401,3 +400,11 @@ fallback, because the Security Review identified a potentially sufficient
 single reviewed transition. The opening's unknown-classification HOLD remains
 superseded by ordinary-by-default admission and visible reporting. All
 protection outcomes remain.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-28
+
+**ACCEPTED, with recorded assurance loss.** The Maintainer's authorization, quoted **verbatim and visually isolated**:
+
+> "3. Accept with recorded assurance loss."
+>
+> "Go ahead and scribe my decisions, and I will pass these back to the Codex agent to oversee implementation of."
