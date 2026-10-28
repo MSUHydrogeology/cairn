@@ -39,6 +39,7 @@ SENSITIVE_ROSTER: tuple[str, ...] = (
     "bootstrap/tests/_oracle.py",
     "bootstrap/tests/_oracle_trust.py",
     "bootstrap/tests/_oracle_activation.py",
+    "bootstrap/tests/_gate_preflight.py",
     "bootstrap/tests/_gate_transition.py",
     "bootstrap/tests/_gate_reanchor.py",
     "bootstrap/tests/_gate_manifest.py",

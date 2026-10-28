@@ -19,6 +19,7 @@ def test_roster_membership():
     assert A.is_sensitive("bootstrap/_scaffold/upgrade.py")
     assert A.is_sensitive("bootstrap/scaffold.py")
     assert A.is_sensitive("bootstrap/tests/_oracle.py")
+    assert A.is_sensitive("bootstrap/tests/_gate_preflight.py")
     assert not A.is_sensitive("docs/whatever.md")
     assert not A.is_sensitive("bootstrap/tests/test_upgrade.py")
 

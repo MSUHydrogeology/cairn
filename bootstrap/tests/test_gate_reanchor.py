@@ -294,14 +294,13 @@ def test_rostered_stage_b_executes_only_preflight_bytes_pinned_by_p(tmp_path):
     act = A.Activation(baseline_sha=P_sha, trusted_ref="refs/heads/main",
                        nonce="rostered-stage-b", scope=["bootstrap/tests/"],
                        required_scenarios=list(REQUIRED))
-    (repo / SENSITIVE_REL).write_text("# reviewed candidate change\n", encoding="utf-8")
+    (repo / R._ACTIVATION_REL).parent.mkdir(parents=True, exist_ok=True)
+    (repo / R._ACTIVATION_REL).write_text(_activation_yaml(act), encoding="utf-8")
+    oracle_path = repo / SENSITIVE_REL
+    oracle_path.write_text(oracle_path.read_text(encoding="utf-8")
+                           + "\n# reviewed candidate change\n", encoding="utf-8")
     marker = tmp_path / "candidate-preflight-executed"
     preflight_path = repo / "bootstrap/tests/_gate_preflight.py"
-    preflight_path.write_text(
-        preflight_path.read_text(encoding="utf-8")
-        + "\nif __import__('os').environ.get('CAIRN_STAGE_B_MARKER'):\n"
-        + f"    Path({str(marker)!r}).write_text('executed')\n",
-        encoding="utf-8")
     C = _commit_all(repo, "C changes a protected oracle")
     prospective = R.M.produce(repo, roster)
     prospective.pop("object_format")
@@ -324,11 +323,17 @@ def test_rostered_stage_b_executes_only_preflight_bytes_pinned_by_p(tmp_path):
         nonce="stage-b-authz", prior_anchor=P_sha, candidate_sha=C,
         checker_hash=evidence.checker_hash, evidence_hash=evidence.digest(),
         prospective_manifest_hash=evidence.prospective_manifest_hash,
-        files={rel: G.sha256_git_object(repo, C, rel)
-               for rel in (SENSITIVE_REL, "bootstrap/tests/_gate_preflight.py")})
+        files={SENSITIVE_REL: G.sha256_git_object(repo, C, SENSITIVE_REL)})
     A_sha = _author_A(repo, P_sha, auth, act)
     _git(repo, "update-ref", AUTHZ_REF, A_sha)
 
+    # Dirty only the invoking checkout after C is fixed. Stage B must execute
+    # P's authenticated source blob, never this checkout's gated marker.
+    preflight_path.write_text(
+        preflight_path.read_text(encoding="utf-8")
+        + "\nif __import__('os').environ.get('CAIRN_STAGE_B_MARKER'):\n"
+        + f"    Path({str(marker)!r}).write_text('executed')\n",
+        encoding="utf-8")
     import os
     os.environ["CAIRN_STAGE_B_MARKER"] = "1"
     try:
@@ -341,6 +346,44 @@ def test_rostered_stage_b_executes_only_preflight_bytes_pinned_by_p(tmp_path):
     assert result.checks["trusted_manifest_derivation"]
     assert result.checks["anchor_static_verified"]
     assert not result.ref_advanced
+    assert not marker.exists(), "Stage B executed the candidate's preflight module"
+
+    # A committed protected-byte replacement is different: without that exact
+    # path in A's authorized files, Stage B refuses before constructing N.
+    C_bad = _commit_all(repo, "C substitutes protected preflight bytes")
+    prospective_bad = R.M.produce(repo, roster)
+    prospective_bad.pop("object_format")
+    prospective_bad["frozen_files"] = {
+        rel: R.M._entry_sha256(entry)
+        for rel, entry in prospective_bad["frozen_files"].items()}
+    for field in ("cascade_mutable", "phase_mutable"):
+        for entry in prospective_bad[field].values():
+            entry.pop("mode", None)
+            entry.pop("oid", None)
+    bad_bytes = (json.dumps(prospective_bad, indent=2, sort_keys=True).encode()
+                 + b"\n")
+    bad_evidence = R.EvidenceBundle(
+        candidate_sha=C_bad, prior_anchor=P_sha, required_scenarios=list(REQUIRED),
+        scenario_results={name: "match" for name in REQUIRED},
+        prospective_manifest_bytes=bad_bytes.decode(),
+        prospective_manifest_hash=R._sha256_bytes(bad_bytes),
+        checker_hash=G.sha256_file(Path(R.G.__file__)), oracle_ok=True)
+    bad_auth = G.PromotionManifest(
+        nonce="stage-b-bad-authz", prior_anchor=P_sha, candidate_sha=C_bad,
+        checker_hash=bad_evidence.checker_hash, evidence_hash=bad_evidence.digest(),
+        prospective_manifest_hash=bad_evidence.prospective_manifest_hash,
+        files={SENSITIVE_REL: G.sha256_git_object(repo, C_bad, SENSITIVE_REL)})
+    bad_A = _author_A(repo, P_sha, bad_auth, act)
+    _git(repo, "update-ref", AUTHZ_REF, bad_A)
+    os.environ["CAIRN_STAGE_B_MARKER"] = "1"
+    try:
+        refused = R.promote_data_only(trusted_repo=repo, anchor_ref=bad_A,
+                                      evidence=bad_evidence, confirm=False)
+    finally:
+        os.environ.pop("CAIRN_STAGE_B_MARKER", None)
+    assert not refused.ok
+    assert not refused.checks["data_only_files"]
+    assert refused.new_anchor is None
     assert not marker.exists(), "Stage B executed the candidate's preflight module"
 
 
