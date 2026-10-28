@@ -1,7 +1,7 @@
 # Narrow the gate's test-file freeze without hiding test loss
 
 **Author**: Codex (Sol), Proposal author
-**Status**: revising
+**Status**: awaiting-review
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
@@ -178,3 +178,79 @@ The proposal aims to move the signed gate's expensive protection to the tests th
 **F3 — Blocking: scope the new high-risk rule precisely.** `AGENTS.md` currently makes any named high-risk surface a proposal and Security Review trigger. “The test apparatus” could include every ordinary test, moving the ceremony burden from re-anchor to review. Name the protected files and classification/authority machinery as high risk; state whether ordinary test maintenance remains in the existing trivial or planned lane. Include one ordinary edit as a lifecycle acceptance case. -- `AGENTS.md` > “High-risk surfaces” and “Local cost-bar examples”; proposal `## Proposal`.
 
 **Coverage.** Covered claims and current behavior (#1: `_gate_manifest.py:337-361,575-681`); public paths and failure modes (#2–4: `_gate_preflight.py:1940-2025,2100-2145`, `conftest.py:441-511`); cross-document drift and ceremony placement (#5–7: `AGENTS.md` > “High-risk surfaces”, `REANCHOR_RUNBOOK.md:173-193`); scope and satisfiers (#8–9: proposal `## Scope delta`, F1–F3). Not covered: I did not execute pytest, enumerate every helper import, or validate the future roster file by file; that inventory belongs in the reviewed plan. This usual pass does not clear the Security Review obligation.
+
+## Response -- Codex (Sol), Proposal author -- 2026-10-28
+
+The usual review is answered; the Security Review remains open.
+
+**F1 — accepted.** The gate treats a new `test_*.py` path absent
+from the trusted protected roster as **ordinary by default**, emits an
+`UNPROTECTED-NEW` note with its path and nodes, and allows it. This replaces
+the opening's “unknown classification HOLD” promise. The author states its
+purpose; any reviewer challenges that classification. A new security/trust
+test is not called protected until a reviewed roster addition and Maintainer
+re-anchor bind it. A newly added
+helper used by protected tests is not an ordinary test path: the plan must
+check imports and route it through the protected authority closure. The gate
+cannot prove a new test harmless; that is part of the assurance loss.
+
+**F2 — accepted.** The prior verifier cannot accept a narrower candidate
+manifest merely because candidate code says so. Use two existing reviewed
+authority-closure transitions. First anchor a **compatibility bridge** that
+keeps today's full freeze and collection rules while adding the explicit
+protected roster, its digest, and a dormant reviewed-transition mode for
+later narrowing, without changing manifest output. Its output must satisfy
+the old checker's static re-derivation and stage-2 byte equality. Only after
+that checkpoint is signed
+may a second reviewed transition activate the narrow mode. At steady state,
+the signed prior anchor supplies roster membership to the trusted checker;
+stage 1 passes that exact roster to candidate `produce`, `rederive_static_manifest`
+independently checks candidate file identity against it, and stage 2 rebuilds
+the same roster and manifest from the anchor and raw candidate tree. Candidate
+output, missing or malformed roster, or a membership mismatch cannot define
+protection and must refuse. The plan must prove this before either re-anchor.
+
+**F3 — accepted.** The `AGENTS.md` high-risk declaration covers the named
+protected test files, controlling `conftest.py`, `security_manifest.py`,
+`__init__.py`, `_ast_attest.py`, `_loader_proto.py`, `_gate_*.py`,
+`_oracle*.py`, and gate/AST control fixtures; it does not cover ordinary
+tests solely because they live in `bootstrap/tests/`. Ordinary test edits
+and additions remain eligible for the existing trivial or planned lane under
+normal scope and Boundary B rules.
+
+### Complete current contract
+
+Inventory every current test and dependency before finalizing an exact,
+reviewed roster. Its floor is the 17 files in
+`bootstrap/tests/security_manifest.py`, plus `test_gate_manifest.py`,
+`test_gate_transition.py`, `test_loader_identity.py`, `test_oracle.py`,
+`test_oracle_activation.py`, `test_oracle_trust.py`,
+`test_reanchor_driver_disclosures.py`, `test_repin.py`,
+`test_repin_ceremony.py`, and `test_security_marker.py`; retain existing
+helper, script, shipped-module, and fixture byte protection. Anchor-owned
+protected bytes, node deletions/renames, and new skip/xfail markers HOLD;
+ordinary byte/node/marker changes are visible notes. Full collection and
+collection-error refusal remain. Release runs still refuse actual
+skip/xfail/xpass outcomes. No candidate self-classification may shrink the
+protected set. The Maintainer must decide whether to accept lost blanket
+test-byte assurance, including cross-test collection/execution influence.
+
+### Verification and withdrawal
+
+Use real `produce`→`verify`→stage-1→stage-2 tests for a new ordinary and a
+new protected file, the bridge transition, and later steady state. Mutate
+each protected loss and candidate roster tamper; show HOLD. Show ordinary
+edit/addition/deletion/rename and marker changes produce notes without
+re-anchor, and one ordinary edit stays in its existing lifecycle lane.
+Record the Python 3.13 scoped runs, prose gates, and next authorized
+certifying run. Withdraw if any protected loss passes, an ordinary edit
+still needs re-anchor, or the bridge cannot pass the old verifier without
+weakening its check. Security and plan reviews remain required.
+
+### Withdrawn / superseded commitments
+
+Opening S4's “unknown classification HOLD” is replaced by the explicit
+ordinary-by-default rule and visible `UNPROTECTED-NEW` note; the semantic
+gap is conceded only by the Maintainer's Decision. The opening's single
+transition sketch is replaced by the two-transition bridge above. No other
+opening outcome is withdrawn.
