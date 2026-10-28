@@ -1,7 +1,7 @@
 # Verify a change at its scope; certify the tree at integration points
 
 **Author**: Codex gpt-6-sol (Proposal)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
@@ -238,3 +238,66 @@ fail-closed behavior (#3-4: SR1 and F2-F3 consequences); consistency and drift (
 or ceremony was run. No timing saving was measured. Residual risk remains a plausible
 but incomplete mapping; full-tree certification cannot guarantee detection either. The
 Security Review obligation remains open pending response.
+
+
+## Response -- Codex gpt-6.1-terra medium (Proposal author) -- 2026-10-28
+
+F1–F4 accepted: distinguish trivial records, close known gaps, split wide runs,
+and preserve older plans and separate certification. SR1 accepted: a human
+adjudicates records; static tests do not parse them.
+
+## Revised contract
+
+Boundary A runs affected tests, public paths and gates.
+For planned work, Boundary B runs on the clean final commit using the reviewed
+change-specific mapping. `bounded` covers mapped affected behavior and consumers;
+`wide` covers whole owning families, known cross-surface integration paths and
+standing gates when effects cannot be confidently bounded. Neither claims unknown dependencies are covered. Record SHA, interpreter, clean state,
+commands, counts, outcomes, omissions and acceptance criteria. Passing all known
+required checks and criteria permits `Implementation verified at <SHA>`.
+
+Trivial work has no reviewed plan mapping: search for owning tests and readers; run them and applicable gates on exact
+candidate bytes before committing, in an otherwise clean tree or separate copy. Record the search,
+commands, counts, interpreter, outcomes and omissions in the commit body; the
+resulting commit identifies the tested bytes. The author owns this record; trivial work has no Boundary C. Pin both lanes in tests.
+
+When coverage is uncertain, identify observable dependencies by searching readers,
+imports, callers and public paths, then widen to the owning families and discovered
+integration paths. A known affected path, required check or unmet criterion cannot
+be deferred to certification: check it or keep the work open. Boundary C's
+independent reviewer challenges the mapping and falsifies the claim. `WIDER RUN
+REQUIRED` names the missing behavior and check; the author runs it and records new
+final-commit evidence before acceptance. Changed implementation, tests, executable
+templates or fixtures invalidate affected evidence. Unknowns remain.
+
+Split wide pytest selections at the guard’s file limit; record their union and cross-family paths. Exercise collection
+for a selection over 40 files and show none was lost. Never set the full-suite
+override for this; if the guard refuses or required coverage cannot be established,
+keep the work open. If a whole-tree run is truly required, obtain the Maintainer's
+authorization for a certifying run; do not bypass the guard.
+
+The Boundary C reviewer rejects records missing a known consumer or mandatory
+security check. Static rule-text tests guard obligations; they cannot prove live rejection. The plan records
+a procedural exercise with a responsible human reader: a complete illustrative
+record (SHA, clean state, interpreter, mapped producer and consumer, mandatory
+security check, commands, counts, outcomes, criteria and omissions) receives a
+verdict; two variants separately omit the consumer and security check. The reader records verdicts and missing checks: accept the complete example only
+if checks pass; reject both omissions and keep their claims open. This is human
+judgment, not a parser or automatic selector.
+
+Certification remains distinct: release, re-anchor and security ceremonies retain
+all prescribed whole-tree and security checks; push certification remains
+conditional on the Maintainer's instruction at `787c558e`. Append a certification
+entry keyed by the certifying SHA when available; a change-verified record does not
+assert tree certification. An accepted plan requiring a full run remains open until
+an authorized certifying run satisfies it, unless explicitly revised through its
+lifecycle. Archives stay unchanged. Reconcile the opening’s named surfaces, search additional readers, and retain
+neutrality and frozen-file ceremonies. Plan maps tests and triggers. Withdraw if known required coverage or ceremony checks can be
+accepted missing. **Scope delta**: preserved.
+
+### Withdrawn / superseded commitments
+
+The opening's final-commit SHA and reviewed mapping for every change are replaced
+by the trivial-lane record above. Deferral of a known unresolved dependency is
+withdrawn; only undiscovered dependencies remain a residual risk. The proposed
+omission rejection is human adjudication, not an executable record check.
