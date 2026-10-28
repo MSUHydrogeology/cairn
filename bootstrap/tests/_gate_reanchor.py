@@ -175,10 +175,12 @@ def _verify_executing_authority_code(trusted_repo: Path, prior_sha: str,
     return (not refusals), refusals
 
 
+@contextlib.contextmanager
 def _load_pinned_preflight(trusted_repo: Path, prior_sha: str):
-    """Execute only the preflight source bytes pinned by roster-installed P."""
+    """Load only preflight source bytes pinned by roster-installed P."""
+    import importlib.abc
+    import importlib.util
     import sys
-    import types
     rel = "bootstrap/tests/_gate_preflight.py"
     manifest_raw = _git_show_bytes(trusted_repo, prior_sha, _MANIFEST_REL)
     source = _git_show_bytes(trusted_repo, prior_sha, rel)
@@ -216,20 +218,41 @@ def _load_pinned_preflight(trusted_repo: Path, prior_sha: str):
             raise RuntimeError(f"trusted import alias conflicts at {alias}")
         sys.modules[alias] = obj
 
-    module_name = ("bootstrap.tests._gate_preflight_stage_b_"
-                   + hashlib.sha256(source).hexdigest())
+    source_hash = hashlib.sha256(source).hexdigest()
+    module_name = "bootstrap.tests._gate_preflight_stage_b_" + source_hash
     if module_name in sys.modules:
         raise RuntimeError("pinned preflight module identity is already occupied")
-    module = types.ModuleType(module_name)
-    module.__file__ = str(Path(trusted_repo).resolve() / rel)
+    filename = str(Path(trusted_repo).resolve() / rel)
+
+    class _PinnedSourceLoader(importlib.abc.SourceLoader):
+        def get_filename(self, fullname):
+            return filename
+
+        def get_data(self, path):
+            if path != filename:
+                raise OSError("only the authenticated preflight source is available")
+            return source
+
+        def path_stats(self, path):
+            if path != filename:
+                raise OSError("only the authenticated preflight source is available")
+            return {"mtime": 0, "size": len(source)}
+
+        def set_data(self, path, data, *, _mode=0o666):
+            # Do not let import machinery write bytecode into the candidate tree.
+            return None
+
+    loader = _PinnedSourceLoader()
+    spec = importlib.util.spec_from_loader(module_name, loader, origin=filename)
+    module = importlib.util.module_from_spec(spec)
+    module.__file__ = filename
     module.__package__ = "bootstrap.tests"
     sys.modules[module_name] = module
     try:
-        exec(compile(source, module.__file__, "exec"), module.__dict__)
-    except BaseException:
+        loader.exec_module(module)
+        yield module
+    finally:
         sys.modules.pop(module_name, None)
-        raise
-    return module
 
 
 def _static_verify_anchor(trusted_repo: Path, n_sha: str, prospective_bytes: str) -> bool:
@@ -505,17 +528,17 @@ def promote_data_only(
                 # Execute source read from P only after its hash is matched to
                 # P's signed frozen entry. Never import the invoking checkout's
                 # copy on the authority path.
-                P_gate = _load_pinned_preflight(trusted_repo, P)
-                static = P_gate.rederive_static_manifest(
-                    candidate_sha, protected_roster=roster, repo=trusted_repo)
-                expected_fields = ((set(static) - {"object_format"})
-                                   | set(P_gate._EXECUTABLE_ONLY_FIELDS))
-                report = P_gate.Report()
-                P_gate.check_static_manifest(
-                    {"manifest": proposed}, candidate_sha, report,
-                    protected_roster=roster, repo=trusted_repo)
-                static_ok = (set(proposed) == expected_fields
-                             and not any(f.level == "refuse" for f in report.findings))
+                with _load_pinned_preflight(trusted_repo, P) as P_gate:
+                    static = P_gate.rederive_static_manifest(
+                        candidate_sha, protected_roster=roster, repo=trusted_repo)
+                    expected_fields = ((set(static) - {"object_format"})
+                                       | set(P_gate._EXECUTABLE_ONLY_FIELDS))
+                    report = P_gate.Report()
+                    P_gate.check_static_manifest(
+                        {"manifest": proposed}, candidate_sha, report,
+                        protected_roster=roster, repo=trusted_repo)
+                    static_ok = (set(proposed) == expected_fields
+                                 and not any(f.level == "refuse" for f in report.findings))
             else:
                 # A roster-less prior anchor keeps the old broad policy. The
                 # legacy callable may neither emit a narrowed roster nor omit

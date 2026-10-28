@@ -1620,9 +1620,9 @@ class TestThreeCommandIntegration:
         review = tmp_path / "initial-roster-review.txt"
         review.write_text(_review_manifest(repo, first_head), encoding="utf-8")
 
-        # Run the exact old checker bytes extracted from P, against C. This is
-        # the compatibility measurement: current checker legacy-mode behavior
-        # alone cannot establish what the prior signed checker does.
+        # Run the fixture P's exact gate-manifest checker bytes against C. This pins the
+        # synthetic first-transition flow; it is not a compatibility result
+        # for the repository's separately signed gate anchor.
         old_checker = tmp_path / "old-gate-manifest.py"
         old_source = subprocess.run(
             ["git", "-C", str(repo), "show",
@@ -1640,6 +1640,27 @@ class TestThreeCommandIntegration:
         first = _two_stage(repo, monkeypatch, review_manifest=str(review),
                            reviewed_candidate=first_head)
         assert first["new_anchor"]
+        # E7's plumbing is exercised against this fixture's synthetic P. The
+        # production signed-anchor comparison is recorded separately because
+        # this helper builds P from the current source tree.
+        package = json.loads((repo.parent / "authorization-package.json")
+                             .read_text(encoding="utf-8"))
+        prior_checker = _extract_anchored(repo, tmp_path / "prior-checker")
+        old_scan = self._cli(prior_checker, "scan-digest", "--repo", str(repo),
+                             "--anchor", old_anchor, "--candidate", first_head)
+        assert old_scan.returncode == 0, old_scan.stderr[-2500:]
+        old_scan_digest = old_scan.stdout.strip()
+        candidate_scan = P.scan_digest(package["range_report"]["scan"])
+        assert old_scan_digest == candidate_scan
+        broad_scan_obj = P.range_scan(old_anchor, first_head, repo=repo,
+                                      protected_roster=None)
+        new_scan_obj = package["range_report"]["scan"]
+        differing_fields = {
+            key: (broad_scan_obj.get(key), new_scan_obj.get(key))
+            for key in sorted(set(broad_scan_obj) | set(new_scan_obj))
+            if broad_scan_obj.get(key) != new_scan_obj.get(key)
+        }
+        assert not differing_fields
         installed = P.resolve_protected_roster(first["new_anchor"], first_head,
                                                transition=None, repo=repo)
         approved = P.G._roster_from_bytes(

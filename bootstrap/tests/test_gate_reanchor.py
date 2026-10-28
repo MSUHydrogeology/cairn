@@ -264,8 +264,8 @@ def test_authority_pin_reads_v2_frozen_entry_digest(tmp_path):
     P = _commit_all(repo, "P v2 manifest")
     ok, holds = R._verify_executing_authority_code(repo, P, include_preflight=True)
     assert ok and holds == []
-    trusted = R._load_pinned_preflight(repo, P)
-    assert callable(trusted.rederive_static_manifest)
+    with R._load_pinned_preflight(repo, P) as trusted:
+        assert callable(trusted.rederive_static_manifest)
 
     # A candidate working copy with different source cannot influence the
     # loader; the loader reads P's object and refuses a bad P manifest pin.
@@ -273,7 +273,8 @@ def test_authority_pin_reads_v2_frozen_entry_digest(tmp_path):
     (repo / R._MANIFEST_REL).write_text(json.dumps({"frozen_files": frozen}) + "\n")
     bad_pin = _commit_all(repo, "P with a wrong preflight pin")
     with pytest.raises(RuntimeError, match="does not authenticate preflight"):
-        R._load_pinned_preflight(repo, bad_pin)
+        with R._load_pinned_preflight(repo, bad_pin):
+            pass
 
 
 def test_rostered_stage_b_executes_only_preflight_bytes_pinned_by_p(tmp_path):
