@@ -1,11 +1,12 @@
 # Narrow the gate's test-file freeze without hiding test loss
 
 **Author**: Codex (Sol), Proposal author
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Keep security and trust tests under the signed gate while letting ordinary test maintenance proceed without a re-anchor ceremony.
+**Waiting on Maintainer**: Decide whether to accept protected-only freezing and the loss of ordinary-test byte protection and node/marker HOLDs.
 
 ## Context
 
@@ -330,3 +331,73 @@ scope and satisfiers (#8–9: Response withdrawal ledger and S1). Not covered:
 no pytest or mutation runs; no complete dependency/fixture inventory or final
 roster validation. Those remain the plan's stated work; this read does not
 claim that enumeration contains hostile ordinary code.
+
+## Response -- Codex (Sol), Proposal author -- 2026-10-28
+
+**S1 — accepted.** Plan one existing reviewed authority-closure transition
+first. Its real stage-1 and stage-2 tests must prove that reviewed candidate
+checker bytes can establish the initial protected roster while the old
+anchor still governs admission. If a concrete old-checker comparison refuses,
+the plan may use the previously described compatibility bridge followed by
+a second reviewed transition; record the failing comparison and the added
+Maintainer ceremony cost. Two checkpoints are not assumed. Both routes keep
+the same anchored membership, refusal rules, and tests. This simplification
+removes no outcome and widens no surface, so it needs no further proposal
+review merely to change status. The Security Review obligation is cleared
+at `56d5a46b`.
+
+### Complete current contract
+
+Inventory each current Python test, controlling helper, import, and fixture;
+then publish an exact protected roster with reasons. Its floor is the 17
+security files in `bootstrap/tests/security_manifest.py` plus
+`test_gate_manifest.py`, `test_gate_transition.py`,
+`test_loader_identity.py`, `test_oracle.py`, `test_oracle_activation.py`,
+`test_oracle_trust.py`, `test_reanchor_driver_disclosures.py`,
+`test_repin.py`, `test_repin_ceremony.py`, and `test_security_marker.py`.
+Retain byte protection of controlling `conftest.py`, `__init__.py`,
+`security_manifest.py`, `_ast_attest.py`, `_loader_proto.py`, current
+`_gate_*.py` and `_oracle*.py` helpers, and existing script,
+shipped-module, and fixture patterns. Put only protected tests and control
+machinery in `AGENTS.md`'s high-risk rule; ordinary tests keep existing
+trivial/planned lanes. Update the runbook's description of the gate.
+
+The reviewed first transition binds initial roster bytes; later the signed
+prior anchor supplies membership. Stage 1 passes that roster to candidate
+`produce`; trusted `rederive_static_manifest` checks file identity against
+raw candidate bytes; stage 2 rebuilds the same roster and manifest. Candidate
+self-classification, absent/malformed roster, membership mismatch, or failed
+collection must refuse. A new `test_*.py` path absent from the trusted roster
+is ordinary by default: emit `UNPROTECTED-NEW` with path and nodes, and allow
+it. A new protective test joins only through reviewed roster addition and
+Maintainer re-anchor; until then it is unprotected. A new helper used by
+protected tests is inventoried and frozen; if it decides ceremony, it also
+joins the authority closure. No semantic checker can prove an ordinary new
+test harmless.
+
+Protected byte edits, lost/renamed nodes, and new skip/xfail markers HOLD.
+Ordinary file, node, and marker changes remain visible nonblocking notes;
+the full collection census remains evidence. Release runs still refuse
+actual skip, xfail, or xpass outcomes. The plan must exercise real
+`produce`→`verify`→stage-1→stage-2 transitions, a later steady-state run,
+new ordinary and protective files, protected mutations, ordinary changes,
+and an ordinary edit's lifecycle lane. Contract/trust implementation uses
+Boundary B full mode and the next authorized certifying run; the plan takes
+Internal and Internal Security reviews.
+
+The **Scope delta remains degraded**: removing blanket byte protection from
+ordinary pytest code also loses HOLDs on its deleted/renamed nodes and new
+markers. Such code can influence protected checks during collection or
+execution. This is not equivalent tamper resistance. Only the Maintainer's
+Decision can accept that loss; retaining the blanket freeze is the alternative.
+Withdraw if candidate code can choose protected expectations, a protected
+loss passes, ordinary maintenance still needs re-anchor, or neither reviewed
+transition route passes its old-anchor checks without weakening them.
+
+### Withdrawn / superseded commitments
+
+The two-checkpoint requirement in the first Response becomes a conditional
+fallback, because the Security Review identified a potentially sufficient
+single reviewed transition. The opening's unknown-classification HOLD remains
+superseded by ordinary-by-default admission and visible reporting. All
+protection outcomes remain.
