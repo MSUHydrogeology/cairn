@@ -1,7 +1,7 @@
 # Make Cairn's governing text easier to edit without losing adopted rules
 
 **Author**: Codex (Proposal author, gpt-6-sol)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
@@ -162,3 +162,76 @@ The proposal corrects the recovery strategy's risky shortcut: it checks the adop
 **F2 (blocking) -- Let the audit decide what can be shortened, and measure the benefit.** The unconditional “Then remove duplicated exposition” and 80–120-line aim (`Proposal`, lines 47–55) still commit to a result before the routing evidence exists. Line count is a size measure, not an editing-cost measure; strategy item 1 also identifies frozen prose tests and mirrored edits as costs. **Satisfier:** condition each cut on the audit finding a safe redundant passage, preserve a no-cut outcome where none exists, and compare one or two representative rule edits before and after: homes touched, tests or ceremonies triggered, and whether an installed reader can still act from the remaining text. Keep the line aim advisory.
 
 **Coverage:** #1 claims: committed `wc -l` totals and `_CORE_MAPPINGS`; #2 production path: mapping inspected, install run not repeated; #3 design: F1–F2; #4 fail-closed: proposal S2–S4 and deletion controls in the named tests; #5 consistency: `doctrine/README.md`, `doctrine/doc-governance.md`, `docs/DOCUMENTATION_PLAN.md`, strategy item 1; #6 drift: strategy's older 1,842-line total versus the committed 1,838-line total; #7 placement: F1 and the proposed Maintainer fence; #8 scope: F1–F2; #9 satisfiers: F1–F2. **Not covered / low confidence:** I did not run an adopter install, tests, or examine every doctrine section; the required Security Review remains pending and this ordinary pass does not clear it.
+
+## Response -- Codex (Proposal author, gpt-6-sol) -- 2026-10-28
+
+I accept F1 and F2. The complete current contract follows. Security Review
+remains open, so status returns to
+`awaiting-review` (`doctrine/proposals.md` > "Append one complete current
+contract with the Response, every time").
+
+## Revised proposal -- Codex (Proposal author, gpt-6-sol) -- 2026-10-28
+
+### Purpose and baseline
+
+Reduce governing-text editing effort while preserving every adopted rule.
+The 2026-10-28 baseline is 1,838 internal lines and 1,731 shipped lines; size
+is not editing effort. `doctrine/README.md` says published doctrine explains
+the invariant method; `bootstrap/_scaffold/config.py` installs operating files
+and no `doctrine/` tree. Test that stated purpose against actual files and
+installs before choosing a new arrangement.
+
+### Plan inventory and Maintainer routing fence
+
+The plan inventories every `doctrine/` section by stated purpose, recorded
+history, prescription versus explanation, and relationship to `docs/`. This is
+plan work, not another lifecycle review. It reads
+`docs/DOCUMENTATION_PLAN.md`, its forkable
+`templates/modules/default-on/documentation_plan_template.md`, and
+`doctrine/doc-governance.md`; compares their routing claims with the installer,
+two real installs, and adopter-reachable citations. For each proposed cut or
+move, record the installed rule home, explanation, pointers, affected boards
+and modules, owning tests, and duplication. Separate source claims from install
+observations.
+
+A MAINTAINER-GATED plan chunk presents the inventory and recommends whether to
+keep published `doctrine/` separate, move suitable material into `docs/`, or
+use another evidenced routing. The Maintainer chooses before any rule move or
+deletion. A published citation alone cannot carry an adopted obligation.
+
+### Conditional edits and evidence
+
+After that choice, cut or move only proven redundant or misplaced passages in
+the governing files and shipped twins, plus affected doctrine, docs, forkable
+plan, board or module. If no safe cut exists, seek Maintainer disposition;
+do not claim success. The 80–120-line template aim cannot authorize lost
+rules. Keep operational imperatives in an installed home, reachable process
+detail, and template fields and short triggers, subject to chosen routing.
+
+Compare one operating-rule and one template-instruction edit before and after:
+files touched, tests and ceremonies, and whether an installed reader can act.
+At least one edit must become simpler without lost reach or meaning. Replace
+wording pins only where a property check covers the same obligation in the
+installed output and fails on a removed or inverted clause. Keep distinct
+semantic guards. The plan maps owning tests, source/twin parity, claim and
+link checks, neutrality and redundancy gates, and real installs. Frozen-test
+and doctrine ceremonies remain; no new tool or directory is proposed.
+
+### Risk, alternatives, and falsification
+
+Moving every rule into published doctrine fails adopter reach; keeping every
+copy preserves editing cost; moving all doctrine into `docs/` may obscure
+governing rationale. The audit judges these rather than assuming a winner.
+Security preflight remains as opened: check the installer independently of
+self-described pointers; deletion controls must fail, positive controls pass;
+name manual triggers; unresolved homes stop relocation; human review checks
+semantic truth. High-assurance and both Security Review obligations remain.
+Withdraw a cut if an install loses a rule, a mandatory pointer has no installed
+home, a deletion control stays green, or editing effort does not improve.
+No science changes.
+
+### Withdrawn / superseded commitments
+
+The opening's unconditional “Then remove duplicated exposition” is replaced
+by evidence-conditional cuts. Its 80–120-line template aim is advisory because
+rule reachability and lower editing effort, not length, govern success.
