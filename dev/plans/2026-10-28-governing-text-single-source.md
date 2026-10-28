@@ -2,7 +2,6 @@
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-governing-text-single-source.md
 **Status**: implementing
-**Waiting on Maintainer**: Path-declaration scope
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Map where rules come from and reach adopters before choosing how to reduce repeated editing.
@@ -390,3 +389,17 @@ claim; stale or unidentifiable claims warn. Agents should claim intent before
 editing. This replaces the differing public default described in the C1 packet;
 the warn and confirm modes remain available. The separate path-declaration
 choice is still open. No operative rules or tools are changed by this record.
+
+## C2 path-declaration choice -- Maintainer, relayed by Codex (Terra) -- 2026-10-28
+
+Maintainer authorization in chat, verbatim:
+
+> Document-wide, yes please update the instructions.
+
+The Maintainer chose document-wide reuse of a declared exact path and requested
+matching instructions. Preserve the checker's exact matching and provenance;
+siblings, descendants, look-alikes and malformed declarations remain
+unexempted. This choice supersedes the published line/block-only restriction.
+The previously recorded routing and coordination choices remain in force. C3's
+sequencing and verification gates still apply; no rules or tools change in this
+record.
