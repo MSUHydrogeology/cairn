@@ -1593,14 +1593,8 @@ def _changed_with_classes(anchor_tree: str, candidate_tree: str, frozen: set,
 def _frozen_policy(anchor: str, head: str, *, repo: Path,
                    protected_roster: dict | None) -> set[str]:
     if protected_roster is None:
-        try:
-            protected_roster = resolve_protected_roster(
-                anchor, head, transition=None, repo=repo)
-        except PreflightError:
-            # Before the first signed roster exists, reporting remains under
-            # the old anchor's broad policy. The reviewed transition supplies
-            # its exact roster explicitly to both stages.
-            return set(G._legacy_frozen_files(repo))
+        protected_roster = resolve_protected_roster(
+            anchor, head, transition=None, repo=repo)
     return set(G._frozen_files(repo, protected_roster))
 
 
@@ -2108,6 +2102,8 @@ def rederive_static_manifest(commit: str, *, protected_roster: dict | None = Non
                     f"AST baseline; the manifest cannot be re-derived")
             mappings[sym] = {"baseline_digest": entry["digest"],
                              "may_change_in_phases": phases}
+        ordinary_test_files = (G._ordinary_test_files(tree, protected_roster)
+                               if protected_roster is not None else None)
     derived = {
         "schema": G.SCHEMA,
         "object_format": object_format,
@@ -2125,7 +2121,7 @@ def rederive_static_manifest(commit: str, *, protected_roster: dict | None = Non
     }
     if protected_roster is not None:
         derived["protected_roster"] = protected_roster
-        derived["ordinary_test_files"] = G._ordinary_test_files(tree, protected_roster)
+        derived["ordinary_test_files"] = ordinary_test_files
     return derived
 
 
@@ -3815,6 +3811,12 @@ def check(*, repo: Path = _REPO, evidence: dict | None = None,
 
     anchor = _resolve(_ANCHOR_REF, repo=repo)
     head = _resolve("HEAD", repo=repo)
+    if protected_roster is None:
+        # Only a verified prior manifest can select narrow membership. A valid
+        # pre-roster manifest returns None and keeps its broad legacy policy;
+        # missing or malformed anchor state raises and refuses.
+        protected_roster = resolve_protected_roster(
+            anchor, head, transition=None, repo=repo)
     report.facts["anchor"] = anchor
     report.facts["head"] = head
 

@@ -79,6 +79,15 @@ def _blob_sha(repo: Path, commit: str, rel: str) -> str:
     return hashlib.sha256(blob.stdout).hexdigest()
 
 
+def _rederived(repo: Path, commit: str) -> dict:
+    """Use the policy resolved from the repository's prior anchor."""
+    anchor = P._resolve(P._ANCHOR_REF, repo=repo)
+    roster = P.resolve_protected_roster(
+        anchor, commit, transition=None, repo=repo)
+    return P.rederive_static_manifest(commit, protected_roster=roster,
+                                      repo=repo)
+
+
 def _findings(report: P.Report, code: str) -> list[P.Finding]:
     return [f for f in report.findings if f.code == code]
 
@@ -798,6 +807,13 @@ def _evidence_repo(tmp_path: Path, producer: str = _STUB_PRODUCER) -> Path:
     stage's orchestration, not pytest.
     """
     repo = _repo(tmp_path)
+    # Evidence collection now resolves its policy from the prior signed
+    # manifest. Give this synthetic repository an explicit legacy anchor so
+    # these orchestration tests exercise broad mode without inventing a roster.
+    _write(repo, G._MANIFEST_REL,
+           (_REPO / G._MANIFEST_REL).read_text(encoding="utf-8"))
+    anchor = _commit(repo, "legacy broad-policy anchor")
+    _run("git", "update-ref", P._ANCHOR_REF, anchor, cwd=repo)
     _write(repo, "bootstrap/tests/_gate_manifest.py", producer)
     _commit(repo, "stub producer")
     return repo
@@ -947,10 +963,30 @@ def _ceremony_repo(tmp_path: Path):
         dst = repo / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
         dst.write_bytes(src.read_bytes())
+    roster_src = _REPO / P.G._PROTECTED_ROSTER_REL
+    roster_data = json.loads(roster_src.read_text(encoding="utf-8"))
+    frozen_paths = (set(roster_data["protected_python_paths"])
+                    | set(roster_data["protected_fixture_paths"])
+                    | set(roster_data["preserved_non_test_frozen_paths"]))
+    for rel in sorted(frozen_paths):
+        if rel == P._ALLOWED_SIGNERS_REL or (repo / rel).exists():
+            continue
+        dst = repo / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if rel == P.G._PROTECTED_ROSTER_REL:
+            dst.write_bytes(roster_src.read_bytes())
+        elif rel.startswith("bootstrap/tests/fixtures/"):
+            dst.write_bytes((_REPO / rel).read_bytes())
+        else:
+            # These fixtures test the ceremony protocol. Regular placeholder
+            # files preserve the approved membership without importing a second
+            # copy of the repository's full test suite into each tiny fixture.
+            dst.write_text("# protected synthetic ceremony member\n",
+                           encoding="utf-8")
     _write(repo, "bootstrap/tests/__init__.py", "")
     _write(repo, P._ALLOWED_SIGNERS_REL, f"m@example {keydata}\n")
     _write(repo, P._MANIFEST_REL, json.dumps(
-        {"protected_roster": P.G._local_roster(_REPO)},
+        {"protected_roster": P.G._local_roster(repo)},
         indent=2, sort_keys=True) + "\n")
     # The REAL manifest producer runs in this fixture, so supply the two things
     # it refuses without: a non-empty pytest collection, and the AST baseline
@@ -1296,7 +1332,10 @@ class TestApplySuccessPath:
         # manifest is refused -- correctly. What the real producer supplies and
         # this cannot is the pytest collection; everything else must be the
         # truth about the tree.
-        manifest = {**P.rederive_static_manifest(head, repo=repo),
+        roster = P.resolve_protected_roster(anchor, head, transition=None,
+                                            repo=repo)
+        manifest = {**P.rederive_static_manifest(
+                        head, protected_roster=roster, repo=repo),
                     "collection": {"node_count": 1, "node_ids": ["a.py::t"],
                                    "skip_xfail_marked": []},
                     "interpreter": {"version": "3.13.13"}}
@@ -2537,7 +2576,7 @@ class TestKeyLoadPhaseSentinel:
         which an early return would silently skip.
         """
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        manifest = {**P.rederive_static_manifest(head, repo=repo),
+        manifest = {**_rederived(repo, head),
                     "collection": {"node_count": 1, "node_ids": ["a.py::t"],
                                    "skip_xfail_marked": []},
                     "interpreter": {"version": "3.13.13"}}
@@ -2789,7 +2828,7 @@ class TestTheCheckpointCarriesTheAdmittedSet:
         # evidence stage has its own coverage. Everything the node is about --
         # the transition, the message, the committed checkpoint -- stays real.
         evidence_manifest = {
-            **P.rederive_static_manifest(head, repo=repo),
+            **_rederived(repo, head),
             "collection": {"node_count": 1, "node_ids": ["a.py::t"],
                            "skip_xfail_marked": []},
             "interpreter": {"version": "3.13.13"}}
@@ -3169,7 +3208,7 @@ class TestAuthorizationPackage:
         nothing.
         """
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        manifest = {**P.rederive_static_manifest(head, repo=repo),
+        manifest = {**_rederived(repo, head),
                     "collection": {"node_count": 1, "node_ids": ["a.py::t"],
                                    "skip_xfail_marked": []},
                     "interpreter": {"version": "3.13.13"}}
@@ -3224,7 +3263,7 @@ class TestAuthorizationPackage:
         differs from what stage 1 measured.
         """
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        manifest = {**P.rederive_static_manifest(head, repo=repo),
+        manifest = {**_rederived(repo, head),
                     "collection": {"node_count": 1, "node_ids": ["a.py::t"],
                                    "skip_xfail_marked": []},
                     "interpreter": {"version": "3.13.13"}}
@@ -3276,7 +3315,7 @@ class TestAuthorizationPackage:
         manifest = tmp_path / "review.txt"
         manifest.write_text(_review_manifest(repo, resolved), encoding="utf-8")
         evidence_manifest = {
-            **P.rederive_static_manifest(resolved, repo=repo),
+            **_rederived(repo, resolved),
             "collection": {"node_count": 1, "node_ids": ["a.py::t"],
                            "skip_xfail_marked": []},
             "interpreter": {"version": "3.13.13"}}
@@ -3515,7 +3554,7 @@ class TestAuthorizationPackage:
         assert P.PACKAGE_EXECUTABLE_ONLY == ("collection", "interpreter")
         head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(P._REPO),
                               capture_output=True, text=True).stdout.strip()
-        derived = set(P.rederive_static_manifest(head, repo=P._REPO))
+        derived = set(_rederived(P._REPO, head))
         for name in P.PACKAGE_EXECUTABLE_ONLY:
             assert name not in derived, (
                 f"{name} IS statically re-derivable; delegating it to the "
@@ -3687,7 +3726,7 @@ class TestKeyChannelProbe:
         spanning two processes.
         """
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        manifest = {**P.rederive_static_manifest(head, repo=repo),
+        manifest = {**_rederived(repo, head),
                     "collection": {"node_count": 1, "node_ids": ["a.py::t"],
                                    "skip_xfail_marked": []},
                     "interpreter": {"version": "3.13.13"}}
@@ -4063,7 +4102,7 @@ class TestTheCeremonyArtifactIsAClosureMember:
     #: Retyped, not imported. A count derived from the thing under test agrees
     #: with it by construction; this is the statement that a member silently
     #: added or dropped has to disagree with.
-    EXPECTED_MEMBERS = 11
+    EXPECTED_MEMBERS = 12
 
     def test_the_artifact_is_in_the_declared_closure(self):
         assert "bootstrap/reanchor.sh" in P.declared_authority_closure()
@@ -4191,7 +4230,7 @@ class TestRangeReportIsOnTheGoverningPath:
 
     def _prepared(self, tmp_path, monkeypatch):
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        manifest = {**P.rederive_static_manifest(head, repo=repo),
+        manifest = {**_rederived(repo, head),
                     "collection": {"node_count": 1, "node_ids": ["a.py::t"],
                                    "skip_xfail_marked": []},
                     "interpreter": {"version": "3.13.13"}}
@@ -4359,7 +4398,7 @@ class TestStaticManifestIsRederived:
         """The exact shape: the blessed tree would contain a frozen-surface
         file that the manifest does not pin."""
         repo, anchor, head, _epoch = _ceremony_repo(tmp_path)
-        honest = P.rederive_static_manifest(head, repo=repo)
+        honest = _rederived(repo, head)
         assert honest["frozen_files"], "the fixture must have a frozen surface"
 
         tampered = json.loads(json.dumps(honest))
@@ -4368,6 +4407,8 @@ class TestStaticManifestIsRederived:
 
         report = P.Report()
         P.check_static_manifest(_fake_evidence(head, tampered), head, report,
+                                protected_roster=P.resolve_protected_roster(
+                                    anchor, head, transition=None, repo=repo),
                                 repo=repo)
         findings = _findings(report, "MANIFEST")
         assert any(f.level == "refuse" and "frozen_files" in f.message
@@ -4377,12 +4418,14 @@ class TestStaticManifestIsRederived:
     def test_an_altered_hash_refuses(self, tmp_path):
         repo, anchor, head, _epoch = _ceremony_repo(tmp_path)
         tampered = json.loads(json.dumps(
-            P.rederive_static_manifest(head, repo=repo)))
+            _rederived(repo, head)))
         victim = sorted(tampered["frozen_files"])[0]
         tampered["frozen_files"][victim] = "0" * 64
 
         report = P.Report()
         P.check_static_manifest(_fake_evidence(head, tampered), head, report,
+                                protected_roster=P.resolve_protected_roster(
+                                    anchor, head, transition=None, repo=repo),
                                 repo=repo)
         assert any("altered" in f.message
                    for f in _findings(report, "MANIFEST"))
@@ -4390,9 +4433,11 @@ class TestStaticManifestIsRederived:
     def test_the_honest_manifest_is_silent(self, tmp_path):
         """Non-vacuity for the two refusals above."""
         repo, anchor, head, _epoch = _ceremony_repo(tmp_path)
-        honest = P.rederive_static_manifest(head, repo=repo)
+        honest = _rederived(repo, head)
         report = P.Report()
         P.check_static_manifest(_fake_evidence(head, honest), head, report,
+                                protected_roster=P.resolve_protected_roster(
+                                    anchor, head, transition=None, repo=repo),
                                 repo=repo)
         assert _findings(report, "MANIFEST") == []
 
@@ -4410,7 +4455,7 @@ class TestStaticManifestIsRederived:
         assert r.returncode == 0, r.stderr[-1500:]
 
         produced = set(json.loads(ev.read_text())["manifest"])
-        rederived = set(P.rederive_static_manifest(head, repo=repo))
+        rederived = set(_rederived(repo, head))
         # Three-way split, which is what the boundary now is:
         #   candidate-only  -> needs the suite to run (collection, interpreter)
         #   checker-only    -> Git-native identity, derived on the trusted side
@@ -4434,7 +4479,7 @@ class TestStaticManifestIsRederived:
              "--repo", str(repo), "-o", str(ev)],
             capture_output=True, text=True, check=False)
         produced = json.loads(ev.read_text())["manifest"]
-        rederived = P.rederive_static_manifest(head, repo=repo)
+        rederived = _rederived(repo, head)
         for field, expected in rederived.items():
             if field in P._CHECKER_DERIVED_FIELDS:
                 # Derived HERE and never accepted from the candidate: the
@@ -4474,7 +4519,7 @@ class TestStaticManifestIsWiredIntoCheck:
                                                                    tmp_path):
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
         tampered = json.loads(json.dumps(
-            P.rederive_static_manifest(head, repo=repo)))
+            _rederived(repo, head)))
         dropped = sorted(tampered["frozen_files"])[0]
         del tampered["frozen_files"][dropped]
         tampered["collection"] = {"node_count": 1, "node_ids": ["a::t"],
@@ -4484,7 +4529,10 @@ class TestStaticManifestIsWiredIntoCheck:
         # Internally consistent: `_fake_evidence` re-hashes, so the digest check
         # passes and the refusal must come from the re-derivation -- a tampered
         # artifact that re-hashes itself is not caught by a digest.
-        report = P.check(repo=repo, evidence=_fake_evidence(head, tampered))
+        roster = P.resolve_protected_roster(
+            anchor, head, transition=None, repo=repo)
+        report = P.check(repo=repo, evidence=_fake_evidence(head, tampered),
+                         protected_roster=roster)
 
         assert report.blocked
         assert any(f.code == "MANIFEST" and f.level == "refuse"
@@ -4492,11 +4540,14 @@ class TestStaticManifestIsWiredIntoCheck:
 
     def test_check_accepts_the_matching_manifest(self, tmp_path):
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        honest = P.rederive_static_manifest(head, repo=repo)
+        honest = _rederived(repo, head)
         honest["collection"] = {"node_count": 1, "node_ids": ["a::t"],
                                 "skip_xfail_marked": []}
         honest["interpreter"] = {"version": "3.13.13"}
-        report = P.check(repo=repo, evidence=_fake_evidence(head, honest))
+        roster = P.resolve_protected_roster(
+            anchor, head, transition=None, repo=repo)
+        report = P.check(repo=repo, evidence=_fake_evidence(head, honest),
+                         protected_roster=roster)
         assert [f for f in report.findings if f.code == "MANIFEST"] == []
 
     def test_an_export_ignored_file_is_still_pinned_end_to_end(self, tmp_path):
@@ -4509,7 +4560,7 @@ class TestStaticManifestIsWiredIntoCheck:
         unpinned; that is the gap, and pinning it is the fix.
         """
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        sneaked = "bootstrap/tests/omitted.py"
+        sneaked = "bootstrap/tests/test_omitted.py"
         _write(repo, sneaked, "SNEAKED = True\n")
         _write(repo, ".gitattributes", f"{sneaked} export-ignore\n")
         _signed_commit(repo, "a file archive cannot see")
@@ -4524,9 +4575,9 @@ class TestStaticManifestIsWiredIntoCheck:
         new = _subprocess_ceremony(checker, repo, tmp_path)["new_anchor"]
         blessed = json.loads(_run("git", "show", f"{new}:{P._MANIFEST_REL}",
                                   cwd=repo).stdout)
-        assert sneaked in blessed["frozen_files"], (
-            "the blessed tree contains a frozen-surface file its own manifest "
-            "does not pin -- FUR3, unfixed")
+        assert sneaked in blessed["ordinary_test_files"], (
+            "the blessed tree contains a new ordinary test path its manifest "
+            "does not census")
 
 
 # --------------------------------------------------------------------------

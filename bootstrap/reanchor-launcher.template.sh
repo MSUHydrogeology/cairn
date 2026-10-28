@@ -60,6 +60,7 @@ bootstrap/tests/_gate_transition.py
 bootstrap/tests/_oracle.py
 bootstrap/tests/_oracle_activation.py
 bootstrap/tests/_oracle_trust.py
+bootstrap/tests/fixtures/protected_test_roster.json
 dev/.cairn/allowed_signers
 '
 
