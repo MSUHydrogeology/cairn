@@ -238,3 +238,45 @@ The control and mutants used `TestThisRepositorysMappingAssignments`, the two AG
 The Boundary B record identifies the committed bytes, canonical interpreter, clean states, mapped commands, outcomes and omissions; full mode and pending certification are appropriate. The range also contains unrelated plan-review response commit `7f12a3f6`; C1 itself is `676b7c0e`. No fence or deviation became the next move in this range (`git log -p 3d046bfa..676b7c0e -- dev/plans/model-floor-alignment.md`), so no Waiting line was owed. Four changed test files are frozen by `bootstrap/tests/_gate_manifest.py::_frozen_files`; their existing re-anchor ceremony remains owed.
 
 The first dated low-tier sample is this implementation and this review: no missed criterion or floor-related defect found. **Covered:** claims and scope (C1 and Decision); public path (ledger); design and silence (checker tests and human authorization in module); drift (copy mutants); lifecycle and satisfier (plan and Waiting check); reuse and domain limits (existing schema, no capability benchmark). **Not covered / low confidence:** no model benchmarking, hostile authorization exercise, full suite or re-anchor; certification remains pending.
+
+## Implementation follow-up -- Codex gpt-6-luna (Implementation) -- 2026-10-28
+
+The code review's ledger names the original test node, but that node now checks
+ordinary proposal review at medium tier. Renamed it to
+`test_proposal_authoring_and_ordinary_review_are_medium`; only the test
+function name changed. The earlier review and its ledger remain historical
+records. The old node name is still present in the frozen-file manifest and
+must be replaced during the already-owed gate-manifest ceremony; this follow-up
+does not edit frozen manifest data or run that ceremony. Plan status remains
+`ready-to-archive`; no second clearing review is called for this naming-only
+correction.
+
+## Implementation verification -- Codex gpt-6-luna (Implementation) -- 2026-10-28
+
+**Boundary B mode**: full
+**Certified by**: pending
+**Tested commit**: 12fc2a1faf24c03fb2eff0ddacba0a060ea2d93b
+**Reviewed range**: 3d046bfa84bd39a7ce1163f5c3b413f49eae3674..12fc2a1faf24c03fb2eff0ddacba0a060ea2d93b
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13
+**Pre-run state**: clean detached worktree at the tested commit.
+**Post-run state**: clean worktree at the identical tested commit; `git diff --check` clean.
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---:|---|---:|
+| `python -m pytest bootstrap/tests/test_model_tier_rule_ships.py` | 0 | 10 passed; 0 failed/skipped/xfail/xpass | 0.16 s |
+| `python -m pytest bootstrap/tests/test_review_stance_in_shipped_files.py` | 0 | 480 passed; 0 failed/skipped/xfail/xpass | 1.24 s |
+| `python -m pytest bootstrap/tests/test_onboarding_seed_roster.py` | 0 | 13 passed; 0 failed/skipped/xfail/xpass | 0.75 s |
+| `python -m pytest bootstrap/tests/test_model_selection_stub.py` | 0 | 71 passed; 0 failed/skipped/xfail/xpass | 1.80 s |
+| `python scripts/check_model_selection.py` | 0 | Mapping filled; shape check passed | <0.01 s |
+| `python scripts/check_cairn.py` | 0 | 185 Markdown files; no issues | 2.19 s |
+| `python scripts/link_check.py` | 0 | 185 Markdown files; no issues | 0.21 s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | Neutrality fail=0; redundancy fail=0 | 1.19 s |
+| `python scripts/claim_check.py dev/plans/model-floor-alignment.md` | 0 | No claim-check flags | <0.01 s |
+
+**Non-pass disposition**: none. The four mapped test files total 574 passed,
+with no skip, xfail or xpass. The focused correction changed no test behavior.
+The changed test file remains frozen; replacing the old node reference in the
+manifest is owed with the existing ceremony. No full suite or re-anchor was
+run; certification remains pending. The original code review remains the
+independent review of this implementation; the review's historical node name
+and ledger are intentionally unchanged.
