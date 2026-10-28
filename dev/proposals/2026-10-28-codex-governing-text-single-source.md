@@ -1,12 +1,11 @@
 # Make Cairn's governing text easier to edit without losing adopted rules
 
 **Author**: Codex (Proposal author, gpt-6-sol)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Map where adopters find each rule, then shorten repeated instructions while keeping every rule available to them.
-**Waiting on Maintainer**: accept inventory-first routing proposal
 
 ## Context
 
@@ -302,3 +301,11 @@ read; the complete current contract is the `## Revised proposal` above. The
 Maintainer now decides whether to accept the inventory-first approach and its
 later routing fence. That Decision does not choose the eventual rule homes;
 the inventory will inform the fenced choice during a derived plan.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-28
+
+**ACCEPTED.** The Maintainer's authorization, quoted **verbatim and visually isolated**:
+
+> "5. Accept, and justify why we would have a doctrine/ folder when no such thing is ever shipped to adopters. If it's not dev/rules, or docs/ I'm not sure what it is."
+>
+> "Go ahead and scribe my decisions, and I will pass these back to the Codex agent to oversee implementation of."
