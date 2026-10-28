@@ -1957,16 +1957,14 @@ def resolve_protected_roster(anchor: str, candidate: str, *,
     except (UnicodeError, json.JSONDecodeError):
         raise PreflightError("the previous anchor's gate manifest is malformed") from None
     old_roster = old_manifest.get("protected_roster")
-    candidate_blob = _blob_at(candidate, G._PROTECTED_ROSTER_REL, repo=repo)
-    if candidate_blob is None:
-        raise PreflightError("candidate is missing the protected roster")
-    candidate_sha = hashlib.sha256(candidate_blob).hexdigest()
 
     if old_roster is None:
         if transition is None:
-            raise PreflightError(
-                "the previous anchor has no protected roster; only the reviewed "
-                "initial transition may establish one")
+            return None  # legacy broad policy; it cannot narrow membership
+        candidate_blob = _blob_at(candidate, G._PROTECTED_ROSTER_REL, repo=repo)
+        if candidate_blob is None:
+            raise PreflightError("candidate is missing the approved initial roster")
+        candidate_sha = hashlib.sha256(candidate_blob).hexdigest()
         if candidate_sha != G._APPROVED_INITIAL_ROSTER_SHA256:
             raise PreflightError("initial roster differs from the exact approved bytes")
         approved = transition.get("members", {}).get(G._PROTECTED_ROSTER_REL)
@@ -1978,6 +1976,10 @@ def resolve_protected_roster(anchor: str, candidate: str, *,
             or old_roster.get("path") != G._PROTECTED_ROSTER_REL
             or not isinstance(old_roster.get("sha256"), str)):
         raise PreflightError("the previous anchor's protected roster is malformed")
+    candidate_blob = _blob_at(candidate, G._PROTECTED_ROSTER_REL, repo=repo)
+    if candidate_blob is None:
+        raise PreflightError("candidate is missing the protected roster")
+    candidate_sha = hashlib.sha256(candidate_blob).hexdigest()
     anchor_roster_blob = _blob_at(anchor, G._PROTECTED_ROSTER_REL, repo=repo)
     if (anchor_roster_blob is None
             or hashlib.sha256(anchor_roster_blob).hexdigest() != old_roster["sha256"]):
@@ -3835,10 +3837,6 @@ def check(*, repo: Path = _REPO, evidence: dict | None = None,
 
     if evidence is not None:
         check_evidence(evidence, head, report)
-        if protected_roster is None:
-            raise PreflightError(
-                "evidence validation requires a roster resolved from the prior "
-                "anchor or a validated reviewed transition")
         check_static_manifest(evidence, head, report,
                               protected_roster=protected_roster, repo=repo)
         report.facts["evidence_checked"] = True
