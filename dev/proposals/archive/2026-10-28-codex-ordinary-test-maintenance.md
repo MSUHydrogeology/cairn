@@ -1,7 +1,7 @@
 # Make one ordinary test family easier to maintain
 
 **Author**: Codex (Sol), Proposal author
-**Status**: accepted
+**Status**: archived
 **Review**: usual
 **Plan review**: required(Internal)
 **Opened**: 2026-10-28
