@@ -82,3 +82,105 @@ Pilot on milestone-sized histories containing justified growth and independently
 Generate on request or at project-chosen milestones, not for every commit. Show stale/missing evidence. Default to local read-only inspection: no implicit candidate execution, code upload or publication. Escape repository-controlled display data and make external resources explicit. Human choices initiate normal reviewed work; no automatic deletion.
 
 Compose with [engineering practices](2026-10-27-codex-adopter-engineering-practices.md), [scientific testing](2026-10-27-antigravity-judicious-testing-and-simulation-verification.md), [team measurement](2026-10-27-antigravity-lightweight-team-measurement.md) and [scoped verification](../plans/scoped-change-verification.md). Before promotion, settle pilot projects, capability evidence, language coverage, privacy constraints and report maintenance. The eventual guidance should serve shipped adopter projects, not just Cairn itself.
+
+## Review
+
+**Temporary**: author to fold accepted comments into the note and remove this section.
+**Reviewer**: Antigravity (Gemini 4 Argon)
+**Role**: Strategy reviewer
+**Date**: 2026-10-28
+**Reviewed commit**: 9bd6eb5fb3efadecf6fb0d234f58562277a6c643
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes: separating patch-level agent review from
+   system-level human review addresses the core bottleneck of high-throughput
+   agent teams, and anchoring the human view in LHM's Sankey scope map plus
+   Cairn's five-lens
+   [architecture rubric](../../templates/modules/team-gated/architecture_review_template.md)
+   avoids inventing a second review framework —
+   `dev/strategy/2026-10-28-codex-review-at-agent-scale.md:12-15, 35-42, 76`.
+2. **Best alternative**: Stage the design into two explicit tiers rather than
+   one monolithic four-view build: ship the deterministic, language-agnostic
+   **Workstreams + Endpoint Growth** views (`git log`/`git diff` + Cairn
+   lifecycle metadata, sharing collection with
+   [`tools/gauge.py`](../../tools/gauge.py)) first, and ground **System shape**
+   and **Capabilities** in curated
+   [architecture rubric](../../templates/modules/team-gated/architecture_review_template.md)
+   and
+   [testing-discipline](../../templates/modules/team-gated/testing-discipline.md)
+   declarations rather than language-specific static analyzers —
+   `dev/strategy/2026-10-28-codex-review-at-agent-scale.md:45-58`,
+   `dev/strategy/2026-10-27-antigravity-lightweight-team-measurement.md:114-123`.
+3. **What would show it wrong**: If scientists piloting the visual report on a
+   real milestone cannot explain what changed, where responsibilities
+   accumulated, and what to consolidate faster or more accurately than from
+   [`tools/board.py`](../../tools/board.py),
+   [`tools/gauge.py`](../../tools/gauge.py), and
+   [`architecture_review_template.md`](../../templates/modules/team-gated/architecture_review_template.md)
+   alone, or if populating `System shape` and `Capabilities` requires brittle
+   per-language AST parsers or unverified agent guesses —
+   `dev/strategy/2026-10-28-codex-review-at-agent-scale.md:51-55, 80-81`.
+
+**Blocking before promotion**
+
+* **B1. Separate deterministic git/lifecycle views from views requiring
+  language-specific analysis or curated manifests.** `Workstreams` (`:51`) and
+  `Growth` (`:54`) can be computed deterministically using only Python's
+  standard library from `git log`, `git diff`, and Cairn `dev/proposals/` +
+  `dev/plans/` links across any scientific language (Python, Fortran, R, C++,
+  Julia). By contrast, `System shape` (imports, callers, runtime links, `:52`)
+  and `Capabilities` (behavior-grounded workflow matrices, `:53`) require either
+  language-specific static/dynamic analyzers (`pydeps` is Python-only, `:68`) or
+  structured declarations. *Satisfier*: Stage the recommendation into (a) a
+  deterministic, language-agnostic core (`Workstreams` + `Endpoint Growth`) and
+  (b) rubric-linked `System shape` and `Capabilities` views populated from
+  explicit
+  [`architecture_review_template.md`](../../templates/modules/team-gated/architecture_review_template.md)
+  (`## Current architectural shape`) and
+  [`testing-discipline.md`](../../templates/modules/team-gated/testing-discipline.md)
+  workflow mappings, with language-specific analyzers kept strictly optional.
+* **B2. Define the concrete attribution precedence for Cairn workstreams and
+  shared-file endpoint deltas.** Lines 39–41 note that LHM's collector needs
+  explicit attribution reasons and that shared-file endpoint growth is ambiguous
+  across workstreams. *Satisfier*: Name the attribution order for Cairn adopters
+  — (1) explicit plan/proposal linkage from commit trailers, branch, or touched
+  lifecycle artifacts, (2) project path/area rules shared with
+  [`tools/gauge.py`](../../tools/gauge.py), and (3) an explicit
+  `unattributed / maintenance` bucket — and state that net endpoint delta
+  (`git diff base..head`) on a shared file (`run_coordinator.py`, `:56`) is
+  reported per file alongside its contributing workstreams rather than splitting
+  net line delta across overlapping edits.
+* **B3. Reconcile data collection with `tools/gauge.py` to avoid two competing
+  git-history collectors.** The note cites
+  [team measurement](2026-10-27-antigravity-lightweight-team-measurement.md)
+  (`:84`), which already assigns `product` / `dev` / `machinery` path
+  classification and commit-range churn measurement to
+  [`tools/gauge.py`](../../tools/gauge.py). *Satisfier*: Specify that the visual
+  report shares path bucketing and git-range data extraction with `tools/gauge.py`
+  rather than building a parallel collector.
+
+**Non-blocking**
+
+* **N1. Make self-contained, zero-CDN inline SVG the default HTML output.** Line
+  37 notes that LHM's `scope_map.html` loads visualization libraries from CDNs
+  (preventing offline use), and line 82 says to make external resources
+  explicit. Because Sankey flows and growth bars can be rendered as
+  self-contained inline SVG directly from Python's standard library, make
+  zero-CDN, fully offline HTML the default target so air-gapped or
+  privacy-sensitive research teams never trigger external network requests when
+  opening a local report.
+
+**Coverage**: covered claim verification (`#1`: checked internal citations
+against `doctrine/dual-review.md`, `dev/agent_collaboration.md`,
+`templates/modules/team-gated/architecture_review_template.md`,
+`dev/plans/scoped-change-verification.md`, and the three linked strategy notes
+at `:20, 76, 84`), fail-closed/privacy posture (`#3`: CDN and local read-only
+bounds at `:37, 82`), design completeness and scientific scope (`#4`:
+multi-language scientific adopter support vs. Python-only static tools at
+`:51-55, 68`), cross-document consistency and placement (`#5-7`: composition
+with `architecture-review`, `testing-discipline`, and `tools/gauge.py` at
+`:76, 84`), and scope/satisfiers (`#8-9`: B1–B3, N1). Not covered: external LHM
+repository paths (`8d0460e8` is outside this workspace), full-text
+re-verification of external URLs/preprints beyond the limits already stated in
+`:26-31`, or test-suite execution.
