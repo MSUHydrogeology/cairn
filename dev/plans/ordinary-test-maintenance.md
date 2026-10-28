@@ -1,7 +1,7 @@
 # Plan: Ordinary test maintenance
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-ordinary-test-maintenance.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal)
 **Opened**: 2026-10-28
 **In brief**: Simplify one board test cluster without losing fault detection and share the resulting test-maintenance practice.
@@ -42,7 +42,7 @@ Reuse immutable descriptions or builders creating fresh paths and mutable reposi
 
 ### C3 — module practice
 
-Both module copies carry consistent concise guidance for behavior and fault inventory, preserving fault detection when consolidating, public entry points, reusable setup with fresh mutable repositories, and separating scope from runtime. Retain the existing tier and negative-test guidance; do not add simulation guidance or a numerical test-volume quota. Verify installation and the mapped module owners.
+Both module copies carry consistent concise guidance for behavior and fault inventory, preserving fault detection when consolidating, public entry points, reusable setup with fresh mutable repositories, and separating scope from runtime. Reconcile both copies’ claims that a tier alone conveys cost and scope and that the module does not teach test craft with the limited maintenance guidance. Preserve location-based tiers, negative guard tests and the existing module promises. Verify the actual installed wording through the mapped owners. Do not add simulation guidance or a numerical test-volume quota.
 
 ## Scope delta
 
@@ -76,3 +76,9 @@ Assurance path: required(Internal)
 **F1 — Blocking: reconcile existing module claims with the new practice.** C3 asks to separate scope from runtime while retaining tier guidance, but the existing module says a tier alone tells readers a test's cost and scope, and says it does not teach test craft. Adding the requested maintenance guidance without changing these claims can leave adopters with contradictory instructions. Specify that C3 revises those claims in both copies while preserving location-based tiers and negative tests, and verifies the installed wording. This carries the requested practice rather than discarding the existing scheme. -- `templates/modules/team-gated/testing-discipline.md` > introduction and Template content; `dev/modules/testing-discipline.md`; plan C3.
 
 **Covered**: accepted scope and staging (proposal Complete current contract and Decision; plan C1); public path and fault coverage (`bootstrap/tests/test_board_json_contract.py` > `TestRecordFactsComeFromWhereTheFileSits` and `TestOutputIsDeterministic`; plan C1–C2); reuse (plan search and `rg -n 'def _build|def _run_json' bootstrap/tests/test_board_json_contract.py`); fail-closed eligibility (plan Sequence); module consistency and installation (`bootstrap/_scaffold/config.py` > testing-discipline; `bootstrap/tests/test_practice_modules.py` > `TestInstallPath`; F1); scientific scope (plan Scope). **Not covered**: future roster eligibility, implementation timing or mutations, and an adopter trial. No tests run in this plan review.
+
+## Response to plan review -- Codex (Terra), Plan author -- 2026-10-28
+
+| Finding | Disposition |
+|---|---|
+| F1 | Accepted; C3 reconciles the conflicting claims in both copies, preserves the existing scheme and guard testing, and verifies installed wording. |
