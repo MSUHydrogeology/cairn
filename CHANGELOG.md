@@ -38,6 +38,8 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+## 0.5.0 — 2026-10-28
+
 ### Changed — `docs/plain-language.md` is a full adoption page for Cairn Plain Language
 
 - The page now holds a project-neutral block of the 17 rules that another
@@ -64,7 +66,7 @@ and a new empty `Unreleased` is started above.
   the digest-correcting script, runbook Phases 0 and 4) is gone, the
   launcher is the only reader of the values file, and the evidence run refuses
   collection-steering `pytest` variables. `repin packet` builds the packet for
-  ordinary ceremonies. The first ceremony under it ran on 2026-10-28 and signed the new anchor; the checks before and after were run by scripts written for that day, not by the runbook's hand steps. Your yes protects
+  ordinary ceremonies. Two ceremonies ran under it on 2026-10-28, one to sign the new anchor and one to pin the AST attestation; the checks before and after were run by scripts written for that day, not by the runbook's hand steps. Your yes protects
   against honest agent mistakes: the anchor moves only to the commit a fresh
   reader read. It does not protect against code running as you, such as a
   malicious local agent or the candidate's own tests. Python 3.13.13 was the
