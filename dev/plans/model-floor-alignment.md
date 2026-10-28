@@ -1,7 +1,7 @@
 # Plan: Align model floors with the team roster
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-model-floor-alignment.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Align the task-based capability floors and Cairn's local model assignments while keeping review and authority safeguards.
@@ -66,6 +66,18 @@ code review follows. No full suite is run for this plan alone.
 **Scope delta**: preserved.
 
 ## Verification
+
+Boundary A maps each property to its owner; extend these existing nodes or
+add property-named nodes in the same files. Each must reject a deliberately
+wrong assignment or instruction, with an unmodified control, rather than
+merely find a tier word:
+
+| Property and sources / public path | Owning test |
+|---|---|
+| Task floor versus lane process in roles and both AGENTS copies, including solo install | `bootstrap/tests/test_model_tier_rule_ships.py::test_both_agents_copies_carry_the_model_tier_rule` and `::test_a_profile_with_no_module_still_installs_the_rule` |
+| Fan-out: low reviewed execution, medium other non-trivial writing, high judgment; high new judgment versus low settled high-risk execution; stronger check only below floor, in roles and both modules | `bootstrap/tests/test_model_tier_rule_ships.py::test_the_different_maker_condition_is_gone_and_same_tier_is_excluded` and `bootstrap/tests/test_review_stance_in_shipped_files.py::test_shipped_text_carries_the_obligation` |
+| Each of Opus/high, Sonnet/medium, Haiku/low, Sol/high, Terra/medium, Luna/low, Argon/high, Pro/medium and Flash/low in Cairn's local mapping | `bootstrap/tests/test_model_selection_stub.py::TestThisRepositorysMappingIsFilled::test_cairn_mapping_passes_with_and_without_pyyaml`, extended with assignment checks |
+| Seed one family per tier; manually add multiple families under existing schema, in module and bootstrap sources and both installed onboarding presets | `bootstrap/tests/test_model_selection_stub.py::TestFamilyNotVersionReachesEverySite::test_all_model_mapping_sites` and `bootstrap/tests/test_onboarding_seed_roster.py::TestModelMappingWaitingSeed::test_seed_renders_and_board_lists_it` |
 
 Boundary A: update and run `python -m pytest bootstrap/tests/test_model_tier_rule_ships.py`
 (including its lane, proposal, fan-out, copy and solo-install checks),
@@ -161,3 +173,12 @@ satisfiers (C1/C2, Verification, and the ordinary pass's F1).
 **Not covered / low confidence:** No implementation, attack execution or model
 benchmark was reviewed. Model assignment and hostile classification still
 depend on human judgment. No implementation tests or full suite were run.
+
+## Response to plan review -- Codex gpt-6.1-terra (author) -- 2026-10-28
+
+| Finding | Disposition |
+|---|---|
+| F1 | Accept. Verification maps each semantic property and installed path to its owning tests, with deliberate wrong-property controls. |
+
+The Internal Security Review raised no findings. Both plan-review obligations
+are complete; the plan is ready to implement.
