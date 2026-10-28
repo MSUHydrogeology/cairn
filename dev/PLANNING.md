@@ -8,12 +8,10 @@ Completed work leaves the board. The commit history retains earlier versions.
 ## Where the project stands
 
 <!-- cairn:slot project-status -->
-Cairn is at **v0.5.0** (tagged 2026-10-28; its release gate was waived, see the v0.6
-row on `PYTEST_ADDOPTS`), self-hosting and used in LHM and modflow_tools. v0.4.0
-was the first public release (2026-10-20). The external correctness trial remains
-open; it was expressly waived as a condition of publishing 0.4. **0.6 work happens
-on branch `0.6-dev`.** The 0.5 sections below are a record of what shipped and
-are due to leave this board (a v0.6 row queues that).
+Cairn is at **v0.5.0** (tagged 2026-10-28; its release gate was waived, see the
+v0.6 row on `PYTEST_ADDOPTS`), self-hosting and used in LHM and modflow_tools.
+**0.6 work happens on branch `0.6-dev`.** The external correctness trial remains
+open; it was expressly waived as a condition of publishing 0.4 and 0.5.
 
 Standing direction: **postdoc-first** and **fix defects, build nothing new**
 (Maintainer, 2026-07-22). A new tool or mechanism needs its own go-ahead.
@@ -30,323 +28,13 @@ artifacts; this board does not maintain a second status table.
 
 ## Release path
 
-### 0.5 (Maintainer direction, 2026-10-26) -- released as v0.5.0 on 2026-10-28
-
-**Theme: plain, short, and fits the install.** The Maintainer, on the theme:
-
-> "I like the theme!"
-
-| Work | Gate | Notes |
-|---|---|---|
-| **Cairn Plain Language 1.0** (17 rules) | Built and archived 2026-10-26 (`2026-10-26-claude-writing-for-the-reader`); its changelog entry is written | Maintainer: "We will be adding this Cairn Plain Language 1.0 as a feature". Lockfile `--finalize` for `AGENTS.md` and `dev/agent_collaboration.md`, and a neutrality check on any vendor name in `doctrine/rationale.md`, before it commits. |
-| `check_cairn` deleted-file crash | Fixed 2026-10-26 (commit `9ec53a43`); its changelog entry is written | Defect; one commit. |
-| **#32** board and `session-start` accept retired statuses | Maintainer direction, 2026-10-23 | Defect. Lands before drain mode, which reads the board. |
-| **#31** "keep it short" in the plan and proposal templates | Prose | The adopter supplied the draft and the evidence. |
-| **Model tiers: use the lowest tier that is safe** | Doctrine change: own proposal, clears the rate-limit gate | Maintainer direction, 2026-10-26: formalize a rule set for lower-tier models where possible. Scope below. Built and archived 2026-10-26 (`dev/plans/archive/model-tier-rules.md`); its one frozen-test edit and the new test file join the re-anchor owed at the cut. |
-| **Security findings from the two 0.4 Security Reviews** | Built 2026-10-26: fixers answered, code reviews checked (no second Security Review); three older problems and later findings are queued below | LP-SR-1 to 8 and SW-SR-11 to 15, found after their repairs shipped in 0.4.0 and never fixed, plus three older problems the engine-batch Security Review found. Scope below. |
-| **Engine batch: F8 and #8 engine half** | Own proposal, Security Review, one AST re-anchor | One batch so the review and the re-anchor are paid once. Maintainer: "Engine batch is in". Rows below. Built and archived 2026-10-26 (`dev/plans/archive/engine-batch-f8-slots.md`); its AST and gate re-anchor is owed at the cut. |
-| **`repin`** | Built 2026-10-26 and archived 2026-10-27 (`scripts/repin.py`; plan `dev/plans/archive/repin-build.md`; its Maintainer-only steps are superseded by the ceremony rewrite, see "The 0.5 cut" below). Its unbuilt items became the repin-hardening change (archived) and the ceremony rewrite (archived); its strategy note is archived (`dev/strategy/archive/2026-08-28-claude-repin-revitalization.md`) | Maintainer: "Repin is a build". Removes the re-anchor ceremony's manual corrections. |
-| **Drain mode** | Built and archived 2026-10-26 (`dev/plans/archive/drain-mode.md`); its strategy note is archived (`dev/strategy/archive/2026-08-25-claude-drain-mode.md`) | `/session-start --drain [board \| issues \| <item>]`. Scope below. |
-| **Onboarding happens at install** | Built and archived 2026-10-26 (`dev/plans/archive/install-time-onboarding.md`); its deletions and edits of frozen files join the re-anchor owed at the cut | Replace the delayed, trigger-based onboarding prompts with install-time onboarding. Maintainer words below. |
-| **`NEXT_SESSION` becomes a local note** | Proposal first (`2026-10-26-claude-next-session-local-note`, being written by the Developer session's author; it touches the engine: `config.py` and `lockfile.py` mention the file) | Maintainer direction, 2026-10-26: "Also, NEXT_SESSION becoming a local note should happen in v0.5 too." Confirmed in this session's chat by the Maintainer (answer: "Yes, add it to 0.5 (Recommended)"). The queued row "Make NEXT_SESSION local and untracked" below holds the earlier scope: the ignore pattern, the scaffold seed, the session-routines doctrine, the goodnight wording in `AGENTS.md`, and the session-end description. Engine files change, so the AST re-anchor set grows and a Security Review is probably owed; the proposal's author sets the header from what it finds. Built and archived 2026-10-26 (`dev/plans/archive/next-session-local-note.md`); its frozen-file edits and the new test join the re-anchor owed at the cut. |
-| **`upgrade` removes untouched copies of files Cairn stopped shipping** | Proposal first (to be written; engine change in `upgrade`, so a Security Review is probably owed) | Found by the onboarding proposal's usual review: that change leaves nine now-dead onboarding files in existing installs, and the `NEXT_SESSION` change leaves a stale copy too. Asked the Maintainer directly, 2026-10-26: add it to 0.5, queue it after, or skip it; answer: "Add it to 0.5". Order: it lands last, after the `NEXT_SESSION` and onboarding changes it cleans up after. Scope condition from the onboarding Security Review (its SR1): when a copy has been modified, `upgrade` must report it by name rather than fold it silently into the removed count. Built and archived 2026-10-27 (`dev/plans/archive/upgrade-removes-retired-files.md`); the Maintainer allowed its departures 5 and 7. Its re-anchor entries are in the plan (frozen edits, six new engine symbols, one renamed node in `test_agreement_retired.py`). |
-| **`upgrade` stops running a repository's own programs when it checks for edits** | Proposal first (to be written after the twelfth row's; engine change, so a Security Review is owed) | Found by the twelfth-row Security Review: `upgrade --stage`, `--apply` and an unscoped `--finalize` call `_dirty_tracked_paths` (`bootstrap/_scaffold/upgrade.py`), a plain `git status`. Measured by that reviewer: an ordinary `upgrade --stage` ran a program named in a project's `.git/config` (`core.fsmonitor`), and the same helper reads an edited file as clean when the project sits in a subfolder of a larger repository. Not a simple fix (a sterile git call and a different dirty check). The Maintainer's answer, 2026-10-26, to where it goes: "A 0.5 row, after the twelfth (Recommended)". It reuses the sterile git helper the twelfth change builds. Reported by the reviewer, not reproduced by the planning session. Built and archived 2026-10-27 (`dev/plans/archive/upgrade-edit-check-no-repository-programs.md`); the code review found no blocking defect. Its re-anchor entries are in the plan. |
-| **Re-anchor ceremony hardening** (the repin note's unbuilt items) | Proposal accepted 2026-10-27 (`dev/proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md`, archived; `dev/plans/archive/repin-ceremony-hardening.md` opened 2026-10-27, awaiting plan review) | Maintainer, 2026-10-27, closing the repin strategy note: "Let's just go ahead and finish out the repin strategy note with any un-built items as a final proposal for v0.5" (relayed by Strategy). Decision 2026-10-27: build A (the launcher template joins the files the gate trusts) in the cut's ceremony, code-reviewed first; build B (narrowed control tests, new test file) and H (claim-only prose edit) before the cut; A2 after the cut and before M2; C, D, I deferred; E not built; F, G dropped; REL-1 stays deleted. A2 (the launcher equals the anchor's template; edits `scripts/repin.py` and its two test files) is a later row: it comes after the cut and before M2, and needs its own plan or an amendment of this one. |
-| **Re-anchor ceremony rewrite (no External review)** | Proposal accepted 2026-10-27, built, code-reviewed, twice Security-reviewed and archived 2026-10-27 (`dev/plans/archive/ceremony-without-external-review.md`; archived proposal `dev/proposals/archive/2026-10-27-claude-ceremony-without-external-review.md`) | Maintainer, 2026-10-27: "We cannot require an External Security review. The runbook must be updated." and "Please go ahead and do all of it now, I changed my mind. The re-anchoring is such an ongoing issue that we just need to tackle it. Period."; Decision: "Accept and commit (Recommended)" and "Accept all six defaults (Recommended)". Scanner coverage of the gate's own files, a plain report page, driver cleanup, `repin packet` and the launcher check, an evidence-environment fix, one values reader, a one-page runbook. Both ceremonies run 2026-10-28 (see "The 0.5 cut") |
-| **Plain Language adoption docs** | Proposal accepted and built 2026-10-27 (`dev/proposals/archive/2026-10-27-antigravity-plain-language-adoption-docs.md`, commit `bd4f1953`) | Maintainer, 2026-10-27: "Can we decide `dev/proposals/2026-10-27-antigravity-plain-language-adoption-docs.md`? I would like to get this implemented here for 0.5 as well"; Decision conditions: "Accept and commit (Recommended)" and "Yes, check each one (Recommended)". Prose only (`docs/plain-language.md`, `doctrine/rationale.md` Anchor 16); no re-anchor owed. Reference check of 30 entries: 22 confirmed, 5 corrected, 3 partly verified (Budescu 2014's 27% to 40% figures, COPE, the Federal Plain Language Guidelines). No reviewer has read the new text; ISO clause numbers were not re-checkable. The old `Mandel & Irwin (2020)` year in Anchor 16 was corrected to 2021. |
-| **Older installs fail the integrity check (kept edited ledger)** | Trivial defect repair (`doctrine/lifecycle.md` three conditions), by the Developer session; lands after the thirteenth plan's code review closes, because it edits `_cmd_finalize_lockfile` too | Maintainer, 2026-10-27, relayed by the Developer session (not yet confirmed in this chat): "And this 'Older installs fail the integrity check' item seems like something to take care of too". Measured by the Developer on clean v0.3.0 installs, Python 3.13.13: v0.3.0 records its foldback ledger (a file named cairn_foldback.md under dev/.cairn/, which v0.4.0 stopped shipping) with `living_state: true`; the engine no longer allows that path; the twelfth change fixes an untouched ledger, but an edited one is kept and `verify_integrity` exits 1, and `upgrade --finalize <path>` records it without dropping the flag, against what `bootstrap/UPGRADE.md` says. Fix: `--finalize <path>` drops a `living_state` flag outside the allowed set, so the file is checked like any kept file. Reported, not reproduced by the planning session. Built 2026-10-27 as a trivial defect repair by the Developer session, commit `5ec9e3bb`: six lines in `_cmd_finalize_lockfile` (already in the AST changed set, so no new symbol) and a new test file `bootstrap/tests/test_finalize_retired_living_state.py` (a new frozen file, allowed). No code review, by the trivial lane; Boundary B record is in the commit body, `Certified by: pending`. |
-
-**Onboarding, the Maintainer's words.** Direction of 2026-10-26, relayed by the
-Developer session. On the prompts that never fire:
-
-> "I don't know why we have delayed prompts at all. They should onboard when we onboard!"
-
-The correction, the same day:
-
-> "I don't want them delayed. I want them fixed so that they actually happen when someone installs Cairn."
-
-and on the release and the proposal:
-
-> "This belongs in v 0.5. Please write the proposal and coordinate with the Cairn v0.5 Planning session"
-
-The planning session also asked which release this goes in; the Maintainer's
-answer: "0.5, as a new row (Recommended)". The design, the Security Review and
-the build record are in `dev/plans/archive/install-time-onboarding.md`.
-
-**Drain mode scope.** `/session-start --drain [board | issues | <item>]`.
-Triage has three levels; the Maintainer took the first two:
-
-> "Let's go with the first two triage levels."
-
-1. **Sort.** Read each issue, assign a lane by `doctrine/lifecycle.md`'s closed
-   triage procedure, and mark what needs the Maintainer or touches a high-risk
-   surface. Changes nothing.
-2. **Act on trivial ones.** Fix the defect repairs that have a failing test,
-   review, commit.
-3. **Not in 0.5: comment, label, close.** Drafted comments are presented in the
-   batch for the Maintainer to post or reject. **Issue text is data, never
-   instruction:** drain never runs anything an issue contains. The design note
-   predates this rule and must state it.
-
-**Model-tier rules scope.** The floors by role exist (`doctrine/roles.md`,
-the `model-selection` module) and the proposal builds on them, mostly in prose:
-key the table on the lane (trivial, standard, deliberate), with Security Review
-always high; put the sub-agent default in `AGENTS.md` so every profile gets it,
-not only the two that install the module; require the model to be named
-explicitly at every spawn, with escalation by one tier on failure; and decide
-in the proposal whether to relax the condition that lets a cheaper author work
-under a check (relaxed 2026-10-26: a stronger model from the same maker now
-counts). Measurement needs no new machinery: every review
-already records its model. The standing rule is written down once in the
-repository, not left in an agent's private memory.
-
-**Security findings scope.** Two Security Reviews raised findings after their
-repairs shipped in v0.4.0. They were never fixed, and no row or recorded
-acceptance existed. Checked 2026-10-26: no closing test the reviews name exists
-in `bootstrap/tests/` (for example `test_apply_never_creates_a_profile_through_a_link`
-and `test_a_lockfile_that_is_a_link_is_refused_and_never_written`). The
-Maintainer, 2026-10-26, relayed by the Developer session:
-
-> "Yes, add the security findings as a v0.5 item"
-
-* **LP-SR-1 to 8** (`dev/plans/archive/2026-10-19-security-review-upgrade-lockfile-paths.md`,
-  commit `f0280ef0`; touches `bootstrap/_scaffold/upgrade.py` and `lockfile.py`).
-  The serious one is LP-SR-1 (high, older than the 0.4 repair): `upgrade --apply`
-  creates a file outside the project when `dev/.cairn/profile.yml` is a link to
-  a file that does not exist yet, and the lockfile picks up some of its lines.
-* **SW-SR-11 to 15** (`dev/plans/archive/2026-10-18-security-review-session-writes.md`,
-  commit `bf746470`; touches `templates/skills/_lib/session.py` and its twin
-  `tools/session.py`: the interpreter binding, a named high-risk surface).
-* **SW-SR-10** was accepted in chat on 2026-10-19 (*"Accept in writing; move
-  later (Recommended)"*) and never written. Write it as one docstring sentence
-  in `_resolve_interpreter` and a residual-risk entry in `bootstrap/SAFETY.md`.
-  Moving the binding into `.git` is a separate proposal after 0.5.
-* **Each finding carries its exact fix and closing test in its review.** No
-  second Security Review. The Maintainer, 2026-10-19: *"Let's just not iterate
-  back and forth on the Security Review"* and *"For now let's just do the
-  single-round Security Review for these"*. A fixer answers the findings and one
-  code review checks the answer.
-* **Three accepted residuals from the LP-SR fixes, 2026-10-26.** The fixer
-  closed LP-SR-3, 4, 6, 7 and 8 fully and left three limits: LP-SR-5 got only
-  the documentation answer, not the full split, because the split breaks a
-  frozen pin; a linked lockfile on `--adopt-collisions` still ends in a
-  traceback, because a frozen test expects an exception there; and the profile's
-  preset, axis and module values are written unquoted, because quoting fails the
-  frozen differential oracle's byte comparison (a printable value containing `: `
-  or ` #` makes a profile the loader refuses, on that line only). Each is
-  recorded in `bootstrap/_scaffold/SECURITY_MUTATIONS.md`. The Maintainer was asked
-  whether to accept all three as documented residuals and answered:
-
-  > "Accept all three (Recommended)"
-
-  Nothing more is built for them in 0.5. The code review of the fixer's answer is
-  still to land; a finding there can reopen one.
-* **Three older problems found by the engine-batch Security Review**
-  (`dev/proposals/2026-10-26-claude-engine-batch-f8-slots.md`, commit `e92ad324`).
-  Reported by that review; the roadmap's author reproduced none of them. All
-  three are outside the engine batch and in the same files as the rows above.
-  Authorization to fold them in, verbatim:
-
-  > "Yes, fold all three into the security row"
-
-  1. **The upgrade does not check the saved base copy against its recorded hash**
-     before the merge uses it (finding SR6). A crafted base copy can already
-     silently drop an adopter's edit or a Cairn fix. Recommended fix: check the
-     hash at plan, stage and apply, and on a mismatch make the file a by-hand
-     merge.
-  2. **Lockfile file names can carry invisible characters** that pass Python's
-     `isprintable()`.
-  3. **`bootstrap/_scaffold/install.py` prints unknown profile module names
-     unescaped** (about line 1526).
-  4. **The install report prints profile-supplied slot names raw**
-     (`bootstrap/_scaffold/install.py` about line 1668, and `cli.py` about
-     lines 359 and 590). Found by the engine-batch plan's Security Review: a
-     profile's token value can add slot names. Only bidirectional and invisible
-     characters get through, because the profile loader refuses control
-     characters (`config.py` about lines 180-183). It predates the engine batch,
-     which leaves it out on purpose. Authorization to queue it, verbatim:
-
-     > "Queue it on the security row"
-* **Overlap with the engine batch.** Both change functions in `upgrade.py` and
-  `lockfile.py`. One fixer holds both, or they run in sequence, never in
-  parallel on the same functions. Both add engine symbols to the single 0.5 AST
-  re-anchor; derive the real set from the code. The planned names were
-  `_self_heal_profile_config`, `_cmd_finalize_lockfile`, `_behind_by_n`,
-  `_resolve_vendor_wrapper`, `_apply_upgrade`, `cmd_upgrade`,
-  `_check_lockfile_paths`, `_lockfile_refusal` and `_contained_lockfile_path`,
-  plus a new `_check_staged_names`; most exist already, so the re-anchor is
-  derived, not carried. `session.py` is not the engine, so it owes no AST
-  change, but it is a frozen-twin pair and its gate-manifest pins need
-  checking.
-* **The fixer's notes, kept from the old handoff file at `0c3a483b`, which is
-  stale.** In `_behind_by_n` (LP-SR-3) the new hex check goes *after* the
-  "missing or unknown" check, because frozen `test_drift_surfacing.py` pins that
-  text. LP-SR-1's guard also refuses a `profile.yml` linked to a file inside the
-  project: stricter than before, and belongs in `bootstrap/UPGRADE.md`. LP-SR-8's
-  `.git` refusal keys on the project tree, not only the `dst` and `base_cache`
-  fields, because the shape-table test calls the guard with four positional
-  arguments and would not see a new keyword. LP-SR-5's split must still run the
-  `files` and `modules` structure checks before the advisory, which crashes on a
-  record that is not an object. LP-SR-4 is refused in `_check_lockfile_paths`
-  through a new `_check_staged_names`, not escaped in `_print_upgrade_report`.
-  New tests go in a new test file: `test_upgrade_lockfile_path_containment.py`
-  is itself frozen (the gate manifest's `frozen_files` lists it; the glob
-  `bootstrap/tests/**/*.py` freezes every test file), and the earlier note
-  saying it was not frozen was wrong, found 2026-10-26 by the fixer.
-
-**Order.** Cheap defects first (`check_cairn`, #32), then Plain Language, #31
-and the model-tier prose, then the security findings, then the engine batch (the
-two share `upgrade.py` and `lockfile.py`, so one fixer holds both or they run in
-sequence), then `repin` and drain mode.
-
-**Issues.** #31 and #32 are the only open issues in 0.5 (#8's engine half is a
-row below; #19 is not in 0.5). Both carry a comment saying so.
-
-**One re-anchor, at the cut.** The re-anchor owed since 2026-10-23 (the Queued
-row below) is folded into the 0.5 cut, not paid twice. The AST correction
-precedes the gate-manifest re-anchor, as at 0.4. Maintainer-only; follow
-`bootstrap/REANCHOR_RUNBOOK.md`.
-
-**Final list: the thirteen rows above.** **Not in 0.5**, and still queued below
-unchanged: VER-5 (a new mechanism). Left out because 0.5 already carries an
-engine batch, a ceremony and a build; it can join by the Maintainer's word. **Also not in 0.5, waiting on their
-revival conditions:** #19, #13 and the deferred table.
-
-**Changelog.** Each row lands with its entry under `## Unreleased` in
-`CHANGELOG.md`, in the same commit or the next, in the file's entry shape (one
-or a few lines, with a link to the durable record). At the cut the section is
-renamed `## 0.5.0 — <date>` and a fresh `Unreleased` opened
-(`docs/release-process.md`). The GitHub release notes are copied from that
-section, not drafted in a separate file: the 0.4.0 draft kept as an untracked
-file went stale, with wrong profile names and a wrong repository URL that also
-reached the published notes. Those two errors are the Maintainer's to correct
-on the published release. Entries so far: Plain Language 1.0 and the
-deleted-file fix.
-
-**Branch rule: one branch, and the intents board.** All 0.5 work happens
-directly on `0.5-dev`, in the one shared checkout. There are no topic branches
-and no worktrees for writing. `master` is frozen at `b70ee08f`: no commits to
-it. Before editing a file, record a claim with
-`python tools/intent.py claim --files <paths> --action "<what>"`; commit the
-files by explicit path, which releases the claim. `python tools/intent.py list`
-shows who holds what, and `python tools/board.py` shows every proposal and plan
-on the branch. A reviewer who must mutate code does it in a throwaway
-detached worktree of the reviewed commit and removes it afterward; it is not a
-named branch, and the review itself is written and committed on `0.5-dev`.
-Merging `0.5-dev` to `master`, and pushing either, are the Maintainer's. The
-Maintainer, 2026-10-26:
-
-> "No more edits in `master` in the Cairn repo"
-
-> "Go ahead and move all new development to 0.5-dev"
-
-> "I actually would prefer that all work happen in the 0.5-dev branch, and that
-> we use the intents board. This has gotten to be too many branches for me to
-> interact with properly."
-
-**Standing direction.** The 2026-07-22 direction, *fix defects, build nothing
-new*, applies to every row above; the choices on this page are the go-ahead for
-these rows only.
-
-### The 0.5 cut (done 2026-10-28)
-
-Written 2026-10-26, closed out 2026-10-28. What happened, in the order it ran:
-
-1. **Two ceremonies** (2026-10-28): anchor `2433453c` (the new trust-root design)
-   then `443de20f` (the AST pin). Authorizations and results are at the end of
-   `dev/plans/archive/ceremony-without-external-review.md`; scripts and records are
-   in `dev/measurement/ceremony-scripts-2026-10-28/`.
-2. **One certifying run**, green at `7c910851` (Python 3.13.13, 5,479 passed, 24
-   minutes 55 seconds). The Maintainer waived the earlier pre-ceremony run
-   (2026-10-27: "It's silly to run multiple 20 minute certifying runs like that").
-3. **Release**: `3bb27388` (version, date, changelog), tag `v0.5.0` signed by the
-   Maintainer, version DOI `10.5281/zenodo.23731834` (`91fd0579`). The release
-   security gate failed closed (15 failed) and was waived by the Maintainer; the
-   correction is a v0.6 row.
-
-#### Existing 0.5 gate-manifest re-anchor debt
-
-Owed since 2026-10-23: frozen `bootstrap/tests/test_quickstart_sequence.py`
-changed so its scripted steps match `docs/quickstart.md` (an `awaiting-review`
-proposal, a fresh-session review commit, a quoted Decision, six commits). No
-node added or dropped; no engine symbol changed. Maintainer direction:
-
-> "If I need to do a re-anchor, okay"
-
-**Also owed from 0.5 work, 2026-10-26.** The #32 code review found frozen
-`bootstrap/tests/test_board_json_contract.py` changed: its golden output gained
-the advisory line. `bootstrap/tests/_gate_manifest.py verify` reports it as
-modified, and the #32 commit is the only one that changed it. The same `verify`
-lists five other modified frozen files that the review did not trace. More are
-expected as 0.5 rows land (the model-tier proposal edits frozen
-`test_review_stance_in_shipped_files.py`, the engine-batch work edits
-`docs/quickstart.md`'s pinned count, and the security fixes may touch more).
-The LP-SR fixes (2026-10-26) add eight engine symbols to the AST re-anchor
-(derived with `_ast_attest.py verify` on Python 3.13.13): changed
-`_apply_upgrade`, `_behind_by_n`, `_resolve_vendor_wrapper`,
-`_self_heal_profile_config` and `cmd_upgrade`, and the known-new
-`_check_lockfile_paths`, `_contained_lockfile_path` and `_lockfile_refusal`,
-whose bodies changed. Two later engine edits add to that set: the repair of
-`upgrade --init-lock` (commit `5e66c74d`) changed `_write_init_lock_profile_template`,
-and engine-batch chunk C1 (commit `24400219`) changed `main` (`cli.py`) and
-`print_report` (`install.py`); the repair of `--init-lock` and `--finalize`
-over links (commit `091ec219`) changed `_cmd_init_lock`,
-`_cmd_finalize_lockfile` and `cmd_upgrade` and added `_refuse_if_linked` and
-`_linked_vendor_wrapper_names`, as the Developer session derived by comparing
-the file's AST before and after; the batch's chunk C2 (commit `47366b20`) changed `merge_file` and
-`_print_upgrade_report`. Reported by the sessions that made them and confirmed
-by the engine batch's code reviewer with the read-only `_ast_attest.py verify`
-listing (10 changed symbols, 3 known-new with changed bodies, no new symbol),
-not derived by this edit. The engine batch's two new test files,
-`test_install_report_slots.py` and `test_upgrade_added_slots.py`, are also
-gate-root files the re-anchor must pin, as are the LP-SR test file. The
-onboarding change (archived) deletes 15 frozen files and edits 13, and adds 19
-engine symbols to the AST set (8 deleted, 11 changed, one of them the
-docstring-only `FunctionDef:_render_onboarding_slot`); it needs 4 known-new keys
-dropped and 4 rekeyed, and 4 baseline keys dropped and 6 changed. Its plan lists
-them (`dev/plans/archive/install-time-onboarding.md`) and names the three oracle
-sensitive-roster entries the Maintainer's authorization must name. Reported by
-that plan, not re-derived here. The
-`NEXT_SESSION` change (archived) edited frozen `test_notice_install.py`,
-`test_upgrade.py` and both `verify_stems.py` twins (`test_quickstart_sequence.py`
-was already owed), dropped one pinned node in
-`test_review_stance_in_shipped_files.py`, and added `Assign:_CORE_MAPPINGS` to the
-AST changed set (12 to 13); its new test `test_next_session_local_note.py` joins
-the anchor. Reported by that plan's code review, not re-derived here. The edit-check change (archived 2026-10-27) adds one new frozen test file (`FROZEN-NEW`, allowed), edits no pinned test, and renames one node in the unpinned `test_upgrade_removes_retired_files.py`; its code review read the AST `verify` listing as 59 symbols, six more than the plan's list (`_GIT_NOT_STARTED`, `_GIT_NO_ANSWER`, `_git_in_project`, `_ask_git`, `_git_config_bool`, `_cannot_tell_refusal`), with `_dirty_tracked_paths` and `_writeset_dirty_collisions` newly changed and `_apply_upgrade`, `_cmd_finalize_lockfile` and `cmd_upgrade` edited again. Reported by the implementer and reviewer, not re-derived here. The repin-hardening change (archived 2026-10-27) edits three pinned files, `_gate_preflight.py`, `test_gate_preflight.py` and `test_reanchor.py`, and adds one new test file, `test_reanchor_driver_disclosures.py` (allowed); the AST list gains nothing; the packet at your hand ceremony has eleven rows, and M2's reviewed commit is `5293f570`. Reported by its implementer and reviewers, not re-derived here. The integrity fix for a kept fold-back ledger (`5ec9e3bb`) adds one frozen test file (`test_finalize_retired_living_state.py`, allowed) and edits `_cmd_finalize_lockfile`, which the AST list already carries. The Strategy
-session reports more, counted by it and not
-re-derived here: frozen `scripts/check_cairn.py`, `scripts/link_check.py` and
-`scripts/sync_doc_snippets.py` with the two `templates/modules/team-gated/`
-twins (commits `9ec53a43` and `dfdd0408`), and frozen
-`bootstrap/tests/test_review_stance_in_shipped_files.py` (commit `cdffeb8a`; the
-node id is unchanged, so no node is dropped). The Maintainer said of that last
-edit: "Go ahead and edit the dual-review. We need to re-anchor anyway". New
-unfrozen test files that join the next anchor include
-`test_deleted_tracked_markdown.py`, `test_writing_rules_ship.py` and
-`test_model_tier_rule_ships.py`. Two Security Reviews of the 0.5 proposals add a
-condition for the re-anchor: the differential oracle's sensitive-roster list
-(`bootstrap/tests/_oracle_activation.py` about lines 34-47) names
-`bootstrap/_scaffold/`, `bootstrap/security_check.py` and
-`bootstrap/tests/_gate_manifest.py`, and `bootstrap/_scaffold/config.py`, all
-unchanged since the trust anchor `6f29519d`. The onboarding change touches the
-first three and the `NEXT_SESSION` change touches `config.py`, so the
-Maintainer's authorization for the cut must name them, or the gate stays shut
-rather than passing. Both are reported by the reviewers and not re-derived here.
-Do not
-carry a list forward from this row: run `verify` on the final committed tree and
-read what it prints.
-
-This is Maintainer-only; follow `bootstrap/REANCHOR_RUNBOOK.md` and derive the
-changed set from the final committed tree.
-
-**Done 2026-10-28**: both ceremonies ran (anchor `443de20f`); `_gate_manifest.py verify` reads OK (197 frozen files, 5,479 pinned nodes).
-
 ### v0.6 — Make existing capabilities work right
 
 **Release boundary (Maintainer direction, 2026-10-27):** correct and complete
 what Cairn already ships. This includes making installed modules findable and
 adding a suitable onboarding/activation task for each. It includes existing
 behavior defects, security corrections, doctrine consistency and test-suite
-maintenance. It does not add work to the 0.5 finalization scope.
+maintenance.
 
 **Recommended cut:** ship when the existing-module discovery and first-use path
 works end to end, the v0.6 defect/security queue is dispositioned through its
@@ -357,7 +45,7 @@ Decision, scope deviation, push or publication authority.
 
 **Suggested order:** queued defects/security work; module discovery and onboarding;
 doctrine routing before compression; narrow test freezing before consolidation.
-Check the current 0.5 implementation before reviving a ceremony correction.
+Check the current tree (0.5.0 or later) before reviving a ceremony correction.
 
 | Work | Gate | Notes |
 |---|---|---|
@@ -368,7 +56,7 @@ Check the current 0.5 implementation before reviving a ceremony correction.
 | **Windows native support clarity** | Docs / front door | Maintainer confirmation, 2026-10-27: *"Yes, Windows support is native. I use it all the time on my projects"*. State native Windows support upfront in `README.md` and `docs/getting-started.md`. |
 | **Document 0-rejections proposal optic** | Docs / lifecycle | Maintainer direction, 2026-10-27: *"Let's add the 0-rejected note somewhere in the docs for v0.6. It's not really a requirement, and other projects have rejected proposals. But yes, basically an idea only happens because of a chat leading to it and many never make it to proposals!"*. Add note to proposal docs/lifecycle explaining Cairn's 0-rejected archive history. |
 | **Public-surface metadata alignment & CONTRIBUTING.md** | Front door / metadata | Strategy note: `dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md`. Align `CITATION.cff` title ("methodology, not a framework") with `README.md` and `AGENTS.md`; ship a standard `CONTRIBUTING.md` for outside contributors. Maintainer authorization, 2026-10-27: *"Yes, add the public-surface metadata alignment + contributing items"*. |
-| **Security cluster strategic items** | Security Review, trust-apparatus | Strategy note: `dev/strategy/2026-08-05-codex-security-strategy.md`. Four items: (1) **Trust root ceremony tidy (`[TRU-4 / TRU-5 / TRU-7]`)**: sign anchor commit or align `AGENTS.md`, scrub `PYTEST_*`/`PYTHON*` in Stage A, and add `git push origin refs/cairn/gate-anchor` to runbook; (2) **Security dispatcher out-of-the-box (`[VER-3]`)**: admit `check_cairn.py` to `run_security_verification.py` runner registry; (3) **Private vulnerability reporting route (`[REL-6]`)**: enable GitHub Private Vulnerability Reporting, state it in `SECURITY.md`, and link in `README.md`; (4) **Terminal escaping hygiene (`[BND-4]`)**: escape module/slot names in install report, reject invisible Unicode in lockfile paths, and encode `tools/session.py` child output. Maintainer authorization, 2026-10-27: *"Let's add those security items to v0.6"*. |
+| **Security cluster strategic items** | Security Review, trust-apparatus | Strategy note: `dev/strategy/2026-08-05-codex-security-strategy.md`. Four items: (1) **Trust root ceremony tidy (`[TRU-4 / TRU-5 / TRU-7]`)**: the anchor is signed (done 2026-10-28, `443de20f`); still to check against the current runbook and evidence stage: scrub `PYTEST_*`/`PYTHON*` in Stage A (the evidence stage now refuses the collection-steering ones) and add `git push origin refs/cairn/gate-anchor` to the runbook; (2) **Security dispatcher out-of-the-box (`[VER-3]`)**: admit `check_cairn.py` to `run_security_verification.py` runner registry; (3) **Private vulnerability reporting route (`[REL-6]`)**: enable GitHub Private Vulnerability Reporting, state it in `SECURITY.md`, and link in `README.md`; (4) **Terminal escaping hygiene (`[BND-4]`)**: escape module/slot names in install report, reject invisible Unicode in lockfile paths, and encode `tools/session.py` child output. Maintainer authorization, 2026-10-27: *"Let's add those security items to v0.6"*. |
 | **Move interpreter binding into `.git`** | Proposal first | Promoted from queued work (SW-SR-10 follow-up). Move `.cairn/local-env.json` out of the working tree into `.git/`. Maintainer instruction, 2026-10-27: *"Do those three queued items as well"*. |
 | **Fix `session-start` handoff marker mismatch** | Trivial defect fix | Promoted from queued work. Default marker in `tools/session.py` (and twin) is `Goodnight`, while Cairn handoff commits begin `Handoff`, printing a misleading 500+ commit range. Change default to match `Handoff`. Maintainer instruction, 2026-10-27: *"Do those three queued items as well"*. |
 | **Handle directory collisions in `upgrade --plan`/`--stage`** | Defect fix, engine | Promoted from queued work. Report a clean conflict instead of crashing with `IsADirectoryError` when an adopter replaces a tracked file with a directory. Maintainer instruction, 2026-10-27: *"Do those three queued items as well"*. |
@@ -379,8 +67,8 @@ Check the current 0.5 implementation before reviving a ceremony correction.
 #### v0.6 queued corrections and release follow-through
 
 The detailed evidence and authorizations below are retained from the queue.
-Overlapping summary rows above are one scope, not additional work. Existing
-0.5 release follow-through may close earlier; it does not expand 0.5.
+Overlapping summary rows above are one scope, not additional work. A
+row may close earlier through its own lifecycle.
 
 * **The session-start tool passes a child process's output through unescaped.**
   Three raw `proc.stderr` pass-throughs and the child's stdout in
@@ -414,27 +102,21 @@ Overlapping summary rows above are one scope, not additional work. Existing
   this finding and the `--plan`/`--stage` one, which is simple and is being
   fixed now).
 
-* **The gate anchor has no signature.** `refs/cairn/gate-anchor` points to
-  commit `6f29519d`, and git reports no signature on it (signature status `N`;
-  `git verify-commit` exits 1; the control `git tag -v v0.4.0` exits 0, measured
-  2026-10-26). `AGENTS.md` says the anchor is trustworthy because of "the
-  signature on the commit it names", which is false for the current anchor. Two
-  ways to close it: sign the anchor at the next key ceremony, or correct that
-  sentence. Which is the Maintainer's call. Found by the repin Security Review
-  (finding SR-8, in `dev/proposals/archive/2026-10-26-claude-repin-build.md`).
-  Authorization to queue it, verbatim:
-
-  > "Yes, add both as Queued rows"
-
-* **Close GitHub #2 and #8 after their fixes are pushed.** The local
+* **Close GitHub #2 and #8 now that their fixes are pushed (0.5.0).** The local
   neutrality/slot-note work and #8's engine half (`dev/plans/archive/engine-batch-f8-slots.md`)
-  are archived; this is tracker follow-through, not permission to push or close
-  issues now. #16 was already closed before its paragraph landed; changing its
+  are archived and pushed; this is tracker follow-through, and closing an issue is
+  the Maintainer's. #16 was already closed before its paragraph landed; changing its
   closure reason is the Maintainer's choice.
-* **Cold bootstrap acceptance run against the pushed release tag.** Run the
+* **Cold bootstrap acceptance run against the pushed release tag (`v0.5.0`).** Run the
   bootstrap block cold against the pushed tag using a machine and roster not
   supplied by this repository (`dev/plans/archive/release-authenticity.md`,
   `docs/release-process.md`).
+
+| Work | Gate | Notes |
+|---|---|---|
+| **Four older upgrade and install findings, never fixed** | Security Review, engine (`bootstrap/_scaffold/upgrade.py`, `lockfile.py`, `install.py`, `cli.py`); proposal first | Found by the engine-batch Security Review (`dev/proposals/archive/2026-10-26-claude-engine-batch-f8-slots.md`, commit `e92ad324`), reported by that review and not reproduced by the planning session. The 0.5.0 changelog says they are not fixed. Authorization to fold them in, 2026-10-26, verbatim: *"Yes, fold all three into the security row"* and *"Queue it on the security row"* (the fourth). (1) The upgrade does not check the saved base copy against its recorded hash before the merge uses it (finding SR6): a crafted base copy can silently drop an adopter's edit or a Cairn fix; recommended fix: check the hash at plan, stage and apply, and make a mismatch a by-hand merge. (2) Lockfile file names can carry invisible characters that pass Python's `isprintable()`. (3) `bootstrap/_scaffold/install.py` prints unknown profile module names unescaped (about line 1526). (4) The install report prints profile-supplied slot names raw (`install.py` about line 1668; `cli.py` about lines 359 and 590): only bidirectional and invisible characters get through, because the profile loader refuses control characters (`config.py` about lines 180-183). Items 2 to 4 overlap the terminal-escaping item in the security cluster row above; one proposal should hold them. Re-check each line number against the tree first. |
+| **Ceremony hardening: the one deferred item (I)** | Check, then a small change to closure members (one ceremony to pin) | From the repin-hardening decision (2026-10-27): the checker's internal messages that the launcher does not print. Deferred with two triggers: the first ceremony refusal the operator's screen did not explain, and the next edit to `bootstrap/reanchor.sh` or the launcher template. The other deferred items were delivered by the ceremony rewrite (one values reader, a one-page runbook, the launcher check in `scripts/repin.py`); E (subprocess use in the interpreter trust root) was not built and F and G were dropped. The first ceremony's stage-1 key probe timing out without explanation is a candidate trigger; read it with the "first-ceremony page and report fixes" row. |
+| **Re-anchor owed** | Maintainer ceremony (`repin`, then the runbook) | None as of 2026-10-28 (anchor `443de20f`, AST pin `000b0e9a`). Rows above that edit frozen test files, `bootstrap/_scaffold/`, `bootstrap/security_check.py`, `bootstrap/tests/_gate_manifest.py` or a closure member owe one; add each to this row when it lands. Before any ceremony run `bootstrap/tests/_gate_manifest.py verify` and `bootstrap/tests/_ast_attest.py verify` on the final committed tree and read what they print; do not carry a list forward. The Maintainer's authorization must name the differential oracle's sensitive-roster entries the change touches (`bootstrap/tests/_oracle_activation.py`). |
 | **Release process: a tag is not a GitHub Release** | Docs (`docs/release-process.md`; no test reads it) | From the Antigravity reflection of 2026-10-27 (v0.4.0 cut): force-pushing an updated tag does not update an existing GitHub Release or its source tarballs; recreate or re-save the Release. Add one sentence to "The cut". Not yet checked against current GitHub behaviour. Maintainer, 2026-10-27: *"If you feel there are follow-ups, please put them into the Queue for v0.6 and we can triage them later"*. |
 | **Document the `CAIRN_AGENT` commit rule** | Docs / coordination | From the Antigravity reflection of 2026-10-27: committing without `CAIRN_AGENT` set to the exact claim identity makes the pre-commit hook report a false collision. A search of `AGENTS.md`, `dev/agent_collaboration.md`, `doctrine/coordination.md` and `tools/intent.py` found no mention. Reported, not reproduced. Maintainer, 2026-10-27: *"If you feel there are follow-ups, please put them into the Queue for v0.6 and we can triage them later"*. |
 | **`UPGRADE.md` retired-files section against a hand-deleted fold-back ledger** | Check, then a trivial repair or a prose fix | From the Developer reflection of 2026-10-27: a deleted old fold-back ledger is reported as "illegal living_state opt-out", not `missing:`, and the guide's retired-files section was not re-read against the behaviour after `5ec9e3bb`. Reproduce on a genuine v0.3.0 install first. Maintainer, 2026-10-27: *"If you feel there are follow-ups, please put them into the Queue for v0.6 and we can triage them later"*. |
@@ -443,7 +125,6 @@ Overlapping summary rows above are one scope, not additional work. Existing
 | **The collision log and rate-limit gate miss same-file sweeps** | Proposal first (work-intent tooling; `templates/modules/team-gated/_intent/conflict.py`) | Found 2026-10-27 from the goodnight gate output ("tracker `dev/measurement/collision_log.md`: 23 incident row(s), 0 'occurred' in the 14-day window"). Measured: all 23 rows are `prevented` (12 in the 14-day window, 1 dated today); `occurred` is written only when someone knowingly overrides a claim (`conflict.py:914`). So the gate's "0 occurred" is correct by its definition and still understates what happened: two reviewers wrote one plan file and `5094a977` carried both sections, and claims were released by another session's commit, with no row. Question for a proposal: what should the gate count as a same-file collision (a commit whose diff holds text from a claim it did not hold), and how is it detected. Also touches the deferred row "Shared working-tree writes", whose trigger has met. Maintainer, 2026-10-27: *"If you feel there are follow-ups, please put them into the Queue for v0.6 and we can triage them later"*. |
 | **The ceremony as two commands: `reanchor` and `repin`** | Proposal first (launcher and checker changes; closure members; Security Review) | After the first ceremony: the Maintainer's parts were typed by hand from a page and the Y1 to Y5 questions are printed and read by no program (checked 2026-10-28). Target: the checks before stage 1, stage 1, the comparisons (E1 to E6, H, K), stage 2 and the signature check run as one script that prints each raw value next to the expected one, compares the shas itself, asks for the passphrase once and records the approval; the Maintainer runs it, confirms the shas it shows, enters the passphrase, and runs the push. The scripts for both ceremonies (`precheck.sh`, `stage1.sh`, `compare.sh`, `stage2.sh`, `push.sh`, `repin1.sh`, `repin2.sh`, the AST correction) are kept in `dev/measurement/ceremony-scripts-2026-10-28/` with a README; they were tested on stand-in values files and hard-code the two candidates. The second ceremony added: `repin` needs a reader's record before it can write an AST pin; it refuses a baselined symbol that is missing (a reviewed deletion), so four deletions needed a by-hand correction and a second signing (`repin` should carry reviewed deletions); a hand edit of the AST fixtures trips `check_stop_records`; the values file's `package` leaf must not exist, so a second ceremony needs a new name. The launcher cannot verify its own bytes, so E5 stays a separate check. Maintainer, 2026-10-28: *"That is what this entire automated routine is for, but here we are pretending that I am doing something"* and *"I could definitely do a `reanchor` and a `repin` and confirm shas and enter my passphrase"*. |
 | **The release gate and the evidence stage disagree about `PYTEST_ADDOPTS`** | Proposal first (the fix touches the gate's own files: `bootstrap/security_check.py`, the preflight closure member or a frozen test; Security Review; a ceremony to re-pin) | On 2026-10-28 `python bootstrap/security_check.py` run on a clean detached copy of `3bb27388` (the 0.5.0 release commit; Python 3.13.13) failed closed at its last phase: 15 failed, 5,464 passed in 19 minutes 34 seconds, all in `test_gate_preflight.py` and `test_ceremony_review_report.py`, all with the message that `PYTEST_ADDOPTS` is set and the evidence stage refuses to pin a collection it may have reduced. The gate itself sets `PYTEST_ADDOPTS="-p no:cacheprovider"` for its test child (`bootstrap/security_check.py`, `_release_child_env`), and the refusal in `bootstrap/tests/_gate_preflight.py` (`_COLLECTION_STEERING_VARIABLES`) came with the ceremony rewrite. The same suite passed 5,479 in the certifying run at `7c910851` (Python 3.13.13, no variable set, 24 minutes 55 seconds with nothing else running), so this is read as a defect in the gate's setup, not in the code under test; that reading was not tested by running the gate without the variable. Likely fix: the preflight accepts exactly `-p no:cacheprovider` and nothing else, or the gate passes the option another way (the order-independence sub-gate's grandchild also inherits the variable); either must keep the refusal of `--ignore=` and plugin variables. The 0.5.0 release was cut with this gate failure waived. Maintainer, 2026-10-28: *"Let's release it now. It's safe and secure. Record this as an item for v0.6 to correct."* The waiver covers only the 0.5.0 cut. |
-| **Prune the 0.5 sections from this board** | Housekeeping, own commit | 0.5.0 shipped 2026-10-28, and "Completed work leaves the board". The 0.5 table and "The 0.5 cut" (to the v0.6 heading) are a record, not a queue. Before deleting, move anything unbuilt into the v0.6 table: the ceremony-hardening items A2, C, D, I (see the first row of "Re-anchor ceremony hardening"), and read each row's gate cell for "later row" wording. The commit history keeps the old text. Raised at the 2026-10-28 handoff. |
 | **First-ceremony page and report fixes** | Docs and checker prose, closure members (one ceremony to pin) | From the first ceremony and its reader (2026-10-28): the page says "Run E7" where the first ceremony has none; the report lists `reanchor.sh` as "not line-scanned" though its 4 hits were scanned; the page does not say that the stage-1 key probe waits 10 seconds for you to decline the passphrase prompt by pressing Return (it timed out once); the page's helper `g` breaks in zsh when `g` is an alias, so the page should say to run in `bash --noprofile --norc`; the Y1 to Y5 questions are not read or recorded by any program; the scan's file classes come from the files on disk, so deleted pinned files show as outside coverage and the digest can depend on stray files; a literal-string `shell=True` rates LOW and passes Bandit's MEDIUM gate; the report's authorization wording asks the Maintainer to author text instead of affirming a prepared one; the `compare.sh` process look listed an unrelated orphaned test process (a temp-folder shell blocked on a FIFO), so the look should filter to the ceremony's own processes. Evidence: `dev/measurement/ceremony-scripts-2026-10-28/`. Maintainer, 2026-10-28: *"That is what this entire automated routine is for, but here we are pretending that I am doing something"* and *"I could definitely do a `reanchor` and a `repin` and confirm shas and enter my passphrase"*. |
 
 ### v0.7 — New capabilities and adopter feedback
@@ -452,7 +133,7 @@ Build on the corrected v0.6 baseline. These are scheduled candidates, each
 retaining its proposal, review and Maintainer gates. Earlier v0.6 candidate
 assignments below are superseded by this release split, not discarded scope.
 The adopter survey/interview happens after v0.6; its strategy note's earlier
-post-0.5 timing is superseded here. No outreach or testimonial publication is
+timing is superseded here. No outreach or testimonial publication is
 authorized by this roadmap.
 
 | Work | Gate | Notes |
@@ -475,7 +156,7 @@ These are observations or an explicitly accepted edge, not new feature tasks.
   such as `awaiting-decision-x`.** The advisory flags it as unknown; the board's
   `--maintainer` view still lists it as a wait. Making the board strict would
   edit the frozen golden and the waits-recipe test (`test_board_json_contract.py`)
-  and fold into the re-anchor owed at the cut. The Maintainer chose to leave it.
+  and owe a re-anchor. The Maintainer chose to leave it.
   Recorded so the disagreement is a known edge, not a surprise. Answer, verbatim:
 
   > "Leave the disagreement"
@@ -488,6 +169,38 @@ These are observations or an explicitly accepted edge, not new feature tasks.
   (2) Heavy test runs should take turns. (3) A review of a long plan is
   expensive, so give tight briefs. Kept as written there; the planning
   session's note, not doctrine (doctrine text takes the rate-limit gate).
+
+* **Working rules for 0.6.** One branch, `0.6-dev`, in the one shared checkout;
+  no topic branches and no worktrees for writing. `master` holds the released
+  0.5.0 and takes no development commits. Before editing a file, record a claim
+  with `python tools/intent.py claim --files <paths> --action "<what>"`; commit
+  by explicit path, which releases the claim. `python tools/intent.py list` shows
+  who holds what; `python tools/board.py` shows every proposal and plan on the
+  branch. A reviewer who must mutate code does it in a throwaway detached
+  worktree of the reviewed commit and removes it afterward. Merging to `master`,
+  tagging and pushing are the Maintainer's. The Maintainer, 2026-10-26:
+
+  > "I actually would prefer that all work happen in the 0.5-dev branch, and that
+  > we use the intents board. This has gotten to be too many branches for me to
+  > interact with properly."
+
+  and, 2026-10-28, on the next release: *"create a 0.6-dev branch where we will
+  do the other work going forward"*.
+* **Each change lands with its changelog entry.** Under `## Unreleased` in
+  `CHANGELOG.md`, in the same commit or the next, in the file's entry shape (one
+  or a few lines, with a link to the durable record). At the cut the section is
+  renamed and a fresh `Unreleased` opened; the GitHub release notes are copied
+  from it, not drafted in a separate file (`docs/release-process.md`, "The cut").
+* **Three accepted limits from the upgrade lockfile-path fixes (0.5.0).**
+  The full split of one finding got only a documentation answer, because the
+  split breaks a frozen pin; a linked lockfile on `--adopt-collisions` and
+  `--init-lock` still ends in a traceback with nothing read or written outside
+  the project; and the profile's preset, axis and module values are written
+  unquoted, because quoting fails the differential oracle's byte comparison.
+  Recorded in `bootstrap/_scaffold/SECURITY_MUTATIONS.md` and
+  `bootstrap/UPGRADE.md`. The Maintainer, 2026-10-26: *"Accept all three
+  (Recommended)"*. The interpreter binding's limit is recorded in
+  `bootstrap/SAFETY.md`; moving it into `.git` is a v0.6 row.
 
 ## Deferred follow-ups (durable home)
 
