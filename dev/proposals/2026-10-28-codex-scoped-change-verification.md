@@ -1,7 +1,7 @@
 # Verify a change at its scope; certify the tree at integration points
 
 **Author**: Codex gpt-6-sol (Proposal)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
@@ -137,3 +137,35 @@ a whole-tree run on each revision.
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Review -- Codex gpt-6-sol (Reviewer) -- 2026-10-28
+
+```
+Reviewed commit: ed5c2242e172169d6ac406c89f46d95de9031dc7
+Target: opening proposal, Context through Assurance path
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes to separating change evidence from tree certification: the plan template asks for a full Boundary B even as the governing rule reserves full runs for integration. The record needs sharper completion rules. -- `dev/plans/_template.md:292-343`; `AGENTS.md:291-366`.
+2. **Best alternative.** Keep the two kinds of evidence, but make each change record cover its actual affected paths and acceptance criteria, with certification recorded separately at authorized integration points. Doing nothing retains the contradiction; a renamed full default retains the cost. -- `doctrine/plans.md:306-374`; proposal `## Alternatives considered`.
+3. **What would show it wrong.** A trivial fix that cannot produce its required record, a wide check refused by the guard, or a known affected path deferred past acceptance would defeat the design. -- `bootstrap/tests/test_review_and_verification_rules_ship.py:24-33`; `bootstrap/tests/conftest.py:378-416`; proposal `## Signals the change is wrong`.
+
+The proposal preserves the conditional push rule and the separate release and trust ceremonies. The following issues concern the change record itself.
+
+**F1 — Blocking: make the record possible in the trivial lane.** The proposal requires a final committed SHA and a reviewed mapping for `bounded`. A trivial change runs Boundary B *before* its commit, writes its record in that commit body, and has no plan reviewer; its own SHA cannot appear in its body. State the trivial-lane form (exact candidate bytes, owning tests found by search, commit-body evidence and resulting SHA) and reserve a reviewed plan mapping and post-commit run for planned work. Pin both paths in the proposed tests. -- `AGENTS.md:354-366`; `bootstrap/tests/test_review_and_verification_rules_ship.py:24-33`; `bootstrap/tests/test_review_and_verification_rules_ship.py:100-114`.
+
+**F2 — Blocking: close known gaps before claiming verification.** `wide` covers “whole owning test families,” but an unknown consumer has no established owning family. The proposal lets an unresolved dependency wait for integration unless “needed for acceptance,” leaving that judgment with the same author whose mapping missed it. Require every *known* affected path and required criterion to be checked or explicitly remain open; say what the reviewer does when `WIDER RUN REQUIRED` identifies one. Preserve later certification for residual, *undiscovered* dependencies. -- proposal `## Proposal`, paragraphs 1-3; `AGENTS.md:336-354,373-384`.
+
+**F3 — Blocking: make `wide` executable under the guard.** A non-certifying pytest invocation spanning more than 40 test files refuses, even if short of the whole suite. Define how wide evidence is split into mapped invocations without dropping required paths, or propose a separately reviewed guard change; neither may use the full-suite override. Exercise a wide selection above that threshold through pytest collection. -- `bootstrap/tests/conftest.py:89`; `bootstrap/tests/conftest.py:378-416`; `bootstrap/tests/test_broad_run_guard.py`.
+
+**F4 — Blocking: specify the transition and certification marker.** Accepted plans may explicitly promise a full Boundary B, while the proposal says they keep that contract unless revised. Name how such a plan proceeds when its required full run is available only at a later authorized integration point. Also distinguish a completed, change-verified record from a still-uncertified tree without rewriting append-only historical records or implying certification happened. An append-only certification entry or lookup keyed by the certifying SHA would satisfy the latter. -- `dev/plans/_template.md:301-343`; `doctrine/plans.md:320-327`; proposal `## Proposal`, paragraph 4.
+
+**Covered**: claims (#1: `AGENTS.md:291-384`); production path (#2: `bootstrap/tests/conftest.py:378-416`); completeness and fail-closed behavior (#3-4: F1-F3); cross-document consistency and drift (#5-6: `dev/plans/_template.md:292-360`, `templates/core/AGENTS.md:300-366`); lifecycle (#7: `doctrine/lifecycle.md:213-225`); scope (#8: proposal `## Scope delta` and F4); satisfiers (#9: F1-F4).
+**Not covered / low confidence**: no implementation or example was run; the proposed new modes have no code path yet, and this pass did not audit every accepted plan or release ceremony.
