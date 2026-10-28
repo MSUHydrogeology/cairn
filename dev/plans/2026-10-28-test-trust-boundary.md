@@ -301,3 +301,50 @@ plan-scoped prose/link/content checks passed; neutrality had zero failures
 and 43 informational exemptions. A reader search found no Python consumers of
 the new data names, with a known manifest import as positive control. No new
 executable snippet, collection, test-body run, certification or ceremony ran.
+
+## C1c source refresh after checker description changes -- Codex (Sol, high) -- 2026-10-28
+
+Use `dev/plans/2026-10-28-test-trust-boundary/c1b-roster-6cc95fa7.json`
+for the next exact roster decision. Its raw SHA-256 is
+`188fa76d82744be571bdc7ca91a43d605776b9df5ba0ac729e2cf22af66b8cc4`.
+The source/frozen/dependency assessment is
+`dev/plans/2026-10-28-test-trust-boundary/c1b-evidence-6cc95fa7.json`.
+This candidate supersedes `fd1c820e` for approval; prior candidates and records
+remain intact. No previous governing-text approval approved this roster.
+
+Source is `6cc95fa7f2688bb63495af76f454ce13963b841e`. Against the previous
+classification source `e9928009`, 236 of the 238 compared Python/frozen/fixture/
+authority paths are byte-identical. The two exceptions are
+`scripts/claim_check.py` and `templates/modules/default-on/claim_check.py`.
+Their module descriptions changed; their ASTs excluding that first docstring
+are equal, and the two current copies are byte-identical. The CLI description
+is an explicit string rather than the module docstring. A positive-controlled
+scan of seven named checker/owner consumers found no direct docstring reads;
+this does not rule out unknown reflective consumers or prove whole-program
+equivalence. Both files keep their existing frozen membership.
+
+All 141 test/control sources and all 11 authority members are byte-identical.
+The committed 5,490-node census and source-current per-file dependency evidence
+are reused; no collection is repeated. The exact path classification stays
+78 protected test files, 12 protected controls and 51 ordinary test files.
+The effective frozen set is still 197 (201 raw matches minus four exclusions),
+and the proposed union is 147. A fresh committed archive and the unchanged
+producer's actual exclusion dictionaries confirm those sets. New hashes record
+the two changed frozen sources; the manifest is untouched.
+
+The governing-text record at `dd0b6bc1` reports 91 canonical Python 3.13.13
+owner tests passing on `860481db`, and explicitly leaves the two checkers'
+Maintainer frozen-file ceremony pending under C4. This refresh reads that
+evidence; it neither repeats those tests nor clears their ceremony. Roster
+authorization would permit C2 work only, retaining all review, installation
+and ceremony fences. Ordinary Python's accepted influence on protected
+execution remains a risk, and the protected board file still blocks its
+separate ordinary-maintenance pilot. No classification conflict was found.
+
+Verification used canonical Python 3.13.13 for source/hash/AST assertions, the
+unchanged 141-path partition, 197 current frozen hashes, exact 238-path delta,
+reused node-inventory hash and preserved fixture/authority counts. Claim and
+plan-scoped prose/link/content checks passed; neutrality had zero failures
+and 43 informational records. A search found no Python readers of the two
+new artifact names, with a known manifest import as positive control. No
+executable snippet, test body, collection, full suite or ceremony ran.
