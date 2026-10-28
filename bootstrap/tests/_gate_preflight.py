@@ -58,7 +58,7 @@ _REPO = Path(__file__).resolve().parents[2]
 
 # The bridge checkpoint ships the approved roster while keeping the old broad
 # policy. The reviewed second transition changes this value to ``active``.
-_PROTECTED_ROSTER_MODE = "dormant"
+_PROTECTED_ROSTER_MODE = "active"
 
 _ANCHOR_REF = "refs/cairn/gate-anchor"
 

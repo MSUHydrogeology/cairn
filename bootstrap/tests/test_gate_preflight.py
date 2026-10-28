@@ -1605,6 +1605,26 @@ class TestThreeCommandIntegration:
             [sys.executable, "-E", "-s", str(checker), *args],
             capture_output=True, text=True, check=False)
 
+    def _bridge_anchor(self, tmp_path, monkeypatch):
+        repo, _anchor, _head, _epoch = _ceremony_repo(tmp_path, rosterless=True)
+        roster_path = repo / P.G._PROTECTED_ROSTER_REL
+        roster_path.parent.mkdir(parents=True, exist_ok=True)
+        roster_path.write_bytes((_REPO / P.G._PROTECTED_ROSTER_REL).read_bytes())
+        preflight_path = repo / "bootstrap/tests/_gate_preflight.py"
+        source = preflight_path.read_text(encoding="utf-8")
+        source = source.replace("_PROTECTED_ROSTER_MODE = \"active\"",
+                                "_PROTECTED_ROSTER_MODE = \"dormant\"", 1)
+        assert "_PROTECTED_ROSTER_MODE = \"dormant\"" in source
+        preflight_path.write_text(source, encoding="utf-8")
+        bridge_candidate = _signed_commit(repo, "reviewed broad compatibility bridge")
+        review = tmp_path / "bridge-review.txt"
+        review.write_text(_review_manifest(repo, bridge_candidate), encoding="utf-8")
+        monkeypatch.setattr(P, "_PROTECTED_ROSTER_MODE", "dormant")
+        P._phase = P._PHASE_CANDIDATE
+        result = _two_stage(repo, monkeypatch, review_manifest=str(review),
+                            reviewed_candidate=bridge_candidate)
+        return repo, result["new_anchor"]
+
     def test_approved_first_roster_transition_then_signed_anchor_steady_state(
             self, tmp_path, monkeypatch):
         """Exercise broad bridge, reviewed narrowing, and narrowed steady state."""
@@ -1664,6 +1684,26 @@ class TestThreeCommandIntegration:
                             review_manifest=str(second_review),
                             reviewed_candidate=second_head)
         assert second["new_anchor"]
+        # The synthetic bridge checkpoint is the exact old policy for this
+        # second transition. Its scanner and the report stage 1 packages must
+        # produce the same E7 digest while the prospective manifest narrows.
+        second_package = json.loads(
+            (repo.parent / "authorization-package.json").read_text(
+                encoding="utf-8"))
+        old_extract = tmp_path / "bridge-anchor-checker"
+        old_extract.mkdir()
+        subprocess.run(
+            f"git -C {shlex.quote(str(repo))} archive "
+            f"{shlex.quote(first['new_anchor'])} bootstrap/tests | "
+            f"tar -x -C {shlex.quote(str(old_extract))}",
+            shell=True, check=True)
+        bridge_checker = old_extract / "bootstrap/tests/_gate_preflight.py"
+        old_bridge_scan = self._cli(
+            bridge_checker, "scan-digest", "--repo", str(repo),
+            "--anchor", first["new_anchor"], "--candidate", second_head)
+        assert old_bridge_scan.returncode == 0, old_bridge_scan.stderr[-2500:]
+        assert old_bridge_scan.stdout.strip() == P.scan_digest(
+            second_package["range_report"]["scan"])
         installed_manifest = json.loads(_run(
             "git", "show", f"{second['new_anchor']}:{P._MANIFEST_REL}",
             cwd=repo).stdout)
@@ -1697,6 +1737,80 @@ class TestThreeCommandIntegration:
             P.stage1(repo=repo, package_out=tmp_path / "must-not-exist.json",
                      out=io.StringIO(), review_manifest=str(review),
                      reviewed_candidate=candidate)
+
+    def test_second_transition_stage1_refuses_candidate_roster_substitution(
+            self, tmp_path, monkeypatch):
+        repo, bridge_anchor = self._bridge_anchor(tmp_path, monkeypatch)
+        roster_path = repo / P.G._PROTECTED_ROSTER_REL
+        roster_path.write_bytes(b'{"protected_python_paths": []}\n')
+        preflight_path = repo / "bootstrap/tests/_gate_preflight.py"
+        preflight_path.write_text(
+            preflight_path.read_text(encoding="utf-8").replace(
+                "_PROTECTED_ROSTER_MODE = \"dormant\"",
+                "_PROTECTED_ROSTER_MODE = \"active\"", 1),
+            encoding="utf-8")
+        candidate = _signed_commit(repo, "candidate substitutes bridge roster")
+        review = tmp_path / "substituted-bridge-roster-review.txt"
+        review.write_text(_review_manifest(repo, candidate), encoding="utf-8")
+        monkeypatch.setattr(P, "_PROTECTED_ROSTER_MODE", "active")
+        P._phase = P._PHASE_CANDIDATE
+        monkeypatch.setattr(P, "require_stage1_cannot_sign", lambda *a, **k: {})
+        monkeypatch.setattr(P, "gather_evidence",
+                            lambda *a, **k: pytest.fail("producer ran before roster refusal"))
+        with pytest.raises(P.PreflightError,
+                           match="candidate changed the compatibility anchor's roster"):
+            P.stage1(repo=repo, package_out=tmp_path / "must-not-exist.json",
+                     out=io.StringIO(), review_manifest=str(review),
+                     reviewed_candidate=candidate)
+        assert P._resolve(P._ANCHOR_REF, repo=repo) == bridge_anchor
+
+    def test_second_transition_stage2_refuses_substituted_prospective_roster(
+            self, tmp_path, monkeypatch):
+        import hashlib
+        repo, _bridge_anchor = self._bridge_anchor(tmp_path, monkeypatch)
+        preflight_path = repo / "bootstrap/tests/_gate_preflight.py"
+        preflight_path.write_text(
+            preflight_path.read_text(encoding="utf-8").replace(
+                "_PROTECTED_ROSTER_MODE = \"dormant\"",
+                "_PROTECTED_ROSTER_MODE = \"active\"", 1),
+            encoding="utf-8")
+        candidate = _signed_commit(repo, "reviewed roster activation")
+        review = tmp_path / "activate-roster-review.txt"
+        review.write_text(_review_manifest(repo, candidate), encoding="utf-8")
+        key_pub = str(tmp_path / "maint.pub")
+        P._phase = P._PHASE_CANDIDATE
+        _path, fingerprint = P.validate_signing_key(key_pub)
+        monkeypatch.setattr(P, "_PROTECTED_ROSTER_MODE", "active")
+        monkeypatch.setattr(P, "require_stage1_cannot_sign",
+                            lambda *a, **k: {"key_path": key_pub,
+                                             "fingerprint": fingerprint,
+                                             "probe": "stubbed"})
+        P._phase = P._PHASE_CANDIDATE
+        package_path = tmp_path / "package.json"
+        P.stage1(repo=repo, package_out=package_path, out=io.StringIO(),
+                 review_manifest=str(review), reviewed_candidate=candidate)
+        package = json.loads(package_path.read_bytes())
+        staged_manifest = json.loads(base64.b64decode(
+            package["prospective_manifest_b64"]))
+        staged_manifest["protected_roster"]["protected_python_paths"].append(
+            "bootstrap/tests/test_agreement_retired.py")
+        substituted = (json.dumps(staged_manifest, indent=2, sort_keys=True)
+                       .encode() + b"\n")
+        package["prospective_manifest_b64"] = base64.b64encode(substituted).decode()
+        package["prospective_manifest_sha256"] = P._sha256_bytes(substituted)
+        body = (json.dumps(package, indent=2, sort_keys=True) + "\n").encode()
+        package_path.write_bytes(body)
+        before = (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
+                  _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip())
+        P._phase = P._PHASE_CANDIDATE
+        with pytest.raises(P.PackageError, match="prospective manifest rebuilt"):
+            P.apply_now(repo=repo, package=str(package_path), out=io.StringIO(),
+                        confirmed_package_sha256=hashlib.sha256(body).hexdigest(),
+                        signing_key=key_pub, review_manifest=str(review),
+                        reviewed_candidate=candidate)
+        assert (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
+                _run("git", "rev-parse", P._ANCHOR_REF,
+                     cwd=repo).stdout.strip()) == before
 
     def test_first_bridge_stage2_refuses_mutated_roster_frozen_hash(
             self, tmp_path, monkeypatch):
