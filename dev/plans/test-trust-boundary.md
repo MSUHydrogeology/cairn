@@ -84,3 +84,70 @@ Assurance path: high-assurance
 **F3 -- Blocking: carry the accepted governing statement.** The plan says the high-risk rule will name protected tests and machinery, but does not require the separate S3 statement describing what the re-anchor verifier freezes, records and holds. A correct roster rule alone would not satisfy that accepted documentation outcome. **Satisfier:** require that governing text convey the accepted S3 statement and that the runbook's actual human-triggered verifier invocation agrees. -- accepted proposal S3; plan Documentation / doctrine surface; `bootstrap/REANCHOR_RUNBOOK.md:173`.
 
 **Coverage.** Covered claims and current behavior (#1: `bootstrap/tests/_gate_manifest.py:337`, `:402`, `:678`); production paths and refusal design (#2–4: `bootstrap/tests/_gate_preflight.py:1933`, `:2097`, `:3425`; `bootstrap/tests/conftest.py:421`); reuse, drift and lifecycle placement (#5–7: plan Reuse and Sequence; `bootstrap/REANCHOR_RUNBOOK.md:173`; `dev/plans/ordinary-test-maintenance.md` C1); accepted scope and satisfiers (#8–9: accepted proposal Complete current contract and findings above). Not covered: no test execution, complete dependency inventory, or future implementation; the separate Internal Security Review remains open.
+
+## Plan review -- Codex (Sol, high), Internal Security reviewer -- 2026-10-28
+
+```
+Reviewed commit: 1640a3595aec0d36e48e65de3d184aefb66b42d4
+Target: opening plan, Source proposal through Verification
+Prior findings: none for this obligation
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, after the clarifications below. The accepted
+   assurance loss is settled; the plan retains anchor-owned membership, independent
+   derivation and Maintainer installation. -- Decision `cca436a9`; plan C2 and C4–C5;
+   `bootstrap/tests/_gate_preflight.py:1933`.
+2. **Best alternative.** Use the existing reviewed transition first; add the bridge only
+   for a measured old-checker refusal. This preserves every accepted outcome with
+   potentially one ceremony. -- plan C3; `bootstrap/tests/test_gate_preflight.py:2111`.
+3. **What would show it wrong.** An approved roster replaced by candidate expectations,
+   a protected loss passing, or ordinary maintenance still held after installation
+   defeats the boundary. -- accepted proposal Complete current contract;
+   `bootstrap/tests/_gate_manifest.py:671`; `bootstrap/tests/_gate_preflight.py:3425`.
+
+**S1 — Blocking: make classification precede its approval fence.** Agree with ordinary
+F1: C1 currently gates the chunk producing its own approval input. **Satisfier:** permit
+evidence collection first, then have a high-tier agent make the security/trust
+classification judgment, then seek Maintainer approval of the exact roster before
+narrowing. Inventory current imports, dynamic loading, fixtures and controlling helpers,
+not only filenames or the historical floor. Keep new unrostered test paths ordinary by
+default; classify new protected helpers through the controlled roster/authority path,
+never candidate labels. -- plan C1; `AGENTS.md` Model tier;
+`bootstrap/tests/_gate_preflight.py:1815`.
+
+**S2 — Blocking: specify the refusal and provenance tests.** Agree with ordinary F2;
+“roster tampering” and “ordinary changes” leave consequential cases implicit.
+**Satisfier:** map protected and ordinary edit/add/delete/rename/new-marker cases,
+missing/malformed roster and manifest, collection errors, and actual release
+skip/xfail/xpass to owning tests. Name real stage-1/stage-2 transition and steady-state
+cases proving the first roster matches approved reviewed bytes and later membership
+comes from the verified prior anchor; candidate membership substitution must refuse in
+each stage. Include `bootstrap/tests/test_gate_reanchor.py`, `test_gate_preflight.py`
+and `test_security_check.py`. Preserve closure validation, static comparison and stage-2
+manifest-byte equality rather than bypassing them to demonstrate success. --
+`bootstrap/tests/_gate_preflight.py:2097`, `:3204`, `:3425`;
+`bootstrap/tests/test_security_check.py:684`.
+
+**S3 — Blocking: connect the governing promise to the actual trigger.** Agree with
+ordinary F3: require the accepted S3 governing statement and its exact human-run
+verifier invocation. The current runbook's executable page calls the launcher; its later
+reference describes external `verify --trusted-repo` as unused. **Satisfier:** trace the
+delivered command through its real entry point and tests to protected HOLDs, full census
+and ordinary notes; do not imply an automatic or existing invocation that does not run.
+Keep narrowed mode inactive until the verified Maintainer ceremony installs it. --
+accepted proposal S3; `bootstrap/REANCHOR_RUNBOOK.md:24`, `:228`; plan C4–C5.
+
+**Coverage.** Claims, production paths, completeness and refusal (#1–4): cited producer,
+static comparison, both stages and release tests; reuse, drift and placement (#5–7):
+repeated Reuse search, launcher/runbook and S3; scope and satisfiers (#8–9): accepted
+contract and S1–S3. Source files cited above are unchanged between reviewed commit and
+`0ac350c0`. No pytest, mutation, complete inventory or future implementation validation
+performed. This pass supplies the Security Review; the author must fold its findings
+before implementation.
