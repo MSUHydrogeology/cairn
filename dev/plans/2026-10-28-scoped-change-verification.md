@@ -20,9 +20,9 @@ Reconcile `AGENTS.md`, `templates/core/AGENTS.md`, both plan and proposal templa
 
 Use `<YYYY-MM-DD>-<slug>.md` for plans and `<YYYY-MM-DD>-<author>-<slug>.md` for proposals and strategies. Keep the opening date when archiving; a plan's document-owned evidence folder uses the same stem and archives with it. Shared tests, scripts and assets stay in their canonical homes. Do not rename archived files.
 
-Proposed paths:
-- `dev/plans/2026-10-28-scoped-change-verification/c2-record-adjudication.md` -- write after the final implementation SHA; include the complete record and both omission variants.
-- `dev/plans/2026-10-28-scoped-change-verification/c2-split-execution.md` -- write after the final implementation SHA; record commands, counts, outcomes and executed-node union.
+Evidence artifacts (materialized at the declared paths after the final implementation SHA):
+- `dev/plans/2026-10-28-scoped-change-verification/c2-record-adjudication.md` -- complete example and consumer/security omission variants; independent verdict pending.
+- `dev/plans/2026-10-28-scoped-change-verification/c2-split-execution.md` -- commands, counts, outcomes and executed-node union.
 
 **Reuse.** Extend the existing verification-boundary, certification, shipped-rule and broad-run guard tests; no parser, selector or new approval stage. Search: `rg -n 'Boundary B|certifying run|FULL RUN REQUIRED|full [|] bounded|full suite'` across live doctrine, templates and tests found those consumers and `bootstrap/tests/conftest.py`. Search touched paths for additional readers and test owners during implementation.
 
@@ -172,3 +172,27 @@ folder, where present, uses the same dated stem and archives with the plan.
 This is a path migration, not a scope or lifecycle change. Historical review
 and evidence citations retain the paths valid at their named commits; current
 link destinations and operative targets use the dated paths.
+
+## Implementation verification -- Codex gpt-6.1-luna low -- 2026-10-28
+
+**Boundary B mode**: wide
+**Tested SHA**: `69b8bc7e4f86fd6c669fd765a1ffe7951e9e10d9`
+**Range**: `2ed8ddabc80c985ebc93171c7e628a7ec070459f..69b8bc7e4f86fd6c669fd765a1ffe7951e9e10d9`
+**Certified by**: pending
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` — Python 3.13.13
+**Pre/post state**: detached worktree `/private/tmp/cairn-scope-worktree-69b8bc7e`; clean before and after; HEAD unchanged at tested SHA. `refs/cairn/gate-anchor` present at `443de20f81169fabe36c4ca3cc620206f7850254`.
+
+**Selection and reconciliation**: Reader search selected 48 pytest modules. The five mapped guard nodes in `bootstrap/tests/test_broad_run_guard.py` ran separately; the other 47 modules were collected and executed in two invocations because the guard refuses selections above 40 files. Collection reported 2,700 node IDs. The sorted executed-node union contains 2,700 unique IDs, with zero missing and zero extra against the collected set; both lists have SHA-256 `56be3c2e7c2507e68c3faac1f93dd28f6f65946f1cb11cd291a6cb7f28ca3052`. All commands retained `--quality-gate-shuffle-seed=0`; no marker selector was used and `CAIRN_FULL_SUITE=1` was not set.
+
+**Commands and outcomes**:
+
+- Collection over the 47 explicit files listed in [`c2-split-execution.md`](2026-10-28-scoped-change-verification/c2-split-execution.md) with `python3.13 -m pytest -q --collect-only ... --quality-gate-shuffle-seed=0` — 2,700 collected; 1.33s.
+- The first 40 sorted files listed in [`c2-split-execution.md`](2026-10-28-scoped-change-verification/c2-split-execution.md), run with `python3.13 -m pytest -vv ... --quality-gate-shuffle-seed=0` — 2,129 passed, 3 failed; 234.85s. The three failures were sandbox restrictions on disposable `ssh-agent` socket creation and loopback binding, not assertion failures in the changed contract.
+- The remaining 7 sorted files listed in [`c2-split-execution.md`](2026-10-28-scoped-change-verification/c2-split-execution.md), run with `python3.13 -m pytest -vv ... --quality-gate-shuffle-seed=0` — 568 passed; 71.31s.
+- The five exact broad-run guard node commands are listed in [`c2-split-execution.md`](2026-10-28-scoped-change-verification/c2-split-execution.md); all 5 passed in 3.44s. The refusal remains unchanged and applies regardless of selector.
+- Elevated local rerun of the three affected mapped security nodes — 3 passed; 0.61s. Nodes: `test_gate_preflight.py::TestCandidateCodeCannotSignFromStageOne::test_the_candidate_position_cannot_sign_through_a_live_agent`, `...::test_the_same_key_signs_when_the_socket_is_present`, and `test_security_verification.py::TestNoCapabilityContract::test_a_socket_opening_child_is_excluded_by_admission_not_blocked_at_runtime`.
+- `python3.13 -m pytest -q bootstrap/tests/test_verification_boundaries.py bootstrap/tests/test_certifying_run_rule.py bootstrap/tests/test_review_and_verification_rules_ship.py` — 129 passed; 0.17s.
+- `python3.13 -m pytest -q bootstrap/tests/test_review_stance_in_shipped_files.py` — 480 passed; 1.16s. This owner module was rerun after its pinned wording exposed a missing accepted statement; the statement was restored in `doctrine/dual-review.md` before this final-SHA evidence.
+- `python3.13 scripts/check_cairn.py` — 184 Markdown files, no issues. `python3.13 scripts/link_check.py` — 184 Markdown files, no issues. `python3.13 scripts/quality_gate.py --sub neutrality --sub redundancy` — zero failures. `python3.13 scripts/claim_check.py` on the authored governing and plan documents — 13 checks passed.
+
+**Surface and omission disposition**: Covered operational and installed guidance, governing templates/doctrine, refusal text, the 47-file cross-family selection, all five guard nodes, and the three mapped security nodes. There is no known missing consumer or mandatory security check in this mapping. This scoped evidence does not certify the tree. Frozen-file gate-manifest/re-anchor ceremony remains pending; this record does not claim that ceremony passed. Independent C2 adjudication of the illustrative records and code review remain pending. No full suite was run.
