@@ -31,12 +31,13 @@ def _write_manifest(tmp_path, manifest: dict) -> Path:
 @pytest.fixture(scope="module")
 def produced() -> dict:
     """Produce once (a full collection subprocess) and share across tests."""
-    return G.produce(_REPO)
+    return G.produce(_REPO, G._local_roster(_REPO))
 
 
 def test_produce_has_the_expected_shape(produced):
     assert produced["schema"] == G.SCHEMA
     for key in ("interpreter", "gate_commands", "collection", "frozen_files",
+                "protected_roster", "ordinary_test_files",
                 "cascade_mutable", "mapping_symbols"):
         assert key in produced
     assert produced["collection"]["node_count"] == len(produced["collection"]["node_ids"])
@@ -49,6 +50,9 @@ def test_frozen_set_boundary(produced):
     frozen = produced["frozen_files"]
     # known gate files are pinned
     assert "bootstrap/tests/test_ast_attest.py" in frozen
+    assert "bootstrap/tests/test_intents_tool.py" in frozen
+    assert "bootstrap/tests/test_agreement_retired.py" not in frozen
+    assert "bootstrap/tests/fixtures/protected_test_roster.json" in frozen
     assert "scripts/check_cairn.py" in frozen
     assert "bootstrap/tests/_ast_attest.py" in frozen
     assert "bootstrap/tests/_gate_manifest.py" in frozen  # self-pinned
@@ -89,12 +93,15 @@ def test_verify_holds_on_frozen_file_modification(produced, tmp_path, capsys):
     assert "FROZEN-MODIFIED" in capsys.readouterr().err
 
 
-def test_verify_holds_on_dropped_node(produced, tmp_path, capsys):
+def test_verify_holds_on_dropped_node(produced, tmp_path, capsys, monkeypatch):
     tampered = copy.deepcopy(produced)
-    # pin a node-ID that collection will NOT produce -> reduced collection
-    tampered["collection"]["node_ids"].append(
-        "bootstrap/tests/test_does_not_exist.py::test_phantom")
+    # Drop an actual node owned by a protected file.
+    victim = next(n for n in tampered["collection"]["node_ids"]
+                  if n.startswith("bootstrap/tests/test_ast_attest.py::"))
+    tampered["collection"]["node_ids"].remove(victim)
     mp = _write_manifest(tmp_path, tampered)
+    ids = set(produced["collection"]["node_ids"]) - {victim}
+    monkeypatch.setattr(G, "_collect", lambda repo=_REPO: (sorted(ids), [], 0))
     assert G.verify(mp, anchor_ref=None, repo=_REPO) == 1
     assert "COLLECTION-DROPPED" in capsys.readouterr().err
 
@@ -112,7 +119,8 @@ def test_verify_holds_on_new_skip_marker(produced, tmp_path, capsys, monkeypatch
     ids = produced["collection"]["node_ids"]
     pinned_marked = set(produced["collection"]["skip_xfail_marked"])
     # simulate the run adding a skip/xfail marker to a currently-UNMARKED test
-    fresh = next(i for i in ids if i not in pinned_marked)
+    fresh = next(i for i in ids if i not in pinned_marked
+                 and i.startswith("bootstrap/tests/test_ast_attest.py::"))
     monkeypatch.setattr(G, "_collect", lambda repo=_REPO: (sorted(ids), [fresh], 0))
     assert G.verify(mp, anchor_ref=None, repo=_REPO) == 1
     assert "SKIP-XFAIL-NEW" in capsys.readouterr().err
@@ -125,7 +133,36 @@ def test_verify_allows_added_test(produced, tmp_path, capsys, monkeypatch):
     # a superset of pinned (nothing dropped) + one new node, no new markers
     monkeypatch.setattr(G, "_collect", lambda repo=_REPO: (sorted(ids + [extra]), [], 0))
     assert G.verify(mp, anchor_ref=None, repo=_REPO) == 0
-    assert "COLLECTION-ADDED" in capsys.readouterr().err
+    output = capsys.readouterr().err
+    assert "COLLECTION-ADDED" in output
+    assert "UNPROTECTED-NEW: bootstrap/tests/test_newly_added.py" in output
+
+
+def test_ordinary_file_and_node_deltas_are_notes(produced, tmp_path, capsys, monkeypatch):
+    tampered = copy.deepcopy(produced)
+    ordinary = "bootstrap/tests/test_agreement_retired.py"
+    tampered["ordinary_test_files"][ordinary] = "0" * 64
+    mp = _write_manifest(tmp_path, tampered)
+    original = G._ordinary_test_files(_REPO, produced["protected_roster"])
+    monkeypatch.setattr(G, "_ordinary_test_files", lambda repo, roster: {
+        **{k: v for k, v in original.items() if k != ordinary},
+        ordinary: "1" * 64,
+        "bootstrap/tests/test_new_ordinary.py": "2" * 64,
+    })
+    ids = set(produced["collection"]["node_ids"])
+    removed = next(n for n in ids if n.startswith(ordinary + "::"))
+    extra = "bootstrap/tests/test_new_ordinary.py::test_new"
+    markers = set(produced["collection"]["skip_xfail_marked"])
+    ordinary_marker = next(n for n in ids if n.startswith(ordinary + "::") and n not in markers)
+    monkeypatch.setattr(G, "_collect", lambda repo=_REPO: (
+        sorted((ids - {removed}) | {extra}), sorted(markers | {ordinary_marker}), 0))
+    assert G.verify(mp, anchor_ref=None, repo=_REPO) == 0
+    output = capsys.readouterr().err
+    assert f"UNPROTECTED-CHANGED: {ordinary}" in output
+    assert "UNPROTECTED-NEW: bootstrap/tests/test_new_ordinary.py" in output
+    assert f"UNPROTECTED-REMOVED: {ordinary}" in output
+    assert "COLLECTION-ORDINARY-DROPPED" in output
+    assert "SKIP-XFAIL-ORDINARY" in output
 
 
 def test_verify_holds_when_anchor_object_absent(produced, tmp_path, capsys):

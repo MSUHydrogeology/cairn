@@ -949,7 +949,9 @@ def _ceremony_repo(tmp_path: Path):
         dst.write_bytes(src.read_bytes())
     _write(repo, "bootstrap/tests/__init__.py", "")
     _write(repo, P._ALLOWED_SIGNERS_REL, f"m@example {keydata}\n")
-    _write(repo, P._MANIFEST_REL, "{}\n")
+    _write(repo, P._MANIFEST_REL, json.dumps(
+        {"protected_roster": P.G._local_roster(_REPO)},
+        indent=2, sort_keys=True) + "\n")
     # The REAL manifest producer runs in this fixture, so supply the two things
     # it refuses without: a non-empty pytest collection, and the AST baseline
     # keys it pins. That is what makes a true three-command integration test

@@ -59,6 +59,7 @@ verifier HOLDs if the running interpreter's *minor* differs from the pinned one
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -75,7 +76,11 @@ SCHEMA = "cairn-gate-manifest/v2"
 SCHEMA_V1 = "cairn-gate-manifest/v1"
 _REPO = Path(__file__).resolve().parents[2]
 _MANIFEST_REL = "bootstrap/tests/fixtures/gate_manifest.json"
+_PROTECTED_ROSTER_REL = "bootstrap/tests/fixtures/protected_test_roster.json"
+_APPROVED_INITIAL_ROSTER_SHA256 = (
+    "188fa76d82744be571bdc7ca91a43d605776b9df5ba0ac729e2cf22af66b8cc4")
 _TESTDIR_REL = "bootstrap/tests"
+_ROSTER_UNSET = object()
 
 # Legitimately mutated by the cascade — EXCLUDED from frozen hashing; integrity
 # governed by the named mechanism, not a byte hash.
@@ -334,10 +339,119 @@ def _sha256(path: str | Path) -> str:
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def _frozen_files(repo: Path = _REPO) -> list[str]:
+def _roster_from_bytes(raw: bytes, *, require_initial_approval: bool = False) -> dict:
+    """Parse the roster payload; the caller supplies its trusted provenance.
+
+    The initial roster is admitted only at the reviewed transition and must
+    match the exact bytes approved by the Maintainer. Later transitions receive
+    the roster bytes from the previous signed anchor instead.
+    """
+    digest = hashlib.sha256(raw).hexdigest()
+    if require_initial_approval and digest != _APPROVED_INITIAL_ROSTER_SHA256:
+        raise RuntimeError("initial protected roster bytes do not match the approved roster")
+    try:
+        data = json.loads(raw.decode("utf-8"))
+        members = data["protected_python_paths"]
+        fixtures = data["protected_fixture_paths"]
+        preserved = data["preserved_non_test_frozen_paths"]
+    except (UnicodeError, json.JSONDecodeError, KeyError, TypeError) as exc:
+        raise RuntimeError(f"protected roster is malformed: {exc}") from None
+    if (not isinstance(members, list) or not members
+            or any(not isinstance(p, str) or not p.startswith("bootstrap/tests/")
+                   or ".." in Path(p).parts for p in members)
+            or members != sorted(set(members))):
+        raise RuntimeError("protected roster membership is invalid or ambiguous")
+    for values in (fixtures, preserved):
+        if (not isinstance(values, list) or any(not isinstance(p, str) for p in values)
+                or values != sorted(set(values))):
+            raise RuntimeError("protected roster path sets are malformed")
+    return {"path": _PROTECTED_ROSTER_REL, "sha256": digest,
+            "protected_python_paths": members,
+            "protected_fixture_paths": fixtures,
+            "preserved_non_test_frozen_paths": preserved}
+
+
+def _local_roster(repo: Path = _REPO, *, require_initial_approval: bool = False) -> dict:
+    try:
+        raw = (repo / _PROTECTED_ROSTER_REL).read_bytes()
+    except OSError as exc:
+        raise RuntimeError(f"protected roster is unavailable: {exc}") from None
+    return _roster_from_bytes(raw, require_initial_approval=require_initial_approval)
+
+
+def _trusted_roster_from_anchor(anchor: str, candidate: str,
+                                repo: Path = _REPO) -> dict | None:
+    """Read installed membership from the prior signed manifest and require
+    candidate roster bytes to match it. ``None`` means legacy broad policy.
+    """
+    manifest_blob = _git("show", f"{anchor}:{_MANIFEST_REL}", repo=repo,
+                         want_bytes=True)
+    if manifest_blob.returncode != 0:
+        raise RuntimeError("prior anchor has no gate manifest")
+    try:
+        manifest = json.loads(manifest_blob.stdout.decode("utf-8"))
+    except (UnicodeError, json.JSONDecodeError):
+        raise RuntimeError("prior anchor gate manifest is malformed") from None
+    expected = manifest.get("protected_roster")
+    if expected is None:
+        return None
+    if (not isinstance(expected, dict)
+            or expected.get("path") != _PROTECTED_ROSTER_REL
+            or not isinstance(expected.get("sha256"), str)):
+        raise RuntimeError("prior anchor protected roster is malformed")
+    anchored = _git("show", f"{anchor}:{_PROTECTED_ROSTER_REL}", repo=repo,
+                    want_bytes=True)
+    candidate_blob = _git("show", f"{candidate}:{_PROTECTED_ROSTER_REL}", repo=repo,
+                          want_bytes=True)
+    if anchored.returncode != 0 or candidate_blob.returncode != 0:
+        raise RuntimeError("prior anchor or candidate is missing the protected roster")
+    if (hashlib.sha256(anchored.stdout).hexdigest() != expected["sha256"]
+            or anchored.stdout != candidate_blob.stdout):
+        raise RuntimeError("candidate roster differs from the previous signed anchor")
+    parsed = _roster_from_bytes(anchored.stdout)
+    if parsed != expected:
+        raise RuntimeError("prior anchor manifest and roster file disagree")
+    return parsed
+
+
+def _ordinary_test_files(repo: Path, protected_roster: dict) -> dict[str, str]:
+    protected = set(protected_roster["protected_python_paths"])
+    return {
+        p.relative_to(repo).as_posix(): _sha256(p)
+        for p in sorted((repo / _TESTDIR_REL).glob("test_*.py"))
+        if p.is_file() and p.relative_to(repo).as_posix() not in protected
+    }
+
+
+def _legacy_frozen_files(repo: Path = _REPO) -> list[str]:
+    """The broad policy used by anchors created before roster installation."""
+    exclude = set(CASCADE_MUTABLE) | set(PHASE_SPLIT_TARGETS) | {_MANIFEST_REL}
+    found: set[str] = set()
+    for pattern in ("bootstrap/*.py", "bootstrap/tests/**/*.py",
+                    "bootstrap/tests/fixtures/**/*", "scripts/*.py",
+                    "templates/modules/**/*.py"):
+        for p in repo.glob(pattern):
+            if p.is_file() and "__pycache__" not in p.parts:
+                rel = p.relative_to(repo).as_posix()
+                if rel not in exclude:
+                    found.add(rel)
+    return sorted(found)
+
+
+def _frozen_files(repo: Path = _REPO,
+                  protected_roster: dict | None | object = _ROSTER_UNSET) -> list[str]:
     """Discover the frozen gate surface by glob, minus cascade-mutable files and
     the manifest artifact itself."""
+    if protected_roster is None:
+        return _legacy_frozen_files(repo)
+    roster = (_local_roster(repo) if protected_roster is _ROSTER_UNSET
+              else protected_roster)
+    protected = set(roster["protected_python_paths"])
+    # The approved protected test_intents_tool.py used to be phase-mutable so
+    # its copied helper fixture could change. Roster membership now freezes its
+    # bytes while the phase record remains available for the facade/template.
     exclude = set(CASCADE_MUTABLE) | set(PHASE_SPLIT_TARGETS) | {_MANIFEST_REL}
+    exclude.discard("bootstrap/tests/test_intents_tool.py")
     found: set[str] = set()
     # ``bootstrap/*.py`` (top-level, NON-recursive) freezes the gate-defining engine
     # modules — security_check.py (the single source of the Bandit ALLOWLIST +
@@ -357,7 +471,11 @@ def _frozen_files(repo: Path = _REPO) -> list[str]:
             rel = p.relative_to(repo).as_posix()
             if rel in exclude:
                 continue
-            found.add(rel)
+            if (rel == _PROTECTED_ROSTER_REL
+                    or rel in protected
+                    or rel in roster["protected_fixture_paths"]
+                    or rel in roster["preserved_non_test_frozen_paths"]):
+                found.add(rel)
     return sorted(found)
 
 
@@ -399,7 +517,7 @@ def _collect(repo: Path = _REPO) -> tuple[list[str], list[str], int]:
         Path(out_path).unlink(missing_ok=True)
 
 
-def produce(repo: Path = _REPO) -> dict:
+def produce(repo: Path = _REPO, protected_roster: dict | None = None) -> dict:
     """Build the gate-integrity manifest dict from the current tree."""
     collected, marked, rc = _collect(repo)
     if rc != 0:
@@ -412,13 +530,16 @@ def produce(repo: Path = _REPO) -> dict:
         # even though pytest exited 0 — refuse rather than pin a vacuous manifest.
         raise RuntimeError(
             "pytest collected zero nodes; refusing to pin a vacuous collection manifest")
+    roster = protected_roster
     fmt = _object_format(repo)
     # Outside a repository (the raw-tree evidence path) there are no oids to
     # read, and the checker re-derives them.  Inside one, they come from Git.
     blobs = _tree_blobs(repo) if fmt is not None else {}
     frozen = {}
     untracked: list[str] = []
-    for rel in _frozen_files(repo):
+    frozen_paths = (_legacy_frozen_files(repo) if roster is None
+                    else _frozen_files(repo, roster))
+    for rel in frozen_paths:
         if fmt is None:
             # sha256 only: the trusted re-derivation supplies mode and oid.
             frozen[rel] = _sha256(repo / rel)
@@ -463,7 +584,7 @@ def produce(repo: Path = _REPO) -> dict:
         if entry is None:
             raise RuntimeError(f"mapping symbol Assign:{sym} not present in the AST baseline")
         mappings[sym] = {"baseline_digest": entry["digest"], "may_change_in_phases": phases}
-    return {
+    result = {
         "schema": SCHEMA,
         **({"object_format": fmt} if fmt is not None else {}),
         "interpreter": {
@@ -482,6 +603,10 @@ def produce(repo: Path = _REPO) -> dict:
         "phase_mutable": phase_mutable,
         "mapping_symbols": mappings,
     }
+    if roster is not None:
+        result["protected_roster"] = roster
+        result["ordinary_test_files"] = _ordinary_test_files(repo, roster)
+    return result
 
 
 def _check_anchor(anchor_ref: str, live_text: str, *, repo: Path,
@@ -573,7 +698,27 @@ def verify(manifest_path: str | Path, *, anchor_ref: str | None = None,
 
     # 3) Frozen files — modification / removal HOLDs; new files are recorded.
     pinned_frozen = manifest["frozen_files"]
-    current_frozen = {rel: _sha256(repo / rel) for rel in _frozen_files(repo)}
+    roster = manifest.get("protected_roster")
+    if roster is None:
+        current_paths = _legacy_frozen_files(repo)
+    else:
+        try:
+            required = {"path", "sha256", "protected_python_paths",
+                        "protected_fixture_paths", "preserved_non_test_frozen_paths"}
+            if not isinstance(roster, dict) or set(roster) != required:
+                raise RuntimeError("protected roster fields are malformed")
+            current_paths = _frozen_files(repo, roster)
+            roster_file = repo / _PROTECTED_ROSTER_REL
+            if (not roster_file.is_file()
+                    or _sha256(roster_file) != roster["sha256"]):
+                holds.append("ROSTER-MODIFIED: candidate roster bytes differ from the anchored identity")
+            else:
+                if _roster_from_bytes(roster_file.read_bytes()) != roster:
+                    holds.append("ROSTER-MEMBERSHIP: roster file and anchored membership differ")
+        except (RuntimeError, KeyError, TypeError) as exc:
+            holds.append(f"ROSTER-MALFORMED: {exc}")
+            current_paths = []
+    current_frozen = {rel: _sha256(repo / rel) for rel in current_paths}
 
     # v2 adds Git-native identity.  A target whose object format differs from
     # the manifest's refuses rather than comparing incomparable ids -- an oid
@@ -667,20 +812,54 @@ def verify(manifest_path: str | Path, *, anchor_ref: str | None = None,
                 f"FROZEN-NEW: {rel} (new tracked gate/test file — allowed, "
                 f"joins the next checkpoint)")
 
-    # 4) Collection identity — dropped node or new skip/xfail HOLDs; added recorded.
+    # Ordinary Python tests remain in the census, but changes to their bytes,
+    # nodes, and markers are report-only. Protected node and marker losses HOLD.
+    if roster is not None:
+        pinned_ordinary = manifest.get("ordinary_test_files", {})
+        current_ordinary = _ordinary_test_files(repo, roster)
+        for rel in sorted(set(pinned_ordinary) - set(current_ordinary)):
+            notes.append(f"UNPROTECTED-REMOVED: {rel} (ordinary test file removed or renamed)")
+        for rel in sorted(set(current_ordinary) - set(pinned_ordinary)):
+            notes.append(f"UNPROTECTED-NEW: {rel} (ordinary test file added)")
+        for rel in sorted(set(current_ordinary) & set(pinned_ordinary)):
+            if current_ordinary[rel] != pinned_ordinary[rel]:
+                notes.append(f"UNPROTECTED-CHANGED: {rel} (ordinary test bytes changed)")
+
+    # 4) Collection identity — protected losses HOLD; ordinary deltas are notes.
     pinned_ids = set(manifest["collection"]["node_ids"])
     if do_collect:
         collected, marked, rc = _collect(repo)
         if rc != 0:
             holds.append(f"COLLECTION: pytest collection failed (rc={rc})")
         cur_ids = set(collected)
+        protected_paths = set(roster["protected_python_paths"]) if roster else None
         for nid in sorted(pinned_ids - cur_ids):
-            holds.append(f"COLLECTION-DROPPED: {nid} (reduced test collection)")
+            rel = nid.split("::", 1)[0]
+            if protected_paths is None or rel in protected_paths:
+                holds.append(f"COLLECTION-DROPPED: {nid} (reduced protected test collection)")
+            else:
+                notes.append(f"COLLECTION-ORDINARY-DROPPED: {nid} (ordinary test collection changed)")
         pinned_marked = set(manifest["collection"]["skip_xfail_marked"])
         for nid in sorted(set(marked) - pinned_marked):
-            holds.append(f"SKIP-XFAIL-NEW: {nid} (a test gained a skip/xfail marker)")
+            rel = nid.split("::", 1)[0]
+            if protected_paths is None or rel in protected_paths:
+                holds.append(f"SKIP-XFAIL-NEW: {nid} (a protected test gained a skip/xfail marker)")
+            else:
+                notes.append(f"SKIP-XFAIL-ORDINARY: {nid} (ordinary marker change)")
+        for nid in sorted(pinned_marked - set(marked)):
+            rel = nid.split("::", 1)[0]
+            if protected_paths is not None and rel not in protected_paths:
+                notes.append(f"SKIP-XFAIL-ORDINARY-REMOVED: {nid} (ordinary marker change)")
         for nid in sorted(cur_ids - pinned_ids):
             notes.append(f"COLLECTION-ADDED: {nid} (new test — allowed, recorded)")
+        if protected_paths is not None:
+            added_by_file: dict[str, list[str]] = {}
+            for nid in sorted(cur_ids - pinned_ids):
+                rel = nid.split("::", 1)[0]
+                if rel.startswith("bootstrap/tests/test_") and rel not in protected_paths:
+                    added_by_file.setdefault(rel, []).append(nid)
+            for rel, nodes in sorted(added_by_file.items()):
+                notes.append(f"UNPROTECTED-NEW: {rel} nodes={nodes!r}")
     else:
         notes.append("COLLECTION: skipped (static-only verification, --no-collect)")
 
@@ -719,7 +898,9 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="gate_manifest", description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("produce", help="emit the gate-integrity manifest JSON to stdout")
+    pr = sub.add_parser("produce", help="emit the gate-integrity manifest JSON to stdout")
+    pr.add_argument("--trusted-protected-roster-b64", default=None,
+                    help="trusted roster object supplied by preflight")
     v = sub.add_parser("verify", help="verify gate integrity against a manifest")
     v.add_argument("--target-repo", default=None,
                    help="the tree to verify (the batch worktree); this trusted tool's CODE "
@@ -741,7 +922,12 @@ def main(argv: list[str] | None = None) -> int:
                    help="skip the pytest collection check (static-only)")
     args = ap.parse_args(argv)
     if args.cmd == "produce":
-        json.dump(produce(), sys.stdout, indent=2, sort_keys=True)
+        if args.trusted_protected_roster_b64 is not None:
+            raw = base64.b64decode(args.trusted_protected_roster_b64, validate=True)
+            roster = json.loads(raw.decode("utf-8"))
+        else:
+            roster = None  # no trusted input: preserve the legacy broad policy
+        json.dump(produce(protected_roster=roster), sys.stdout, indent=2, sort_keys=True)
         sys.stdout.write("\n")
         return 0
     target = Path(args.target_repo) if args.target_repo else _REPO

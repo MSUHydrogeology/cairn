@@ -232,6 +232,11 @@ def gather_evidence(
 
     candidate_sha = _resolve_sha(trusted_repo, candidate_ref)
     prior_sha = _resolve_sha(trusted_repo, prior_anchor)
+    # Membership is read from the prior signed gate manifest. A roster-less
+    # anchor keeps the legacy broad policy; this public path cannot establish
+    # the new initial roster or admit a candidate replacement.
+    protected_roster = M._trusted_roster_from_anchor(
+        prior_sha, candidate_sha, repo=trusted_repo)
     required = list(required_scenarios) if required_scenarios else [fx["name"] for fx in O.FIXTURES]
 
     mat = workdir / "_candidate_tree"
@@ -241,7 +246,9 @@ def gather_evidence(
     with scrub:
         report = run_oracle_fn(workdir / "oracle", baseline_ref=baseline_ref,
                                trusted_ref=trusted_ref, repo=trusted_repo, target_root=mat)
-        prospective = json.dumps(produce_fn(mat), indent=2, sort_keys=True) + "\n"
+        produced = (produce_fn(mat, protected_roster=protected_roster)
+                    if protected_roster is not None else produce_fn(mat))
+        prospective = json.dumps(produced, indent=2, sort_keys=True) + "\n"
 
     matched = {f["name"]: f["status"] for f in report.get("fixtures", [])}
     matched.update({p["name"]: p["status"] for p in report.get("privileged", [])})
@@ -405,11 +412,65 @@ def promote_data_only(
         if checks["gate_ref_at_prior"] else (False, ["prior gate state unknown — cannot pin authority code"])
     checks["authority_code_pinned"] = code_ok
 
+    # Independently bind the prospective membership and static manifest fields
+    # to P and C before any anchor commit is constructed. The producer's pytest
+    # collection remains evidence; the producer cannot choose the frozen set.
+    static_ok = False
+    static_error = "executing authority code is not pinned by P"
+    if code_ok:
+        try:
+            roster = M._trusted_roster_from_anchor(P, candidate_sha, repo=trusted_repo)
+            proposed = json.loads(evidence.prospective_manifest_bytes)
+            if roster is not None:
+                try:
+                    from bootstrap.tests import _gate_preflight as P_gate
+                except ImportError:
+                    import _gate_preflight as P_gate
+                static = P_gate.rederive_static_manifest(
+                    candidate_sha, protected_roster=roster, repo=trusted_repo)
+                expected_fields = ((set(static) - {"object_format"})
+                                   | set(P_gate._EXECUTABLE_ONLY_FIELDS))
+                report = P_gate.Report()
+                P_gate.check_static_manifest(
+                    {"manifest": proposed}, candidate_sha, report,
+                    protected_roster=roster, repo=trusted_repo)
+                static_ok = (set(proposed) == expected_fields
+                             and not any(f.level == "refuse" for f in report.findings))
+            else:
+                # A roster-less prior anchor keeps the old broad policy. The
+                # legacy callable may neither emit a narrowed roster nor omit
+                # a tracked frozen path or substitute its digest.
+                if "protected_roster" in proposed:
+                    raise ValueError("legacy path cannot install a protected roster")
+                try:
+                    from bootstrap.tests import _gate_preflight as P_gate
+                except ImportError:
+                    import _gate_preflight as P_gate
+                with P_gate.raw_tree(candidate_sha, repo=trusted_repo) as tree:
+                    blob_ids = M._tree_blobs(trusted_repo, candidate_sha)
+                    expected = {
+                        rel: M._blob_sha256(trusted_repo, blob_ids[rel][1])
+                        for rel in M._legacy_frozen_files(tree)
+                        if rel in blob_ids
+                    }
+                actual = {rel: M._entry_sha256(value)
+                          for rel, value in proposed.get("frozen_files", {}).items()}
+                static_ok = actual == expected
+                if not static_ok:
+                    static_error = "legacy broad frozen set or digest differs from candidate objects"
+            static_error = "candidate fields differ from trusted raw-tree derivation"
+        except Exception as exc:
+            static_error = str(exc)
+    checks["trusted_manifest_derivation"] = static_ok
+    if not static_ok:
+        refusals.append(f"manifest: {static_error}")
+
     for name, ok in (("gate_ref_at_prior", f"designated ref {designated_ref} is not at the "
                       f"manifest's prior gate state (stale/wrong prior)"),
                      ("authority_anchor_parent", "authority anchor A is not a one-parent commit on P"),
                      ("authority_bounded_diff", "authority anchor A changes more than the bounded "
                       "authorization artifacts (diff P..A not limited to the authz bundle)"),
+                     ("trusted_manifest_derivation", "candidate manifest does not match the prior roster and raw tree"),
                      ("binds_candidate", "authorization candidate_sha != C/evidence"),
                      ("binds_evidence_hash", "authorization evidence_hash != Stage-A bundle digest"),
                      ("binds_prospective_manifest", "authorization prospective_manifest_hash != evidence"),

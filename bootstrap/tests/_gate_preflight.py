@@ -643,6 +643,7 @@ def declared_authority_closure() -> list[str]:
         _ARTIFACT_REL,                            # the procedure itself
         _LAUNCHER_TEMPLATE_REL,                   # what runs before this checker
         _ALLOWED_SIGNERS_REL,                     # pinned key set
+        G._PROTECTED_ROSTER_REL,                  # classification input
     ]
 
 
@@ -783,7 +784,8 @@ def _index_entries(*, repo: Path = _REPO) -> dict[str, str]:
     return entries
 
 
-def check_frozen_surface(report: Report, *, repo: Path = _REPO) -> None:
+def check_frozen_surface(report: Report, *, repo: Path = _REPO,
+                         protected_roster: dict | None = None) -> None:
     """Every discovered frozen path must be a stage-0 regular blob in the index.
 
     ``_frozen_files()`` discovers by filesystem glob and ``_sha256`` follows
@@ -792,7 +794,8 @@ def check_frozen_surface(report: Report, *, repo: Path = _REPO) -> None:
     symlink pins its target's bytes. Both produce a manifest a fresh checkout
     cannot reproduce.
     """
-    frozen = G._frozen_files(repo)
+    frozen = (G._frozen_files(repo, protected_roster)
+              if protected_roster is not None else G._legacy_frozen_files(repo))
     index = _index_entries(repo=repo)
     for rel in frozen:
         mode = index.get(rel)
@@ -1587,12 +1590,29 @@ def _changed_with_classes(anchor_tree: str, candidate_tree: str, frozen: set,
     return changed, classes, decides
 
 
-def range_scan(anchor: str, head: str, *, repo: Path = _REPO) -> dict:
+def _frozen_policy(anchor: str, head: str, *, repo: Path,
+                   protected_roster: dict | None) -> set[str]:
+    if protected_roster is None:
+        try:
+            protected_roster = resolve_protected_roster(
+                anchor, head, transition=None, repo=repo)
+        except PreflightError:
+            # Before the first signed roster exists, reporting remains under
+            # the old anchor's broad policy. The reviewed transition supplies
+            # its exact roster explicitly to both stages.
+            return set(G._legacy_frozen_files(repo))
+    return set(G._frozen_files(repo, protected_roster))
+
+
+def range_scan(anchor: str, head: str, *, repo: Path = _REPO,
+               protected_roster: dict | None = None) -> dict:
     """The line scan alone, for the anchored `scan-digest` command."""
     anchor_tree = _resolve_tree(anchor, repo=repo)
     candidate_tree = _resolve_tree(head, repo=repo)
     changed, classes, decides = _changed_with_classes(
-        anchor_tree, candidate_tree, set(G._frozen_files(repo)),
+        anchor_tree, candidate_tree,
+        _frozen_policy(anchor, head, repo=repo,
+                       protected_roster=protected_roster),
         set(G.CASCADE_MUTABLE), set(G.PHASE_SPLIT_TARGETS), G._MANIFEST_REL,
         repo=repo)
     return _scan_range(anchor_tree, candidate_tree, changed, classes, decides,
@@ -1601,9 +1621,11 @@ def range_scan(anchor: str, head: str, *, repo: Path = _REPO) -> dict:
 
 def range_review_report(anchor: str, head: str, *, branch: str,
                         expected_old: str, repo: Path = _REPO,
-                        prospective_manifest: bytes | None = None) -> dict:
+                        prospective_manifest: bytes | None = None,
+                        protected_roster: dict | None = None) -> dict:
     """The one canonical report `apply` re-derives and the checkpoint binds."""
-    frozen = set(G._frozen_files(repo))
+    frozen = _frozen_policy(anchor, head, repo=repo,
+                            protected_roster=protected_roster)
     cascade = set(G.CASCADE_MUTABLE)
     phase = set(G.PHASE_SPLIT_TARGETS)
     manifest_rel = G._MANIFEST_REL
@@ -1810,6 +1832,7 @@ _COLLECTION_STEERING_VARIABLES = ("PYTEST_ADDOPTS", "PYTEST_PLUGINS",
 
 
 def gather_evidence(candidate_ref: str = "HEAD", *, repo: Path = _REPO,
+                    protected_roster: dict | None = None,
                     out=sys.stderr) -> dict:
     """Produce the evidence artifact by running the **candidate's** manifest
     producer over a materialized copy of the candidate tree.
@@ -1824,6 +1847,10 @@ def gather_evidence(candidate_ref: str = "HEAD", *, repo: Path = _REPO,
     refuse_if_sealed("the evidence stage")
     out.write(_EVIDENCE_RESIDUAL + "\n")
     candidate = _resolve(candidate_ref, repo=repo)
+    if protected_roster is None:
+        protected_roster = resolve_protected_roster(
+            _resolve(_ANCHOR_REF, repo=repo), candidate,
+            transition=None, repo=repo)
 
     # Python loads a tracked compiled file in place of its source, so the tests
     # that run below would not be the source a reader read. Refused here, where
@@ -1870,9 +1897,12 @@ def gather_evidence(candidate_ref: str = "HEAD", *, repo: Path = _REPO,
                     f"{', '.join(steering)} is set in the environment and "
                     f"changes which tests pytest collects; refusing to pin a "
                     f"collection it may have reduced. Unset it and run again")
+            roster_arg = base64.b64encode(
+                json.dumps(protected_roster, sort_keys=True).encode()).decode("ascii")
             proc = subprocess.run(
                 [sys.executable, "-E", "-s",
-                 "bootstrap/tests/_gate_manifest.py", "produce"],
+                 "bootstrap/tests/_gate_manifest.py", "produce",
+                 "--trusted-protected-roster-b64", roster_arg],
                 cwd=str(tree), capture_output=True, text=True, check=False,
                 env=env)
         if proc.returncode != 0:
@@ -1907,6 +1937,66 @@ _EXECUTABLE_ONLY_FIELDS = frozenset({"collection", "interpreter"})
 #: these -- and the trusted side deriving them is the stronger arrangement.
 _CHECKER_DERIVED_FIELDS = frozenset({"object_format"})
 
+
+def resolve_protected_roster(anchor: str, candidate: str, *,
+                             transition: dict | None,
+                             repo: Path = _REPO) -> dict:
+    """Resolve membership from the old signed manifest or the reviewed first
+    transition, and prove the candidate carries those exact roster bytes.
+
+    The initial exception is one-way: an anchor without a roster can admit only
+    the Maintainer-approved byte string through a validated reviewed transition.
+    Once a roster exists, an unchanged roster comes from the anchor object; a
+    changed roster is allowed only as a reviewed authority-closure member.
+    """
+    old_blob = _blob_at(anchor, G._MANIFEST_REL, repo=repo)
+    if old_blob is None:
+        raise PreflightError("the previous anchor has no gate manifest")
+    try:
+        old_manifest = json.loads(old_blob.decode("utf-8"))
+    except (UnicodeError, json.JSONDecodeError):
+        raise PreflightError("the previous anchor's gate manifest is malformed") from None
+    old_roster = old_manifest.get("protected_roster")
+    candidate_blob = _blob_at(candidate, G._PROTECTED_ROSTER_REL, repo=repo)
+    if candidate_blob is None:
+        raise PreflightError("candidate is missing the protected roster")
+    candidate_sha = hashlib.sha256(candidate_blob).hexdigest()
+
+    if old_roster is None:
+        if transition is None:
+            raise PreflightError(
+                "the previous anchor has no protected roster; only the reviewed "
+                "initial transition may establish one")
+        if candidate_sha != G._APPROVED_INITIAL_ROSTER_SHA256:
+            raise PreflightError("initial roster differs from the exact approved bytes")
+        approved = transition.get("members", {}).get(G._PROTECTED_ROSTER_REL)
+        if approved != candidate_sha:
+            raise PreflightError("reviewed transition does not bind the approved roster bytes")
+        return G._roster_from_bytes(candidate_blob, require_initial_approval=True)
+
+    if (not isinstance(old_roster, dict)
+            or old_roster.get("path") != G._PROTECTED_ROSTER_REL
+            or not isinstance(old_roster.get("sha256"), str)):
+        raise PreflightError("the previous anchor's protected roster is malformed")
+    anchor_roster_blob = _blob_at(anchor, G._PROTECTED_ROSTER_REL, repo=repo)
+    if (anchor_roster_blob is None
+            or hashlib.sha256(anchor_roster_blob).hexdigest() != old_roster["sha256"]):
+        raise PreflightError("the previous anchor's roster bytes do not match its manifest")
+
+    if candidate_sha != old_roster["sha256"]:
+        if transition is None:
+            raise PreflightError("candidate roster changed without a reviewed transition")
+        reviewed_sha = transition.get("members", {}).get(G._PROTECTED_ROSTER_REL)
+        if reviewed_sha != candidate_sha:
+            raise PreflightError("reviewed transition does not bind candidate roster bytes")
+        raw = candidate_blob
+    else:
+        raw = anchor_roster_blob
+    roster = G._roster_from_bytes(raw)
+    if candidate_sha != roster["sha256"]:
+        raise PreflightError("candidate roster identity differs from trusted membership")
+    return roster
+
 #: Git-native identity *inside* an entry.  Same rule, one level down: the
 #: candidate produces its manifest from a raw tree with no repository, so it
 #: cannot supply these -- and the trusted side deriving them means a candidate
@@ -1930,7 +2020,8 @@ def _candidate_comparable(value):
     return out
 
 
-def rederive_static_manifest(commit: str, *, repo: Path = _REPO) -> dict:
+def rederive_static_manifest(commit: str, *, protected_roster: dict | None = None,
+                             repo: Path = _REPO) -> dict:
     """Recompute every statically derivable manifest field, independently.
 
     The evidence stage was labelled wholly "NON-AUTHORITATIVE" while ``check``
@@ -1958,11 +2049,26 @@ def rederive_static_manifest(commit: str, *, repo: Path = _REPO) -> dict:
     # derived by different means over the same object, which is the point of
     # this function existing at all.  A `raw_tree` directory is not a git
     # repository, so the oids cannot come from it.
+    if protected_roster is not None:
+        roster_blob = _blob_at(commit, G._PROTECTED_ROSTER_REL, repo=repo)
+        if (roster_blob is None
+                or hashlib.sha256(roster_blob).hexdigest() != protected_roster.get("sha256")):
+            raise PreflightError(
+                "candidate roster bytes differ from the roster resolved from the "
+                "previous signed anchor or reviewed transition")
+        try:
+            candidate_roster = G._roster_from_bytes(roster_blob)
+        except RuntimeError as exc:
+            raise PreflightError(str(exc)) from None
+        if candidate_roster != protected_roster:
+            raise PreflightError("candidate roster membership differs from trusted roster")
     blobs = G._tree_blobs(repo, commit)
     object_format = G._object_format(repo)
     with raw_tree(commit, repo=repo) as tree:
         frozen = {}
-        for rel in G._frozen_files(tree):
+        frozen_paths = (G._legacy_frozen_files(tree) if protected_roster is None
+                        else G._frozen_files(tree, protected_roster))
+        for rel in frozen_paths:
             mode_oid = blobs.get(rel)
             if mode_oid is None:
                 # Unreachable in practice: a raw tree holds only tracked files.
@@ -2000,7 +2106,7 @@ def rederive_static_manifest(commit: str, *, repo: Path = _REPO) -> dict:
                     f"AST baseline; the manifest cannot be re-derived")
             mappings[sym] = {"baseline_digest": entry["digest"],
                              "may_change_in_phases": phases}
-    return {
+    derived = {
         "schema": G.SCHEMA,
         "object_format": object_format,
         # `untracked_gate_files` is deliberately NOT re-derived. A `raw_tree`
@@ -2015,6 +2121,10 @@ def rederive_static_manifest(commit: str, *, repo: Path = _REPO) -> dict:
         "phase_mutable": phase_mutable,
         "mapping_symbols": mappings,
     }
+    if protected_roster is not None:
+        derived["protected_roster"] = protected_roster
+        derived["ordinary_test_files"] = G._ordinary_test_files(tree, protected_roster)
+    return derived
 
 
 def _entry_base(entry) -> dict:
@@ -2092,10 +2202,17 @@ def authoritative_manifest(theirs: dict, ours: dict) -> dict:
 
 
 def check_static_manifest(evidence: dict, head: str, report: Report, *,
+                          protected_roster: dict | None = None,
                           repo: Path = _REPO) -> None:
     """Compare the candidate's manifest against the independent re-derivation."""
-    ours = rederive_static_manifest(head, repo=repo)
+    ours = rederive_static_manifest(head, protected_roster=protected_roster,
+                                    repo=repo)
     theirs = evidence.get("manifest") or {}
+
+    for field in ("protected_roster", "ordinary_test_files"):
+        if theirs.get(field) != ours.get(field):
+            report.add("MANIFEST", "refuse",
+                       f"field {field!r} differs from trusted roster/raw-tree derivation")
 
     for field, expected in sorted(ours.items()):
         got = theirs.get(field)
@@ -3218,10 +3335,16 @@ def stage1(*, repo: Path = _REPO, package_out: Path,
                   f"({transition['provenance']}, {len(transition['members'])} "
                   f"members, digest {review_digest[:12]})\n")
 
-    evidence = gather_evidence("HEAD", repo=repo, out=out)
+    anchor = _resolve(_ANCHOR_REF, repo=repo)
+    head = _resolve("HEAD", repo=repo)
+    protected_roster = resolve_protected_roster(
+        anchor, head, transition=transition, repo=repo)
+    evidence = gather_evidence("HEAD", repo=repo,
+                               protected_roster=protected_roster, out=out)
     report = check(repo=repo, evidence=evidence,
                    admitted_authority=(transition["members"] if transition
-                                       else None))
+                                       else None),
+                   protected_roster=protected_roster)
     _render(report, out)
     if report.blocked:
         raise PreflightError(
@@ -3236,12 +3359,14 @@ def stage1(*, repo: Path = _REPO, package_out: Path,
     branch_old = _resolve(branch, repo=repo)
 
     committed_manifest = authoritative_manifest(
-        evidence["manifest"], rederive_static_manifest(head, repo=repo))
+        evidence["manifest"], rederive_static_manifest(
+            head, protected_roster=protected_roster, repo=repo))
     manifest_bytes = (json.dumps(committed_manifest, indent=2, sort_keys=True)
                       .encode() + b"\n")
     the_report = range_review_report(anchor, head, branch=branch,
                                      expected_old=branch_old, repo=repo,
-                                     prospective_manifest=manifest_bytes)
+                                     prospective_manifest=manifest_bytes,
+                                     protected_roster=protected_roster)
 
     pkg = {
         "schema": PACKAGE_SCHEMA,
@@ -3410,6 +3535,26 @@ def apply_now(*, repo: Path = _REPO,
                 f"package {field} is {pkg[field]!r}; this repository is now "
                 f"{expected!r}. A stale package cannot authorize a moved state.")
 
+    # Resolve the membership before either stage-2 derivation. In particular,
+    # a missing roster at the old anchor can use only the exact approved bytes
+    # carried by the revalidated first transition.
+    early_transition = None
+    if review_manifest is not None:
+        early_parsed, early_digest = read_review_manifest(review_manifest)
+        if (pkg["review_manifest"] is None
+                or early_digest != pkg["review_manifest"].get("digest")):
+            raise PackageError("stage 2 transition input differs from stage 1")
+        early_transition = revalidate_transition(
+            early_parsed, reviewed_candidate, _resolve("HEAD", repo=repo),
+            anchor=_resolve(_ANCHOR_REF, repo=repo), repo=repo)
+    elif pkg["review_manifest"] is not None:
+        raise PackageError(
+            "the package authorizes a reviewed-authority transition, but "
+            "stage 2 was given no --transition-from-review")
+    protected_roster = resolve_protected_roster(
+        _resolve(_ANCHOR_REF, repo=repo), pkg["candidate_head"],
+        transition=early_transition, repo=repo)
+
     # Stage 2 rebuilds the manifest from its OWN static re-derivation plus
     # the two fields declared candidate-only, and never from the candidate's
     # manifest -- which it does not have and must not need.
@@ -3422,7 +3567,8 @@ def apply_now(*, repo: Path = _REPO,
     # comment and becomes a property re-tested on every real run. A third
     # candidate-only field appearing anywhere makes stage 2 refuse, which is the
     # answer that matters: it fails, it does not silently trust.
-    static = rederive_static_manifest(pkg["candidate_head"], repo=repo)
+    static = rederive_static_manifest(pkg["candidate_head"],
+                                      protected_roster=protected_roster, repo=repo)
     evidence = {
         "schema": EVIDENCE_SCHEMA,
         "candidate_sha": pkg["candidate_head"],
@@ -3487,7 +3633,8 @@ def apply_now(*, repo: Path = _REPO,
 
     report = check(repo=repo, evidence=evidence,
                    admitted_authority=(transition["members"] if transition
-                                       else None))
+                                       else None),
+                   protected_roster=protected_roster)
     _render(report, out)
     if report.blocked:
         raise PreflightError(
@@ -3509,7 +3656,8 @@ def apply_now(*, repo: Path = _REPO,
     # re-derivation ceremonial -- computed, compared, discarded. The digest and
     # the message follow the bytes, so the checkpoint binds what is anchored.
     committed_manifest = authoritative_manifest(
-        evidence["manifest"], rederive_static_manifest(head, repo=repo))
+        evidence["manifest"], rederive_static_manifest(
+            head, protected_roster=protected_roster, repo=repo))
     manifest_bytes = (json.dumps(committed_manifest, indent=2, sort_keys=True)
                       .encode() + b"\n")
     committed_sha256 = _sha256_bytes(manifest_bytes)
@@ -3655,7 +3803,8 @@ def apply_now(*, repo: Path = _REPO,
 def check(*, repo: Path = _REPO, evidence: dict | None = None,
           trusted_repo: str | None = None,
           trusted_ref: str = "HEAD",
-          admitted_authority: dict | None = None) -> Report:
+          admitted_authority: dict | None = None,
+          protected_roster: dict | None = None) -> Report:
     """Run every read-only check. Returns a :class:`Report`; raises only on a
     condition that must not be summarised into a finding."""
     report = Report()
@@ -3672,7 +3821,7 @@ def check(*, repo: Path = _REPO, evidence: dict | None = None,
                             admitted_authority=admitted_authority)
     check_authority_modules(anchor, report, repo=repo,
                             admitted_authority=admitted_authority)
-    check_frozen_surface(report, repo=repo)
+    check_frozen_surface(report, repo=repo, protected_roster=protected_roster)
     check_signatures(anchor, head, report, repo=repo)
 
     # Threaded through even though this repository passes neither -- the
@@ -3686,7 +3835,12 @@ def check(*, repo: Path = _REPO, evidence: dict | None = None,
 
     if evidence is not None:
         check_evidence(evidence, head, report)
-        check_static_manifest(evidence, head, report, repo=repo)
+        if protected_roster is None:
+            raise PreflightError(
+                "evidence validation requires a roster resolved from the prior "
+                "anchor or a validated reviewed transition")
+        check_static_manifest(evidence, head, report,
+                              protected_roster=protected_roster, repo=repo)
         report.facts["evidence_checked"] = True
     return report
 

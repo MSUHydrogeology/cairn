@@ -59,7 +59,12 @@ def _fake_oracle(scenarios=REQUIRED, ok=True):
 
 
 def _fake_produce(tree):
-    return {"schema": "cairn-gate-manifest/v1", "frozen_files": {"x": "sha256:0"}}
+    tree = Path(tree)
+    return {"schema": "cairn-gate-manifest/v1",
+            "frozen_files": {
+                rel: hashlib.sha256((tree / rel).read_bytes()).hexdigest()
+                for rel in R.M._legacy_frozen_files(tree)
+            }}
 
 
 def _trusted_frozen_files() -> dict:
