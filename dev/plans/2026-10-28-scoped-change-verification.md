@@ -247,3 +247,25 @@ link destinations and operative targets use the dated paths.
 - Opened `scripts/quality_gate.py` dispatch and neutrality file selection: doctrine Markdown and shipped template types remain selected. Implementation evidence reports zero neutrality failures; no model names were introduced into governing shipped prose. No machine record parser or automatic coverage guarantee is claimed.
 
 **Covered**: claims/execution/refusal (#1-4: guard probes and release dispatch); consistency/drift (#5-6: unchanged ceremony bytes and C2 verdicts); lifecycle/scope/satisfier (#7-9: ordinary F1, preserved conditional certification and ceremony authority). **Not covered / low confidence**: did not reproduce the 2,700-node logs, run the ceremony, certify the tree, or authenticate author-reported results. Mapping completeness remains reviewer judgment. No full suite or mutation sweep was run.
+
+## Response to code review -- Codex gpt-6.1-luna low -- 2026-10-28
+
+| Finding | Disposition | Current state |
+|---|---|---|
+| Ordinary code F1, `f19f4f53` | Accepted | The frozen-file gate-manifest ceremony remains required. Keep this implementation and plan open; the scoped record does not satisfy or replace it. |
+| Security Review F1, `9d813013` | Accepted | The Security Review obligation remains open until the Maintainer completes and records that same ceremony. No waiver or scope reduction is granted here. |
+| C2 example adjudication | Complete | Independent Terra adjudication is appended at `26c8a055`: A accepted for its reported checks, B and C rejected with their missing consumer/security checks named. |
+
+**Status remains**: revising-code. The original implementation is at `69b8bc7e`; its evidence record is at `e052da5c`. A later documentation-only correction of live dated-name examples is at `5c525367` and has its own bounded evidence below; it does not resolve F1. Both reviews found no implementation defect. The outstanding action is the existing Maintainer-only frozen-file ceremony on the final reviewed tree: run `python bootstrap/tests/_gate_manifest.py verify` as part of the supervised procedure in `bootstrap/REANCHOR_RUNBOOK.md`, resolve and record any reported frozen-file or dropped-node discrepancy under that procedure, then return to the Maintainer for disposition. This response does not authorize editing the manifest, changing a trust root, signing, pushing, or treating any outstanding check as complete.
+
+## Follow-up verification -- Codex gpt-6.1-luna low -- 2026-10-28
+
+**Reviewed content commit**: `5c525367` (`doctrine/plans.md`, `doctrine/proposals.md`)
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` — Python 3.13.13
+**Change type**: prose-only correction of live filename examples; the historical archive text was not changed. The documents are not entries in `bootstrap/tests/fixtures/gate_manifest.json`'s `frozen_files` map.
+
+**Reader search and owner tests**: `rg -l -F 'doctrine/plans.md' bootstrap/tests -g '*.py'` and the corresponding search for `doctrine/proposals.md` found the relevant readers. The resulting owner set was `test_certifying_run_rule.py`, `test_verification_boundaries.py`, `test_scope_reduction_trap.py`, `test_review_stance_in_shipped_files.py`, `test_stewardship_rules_ship.py`, and `test_status_vocabulary_advisory.py`. `python3.13 -m pytest -q` on those six files with `--quality-gate-shuffle-seed=0` passed 656 tests in 2.49s.
+
+**Prose gates**: `python3.13 scripts/check_cairn.py` and `python3.13 scripts/link_check.py` each passed over 186 Markdown files. `python3.13 scripts/quality_gate.py --sub neutrality --sub redundancy` reported zero failures. `python3.13 scripts/claim_check.py doctrine/plans.md` and the corresponding command for `doctrine/proposals.md` both passed. A positive control matched seven obsolete forms in the pre-edit blobs at `918638f5`; the same obsolete-form search returned no matches in the current documents, while the explicit dated forms remain present.
+
+This follow-up does not run or discharge the Maintainer-only frozen-file ceremony. No whole suite, manifest verification, trust-root operation, or push was performed.
