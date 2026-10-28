@@ -427,3 +427,29 @@ full suite or whole-tree verification ran. The test-trust-boundary plan remains
 implementing at its Maintainer roster gate. This record covers only the path
 instruction correction; C3's other outcomes and the plan's completion remain
 open.
+
+## Focused C3 path-guidance review -- Codex (gpt-6.1-terra) -- 2026-10-28
+
+Reviewed commit: `31d923855ea5b186a548c820a7521abd8e629329`
+Target: source change `7682214db06e922a67d2a218f0cb53f79d6c3c22` and its focused evidence; not final C3/C4 review.
+Prior findings: none.
+
+**Foundations**
+
+1. **Does it do what it claims?** The central standalone and exact-reuse guidance matches the scan; two qualifications below need correction -- `scripts/claim_check.py` > `_scan`.
+2. **Best alternative.** Keep the focused correction and qualify its edge conditions; do not change the checker merely to match prose -- `scripts/claim_check.py` > `parse_typed_declarations` and `_scan`.
+3. **What would show it wrong?** An exempted near-match, unreported conflict, or missed stale outside-block citation -- see falsification ledger below.
+
+**F1 -- Qualify liveness and the linked mechanism.** Both doctrine pages say every structured-block declaration in a non-terminal artifact must authorize an outside occurrence. The checker instead reports non-checkable entries and archive-resolved entries informationally; immutable grandfathering also changes severity. Qualify this statement. Both pages also direct readers to the checker module docstring for the full mechanism, but its typed-registry section says duplicates in one block grant nothing; `parse_typed_declarations` actually treats same-keyword repeats as idempotent. Correct that linked description through the applicable checker/change gates, or explicitly flag the discrepancy in the guidance until corrected.
+
+**Falsification ledger** (Python 3.13.13, fresh archive of reviewed commit; `_scan` with a synthetic active plan path as context):
+
+- Standalone marker followed by exact missing path: no hard flags; exemption cites marker line.
+- Sibling/look-alike and descendant: both hard path flags.
+- Same-keyword duplicate on one marker: no hard flags; exact occurrence exempted with first declaration provenance.
+- Proposed versus untracked declaration for one path: declaration conflict and outside path hard flags; no registry exemption.
+- Wildcard declaration: declaration hard flag and outside path hard flag.
+- Existing file with out-of-range line citation outside marker: hard line-bounds flag.
+- Source and shipped checker copies compare identical (`cmp scripts/claim_check.py templates/modules/default-on/claim_check.py`).
+
+**Evidence and limits.** The author's 167-test record names the scoped source commit and explicitly leaves standalone recurrence untested; the independent probe above supplies that targeted observation. It is not final Boundary B, and this pass does not certify C3 or C4. The author claimed source and plan before the source commit, but auto-release followed that commit; the subsequent plan evidence was edited without a renewed claim. No collision is established. Claim again before each later edit. This pass did not run an install, frozen-test changes, security ceremony or full suite; the existing plan gates remain. Status stays `implementing`.
