@@ -453,3 +453,56 @@ Prior findings: none.
 - Source and shipped checker copies compare identical (`cmp scripts/claim_check.py templates/modules/default-on/claim_check.py`).
 
 **Evidence and limits.** The author's 167-test record names the scoped source commit and explicitly leaves standalone recurrence untested; the independent probe above supplies that targeted observation. It is not final Boundary B, and this pass does not certify C3 or C4. The author claimed source and plan before the source commit, but auto-release followed that commit; the subsequent plan evidence was edited without a renewed claim. No collision is established. Claim again before each later edit. This pass did not run an install, frozen-test changes, security ceremony or full suite; the existing plan gates remain. Status stays `implementing`.
+
+## Response to focused C3 path-guidance review -- Codex (Luna, low) -- 2026-10-28
+
+| Finding | Disposition | Changes |
+|---|---|---|
+| F1 | Accepted | Forward-reference guidance and linked checker descriptions updated in `doctrine/plans.md`, `doctrine/proposals.md`, `scripts/claim_check.py`, and `templates/modules/default-on/claim_check.py`. |
+
+The doctrine now limits hard liveness findings to checkable structured-block
+declarations in mutable lifecycle artifacts at the exact live paths. It names
+the non-failing cases: paths the checker cannot resolve, entries now resolved
+by the exact archive rule, and declarations in archived or terminal artifacts.
+Missing or invalid status fails closed into liveness. Standalone marker-line
+declarations remain exact and document-wide but have no separate liveness check.
+
+The source and shipped module docstrings now say that same-keyword redeclarations
+are idempotent, including repeats in one block; declarations under different
+marker keywords conflict and grant no authority. Both copies remain byte-
+identical. These are frozen gate-manifest files, so their applicable Maintainer
+ceremony remains owed under C4. No runtime code or frozen test changed, and the
+ceremony was not run.
+
+## Implementation verification -- F1 path-guidance revision -- Codex (Luna, low) -- 2026-10-28
+
+**Boundary B mode**: wide. The touched surfaces are the published proposal and
+plan doctrine plus the local and shipped claim-check module descriptions. The
+owning claim-check behavior family and the installed-script owner family ran;
+the installed-script tests exercised the scaffolded checker. `check_cairn.py`
+checked both changed doctrine files, and the standing neutrality gate ran.
+Effects are bounded to instructions and module docstrings; runtime code is
+unchanged. The source/twin byte comparison confirms the shipped description
+matches its local source.
+
+**Certified by**: pending
+**Tested commit**: `860481db0cf36fe25af1994612860fab429dd18f`
+**Reviewed range**: `0766c18f1dd6594d28b75caba87d8daadf1e5bb1..860481db0cf36fe25af1994612860fab429dd18f`
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` — Python 3.13.13
+**Pre-run state**: tracked tree clean at tested commit; two pre-existing untracked items only.
+**Post-run state**: tracked tree clean; `HEAD` remained the tested commit.
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---:|---|---:|
+| `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -p no:cacheprovider -q bootstrap/tests/test_claim_check_module.py` | 0 | 78 passed | 0.12 s |
+| `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -p no:cacheprovider -q bootstrap/tests/test_reference_scripts.py` | 0 | 13 passed; includes claim-check install/parity and real installed entry path | 0.72 s |
+| `python scripts/check_cairn.py doctrine/plans.md doctrine/proposals.md` | 0 | 2 Markdown files; no issues | 0.04 s |
+| `python scripts/quality_gate.py --sub neutrality` | 0 | 0 failures; 43 informational records | 0.75 s |
+| `cmp scripts/claim_check.py templates/modules/default-on/claim_check.py` | 0 | Source and shipped copy identical | <0.01 s |
+
+**Non-pass disposition**: none. Neutrality informational records are the existing
+43 accepted exemptions. **Known omissions**: no full suite, whole-plan C3/C4
+verification, profile-wide install, or gate-manifest ceremony ran. Both frozen
+checker files still require the applicable Maintainer ceremony under C4; the
+manifest was not changed. The focused F1 correction is verified, while C3's
+remaining outcomes and the plan stay open.
