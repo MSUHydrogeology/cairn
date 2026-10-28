@@ -95,11 +95,18 @@ def _make_range(tmp_path: Path, anchor_files: dict, candidate_files: dict,
     _fx(repo, "init", "-q", "-b", "main")
     for rel, data in anchor_files.items():
         _write(repo, rel, data)
+    # A roster-bearing legacy anchor must contain the actual approved bytes.
+    if P.G._PROTECTED_ROSTER_REL in anchor_files:
+        _write(repo, P.G._PROTECTED_ROSTER_REL,
+               (CAIRN_ROOT / P.G._PROTECTED_ROSTER_REL).read_bytes())
+    if not (repo / P._MANIFEST_REL).exists():
+        _write(repo, P._MANIFEST_REL, "{}\n")
     if setup:
         setup(repo)
     _fx(repo, "add", "-A")
     _fx(repo, "commit", "-q", "-m", "anchor")
     anchor = _fx(repo, "rev-parse", "HEAD")
+    _fx(repo, "update-ref", P._ANCHOR_REF, anchor)
     for rel, data in candidate_files.items():
         if data is None:
             (repo / rel).unlink()
