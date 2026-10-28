@@ -169,3 +169,72 @@ The proposal preserves the conditional push rule and the separate release and tr
 
 **Covered**: claims (#1: `AGENTS.md:291-384`); production path (#2: `bootstrap/tests/conftest.py:378-416`); completeness and fail-closed behavior (#3-4: F1-F3); cross-document consistency and drift (#5-6: `dev/plans/_template.md:292-360`, `templates/core/AGENTS.md:300-366`); lifecycle (#7: `doctrine/lifecycle.md:213-225`); scope (#8: proposal `## Scope delta` and F4); satisfiers (#9: F1-F4).
 **Not covered / low confidence**: no implementation or example was run; the proposed new modes have no code path yet, and this pass did not audit every accepted plan or release ceremony.
+
+## Review -- Codex gpt-6.1-sol high (Security Reviewer) -- 2026-10-28
+
+```
+Reviewed commit: ed5c2242e172169d6ac406c89f46d95de9031dc7
+Target: opening proposal, Context through Assurance path
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes to separating evidence about a change from
+   evidence about the integrated tree. Keeping mandatory ceremony checks prevents that
+   saving from authorizing a release or re-anchor on weaker evidence. Omission rejection
+   needs a named mechanism. -- proposal `## Proposal`;
+   `bootstrap/REANCHOR_RUNBOOK.md:3-14`; `doctrine/plans.md:352-375`.
+2. **Best alternative.** Retain scoped change records, independent human coverage
+   judgment and separate certification; make their limits explicit. Doing nothing keeps
+   the conflicting defaults, while an automatic coverage oracle adds a mechanism the
+   existing design explicitly declines. -- `dev/plans/_template.md:292-343`;
+   `doctrine/plans.md:369-375`.
+3. **What would show it wrong.** A record missing a mandatory security check being
+   accepted, or a static wording test presented as proof that such a record is rejected,
+   would defeat the safety claim. -- proposal `## Signals the change is wrong`;
+   `bootstrap/tests/test_verification_boundaries.py:1-5`;
+   `bootstrap/tests/test_verification_boundaries.py:237-252`.
+
+The strongest design makes less repetition possible while retaining every required
+check. The opening preserves security/release ceremonies and acknowledges that an
+author's mapping cannot prove itself. This pass addresses that evidence boundary; it
+does not verify an implementation.
+
+**SR1 — Blocking: specify who rejects an incomplete record and what demonstrates
+rejection.** The verification plan and S2 require malformed records to be rejected but
+do not distinguish a human Boundary C verdict from an executable check. The cited
+removed-fence test deletes words from governing prose and checks a token-based violation
+function; it never submits a filled record. The module explicitly excludes record
+parsing and automatic selection. A passing mutation therefore proves the prose guard
+notices that deletion, not that an omitted consumer or security check blocks a real
+record. -- `bootstrap/tests/test_verification_boundaries.py:1-5`;
+`bootstrap/tests/test_verification_boundaries.py:230-252`.
+
+**Satisfier:** state that the independent reviewer adjudicates coverage, and that the
+proposed tests guard governing obligations. Name the procedural exercise: present one
+complete record and the two promised omission cases, record the responsible reader's
+verdict and missing check, and keep the affected claim open after rejection. Include the
+trivial lane's different responsibility when resolving ordinary F1. No new parser or
+lifecycle gate is needed; do not describe these examples as machine enforcement.
+
+**Security consequences of ordinary F2-F4:** an identified consumer or mandatory check
+cannot be deferred as a harmless unknown; guard refusal cannot justify dropping part of
+`wide`; completion must never imply certification, rewrite historical records, or waive
+an older plan's contract. Preserve all prescribed ceremony commands when resolving those
+findings. -- proposal `## Proposal`; `bootstrap/tests/conftest.py:398-416`;
+`doctrine/plans.md:377-393`; `bootstrap/REANCHOR_RUNBOOK.md:3-14`.
+
+**Covered**: claims and production path (#1-2: SR1's cited test body); completeness and
+fail-closed behavior (#3-4: SR1 and F2-F3 consequences); consistency and drift (#5-6:
+`dev/plans/_template.md:292-360`, `doctrine/plans.md:315-393`); lifecycle and scope
+(#7-8: proposal ceremony/old-plan commitments); satisfiers (#9: SR1).
+**Not covered / low confidence**: no new implementation, omission exercise, source test
+or ceremony was run. No timing saving was measured. Residual risk remains a plausible
+but incomplete mapping; full-tree certification cannot guarantee detection either. The
+Security Review obligation remains open pending response.
