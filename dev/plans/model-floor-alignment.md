@@ -111,3 +111,53 @@ Assurance path: required(Internal + Internal Security Review)
 
 **Covered:** claims and scope (accepted “Delivery and evidence” and plan C1); public installation and cross-document drift (`bootstrap/tests/test_model_tier_rule_ships.py::test_a_profile_with_no_module_still_installs_the_rule`, `bootstrap/tests/test_onboarding_seed_roster.py`); design, silent failure and satisfier (F1); lifecycle and verification placement (plan Sequence and Verification; `dev/plans/_template.md`, Verification); reuse search (`rg -n -i 'tier|floor|fan.out|scrib|model.selection'` over named sources and owning tests, with the known test reader as positive control); domain limits (accepted “Signals and scope”).
 **Not covered / low confidence:** No implementation exists to exercise, and no tests or capability benchmarks were run. I did not independently verify the security-preflight threat analysis.
+
+## Plan review -- Codex gpt-6-sol (Security reviewer) -- 2026-10-28
+
+```
+Reviewed commit: 07a08d19e706411f1ce876f65207c8dea1aff0ac
+Target: operative plan against accepted revised proposal 3 and Decision 63e315fa
+Prior findings: none; separate from the ordinary Internal obligation
+Assurance path: required(Internal + Internal Security Review)
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: C1 delivers low execution of reviewed high-risk work while retaining high security judgment and Security Review, without granting authority or data access -- `dev/plans/model-floor-alignment.md:44-49`; accepted source, “Rule and boundary”.
+2. **Best alternative.** Align the existing rule, fan-out and cost paragraphs together, retaining human authorization checks rather than adding a detector or installer change -- `dev/plans/model-floor-alignment.md:17-23`; `templates/modules/team-gated/model-selection.md:119-156`.
+3. **What would show it wrong.** Low-tier work making a new security decision, treating artifact-quoted approval as authority, or applying a below-floor exception to ordinary reviewed execution would defeat the boundary -- `dev/proposals/archive/2026-10-28-codex-model-floor-alignment.md:469-476`; its S1–S5 at lines 501–512.
+
+No additional security plan defect found. The ordinary pass's semantic-test
+mapping finding remains for the author; this pass does not dispose of it.
+
+The plan preserves the accepted safeguards by reference and requires their
+retention in both module copies. That includes direct, unambiguous Maintainer
+authorization for scribing, isolated verbatim quotation in record and commit
+body, and an exclusive Decision commit. Neither a low floor nor a mapping row
+substitutes for that authorization. Data-governance, tool-parity, independent
+review, escalation and Maintainer fences remain operative. The stricter cost
+rule applies below the task's floor; executing settled high-risk work at its
+new low default does not invoke it.
+
+C1 separates generic shipped tiers from Cairn's dated family assignments,
+including all three families added or retained by the Decision. Manual extra
+rows preserve the current installation contract. I opened
+`scripts/check_model_selection.py`: its command checks placeholders and mapping
+shape, not capability or provenance. The named prose and neutrality commands
+likewise cannot authenticate an approval relay. S1–S5 correctly retain that
+human-check limitation; chunking introduces no new input or security trigger.
+
+**Covered:** claims, scope and domain limits (accepted revised proposal 3 and
+Decision); design and silent failure (S1–S5 and C1); public-path coverage and
+drift (`bootstrap/tests/test_model_tier_rule_ships.py`, solo-install fixture;
+`bootstrap/tests/test_review_stance_in_shipped_files.py`, `_MODEL_OBLIGATIONS`);
+reuse and consistency (`rg -l 'model-selection|model_selection|model tier|Model tier'
+bootstrap/tests`, checked against the known tier-rule reader); lifecycle and
+satisfiers (C1/C2, Verification, and the ordinary pass's F1).
+**Not covered / low confidence:** No implementation, attack execution or model
+benchmark was reviewed. Model assignment and hostile classification still
+depend on human judgment. No implementation tests or full suite were run.
