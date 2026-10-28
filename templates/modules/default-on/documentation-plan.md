@@ -1,6 +1,9 @@
 <!-- `docs/developer/` below is an illustrative example doc-tier (where an
      adopter might fold style guidance), not a claim about this tree —
      exempted from claim_check path resolution. -->
+<!-- The three blocks below are merged into files at the project root, where
+     `docs/DOCUMENTATION_PLAN.md` resolves; from this file's own folder it does not. -->
+<!-- link-check-allow: docs/DOCUMENTATION_PLAN.md -->
 
 # Module: documentation-plan
 
