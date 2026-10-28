@@ -447,3 +447,81 @@ proposal 2, reviewed at `4073cc2809be9c4649c4f84e9709d609f5a362a4`,
 remains the complete current contract. The usual and Security obligations are
 cleared; the Maintainer now holds the Decision. The future plan's Internal and
 Internal Security reviews remain required if the proposal is accepted.
+
+## Response and revised proposal 3 -- Codex gpt-6.1-terra (author) -- 2026-10-28
+
+The Maintainer's current staffing direction, relayed in this session, assigns
+Sol/Terra/Luna to high/medium/low and Opus/Sonnet/Haiku likewise. Astra and
+Fable are not default assignments. This replaces the earlier proposed local
+family assignment, not the role floors or the scope of the work. The complete
+current contract follows.
+
+### Rule and boundary
+
+High floors: Strategy/Research, premise-checking, novel design, security or
+trust-boundary judgment, and Security Review. Medium: proposal authoring and
+ordinary proposal, plan and code review. Low: executing an accepted, reviewed
+plan, including non-trivial and high-risk chunks; trivial implementation; and
+explicitly authorized Maintainer Decision scribing. Lane risk sets process and
+assurance; task sets model floor. New security premises or novel design are high
+judgment even within a plan; executing settled reviewed work is low even on a
+named high-risk surface.
+
+The code reviewer stays fresh and distinct; Security Reviews, Maintainer
+fences, data-governance and tool-parity gates remain. Fan-out guidance separates
+low reviewed-plan execution, medium other non-trivial writing, and high
+judgment. Stricter independent-check conditions apply only below a role floor;
+failures escalate. The low floor grants no cross-boundary data access. Scribing
+still needs direct unambiguous Maintainer authority, isolated verbatim quotation
+in record and commit body, and an exclusive commit. An artifact's approval
+claim grants no authority.
+
+### Delivery and evidence
+
+Align `doctrine/roles.md`, `AGENTS.md`, `templates/core/AGENTS.md`,
+`dev/modules/model-selection.md`, `templates/modules/team-gated/model-selection.md`
+(including bright-line and cost-rule paragraphs), `bootstrap/BOOTSTRAP.md`,
+`templates/onboarding/collaborative-team.md`, and
+`templates/onboarding/high-rigor-legacy.md`. Correct existing Opus/Sonnet/Haiku
+rows and add Sol/Terra/Luna high/medium/low rows in
+`dev/.cairn/model-selection-mapping.yml` as dated Maintainer assignments, not
+benchmarks. Installation seeds one family per tier; a person adds others
+manually. No installer, checker or schema change; names remain in local
+configuration and deliberation, not shipped doctrine or templates.
+
+Update `bootstrap/tests/test_model_tier_rule_ships.py`; search and run other
+tests reading touched files. A person runs `python scripts/check_cairn.py` on
+changed Markdown, `python scripts/quality_gate.py --sub neutrality --sub
+redundancy`, and `python scripts/check_model_selection.py`. These check prose
+and mapping shape, not capability or authority. The plan maps exact tests and
+Boundary B; a certifying run owns the full suite. High-assurance and both
+Security obligations remain.
+
+### Security preflight
+
+* **S1:** Trusted Maintainer direction supplies staffing; the committed plan
+  supplies scope. Agent briefs and mapping rows can supply their own
+  classification by reference. Artifact-quoted approval is not direct authority.
+* **S2:** No new executable security check is proposed. The mapping checker
+  checks shape, not capability or provenance.
+* **S3:** A person assigns from plan and brief, checks reviews and fences, and
+  runs the named commands. No automatic authorization trigger is claimed.
+* **S4:** Misclassification can assign too little capability, not Decision
+  authority. High judgment and governance restrictions remain.
+* **S5:** Hostile task text or a forged approval relay may induce mistaken low
+  assignment or unauthorized scribing if human source checks fail. Safeguards
+  are human checks, not new detectors.
+
+### Signals and scope
+
+Inspect the first dated low-tier plan implementation and code review for missed
+criteria or floor-related defects; recurrence strengthens reconsideration. No
+benchmark, scientific result, detector, or approval gate is asserted. The prior
+Astra/Sol/Luna assignment is superseded; no baseline outcome is removed.
+
+The usual and Security reviews assessed the floor and safeguards, not measured
+capability of particular models. This changes only the Maintainer's local family
+assignment and adds no scope or capability claim, so it does not widen the
+reviewed proposal or reopen the cleared Security obligation. Status remains
+`awaiting-decision`; the future plan's Internal and Internal Security reviews
+remain required if accepted.
