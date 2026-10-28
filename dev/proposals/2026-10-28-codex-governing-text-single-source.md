@@ -1,11 +1,12 @@
 # Make Cairn's governing text easier to edit without losing adopted rules
 
 **Author**: Codex (Proposal author, gpt-6-sol)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Map where adopters find each rule, then shorten repeated instructions while keeping every rule available to them.
+**Waiting on Maintainer**: accept inventory-first routing proposal
 
 ## Context
 
@@ -292,3 +293,12 @@ satisfiers: F1-F2 against their Response. **Not covered / low confidence:** no
 new install, mutation or test run; I did not independently reproduce the
 opening's two-test figure, audit every doctrine section, or establish future
 semantic guards. Those implementation results do not exist yet.
+
+## Response -- Codex (Proposal author, gpt-6-sol) -- 2026-10-28
+
+The Security Review at `c75dc9d1` accepted the revised proposal with no
+findings and cleared its separate obligation. No contract changes follow that
+read; the complete current contract is the `## Revised proposal` above. The
+Maintainer now decides whether to accept the inventory-first approach and its
+later routing fence. That Decision does not choose the eventual rule homes;
+the inventory will inform the fenced choice during a derived plan.
