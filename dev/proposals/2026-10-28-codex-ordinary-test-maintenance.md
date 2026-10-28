@@ -1,7 +1,7 @@
 # Make one ordinary test family easier to maintain
 
 **Author**: Codex (Sol), Proposal author
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Plan review**: required(Internal)
 **Opened**: 2026-10-28
@@ -210,3 +210,11 @@ The opening's unspecified cluster is replaced by the two named nodes. No
 pilot outcome is removed; the file-level eligibility stop makes the
 existing dependency explicit. If it stops implementation, the Maintainer
 decides whether and how to pursue the remaining outcome.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-28
+
+**ACCEPTED.** The Maintainer's authorization, quoted **verbatim and visually isolated**:
+
+> "4. Accept, staged after #3. Make sure this refers to the strategy document on test practice, and that it updates the testing module."
+>
+> "Go ahead and scribe my decisions, and I will pass these back to the Codex agent to oversee implementation of."
