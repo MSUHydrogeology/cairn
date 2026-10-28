@@ -1,0 +1,2796 @@
+{
+  "artifact": "C1a factual inventory refresh; not a classification or authority artifact",
+  "board_pilot_factual_locations": {
+    "file": "bootstrap/tests/test_board_json_contract.py",
+    "other_security_test_locations_same_file": [
+      {
+        "line": 477,
+        "test": "test_symlinked_sources_are_skipped_and_named_in_all_modes"
+      },
+      {
+        "line": 675,
+        "test": "test_planted_session_module_under_root_is_never_executed"
+      }
+    ],
+    "pilot_nodes": [
+      {
+        "class_line": 888,
+        "helpers": [
+          {
+            "line": 28,
+            "name": "_write"
+          },
+          {
+            "line": 751,
+            "name": "_run_json"
+          },
+          {
+            "line": 25,
+            "loader": "_load_board at line 17",
+            "name": "board"
+          },
+          {
+            "line": 723,
+            "name": "BASELINE_PATH"
+          }
+        ],
+        "nodeid": "bootstrap/tests/test_board_json_contract.py::TestRecordFactsComeFromWhereTheFileSits::test_all_record_values_and_absent_vs_blank_and_headerless_files",
+        "test_line": 928
+      },
+      {
+        "class_line": 1014,
+        "helpers": [
+          {
+            "line": 28,
+            "name": "_write"
+          },
+          {
+            "line": 751,
+            "name": "_run_json"
+          },
+          {
+            "line": 25,
+            "loader": "_load_board at line 17",
+            "name": "board"
+          }
+        ],
+        "nodeid": "bootstrap/tests/test_board_json_contract.py::TestOutputIsDeterministic::test_archives_unique_path_key_and_deterministic_ascii_json",
+        "test_line": 1018
+      }
+    ],
+    "sha256": "bbfb6137a733e7e78d211206a426c0e826f71b76b9828f117e742e7cbc1d8f2e"
+  },
+  "bootstrap_test_tree_python_count": 141,
+  "changed_python_paths_since_c1b_source": [
+    {
+      "current_sha256": "c6d1322e4b31b885bf633ae4db16c307449bec429d0a13227a5ef175bb90a021",
+      "path": "bootstrap/tests/conftest.py",
+      "prior_sha256": "da2012750dff3d112285f7c0235d736e937db99e876015a15147908aec0f8e9a"
+    },
+    {
+      "current_sha256": "a8bb32492d844c172ba315a341dffdcd914abc678c6e25920d6d6347a2fe4261",
+      "path": "bootstrap/tests/test_certifying_run_rule.py",
+      "prior_sha256": "1f9a469a2ccd561f452aee2fc3b1af9d427774fa33f460d761779a057161dbee"
+    },
+    {
+      "current_sha256": "b095ef072e112fcbf9e41188cfd11f71fec4f4f091c2aef28c9f5658cc958bd5",
+      "path": "bootstrap/tests/test_model_tier_rule_ships.py",
+      "prior_sha256": "acb6405a55f6a0f93b72869275b38a9550d00070fc7842e337176922860027d1"
+    },
+    {
+      "current_sha256": "3b9075256513647a85f7c3ec5cc5081de9368409935d81a7891c081bce7774aa",
+      "path": "bootstrap/tests/test_review_and_verification_rules_ship.py",
+      "prior_sha256": "81cfe819d01a36daec012ad508eaa45fe6c0c8c581b739de3d4d3392deb552e0"
+    },
+    {
+      "current_sha256": "c32f0ca7b3faf79c98cb516feaa222cccf2a473e36f320c16be0beaec69ef369",
+      "path": "bootstrap/tests/test_verification_boundaries.py",
+      "prior_sha256": "b883df12ae5f373c168612b8b1b7b8201d915f4351ac20f4216b4eafc83fbdd2"
+    }
+  ],
+  "changed_test_dependency_refresh": {
+    "bootstrap/tests/conftest.py": {
+      "definitions": [
+        {
+          "end_line": 133,
+          "line": 108,
+          "name": "_own"
+        },
+        {
+          "end_line": 184,
+          "line": 136,
+          "name": "_refuse_if_a_hook_was_shadowed"
+        },
+        {
+          "end_line": 200,
+          "line": 192,
+          "name": "_release_mode"
+        },
+        {
+          "end_line": 213,
+          "line": 204,
+          "name": "pytest_addhooks"
+        },
+        {
+          "end_line": 235,
+          "line": 217,
+          "name": "pytest_addoption"
+        },
+        {
+          "end_line": 252,
+          "line": 240,
+          "name": "pytest_collection_modifyitems"
+        },
+        {
+          "end_line": 273,
+          "line": 255,
+          "name": "_apply_security_marker"
+        },
+        {
+          "end_line": 304,
+          "line": 276,
+          "name": "_security_family"
+        },
+        {
+          "end_line": 313,
+          "line": 307,
+          "name": "_full_suite_override"
+        },
+        {
+          "end_line": 332,
+          "line": 316,
+          "name": "_collected_file_span"
+        },
+        {
+          "end_line": 374,
+          "line": 337,
+          "name": "pytest_collection_finish"
+        },
+        {
+          "end_line": 419,
+          "line": 377,
+          "name": "_refuse_broad_run_if_warranted"
+        },
+        {
+          "end_line": 432,
+          "line": 422,
+          "name": "_record_refused_report"
+        },
+        {
+          "end_line": 447,
+          "line": 436,
+          "name": "pytest_runtest_logreport"
+        },
+        {
+          "end_line": 458,
+          "line": 451,
+          "name": "pytest_collectreport"
+        },
+        {
+          "end_line": 474,
+          "line": 462,
+          "name": "pytest_configure"
+        },
+        {
+          "end_line": 486,
+          "line": 480,
+          "name": "pytest_sessionfinish"
+        },
+        {
+          "end_line": 516,
+          "line": 489,
+          "name": "_release_mode_outcome_rule"
+        },
+        {
+          "end_line": 531,
+          "line": 522,
+          "name": "_suite_root"
+        }
+      ],
+      "dynamic_load_calls": [
+        {
+          "expression": "importlib.util.spec_from_file_location(\"_cairn_security_manifest\", path)",
+          "line": 301
+        },
+        {
+          "expression": "importlib.util.module_from_spec(spec)",
+          "line": 302
+        },
+        {
+          "expression": "spec.loader.exec_module(module)",
+          "line": 303
+        }
+      ],
+      "fixture_argument_candidates": [
+        "config",
+        "exitstatus",
+        "fn",
+        "items",
+        "parser",
+        "pluginmanager",
+        "report",
+        "session"
+      ],
+      "fixture_definitions": [],
+      "imports": [
+        {
+          "line": 44,
+          "repository_candidates": [],
+          "statement": "from __future__ import annotations"
+        },
+        {
+          "line": 46,
+          "repository_candidates": [],
+          "statement": "import json"
+        },
+        {
+          "line": 47,
+          "repository_candidates": [],
+          "statement": "import math"
+        },
+        {
+          "line": 48,
+          "repository_candidates": [],
+          "statement": "import os"
+        },
+        {
+          "line": 49,
+          "repository_candidates": [],
+          "statement": "import random"
+        },
+        {
+          "line": 50,
+          "repository_candidates": [],
+          "statement": "import sys"
+        },
+        {
+          "line": 51,
+          "repository_candidates": [],
+          "statement": "import time"
+        },
+        {
+          "line": 52,
+          "repository_candidates": [],
+          "statement": "from datetime import datetime, timezone"
+        },
+        {
+          "line": 53,
+          "repository_candidates": [],
+          "statement": "from pathlib import Path"
+        },
+        {
+          "line": 55,
+          "repository_candidates": [],
+          "statement": "import pytest"
+        },
+        {
+          "line": 58,
+          "repository_candidates": [],
+          "statement": "import fcntl"
+        },
+        {
+          "line": 285,
+          "repository_candidates": [],
+          "statement": "import importlib.util"
+        }
+      ],
+      "path_literal_evidence": [
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 1,
+          "literal": "Pytest conftest for Cairn's bootstrap test suite.\n\nCarries several mechanisms, all stdlib-only and all inert unless explicitly\nactivated: the **order-independence shuffle hook**, the **release-mode outcome\nrule** and the **broad-run guard** (documented at\nthe section that implements it, near the end of this file).\n\nRelease mode (``CAIRN_RELEASE_GATE_ACTIVE``)\n--------------------------------------------\n\n``bootstrap/security_check.py`` sets this variable, at exactly one\nrecognized value, on the pytest children whose result it reports as\nrelease evidence.  While it is set, an actual ``skipped`` /\n``xfailed`` / ``xpassed`` outcome makes the session **non-zero**: \"the\nsecurity gate may have skipped on the machine that cut the release\" is\nnot acceptable release evidence, and a suite that exits 0 after a skip\nsays nothing about the code that did not run.\n\nThree boundaries, each deliberate:\n\n* **Without the token -- including at any other value -- contributor\n  behaviour is unchanged.**  A local skip is a feature for someone\n  without dev-deps installed; only a release run refuses it.\n* It is an **outcome rule, not a marker census**.  An *inactive*\n  ``skipif`` marker (condition false, test ran normally) does not fail\n  a release for existing.  Counting markers would refuse a release for\n  a skip that never happened.\n* An **already-failing or interrupted session stays at its own exit\n  code**.  Overwriting a ``2`` (interrupted) with a ``1`` would hide\n  the more serious outcome behind the less serious one.\n\nWhen pytest is invoked without ``--quality-gate-shuffle-seed``\n(the normal case), the hook is a no-op and tests run in the\ndefault collection order.  When the flag is passed, the hook\ndeterministically reorders ``items`` using a fresh ``random.Random``\nseeded with the int value, so the same seed always produces the\nsame order.\n\nRepeat-call protection: an invocation can pass multiple\n``--quality-gate-shuffle-seed`` values; pytest keeps only the last\none.  That is sufficient for the quality-gate sub-gate's \"run once\nper seed\" contract (the sub-gate spawns a subprocess per seed).\n"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 137,
+          "literal": "Refuse the session if any hook this module owns has been replaced.\n\n    Checked from inside a hook rather than at module scope on purpose: module\n    scope executes top-to-bottom, so a check placed in the file body runs\n    *before* an append further down and sees the state it is meant to catch as\n    still correct. A hook body runs after the import has completed, which is the\n    only moment the final bindings are visible.\n\n    Runs from ``pytest_addhooks``, which is call #1 for a conftest plugin --\n    ahead of ``pytest_addoption``. An earlier version ran from ``addoption`` and\n    claimed no earlier hook existed; that was false, and it left an append\n    shadowing both hooks silent.\n\n    **A known limit, stated rather than left to be rediscovered.** The\n    comparison is by object identity (``globals().get(name) is not fn``), so\n    it catches every *rebinding* of the module attribute -- a second ``def``,\n    a ``functools.wraps`` wrap, a bare reassignment -- because all of those\n    make ``globals()[name]`` a different object from the one ``_own`` recorded.\n    It does **not** catch a mutation of that *same* object's internals:\n    ``pytest_sessionfinish.__code__ = other.__code__`` leaves the name bound\n    to the identical object ``_OWNED_HOOKS`` already holds, so the comparison\n    finds nothing to report. Measured: this silences the release-mode outcome\n    rule as completely as the pre-fix hazard -- exit 0, no ``RELEASE MODE``\n    report, no diagnostic anywhere -- on a tree with a real skip present.  An\n    explicit ``_OWNED_HOOKS.pop(name)`` ahead of a shadowing ``def`` reaches\n    the same result by a different route (the shadow's own identity check\n    then compares the registry against itself). Both require code written\n    specifically to defeat this check; neither is the accidental shadowing --\n    a future contributor copying this file's own ``def``/``@_own`` idiom --\n    this guard was built to catch, and neither is closed here.\n    "
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 463,
+          "literal": "Register the security-family marker.\n\n    Membership itself lives in ``bootstrap/tests/security_manifest.py``; this\n    only makes the marker known so ``-m`` selections are not warnings.\n    "
+        },
+        {
+          "basename_candidates": [
+            "bootstrap/tests/security_manifest.py"
+          ],
+          "exact_test_tree_path": [],
+          "line": 287,
+          "literal": "security_manifest.py"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 470,
+          "literal": "security: a member of the security test family (see bootstrap/tests/security_manifest.py). Deselected from the per-change loop with -m 'not security'; always run by the release ceremony, which executes the entire suite with skips and xfails failing closed."
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 230,
+          "literal": "If set, shuffle test collection order deterministically using this integer as the seed.  Stdlib `random.Random`; no pytest plugin dependency.  Used by scripts/quality_gate.py --sub order-independence."
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 126,
+          "literal": "bootstrap/tests/conftest.py defines "
+        }
+      ],
+      "path_literals": [
+        {
+          "line": 1,
+          "value": "Pytest conftest for Cairn's bootstrap test suite.\n\nCarries several mechanisms, all stdlib-only and all inert unless explicitly\nactivated: the **order-independence shuffle hook**, the **release-mode outcome\nrule** and the **broad-run guard** (documented at\nthe section that implements it, near the end of this file).\n\nRelease mode (``CAIRN_RELEASE_GATE_ACTIVE``)\n--------------------------------------------\n\n``bootstrap/security_check.py`` sets this variable, at exactly one\nrecognized value, on the pytest children whose result it reports as\nrelease evidence.  While it is set, an actual ``skipped`` /\n``xfailed`` / ``xpassed`` outcome makes the session **non-zero**: \"the\nsecurity gate may have skipped on the machine that cut the release\" is\nnot acceptable release evidence, and a suite that exits 0 after a skip\nsays nothing about the code that did not run.\n\nThree boundaries, each deliberate:\n\n* **Without the token -- including at any other value -- contributor\n  behaviour is unchanged.**  A local skip is a feature for someone\n  without dev-deps installed; only a release run refuses it.\n* It is an **outcome rule, not a marker census**.  An *inactive*\n  ``skipif`` marker (condition false, test ran normally) does not fail\n  a release for existing.  Counting markers would refuse a release for\n  a skip that never happened.\n* An **already-failing or interrupted session stays at its own exit\n  code**.  Overwriting a ``2`` (interrupted) with a ``1`` would hide\n  the more serious outcome behind the less serious one.\n\nWhen pytest is invoked without ``--quality-gate-shuffle-seed``\n(the normal case), the hook is a no-op and tests run in the\ndefault collection order.  When the flag is passed, the hook\ndeterministically reorders ``items`` using a fresh ``random.Random``\nseeded with the int value, so the same seed always produces the\nsame order.\n\nRepeat-call protection: an invocation can pass multiple\n``--quality-gate-shuffle-seed`` values; pytest keeps only the last\none.  That is sufficient for the quality-gate sub-gate's \"run once\nper seed\" contract (the sub-gate spawns a subprocess per seed).\n"
+        },
+        {
+          "line": 137,
+          "value": "Refuse the session if any hook this module owns has been replaced.\n\n    Checked from inside a hook rather than at module scope on purpose: module\n    scope executes top-to-bottom, so a check placed in the file body runs\n    *before* an append further down and sees the state it is meant to catch as\n    still correct. A hook body runs after the import has completed, which is the\n    only moment the final bindings are visible.\n\n    Runs from ``pytest_addhooks``, which is call #1 for a conftest plugin --\n    ahead of ``pytest_addoption``. An earlier version ran from ``addoption`` and\n    claimed no earlier hook existed; that was false, and it left an append\n    shadowing both hooks silent.\n\n    **A known limit, stated rather than left to be rediscovered.** The\n    comparison is by object identity (``globals().get(name) is not fn``), so\n    it catches every *rebinding* of the module attribute -- a second ``def``,\n    a ``functools.wraps`` wrap, a bare reassignment -- because all of those\n    make ``globals()[name]`` a different object from the one ``_own`` recorded.\n    It does **not** catch a mutation of that *same* object's internals:\n    ``pytest_sessionfinish.__code__ = other.__code__`` leaves the name bound\n    to the identical object ``_OWNED_HOOKS`` already holds, so the comparison\n    finds nothing to report. Measured: this silences the release-mode outcome\n    rule as completely as the pre-fix hazard -- exit 0, no ``RELEASE MODE``\n    report, no diagnostic anywhere -- on a tree with a real skip present.  An\n    explicit ``_OWNED_HOOKS.pop(name)`` ahead of a shadowing ``def`` reaches\n    the same result by a different route (the shadow's own identity check\n    then compares the registry against itself). Both require code written\n    specifically to defeat this check; neither is the accidental shadowing --\n    a future contributor copying this file's own ``def``/``@_own`` idiom --\n    this guard was built to catch, and neither is closed here.\n    "
+        },
+        {
+          "line": 463,
+          "value": "Register the security-family marker.\n\n    Membership itself lives in ``bootstrap/tests/security_manifest.py``; this\n    only makes the marker known so ``-m`` selections are not warnings.\n    "
+        },
+        {
+          "line": 287,
+          "value": "security_manifest.py"
+        },
+        {
+          "line": 470,
+          "value": "security: a member of the security test family (see bootstrap/tests/security_manifest.py). Deselected from the per-change loop with -m 'not security'; always run by the release ceremony, which executes the entire suite with skips and xfails failing closed."
+        },
+        {
+          "line": 230,
+          "value": "If set, shuffle test collection order deterministically using this integer as the seed.  Stdlib `random.Random`; no pytest plugin dependency.  Used by scripts/quality_gate.py --sub order-independence."
+        },
+        {
+          "line": 126,
+          "value": "bootstrap/tests/conftest.py defines "
+        }
+      ],
+      "sha256": "c6d1322e4b31b885bf633ae4db16c307449bec429d0a13227a5ef175bb90a021"
+    },
+    "bootstrap/tests/test_certifying_run_rule.py": {
+      "definitions": [
+        {
+          "end_line": 34,
+          "line": 33,
+          "name": "_flat"
+        },
+        {
+          "end_line": 41,
+          "line": 38,
+          "name": "test_every_verification_surface_says_the_full_suite_is_a_certifying_run"
+        },
+        {
+          "end_line": 50,
+          "line": 45,
+          "name": "test_the_governing_rule_names_its_integration_points_and_its_failure_path"
+        },
+        {
+          "end_line": 55,
+          "line": 54,
+          "name": "test_reviewers_are_told_never_to_run_the_full_suite"
+        },
+        {
+          "end_line": 63,
+          "line": 58,
+          "name": "test_the_shipped_rule_names_no_cairn_only_command"
+        },
+        {
+          "end_line": 79,
+          "line": 66,
+          "name": "test_the_broad_run_refusal_no_longer_offers_the_override"
+        },
+        {
+          "end_line": 84,
+          "line": 82,
+          "name": "_push_certification_is_conditional"
+        }
+      ],
+      "dynamic_load_calls": [],
+      "fixture_argument_candidates": [
+        "message",
+        "path"
+      ],
+      "fixture_definitions": [],
+      "imports": [
+        {
+          "line": 11,
+          "repository_candidates": [],
+          "statement": "from __future__ import annotations"
+        },
+        {
+          "line": 13,
+          "repository_candidates": [],
+          "statement": "import re"
+        },
+        {
+          "line": 14,
+          "repository_candidates": [],
+          "statement": "from pathlib import Path"
+        },
+        {
+          "line": 16,
+          "repository_candidates": [],
+          "statement": "import pytest"
+        }
+      ],
+      "path_literal_evidence": [
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 21,
+          "literal": "AGENTS.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 22,
+          "literal": "AGENTS.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 23,
+          "literal": "plans.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 24,
+          "literal": "dual-review.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 25,
+          "literal": "_template.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 26,
+          "literal": "_template.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 62,
+          "literal": "bootstrap/tests"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 59,
+          "literal": "AGENTS.md"
+        },
+        {
+          "basename_candidates": [
+            "bootstrap/tests/conftest.py"
+          ],
+          "exact_test_tree_path": [],
+          "line": 67,
+          "literal": "conftest.py"
+        }
+      ],
+      "path_literals": [
+        {
+          "line": 21,
+          "value": "AGENTS.md"
+        },
+        {
+          "line": 22,
+          "value": "AGENTS.md"
+        },
+        {
+          "line": 23,
+          "value": "plans.md"
+        },
+        {
+          "line": 24,
+          "value": "dual-review.md"
+        },
+        {
+          "line": 25,
+          "value": "_template.md"
+        },
+        {
+          "line": 26,
+          "value": "_template.md"
+        },
+        {
+          "line": 62,
+          "value": "bootstrap/tests"
+        },
+        {
+          "line": 59,
+          "value": "AGENTS.md"
+        },
+        {
+          "line": 67,
+          "value": "conftest.py"
+        }
+      ],
+      "sha256": "a8bb32492d844c172ba315a341dffdcd914abc678c6e25920d6d6347a2fe4261"
+    },
+    "bootstrap/tests/test_model_tier_rule_ships.py": {
+      "definitions": [
+        {
+          "end_line": 81,
+          "line": 78,
+          "name": "_flat"
+        },
+        {
+          "end_line": 85,
+          "line": 84,
+          "name": "_read"
+        },
+        {
+          "end_line": 93,
+          "line": 88,
+          "name": "_roles_section"
+        },
+        {
+          "end_line": 115,
+          "line": 103,
+          "name": "_fan_out_gaps"
+        },
+        {
+          "end_line": 121,
+          "line": 118,
+          "name": "_missing_rule_clauses"
+        },
+        {
+          "end_line": 127,
+          "line": 124,
+          "name": "_retired_condition"
+        },
+        {
+          "end_line": 133,
+          "line": 131,
+          "name": "test_both_agents_copies_carry_the_model_tier_rule"
+        },
+        {
+          "end_line": 151,
+          "line": 136,
+          "name": "test_task_floors_reject_lane_based_assignment_and_unreviewed_low_authority"
+        },
+        {
+          "end_line": 160,
+          "line": 154,
+          "name": "test_the_rule_reads_the_same_in_both_copies"
+        },
+        {
+          "end_line": 168,
+          "line": 164,
+          "name": "test_the_rule_sits_under_roles"
+        },
+        {
+          "end_line": 176,
+          "line": 171,
+          "name": "test_deleting_the_name_the_model_sentence_is_reported"
+        },
+        {
+          "end_line": 191,
+          "line": 180,
+          "name": "solo_install"
+        },
+        {
+          "end_line": 198,
+          "line": 194,
+          "name": "test_a_profile_with_no_module_still_installs_the_rule"
+        },
+        {
+          "end_line": 234,
+          "line": 201,
+          "name": "test_the_different_maker_condition_is_gone_and_same_tier_is_excluded"
+        },
+        {
+          "end_line": 323,
+          "line": 237,
+          "name": "test_proposal_authoring_and_ordinary_review_are_medium"
+        },
+        {
+          "end_line": 159,
+          "line": 156,
+          "name": "rule"
+        },
+        {
+          "end_line": 214,
+          "line": 212,
+          "name": "violations"
+        },
+        {
+          "end_line": 259,
+          "line": 254,
+          "name": "task_floors"
+        },
+        {
+          "end_line": 277,
+          "line": 272,
+          "name": "fanout_floors"
+        }
+      ],
+      "dynamic_load_calls": [],
+      "fixture_argument_candidates": [
+        "by_place",
+        "rel",
+        "roles_text",
+        "solo_install",
+        "text",
+        "tmp_path_factory"
+      ],
+      "fixture_definitions": [
+        "solo_install"
+      ],
+      "imports": [
+        {
+          "line": 18,
+          "repository_candidates": [],
+          "statement": "from pathlib import Path"
+        },
+        {
+          "line": 19,
+          "repository_candidates": [],
+          "statement": "import re"
+        },
+        {
+          "line": 20,
+          "repository_candidates": [],
+          "statement": "import subprocess"
+        },
+        {
+          "line": 21,
+          "repository_candidates": [],
+          "statement": "import sys"
+        },
+        {
+          "line": 23,
+          "repository_candidates": [],
+          "statement": "import pytest"
+        }
+      ],
+      "path_literal_evidence": [
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 28,
+          "literal": "templates/core/AGENTS.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 29,
+          "literal": "AGENTS.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 30,
+          "literal": "doctrine/roles.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 31,
+          "literal": "templates/modules/team-gated/model-selection.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 32,
+          "literal": "dev/modules/model-selection.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 240,
+          "literal": "Strategy / Research"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 241,
+          "literal": "Security judgment / Security Review"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 262,
+          "literal": "Single search / retrieval"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 263,
+          "literal": "Single-source extraction / parsing"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 264,
+          "literal": "Mechanical transform / formatting"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 301,
+          "literal": "| Security judgment / Security Review | high |"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 302,
+          "literal": "| Security judgment / Security Review | medium |"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 197,
+          "literal": "AGENTS.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 185,
+          "literal": "bootstrap/scaffold.py"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 186,
+          "literal": "bootstrap/profiles/solo-greenfield.yml"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 196,
+          "literal": "dev/modules/model-selection.md"
+        }
+      ],
+      "path_literals": [
+        {
+          "line": 28,
+          "value": "templates/core/AGENTS.md"
+        },
+        {
+          "line": 29,
+          "value": "AGENTS.md"
+        },
+        {
+          "line": 30,
+          "value": "doctrine/roles.md"
+        },
+        {
+          "line": 31,
+          "value": "templates/modules/team-gated/model-selection.md"
+        },
+        {
+          "line": 32,
+          "value": "dev/modules/model-selection.md"
+        },
+        {
+          "line": 240,
+          "value": "Strategy / Research"
+        },
+        {
+          "line": 241,
+          "value": "Security judgment / Security Review"
+        },
+        {
+          "line": 262,
+          "value": "Single search / retrieval"
+        },
+        {
+          "line": 263,
+          "value": "Single-source extraction / parsing"
+        },
+        {
+          "line": 264,
+          "value": "Mechanical transform / formatting"
+        },
+        {
+          "line": 301,
+          "value": "| Security judgment / Security Review | high |"
+        },
+        {
+          "line": 302,
+          "value": "| Security judgment / Security Review | medium |"
+        },
+        {
+          "line": 197,
+          "value": "AGENTS.md"
+        },
+        {
+          "line": 185,
+          "value": "bootstrap/scaffold.py"
+        },
+        {
+          "line": 186,
+          "value": "bootstrap/profiles/solo-greenfield.yml"
+        },
+        {
+          "line": 196,
+          "value": "dev/modules/model-selection.md"
+        }
+      ],
+      "sha256": "b095ef072e112fcbf9e41188cfd11f71fec4f4f091c2aef28c9f5658cc958bd5"
+    },
+    "bootstrap/tests/test_review_and_verification_rules_ship.py": {
+      "definitions": [
+        {
+          "end_line": 176,
+          "line": 174,
+          "name": "_collapse"
+        },
+        {
+          "end_line": 180,
+          "line": 179,
+          "name": "_text"
+        },
+        {
+          "end_line": 187,
+          "line": 183,
+          "name": "_missing"
+        },
+        {
+          "end_line": 197,
+          "line": 192,
+          "name": "test_agents_md_carries_the_obligation"
+        },
+        {
+          "end_line": 204,
+          "line": 200,
+          "name": "_present_forbidden"
+        },
+        {
+          "end_line": 212,
+          "line": 209,
+          "name": "test_agents_md_omits_the_forbidden_phrasing"
+        },
+        {
+          "end_line": 220,
+          "line": 215,
+          "name": "test_forbidden_patterns_recognize_their_examples"
+        },
+        {
+          "end_line": 235,
+          "line": 229,
+          "name": "test_the_external_by_default_pin_ignores_case_and_wrapping"
+        },
+        {
+          "end_line": 240,
+          "line": 238,
+          "name": "test_an_empty_file_carries_no_obligation"
+        },
+        {
+          "end_line": 255,
+          "line": 244,
+          "name": "test_the_commit_rule_sits_in_the_review_section"
+        },
+        {
+          "end_line": 265,
+          "line": 258,
+          "name": "test_the_shipped_copy_makes_claiming_conditional"
+        },
+        {
+          "end_line": 276,
+          "line": 268,
+          "name": "test_cairns_own_copy_claims_unconditionally"
+        }
+      ],
+      "dynamic_load_calls": [],
+      "fixture_argument_candidates": [
+        "label",
+        "rel",
+        "text",
+        "variant"
+      ],
+      "fixture_definitions": [],
+      "imports": [
+        {
+          "line": 54,
+          "repository_candidates": [],
+          "statement": "from __future__ import annotations"
+        },
+        {
+          "line": 56,
+          "repository_candidates": [],
+          "statement": "import re"
+        },
+        {
+          "line": 57,
+          "repository_candidates": [],
+          "statement": "from pathlib import Path"
+        },
+        {
+          "line": 59,
+          "repository_candidates": [],
+          "statement": "import pytest"
+        }
+      ],
+      "path_literal_evidence": [
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 1,
+          "literal": "The review and verification rules must reach the adopter, not only the doctrine.\n\n`doctrine/` is **not installed into an adopter tree**, so a rule that lives\nonly there binds nobody who adopts Cairn. These rules therefore sit in\n`templates/core/AGENTS.md`, the file every adopter receives and every agent\nloads each session, and in Cairn's own root `AGENTS.md`, so that Cairn is bound\nby the rules it ships.\n\nThe rules pinned here:\n\n* **A review reads a commit, never a shared working tree.** In a working tree\n  shared with an author, the reviewer's only write is its own review record;\n  anything else that writes runs in a separate copy. A reverted, uncommitted\n  file cannot be brought back with git, so this is the rule that prevents lost\n  work.\n* **A claim that a value reaches every member of a set is settled by\n  mutation.** The missing member is a line that is not there, so reading a\n  diff cannot see it. The ledger reports every mutant against an unmutated\n  control, and an equivalence nobody measured counts as a survivor. Two\n  clauses carry that meaning and are pinned for what they say, not only that\n  they exist: the trigger is a claim about a set (not any defect), and an\n  equivalent mutant is one a behaviour test *passes* under (a test that fails\n  has killed it).\n* **Boundary B governs a trivial change too.** Search for its owning tests\n  and readers, then run those checks on the exact candidate bytes before\n  commit, in an otherwise clean tree or separate copy. Its commit body records\n  the mode, pending tree certification, search, commands, counts, interpreter,\n  outcomes and omissions; the author owns the record and there is no Boundary\n  C. A passing record may say `Implementation verified at <SHA>`; a known\n  missing consumer, security check, or criterion keeps the work open. For\n  planned work, Boundary B is `bounded` for mapped affected behavior and\n  consumers, or `wide` for owning families, known integration and public paths,\n  and standing gates when effects cannot be confidently bounded. Use `wide`\n  for a contract or trust-ceremony surface. A full-tree certification is a\n  separate authorized integration run and cannot close a missing change check.\n* **\"Substantive surface\" is defined once.** It is anything that is not\n  ordinary prose, and that includes prose a test or manifest pins. A narrower\n  \"code\" reading misses exactly the template rewrite whose pinned prose broke\n  tests its author never ran.\n* **Code review is not External by default.** More distance on a review is\n  the Maintainer's call on one named artifact, never a default and never\n  something an agent applies. The usual procedure may be reworded, so this is\n  pinned as an absence: the claim must not come back in either copy, in any\n  capitalisation or line wrapping.\n\nEach obligation is an alternation matched against whitespace-collapsed text, so\na rewording that keeps the obligation passes and a deletion fails. Node IDs are\nthe obligation labels, never the patterns, so rewording a pattern does not\nrename (and so drop) a collected test.\n\nRun from the Cairn repo root:\n    python -m pytest bootstrap/tests/test_review_and_verification_rules_ship.py\n"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 65,
+          "literal": "templates/core/AGENTS.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 66,
+          "literal": "AGENTS.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 194,
+          "literal": ". The doctrine holds the same rule, but adopters never receive doctrine/; removing it here removes it for them."
+        }
+      ],
+      "path_literals": [
+        {
+          "line": 1,
+          "value": "The review and verification rules must reach the adopter, not only the doctrine.\n\n`doctrine/` is **not installed into an adopter tree**, so a rule that lives\nonly there binds nobody who adopts Cairn. These rules therefore sit in\n`templates/core/AGENTS.md`, the file every adopter receives and every agent\nloads each session, and in Cairn's own root `AGENTS.md`, so that Cairn is bound\nby the rules it ships.\n\nThe rules pinned here:\n\n* **A review reads a commit, never a shared working tree.** In a working tree\n  shared with an author, the reviewer's only write is its own review record;\n  anything else that writes runs in a separate copy. A reverted, uncommitted\n  file cannot be brought back with git, so this is the rule that prevents lost\n  work.\n* **A claim that a value reaches every member of a set is settled by\n  mutation.** The missing member is a line that is not there, so reading a\n  diff cannot see it. The ledger reports every mutant against an unmutated\n  control, and an equivalence nobody measured counts as a survivor. Two\n  clauses carry that meaning and are pinned for what they say, not only that\n  they exist: the trigger is a claim about a set (not any defect), and an\n  equivalent mutant is one a behaviour test *passes* under (a test that fails\n  has killed it).\n* **Boundary B governs a trivial change too.** Search for its owning tests\n  and readers, then run those checks on the exact candidate bytes before\n  commit, in an otherwise clean tree or separate copy. Its commit body records\n  the mode, pending tree certification, search, commands, counts, interpreter,\n  outcomes and omissions; the author owns the record and there is no Boundary\n  C. A passing record may say `Implementation verified at <SHA>`; a known\n  missing consumer, security check, or criterion keeps the work open. For\n  planned work, Boundary B is `bounded` for mapped affected behavior and\n  consumers, or `wide` for owning families, known integration and public paths,\n  and standing gates when effects cannot be confidently bounded. Use `wide`\n  for a contract or trust-ceremony surface. A full-tree certification is a\n  separate authorized integration run and cannot close a missing change check.\n* **\"Substantive surface\" is defined once.** It is anything that is not\n  ordinary prose, and that includes prose a test or manifest pins. A narrower\n  \"code\" reading misses exactly the template rewrite whose pinned prose broke\n  tests its author never ran.\n* **Code review is not External by default.** More distance on a review is\n  the Maintainer's call on one named artifact, never a default and never\n  something an agent applies. The usual procedure may be reworded, so this is\n  pinned as an absence: the claim must not come back in either copy, in any\n  capitalisation or line wrapping.\n\nEach obligation is an alternation matched against whitespace-collapsed text, so\na rewording that keeps the obligation passes and a deletion fails. Node IDs are\nthe obligation labels, never the patterns, so rewording a pattern does not\nrename (and so drop) a collected test.\n\nRun from the Cairn repo root:\n    python -m pytest bootstrap/tests/test_review_and_verification_rules_ship.py\n"
+        },
+        {
+          "line": 65,
+          "value": "templates/core/AGENTS.md"
+        },
+        {
+          "line": 66,
+          "value": "AGENTS.md"
+        },
+        {
+          "line": 194,
+          "value": ". The doctrine holds the same rule, but adopters never receive doctrine/; removing it here removes it for them."
+        }
+      ],
+      "sha256": "3b9075256513647a85f7c3ec5cc5081de9368409935d81a7891c081bce7774aa"
+    },
+    "bootstrap/tests/test_verification_boundaries.py": {
+      "definitions": [
+        {
+          "end_line": 42,
+          "line": 41,
+          "name": "_read"
+        },
+        {
+          "end_line": 51,
+          "line": 45,
+          "name": "_load_quality_gate"
+        },
+        {
+          "end_line": 68,
+          "line": 54,
+          "name": "_operational_violations"
+        },
+        {
+          "end_line": 73,
+          "line": 71,
+          "name": "test_both_operational_surfaces_separate_change_checks_from_tree_certification"
+        },
+        {
+          "end_line": 81,
+          "line": 76,
+          "name": "test_operational_guard_detects_removed_wide_surface_fence"
+        },
+        {
+          "end_line": 94,
+          "line": 84,
+          "name": "test_installed_operational_rule_is_project_general"
+        },
+        {
+          "end_line": 120,
+          "line": 97,
+          "name": "test_static_quality_composition_does_not_dispatch_pytest"
+        },
+        {
+          "end_line": 135,
+          "line": 123,
+          "name": "test_quality_gate_cli_default_still_selects_every_leg"
+        },
+        {
+          "end_line": 158,
+          "line": 138,
+          "name": "_record_violations"
+        },
+        {
+          "end_line": 162,
+          "line": 161,
+          "name": "test_plan_doctrine_binds_record_to_tested_range"
+        },
+        {
+          "end_line": 168,
+          "line": 165,
+          "name": "test_record_schema_guard_detects_removed_reviewed_range"
+        },
+        {
+          "end_line": 181,
+          "line": 171,
+          "name": "_review_violations"
+        },
+        {
+          "end_line": 185,
+          "line": 184,
+          "name": "test_review_doctrine_requires_targeted_falsification_and_replacement_triggers"
+        },
+        {
+          "end_line": 197,
+          "line": 188,
+          "name": "test_plan_and_review_doctrine_share_record_replacement_triggers"
+        },
+        {
+          "end_line": 238,
+          "line": 230,
+          "name": "test_change_verification_contract_reaches_every_surface"
+        },
+        {
+          "end_line": 245,
+          "line": 241,
+          "name": "_change_verification_violations"
+        },
+        {
+          "end_line": 265,
+          "line": 248,
+          "name": "test_change_verification_guard_detects_removed_wide_fence"
+        },
+        {
+          "end_line": 291,
+          "line": 275,
+          "name": "test_already_open_plans_keep_their_written_contract"
+        },
+        {
+          "end_line": 297,
+          "line": 294,
+          "name": "test_change_verification_guard_is_not_satisfied_by_an_empty_file"
+        },
+        {
+          "end_line": 309,
+          "line": 300,
+          "name": "test_boundary_c_adjudicates_a_scoped_record"
+        },
+        {
+          "end_line": 317,
+          "line": 312,
+          "name": "test_wider_run_verdict_invalidates_the_scoped_record"
+        },
+        {
+          "end_line": 323,
+          "line": 320,
+          "name": "test_review_reuse_guard_detects_unconditional_reuse"
+        },
+        {
+          "end_line": 364,
+          "line": 342,
+          "name": "_plan_template_violations"
+        },
+        {
+          "end_line": 374,
+          "line": 367,
+          "name": "test_both_plan_templates_carry_record_and_review_contract"
+        },
+        {
+          "end_line": 380,
+          "line": 377,
+          "name": "test_plan_template_guard_detects_removed_reviewed_range"
+        },
+        {
+          "end_line": 397,
+          "line": 383,
+          "name": "test_both_proposal_templates_reject_speed_as_coverage"
+        },
+        {
+          "end_line": 103,
+          "line": 101,
+          "name": "order"
+        },
+        {
+          "end_line": 107,
+          "line": 105,
+          "name": "neutrality"
+        },
+        {
+          "end_line": 111,
+          "line": 109,
+          "name": "redundancy"
+        },
+        {
+          "end_line": 129,
+          "line": 127,
+          "name": "capture"
+        }
+      ],
+      "dynamic_load_calls": [
+        {
+          "expression": "importlib.util.spec_from_file_location(name, QUALITY_GATE)",
+          "line": 46
+        },
+        {
+          "expression": "importlib.util.module_from_spec(spec)",
+          "line": 48
+        },
+        {
+          "expression": "spec.loader.exec_module(module)",
+          "line": 50
+        }
+      ],
+      "fixture_argument_candidates": [
+        "label",
+        "monkeypatch",
+        "name",
+        "path",
+        "sub_gates",
+        "text",
+        "tmp_path",
+        "tokens"
+      ],
+      "fixture_definitions": [],
+      "imports": [
+        {
+          "line": 7,
+          "repository_candidates": [],
+          "statement": "from __future__ import annotations"
+        },
+        {
+          "line": 9,
+          "repository_candidates": [],
+          "statement": "import importlib.util"
+        },
+        {
+          "line": 10,
+          "repository_candidates": [],
+          "statement": "import re"
+        },
+        {
+          "line": 11,
+          "repository_candidates": [],
+          "statement": "import sys"
+        },
+        {
+          "line": 12,
+          "repository_candidates": [],
+          "statement": "from pathlib import Path"
+        },
+        {
+          "line": 13,
+          "repository_candidates": [],
+          "statement": "from types import ModuleType"
+        },
+        {
+          "line": 15,
+          "repository_candidates": [],
+          "statement": "import pytest"
+        }
+      ],
+      "path_literal_evidence": [
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 1,
+          "literal": "Focused guards for the implementation verification boundaries.\n\nThese tests guard the prospective governing/template contract and the existing\nquality-gate composition. They do not parse filled verification records or\nselect tests automatically; both are explicit v1 omissions.\n"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 19,
+          "literal": "AGENTS.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 20,
+          "literal": "AGENTS.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 21,
+          "literal": "plans.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 22,
+          "literal": "dual-review.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 23,
+          "literal": "quality_gate.py"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 24,
+          "literal": "_template.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 25,
+          "literal": "_template.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 26,
+          "literal": "_template.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 28,
+          "literal": "_template.md"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 329,
+          "literal": "Interpreter/runtime"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 87,
+          "literal": "bootstrap/tests"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 88,
+          "literal": "scripts/quality_gate.py"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 94,
+          "literal": "configured interpreter/runtime"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 148,
+          "literal": "**Interpreter/runtime**"
+        },
+        {
+          "basename_candidates": [],
+          "exact_test_tree_path": [],
+          "line": 395,
+          "literal": "There is no separate slow / networked tier"
+        }
+      ],
+      "path_literals": [
+        {
+          "line": 1,
+          "value": "Focused guards for the implementation verification boundaries.\n\nThese tests guard the prospective governing/template contract and the existing\nquality-gate composition. They do not parse filled verification records or\nselect tests automatically; both are explicit v1 omissions.\n"
+        },
+        {
+          "line": 19,
+          "value": "AGENTS.md"
+        },
+        {
+          "line": 20,
+          "value": "AGENTS.md"
+        },
+        {
+          "line": 21,
+          "value": "plans.md"
+        },
+        {
+          "line": 22,
+          "value": "dual-review.md"
+        },
+        {
+          "line": 23,
+          "value": "quality_gate.py"
+        },
+        {
+          "line": 24,
+          "value": "_template.md"
+        },
+        {
+          "line": 25,
+          "value": "_template.md"
+        },
+        {
+          "line": 26,
+          "value": "_template.md"
+        },
+        {
+          "line": 28,
+          "value": "_template.md"
+        },
+        {
+          "line": 329,
+          "value": "Interpreter/runtime"
+        },
+        {
+          "line": 87,
+          "value": "bootstrap/tests"
+        },
+        {
+          "line": 88,
+          "value": "scripts/quality_gate.py"
+        },
+        {
+          "line": 94,
+          "value": "configured interpreter/runtime"
+        },
+        {
+          "line": 148,
+          "value": "**Interpreter/runtime**"
+        },
+        {
+          "line": 395,
+          "value": "There is no separate slow / networked tier"
+        }
+      ],
+      "sha256": "c32f0ca7b3faf79c98cb516feaa222cccf2a473e36f320c16be0beaec69ef369"
+    }
+  },
+  "changed_test_paths_since_c1b_source": [
+    "bootstrap/tests/conftest.py",
+    "bootstrap/tests/test_certifying_run_rule.py",
+    "bootstrap/tests/test_model_tier_rule_ships.py",
+    "bootstrap/tests/test_review_and_verification_rules_ship.py",
+    "bootstrap/tests/test_verification_boundaries.py"
+  ],
+  "collected_node_count": 5490,
+  "collection_command": "PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest --collect-only -q --disable-warnings -p no:cacheprovider bootstrap/tests",
+  "collection_exit_code": 0,
+  "collection_summary": "5490 tests collected in 3.95s",
+  "current_bootstrap_test_tree_python_hashes": {
+    "bootstrap/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bootstrap/tests/_ast_attest.py": "8280d432dae5931167bfb0f823e89cd51bec0fc6aff99a3c79f45923146e6006",
+    "bootstrap/tests/_gate_manifest.py": "e4c25061dd422f890795200c6ce4924744fdfaa3f47053282265fc4402d09725",
+    "bootstrap/tests/_gate_preflight.py": "bdf33a202d2a6b86e13c7e025c591c05cf7f4b4c441c3a9f009fa2f254a6bd5d",
+    "bootstrap/tests/_gate_reanchor.py": "3cd5d39ec6b64296557bda4ee41d838158c40e89699fc6b3372f4c412466be7c",
+    "bootstrap/tests/_gate_transition.py": "545625aea1d229d3977abd52118151477caf1bc5d87479d2e0a3cc08436bca17",
+    "bootstrap/tests/_loader_proto.py": "a13bd3e12bfecc272d3295f545400b065062f1ef326e106d280fc94cabf61046",
+    "bootstrap/tests/_oracle.py": "afc9951ecbbc2693caba76ad14843d4d38560e1c524dddbad37e04e1c3896bed",
+    "bootstrap/tests/_oracle_activation.py": "f8f94efa73eea79d6b366f280024d2bace4d13b4b111f12c65d9ae0f85c9d2c4",
+    "bootstrap/tests/_oracle_trust.py": "725692f9ad21f1276532dcba7ae49ed307fbd9c18bfdc25212fb048de0c63f42",
+    "bootstrap/tests/conftest.py": "c6d1322e4b31b885bf633ae4db16c307449bec429d0a13227a5ef175bb90a021",
+    "bootstrap/tests/security_manifest.py": "ecb794b097ccfc4f9cf1a7af6c3990bd71b2020a50470bb95be3a8e8dd6ffdb6",
+    "bootstrap/tests/test_agreement_retired.py": "31914fc6fa796ca2dbca62b2dd2c59356c64fdbdee4ba2d37e1a7272623ca6eb",
+    "bootstrap/tests/test_api_access_security.py": "ecdfdcfcd2534a1c353cd713f903d1e054b3b8755093ae9e20ea7924569157b8",
+    "bootstrap/tests/test_ast_attest.py": "e4e6c45d85f75d3c8ec3a7a06898575e0dcd952aacca9ca034fbf9dbe9bcac96",
+    "bootstrap/tests/test_board_json_contract.py": "bbfb6137a733e7e78d211206a426c0e826f71b76b9828f117e742e7cbc1d8f2e",
+    "bootstrap/tests/test_broad_run_guard.py": "3649377c412c128e37b40aa29b09efec70f8709ea2a3161b8160d1c4be9b95c3",
+    "bootstrap/tests/test_cairn_prefix_links.py": "0078b1332009c3960e8730a6f1dbc15681b8731e6edb53d5076d02580c256927",
+    "bootstrap/tests/test_ceremony_review_report.py": "a17f711c7a2e31ddd27ac833b7c07e8dcd92c0f2c071a71266fc0ead1c2af9f3",
+    "bootstrap/tests/test_certifying_run_rule.py": "a8bb32492d844c172ba315a341dffdcd914abc678c6e25920d6d6347a2fe4261",
+    "bootstrap/tests/test_check_cairn_content.py": "056fa4ed7da14efbfd7989e27d567ef0b3e2cc354e7790159ba4db30a92ca768",
+    "bootstrap/tests/test_check_cairn_counts.py": "1c5b3937a50eb1f150d5aedc59af76fb29091864094cb7513b866548dbf69dbf",
+    "bootstrap/tests/test_claim_check_allow_config.py": "58700c2c3c6d6b0819722c04a91764c58e352c581d780f616a4f636dd1c416b7",
+    "bootstrap/tests/test_claim_check_module.py": "9290a744e7200393edb234724cda493d7a8f4848927f0160d799303e2068c042",
+    "bootstrap/tests/test_cli_module.py": "f2653af6b42adb8c23af8755566c5852d3c368836b474c7ad5a5f64649b6a497",
+    "bootstrap/tests/test_comprehension_floor.py": "671cfca4f7e0a082d444d0b458e7443246373b43700c2d22a19a3839f7b76b58",
+    "bootstrap/tests/test_config_module.py": "d816e32e9695a8ed30c1c5d3b8c88ec41c045e0447521ba1b9f335e85a473a6e",
+    "bootstrap/tests/test_content_scan.py": "1947e78ed149919101f84cc53f15d8c7ac331f8232a40b391a079b7208354319",
+    "bootstrap/tests/test_coordination_broad_intent.py": "374b3e155b551d4c00f023f863923ad5e9fc21e7fcfd0ccca5d24cede2b7b16e",
+    "bootstrap/tests/test_core_dev_folders.py": "8622d33030f618adc31c9ce00dbfdbc7d06ab0a501dfb066d6adff7e71a17fba",
+    "bootstrap/tests/test_default_security_stance.py": "ff35b2b3f5e7dc02d77da71738791004273b0322fc9d87623100397227b61406",
+    "bootstrap/tests/test_deleted_tracked_markdown.py": "1455f9eb424070042d41f747b417a863ffa704f6747a39949c41aa744c330deb",
+    "bootstrap/tests/test_doc_drift_tools.py": "7d7db817f89ad8ec6bb6b84ec6420c8e597100d8bd27505921aacc66b8a1b19a",
+    "bootstrap/tests/test_doc_governance.py": "00c013ea0d6eb1dbb202392a8159bb593798f001053b6e6e839792545bb55955",
+    "bootstrap/tests/test_documentation_plan_module.py": "31532e535cc7340934f236c9158c46a5a1e25fd6278b88c64967e4c9ce02a4c7",
+    "bootstrap/tests/test_drift_surfacing.py": "f8754c952c9cdccb403ffa97c13590ad20f9ca3821069262d9ca4b00253ba91b",
+    "bootstrap/tests/test_engine_copy_fallback_contained.py": "eb6faf44c8198b191d62cb7f11beeb7e538f7b5ef5305c3dce0cc7b28ef440e0",
+    "bootstrap/tests/test_evolution_infer.py": "195775eaac3c5bd9de142265d097507428e5803f4373682ace5b9ddd2ce0ca2f",
+    "bootstrap/tests/test_facade_loader_cleanup.py": "2f4cc79fd8016268784252e99b22ad7937a741110ed4040e317ff39a619f20a2",
+    "bootstrap/tests/test_finalize_retired_living_state.py": "687ddddadc5ba14de460ef29bf57642d3042032ab68a9addd76e0ffd2a74ee45",
+    "bootstrap/tests/test_first_session_report.py": "16e2b09483865546f03dc35f30f13e5b80b26a8e6ba232db4f79aecb47d7238b",
+    "bootstrap/tests/test_fork_advisory.py": "99bd284108daea63c44cc1958160e67a8a70087be6228ce9822cb6bbc25f65f0",
+    "bootstrap/tests/test_gate_manifest.py": "394ea75f791c0511fa7b37c691abf66c3a6b646172037f0993b5dd6dc3e568ef",
+    "bootstrap/tests/test_gate_preflight.py": "afbcc196be13b154c685f2e04f8e93fde5a8ae6255222555fb5fc814921c5c98",
+    "bootstrap/tests/test_gate_reanchor.py": "039d27701e9d07dea0273f0ef2b31f8065fa517c1734b39404bfc4f7a30068a7",
+    "bootstrap/tests/test_gate_transition.py": "01d5c608484b8f9d9e3b3acc6fcecd112fca5982dd3e1a55258e2f32f831d79f",
+    "bootstrap/tests/test_generated_output_scan.py": "e752cc3e0bc9a9cc8a88ea9aa639e86676aba1be613ccfe94edbf5dc70ec19f1",
+    "bootstrap/tests/test_hardening.py": "eba10b9dec753b0f235f82d0b7b5a77ba450616042ae4ed7b414eb93630f3c2e",
+    "bootstrap/tests/test_incident_trackers_module.py": "8e863704fd663196b3ed866f08a1b2d513b06ec8923f6cea5d17855cf8c11433",
+    "bootstrap/tests/test_install_module.py": "54fcbdd3154c43e6bbedd397c0726f7ded0cd964a59e6f5900d2745e09b7e536",
+    "bootstrap/tests/test_install_report_slots.py": "ce5a330d8336d4c00c3ec1aef835f15ebf6893eb796b97d9af0c02dbe98c61f6",
+    "bootstrap/tests/test_install_time_onboarding.py": "e31c539089dd883873046b1128f967d03a0216c83c28ebc0100c3f8bca110b87",
+    "bootstrap/tests/test_intents_tool.py": "beb82d59476f4f9ac52cea2ad69d0b0e56419dfcfede907d419000953c2d2b2d",
+    "bootstrap/tests/test_issue_capture_bootstrap.py": "9549c2f5fda4fee5f66a83dd866f65115a7210ea3ccce94f2889e097308e2ba6",
+    "bootstrap/tests/test_link_check_exclusions.py": "3f8832679ee00e30bbcb15546ac128822e125702758217f04a7617ed46ede5c4",
+    "bootstrap/tests/test_loader_identity.py": "5816af4bf70f07d15f832c9bc85b4fcb9ccef2ca36cd014ad78ae98840355442",
+    "bootstrap/tests/test_lockfile_module.py": "10ed583a91412a762596297b251997f3b0e52081c5141d468bd2b11a0219b595",
+    "bootstrap/tests/test_lockfile_provenance.py": "5c5e572e514e72b4cb68526783d6ebc2e683d90d2fb7e4bbe39b924bd9ae3ab0",
+    "bootstrap/tests/test_loop_fidelity_gate.py": "f2865d8c930ed162247c4079d37276a7d0c229577aeeb4dbbe87b0a98d572544",
+    "bootstrap/tests/test_manifest.py": "abea6232dff47b1d8df4281bb6169b7e67d25a2cdaa01fa7d276adec15c10775",
+    "bootstrap/tests/test_merge_module.py": "37855f076687d8f471356c559af9deb9cab09a3e7485bf57ea81533c8cc6ffc7",
+    "bootstrap/tests/test_model_selection_stub.py": "c4cf4361fcddd360f9006cdba32956858ded193e5bd41d423cf839b28a69c1fb",
+    "bootstrap/tests/test_model_tier_rule_ships.py": "b095ef072e112fcbf9e41188cfd11f71fec4f4f091c2aef28c9f5658cc958bd5",
+    "bootstrap/tests/test_module_merge.py": "a08b4327a6848cd88ebb9c0c9b0acd67378ca83a544ba8ab6387ff4b6ca3f919",
+    "bootstrap/tests/test_module_merge_lockfile.py": "9fc21ce969e211d84c9bc60710d9944c8eb0b1f4300a8c02a1d8800e2bed671e",
+    "bootstrap/tests/test_module_roster.py": "d29a18ef613a9ab249007315368cfdd3085fb43af3f2a390e51ea74f2c8f1143",
+    "bootstrap/tests/test_next_session_local_note.py": "55b1d0ef5ce31d8c0f21876b191c6218098c0711c1570f4f6e437b56c620abe0",
+    "bootstrap/tests/test_notice_install.py": "e0a1350b8c2a6e7fc1dd64894e157db48ffed78ad3a4942765e2ef5e6b81a43e",
+    "bootstrap/tests/test_onboarding_seed_roster.py": "32ffd8d6dbd75b3cf28d26de188b4f154717cfdcae872a15ce90dcedf8502692",
+    "bootstrap/tests/test_onboarding_slot_substitution.py": "545a519f184fb062e3105b6ac389f66d521bf8ebf1604761afc7394fc357833f",
+    "bootstrap/tests/test_oracle.py": "4fb3592c1bdc2c4b31dbbd43da1fbe366d5b5a83f1efb7ff260ee46341f24f32",
+    "bootstrap/tests/test_oracle_activation.py": "b799194596303d2dc99dc4cbc214f88ca85eb226997096de94abb18e5618c554",
+    "bootstrap/tests/test_oracle_trust.py": "6fdaf0d1241ae9aabfaa722a50c5c3a8901747a1c8d51584a2642ba478fd18ee",
+    "bootstrap/tests/test_portable_security_sweeps.py": "c6e6213c2616db524a72ac692801452cd75f0892901807f917be4b198a3f4958",
+    "bootstrap/tests/test_practice_modules.py": "d9cb7704fa83fafd98f6c0e7c20a76c0f51b9536f7491866673c90b22c22cc13",
+    "bootstrap/tests/test_presets.py": "c991cabdcc8b71925bc74d6bb232db7d9ac375992722eadc54ed8a24d0997d39",
+    "bootstrap/tests/test_profile_grammar.py": "1869871a28f1233f068ab533569a10c8d60b0628e88128fd8e58b01c8aece665",
+    "bootstrap/tests/test_profiles_smoke.py": "83160d173903a650369bfd22a378d9a8db3e56cd50474feb024decf8e6993d4f",
+    "bootstrap/tests/test_prune_tools.py": "e66d7859f5723eb91ad1f203f7f9c103266367abfdd594e7f605c411ef6ddc3c",
+    "bootstrap/tests/test_python_floor.py": "c91bf280605e4b89265fd2dcbbff8497f418f2337d7cacfc3bd79bb1ebb3d95e",
+    "bootstrap/tests/test_quality_gate_cli.py": "4b756800fd62c3e7b1234b25e3c1e73563d4a198f001f1e1fa7f37e26cf971ee",
+    "bootstrap/tests/test_quality_gate_neutrality.py": "2190797b3a3c09b68c313f22450e43db22723003a03514502bd19f44c375b1ee",
+    "bootstrap/tests/test_quality_gate_order_independence.py": "b79fafecd10d217b95825ef2588b07b8e152ace6b2364dc8735cc40186e54012",
+    "bootstrap/tests/test_quality_gate_redundancy.py": "90d312e0910818b33bf0fdf50d5547a7ae907964d21714f66562f8c49066b7d8",
+    "bootstrap/tests/test_quickstart_sequence.py": "24902eae743e6a486f8160c72158a73151cf6231a89eab152159759734119e05",
+    "bootstrap/tests/test_reanchor.py": "106d4ce5e3fbb6b885b8d0bbdaf96a2506ad58bceca54983693577908f3d974a",
+    "bootstrap/tests/test_reanchor_driver_disclosures.py": "0bfca93f1055473259d6f5d1389f56a80d92d1770c4b92f40e416765332b3332",
+    "bootstrap/tests/test_reference_scripts.py": "0616421b20deedc87e69cf526cec2b7ed94069f17ac49420b2b88c39b65aa806",
+    "bootstrap/tests/test_repin.py": "f467293a80ee01b6d09833fefcdf808b81ddb55077a59f4b5b8c226d1d195c56",
+    "bootstrap/tests/test_repin_ceremony.py": "42eb4df16248f0f23c84dffd2ca97dc9763f2d160e4b60532f7a7c44ac3ae9a7",
+    "bootstrap/tests/test_replacement_tools.py": "0a48739fcdd5da2fef30fe34635df6c7eb68bd01c10a07fcb5617302d5885f0f",
+    "bootstrap/tests/test_review_and_verification_rules_ship.py": "3b9075256513647a85f7c3ec5cc5081de9368409935d81a7891c081bce7774aa",
+    "bootstrap/tests/test_review_stance_in_shipped_files.py": "b44a446d31fb1273a8fddf2b510a17f7a4463c8475680f1563f9d8d3c7cc4bd3",
+    "bootstrap/tests/test_review_sweep_ships.py": "c16510242451a2c7e0b967ea0aa05ef38fb07c4c20724c3e267137bc4228adfa",
+    "bootstrap/tests/test_scaffold.py": "c6f1b8fb7ca4375fbc5bda60f867734a127f44b0066a203a59e78b512f2a550e",
+    "bootstrap/tests/test_scaffold_substrate.py": "744f46ea7d1a319b17ff40316acfe88035f287df7edd0d25e88b41e9faa81b35",
+    "bootstrap/tests/test_scientific_check_guidance_ships.py": "9a759c768897974a14900b2f2eb865ce21ec3ac73207bef01ec8d4f1dd10a2a2",
+    "bootstrap/tests/test_scope_reduction_trap.py": "1a74bcdead6b2f647dfd4abf2fe374d8c9632cdcda8edae019fa5b7169f2be7c",
+    "bootstrap/tests/test_security_capability_install.py": "51357639c119a4fd0e6d730b9ec51536980e5732b07bf3053f5ec4e3fc4332ff",
+    "bootstrap/tests/test_security_check.py": "f32b15003af0987922c703f9e17cb7ee09bd3949dfd44e3b266bd8dec931659a",
+    "bootstrap/tests/test_security_finding_confidentiality.py": "170c03c33c83f14d5895674abfd8e151b34d0fbef745e26fa9ef4678b1e2b313",
+    "bootstrap/tests/test_security_leaf.py": "0822b03ab73b79284d71543a9508d4b08a98812d21dfa0fad2a0352e921b6e3f",
+    "bootstrap/tests/test_security_lint.py": "9f131be382c5e268a868f9675fd4dfbe0b77f486d09f85e7703c6599c82a1e9a",
+    "bootstrap/tests/test_security_marker.py": "ce89dd126bc78c26a4ec0f9b65bec44144019e3ea5ae98729803387d8ad33231",
+    "bootstrap/tests/test_security_net.py": "ed69bfabb2d68e79efbf1fda1cb854703c9129a39130cac95200f5d4dc9fb8df",
+    "bootstrap/tests/test_security_stack.py": "ab14e9c592ee0ff2f8d98dd0ffebee390a86048f288df3afea666ebc64bca668",
+    "bootstrap/tests/test_security_verification.py": "829251b233d58eb172dc587df98c6dbe6d77cb06e5a08982990c19af47f72b73",
+    "bootstrap/tests/test_session_binding_gate_and_printing_hold.py": "981f9a97d4370bd64041b4bd4e06c7089e4f63e8c74ee0d616c322d5f09567b8",
+    "bootstrap/tests/test_session_binding_untracked.py": "c147c2e7ba9ba587ae3a940ea92cc3b3c1b9bdaadfff1d72d1e62b0edd2fa277",
+    "bootstrap/tests/test_session_failsafe.py": "db394c44ddb133f48bcbd5515c20946f6e2c0a631609e9c4fb9c7979a3675cb3",
+    "bootstrap/tests/test_session_kernel.py": "4a6d2628241ad58764021aed6197a5c8f2e6a75075ccf52f69afd006f302ca5f",
+    "bootstrap/tests/test_session_routines.py": "1689060aa4b858485f7a1863f9e65250712fafd9924b8fd19254713246444984",
+    "bootstrap/tests/test_session_start_drain_rules.py": "f21fc383d910af0e90b21c0e66a688e3375b70e0acd29cd17c9fec8f859b6086",
+    "bootstrap/tests/test_session_writes_contained.py": "1605a9e0747f795d2027dd3f1a0e3031525dc8240eb60761def5a3f1f852705e",
+    "bootstrap/tests/test_skill_contract.py": "d41df6e9a4679c9a28b141a0c56ad35dd2ead362efc0107383a8ce0c3342f7a6",
+    "bootstrap/tests/test_skills_fanout.py": "12bc32a9bdb41a1038a147f43ad58b7d170d9777973321787571d9c5a56f2e0e",
+    "bootstrap/tests/test_skills_install.py": "7e9af5b6c07dbce964c3be606756ff827bfa5a46fb656b0bf4092f1841bfff97",
+    "bootstrap/tests/test_skills_matrix.py": "11e9d5a6f26aa36892c568efbd33555cebf3cc016f625cb5b1eb682da2ad5a9f",
+    "bootstrap/tests/test_skills_onboarding.py": "67fff7ad648eb77cf1119f78cce97e160d862d69585df3cba819650e8f0a0e90",
+    "bootstrap/tests/test_skills_security.py": "4e0a8d3dea727bc762afc972c7c88c64dccfcee250b64bb959687a4082e8c6ae",
+    "bootstrap/tests/test_skills_self_heal.py": "d2760bdb15f237d41c932c6e63024db73b959e7c5af6dc29433e8bcf382d7c28",
+    "bootstrap/tests/test_skills_upgrade.py": "b590a6f21f4083705ac26fbadd3557a3c3bc5721fdd8082edaf515ea63657506",
+    "bootstrap/tests/test_slotmerge_leaf.py": "b746ac5b616a90c696271c93543c58685e1a4389778a723281490ba143857005",
+    "bootstrap/tests/test_status_vocabulary_advisory.py": "a72fec54d7c720663e17ca86f1db02076d7575f70e6e80ef2204844e21f60ddf",
+    "bootstrap/tests/test_stewardship_rules_ship.py": "a9a373d2377cddbb20a320f8eff260f965616e8e39dd22d59d00e8c8b211e8a7",
+    "bootstrap/tests/test_upgrade.py": "edb97f2dbba3dd4d42c10a133472b45679bb54199e696ad1f798c54cdfa10e93",
+    "bootstrap/tests/test_upgrade_added_slots.py": "b193ded474d4a9448589b548835548b659040bcd3b27b1a803a20425fe1b9ae8",
+    "bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py": "fd272a9b924f82d48dd9d747bc43e34526d9982396f33d884531ff4ff494dc84",
+    "bootstrap/tests/test_upgrade_lockfile_path_containment.py": "0156507fc2cdde1a6a1387c131f5e9507d967454e67ca2de19da0414226cae12",
+    "bootstrap/tests/test_upgrade_module.py": "cd6ba214c5b3119703e91afa7b51ef941a5845427beccb4dbb0df6bc678a3b29",
+    "bootstrap/tests/test_upgrade_module_additions.py": "8ac97c4a9329fcb355d115879b35d7a27e0651ddab697394ae36371b1bca721a",
+    "bootstrap/tests/test_upgrade_refuses_hostile_project_data.py": "388b87ee522edb802eee391a082a4a0ca7b87121de607c23393b6afde3a9b6d0",
+    "bootstrap/tests/test_upgrade_removes_retired_files.py": "3cdbc1934348093db28db5f0d9b8ea063cea80c7ee048d0ca221567b22bde491",
+    "bootstrap/tests/test_upgrade_side_door_parity.py": "dc2eb03710f85e5ee84c1d42f302a5a555c32201edf02d75c80f2711eb9d9b96",
+    "bootstrap/tests/test_verification_boundaries.py": "c32f0ca7b3faf79c98cb516feaa222cccf2a473e36f320c16be0beaec69ef369",
+    "bootstrap/tests/test_verify_counts.py": "4fe6a8bb3e1af0970431b3ec1304047b1e88b6cf6f57487ed6c1f7584c45aa7c",
+    "bootstrap/tests/test_verify_integrity.py": "8110be300b241b4f7903e430b53c53b562161f7cfbe8a06390f58acde7efa11c",
+    "bootstrap/tests/test_verify_ref.py": "3a2be3dc1ff6e0b8ee14e18c0b72f1986cd16d2c9c82eefab4bf5af56bfe46ae",
+    "bootstrap/tests/test_verify_stems.py": "2b196ed9bd6490f7beeccc24c6be484c2a4c83596875491354c56a839ecf3797",
+    "bootstrap/tests/test_web_hosting_security.py": "3c72ad61d4513a2de0711bccf92948a9fb50f258600d5c123ce9a40fcf2ac8f2",
+    "bootstrap/tests/test_writing_rules_ship.py": "1948d96b4ceb93a4b03ac286ddd6eb7d3e5413d8f8b2166b619591fce0a0c545"
+  },
+  "current_fixture_path_hashes": {
+    "bootstrap/tests/fixtures/active_refactor.example.yml": "13bd1b3153fda5bfd776a2594a58806f9590c1d2bb05ec92736e57909cb0a946",
+    "bootstrap/tests/fixtures/board_json_v1_baseline.json": "e2d345c67c18a48d36f934427ff1d0d066850c1b16ede8f9ada239c9d1283ce5",
+    "bootstrap/tests/fixtures/gate_manifest.json": "3e2cfc850709a6e7cf6db24b9dc66c9e223f10f61c7b2a982fc31fe1d6009064",
+    "bootstrap/tests/fixtures/redteam/malicious.txt": "305eae06b09ac1b106b853954976fc2a21805225cb05e9ea4514d2f44c1e9624",
+    "bootstrap/tests/fixtures/scaffold_ast_baseline.json": "ce501a096e185592aeda8a1d15061fcf3d0b5da34939805daf5ca9ee4c2cbdfb",
+    "bootstrap/tests/fixtures/scaffold_ast_known_new.json": "6e8c03ddae6d1190f6baf74d0f22e249d410c0498b8e173f878307b341956872",
+    "bootstrap/tests/fixtures/skills/README.md": "62f7deb00cc3aa922efd3877ef4696efc2af3d0b27cd1fc278168b67070f4092"
+  },
+  "current_freeze_path_count": 197,
+  "current_freeze_paths": [
+    "bootstrap/check_module_body_coverage.py",
+    "bootstrap/scaffold.py",
+    "bootstrap/security_check.py",
+    "bootstrap/tests/__init__.py",
+    "bootstrap/tests/_ast_attest.py",
+    "bootstrap/tests/_gate_manifest.py",
+    "bootstrap/tests/_gate_preflight.py",
+    "bootstrap/tests/_gate_reanchor.py",
+    "bootstrap/tests/_gate_transition.py",
+    "bootstrap/tests/_loader_proto.py",
+    "bootstrap/tests/_oracle.py",
+    "bootstrap/tests/_oracle_activation.py",
+    "bootstrap/tests/_oracle_trust.py",
+    "bootstrap/tests/conftest.py",
+    "bootstrap/tests/fixtures/active_refactor.example.yml",
+    "bootstrap/tests/fixtures/board_json_v1_baseline.json",
+    "bootstrap/tests/fixtures/redteam/malicious.txt",
+    "bootstrap/tests/fixtures/scaffold_ast_known_new.json",
+    "bootstrap/tests/fixtures/skills/README.md",
+    "bootstrap/tests/security_manifest.py",
+    "bootstrap/tests/test_agreement_retired.py",
+    "bootstrap/tests/test_api_access_security.py",
+    "bootstrap/tests/test_ast_attest.py",
+    "bootstrap/tests/test_board_json_contract.py",
+    "bootstrap/tests/test_broad_run_guard.py",
+    "bootstrap/tests/test_cairn_prefix_links.py",
+    "bootstrap/tests/test_ceremony_review_report.py",
+    "bootstrap/tests/test_certifying_run_rule.py",
+    "bootstrap/tests/test_check_cairn_content.py",
+    "bootstrap/tests/test_check_cairn_counts.py",
+    "bootstrap/tests/test_claim_check_allow_config.py",
+    "bootstrap/tests/test_claim_check_module.py",
+    "bootstrap/tests/test_cli_module.py",
+    "bootstrap/tests/test_comprehension_floor.py",
+    "bootstrap/tests/test_config_module.py",
+    "bootstrap/tests/test_content_scan.py",
+    "bootstrap/tests/test_coordination_broad_intent.py",
+    "bootstrap/tests/test_core_dev_folders.py",
+    "bootstrap/tests/test_default_security_stance.py",
+    "bootstrap/tests/test_deleted_tracked_markdown.py",
+    "bootstrap/tests/test_doc_drift_tools.py",
+    "bootstrap/tests/test_doc_governance.py",
+    "bootstrap/tests/test_documentation_plan_module.py",
+    "bootstrap/tests/test_drift_surfacing.py",
+    "bootstrap/tests/test_engine_copy_fallback_contained.py",
+    "bootstrap/tests/test_evolution_infer.py",
+    "bootstrap/tests/test_facade_loader_cleanup.py",
+    "bootstrap/tests/test_finalize_retired_living_state.py",
+    "bootstrap/tests/test_first_session_report.py",
+    "bootstrap/tests/test_fork_advisory.py",
+    "bootstrap/tests/test_gate_manifest.py",
+    "bootstrap/tests/test_gate_preflight.py",
+    "bootstrap/tests/test_gate_reanchor.py",
+    "bootstrap/tests/test_gate_transition.py",
+    "bootstrap/tests/test_generated_output_scan.py",
+    "bootstrap/tests/test_hardening.py",
+    "bootstrap/tests/test_incident_trackers_module.py",
+    "bootstrap/tests/test_install_module.py",
+    "bootstrap/tests/test_install_report_slots.py",
+    "bootstrap/tests/test_install_time_onboarding.py",
+    "bootstrap/tests/test_issue_capture_bootstrap.py",
+    "bootstrap/tests/test_link_check_exclusions.py",
+    "bootstrap/tests/test_loader_identity.py",
+    "bootstrap/tests/test_lockfile_module.py",
+    "bootstrap/tests/test_lockfile_provenance.py",
+    "bootstrap/tests/test_loop_fidelity_gate.py",
+    "bootstrap/tests/test_manifest.py",
+    "bootstrap/tests/test_merge_module.py",
+    "bootstrap/tests/test_model_selection_stub.py",
+    "bootstrap/tests/test_model_tier_rule_ships.py",
+    "bootstrap/tests/test_module_merge.py",
+    "bootstrap/tests/test_module_merge_lockfile.py",
+    "bootstrap/tests/test_module_roster.py",
+    "bootstrap/tests/test_next_session_local_note.py",
+    "bootstrap/tests/test_notice_install.py",
+    "bootstrap/tests/test_onboarding_seed_roster.py",
+    "bootstrap/tests/test_onboarding_slot_substitution.py",
+    "bootstrap/tests/test_oracle.py",
+    "bootstrap/tests/test_oracle_activation.py",
+    "bootstrap/tests/test_oracle_trust.py",
+    "bootstrap/tests/test_portable_security_sweeps.py",
+    "bootstrap/tests/test_practice_modules.py",
+    "bootstrap/tests/test_presets.py",
+    "bootstrap/tests/test_profile_grammar.py",
+    "bootstrap/tests/test_profiles_smoke.py",
+    "bootstrap/tests/test_prune_tools.py",
+    "bootstrap/tests/test_python_floor.py",
+    "bootstrap/tests/test_quality_gate_cli.py",
+    "bootstrap/tests/test_quality_gate_neutrality.py",
+    "bootstrap/tests/test_quality_gate_order_independence.py",
+    "bootstrap/tests/test_quality_gate_redundancy.py",
+    "bootstrap/tests/test_quickstart_sequence.py",
+    "bootstrap/tests/test_reanchor.py",
+    "bootstrap/tests/test_reanchor_driver_disclosures.py",
+    "bootstrap/tests/test_reference_scripts.py",
+    "bootstrap/tests/test_repin.py",
+    "bootstrap/tests/test_repin_ceremony.py",
+    "bootstrap/tests/test_replacement_tools.py",
+    "bootstrap/tests/test_review_and_verification_rules_ship.py",
+    "bootstrap/tests/test_review_stance_in_shipped_files.py",
+    "bootstrap/tests/test_review_sweep_ships.py",
+    "bootstrap/tests/test_scaffold.py",
+    "bootstrap/tests/test_scaffold_substrate.py",
+    "bootstrap/tests/test_scientific_check_guidance_ships.py",
+    "bootstrap/tests/test_scope_reduction_trap.py",
+    "bootstrap/tests/test_security_capability_install.py",
+    "bootstrap/tests/test_security_check.py",
+    "bootstrap/tests/test_security_finding_confidentiality.py",
+    "bootstrap/tests/test_security_leaf.py",
+    "bootstrap/tests/test_security_lint.py",
+    "bootstrap/tests/test_security_marker.py",
+    "bootstrap/tests/test_security_net.py",
+    "bootstrap/tests/test_security_stack.py",
+    "bootstrap/tests/test_security_verification.py",
+    "bootstrap/tests/test_session_binding_gate_and_printing_hold.py",
+    "bootstrap/tests/test_session_binding_untracked.py",
+    "bootstrap/tests/test_session_failsafe.py",
+    "bootstrap/tests/test_session_kernel.py",
+    "bootstrap/tests/test_session_routines.py",
+    "bootstrap/tests/test_session_start_drain_rules.py",
+    "bootstrap/tests/test_session_writes_contained.py",
+    "bootstrap/tests/test_skill_contract.py",
+    "bootstrap/tests/test_skills_fanout.py",
+    "bootstrap/tests/test_skills_install.py",
+    "bootstrap/tests/test_skills_matrix.py",
+    "bootstrap/tests/test_skills_onboarding.py",
+    "bootstrap/tests/test_skills_security.py",
+    "bootstrap/tests/test_skills_self_heal.py",
+    "bootstrap/tests/test_skills_upgrade.py",
+    "bootstrap/tests/test_slotmerge_leaf.py",
+    "bootstrap/tests/test_status_vocabulary_advisory.py",
+    "bootstrap/tests/test_stewardship_rules_ship.py",
+    "bootstrap/tests/test_upgrade.py",
+    "bootstrap/tests/test_upgrade_added_slots.py",
+    "bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py",
+    "bootstrap/tests/test_upgrade_lockfile_path_containment.py",
+    "bootstrap/tests/test_upgrade_module.py",
+    "bootstrap/tests/test_upgrade_module_additions.py",
+    "bootstrap/tests/test_upgrade_refuses_hostile_project_data.py",
+    "bootstrap/tests/test_upgrade_removes_retired_files.py",
+    "bootstrap/tests/test_upgrade_side_door_parity.py",
+    "bootstrap/tests/test_verification_boundaries.py",
+    "bootstrap/tests/test_verify_counts.py",
+    "bootstrap/tests/test_verify_integrity.py",
+    "bootstrap/tests/test_verify_ref.py",
+    "bootstrap/tests/test_verify_stems.py",
+    "bootstrap/tests/test_web_hosting_security.py",
+    "bootstrap/tests/test_writing_rules_ship.py",
+    "bootstrap/verify_integrity.py",
+    "scripts/bootstrap_github_labels.py",
+    "scripts/bootstrap_gitlab_labels.py",
+    "scripts/check_cairn.py",
+    "scripts/check_model_selection.py",
+    "scripts/claim_check.py",
+    "scripts/content_scan.py",
+    "scripts/content_scan_runner.py",
+    "scripts/gen_legacy_code_review_passes.py",
+    "scripts/gen_legacy_passes.py",
+    "scripts/link_check.py",
+    "scripts/measurements.py",
+    "scripts/quality_gate.py",
+    "scripts/quality_gate_unused_def_whitelist.py",
+    "scripts/reanchor_ceremony.py",
+    "scripts/repin.py",
+    "scripts/run_portable_security_sweeps.py",
+    "scripts/sync_doc_snippets.py",
+    "scripts/token_budget.py",
+    "scripts/verify_counts.py",
+    "scripts/verify_stems.py",
+    "templates/modules/default-on/claim_check.py",
+    "templates/modules/default-on/evolution_infer.py",
+    "templates/modules/default-on/prune_reflections.py",
+    "templates/modules/default-on/run_security_verification.py",
+    "templates/modules/default-on/verify_stems.py",
+    "templates/modules/team-gated/_intent/__init__.py",
+    "templates/modules/team-gated/_intent/cli.py",
+    "templates/modules/team-gated/_intent/conflict.py",
+    "templates/modules/team-gated/_intent/hooks.py",
+    "templates/modules/team-gated/_intent/identity.py",
+    "templates/modules/team-gated/_intent/record_io.py",
+    "templates/modules/team-gated/_intent/shared.py",
+    "templates/modules/team-gated/_security_net/__init__.py",
+    "templates/modules/team-gated/_security_net/net.py",
+    "templates/modules/team-gated/_security_net/policy.py",
+    "templates/modules/team-gated/_security_net/report.py",
+    "templates/modules/team-gated/api_access_security.py",
+    "templates/modules/team-gated/check_model_selection.py",
+    "templates/modules/team-gated/content_scan.py",
+    "templates/modules/team-gated/content_scan_runner.py",
+    "templates/modules/team-gated/issue-capture/bootstrap_github_labels.py",
+    "templates/modules/team-gated/issue-capture/bootstrap_gitlab_labels.py",
+    "templates/modules/team-gated/link_check.py",
+    "templates/modules/team-gated/prune_intents.py",
+    "templates/modules/team-gated/run_portable_security_sweeps.py",
+    "templates/modules/team-gated/run_security_audit.py",
+    "templates/modules/team-gated/sync_doc_snippets.py",
+    "templates/modules/team-gated/web_hosting_security.py"
+  ],
+  "current_head_stability_check": {
+    "basis": "git diff --name-only 918638f5a11eb6985d0fa2cc26989b8a1d6541ca..e9928009078b666b753b3b0502af14d9d2421922 -- bootstrap/tests returned no paths; review response changed only doctrine/plans.md, doctrine/proposals.md and scoped-verification plan.",
+    "census_and_dependency_bytes_unchanged": true,
+    "commits_after_inventory_source": [
+      "5c525367",
+      "e9928009"
+    ],
+    "head": "e9928009078b666b753b3b0502af14d9d2421922",
+    "paths_changed_since_source_under_bootstrap_tests": []
+  },
+  "current_test_file_hashes": {
+    "bootstrap/tests/test_agreement_retired.py": "31914fc6fa796ca2dbca62b2dd2c59356c64fdbdee4ba2d37e1a7272623ca6eb",
+    "bootstrap/tests/test_api_access_security.py": "ecdfdcfcd2534a1c353cd713f903d1e054b3b8755093ae9e20ea7924569157b8",
+    "bootstrap/tests/test_ast_attest.py": "e4e6c45d85f75d3c8ec3a7a06898575e0dcd952aacca9ca034fbf9dbe9bcac96",
+    "bootstrap/tests/test_board_json_contract.py": "bbfb6137a733e7e78d211206a426c0e826f71b76b9828f117e742e7cbc1d8f2e",
+    "bootstrap/tests/test_broad_run_guard.py": "3649377c412c128e37b40aa29b09efec70f8709ea2a3161b8160d1c4be9b95c3",
+    "bootstrap/tests/test_cairn_prefix_links.py": "0078b1332009c3960e8730a6f1dbc15681b8731e6edb53d5076d02580c256927",
+    "bootstrap/tests/test_ceremony_review_report.py": "a17f711c7a2e31ddd27ac833b7c07e8dcd92c0f2c071a71266fc0ead1c2af9f3",
+    "bootstrap/tests/test_certifying_run_rule.py": "a8bb32492d844c172ba315a341dffdcd914abc678c6e25920d6d6347a2fe4261",
+    "bootstrap/tests/test_check_cairn_content.py": "056fa4ed7da14efbfd7989e27d567ef0b3e2cc354e7790159ba4db30a92ca768",
+    "bootstrap/tests/test_check_cairn_counts.py": "1c5b3937a50eb1f150d5aedc59af76fb29091864094cb7513b866548dbf69dbf",
+    "bootstrap/tests/test_claim_check_allow_config.py": "58700c2c3c6d6b0819722c04a91764c58e352c581d780f616a4f636dd1c416b7",
+    "bootstrap/tests/test_claim_check_module.py": "9290a744e7200393edb234724cda493d7a8f4848927f0160d799303e2068c042",
+    "bootstrap/tests/test_cli_module.py": "f2653af6b42adb8c23af8755566c5852d3c368836b474c7ad5a5f64649b6a497",
+    "bootstrap/tests/test_comprehension_floor.py": "671cfca4f7e0a082d444d0b458e7443246373b43700c2d22a19a3839f7b76b58",
+    "bootstrap/tests/test_config_module.py": "d816e32e9695a8ed30c1c5d3b8c88ec41c045e0447521ba1b9f335e85a473a6e",
+    "bootstrap/tests/test_content_scan.py": "1947e78ed149919101f84cc53f15d8c7ac331f8232a40b391a079b7208354319",
+    "bootstrap/tests/test_coordination_broad_intent.py": "374b3e155b551d4c00f023f863923ad5e9fc21e7fcfd0ccca5d24cede2b7b16e",
+    "bootstrap/tests/test_core_dev_folders.py": "8622d33030f618adc31c9ce00dbfdbc7d06ab0a501dfb066d6adff7e71a17fba",
+    "bootstrap/tests/test_default_security_stance.py": "ff35b2b3f5e7dc02d77da71738791004273b0322fc9d87623100397227b61406",
+    "bootstrap/tests/test_deleted_tracked_markdown.py": "1455f9eb424070042d41f747b417a863ffa704f6747a39949c41aa744c330deb",
+    "bootstrap/tests/test_doc_drift_tools.py": "7d7db817f89ad8ec6bb6b84ec6420c8e597100d8bd27505921aacc66b8a1b19a",
+    "bootstrap/tests/test_doc_governance.py": "00c013ea0d6eb1dbb202392a8159bb593798f001053b6e6e839792545bb55955",
+    "bootstrap/tests/test_documentation_plan_module.py": "31532e535cc7340934f236c9158c46a5a1e25fd6278b88c64967e4c9ce02a4c7",
+    "bootstrap/tests/test_drift_surfacing.py": "f8754c952c9cdccb403ffa97c13590ad20f9ca3821069262d9ca4b00253ba91b",
+    "bootstrap/tests/test_engine_copy_fallback_contained.py": "eb6faf44c8198b191d62cb7f11beeb7e538f7b5ef5305c3dce0cc7b28ef440e0",
+    "bootstrap/tests/test_evolution_infer.py": "195775eaac3c5bd9de142265d097507428e5803f4373682ace5b9ddd2ce0ca2f",
+    "bootstrap/tests/test_facade_loader_cleanup.py": "2f4cc79fd8016268784252e99b22ad7937a741110ed4040e317ff39a619f20a2",
+    "bootstrap/tests/test_finalize_retired_living_state.py": "687ddddadc5ba14de460ef29bf57642d3042032ab68a9addd76e0ffd2a74ee45",
+    "bootstrap/tests/test_first_session_report.py": "16e2b09483865546f03dc35f30f13e5b80b26a8e6ba232db4f79aecb47d7238b",
+    "bootstrap/tests/test_fork_advisory.py": "99bd284108daea63c44cc1958160e67a8a70087be6228ce9822cb6bbc25f65f0",
+    "bootstrap/tests/test_gate_manifest.py": "394ea75f791c0511fa7b37c691abf66c3a6b646172037f0993b5dd6dc3e568ef",
+    "bootstrap/tests/test_gate_preflight.py": "afbcc196be13b154c685f2e04f8e93fde5a8ae6255222555fb5fc814921c5c98",
+    "bootstrap/tests/test_gate_reanchor.py": "039d27701e9d07dea0273f0ef2b31f8065fa517c1734b39404bfc4f7a30068a7",
+    "bootstrap/tests/test_gate_transition.py": "01d5c608484b8f9d9e3b3acc6fcecd112fca5982dd3e1a55258e2f32f831d79f",
+    "bootstrap/tests/test_generated_output_scan.py": "e752cc3e0bc9a9cc8a88ea9aa639e86676aba1be613ccfe94edbf5dc70ec19f1",
+    "bootstrap/tests/test_hardening.py": "eba10b9dec753b0f235f82d0b7b5a77ba450616042ae4ed7b414eb93630f3c2e",
+    "bootstrap/tests/test_incident_trackers_module.py": "8e863704fd663196b3ed866f08a1b2d513b06ec8923f6cea5d17855cf8c11433",
+    "bootstrap/tests/test_install_module.py": "54fcbdd3154c43e6bbedd397c0726f7ded0cd964a59e6f5900d2745e09b7e536",
+    "bootstrap/tests/test_install_report_slots.py": "ce5a330d8336d4c00c3ec1aef835f15ebf6893eb796b97d9af0c02dbe98c61f6",
+    "bootstrap/tests/test_install_time_onboarding.py": "e31c539089dd883873046b1128f967d03a0216c83c28ebc0100c3f8bca110b87",
+    "bootstrap/tests/test_intents_tool.py": "beb82d59476f4f9ac52cea2ad69d0b0e56419dfcfede907d419000953c2d2b2d",
+    "bootstrap/tests/test_issue_capture_bootstrap.py": "9549c2f5fda4fee5f66a83dd866f65115a7210ea3ccce94f2889e097308e2ba6",
+    "bootstrap/tests/test_link_check_exclusions.py": "3f8832679ee00e30bbcb15546ac128822e125702758217f04a7617ed46ede5c4",
+    "bootstrap/tests/test_loader_identity.py": "5816af4bf70f07d15f832c9bc85b4fcb9ccef2ca36cd014ad78ae98840355442",
+    "bootstrap/tests/test_lockfile_module.py": "10ed583a91412a762596297b251997f3b0e52081c5141d468bd2b11a0219b595",
+    "bootstrap/tests/test_lockfile_provenance.py": "5c5e572e514e72b4cb68526783d6ebc2e683d90d2fb7e4bbe39b924bd9ae3ab0",
+    "bootstrap/tests/test_loop_fidelity_gate.py": "f2865d8c930ed162247c4079d37276a7d0c229577aeeb4dbbe87b0a98d572544",
+    "bootstrap/tests/test_manifest.py": "abea6232dff47b1d8df4281bb6169b7e67d25a2cdaa01fa7d276adec15c10775",
+    "bootstrap/tests/test_merge_module.py": "37855f076687d8f471356c559af9deb9cab09a3e7485bf57ea81533c8cc6ffc7",
+    "bootstrap/tests/test_model_selection_stub.py": "c4cf4361fcddd360f9006cdba32956858ded193e5bd41d423cf839b28a69c1fb",
+    "bootstrap/tests/test_model_tier_rule_ships.py": "b095ef072e112fcbf9e41188cfd11f71fec4f4f091c2aef28c9f5658cc958bd5",
+    "bootstrap/tests/test_module_merge.py": "a08b4327a6848cd88ebb9c0c9b0acd67378ca83a544ba8ab6387ff4b6ca3f919",
+    "bootstrap/tests/test_module_merge_lockfile.py": "9fc21ce969e211d84c9bc60710d9944c8eb0b1f4300a8c02a1d8800e2bed671e",
+    "bootstrap/tests/test_module_roster.py": "d29a18ef613a9ab249007315368cfdd3085fb43af3f2a390e51ea74f2c8f1143",
+    "bootstrap/tests/test_next_session_local_note.py": "55b1d0ef5ce31d8c0f21876b191c6218098c0711c1570f4f6e437b56c620abe0",
+    "bootstrap/tests/test_notice_install.py": "e0a1350b8c2a6e7fc1dd64894e157db48ffed78ad3a4942765e2ef5e6b81a43e",
+    "bootstrap/tests/test_onboarding_seed_roster.py": "32ffd8d6dbd75b3cf28d26de188b4f154717cfdcae872a15ce90dcedf8502692",
+    "bootstrap/tests/test_onboarding_slot_substitution.py": "545a519f184fb062e3105b6ac389f66d521bf8ebf1604761afc7394fc357833f",
+    "bootstrap/tests/test_oracle.py": "4fb3592c1bdc2c4b31dbbd43da1fbe366d5b5a83f1efb7ff260ee46341f24f32",
+    "bootstrap/tests/test_oracle_activation.py": "b799194596303d2dc99dc4cbc214f88ca85eb226997096de94abb18e5618c554",
+    "bootstrap/tests/test_oracle_trust.py": "6fdaf0d1241ae9aabfaa722a50c5c3a8901747a1c8d51584a2642ba478fd18ee",
+    "bootstrap/tests/test_portable_security_sweeps.py": "c6e6213c2616db524a72ac692801452cd75f0892901807f917be4b198a3f4958",
+    "bootstrap/tests/test_practice_modules.py": "d9cb7704fa83fafd98f6c0e7c20a76c0f51b9536f7491866673c90b22c22cc13",
+    "bootstrap/tests/test_presets.py": "c991cabdcc8b71925bc74d6bb232db7d9ac375992722eadc54ed8a24d0997d39",
+    "bootstrap/tests/test_profile_grammar.py": "1869871a28f1233f068ab533569a10c8d60b0628e88128fd8e58b01c8aece665",
+    "bootstrap/tests/test_profiles_smoke.py": "83160d173903a650369bfd22a378d9a8db3e56cd50474feb024decf8e6993d4f",
+    "bootstrap/tests/test_prune_tools.py": "e66d7859f5723eb91ad1f203f7f9c103266367abfdd594e7f605c411ef6ddc3c",
+    "bootstrap/tests/test_python_floor.py": "c91bf280605e4b89265fd2dcbbff8497f418f2337d7cacfc3bd79bb1ebb3d95e",
+    "bootstrap/tests/test_quality_gate_cli.py": "4b756800fd62c3e7b1234b25e3c1e73563d4a198f001f1e1fa7f37e26cf971ee",
+    "bootstrap/tests/test_quality_gate_neutrality.py": "2190797b3a3c09b68c313f22450e43db22723003a03514502bd19f44c375b1ee",
+    "bootstrap/tests/test_quality_gate_order_independence.py": "b79fafecd10d217b95825ef2588b07b8e152ace6b2364dc8735cc40186e54012",
+    "bootstrap/tests/test_quality_gate_redundancy.py": "90d312e0910818b33bf0fdf50d5547a7ae907964d21714f66562f8c49066b7d8",
+    "bootstrap/tests/test_quickstart_sequence.py": "24902eae743e6a486f8160c72158a73151cf6231a89eab152159759734119e05",
+    "bootstrap/tests/test_reanchor.py": "106d4ce5e3fbb6b885b8d0bbdaf96a2506ad58bceca54983693577908f3d974a",
+    "bootstrap/tests/test_reanchor_driver_disclosures.py": "0bfca93f1055473259d6f5d1389f56a80d92d1770c4b92f40e416765332b3332",
+    "bootstrap/tests/test_reference_scripts.py": "0616421b20deedc87e69cf526cec2b7ed94069f17ac49420b2b88c39b65aa806",
+    "bootstrap/tests/test_repin.py": "f467293a80ee01b6d09833fefcdf808b81ddb55077a59f4b5b8c226d1d195c56",
+    "bootstrap/tests/test_repin_ceremony.py": "42eb4df16248f0f23c84dffd2ca97dc9763f2d160e4b60532f7a7c44ac3ae9a7",
+    "bootstrap/tests/test_replacement_tools.py": "0a48739fcdd5da2fef30fe34635df6c7eb68bd01c10a07fcb5617302d5885f0f",
+    "bootstrap/tests/test_review_and_verification_rules_ship.py": "3b9075256513647a85f7c3ec5cc5081de9368409935d81a7891c081bce7774aa",
+    "bootstrap/tests/test_review_stance_in_shipped_files.py": "b44a446d31fb1273a8fddf2b510a17f7a4463c8475680f1563f9d8d3c7cc4bd3",
+    "bootstrap/tests/test_review_sweep_ships.py": "c16510242451a2c7e0b967ea0aa05ef38fb07c4c20724c3e267137bc4228adfa",
+    "bootstrap/tests/test_scaffold.py": "c6f1b8fb7ca4375fbc5bda60f867734a127f44b0066a203a59e78b512f2a550e",
+    "bootstrap/tests/test_scaffold_substrate.py": "744f46ea7d1a319b17ff40316acfe88035f287df7edd0d25e88b41e9faa81b35",
+    "bootstrap/tests/test_scientific_check_guidance_ships.py": "9a759c768897974a14900b2f2eb865ce21ec3ac73207bef01ec8d4f1dd10a2a2",
+    "bootstrap/tests/test_scope_reduction_trap.py": "1a74bcdead6b2f647dfd4abf2fe374d8c9632cdcda8edae019fa5b7169f2be7c",
+    "bootstrap/tests/test_security_capability_install.py": "51357639c119a4fd0e6d730b9ec51536980e5732b07bf3053f5ec4e3fc4332ff",
+    "bootstrap/tests/test_security_check.py": "f32b15003af0987922c703f9e17cb7ee09bd3949dfd44e3b266bd8dec931659a",
+    "bootstrap/tests/test_security_finding_confidentiality.py": "170c03c33c83f14d5895674abfd8e151b34d0fbef745e26fa9ef4678b1e2b313",
+    "bootstrap/tests/test_security_leaf.py": "0822b03ab73b79284d71543a9508d4b08a98812d21dfa0fad2a0352e921b6e3f",
+    "bootstrap/tests/test_security_lint.py": "9f131be382c5e268a868f9675fd4dfbe0b77f486d09f85e7703c6599c82a1e9a",
+    "bootstrap/tests/test_security_marker.py": "ce89dd126bc78c26a4ec0f9b65bec44144019e3ea5ae98729803387d8ad33231",
+    "bootstrap/tests/test_security_net.py": "ed69bfabb2d68e79efbf1fda1cb854703c9129a39130cac95200f5d4dc9fb8df",
+    "bootstrap/tests/test_security_stack.py": "ab14e9c592ee0ff2f8d98dd0ffebee390a86048f288df3afea666ebc64bca668",
+    "bootstrap/tests/test_security_verification.py": "829251b233d58eb172dc587df98c6dbe6d77cb06e5a08982990c19af47f72b73",
+    "bootstrap/tests/test_session_binding_gate_and_printing_hold.py": "981f9a97d4370bd64041b4bd4e06c7089e4f63e8c74ee0d616c322d5f09567b8",
+    "bootstrap/tests/test_session_binding_untracked.py": "c147c2e7ba9ba587ae3a940ea92cc3b3c1b9bdaadfff1d72d1e62b0edd2fa277",
+    "bootstrap/tests/test_session_failsafe.py": "db394c44ddb133f48bcbd5515c20946f6e2c0a631609e9c4fb9c7979a3675cb3",
+    "bootstrap/tests/test_session_kernel.py": "4a6d2628241ad58764021aed6197a5c8f2e6a75075ccf52f69afd006f302ca5f",
+    "bootstrap/tests/test_session_routines.py": "1689060aa4b858485f7a1863f9e65250712fafd9924b8fd19254713246444984",
+    "bootstrap/tests/test_session_start_drain_rules.py": "f21fc383d910af0e90b21c0e66a688e3375b70e0acd29cd17c9fec8f859b6086",
+    "bootstrap/tests/test_session_writes_contained.py": "1605a9e0747f795d2027dd3f1a0e3031525dc8240eb60761def5a3f1f852705e",
+    "bootstrap/tests/test_skill_contract.py": "d41df6e9a4679c9a28b141a0c56ad35dd2ead362efc0107383a8ce0c3342f7a6",
+    "bootstrap/tests/test_skills_fanout.py": "12bc32a9bdb41a1038a147f43ad58b7d170d9777973321787571d9c5a56f2e0e",
+    "bootstrap/tests/test_skills_install.py": "7e9af5b6c07dbce964c3be606756ff827bfa5a46fb656b0bf4092f1841bfff97",
+    "bootstrap/tests/test_skills_matrix.py": "11e9d5a6f26aa36892c568efbd33555cebf3cc016f625cb5b1eb682da2ad5a9f",
+    "bootstrap/tests/test_skills_onboarding.py": "67fff7ad648eb77cf1119f78cce97e160d862d69585df3cba819650e8f0a0e90",
+    "bootstrap/tests/test_skills_security.py": "4e0a8d3dea727bc762afc972c7c88c64dccfcee250b64bb959687a4082e8c6ae",
+    "bootstrap/tests/test_skills_self_heal.py": "d2760bdb15f237d41c932c6e63024db73b959e7c5af6dc29433e8bcf382d7c28",
+    "bootstrap/tests/test_skills_upgrade.py": "b590a6f21f4083705ac26fbadd3557a3c3bc5721fdd8082edaf515ea63657506",
+    "bootstrap/tests/test_slotmerge_leaf.py": "b746ac5b616a90c696271c93543c58685e1a4389778a723281490ba143857005",
+    "bootstrap/tests/test_status_vocabulary_advisory.py": "a72fec54d7c720663e17ca86f1db02076d7575f70e6e80ef2204844e21f60ddf",
+    "bootstrap/tests/test_stewardship_rules_ship.py": "a9a373d2377cddbb20a320f8eff260f965616e8e39dd22d59d00e8c8b211e8a7",
+    "bootstrap/tests/test_upgrade.py": "edb97f2dbba3dd4d42c10a133472b45679bb54199e696ad1f798c54cdfa10e93",
+    "bootstrap/tests/test_upgrade_added_slots.py": "b193ded474d4a9448589b548835548b659040bcd3b27b1a803a20425fe1b9ae8",
+    "bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py": "fd272a9b924f82d48dd9d747bc43e34526d9982396f33d884531ff4ff494dc84",
+    "bootstrap/tests/test_upgrade_lockfile_path_containment.py": "0156507fc2cdde1a6a1387c131f5e9507d967454e67ca2de19da0414226cae12",
+    "bootstrap/tests/test_upgrade_module.py": "cd6ba214c5b3119703e91afa7b51ef941a5845427beccb4dbb0df6bc678a3b29",
+    "bootstrap/tests/test_upgrade_module_additions.py": "8ac97c4a9329fcb355d115879b35d7a27e0651ddab697394ae36371b1bca721a",
+    "bootstrap/tests/test_upgrade_refuses_hostile_project_data.py": "388b87ee522edb802eee391a082a4a0ca7b87121de607c23393b6afde3a9b6d0",
+    "bootstrap/tests/test_upgrade_removes_retired_files.py": "3cdbc1934348093db28db5f0d9b8ea063cea80c7ee048d0ca221567b22bde491",
+    "bootstrap/tests/test_upgrade_side_door_parity.py": "dc2eb03710f85e5ee84c1d42f302a5a555c32201edf02d75c80f2711eb9d9b96",
+    "bootstrap/tests/test_verification_boundaries.py": "c32f0ca7b3faf79c98cb516feaa222cccf2a473e36f320c16be0beaec69ef369",
+    "bootstrap/tests/test_verify_counts.py": "4fe6a8bb3e1af0970431b3ec1304047b1e88b6cf6f57487ed6c1f7584c45aa7c",
+    "bootstrap/tests/test_verify_integrity.py": "8110be300b241b4f7903e430b53c53b562161f7cfbe8a06390f58acde7efa11c",
+    "bootstrap/tests/test_verify_ref.py": "3a2be3dc1ff6e0b8ee14e18c0b72f1986cd16d2c9c82eefab4bf5af56bfe46ae",
+    "bootstrap/tests/test_verify_stems.py": "2b196ed9bd6490f7beeccc24c6be484c2a4c83596875491354c56a839ecf3797",
+    "bootstrap/tests/test_web_hosting_security.py": "3c72ad61d4513a2de0711bccf92948a9fb50f258600d5c123ce9a40fcf2ac8f2",
+    "bootstrap/tests/test_writing_rules_ship.py": "1948d96b4ceb93a4b03ac286ddd6eb7d3e5413d8f8b2166b619591fce0a0c545"
+  },
+  "current_test_nodes_sha256": "4ac10382f0ff16d261508e3a8330a5aae7cc19c7b9bc013b29115963a92f1230",
+  "freeze_discovery": {
+    "effective_delta_since_c1a": {
+      "added": [],
+      "removed": []
+    },
+    "effective_frozen_count": 197,
+    "effective_frozen_paths": [
+      "bootstrap/check_module_body_coverage.py",
+      "bootstrap/scaffold.py",
+      "bootstrap/security_check.py",
+      "bootstrap/tests/__init__.py",
+      "bootstrap/tests/_ast_attest.py",
+      "bootstrap/tests/_gate_manifest.py",
+      "bootstrap/tests/_gate_preflight.py",
+      "bootstrap/tests/_gate_reanchor.py",
+      "bootstrap/tests/_gate_transition.py",
+      "bootstrap/tests/_loader_proto.py",
+      "bootstrap/tests/_oracle.py",
+      "bootstrap/tests/_oracle_activation.py",
+      "bootstrap/tests/_oracle_trust.py",
+      "bootstrap/tests/conftest.py",
+      "bootstrap/tests/fixtures/active_refactor.example.yml",
+      "bootstrap/tests/fixtures/board_json_v1_baseline.json",
+      "bootstrap/tests/fixtures/redteam/malicious.txt",
+      "bootstrap/tests/fixtures/scaffold_ast_known_new.json",
+      "bootstrap/tests/fixtures/skills/README.md",
+      "bootstrap/tests/security_manifest.py",
+      "bootstrap/tests/test_agreement_retired.py",
+      "bootstrap/tests/test_api_access_security.py",
+      "bootstrap/tests/test_ast_attest.py",
+      "bootstrap/tests/test_board_json_contract.py",
+      "bootstrap/tests/test_broad_run_guard.py",
+      "bootstrap/tests/test_cairn_prefix_links.py",
+      "bootstrap/tests/test_ceremony_review_report.py",
+      "bootstrap/tests/test_certifying_run_rule.py",
+      "bootstrap/tests/test_check_cairn_content.py",
+      "bootstrap/tests/test_check_cairn_counts.py",
+      "bootstrap/tests/test_claim_check_allow_config.py",
+      "bootstrap/tests/test_claim_check_module.py",
+      "bootstrap/tests/test_cli_module.py",
+      "bootstrap/tests/test_comprehension_floor.py",
+      "bootstrap/tests/test_config_module.py",
+      "bootstrap/tests/test_content_scan.py",
+      "bootstrap/tests/test_coordination_broad_intent.py",
+      "bootstrap/tests/test_core_dev_folders.py",
+      "bootstrap/tests/test_default_security_stance.py",
+      "bootstrap/tests/test_deleted_tracked_markdown.py",
+      "bootstrap/tests/test_doc_drift_tools.py",
+      "bootstrap/tests/test_doc_governance.py",
+      "bootstrap/tests/test_documentation_plan_module.py",
+      "bootstrap/tests/test_drift_surfacing.py",
+      "bootstrap/tests/test_engine_copy_fallback_contained.py",
+      "bootstrap/tests/test_evolution_infer.py",
+      "bootstrap/tests/test_facade_loader_cleanup.py",
+      "bootstrap/tests/test_finalize_retired_living_state.py",
+      "bootstrap/tests/test_first_session_report.py",
+      "bootstrap/tests/test_fork_advisory.py",
+      "bootstrap/tests/test_gate_manifest.py",
+      "bootstrap/tests/test_gate_preflight.py",
+      "bootstrap/tests/test_gate_reanchor.py",
+      "bootstrap/tests/test_gate_transition.py",
+      "bootstrap/tests/test_generated_output_scan.py",
+      "bootstrap/tests/test_hardening.py",
+      "bootstrap/tests/test_incident_trackers_module.py",
+      "bootstrap/tests/test_install_module.py",
+      "bootstrap/tests/test_install_report_slots.py",
+      "bootstrap/tests/test_install_time_onboarding.py",
+      "bootstrap/tests/test_issue_capture_bootstrap.py",
+      "bootstrap/tests/test_link_check_exclusions.py",
+      "bootstrap/tests/test_loader_identity.py",
+      "bootstrap/tests/test_lockfile_module.py",
+      "bootstrap/tests/test_lockfile_provenance.py",
+      "bootstrap/tests/test_loop_fidelity_gate.py",
+      "bootstrap/tests/test_manifest.py",
+      "bootstrap/tests/test_merge_module.py",
+      "bootstrap/tests/test_model_selection_stub.py",
+      "bootstrap/tests/test_model_tier_rule_ships.py",
+      "bootstrap/tests/test_module_merge.py",
+      "bootstrap/tests/test_module_merge_lockfile.py",
+      "bootstrap/tests/test_module_roster.py",
+      "bootstrap/tests/test_next_session_local_note.py",
+      "bootstrap/tests/test_notice_install.py",
+      "bootstrap/tests/test_onboarding_seed_roster.py",
+      "bootstrap/tests/test_onboarding_slot_substitution.py",
+      "bootstrap/tests/test_oracle.py",
+      "bootstrap/tests/test_oracle_activation.py",
+      "bootstrap/tests/test_oracle_trust.py",
+      "bootstrap/tests/test_portable_security_sweeps.py",
+      "bootstrap/tests/test_practice_modules.py",
+      "bootstrap/tests/test_presets.py",
+      "bootstrap/tests/test_profile_grammar.py",
+      "bootstrap/tests/test_profiles_smoke.py",
+      "bootstrap/tests/test_prune_tools.py",
+      "bootstrap/tests/test_python_floor.py",
+      "bootstrap/tests/test_quality_gate_cli.py",
+      "bootstrap/tests/test_quality_gate_neutrality.py",
+      "bootstrap/tests/test_quality_gate_order_independence.py",
+      "bootstrap/tests/test_quality_gate_redundancy.py",
+      "bootstrap/tests/test_quickstart_sequence.py",
+      "bootstrap/tests/test_reanchor.py",
+      "bootstrap/tests/test_reanchor_driver_disclosures.py",
+      "bootstrap/tests/test_reference_scripts.py",
+      "bootstrap/tests/test_repin.py",
+      "bootstrap/tests/test_repin_ceremony.py",
+      "bootstrap/tests/test_replacement_tools.py",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py",
+      "bootstrap/tests/test_review_stance_in_shipped_files.py",
+      "bootstrap/tests/test_review_sweep_ships.py",
+      "bootstrap/tests/test_scaffold.py",
+      "bootstrap/tests/test_scaffold_substrate.py",
+      "bootstrap/tests/test_scientific_check_guidance_ships.py",
+      "bootstrap/tests/test_scope_reduction_trap.py",
+      "bootstrap/tests/test_security_capability_install.py",
+      "bootstrap/tests/test_security_check.py",
+      "bootstrap/tests/test_security_finding_confidentiality.py",
+      "bootstrap/tests/test_security_leaf.py",
+      "bootstrap/tests/test_security_lint.py",
+      "bootstrap/tests/test_security_marker.py",
+      "bootstrap/tests/test_security_net.py",
+      "bootstrap/tests/test_security_stack.py",
+      "bootstrap/tests/test_security_verification.py",
+      "bootstrap/tests/test_session_binding_gate_and_printing_hold.py",
+      "bootstrap/tests/test_session_binding_untracked.py",
+      "bootstrap/tests/test_session_failsafe.py",
+      "bootstrap/tests/test_session_kernel.py",
+      "bootstrap/tests/test_session_routines.py",
+      "bootstrap/tests/test_session_start_drain_rules.py",
+      "bootstrap/tests/test_session_writes_contained.py",
+      "bootstrap/tests/test_skill_contract.py",
+      "bootstrap/tests/test_skills_fanout.py",
+      "bootstrap/tests/test_skills_install.py",
+      "bootstrap/tests/test_skills_matrix.py",
+      "bootstrap/tests/test_skills_onboarding.py",
+      "bootstrap/tests/test_skills_security.py",
+      "bootstrap/tests/test_skills_self_heal.py",
+      "bootstrap/tests/test_skills_upgrade.py",
+      "bootstrap/tests/test_slotmerge_leaf.py",
+      "bootstrap/tests/test_status_vocabulary_advisory.py",
+      "bootstrap/tests/test_stewardship_rules_ship.py",
+      "bootstrap/tests/test_upgrade.py",
+      "bootstrap/tests/test_upgrade_added_slots.py",
+      "bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py",
+      "bootstrap/tests/test_upgrade_lockfile_path_containment.py",
+      "bootstrap/tests/test_upgrade_module.py",
+      "bootstrap/tests/test_upgrade_module_additions.py",
+      "bootstrap/tests/test_upgrade_refuses_hostile_project_data.py",
+      "bootstrap/tests/test_upgrade_removes_retired_files.py",
+      "bootstrap/tests/test_upgrade_side_door_parity.py",
+      "bootstrap/tests/test_verification_boundaries.py",
+      "bootstrap/tests/test_verify_counts.py",
+      "bootstrap/tests/test_verify_integrity.py",
+      "bootstrap/tests/test_verify_ref.py",
+      "bootstrap/tests/test_verify_stems.py",
+      "bootstrap/tests/test_web_hosting_security.py",
+      "bootstrap/tests/test_writing_rules_ship.py",
+      "bootstrap/verify_integrity.py",
+      "scripts/bootstrap_github_labels.py",
+      "scripts/bootstrap_gitlab_labels.py",
+      "scripts/check_cairn.py",
+      "scripts/check_model_selection.py",
+      "scripts/claim_check.py",
+      "scripts/content_scan.py",
+      "scripts/content_scan_runner.py",
+      "scripts/gen_legacy_code_review_passes.py",
+      "scripts/gen_legacy_passes.py",
+      "scripts/link_check.py",
+      "scripts/measurements.py",
+      "scripts/quality_gate.py",
+      "scripts/quality_gate_unused_def_whitelist.py",
+      "scripts/reanchor_ceremony.py",
+      "scripts/repin.py",
+      "scripts/run_portable_security_sweeps.py",
+      "scripts/sync_doc_snippets.py",
+      "scripts/token_budget.py",
+      "scripts/verify_counts.py",
+      "scripts/verify_stems.py",
+      "templates/modules/default-on/claim_check.py",
+      "templates/modules/default-on/evolution_infer.py",
+      "templates/modules/default-on/prune_reflections.py",
+      "templates/modules/default-on/run_security_verification.py",
+      "templates/modules/default-on/verify_stems.py",
+      "templates/modules/team-gated/_intent/__init__.py",
+      "templates/modules/team-gated/_intent/cli.py",
+      "templates/modules/team-gated/_intent/conflict.py",
+      "templates/modules/team-gated/_intent/hooks.py",
+      "templates/modules/team-gated/_intent/identity.py",
+      "templates/modules/team-gated/_intent/record_io.py",
+      "templates/modules/team-gated/_intent/shared.py",
+      "templates/modules/team-gated/_security_net/__init__.py",
+      "templates/modules/team-gated/_security_net/net.py",
+      "templates/modules/team-gated/_security_net/policy.py",
+      "templates/modules/team-gated/_security_net/report.py",
+      "templates/modules/team-gated/api_access_security.py",
+      "templates/modules/team-gated/check_model_selection.py",
+      "templates/modules/team-gated/content_scan.py",
+      "templates/modules/team-gated/content_scan_runner.py",
+      "templates/modules/team-gated/issue-capture/bootstrap_github_labels.py",
+      "templates/modules/team-gated/issue-capture/bootstrap_gitlab_labels.py",
+      "templates/modules/team-gated/link_check.py",
+      "templates/modules/team-gated/prune_intents.py",
+      "templates/modules/team-gated/run_portable_security_sweeps.py",
+      "templates/modules/team-gated/run_security_audit.py",
+      "templates/modules/team-gated/sync_doc_snippets.py",
+      "templates/modules/team-gated/web_hosting_security.py"
+    ],
+    "effective_frozen_sha256_by_path": {
+      "bootstrap/check_module_body_coverage.py": "ddd0f177d706d18eea9aab6db7fb2b32f62fa802dce6a8e9cdb9793069c7ba13",
+      "bootstrap/scaffold.py": "54011ce6dd47b00a1d0b38821b8956fa3f810473c3b44cdd533c2b5500428a2f",
+      "bootstrap/security_check.py": "b8c3d6d787c007d8f5c6dd58f98ac85ca177a26af68ced3d4762671dae5bbd6d",
+      "bootstrap/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bootstrap/tests/_ast_attest.py": "8280d432dae5931167bfb0f823e89cd51bec0fc6aff99a3c79f45923146e6006",
+      "bootstrap/tests/_gate_manifest.py": "e4c25061dd422f890795200c6ce4924744fdfaa3f47053282265fc4402d09725",
+      "bootstrap/tests/_gate_preflight.py": "bdf33a202d2a6b86e13c7e025c591c05cf7f4b4c441c3a9f009fa2f254a6bd5d",
+      "bootstrap/tests/_gate_reanchor.py": "3cd5d39ec6b64296557bda4ee41d838158c40e89699fc6b3372f4c412466be7c",
+      "bootstrap/tests/_gate_transition.py": "545625aea1d229d3977abd52118151477caf1bc5d87479d2e0a3cc08436bca17",
+      "bootstrap/tests/_loader_proto.py": "a13bd3e12bfecc272d3295f545400b065062f1ef326e106d280fc94cabf61046",
+      "bootstrap/tests/_oracle.py": "afc9951ecbbc2693caba76ad14843d4d38560e1c524dddbad37e04e1c3896bed",
+      "bootstrap/tests/_oracle_activation.py": "f8f94efa73eea79d6b366f280024d2bace4d13b4b111f12c65d9ae0f85c9d2c4",
+      "bootstrap/tests/_oracle_trust.py": "725692f9ad21f1276532dcba7ae49ed307fbd9c18bfdc25212fb048de0c63f42",
+      "bootstrap/tests/conftest.py": "c6d1322e4b31b885bf633ae4db16c307449bec429d0a13227a5ef175bb90a021",
+      "bootstrap/tests/fixtures/active_refactor.example.yml": "13bd1b3153fda5bfd776a2594a58806f9590c1d2bb05ec92736e57909cb0a946",
+      "bootstrap/tests/fixtures/board_json_v1_baseline.json": "e2d345c67c18a48d36f934427ff1d0d066850c1b16ede8f9ada239c9d1283ce5",
+      "bootstrap/tests/fixtures/redteam/malicious.txt": "305eae06b09ac1b106b853954976fc2a21805225cb05e9ea4514d2f44c1e9624",
+      "bootstrap/tests/fixtures/scaffold_ast_known_new.json": "6e8c03ddae6d1190f6baf74d0f22e249d410c0498b8e173f878307b341956872",
+      "bootstrap/tests/fixtures/skills/README.md": "62f7deb00cc3aa922efd3877ef4696efc2af3d0b27cd1fc278168b67070f4092",
+      "bootstrap/tests/security_manifest.py": "ecb794b097ccfc4f9cf1a7af6c3990bd71b2020a50470bb95be3a8e8dd6ffdb6",
+      "bootstrap/tests/test_agreement_retired.py": "31914fc6fa796ca2dbca62b2dd2c59356c64fdbdee4ba2d37e1a7272623ca6eb",
+      "bootstrap/tests/test_api_access_security.py": "ecdfdcfcd2534a1c353cd713f903d1e054b3b8755093ae9e20ea7924569157b8",
+      "bootstrap/tests/test_ast_attest.py": "e4e6c45d85f75d3c8ec3a7a06898575e0dcd952aacca9ca034fbf9dbe9bcac96",
+      "bootstrap/tests/test_board_json_contract.py": "bbfb6137a733e7e78d211206a426c0e826f71b76b9828f117e742e7cbc1d8f2e",
+      "bootstrap/tests/test_broad_run_guard.py": "3649377c412c128e37b40aa29b09efec70f8709ea2a3161b8160d1c4be9b95c3",
+      "bootstrap/tests/test_cairn_prefix_links.py": "0078b1332009c3960e8730a6f1dbc15681b8731e6edb53d5076d02580c256927",
+      "bootstrap/tests/test_ceremony_review_report.py": "a17f711c7a2e31ddd27ac833b7c07e8dcd92c0f2c071a71266fc0ead1c2af9f3",
+      "bootstrap/tests/test_certifying_run_rule.py": "a8bb32492d844c172ba315a341dffdcd914abc678c6e25920d6d6347a2fe4261",
+      "bootstrap/tests/test_check_cairn_content.py": "056fa4ed7da14efbfd7989e27d567ef0b3e2cc354e7790159ba4db30a92ca768",
+      "bootstrap/tests/test_check_cairn_counts.py": "1c5b3937a50eb1f150d5aedc59af76fb29091864094cb7513b866548dbf69dbf",
+      "bootstrap/tests/test_claim_check_allow_config.py": "58700c2c3c6d6b0819722c04a91764c58e352c581d780f616a4f636dd1c416b7",
+      "bootstrap/tests/test_claim_check_module.py": "9290a744e7200393edb234724cda493d7a8f4848927f0160d799303e2068c042",
+      "bootstrap/tests/test_cli_module.py": "f2653af6b42adb8c23af8755566c5852d3c368836b474c7ad5a5f64649b6a497",
+      "bootstrap/tests/test_comprehension_floor.py": "671cfca4f7e0a082d444d0b458e7443246373b43700c2d22a19a3839f7b76b58",
+      "bootstrap/tests/test_config_module.py": "d816e32e9695a8ed30c1c5d3b8c88ec41c045e0447521ba1b9f335e85a473a6e",
+      "bootstrap/tests/test_content_scan.py": "1947e78ed149919101f84cc53f15d8c7ac331f8232a40b391a079b7208354319",
+      "bootstrap/tests/test_coordination_broad_intent.py": "374b3e155b551d4c00f023f863923ad5e9fc21e7fcfd0ccca5d24cede2b7b16e",
+      "bootstrap/tests/test_core_dev_folders.py": "8622d33030f618adc31c9ce00dbfdbc7d06ab0a501dfb066d6adff7e71a17fba",
+      "bootstrap/tests/test_default_security_stance.py": "ff35b2b3f5e7dc02d77da71738791004273b0322fc9d87623100397227b61406",
+      "bootstrap/tests/test_deleted_tracked_markdown.py": "1455f9eb424070042d41f747b417a863ffa704f6747a39949c41aa744c330deb",
+      "bootstrap/tests/test_doc_drift_tools.py": "7d7db817f89ad8ec6bb6b84ec6420c8e597100d8bd27505921aacc66b8a1b19a",
+      "bootstrap/tests/test_doc_governance.py": "00c013ea0d6eb1dbb202392a8159bb593798f001053b6e6e839792545bb55955",
+      "bootstrap/tests/test_documentation_plan_module.py": "31532e535cc7340934f236c9158c46a5a1e25fd6278b88c64967e4c9ce02a4c7",
+      "bootstrap/tests/test_drift_surfacing.py": "f8754c952c9cdccb403ffa97c13590ad20f9ca3821069262d9ca4b00253ba91b",
+      "bootstrap/tests/test_engine_copy_fallback_contained.py": "eb6faf44c8198b191d62cb7f11beeb7e538f7b5ef5305c3dce0cc7b28ef440e0",
+      "bootstrap/tests/test_evolution_infer.py": "195775eaac3c5bd9de142265d097507428e5803f4373682ace5b9ddd2ce0ca2f",
+      "bootstrap/tests/test_facade_loader_cleanup.py": "2f4cc79fd8016268784252e99b22ad7937a741110ed4040e317ff39a619f20a2",
+      "bootstrap/tests/test_finalize_retired_living_state.py": "687ddddadc5ba14de460ef29bf57642d3042032ab68a9addd76e0ffd2a74ee45",
+      "bootstrap/tests/test_first_session_report.py": "16e2b09483865546f03dc35f30f13e5b80b26a8e6ba232db4f79aecb47d7238b",
+      "bootstrap/tests/test_fork_advisory.py": "99bd284108daea63c44cc1958160e67a8a70087be6228ce9822cb6bbc25f65f0",
+      "bootstrap/tests/test_gate_manifest.py": "394ea75f791c0511fa7b37c691abf66c3a6b646172037f0993b5dd6dc3e568ef",
+      "bootstrap/tests/test_gate_preflight.py": "afbcc196be13b154c685f2e04f8e93fde5a8ae6255222555fb5fc814921c5c98",
+      "bootstrap/tests/test_gate_reanchor.py": "039d27701e9d07dea0273f0ef2b31f8065fa517c1734b39404bfc4f7a30068a7",
+      "bootstrap/tests/test_gate_transition.py": "01d5c608484b8f9d9e3b3acc6fcecd112fca5982dd3e1a55258e2f32f831d79f",
+      "bootstrap/tests/test_generated_output_scan.py": "e752cc3e0bc9a9cc8a88ea9aa639e86676aba1be613ccfe94edbf5dc70ec19f1",
+      "bootstrap/tests/test_hardening.py": "eba10b9dec753b0f235f82d0b7b5a77ba450616042ae4ed7b414eb93630f3c2e",
+      "bootstrap/tests/test_incident_trackers_module.py": "8e863704fd663196b3ed866f08a1b2d513b06ec8923f6cea5d17855cf8c11433",
+      "bootstrap/tests/test_install_module.py": "54fcbdd3154c43e6bbedd397c0726f7ded0cd964a59e6f5900d2745e09b7e536",
+      "bootstrap/tests/test_install_report_slots.py": "ce5a330d8336d4c00c3ec1aef835f15ebf6893eb796b97d9af0c02dbe98c61f6",
+      "bootstrap/tests/test_install_time_onboarding.py": "e31c539089dd883873046b1128f967d03a0216c83c28ebc0100c3f8bca110b87",
+      "bootstrap/tests/test_issue_capture_bootstrap.py": "9549c2f5fda4fee5f66a83dd866f65115a7210ea3ccce94f2889e097308e2ba6",
+      "bootstrap/tests/test_link_check_exclusions.py": "3f8832679ee00e30bbcb15546ac128822e125702758217f04a7617ed46ede5c4",
+      "bootstrap/tests/test_loader_identity.py": "5816af4bf70f07d15f832c9bc85b4fcb9ccef2ca36cd014ad78ae98840355442",
+      "bootstrap/tests/test_lockfile_module.py": "10ed583a91412a762596297b251997f3b0e52081c5141d468bd2b11a0219b595",
+      "bootstrap/tests/test_lockfile_provenance.py": "5c5e572e514e72b4cb68526783d6ebc2e683d90d2fb7e4bbe39b924bd9ae3ab0",
+      "bootstrap/tests/test_loop_fidelity_gate.py": "f2865d8c930ed162247c4079d37276a7d0c229577aeeb4dbbe87b0a98d572544",
+      "bootstrap/tests/test_manifest.py": "abea6232dff47b1d8df4281bb6169b7e67d25a2cdaa01fa7d276adec15c10775",
+      "bootstrap/tests/test_merge_module.py": "37855f076687d8f471356c559af9deb9cab09a3e7485bf57ea81533c8cc6ffc7",
+      "bootstrap/tests/test_model_selection_stub.py": "c4cf4361fcddd360f9006cdba32956858ded193e5bd41d423cf839b28a69c1fb",
+      "bootstrap/tests/test_model_tier_rule_ships.py": "b095ef072e112fcbf9e41188cfd11f71fec4f4f091c2aef28c9f5658cc958bd5",
+      "bootstrap/tests/test_module_merge.py": "a08b4327a6848cd88ebb9c0c9b0acd67378ca83a544ba8ab6387ff4b6ca3f919",
+      "bootstrap/tests/test_module_merge_lockfile.py": "9fc21ce969e211d84c9bc60710d9944c8eb0b1f4300a8c02a1d8800e2bed671e",
+      "bootstrap/tests/test_module_roster.py": "d29a18ef613a9ab249007315368cfdd3085fb43af3f2a390e51ea74f2c8f1143",
+      "bootstrap/tests/test_next_session_local_note.py": "55b1d0ef5ce31d8c0f21876b191c6218098c0711c1570f4f6e437b56c620abe0",
+      "bootstrap/tests/test_notice_install.py": "e0a1350b8c2a6e7fc1dd64894e157db48ffed78ad3a4942765e2ef5e6b81a43e",
+      "bootstrap/tests/test_onboarding_seed_roster.py": "32ffd8d6dbd75b3cf28d26de188b4f154717cfdcae872a15ce90dcedf8502692",
+      "bootstrap/tests/test_onboarding_slot_substitution.py": "545a519f184fb062e3105b6ac389f66d521bf8ebf1604761afc7394fc357833f",
+      "bootstrap/tests/test_oracle.py": "4fb3592c1bdc2c4b31dbbd43da1fbe366d5b5a83f1efb7ff260ee46341f24f32",
+      "bootstrap/tests/test_oracle_activation.py": "b799194596303d2dc99dc4cbc214f88ca85eb226997096de94abb18e5618c554",
+      "bootstrap/tests/test_oracle_trust.py": "6fdaf0d1241ae9aabfaa722a50c5c3a8901747a1c8d51584a2642ba478fd18ee",
+      "bootstrap/tests/test_portable_security_sweeps.py": "c6e6213c2616db524a72ac692801452cd75f0892901807f917be4b198a3f4958",
+      "bootstrap/tests/test_practice_modules.py": "d9cb7704fa83fafd98f6c0e7c20a76c0f51b9536f7491866673c90b22c22cc13",
+      "bootstrap/tests/test_presets.py": "c991cabdcc8b71925bc74d6bb232db7d9ac375992722eadc54ed8a24d0997d39",
+      "bootstrap/tests/test_profile_grammar.py": "1869871a28f1233f068ab533569a10c8d60b0628e88128fd8e58b01c8aece665",
+      "bootstrap/tests/test_profiles_smoke.py": "83160d173903a650369bfd22a378d9a8db3e56cd50474feb024decf8e6993d4f",
+      "bootstrap/tests/test_prune_tools.py": "e66d7859f5723eb91ad1f203f7f9c103266367abfdd594e7f605c411ef6ddc3c",
+      "bootstrap/tests/test_python_floor.py": "c91bf280605e4b89265fd2dcbbff8497f418f2337d7cacfc3bd79bb1ebb3d95e",
+      "bootstrap/tests/test_quality_gate_cli.py": "4b756800fd62c3e7b1234b25e3c1e73563d4a198f001f1e1fa7f37e26cf971ee",
+      "bootstrap/tests/test_quality_gate_neutrality.py": "2190797b3a3c09b68c313f22450e43db22723003a03514502bd19f44c375b1ee",
+      "bootstrap/tests/test_quality_gate_order_independence.py": "b79fafecd10d217b95825ef2588b07b8e152ace6b2364dc8735cc40186e54012",
+      "bootstrap/tests/test_quality_gate_redundancy.py": "90d312e0910818b33bf0fdf50d5547a7ae907964d21714f66562f8c49066b7d8",
+      "bootstrap/tests/test_quickstart_sequence.py": "24902eae743e6a486f8160c72158a73151cf6231a89eab152159759734119e05",
+      "bootstrap/tests/test_reanchor.py": "106d4ce5e3fbb6b885b8d0bbdaf96a2506ad58bceca54983693577908f3d974a",
+      "bootstrap/tests/test_reanchor_driver_disclosures.py": "0bfca93f1055473259d6f5d1389f56a80d92d1770c4b92f40e416765332b3332",
+      "bootstrap/tests/test_reference_scripts.py": "0616421b20deedc87e69cf526cec2b7ed94069f17ac49420b2b88c39b65aa806",
+      "bootstrap/tests/test_repin.py": "f467293a80ee01b6d09833fefcdf808b81ddb55077a59f4b5b8c226d1d195c56",
+      "bootstrap/tests/test_repin_ceremony.py": "42eb4df16248f0f23c84dffd2ca97dc9763f2d160e4b60532f7a7c44ac3ae9a7",
+      "bootstrap/tests/test_replacement_tools.py": "0a48739fcdd5da2fef30fe34635df6c7eb68bd01c10a07fcb5617302d5885f0f",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py": "3b9075256513647a85f7c3ec5cc5081de9368409935d81a7891c081bce7774aa",
+      "bootstrap/tests/test_review_stance_in_shipped_files.py": "b44a446d31fb1273a8fddf2b510a17f7a4463c8475680f1563f9d8d3c7cc4bd3",
+      "bootstrap/tests/test_review_sweep_ships.py": "c16510242451a2c7e0b967ea0aa05ef38fb07c4c20724c3e267137bc4228adfa",
+      "bootstrap/tests/test_scaffold.py": "c6f1b8fb7ca4375fbc5bda60f867734a127f44b0066a203a59e78b512f2a550e",
+      "bootstrap/tests/test_scaffold_substrate.py": "744f46ea7d1a319b17ff40316acfe88035f287df7edd0d25e88b41e9faa81b35",
+      "bootstrap/tests/test_scientific_check_guidance_ships.py": "9a759c768897974a14900b2f2eb865ce21ec3ac73207bef01ec8d4f1dd10a2a2",
+      "bootstrap/tests/test_scope_reduction_trap.py": "1a74bcdead6b2f647dfd4abf2fe374d8c9632cdcda8edae019fa5b7169f2be7c",
+      "bootstrap/tests/test_security_capability_install.py": "51357639c119a4fd0e6d730b9ec51536980e5732b07bf3053f5ec4e3fc4332ff",
+      "bootstrap/tests/test_security_check.py": "f32b15003af0987922c703f9e17cb7ee09bd3949dfd44e3b266bd8dec931659a",
+      "bootstrap/tests/test_security_finding_confidentiality.py": "170c03c33c83f14d5895674abfd8e151b34d0fbef745e26fa9ef4678b1e2b313",
+      "bootstrap/tests/test_security_leaf.py": "0822b03ab73b79284d71543a9508d4b08a98812d21dfa0fad2a0352e921b6e3f",
+      "bootstrap/tests/test_security_lint.py": "9f131be382c5e268a868f9675fd4dfbe0b77f486d09f85e7703c6599c82a1e9a",
+      "bootstrap/tests/test_security_marker.py": "ce89dd126bc78c26a4ec0f9b65bec44144019e3ea5ae98729803387d8ad33231",
+      "bootstrap/tests/test_security_net.py": "ed69bfabb2d68e79efbf1fda1cb854703c9129a39130cac95200f5d4dc9fb8df",
+      "bootstrap/tests/test_security_stack.py": "ab14e9c592ee0ff2f8d98dd0ffebee390a86048f288df3afea666ebc64bca668",
+      "bootstrap/tests/test_security_verification.py": "829251b233d58eb172dc587df98c6dbe6d77cb06e5a08982990c19af47f72b73",
+      "bootstrap/tests/test_session_binding_gate_and_printing_hold.py": "981f9a97d4370bd64041b4bd4e06c7089e4f63e8c74ee0d616c322d5f09567b8",
+      "bootstrap/tests/test_session_binding_untracked.py": "c147c2e7ba9ba587ae3a940ea92cc3b3c1b9bdaadfff1d72d1e62b0edd2fa277",
+      "bootstrap/tests/test_session_failsafe.py": "db394c44ddb133f48bcbd5515c20946f6e2c0a631609e9c4fb9c7979a3675cb3",
+      "bootstrap/tests/test_session_kernel.py": "4a6d2628241ad58764021aed6197a5c8f2e6a75075ccf52f69afd006f302ca5f",
+      "bootstrap/tests/test_session_routines.py": "1689060aa4b858485f7a1863f9e65250712fafd9924b8fd19254713246444984",
+      "bootstrap/tests/test_session_start_drain_rules.py": "f21fc383d910af0e90b21c0e66a688e3375b70e0acd29cd17c9fec8f859b6086",
+      "bootstrap/tests/test_session_writes_contained.py": "1605a9e0747f795d2027dd3f1a0e3031525dc8240eb60761def5a3f1f852705e",
+      "bootstrap/tests/test_skill_contract.py": "d41df6e9a4679c9a28b141a0c56ad35dd2ead362efc0107383a8ce0c3342f7a6",
+      "bootstrap/tests/test_skills_fanout.py": "12bc32a9bdb41a1038a147f43ad58b7d170d9777973321787571d9c5a56f2e0e",
+      "bootstrap/tests/test_skills_install.py": "7e9af5b6c07dbce964c3be606756ff827bfa5a46fb656b0bf4092f1841bfff97",
+      "bootstrap/tests/test_skills_matrix.py": "11e9d5a6f26aa36892c568efbd33555cebf3cc016f625cb5b1eb682da2ad5a9f",
+      "bootstrap/tests/test_skills_onboarding.py": "67fff7ad648eb77cf1119f78cce97e160d862d69585df3cba819650e8f0a0e90",
+      "bootstrap/tests/test_skills_security.py": "4e0a8d3dea727bc762afc972c7c88c64dccfcee250b64bb959687a4082e8c6ae",
+      "bootstrap/tests/test_skills_self_heal.py": "d2760bdb15f237d41c932c6e63024db73b959e7c5af6dc29433e8bcf382d7c28",
+      "bootstrap/tests/test_skills_upgrade.py": "b590a6f21f4083705ac26fbadd3557a3c3bc5721fdd8082edaf515ea63657506",
+      "bootstrap/tests/test_slotmerge_leaf.py": "b746ac5b616a90c696271c93543c58685e1a4389778a723281490ba143857005",
+      "bootstrap/tests/test_status_vocabulary_advisory.py": "a72fec54d7c720663e17ca86f1db02076d7575f70e6e80ef2204844e21f60ddf",
+      "bootstrap/tests/test_stewardship_rules_ship.py": "a9a373d2377cddbb20a320f8eff260f965616e8e39dd22d59d00e8c8b211e8a7",
+      "bootstrap/tests/test_upgrade.py": "edb97f2dbba3dd4d42c10a133472b45679bb54199e696ad1f798c54cdfa10e93",
+      "bootstrap/tests/test_upgrade_added_slots.py": "b193ded474d4a9448589b548835548b659040bcd3b27b1a803a20425fe1b9ae8",
+      "bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py": "fd272a9b924f82d48dd9d747bc43e34526d9982396f33d884531ff4ff494dc84",
+      "bootstrap/tests/test_upgrade_lockfile_path_containment.py": "0156507fc2cdde1a6a1387c131f5e9507d967454e67ca2de19da0414226cae12",
+      "bootstrap/tests/test_upgrade_module.py": "cd6ba214c5b3119703e91afa7b51ef941a5845427beccb4dbb0df6bc678a3b29",
+      "bootstrap/tests/test_upgrade_module_additions.py": "8ac97c4a9329fcb355d115879b35d7a27e0651ddab697394ae36371b1bca721a",
+      "bootstrap/tests/test_upgrade_refuses_hostile_project_data.py": "388b87ee522edb802eee391a082a4a0ca7b87121de607c23393b6afde3a9b6d0",
+      "bootstrap/tests/test_upgrade_removes_retired_files.py": "3cdbc1934348093db28db5f0d9b8ea063cea80c7ee048d0ca221567b22bde491",
+      "bootstrap/tests/test_upgrade_side_door_parity.py": "dc2eb03710f85e5ee84c1d42f302a5a555c32201edf02d75c80f2711eb9d9b96",
+      "bootstrap/tests/test_verification_boundaries.py": "c32f0ca7b3faf79c98cb516feaa222cccf2a473e36f320c16be0beaec69ef369",
+      "bootstrap/tests/test_verify_counts.py": "4fe6a8bb3e1af0970431b3ec1304047b1e88b6cf6f57487ed6c1f7584c45aa7c",
+      "bootstrap/tests/test_verify_integrity.py": "8110be300b241b4f7903e430b53c53b562161f7cfbe8a06390f58acde7efa11c",
+      "bootstrap/tests/test_verify_ref.py": "3a2be3dc1ff6e0b8ee14e18c0b72f1986cd16d2c9c82eefab4bf5af56bfe46ae",
+      "bootstrap/tests/test_verify_stems.py": "2b196ed9bd6490f7beeccc24c6be484c2a4c83596875491354c56a839ecf3797",
+      "bootstrap/tests/test_web_hosting_security.py": "3c72ad61d4513a2de0711bccf92948a9fb50f258600d5c123ce9a40fcf2ac8f2",
+      "bootstrap/tests/test_writing_rules_ship.py": "1948d96b4ceb93a4b03ac286ddd6eb7d3e5413d8f8b2166b619591fce0a0c545",
+      "bootstrap/verify_integrity.py": "68ce8ee8def272cfd5be862f77801c8786bc318330b1d9a127f7763b3c1134e8",
+      "scripts/bootstrap_github_labels.py": "9e29302b00f58c8b126a09567fc3fba7c0ce93d6edd873f1d4cd93c3fbf4fa29",
+      "scripts/bootstrap_gitlab_labels.py": "439570e4833a0b8bfbb0392448f4fca4898e96b731dcf68181541b0b94639a67",
+      "scripts/check_cairn.py": "2f1744e1c7741c65ecb8ce3e5110a88764b327f564050a04bc9ffa6a952a772d",
+      "scripts/check_model_selection.py": "103ab77aa55a721618b4fea175b7877833fc9ca4cba57d68841b4071a71a64ff",
+      "scripts/claim_check.py": "3c15a3a61ae5b01d5fcf4e74f0ec2bbd6d84c6f2054488b992704e269a6f3081",
+      "scripts/content_scan.py": "8ab87d1b562e8a54bf552e1e93f0bd9b33d9cc3ec1bbeafb1933bdeaa30149c3",
+      "scripts/content_scan_runner.py": "dc34b74062c4b69a0b5667a74904e120cb949717453e80e581bc68344bc696a1",
+      "scripts/gen_legacy_code_review_passes.py": "53e795003faf8214e49c8c46818f91a65e5812193de95aca85c2514c4347e866",
+      "scripts/gen_legacy_passes.py": "7f5781b83bef6872e2014d76b7034f8e03f86522dc9e1905ee093b9f591242ac",
+      "scripts/link_check.py": "2da9814c7d748d894834d3b30d24001e044244393b74037848154066331ea80d",
+      "scripts/measurements.py": "8546b794ca46ef26e30ba35a2aefeeed7abdf9e244a7c86dc84b85fe4e4507eb",
+      "scripts/quality_gate.py": "c3478f685290cb667363e96499ecbe385eea803ff794516cd134486507cfafad",
+      "scripts/quality_gate_unused_def_whitelist.py": "de21df447aaa8e249bcc7ac6379604ab851fab15a62b4f7b8be6bb542d05c89b",
+      "scripts/reanchor_ceremony.py": "557e3ab460687a63f5c8d8af2915908ba3b5ceedaf035c251f06ba9221deda3e",
+      "scripts/repin.py": "fab93c7a2f3b3bffd84afd2ff3a71932de96a8f31f2862857f1431ab550cd09e",
+      "scripts/run_portable_security_sweeps.py": "9bf5122ab77741e92c9ce44ffd8371459f0cc68ac732b68432223abb82dbad88",
+      "scripts/sync_doc_snippets.py": "3dc5eef13180b3ff531f36c1fafaa0d71ba97af7606f0715cca0cc8af5c3ca38",
+      "scripts/token_budget.py": "37234be30e7bf93a9a00b283aa1216b6b314a682937a13fb5e5005f7d846ef74",
+      "scripts/verify_counts.py": "06be6f91b2886f8778b6ac15ef76d38ea022b68d005aa243d2f462b42fd2e699",
+      "scripts/verify_stems.py": "f53ea66bfba3f8ef95db2ad9edd0c5386b62f15f09e78762b1202f05ab9604eb",
+      "templates/modules/default-on/claim_check.py": "3c15a3a61ae5b01d5fcf4e74f0ec2bbd6d84c6f2054488b992704e269a6f3081",
+      "templates/modules/default-on/evolution_infer.py": "47682aaf6f0131475bf769db0a8d5e3d41477d6112645d5671a3a4793e7cb374",
+      "templates/modules/default-on/prune_reflections.py": "2464d9e6239bf421fda5849ecd351b09fc6d0856e027ab39628d4d645a1758ef",
+      "templates/modules/default-on/run_security_verification.py": "0b1d0c05e441af05e256213cbfee3bb3f0f9e089d19321776ca98d15b426c2b4",
+      "templates/modules/default-on/verify_stems.py": "f53ea66bfba3f8ef95db2ad9edd0c5386b62f15f09e78762b1202f05ab9604eb",
+      "templates/modules/team-gated/_intent/__init__.py": "452ee35610b087feecedb10d9f8526e9662cec030db7cf9de908923a16d25738",
+      "templates/modules/team-gated/_intent/cli.py": "76f735d2179d0e49cacba5dc65f69f74376170bf6821c4ee615dcd1ea6c9a71a",
+      "templates/modules/team-gated/_intent/conflict.py": "8d9601865c386ee355ced1d35574fea1911abe224b7dd142e07eeb7a144444da",
+      "templates/modules/team-gated/_intent/hooks.py": "ae8d79598aff4b7d0688953faab97ad5f98bd9a690f46dec15015f7242f1bf61",
+      "templates/modules/team-gated/_intent/identity.py": "db8ab84cd8d26ecc4ab8904c0060893bf001adf6b0d229ecee72e9469107585f",
+      "templates/modules/team-gated/_intent/record_io.py": "231cf8cc9904ca9dfcb1870dc841b5a01eeb7862f193eeeb0aa39f4951cf84f6",
+      "templates/modules/team-gated/_intent/shared.py": "4aa9de11e1327516d4fbae9f854f47025a67c90732e4608109dff47cb33bd370",
+      "templates/modules/team-gated/_security_net/__init__.py": "b6305297cbc22b7b569133768d0ddad443f6158a9e33d24792d1eb34edbc21bb",
+      "templates/modules/team-gated/_security_net/net.py": "e8e8726172f3d67fc71fe2e8fa19c90fce2656614f64450682a005ad5f7137b4",
+      "templates/modules/team-gated/_security_net/policy.py": "1e5b14d741f521b73b212fc06fcc1b223435adb613f0fc87c7ec4a28dda03907",
+      "templates/modules/team-gated/_security_net/report.py": "bcb148c740acc1d02778d2f95ba5f023aefc981980e3357a4230699e54e4fba7",
+      "templates/modules/team-gated/api_access_security.py": "9148b9136fff0c0862b7dfd806e59fbc93de9897be06345d007ac0121a536c2c",
+      "templates/modules/team-gated/check_model_selection.py": "103ab77aa55a721618b4fea175b7877833fc9ca4cba57d68841b4071a71a64ff",
+      "templates/modules/team-gated/content_scan.py": "8ab87d1b562e8a54bf552e1e93f0bd9b33d9cc3ec1bbeafb1933bdeaa30149c3",
+      "templates/modules/team-gated/content_scan_runner.py": "dc34b74062c4b69a0b5667a74904e120cb949717453e80e581bc68344bc696a1",
+      "templates/modules/team-gated/issue-capture/bootstrap_github_labels.py": "9e29302b00f58c8b126a09567fc3fba7c0ce93d6edd873f1d4cd93c3fbf4fa29",
+      "templates/modules/team-gated/issue-capture/bootstrap_gitlab_labels.py": "439570e4833a0b8bfbb0392448f4fca4898e96b731dcf68181541b0b94639a67",
+      "templates/modules/team-gated/link_check.py": "2da9814c7d748d894834d3b30d24001e044244393b74037848154066331ea80d",
+      "templates/modules/team-gated/prune_intents.py": "21ddb93dcf1fc04ec77cedfdc3663282994ead4f1b645940b5314ab5639bdc78",
+      "templates/modules/team-gated/run_portable_security_sweeps.py": "9bf5122ab77741e92c9ce44ffd8371459f0cc68ac732b68432223abb82dbad88",
+      "templates/modules/team-gated/run_security_audit.py": "9b8115f633ec262329f70a8ecdcb912d54afa5f6b3b8b5210730fbffb2dd6d50",
+      "templates/modules/team-gated/sync_doc_snippets.py": "3dc5eef13180b3ff531f36c1fafaa0d71ba97af7606f0715cca0cc8af5c3ca38",
+      "templates/modules/team-gated/web_hosting_security.py": "ba9aba602a366abf02357564ee71e9ec0b9a1dbb2ca668670fde56fe6c9d16d0"
+    },
+    "excluded_by_current_function": [
+      "bootstrap/_scaffold/config.py",
+      "bootstrap/tests/fixtures/gate_manifest.json",
+      "bootstrap/tests/fixtures/scaffold_ast_baseline.json",
+      "bootstrap/tests/test_intents_tool.py",
+      "templates/modules/team-gated/intent.py"
+    ],
+    "patterns": [
+      "bootstrap/*.py",
+      "bootstrap/tests/**/*.py",
+      "bootstrap/tests/fixtures/**/*",
+      "scripts/*.py",
+      "templates/modules/**/*.py"
+    ],
+    "raw_candidates_added_since_c1a_pattern_snapshot": [
+      "bootstrap/tests/fixtures/gate_manifest.json",
+      "bootstrap/tests/fixtures/scaffold_ast_baseline.json",
+      "bootstrap/tests/test_intents_tool.py",
+      "templates/modules/team-gated/intent.py"
+    ],
+    "raw_pattern_union_count": 201,
+    "raw_pattern_union_paths": [
+      "bootstrap/check_module_body_coverage.py",
+      "bootstrap/scaffold.py",
+      "bootstrap/security_check.py",
+      "bootstrap/tests/__init__.py",
+      "bootstrap/tests/_ast_attest.py",
+      "bootstrap/tests/_gate_manifest.py",
+      "bootstrap/tests/_gate_preflight.py",
+      "bootstrap/tests/_gate_reanchor.py",
+      "bootstrap/tests/_gate_transition.py",
+      "bootstrap/tests/_loader_proto.py",
+      "bootstrap/tests/_oracle.py",
+      "bootstrap/tests/_oracle_activation.py",
+      "bootstrap/tests/_oracle_trust.py",
+      "bootstrap/tests/conftest.py",
+      "bootstrap/tests/fixtures/active_refactor.example.yml",
+      "bootstrap/tests/fixtures/board_json_v1_baseline.json",
+      "bootstrap/tests/fixtures/gate_manifest.json",
+      "bootstrap/tests/fixtures/redteam/malicious.txt",
+      "bootstrap/tests/fixtures/scaffold_ast_baseline.json",
+      "bootstrap/tests/fixtures/scaffold_ast_known_new.json",
+      "bootstrap/tests/fixtures/skills/README.md",
+      "bootstrap/tests/security_manifest.py",
+      "bootstrap/tests/test_agreement_retired.py",
+      "bootstrap/tests/test_api_access_security.py",
+      "bootstrap/tests/test_ast_attest.py",
+      "bootstrap/tests/test_board_json_contract.py",
+      "bootstrap/tests/test_broad_run_guard.py",
+      "bootstrap/tests/test_cairn_prefix_links.py",
+      "bootstrap/tests/test_ceremony_review_report.py",
+      "bootstrap/tests/test_certifying_run_rule.py",
+      "bootstrap/tests/test_check_cairn_content.py",
+      "bootstrap/tests/test_check_cairn_counts.py",
+      "bootstrap/tests/test_claim_check_allow_config.py",
+      "bootstrap/tests/test_claim_check_module.py",
+      "bootstrap/tests/test_cli_module.py",
+      "bootstrap/tests/test_comprehension_floor.py",
+      "bootstrap/tests/test_config_module.py",
+      "bootstrap/tests/test_content_scan.py",
+      "bootstrap/tests/test_coordination_broad_intent.py",
+      "bootstrap/tests/test_core_dev_folders.py",
+      "bootstrap/tests/test_default_security_stance.py",
+      "bootstrap/tests/test_deleted_tracked_markdown.py",
+      "bootstrap/tests/test_doc_drift_tools.py",
+      "bootstrap/tests/test_doc_governance.py",
+      "bootstrap/tests/test_documentation_plan_module.py",
+      "bootstrap/tests/test_drift_surfacing.py",
+      "bootstrap/tests/test_engine_copy_fallback_contained.py",
+      "bootstrap/tests/test_evolution_infer.py",
+      "bootstrap/tests/test_facade_loader_cleanup.py",
+      "bootstrap/tests/test_finalize_retired_living_state.py",
+      "bootstrap/tests/test_first_session_report.py",
+      "bootstrap/tests/test_fork_advisory.py",
+      "bootstrap/tests/test_gate_manifest.py",
+      "bootstrap/tests/test_gate_preflight.py",
+      "bootstrap/tests/test_gate_reanchor.py",
+      "bootstrap/tests/test_gate_transition.py",
+      "bootstrap/tests/test_generated_output_scan.py",
+      "bootstrap/tests/test_hardening.py",
+      "bootstrap/tests/test_incident_trackers_module.py",
+      "bootstrap/tests/test_install_module.py",
+      "bootstrap/tests/test_install_report_slots.py",
+      "bootstrap/tests/test_install_time_onboarding.py",
+      "bootstrap/tests/test_intents_tool.py",
+      "bootstrap/tests/test_issue_capture_bootstrap.py",
+      "bootstrap/tests/test_link_check_exclusions.py",
+      "bootstrap/tests/test_loader_identity.py",
+      "bootstrap/tests/test_lockfile_module.py",
+      "bootstrap/tests/test_lockfile_provenance.py",
+      "bootstrap/tests/test_loop_fidelity_gate.py",
+      "bootstrap/tests/test_manifest.py",
+      "bootstrap/tests/test_merge_module.py",
+      "bootstrap/tests/test_model_selection_stub.py",
+      "bootstrap/tests/test_model_tier_rule_ships.py",
+      "bootstrap/tests/test_module_merge.py",
+      "bootstrap/tests/test_module_merge_lockfile.py",
+      "bootstrap/tests/test_module_roster.py",
+      "bootstrap/tests/test_next_session_local_note.py",
+      "bootstrap/tests/test_notice_install.py",
+      "bootstrap/tests/test_onboarding_seed_roster.py",
+      "bootstrap/tests/test_onboarding_slot_substitution.py",
+      "bootstrap/tests/test_oracle.py",
+      "bootstrap/tests/test_oracle_activation.py",
+      "bootstrap/tests/test_oracle_trust.py",
+      "bootstrap/tests/test_portable_security_sweeps.py",
+      "bootstrap/tests/test_practice_modules.py",
+      "bootstrap/tests/test_presets.py",
+      "bootstrap/tests/test_profile_grammar.py",
+      "bootstrap/tests/test_profiles_smoke.py",
+      "bootstrap/tests/test_prune_tools.py",
+      "bootstrap/tests/test_python_floor.py",
+      "bootstrap/tests/test_quality_gate_cli.py",
+      "bootstrap/tests/test_quality_gate_neutrality.py",
+      "bootstrap/tests/test_quality_gate_order_independence.py",
+      "bootstrap/tests/test_quality_gate_redundancy.py",
+      "bootstrap/tests/test_quickstart_sequence.py",
+      "bootstrap/tests/test_reanchor.py",
+      "bootstrap/tests/test_reanchor_driver_disclosures.py",
+      "bootstrap/tests/test_reference_scripts.py",
+      "bootstrap/tests/test_repin.py",
+      "bootstrap/tests/test_repin_ceremony.py",
+      "bootstrap/tests/test_replacement_tools.py",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py",
+      "bootstrap/tests/test_review_stance_in_shipped_files.py",
+      "bootstrap/tests/test_review_sweep_ships.py",
+      "bootstrap/tests/test_scaffold.py",
+      "bootstrap/tests/test_scaffold_substrate.py",
+      "bootstrap/tests/test_scientific_check_guidance_ships.py",
+      "bootstrap/tests/test_scope_reduction_trap.py",
+      "bootstrap/tests/test_security_capability_install.py",
+      "bootstrap/tests/test_security_check.py",
+      "bootstrap/tests/test_security_finding_confidentiality.py",
+      "bootstrap/tests/test_security_leaf.py",
+      "bootstrap/tests/test_security_lint.py",
+      "bootstrap/tests/test_security_marker.py",
+      "bootstrap/tests/test_security_net.py",
+      "bootstrap/tests/test_security_stack.py",
+      "bootstrap/tests/test_security_verification.py",
+      "bootstrap/tests/test_session_binding_gate_and_printing_hold.py",
+      "bootstrap/tests/test_session_binding_untracked.py",
+      "bootstrap/tests/test_session_failsafe.py",
+      "bootstrap/tests/test_session_kernel.py",
+      "bootstrap/tests/test_session_routines.py",
+      "bootstrap/tests/test_session_start_drain_rules.py",
+      "bootstrap/tests/test_session_writes_contained.py",
+      "bootstrap/tests/test_skill_contract.py",
+      "bootstrap/tests/test_skills_fanout.py",
+      "bootstrap/tests/test_skills_install.py",
+      "bootstrap/tests/test_skills_matrix.py",
+      "bootstrap/tests/test_skills_onboarding.py",
+      "bootstrap/tests/test_skills_security.py",
+      "bootstrap/tests/test_skills_self_heal.py",
+      "bootstrap/tests/test_skills_upgrade.py",
+      "bootstrap/tests/test_slotmerge_leaf.py",
+      "bootstrap/tests/test_status_vocabulary_advisory.py",
+      "bootstrap/tests/test_stewardship_rules_ship.py",
+      "bootstrap/tests/test_upgrade.py",
+      "bootstrap/tests/test_upgrade_added_slots.py",
+      "bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py",
+      "bootstrap/tests/test_upgrade_lockfile_path_containment.py",
+      "bootstrap/tests/test_upgrade_module.py",
+      "bootstrap/tests/test_upgrade_module_additions.py",
+      "bootstrap/tests/test_upgrade_refuses_hostile_project_data.py",
+      "bootstrap/tests/test_upgrade_removes_retired_files.py",
+      "bootstrap/tests/test_upgrade_side_door_parity.py",
+      "bootstrap/tests/test_verification_boundaries.py",
+      "bootstrap/tests/test_verify_counts.py",
+      "bootstrap/tests/test_verify_integrity.py",
+      "bootstrap/tests/test_verify_ref.py",
+      "bootstrap/tests/test_verify_stems.py",
+      "bootstrap/tests/test_web_hosting_security.py",
+      "bootstrap/tests/test_writing_rules_ship.py",
+      "bootstrap/verify_integrity.py",
+      "scripts/bootstrap_github_labels.py",
+      "scripts/bootstrap_gitlab_labels.py",
+      "scripts/check_cairn.py",
+      "scripts/check_model_selection.py",
+      "scripts/claim_check.py",
+      "scripts/content_scan.py",
+      "scripts/content_scan_runner.py",
+      "scripts/gen_legacy_code_review_passes.py",
+      "scripts/gen_legacy_passes.py",
+      "scripts/link_check.py",
+      "scripts/measurements.py",
+      "scripts/quality_gate.py",
+      "scripts/quality_gate_unused_def_whitelist.py",
+      "scripts/reanchor_ceremony.py",
+      "scripts/repin.py",
+      "scripts/run_portable_security_sweeps.py",
+      "scripts/sync_doc_snippets.py",
+      "scripts/token_budget.py",
+      "scripts/verify_counts.py",
+      "scripts/verify_stems.py",
+      "templates/modules/default-on/claim_check.py",
+      "templates/modules/default-on/evolution_infer.py",
+      "templates/modules/default-on/prune_reflections.py",
+      "templates/modules/default-on/run_security_verification.py",
+      "templates/modules/default-on/verify_stems.py",
+      "templates/modules/team-gated/_intent/__init__.py",
+      "templates/modules/team-gated/_intent/cli.py",
+      "templates/modules/team-gated/_intent/conflict.py",
+      "templates/modules/team-gated/_intent/hooks.py",
+      "templates/modules/team-gated/_intent/identity.py",
+      "templates/modules/team-gated/_intent/record_io.py",
+      "templates/modules/team-gated/_intent/shared.py",
+      "templates/modules/team-gated/_security_net/__init__.py",
+      "templates/modules/team-gated/_security_net/net.py",
+      "templates/modules/team-gated/_security_net/policy.py",
+      "templates/modules/team-gated/_security_net/report.py",
+      "templates/modules/team-gated/api_access_security.py",
+      "templates/modules/team-gated/check_model_selection.py",
+      "templates/modules/team-gated/content_scan.py",
+      "templates/modules/team-gated/content_scan_runner.py",
+      "templates/modules/team-gated/intent.py",
+      "templates/modules/team-gated/issue-capture/bootstrap_github_labels.py",
+      "templates/modules/team-gated/issue-capture/bootstrap_gitlab_labels.py",
+      "templates/modules/team-gated/link_check.py",
+      "templates/modules/team-gated/prune_intents.py",
+      "templates/modules/team-gated/run_portable_security_sweeps.py",
+      "templates/modules/team-gated/run_security_audit.py",
+      "templates/modules/team-gated/sync_doc_snippets.py",
+      "templates/modules/team-gated/web_hosting_security.py"
+    ],
+    "source_function": "bootstrap/tests/_gate_manifest.py::_frozen_files"
+  },
+  "freeze_patterns": [
+    "bootstrap/*.py",
+    "bootstrap/tests/**/*.py",
+    "bootstrap/tests/fixtures/**/*",
+    "scripts/*.py",
+    "templates/modules/**/*.py"
+  ],
+  "limits": [
+    "Collection imported tests and ran no test bodies.",
+    "Existing C1a and C1b AST evidence remains byte-current for paths unchanged since their respective source commits; see changed_test_paths_since_c1b_source for paths requiring refreshed per-file dependencies.",
+    "Static evidence does not establish runtime reachability or security classification."
+  ],
+  "node_delta_since_c1b_source": {
+    "added": [
+      "bootstrap/tests/test_model_tier_rule_ships.py::test_proposal_authoring_and_ordinary_review_are_medium",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation[a-trivial-change-records-the-search-and-checks-in-its-commit-body-own]",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation[a-trivial-change-records-the-search-and-checks-in-its-commit-body-shipped]",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation[a-trivial-change-runs-on-exact-candidate-bytes-own]",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation[a-trivial-change-runs-on-exact-candidate-bytes-shipped]",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation[bounded-mode-covers-affected-behavior-and-consumers-own]",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation[bounded-mode-covers-affected-behavior-and-consumers-shipped]",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation[contract-and-trust-surfaces-use-wide-mode-own]",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation[contract-and-trust-surfaces-use-wide-mode-shipped]",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation[passing-known-checks-identifies-the-verified-commit-own]",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation[passing-known-checks-identifies-the-verified-commit-shipped]",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation[wide-mode-covers-known-families-and-public-paths-own]",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation[wide-mode-covers-known-families-and-public-paths-shipped]",
+      "bootstrap/tests/test_verification_boundaries.py::test_both_operational_surfaces_separate_change_checks_from_tree_certification",
+      "bootstrap/tests/test_verification_boundaries.py::test_boundary_c_adjudicates_a_scoped_record",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[bounded records cover affected behavior and consumers-tokens0-AGENTS.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[bounded records cover affected behavior and consumers-tokens0-dev/plans/_template.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[bounded records cover affected behavior and consumers-tokens0-doctrine/dual-review.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[bounded records cover affected behavior and consumers-tokens0-doctrine/plans.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[bounded records cover affected behavior and consumers-tokens0-templates/core/AGENTS.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[bounded records cover affected behavior and consumers-tokens0-templates/core/dev/plans/_template.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[contract and trust-ceremony surfaces use wide mode-tokens1-AGENTS.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[contract and trust-ceremony surfaces use wide mode-tokens1-dev/plans/_template.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[contract and trust-ceremony surfaces use wide mode-tokens1-doctrine/dual-review.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[contract and trust-ceremony surfaces use wide mode-tokens1-doctrine/plans.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[contract and trust-ceremony surfaces use wide mode-tokens1-templates/core/AGENTS.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[contract and trust-ceremony surfaces use wide mode-tokens1-templates/core/dev/plans/_template.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[the record declares bounded or wide mode-tokens2-AGENTS.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[the record declares bounded or wide mode-tokens2-dev/plans/_template.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[the record declares bounded or wide mode-tokens2-doctrine/dual-review.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[the record declares bounded or wide mode-tokens2-doctrine/plans.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[the record declares bounded or wide mode-tokens2-templates/core/AGENTS.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[the record declares bounded or wide mode-tokens2-templates/core/dev/plans/_template.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[wide records cover owning families and known paths-tokens3-AGENTS.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[wide records cover owning families and known paths-tokens3-dev/plans/_template.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[wide records cover owning families and known paths-tokens3-doctrine/dual-review.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[wide records cover owning families and known paths-tokens3-doctrine/plans.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[wide records cover owning families and known paths-tokens3-templates/core/AGENTS.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface[wide records cover owning families and known paths-tokens3-templates/core/dev/plans/_template.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_guard_detects_removed_wide_fence",
+      "bootstrap/tests/test_verification_boundaries.py::test_change_verification_guard_is_not_satisfied_by_an_empty_file",
+      "bootstrap/tests/test_verification_boundaries.py::test_operational_guard_detects_removed_wide_surface_fence",
+      "bootstrap/tests/test_verification_boundaries.py::test_plan_and_review_doctrine_share_record_replacement_triggers",
+      "bootstrap/tests/test_verification_boundaries.py::test_review_doctrine_requires_targeted_falsification_and_replacement_triggers",
+      "bootstrap/tests/test_verification_boundaries.py::test_wider_run_verdict_invalidates_the_scoped_record"
+    ],
+    "removed": [
+      "bootstrap/tests/test_model_tier_rule_ships.py::test_proposal_authoring_is_medium_and_proposal_review_stays_high",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation[a-trivial-change-runs-before-its-commit-own]",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation[a-trivial-change-runs-before-its-commit-shipped]",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation[a-trivial-changes-record-is-its-commit-body-own]",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation[a-trivial-changes-record-is-its-commit-body-shipped]",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation[bounded-mode-needs-a-mapping-not-a-plans-reviewed-mapping-own]",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation[bounded-mode-needs-a-mapping-not-a-plans-reviewed-mapping-shipped]",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation[the-commit-body-carries-mode-and-interpreter-own]",
+      "bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation[the-commit-body-carries-mode-and-interpreter-shipped]",
+      "bootstrap/tests/test_verification_boundaries.py::test_both_operational_surfaces_fail_to_full",
+      "bootstrap/tests/test_verification_boundaries.py::test_boundary_c_adjudicates_a_bounded_record",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_boundary_b_contract_reaches_every_surface[the bounding clause itself-tokens0-AGENTS.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_boundary_b_contract_reaches_every_surface[the bounding clause itself-tokens0-dev/plans/_template.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_boundary_b_contract_reaches_every_surface[the bounding clause itself-tokens0-doctrine/plans.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_boundary_b_contract_reaches_every_surface[the bounding clause itself-tokens0-templates/core/AGENTS.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_boundary_b_contract_reaches_every_surface[the bounding clause itself-tokens0-templates/core/dev/plans/_template.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_boundary_b_contract_reaches_every_surface[the fence refuses on contract and trust-ceremony surfaces-tokens1-AGENTS.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_boundary_b_contract_reaches_every_surface[the fence refuses on contract and trust-ceremony surfaces-tokens1-dev/plans/_template.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_boundary_b_contract_reaches_every_surface[the fence refuses on contract and trust-ceremony surfaces-tokens1-doctrine/plans.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_boundary_b_contract_reaches_every_surface[the fence refuses on contract and trust-ceremony surfaces-tokens1-templates/core/AGENTS.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_boundary_b_contract_reaches_every_surface[the fence refuses on contract and trust-ceremony surfaces-tokens1-templates/core/dev/plans/_template.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_boundary_b_contract_reaches_every_surface[the record declares its mode-tokens2-AGENTS.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_boundary_b_contract_reaches_every_surface[the record declares its mode-tokens2-dev/plans/_template.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_boundary_b_contract_reaches_every_surface[the record declares its mode-tokens2-doctrine/plans.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_boundary_b_contract_reaches_every_surface[the record declares its mode-tokens2-templates/core/AGENTS.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_boundary_b_contract_reaches_every_surface[the record declares its mode-tokens2-templates/core/dev/plans/_template.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_boundary_b_contract_reaches_every_surface[uncertainty resolves to full-tokens3-AGENTS.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_boundary_b_contract_reaches_every_surface[uncertainty resolves to full-tokens3-dev/plans/_template.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_boundary_b_contract_reaches_every_surface[uncertainty resolves to full-tokens3-doctrine/plans.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_boundary_b_contract_reaches_every_surface[uncertainty resolves to full-tokens3-templates/core/AGENTS.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_boundary_b_contract_reaches_every_surface[uncertainty resolves to full-tokens3-templates/core/dev/plans/_template.md]",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_guard_detects_a_removed_fence",
+      "bootstrap/tests/test_verification_boundaries.py::test_bounded_guard_is_not_satisfied_by_an_empty_file",
+      "bootstrap/tests/test_verification_boundaries.py::test_full_run_required_routes_to_the_existing_first_trigger",
+      "bootstrap/tests/test_verification_boundaries.py::test_operational_guard_detects_removed_full_fallback",
+      "bootstrap/tests/test_verification_boundaries.py::test_plan_and_review_doctrine_share_fresh_run_triggers",
+      "bootstrap/tests/test_verification_boundaries.py::test_review_doctrine_requires_targeted_falsification_and_six_triggers"
+    ]
+  },
+  "positive_controls": {
+    "collected_test_node": "bootstrap/tests/test_gate_manifest.py::test_produce_has_the_expected_shape",
+    "conftest_file_relative_manifest_load": "bootstrap/tests/conftest.py:287-303 loads security_manifest.py by file-relative spec and exec_module"
+  },
+  "python_repository_path_count": 227,
+  "python_test_file_count": 129,
+  "raw_pattern_union_count": 201,
+  "raw_pattern_union_paths": [
+    "bootstrap/check_module_body_coverage.py",
+    "bootstrap/scaffold.py",
+    "bootstrap/security_check.py",
+    "bootstrap/tests/__init__.py",
+    "bootstrap/tests/_ast_attest.py",
+    "bootstrap/tests/_gate_manifest.py",
+    "bootstrap/tests/_gate_preflight.py",
+    "bootstrap/tests/_gate_reanchor.py",
+    "bootstrap/tests/_gate_transition.py",
+    "bootstrap/tests/_loader_proto.py",
+    "bootstrap/tests/_oracle.py",
+    "bootstrap/tests/_oracle_activation.py",
+    "bootstrap/tests/_oracle_trust.py",
+    "bootstrap/tests/conftest.py",
+    "bootstrap/tests/fixtures/active_refactor.example.yml",
+    "bootstrap/tests/fixtures/board_json_v1_baseline.json",
+    "bootstrap/tests/fixtures/gate_manifest.json",
+    "bootstrap/tests/fixtures/redteam/malicious.txt",
+    "bootstrap/tests/fixtures/scaffold_ast_baseline.json",
+    "bootstrap/tests/fixtures/scaffold_ast_known_new.json",
+    "bootstrap/tests/fixtures/skills/README.md",
+    "bootstrap/tests/security_manifest.py",
+    "bootstrap/tests/test_agreement_retired.py",
+    "bootstrap/tests/test_api_access_security.py",
+    "bootstrap/tests/test_ast_attest.py",
+    "bootstrap/tests/test_board_json_contract.py",
+    "bootstrap/tests/test_broad_run_guard.py",
+    "bootstrap/tests/test_cairn_prefix_links.py",
+    "bootstrap/tests/test_ceremony_review_report.py",
+    "bootstrap/tests/test_certifying_run_rule.py",
+    "bootstrap/tests/test_check_cairn_content.py",
+    "bootstrap/tests/test_check_cairn_counts.py",
+    "bootstrap/tests/test_claim_check_allow_config.py",
+    "bootstrap/tests/test_claim_check_module.py",
+    "bootstrap/tests/test_cli_module.py",
+    "bootstrap/tests/test_comprehension_floor.py",
+    "bootstrap/tests/test_config_module.py",
+    "bootstrap/tests/test_content_scan.py",
+    "bootstrap/tests/test_coordination_broad_intent.py",
+    "bootstrap/tests/test_core_dev_folders.py",
+    "bootstrap/tests/test_default_security_stance.py",
+    "bootstrap/tests/test_deleted_tracked_markdown.py",
+    "bootstrap/tests/test_doc_drift_tools.py",
+    "bootstrap/tests/test_doc_governance.py",
+    "bootstrap/tests/test_documentation_plan_module.py",
+    "bootstrap/tests/test_drift_surfacing.py",
+    "bootstrap/tests/test_engine_copy_fallback_contained.py",
+    "bootstrap/tests/test_evolution_infer.py",
+    "bootstrap/tests/test_facade_loader_cleanup.py",
+    "bootstrap/tests/test_finalize_retired_living_state.py",
+    "bootstrap/tests/test_first_session_report.py",
+    "bootstrap/tests/test_fork_advisory.py",
+    "bootstrap/tests/test_gate_manifest.py",
+    "bootstrap/tests/test_gate_preflight.py",
+    "bootstrap/tests/test_gate_reanchor.py",
+    "bootstrap/tests/test_gate_transition.py",
+    "bootstrap/tests/test_generated_output_scan.py",
+    "bootstrap/tests/test_hardening.py",
+    "bootstrap/tests/test_incident_trackers_module.py",
+    "bootstrap/tests/test_install_module.py",
+    "bootstrap/tests/test_install_report_slots.py",
+    "bootstrap/tests/test_install_time_onboarding.py",
+    "bootstrap/tests/test_intents_tool.py",
+    "bootstrap/tests/test_issue_capture_bootstrap.py",
+    "bootstrap/tests/test_link_check_exclusions.py",
+    "bootstrap/tests/test_loader_identity.py",
+    "bootstrap/tests/test_lockfile_module.py",
+    "bootstrap/tests/test_lockfile_provenance.py",
+    "bootstrap/tests/test_loop_fidelity_gate.py",
+    "bootstrap/tests/test_manifest.py",
+    "bootstrap/tests/test_merge_module.py",
+    "bootstrap/tests/test_model_selection_stub.py",
+    "bootstrap/tests/test_model_tier_rule_ships.py",
+    "bootstrap/tests/test_module_merge.py",
+    "bootstrap/tests/test_module_merge_lockfile.py",
+    "bootstrap/tests/test_module_roster.py",
+    "bootstrap/tests/test_next_session_local_note.py",
+    "bootstrap/tests/test_notice_install.py",
+    "bootstrap/tests/test_onboarding_seed_roster.py",
+    "bootstrap/tests/test_onboarding_slot_substitution.py",
+    "bootstrap/tests/test_oracle.py",
+    "bootstrap/tests/test_oracle_activation.py",
+    "bootstrap/tests/test_oracle_trust.py",
+    "bootstrap/tests/test_portable_security_sweeps.py",
+    "bootstrap/tests/test_practice_modules.py",
+    "bootstrap/tests/test_presets.py",
+    "bootstrap/tests/test_profile_grammar.py",
+    "bootstrap/tests/test_profiles_smoke.py",
+    "bootstrap/tests/test_prune_tools.py",
+    "bootstrap/tests/test_python_floor.py",
+    "bootstrap/tests/test_quality_gate_cli.py",
+    "bootstrap/tests/test_quality_gate_neutrality.py",
+    "bootstrap/tests/test_quality_gate_order_independence.py",
+    "bootstrap/tests/test_quality_gate_redundancy.py",
+    "bootstrap/tests/test_quickstart_sequence.py",
+    "bootstrap/tests/test_reanchor.py",
+    "bootstrap/tests/test_reanchor_driver_disclosures.py",
+    "bootstrap/tests/test_reference_scripts.py",
+    "bootstrap/tests/test_repin.py",
+    "bootstrap/tests/test_repin_ceremony.py",
+    "bootstrap/tests/test_replacement_tools.py",
+    "bootstrap/tests/test_review_and_verification_rules_ship.py",
+    "bootstrap/tests/test_review_stance_in_shipped_files.py",
+    "bootstrap/tests/test_review_sweep_ships.py",
+    "bootstrap/tests/test_scaffold.py",
+    "bootstrap/tests/test_scaffold_substrate.py",
+    "bootstrap/tests/test_scientific_check_guidance_ships.py",
+    "bootstrap/tests/test_scope_reduction_trap.py",
+    "bootstrap/tests/test_security_capability_install.py",
+    "bootstrap/tests/test_security_check.py",
+    "bootstrap/tests/test_security_finding_confidentiality.py",
+    "bootstrap/tests/test_security_leaf.py",
+    "bootstrap/tests/test_security_lint.py",
+    "bootstrap/tests/test_security_marker.py",
+    "bootstrap/tests/test_security_net.py",
+    "bootstrap/tests/test_security_stack.py",
+    "bootstrap/tests/test_security_verification.py",
+    "bootstrap/tests/test_session_binding_gate_and_printing_hold.py",
+    "bootstrap/tests/test_session_binding_untracked.py",
+    "bootstrap/tests/test_session_failsafe.py",
+    "bootstrap/tests/test_session_kernel.py",
+    "bootstrap/tests/test_session_routines.py",
+    "bootstrap/tests/test_session_start_drain_rules.py",
+    "bootstrap/tests/test_session_writes_contained.py",
+    "bootstrap/tests/test_skill_contract.py",
+    "bootstrap/tests/test_skills_fanout.py",
+    "bootstrap/tests/test_skills_install.py",
+    "bootstrap/tests/test_skills_matrix.py",
+    "bootstrap/tests/test_skills_onboarding.py",
+    "bootstrap/tests/test_skills_security.py",
+    "bootstrap/tests/test_skills_self_heal.py",
+    "bootstrap/tests/test_skills_upgrade.py",
+    "bootstrap/tests/test_slotmerge_leaf.py",
+    "bootstrap/tests/test_status_vocabulary_advisory.py",
+    "bootstrap/tests/test_stewardship_rules_ship.py",
+    "bootstrap/tests/test_upgrade.py",
+    "bootstrap/tests/test_upgrade_added_slots.py",
+    "bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py",
+    "bootstrap/tests/test_upgrade_lockfile_path_containment.py",
+    "bootstrap/tests/test_upgrade_module.py",
+    "bootstrap/tests/test_upgrade_module_additions.py",
+    "bootstrap/tests/test_upgrade_refuses_hostile_project_data.py",
+    "bootstrap/tests/test_upgrade_removes_retired_files.py",
+    "bootstrap/tests/test_upgrade_side_door_parity.py",
+    "bootstrap/tests/test_verification_boundaries.py",
+    "bootstrap/tests/test_verify_counts.py",
+    "bootstrap/tests/test_verify_integrity.py",
+    "bootstrap/tests/test_verify_ref.py",
+    "bootstrap/tests/test_verify_stems.py",
+    "bootstrap/tests/test_web_hosting_security.py",
+    "bootstrap/tests/test_writing_rules_ship.py",
+    "bootstrap/verify_integrity.py",
+    "scripts/bootstrap_github_labels.py",
+    "scripts/bootstrap_gitlab_labels.py",
+    "scripts/check_cairn.py",
+    "scripts/check_model_selection.py",
+    "scripts/claim_check.py",
+    "scripts/content_scan.py",
+    "scripts/content_scan_runner.py",
+    "scripts/gen_legacy_code_review_passes.py",
+    "scripts/gen_legacy_passes.py",
+    "scripts/link_check.py",
+    "scripts/measurements.py",
+    "scripts/quality_gate.py",
+    "scripts/quality_gate_unused_def_whitelist.py",
+    "scripts/reanchor_ceremony.py",
+    "scripts/repin.py",
+    "scripts/run_portable_security_sweeps.py",
+    "scripts/sync_doc_snippets.py",
+    "scripts/token_budget.py",
+    "scripts/verify_counts.py",
+    "scripts/verify_stems.py",
+    "templates/modules/default-on/claim_check.py",
+    "templates/modules/default-on/evolution_infer.py",
+    "templates/modules/default-on/prune_reflections.py",
+    "templates/modules/default-on/run_security_verification.py",
+    "templates/modules/default-on/verify_stems.py",
+    "templates/modules/team-gated/_intent/__init__.py",
+    "templates/modules/team-gated/_intent/cli.py",
+    "templates/modules/team-gated/_intent/conflict.py",
+    "templates/modules/team-gated/_intent/hooks.py",
+    "templates/modules/team-gated/_intent/identity.py",
+    "templates/modules/team-gated/_intent/record_io.py",
+    "templates/modules/team-gated/_intent/shared.py",
+    "templates/modules/team-gated/_security_net/__init__.py",
+    "templates/modules/team-gated/_security_net/net.py",
+    "templates/modules/team-gated/_security_net/policy.py",
+    "templates/modules/team-gated/_security_net/report.py",
+    "templates/modules/team-gated/api_access_security.py",
+    "templates/modules/team-gated/check_model_selection.py",
+    "templates/modules/team-gated/content_scan.py",
+    "templates/modules/team-gated/content_scan_runner.py",
+    "templates/modules/team-gated/intent.py",
+    "templates/modules/team-gated/issue-capture/bootstrap_github_labels.py",
+    "templates/modules/team-gated/issue-capture/bootstrap_gitlab_labels.py",
+    "templates/modules/team-gated/link_check.py",
+    "templates/modules/team-gated/prune_intents.py",
+    "templates/modules/team-gated/run_portable_security_sweeps.py",
+    "templates/modules/team-gated/run_security_audit.py",
+    "templates/modules/team-gated/sync_doc_snippets.py",
+    "templates/modules/team-gated/web_hosting_security.py"
+  ],
+  "recorded_roster_comparison": {
+    "c1b_proposed_roster_count": 147,
+    "classification_status": "proposed-not-approved; comparison is arithmetic only, no classification judgment",
+    "current_effective_frozen_count": 197,
+    "difference_paths": 50
+  },
+  "source_commit": "918638f5a11eb6985d0fa2cc26989b8a1d6541ca",
+  "test_files_with_nodes": 129
+}
