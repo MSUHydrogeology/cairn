@@ -9,8 +9,8 @@
     "bootstrap/tests/fixtures/scaffold_ast_baseline.json": {
       "governed_by": "_ast_attest.py update-symbol \u2014 one allowlisted baseline key, --expect-old guarded",
       "mode": "100644",
-      "oid": "bde517b24e9fb605d555208edd2b6fa5b01bee42",
-      "pre_run_sha256": "225bf15bf6f6e4e1fda2ba29b42a91ae2836cf8441cdd549447eb31f51de082f"
+      "oid": "21b3b65cd1b98e4dba70559d77276470cd3d17fb",
+      "pre_run_sha256": "ce501a096e185592aeda8a1d15061fcf3d0b5da34939805daf5ca9ee4c2cbdfb"
     }
   },
   "collection": {
@@ -7401,8 +7401,8 @@
     },
     "bootstrap/tests/fixtures/scaffold_ast_known_new.json": {
       "mode": "100644",
-      "oid": "4d5ecc1d3d5c7506b32ebead2900025488a3ae77",
-      "sha256": "83124efcfb06e3427289a70a1c5bcadc647defaa22b20ef67578bd999405d35c"
+      "oid": "4d4876871493057c2642fbcb0e930669c76c7ce6",
+      "sha256": "6e8c03ddae6d1190f6baf74d0f22e249d410c0498b8e173f878307b341956872"
     },
     "bootstrap/tests/fixtures/skills/README.md": {
       "mode": "100644",
@@ -8357,7 +8357,7 @@
   },
   "mapping_symbols": {
     "_CORE_MAPPINGS": {
-      "baseline_digest": "bfb57242f0ce9125",
+      "baseline_digest": "372c01231f7f676b",
       "may_change_in_phases": [
         "E (heavier R6 pytest-wrapper option only)"
       ]
