@@ -1,7 +1,7 @@
 # Make one ordinary test family easier to maintain
 
 **Author**: Codex (Sol), Proposal author
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual
 **Plan review**: required(Internal)
 **Opened**: 2026-10-28
@@ -120,3 +120,30 @@ and keeps the roadmap's larger maintenance work visible.
 
 **Assurance path**: standard. Only ordinary test organization is proposed;
 the separate test-trust-boundary work governs when those tests become editable.
+
+## Review -- Codex (Sol), Proposal reviewer -- 2026-10-28
+
+```
+Reviewed commit: 2b249005f6250179e9165bb3adf6f837b56966f0
+Target: opening proposal, Context through Assurance path
+Prior findings: none
+Assurance path: standard (declared)
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** A small, behavior-preserving pilot is worth trying only if its named file actually enters the ordinary lane and a concrete cluster has setup worth simplifying; neither is established yet. -- `dev/proposals/2026-10-28-codex-test-trust-boundary.md` > Complete current contract; `bootstrap/tests/test_board_json_contract.py:473-675`.
+2. **Best alternative.** Keep the one-family pilot but identify the repeated setup and eligible nodes before the Decision; doing nothing avoids churn but leaves the repetition the proposal identifies. This keeps the opened outcome and adds no line or deletion quota. -- `bootstrap/tests/test_board_json_contract.py:292-335`; `bootstrap/tests/test_board_json_contract.py:1088-1135`.
+3. **What would show it wrong.** Withdraw this board-file pilot if the implemented protected roster includes the file, or if its candidate cluster has no distinct setup to simplify without weakening a fault probe. A whole-suite speed claim would also be unsupported by this pilot's scoped timing. -- `dev/proposals/2026-10-28-codex-test-trust-boundary.md` > Complete current contract; `dev/PLANNING.md:123`; proposal `## Signals the change is wrong`.
+
+The proposal rightly treats the 24 minute 55 second suite run as context, not a board-test timing result, and requires per-case fault accounting before deletion (`dev/PLANNING.md:123`; proposal `## Context`, `## Evidence / verification plan`). The following two points must be resolved before a Decision.
+
+**F1 — Blocking: establish the file's ordinary-lane eligibility.** The named file contains symlink, non-regular-entry, planted-module, and failure-output protections alongside output and guide checks. The separate trust-boundary proposal still awaits its Decision and promises a later *file-level* protected roster. Keeping those cases intact does not itself make an edit to their file ordinary. Close by stating that the pilot proceeds under `standard` only if the implemented roster leaves this file unprotected and the chosen cluster changes no protected case or controlling helper; if the roster protects the file, stop this pilot and return the scope and assurance path to the Maintainer before editing. -- `bootstrap/tests/test_board_json_contract.py:473-675`; `bootstrap/tests/test_board_json_contract.py:1137-1278`; `dev/proposals/2026-10-28-codex-test-trust-boundary.md` > Complete current contract; `AGENTS.md` > High-risk surfaces.
+
+**F2 — Blocking: name a candidate cluster now.** The shared golden-tree builder is already used by the terminal and roadmap JSON checks, which assert different behavior; the other cited sections build different inputs. The proposal leaves the cluster, exact nodes, and specific duplication to the plan, so the reviewer cannot yet judge whether the pilot reaches its maintenance cause. Close with one candidate cluster's node names, the setup repeated between them, and the property or fault each keeps; leave the full deletion ledger and measured comparison to the plan. If no such cluster exists, withdraw the pilot rather than treating fewer lines as its result. -- `bootstrap/tests/test_board_json_contract.py:292-335`; `bootstrap/tests/test_board_json_contract.py:1088-1135`; proposal `## Proposal`, `### Tests required`.
+
+**Covered**: claims and drift (`dev/PLANNING.md:63`; `dev/PLANNING.md:123`); public path (`bootstrap/tests/test_board_json_contract.py:292-335`; `bootstrap/tests/test_board_json_contract.py:1137-1278`); design and domain scope (proposal `## Proposal`, `## Evidence / verification plan`); fail-closed behavior (`bootstrap/tests/test_board_json_contract.py:473-675`); cross-document and lifecycle placement (`dev/proposals/2026-10-28-codex-test-trust-boundary.md` > Complete current contract; `AGENTS.md` > High-risk surfaces); satisfiers (F1-F2 above). **Not covered / low confidence**: I did not time or mutate board tests, or inspect the future protected roster; it does not exist yet.
