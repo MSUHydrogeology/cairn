@@ -1,7 +1,7 @@
 # Make Cairn's governing text easier to edit without losing adopted rules
 
 **Author**: Codex (Proposal author, gpt-6-sol)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
@@ -235,3 +235,60 @@ No science changes.
 The opening's unconditional “Then remove duplicated exposition” is replaced
 by evidence-conditional cuts. Its 80–120-line template aim is advisory because
 rule reachability and lower editing effort, not length, govern success.
+
+## Review -- Codex (Security Review, gpt-6-astra) -- 2026-10-28
+
+```
+Reviewed commit: ccb41f6d361648f772bb3971be75a765d29a7d3a
+Target: Revised proposal and incorporated Security preflight
+Prior findings: F1-F2 answered by the Response; no prior Security Review
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Audit purpose and installed reach before choosing a layout; shorter instructions can improve safe operation if their obligations survive. The revision now conditions cuts on that evidence and Maintainer routing -- revised proposal, “Plan inventory and Maintainer routing fence” and “Conditional edits and evidence”; `doctrine/doc-governance.md` > “The operational-safety minimum stays minimal”.
+2. **Best alternative.** Retain the existing layout wherever consolidation does not reduce editing effort safely; change only demonstrated duplication. Keeping everything avoids migration risk but retains repeated rule edits, while moving everything into published doctrine loses the installed operating surface -- `bootstrap/_scaffold/config.py` > `_CORE_MAPPINGS`; `doctrine/README.md` > “How to read this tree”.
+3. **What would show it wrong.** An installed reader loses a rule, its trigger, or usable access; a weakened guard still passes its deletion/inversion control; or neither representative edit becomes simpler -- revised proposal, “Conditional edits and evidence”; `bootstrap/tests/test_scope_reduction_trap.py` > `_REVIEW_LOOP`.
+
+The strongest result is fewer places to edit one rule while retaining the
+instruction where an adopter needs it. This design is sufficient for the
+proposal's governing-doctrine/template Security Review obligation, which this
+pass clears. It does not approve a routing map or certify future edits.
+
+The source inventory and installation observations answer different questions.
+`_CORE_MAPPINGS` identifies delivery, not the meaning of an obligation; comparing
+committed rules with the inventory and revised prose remains a human review
+job. The revision explicitly separates those claims, inventories every doctrine
+section, and brings affected boards, modules and the forkable documentation
+plan to the routing fence. That addresses F1 without assuming the present
+`doctrine/` split is right.
+
+The existing tests demonstrate why mere link resolution or source parity is
+insufficient: `_REVIEW_LOOP` records a rule deletion hidden by a surviving
+citation; `test_the_shipped_copy_makes_claiming_conditional` protects a necessary
+adopter-specific difference. Parity must preserve that difference. The proposed
+installed-output checks, positive controls and removed/inverted-clause controls
+address this failure class; a green regex cannot establish semantic truth.
+Unresolved homes stop relocation, and existing security, frozen-test and
+doctrine ceremonies remain in force. No additional gate is needed here.
+
+F2's response and withdrawal ledger are consistent: conditional cuts replace
+the unconditional cut, the line target cannot override obligations, and a safe
+no-cut result returns for Maintainer disposition instead of claiming success.
+The two representative edits now measure effort and retained usability. No
+accepted outcome is waived by this review.
+
+**Covered:** #1 claims and #2 delivery: committed `_CORE_MAPPINGS` and the named
+shipped-rule tests; #3 design and #4 failure: revised proposal and S1-S5;
+#5 consistency and #6 drift: `doctrine/doc-governance.md`,
+`docs/DOCUMENTATION_PLAN.md`, and the conditional-claiming test; #7 placement:
+Maintainer routing fence; #8 scope: revision and withdrawal ledger; #9
+satisfiers: F1-F2 against their Response. **Not covered / low confidence:** no
+new install, mutation or test run; I did not independently reproduce the
+opening's two-test figure, audit every doctrine section, or establish future
+semantic guards. Those implementation results do not exist yet.
