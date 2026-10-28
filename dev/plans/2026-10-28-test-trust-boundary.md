@@ -2,7 +2,6 @@
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-test-trust-boundary.md
 **Status**: implementing
-**Waiting on Maintainer**: Approve exact test-trust roster
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Protect the tests that defend trust while reporting ordinary test changes without requiring a new trust anchor.
@@ -348,3 +347,19 @@ plan-scoped prose/link/content checks passed; neutrality had zero failures
 and 43 informational records. A search found no Python readers of the two
 new artifact names, with a known manifest import as positive control. No
 executable snippet, test body, collection, full suite or ceremony ran.
+
+## C1c roster approval -- Maintainer, relayed by Codex (Terra) -- 2026-10-28
+
+Maintainer authorization in chat, verbatim, in response to the request to approve
+the linked list as the initial protected roster:
+
+> Yes, I approve
+
+The approved exact roster is
+`dev/plans/2026-10-28-test-trust-boundary/c1b-roster-6cc95fa7.json`, committed
+at `884e6d53b4f6ff6329a1148dc49a32294628109f`, raw SHA-256
+`188fa76d82744be571bdc7ca91a43d605776b9df5ba0ac729e2cf22af66b8cc4`.
+The approval permits the plan's C2 implementation; it does not install the
+boundary, approve the pilot extraction, waive reviews, or authorize the
+Maintainer-only authority transition and re-anchor. Existing frozen-file and
+certification obligations remain open.
