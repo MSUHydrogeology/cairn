@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-governing-text-single-source.md
 **Status**: implementing
-**Waiting on Maintainer**: Routing and two conflicting prescriptions
+**Waiting on Maintainer**: Two conflicting prescriptions
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Map where rules come from and reach adopters before choosing how to reduce repeated editing.
@@ -362,3 +362,19 @@ are measured before consolidation; no after-change saving is claimed. C3 still
 owes source/twin semantic comparison and positive plus removed/inverted installed
 controls for changed obligations, and its trust-test sequencing fence remains.
 Any subsequent affected source delta requires refresh before acting on C2.
+
+## C2 routing choice -- Maintainer, relayed by Codex (Terra) -- 2026-10-28
+
+Maintainer authorization in chat, verbatim:
+
+> Yes, I like docs/methodology as a home, and other locations as you describe.
+
+Proposed path: `docs/methodology/` (not yet created).
+
+The chosen routing places public methodology explanation and reference under
+the proposed path, complete operating duties in usable installed files, and
+project-specific rules in `dev/rules/`. Preserve partially installed duties
+until their complete appropriate installed home and usable pointer are shown.
+This choice settles routing; the coordination-default and path-declaration
+conflicts remain separate Maintainer decisions. C3's remaining sequencing and
+verification gates still apply. No rule relocation or deletion is made here.
