@@ -192,20 +192,31 @@ A token carrying a placeholder (``<slug>``, a brace) declares nothing --
 it is an illustrative form, exactly as elsewhere in this checker.  A
 path-shaped token carrying a **glob wildcard** is *malformed*: the
 registry is literal by contract, so the entry grants no document-wide
-authority (fail closed).  A path declared **twice inside one block** is
-a duplicate and likewise grants nothing.  The same path declared in two
-*different* blocks is not a duplicate -- an append-only record whose
-revision section restates its proposed paths is doing the right thing.
+authority (fail closed).  Re-declaring the same path under the **same
+marker keyword** is idempotent, whether it appears again in the same
+block or in another block; an append-only revision can restate its
+proposed paths without creating a conflict.  Declaring one path under
+**different marker keywords** conflicts because it gives incompatible
+reasons, so that path grants no registry authority.
 
 **Liveness (lifecycle artifacts only).**  An exemption is meant to be
-temporary debt, so on a **non-terminal proposal or plan** -- a file at
-exactly ``dev/proposals/<name>.md`` or ``dev/plans/<name>.md`` (a
-``_``-prefixed authoring template is not an artifact) -- each declaration
-must still be doing work:
+temporary debt, so on a mutable **proposal or plan artifact** -- a file
+at exactly ``dev/proposals/<name>.md`` or ``dev/plans/<name>.md`` (a
+``_``-prefixed authoring template is not an artifact), with a missing,
+invalid, or non-terminal header status -- each checkable declaration in
+a structured marker block must still be doing work:
 
-* a typed registry entry must authorize at least one exemption
-  **outside its own block**; an entry whose path has materialized (or
-  which nothing outside the block cites) is a hard finding;
+* a typed registry entry in a structured block must suppress at least
+  one would-be path or line-bounds finding outside every marker line and
+  block; an entry whose path has materialized (or which is cited nowhere
+  outside marker lines and blocks) is a hard finding;
+* a standalone marker-line declaration has no separate liveness check:
+  it remains load-bearing for its own line, while still authorizing exact
+  document-wide reuse;
+* a declaration for a path this checker cannot resolve is reported as
+  informational because liveness cannot be evaluated; an entry now
+  resolved by the exact lifecycle archive rule is a non-failing
+  ``resolved-by-archive`` migration diagnostic;
 * a ``claim-check-allow`` glob that suppresses at least one report is
   ``effective``; one that suppresses nothing is ``unused`` -- a hard
   directive finding.

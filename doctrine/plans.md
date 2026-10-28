@@ -595,10 +595,21 @@ grants no authority. Do not reuse a declaration after its path resolves:
 existing files and stale line-bounds citations remain subject to the
 hard checks. Use a marker line or structured marker block when a
 declared path recurs in ordinary prose (a chunk description or
-acceptance criterion). On a non-terminal plan or proposal, a declaration
-in a structured block must authorize an occurrence outside that block;
-a standalone marker line has no separate liveness obligation because
-its own line uses the declaration.
+acceptance criterion). On a mutable lifecycle artifact
+(`dev/proposals/<name>.md` or `dev/plans/<name>.md`, not an
+`_template.md`), each checkable declaration in a structured block is
+subject to liveness: its path must not have materialized, and it must
+authorize at least one would-be missing-path or line-bounds exemption
+outside every marker line and block. A path the
+checker cannot resolve is reported informationally because liveness
+cannot be evaluated; a path now resolved by the exact lifecycle archive
+rule is a non-failing migration diagnostic. Files under
+`dev/proposals/archive/` or `dev/plans/archive/`, proposals with terminal
+status (`accepted`, `rejected`, `superseded`), and plans with terminal
+status (`archived`) are immutable, so their liveness findings are
+informational. A missing or invalid status does not make an active
+artifact immutable. A standalone marker line declares paths
+document-wide but carries no separate liveness obligation.
 
 **Two other marker keywords** parallel `Proposed paths:`:
 
