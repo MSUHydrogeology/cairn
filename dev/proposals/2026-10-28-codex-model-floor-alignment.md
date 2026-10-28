@@ -1,7 +1,7 @@
 # Align model floors with the current team roster
 
 **Author**: Codex gpt-6-sol (Proposal)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
@@ -246,3 +246,65 @@ Recurrence strengthens the signal. No scientific assumption or result changes.
 
 * Opening N/A Security preflight and usual-only headers are replaced because
   governing doctrine requires Security Review. No requested outcome is removed.
+
+## Review -- Codex gpt-6-astra (Security Reviewer) -- 2026-10-28
+
+```
+Reviewed commit: a173c0f628bb7481ebbf2a4fd36030cd4ed21b46
+Target: Response and Revised proposal, against the opening scope
+Prior findings: usual F1-F4 provide context; not another usual review
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** Lower execution floors can coexist with high security judgment and Maintainer authority, but preserving the existing bright-line definition contradicts the intended low floor for executing reviewed high-risk work -- `templates/modules/team-gated/model-selection.md:128-145`.
+2. **Best alternative.** Separate executing an already-reviewed plan from making new security, premise or design judgments; retain existing reviews and authorization fences, rather than exempting whole implementation paths from the low default -- `AGENTS.md:219-239`; this proposal's revised Rule.
+3. **What would show it wrong.** A task labeled implementation that silently changes a security premise, or a scribe treating relayed approval as Maintainer authority, would defeat the distinction; independent review and exact authorization remain human checks, not mapping-check guarantees -- `AGENTS.md:267-272`; `scripts/check_model_selection.py:130-149`.
+
+The strongest version lets capable low-tier models execute settled work while
+preserving the judgments and approvals that make it settled. Low Decision scribing
+retains unambiguous authorization, an isolated verbatim quote in both places, and an
+exclusive commit. The revised copy list includes bootstrap and onboarding exposure
+without changing the installer.
+
+* **SR1 (blocking): Resolve the high-risk implementation exception.** The revised
+  Rule retains “existing bright-line work” and says it stays high inside a plan. The
+  current module includes “security-sensitive changes” and “high-risk trust
+  boundaries” in that class
+  (`templates/modules/team-gated/model-selection.md:128-145`). Thus an agent
+  executing a reviewed engine plan can still be forced to high. This conflicts with
+  the Maintainer's relayed intent that low executes reviewed plans, including
+  deliberate work; high supplies strategy, premise/novel-design judgment and Security
+  Review. **Satisfier:** explicitly distinguish low execution of reviewed security
+  work from those high judgment tasks. Name the existing bright-line and below-floor
+  cost-rule paragraphs in both module copies for alignment. Retain Security Reviews,
+  data-governance/tool-parity gates and Maintainer fences. This clarifies the
+  requested scope; it adds no review or permission gate.
+* **SR2 (blocking): Account for hostile classification inputs.** Revised S1
+  identifies assignment provenance but omits the task/plan and any model-produced
+  classification or authorization relay. S5 describes mistaken assignment, not an
+  attacker capability. These omissions leave the new execution/judgment distinction's
+  failure case unstated (`dev/proposals/_template.md:308-327`). **Satisfier:**
+  identify who supplies those inputs and whether the classified work supplies any
+  itself; state an attacker assumption and a residual success, such as hostile task
+  material inducing misclassification or a false authorization claim. Distinguish the
+  existing manual safeguards from automated detection. No new detector is required.
+
+**Floor record:** the ordinary reviewer used medium under the Maintainer's direct
+chat instruction, relayed in this review brief and quoted in Context. That
+session staffing authorization is distinct from accepting the durable floor
+change; this Security pass supplies no Decision (`AGENTS.md:206-214`).
+
+**Covered:** authority, fail-closed design and satisfiers (SR1/SR2); copy drift and
+public install path (`bootstrap/_scaffold/install.py:917-958`); mapping claims
+(`scripts/check_model_selection.py`); lifecycle placement and withdrawal ledger
+(Response and Revised proposal). No opening outcome was explicitly withdrawn beyond
+the obsolete preflight/header.
+**Not covered / low confidence:** no model benchmarking, attack execution or
+implementation tests; mapping shape does not authenticate assignments. This proposal
+pass leaves the Security obligation open.
