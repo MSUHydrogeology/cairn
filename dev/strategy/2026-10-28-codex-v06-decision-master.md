@@ -25,7 +25,7 @@ capabilities and adopter research. This five-plan batch does not finish v0.6.
 |---|---|
 | [Model floors](../plans/archive/2026-10-28-model-floor-alignment.md) | Implemented, independently reviewed and archived. Local vendor assignments and shipped generic task floors align; 574 mapped passes under Python 3.13.13. Certification/re-anchor debt remains live in the roadmap. |
 | [Scoped verification](../plans/2026-10-28-scoped-change-verification.md) | Implemented; 2,700 collected/executed nodes reconciled, five guard cases passed, environment-denied security cases passed with required local capability. Independent example adjudication and ordinary/Security reviews completed. Both reviews hold completion for the prescribed frozen-file ceremony. Later naming examples corrected with 656 mapped passes under Python 3.13.13. |
-| [Governing text](../plans/2026-10-28-governing-text-single-source.md) | Routing chosen at `aa9fc08b` and coordination default at `7013de1d`; path-declaration scope remains open. No rule moved or deleted. |
+| [Governing text](../plans/2026-10-28-governing-text-single-source.md) | Routing chosen at `aa9fc08b`, coordination default at `7013de1d`, and document-wide path declarations at `560a178c`. Instruction updates and consolidation remain subject to the plan gates. |
 | [Test trust boundary](../plans/2026-10-28-test-trust-boundary.md) | Refreshed factual inventory and high-tier classification are ready for exact roster approval. Existing protection remains active. |
 | [Ordinary test maintenance](../plans/2026-10-28-ordinary-test-maintenance.md) | Reviewed plan; implementation cannot start because the chosen board file contains security defenses and remains protected. |
 
@@ -40,7 +40,7 @@ Use `python tools/board.py --maintainer` for declared next moves.
 **Chosen:** move public explanation/reference to the proposed methodology
 home under docs; keep complete operating duties in usable installed files and
 project-specific rules in `dev/rules/`. The Maintainer chose this routing in
-`aa9fc08b`; the path-declaration rule below remains undecided. A separate published methodology has a
+`aa9fc08b`; both rule choices below are also recorded. A separate published methodology has a
 purpose, but the inventory found no delivery requirement for the distinct
 `doctrine/` location. Moving costs the familiar landmark and citation migration;
 a rename alone saves no editing.
@@ -56,7 +56,7 @@ implied wording cleanup:
 | Conflict | Recommended choice and conceded prescription |
 |---|---|
 | Coordination defaults | **Chosen (`7013de1d`):** block provable live-session conflicts; agents claim intent before editing. Warn for stale/tokenless cases; retain warn/confirm modes and opt-in hooks. Update the different published default. |
-| Path declarations | Confirm existing checker behavior: an explicitly declared literal path may recur document-wide, with exact matching and provenance. Retire the published line/block-only restriction. Siblings, descendants, look-alikes and malformed declarations stay unexempted; no checker rewrite. |
+| Path declarations | **Chosen (`560a178c`):** an explicitly declared literal path may recur document-wide, with exact matching and provenance. Update the line/block-only instructions. Siblings, descendants, look-alikes and malformed declarations stay unexempted; no checker rewrite. |
 
 Retain all 21 partial-reach obligation groups until a complete appropriate
 installed home and usable pointer are demonstrated. Generic prompts or upstream
