@@ -1,0 +1,480 @@
+== launcher: candidate resolved and closure verified ==
+  candidate    55d31f1e59a95c5185b08cb5242b7c23bd73debc
+  provenance   fresh-session build from git objects at 38965e4a; builder wrote nothing in the range; same vendor as reader
+  artifact     bootstrap/reanchor.sh
+  manifest     /private/var/folders/z7/ctp79pf56gqcq2t5r5t1kslr0000gn/T/tmp.c8IX4u93Us/review-manifest.txt
+  mode         TRANSITION -- the authority closure differs at the
+               candidate, so this ceremony carries a reviewed
+               closure change
+
+== what you are authorizing ==
+
+  candidate id     55d31f1e59a95c5185b08cb5242b7c23bd73debc
+  anchor           6f29519d9f4756c977e45ad6415e88c212f8f29f
+  branch           refs/heads/0.5-dev
+  expected old     55d31f1e59a95c5185b08cb5242b7c23bd73debc
+  manifest sha256  6840d1d9c456df4fe084c36a49f21151fd64b6bdbd0bcaa69ae4d736c3069361
+  package sha256   ecb847161a3e5a8d4409905da66f944b0d08b5616cb78fe3c405ceeaa3c2ed28
+
+  allowed_signers fingerprints (compare yours with ssh-keygen -lf):
+    anchored roster (1):
+      kendal30@msu.edu ssh-ed25519 SHA256:8R549gtP0SJPaCWlQlausCtAbRBquXCIhbM6395ESsM
+    candidate roster (1):
+      kendal30@msu.edu ssh-ed25519 SHA256:8R549gtP0SJPaCWlQlausCtAbRBquXCIhbM6395ESsM
+    roster unchanged
+
+  tools this ceremony runs, from your values file (compare each with readlink -f of command -v):
+    env      /usr/bin/env
+    git      /opt/homebrew/Cellar/git/2.53.0/bin/git
+    python   /Users/kendal30/conda_envs/lhm/bin/python3.13
+    mktemp   /usr/bin/mktemp
+    mkdir    /bin/mkdir
+    shasum   /usr/bin/shasum
+    sort     /usr/bin/sort
+    cat      /bin/cat
+
+  changed paths by class:
+    cascade-mutable          1
+    frozen                   48
+    manifest-artifact        0
+    outside-coverage         265
+    phase-mutable            0
+  changed paths by role:
+    decides                  7
+    pinned                   44
+    other                    263
+
+  decides (7):
+    modified 100644 outside-coverage bootstrap/REANCHOR_RUNBOOK.md
+    modified 100644 outside-coverage bootstrap/reanchor-launcher.template.sh
+    modified 100755 outside-coverage bootstrap/reanchor.sh
+    modified 100644 frozen           bootstrap/tests/_gate_manifest.py
+    modified 100644 frozen           bootstrap/tests/_gate_preflight.py
+    modified 100644 frozen           scripts/reanchor_ceremony.py
+    added    100644 frozen           scripts/repin.py
+
+  pinned (44):
+    modified 100644 frozen           bootstrap/security_check.py
+    modified 100644 frozen           bootstrap/tests/test_agreement_retired.py
+    modified 100644 frozen           bootstrap/tests/test_board_json_contract.py
+    added    100644 frozen           bootstrap/tests/test_ceremony_review_report.py
+    added    100644 frozen           bootstrap/tests/test_deleted_tracked_markdown.py
+    modified 100644 frozen           bootstrap/tests/test_facade_loader_cleanup.py
+    added    100644 frozen           bootstrap/tests/test_finalize_retired_living_state.py
+    modified 100644 frozen           bootstrap/tests/test_gate_manifest.py
+    modified 100644 frozen           bootstrap/tests/test_gate_preflight.py
+    modified 100644 frozen           bootstrap/tests/test_hardening.py
+    added    100644 frozen           bootstrap/tests/test_install_report_slots.py
+    added    100644 frozen           bootstrap/tests/test_install_time_onboarding.py
+    added    100644 frozen           bootstrap/tests/test_model_tier_rule_ships.py
+    added    100644 frozen           bootstrap/tests/test_next_session_local_note.py
+    modified 100644 frozen           bootstrap/tests/test_notice_install.py
+    modified 100644 frozen           bootstrap/tests/test_onboarding_slot_substitution.py
+    modified 100644 frozen           bootstrap/tests/test_portable_security_sweeps.py
+    modified 100644 frozen           bootstrap/tests/test_quickstart_sequence.py
+    modified 100644 frozen           bootstrap/tests/test_reanchor.py
+    added    100644 frozen           bootstrap/tests/test_reanchor_driver_disclosures.py
+    added    100644 frozen           bootstrap/tests/test_repin.py
+    added    100644 frozen           bootstrap/tests/test_repin_ceremony.py
+    modified 100644 frozen           bootstrap/tests/test_review_stance_in_shipped_files.py
+    modified 100644 frozen           bootstrap/tests/test_security_check.py
+    modified 100644 frozen           bootstrap/tests/test_security_leaf.py
+    modified 100644 frozen           bootstrap/tests/test_security_lint.py
+    added    100644 frozen           bootstrap/tests/test_session_binding_gate_and_printing_hold.py
+    added    100644 frozen           bootstrap/tests/test_session_start_drain_rules.py
+    added    100644 frozen           bootstrap/tests/test_status_vocabulary_advisory.py
+    modified 100644 frozen           bootstrap/tests/test_upgrade.py
+    added    100644 frozen           bootstrap/tests/test_upgrade_added_slots.py
+    added    100644 frozen           bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py
+    modified 100644 frozen           bootstrap/tests/test_upgrade_lockfile_path_containment.py
+    added    100644 frozen           bootstrap/tests/test_upgrade_refuses_hostile_project_data.py
+    added    100644 frozen           bootstrap/tests/test_upgrade_removes_retired_files.py
+    modified 100644 frozen           bootstrap/tests/test_upgrade_side_door_parity.py
+    added    100644 frozen           bootstrap/tests/test_writing_rules_ship.py
+    modified 100644 frozen           scripts/check_cairn.py
+    modified 100644 frozen           scripts/link_check.py
+    modified 100644 frozen           scripts/sync_doc_snippets.py
+    modified 100644 frozen           scripts/verify_stems.py
+    modified 100644 frozen           templates/modules/default-on/verify_stems.py
+    modified 100644 frozen           templates/modules/team-gated/link_check.py
+    modified 100644 frozen           templates/modules/team-gated/sync_doc_snippets.py
+
+  other (263):
+    modified 100644 outside-coverage .agents/skills/session-end/SKILL.md
+    modified 100644 outside-coverage .agents/skills/session-start/SKILL.md
+    added    100644 outside-coverage .zenodo.json
+    modified 100644 outside-coverage AGENTS.md
+    modified 100644 outside-coverage CHANGELOG.md
+    modified 100644 outside-coverage CITATION.cff
+    modified 100644 outside-coverage CLAUDE.md
+    modified 100644 outside-coverage LICENSE-CC-BY.md
+    modified 100644 outside-coverage README.md
+    modified 100644 outside-coverage SECURITY.md
+    modified 100644 outside-coverage bootstrap/BOOTSTRAP.md
+    modified 100644 outside-coverage bootstrap/SAFETY.md
+    modified 100644 outside-coverage bootstrap/UPGRADE.md
+    modified 100644 outside-coverage bootstrap/_scaffold/SECURITY_MUTATIONS.md
+    modified 100644 outside-coverage bootstrap/_scaffold/__init__.py
+    modified 100644 outside-coverage bootstrap/_scaffold/cli.py
+    modified 100644 cascade-mutable  bootstrap/_scaffold/config.py
+    modified 100644 outside-coverage bootstrap/_scaffold/install.py
+    modified 100644 outside-coverage bootstrap/_scaffold/lockfile.py
+    modified 100644 outside-coverage bootstrap/_scaffold/merge.py
+    modified 100644 outside-coverage bootstrap/_scaffold/security.py
+    modified 100644 outside-coverage bootstrap/_scaffold/upgrade.py
+    modified 100644 outside-coverage bootstrap/fidelity-check.md
+    modified 100644 outside-coverage bootstrap/reanchor-values.example
+    deleted  -      outside-coverage bootstrap/tests/test_active_surfacing_mechanism.py
+    deleted  -      outside-coverage bootstrap/tests/test_active_surfacing_render.py
+    deleted  -      outside-coverage bootstrap/tests/test_correct_pinned_digests.py
+    deleted  -      outside-coverage bootstrap/tests/test_deferred_task_store.py
+    deleted  -      outside-coverage bootstrap/tests/test_onboarding_activation_helper.py
+    deleted  -      outside-coverage bootstrap/tests/test_trigger_evaluation_action.py
+    deleted  -      outside-coverage bootstrap/tests/test_trigger_evaluation_maturity.py
+    modified 100644 outside-coverage case-studies/README.md
+    modified 100644 outside-coverage case-studies/lhm.md
+    modified 100644 outside-coverage case-studies/modflow_tools.md
+    modified 100644 outside-coverage dev/.cairn/cairn-lock.yml
+    modified 100644 outside-coverage dev/.cairn/claim-check-allow.json
+    modified 100644 outside-coverage dev/.cairn/model-selection-mapping.yml
+    deleted  -      outside-coverage dev/.cairn/onboarding-activated.jsonl
+    deleted  -      outside-coverage dev/NEXT_SESSION.md
+    modified 100644 outside-coverage dev/PLANNING.md
+    modified 100644 outside-coverage dev/README.md
+    modified 100644 outside-coverage dev/agent_collaboration.md
+    added    100644 outside-coverage dev/ceremony-record.md
+    modified 100644 outside-coverage dev/measurement/tag-pass-dispositions.md
+    modified 100644 outside-coverage dev/modules/doc-drift-prevention.md
+    modified 100644 outside-coverage dev/modules/examples-gallery.md
+    modified 100644 outside-coverage dev/modules/incident-trackers.md
+    modified 100644 outside-coverage dev/modules/model-selection.md
+    modified 100644 outside-coverage dev/modules/onboarding/agent-team-onboarding.md
+    deleted  -      outside-coverage dev/modules/onboarding/collaborative-team.md
+    modified 100644 outside-coverage dev/modules/onboarding/dev-tour.md
+    modified 100644 outside-coverage dev/modules/security-verification.md
+    modified 100644 outside-coverage dev/modules/testing-discipline.md
+    modified 100644 outside-coverage dev/plans/_template.md
+    added    100644 outside-coverage dev/plans/archive/2026-08-27-code-review-c1-session-kernel.md
+    added    100644 outside-coverage dev/plans/archive/2026-08-27-code-review-c2-c3-constitution-and-tools.md
+    added    100644 outside-coverage dev/plans/archive/2026-08-27-code-review-c5-c6-removals.md
+    added    100644 outside-coverage dev/plans/archive/2026-08-27-code-review-c7-prose-phase.md
+    added    100644 outside-coverage dev/plans/archive/2026-08-27-external-security-review-authority-closure.md
+    added    100644 outside-coverage dev/plans/archive/2026-08-27-external-security-review-correct-pinned-digests.md
+    added    100644 outside-coverage dev/plans/archive/2026-08-27-external-security-review-launcher-template.md
+    added    100644 outside-coverage dev/plans/archive/2026-10-17-code-review-engine-advice-defects.md
+    added    100644 outside-coverage dev/plans/archive/2026-10-17-code-review-issue-batch.md
+    added    100644 outside-coverage dev/plans/archive/2026-10-18-code-review-gitignore-seed-guard.md
+    added    100644 outside-coverage dev/plans/archive/2026-10-18-code-review-session-writes.md
+    added    100644 outside-coverage dev/plans/archive/2026-10-18-security-review-gitignore-seed-guard.md
+    added    100644 outside-coverage dev/plans/archive/2026-10-18-security-review-session-writes.md
+    added    100644 outside-coverage dev/plans/archive/2026-10-19-code-review-engine-copy-fallback.md
+    added    100644 outside-coverage dev/plans/archive/2026-10-19-security-review-engine-copy-fallback.md
+    added    100644 outside-coverage dev/plans/archive/2026-10-19-security-review-upgrade-lockfile-paths.md
+    added    100644 outside-coverage dev/plans/archive/2026-10-26-code-review-adopt-actions-profile-link.md
+    added    100644 outside-coverage dev/plans/archive/2026-10-26-code-review-drain-skill-gaps.md
+    added    100644 outside-coverage dev/plans/archive/2026-10-26-code-review-lockfile-path-findings.md
+    added    100644 outside-coverage dev/plans/archive/2026-10-26-code-review-plan-stage-profile-link.md
+    added    100644 outside-coverage dev/plans/archive/2026-10-26-code-review-session-write-findings.md
+    added    100644 outside-coverage dev/plans/archive/2026-10-26-code-review-status-vocabulary-advisory.md
+    added    100644 outside-coverage dev/plans/archive/2026-10-26-review-keep-it-short-templates.md
+    added    100644 outside-coverage dev/plans/archive/2026-10-26-second-look-session-binding-revision.md
+    added    100644 outside-coverage dev/plans/archive/ceremony-without-external-review.md
+    added    100644 outside-coverage dev/plans/archive/drain-mode.md
+    added    100644 outside-coverage dev/plans/archive/engine-batch-f8-slots.code-review.md
+    added    100644 outside-coverage dev/plans/archive/engine-batch-f8-slots.md
+    modified 100644 outside-coverage dev/plans/archive/independent-scientific-check.md
+    added    100644 outside-coverage dev/plans/archive/install-time-onboarding.md
+    modified 100644 outside-coverage dev/plans/archive/maintainer-attention.md
+    modified 100644 outside-coverage dev/plans/archive/model-mapping-install-path.md
+    added    100644 outside-coverage dev/plans/archive/model-tier-rules.code-review.md
+    added    100644 outside-coverage dev/plans/archive/model-tier-rules.md
+    modified 100644 outside-coverage dev/plans/archive/neutrality-and-upgrade-slots.md
+    added    100644 outside-coverage dev/plans/archive/next-session-local-note.code-review.md
+    added    100644 outside-coverage dev/plans/archive/next-session-local-note.md
+    added    100644 outside-coverage dev/plans/archive/no-plan-changes-end-to-end.md
+    modified 100644 outside-coverage dev/plans/archive/portable-sweeps-cannot-run.md
+    modified 100644 outside-coverage dev/plans/archive/remove-collaboration-agreement.md
+    added    100644 outside-coverage dev/plans/archive/repin-build.code-review.md
+    added    100644 outside-coverage dev/plans/archive/repin-build.md
+    added    100644 outside-coverage dev/plans/archive/repin-build.second-look.md
+    added    100644 outside-coverage dev/plans/archive/repin-ceremony-hardening.md
+    modified 100644 outside-coverage dev/plans/archive/scanner-claim-scope.md
+    modified 100644 outside-coverage dev/plans/archive/subtraction-sweep.md
+    added    100644 outside-coverage dev/plans/archive/upgrade-edit-check-no-repository-programs.md
+    added    100644 outside-coverage dev/plans/archive/upgrade-removes-retired-files.md
+    modified 100644 outside-coverage dev/plans/archive/verification-practice.md
+    modified 100644 outside-coverage dev/proposals/_template.md
+    modified 100644 outside-coverage dev/proposals/archive/2026-07-11-claude-adopter-licensing-compliance.md
+    modified 100644 outside-coverage dev/proposals/archive/2026-07-11-claude-first-session-survivability.md
+    modified 100644 outside-coverage dev/proposals/archive/2026-07-11-claude-record-corrections.md
+    modified 100644 outside-coverage dev/proposals/archive/2026-07-11-claude-solo-legacy-adopter-path.md
+    added    100644 outside-coverage dev/proposals/archive/2026-07-11-first-session-internal-panel.json
+    added    100644 outside-coverage dev/proposals/archive/2026-07-11-licensing-internal-panel.json
+    added    100644 outside-coverage dev/proposals/archive/2026-07-11-record-corrections-internal-panel.json
+    added    100644 outside-coverage dev/proposals/archive/2026-07-11-solo-legacy-internal-panel.json
+    modified 100644 outside-coverage dev/proposals/archive/2026-07-22-claude-interpreter-trust-root-fallback.md
+    modified 100644 outside-coverage dev/proposals/archive/2026-07-22-claude-lockfile-provenance-fields.md
+    modified 100644 outside-coverage dev/proposals/archive/2026-07-22-claude-stage-commit-patterns.md
+    modified 100644 outside-coverage dev/proposals/archive/2026-07-22-claude-transition-lint.md
+    added    100644 outside-coverage dev/proposals/archive/2026-07-22-interpreter-trust-root-internal-panel.json
+    added    100644 outside-coverage dev/proposals/archive/2026-07-22-lockfile-provenance-internal-panel.json
+    added    100644 outside-coverage dev/proposals/archive/2026-07-22-stage-commit-patterns-internal-panel.json
+    added    100644 outside-coverage dev/proposals/archive/2026-07-22-transition-lint-internal-panel.json
+    added    100644 outside-coverage dev/proposals/archive/2026-08-20-adopter-issues-decision-support.md
+    modified 100644 outside-coverage dev/proposals/archive/2026-10-17-claude-maintainer-attention.md
+    modified 100644 outside-coverage dev/proposals/archive/2026-10-17-claude-verification-practice.md
+    modified 100644 outside-coverage dev/proposals/archive/2026-10-18-claude-stewardship-and-reuse.md
+    added    100644 outside-coverage dev/proposals/archive/2026-10-26-claude-check-cairn-deleted-files.md
+    added    100644 outside-coverage dev/proposals/archive/2026-10-26-claude-engine-batch-f8-slots.md
+    added    100644 outside-coverage dev/proposals/archive/2026-10-26-claude-model-tier-rules.md
+    added    100644 outside-coverage dev/proposals/archive/2026-10-26-claude-next-session-local-note.md
+    added    100644 outside-coverage dev/proposals/archive/2026-10-26-claude-no-plan-changes-end-to-end.md
+    added    100644 outside-coverage dev/proposals/archive/2026-10-26-claude-repin-build.md
+    added    100644 outside-coverage dev/proposals/archive/2026-10-26-claude-retire-delayed-onboarding-prompts.md
+    added    100644 outside-coverage dev/proposals/archive/2026-10-26-claude-upgrade-dirty-check-runs-no-repository-programs.md
+    added    100644 outside-coverage dev/proposals/archive/2026-10-26-claude-upgrade-removes-untouched-retired-files.md
+    added    100644 outside-coverage dev/proposals/archive/2026-10-26-claude-writing-for-the-reader.md
+    added    100644 outside-coverage dev/proposals/archive/2026-10-27-antigravity-plain-language-adoption-docs.md
+    added    100644 outside-coverage dev/proposals/archive/2026-10-27-claude-ceremony-without-external-review.md
+    added    100644 outside-coverage dev/proposals/archive/2026-10-27-claude-repin-ceremony-hardening.md
+    modified 100644 outside-coverage dev/reflections/README.md
+    deleted  -      outside-coverage dev/reviews/2026-07-11-first-session-internal-panel.json
+    deleted  -      outside-coverage dev/reviews/2026-07-11-licensing-internal-panel.json
+    deleted  -      outside-coverage dev/reviews/2026-07-11-record-corrections-internal-panel.json
+    deleted  -      outside-coverage dev/reviews/2026-07-11-solo-legacy-internal-panel.json
+    deleted  -      outside-coverage dev/reviews/2026-07-22-interpreter-trust-root-internal-panel.json
+    deleted  -      outside-coverage dev/reviews/2026-07-22-lockfile-provenance-internal-panel.json
+    deleted  -      outside-coverage dev/reviews/2026-07-22-stage-commit-patterns-internal-panel.json
+    deleted  -      outside-coverage dev/reviews/2026-07-22-transition-lint-internal-panel.json
+    deleted  -      outside-coverage dev/reviews/2026-08-20-adopter-issues-decision-support.md
+    deleted  -      outside-coverage dev/reviews/2026-08-27-code-review-c1-session-kernel.md
+    deleted  -      outside-coverage dev/reviews/2026-08-27-code-review-c2-c3-constitution-and-tools.md
+    deleted  -      outside-coverage dev/reviews/2026-08-27-code-review-c5-c6-removals.md
+    deleted  -      outside-coverage dev/reviews/2026-08-27-code-review-c7-prose-phase.md
+    deleted  -      outside-coverage dev/reviews/2026-08-27-external-security-review-authority-closure.md
+    deleted  -      outside-coverage dev/reviews/2026-08-27-external-security-review-correct-pinned-digests.md
+    deleted  -      outside-coverage dev/reviews/2026-08-27-external-security-review-launcher-template.md
+    deleted  -      outside-coverage dev/reviews/2026-10-17-code-review-engine-advice-defects.md
+    deleted  -      outside-coverage dev/reviews/2026-10-17-code-review-issue-batch.md
+    deleted  -      outside-coverage dev/reviews/2026-10-18-code-review-gitignore-seed-guard.md
+    deleted  -      outside-coverage dev/reviews/2026-10-18-code-review-session-writes.md
+    deleted  -      outside-coverage dev/reviews/2026-10-18-security-review-gitignore-seed-guard.md
+    deleted  -      outside-coverage dev/reviews/2026-10-18-security-review-session-writes.md
+    deleted  -      outside-coverage dev/reviews/2026-10-19-code-review-engine-copy-fallback.md
+    deleted  -      outside-coverage dev/reviews/2026-10-19-security-review-engine-copy-fallback.md
+    deleted  -      outside-coverage dev/reviews/2026-10-19-security-review-upgrade-lockfile-paths.md
+    modified 100644 outside-coverage dev/strategy/2026-05-14-claude-human-ai-team-development-framework.md
+    modified 100644 outside-coverage dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md
+    modified 100644 outside-coverage dev/strategy/2026-08-05-codex-security-strategy.md
+    modified 100644 outside-coverage dev/strategy/2026-08-21-claude-nimbleness-recovery.md
+    deleted  -      outside-coverage dev/strategy/2026-08-25-claude-drain-mode.md
+    deleted  -      outside-coverage dev/strategy/2026-08-28-claude-repin-revitalization.md
+    deleted  -      outside-coverage dev/strategy/2026-10-19-codex-assai-runtime-architecture.md
+    deleted  -      outside-coverage dev/strategy/2026-10-19-codex-cairn-and-assai.md
+    added    100644 outside-coverage dev/strategy/2026-10-26-claude-work-tracker-and-the-board.md
+    added    100644 outside-coverage dev/strategy/2026-10-27-antigravity-adopter-survey-instrument.md
+    added    100644 outside-coverage dev/strategy/2026-10-27-antigravity-judicious-testing-and-simulation-verification.md
+    added    100644 outside-coverage dev/strategy/2026-10-27-antigravity-lightweight-team-measurement.md
+    added    100644 outside-coverage dev/strategy/2026-10-27-antigravity-plain-language-and-scientific-writing.md
+    added    100644 outside-coverage dev/strategy/2026-10-27-codex-adopter-engineering-practices.md
+    modified 100644 outside-coverage dev/strategy/_template.md
+    added    100644 outside-coverage dev/strategy/archive/2026-08-25-claude-drain-mode.md
+    added    100644 outside-coverage dev/strategy/archive/2026-08-28-claude-repin-revitalization.md
+    modified 100644 outside-coverage dimensions/README.md
+    added    100644 outside-coverage docs/.nojekyll
+    modified 100644 outside-coverage docs/DOCUMENTATION_PLAN.md
+    modified 100644 outside-coverage docs/README.md
+    modified 100644 outside-coverage docs/agent-team-onboarding.md
+    added    100644 outside-coverage docs/assets/independent-scientific-check.svg
+    added    100644 outside-coverage docs/assets/shared-record-across-sessions.svg
+    added    100644 outside-coverage docs/assets/three-lanes-of-change.svg
+    added    100644 outside-coverage docs/assets/two-ways-to-adopt.svg
+    modified 100644 outside-coverage docs/dev-tour.md
+    modified 100644 outside-coverage docs/further-reading.md
+    modified 100644 outside-coverage docs/getting-started.md
+    modified 100644 outside-coverage docs/glossary.md
+    added    100644 outside-coverage docs/index.html
+    added    100644 outside-coverage docs/plain-language.md
+    modified 100644 outside-coverage docs/quickstart.md
+    modified 100644 outside-coverage docs/related-practices.md
+    modified 100644 outside-coverage docs/release-process.md
+    modified 100644 outside-coverage docs/solo-legacy-recipe.md
+    modified 100644 outside-coverage docs/tool-usage.md
+    modified 100644 outside-coverage docs/vision.md
+    modified 100644 outside-coverage docs/workflow-role.md
+    modified 100644 outside-coverage doctrine/README.md
+    modified 100644 outside-coverage doctrine/doc-governance.md
+    modified 100644 outside-coverage doctrine/dual-review.md
+    modified 100644 outside-coverage doctrine/lifecycle.md
+    modified 100644 outside-coverage doctrine/onboarding.md
+    modified 100644 outside-coverage doctrine/plans.md
+    modified 100644 outside-coverage doctrine/proposals.md
+    modified 100644 outside-coverage doctrine/rationale.md
+    modified 100644 outside-coverage doctrine/roles.md
+    modified 100644 outside-coverage doctrine/session-routines.md
+    modified 100644 outside-coverage examples/minimal/README.md
+    modified 100644 outside-coverage examples/minimal/dev/proposals/archive/0001-add-name-argument.md
+    modified 100644 outside-coverage examples/scientific-minimal/README.md
+    modified 100644 outside-coverage examples/scientific-minimal/dev/proposals/archive/0001-add-mass-balance-invariant-test.md
+    modified 100644 outside-coverage on-ramp/README.md
+    deleted  -      outside-coverage scripts/_onboarding/__init__.py
+    deleted  -      outside-coverage scripts/_onboarding/activation.py
+    deleted  -      outside-coverage scripts/_onboarding/cli.py
+    deleted  -      outside-coverage scripts/_onboarding/prompts.py
+    deleted  -      outside-coverage scripts/_onboarding/security.py
+    deleted  -      outside-coverage scripts/_onboarding/shared.py
+    deleted  -      outside-coverage scripts/_onboarding/slotparse.py
+    deleted  -      outside-coverage scripts/_onboarding/triggers.py
+    deleted  -      outside-coverage scripts/correct_pinned_digests.py
+    deleted  -      outside-coverage scripts/onboarding_activate.py
+    modified 100644 outside-coverage templates/README.md
+    modified 100644 outside-coverage templates/core/AGENTS.md
+    deleted  -      outside-coverage templates/core/dev/NEXT_SESSION.md
+    modified 100644 outside-coverage templates/core/dev/PLANNING.md
+    modified 100644 outside-coverage templates/core/dev/README.md
+    modified 100644 outside-coverage templates/core/dev/agent_collaboration.md
+    modified 100644 outside-coverage templates/core/dev/plans/_template.md
+    modified 100644 outside-coverage templates/core/dev/proposals/_template.md
+    modified 100644 outside-coverage templates/core/dev/strategy/_template.md
+    deleted  -      outside-coverage templates/modules/default-on/_onboarding/__init__.py
+    deleted  -      outside-coverage templates/modules/default-on/_onboarding/activation.py
+    deleted  -      outside-coverage templates/modules/default-on/_onboarding/cli.py
+    deleted  -      outside-coverage templates/modules/default-on/_onboarding/prompts.py
+    deleted  -      outside-coverage templates/modules/default-on/_onboarding/security.py
+    deleted  -      outside-coverage templates/modules/default-on/_onboarding/shared.py
+    deleted  -      outside-coverage templates/modules/default-on/_onboarding/slotparse.py
+    deleted  -      outside-coverage templates/modules/default-on/_onboarding/triggers.py
+    modified 100644 outside-coverage templates/modules/default-on/documentation_plan_template.md
+    modified 100644 outside-coverage templates/modules/default-on/incident-trackers.md
+    deleted  -      outside-coverage templates/modules/default-on/onboarding_activate.py
+    modified 100644 outside-coverage templates/modules/default-on/reflections-README.md
+    modified 100644 outside-coverage templates/modules/default-on/security-verification.md
+    modified 100644 outside-coverage templates/modules/team-gated/doc-drift-prevention.md
+    modified 100644 outside-coverage templates/modules/team-gated/examples-gallery.md
+    modified 100644 outside-coverage templates/modules/team-gated/model-selection.md
+    modified 100644 outside-coverage templates/modules/team-gated/python-security.md
+    modified 100644 outside-coverage templates/modules/team-gated/testing-discipline.md
+    modified 100644 outside-coverage templates/onboarding/collaborative-team.md
+    modified 100644 outside-coverage templates/onboarding/high-rigor-legacy.md
+    modified 100644 outside-coverage templates/onboarding/solo-greenfield.md
+    modified 100644 outside-coverage templates/skills/_lib/board.py
+    modified 100644 outside-coverage templates/skills/_lib/session.py
+    modified 100644 outside-coverage templates/skills/session-end/SKILL.md
+    modified 100644 outside-coverage templates/skills/session-start/SKILL.md
+    modified 100644 outside-coverage tools/board.py
+    modified 100644 outside-coverage tools/session.py
+
+  line scan: added lines in the paths that decide what runs, in the sensitive roster and in new files under scripts/ and bootstrap/
+    what this finds: an added call, write, command or compiled file that matches a fixed pattern list.
+    what it does not: a harmful change that matches no pattern, or a check that was removed.
+    scanned paths: 17
+    process-start  21 hit(s)
+    network        11 hit(s)
+    dynamic-code   10 hit(s)
+    shell-true     0 hit(s)
+    file-write     32 hit(s)
+    nosec          1 hit(s)
+    shell-command  2 hit(s)
+    compiled-file  0 hit(s)
+
+  every scan hit (77), none cut:
+    bootstrap/REANCHOR_RUNBOOK.md:27 [file-write] g() { env -i HOME=/nonexistent GIT_NO_LAZY_FETCH=1 <git> --no-pager --no-replace-objects -c core.useReplaceRefs=false -c core.hooksPath=/dev/null -c core.fsmonitor=false -C <checkout> "$@"; }
+    bootstrap/REANCHOR_RUNBOOK.md:28 [file-write] L() { env -i HOME=<home> PATH=/usr/bin:/bin TERM="$TERM" LANG=C /bin/sh <launcher> <packet> <values> "$@"; }
+    bootstrap/REANCHOR_RUNBOOK.md:45 [shell-command] ssh-add -l; SSH_AUTH_SOCK=$(launchctl getenv SSH_AUTH_SOCK) ssh-add -l
+    bootstrap/REANCHOR_RUNBOOK.md:66 [shell-command] ssh-keygen -lf <key.pub>
+    bootstrap/REANCHOR_RUNBOOK.md:74 [file-write] env -i HOME=<home> PATH=/usr/bin:/bin TERM="$TERM" LANG=C /bin/sh <launcher> <packet> <values> $CAND --stage2 <digest>
+    bootstrap/REANCHOR_RUNBOOK.md:76 [file-write] g -c gpg.format=ssh -c gpg.ssh.program=/usr/bin/ssh-keygen -c gpg.program=/usr/bin/false -c gpg.openpgp.program=/usr/bin/false -c gpg.x509.program=/usr/bin/false -c gpg.ssh.allowedSignersFile=<checkout>/dev/.cairn/allowed_signers verify-commit refs/cairn/gate-anchor
+    bootstrap/_scaffold/SECURITY_MUTATIONS.md:117 [file-write] | `_check_lockfile_paths` | `_contained_lockfile_path` for `src` (root: `templates/`), `dst` and `base_cache` (root: the project) of **every** record; and the lockfile's `modules`, which must be a list of non-empty printable strings (the report prints each) | called once, in `cmd_upgrade` right after the lockfile is read and the forked-facade advisory has run, so the report, `--stage`, `--apply`, `--finalize` and `--adopt-collisions` never see a name they would have to trust. The advisory runs first so that a lockfile about to be refused cannot hide a forked facade. It reads file bytes only through its own contained reader and prints names escaped, but it is not inert: its candidate gate stats and globs `<dst folder>/_<name>/` at a path the lockfile chose, unchecked, so a `dst` that leads outside the project lets one yes-or-no line on the operator's terminal say whether a folder of that name holding a `.py` file exists there. No byte is read and nothing is written. The frozen advisory tests pin that order; checking `dst` and `base_cache` ahead of the advisory is possible, and needs the "checked in exactly one place" pin in `test_upgrade_lockfile_path_containment.py` replaced. `cmd_upgrade` turns the refusal into a plain exit 2 and writes nothing. A field a record does not carry is not required |
+    bootstrap/_scaffold/security.py:205 [file-write]     Where ``os.unlink`` takes ``dir_fd`` (every of ``os.open``, ``os.unlink``,
+    bootstrap/_scaffold/security.py:206 [file-write]     ``os.rmdir`` and ``os.stat`` is in ``os.supports_dir_fd``, and the platform
+    bootstrap/_scaffold/security.py:247 [file-write]         all(fn in os.supports_dir_fd for fn in (os.open, os.unlink, os.rmdir, os.stat))
+    bootstrap/_scaffold/security.py:269 [file-write]             os.unlink(path)
+    bootstrap/_scaffold/security.py:276 [file-write]                 os.rmdir(path.parent)
+    bootstrap/_scaffold/security.py:324 [file-write]             os.unlink(name, dir_fd=folder)
+    bootstrap/_scaffold/security.py:337 [file-write]                 os.rmdir(parts[-2], dir_fd=handles[-2])
+    bootstrap/_scaffold/upgrade.py:2767 [process-start]     import subprocess
+    bootstrap/_scaffold/upgrade.py:2775 [process-start]         proc = subprocess.Popen(
+    bootstrap/_scaffold/upgrade.py:2776 [process-start]             ["git", *args], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+    bootstrap/_scaffold/upgrade.py:2777 [process-start]             stderr=subprocess.DEVNULL, env=env)
+    bootstrap/_scaffold/upgrade.py:2796 [process-start]         except subprocess.TimeoutExpired:
+    bootstrap/_scaffold/upgrade.py:2811 [network]     An older git would fetch a missing object from a remote the project names, and
+    bootstrap/_scaffold/upgrade.py:3431 [file-write]     # inert, though.  Its candidate gate stats and globs `<dst folder>/_<name>/`
+    bootstrap/reanchor-launcher.template.sh:728 [file-write]         sterile_git cat-file blob "$BLOB" > "$T/anchor/$REL" \x5c
+    bootstrap/reanchor-launcher.template.sh:765 [process-start]     exec /bin/sh "$T/$ARTIFACT_REL" "$MODE" "$@"
+    bootstrap/reanchor-launcher.template.sh:774 [process-start]         exec /bin/sh "$T/$ARTIFACT_REL" stage2 "$@" \x5c
+    bootstrap/reanchor-launcher.template.sh:779 [process-start]     exec /bin/sh "$T/$ARTIFACT_REL" stage2 "$@" \x5c
+    bootstrap/reanchor-launcher.template.sh:795 [process-start]     exec /bin/sh "$T/$ARTIFACT_REL" stage1 "$@" \x5c
+    bootstrap/reanchor-launcher.template.sh:799 [process-start] exec /bin/sh "$T/$ARTIFACT_REL" stage1 "$@"
+    bootstrap/reanchor.sh:272 [network] #:   with neither a socket nor a terminal falls back to `ssh-askpass` and dies
+    bootstrap/reanchor.sh:466 [network]             printf '%s\x5cn'   "  --stage2, under a short environment with no key socket. It"
+    bootstrap/reanchor.sh:519 [network]     # The key stays in no agent, so the stage is run with no socket and the
+    bootstrap/reanchor.sh:529 [network]         printf '%s\x5cn' "   NOTE: no agent socket, as intended: the key stays in no agent."
+    bootstrap/tests/_gate_preflight.py:1275 [dynamic-code]     (name, re.compile(rx)) for name, rx in (
+    bootstrap/tests/_gate_preflight.py:1280 [process-start]          # `from os import system as s` names the call without `os.`; a shell
+    bootstrap/tests/_gate_preflight.py:1288 [network]          rb"\x5cb(?:socket|urllib|urlopen|http\x5c.client|httplib|ftplib|smtplib"
+    bootstrap/tests/_gate_preflight.py:1289 [network]          rb"|telnetlib|curl|wget)\x5cb"
+    bootstrap/tests/_gate_preflight.py:1295 [dynamic-code]          # pytest reads `pytest_plugins` from a conftest and imports each name;
+    bootstrap/tests/_gate_preflight.py:1308 [nosec]         ("nosec", rb"nosec\x5cb"),
+    bootstrap/tests/_gate_preflight.py:1523 [dynamic-code] _KEY_TYPE = re.compile(r"(?:ssh-[a-z0-9-]+|ecdsa-sha2-[a-z0-9]+|sk-[a-z0-9@.-]+)")
+    scripts/reanchor_ceremony.py:512 [network]     say("  key socket:")
+    scripts/repin.py:36 [process-start]         os.execv(sys.executable,
+    scripts/repin.py:44 [dynamic-code] import importlib.machinery
+    scripts/repin.py:45 [dynamic-code] import importlib.util
+    scripts/repin.py:51 [process-start] import subprocess
+    scripts/repin.py:98 [file-write] GIT = shutil.which("git") or "git"
+    scripts/repin.py:113 [process-start]     r = subprocess.run([GIT, "-C", str(repo), *_GIT_FLAGS, *args], input=input,
+    scripts/repin.py:141 [file-write]     path.parent.mkdir()
+    scripts/repin.py:142 [file-write]     path.write_bytes(blob)
+    scripts/repin.py:145 [dynamic-code]     spec_ = importlib.util.spec_from_file_location("anchor_session", path)
+    scripts/repin.py:146 [dynamic-code]     mod = importlib.util.module_from_spec(spec_)
+    scripts/repin.py:204 [file-write]         target.parent.mkdir(parents=True, exist_ok=True)
+    scripts/repin.py:205 [file-write]         with open(target, "xb") as fh:
+    scripts/repin.py:230 [dynamic-code]         parent.__path__, parent.__spec__ = [], importlib.machinery.ModuleSpec(pkg, None, is_package=True)
+    scripts/repin.py:236 [dynamic-code]             spec = importlib.util.spec_from_file_location(
+    scripts/repin.py:238 [dynamic-code]             mod = sys.modules[name] = importlib.util.module_from_spec(spec)
+    scripts/repin.py:284 [network]                      f"git fetch origin '+{ANCHOR_REF}:{ANCHOR_REF}'")
+    scripts/repin.py:364 [process-start]     r = subprocess.run([sys.executable, "-I", "-X", f"pycache_prefix={prefix}", "-c",
+    scripts/repin.py:459 [file-write]     path.write_text(json.dumps(man), encoding="utf-8")
+    scripts/repin.py:579 [file-write]         check.mkdir(exist_ok=True)
+    scripts/repin.py:581 [file-write]             (check / Path(rel).name).write_bytes(new.get(rel, old[rel]))
+    scripts/repin.py:635 [file-write]     os.replace(tmp, cdir / TXN_NAME)
+    scripts/repin.py:727 [file-write]             os.chmod(tmp, stat.S_IMODE(os.lstat(target).st_mode))
+    scripts/repin.py:734 [file-write]             os.replace(tmp, target)
+    scripts/repin.py:738 [file-write]             Path(tmp).unlink(missing_ok=True)
+    scripts/repin.py:753 [file-write]     record.write_bytes(dump({"schema": "repin-ast-stop/v1", "head": head, "paths": blobs,
+    scripts/repin.py:803 [network]     """The agent socket the login session would hand to any process, or None."""
+    scripts/repin.py:804 [process-start]     r = subprocess.run([LAUNCHCTL, "getenv", "SSH_AUTH_SOCK"], capture_output=True, text=True,
+    scripts/repin.py:805 [process-start]                        stdin=subprocess.DEVNULL, env={"PATH": CHILD_PATH}, check=False)
+    scripts/repin.py:812 [process-start]     kw.setdefault("stdin", subprocess.DEVNULL)
+    scripts/repin.py:813 [process-start]     r = subprocess.run(argv, capture_output=True, text=True, check=False, **kw)
+    scripts/repin.py:998 [file-write]         paths[0].unlink()
+    scripts/repin.py:1059 [file-write]     os.replace(tmp, Path(cdir) / "ceremony-record.txt")
+    scripts/repin.py:1144 [file-write]     roster.write_bytes((ctx["ext"] / ROSTER_REL).read_bytes())
+    scripts/repin.py:1213 [process-start]     proc = subprocess.Popen(argv, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+    scripts/repin.py:1214 [process-start]                             stderr=subprocess.STDOUT)
+    scripts/repin.py:1251 [network]             f"Publishing is yours; this tool never pushes:\x5cn  git -C {d(str(ctx['repo']))} push --atomic "
+    scripts/repin.py:1302 [file-write]         shutil.rmtree(tmp, ignore_errors=True)
+    scripts/repin.py:1304 [file-write]             shutil.rmtree(sys.pycache_prefix, ignore_errors=True)
+
+  listed, not line-scanned as text (1):
+    bootstrap/reanchor.sh  mode 100755
+  not line-scanned: frozen, 43
+  not line-scanned: outside-coverage, 254
+
+  scan digest      4dd3e815a4f549a37101555a4dcf502eaa16f7d06374ddb794c99ee321c346e7
+  anchored scan    not computed here: the report says a candidate checker made this scan. Run E7 and compare its digest with this one.
+
+  signatures over the range:
+    good                     0
+    other                    0
+    total                    470
+    unsigned                 470
+
+== your answers, yes or no ==
+  Y1  [yes/no]  The record says its author wrote nothing in this range.
+                (a statement; you cannot check it)
+  Y2  [yes/no]  The gate-file changes listed above are the ones the plan names.
+  Y3  [yes/no]  Every scan hit above has a one-line plain explanation in the record.
+  Y4  [yes/no]  Every scanner and the certifying run passed, or each failure
+                is named in an earlier allowance.
+  Y5  [yes/no]  This is your own machine and your signing key is not loaded.

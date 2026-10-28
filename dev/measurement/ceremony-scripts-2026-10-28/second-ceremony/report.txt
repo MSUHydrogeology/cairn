@@ -1,0 +1,92 @@
+== launcher: candidate resolved and closure verified ==
+  candidate    5267f3639d6ce5a86db4c7d32e0d23d034d1e7d6
+  provenance   repin packet
+  artifact     bootstrap/reanchor.sh
+  manifest     /private/var/folders/z7/ctp79pf56gqcq2t5r5t1kslr0000gn/T/tmp.HjFSmP18g4/review-manifest.txt
+  mode         steady state -- the authority closure is identical
+               at the anchor and the candidate
+
+== what you are authorizing ==
+
+  candidate id     5267f3639d6ce5a86db4c7d32e0d23d034d1e7d6
+  anchor           2433453cbb19b33e9278d05cead25eb50ebc7f43
+  branch           refs/heads/0.5-dev
+  expected old     5267f3639d6ce5a86db4c7d32e0d23d034d1e7d6
+  manifest sha256  3e2cfc850709a6e7cf6db24b9dc66c9e223f10f61c7b2a982fc31fe1d6009064
+  package sha256   f1c350a7e77e7715e53c4ba21868ec98d090381ee9a0e7364fcb9531f72f1611
+
+  allowed_signers fingerprints (compare yours with ssh-keygen -lf):
+    anchored roster (1):
+      kendal30@msu.edu ssh-ed25519 SHA256:8R549gtP0SJPaCWlQlausCtAbRBquXCIhbM6395ESsM
+    candidate roster (1):
+      kendal30@msu.edu ssh-ed25519 SHA256:8R549gtP0SJPaCWlQlausCtAbRBquXCIhbM6395ESsM
+    roster unchanged
+
+  tools this ceremony runs, from your values file (compare each with readlink -f of command -v):
+    env      /usr/bin/env
+    git      /opt/homebrew/Cellar/git/2.53.0/bin/git
+    python   /Users/kendal30/conda_envs/lhm/bin/python3.13
+    mktemp   /usr/bin/mktemp
+    mkdir    /bin/mkdir
+    shasum   /usr/bin/shasum
+    sort     /usr/bin/sort
+    cat      /bin/cat
+
+  changed paths by class:
+    cascade-mutable          1
+    frozen                   1
+    manifest-artifact        0
+    outside-coverage         4
+    phase-mutable            0
+  changed paths by role:
+    decides                  0
+    pinned                   1
+    other                    5
+
+  pinned (1):
+    modified 100644 frozen           bootstrap/tests/fixtures/scaffold_ast_known_new.json
+
+  other (5):
+    modified 100644 outside-coverage CHANGELOG.md
+    modified 100644 cascade-mutable  bootstrap/tests/fixtures/scaffold_ast_baseline.json
+    modified 100644 outside-coverage dev/PLANNING.md
+    modified 100644 outside-coverage dev/ceremony-record.md
+    modified 100644 outside-coverage dev/plans/archive/ceremony-without-external-review.md
+
+  line scan: added lines in the paths that decide what runs, in the sensitive roster and in new files under scripts/ and bootstrap/
+    what this finds: an added call, write, command or compiled file that matches a fixed pattern list.
+    what it does not: a harmful change that matches no pattern, or a check that was removed.
+    scanned paths: 0
+    process-start  0 hit(s)
+    network        0 hit(s)
+    dynamic-code   0 hit(s)
+    shell-true     0 hit(s)
+    file-write     0 hit(s)
+    nosec          0 hit(s)
+    shell-command  0 hit(s)
+    compiled-file  0 hit(s)
+
+  every scan hit (0), none cut:
+
+  listed, not line-scanned as text (0):
+  not line-scanned: cascade-mutable, 1
+  not line-scanned: frozen, 1
+  not line-scanned: outside-coverage, 4
+
+  scan digest      dbac70a6980522636d511a551b9c9860b8c030b8a1f1a63a093201ecbe0c46f6
+  anchored scan    the report SAYS the anchor own checker made this scan; only your E7 command tests that. E7 binds this digest, not the hits listed above.
+
+  signatures over the range:
+    good                     0
+    other                    0
+    total                    4
+    unsigned                 4
+
+== your answers, yes or no ==
+  Y1  [yes/no]  The record says its author wrote nothing in this range.
+                (a statement; you cannot check it)
+  Y2  [yes/no]  The gate-file changes listed above are the ones the plan names.
+  Y3  [yes/no]  Every scan hit above has a one-line plain explanation in the record.
+  Y4  [yes/no]  Every scanner and the certifying run passed, or each failure
+                is named in an earlier allowance.
+  Y5  [yes/no]  This is your own machine and your signing key is not loaded.
