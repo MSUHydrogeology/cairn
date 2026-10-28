@@ -64,10 +64,10 @@
     "type": "Assign"
   },
   "Assign:_CORE_MAPPINGS": {
-    "digest": "bfb57242f0ce9125",
+    "digest": "372c01231f7f676b",
     "span": [
-      165,
-      205
+      534,
+      571
     ],
     "type": "AnnAssign"
   },
@@ -144,10 +144,10 @@
     "type": "AnnAssign"
   },
   "Assign:_KIND_DISPLAY_LABEL": {
-    "digest": "db5814c837edd305",
+    "digest": "3257e6b4904ee202",
     "span": [
-      165,
-      172
+      364,
+      376
     ],
     "type": "Assign"
   },
@@ -260,38 +260,6 @@
     "span": [
       2019,
       2019
-    ],
-    "type": "Assign"
-  },
-  "Assign:_ONBOARDING_HELPER_DST_REL": {
-    "digest": "37e6235a189f9fd2",
-    "span": [
-      1997,
-      1997
-    ],
-    "type": "Assign"
-  },
-  "Assign:_ONBOARDING_HELPER_SRC_REL": {
-    "digest": "2470e945219cbb67",
-    "span": [
-      1996,
-      1996
-    ],
-    "type": "Assign"
-  },
-  "Assign:_ONBOARDING_LOG_HEADER": {
-    "digest": "733521829d3cffe6",
-    "span": [
-      2005,
-      2011
-    ],
-    "type": "Assign"
-  },
-  "Assign:_ONBOARDING_LOG_REL": {
-    "digest": "5179a5be4f19e422",
-    "span": [
-      2001,
-      2001
     ],
     "type": "Assign"
   },
@@ -520,10 +488,10 @@
     "type": "Expr"
   },
   "FunctionDef:_apply_upgrade": {
-    "digest": "f05f1ee7ad8c58fe",
+    "digest": "ec7f3bb7c8027f96",
     "span": [
-      1788,
-      2036
+      2876,
+      3186
     ],
     "type": "FunctionDef"
   },
@@ -552,10 +520,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_behind_by_n": {
-    "digest": "fc1e3d670ff82522",
+    "digest": "fabe0c18a9b28fc7",
     "span": [
-      2608,
-      2638
+      205,
+      245
     ],
     "type": "FunctionDef"
   },
@@ -624,34 +592,34 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_finalize_lockfile": {
-    "digest": "4966e1fa55574461",
+    "digest": "fc47876a44184a2d",
     "span": [
-      1592,
-      1714
+      2224,
+      2418
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_init_lock": {
-    "digest": "e630648f70117ff9",
+    "digest": "22588b85cd4a9db6",
     "span": [
-      1115,
-      1224
+      1475,
+      1602
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_compute_upgrade": {
-    "digest": "a98e65843a1c67be",
+    "digest": "35c892fe124d97d1",
     "span": [
-      320,
-      660
+      620,
+      933
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_dirty_tracked_paths": {
-    "digest": "af3a11ba21593ba9",
+    "digest": "faffa3574e728e83",
     "span": [
-      3943,
-      3991
+      2619,
+      2723
     ],
     "type": "FunctionDef"
   },
@@ -760,10 +728,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_print_upgrade_report": {
-    "digest": "5371f0b39845052c",
+    "digest": "6728a2137b80fd5a",
     "span": [
-      3337,
-      3393
+      953,
+      1021
     ],
     "type": "FunctionDef"
   },
@@ -776,10 +744,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_render_onboarding_slot": {
-    "digest": "b96b1635128618d9",
+    "digest": "71a9c13997ec8898",
     "span": [
-      1951,
-      1965
+      1110,
+      1119
     ],
     "type": "FunctionDef"
   },
@@ -792,10 +760,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_resolve_vendor_wrapper": {
-    "digest": "e47ea5c98327755f",
+    "digest": "b9f776b513d56519",
     "span": [
-      3517,
-      3549
+      1282,
+      1319
     ],
     "type": "FunctionDef"
   },
@@ -808,10 +776,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_self_heal_profile_config": {
-    "digest": "1f5f7bcbcf3140b7",
+    "digest": "cc1b893fec3b03ae",
     "span": [
-      4214,
-      4258
+      3196,
+      3260
     ],
     "type": "FunctionDef"
   },
@@ -912,10 +880,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_write_init_lock_profile_template": {
-    "digest": "d00b9cf6359ead3d",
+    "digest": "af62cc9d23d978a3",
     "span": [
-      3650,
-      3688
+      1429,
+      1472
     ],
     "type": "FunctionDef"
   },
@@ -936,10 +904,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_writeset_dirty_collisions": {
-    "digest": "cced7b25e05b9c3b",
+    "digest": "cff15d4c2deb4a9e",
     "span": [
-      3994,
-      4004
+      2726,
+      2736
     ],
     "type": "FunctionDef"
   },
@@ -992,10 +960,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:cmd_upgrade": {
-    "digest": "e334138dcc0745aa",
+    "digest": "9362561c3ba3fc0d",
     "span": [
-      2243,
-      2490
+      3263,
+      3637
     ],
     "type": "FunctionDef"
   },
@@ -1104,10 +1072,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:install_manifest": {
-    "digest": "513431790a3ea65a",
+    "digest": "a219cbb56dff131e",
     "span": [
-      2396,
-      2419
+      1533,
+      1567
     ],
     "type": "FunctionDef"
   },
@@ -1120,10 +1088,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:install_onboarding": {
-    "digest": "3ce57ecdc058cbcf",
+    "digest": "62270884cb7691d3",
     "span": [
-      951,
-      1173
+      1181,
+      1295
     ],
     "type": "FunctionDef"
   },
@@ -1160,18 +1128,18 @@
     "type": "FunctionDef"
   },
   "FunctionDef:main": {
-    "digest": "0270e7f38e594156",
+    "digest": "0e7fd61ed751de18",
     "span": [
       189,
-      754
+      782
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:merge_file": {
-    "digest": "3b32084ea3739ba6",
+    "digest": "bc30f07e009b71ae",
     "span": [
-      2995,
-      3057
+      176,
+      263
     ],
     "type": "FunctionDef"
   },
@@ -1200,10 +1168,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:print_report": {
-    "digest": "19c50962a130a8e8",
+    "digest": "f1b12c1404935cf6",
     "span": [
-      1235,
-      1313
+      1395,
+      1526
     ],
     "type": "FunctionDef"
   },
@@ -1288,10 +1256,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:write_install_lockfile": {
-    "digest": "88db57e796412133",
+    "digest": "014a76282a5efabf",
     "span": [
-      1478,
-      1650
+      1679,
+      1890
     ],
     "type": "FunctionDef"
   },
