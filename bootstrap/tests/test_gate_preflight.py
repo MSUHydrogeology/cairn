@@ -122,7 +122,7 @@ class TestFrozenSurfaceIsIndexValidated:
     membership must be checked against the index, not against `git status`."""
 
     def _surface_report(self, repo: Path, monkeypatch, names: list[str]):
-        monkeypatch.setattr(P.G, "_frozen_files", lambda r=None: names)
+        monkeypatch.setattr(P.G, "_legacy_frozen_files", lambda r=None: names)
         report = P.Report()
         P.check_frozen_surface(report, repo=repo)
         return report
