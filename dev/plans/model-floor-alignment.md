@@ -1,7 +1,7 @@
 # Plan: Align model floors with the team roster
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-model-floor-alignment.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Align the task-based capability floors and Cairn's local model assignments while keeping review and authority safeguards.
@@ -210,3 +210,31 @@ are complete; the plan is ready to implement.
 **Plan-specific acceptance commands**: the four mapped test files and five named gates above ran against the tested commit. The test controls reject wrong task/lane assignments; module, onboarding and solo-install tests read the installed guidance paths. The mapping test checks all nine exact family/tier assignments and their dates and sources.
 
 **Known omissions**: no full suite was run; the next certifying run owns that evidence and certification remains pending. Boundary C independent falsification is still owed. No model-capability benchmarks were run; the dated local rows are Maintainer assignments by family name. The existing install notice still seeds one placeholder row and describes replacing it with one row per tier; the module, bootstrap guide and both onboarding presets explain how to add further family rows manually under the existing schema. The mapping checker validates shape and placeholders, not assignment authority.
+
+
+## Code review -- Codex gpt-6.1-terra (Reviewer) -- 2026-10-28
+
+Reviewed commit: 676b7c0e1858d91fc790e719a2a136230db4dfaf
+Target: C1 in 3d046bfa84bd39a7ce1163f5c3b413f49eae3674..676b7c0e1858d91fc790e719a2a136230db4dfaf; Boundary B record 43a45e27
+Prior findings: none
+
+**Findings**: none.
+
+**Foundations**
+
+1. **Does it do what it claims?** The task floors, safeguards and local assignments align; the installed paths retain manual additional rows -- `dev/modules/model-selection.md`, `dev/.cairn/model-selection-mapping.yml`, and ledger below.
+2. **Best alternative.** Reusing the existing schema and installation paths avoids an engine change while delivering the accepted manual path -- `bootstrap/_scaffold/install.py` and `bootstrap/tests/test_onboarding_seed_roster.py`.
+3. **What would show it wrong?** A wrong assignment, lost copy or broken installed path that survives its check would challenge the delivery -- see falsification ledger below.
+
+**Falsification ledger.** On separate fresh detached copies of the reviewed commit, Python 3.13.13 ran the same 10 targeted cases; the unmodified control passed 10/10. Each of these mutants was killed (at least one test failed):
+
+| Set enumerated from the tree | Single mutation per separate copy | Result for each member |
+|---|---|---|
+| Local mapping rows: Opus, Sol, Argon, Sonnet, Terra, Pro, Haiku, Luna, Flash | Change that family's name | Opus killed; Sol killed; Argon killed; Sonnet killed; Terra killed; Pro killed; Haiku killed; Luna killed; Flash killed |
+| Rule/guidance sites: `AGENTS.md`, `templates/core/AGENTS.md`, `doctrine/roles.md`, `dev/modules/model-selection.md`, `templates/modules/team-gated/model-selection.md`, `templates/onboarding/collaborative-team.md`, `templates/onboarding/high-rigor-legacy.md`, `bootstrap/BOOTSTRAP.md` | Reverse task/lane or review floor, or remove extra-row instruction at that site | Own AGENTS killed; shipped AGENTS killed; roles killed; own module killed; shipped module killed; collaborative killed; legacy killed; bootstrap killed |
+
+The control and mutants used `TestThisRepositorysMappingAssignments`, the two AGENTS copy cases, `test_proposal_authoring_is_medium_and_proposal_review_stays_high`, `TestShippedWordsArePinnedByExactString::test_waiting_line_in_both_presets`, `TestModelMappingWaitingSeed::test_seed_renders_and_board_lists_it`, `TestFamilyNotVersionReachesEverySite::test_installed_module_explains_extra_family_rows`, and `TestAcceptanceChecklistNamesTheMappingCheck`. The onboarding and module cases exercise real scaffold installs. Separately, interactive capture, the nine-row checker with and without PyYAML, and the solo install passed 3/3. The noninteractive install notice still says one row per tier: it describes the initial stub; interactive capture loops once per tier and the accepted plan explicitly leaves the installer unchanged. The module and both installed onboarding paths supply the manual extension.
+
+The Boundary B record identifies the committed bytes, canonical interpreter, clean states, mapped commands, outcomes and omissions; full mode and pending certification are appropriate. The range also contains unrelated plan-review response commit `7f12a3f6`; C1 itself is `676b7c0e`. No fence or deviation became the next move in this range (`git log -p 3d046bfa..676b7c0e -- dev/plans/model-floor-alignment.md`), so no Waiting line was owed. Four changed test files are frozen by `bootstrap/tests/_gate_manifest.py::_frozen_files`; their existing re-anchor ceremony remains owed.
+
+The first dated low-tier sample is this implementation and this review: no missed criterion or floor-related defect found. **Covered:** claims and scope (C1 and Decision); public path (ledger); design and silence (checker tests and human authorization in module); drift (copy mutants); lifecycle and satisfier (plan and Waiting check); reuse and domain limits (existing schema, no capability benchmark). **Not covered / low confidence:** no model benchmarking, hostile authorization exercise, full suite or re-anchor; certification remains pending.
