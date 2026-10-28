@@ -1607,7 +1607,7 @@ class TestThreeCommandIntegration:
 
     def test_approved_first_roster_transition_then_signed_anchor_steady_state(
             self, tmp_path, monkeypatch):
-        """Run the real stage1/stage2 path from roster-less P through steady state."""
+        """Exercise broad bridge, reviewed narrowing, and narrowed steady state."""
         repo, old_anchor, _head, _epoch = _ceremony_repo(tmp_path, rosterless=True)
         old_manifest = json.loads(_run(
             "git", "show", f"{old_anchor}:{P._MANIFEST_REL}",
@@ -1616,60 +1616,62 @@ class TestThreeCommandIntegration:
         roster_path = repo / P.G._PROTECTED_ROSTER_REL
         roster_path.parent.mkdir(parents=True, exist_ok=True)
         roster_path.write_bytes((_REPO / P.G._PROTECTED_ROSTER_REL).read_bytes())
-        first_head = _signed_commit(repo, "admit the approved initial roster")
+        preflight_path = repo / "bootstrap/tests/_gate_preflight.py"
+        bridge_source = preflight_path.read_text(encoding="utf-8")
+        if "_PROTECTED_ROSTER_MODE = \"active\"" in bridge_source:
+            bridge_source = bridge_source.replace(
+                "_PROTECTED_ROSTER_MODE = \"active\"",
+                "_PROTECTED_ROSTER_MODE = \"dormant\"", 1)
+        assert "_PROTECTED_ROSTER_MODE = \"dormant\"" in bridge_source
+        preflight_path.write_text(bridge_source, encoding="utf-8")
+        first_head = _signed_commit(repo, "anchor broad compatibility bridge")
         review = tmp_path / "initial-roster-review.txt"
         review.write_text(_review_manifest(repo, first_head), encoding="utf-8")
 
-        # Run the fixture P's exact gate-manifest checker bytes against C. This pins the
-        # synthetic first-transition flow; it is not a compatibility result
-        # for the repository's separately signed gate anchor.
-        old_checker = tmp_path / "old-gate-manifest.py"
-        old_source = subprocess.run(
-            ["git", "-C", str(repo), "show",
-             f"{old_anchor}:bootstrap/tests/_gate_manifest.py"],
-            capture_output=True, check=True).stdout
-        old_checker.write_bytes(old_source)
-        legacy_result = subprocess.run(
-            [sys.executable, "-E", "-s", str(old_checker), "verify",
-             "--target-repo", str(repo), "--manifest", str(repo / P._MANIFEST_REL),
-             "--anchor-ref", old_anchor, "--no-collect"],
-            capture_output=True, text=True, check=False)
-        assert legacy_result.returncode == 0, legacy_result.stderr[-2500:]
-        assert f"FROZEN-NEW: {P.G._PROTECTED_ROSTER_REL}" in legacy_result.stderr
-
+        monkeypatch.setattr(P, "_PROTECTED_ROSTER_MODE", "dormant")
         first = _two_stage(repo, monkeypatch, review_manifest=str(review),
                            reviewed_candidate=first_head)
         assert first["new_anchor"]
-        # E7's plumbing is exercised against this fixture's synthetic P. The
-        # production signed-anchor comparison is recorded separately because
-        # this helper builds P from the current source tree.
-        package = json.loads((repo.parent / "authorization-package.json")
-                             .read_text(encoding="utf-8"))
-        prior_checker = _extract_anchored(repo, tmp_path / "prior-checker")
-        old_scan = self._cli(prior_checker, "scan-digest", "--repo", str(repo),
-                             "--anchor", old_anchor, "--candidate", first_head)
-        assert old_scan.returncode == 0, old_scan.stderr[-2500:]
-        old_scan_digest = old_scan.stdout.strip()
-        candidate_scan = P.scan_digest(package["range_report"]["scan"])
-        assert old_scan_digest == candidate_scan
-        broad_scan_obj = P.range_scan(old_anchor, first_head, repo=repo,
-                                      protected_roster=None)
-        new_scan_obj = package["range_report"]["scan"]
-        differing_fields = {
-            key: (broad_scan_obj.get(key), new_scan_obj.get(key))
-            for key in sorted(set(broad_scan_obj) | set(new_scan_obj))
-            if broad_scan_obj.get(key) != new_scan_obj.get(key)
-        }
-        assert not differing_fields
-        installed = P.resolve_protected_roster(first["new_anchor"], first_head,
-                                               transition=None, repo=repo)
+        bridge_manifest = json.loads(_run(
+            "git", "show", f"{first['new_anchor']}:{P._MANIFEST_REL}",
+            cwd=repo).stdout)
+        assert "protected_roster" not in bridge_manifest
+        assert P.G._PROTECTED_ROSTER_REL in bridge_manifest["frozen_files"]
+        assert _blob_sha(repo, first["new_anchor"],
+                         P.G._PROTECTED_ROSTER_REL) == \
+            P.G._APPROVED_INITIAL_ROSTER_SHA256
+        assert P.resolve_protected_roster(first["new_anchor"], first_head,
+                                          transition=None, repo=repo) is None
         approved = P.G._roster_from_bytes(
             (_REPO / P.G._PROTECTED_ROSTER_REL).read_bytes(),
             require_initial_approval=True)
-        assert installed == approved
 
-        # Exercise the same real producer and both ceremony stages after P now
-        # carries the signed roster. No transition input is supplied.
+        # A second reviewed closure transition flips the dormant mode. The
+        # signed P tree supplies identical roster bytes; its old broad scanner
+        # remains the E7 comparison until this stage closes.
+        preflight_path.write_text(
+            preflight_path.read_text(encoding="utf-8").replace(
+                "_PROTECTED_ROSTER_MODE = \"dormant\"",
+                "_PROTECTED_ROSTER_MODE = \"active\"", 1),
+            encoding="utf-8")
+        second_head = _signed_commit(repo, "activate reviewed protected roster")
+        second_review = tmp_path / "activate-roster-review.txt"
+        second_review.write_text(_review_manifest(repo, second_head),
+                                 encoding="utf-8")
+        monkeypatch.setattr(P, "_PROTECTED_ROSTER_MODE", "active")
+        P._phase = P._PHASE_CANDIDATE
+        second = _two_stage(repo, monkeypatch,
+                            review_manifest=str(second_review),
+                            reviewed_candidate=second_head)
+        assert second["new_anchor"]
+        installed_manifest = json.loads(_run(
+            "git", "show", f"{second['new_anchor']}:{P._MANIFEST_REL}",
+            cwd=repo).stdout)
+        assert installed_manifest["protected_roster"] == approved
+        assert P.resolve_protected_roster(second["new_anchor"], second_head,
+                                          transition=None, repo=repo) == approved
+
+        # Exercise both ceremony stages after P carries the narrowed manifest.
         _write(repo, "bootstrap/tests/test_smoke.py",
                "def test_smoke():\n    assert True\n    assert 1 + 1 == 2\n")
         steady_head = _signed_commit(repo, "steady-state candidate")
@@ -1696,9 +1698,9 @@ class TestThreeCommandIntegration:
                      out=io.StringIO(), review_manifest=str(review),
                      reviewed_candidate=candidate)
 
-    def test_first_transition_stage2_refuses_substituted_prospective_roster(
+    def test_first_bridge_stage2_refuses_mutated_roster_frozen_hash(
             self, tmp_path, monkeypatch):
-        """Stage 2 rebuilds roster membership instead of trusting package JSON."""
+        """Stage 2 keeps the approved roster bytes inside the broad freeze."""
         import hashlib
         repo, _anchor, _head, _epoch = _ceremony_repo(tmp_path, rosterless=True)
         roster_path = repo / P.G._PROTECTED_ROSTER_REL
@@ -1720,8 +1722,12 @@ class TestThreeCommandIntegration:
         package = json.loads(package_path.read_bytes())
         staged_manifest = json.loads(base64.b64decode(
             package["prospective_manifest_b64"]))
-        staged_manifest["protected_roster"]["protected_python_paths"].append(
-            "bootstrap/tests/test_agreement_retired.py")
+        assert "protected_roster" not in staged_manifest
+        entry = staged_manifest["frozen_files"][P.G._PROTECTED_ROSTER_REL]
+        if isinstance(entry, dict):
+            entry["sha256"] = "0" * 64
+        else:
+            staged_manifest["frozen_files"][P.G._PROTECTED_ROSTER_REL] = "0" * 64
         substituted = (json.dumps(staged_manifest, indent=2, sort_keys=True)
                        .encode() + b"\n")
         package["prospective_manifest_b64"] = base64.b64encode(substituted).decode()

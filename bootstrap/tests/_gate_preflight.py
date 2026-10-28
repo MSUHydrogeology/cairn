@@ -56,6 +56,10 @@ except ImportError:  # script import (the anchored invocation)
 
 _REPO = Path(__file__).resolve().parents[2]
 
+# The bridge checkpoint ships the approved roster while keeping the old broad
+# policy. The reviewed second transition changes this value to ``active``.
+_PROTECTED_ROSTER_MODE = "dormant"
+
 _ANCHOR_REF = "refs/cairn/gate-anchor"
 
 #: The one reflog reason every gate-anchor transaction writes, on **both** refs.
@@ -1630,8 +1634,40 @@ def range_review_report(anchor: str, head: str, *, branch: str,
     changed, classes, decides = _changed_with_classes(
         anchor_tree, candidate_tree, frozen, cascade, phase, manifest_rel,
         repo=repo)
-    scan, facts = _scan_range(anchor_tree, candidate_tree, changed, classes,
-                              decides, repo=repo)
+    # E7's scanner belongs to the old signed anchor. During the two reviewed
+    # compatibility transitions its manifest still has the broad legacy
+    # policy, even though the prospective manifest may be narrowed. Preserve
+    # that exact old scan for E7 while the path list below reports the
+    # prospective policy's classifications.
+    scan_roster = protected_roster
+    if protected_roster is not None:
+        old_blob = _blob_at(anchor, manifest_rel, repo=repo)
+        try:
+            old_manifest = json.loads(old_blob.decode("utf-8"))
+        except (AttributeError, UnicodeError, json.JSONDecodeError):
+            raise PreflightError("the prior manifest is malformed during scan policy resolution") from None
+        if "protected_roster" not in old_manifest:
+            scan_roster = None
+        elif old_manifest["protected_roster"] is None:
+            raise PreflightError("the prior manifest has a malformed protected roster")
+    scan_frozen = _frozen_policy(anchor, head, repo=repo,
+                                 protected_roster=scan_roster)
+    scan_changed, scan_classes, scan_decides = _changed_with_classes(
+        anchor_tree, candidate_tree, scan_frozen, cascade, phase, manifest_rel,
+        repo=repo)
+    if scan_changed != changed:
+        raise PreflightError("scan and path-report ranges disagree")
+    # The first compatibility bridge adds the approved roster as a closure
+    # member. The pre-bridge signed checker did not know that path as a
+    # decision input: its broad fixture glob listed the new JSON as frozen,
+    # but did not line-scan it. Preserve that exact old E7 behavior for this
+    # one initial admission. The raw roster is still bound by the revalidated
+    # transition and by its full-file frozen hash; it is shown in `paths`.
+    if _blob_at(anchor, G._PROTECTED_ROSTER_REL, repo=repo) is None:
+        scan_decides = frozenset(set(scan_decides)
+                                 - {G._PROTECTED_ROSTER_REL})
+    scan, facts = _scan_range(anchor_tree, candidate_tree, scan_changed,
+                              scan_classes, scan_decides, repo=repo)
 
     entries: list[dict] = []
     for raw in changed:
@@ -1959,6 +1995,37 @@ def resolve_protected_roster(anchor: str, candidate: str, *,
         if "protected_roster" in old_manifest:
             raise PreflightError(
                 "the previous anchor's protected roster is present but malformed")
+        anchor_roster_blob = _blob_at(anchor, G._PROTECTED_ROSTER_REL, repo=repo)
+        if anchor_roster_blob is not None:
+            # The compatibility checkpoint deliberately keeps the old broad
+            # manifest schema. Its signed tree nevertheless carries the exact
+            # reviewed roster as a frozen fixture. A later reviewed transition
+            # may activate it; steady state without that transition remains
+            # broad until the narrowed manifest itself is anchored.
+            anchor_digest = hashlib.sha256(anchor_roster_blob).hexdigest()
+            if anchor_digest != G._APPROVED_INITIAL_ROSTER_SHA256:
+                raise PreflightError(
+                    "the compatibility anchor's roster bytes are not the exact "
+                    "approved initial roster")
+            anchor_roster = G._roster_from_bytes(
+                anchor_roster_blob, require_initial_approval=True)
+            if transition is None:
+                return None
+            if _PROTECTED_ROSTER_MODE != "active":
+                raise PreflightError(
+                    "the protected roster remains dormant in this checker; "
+                    "the reviewed second transition must activate it")
+            candidate_blob = _blob_at(candidate, G._PROTECTED_ROSTER_REL,
+                                      repo=repo)
+            if candidate_blob != anchor_roster_blob:
+                raise PreflightError(
+                    "candidate changed the compatibility anchor's roster bytes")
+            reviewed_sha = transition.get("members", {}).get(
+                G._PROTECTED_ROSTER_REL)
+            if reviewed_sha != anchor_digest:
+                raise PreflightError(
+                    "reviewed transition does not bind the compatibility roster")
+            return anchor_roster
         if transition is None:
             return None  # a verified roster-less manifest keeps broad legacy policy
         candidate_blob = _blob_at(candidate, G._PROTECTED_ROSTER_REL, repo=repo)
@@ -1970,12 +2037,20 @@ def resolve_protected_roster(anchor: str, candidate: str, *,
         approved = transition.get("members", {}).get(G._PROTECTED_ROSTER_REL)
         if approved != candidate_sha:
             raise PreflightError("reviewed transition does not bind the approved roster bytes")
-        return G._roster_from_bytes(candidate_blob, require_initial_approval=True)
+        # First transition is the compatibility checkpoint: admit and freeze
+        # the exact roster blob while retaining the old broad policy/output.
+        # Narrowing is activated only by a second reviewed transition from an
+        # anchor whose signed tree already contains these exact bytes.
+        G._roster_from_bytes(candidate_blob, require_initial_approval=True)
+        return None
 
     if (not isinstance(old_roster, dict)
             or old_roster.get("path") != G._PROTECTED_ROSTER_REL
             or not isinstance(old_roster.get("sha256"), str)):
         raise PreflightError("the previous anchor's protected roster is malformed")
+    if _PROTECTED_ROSTER_MODE != "active":
+        raise PreflightError(
+            "the prior anchor has narrowed policy but this checker is dormant")
     candidate_blob = _blob_at(candidate, G._PROTECTED_ROSTER_REL, repo=repo)
     if candidate_blob is None:
         raise PreflightError("candidate is missing the protected roster")
@@ -2528,7 +2603,8 @@ class RangeReportDrift(PreflightError):
 def rederive_and_bind(anchor: str, head: str, *, branch: str,
                       expected_old: str, confirmed_digest: str,
                       repo: Path = _REPO,
-                      prospective_manifest: bytes | None = None) -> dict:
+                      prospective_manifest: bytes | None = None,
+                      protected_roster: dict | None = None) -> dict:
     """Re-derive the report **in memory** and refuse any drift.
 
     R1-A: `apply` neither reads nor trusts a handoff file.  The report the
@@ -2542,7 +2618,8 @@ def rederive_and_bind(anchor: str, head: str, *, branch: str,
     """
     fresh = range_review_report(anchor, head, branch=branch,
                                 expected_old=expected_old, repo=repo,
-                                prospective_manifest=prospective_manifest)
+                                prospective_manifest=prospective_manifest,
+                                protected_roster=protected_roster)
     actual = range_report_digest(fresh)
     if actual != confirmed_digest:
         raise RangeReportDrift(
@@ -3004,6 +3081,7 @@ def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
                   branch: str | None = None,
                   expected_old: str | None = None,
                   prospective_manifest: bytes | None = None,
+                  protected_roster: dict | None = None,
                   admitted_authority: dict | None = None,
                   review_provenance: str | None = None,
                   review_digest: str | None = None) -> dict:
@@ -3039,7 +3117,8 @@ def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
     the_report = (range_review_report(
                       report.facts["anchor"], report.facts["head"],
                       branch=branch, expected_old=expected_old, repo=repo,
-                      prospective_manifest=prospective_manifest)
+                      prospective_manifest=prospective_manifest,
+                      protected_roster=protected_roster)
                   if branch and expected_old else None)
     report_digest = range_report_digest(the_report) if the_report else None
     candidate_tree = (_resolve_tree(report.facts["head"], repo=repo)
@@ -3686,6 +3765,7 @@ def apply_now(*, repo: Path = _REPO,
                          manifest_sha256=committed_sha256,
                          branch=branch, expected_old=branch_old,
                          prospective_manifest=manifest_bytes,
+                         protected_roster=protected_roster,
                          # The DURABLE RECORD comes from the
                          # revalidated transition, never from the package.
                          #
@@ -3765,7 +3845,8 @@ def apply_now(*, repo: Path = _REPO,
     rederive_and_bind(report.facts["anchor"], report.facts["head"],
                       branch=branch, expected_old=branch_old,
                       confirmed_digest=plan["range_report_digest"], repo=repo,
-                      prospective_manifest=manifest_bytes)
+                      prospective_manifest=manifest_bytes,
+                      protected_roster=protected_roster)
 
     verify_message_binds_report(
         plan["message"], digest=plan["range_report_digest"],
