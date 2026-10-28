@@ -126,6 +126,9 @@ def bed(tmp_path):
     roster = checkout / "dev" / ".cairn" / "allowed_signers"
     roster.parent.mkdir(parents=True, exist_ok=True)
     roster.write_text(f"reanchor-test {pub[0]} {pub[1]}\n", encoding="utf-8")
+    manifest = checkout / "bootstrap/tests/fixtures/gate_manifest.json"
+    manifest.parent.mkdir(parents=True, exist_ok=True)
+    manifest.write_text("{}\n", encoding="utf-8")
     subprocess.run(["git", "-C", str(checkout), "add", "-A"], check=True,
                    capture_output=True)
     subprocess.run(["git", "-C", str(checkout), "-c", "user.email=t@t",
@@ -1014,7 +1017,7 @@ class TestShowReport:
                 check=True, capture_output=True, text=True).stdout.strip()
 
         anchor = git("rev-parse", "HEAD")
-        (checkout / "bootstrap/tests").mkdir(parents=True)
+        (checkout / "bootstrap/tests").mkdir(parents=True, exist_ok=True)
         (checkout / "bootstrap/tests/_oracle.py").write_text(
             "a = 1\n" + ("import subprocess\n" if plant else ""))
         (checkout / "scripts").mkdir()
@@ -1331,6 +1334,7 @@ CLOSURE = (
     "bootstrap/tests/_oracle.py",
     "bootstrap/tests/_oracle_activation.py",
     "bootstrap/tests/_oracle_trust.py",
+    "bootstrap/tests/fixtures/protected_test_roster.json",
     "dev/.cairn/allowed_signers",
 )
 
