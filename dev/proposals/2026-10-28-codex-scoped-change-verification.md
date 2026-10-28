@@ -1,8 +1,7 @@
 # Verify a change at its scope; certify the tree at integration points
 
 **Author**: Codex gpt-6-sol (Proposal)
-**Status**: awaiting-decision
-**Waiting on Maintainer**: accept verification separation
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
@@ -434,3 +433,11 @@ above. The opening's universal final-commit SHA and reviewed mapping are
 replaced by the trivial-lane record; deferral of known unresolved dependencies
 is withdrawn. Omission rejection is reviewer judgment, not executable record
 validation.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-28
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated**:
+
+> "2. Accept as revised."
+>
+> "Go ahead and scribe my decisions, and I will pass these back to the Codex agent to oversee implementation of."
