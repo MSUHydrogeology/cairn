@@ -56,3 +56,21 @@ python3.13 -m pytest -q \
 **Coverage limit**: pending  
 
 The independent reviewer must supply their own judgments. This file does not attribute or pre-fill a review on their behalf.
+
+## Independent adjudication -- Codex gpt-6.1-terra medium -- 2026-10-28
+
+**Reviewed commit**: `e052da5c` (examples); tested implementation `69b8bc7e`.
+
+**Foundations**
+
+1. **Does the exercise work?** Yes: A reports the mapped consumer and three security nodes, while B and C omit them and cannot close their claims. -- Examples A-C; plan C2.
+2. **Best alternative.** Keep judgment by a reviewer, with concrete checks and dispositions; a field-presence parser could accept an unrun check. -- plan C2; `c2-split-execution.md` commands and outcomes.
+3. **What would show it wrong?** A missing mapped check accepted as passing, or an unresolved failed required check hidden by the union, would break the exercise. -- verdicts below; split 1 and security rerun in `c2-split-execution.md`.
+
+**Example A -- PASS for the illustrative mapped checks.** The record identifies the tested commit, clean copy, interpreter, producer selection, adopter-facing consumer, commands, counts, criteria and omissions. The split reports 2,700 collected and executed unique IDs, zero missing or extra; three initially denied security nodes are identified and reported passing on the same SHA under elevated local permissions. The cited consumer is an actual parameterized check of both operational and shipped rule copies (`bootstrap/tests/test_review_and_verification_rules_ship.py:192` at `69b8bc7e`). This accepts the example's evidence as reported, not independent reproduction or tree certification. The frozen-file ceremony remains pending and this verdict does not close that obligation or the plan.
+
+**Example B -- REJECT; open.** The 13 passing certifying-rule tests do not exercise the mapped shipped-rule consumer. Run `bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation` on the candidate commit and record its outcome before claiming that coverage. -- Example B; plan Verification.
+
+**Example C -- REJECT; open.** The 129 focused rule tests omit the two gate-preflight nodes and the no-capability security node named in Example A. Run those three mapped nodes on the candidate commit and record outcomes before claiming that security coverage. -- Example C; `c2-split-execution.md` security rerun.
+
+**Coverage**: Reviewed the committed illustrative records, split reconciliation and mapped consumer against the named commit; judged the reported outcomes, not their raw logs. Did not independently execute tests, verify every reader or ceremony, perform code falsification, or certify the tree. The pending ceremony and independent code review remain open.
