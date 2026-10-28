@@ -1,7 +1,7 @@
 # Verify a change at its scope; certify the tree at integration points
 
 **Author**: Codex gpt-6-sol (Proposal)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
@@ -301,3 +301,63 @@ The opening's final-commit SHA and reviewed mapping for every change are replace
 by the trivial-lane record above. Deferral of a known unresolved dependency is
 withdrawn; only undiscovered dependencies remain a residual risk. The proposed
 omission rejection is human adjudication, not an executable record check.
+
+## Review -- Codex gpt-6.1-sol high (Security Reviewer) -- 2026-10-28 -- SR1 closure
+
+```
+Reviewed commit: 7ab5684a0fc93ede6e338ff9a01cf1bb33f59a48
+Target: Response, Revised contract and withdrawal ledger; Security SR1 only
+Prior findings: SR1 from Security Review at 6dc67061
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised (one non-blocking clarification)
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the revised design assigns coverage
+   rejection to the independent Boundary C reviewer and separates that judgment from
+   tests of rule text. This closes SR1's evidence ambiguity. -- proposal
+   `## Revised contract`, paragraph beginning “The Boundary C reviewer rejects”.
+2. **Best alternative.** Keep the existing reviewer role and its judgment, with an
+   illustrative complete record and two omission variants. A parser could check fields
+   without establishing coverage truth; the existing design declines that claim. --
+   `doctrine/plans.md:369-375`; `dev/agent_collaboration.md:11-25`.
+3. **What would show it wrong.** Accepting either omission variant, or describing
+   a static test as proving live record rejection, would contradict the revised
+   contract. Its exercise requires recorded verdicts and missing checks, leaving
+   rejected claims open. -- proposal `## Revised contract`;
+   `bootstrap/tests/test_verification_boundaries.py:1-5`.
+
+**SR1 closed.** The response identifies the reviewer, distinguishes static obligation
+checks from record adjudication, and specifies the complete example and separate
+consumer/security-check omissions with reader verdicts. It names the author as owner
+of the trivial-lane record, where Boundary C does not exist. This satisfies SR1 at
+proposal stage; the exercise remains implementation work.
+
+**N1 — Non-blocking: retain the existing reviewer role.** My original pass used
+“human” too broadly. SR1 requires reviewer judgment rather than parser enforcement;
+it does not require a human-only review or a new Maintainer step. The response's
+“responsible human reader” can imply that extra obligation. **Satisfier:** the author's
+handoff should say “named responsible reviewer (agent or human)” and “reviewer
+judgment,” keeping the exercise within the existing implementation/review evidence.
+This corrects the actor wording without changing the security safeguard or adding a
+stage. -- `dev/agent_collaboration.md:11-25`; proposal `## Revised contract`.
+
+The withdrawal ledger replaces executable record rejection with adjudication. The
+revised contract preserves required checks, separate certification, older-plan
+obligations and ceremony commands. This closure does not reopen ordinary F1-F4 or
+claim that an implementation enforces them.
+
+The Security Review obligation is cleared. Status returns to `revising` for the
+author's handoff; this verdict is not a Decision. N1 requires no further Security pass.
+
+**Covered**: SR1's claims, check path and fail-closed design (#1-4: revised-contract
+exercise and `bootstrap/tests/test_verification_boundaries.py:1-5`); consistency,
+drift and lifecycle (#5-7: withdrawal ledger, trivial ownership and N1's cited roles);
+scope and satisfiers (#8-9: SR1 closure and N1 above).
+**Not covered / low confidence**: no source implementation, record exercise, tests or
+ceremony was run. Static tests cannot establish coverage truth; an incomplete but
+plausible mapping remains a residual risk. Ordinary findings were not reviewed again.
