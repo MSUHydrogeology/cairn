@@ -1,7 +1,7 @@
 # Plan: Verify changes at their scope
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-scoped-change-verification.md
-**Status**: implementing
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Verify each change against its affected behavior and reserve whole-tree certification for authorized integration points.
@@ -196,3 +196,28 @@ link destinations and operative targets use the dated paths.
 - `python3.13 scripts/check_cairn.py` — 184 Markdown files, no issues. `python3.13 scripts/link_check.py` — 184 Markdown files, no issues. `python3.13 scripts/quality_gate.py --sub neutrality --sub redundancy` — zero failures. `python3.13 scripts/claim_check.py` on the authored governing and plan documents — 13 checks passed.
 
 **Surface and omission disposition**: Covered operational and installed guidance, governing templates/doctrine, refusal text, the 47-file cross-family selection, all five guard nodes, and the three mapped security nodes. There is no known missing consumer or mandatory security check in this mapping. This scoped evidence does not certify the tree. Frozen-file gate-manifest/re-anchor ceremony remains pending; this record does not claim that ceremony passed. Independent C2 adjudication of the illustrative records and code review remain pending. No full suite was run.
+
+
+## Code review -- Codex gpt-6.1-terra medium -- 2026-10-28
+
+**Reviewed commit**: `26c8a055` (record and adjudication); implementation `69b8bc7e4f86fd6c669fd765a1ffe7951e9e10d9`
+**Target**: scoped verification implementation commits `89e44c78`, `0566202e`, `69b8bc7e`, and final evidence `e052da5c`.
+**Prior findings**: none
+
+**Foundations**
+
+1. **Does it do what it claims?** The six governed surfaces carry the wide-mode fence and the mapped guard detects its removal, but the plan's required ceremony remains uncompleted. -- falsification ledger; plan Verification and Implementation verification.
+2. **Best alternative.** Retain the scoped mapping and separate certification; complete the prescribed ceremony at its authorized point or revise the plan through its lifecycle before claiming completion. -- plan Verification; `AGENTS.md` Verification boundaries.
+3. **What would show it wrong?** A changed surface that loses the wide fence without its mapped test failing, or an unperformed required check treated as complete. -- falsification ledger below.
+
+**Bounding**: WIDER RUN REQUIRED -- the plan requires any applicable frozen-file ceremony and its evidence records that ceremony pending. Complete and record the applicable ceremony before acceptance, or revise the plan's contract through its lifecycle; a scoped test run cannot replace it.
+
+**F1 -- Blocking: required ceremony remains pending.** Verification requires the applicable frozen-file ceremony and the final record expressly leaves the gate-manifest/re-anchor ceremony pending. The plan's known required check therefore is not met; do not mark the plan ready to archive on the scoped evidence alone. This finding does not authorize changes to manifests or trust roots. -- plan Verification and Implementation verification; `AGENTS.md` Verification boundaries.
+
+**Falsification ledger** (Python 3.13.13, detached local clones of `69b8bc7e`):
+
+- Control: `python3.13 -m pytest -q bootstrap/tests/test_verification_boundaries.py::test_change_verification_contract_reaches_every_surface` -- 24 passed.
+- In separate fresh clones, replace the wide fence with bounded in each tree-enumerated member: `AGENTS.md`, `templates/core/AGENTS.md`, `doctrine/plans.md`, `doctrine/dual-review.md`, `dev/plans/_template.md`, `templates/core/dev/plans/_template.md`. Each mutation matched once and was killed by that targeted test (1 failed, 23 passed each).
+- Examined the final verification record and independent C2 verdict against the plan's required checks; the ceremony remains explicitly pending (F1). The initial literal mutation pattern matched no surface because lines wrap; it was discarded and the whitespace-aware control above measured each actual member.
+
+**Covered**: claims and execution (#1-2: control and mutations); completeness and refusal (#3-4: F1); consistency and drift (#5-6: six surface mutations); lifecycle, scope and satisfier (#7-9: plan Verification and F1). **Not covered / low confidence**: did not reproduce the 2,700-node selection or raw logs, execute the frozen-file ceremony, inspect every naming consumer, or certify the tree. Security Review is separate.
