@@ -221,3 +221,29 @@ link destinations and operative targets use the dated paths.
 - Examined the final verification record and independent C2 verdict against the plan's required checks; the ceremony remains explicitly pending (F1). The initial literal mutation pattern matched no surface because lines wrap; it was discarded and the whitespace-aware control above measured each actual member.
 
 **Covered**: claims and execution (#1-2: control and mutations); completeness and refusal (#3-4: F1); consistency and drift (#5-6: six surface mutations); lifecycle, scope and satisfier (#7-9: plan Verification and F1). **Not covered / low confidence**: did not reproduce the 2,700-node selection or raw logs, execute the frozen-file ceremony, inspect every naming consumer, or certify the tree. Security Review is separate.
+
+## Code review -- Codex gpt-6.1-sol high (Security Reviewer) -- 2026-10-28
+
+**Reviewed commit**: `69b8bc7e4f86fd6c669fd765a1ffe7951e9e10d9`
+**Target**: implementation `89e44c78`, `0566202e`, `69b8bc7e`; evidence `e052da5c`; independent C2 adjudication `26c8a055`.
+**Prior findings**: ordinary code F1 read at `f19f4f53`.
+**Tier**: Security Review
+**Obligation**: Security Review of governing/vendor-neutrality verification rules and preservation of required security and trust ceremonies.
+**Verdict**: REVISE -- obligation remains open for the prescribed frozen-file ceremony (ordinary F1); no additional security defect found.
+
+**Foundations**
+
+1. **Does it do what it claims?** The scoped evidence preserves required checks and separate certification, but cannot establish completion while its prescribed ceremony is pending. -- plan Verification and Implementation verification; `doctrine/plans.md`, verification boundaries.
+2. **Best alternative.** Keep the existing guard and reviewer judgment; complete the Maintainer ceremony or obtain a lifecycle revision of that contract rather than treating scoped evidence as authority to waive it. -- ordinary F1; `bootstrap/REANCHOR_RUNBOOK.md` prerequisites and stages.
+3. **What would show it wrong?** A guard bypass, acceptance of missing security evidence, or a scoped record replacing a ceremony would defeat this boundary. -- falsification ledger below.
+
+**Bounding**: WIDER RUN REQUIRED -- ordinary F1 names the outstanding frozen-file gate-manifest/re-anchor ceremony. This review authorizes neither execution nor waiver of that Maintainer gate.
+
+**Falsification ledger** (Python 3.13.13; fresh detached worktree at the reviewed implementation):
+
+- Compared the AST of `_refuse_broad_run_if_warranted` with its pre-C2 version: statements before the final refusal are identical. Executed the reviewed function with controlled sessions: 40 files allowed; 41 refused; 41 with collection-only allowed; 41 with an existing stop preserved that stop. The refusal retained conditional push certification and exposed no full-suite override. These four boundary probes passed without running pytest selections or the full suite.
+- Opened `bootstrap/security_check.py::main`, `::_phases`, release-suite and quality-gate runners: release preflight leads to detached committed phases, including Bandit, release-mode suite and quality gates. Compared that file, `bootstrap/REANCHOR_RUNBOOK.md`, and `bootstrap/reanchor-launcher.template.sh` with pre-C1 bytes: unchanged. The runbook still reserves comparison, signing and pushing to the Maintainer.
+- Challenged missing-check acceptance against the committed C2 examples and independent verdicts: B remains open for the shipped consumer, C for the three security nodes; A accepts only its reported mapped checks and expressly leaves the ceremony open. The recorded same-SHA elevated rerun disposes of the three initial environment denials; it does not dispose of F1.
+- Opened `scripts/quality_gate.py` dispatch and neutrality file selection: doctrine Markdown and shipped template types remain selected. Implementation evidence reports zero neutrality failures; no model names were introduced into governing shipped prose. No machine record parser or automatic coverage guarantee is claimed.
+
+**Covered**: claims/execution/refusal (#1-4: guard probes and release dispatch); consistency/drift (#5-6: unchanged ceremony bytes and C2 verdicts); lifecycle/scope/satisfier (#7-9: ordinary F1, preserved conditional certification and ceremony authority). **Not covered / low confidence**: did not reproduce the 2,700-node logs, run the ceremony, certify the tree, or authenticate author-reported results. Mapping completeness remains reviewer judgment. No full suite or mutation sweep was run.
