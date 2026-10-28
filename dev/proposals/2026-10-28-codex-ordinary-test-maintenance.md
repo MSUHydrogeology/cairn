@@ -1,7 +1,7 @@
 # Make one ordinary test family easier to maintain
 
 **Author**: Codex (Sol), Proposal author
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual
 **Plan review**: required(Internal)
 **Opened**: 2026-10-28
@@ -147,3 +147,66 @@ The proposal rightly treats the 24 minute 55 second suite run as context, not a 
 **F2 — Blocking: name a candidate cluster now.** The shared golden-tree builder is already used by the terminal and roadmap JSON checks, which assert different behavior; the other cited sections build different inputs. The proposal leaves the cluster, exact nodes, and specific duplication to the plan, so the reviewer cannot yet judge whether the pilot reaches its maintenance cause. Close with one candidate cluster's node names, the setup repeated between them, and the property or fault each keeps; leave the full deletion ledger and measured comparison to the plan. If no such cluster exists, withdraw the pilot rather than treating fewer lines as its result. -- `bootstrap/tests/test_board_json_contract.py:292-335`; `bootstrap/tests/test_board_json_contract.py:1088-1135`; proposal `## Proposal`, `### Tests required`.
 
 **Covered**: claims and drift (`dev/PLANNING.md:63`; `dev/PLANNING.md:123`); public path (`bootstrap/tests/test_board_json_contract.py:292-335`; `bootstrap/tests/test_board_json_contract.py:1137-1278`); design and domain scope (proposal `## Proposal`, `## Evidence / verification plan`); fail-closed behavior (`bootstrap/tests/test_board_json_contract.py:473-675`); cross-document and lifecycle placement (`dev/proposals/2026-10-28-codex-test-trust-boundary.md` > Complete current contract; `AGENTS.md` > High-risk surfaces); satisfiers (F1-F2 above). **Not covered / low confidence**: I did not time or mutate board tests, or inspect the future protected roster; it does not exist yet.
+
+## Response -- Codex (Sol), Proposal author -- 2026-10-28
+
+**F1 — accepted.** The current file mixes data-output tests with symlink,
+non-regular-entry, planted-module, and failure-output protections
+(`bootstrap/tests/test_board_json_contract.py:473-675`;
+`bootstrap/tests/test_board_json_contract.py:1137-1228`). The
+test-trust-boundary proposal promises a **file-level** protected roster, not
+case-level permission. Its classification is undecided and unimplemented.
+This pilot's standard path applies only if the implemented roster leaves
+`test_board_json_contract.py` unprotected, and the reviewed plan confines
+edits to the data-output cluster below and any helper used exclusively by
+that cluster. It cannot change a protected case, shared controlling helper,
+golden fixture, or gate behavior. If the roster protects this file, stop
+before editing; return the pilot's scope and assurance path to the Maintainer
+for a new disposition. Do not quietly use ordinary-lane permission inside a
+protected file or assume that leaving safety assertions intact settles the
+file's classification. `rg --files bootstrap/tests | rg 'board'` finds this
+one board test module and its baseline fixture, so no second board module is
+an automatic substitute.
+
+**F2 — accepted.** Start with two ordinary JSON-output nodes in that file:
+`TestRecordFactsComeFromWhereTheFileSits::test_all_record_values_and_absent_vs_blank_and_headerless_files`
+and `TestOutputIsDeterministic::test_archives_unique_path_key_and_deterministic_ascii_json`
+(`bootstrap/tests/test_board_json_contract.py:928-1082`). Both manually
+construct fresh `dev/proposals/` or `dev/plans/` Markdown trees with header
+fields, then invoke and decode `board.main --json`; the second repeats the
+live/archive setup in two roots. The candidate change factors only the
+repeated artifact-description and fresh-tree construction, if doing so makes
+the cases easier to read. The first node keeps absent-versus-blank fields,
+header boundaries, and headerless plain-view omission; it catches a parser
+that invents values or reads body fields. The second keeps distinct archive
+paths, stable ordering, ASCII serialization, and identical bytes across
+roots; it catches path-key collisions and nondeterministic output. Neither
+node is deleted on the strength of shared setup. Their values remain
+separate, and a helper must create new paths per call. The plan measures the
+actual duplication and keeps both tests unchanged if extraction adds more
+indirection than it removes.
+
+### Complete current contract
+
+After the test-trust-boundary Decision and implementation, and only if its
+protected roster leaves this file unprotected, plan one bounded cleanup of
+the two named data-output nodes. Inventory their cases, properties, and
+plausible faults before any deletion; preserve their public `--json` checks
+and the file's existing CLI/subprocess safety checks. Share immutable case
+descriptions or fresh per-test builders, never mutable scratch state. Do not
+change product code, fixture/schema, governing text, security/trust tests,
+or semantic prose tests owned by the governing-text proposal. Use the
+canonical Python 3.13 interpreter for owning scoped tests and matched
+before/after family timing; report maintenance evidence, runtime, and costs
+without a whole-suite speed claim. Apply existing Boundary A/B and gate
+ceremonies; the next authorized certifying run alone supplies full-suite
+evidence. The wider roadmap consolidation remains open. If the file is
+protected or the candidate extraction fails its maintenance test, return to
+the Maintainer before changing the scope or assurance path.
+
+### Withdrawn / superseded commitments
+
+The opening's unspecified cluster is replaced by the two named nodes. No
+pilot outcome is removed; the file-level eligibility stop makes the
+existing dependency explicit. If it stops implementation, the Maintainer
+decides whether and how to pursue the remaining outcome.
