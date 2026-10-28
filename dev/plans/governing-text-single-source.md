@@ -1,7 +1,7 @@
 # Plan: Governing text inventory and routing
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-governing-text-single-source.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Map where rules come from and reach adopters before choosing how to reduce repeated editing.
@@ -31,8 +31,9 @@ installed governing text, and affected modules and boards. Compare their actual
 purposes and history, including the Maintainer's `dev/rules` alternative;
 do not assume the present placement is justified.
 
-Proposed paths:
+C1 outputs:
 - `dev/strategy/2026-10-28-governing-text-inventory.md`
+- `dev/plans/governing-text-single-source/doctrine-sections.tsv` (per-heading evidence)
 
 ## Sequence
 
@@ -235,3 +236,25 @@ separate.
 | F1 | Accepted | Sequence C2–C3; C1 refresh |
 | F2 | Accepted | Verification map and C1 refresh |
 | S1 | Accepted | Verification map and installed-output controls |
+
+## Implementation verification -- Codex (Implementation, Luna) -- 2026-10-28
+
+**Scope**: C1 initial factual inventory only. No governing-rule or executable bytes changed. This is not Boundary B and does not complete plan verification.
+
+**Measured source SHA**: `0ac350c02422d8a8ba8c3b674a671b072c71a317` (reviewed plan revision).
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` -- Python 3.13.13.
+**Clean pre/post state**: the detached measurement worktree was clean before and after the scoped checks (`git status --short` returned no paths).
+
+**Commands and outcomes**:
+
+- `bootstrap/scaffold.py --config bootstrap/profiles/solo-greenfield.yml --target /private/tmp/cairn-gov-small-20261028 --non-interactive --allow-dev` -- exit 0; 69 files; no `doctrine/`; two module slots remain for onboarding.
+- `bootstrap/scaffold.py --config bootstrap/profiles/high-rigor-legacy.yml --target /private/tmp/cairn-gov-full-20261028 --non-interactive --allow-dev` -- exit 0; 101 files; no `doctrine/`; model mapping remains `FILL ME`, hook setup is manual, and no security host tool ran.
+- `python -m pytest -q bootstrap/tests/test_model_tier_rule_ships.py bootstrap/tests/test_scope_reduction_trap.py` -- 98 passed in 0.25s.
+- `python -m pytest -q bootstrap/tests/test_documentation_plan_module.py bootstrap/tests/test_review_sweep_ships.py bootstrap/tests/test_review_and_verification_rules_ship.py` -- 275 passed in 1.12s.
+- `python scripts/check_cairn.py` on the inventory note and updated plan; `claim_check.py` and `link_check.py` on both files -- all pass; one Markdown file scanned per call. The test-reader search found no test importing or reading the new note/TSV (a known `doctrine/lifecycle.md` reference matched as the positive control).
+- `python scripts/quality_gate.py --sub neutrality --sub redundancy` -- 0 failures, 43 informational entries, no redundancy findings.
+- Per-heading source record: `dev/plans/governing-text-single-source/doctrine-sections.tsv` contains 195 H1-H3 rows from 15 doctrine files at the measured SHA. Inventory note: `dev/strategy/2026-10-28-governing-text-inventory.md` (1,378 words).
+
+**Timing**: pytest-reported 0.25s and 1.12s; the install and prose-gate calls completed in under 2s each by tool wall time.
+**Non-pass disposition**: no test skips or failures. Quality-gate informational entries were reported, not failures. Installs completed but retain the onboarding notes above.
+**Known omissions**: no implementation edit, mutation, full suite or adopter-use trial; the installed `Scope delta` wording was observed but not semantically pinned by its owner test. Initial inventory only: refresh affected facts and mapping after model-floor and scoped-verification implementation and code reviews, before C2. The routing recommendation and Maintainer choice remain open.
