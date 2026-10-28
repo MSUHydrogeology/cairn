@@ -25,21 +25,28 @@ closes issues under this drain.
 
 ## Decision batch
 
-The model-floor, governing-text, test-trust and test-maintenance proposals
-have completed their required reviews and author responses and are awaiting
-decision. The verification proposal is completing review/response steps. Consult
+All five proposals have completed their required reviews and author responses
+and are awaiting decision. No plan or implementation has begun. Consult
 `python tools/board.py --maintainer` for the current declared waits.
 
 | Item | Recommended next choice | Why / cost of being wrong |
 |---|---|---|
-| [Model floors](../proposals/2026-10-28-codex-model-floor-alignment.md) | Align the written floors with the Maintainer's current staffing direction, after resolving review obligations | Removes unnecessary model-cost escalation; an inadequate floor can miss defects, so retain independent review, security treatment and escalation |
+| [Model floors](../proposals/2026-10-28-codex-model-floor-alignment.md) | Accept the reviewed floors and current Sol/Terra/Luna and Opus/Sonnet/Haiku assignment | Removes unnecessary model-cost escalation; an inadequate floor can miss defects, so retain independent review, security treatment and escalation |
 | [Doctrine purpose and governing-text inventory](../proposals/2026-10-28-codex-governing-text-single-source.md) | Inventory first; choose routing at a Maintainer fence before moving or deleting rules | Avoids shortening files by hiding obligations from adopters; premature routing could preserve the wrong structure or lose rules |
-| [Test trust boundary](../proposals/2026-10-28-codex-test-trust-boundary.md) | Consider a protected security/trust roster covering both bytes and collection identity; decide only with Security Review evidence | Removes routine test-edit ceremony debt; it deliberately gives up blanket freezing of ordinary pytest code that can influence other tests |
-| [Ordinary test maintenance pilot](../proposals/2026-10-28-codex-ordinary-test-maintenance.md) | Pilot one evidenced ordinary board-test cluster after the protected roster is settled | Reuse setup and preserve fault detection; eligibility must exclude protected files and helpers, and one pilot does not prove suite-wide speedup |
-| [Change verification / issue #33](../proposals/2026-10-28-codex-scoped-change-verification.md) | Replace contradictory operative full-suite instructions with scoped change evidence and separate tree certification | Avoids repeated per-change runs; integration regressions may appear later, and prescribed ceremony checks must remain |
+| [Test trust boundary](../proposals/2026-10-28-codex-test-trust-boundary.md) | Accept narrower protection only with explicit acceptance of the recorded assurance loss | Removes routine test-edit ceremony debt; it deliberately gives up blanket freezing of ordinary pytest code that can influence other tests |
+| [Ordinary test maintenance pilot](../proposals/2026-10-28-codex-ordinary-test-maintenance.md) | Accept the bounded pilot, conditional on the final protected roster leaving its file eligible | Reuse setup and preserve fault detection; eligibility must exclude protected files and helpers, and one pilot does not prove suite-wide speedup |
+| [Change verification / issue #33](../proposals/2026-10-28-codex-scoped-change-verification.md) | Accept scoped change verification and separate tree certification, preserving prescribed ceremony checks | Avoids repeated per-change runs; integration regressions may appear later, and prescribed ceremony checks must remain |
 
 Read the final author responses and Security Reviews in each artifact before
-deciding. Ordinary reviews alone do not clear an outstanding security pass.
+deciding. The trust-boundary choice stops blocking ordinary test deletion,
+renaming and new skip markers at the manifest level; actual release-mode
+skip/xfail/xpass refusal remains. Ordinary pytest code can still influence
+protected execution. This loss needs an explicit Maintainer choice.
+
+Suggested reading order: model floors; verification wording; test trust boundary;
+ordinary test maintenance; governing-text inventory. The inventory can run in
+parallel with accepted test work, but no rule relocates before its routing fence.
+Final handoffs: `639196fe`, `a0ca1241`, `55bbbb25`, `98bed453`, `5111ca97` respectively.
 
 ## What the doctrine question means
 
@@ -61,7 +68,7 @@ choose folder structure merely to reach a line-count target.
 
 ## Dependency order and next work
 
-1. Complete independent reviews and author responses on the first batch.
+1. Decide the five reviewed proposals; their proposal-stage work is complete.
 2. After acceptance, write plans and have fresh reviewers read them. The
    model-floor change can proceed separately; the doctrine audit can gather
    evidence before its routing fence.
@@ -132,8 +139,9 @@ were checked against [official OpenAI documentation](https://developers.openai.c
 these local tier assignments are the Maintainer's choice, not benchmark results.
 Decision scribing still needs unambiguous disposition and commit authorization.
 
-No implementation, suite-consolidation outcome or new scientific evidence is
-claimed. Proposal authors/reviewers own their records and commits. Claims,
+This is the nimbleness-first batch, not a completed v0.6 release. Other roadmap
+groups remain queued. No implementation, suite-consolidation outcome or new
+scientific evidence is claimed. Proposal authors/reviewers own their records and commits. Claims,
 links and applicable prose gates check this master; they do not verify the
 engineering claims in the linked proposals. Do not mistake a populated board
 for delivered functionality.
