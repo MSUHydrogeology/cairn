@@ -258,3 +258,41 @@ separate.
 **Timing**: pytest-reported 0.25s and 1.12s; the install and prose-gate calls completed in under 2s each by tool wall time.
 **Non-pass disposition**: no test skips or failures. Quality-gate informational entries were reported, not failures. Installs completed but retain the onboarding notes above.
 **Known omissions**: no implementation edit, mutation, full suite or adopter-use trial; the installed `Scope delta` wording was observed but not semantically pinned by its owner test. Initial inventory only: refresh affected facts and mapping after model-floor and scoped-verification implementation and code reviews, before C2. The routing recommendation and Maintainer choice remain open.
+
+## C1 Strategy routing judgment -- Codex (gpt-6.1-sol high) -- 2026-10-28
+
+Strategy's recommendation is folded into
+`dev/strategy/2026-10-28-governing-text-inventory.md`: public methodology
+explanation/reference under `docs/`, with complete operative obligations in
+usable installed homes. It compares retaining the publication split,
+`dev/rules/`, relocation under `docs/`, and generation; preserves useful public
+specifications and distinct template instructions; and names the lost landmark,
+citation migration, unresolved installed duties and unmeasured savings. This is
+Strategy work, not a review or the Maintainer's routing choice.
+
+**Census correction**: the initial 195 H1–H3 rows include five example headings
+inside code fences in `doctrine/plans.md`. There are 190 document headings.
+The TSV's added `heading_context` column preserves every original row and field
+while distinguishing the five examples; lexical content signals remain an
+inventory aid, not a semantic audit.
+
+**Evidence**: read the committed baseline `0ac350c0`, the inventory at
+`423310d4`, representative public/installed passages and owner tests, and
+history `3a190c95`, `5f619be4`, `7519c5da`, `676b7c0e`. Python 3.13.13 at
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` confirmed all 195 existing TSV
+records/fields unchanged and census controls included real headings while
+excluding fenced examples. The note has 1,293 whitespace-delimited words.
+`claim_check.py`, `link_check.py` and `check_cairn.py` passed on the note and
+this plan; the future destination is typed as a proposed path.
+`quality_gate.py --sub neutrality --sub redundancy` reported 0 failures,
+43 informational neutrality entries and no redundancy findings. Reader search
+for the note basename, TSV basename and plan stem in `bootstrap/tests`,
+`scripts` and `.github` found no readers; the same instrument found known
+`doctrine/lifecycle.md` readers as its positive control. No executable snippets
+were added, so snippet synchronization does not apply.
+
+**Limits / next move**: no rule move, deletion, AGENTS edit, new tool, installed
+mutation, full suite or ceremony. Existing source-vs-installed test limits
+remain recorded in the note. Refresh affected facts and mapping after the
+model-floor and scoped-verification implementations and code reviews; only
+then can C2 become the Maintainer's next move. Status remains `implementing`.
