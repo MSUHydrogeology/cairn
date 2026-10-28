@@ -3,7 +3,7 @@
 # Proposals — type-specific lifecycle doctrine
 
 This page covers the doctrine specific to **proposal artifacts**
-(`dev/proposals/<date>-<author>-<slug>.md`).  Shared lifecycle
+(`dev/proposals/<YYYY-MM-DD>-<author>-<slug>.md`).  Shared lifecycle
 concepts — the Registered Report analogy, why the record exists,
 the claim-marker maintenance exception, deferred-follow-up revival,
 roadmap management, and archive preconditions — live in
@@ -377,7 +377,7 @@ A `defer` needs a home outside the proposal text; acceptable homes:
   and the Maintainer's quoted authorization covering the added scope.
 * A topic doc's "Future work" section.
 * Its own queued follow-up proposal at
-  `dev/proposals/<date>-<author>-<short-title>.md`.
+  `dev/proposals/<YYYY-MM-DD>-<author>-<short-title>.md`.
 
 The local next-session note is not an archive-time home — it is
 written only at the goodnight routine. A small, pickable-cold
@@ -393,7 +393,7 @@ Dispositions:
 * <item> -> guard (tests/test_thing.py::test_the_case)
 * <item> -> wontfix (<rationale>)
 * <item> -> defer (<reason>) -> dev/PLANNING.md > <section>   [Maintainer: "<quote>"]
-* <item> -> defer (in motion) -> dev/plans/<slug>.md > <section>   [Maintainer: "<quote>"]
+* <item> -> defer (in motion) -> dev/plans/<YYYY-MM-DD>-<slug>.md > <section>   [Maintainer: "<quote>"]
 ```
 
 The older `Follow-ups migrated to:` spelling remains valid and is

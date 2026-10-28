@@ -3,7 +3,7 @@
 # Plans — type-specific lifecycle doctrine
 
 This page covers the doctrine specific to **plan artifacts**
-(`dev/plans/<slug>.md`).  Shared lifecycle concepts — the Registered
+(`dev/plans/<YYYY-MM-DD>-<slug>.md`).  Shared lifecycle concepts — the Registered
 Report analogy, why the record exists, the claim-marker maintenance
 exception, deferred-follow-up revival, roadmap management, and
 archive preconditions — live in `doctrine/lifecycle.md`.
@@ -11,7 +11,8 @@ The review stance, the stage questions and how distance is recorded
 live in `doctrine/dual-review.md`.  Proposal-lifecycle doctrine (triage,
 file moves, Response grammars) lives in `doctrine/proposals.md`.
 
-**The standard lane's change note also lives at `dev/plans/<slug>.md`**,
+**The standard lane's change note also lives at
+`dev/plans/<YYYY-MM-DD>-<slug>.md`**,
 reusing the status vocabulary and much of the machinery below without a
 parent proposal — see `doctrine/lifecycle.md` > "Three lanes, chosen by
 a closed triage procedure" for the triage that routes there, and the
@@ -1033,7 +1034,7 @@ Acceptable `defer` homes:
 * `CHANGELOG.md > Unreleased` — the user-visible release-facing
   summary.
 * Its own queued follow-up proposal at
-  `dev/proposals/<date>-<author>-<short-title>.md`.
+  `dev/proposals/<YYYY-MM-DD>-<author>-<short-title>.md`.
 
 The local next-session note is not an archive-time home — it is
 written only at the goodnight routine. A small, pickable-cold
@@ -1057,7 +1058,7 @@ Dispositions:
 * <item> -> guard (tests/test_thing.py::test_the_case)
 * <item> -> wontfix (<rationale>)
 * <item> -> defer (<reason>) -> dev/PLANNING.md > <section>   [Maintainer: "<quote>"]
-* <item> -> defer (in motion) -> dev/plans/<slug>.md > <section>   [Maintainer: "<quote>"]
+* <item> -> defer (in motion) -> dev/plans/<YYYY-MM-DD>-<slug>.md > <section>   [Maintainer: "<quote>"]
 ```
 
 The older `Follow-ups migrated to:` spelling remains valid and is
