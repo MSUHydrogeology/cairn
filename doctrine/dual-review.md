@@ -340,9 +340,10 @@ different-agent-type read.
 
 Independent review does not mean independently repeating every command the
 implementer ran. For work with a valid Boundary B record (`doctrine/plans.md`:
-a plan's Implementation verification section, or a trivial change's commit
-body, whose candidate bytes are identified by the resulting commit and whose
-clean state is a tree clean apart from the change), the reviewer first checks
+a plan's Implementation verification section, or, where the Maintainer asks
+for a review of a trivial change, its commit body, whose candidate bytes are
+identified by the resulting commit and whose clean state is a tree clean apart
+from the change), the reviewer first checks
 that the tested revision and reviewed range cover the implementation, that the
 named paths and interpreter/runtime are credible, and that clean pre/post
 state and all outcomes are dispositioned. The reviewer then chooses tests and
