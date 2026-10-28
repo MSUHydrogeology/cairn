@@ -1,9 +1,10 @@
-# Ceremony record: reader, second ceremony under the new design (the AST pin through repin)
+# Ceremony record: reader, second re-anchor ceremony under the new design (the AST pin through repin)
 # I am a fresh same-vendor session that wrote nothing in the range; this is a statement, nothing checks it.
-# Reader: Claude Opus 5.5 (claude-opus-5-5), 2026-10-28. Range read: 2433453c (anchor) to the read-commit below, one commit.
-# The range changes three prose files only (CHANGELOG.md, dev/PLANNING.md, the archived ceremony plan); all 11 closure blobs equal the anchor's.
-# Scan hits: none (0 hits, 0 files line-scanned, 3 outside coverage). Scan digest 96077707095cb263be2529a0341f62c7d3add030c7c9d68614b640bee076b4e5.
-read-commit 137264bedb1fe96074e9a86955a7df69806c4d63
+# Reader: Claude Opus 5.5 (claude-opus-5-5), 2026-10-28. Range read: 2433453c (the anchor) to the read-commit below, three commits.
+# The range changes six files: three prose files (CHANGELOG.md, dev/PLANNING.md, dev/plans/archive/ceremony-without-external-review.md), this record (the previous reader's version), and the two AST fixtures (bootstrap/tests/fixtures/scaffold_ast_baseline.json, scaffold_ast_known_new.json). All mode 100644. No code, test or closure file changed; all 11 closure blobs equal the anchor's.
+# AST pin (000b0e9a, fixtures only): baseline 173 to 169 keys, the four deletions exactly the four constants dev/plans/archive/install-time-onboarding.md names and fa86e2cb removed from bootstrap/_scaffold/install.py; 21 entries change digest/span only; known-new 62 to 81 keys, 23 added, 7 rekeyed, 4 dropped. In a detached worktree of the read-commit (Python 3.13.13): _ast_attest.py verify --known-new ends "AST attestation OK" (169 symbols); test_ast_attest.py 30 passed. Control: the parent's fixtures make verify exit 1.
+# Scan hits: none (0 hits, 0 paths line-scanned; not line-scanned: outside-coverage 4, frozen 1, cascade-mutable 1). Scan digest over anchor..read-commit dbac70a6980522636d511a551b9c9860b8c030b8a1f1a63a093201ecbe0c46f6. Control (shell=True planted in scripts/repin.py in a scratch clone) fired: 2 hits, process-start 1, shell-true 1.
+read-commit 000b0e9a515f8fefea6590f65efe71fc15ddcdbb
 packet-sha256 374b18cd2c8598957963ff021f5be6e82c2f13daaebc44825f0700c89807cada
 launcher-sha256 c9079ff56fc696b669a37ce53444f25b11d901a6e85ae655533a8780a6612304
 member 43ae37a83932a3be253f08509fa2df3feb3a0c8650003e194a02b8577333db90 bootstrap/REANCHOR_RUNBOOK.md
