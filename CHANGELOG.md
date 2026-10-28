@@ -38,7 +38,8 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
-- Capability floors now follow the task: ordinary authorship and reviews are medium, while executing an accepted reviewed plan is low, including high-risk chunks. Cairn's dated local model mapping records three assigned families per tier. ([plan](dev/plans/model-floor-alignment.md); [roles](doctrine/roles.md))
+- Change verification is mapped per change and tree certification is separate; plan, proposal, and strategy names now include their opening date. ([plan](dev/plans/2026-10-28-scoped-change-verification.md); [verification doctrine](doctrine/plans.md))
+- Capability floors now follow the task: ordinary authorship and reviews are medium, while executing an accepted reviewed plan is low, including high-risk chunks. Cairn's dated local model mapping records three assigned families per tier. ([plan](dev/plans/2026-10-28-model-floor-alignment.md); [roles](doctrine/roles.md))
 
 ## 0.5.0 — 2026-10-28
 

@@ -155,18 +155,22 @@ must stay exactly identical, and a test checks that they do.
 
 ## Verification
 
-**Verification boundaries** — three separate testing jobs, deliberately not
-paid for all at once: quick targeted runs while building (A), the
-implementer's scoped record on a clean commit before code review (B), and the
-reviewer's own attempt to break it (C). Re-running someone else's test command
-is not the third one.
+**Verification boundaries** — three separate jobs, deliberately not paid for
+all at once: scoped checks while building (A), the implementer's change record
+on a clean final commit before code review (B), and the reviewer's independent
+attempt to break the claim (C). Boundary B is `bounded` when a reviewed map
+covers affected behavior and consumers, or `wide` when it must cover owning
+families, known integration and public paths, and standing gates. A whole-tree
+certifying run is separate. Re-running someone else's test command is not the
+third job.
 
 **Certifying run** — the full test suite on a clean, committed tree. It is run
 only before a push when required (pushing may require a certifying run; ask the
 Maintainer), before the Maintainer's re-anchor ceremony, before a release cut,
 or when the Maintainer asks. One green run certifies every change at or before
-it; a change's record cites it as `Certified by: <commit>`, or `pending` until
-one exists.
+it. A change-verification record says `Certified by: pending` until then; the
+later certification is appended separately by its commit SHA and does not
+rewrite the change record.
 
 **Independent scientific check** — for a change that touches a scientific
 assumption: one named check whose expected answer does not come from the code

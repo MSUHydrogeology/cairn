@@ -298,31 +298,29 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
   routine, explicit instruction).
 * **Verification boundaries.** Three jobs; do not pay for the same broad run at
   every one.
-  * **The full suite runs only as a certifying run.** A full run is evidence
-    about a *tree*, not about one change, so it is paid for once per integration
-    point, never per change and never per revision. Wherever this section says
-    the full suite runs, a record is `full`, or a fresh full run is required,
-    that evidence comes from the next **certifying run** that contains the
-    change's final commit. It never comes from a run the implementer or a
-    reviewer makes for one change. A certifying run is Cairn's pair (Boundary B,
-    below) on a clean committed tree under the canonical interpreter, and it is
-    made only:
+  * **Change verification and tree certification are separate.** A scoped record
+    answers whether the change meets its known acceptance criteria; a
+    certifying run answers whether the committed tree passes Cairn's full suite.
+    The full suite is paid for only at an authorized integration point, never
+    per change or revision. A certifying run is Cairn's pair on a clean
+    committed tree under the canonical interpreter, and it is made only:
     * before a push, when required (pushing may require a certifying run; ask the Maintainer);
     * before the Maintainer's re-anchor ceremony;
     * before a release cut;
     * when the Maintainer asks for one.
 
     One green run at commit `T` certifies every change at or before `T`. A
-    record cites it as `**Certified by**: <T>`, or as `pending` until one
-    exists. **Nobody sets `CAIRN_FULL_SUITE=1` for any other reason**: not at
+    change-verification record cites it as `**Certified by**: <T>`, or as
+    `pending` until one exists; certification is appended separately and never
+    rewrites that record. **Nobody sets `CAIRN_FULL_SUITE=1` for any other reason**: not at
     Boundary A, not for a Boundary B record, not to reproduce another agent's
     record, and not for a mutation sweep. The broad-run guard refuses without
     it, and that refusal is this rule working. If a certifying run fails, bisect
     the range since the last certified commit. The change that broke it goes
     back to its owner. When a certifying run was required, nothing is pushed
-    until the tree certifies. This holds for already-open plans too: where a
-    plan's own text asks for a full Boundary B, a scoped record plus the
-    certifying run satisfies it.
+    until the tree certifies. An already-open plan that requires a whole-tree
+    run keeps that contract until an authorized certifying run covers it or the
+    plan is revised through its lifecycle.
   * **The suite has a budget.** A test pins a property in one node.
     Parametrizing over every word, line or file of a text does not test a
     property, and a mutation ledger breaks the claims under review, not every
@@ -338,63 +336,64 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
     record, and the certifying run covers it. A **substantive surface** is anything that is not ordinary
     prose under the prose-only rule below: code, tests, executable templates and
     snippets, fixtures, manifests, and prose a test or manifest pins.
-  * **B — Integration (stable evidence).** After the final implementation commit
-    and before code review, against a clean unchanged commit under the
-    **canonical interpreter (Python 3.13.x)**. Where this paragraph says the
-    full suite runs, read it as "the certifying run covers it" (above): the
-    change's own record is scoped, with `**Certified by**: pending`. Cairn's pair is
+  * **B — Integration (stable change evidence).** After the final implementation
+    commit and before code review, run the reviewed mapping on a clean, unchanged
+    commit under the **canonical interpreter (Python 3.13.x)**. Record
+    `**Boundary B mode**: bounded | wide` and `**Certified by**: pending` until a
+    separate certifying run covers the commit. `bounded` covers the mapped
+    affected behavior and consumers. Its record names the touched surfaces,
+    the test files or nodes, standing gates, why effects are bounded, and how
+    consumers are covered.
+    `wide` covers the owning test families,
+    known cross-surface integration and public paths, and standing gates when
+    effects cannot be confidently bounded. Use `wide` for a contract or
+    trust-ceremony surface. A trust-ceremony surface is any high-risk surface
+    this file names, or release/security ceremony work. Neither mode claims unknown dependencies are
+    covered. A contract change includes its producers, consumers and public
+    paths; a trust ceremony keeps every prescribed security and ceremony check.
+    A known required path, check or criterion that was not met keeps the change
+    open; certification cannot supply it later. Passing the known checks and
+    criteria permits `Implementation verified at <SHA>`.
+    If required coverage cannot be established, keep the work open. A
+    certifying run remains Cairn's pair:
     `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests
     --quality-gate-shuffle-seed=0` then
     `python scripts/quality_gate.py --sub neutrality --sub redundancy`.
-    Run the **full suite unless the mapping bounds the change's effects
-    confidently** — if a substantive surface has no such mapping, or its effects
-    **cannot be bounded confidently**, the full suite runs. **Bounded mode refuses**,
-    and the full suite runs, whenever the change touches a **contract surface**
-    (the install contract, the fidelity or gate manifest, the lockfile schema, the
-    published `scaffold.py --manifest`) or a **trust-ceremony surface** (any
-    high-risk surface this file names, or release or security ceremony work).
-    **Uncertainty resolves to `full`** — the fence is a refusal rule, not a
-    checklist to argue past. Record `**Boundary B mode**: full | bounded`; on
-    `bounded`, name the touched surfaces, the test files or nodes and the gates
-    run, with counts, why the effects are bounded, and the explicit absence of
-    any contract or trust-ceremony surface.
 
     **Boundary B governs every implementation, a trivial change included.** A
-    trivial change's mapping is the owning tests Boundary A names. It runs
-    before the commit, not after, on exactly the bytes being committed: a tree
-    clean apart from the change, or a separate copy holding only it. Its record
-    is its commit body, not a plan section, and carries the mode, the
-    interpreter, and on `bounded` every field the record sentence above names.
-    An accepted proposal implemented in one commit with no plan records its
-    result the same way. A trivial change has no code review, so its commit body
-    is the whole record. A change whose Boundary B would run in `full` mode is
-    not trivial: it opens a plan. The one exception is a defect repair that meets the lifecycle's three
-    conditions (a failing-test reproduction; it restores documented or
-    intended behaviour with no contract change; the touched surface's own
-    test family runs in the loop): it stays trivial even on a named surface.
+    trivial change has no reviewed plan mapping: search for its owning tests and
+    readers, then run those checks on the exact candidate bytes before commit,
+    in an otherwise clean tree or a separate copy holding only the change.
+    Its commit body records the mode, `Certified by: pending`, search,
+    commands, counts, interpreter, outcomes and omissions; the resulting
+    commit identifies the tested bytes. Passing the known checks and criteria
+    permits `Implementation verified at <SHA>`.
+    The author owns this record and there is no Boundary C. An accepted
+    proposal implemented without a plan records its result the same way.
+    The defect-repair exception remains governed by the lifecycle's three
+    conditions.
 
     **An already-open plan keeps the verification contract written in it.**
-    Bounded mode reaches it only through that plan's own append-only revision.
+    A new scoped contract reaches it only through that plan's own append-only
+    revision. Do not retrofit archives.
 
     A plan appends the tested SHA/range, interpreter, clean pre/post state,
     commands, outcomes, timing, non-pass disposition, and known omissions as
     `## Implementation verification -- <agent> -- YYYY-MM-DD`.
-  * **C — Falsification (independent).** The code reviewer verifies that record
+  * **C — Falsification (independent).** The code reviewer verifies the record
     against the reviewed range, then runs independent targeted falsification;
-    copying Boundary B's broad command is not a falsification ledger. On a
-    bounded record the reviewer records
-    `**Bounding**: ACCEPTED | FULL RUN REQUIRED` after challenging at least one
-    named surface, mapped test, or stated omission — never "the field is
-    present". **The reviewer never runs the full suite.** A required fresh full
-    run is the next certifying run, and until it lands the change stays
-    uncertified. A fresh full run is required when: **no valid Boundary B record exists**;
-    an **unrecorded cross-surface dependency** appears; the run reports a
-    **skip, xfail, or xpass** that the record does not dispose of; **review
-    sharpening changes implementation, tests, executable templates, or**
-    fixtures — any change to
-    **implementation/test/executable-template/fixture bytes** invalidates the
-    record; a **trust ceremony that explicitly requires** one applies; or there
-    is a **concrete reason to distrust or falsify** the evidence.
+    copying Boundary B's command is not a falsification ledger. After
+    challenging a named surface, mapped test or stated omission, the reviewer
+    records `**Bounding**: ACCEPTED | WIDER RUN REQUIRED`. The second verdict
+    names the missing behavior and check; the author adds it and records new
+    final-commit evidence before acceptance. **The reviewer never runs the full
+    suite.** A missing or invalid change-verification record, an unrecorded
+    dependency, an undisposed skip/xfail/xpass, or changed implementation,
+    test, executable-template or fixture bytes requires a new change-specific
+    record, not automatically a whole-tree run. A trust ceremony keeps its
+    prescribed checks. Full-tree evidence comes only from a certifying run at
+    an authorized integration point; it does not close a known missing change
+    check.
 
     **When a finding or claim says a value must reach every member of a set**
     (every call site, every rendering path), list the set from the tree, not the
@@ -488,8 +487,12 @@ conversation that has ended.
 
 **Naming.** UPPERCASE for landmark files (`README.md`, `AGENTS.md`,
 `CHANGELOG.md`, `SECURITY.md`, `PLANNING.md`);
-lowercase-kebab for content. Proposal stems are `<YYYY-MM-DD>-<author>-<slug>.md`;
-plan stems are `<slug>.md`.
+lowercase-kebab for content. Plan files use
+`<YYYY-MM-DD>-<slug>.md`; their document-owned evidence folder uses the same
+stem and archives with the plan. Keep shared tests, scripts, and assets in
+their canonical homes. Proposal and strategy files use
+`<YYYY-MM-DD>-<author>-<slug>.md`. The date is the artifact's opening date;
+retain it when archiving. Existing archived records are not renamed.
 
 **Development environment & dependency budget.** Everything Cairn ships an
 adopter — the scaffold engine, `scripts/`, the reference checkers — is

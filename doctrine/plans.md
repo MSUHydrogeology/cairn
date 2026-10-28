@@ -39,7 +39,12 @@ flowchart TD
 ```
 
 The plan-open commit creates the plan and archives the source
-proposal. Each status names who holds it next.
+proposal. Name the plan `<YYYY-MM-DD>-<slug>.md`, using its opening date, and
+create a sibling document-owned evidence folder with the same stem; that
+folder archives with the plan. Shared tests, scripts and assets stay in their
+canonical homes. Proposal and strategy files use
+`<YYYY-MM-DD>-<author>-<slug>.md`. Retain opening dates when archiving and do
+not rename existing archived records. Each status names who holds it next.
 
 * **awaiting-plan-review** — *(only for a review-required plan; see
   the plan-review precondition below)* the plan exists but
@@ -182,7 +187,7 @@ obligation a security-sensitive plan declares.
   per-target rollouts).
 * Carries deferred follow-ups that need a `defer` home before
   archiving.
-* Needs Boundary B in `full` mode (a defect repair meeting the three
+* Needs Boundary B in `wide` mode (a defect repair meeting the three
   conditions in `doctrine/lifecycle.md` is the one exception).
 
 **Skip the plan when:**
@@ -191,10 +196,10 @@ obligation a security-sensitive plan declares.
 * The change is single-file or single-area.
 * No follow-up needs a `defer` home (the proposal's "what's next" is
   fully captured in the implementing commit message).
-* Boundary B would run `bounded`. A change that needs `full` mode (it
+* Boundary B would run `bounded`. A change that needs `wide` mode because it
   touches a contract or trust-ceremony surface, or its effects cannot be
-  bounded with confidence) opens a plan, which has a `## Code review`
-  section. A change that skips the plan has no code review. The one
+  confidently bounded, opens a plan with a `## Code review` section. A change
+  that skips the plan has no code review. The one
   exception is a defect repair that meets the three conditions in
   `doctrine/lifecycle.md` (a failing-test reproduction; it restores
   documented or intended behaviour with no contract change; the touched
@@ -203,7 +208,7 @@ obligation a security-sensitive plan declares.
 
 The implementing commit re-reads these conditions against what it actually
 touched. If it touched more than one area, or its Boundary B would run
-`full`, a plan opens then.
+`wide`, a plan opens then.
 
 When in doubt, open the plan. The cost is low (one file in
 `dev/plans/`); the benefit is durable execution context for any agent
@@ -216,7 +221,7 @@ ANY of the five hold. The common sub-pattern where the first bullet
 is FALSE (the implementation itself fits in one commit) but at least
 one of the others holds (touches multiple files / areas, has
 multi-stage sequencing, carries deferred follow-ups, or needs Boundary B
-in `full` mode) is called **fast multi-stage**.
+in `wide` mode) is called **fast multi-stage**.
 
 Fast multi-stage compresses the implementation phase into a single
 commit but does **not** collapse the lifecycle. Plan-open + first
@@ -295,38 +300,35 @@ archived proposals).
 
 ## Implementation verification boundaries
 
-A plan maps verification to three boundaries. This keeps iteration useful,
-integration evidence exact, and review independent without treating repeated
-execution of one broad command as a second opinion.
+A plan maps verification to three boundaries. Change verification covers the
+known behavior and acceptance criteria of the change; tree certification
+covers the committed project at an authorized integration point. Repeating
+one broad command is not independent review.
 
 ### Boundary A — Iteration (scoped)
 
 Each chunk's acceptance criteria map the changed invariants and public paths to
 their affected tests and standing surface gates. The implementer runs that
-reviewed scope while iterating and adds a newly discovered dependency to the
-plan before relying on it. A trivial change, with no proposal or plan, maps
-instead to the tests that own each touched surface, found by searching for what
-imports or reads the touched files rather than by expectation, plus that
-surface's standing gates. There is no permanent "fast suite": speed does not
-establish coverage. If a substantive surface has no such mapping, or its
-effects cannot be bounded confidently, the full project suite is the
-fail-closed fallback.
+reviewed scope while iterating and adds newly discovered dependencies to the
+mapping before relying on them. A trivial change with no proposal or plan maps
+its owning tests and readers by searching what imports or reads the touched
+files, then runs those checks and applicable surface gates on the candidate
+bytes. Speed alone does not establish coverage. If effects cannot be
+confidently bounded, use `wide`: run the owning test families, known
+cross-surface integration and public paths, and standing gates. Unknown
+dependencies are not claimed as covered. A known required path, check, or
+acceptance criterion that remains unmet keeps the change open.
 
-**The full suite runs only as a certifying run.** A full run is evidence about
-a tree, not about one change, so it is paid for once per integration point,
-never per change and never per revision. Wherever this document says the full
-suite runs, a record is `full`, or a fresh full run is required, that evidence
-comes from the next certifying run that contains the change's final commit. It
-never comes from a run the implementer or a reviewer makes for one change. A
-certifying run is the full suite and standing gates on a clean committed tree,
-made only before a push when required (pushing may require a certifying run; ask
-the Maintainer), before a ceremony that re-pins the gates, before a release cut,
-or when the Maintainer asks for one. One green run at commit `T` certifies every
-change at or before `T`. A record cites it as
-`**Certified by**: <T>`, or as `pending` until one exists. If a certifying run
-fails, the range since the last certified commit is bisected, and the change
-that broke it goes back to its owner. When a certifying run was required,
-nothing is pushed until the tree certifies.
+**Tree certification is separate.** The full suite and standing gates are run
+on a clean committed tree only before a push when required (pushing may require
+a certifying run; ask the Maintainer), before a ceremony that re-pins the
+gates, before a release cut, or when the Maintainer asks. A green run at commit
+`T` certifies every change at or before `T`. A change-verification record
+carries `**Certified by**: pending` until a certifying run covers it. Append a
+separate certification entry keyed by the certifying SHA; never rewrite the
+change-verification record or an archive. A certifying run that fails is
+bisected from the last certified commit, and the change that broke it returns
+to its owner. Nothing is pushed when a required certifying run has not passed.
 
 Work confined to ordinary prose or deliberation records runs the applicable
 claim, link, snippet, schema, and neutrality gates rather than an unrelated
@@ -339,67 +341,57 @@ A **substantive surface** is anything that is not ordinary prose under the
 prose-only rule: code, tests, executable templates and snippets, fixtures,
 manifests, and prose a test or manifest pins.
 
-### Boundary B — Integration (one stable record)
+### Boundary B — Integration (one stable change-verification record)
 
 After the final implementation commit and before code review, the implementer
-runs against a clean, stable commit using the configured canonical
-interpreter/runtime. The default is the **full project suite**; work whose
-**mapping bounds the change's effects confidently** may instead run
-that mapping plus every standing gate for every touched surface. This is the
-same test and the same fail-closed direction Boundary A already uses — the full
-suite is the escalation, not a ceremony paid at every boundary.
+runs the reviewed mapping on a clean, stable commit using the configured
+canonical interpreter/runtime. Record `**Boundary B mode**: bounded | wide`.
+`bounded` covers mapped affected behavior and consumers. `wide` covers the
+owning test families, known cross-surface integration and public paths, and
+standing gates when effects cannot be confidently bounded. Use `wide` for a
+contract or trust-ceremony surface. Neither mode claims unknown dependencies
+are covered. A contract change covers its producers,
+consumers and public paths; a trust ceremony retains every prescribed security
+and ceremony check. Missing known coverage or an unmet criterion keeps the work
+open; certification cannot fill that gap.
 
-**The fence is a refusal, not a checklist.** Bounded mode refuses — and the
-full suite runs — whenever the change touches a **contract surface** (the
-install contract, the fidelity or gate manifest, the lockfile schema, the
-published install manifest) or a **trust-ceremony surface** (any high-risk
-surface the project's governing file names, or work under a release or security
-ceremony, which keeps its own exhaustive commands). **Uncertainty resolves to
-`full`.**
+If a required selection crosses the test runner's file limit, split it into
+invocations within the limit. Record each invocation's arguments and outcomes,
+the executed-test union, and its reconciliation with the original collected
+selection. Preserve markers and shuffle seeds; never use the full-suite
+override to get around the limit. Collection alone is not evidence that a split
+ran.
 
-**The bounding claim is written, then adjudicated.** The record carries
-`**Boundary B mode**: full | bounded`. On `bounded` it must also name the
-touched surfaces, the test files or nodes and the standing gates it ran, with
-counts, why the effects are bounded, and the explicit absence of any contract
-or trust-ceremony surface. Boundary C then records
-`**Bounding**: ACCEPTED | FULL RUN REQUIRED`.
-`FULL RUN REQUIRED` **invalidates** the bounded record, which lands it on
-trigger 1 ("no valid Boundary B record exists") — the six triggers stay six.
-
-Why the claim is adjudicated rather than merely stated: the implementer chooses
-the mapping, writes the argument, and captures the saving. A norm alone assumes
-nobody profits from the miss. No tool gate is proposed — a check could confirm
-the field is present, never that the argument is true, and a green check on the
-question that needed judgement is the clean-pass trap manufactured. What closes
-it is whose signature is on the verdict: an independent reviewer, who captures
-nothing.
+The mapping is adjudicated by Boundary C, not by a tool that can only confirm
+that fields exist. The independent reviewer records
+`**Bounding**: ACCEPTED | WIDER RUN REQUIRED` after challenging a named surface,
+mapped test or stated omission. The second verdict names the missing behavior
+and check. The author runs that check and records new final-commit evidence
+before acceptance; otherwise the work stays open.
 
 **Boundary B governs every implementation, a trivial change included.** A
-trivial change's mapping is the owning tests Boundary A names. It runs before
-the commit, not after, on exactly the bytes being committed: a tree clean apart
-from the change, or a separate copy holding only it. Its record is its commit
-body, not a plan section, and carries the mode, the interpreter, and on
-`bounded` every field the bounding claim above names. An accepted proposal
-implemented in one commit with no plan records its result the same way. A
-trivial change has no code review, so its commit body is the whole record. A
-change whose Boundary B would run in `full` mode is not trivial: it opens a
-plan. The one exception is a defect repair that meets the lifecycle's three
-conditions (a failing-test reproduction; it restores documented or intended
-behaviour with no contract change; the touched surface's own test family runs
-in the loop): it stays trivial even on a named surface.
+trivial work has no reviewed plan mapping. Search for its owning tests and
+readers, then run them on the exact candidate bytes before committing, in an
+otherwise clean tree or a separate copy holding only the change. Its commit
+body records the mode, `Certified by: pending`, search, commands, counts,
+interpreter, outcomes and omissions; the resulting commit identifies those
+bytes. Passing known checks and criteria permits `Implementation verified at
+<SHA>`. The author owns the record, and trivial work has no Boundary C. An accepted proposal implemented
+without a plan records its result the same way. The defect-repair exception
+remains governed by the lifecycle's three conditions.
 
-**An already-open plan keeps the verification contract written in it.** Bounded
-mode becomes available to it only through that plan's own explicit, append-only
-revision under the deviation rule. A plan opened after this rule landed may use
-bounded mode where its reviewed mapping supports it. The reason the rule is
-needed at all: editing doctrine acts immediately while editing the plan
-templates acts prospectively, so an in-flight plan would otherwise receive two
-answers about its own evidence obligation. The plan receives an append-only
-record only after the run completes:
+**An already-open plan keeps the verification contract written in it.** A new
+scoped contract applies to it only through that plan's own append-only revision
+under the deviation rule. A plan that already requires a whole-tree run stays
+open until an authorized certifying run covers it or that plan is revised.
+Plan templates apply prospectively; archives are not retrofitted. A plan
+receives its implementation-verification record only after the run completes:
 
 ```markdown
 ## Implementation verification -- <agent> -- YYYY-MM-DD
 
+**Boundary B mode**: <bounded | wide>
+**Certified by**: <pending | certifying commit>
 **Tested commit**: <full revision ID>
 **Reviewed range**: <base revision>..<tested endpoint>
 **Interpreter/runtime**: <path and version>
@@ -408,7 +400,7 @@ record only after the run completes:
 
 | Command | Exit | Outcomes | Elapsed |
 |---|---:|---|---:|
-| <full suite and standing integration commands> | <code> | <pass/fail/skip/xfail/xpass counts> | <time> |
+| <mapped tests, standing gates, and acceptance commands> | <code> | <pass/fail/skip/xfail/xpass counts> | <time> |
 
 **Non-pass disposition**: <explicit disposition; ordinarily none>
 **Plan-specific acceptance commands**: <commands and results>
@@ -419,6 +411,10 @@ Do not place an empty Implementation verification heading in a newly opened
 plan: an empty section looks like landed evidence. The record is committed in a
 later plan-only commit, so live `HEAD` may advance without changing the tested
 implementation bytes.
+
+When certification later covers the tested commit, append a separate entry
+headed `## Tree certification -- <SHA>` with the run evidence. Do not change
+the earlier `Certified by: pending` record or any archived plan.
 
 A plan's record is valid only when the tested commit contains the entire
 reviewed range, pre/post `HEAD` both equal the full tested revision, and the
@@ -434,24 +430,34 @@ not a signed receipt or parser-enforced claim. It does not authenticate the
 author or prove the commands ran. Release verification is a separate ceremony:
 an implementation record never satisfies or shortens a release gate.
 
-### Boundary C — Falsification (independent, reusing B)
+### Boundary C — Falsification (independent, challenging B)
 
-Code review may reuse a valid Boundary B broad result only after checking the
-tested revision, reviewed range, path validity, clean-state assertions, command
-results, and non-pass disposition. The reviewer then chooses independent
-targeted falsification under `doctrine/dual-review.md`; repeating the broad
-author command by default is not structural independence.
+Code review verifies the Boundary B record against the reviewed range, then
+performs independent targeted falsification under `doctrine/dual-review.md`;
+repeating the author's command is not structural independence. A missing or
+invalid record, an unrecorded dependency, an undisposed skip/xfail/xpass, or
+changed implementation, test, executable-template or fixture bytes requires a
+valid new change-specific record. Review findings name the missing behavior
+and check; the author runs them before acceptance. **The reviewer never runs
+the full suite.** A ceremony keeps every prescribed check, and whole-tree
+evidence comes from a separate authorized certifying run, never from a
+reviewer's rerun.
 
-A fresh full-suite run replaces reuse when any of these six conditions holds:
+A replacement Boundary B record is required when any of these six
+record-replacement triggers applies:
 
 1. no valid Boundary B record exists;
 2. review discovers an unrecorded cross-surface dependency;
 3. a skip, xfail, or xpass lacks an adequate disposition;
 4. review sharpening changes implementation, tests, executable templates, or
    fixtures in the reviewed range;
-5. the accepted plan governs a trust ceremony that explicitly requires
-   independent full execution; or
+5. the accepted plan's trust ceremony explicitly requires independent full
+   execution; or
 6. the reviewer has a concrete reason to distrust or falsify the broad result.
+
+These triggers require scoped change evidence again; they do not automatically
+call for a whole-tree run. The fifth trigger is satisfied only by the
+authorized ceremony's prescribed certifying run.
 
 ---
 

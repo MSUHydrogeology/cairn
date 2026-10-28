@@ -1,6 +1,6 @@
 <!-- The plan template. Copy only the opening header and operative section
      headings (`Source proposal` through `Verification`) below the rule into
-     `dev/plans/<slug>.md`, replace every prompt with your answer (or `N/A`),
+     `dev/plans/<YYYY-MM-DD>-<slug>.md`, replace every prompt with your answer (or `N/A`),
      and do NOT copy template commentary or the later-stage `Dispositions`,
      `Plan review`, and `Code review` sections at the bottom. Re-read this file
      before you write or revise a plan: its word budgets ("Keep the plan
@@ -20,7 +20,10 @@ awaiting-plan-review -> revising-plan -> ready-to-implement
 ```
 
 Each status names **who holds it next**. Opening a plan archives its source
-proposal in the same commit.
+proposal in the same commit. Name the plan
+`<YYYY-MM-DD>-<slug>.md`, using its opening date, and create a sibling
+document-owned evidence folder with the same stem. That folder archives with
+the plan; shared tests, scripts, and assets stay in their canonical homes.
 
 **Reviews, responses and decisions append and are never edited. Operative
 cells — Scope, Sequence, Acceptance criteria, Verification — revise in place
@@ -51,7 +54,7 @@ beside Status, and delete it when they answer. Write it at three moments: work
 reaches a fenced chunk (one marked MAINTAINER-GATED or MAINTAINER-ONLY), you
 put a `defer` batch to the Maintainer, or you make a deviation request. Keep
 `<what>` under 48 characters, the board's cell width; the detail stays in the
-plan. A change note (`dev/plans/<slug>.md`) carries the line the same way. The
+plan. A change note (`dev/plans/<YYYY-MM-DD>-<slug>.md`) carries the line the same way. The
 colon sits outside the bold, exactly as shown: with the colon inside the bold
 the board does not read the line. `python tools/board.py --maintainer` lists
 every artifact that carries it. This paragraph sits above the rule, so the line
@@ -292,39 +295,46 @@ plus its standing gates.
 Before implementation, make Boundary A a **reviewed mapping**: for each changed
 invariant and public path, name the exact affected test node/file and every
 standing non-pytest gate for the touched surface. Run that scope while
-iterating. There is no permanent fast tier; if a substantive surface has
-no reviewed mapping or cannot be bounded confidently, run the full suite.
-**The full suite runs only as a certifying run** (`AGENTS.md` > Verification
-boundaries): this plan's own records are scoped and carry
-`**Certified by**: <commit>`, or `pending` until a certifying run covers them.
+iterating. There is no permanent fast tier: `bounded` uses the reviewed map
+when it covers affected behavior and consumers; `wide` runs the owning test
+families, known integration and public paths, and standing gates when effects
+cannot be confidently bounded. Neither mode claims unknown dependencies are
+covered. A known missing path, required check, or unmet criterion keeps the
+change open. For a selection above a guard's file limit, split it into
+invocations within the limit and reconcile the executed-test union with the
+original selection; preserve arguments and markers, and do not use an override.
 
-After the final implementation commit, Boundary B runs once against a clean,
-unchanged commit under the canonical interpreter. The default is the **full
-suite**; a plan whose reviewed mapping **bounds the change's effects
-confidently** may instead run that mapping plus every standing gate for every
-touched surface. Bounded mode **refuses** — run full — when the change touches a
-**contract surface** (install contract, fidelity or gate manifest, lockfile
-schema, published `scaffold.py --manifest`) or a **trust-ceremony surface**
-(any high-risk surface `AGENTS.md` names, or release/security ceremony work).
-**Uncertainty resolves to `full`.** The commands:
+Boundary B runs once after the final implementation commit on a clean,
+unchanged commit under the canonical interpreter. Record
+`**Boundary B mode**: bounded | wide`. Use `wide` for a contract or
+trust-ceremony surface. A contract change includes its producers, consumers,
+and public paths; a trust ceremony retains every prescribed security and
+ceremony check. The change record carries
+`**Certified by**: pending` until a separate authorized tree-certifying run
+covers the commit. A certifying run uses the project's full suite and standing
+gates only at the integration points in `AGENTS.md` > Verification boundaries;
+it is not a per-change command and does not replace missing change evidence.
 
-* **Engine + seed-0 order coverage** — `python -m pytest bootstrap/tests
-  --quality-gate-shuffle-seed=0`.
-* **Static quality legs** — `python scripts/quality_gate.py --sub neutrality
-  --sub redundancy` (does not dispatch pytest again).
-* **Prose integrity** — `python scripts/check_cairn.py`.
-* **Write-time claim check** — `python scripts/claim_check.py <file>` once for
-  each authored proposal, plan, or doc.
-* **Plan-specific acceptance commands** — the mapped tests, security budgets,
-  doc-drift gates, public-path smokes, and other commands named above.
+The commands and checks named for Boundary B are the mapped tests, each
+surface's standing gates, and all plan-specific acceptance commands, including
+documentation, schema, snippet, security, and public-path checks where they
+apply. Name the command and the property it checks; record `N/A` with a reason
+when none applies. For Cairn, the authorized tree-certification pair is
+`CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests
+--quality-gate-shuffle-seed=0` followed by
+`python scripts/quality_gate.py --sub neutrality --sub redundancy`.
 
 Only after that stable run, append a dated section named
 `Implementation verification -- <agent> -- YYYY-MM-DD` at H2. Do not place an
 empty heading in a new plan. The record uses these exact fields:
 
-* **Boundary B mode** — `full` | `bounded`. On `bounded`, also name the touched
-  surfaces, the reviewed mapping and standing gates run, why the effects are
-  bounded, and the explicit absence of any contract or trust-ceremony surface.
+* **Boundary B mode** — `bounded` | `wide`. On `bounded`, name the touched
+  surfaces, mapped tests and standing gates, why the effects are bounded, and
+  how affected consumers are covered. On `wide`, name the owning families,
+  known integration/public paths, and gates run, and explain why narrower
+  bounds were not confident.
+* **Certified by** — `pending` or the certifying commit; certification is
+  appended separately and never rewrites the change-verification record.
 * **Tested commit** — full SHA.
 * **Reviewed range** — base and tested endpoint.
 * **Interpreter/runtime** — canonical path and version.
@@ -338,9 +348,10 @@ empty heading in a new plan. The record uses these exact fields:
 
 **Boundary B (integration).** After the final implementation commit, against a
 clean unchanged commit under the canonical interpreter. Record
-`**Boundary B mode**: full | bounded`. **Uncertainty resolves to `full`**, and
-`full` is mandatory for any contract or trust-ceremony surface. On `bounded`,
-name the touched surfaces, the mapping run, and why the effects are bounded.
+`**Boundary B mode**: bounded | wide`. Use `wide` when the reviewed mapping
+cannot bound affected behavior confidently. Record the checked consumers and
+public paths; preserve every prescribed contract and ceremony check. A known
+missing check keeps the change open, regardless of mode.
 
 Append the evidence as `## Implementation verification -- <agent> -- YYYY-MM-DD`:
 tested SHA, interpreter, clean pre/post state, commands, outcomes, timing,
@@ -349,15 +360,15 @@ disposition of every non-pass, known omissions.
 **Boundary C (falsification)** is the code reviewer's, and it is not re-running
 Boundary B's command. Verify the record against the reviewed range, then run
 independent **targeted falsification** — attack the claims that would hurt most
-if wrong.
-
-A **fresh full run** is required, and the record does not carry, when any of
-these holds: **no valid Boundary B record exists**; an **unrecorded
-cross-surface dependency** appears; the run reports a **skip, xfail, or xpass**
-the record does not dispose of; **review sharpening changes implementation,
-tests, executable templates, or** fixtures; a **trust ceremony that explicitly
-requires** one applies; or there is a **concrete reason to distrust or falsify**
-the evidence.
+if wrong. Record `**Bounding**: ACCEPTED | WIDER RUN REQUIRED` only after
+challenging a named surface, mapped test, or stated omission. `WIDER RUN
+REQUIRED` names the missing behavior and check; the author adds the check and
+records new final-commit evidence before acceptance. A missing or invalid
+record, newly found dependency, undisposed skip/xfail/xpass, or changed
+implementation, test, executable-template, or fixture bytes requires valid new
+change-specific evidence. It does not by itself trigger a full-suite run. Tree
+certification remains a separate authorized integration run; a ceremony keeps
+its own required checks.
 
 <!-- Later-stage sections — do NOT copy into a new plan; append each
      section only when that lifecycle step occurs. -->
@@ -431,8 +442,10 @@ test, line or command that backs it):
 2. **Best alternative.** <a simpler or safer build, if any> -- <evidence>
 3. **What would show it wrong.** <the input or run that breaks it, and what was tried> -- see the falsification ledger (`dev/agent_collaboration.md` > "The review sweep")
 
-**Bounding**: ACCEPTED | FULL RUN REQUIRED — recorded only after challenging a
-named surface or mapped test, never because the field is present.
+**Bounding**: ACCEPTED | WIDER RUN REQUIRED — recorded only after challenging a
+named surface, mapped test, or stated omission. The second verdict names the
+missing behavior and check; the author adds it and records new final-commit
+evidence before acceptance.
 
 **Waiting-line check.** `git log -p` on the plan must show a Waiting line for
 each fenced chunk whose fence became the next move inside the reviewed range,

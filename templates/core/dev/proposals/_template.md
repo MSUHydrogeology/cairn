@@ -203,9 +203,14 @@ what would falsify it.
 behavioral nodes, and **public paths** that must be exercised through their real
 entry points. Record speed / environment tiers where they exist, but **speed
 alone does not establish affected coverage**. The eventual plan owns a reviewed
-change-specific mapping, not a permanent fast set; **unknown or uncertain scope
-falls back to the full suite**. Fill from the project's test plan, or replace
-with `N/A: no test layout` plus the project's full-test fallback.)
+change-specific mapping, not a permanent fast set. `bounded` covers mapped
+affected behavior and consumers; `wide` covers owning test families, known
+integration and public paths, and standing gates when effects cannot be
+confidently bounded. Unknown dependencies are not claimed as covered: search for
+readers and callers, and keep the work open if a known required check or
+criterion remains unmet. Full tree certification is a separate authorized
+integration run. Fill from the project's test plan, or replace with
+`N/A: no test layout` plus the project's scoped test procedure.)
 <!-- cairn:end tests-tier-home -->
 
 ### Examples / smoke checks

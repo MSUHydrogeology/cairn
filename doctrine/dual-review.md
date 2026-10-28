@@ -336,19 +336,19 @@ calls for security treatment declares the `+ Internal Security Review`
 obligation there; nothing upgrades a plan review to a mandated
 different-agent-type read.
 
-### Boundary C — Falsification (targeted, after broad verification)
+### Boundary C — Falsification (targeted, after change verification)
 
 Independent review does not mean independently repeating every command the
 implementer ran. For work with a valid Boundary B record (`doctrine/plans.md`:
-a plan's Implementation verification section, or, where the Maintainer asks
-for a review of a trivial change, its commit body, whose tested revision is that
-commit and whose clean state is a tree clean apart from the change), the reviewer first checks that the full tested
-revision and reviewed range cover the implementation under review, that the
-named paths and interpreter/runtime are credible, and that clean pre/post state
-and all outcomes are dispositioned. The reviewer then chooses tests and probes
-for the review's own falsification ledger: changed public paths, negative or
-edge cases, cross-surface assumptions, and claims whose evidence is doubtful.
-Copying the implementation's broad command does not satisfy that ledger.
+a plan's Implementation verification section, or a trivial change's commit
+body, whose candidate bytes are identified by the resulting commit and whose
+clean state is a tree clean apart from the change), the reviewer first checks
+that the tested revision and reviewed range cover the implementation, that the
+named paths and interpreter/runtime are credible, and that clean pre/post
+state and all outcomes are dispositioned. The reviewer then chooses tests and
+probes for the review's own falsification ledger: changed public paths,
+negative or edge cases, cross-surface assumptions, and claims whose evidence
+is doubtful. Copying the implementation's command does not satisfy that ledger.
 
 **When a finding or claim says a value must reach every member of a set**
 (every call site, every rendering path), list the set from the tree, not the
@@ -364,35 +364,46 @@ site fails. Any equivalence that was not measured is reported as a survivor.
 Outside that trigger, mutation stays the reviewer's choice.
 
 **The reviewer never runs the full suite.** The full suite runs only as a
-certifying run, once per integration point (`doctrine/plans.md`). A record's
-full-suite evidence is the certifying run that contains the change's final
-commit, cited as `**Certified by**`. A fresh full run that a trigger below
-requires is the next certifying run, not the reviewer's own, and until it lands
-the change stays uncertified.
+certifying run at the authorized integration points (`doctrine/plans.md`). A
+change-verification record cites the certifying SHA as `**Certified by**`, or
+`pending`; later certification is appended separately. It does not supply a
+missing change check.
 
-**A Boundary B record may be `full` or `bounded`** (`doctrine/plans.md`). On a
-bounded record the reviewer additionally records
-`**Bounding**: ACCEPTED | FULL RUN REQUIRED`, after challenging at least one
-named surface, mapped test, or stated omission — the same standard applied to
-author-accounting here, where the reviewer challenges a row or names the one
-they sampled, never "the field is present". `FULL RUN REQUIRED` **invalidates**
-the bounded record, which lands it on trigger 1 below. It is not a seventh
-trigger.
+A Boundary B record states `**Boundary B mode**: bounded | wide` and follows
+the plan doctrine's coverage fields. `bounded` must cover mapped affected
+behavior and consumers; `wide` names owning test families, known integration
+and public paths, and standing gates. Use `wide` for a contract or
+trust-ceremony surface. After
+challenging a named surface, mapped test, or stated omission, the reviewer
+records `**Bounding**: ACCEPTED | WIDER RUN REQUIRED`. The second verdict
+names the missing behavior and check, invalidates that record for acceptance,
+and returns it to the author for a wider run and new final-commit evidence.
+This is reviewer judgment, not a parser or selector.
 
-A fresh full-suite run is required when any of these six triggers applies:
+A missing or invalid record, an unrecorded cross-surface dependency, an
+undisposed skip/xfail/xpass, or changed implementation, test, executable
+template, or fixture bytes requires valid new change-specific evidence. It does
+not automatically require a whole-tree run. Review-only prose appended after a
+valid record does not invalidate it. A later unrelated commit cannot cite the
+old record as evidence for its own bytes. When a ceremony explicitly requires
+full execution, its authorized certifying run supplies that tree evidence; the
+reviewer does not run it.
+
+A replacement Boundary B record is required when any of these six
+record-replacement triggers applies:
 
 1. no valid Boundary B record exists;
 2. review discovers an unrecorded cross-surface dependency;
 3. a skip, xfail, or xpass lacks an adequate disposition;
 4. review sharpening changes implementation, tests, executable templates, or
    fixtures in the reviewed range;
-5. the accepted plan governs a trust ceremony that explicitly requires
-   independent full execution; or
+5. the accepted plan's trust ceremony explicitly requires independent full
+   execution; or
 6. the reviewer has a concrete reason to distrust or falsify the broad result.
 
-Review-only prose appended after a valid run does not trigger another broad run.
-A replacement run binds the final changed implementation. A later unrelated
-commit cannot cite the old record as evidence for its own bytes.
+These triggers require scoped change evidence again; they do not automatically
+call for a whole-tree run. The fifth trigger is satisfied only by the
+authorized ceremony's prescribed certifying run.
 
 This reuse rule is not authentication, malicious-committer protection, or a
 release optimization. Release ceremonies keep their own accepted commands and

@@ -219,7 +219,7 @@ conditions in lane 1 stays trivial even on a named surface) — is implemented a
 proposal archived in one commit, with no code review. A
 **non-trivial** change — landing across multiple commits, touching
 multiple areas, carrying multi-stage sequencing, leaving deferred
-follow-ups, or needing Boundary B in `full` mode — opens a plan.
+follow-ups, or needing Boundary B in `wide` mode — opens a plan.
 
 ## The plan lifecycle
 

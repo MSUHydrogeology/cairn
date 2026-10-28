@@ -187,7 +187,7 @@ single area, no follow-ups, and a Boundary B that would run `bounded`,
 except that a defect repair meeting the lifecycle's three conditions stays
 trivial on a named surface — implemented and the proposal archived together, with no code review) or
 **non-trivial** (multiple commits or areas, multi-stage sequencing,
-deferred follow-ups, or Boundary B in `full` mode — it opens a plan; see
+deferred follow-ups, or Boundary B in `wide` mode — it opens a plan; see
 `doctrine/plans.md`).
 
 **The plan-review decision is part of accepting a non-trivial
@@ -327,12 +327,12 @@ commit:
   work AND moves the proposal to `dev/proposals/archive/` in the same
   commit. It has no code review. The implementing commit re-reads each
   plan-skip condition against what it actually touched. If it touched more
-  than one area, or its Boundary B would run `full`, a plan opens then, and
+  than one area, or its Boundary B would run `wide`, a plan opens then, and
   the plan-open commit archives the proposal.
 * If the implementation is **non-trivial** (lands across multiple
   commits, OR touches multiple files / areas, OR has multi-stage
   sequencing, OR carries deferred follow-ups, OR needs Boundary B in
-  `full` mode — see the plan triage
+  `wide` mode — see the plan triage
   rule in `doctrine/plans.md` for the canonical formulation), the
   implementing agent first opens a plan in `dev/plans/`. The plan-open
   commit moves the proposal to `dev/proposals/archive/` in the same
