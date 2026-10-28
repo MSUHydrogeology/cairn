@@ -1,7 +1,7 @@
 # Plan: Align model floors with the team roster
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-model-floor-alignment.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Align the task-based capability floors and Cairn's local model assignments while keeping review and authority safeguards.
@@ -89,3 +89,25 @@ until the next certifying run covers it. The certifying run, not this plan's
 implementation or review, owns the full suite. Boundary C is independent targeted
 falsification by the code reviewer. No new security check or trigger is added;
 the proposal's S1–S5 and existing human checks remain unchanged.
+
+## Plan review -- Codex gpt-6.1-terra (Internal reviewer) -- 2026-10-28
+
+Reviewed commit: 07a08d19e706411f1ce876f65207c8dea1aff0ac
+Target: Source proposal, Scope, Sequence, Acceptance criteria, Scope delta, Verification
+Prior findings: none
+Assurance path: required(Internal + Internal Security Review)
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+
+**Foundations**
+
+1. **Should this happen as framed?** The named sources and pending certification can deliver the Decision, but the mapped checks need explicit properties for the new distinctions -- `dev/plans/model-floor-alignment.md`, C1 and Verification.
+2. **Best alternative.** Extend the existing owning checks and real-install checks rather than add a new gate; retain the source and installed copies -- `bootstrap/tests/test_model_tier_rule_ships.py`; `bootstrap/tests/test_onboarding_seed_roster.py`.
+3. **What would show it wrong.** A changed floor or installed instruction that contradicts the accepted rule while the mapped checks pass would show the evidence cannot establish delivery -- `dev/proposals/archive/2026-10-28-codex-model-floor-alignment.md`, “Rule and boundary”; `bootstrap/tests/test_review_stance_in_shipped_files.py`, `_MODEL_OBLIGATIONS`.
+
+**F1 (blocking): Map the semantic properties to their checks.** C1 asks that tests exercise the rule and fan-out, but the verification mapping names files and broad areas, not the new properties each must catch. The existing fan-out check in `bootstrap/tests/test_model_tier_rule_ships.py` checks the stronger-check clauses, while `bootstrap/tests/test_review_stance_in_shipped_files.py` currently pins the old proposal-review and bright-line wording. Merely updating those old assertions can leave a low floor for ordinary unreviewed non-trivial writing, a high floor for settled high-risk plan execution, or an unchanged standard-lane floor undetected. The existing mapping checker validates shape, not the assigned families. **Satisfier:** map the owning tests or nodes to the task-versus-lane distinction, all three fan-out categories, the high-judgment/low-execution boundary, the below-floor-only check, and each assigned local family/tier; require checks on relevant source and installed guidance, including both onboarding paths. Make each check fail for the wrong property rather than just finding a general tier word.
+
+**Covered:** claims and scope (accepted “Delivery and evidence” and plan C1); public installation and cross-document drift (`bootstrap/tests/test_model_tier_rule_ships.py::test_a_profile_with_no_module_still_installs_the_rule`, `bootstrap/tests/test_onboarding_seed_roster.py`); design, silent failure and satisfier (F1); lifecycle and verification placement (plan Sequence and Verification; `dev/plans/_template.md`, Verification); reuse search (`rg -n -i 'tier|floor|fan.out|scrib|model.selection'` over named sources and owning tests, with the known test reader as positive control); domain limits (accepted “Signals and scope”).
+**Not covered / low confidence:** No implementation exists to exercise, and no tests or capability benchmarks were run. I did not independently verify the security-preflight threat analysis.
