@@ -391,9 +391,9 @@ def _trusted_roster_from_anchor(anchor: str, candidate: str,
         manifest = json.loads(manifest_blob.stdout.decode("utf-8"))
     except (UnicodeError, json.JSONDecodeError):
         raise RuntimeError("prior anchor gate manifest is malformed") from None
-    expected = manifest.get("protected_roster")
-    if expected is None:
+    if "protected_roster" not in manifest:
         return None
+    expected = manifest["protected_roster"]
     if (not isinstance(expected, dict)
             or expected.get("path") != _PROTECTED_ROSTER_REL
             or not isinstance(expected.get("sha256"), str)):
@@ -417,8 +417,10 @@ def _ordinary_test_files(repo: Path, protected_roster: dict) -> dict[str, str]:
     protected = set(protected_roster["protected_python_paths"])
     return {
         p.relative_to(repo).as_posix(): _sha256(p)
-        for p in sorted((repo / _TESTDIR_REL).glob("test_*.py"))
-        if p.is_file() and p.relative_to(repo).as_posix() not in protected
+        for p in sorted((repo / _TESTDIR_REL).rglob("test_*.py"))
+        if (p.is_file()
+            and "fixtures" not in p.relative_to(repo).parts
+            and p.relative_to(repo).as_posix() not in protected)
     }
 
 
@@ -473,10 +475,19 @@ def _frozen_files(repo: Path = _REPO,
             rel = p.relative_to(repo).as_posix()
             if rel in exclude:
                 continue
+            rel_parts = Path(rel).parts
+            tests_parts = Path(_TESTDIR_REL).parts
+            in_tests = rel_parts[:len(tests_parts)] == tests_parts
+            under_fixtures = in_tests and "fixtures" in rel_parts[len(tests_parts):]
+            is_test_file = (in_tests and not under_fixtures
+                            and Path(rel).name.startswith("test_")
+                            and Path(rel).suffix == ".py")
+            # Preserve the old byte surface for every non-test glob match,
+            # including new scripts, shipped modules and fixtures. The roster
+            # narrows only test files: only its explicit members stay frozen.
             if (rel == _PROTECTED_ROSTER_REL
-                    or rel in protected
-                    or rel in roster["protected_fixture_paths"]
-                    or rel in roster["preserved_non_test_frozen_paths"]):
+                    or not is_test_file
+                    or rel in protected):
                 found.add(rel)
     return sorted(found)
 
@@ -700,8 +711,9 @@ def verify(manifest_path: str | Path, *, anchor_ref: str | None = None,
 
     # 3) Frozen files — modification / removal HOLDs; new files are recorded.
     pinned_frozen = manifest["frozen_files"]
+    roster_present = "protected_roster" in manifest
     roster = manifest.get("protected_roster")
-    if roster is None:
+    if not roster_present:
         current_paths = _legacy_frozen_files(repo)
     else:
         try:
@@ -854,14 +866,6 @@ def verify(manifest_path: str | Path, *, anchor_ref: str | None = None,
                 notes.append(f"SKIP-XFAIL-ORDINARY-REMOVED: {nid} (ordinary marker change)")
         for nid in sorted(cur_ids - pinned_ids):
             notes.append(f"COLLECTION-ADDED: {nid} (new test — allowed, recorded)")
-        if protected_paths is not None:
-            added_by_file: dict[str, list[str]] = {}
-            for nid in sorted(cur_ids - pinned_ids):
-                rel = nid.split("::", 1)[0]
-                if rel.startswith("bootstrap/tests/test_") and rel not in protected_paths:
-                    added_by_file.setdefault(rel, []).append(nid)
-            for rel, nodes in sorted(added_by_file.items()):
-                notes.append(f"UNPROTECTED-NEW: {rel} nodes={nodes!r}")
     else:
         notes.append("COLLECTION: skipped (static-only verification, --no-collect)")
 

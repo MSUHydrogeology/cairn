@@ -138,7 +138,8 @@ def _authority_code_files():
     return [("bootstrap/tests/" + Path(m.__file__).name, m.__file__) for m in mods]
 
 
-def _verify_executing_authority_code(trusted_repo: Path, prior_sha: str) -> tuple[bool, list[str]]:
+def _verify_executing_authority_code(trusted_repo: Path, prior_sha: str,
+                                     *, include_preflight: bool = False) -> tuple[bool, list[str]]:
     """Pin the EXECUTING authority code against the immutable trusted gate manifest
     at the prior gate state ``P`` (re-review round-5 Finding 1b). Refuses if a
     verifier module is unpinned or its running bytes differ from P's frozen hash."""
@@ -146,12 +147,14 @@ def _verify_executing_authority_code(trusted_repo: Path, prior_sha: str) -> tupl
     if raw is None:
         return False, [f"prior gate manifest absent at P {prior_sha[:12]} — cannot pin authority code"]
     try:
-        frozen = json.loads(raw).get("frozen_files", {})
+        prior_manifest = json.loads(raw)
+        frozen = prior_manifest.get("frozen_files", {})
     except json.JSONDecodeError:
         return False, ["prior gate manifest at P is unparseable — cannot pin authority code"]
     refusals: list[str] = []
     for rel, path in _authority_code_files():
-        pinned = frozen.get(rel)
+        entry = frozen.get(rel)
+        pinned = M._entry_sha256(entry) if entry is not None else None
         if pinned is None:
             refusals.append(f"authority code {rel} is not pinned in P's trusted gate manifest")
             continue
@@ -159,7 +162,36 @@ def _verify_executing_authority_code(trusted_repo: Path, prior_sha: str) -> tupl
         if actual != pinned:
             refusals.append(f"executing authority code {rel} differs from P's pinned hash "
                             f"(untrusted verifier code in the invoking checkout)")
+    if include_preflight:
+        # _gate_preflight is not imported in this process yet. Validate the
+        # exact source object that the trusted loader will execute below.
+        rel = "bootstrap/tests/_gate_preflight.py"
+        entry = frozen.get(rel)
+        source = _git_show_bytes(trusted_repo, prior_sha, rel)
+        if entry is None:
+            refusals.append(f"authority code {rel} is not pinned in P's trusted gate manifest")
+        elif source is None or hashlib.sha256(source).hexdigest() != M._entry_sha256(entry):
+            refusals.append(f"authority code {rel} differs from P's pinned hash")
     return (not refusals), refusals
+
+
+def _load_pinned_preflight(trusted_repo: Path, prior_sha: str):
+    """Execute only the preflight source bytes pinned by roster-installed P."""
+    import types
+    rel = "bootstrap/tests/_gate_preflight.py"
+    manifest_raw = _git_show_bytes(trusted_repo, prior_sha, _MANIFEST_REL)
+    source = _git_show_bytes(trusted_repo, prior_sha, rel)
+    if manifest_raw is None or source is None:
+        raise RuntimeError("prior anchor does not carry the preflight authority source")
+    manifest = json.loads(manifest_raw)
+    entry = manifest.get("frozen_files", {}).get(rel)
+    if entry is None or hashlib.sha256(source).hexdigest() != M._entry_sha256(entry):
+        raise RuntimeError("prior anchor does not authenticate preflight authority source")
+    module = types.ModuleType("bootstrap.tests._gate_preflight_stage_b")
+    module.__file__ = str(Path(__file__).resolve().parent / "_gate_preflight.py")
+    module.__package__ = "bootstrap.tests"
+    exec(compile(source, module.__file__, "exec"), module.__dict__)
+    return module
 
 
 def _static_verify_anchor(trusted_repo: Path, n_sha: str, prospective_bytes: str) -> bool:
@@ -408,8 +440,17 @@ def promote_data_only(
 
     # (2b) Authority-CODE pin: the executing verifier code must match
     #      P's trusted gate manifest — reading authority DATA from A is not enough.
-    code_ok, code_holds = _verify_executing_authority_code(trusted_repo, P) \
-        if checks["gate_ref_at_prior"] else (False, ["prior gate state unknown — cannot pin authority code"])
+    roster = None
+    roster_resolution_error = None
+    if checks["gate_ref_at_prior"]:
+        try:
+            roster = M._trusted_roster_from_anchor(P, candidate_sha, repo=trusted_repo)
+        except Exception as exc:
+            roster_resolution_error = str(exc)
+    code_ok, code_holds = _verify_executing_authority_code(
+        trusted_repo, P, include_preflight=roster is not None) \
+        if checks["gate_ref_at_prior"] else (
+            False, ["prior gate state unknown — cannot pin authority code"])
     checks["authority_code_pinned"] = code_ok
 
     # Independently bind the prospective membership and static manifest fields
@@ -419,13 +460,14 @@ def promote_data_only(
     static_error = "executing authority code is not pinned by P"
     if code_ok:
         try:
-            roster = M._trusted_roster_from_anchor(P, candidate_sha, repo=trusted_repo)
+            if roster_resolution_error:
+                raise RuntimeError(roster_resolution_error)
             proposed = json.loads(evidence.prospective_manifest_bytes)
             if roster is not None:
-                try:
-                    from bootstrap.tests import _gate_preflight as P_gate
-                except ImportError:
-                    import _gate_preflight as P_gate
+                # Execute source read from P only after its hash is matched to
+                # P's signed frozen entry. Never import the invoking checkout's
+                # copy on the authority path.
+                P_gate = _load_pinned_preflight(trusted_repo, P)
                 static = P_gate.rederive_static_manifest(
                     candidate_sha, protected_roster=roster, repo=trusted_repo)
                 expected_fields = ((set(static) - {"object_format"})
@@ -442,11 +484,11 @@ def promote_data_only(
                 # a tracked frozen path or substitute its digest.
                 if "protected_roster" in proposed:
                     raise ValueError("legacy path cannot install a protected roster")
-                try:
-                    from bootstrap.tests import _gate_preflight as P_gate
-                except ImportError:
-                    import _gate_preflight as P_gate
-                with P_gate.raw_tree(candidate_sha, repo=trusted_repo) as tree:
+                # The old signed closure predates _gate_preflight. Preserve its
+                # broad frozen policy using only already-pinned M and _trust.
+                with tempfile.TemporaryDirectory(prefix="cairn-legacy-static-") as td:
+                    tree = _trust.extract_ref_tree(candidate_sha, Path(td) / "candidate",
+                                                   trusted_repo)
                     blob_ids = M._tree_blobs(trusted_repo, candidate_sha)
                     expected = {
                         rel: M._blob_sha256(trusted_repo, blob_ids[rel][1])

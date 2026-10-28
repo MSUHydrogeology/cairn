@@ -1950,11 +1950,17 @@ def resolve_protected_roster(anchor: str, candidate: str, *,
         old_manifest = json.loads(old_blob.decode("utf-8"))
     except (UnicodeError, json.JSONDecodeError):
         raise PreflightError("the previous anchor's gate manifest is malformed") from None
-    old_roster = old_manifest.get("protected_roster")
+    if "protected_roster" not in old_manifest:
+        old_roster = None
+    else:
+        old_roster = old_manifest["protected_roster"]
 
     if old_roster is None:
+        if "protected_roster" in old_manifest:
+            raise PreflightError(
+                "the previous anchor's protected roster is present but malformed")
         if transition is None:
-            return None  # legacy broad policy; it cannot narrow membership
+            return None  # a verified roster-less manifest keeps broad legacy policy
         candidate_blob = _blob_at(candidate, G._PROTECTED_ROSTER_REL, repo=repo)
         if candidate_blob is None:
             raise PreflightError("candidate is missing the approved initial roster")

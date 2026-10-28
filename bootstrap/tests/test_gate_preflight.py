@@ -13,6 +13,7 @@ a test claiming otherwise is worse than no test:
 from __future__ import annotations
 
 import ast
+import base64
 import contextlib
 import io
 import json
@@ -60,6 +61,16 @@ def _write(repo: Path, rel: str, text: str = "x\n") -> None:
     p = repo / rel
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(text, encoding="utf-8")
+
+
+def test_present_null_roster_in_anchor_is_malformed_not_legacy(tmp_path):
+    repo = _repo(tmp_path)
+    _write(repo, G._MANIFEST_REL,
+           json.dumps({"schema": G.SCHEMA, "protected_roster": None,
+                       "frozen_files": {}}))
+    anchor = _commit(repo, "malformed null roster")
+    with pytest.raises(P.PreflightError, match="present but malformed"):
+        P.resolve_protected_roster(anchor, anchor, transition=None, repo=repo)
 
 
 def _closure_repo(tmp_path: Path) -> tuple[Path, str]:
@@ -946,7 +957,7 @@ def _extract_anchored(repo: Path, dest: Path) -> Path:
     return dest / "bootstrap/tests/_gate_preflight.py"
 
 
-def _ceremony_repo(tmp_path: Path):
+def _ceremony_repo(tmp_path: Path, *, rosterless: bool = False):
     """A repo where the whole ceremony can actually run.
 
     Copies the *real* authority-closure files so the closure and authority-module
@@ -960,6 +971,8 @@ def _ceremony_repo(tmp_path: Path):
     for rel, src in _CLOSURE_SRC.items():
         if rel == P._ALLOWED_SIGNERS_REL:
             continue
+        if rosterless and rel == P.G._PROTECTED_ROSTER_REL:
+            continue
         dst = repo / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
         dst.write_bytes(src.read_bytes())
@@ -969,6 +982,8 @@ def _ceremony_repo(tmp_path: Path):
                     | set(roster_data["protected_fixture_paths"])
                     | set(roster_data["preserved_non_test_frozen_paths"]))
     for rel in sorted(frozen_paths):
+        if rosterless and rel == P.G._PROTECTED_ROSTER_REL:
+            continue
         if rel == P._ALLOWED_SIGNERS_REL or (repo / rel).exists():
             continue
         dst = repo / rel
@@ -985,9 +1000,6 @@ def _ceremony_repo(tmp_path: Path):
                            encoding="utf-8")
     _write(repo, "bootstrap/tests/__init__.py", "")
     _write(repo, P._ALLOWED_SIGNERS_REL, f"m@example {keydata}\n")
-    _write(repo, P._MANIFEST_REL, json.dumps(
-        {"protected_roster": P.G._local_roster(repo)},
-        indent=2, sort_keys=True) + "\n")
     # The REAL manifest producer runs in this fixture, so supply the two things
     # it refuses without: a non-empty pytest collection, and the AST baseline
     # keys it pins. That is what makes a true three-command integration test
@@ -998,6 +1010,19 @@ def _ceremony_repo(tmp_path: Path):
            json.dumps({f"Assign:{sym}": {"digest": f"d{i}"}
                        for i, sym in enumerate(P.G.MAPPING_SYMBOLS_PHASES)},
                       indent=2) + "\n")
+    if rosterless:
+        # P models the verified pre-installation anchor: the roster field is
+        # truly absent and its existing broad frozen policy remains intact.
+        _commit(repo, "fixture files before the legacy manifest")
+        old_manifest = P.G.produce(repo)
+        # The producer's real collection may leave bytecode in the synthetic
+        # repository; compiled files are correctly refused by the ceremony.
+        for cache in sorted(repo.rglob("__pycache__"), reverse=True):
+            shutil.rmtree(cache)
+    else:
+        old_manifest = {"protected_roster": P.G._local_roster(repo)}
+    _write(repo, P._MANIFEST_REL,
+           json.dumps(old_manifest, indent=2, sort_keys=True) + "\n")
 
     for k, v in (("gpg.format", "ssh"),
                  ("user.signingkey", str(key.with_suffix(".pub"))),
@@ -1579,6 +1604,120 @@ class TestThreeCommandIntegration:
         return subprocess.run(
             [sys.executable, "-E", "-s", str(checker), *args],
             capture_output=True, text=True, check=False)
+
+    def test_approved_first_roster_transition_then_signed_anchor_steady_state(
+            self, tmp_path, monkeypatch):
+        """Run the real stage1/stage2 path from roster-less P through steady state."""
+        repo, old_anchor, _head, _epoch = _ceremony_repo(tmp_path, rosterless=True)
+        old_manifest = json.loads(_run(
+            "git", "show", f"{old_anchor}:{P._MANIFEST_REL}",
+            cwd=repo).stdout)
+        assert "protected_roster" not in old_manifest
+        roster_path = repo / P.G._PROTECTED_ROSTER_REL
+        roster_path.parent.mkdir(parents=True, exist_ok=True)
+        roster_path.write_bytes((_REPO / P.G._PROTECTED_ROSTER_REL).read_bytes())
+        first_head = _signed_commit(repo, "admit the approved initial roster")
+        review = tmp_path / "initial-roster-review.txt"
+        review.write_text(_review_manifest(repo, first_head), encoding="utf-8")
+
+        # Run the exact old checker bytes extracted from P, against C. This is
+        # the compatibility measurement: current checker legacy-mode behavior
+        # alone cannot establish what the prior signed checker does.
+        old_checker = tmp_path / "old-gate-manifest.py"
+        old_source = subprocess.run(
+            ["git", "-C", str(repo), "show",
+             f"{old_anchor}:bootstrap/tests/_gate_manifest.py"],
+            capture_output=True, check=True).stdout
+        old_checker.write_bytes(old_source)
+        legacy_result = subprocess.run(
+            [sys.executable, "-E", "-s", str(old_checker), "verify",
+             "--target-repo", str(repo), "--manifest", str(repo / P._MANIFEST_REL),
+             "--anchor-ref", old_anchor, "--no-collect"],
+            capture_output=True, text=True, check=False)
+        assert legacy_result.returncode == 0, legacy_result.stderr[-2500:]
+        assert f"FROZEN-NEW: {P.G._PROTECTED_ROSTER_REL}" in legacy_result.stderr
+
+        first = _two_stage(repo, monkeypatch, review_manifest=str(review),
+                           reviewed_candidate=first_head)
+        assert first["new_anchor"]
+        installed = P.resolve_protected_roster(first["new_anchor"], first_head,
+                                               transition=None, repo=repo)
+        approved = P.G._roster_from_bytes(
+            (_REPO / P.G._PROTECTED_ROSTER_REL).read_bytes(),
+            require_initial_approval=True)
+        assert installed == approved
+
+        # Exercise the same real producer and both ceremony stages after P now
+        # carries the signed roster. No transition input is supplied.
+        _write(repo, "bootstrap/tests/test_smoke.py",
+               "def test_smoke():\n    assert True\n    assert 1 + 1 == 2\n")
+        steady_head = _signed_commit(repo, "steady-state candidate")
+        P._phase = P._PHASE_CANDIDATE   # separate process in the recorded ceremony
+        steady = _two_stage(repo, monkeypatch)
+        assert steady["new_anchor"]
+        assert P.resolve_protected_roster(steady["new_anchor"], steady_head,
+                                          transition=None, repo=repo) == approved
+
+    def test_first_transition_stage1_refuses_candidate_roster_substitution(
+            self, tmp_path, monkeypatch):
+        repo, _anchor, _head, _epoch = _ceremony_repo(tmp_path, rosterless=True)
+        roster_path = repo / P.G._PROTECTED_ROSTER_REL
+        roster_path.parent.mkdir(parents=True, exist_ok=True)
+        roster_path.write_bytes(b'{"protected_python_paths": []}\n')
+        candidate = _signed_commit(repo, "candidate substitutes roster")
+        review = tmp_path / "substituted-roster-review.txt"
+        review.write_text(_review_manifest(repo, candidate), encoding="utf-8")
+        monkeypatch.setattr(P, "require_stage1_cannot_sign", lambda *a, **k: {})
+        monkeypatch.setattr(P, "gather_evidence",
+                            lambda *a, **k: pytest.fail("producer ran before roster refusal"))
+        with pytest.raises(P.PreflightError, match="exact approved bytes"):
+            P.stage1(repo=repo, package_out=tmp_path / "must-not-exist.json",
+                     out=io.StringIO(), review_manifest=str(review),
+                     reviewed_candidate=candidate)
+
+    def test_first_transition_stage2_refuses_substituted_prospective_roster(
+            self, tmp_path, monkeypatch):
+        """Stage 2 rebuilds roster membership instead of trusting package JSON."""
+        import hashlib
+        repo, _anchor, _head, _epoch = _ceremony_repo(tmp_path, rosterless=True)
+        roster_path = repo / P.G._PROTECTED_ROSTER_REL
+        roster_path.parent.mkdir(parents=True, exist_ok=True)
+        roster_path.write_bytes((_REPO / P.G._PROTECTED_ROSTER_REL).read_bytes())
+        candidate = _signed_commit(repo, "approved roster candidate")
+        review = tmp_path / "stage2-roster-review.txt"
+        review.write_text(_review_manifest(repo, candidate), encoding="utf-8")
+        key_pub = str(tmp_path / "maint.pub")
+        _path, fingerprint = P.validate_signing_key(key_pub)
+        monkeypatch.setattr(P, "require_stage1_cannot_sign",
+                            lambda *a, **k: {"key_path": key_pub,
+                                             "fingerprint": fingerprint,
+                                             "probe": "stubbed"})
+        package_path = tmp_path / "package.json"
+        P.stage1(repo=repo, package_out=package_path, out=io.StringIO(),
+                 review_manifest=str(review), reviewed_candidate=candidate)
+
+        package = json.loads(package_path.read_bytes())
+        staged_manifest = json.loads(base64.b64decode(
+            package["prospective_manifest_b64"]))
+        staged_manifest["protected_roster"]["protected_python_paths"].append(
+            "bootstrap/tests/test_agreement_retired.py")
+        substituted = (json.dumps(staged_manifest, indent=2, sort_keys=True)
+                       .encode() + b"\n")
+        package["prospective_manifest_b64"] = base64.b64encode(substituted).decode()
+        package["prospective_manifest_sha256"] = P._sha256_bytes(substituted)
+        body = (json.dumps(package, indent=2, sort_keys=True) + "\n").encode()
+        package_path.write_bytes(body)
+        before = (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
+                  _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip())
+        P._phase = P._PHASE_CANDIDATE
+        with pytest.raises(P.PackageError, match="prospective manifest rebuilt"):
+            P.apply_now(repo=repo, package=str(package_path), out=io.StringIO(),
+                        confirmed_package_sha256=hashlib.sha256(body).hexdigest(),
+                        signing_key=key_pub, review_manifest=str(review),
+                        reviewed_candidate=candidate)
+        assert (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
+                _run("git", "rev-parse", P._ANCHOR_REF,
+                     cwd=repo).stdout.strip()) == before
 
     def test_the_whole_ceremony_end_to_end_through_subprocesses(self, tmp_path):
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)

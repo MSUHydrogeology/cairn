@@ -12,6 +12,7 @@ from __future__ import annotations
 import ast
 import copy
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -61,6 +62,43 @@ def test_omitted_roster_keeps_broad_policy_without_reading_candidate_roster(tmp_
     assert "bootstrap/tests/test_ordinary.py" in G._frozen_files(repo)
 
 
+def test_roster_narrows_only_test_globs_and_keeps_future_non_test_files(tmp_path):
+    repo = tmp_path / "future-files"
+    for rel in ("bootstrap/tests/test_protected.py",
+                "bootstrap/tests/test_ordinary.py",
+                "bootstrap/tests/helpers.py",
+                "bootstrap/tests/fixtures/new_fixture.py",
+                "scripts/new_script.py",
+                "templates/modules/new_module.py",
+                "bootstrap/new_engine.py"):
+        path = repo / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("VALUE = 1\n", encoding="utf-8")
+    roster = {"protected_python_paths": ["bootstrap/tests/test_protected.py"]}
+    frozen = set(G._frozen_files(repo, roster))
+    assert "bootstrap/tests/test_protected.py" in frozen
+    assert "bootstrap/tests/test_ordinary.py" not in frozen
+    assert {"bootstrap/tests/helpers.py", "bootstrap/tests/fixtures/new_fixture.py",
+            "scripts/new_script.py", "templates/modules/new_module.py",
+            "bootstrap/new_engine.py"} <= frozen
+
+
+def test_present_null_roster_is_not_legacy_anchor(tmp_path):
+    repo = tmp_path / "null-roster-anchor"
+    (repo / "bootstrap/tests/fixtures").mkdir(parents=True)
+    subprocess.run(["git", "-C", str(repo), "init", "-q"], check=True)
+    subprocess.run(["git", "-C", str(repo), "config", "user.email", "t@t"], check=True)
+    subprocess.run(["git", "-C", str(repo), "config", "user.name", "t"], check=True)
+    (repo / G._MANIFEST_REL).write_text(
+        json.dumps({"schema": G.SCHEMA, "protected_roster": None, "frozen_files": {}}))
+    subprocess.run(["git", "-C", str(repo), "add", "-A"], check=True)
+    subprocess.run(["git", "-C", str(repo), "commit", "-q", "-m", "P"], check=True)
+    anchor = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
+                            capture_output=True, text=True, check=True).stdout.strip()
+    with pytest.raises(RuntimeError, match="protected roster is malformed"):
+        G._trusted_roster_from_anchor(anchor, anchor, repo=repo)
+
+
 def test_frozen_set_boundary(produced):
     frozen = produced["frozen_files"]
     # known gate files are pinned
@@ -97,6 +135,14 @@ def test_verify_clean_tree_is_ok(produced, tmp_path, capsys):
     mp = _write_manifest(tmp_path, produced)
     assert G.verify(mp, anchor_ref=None, repo=_REPO) == 0
     assert "OK — gate integrity intact" in capsys.readouterr().err
+
+
+def test_verify_refuses_present_null_roster(produced, tmp_path, capsys):
+    malformed = copy.deepcopy(produced)
+    malformed["protected_roster"] = None
+    mp = _write_manifest(tmp_path, malformed)
+    assert G.verify(mp, anchor_ref=None, repo=_REPO, do_collect=False) == 1
+    assert "ROSTER-MALFORMED" in capsys.readouterr().err
 
 
 def test_verify_holds_on_frozen_file_modification(produced, tmp_path, capsys):
@@ -150,7 +196,19 @@ def test_verify_allows_added_test(produced, tmp_path, capsys, monkeypatch):
     assert G.verify(mp, anchor_ref=None, repo=_REPO) == 0
     output = capsys.readouterr().err
     assert "COLLECTION-ADDED" in output
-    assert "UNPROTECTED-NEW: bootstrap/tests/test_newly_added.py" in output
+    assert "UNPROTECTED-NEW: bootstrap/tests/test_newly_added.py" not in output
+
+
+def test_node_added_to_existing_ordinary_file_is_not_unprotected_new(
+        produced, tmp_path, capsys, monkeypatch):
+    mp = _write_manifest(tmp_path, produced)
+    ids = produced["collection"]["node_ids"]
+    extra = "bootstrap/tests/test_agreement_retired.py::test_new_node"
+    monkeypatch.setattr(G, "_collect", lambda repo=_REPO: (sorted(ids + [extra]), [], 0))
+    G.verify(mp, anchor_ref=None, repo=_REPO)
+    output = capsys.readouterr().err
+    assert f"COLLECTION-ADDED: {extra}" in output
+    assert "UNPROTECTED-NEW: bootstrap/tests/test_agreement_retired.py" not in output
 
 
 def test_ordinary_file_and_node_deltas_are_notes(produced, tmp_path, capsys, monkeypatch):

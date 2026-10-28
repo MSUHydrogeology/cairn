@@ -230,6 +230,40 @@ def test_executing_authority_code_pin_passes_for_real_modules(tmp_path):
     assert ok and holds == []
 
 
+def test_legacy_data_only_promotion_never_executes_unpinned_preflight(tmp_path, monkeypatch):
+    """Roster-less P cannot authorize importing the newer preflight helper."""
+    b = _two_stage_repo(tmp_path)
+    monkeypatch.setattr(R, "_load_pinned_preflight",
+                        lambda *a, **k: pytest.fail("legacy Stage B executed unpinned preflight"))
+    result = _promote(b, confirm=False)
+    assert result.ok
+    assert result.checks["authority_code_pinned"]
+    assert result.checks["trusted_manifest_derivation"]
+
+
+def test_authority_pin_reads_v2_frozen_entry_digest(tmp_path):
+    repo = tmp_path / "v2-pin"
+    (repo / "bootstrap/tests/fixtures").mkdir(parents=True)
+    _git(repo, "init", "-q", "-b", "main")
+    _git(repo, "config", "user.email", "t@t")
+    _git(repo, "config", "user.name", "t")
+    frozen = {
+        rel: {"sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest(),
+              "mode": "100644", "oid": "0" * 40}
+        for rel, path in R._authority_code_files()
+    }
+    preflight_source = Path(R.__file__).with_name("_gate_preflight.py").read_bytes()
+    frozen["bootstrap/tests/_gate_preflight.py"] = {
+        "sha256": hashlib.sha256(preflight_source).hexdigest(),
+        "mode": "100644", "oid": "0" * 40}
+    (repo / "bootstrap/tests/_gate_preflight.py").write_bytes(preflight_source)
+    (repo / R._MANIFEST_REL).write_text(json.dumps({"schema": "cairn-gate-manifest/v2",
+                                                      "frozen_files": frozen}) + "\n")
+    P = _commit_all(repo, "P v2 manifest")
+    ok, holds = R._verify_executing_authority_code(repo, P, include_preflight=True)
+    assert ok and holds == []
+
+
 def test_pretransition_manifest_refuses_until_supervised_bootstrap(tmp_path):
     """Production-shaped: the REAL pre-transition manifest shape does
     NOT pin the Stage-B authority modules (they read FROZEN-NEW). Against such a P
