@@ -2,6 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-ordinary-test-maintenance.md
 **Status**: ready-to-implement
+**Waiting on Maintainer**: Pilot extraction and path allowance
 **Plan review**: required(Internal)
 **Opened**: 2026-10-28
 **In brief**: Simplify one board test cluster without losing fault detection and share the resulting test-maintenance practice.
@@ -95,3 +96,29 @@ folder, where present, uses the same dated stem and archives with the plan.
 This is a path migration, not a scope or lifecycle change. Historical review
 and evidence citations retain the paths valid at their named commits; current
 link destinations and operative targets use the dated paths.
+
+## Pending scope request -- Codex (Coordination, Terra) -- 2026-10-28
+
+The refreshed classification at `fd1c820e` retains protection for
+`bootstrap/tests/test_board_json_contract.py`. The plan's protected-file refusal
+therefore prevents implementing the pilot as written; the narrower trust
+boundary itself is still uninstalled.
+
+**Requested scope delta, not authorized:** separately review relocation of only
+`TestRecordFactsComeFromWhereTheFileSits::test_all_record_values_and_absent_vs_blank_and_headerless_files`
+and `TestOutputIsDeterministic::test_archives_unique_path_key_and_deterministic_ascii_json`,
+keeping their class/method names, to the proposed ordinary file below; then allow
+this pilot to use that path after all eligibility and transition gates are met.
+Keep existing protected helpers and security cases in the original file.
+
+Proposed path: `bootstrap/tests/test_board_json_values.py`.
+
+The exact witnesses, retained helpers, alternatives and assurance costs are in
+`dev/plans/2026-10-28-test-trust-boundary/c1b-refresh-classification-evidence.json`.
+This adds preparatory extraction, dependency/fault evidence, ordinary and Security
+reads, and the applicable protected-node transition and Maintainer ceremony.
+It removes no accepted pilot property or testing-module update. Alternatively,
+keep the pilot waiting; a protected-lane pilot would require explicit acceptance
+of the changed maintenance outcome. No extraction, substitution or waiver is
+made here. The consolidated choice is in
+`dev/strategy/2026-10-28-codex-v06-decision-master.md`.
