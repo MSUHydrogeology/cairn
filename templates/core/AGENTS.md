@@ -222,7 +222,8 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
 * **Implementing an accepted plan, commit your own work.** There is **no
   per-commit approval gate**. Approval attaches to exactly four things:
   * **Pushing.** Always, without exception. The plan authorized the change; it
-    did not authorize publishing it.
+    did not authorize publishing it. Pushing may require a certifying run; ask
+    the Maintainer.
   * **A Decision on a proposal** — the Maintainer's to make, bounded by the
     scribing guard-rail below.
   * **A deviation from the approved plan** — new scope, a struck chunk revived,
@@ -305,7 +306,7 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
     reviewer makes for one change. A certifying run is the configured full suite
     and every standing gate, on a clean committed tree under the configured
     interpreter/runtime, and it is made only:
-    * before a push;
+    * before a push, when required (pushing may require a certifying run; ask the Maintainer);
     * before any ceremony that re-pins the project's gates;
     * before a release cut;
     * when the Maintainer asks for one.
@@ -314,10 +315,10 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
     record cites it as `**Certified by**: <T>`, or as `pending` until one
     exists. Nobody uses the suite's full-run override for any other reason. If a
     certifying run fails, bisect the range since the last certified commit. The
-    change that broke it goes back to its owner, and nothing is pushed until the
-    tree certifies. This holds for already-open plans too: where a plan's own
-    text asks for a full Boundary B, a scoped record plus the certifying run
-    satisfies it.
+    change that broke it goes back to its owner. When a certifying run was
+    required, nothing is pushed until the tree certifies. This holds for
+    already-open plans too: where a plan's own text asks for a full Boundary B,
+    a scoped record plus the certifying run satisfies it.
   * **A — Iteration (scoped).** During implementation, run the tests and probes
     the reviewed plan maps — or, for a trivial change, with no proposal or plan,
     the tests that own each touched surface, found by searching for what imports

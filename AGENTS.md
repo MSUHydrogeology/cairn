@@ -218,7 +218,8 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
 * **Implementing an accepted plan, commit your own work.** There is **no
   per-commit approval gate**. Approval attaches to exactly four things:
   * **Pushing.** Always, without exception. The plan authorized the change; it
-    did not authorize publishing it.
+    did not authorize publishing it. Pushing may require a certifying run; ask
+    the Maintainer.
   * **A Decision on a proposal** — the Maintainer's to make, bounded by the
     scribing guard-rail below.
   * **A deviation from the approved plan** — new scope, a struck chunk revived,
@@ -301,7 +302,7 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
     reviewer makes for one change. A certifying run is Cairn's pair (Boundary B,
     below) on a clean committed tree under the canonical interpreter, and it is
     made only:
-    * before a push;
+    * before a push, when required (pushing may require a certifying run; ask the Maintainer);
     * before the Maintainer's re-anchor ceremony;
     * before a release cut;
     * when the Maintainer asks for one.
@@ -313,9 +314,10 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
     record, and not for a mutation sweep. The broad-run guard refuses without
     it, and that refusal is this rule working. If a certifying run fails, bisect
     the range since the last certified commit. The change that broke it goes
-    back to its owner, and nothing is pushed until the tree certifies. This
-    holds for already-open plans too: where a plan's own text asks for a full
-    Boundary B, a scoped record plus the certifying run satisfies it.
+    back to its owner. When a certifying run was required, nothing is pushed
+    until the tree certifies. This holds for already-open plans too: where a
+    plan's own text asks for a full Boundary B, a scoped record plus the
+    certifying run satisfies it.
   * **The suite has a budget.** A test pins a property in one node.
     Parametrizing over every word, line or file of a text does not test a
     property, and a mutation ledger breaks the claims under review, not every

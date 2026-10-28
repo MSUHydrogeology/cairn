@@ -162,10 +162,11 @@ reviewer's own attempt to break it (C). Re-running someone else's test command
 is not the third one.
 
 **Certifying run** — the full test suite on a clean, committed tree. It is run
-only before a push, before the Maintainer's re-anchor ceremony, before a
-release cut, or when the Maintainer asks. One green run certifies every change
-at or before it; a change's record cites it as `Certified by: <commit>`, or
-`pending` until one exists.
+only before a push when required (pushing may require a certifying run; ask the
+Maintainer), before the Maintainer's re-anchor ceremony, before a release cut,
+or when the Maintainer asks. One green run certifies every change at or before
+it; a change's record cites it as `Certified by: <commit>`, or `pending` until
+one exists.
 
 **Independent scientific check** — for a change that touches a scientific
 assumption: one named check whose expected answer does not come from the code
