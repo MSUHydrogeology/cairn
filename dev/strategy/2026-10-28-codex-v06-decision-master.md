@@ -25,7 +25,7 @@ capabilities and adopter research. This five-plan batch does not finish v0.6.
 |---|---|
 | [Model floors](../plans/archive/2026-10-28-model-floor-alignment.md) | Implemented, independently reviewed and archived. Local vendor assignments and shipped generic task floors align; 574 mapped passes under Python 3.13.13. Certification/re-anchor debt remains live in the roadmap. |
 | [Scoped verification](../plans/2026-10-28-scoped-change-verification.md) | Implemented; 2,700 collected/executed nodes reconciled, five guard cases passed, environment-denied security cases passed with required local capability. Independent example adjudication and ordinary/Security reviews completed. Both reviews hold completion for the prescribed frozen-file ceremony. Later naming examples corrected with 656 mapped passes under Python 3.13.13. |
-| [Governing text](../plans/2026-10-28-governing-text-single-source.md) | Refreshed section/obligation map, editing baseline and actual installs support the routing/conflict choice below. No rule moved or deleted. |
+| [Governing text](../plans/2026-10-28-governing-text-single-source.md) | Routing chosen at `aa9fc08b`; the two conflicting prescriptions remain for separate choices. No rule moved or deleted. |
 | [Test trust boundary](../plans/2026-10-28-test-trust-boundary.md) | Refreshed factual inventory and high-tier classification are ready for exact roster approval. Existing protection remains active. |
 | [Ordinary test maintenance](../plans/2026-10-28-ordinary-test-maintenance.md) | Reviewed plan; implementation cannot start because the chosen board file contains security defenses and remains protected. |
 
@@ -37,9 +37,10 @@ Use `python tools/board.py --maintainer` for declared next moves.
 
 ### 1. Governing-text routing and two conflicting prescriptions
 
-**Recommend:** move public explanation/reference to the proposed methodology
+**Chosen:** move public explanation/reference to the proposed methodology
 home under docs; keep complete operating duties in usable installed files and
-project-specific rules in `dev/rules/`. A separate published methodology has a
+project-specific rules in `dev/rules/`. The Maintainer chose this routing in
+`aa9fc08b`; the two conflicting rules below remain undecided. A separate published methodology has a
 purpose, but the inventory found no delivery requirement for the distinct
 `doctrine/` location. Moving costs the familiar landmark and citation migration;
 a rename alone saves no editing.
