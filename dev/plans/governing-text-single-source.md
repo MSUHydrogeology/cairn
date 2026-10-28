@@ -1,15 +1,14 @@
 # Plan: Governing text inventory and routing
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-governing-text-single-source.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Map where rules come from and reach adopters before choosing how to reduce repeated editing.
 
 ## Source proposal
 
-The accepted revised proposal makes a rule inventory and a Maintainer routing
-choice precede conditional consolidation. The Decision also asks why a
+The accepted proposal makes inventory and Maintainer routing precede consolidation. The Decision also asks why a
 `doctrine/` folder exists when it is not shipped to adopters, and whether its
 contents belong in `dev/rules` or `docs/` instead.
 
@@ -19,8 +18,7 @@ Inventory the published doctrine and the internal and installed governing
 files, including `AGENTS.md`, `dev/agent_collaboration.md`, and proposal and
 plan templates. Include affected modules, boards, the documentation plan and
 its forkable template. The routing choice may lead to changes in these surfaces;
-no new directory or general-purpose tool is assumed. Preserve all adopted
-obligations and distinguish source parity from deliberate adopter differences.
+Preserve adopted obligations and deliberate adopter differences.
 
 **Reuse.** N/A: no code added. Use the existing installer, profile definitions,
 rule tests, claim and link checkers, and applicable ceremonies.
@@ -41,8 +39,8 @@ Proposed paths:
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
 | C1 | Inventory current rules, history, installed reach and editing cost | Plan review; may run alongside other plans | Evidence and routing alternatives in `dev/strategy/2026-10-28-governing-text-inventory.md` |
-| C2 | MAINTAINER-GATED routing choice | C1; Maintainer chooses homes before operative rule relocation or deletion | Chosen routing and explicit authorization in this plan |
-| C3 | Conditional edits and property guards | C2; model-floor alignment completed before shared governing-file edits; test-trust-boundary work completed before changing frozen prose tests | Safe consolidation, installed guards and comparison evidence |
+| C2 | MAINTAINER-GATED routing choice | C1 refreshed after model-floor and scoped-verification implementation and code review; Maintainer chooses before rule relocation or deletion | Chosen routing and explicit authorization in this plan |
+| C3 | Conditional edits and property guards | C2; scoped-verification implementation and code review complete before shared governing edits; test-trust-boundary work complete before frozen prose tests change | Safe consolidation, installed guards and comparison evidence |
 | C4 | Verify and hand off | C3; applicable frozen-file and doctrine ceremonies | Scoped verification record and independent code review |
 
 ## Acceptance criteria
@@ -58,7 +56,9 @@ Inspect the installer's mapping and real small and fuller profile installs;
 separate source claims from observed output and trace mandatory reachability.
 Measure one operating-rule and one template-instruction edit: files, tests,
 ceremonies and installed reader usability. Recommend a routing with its losses
-and unresolved questions. Commit the inventory before the fence.
+and unresolved questions. Refresh affected evidence and mapping against the
+post-model-floor and post-scoped-verification reviewed HEAD before C2; commit
+the inventory before the fence.
 
 ### C2
 
@@ -92,18 +92,44 @@ individual disposition and the Maintainer's quoted allowance before archive.
 
 ## Verification
 
-Boundary A maps each changed rule and installed path to its owner before edits;
-start with `bootstrap/tests/test_review_and_verification_rules_ship.py`,
-`bootstrap/tests/test_scope_reduction_trap.py`,
-`bootstrap/tests/test_writing_rules_ship.py`,
-`bootstrap/tests/test_model_tier_rule_ships.py`, and
-`bootstrap/tests/test_review_sweep_ships.py`. Search for further readers of
-each changed surface and run those owners, positive and deletion/inversion
-controls, and representative real installs. Run claim, link, prose-integrity,
-neutrality and redundancy checks as applicable. Inspect the frozen manifest for
-changed files and follow the existing doctrine and frozen-file ceremonies;
-never modify frozen prose tests before the test-trust-boundary work completes.
-The inventory itself needs claim and link checks and evidence inspection.
+Boundary A starts with this map; paths after arrows are installed destinations
+from `bootstrap/_scaffold/config.py` `_CORE_MAPPINGS`:
+
+- Review and verification duties: `templates/core/AGENTS.md` → `AGENTS.md`;
+  `test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation`
+  checks both source copies only. Its claiming tests distinguish conditional
+  adopter claiming from unconditional Cairn claiming; do not flatten that difference.
+- Review sweep: `templates/core/dev/agent_collaboration.md` →
+  `dev/agent_collaboration.md`, with the `AGENTS.md` pointer. In
+  `bootstrap/tests/test_review_sweep_ships.py`, source tests check both copies;
+  `test_installed_loop_document_carries_the_obligation` and
+  `test_installed_agents_md_carries_the_pointer` check actual installs of every
+  shipped profile; `test_an_install_without_the_sweep_is_reported` removes the
+  sweep from installed output as a control.
+- Scope reduction: core governing files and proposal/plan templates map to the
+  same relative installed paths; `test_scope_reduction_trap.py::test_scope_reduction_obligation_present`
+  checks source, board and doctrine surfaces, not installed output. Compare
+  source/twin meaning, and verify affected installed clauses through real installs.
+- Model floors: core `AGENTS.md` → installed `AGENTS.md`;
+  `test_model_tier_rule_ships.py::test_the_rule_reads_the_same_in_both_copies`
+  checks parity; `test_a_profile_with_no_module_still_installs_the_rule` checks
+  `bootstrap/profiles/solo-greenfield.yml` output.
+- Plain language: core collaboration file → installed collaboration file;
+  `test_writing_rules_ship.py::test_cairns_own_copy_says_what_it_ships` checks
+  source parity, and `test_standard_with_version_and_groups_reaches_install`
+  checks a real core-plus-issue-capture install.
+
+Test paths above are under `bootstrap/tests/`. The inventory and chosen routing
+extend this map to each changed obligation, source owner, installed destination,
+profile and exact test or gate before edits; search for every affected reader,
+record uncovered consumers and check them. For each replaced guard, check the
+intact real install and removed or inverted clause in installed output; a negative
+control proves sensitivity, not semantic equivalence. Compare meaning against
+the inventory and check source/twin parity including intentional differences.
+Run the mapped owners and real installs, `scripts/claim_check.py`,
+`scripts/link_check.py`, `scripts/check_cairn.py`, and
+`scripts/quality_gate.py --sub neutrality --sub redundancy` as applicable.
+Inspect the frozen manifest and follow the existing ceremonies. Check the inventory’s claims, links and evidence.
 
 Boundary B uses the canonical `/Users/kendal30/conda_envs/lhm/bin/python3.13`
 on a clean final implementation commit. These high-risk surfaces require full
@@ -201,3 +227,11 @@ placement: C2 and frozen-test fence; #8 scope: conditional cuts and two-edit com
 mutation, ceremony, full doctrine inventory or future semantic guard was executed. Those
 remain implementation evidence; the ordinary review's sequencing finding remains
 separate.
+
+## Response to plan review -- Codex (Plan author, gpt-6.1-terra) -- 2026-10-28
+
+| Finding | Disposition | Operative cell |
+|---|---|---|
+| F1 | Accepted | Sequence C2–C3; C1 refresh |
+| F2 | Accepted | Verification map and C1 refresh |
+| S1 | Accepted | Verification map and installed-output controls |
