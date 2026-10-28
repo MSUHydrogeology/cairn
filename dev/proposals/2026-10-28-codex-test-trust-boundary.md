@@ -1,7 +1,7 @@
 # Narrow the gate's test-file freeze without hiding test loss
 
 **Author**: Codex (Sol), Proposal author
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
@@ -149,3 +149,32 @@ concede this lost assurance.
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Review -- Codex (Sol), Proposal reviewer -- 2026-10-28
+
+```
+Reviewed commit: 7b8036cf80334eedd8d9a180b180c383b260a252
+Target: opening proposal, Context through Assurance path
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, if the Maintainer accepts the stated loss: the current gate holds on every frozen test edit and every lost node, so ordinary maintenance incurs ceremony; the protected boundary needs a sharper admission rule. -- `bootstrap/tests/_gate_manifest.py:337`; `bootstrap/tests/_gate_manifest.py:575`; `bootstrap/tests/_gate_manifest.py:678`; proposal `## Scope delta`.
+2. **Best alternative.** Keep blanket freezing if the Maintainer values byte-level detection across every test more than routine edits. If narrowing, use one anchor-owned protected roster across produce, verify, and the signed ceremony, not a candidate-controlled classification. -- `bootstrap/tests/_gate_preflight.py:1903`; `bootstrap/tests/_gate_preflight.py:1940`; `bootstrap/tests/_gate_preflight.py:2100`; `bootstrap/REANCHOR_RUNBOOK.md:173`.
+3. **What would show it wrong.** Withdraw this design if an ordinary-file change can remove a protected test's effect without a visible warning, or if adding an ordinary test still needs re-anchor. The first risk is admitted but not eliminated; both cases need end-to-end probes. -- `bootstrap/tests/conftest.py:441-511`; `bootstrap/tests/_gate_manifest.py:671-686`; proposal `## Signals the change is wrong`.
+
+The proposal aims to move the signed gate's expensive protection to the tests that defend security and trust, while keeping an honest census of the rest. It states the lost assurance and leaves its acceptance to the Maintainer.
+
+**F1 — Blocking: define admission for new files.** “Unknown classification ... HOLD” conflicts with the promise that ordinary additions are routine. A prior anchor can name existing protected files, but it cannot know whether a newly added test is ordinary or protects a trust control. A candidate-supplied label cannot settle that question under S1. Specify the rule for new files, including who classifies them, when a new protected file joins the anchored roster, and the observable disposition of an unclassified one. Then require real produce→verify→ceremony tests for one new ordinary and one new protected file. -- proposal `## Proposal`, `S1`, `S4`; `bootstrap/tests/_gate_manifest.py:657-668`.
+
+**F2 — Blocking: bind the roster at every authority step.** Today `produce` discovers frozen files by glob, while the checker independently re-derives that field using its own `_frozen_files`; stage 2 rebuilds the manifest again. Merely changing the candidate's glob would conflict with the prior checker on the first transition. State where the prior signed roster is read in each step, how the reviewed transition admits the first roster, and what fails if candidate bytes or a missing roster try to choose membership. Require an end-to-end transition and subsequent steady-state test, not only isolated verifier tests. -- `bootstrap/tests/_gate_manifest.py:337`; `bootstrap/tests/_gate_manifest.py:402`; `bootstrap/tests/_gate_preflight.py:1940`; `bootstrap/tests/_gate_preflight.py:2100`; `bootstrap/tests/_gate_preflight.py:3410`; `bootstrap/REANCHOR_RUNBOOK.md:173`.
+
+**F3 — Blocking: scope the new high-risk rule precisely.** `AGENTS.md` currently makes any named high-risk surface a proposal and Security Review trigger. “The test apparatus” could include every ordinary test, moving the ceremony burden from re-anchor to review. Name the protected files and classification/authority machinery as high risk; state whether ordinary test maintenance remains in the existing trivial or planned lane. Include one ordinary edit as a lifecycle acceptance case. -- `AGENTS.md` > “High-risk surfaces” and “Local cost-bar examples”; proposal `## Proposal`.
+
+**Coverage.** Covered claims and current behavior (#1: `_gate_manifest.py:337-361,575-681`); public paths and failure modes (#2–4: `_gate_preflight.py:1940-2025,2100-2145`, `conftest.py:441-511`); cross-document drift and ceremony placement (#5–7: `AGENTS.md` > “High-risk surfaces”, `REANCHOR_RUNBOOK.md:173-193`); scope and satisfiers (#8–9: proposal `## Scope delta`, F1–F3). Not covered: I did not execute pytest, enumerate every helper import, or validate the future roster file by file; that inventory belongs in the reviewed plan. This usual pass does not clear the Security Review obligation.
