@@ -2,6 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-test-trust-boundary.md
 **Status**: implementing
+**Waiting on Maintainer**: Approve exact test-trust roster
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Protect the tests that defend trust while reporting ordinary test changes without requiring a new trust anchor.
@@ -249,3 +250,54 @@ The two named board-pilot nodes and their source locations/helpers are recorded 
 ## C1a inventory precision correction -- Codex (Luna, low) -- 2026-10-28
 
 In `c1a-refresh-918638f.json`, `BASELINE_PATH` is removed from the helper list for the line-928 pilot node: that node does not read it. The adjacent line-892 anti-forgery node reads `BASELINE_PATH` at line 898; the constant is defined at line 723. No test or source code changed.
+
+## Implementation log -- C1b refresh and C1c gate -- Codex (Sol, high) -- 2026-10-28
+
+C1c now has its exact approval input. The current candidate is
+`dev/plans/2026-10-28-test-trust-boundary/c1b-refresh-roster.json`, raw SHA-256
+`02435039b9325950671a715df269194d345a9696d2ecb585c4818614ed868dee`.
+The per-file reasons, source witnesses, dependency pointers, preserved mechanisms
+and grouped pilot recommendation are in
+`dev/plans/2026-10-28-test-trust-boundary/c1b-refresh-classification-evidence.json`.
+This supersedes the earlier candidate for approval, without rewriting its record.
+Both remain proposed, unapproved data; the signed boundary is unchanged.
+
+The committed factual refresh (`c387dec7`, precision correction `833817bc`)
+collected 5,490 nodes in 129 test files from source `918638f5`. Classification
+source is `e9928009078b666b753b3b0502af14d9d2421922`; all 238 repository-Python,
+effective-frozen, fixture and authority paths compared byte-identical across
+those sources. The five changed Python paths since the first C1b pass were read;
+no membership change follows: 78 protected test files, 12 protected controls and
+51 ordinary files, including every required floor member. Of the collected
+nodes, 3,954 are in protected files and 1,536 in ordinary files.
+
+The effective current frozen set is 197, after four exclusions from the raw
+201-path glob. The proposed union is 147, preserving 57 non-test frozen paths
+and all seven fixture mechanisms. The ordinary-maintenance saving is prospective
+and unmeasured; ordinary Python retains its accepted influence on protected execution.
+No helper or authority member is added by this classification.
+
+The board file stays protected because its linked-source and planted-encoder
+checks are actual defenses. The separate pilot therefore cannot start as written.
+The evidence recommends one grouped allowance: separately review relocation of
+exactly the two named ordinary methods to a new ordinary file, preserving their
+class/method names, then update the pilot's path. Leave its protected helpers and
+all security cases in place; the adjacent anti-forgery method, not either pilot
+method, reads the baseline fixture. This adds extraction, dependency/fault
+evidence, independent reviews and the applicable protected-node transition and
+Maintainer ceremony. No extraction or pilot deviation is authorized here.
+
+Ordinary and Security code reads of scoped verification (`f19f4f53`, `9d813013`)
+are complete; their required Maintainer frozen-file ceremony remains open under
+the author's response `e9928009`. Roster approval clears neither that ceremony
+nor this plan's C2–C4 implementation, review and installation fences. The next
+move is the Maintainer's exact roster decision; related pilot scope belongs in
+the consolidated decision batch.
+
+Verification: canonical Python 3.13.13 checked all 141 source hashes, exact
+partition/floor membership, code-witness bounds, 5,490 source-bound node IDs,
+raw data/roster hashes and the effective/proposed freeze sets. Claim and
+plan-scoped prose/link/content checks passed; neutrality had zero failures
+and 43 informational exemptions. A reader search found no Python consumers of
+the new data names, with a known manifest import as positive control. No new
+executable snippet, collection, test-body run, certification or ceremony ran.
