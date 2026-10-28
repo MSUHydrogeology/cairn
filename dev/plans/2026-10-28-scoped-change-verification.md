@@ -2,6 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-scoped-change-verification.md
 **Status**: revising-code
+**Waiting on Maintainer**: Required frozen-file ceremony
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Verify each change against its affected behavior and reserve whole-tree certification for authorized integration points.
