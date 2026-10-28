@@ -1,7 +1,7 @@
 # Plan: Align model floors with the team roster
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-model-floor-alignment.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Align the task-based capability floors and Cairn's local model assignments while keeping review and authority safeguards.
@@ -293,3 +293,19 @@ folder, where present, uses the same dated stem and archives with the plan.
 This is a path migration, not a scope or lifecycle change. Historical review
 and evidence citations retain the paths valid at their named commits; current
 link destinations and operative targets use the dated paths.
+
+
+## Dispositions -- Codex (Coordination) -- 2026-10-28
+
+Dispositions: plan-review F1 -> guard (`bootstrap/tests/test_model_tier_rule_ships.py::test_proposal_authoring_and_ordinary_review_are_medium`; `bootstrap/tests/test_model_selection_stub.py::TestThisRepositorysMappingAssignments`). The property mapping, installed paths and wrong-property controls are recorded above; the independent code review found no defects.
+
+The source instruction, dated local assignments, manual extension guidance and
+scoped evidence are delivered. The installation notice remains the approved
+initial one-family-per-tier seed; no installer change was authorized or left
+promised. No model-capability benchmark is claimed.
+
+Whole-tree certification and the frozen-test re-anchor remain standing
+integration obligations, recorded in `dev/PLANNING.md` under Re-anchor owed.
+Four test files changed, and the corrected test name replaces an old pinned
+node at that ceremony. This archive does not certify the tree, update the
+anchor, or waive any ceremony. There is no deferred implementation outcome.

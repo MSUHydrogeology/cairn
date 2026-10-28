@@ -35,7 +35,7 @@ this briefing as another status board.
 
 | Order | Plan | Accepted outcome and remaining constraint |
 |---|---|---|
-| 1 | [Model floors](../plans/2026-10-28-model-floor-alignment.md) | Task-based floors; Cairn-only family assignments, including Antigravity; no vendor-specific tiers shipped |
+| 1 | [Model floors](../plans/archive/2026-10-28-model-floor-alignment.md) | Implemented and code-reviewed task floors and Cairn-only assignments, including Antigravity; certification/re-anchor pending |
 | 2 | [Change verification / issue #33](../plans/2026-10-28-scoped-change-verification.md) | Scoped change evidence, separate tree certification, trivial-lane exception and preserved ceremony duties; shared-file edits follow model-floor code review |
 | 3, parallel inventory | [Governing text](../plans/2026-10-28-governing-text-single-source.md) | Establish why each home exists and compare doctrine with docs/dev/rules; the Maintainer chooses routing before rule relocation/deletion |
 | 4 | [Test trust boundary](../plans/2026-10-28-test-trust-boundary.md) | Exact protected roster requires Maintainer approval; root/re-anchor remains Maintainer-only; narrower assurance loss already accepted |

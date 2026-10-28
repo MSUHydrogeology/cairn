@@ -303,12 +303,6 @@
         "templates/core/evil"
       ]
     },
-    "dev/plans/2026-10-28-model-floor-alignment.md": {
-      "paths": [
-        "dev/plans/model-floor-alignment.md"
-      ],
-      "_comment": "Exact pre-rename paths in immutable review/implementation records; citations are bound to their recorded commits. Active targets use dated names."
-    },
     "dev/plans/2026-10-28-governing-text-single-source.md": {
       "paths": [
         "dev/plans/governing-text-single-source.md",
@@ -324,6 +318,12 @@
         "dev/plans/test-trust-boundary/c1a-node-inventory.jsonl",
         "dev/plans/test-trust-boundary/c1b-classification-evidence.json",
         "dev/plans/test-trust-boundary/c1b-proposed-roster.json"
+      ],
+      "_comment": "Exact pre-rename paths in immutable review/implementation records; citations are bound to their recorded commits. Active targets use dated names."
+    },
+    "dev/plans/archive/2026-10-28-model-floor-alignment.md": {
+      "paths": [
+        "dev/plans/model-floor-alignment.md"
       ],
       "_comment": "Exact pre-rename paths in immutable review/implementation records; citations are bound to their recorded commits. Active targets use dated names."
     }
