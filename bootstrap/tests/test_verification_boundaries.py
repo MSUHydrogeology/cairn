@@ -28,12 +28,12 @@ ADOPTER_PROPOSAL_TEMPLATE = (
     ROOT / "templates" / "core" / "dev" / "proposals" / "_template.md"
 )
 
-FRESH_RUN_TRIGGERS = (
+REPLACEMENT_RECORD_TRIGGERS = (
     "no valid Boundary B record exists",
     "unrecorded cross-surface dependency",
     "skip, xfail, or xpass",
-    "review sharpening changes implementation, tests, executable templates, or",
-    "trust ceremony that explicitly requires",
+    "changed implementation",
+    "trust ceremony explicitly requires",
     "concrete reason to distrust or falsify",
 )
 
@@ -55,29 +55,34 @@ def _operational_violations(text: str) -> list[str]:
     text = " ".join(text.split())
     required = {
         "Boundary A": "Iteration (scoped)",
-        "Boundary B": "Integration (stable evidence)",
+        "Boundary B mode": "Boundary B mode**: bounded | wide",
         "Boundary C": "Falsification (independent)",
-        "full fallback": "cannot be bounded confidently",
+        "wide owning coverage": "`wide` covers the owning test families",
+        "contract and ceremony fence": "Use `wide` for a contract or trust-ceremony surface",
+        "known check blocks completion": "certification cannot supply it later",
+        "separate certification": "Change verification and tree certification are separate",
         "record heading": "## Implementation verification -- <agent> -- YYYY-MM-DD",
-        "invalidation": "implementation/test/executable-template/fixture bytes",
-        "release separation": "separate strict ceremony",
+        "invalidation": "changed implementation",
+        "release separation": "Release verification is a separate strict ceremony",
     }
     return [label for label, token in required.items() if token not in text]
 
 
-def test_both_operational_surfaces_fail_to_full() -> None:
+def test_both_operational_surfaces_separate_change_checks_from_tree_certification() -> None:
     for path in (SELF_AGENTS, ADOPTER_AGENTS):
         assert _operational_violations(_read(path)) == [], path
 
 
-def test_operational_guard_detects_removed_full_fallback() -> None:
-    text = _read(SELF_AGENTS)
-    mutated = text.replace("cannot be bounded confidently", "looks broad", 1)
-    assert "full fallback" in _operational_violations(mutated)
+def test_operational_guard_detects_removed_wide_surface_fence() -> None:
+    text = " ".join(_read(SELF_AGENTS).split())
+    mutated = text.replace(
+        "Use `wide` for a contract or trust-ceremony surface",
+        "Use `bounded` for a contract or trust-ceremony surface", 1)
+    assert "contract and ceremony fence" in _operational_violations(mutated)
 
 
 def test_installed_operational_rule_is_project_general() -> None:
-    text = _read(ADOPTER_AGENTS)
+    text = " ".join(_read(ADOPTER_AGENTS).split())
     cairn_only = (
         "bootstrap/tests",
         "scripts/quality_gate.py",
@@ -134,6 +139,10 @@ def _record_violations(text: str) -> list[str]:
     text = " ".join(text.split())
     required = (
         "## Implementation verification -- <agent> -- YYYY-MM-DD",
+        "**Boundary B mode**",
+        "**Boundary B mode**: bounded | wide",
+        "Certified by",
+        "Tree certification -- <SHA>",
         "**Tested commit**",
         "**Reviewed range**",
         "**Interpreter/runtime**",
@@ -142,7 +151,7 @@ def _record_violations(text: str) -> list[str]:
         "**Non-pass disposition**",
         "**Plan-specific acceptance commands**",
         "**Known omissions**",
-        "implementation, tests, executable templates, or fixtures",
+        "changed implementation, test, executable-template or fixture bytes",
         "never satisfies or shortens a release gate",
         "not a signed receipt or parser-enforced claim",
     )
@@ -162,98 +171,102 @@ def test_record_schema_guard_detects_removed_reviewed_range() -> None:
 def _review_violations(text: str) -> list[str]:
     text = " ".join(text.split())
     required = (
-        "Falsification (targeted, after broad verification)",
-        "Copying the implementation's broad command does not satisfy",
-        *FRESH_RUN_TRIGGERS,
+        "Falsification (targeted, after change verification)",
+        "Copying the implementation's command does not satisfy",
+        *REPLACEMENT_RECORD_TRIGGERS,
+        "do not automatically call for a whole-tree run",
         "not authentication, malicious-committer protection, or a",
         "release optimization",
     )
     return [token for token in required if token not in text]
 
 
-def test_review_doctrine_requires_targeted_falsification_and_six_triggers() -> None:
+def test_review_doctrine_requires_targeted_falsification_and_replacement_triggers() -> None:
     assert _review_violations(_read(REVIEW_DOCTRINE)) == []
 
 
-def test_plan_and_review_doctrine_share_fresh_run_triggers() -> None:
+def test_plan_and_review_doctrine_share_record_replacement_triggers() -> None:
     for path in (PLANS_DOCTRINE, REVIEW_DOCTRINE):
         normalized = " ".join(_read(path).split())
-        assert not [token for token in FRESH_RUN_TRIGGERS if token not in normalized], path
+        assert not [token for token in REPLACEMENT_RECORD_TRIGGERS if token not in normalized], path
+        body = re.search(
+            r"record-replacement triggers applies:(.*?)\n\nThese triggers require scoped",
+            _read(path), re.S)
+        assert body, path
+        numbered = re.findall(r"^\s*(\d+)\.", body.group(1), re.M)
+        assert numbered == ["1", "2", "3", "4", "5", "6"], (path, numbered)
 
 
-#: The bounded-mode contract, from `2026-08-12-claude-boundary-b-bounding-clause`
-#: (accepted 2026-08-12). Boundary B stopped being unconditional; these are the
-#: obligations that make the cheaper path safe. Each surface is asserted for the
-#: *obligation*, not one exact sentence, so a rewording passes and a deletion
-#: fails.
-_BOUNDED_OBLIGATIONS = {
-    "the bounding clause itself": (
-        "bounds the change's effects confidently",
+#: The current scoped-evidence contract: bounded covers its reviewed map;
+#: wide covers owning families and known paths when narrower bounds are weak.
+_CHANGE_VERIFICATION_OBLIGATIONS = {
+    "bounded records cover affected behavior and consumers": (
+        "bounded", "affected behavior and consumers",
     ),
-    "the fence refuses on contract and trust-ceremony surfaces": (
-        "contract surface",
-        "trust-ceremony surface",
+    "wide records cover owning families and known paths": (
+        "wide", "owning test families", "integration and public paths",
+        "standing gates",
     ),
-    "uncertainty resolves to full": (
-        "Uncertainty resolves to",
+    "contract and trust-ceremony surfaces use wide mode": (
+        "Use `wide` for a contract or trust-ceremony surface",
     ),
-    "the record declares its mode": (
-        "Boundary B mode",
+    "the record declares bounded or wide mode": (
+        "Boundary B mode", "bounded | wide",
     ),
 }
 
-#: Every surface that must carry the bounded contract. The two `AGENTS.md`
+#: Every surface carrying the change-verification contract. The two `AGENTS.md`
 #: copies stay semantically parallel and lexically different -- Cairn names its
-#: own commands, the adopter copy stays project-general -- which is why this
-#: asserts obligations rather than shared literal prose.
-_BOUNDED_SURFACES = (
+#: own commands, the adopter copy stays project-general.
+_CHANGE_VERIFICATION_SURFACES = (
     SELF_AGENTS, ADOPTER_AGENTS, PLANS_DOCTRINE,
-    SELF_PLAN_TEMPLATE, ADOPTER_PLAN_TEMPLATE,
+    REVIEW_DOCTRINE, SELF_PLAN_TEMPLATE, ADOPTER_PLAN_TEMPLATE,
 )
 
 
-@pytest.mark.parametrize("path", _BOUNDED_SURFACES,
+@pytest.mark.parametrize("path", _CHANGE_VERIFICATION_SURFACES,
                          ids=lambda p: str(p.relative_to(ROOT)))
-@pytest.mark.parametrize("label,tokens", sorted(_BOUNDED_OBLIGATIONS.items()))
-def test_bounded_boundary_b_contract_reaches_every_surface(
+@pytest.mark.parametrize("label,tokens", sorted(_CHANGE_VERIFICATION_OBLIGATIONS.items()))
+def test_change_verification_contract_reaches_every_surface(
         path, label: str, tokens) -> None:
     text = " ".join(_read(path).split())
     missing = [tok for tok in tokens if tok not in text]
     assert not missing, (
-        f"{path} no longer carries the bounded-Boundary-B obligation {label!r} "
-        f"(missing {missing}). Boundary B is conditional as of "
-        f"2026-08-12-claude-boundary-b-bounding-clause; a surface that loses "
-        f"the fence or the mode field ships a different contract than the rest."
+        f"{path} no longer carries the change-verification obligation {label!r} "
+        f"(missing {missing}); a surface that loses the mode or coverage "
+        f"contract ships a different rule than the rest."
     )
 
 
-def _bounded_violations(text: str) -> list[str]:
-    """Labels of the bounded-contract obligations absent from *text*."""
+def _change_verification_violations(text: str) -> list[str]:
+    """Labels of the change-verification obligations absent from *text*."""
     normalized = " ".join(text.split())
-    return [label for label, tokens in _BOUNDED_OBLIGATIONS.items()
+    return [label for label, tokens in _CHANGE_VERIFICATION_OBLIGATIONS.items()
             if [tok for tok in tokens if tok not in normalized]]
 
 
-def test_bounded_guard_detects_a_removed_fence() -> None:
-    """The mutant for the test above: strip the fence, the guard must fire.
+def test_change_verification_guard_detects_removed_wide_fence() -> None:
+    """Replacing the required wide mode with bounded must fail the guard.
 
     This asserts the *violation function* reports the loss -- the pattern used
-    by `test_operational_guard_detects_removed_full_fallback` and
+    by `test_operational_guard_detects_removed_wide_surface_fence` and
     `test_review_reuse_guard_detects_unconditional_reuse` above. An earlier
     version of this test asserted only that a token was absent from text it
     had just removed it from, which passed even against an empty file: a
     tautology wearing a mutant's docstring.
     """
-    intact = _read(SELF_AGENTS)
-    assert _bounded_violations(intact) == []
+    intact = " ".join(_read(SELF_AGENTS).split())
+    assert _change_verification_violations(intact) == []
 
-    mutated = intact.replace("trust-ceremony surface", "surface")
-    assert "the fence refuses on contract and trust-ceremony surfaces" in \
-        _bounded_violations(mutated)
+    mutated = intact.replace(
+        "Use `wide` for a contract or trust-ceremony surface",
+        "Use `bounded` for a contract or trust-ceremony surface", 1)
+    assert "contract and trust-ceremony surfaces use wide mode" in \
+        _change_verification_violations(mutated)
 
 
-#: The three GOVERNING surfaces -- not the plan templates, which do not carry
-#: this rule. Kept separate from `_BOUNDED_SURFACES` for that reason.
+#: The three governing surfaces -- not the plan templates, which do not carry
+#: the already-open-plan rule.
 _APPLICABILITY_SURFACES = (SELF_AGENTS, ADOPTER_AGENTS, PLANS_DOCTRINE)
 
 
@@ -278,13 +291,14 @@ def test_already_open_plans_keep_their_written_contract(path) -> None:
     )
 
 
-def test_bounded_guard_is_not_satisfied_by_an_empty_file() -> None:
-    """The floor the old mutant test silently sat below."""
-    assert len(_bounded_violations("")) == len(_BOUNDED_OBLIGATIONS)
+def test_change_verification_guard_is_not_satisfied_by_an_empty_file() -> None:
+    """An empty document carries none of the scoped-evidence obligations."""
+    assert len(_change_verification_violations("")) == len(
+        _CHANGE_VERIFICATION_OBLIGATIONS)
 
 
-def test_boundary_c_adjudicates_a_bounded_record() -> None:
-    """The saving must depend on an independent verdict, not self-exemption.
+def test_boundary_c_adjudicates_a_scoped_record() -> None:
+    """The independent reviewer accepts or sends the mapping back wider.
 
     The implementer picks the mapping, writes the bounding argument, and
     captures the saving; the reviewer captures nothing. That asymmetry is why
@@ -292,30 +306,15 @@ def test_boundary_c_adjudicates_a_bounded_record() -> None:
     """
     for path in (REVIEW_DOCTRINE, SELF_AGENTS, ADOPTER_AGENTS):
         normalized = " ".join(_read(path).split())
-        assert "Bounding" in normalized and "FULL RUN REQUIRED" in normalized, path
+        assert "Bounding" in normalized and "WIDER RUN REQUIRED" in normalized, path
 
 
-def test_full_run_required_routes_to_the_existing_first_trigger() -> None:
-    """`FULL RUN REQUIRED` invalidates the record; it is not a seventh trigger.
-
-    The six triggers are pinned identically across two doctrine files by
-    `test_plan_and_review_doctrine_share_fresh_run_triggers`. If adjudication
-    had added a seventh, that pairing would drift.
-    """
+def test_wider_run_verdict_invalidates_the_scoped_record() -> None:
+    """`WIDER RUN REQUIRED` blocks acceptance until new B evidence exists."""
     normalized = " ".join(_read(REVIEW_DOCTRINE).split())
-    assert "invalidates" in normalized
-
-    # Counted from the DOCTRINE, not from `FRESH_RUN_TRIGGERS` -- that tuple
-    # lives in this file, so asserting its length can never fail on a doctrine
-    # edit and the "six stay six" claim rested on nothing.
-    # The list is the numbered items between the "six triggers" sentence
-    # and the paragraph that follows it.
-    body = re.search(
-        r"required when any of these six triggers applies:(.*?)\n\nReview-only",
-        _read(REVIEW_DOCTRINE), re.S)
-    assert body, "the six-trigger list is no longer in its documented shape"
-    numbered = re.findall(r"^\s*(\d+)\.", body.group(1), re.M)
-    assert numbered == ["1", "2", "3", "4", "5", "6"], numbered
+    assert "WIDER RUN REQUIRED" in normalized
+    assert "invalidates that record for acceptance" in normalized
+    assert "do not automatically call for a whole-tree run" in normalized
 
 
 def test_review_reuse_guard_detects_unconditional_reuse() -> None:
@@ -348,12 +347,16 @@ def _plan_template_violations(text: str) -> list[str]:
     verification_required = (
         "Implementation verification -- <agent> -- YYYY-MM-DD",
         "reviewed mapping",
-        "full suite",
+        "Boundary B mode",
+        "bounded | wide",
+        "Certified by",
         *RECORD_FIELDS,
     )
     review_required = (
         "targeted falsification",
-        *FRESH_RUN_TRIGGERS,
+        "WIDER RUN REQUIRED",
+        "keeps the change open",
+        "a separate authorized integration run",
     )
     return [
         *[token for token in verification_required if token not in normalized_verification],
@@ -382,7 +385,8 @@ def test_both_proposal_templates_reject_speed_as_coverage() -> None:
         normalized = " ".join(_read(path).split())
         required = (
             "speed alone does not establish affected coverage",
-            "unknown or uncertain scope falls back to the full suite",
+            "Unknown dependencies are not claimed as covered",
+            "Full tree certification is a separate authorized integration run",
             "test homes",
             "public paths",
         )

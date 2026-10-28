@@ -1,12 +1,12 @@
-"""The full suite runs only as a certifying run, and the guard stops offering it.
+"""Tree certification stays separate, and the guard preserves conditional push wording.
 
 A full run is evidence about a tree, not about one change, so the governing
 text in every surface that defines verification says it is paid for once per
-integration point (before a push, a gate-re-pinning ceremony, a release cut, or
-when the Maintainer asks), and that a record cites it as ``Certified by``.
-These tests keep that rule present in each surface, and keep the broad-run
-guard's refusal from handing out the full-suite override as the remedy -- the
-offer that turned an override into a habit.
+integration point (before a push when required, a gate-re-pinning ceremony, a
+release cut, or when the Maintainer asks), and that a change record cites it as
+``Certified by``. These tests keep that rule present in each surface, and keep
+the broad-run guard from making a conditional push certification sound
+automatic or handing out the full-suite override as a remedy.
 """
 from __future__ import annotations
 
@@ -37,8 +37,7 @@ def _flat(path: Path) -> str:
 @pytest.mark.parametrize("path", SURFACES, ids=lambda p: str(p.relative_to(ROOT)))
 def test_every_verification_surface_says_the_full_suite_is_a_certifying_run(path):
     text = _flat(path)
-    assert ("runs only as a certifying run" in text
-            or "never runs the full suite" in text), path
+    assert "tree certification" in text or "certifying run" in text, path
     assert "Certified by" in text, path
 
 
@@ -58,7 +57,7 @@ def test_reviewers_are_told_never_to_run_the_full_suite(path):
 
 def test_the_shipped_rule_names_no_cairn_only_command():
     text = _flat(ROOT / "templates" / "core" / "AGENTS.md")
-    start = text.index("The full suite runs only as a certifying run.")
+    start = text.index("Change verification and tree certification are separate.")
     rule = text[start:start + 1600]
     for token in ("CAIRN_FULL_SUITE", "bootstrap/tests", "Python 3.13"):
         assert token not in rule, token
@@ -68,6 +67,18 @@ def test_the_broad_run_refusal_no_longer_offers_the_override():
     source = (ROOT / "bootstrap" / "tests" / "conftest.py").read_text(encoding="utf-8")
     body = source[source.index("def _refuse_broad_run_if_warranted"):]
     message = body[body.index("raise pytest.UsageError("):body.index("\n\n\n")]
-    assert "certifying run" in message
+    flattened = " ".join(message.lower().split())
+    assert _push_certification_is_conditional(flattened)
     assert not re.search(r"set\s*\"?\s*f?\"?\{FULL_SUITE_ENV\}", message), (
         "the refusal must not tell the reader to set the override")
+
+    unconditional = flattened.replace(
+        "before a push, when required",
+        "before a push",
+    )
+    assert not _push_certification_is_conditional(unconditional)
+
+
+def _push_certification_is_conditional(message: str) -> bool:
+    return ("before a push, when required" in message
+            and "pushing may require certification; ask the maintainer" in message)

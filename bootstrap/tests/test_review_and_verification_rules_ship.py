@@ -21,18 +21,18 @@ The rules pinned here:
   they exist: the trigger is a claim about a set (not any defect), and an
   equivalent mutant is one a behaviour test *passes* under (a test that fails
   has killed it).
-* **Boundary B governs a trivial change too.** Its mapping is the tests that
-  own what it touched, found by search; it runs before the commit, and its
-  record is its commit body, which the code reviewer's Bounding verdict
-  reviews. No sentence may tie the full-suite fallback to a *reviewed*
-  mapping, which a trivial change never has before it lands: that would send
-  every small fix to the full suite. The same holds one level up: the mapping
-  that bounds a change's effects is *a* mapping, not a *plan's* reviewed
-  mapping, which a plan-less change can never have. A trivial change's mapping
-  is the tests that own what it touched, and prose that no test or manifest
-  pins runs the prose gates even on a high-risk surface. The fence's
-  trust-ceremony surface is defined in the file that uses it, because the
-  adopter's copy is the only one they receive.
+* **Boundary B governs a trivial change too.** Search for its owning tests
+  and readers, then run those checks on the exact candidate bytes before
+  commit, in an otherwise clean tree or separate copy. Its commit body records
+  the mode, pending tree certification, search, commands, counts, interpreter,
+  outcomes and omissions; the author owns the record and there is no Boundary
+  C. A passing record may say `Implementation verified at <SHA>`; a known
+  missing consumer, security check, or criterion keeps the work open. For
+  planned work, Boundary B is `bounded` for mapped affected behavior and
+  consumers, or `wide` for owning families, known integration and public paths,
+  and standing gates when effects cannot be confidently bounded. Use `wide`
+  for a contract or trust-ceremony surface. A full-tree certification is a
+  separate authorized integration run and cannot close a missing change check.
 * **"Substantive surface" is defined once.** It is anything that is not
   ordinary prose, and that includes prose a test or manifest pins. A narrower
   "code" reading misses exactly the template rewrite whose pinned prose broke
@@ -103,25 +103,29 @@ _OBLIGATIONS = {
     "a-trivial-change-maps-to-the-tests-that-own-its-surface":
         r"for a trivial change, with no proposal or plan, "
         r"the tests that own each touched surface",
-    "bounded-mode-needs-a-mapping-not-a-plans-reviewed-mapping":
-        r"full suite unless the mapping bounds the change's effects",
+    "bounded-mode-covers-affected-behavior-and-consumers":
+        r"`?bounded`? covers the mapped affected behavior and consumers",
+    "wide-mode-covers-known-families-and-public-paths":
+        r"`?wide`? covers the owning test families, known cross-surface integration and public paths",
+    "contract-and-trust-surfaces-use-wide-mode":
+        r"Use `?wide`? for a contract or trust-ceremony surface",
     "unpinned-prose-on-a-high-risk-surface-runs-the-prose-gates":
         r"prose change to a contract or high-risk surface does not trigger "
         r"the full suite unless a test or manifest pins its bytes",
-    "a-trivial-change-runs-before-its-commit":
-        r"runs before the commit, not after, on exactly the bytes being committed",
-    "a-trivial-changes-record-is-its-commit-body":
-        r"[Ii]ts record is its commit body",
-    "the-commit-body-carries-mode-and-interpreter":
-        r"carries the mode, the interpreter",
+    "a-trivial-change-runs-on-exact-candidate-bytes":
+        r"run those checks on the exact candidate bytes before commit",
+    "a-trivial-change-records-the-search-and-checks-in-its-commit-body":
+        r"commit body records the mode,.*search, commands, counts, interpreter",
+    "passing-known-checks-identifies-the-verified-commit":
+        r"Implementation verified at <SHA>",
     "a-plan-appends-its-verification-section":
         r"[Aa] plan appends the tested SHA",
     "owning-tests-are-found-by-search":
         r"found by searching for what imports or reads the touched files",
     "bounded-record-names-touched-surfaces-and-tests":
-        r"name the touched surfaces, the test files or nodes",
+        r"[Rr]ecord names the touched surfaces, the test files or nodes",
     "trust-ceremony-surface-is-defined":
-        r"trust-ceremony surface\*{0,2} \(any high-risk surface this file names",
+        r"trust-ceremony surface is any high-risk surface this file names",
     # One term, defined where it is used.
     "substantive-surface-is-defined":
         r"substantive surface\*{0,2} is anything that is not ordinary prose",
