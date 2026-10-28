@@ -26,7 +26,7 @@ capabilities and adopter research. This five-plan batch does not finish v0.6.
 | [Model floors](../plans/archive/2026-10-28-model-floor-alignment.md) | Implemented, independently reviewed and archived. Local vendor assignments and shipped generic task floors align; 574 mapped passes under Python 3.13.13. Certification/re-anchor debt remains live in the roadmap. |
 | [Scoped verification](../plans/2026-10-28-scoped-change-verification.md) | Implemented; 2,700 collected/executed nodes reconciled, five guard cases passed, environment-denied security cases passed with required local capability. Independent example adjudication and ordinary/Security reviews completed. Both reviews hold completion for the prescribed frozen-file ceremony. Later naming examples corrected with 656 mapped passes under Python 3.13.13. |
 | [Governing text](../plans/2026-10-28-governing-text-single-source.md) | Routing chosen at `aa9fc08b`, coordination default at `7013de1d`, and document-wide path declarations at `560a178c`. Path instructions updated and the focused review finding addressed at `860481db`; remaining consolidation and ceremony gates stay open. |
-| [Test trust boundary](../plans/2026-10-28-test-trust-boundary.md) | Refreshed factual inventory and high-tier classification are ready for exact roster approval. Existing protection remains active. |
+| [Test trust boundary](../plans/2026-10-28-test-trust-boundary.md) | Exact initial roster approved at `3e9f8fc2`; implementation follows, and existing protection remains active until the Maintainer installs the reviewed boundary. |
 | [Ordinary test maintenance](../plans/2026-10-28-ordinary-test-maintenance.md) | Reviewed plan; implementation cannot start because the chosen board file contains security defenses and remains protected. |
 
 The source Decisions are `63e315fa`, `f110d263`, `cca436a9`, `cea1299d` and
@@ -66,9 +66,9 @@ obligations untouched. No accepted duty may be lost by consolidation. C3 must
 show an actual simpler edit using the two recorded baselines before claiming
 improvement; affected frozen tests still wait for the trust-boundary work.
 
-### 2. Approve the exact initial test-protection roster
+### 2. Approved initial test-protection roster
 
-**Recommend:** approve the [refreshed proposed roster](../plans/2026-10-28-test-trust-boundary/c1b-roster-6cc95fa7.json)
+**Approved:** the [refreshed roster](../plans/2026-10-28-test-trust-boundary/c1b-roster-6cc95fa7.json)
 at commit `884e6d53`, raw SHA-256
 `188fa76d82744be571bdc7ca91a43d605776b9df5ba0ac729e2cf22af66b8cc4`.
 The [classification evidence](../plans/2026-10-28-test-trust-boundary/c1b-evidence-6cc95fa7.json)
@@ -78,14 +78,14 @@ It protects **78 test files plus 12 Python controls**, leaving **51 test files
 ordinary**. The refreshed census has 5,490 nodes in 129 test files: 3,954 in
 protected files and 1,536 in ordinary files. The effective frozen set would
 change from 197 to 147 paths while preserving the other existing protection.
-These are proposed memberships, not an installed boundary or measured speedup.
+These are approved memberships, not an installed boundary or measured speedup.
 
 The accepted trust Decision already concedes blanket ordinary-test byte and
 node/marker HOLD protection. Ordinary Python can still influence protected
 execution; narrower protection is not equivalent tamper resistance. Actual
 release skip/xfail/xpass refusal stays. Roster approval authorizes neither
-installation nor a waiver of existing ceremony/review obligations. Alternative:
-retain the current boundary and leave narrowing paused.
+installation nor a waiver of existing ceremony/review obligations. The Maintainer approved the exact list in `3e9f8fc2`; implementation and
+independent reviews precede installation.
 
 ### 3. Allow a preparatory extraction for the maintenance pilot
 
