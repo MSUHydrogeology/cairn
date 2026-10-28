@@ -21,9 +21,11 @@ import pytest
 from bootstrap.tests import _gate_reanchor as R
 from bootstrap.tests import _oracle_activation as A
 from bootstrap.tests import _gate_transition as G
+from bootstrap.tests import _gate_preflight as P
 
 REQUIRED = ["solo-greenfield", "upgrade_apply"]
 SENSITIVE_REL = "bootstrap/tests/_oracle.py"
+REPO = Path(__file__).resolve().parents[2]
 DESIGNATED = R._DESIGNATED_REF
 AUTHZ_REF = R._AUTHORIZATION_REF
 
@@ -262,6 +264,84 @@ def test_authority_pin_reads_v2_frozen_entry_digest(tmp_path):
     P = _commit_all(repo, "P v2 manifest")
     ok, holds = R._verify_executing_authority_code(repo, P, include_preflight=True)
     assert ok and holds == []
+    trusted = R._load_pinned_preflight(repo, P)
+    assert callable(trusted.rederive_static_manifest)
+
+    # A candidate working copy with different source cannot influence the
+    # loader; the loader reads P's object and refuses a bad P manifest pin.
+    frozen["bootstrap/tests/_gate_preflight.py"]["sha256"] = "0" * 64
+    (repo / R._MANIFEST_REL).write_text(json.dumps({"frozen_files": frozen}) + "\n")
+    bad_pin = _commit_all(repo, "P with a wrong preflight pin")
+    with pytest.raises(RuntimeError, match="does not authenticate preflight"):
+        R._load_pinned_preflight(repo, bad_pin)
+
+
+def test_rostered_stage_b_executes_only_preflight_bytes_pinned_by_p(tmp_path):
+    """Real Stage B narrows from signed P and statically verifies N."""
+    repo = tmp_path / "rostered-stage-b"
+    subprocess.run(["git", "clone", "--shared", "--no-checkout", "-q",
+                    str(REPO), str(repo)], capture_output=True, check=True)
+    _git(repo, "checkout", "--detach", "HEAD")
+    _git(repo, "checkout", "-b", "main")
+    roster = R.M._roster_from_bytes(
+        (repo / R.M._PROTECTED_ROSTER_REL).read_bytes(), require_initial_approval=True)
+    base_manifest = R.M.produce(repo, roster)
+    (repo / R._MANIFEST_REL).write_text(
+        json.dumps(base_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    P_sha = _commit_all(repo, "P with signed roster policy")
+    _git(repo, "update-ref", DESIGNATED, P_sha)
+
+    act = A.Activation(baseline_sha=P_sha, trusted_ref="refs/heads/main",
+                       nonce="rostered-stage-b", scope=["bootstrap/tests/"],
+                       required_scenarios=list(REQUIRED))
+    (repo / SENSITIVE_REL).write_text("# reviewed candidate change\n", encoding="utf-8")
+    marker = tmp_path / "candidate-preflight-executed"
+    preflight_path = repo / "bootstrap/tests/_gate_preflight.py"
+    preflight_path.write_text(
+        preflight_path.read_text(encoding="utf-8")
+        + "\nif __import__('os').environ.get('CAIRN_STAGE_B_MARKER'):\n"
+        + f"    Path({str(marker)!r}).write_text('executed')\n",
+        encoding="utf-8")
+    C = _commit_all(repo, "C changes a protected oracle")
+    prospective = R.M.produce(repo, roster)
+    prospective.pop("object_format")
+    prospective["frozen_files"] = {
+        rel: R.M._entry_sha256(entry)
+        for rel, entry in prospective["frozen_files"].items()}
+    for field in ("cascade_mutable", "phase_mutable"):
+        for entry in prospective[field].values():
+            entry.pop("mode", None)
+            entry.pop("oid", None)
+    prospective_bytes = (json.dumps(prospective, indent=2, sort_keys=True).encode()
+                         + b"\n")
+    evidence = R.EvidenceBundle(
+        candidate_sha=C, prior_anchor=P_sha, required_scenarios=list(REQUIRED),
+        scenario_results={name: "match" for name in REQUIRED},
+        prospective_manifest_bytes=prospective_bytes.decode(),
+        prospective_manifest_hash=R._sha256_bytes(prospective_bytes),
+        checker_hash=G.sha256_file(Path(R.G.__file__)), oracle_ok=True)
+    auth = G.PromotionManifest(
+        nonce="stage-b-authz", prior_anchor=P_sha, candidate_sha=C,
+        checker_hash=evidence.checker_hash, evidence_hash=evidence.digest(),
+        prospective_manifest_hash=evidence.prospective_manifest_hash,
+        files={rel: G.sha256_git_object(repo, C, rel)
+               for rel in (SENSITIVE_REL, "bootstrap/tests/_gate_preflight.py")})
+    A_sha = _author_A(repo, P_sha, auth, act)
+    _git(repo, "update-ref", AUTHZ_REF, A_sha)
+
+    import os
+    os.environ["CAIRN_STAGE_B_MARKER"] = "1"
+    try:
+        result = R.promote_data_only(trusted_repo=repo, anchor_ref=A_sha,
+                                     evidence=evidence, confirm=False)
+    finally:
+        os.environ.pop("CAIRN_STAGE_B_MARKER", None)
+    assert result.ok, result.refusals
+    assert result.checks["authority_code_pinned"]
+    assert result.checks["trusted_manifest_derivation"]
+    assert result.checks["anchor_static_verified"]
+    assert not result.ref_advanced
+    assert not marker.exists(), "Stage B executed the candidate's preflight module"
 
 
 def test_pretransition_manifest_refuses_until_supervised_bootstrap(tmp_path):

@@ -177,6 +177,7 @@ def _verify_executing_authority_code(trusted_repo: Path, prior_sha: str,
 
 def _load_pinned_preflight(trusted_repo: Path, prior_sha: str):
     """Execute only the preflight source bytes pinned by roster-installed P."""
+    import sys
     import types
     rel = "bootstrap/tests/_gate_preflight.py"
     manifest_raw = _git_show_bytes(trusted_repo, prior_sha, _MANIFEST_REL)
@@ -187,10 +188,47 @@ def _load_pinned_preflight(trusted_repo: Path, prior_sha: str):
     entry = manifest.get("frozen_files", {}).get(rel)
     if entry is None or hashlib.sha256(source).hexdigest() != M._entry_sha256(entry):
         raise RuntimeError("prior anchor does not authenticate preflight authority source")
-    module = types.ModuleType("bootstrap.tests._gate_preflight_stage_b")
-    module.__file__ = str(Path(__file__).resolve().parent / "_gate_preflight.py")
+    # Its source imports the already-loaded, authority-pinned M and this R.
+    # Install those identities under both supported import spellings before
+    # executing the anchored source, so Python cannot resolve a second copy
+    # from the invoking checkout or an import-path shadow.
+    current = sys.modules.get(__name__)
+    package = sys.modules.get("bootstrap.tests")
+    aliases = {
+        "bootstrap.tests._gate_manifest": M,
+        "bootstrap.tests._gate_reanchor": current,
+        "_gate_manifest": M,
+        "_gate_reanchor": current,
+    }
+    if current is None:
+        raise RuntimeError("executing reanchor module is not registered")
+    if package is not None:
+        for short, obj in (("_gate_manifest", M), ("_gate_reanchor", current)):
+            existing = getattr(package, short, None)
+            if existing is not None and existing is not obj:
+                raise RuntimeError(f"trusted import package conflicts at {short}")
+            setattr(package, short, obj)
+    for alias, obj in aliases.items():
+        if obj is None:
+            continue
+        existing = sys.modules.get(alias)
+        if existing is not None and existing is not obj:
+            raise RuntimeError(f"trusted import alias conflicts at {alias}")
+        sys.modules[alias] = obj
+
+    module_name = ("bootstrap.tests._gate_preflight_stage_b_"
+                   + hashlib.sha256(source).hexdigest())
+    if module_name in sys.modules:
+        raise RuntimeError("pinned preflight module identity is already occupied")
+    module = types.ModuleType(module_name)
+    module.__file__ = str(Path(trusted_repo).resolve() / rel)
     module.__package__ = "bootstrap.tests"
-    exec(compile(source, module.__file__, "exec"), module.__dict__)
+    sys.modules[module_name] = module
+    try:
+        exec(compile(source, module.__file__, "exec"), module.__dict__)
+    except BaseException:
+        sys.modules.pop(module_name, None)
+        raise
     return module
 
 
