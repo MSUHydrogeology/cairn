@@ -23,30 +23,32 @@ acceptance. No proposal is accepted by this document. Plans begin after the
 proposal Decision; no agent pushes, publishes, changes repository settings or
 closes issues under this drain.
 
-## Decision batch
+## Accepted batch and execution order
 
-All five proposals have completed their required reviews and author responses
-and are awaiting decision. No plan or implementation has begun. Consult
-`python tools/board.py --maintainer` for the current declared waits.
+All five proposals were accepted in committed Maintainer Decisions:
+`63e315fa` (model floors), `f110d263` (verification), `cca436a9` (test trust),
+`cea1299d` (test maintenance), and `439c7b34` (governing text).
+The Maintainer then instructed: “Okay, go ahead with all five in the order you
+deem most appropriate”. Opening each plan archived its accepted source unchanged.
+Use `python tools/board.py` for current lifecycle status rather than treating
+this briefing as another status board.
 
-| Item | Recommended next choice | Why / cost of being wrong |
+| Order | Plan | Accepted outcome and remaining constraint |
 |---|---|---|
-| [Model floors](../proposals/2026-10-28-codex-model-floor-alignment.md) | Accept the reviewed floors and current Sol/Terra/Luna and Opus/Sonnet/Haiku assignment | Removes unnecessary model-cost escalation; an inadequate floor can miss defects, so retain independent review, security treatment and escalation |
-| [Doctrine purpose and governing-text inventory](../proposals/2026-10-28-codex-governing-text-single-source.md) | Inventory first; choose routing at a Maintainer fence before moving or deleting rules | Avoids shortening files by hiding obligations from adopters; premature routing could preserve the wrong structure or lose rules |
-| [Test trust boundary](../proposals/2026-10-28-codex-test-trust-boundary.md) | Accept narrower protection only with explicit acceptance of the recorded assurance loss | Removes routine test-edit ceremony debt; it deliberately gives up blanket freezing of ordinary pytest code that can influence other tests |
-| [Ordinary test maintenance pilot](../proposals/2026-10-28-codex-ordinary-test-maintenance.md) | Accept the bounded pilot, conditional on the final protected roster leaving its file eligible | Reuse setup and preserve fault detection; eligibility must exclude protected files and helpers, and one pilot does not prove suite-wide speedup |
-| [Change verification / issue #33](../proposals/2026-10-28-codex-scoped-change-verification.md) | Accept scoped change verification and separate tree certification, preserving prescribed ceremony checks | Avoids repeated per-change runs; integration regressions may appear later, and prescribed ceremony checks must remain |
+| 1 | [Model floors](../plans/model-floor-alignment.md) | Task-based floors; Cairn-only family assignments, including Antigravity; no vendor-specific tiers shipped |
+| 2 | [Change verification / issue #33](../plans/scoped-change-verification.md) | Scoped change evidence, separate tree certification, trivial-lane exception and preserved ceremony duties; shared-file edits follow model-floor code review |
+| 3, parallel inventory | [Governing text](../plans/governing-text-single-source.md) | Establish why each home exists and compare doctrine with docs/dev/rules; the Maintainer chooses routing before rule relocation/deletion |
+| 4 | [Test trust boundary](../plans/test-trust-boundary.md) | Exact protected roster requires Maintainer approval; root/re-anchor remains Maintainer-only; narrower assurance loss already accepted |
+| 5 | [Ordinary test maintenance](../plans/ordinary-test-maintenance.md) | Follows implemented trust boundary and board-file eligibility; references the test-practice strategy and updates the existing testing module |
 
-Read the final author responses and Security Reviews in each artifact before
-deciding. The trust-boundary choice stops blocking ordinary test deletion,
-renaming and new skip markers at the manifest level; actual release-mode
-skip/xfail/xpass refusal remains. Ordinary pytest code can still influence
-protected execution. This loss needs an explicit Maintainer choice.
+The trust Decision explicitly accepts loss of blanket ordinary-test byte
+protection and ordinary-node deletion/rename/new-marker HOLDs. Actual
+release-mode skip/xfail/xpass refusal remains. Ordinary pytest code can still
+influence protected execution; do not claim equivalent tamper resistance.
+The ordinary test pilot stops for a scope decision if its file remains protected.
 
-Suggested reading order: model floors; verification wording; test trust boundary;
-ordinary test maintenance; governing-text inventory. The inventory can run in
-parallel with accepted test work, but no rule relocates before its routing fence.
-Final handoffs: `639196fe`, `a0ca1241`, `55bbbb25`, `98bed453`, `5111ca97` respectively.
+The approved testing-module update stays within existing maintenance practice;
+new simulation guidance remains v0.7. No plan waives its recorded fence.
 
 ## What the doctrine question means
 
@@ -66,25 +68,24 @@ from docs, how installed references are reached, and how many places an actual
 rule change requires editing. Preserve adopter access and semantics; do not
 choose folder structure merely to reach a line-count target.
 
-## Dependency order and next work
+## Work sequence
 
-1. Decide the five reviewed proposals; their proposal-stage work is complete.
-2. After acceptance, write plans and have fresh reviewers read them. The
-   model-floor change can proceed separately; the doctrine audit can gather
-   evidence before its routing fence.
-3. Settle the test-protection boundary before renaming or deleting ordinary
-   tests. Narrowing the byte glob alone leaves the existing dropped-node
-   HOLDs in place.
-4. Scope an ordinary test-family consolidation, starting with a measured
-   behavior/fault inventory and repeated setup. Exclude the governing-text
-   proposal's tests to avoid two owners editing them. Keep representative
-   real entry-point checks. No line-ratio deletion quota.
-5. Assess the recorded slow-suite evidence with scoped duration measurements;
-   do not run another full suite merely to prepare a proposal. Parallel test
-   runners and new dependencies remain separate choices, not assumed fixes.
-6. Return to the remaining v0.6 roadmap corrections, including module discovery
-   and first-use onboarding. They stay in v0.6; new adopter engineering guidance
-   and the survey stay in v0.7.
+Fresh ordinary and Security plan reviews precede implementation where required.
+Luna executes reviewed plans; Terra independently reviews code. Sol handles
+Security Reviews and new strategy or premise judgments.
+
+Serialize changes to shared governing files. Governing-text inventory can run
+alongside model/verification work because it gathers evidence rather than moving
+rules. Settle the test-protection boundary before ordinary test deletion or
+renaming; narrowing only the byte glob would leave collection HOLDs in place.
+Use scoped measurements for the pilot; a full-suite speedup is measured only at
+the next authorized whole-tree integration run, not by creating another broad run.
+
+Maintain the existing release and certification ceremonies. Root changes,
+re-anchors and routing decisions remain the Maintainer's actions; pushing,
+publishing, issue closure and repository settings changes are not authorized.
+Other v0.6 groups, including module discovery and onboarding, remain in the
+[roadmap](../PLANNING.md). The five-plan batch does not claim to finish v0.6.
 
 ## Open-issue triage
 
@@ -131,17 +132,19 @@ Current default staffing follows the Maintainer's latest October 28 direction:
 | Medium | Terra | Sonnet | Proposal/plan authoring and ordinary reviews |
 | Low | Luna | Haiku | Implementation of reviewed plans, including high-risk/non-trivial chunks; trivial work and authorized Decision scribing |
 
-No Astra or Fable by default. The remaining Astra subagent was stopped after
+Antigravity maps high/medium/low to Argon/Pro/Flash under Decision `63e315fa`.
+All three vendor mappings are Cairn-local assignments; shipped tiers remain
+generic. No Astra or Fable by default. The remaining Astra subagent was stopped after
 read-only work; completed reviews retain their true attribution and are not
-repeated. The staffing proposal records this revised family assignment at
-`639196fe`; it remains a proposal rather than a scribed Decision. Family names
+repeated. The staffing Decision at `63e315fa` now authorizes the local assignments and
+the reviewed task floors. Family names
 were checked against [official OpenAI documentation](https://developers.openai.com/api/docs/guides/model-selection);
 these local tier assignments are the Maintainer's choice, not benchmark results.
 Decision scribing still needs unambiguous disposition and commit authorization.
 
 This is the nimbleness-first batch, not a completed v0.6 release. Other roadmap
-groups remain queued. No implementation, suite-consolidation outcome or new
-scientific evidence is claimed. Proposal authors/reviewers own their records and commits. Claims,
+groups remain queued. Plans and their recorded verification own implementation
+claims; no suite-wide speedup or new scientific evidence is claimed here. Proposal authors/reviewers own their records and commits. Claims,
 links and applicable prose gates check this master; they do not verify the
 engineering claims in the linked proposals. Do not mistake a populated board
 for delivered functionality.
