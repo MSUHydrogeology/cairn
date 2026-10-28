@@ -1,7 +1,7 @@
 # Plan: Verify changes at their scope
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-scoped-change-verification.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Verify each change against its affected behavior and reserve whole-tree certification for authorized integration points.
@@ -46,3 +46,26 @@ Use `/Users/kendal30/conda_envs/lhm/bin/python3.13`. Boundary A and final-commit
 - Both operational copies and trivial lane: `bootstrap/tests/test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation`, `::test_agents_md_omits_the_forbidden_phrasing`, and `::test_an_empty_file_carries_no_obligation`.
 - Guard and split: `bootstrap/tests/test_broad_run_guard.py::test_a_run_over_the_file_threshold_is_refused_regardless_of_selector`, `::test_the_file_threshold_boundary_is_exact`, `::test_collect_only_is_exempt_from_the_guard`, plus the C2 union exercise. Open `bootstrap/tests/conftest.py` to verify the collection and execution triggers.
 - Run `scripts/claim_check.py` for each authored document, `scripts/check_cairn.py`, `scripts/link_check.py`, and `scripts/quality_gate.py --sub neutrality --sub redundancy`; inspect each trigger and selection. Check snippet synchronization if a synced block changes. Search tests and manifests reading every touched surface; run their owners and any applicable frozen-file ceremony. Record any uncovered surface and keep required coverage open.
+
+
+## Plan review -- Codex gpt-6.1-terra medium -- 2026-10-28
+
+**Reviewed commit**: 865175bc
+**Tier**: Internal
+**Obligation**: Internal
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Does it deliver the Decision?** The two lanes and reviewer exercise are mapped, but the execution union, trivial evidence, and certification migration need explicit criteria. -- plan `## Acceptance criteria`; source proposal `## Current contract`.
+2. **Best alternative.** Keep the two chunks and existing tests; spell out these criteria and extend the existing guard-message test rather than create a new selector or stage. -- `bootstrap/tests/test_certifying_run_rule.py:67`; `bootstrap/tests/conftest.py:398`.
+3. **What would show it wrong?** An example whose collected union matches while one required chunk never runs, or a changed record rewritten to claim certification, would meet the present wording without delivering the contract. -- plan `## Acceptance criteria`; source proposal `## Current contract`.
+
+**F1 -- Blocking: require execution of the split union.** C2 compares collection for a selection over 40 files and records cross-family checks, but does not say to run every resulting chunk or record the executed union. Collection is explicitly exempt from the guard; matching collected IDs alone is not execution evidence. Require every split invocation to run within the limit, record its results and union, and show the required cross-family paths are exercised. Keep the collection comparison and no override. -- `bootstrap/tests/conftest.py:398-416`; plan C2.
+
+**F2 -- Blocking: make both record migrations explicit.** C1 says the trivial author records “evidence” but does not require an otherwise clean tree or separate copy, the search, commands, counts, interpreter, outcomes and omissions in the commit body. Its certification-by-SHA wording also does not require an append-only entry, leaving historical records open to rewriting. Add those fields and clean-candidate condition; require a later append-only certification entry keyed by the certifying SHA. Preserve old plans until their authorized certification or lifecycle revision. -- source proposal `## Current contract`; plan C1 and Scope.
+
+**F3 -- Blocking: reconcile the guard's live push guidance.** The guard's refusal says certification occurs “before a push” without the accepted conditional; the mapped test only checks for “certifying run” and absence of an override. C1 scopes other *governing* consumers, and C2 does not require this executable message or its test to change. Add the message to the migration and extend its existing test to distinguish a required push certification from an unconditional one, with a negative control. -- `bootstrap/tests/conftest.py:410-416`; `bootstrap/tests/test_certifying_run_rule.py:67-73`; `AGENTS.md:305`.
+
+**Covered**: claims and execution path (#1-2: F1 and F3); completeness and refusal (#3-4: F1-F3); consistency and drift (#5-6: plan Scope and mapped test files); lifecycle and scope (#7-8: F2 and source Current contract); satisfiers (#9: each finding).
+**Not covered / low confidence**: no implementation, example verdict, tests, security ceremony or full suite was run; this pass does not discharge the separate Internal Security Review.
