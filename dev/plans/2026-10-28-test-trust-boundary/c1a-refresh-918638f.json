@@ -1,6 +1,14 @@
 {
   "artifact": "C1a factual inventory refresh; not a classification or authority artifact",
   "board_pilot_factual_locations": {
+    "adjacent_non_pilot_fact": {
+      "class_line": 888,
+      "constant_definition_line": 723,
+      "nodeid": "bootstrap/tests/test_board_json_contract.py::TestRecordFactsComeFromWhereTheFileSits::test_header_lines_cannot_forge_location_or_schema_fields",
+      "read_line": 898,
+      "reads": "BASELINE_PATH",
+      "test_line": 892
+    },
     "file": "bootstrap/tests/test_board_json_contract.py",
     "other_security_test_locations_same_file": [
       {
@@ -28,10 +36,6 @@
             "line": 25,
             "loader": "_load_board at line 17",
             "name": "board"
-          },
-          {
-            "line": 723,
-            "name": "BASELINE_PATH"
           }
         ],
         "nodeid": "bootstrap/tests/test_board_json_contract.py::TestRecordFactsComeFromWhereTheFileSits::test_all_record_values_and_absent_vs_blank_and_headerless_files",
