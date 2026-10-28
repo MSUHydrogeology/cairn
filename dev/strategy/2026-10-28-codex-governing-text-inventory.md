@@ -5,7 +5,7 @@
 **Date**: 2026-10-28
 **Status**: draft
 **Type**: comparative-research
-**Surfaces this would feed**: `dev/plans/governing-text-single-source.md` C2
+**Surfaces this would feed**: `dev/plans/2026-10-28-governing-text-single-source.md` C2
 
 ## The question / felt gap
 
@@ -13,7 +13,7 @@ Recommend a public methodology reference under **`docs/`**, with one usable inst
 
 ## Method *(grounded, falsifiable — verify-before-asserting)*
 
-Factual baseline: `0ac350c02422d8a8ba8c3b674a671b072c71a317`, recorded at `423310d4`. The [TSV](../plans/governing-text-single-source/doctrine-sections.tsv) preserves all 195 heading-shaped records from 15 files (6,107 lines), with stated purpose, excerpts, history and placement relations. A fence-aware recount finds **190 actual H1–H3 headings and five example headings inside code fences**, all in `doctrine/plans.md`; its context column distinguishes them. Classification is lexical signal, not proof of each section's meaning.
+Factual baseline: `0ac350c02422d8a8ba8c3b674a671b072c71a317`, recorded at `423310d4`. The [TSV](../plans/2026-10-28-governing-text-single-source/doctrine-sections.tsv) preserves all 195 heading-shaped records from 15 files (6,107 lines), with stated purpose, excerpts, history and placement relations. A fence-aware recount finds **190 actual H1–H3 headings and five example headings inside code fences**, all in `doctrine/plans.md`; its context column distinguishes them. Classification is lexical signal, not proof of each section's meaning.
 
 Strategy read representative committed passages in roles, plans, lifecycle-contract, doc-governance, rationale and consolidation-review; installer mappings, owner tests and the documentation-plan pair; and history at `3a190c95`, `5f619be4`, `7519c5da` and `676b7c0e`. Initial installs/tests used Python 3.13.13. No public text changed and no adoption trial ran. A uniquely necessary public contract without a suitable documented home would challenge the recommendation.
 

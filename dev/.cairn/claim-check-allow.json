@@ -302,6 +302,30 @@
         "docs/linkdir",
         "templates/core/evil"
       ]
+    },
+    "dev/plans/2026-10-28-model-floor-alignment.md": {
+      "paths": [
+        "dev/plans/model-floor-alignment.md"
+      ],
+      "_comment": "Exact pre-rename paths in immutable review/implementation records; citations are bound to their recorded commits. Active targets use dated names."
+    },
+    "dev/plans/2026-10-28-governing-text-single-source.md": {
+      "paths": [
+        "dev/plans/governing-text-single-source.md",
+        "dev/plans/governing-text-single-source/doctrine-sections.tsv",
+        "dev/plans/scoped-change-verification.md",
+        "dev/strategy/2026-10-28-governing-text-inventory.md"
+      ],
+      "_comment": "Exact pre-rename paths in immutable review/implementation records; citations are bound to their recorded commits. Active targets use dated names."
+    },
+    "dev/plans/2026-10-28-test-trust-boundary.md": {
+      "paths": [
+        "dev/plans/ordinary-test-maintenance.md",
+        "dev/plans/test-trust-boundary/c1a-node-inventory.jsonl",
+        "dev/plans/test-trust-boundary/c1b-classification-evidence.json",
+        "dev/plans/test-trust-boundary/c1b-proposed-roster.json"
+      ],
+      "_comment": "Exact pre-rename paths in immutable review/implementation records; citations are bound to their recorded commits. Active targets use dated names."
     }
   }
 }

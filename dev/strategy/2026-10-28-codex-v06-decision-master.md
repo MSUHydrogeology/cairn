@@ -35,11 +35,11 @@ this briefing as another status board.
 
 | Order | Plan | Accepted outcome and remaining constraint |
 |---|---|---|
-| 1 | [Model floors](../plans/model-floor-alignment.md) | Task-based floors; Cairn-only family assignments, including Antigravity; no vendor-specific tiers shipped |
-| 2 | [Change verification / issue #33](../plans/scoped-change-verification.md) | Scoped change evidence, separate tree certification, trivial-lane exception and preserved ceremony duties; shared-file edits follow model-floor code review |
-| 3, parallel inventory | [Governing text](../plans/governing-text-single-source.md) | Establish why each home exists and compare doctrine with docs/dev/rules; the Maintainer chooses routing before rule relocation/deletion |
-| 4 | [Test trust boundary](../plans/test-trust-boundary.md) | Exact protected roster requires Maintainer approval; root/re-anchor remains Maintainer-only; narrower assurance loss already accepted |
-| 5 | [Ordinary test maintenance](../plans/ordinary-test-maintenance.md) | Follows implemented trust boundary and board-file eligibility; references the test-practice strategy and updates the existing testing module |
+| 1 | [Model floors](../plans/2026-10-28-model-floor-alignment.md) | Task-based floors; Cairn-only family assignments, including Antigravity; no vendor-specific tiers shipped |
+| 2 | [Change verification / issue #33](../plans/2026-10-28-scoped-change-verification.md) | Scoped change evidence, separate tree certification, trivial-lane exception and preserved ceremony duties; shared-file edits follow model-floor code review |
+| 3, parallel inventory | [Governing text](../plans/2026-10-28-governing-text-single-source.md) | Establish why each home exists and compare doctrine with docs/dev/rules; the Maintainer chooses routing before rule relocation/deletion |
+| 4 | [Test trust boundary](../plans/2026-10-28-test-trust-boundary.md) | Exact protected roster requires Maintainer approval; root/re-anchor remains Maintainer-only; narrower assurance loss already accepted |
+| 5 | [Ordinary test maintenance](../plans/2026-10-28-ordinary-test-maintenance.md) | Follows implemented trust boundary and board-file eligibility; references the test-practice strategy and updates the existing testing module |
 
 The trust Decision explicitly accepts loss of blanket ordinary-test byte
 protection and ordinary-node deletion/rename/new-marker HOLDs. Actual

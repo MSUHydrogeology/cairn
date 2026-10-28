@@ -224,3 +224,16 @@ Claim check and the plan-scoped prose/link/content check passed; neutrality had
 zero failures and 43 informational exemptions. No executable snippet changed,
 no full suite ran and certification remains pending. Shared unrelated edits
 were excluded from the commit; measured source came only from the named commit.
+
+
+## Filename maintenance -- Codex (Coordination) -- 2026-10-28
+
+Maintainer naming instruction, verbatim:
+
+> "Your plan docs aren't following the right naming convention. See the archive. Can you check if the template specifies this? If not, please modify it and the other templates (And shipped copies) to specify the date as part of the naming."
+
+The filename now uses its original Opened date. Its document-owned evidence
+folder, where present, uses the same dated stem and archives with the plan.
+This is a path migration, not a scope or lifecycle change. Historical review
+and evidence citations retain the paths valid at their named commits; current
+link destinations and operative targets use the dated paths.

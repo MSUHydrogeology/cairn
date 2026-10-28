@@ -20,6 +20,17 @@
 
 **Keep the strategy note short.** Count words, not lines — never unwrap lines to look short. Keep a standard strategy note to **≤ 1,500 words (~10 KB)**, fold reviews in inline rather than appending review logs, and replace the section prompts below the rule rather than copying boilerplate.
 
+## Filename and close-out
+
+Name a new note `<YYYY-MM-DD>-<author>-<slug>.md`, using its original Date;
+keep that date and stem when revising or archiving. Commit document-owned
+supporting files with the note; a dedicated folder uses the same stem.
+When the direction is adopted, superseded or retired, migrate lasting conclusions
+to their durable homes, then archive the note and its owned folder together and
+repair live links. Shared canonical scripts, tests and assets stay in their homes.
+A maintained living reference stays live; retire its role consistently with
+`README.md` before archiving it. Do not leave completed notes appearing active.
+
 ## What a strategy note is (and the one rule that defines it)
 
 `dev/strategy/` is the project's **Stage-0 "explore before you commit"**

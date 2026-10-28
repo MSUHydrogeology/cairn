@@ -32,14 +32,14 @@ purposes and history, including the Maintainer's `dev/rules` alternative;
 do not assume the present placement is justified.
 
 C1 outputs:
-- `dev/strategy/2026-10-28-governing-text-inventory.md`
-- `dev/plans/governing-text-single-source/doctrine-sections.tsv` (per-heading evidence)
+- `dev/strategy/2026-10-28-codex-governing-text-inventory.md`
+- `dev/plans/2026-10-28-governing-text-single-source/doctrine-sections.tsv` (per-heading evidence)
 
 ## Sequence
 
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
-| C1 | Inventory current rules, history, installed reach and editing cost | Plan review; may run alongside other plans | Evidence and routing alternatives in `dev/strategy/2026-10-28-governing-text-inventory.md` |
+| C1 | Inventory current rules, history, installed reach and editing cost | Plan review; may run alongside other plans | Evidence and routing alternatives in `dev/strategy/2026-10-28-codex-governing-text-inventory.md` |
 | C2 | MAINTAINER-GATED routing choice | C1 refreshed after model-floor and scoped-verification implementation and code review; Maintainer chooses before rule relocation or deletion | Chosen routing and explicit authorization in this plan |
 | C3 | Conditional edits and property guards | C2; scoped-verification implementation and code review complete before shared governing edits; test-trust-boundary work complete before frozen prose tests change | Safe consolidation, installed guards and comparison evidence |
 | C4 | Verify and hand off | C3; applicable frozen-file and doctrine ceremonies | Scoped verification record and independent code review |
@@ -296,3 +296,16 @@ mutation, full suite or ceremony. Existing source-vs-installed test limits
 remain recorded in the note. Refresh affected facts and mapping after the
 model-floor and scoped-verification implementations and code reviews; only
 then can C2 become the Maintainer's next move. Status remains `implementing`.
+
+
+## Filename maintenance -- Codex (Coordination) -- 2026-10-28
+
+Maintainer naming instruction, verbatim:
+
+> "Your plan docs aren't following the right naming convention. See the archive. Can you check if the template specifies this? If not, please modify it and the other templates (And shipped copies) to specify the date as part of the naming."
+
+The filename now uses its original Opened date. Its document-owned evidence
+folder, where present, uses the same dated stem and archives with the plan.
+This is a path migration, not a scope or lifecycle change. Historical review
+and evidence citations retain the paths valid at their named commits; current
+link destinations and operative targets use the dated paths.
