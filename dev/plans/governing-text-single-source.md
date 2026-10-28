@@ -1,7 +1,7 @@
 # Plan: Governing text inventory and routing
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-governing-text-single-source.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Map where rules come from and reach adopters before choosing how to reduce repeated editing.
@@ -112,3 +112,28 @@ mode, with the next certifying run supplying full-suite evidence; record
 record tested SHA and range, clean pre/post state, commands, counts, timing,
 non-pass dispositions and omissions. The reviewer independently falsifies the
 record and changed rule reach, without running the full suite.
+
+## Plan review -- Codex (Internal reviewer, gpt-6.1-terra) -- 2026-10-28
+
+```
+Reviewed commit: 73d9ff63803769c4764883c7117817d444f0c5f9
+Target: Source proposal through Verification
+Prior findings: none
+Assurance path: Internal + Internal Security Review
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, subject to sequencing and a usable verification map: inventory and the Maintainer's routing choice precede any operative move or deletion -- `dev/plans/governing-text-single-source.md` > C1–C3.
+2. **Best alternative.** Keep the present homes where evidence does not support a safe simplification; the existing installer delivers core and module files separately, so a published citation alone is insufficient -- `bootstrap/_scaffold/config.py` > `_CORE_MAPPINGS` and `_MODULE_MAPPINGS`.
+3. **What would show it wrong.** A real install loses an obligation or its usable trigger, a deletion control passes, or neither representative edit becomes simpler without lost meaning -- `dev/proposals/archive/2026-10-28-codex-governing-text-single-source.md` > "Conditional edits and evidence".
+
+**F1 (blocking) -- Sequence the other shared-rule work.** C3 waits for model-floor alignment but not the accepted scoped-change-verification plan, whose C1 also changes `AGENTS.md`, its shipped twin, doctrine and plan templates (`dev/plans/scoped-change-verification.md` > Scope and C1). Concurrent changes can make the inventory and its chosen edits stale or overwrite another accepted outcome. **Satisfier:** gate shared governing edits on that plan's implementation and code review too; allow C1 alongside it, but refresh the affected inventory and mapping against the completed changes before routing or edits.
+
+**F2 (blocking) -- Map the checks and source-to-install comparison before editing.** Verification lists five starting test files and defers owner mapping until before edits, but does not map changed invariants and public paths to checks for review as the plan template requires. For example, `bootstrap/tests/test_review_and_verification_rules_ship.py` reads both `AGENTS.md` copies, including a deliberately different claiming rule; naming the file alone does not identify what protects each obligation or installed path. The accepted contract also calls for source/twin parity, not just distinct wording. **Satisfier:** map the known invariants and installed paths to test nodes or files and standing gates now, including parity and intentional differences; explain how the inventory and routing choice extend that map before edits, with any uncovered consumer recorded and checked. Keep the existing single plan-review round.
+
+**Coverage:** Claims and production path: `_CORE_MAPPINGS`, `_MODULE_MAPPINGS`, and the cited shipped-rule tests; design and failure: C1–C4, real installs and deletion/inversion controls; consistency and drift: the accepted proposal, model-floor and scoped-verification plans; placement: C2's Maintainer fence; scope and satisfiers: conditional cuts, comparison and F1–F2. **Not covered / low confidence:** No install, test, ceremony, full doctrine-section audit, or future semantic guard was executed; the separate Internal Security Review remains open.
