@@ -549,8 +549,9 @@ execution (new modules, new test files, new docs). At plan-open time
 those paths do not resolve, so `claim_check` hard-flags them. The
 escape hatch is `claim_check`'s marker-line mechanism: a line that
 begins with `Proposed paths:` (case-insensitive; optional list-item
-prefix) exempts the backticked path tokens **on that same line** from
-the hard path check.
+prefix) exempts path and line-bounds tokens on that line from the hard
+checks. Each literal path declared on the marker line may also recur
+anywhere else in the document when it does not resolve locally.
 
 Use the marker when:
 
@@ -563,37 +564,41 @@ Use the marker when:
 Marker shape (preferred): one or more `Proposed paths:` lines near the
 top of the plan (after `## Plan triage rule`, before `## Scope`), each
 listing a batch of related tokens. Multiple tokens per line are fine;
-a marker line also exempts any **contiguous structured block
-immediately beneath it** (table rows, list rows, or bare backticked
-path-list rows) until the next blank line, heading, or ordinary prose
-line.
+each backticked token on the marker line declares a path. The line's
+declared literal paths may recur anywhere else in the same document, and
+each exempted occurrence is reported with the declaration that
+authorized it. The marker line and any contiguous structured rows
+(table rows, list rows, or bare backticked path-list rows) are exempt
+from hard path and line-bounds checks until a blank line, heading, or
+ordinary prose line. Each continuation row declares only its first
+backticked token; later tokens in that row's explanation are not
+declarations. A standalone marker line still declares its paths for
+document-wide reuse.
 
 Example:
 
 ```
-Proposed paths: `path/to/new_tool.py`, `path/to/new_dir/`,
-`path/to/new_doc.md`.
+Proposed paths:
+- `path/to/new_tool.py` -- a new module.
+- `path/to/new_dir/` -- a new directory.
+- `path/to/new_doc.md` -- a new document.
 
-Proposed paths: `path/to/tests/test_new_thing.py`,
-`path/to/tests/test_new_contract.py`.
+Chunk A creates `path/to/new_tool.py` in `path/to/new_dir/` and documents it in `path/to/new_doc.md`.
 ```
 
-**The marker is line- and block-scoped**: it does NOT exempt a path
-where the same token recurs in ordinary prose (a chunk description, an
-acceptance-criterion sentence). Such an occurrence still hard-flags.
-Two clean ways to handle it, in preference order:
-
-* **Cite the existing parent directory + the bare new filename.**
-  `claim_check` treats a backticked token as a repo-path claim only
-  when its first segment is a real top-level directory; a bare
-  filename (no `/`) is not a claim. Write a new file as a bare name
-  beside its directory — e.g. `new_tool.py` next to the existing
-  `path/to/dir/` — so the directory token resolves, the bare name is
-  ignored, and the full slashed path stays declared once in the
-  marker. No flag, no residue.
-* **Conscious-accept**, documented in the plan-open commit body — the
-  fallback when the full slashed path must appear in prose; it clears
-  at the implementing chunk commit where the path is created.
+**Document-wide reuse is exact and fail-closed.** A declaration exempts
+only the identical literal path in the same document when that path does
+not resolve locally. It never exempts a sibling, descendant, or
+look-alike prefix. A wildcard or placeholder is not a literal
+declaration; a conflicting declaration under another marker keyword
+grants no authority. Do not reuse a declaration after its path resolves:
+existing files and stale line-bounds citations remain subject to the
+hard checks. Use a marker line or structured marker block when a
+declared path recurs in ordinary prose (a chunk description or
+acceptance criterion). On a non-terminal plan or proposal, a declaration
+in a structured block must authorize an occurrence outside that block;
+a standalone marker line has no separate liveness obligation because
+its own line uses the declaration.
 
 **Two other marker keywords** parallel `Proposed paths:`:
 
@@ -603,9 +608,9 @@ Two clean ways to handle it, in preference order:
   repository this project depends on, or an upstream framework
   checkout, rather than in this tree.
 
-All three markers exempt only the tokens on the marker line itself.
-See `claim_check`'s module docstring (the "Marker lines" subsection)
-for the full mechanism documentation.
+All three marker keywords use the same exact document-wide rules.
+See `claim_check`'s module docstring (the "Typed-declaration registry"
+subsection) for the full mechanism and provenance rules.
 
 **Applies to a plan's append-only finding sections too.** Under the
 `AGENTS.md` claim-marker-maintenance exception, inserting a marker line
@@ -616,10 +621,11 @@ reviewer's findings) — additive marker line only, in its own
 text. A plan's **task checkboxes / status** are ordinary mutable
 workflow, distinct from these append-only finding sections. Before
 marking, confirm the flagged path is not a typo of a real local path.
-**Placement safety**: an inline marker is *block-scoped* (it exempts
-contiguous rows beneath it until a blank line / heading) — place it
-immediately adjacent to the target token and leave a blank line after
-the target row so it does not over-exempt later rows; for many
+**Placement safety**: a marker block exempts its contiguous structured
+rows and lets each row's first path become an exact document-wide
+declaration. A marker line's paths also declare exact paths document-
+wide, even without continuation rows. Put only intentional declarations
+in the block, then leave a blank line after its rows. For many
 sibling-repo paths, prefer the file-level
 `<!-- claim-check-allow: <glob> -->` directive (narrow globs only).
 

@@ -227,9 +227,10 @@ time (new test files, new directories, new docs). At proposal-open
 time those paths do not resolve, so `claim_check` hard-flags them.
 The escape hatch is `claim_check`'s marker-line mechanism: a line
 that begins with `Proposed paths:` (or `Proposed path:` for a single
-token; case-insensitive; optional list-item prefix) exempts the
-backticked path tokens **on that same line** from the hard path
-check.
+token; case-insensitive; optional list-item prefix) exempts path and
+line-bounds tokens on that line from the hard checks. Each literal path
+declared on the marker line may also recur anywhere else in the document
+when it does not resolve locally.
 
 Use the marker when:
 
@@ -241,41 +242,42 @@ Use the marker when:
 
 Marker shape (preferred): one or more `Proposed paths:` lines, each
 listing a batch of related tokens. Multiple tokens per line are
-fine; the marker exempts everything on its own line **and any
-contiguous structured block immediately beneath it** — Markdown
-table rows, list rows, or bare backticked path-list rows are exempt
-until the next blank line, heading, or ordinary prose line, so a
-marker line placed directly above a path-bearing table covers the
-whole table.
+fine; each backticked token on the marker line declares a path. The
+line's declared literal paths may recur anywhere else in the same
+document, and each exempted occurrence is reported with the declaration
+that authorized it. The marker line and any contiguous structured rows
+(Markdown table rows, list rows, or bare backticked path-list rows) are
+exempt from hard path and line-bounds checks until the next blank line,
+heading, or ordinary prose line. Each continuation row declares only
+its first backticked token; later tokens in that row's explanation are
+not declarations. A standalone marker line still declares its paths
+for document-wide reuse.
 
 Example (place near the top of the proposal, e.g. after the Context
 section):
 
 ```
-Proposed paths: `path/to/new/dir/`, `path/to/new/dir/archive/`,
-`path/to/new/reference.md`.
+Proposed paths:
+- `path/to/new/dir/` -- a new directory.
+- `path/to/new/dir/archive/` -- its future archive.
+- `path/to/new/reference.md` -- a new reference page.
 
-Proposed paths: `path/to/tests/test_x.py`, `path/to/tests/test_y.py`.
+The reference page will live at `path/to/new/reference.md`.
 ```
 
-**The marker is line- and block-scoped**: it does NOT exempt a path
-where the same token recurs in ordinary prose elsewhere in the
-document (a Rationale sentence, a chunk description). Such an
-occurrence still hard-flags. Two clean ways to handle it, in
-preference order:
-
-* **Cite the existing parent directory + the bare new filename.**
-  `claim_check` treats a backticked token as a repo-path claim only
-  when its first segment is a real top-level directory; a bare
-  filename (no `/`) is not a claim. So in prose, name a new file as
-  a bare name beside its directory — e.g. `new_helper.py` next to the
-  existing `path/to/dir/` — so the directory token resolves, the bare
-  name is ignored, and the full slashed path stays declared once in
-  the marker. No flag, no residue.
-* **Conscious-accept**, documented in the proposal-open commit body
-  — the fallback when the full slashed path genuinely must appear in
-  prose. It clears at the implementing commit where the path is
-  created.
+**Document-wide reuse is exact and fail-closed.** A declaration exempts
+only the identical literal path in the same document when that path does
+not resolve locally. It never exempts a sibling, descendant, or
+look-alike prefix. A wildcard or placeholder is not a literal
+declaration; a conflicting declaration under another marker keyword
+grants no authority. Do not reuse a declaration after its path resolves:
+existing files and stale line-bounds citations remain subject to the
+hard checks. Use a marker line or structured marker block when a
+declared path recurs in ordinary prose (a Rationale sentence or chunk
+description). On a non-terminal plan or proposal, a declaration in a
+structured block must authorize an occurrence outside that block; a
+standalone marker line has no separate liveness obligation because its
+own line uses the declaration.
 
 **Two other marker keywords** parallel `Proposed paths:`:
 
@@ -285,9 +287,9 @@ preference order:
   repository this project depends on, or an upstream framework
   checkout, rather than in this tree.
 
-All three markers exempt only the tokens on the marker line itself.
-See `claim_check`'s module docstring (the "Marker lines" subsection)
-for the full mechanism documentation.
+All three marker keywords use the same exact document-wide rules.
+See `claim_check`'s module docstring (the "Typed-declaration registry"
+subsection) for the full mechanism and provenance rules.
 
 **The convention applies to Review / Response sections too.**
 Forward-reference and sibling-repo paths land most often in
@@ -299,11 +301,12 @@ is permitted even inside another agent's append-only section
 (additive marker line only, in its own `claim-marker maintenance:`
 commit). **Typo guard**: before marking, confirm the flagged path is
 not a typo of a real local path — fix or surface it rather than
-silencing. **Placement safety**: an inline marker is *block-scoped* —
-it exempts contiguous rows beneath it until a blank line / heading.
-Place it immediately adjacent to the target token and leave a blank
-line after the target row, so the continuation does not over-exempt
-later rows. For a document with *many* such paths (e.g. a cross-repo
+silencing. **Placement safety**: a marker block exempts its contiguous
+structured rows and lets each row's first path become an exact
+document-wide declaration. A marker line's paths also declare exact
+paths document-wide, even without continuation rows. Put only
+intentional declarations in the block, then leave a blank line after
+its rows. For a document with *many* such paths (e.g. a cross-repo
 proposal whose reviewer sections cite sibling-repo paths), prefer the
 file-level `<!-- claim-check-allow: <glob> -->` directive (narrow
 globs only; it reports each exempted token) over scattering per-line
