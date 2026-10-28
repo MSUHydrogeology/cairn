@@ -363,3 +363,149 @@ The approval permits the plan's C2 implementation; it does not install the
 boundary, approve the pilot extraction, waive reviews, or authorize the
 Maintainer-only authority transition and re-anchor. Existing frozen-file and
 certification obligations remain open.
+
+## Implementation log -- C2 -- Codex (Implementation Luna, low) -- 2026-10-28
+
+Implemented the approved 90-path Python roster without changing its raw bytes
+or SHA-256. Its seven protected fixtures and 57 preserved non-test paths remain
+in the prospective freeze. The new roster artifact joins the fixed authority
+closure, so the prospective frozen set is 148 paths (147 from the approved
+union plus the roster artifact). The launcher's fixed list and hand-built
+packet instructions now both name all 12 closure members. test_intents_tool.py
+is frozen as approved while its existing phase-split handling remains in place.
+
+Membership is supplied only by a verified prior signed anchor or the exact
+approved roster bytes admitted by the reviewed initial transition. The first
+transition tests pass without a compatibility bridge. Thereafter, the
+candidate producer receives the trusted roster explicitly; trusted static
+derivation compares roster identity and frozen/ordinary hashes to raw candidate
+objects; stage 2 resolves the same roster from the observed anchor and retains
+manifest-byte equality. The public check command also resolves from its prior
+anchor. Missing or malformed anchor state refuses. With a valid pre-roster
+anchor, the public data-only path keeps its broad legacy policy and cannot
+introduce a candidate roster.
+
+The tree-wide caller read used:
+
+    rg -n "_trusted_roster_from_anchor|resolve_protected_roster|rederive_static_manifest|produce\(protected_roster|_frozen_files\(" bootstrap/tests/_gate_manifest.py bootstrap/tests/_gate_preflight.py bootstrap/tests/_gate_reanchor.py scripts/repin.py
+
+The narrowed call paths are _gate_manifest.produce and verify;
+_gate_preflight.gather_evidence, rederive_static_manifest,
+check_static_manifest, check, stage1 and apply_now; and
+_gate_reanchor.gather_evidence plus its data-only Stage B. The two
+_gate_reanchor paths resolve from the previous signed manifest; Stage B
+independently validates candidate evidence before constructing a commit or
+advancing a ref. _frozen_files with no roster now means broad legacy policy,
+never local candidate membership. The ordinary census is computed while the
+raw object tree is still materialized. Existing ordinary additions, removals,
+renames and marker changes remain visible notes; lost or changed protected
+members remain HOLDs, and a new ordinary test_*.py is named in
+ordinary_test_files and reported as UNPROTECTED-NEW.
+
+Changes are in 979018d4, 26f65e18, 71ec71b3, cd6e1ddf, f66732ea
+and bef293ff; the approved-roster count note is b97e71fd. The main
+checkout's pre-existing untracked .claude/ and
+dev/measurement/collision_log.md were not edited. No signed ref, manifest
+authority installation, anchor, board pilot, push or waiver was changed.
+
+## Implementation verification -- Codex (Implementation Luna, low) -- 2026-10-28
+
+**Boundary B mode**: wide
+**Certified by**: pending
+**Tested commit**: bef293ffc65852c4513e65660c8a037eb5a0e8bf
+**Reviewed range**: d866caef605e1dc7ae7a3b6a14a9269909513d67 to bef293ffc65852c4513e65660c8a037eb5a0e8bf
+**Interpreter/runtime**: /Users/kendal30/conda_envs/lhm/bin/python3.13, Python 3.13.13
+**Pre-run state**: clean detached worktree at the tested commit; git status --porcelain empty.
+**Post-run state**: same HEAD and clean status after all commands.
+
+Commands used PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest <paths> -q --tb=short in /private/tmp/cairn-c2-bef293ff; the two agent tests and the repin ceremony family ran with local signing/PTY capability enabled.
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---:|---|---:|
+| bootstrap/tests/test_gate_manifest.py | 0 | 23 passed | 24.11 s |
+| bootstrap/tests/test_gate_transition.py bootstrap/tests/test_gate_reanchor.py | 0 | 25 passed | 5.56 s |
+| bootstrap/tests/test_security_check.py bootstrap/tests/test_security_marker.py | 0 | 120 passed; 3 upstream deprecation warnings | 48.80 s |
+| bootstrap/tests/test_repin.py | 0 | 106 passed | 102.14 s |
+| bootstrap/tests/test_gate_preflight.py | 1 | 318 passed; 2 agent tests could not start /usr/bin/ssh-agent in the restricted run (exit 255) | 136.99 s |
+| The two TestCandidateCodeCannotSignFromStageOne agent nodes, rerun with local agent access | 0 | 2 passed | 0.60 s |
+| bootstrap/tests/test_reanchor_driver_disclosures.py | 0 | 21 passed | 5.31 s |
+| bootstrap/tests/test_repin_ceremony.py with local signing/PTY capability | 0 | 130 passed | 417.97 s |
+
+The scoped preflight family therefore passed 320/320; all listed mapped tests
+passed, for 745 passing tests. No skips, xfails or xpasses were reported in
+these runs. The initial restricted preflight non-pass was reproduced as an
+environment denial and the same two nodes passed with local agent access. The
+ceremony signing test's restricted-run passphrase failure also occurred on
+pre-C2 commit d866caef under the same interpreter; it passed in the elevated
+current run. No signing assertion or test was bypassed.
+
+Plan-specific acceptance: first-transition and steady-state two-stage flows,
+exact roster identity, static re-derivation, closure, candidate substitution,
+legacy broad data-only promotion, protected and ordinary changes, actual
+release skip/xfail/xpass handling, and the 12-member repin packet/runbook path
+were exercised by the listed families. The old-checker comparison refused no
+required first-transition case, so no bridge was added. The shared signed
+anchor remains unchanged and still predates this implementation.
+
+**Plan-specific acceptance commands**: the mapped test commands above. Claim,
+link, snippet, neutrality and prose-integrity checks remain to be recorded
+after this plan entry is checked. **Known omissions**: no full-suite or
+certifying run; C3 independent code and Security Reviews remain pending; C4
+Maintainer-only installation and re-anchor remain pending. No claim that the
+narrow boundary is active is made.
+
+## Implementation verification follow-up -- Codex (Implementation Luna, low) -- 2026-10-28
+
+This record supersedes the preceding Boundary B result for the final
+implementation. That earlier record describes `bef293ff`, before the actual
+old-checker E7 comparison and bridge repair; its claim that no bridge was
+needed is false for that candidate. Its test counts remain historical only.
+
+**Boundary B mode**: wide
+**Certified by**: pending
+**Tested commit**: e1b8f8e9dd98bfa35acbb33a402be1e2d634cbe2
+**Reviewed range**: d866caef605e1dc7ae7a3b6a14a9269909513d67 to e1b8f8e9dd98bfa35acbb33a402be1e2d634cbe2
+**Interpreter/runtime**: /Users/kendal30/conda_envs/lhm/bin/python3.13, Python 3.13.13
+**Pre-run state**: clean detached clone `/private/tmp/cairn-c2-e1b8f8e9`, HEAD e1b8f8e9; empty `git status --porcelain`.
+**Post-run state**: same HEAD and empty status.
+
+The mapped wide command was:
+
+    PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_gate_manifest.py bootstrap/tests/test_gate_transition.py bootstrap/tests/test_gate_preflight.py bootstrap/tests/test_gate_reanchor.py bootstrap/tests/test_ceremony_review_report.py bootstrap/tests/test_reanchor.py bootstrap/tests/test_reanchor_driver_disclosures.py bootstrap/tests/test_repin.py bootstrap/tests/test_repin_ceremony.py bootstrap/tests/test_oracle_activation.py bootstrap/tests/test_security_check.py bootstrap/tests/test_security_marker.py -q --tb=short
+
+Outcome: **939 passed, 146 failed, 3 warnings in 690.94 seconds**. No skips,
+xfails or xpasses were reported in the aggregate output. Known environment
+failures are `test_the_candidate_position_cannot_sign_through_a_live_agent`
+and `test_the_same_key_signs_when_the_socket_is_present` in
+`test_gate_preflight.py`: `/usr/bin/ssh-agent -s` exited 255 in this run. The
+first visible report-family trace is
+`test_ceremony_review_report.py::TestReportRolesAndSchema::test_the_schema_is_the_second_version_and_every_path_has_a_role`, refusing
+because its synthetic prior anchor has no gate manifest. The same refusal
+appeared across report, line-scan, and launcher consumers. Other failures were
+listed across the mapped report and repin ceremony families, but the captured
+tool output was truncated before a complete per-node ledger could be retained.
+Terra follow-up is required to separate the remaining defects from dependent
+fixture failures; this result does not establish Boundary B acceptance.
+
+The exact final-SHA actual first-bridge E7 probe used P
+`443de20f81169fabe36c4ca3cc620206f7850254` and candidate C
+`e1b8f8e9dd98bfa35acbb33a402be1e2d634cbe2` in a separate clean isolated clone.
+Real stage 1 ran against a generated, revalidated 12-member transition
+manifest. Its broad prospective manifest omitted `protected_roster` and froze
+the approved roster file. The stage-1 report scan digest and the sterile
+Python 3.13 `-E -s -S` invocation of exact P `_gate_preflight.py scan-digest`
+both returned
+`1deb11c6fc93444b6367a35b2e6d0c91a9a656124adb3ea9bad93b7317157c70`; the
+old checker exited 0, and the anchor ref was unchanged. The two-transition
+integration fixture also exercised its simulated bridge checkpoint, extracted
+that fixture P checker for the second E7 comparison, and completed stage 2's
+exact prospective-manifest/report re-derivation. It signs only disposable
+fixture commits and is not a real anchor installation.
+
+The full mapped run's captured output was truncated; its aggregate is recorded
+without claiming the omitted node-level dispositions. No full suite,
+certifying run, root update, signature or Maintainer ceremony occurred. C3
+independent code and Security Reviews, C4 installation/re-anchor and C5
+steady-state approval remain pending. Do not treat the prospective narrowed
+manifest as installed or the implementation as verified until Terra resolves
+the mapped non-passes and a new final-commit Boundary B record succeeds.
