@@ -1,7 +1,7 @@
 # Narrow the gate's test-file freeze without hiding test loss
 
 **Author**: Codex (Sol), Proposal author
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
@@ -254,3 +254,79 @@ ordinary-by-default rule and visible `UNPROTECTED-NEW` note; the semantic
 gap is conceded only by the Maintainer's Decision. The opening's single
 transition sketch is replaced by the two-transition bridge above. No other
 opening outcome is withdrawn.
+
+## Review -- Codex (gpt-6-astra), Security Reviewer -- 2026-10-28
+
+```
+Reviewed commit: 5c8b95db07d7e275d8b480507f05395e7c390d87
+Target: opening proposal and complete Response contract
+Prior findings: none for this Security Review obligation
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, if the Maintainer accepts the declared
+   loss. Anchored membership prevents candidate self-removal; it cannot make
+   candidate-reported collection independent of ordinary Python execution. The
+   Response acknowledges both boundaries. -- proposal S1/S5 and Response;
+   `bootstrap/tests/_gate_preflight.py:1778-1801`.
+2. **Best alternative.** Use one existing reviewed transition if its real path
+   can establish the initial roster; retain blanket freezing if the lost
+   execution assurance is unacceptable. The current transition already runs
+   the reviewed candidate checker. --
+   `bootstrap/tests/test_gate_preflight.py:2030-2063`;
+   `bootstrap/REANCHOR_RUNBOOK.md:173-199`.
+3. **What would show it wrong.** Candidate control of protected expectations,
+   an unnoticed protected-byte loss, or routine ordinary edits still requiring
+   re-anchor would defeat the design. The proposed bridge also fails its own
+   contract if old static derivation and unchanged output cannot agree. --
+   Response “Verification and withdrawal”;
+   `bootstrap/tests/_gate_preflight.py:1947-1977`;
+   `bootstrap/tests/_gate_preflight.py:3413-3437`.
+
+The strongest version spends ceremony effort on the tests and machinery that
+defend trust, while reporting ordinary changes honestly. The revised admission
+rule, anchor-owned roster, retained fixtures/helpers, and required dependency
+inventory make that a coherent proposal. A new trust test remains explicitly
+unprotected until its reviewed roster addition is anchored. The withdrawal
+ledger records the ordinary-by-default concession and the changed transition
+mechanism; neither silently removes a promised outcome.
+
+**S1 — Non-blocking: challenge the extra checkpoint.** The Response explains
+its two-transition bridge by saying the prior verifier cannot accept narrowed
+output. That constraint describes a steady-state checker, but the current
+reviewed-transition route selects the reviewed candidate checker in both
+stages. `bootstrap/tests/test_gate_preflight.py:2111-2173` exercises a change
+to that checker itself; `bootstrap/tests/_gate_preflight.py:3204-3234` admits
+the reviewed authority before evidence collection. I recommend first planning
+one such transition, with the initial roster bound by the reviewed authority
+bytes and later membership read from the signed anchor. **Satisfier:** the
+author either adopts that simpler route with the same real ceremony tests, or
+names the specific old-checker comparison requiring the bridge and makes its
+refusal the bridge's justification. No protection or maintenance outcome is
+removed by using fewer checkpoints. I have not executed either future design.
+
+**Security obligation cleared at proposal stage.** This does not certify
+implementation or accept the loss for the Maintainer. In particular, retaining
+release hooks does not isolate them from ordinary modules: collection and
+outcome observations remain susceptible to the explicitly conceded execution
+influence (`bootstrap/tests/conftest.py:421-511`).
+
+**Coverage.** Covered claims, public paths and refusal design (#1–4:
+`bootstrap/tests/_gate_manifest.py:337-361`;
+`bootstrap/tests/_gate_manifest.py:575-686`;
+`bootstrap/tests/_gate_preflight.py:611-764`;
+`bootstrap/tests/_gate_preflight.py:1947-2025`;
+`bootstrap/tests/_gate_preflight.py:3204-3234`;
+`bootstrap/tests/_gate_preflight.py:3413-3437`);
+cross-document consistency, drift and ceremony placement (#5–7:
+`AGENTS.md` high-risk surfaces, runbook Phase 0, transition tests cited above);
+scope and satisfiers (#8–9: Response withdrawal ledger and S1). Not covered:
+no pytest or mutation runs; no complete dependency/fixture inventory or final
+roster validation. Those remain the plan's stated work; this read does not
+claim that enumeration contains hostile ordinary code.
