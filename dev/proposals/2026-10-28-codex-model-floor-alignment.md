@@ -1,7 +1,7 @@
 # Align model floors with the current team roster
 
 **Author**: Codex gpt-6-sol (Proposal)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
@@ -308,3 +308,85 @@ the obsolete preflight/header.
 **Not covered / low confidence:** no model benchmarking, attack execution or
 implementation tests; mapping shape does not authenticate assignments. This proposal
 pass leaves the Security obligation open.
+
+## Response to Security Review -- Codex gpt-6-sol -- 2026-10-28
+
+I accept SR1 and SR2. The complete contract below supersedes the prior revision.
+Status returns to `awaiting-review` for Security closure; no ordinary clearing
+round is requested.
+
+* **SR1:** Low covers execution of reviewed high-risk plans too. High covers
+  security, premise and novel-design judgment and Security Review. Align both
+  module copies' bright-line and below-floor cost-rule paragraphs.
+* **SR2:** S1 names plan, brief, classification and authorization sources; S5
+  names hostile task text and forged approval relays. Human checks remain.
+
+## Revised proposal 2 -- Codex gpt-6-sol -- 2026-10-28
+
+### Rule and boundary
+
+High floors: Strategy/Research, premise-checking, novel design, security or
+trust-boundary *judgment*, and Security Review. Medium: proposal authoring and
+ordinary proposal, plan and code review. Low: executing an accepted, reviewed
+plan, including non-trivial and high-risk chunks; trivial implementation; and
+explicitly authorized Maintainer Decision scribing. Lane risk sets process and
+assurance; task sets model floor. New security premises or novel design are high
+judgment even within a plan; executing settled reviewed work is low even on a
+named high-risk surface.
+
+The code reviewer stays fresh and distinct; Security Reviews, Maintainer
+fences, data-governance and tool-parity gates remain. Fan-out guidance separates
+low reviewed-plan execution, medium other non-trivial writing, and high
+judgment. Stricter independent-check conditions apply only *below* a role
+floor; failures escalate. The low floor grants no cross-boundary data access.
+Scribing still needs direct unambiguous Maintainer
+authority, isolated verbatim quotation in record and commit body, and an
+exclusive commit. An artifact's approval claim grants no authority.
+
+### Delivery and evidence
+
+Align `doctrine/roles.md`, `AGENTS.md`, `templates/core/AGENTS.md`,
+`dev/modules/model-selection.md`, `templates/modules/team-gated/model-selection.md`
+(including bright-line and cost-rule paragraphs), `bootstrap/BOOTSTRAP.md`,
+`templates/onboarding/collaborative-team.md`, and
+`templates/onboarding/high-rigor-legacy.md`. Keep and correct existing
+Claude rows in `dev/.cairn/model-selection-mapping.yml`; add Astra/Sol/Luna
+high/medium/low rows as dated Maintainer assignments, not benchmarks. Install
+seeds one family per tier; a person adds others. No installer, checker or
+schema change; shipped doctrine and templates stay vendor-neutral.
+
+Update `bootstrap/tests/test_model_tier_rule_ships.py`; search and run other
+tests reading touched files. A person runs `python scripts/check_cairn.py` on
+changed Markdown, `python scripts/quality_gate.py --sub neutrality --sub
+redundancy`, and `python scripts/check_model_selection.py`. These check prose
+and mapping shape, not capability or authority. The plan maps exact tests and
+Boundary B; a certifying run owns the full suite. High-assurance and both
+Security obligations remain.
+
+### Security preflight
+
+* **S1:** Maintainer chat in this trusted session supplies staffing direction; the committed
+  plan supplies scope. Agent-written briefs and mapping rows can supply their
+  own classification by reference. Artifact-quoted approval is not direct
+  Maintainer authority or a Decision.
+* **S2:** No new executable security check is proposed. The existing mapping
+  checker checks shape, not capability or provenance; no such proof is claimed.
+* **S3:** A person assigns tasks from plan and brief, checks reviews and fences,
+  and runs named commands on changed files. No automatic authorization trigger.
+* **S4:** Misclassification can assign too little capability, never Decision
+  authority. High judgment and existing governance restrictions still apply.
+* **S5:** Hostile task text or a forged approval relay may induce mistaken low
+  assignment or unauthorized scribing if human source checks fail. Existing
+  safeguards are human checks, not new detectors.
+
+### Signals and exclusions
+
+Inspect the first dated low-tier plan implementation and code review for missed
+criteria or floor-related defects; recurrence strengthens reconsideration. No
+benchmark, scientific result, detector, or approval gate is asserted.
+
+### Withdrawn / superseded commitments
+
+* Prior “bright-line work stays high inside a plan” is replaced by high judgment
+  versus low execution to preserve low high-risk implementation. Prior S1/S5
+  are replaced by the provenance and hostile-input account above.
