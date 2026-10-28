@@ -1,7 +1,7 @@
 # Plan: Test trust boundary
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-test-trust-boundary.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Protect the tests that defend trust while reporting ordinary test changes without requiring a new trust anchor.
@@ -57,3 +57,30 @@ The Maintainer alone authorizes and performs the applicable root and re-anchor c
 Boundary A uses the owning families `bootstrap/tests/test_gate_manifest.py`, `test_gate_transition.py`, `test_gate_preflight.py`, `test_reanchor_driver_disclosures.py`, `test_repin.py`, `test_repin_ceremony.py` and `test_security_marker.py`, plus tests found by tracing changed imports and fixtures. Add targeted real-path and release-outcome probes for the criteria above. Run applicable claim, link, snippet and neutrality gates for changed prose; trace each check to its trigger. Record S2 mutations and S3's actual Maintainer-run verifier command in the implementation evidence.
 
 Boundary B is **full** because gate manifest and trust ceremony surfaces change. After the final implementation commit, run the scoped mapping and standing gates on a clean unchanged tree under `/Users/kendal30/conda_envs/lhm/bin/python3.13`; record commit, range, pre/post state, commands, counts, timing, non-pass dispositions and omissions. Set **Certified by**: pending until the next authorized certifying run supplies the full suite and quality pair. Reviewers independently falsify the recorded claims; they do not run the full suite. The installed boundary and actual ceremony remain contingent on C4.
+
+## Plan review -- Codex (gpt-6.1-terra), Internal reviewer -- 2026-10-28
+
+```
+Reviewed commit: 1640a3595aec0d36e48e65de3d184aefb66b42d4
+Target: opening plan, Source proposal through Verification
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+
+**Foundations**
+
+1. **Should this happen as framed?** The plan follows the accepted narrower boundary, but its classification gate, verification mapping and governing-text criterion need clarification before it can reliably deliver it. -- plan C1, Verification and Documentation / doctrine surface; accepted proposal Complete current contract and S3.
+2. **Best alternative.** Produce the inventory first, then gate narrowing on approval; use the existing reviewed transition first and the existing test families for a specific mapping. This keeps all accepted outcomes. -- plan Sequence and C3; `bootstrap/tests/test_gate_preflight.py:2111`; `bootstrap/tests/test_gate_reanchor.py`.
+3. **What would show it wrong.** A real transition that cannot retain the old anchor's admission checks, a protected loss that passes, or ordinary maintenance still held after installation would defeat the plan. -- accepted proposal Complete current contract; `bootstrap/tests/_gate_preflight.py:3204`; `bootstrap/tests/_gate_manifest.py:671`.
+
+**F1 -- Blocking: order the classification approval after its evidence exists.** C1 is itself marked Maintainer-gated to approve an exact classification, yet C1 is the chunk that produces the inventory and proposed roster. That makes the gate's input unavailable when the chunk starts. **Satisfier:** separate inventory and proposed classification from the approval fence, and put the fence after that evidence exists and before any narrowing; explicitly trace actual dependency paths including dynamic imports and fixtures. Retain the stated floors and give the Maintainer the precise classification to approve. -- plan Sequence and C1; `bootstrap/tests/test_gate_preflight.py:810`.
+
+**F2 -- Blocking: map the accepted verification to owning paths.** Verification names several families and generic real-path and release probes, but does not map each invariant and public path to its test file or node. It omits the accepted proposal's named `test_gate_reanchor.py` and `test_security_check.py` from the listed families even though they own two-stage and actual release-outcome behavior. C3's broad “ordinary changes” also leaves the accepted separate edit, addition, deletion, rename and marker cases implicit. **Satisfier:** map the accepted cases and each stage to specific owning test files or nodes, including these families, and identify where new real-path cases will be added; retain the separate ordinary and protected cases and actual skip/xfail/xpass release probes. -- accepted proposal Tests required and Verification and withdrawal; `bootstrap/tests/test_gate_reanchor.py:94`; `bootstrap/tests/test_security_check.py:624`; plan C3 and Verification.
+
+**F3 -- Blocking: carry the accepted governing statement.** The plan says the high-risk rule will name protected tests and machinery, but does not require the separate S3 statement describing what the re-anchor verifier freezes, records and holds. A correct roster rule alone would not satisfy that accepted documentation outcome. **Satisfier:** require that governing text convey the accepted S3 statement and that the runbook's actual human-triggered verifier invocation agrees. -- accepted proposal S3; plan Documentation / doctrine surface; `bootstrap/REANCHOR_RUNBOOK.md:173`.
+
+**Coverage.** Covered claims and current behavior (#1: `bootstrap/tests/_gate_manifest.py:337`, `:402`, `:678`); production paths and refusal design (#2–4: `bootstrap/tests/_gate_preflight.py:1933`, `:2097`, `:3425`; `bootstrap/tests/conftest.py:421`); reuse, drift and lifecycle placement (#5–7: plan Reuse and Sequence; `bootstrap/REANCHOR_RUNBOOK.md:173`; `dev/plans/ordinary-test-maintenance.md` C1); accepted scope and satisfiers (#8–9: accepted proposal Complete current contract and findings above). Not covered: no test execution, complete dependency inventory, or future implementation; the separate Internal Security Review remains open.
