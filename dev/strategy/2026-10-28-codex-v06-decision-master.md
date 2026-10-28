@@ -25,7 +25,7 @@ capabilities and adopter research. This five-plan batch does not finish v0.6.
 |---|---|
 | [Model floors](../plans/archive/2026-10-28-model-floor-alignment.md) | Implemented, independently reviewed and archived. Local vendor assignments and shipped generic task floors align; 574 mapped passes under Python 3.13.13. Certification/re-anchor debt remains live in the roadmap. |
 | [Scoped verification](../plans/2026-10-28-scoped-change-verification.md) | Implemented; 2,700 collected/executed nodes reconciled, five guard cases passed, environment-denied security cases passed with required local capability. Independent example adjudication and ordinary/Security reviews completed. Both reviews hold completion for the prescribed frozen-file ceremony. Later naming examples corrected with 656 mapped passes under Python 3.13.13. |
-| [Governing text](../plans/2026-10-28-governing-text-single-source.md) | Routing chosen at `aa9fc08b`, coordination default at `7013de1d`, and document-wide path declarations at `560a178c`. Instruction updates and consolidation remain subject to the plan gates. |
+| [Governing text](../plans/2026-10-28-governing-text-single-source.md) | Routing chosen at `aa9fc08b`, coordination default at `7013de1d`, and document-wide path declarations at `560a178c`. Path instructions updated and the focused review finding addressed at `860481db`; remaining consolidation and ceremony gates stay open. |
 | [Test trust boundary](../plans/2026-10-28-test-trust-boundary.md) | Refreshed factual inventory and high-tier classification are ready for exact roster approval. Existing protection remains active. |
 | [Ordinary test maintenance](../plans/2026-10-28-ordinary-test-maintenance.md) | Reviewed plan; implementation cannot start because the chosen board file contains security defenses and remains protected. |
 
@@ -56,7 +56,7 @@ implied wording cleanup:
 | Conflict | Recommended choice and conceded prescription |
 |---|---|
 | Coordination defaults | **Chosen (`7013de1d`):** block provable live-session conflicts; agents claim intent before editing. Warn for stale/tokenless cases; retain warn/confirm modes and opt-in hooks. Update the different published default. |
-| Path declarations | **Chosen (`560a178c`):** an explicitly declared literal path may recur document-wide, with exact matching and provenance. Update the line/block-only instructions. Siblings, descendants, look-alikes and malformed declarations stay unexempted; no checker rewrite. |
+| Path declarations | **Chosen (`560a178c`):** an explicitly declared literal path may recur document-wide, with exact matching and provenance. Instructions updated; siblings, descendants, look-alikes and malformed declarations stay unexempted. Checker logic is unchanged. |
 
 Retain all 21 partial-reach obligation groups until a complete appropriate
 installed home and usable pointer are demonstrated. Generic prompts or upstream
@@ -113,6 +113,10 @@ Its declared next move is the existing frozen-file ceremony: inspect
 `bootstrap/REANCHOR_RUNBOOK.md`, resolve and record discrepancies, then obtain
 the applicable Maintainer disposition. This briefing authorizes no manifest
 edit, signing, root change or waiver. Certification remains pending.
+
+The path-instruction update also changed the frozen local and shipped checker
+module descriptions; their applicable Maintainer ceremony remains owed under the
+governing-text plan.
 
 The trust plan separately requires reviewed implementation after roster approval,
 then its Maintainer-only authority transition/re-anchor and steady-state proof.
