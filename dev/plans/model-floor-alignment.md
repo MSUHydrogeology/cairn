@@ -1,7 +1,7 @@
 # Plan: Align model floors with the team roster
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-model-floor-alignment.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Align the task-based capability floors and Cairn's local model assignments while keeping review and authority safeguards.
@@ -182,3 +182,31 @@ depend on human judgment. No implementation tests or full suite were run.
 
 The Internal Security Review raised no findings. Both plan-review obligations
 are complete; the plan is ready to implement.
+
+## Implementation verification -- Codex gpt-6-luna (Implementation) -- 2026-10-28
+
+**Boundary B mode**: full
+**Certified by**: pending
+**Tested commit**: 676b7c0e1858d91fc790e719a2a136230db4dfaf
+**Reviewed range**: 3d046bfa84bd39a7ce1163f5c3b413f49eae3674..676b7c0e1858d91fc790e719a2a136230db4dfaf
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13
+**Pre-run state**: clean detached worktree at the tested commit.
+**Post-run state**: clean worktree at the identical tested commit; `git diff --check` clean.
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---:|---|---:|
+| `python -m pytest bootstrap/tests/test_model_tier_rule_ships.py` | 0 | 10 passed; 0 failed/skipped/xfail/xpass | 0.16 s |
+| `python -m pytest bootstrap/tests/test_review_stance_in_shipped_files.py` | 0 | 480 passed; 0 failed/skipped/xfail/xpass | 1.26 s |
+| `python -m pytest bootstrap/tests/test_onboarding_seed_roster.py` | 0 | 13 passed; 0 failed/skipped/xfail/xpass | 0.78 s |
+| `python -m pytest bootstrap/tests/test_model_selection_stub.py` | 0 | 71 passed; 0 failed/skipped/xfail/xpass | 1.78 s |
+| `python scripts/check_model_selection.py` | 0 | Mapping filled; shape check passed | <0.01 s |
+| `python scripts/check_cairn.py` | 0 | 184 Markdown files; no issues | 2.19 s |
+| `python scripts/link_check.py` | 0 | 184 Markdown files; no issues | 0.21 s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | Neutrality fail=0; redundancy fail=0 | 1.19 s |
+| `python scripts/claim_check.py <file>` for each of 10 changed Markdown files | 0 | 10/10 clean; existing documented exemptions only | 0.15 s aggregate |
+
+**Non-pass disposition**: none. The scoped tests total 574 passed, with no skip, xfail or xpass.
+
+**Plan-specific acceptance commands**: the four mapped test files and five named gates above ran against the tested commit. The test controls reject wrong task/lane assignments; module, onboarding and solo-install tests read the installed guidance paths. The mapping test checks all nine exact family/tier assignments and their dates and sources.
+
+**Known omissions**: no full suite was run; the next certifying run owns that evidence and certification remains pending. Boundary C independent falsification is still owed. No model-capability benchmarks were run; the dated local rows are Maintainer assignments by family name. The existing install notice still seeds one placeholder row and describes replacing it with one row per tier; the module, bootstrap guide and both onboarding presets explain how to add further family rows manually under the existing schema. The mapping checker validates shape and placeholders, not assignment authority.
