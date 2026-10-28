@@ -1,7 +1,7 @@
 # Align model floors with the current team roster
 
 **Author**: Codex gpt-6-sol (Proposal)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual
 **Plan review**: required(Internal)
 **Opened**: 2026-10-28
@@ -132,3 +132,32 @@ N/A: opening baseline; no outcome removed.
 Governing doctrine and shipped authoring instructions change. The plan must
 map every copy and test owner before implementation; this proposal makes no
 doctrine or mapping edit.
+
+## Review -- Codex gpt-6-sol (Proposal Reviewer) -- 2026-10-28
+
+```
+Reviewed commit: 3be47b8020b5ac57d666a0d3b9d2322ffe676301
+Target: opening proposal, Context through Assurance path
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: a role-based floor can reflect the Maintainer's assignment while keeping independent review and bright-line protections, but the proposed copy list and assurance route need correction -- `doctrine/roles.md:167-204`; `dev/proposals/_template.md:377-400`.
+2. **Best alternative.** Do nothing retains the current mismatch; the stronger design makes the role floor authoritative across lane and fan-out text, then treats the mapping as a per-family assignment with one documented manual-add path -- `AGENTS.md:206-214`; `templates/modules/team-gated/model-selection.md:46-99`; `bootstrap/_scaffold/install.py:917-958`.
+3. **What would show it wrong.** Withdraw or restore a higher floor if low-tier reviewed implementation repeatedly produces defects its mapped tests and code review should catch; the cited October 27 measurement documents medium-tier reviews, not low-tier planned implementation -- `dev/strategy/2026-10-27-antigravity-lightweight-team-measurement.md`, “Model-tier intensity and review pass counts”; `AGENTS.md:210-214`.
+
+The proposal preserves the valuable separation between the implementing agent and its reviewer. Its current description leaves three ways for the old rule to survive:
+
+* **F1 (blocking): Make the new default unambiguous.** `doctrine/roles.md:196-204` still says the standard lane is medium, and both module copies say a non-trivial generative fan-out leaf is medium (`templates/modules/team-gated/model-selection.md:91-100`). A low-tier agent implementing a reviewed standard or deliberate plan would meet conflicting instructions even if the role table changes. **Satisfier:** state how the role floor, lane risk, bright-line exceptions, and fan-out task row compose, and name these exact paragraphs and owning assertions (`bootstrap/tests/test_model_tier_rule_ships.py:39-48`; `bootstrap/tests/test_model_tier_rule_ships.py:220-241`) in the plan.
+* **F2 (blocking): Reconcile the mapping's public path.** The proposal permits several families per tier, but `bootstrap/BOOTSTRAP.md:573-577` and both onboarding seeds (`templates/onboarding/collaborative-team.md:95-101`; `templates/onboarding/high-rigor-legacy.md:110-116`) instruct one row per tier. Interactive install loops once per tier (`bootstrap/_scaffold/install.py:917-958`), while the stub already permits more rows (`templates/modules/team-gated/model_selection_mapping_stub.yml:38-39`). **Satisfier:** include the bootstrap and onboarding copy changes and explain that install seeds one family per tier and additional families are entered by editing the mapping, or explicitly scope and test an install change.
+* **F3 (blocking): Account for the governing-surface obligation.** The proposal declares high assurance because it changes `doctrine/roles.md`, yet its header asks only for usual review and its Security preflight says N/A. The current proposal template names governing doctrine as a mandatory high-assurance, Security-Review surface and requires the five preflight answers for a named high-risk surface (`dev/proposals/_template.md:292-318`; `dev/proposals/_template.md:377-400`); `AGENTS.md:148-157` says the usual pass cannot clear that obligation. **Satisfier:** add the Security Review obligation to the header and answer S1–S5 for the proposed rule, with explicit N/A per question where no executable check or trust input exists.
+* **F4 (non-blocking): Make the withdrawal signal observable.** “Regularly fails” has no cohort or threshold, while the October 27 measurement covers medium-tier reviews and implementation (`dev/strategy/2026-10-27-antigravity-lightweight-team-measurement.md`, “Model-tier intensity and review pass counts”). **Satisfier:** give the Maintainer a dated, reviewable low-tier planned-work sample or a concrete watch threshold; keep the assignment identified as judgment rather than measured capability.
+
+**Covered:** claims and scope (`doctrine/roles.md:167-204`); public-path tests and fail-closed mapping (`bootstrap/tests/test_model_tier_rule_ships.py:132-179`; `bootstrap/tests/test_model_tier_rule_ships.py:220-241`; `scripts/check_model_selection.py:130-149`); design and cross-document drift (`templates/modules/team-gated/model-selection.md:46-99`; `bootstrap/BOOTSTRAP.md:573-577`); lifecycle placement (`dev/proposals/_template.md:115-129`; `dev/proposals/_template.md:377-400`); satisfiers F1–F4 above.
+**Not covered / low confidence:** I did not run implementation tests or independently benchmark model capability; this is a read of committed proposal and source bytes, not a claim that a low-tier model meets the proposed floor.
