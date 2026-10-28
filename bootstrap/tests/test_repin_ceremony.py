@@ -33,6 +33,7 @@ CLOSURE = ["bootstrap/REANCHOR_RUNBOOK.md", "bootstrap/reanchor-launcher.templat
            "bootstrap/tests/_gate_preflight.py", "bootstrap/tests/_gate_reanchor.py",
            "bootstrap/tests/_gate_transition.py", "bootstrap/tests/_oracle.py",
            "bootstrap/tests/_oracle_activation.py", "bootstrap/tests/_oracle_trust.py",
+           "bootstrap/tests/fixtures/protected_test_roster.json",
            "dev/.cairn/allowed_signers"]
 MAPS = "bootstrap/_scaffold/maps.py"
 RECORD = "dev/ceremony-record.md"
@@ -1984,7 +1985,7 @@ def test_the_packet_grammar_the_runbook_gives_a_hand_builder_is_the_one_the_laun
                  "artifact_sha256", "member", "@PACKET_SHA256@"):
         assert word in section and word.split()[0] in template, word
     listed = template[template.index("EXPECTED_PATHS='") + len("EXPECTED_PATHS='"):].split("'", 1)[0].split()
-    assert len(listed) == 11 and "exactly the eleven the launcher template lists" in section
+    assert len(listed) == 12 and "exactly the twelve the launcher template lists" in section
     assert f"PACKET_SCHEMA='{'cairn-authorization-packet/v1'}'" in template
     assert "at most 120 characters" in section and "[ ${#P_provenance} -le 120 ]" in template
     assert "under 4096 bytes" in section and "MAX_LINE_BYTES=4096" in template

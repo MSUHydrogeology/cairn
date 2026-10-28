@@ -129,6 +129,8 @@ def template(tmp_path_factory):
     bed.git("init", "-q", "-b", "main")
     for rel in [*LISTED, *SESSION, "scripts/repin.py"]:
         bed.write(rel, (REAL / rel).read_bytes())
+    bed.write(GM._PROTECTED_ROSTER_REL,
+              (REAL / GM._PROTECTED_ROSTER_REL).read_bytes())
     bed.write(ENGINE, "def f():\n    return 1\n")
     bed.write(BASELINE, _dump(A.digest_module(bed.repo / ENGINE)))
     bed.write(KNOWN_NEW, _dump({}))
@@ -494,7 +496,7 @@ def test_status_says_whether_repin_itself_is_anchored(bed, name, state):
 
 
 def test_status_shows_a_closure_member_that_differs_from_the_anchor(bed):
-    assert "closure  0 of 11 authority files differ" in ok(bed.run("status"))
+    assert "closure  0 of 12 authority files differ" in ok(bed.run("status"))
     bed.write("bootstrap/REANCHOR_RUNBOOK.md", "# runbook\n")
     bed.write("bootstrap/reanchor.sh", "#!/bin/sh\n")
     bed.write("dev/.cairn/allowed_signers", "x ssh-ed25519 AAAA\n")
@@ -502,7 +504,7 @@ def test_status_shows_a_closure_member_that_differs_from_the_anchor(bed):
     bed.write("bootstrap/REANCHOR_RUNBOOK.md", "# runbook, edited\n")
     bed.commit("edit the runbook")
     out = ok(bed.run("status"))
-    assert "closure  1 of 11 authority files differ" in out and "bootstrap/REANCHOR_RUNBOOK.md" in out
+    assert "closure  1 of 12 authority files differ" in out and "bootstrap/REANCHOR_RUNBOOK.md" in out
 
 
 def test_a_different_interpreter_minor_is_shown(bed):

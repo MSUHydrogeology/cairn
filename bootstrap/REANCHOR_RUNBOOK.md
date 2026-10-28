@@ -102,7 +102,7 @@ hand, the packet is one record per line, no control characters, each line under
 4096 bytes, blank lines and `#` lines ignored: `schema cairn-authorization-packet/v1`;
 `provenance <text, at most 120 characters>`; `artifact bootstrap/reanchor.sh`;
 `artifact_sha256 <64 hex>`; then one `member <64 hex> <path>` per closure file, in
-`LC_ALL=C` order, exactly the eleven the launcher template lists as its fixed
+`LC_ALL=C` order, exactly the twelve the launcher template lists as its fixed
 member set. It carries no candidate id. Its SHA-256 replaces `@PACKET_SHA256@`, the
 one slot in the template, and that file is the launcher.
 

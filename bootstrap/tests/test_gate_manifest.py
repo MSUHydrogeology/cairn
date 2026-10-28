@@ -31,7 +31,9 @@ def _write_manifest(tmp_path, manifest: dict) -> Path:
 @pytest.fixture(scope="module")
 def produced() -> dict:
     """Produce once (a full collection subprocess) and share across tests."""
-    return G.produce(_REPO, G._local_roster(_REPO))
+    roster_bytes = (_REPO / G._PROTECTED_ROSTER_REL).read_bytes()
+    roster = G._roster_from_bytes(roster_bytes, require_initial_approval=True)
+    return G.produce(_REPO, roster)
 
 
 def test_produce_has_the_expected_shape(produced):
@@ -44,6 +46,19 @@ def test_produce_has_the_expected_shape(produced):
     assert produced["collection"]["node_count"] > 100  # the real suite is large
     for sym in ("_MODULE_MAPPINGS", "_SKILLS_MAPPINGS", "_CORE_MAPPINGS"):
         assert produced["mapping_symbols"][sym]["baseline_digest"]
+
+
+def test_omitted_roster_keeps_broad_policy_without_reading_candidate_roster(tmp_path):
+    repo = tmp_path / "candidate"
+    path = repo / "bootstrap/tests"
+    path.mkdir(parents=True)
+    (path / "test_ordinary.py").write_text("def test_x(): pass\n")
+    roster_path = path / "fixtures/protected_test_roster.json"
+    roster_path.parent.mkdir()
+    roster_path.write_text(json.dumps({"protected_python_paths": []}))
+
+    assert G._frozen_files(repo) == G._legacy_frozen_files(repo)
+    assert "bootstrap/tests/test_ordinary.py" in G._frozen_files(repo)
 
 
 def test_frozen_set_boundary(produced):

@@ -80,7 +80,6 @@ _PROTECTED_ROSTER_REL = "bootstrap/tests/fixtures/protected_test_roster.json"
 _APPROVED_INITIAL_ROSTER_SHA256 = (
     "188fa76d82744be571bdc7ca91a43d605776b9df5ba0ac729e2cf22af66b8cc4")
 _TESTDIR_REL = "bootstrap/tests"
-_ROSTER_UNSET = object()
 
 # Legitimately mutated by the cascade — EXCLUDED from frozen hashing; integrity
 # governed by the named mechanism, not a byte hash.
@@ -439,13 +438,16 @@ def _legacy_frozen_files(repo: Path = _REPO) -> list[str]:
 
 
 def _frozen_files(repo: Path = _REPO,
-                  protected_roster: dict | None | object = _ROSTER_UNSET) -> list[str]:
-    """Discover the frozen gate surface by glob, minus cascade-mutable files and
-    the manifest artifact itself."""
+                  protected_roster: dict | None = None) -> list[str]:
+    """Discover the frozen gate surface using an explicit trusted roster.
+
+    An omitted roster retains the pre-installation broad policy. This helper
+    never selects membership from ``repo``; narrowed callers must supply the
+    roster resolved from a verified signed anchor or reviewed transition.
+    """
     if protected_roster is None:
         return _legacy_frozen_files(repo)
-    roster = (_local_roster(repo) if protected_roster is _ROSTER_UNSET
-              else protected_roster)
+    roster = protected_roster
     protected = set(roster["protected_python_paths"])
     # The approved protected test_intents_tool.py used to be phase-mutable so
     # its copied helper fixture could change. Roster membership now freezes its
