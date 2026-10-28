@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-governing-text-single-source.md
 **Status**: implementing
-**Waiting on Maintainer**: Two conflicting prescriptions
+**Waiting on Maintainer**: Path-declaration scope
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Map where rules come from and reach adopters before choosing how to reduce repeated editing.
@@ -378,3 +378,15 @@ until their complete appropriate installed home and usable pointer are shown.
 This choice settles routing; the coordination-default and path-declaration
 conflicts remain separate Maintainer decisions. C3's remaining sequencing and
 verification gates still apply. No rule relocation or deletion is made here.
+
+## C2 coordination choice -- Maintainer, relayed by Codex (Terra) -- 2026-10-28
+
+Maintainer authorization in chat, verbatim:
+
+> Blocking for live-session conflicts, yes. Agents should claim intent prior to editing.
+
+The chosen default blocks a commit on a provably different live session's
+claim; stale or unidentifiable claims warn. Agents should claim intent before
+editing. This replaces the differing public default described in the C1 packet;
+the warn and confirm modes remain available. The separate path-declaration
+choice is still open. No operative rules or tools are changed by this record.
