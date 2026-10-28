@@ -26,7 +26,7 @@ capabilities and adopter research. This five-plan batch does not finish v0.6.
 | [Model floors](../plans/archive/2026-10-28-model-floor-alignment.md) | Implemented, independently reviewed and archived. Local vendor assignments and shipped generic task floors align; 574 mapped passes under Python 3.13.13. Certification/re-anchor debt remains live in the roadmap. |
 | [Scoped verification](../plans/2026-10-28-scoped-change-verification.md) | Implemented; 2,700 collected/executed nodes reconciled, five guard cases passed, environment-denied security cases passed with required local capability. Independent example adjudication and ordinary/Security reviews completed. Both reviews hold completion for the prescribed frozen-file ceremony. Later naming examples corrected with 656 mapped passes under Python 3.13.13. |
 | [Governing text](../plans/2026-10-28-governing-text-single-source.md) | Routing chosen at `aa9fc08b`, coordination default at `7013de1d`, and document-wide path declarations at `560a178c`. Path instructions updated and the focused review finding addressed at `860481db`; remaining consolidation and ceremony gates stay open. |
-| [Test trust boundary](../plans/2026-10-28-test-trust-boundary.md) | Exact initial roster approved at `3e9f8fc2`; implementation follows, and existing protection remains active until the Maintainer installs the reviewed boundary. |
+| [Test trust boundary](../plans/2026-10-28-test-trust-boundary.md) | Exact roster approved at `3e9f8fc2`; implementation is blocked on approval review of the dormant bridge candidate. Existing protection remains active. |
 | [Ordinary test maintenance](../plans/2026-10-28-ordinary-test-maintenance.md) | Reviewed plan; implementation cannot start because the chosen board file contains security defenses and remains protected. |
 
 The source Decisions are `63e315fa`, `f110d263`, `cca436a9`, `cea1299d` and
@@ -120,9 +120,19 @@ The path-instruction update also changed the frozen local and shipped checker
 module descriptions; their applicable Maintainer ceremony remains owed under the
 governing-text plan.
 
-The trust plan separately requires reviewed implementation after roster approval,
-then its Maintainer-only authority transition/re-anchor and steady-state proof.
-No narrowed boundary or ordinary pilot becomes active before those conditions.
+The old-anchor E7 comparison required the accepted two-transition bridge. The
+active-mode candidate `bbe5ecb6` passed 1,085 scoped tests, but cannot itself
+represent the required dormant first checkpoint. A one-line dormant setting in
+`bootstrap/tests/_gate_preflight.py` is prepared and uncommitted. Automatic
+approval review rejected its local commit, citing the security impact and
+insufficient explicit authorization; it prohibited bypass. The Maintainer must
+explicitly authorize that proposed local change before another attempt. The
+preliminary code review also has three surviving mutations not yet shown
+equivalent; neither independent review is complete.
+
+The trust plan still requires independent code and Security Reviews, then its
+Maintainer-only authority transitions/re-anchors and steady-state proof. The
+prepared change does not install a boundary or authorize a ceremony.
 
 ### 5. Queued convention choice: session handoff marker
 
