@@ -1,7 +1,7 @@
 # Make Cairn's governing text easier to edit without losing adopted rules
 
 **Author**: Codex (Proposal author, gpt-6-sol)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
@@ -135,3 +135,30 @@ N/A: opening proposal; no baseline outcome has been removed.
 
 **Assurance path**: high-assurance. The proposed changes may touch `doctrine/`
 and authoring templates, named high-assurance surfaces in the proposal template.
+
+## Review -- Codex (Proposal reviewer, gpt-6-sol) -- 2026-10-28
+
+```
+Reviewed commit: 40b64340cea11bffefa71d5639a6959e4a6b74e2
+Target: opening proposal, Context through Assurance path
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes to finding the installed home of each obligation before editing; revise the audit's scope and make compression conditional on what it finds. The eight files alone cannot explain the published-doctrine split or every distributed rule -- `docs/DOCUMENTATION_PLAN.md` > "The documentation vision"; `bootstrap/tests/test_scope_reduction_trap.py` > `_SURFACES`.
+2. **Best alternative.** Keep the published-doctrine and installed-operating-text distinction unless an evidence-backed routing map improves it; then remove proven duplication and wording pins where a rule stays reachable. Doing nothing preserves the measured 1,838 + 1,731 lines and the editing burden identified in strategy item 1 -- `doctrine/README.md` > "How to read this tree"; `dev/strategy/2026-08-21-claude-nimbleness-recovery.md` > item 1.
+3. **What would show it wrong.** Withdraw a relocation or cut if a real install loses an obligation, a mandatory pointer only reaches Cairn's repository, or a representative rule edit is no easier after the change -- `bootstrap/_scaffold/config.py` > `_CORE_MAPPINGS`; proposal > "Signals the change is wrong".
+
+The proposal corrects the recovery strategy's risky shortcut: it checks the adopter's installed text before moving detail to `doctrine/`. The committed `_CORE_MAPPINGS` installs the four shipped files and has no `doctrine/` mapping; the two cited tests explicitly reject treating published doctrine as an installed rule.
+
+**F1 (blocking) -- Audit the reason for the split, not only the eight files.** `doctrine/README.md` calls doctrine the invariant core and explains why it is published; `docs/DOCUMENTATION_PLAN.md` calls it methodology authority, distinguishes prescription from description, and ships a forkable placement procedure. `doctrine/doc-governance.md` already prescribes one canonical home across the two installed governing files. The proposed eight-file inventory does not say how it will test these existing claims against the doctrine corpus, the forkable documentation plan, or other installed rule homes: `_SURFACES` in `test_scope_reduction_trap.py` names the board and doctrine as well as the eight. **Satisfier:** make the first audit question why each published doctrine section exists, which parts prescribe versus explain, and how the current split serves Cairn and adopters; include every rule home and pointer affected by a proposed cut. Bring that evidence to the Maintainer's routing fence before choosing any home.
+
+**F2 (blocking) -- Let the audit decide what can be shortened, and measure the benefit.** The unconditional “Then remove duplicated exposition” and 80–120-line aim (`Proposal`, lines 47–55) still commit to a result before the routing evidence exists. Line count is a size measure, not an editing-cost measure; strategy item 1 also identifies frozen prose tests and mirrored edits as costs. **Satisfier:** condition each cut on the audit finding a safe redundant passage, preserve a no-cut outcome where none exists, and compare one or two representative rule edits before and after: homes touched, tests or ceremonies triggered, and whether an installed reader can still act from the remaining text. Keep the line aim advisory.
+
+**Coverage:** #1 claims: committed `wc -l` totals and `_CORE_MAPPINGS`; #2 production path: mapping inspected, install run not repeated; #3 design: F1–F2; #4 fail-closed: proposal S2–S4 and deletion controls in the named tests; #5 consistency: `doctrine/README.md`, `doctrine/doc-governance.md`, `docs/DOCUMENTATION_PLAN.md`, strategy item 1; #6 drift: strategy's older 1,842-line total versus the committed 1,838-line total; #7 placement: F1 and the proposed Maintainer fence; #8 scope: F1–F2; #9 satisfiers: F1–F2. **Not covered / low confidence:** I did not run an adopter install, tests, or examine every doctrine section; the required Security Review remains pending and this ordinary pass does not clear it.
