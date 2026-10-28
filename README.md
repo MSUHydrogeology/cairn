@@ -8,6 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE-MIT.md)
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-blue.svg)](LICENSE-CC-BY.md)
 [![Language: Python](https://img.shields.io/badge/Language-Python_3.13-blue.svg)](https://www.python.org/)
+[![Documentation: GitHub Pages](https://img.shields.io/badge/Documentation-GitHub_Pages-blue.svg)](https://msuhydrogeology.github.io/cairn/)
 
 Cairn is a working method for scientists developing software with AI coding
 agents. It brings together project rules, written proposals, review, testing,
