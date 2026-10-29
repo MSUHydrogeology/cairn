@@ -857,8 +857,9 @@ def commit_reviewed_pin(ctx, cdir):
     message = f"AST pin\n\nTransaction: {digest}\nPython: {sys.version.split()[0]}"
     # A commit needs the operator's normal Git identity and hooks. Strip only
     # environment overrides so a global user.name/user.email still works.
-    commit_env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
-    commit_env.update(GIT_TERMINAL_PROMPT="0", LC_ALL="C")
+    commit_env = git_env()
+    commit_env.pop("GIT_CONFIG_GLOBAL")
+    commit_env.pop("GIT_CONFIG_NOSYSTEM")
     result = subprocess.run([GIT, "--no-replace-objects", "-c", "core.useReplaceRefs=false",
                              "-C", str(ctx["repo"]), "commit", "-m", message, "--", *sorted(paths)],
                             env=commit_env, capture_output=True, text=True, check=False)
