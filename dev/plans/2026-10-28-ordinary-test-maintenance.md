@@ -2,7 +2,6 @@
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-ordinary-test-maintenance.md
 **Status**: ready-to-implement
-**Waiting on Maintainer**: Pilot extraction and path allowance
 **Plan review**: required(Internal)
 **Opened**: 2026-10-28
 **In brief**: Simplify one board test cluster without losing fault detection and share the resulting test-maintenance practice.
@@ -25,21 +24,21 @@ The testing module is adopter-facing practice, with a self-hosted mirror; route 
 
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
-| C1 | Inventory and baseline | Reviewed plan; completed test-trust-boundary implementation and final roster | Cluster properties, fault ledger and matched control timing |
-| C2 | Simplify cluster | C1 establishes file eligibility and a useful extraction | Fresh setup reuse and preserved assertions |
+| C1 | Inventory and fault map | Reviewed plan; Maintainer pilot-file allowance below | Cluster properties, fault ledger and retained assertions |
+| C2 | Simplify cluster | C1 establishes a useful consolidation in the original file | Fresh setup reuse and preserved assertions |
 | C3 | Update testing module | Reviewed plan and C1 evidence | Concise practice in shipped and self-hosted copies |
 
-Before any board-file edit, check the installed final protected roster. If it protects the file, stop and return scope and assurance to the Maintainer; do not select another file automatically. Even if unprotected, change no protected case or shared controlling helper. If extraction adds more indirection than it removes, retain the tests and return the pilot scope to the Maintainer before changing it.
+The Maintainer's pilot-file allowance below permits the named work in `bootstrap/tests/test_board_json_contract.py` without the trust-inventory eligibility, protected-file review or baseline prerequisites. Keep the two named test methods in their original file; do not extract or substitute them. Preserve their behavior and fault detection, run the mapped functional checks, and obtain the ordinary plan and code reviews. Do not change shared controlling helpers, product code, schema or gates.
 
 ## Acceptance criteria
 
-### C1 — inventory and baseline
+### C1 — inventory and fault map
 
-Inventory both `TestRecordFactsComeFromWhereTheFileSits::test_all_record_values_and_absent_vs_blank_and_headerless_files` and `TestOutputIsDeterministic::test_archives_unique_path_key_and_deterministic_ascii_json`: setup, public behavior and plausible faults. Record baseline duplication and a timed owning-family run on the committed control using the canonical interpreter, environment and durations settings to be matched later. Document the installed roster and file eligibility before editing. For each proposed removed case, map its property and fault to a retained assertion and a probe; retain it without a convincing replacement.
+Inventory both `TestRecordFactsComeFromWhereTheFileSits::test_all_record_values_and_absent_vs_blank_and_headerless_files` and `TestOutputIsDeterministic::test_archives_unique_path_key_and_deterministic_ascii_json`: setup, public behavior and plausible faults. Map each property and fault to retained assertions and probes; retain it without a convincing replacement. No pre-edit test-family run, timing baseline or installed-roster eligibility check is required by the Maintainer's amendment.
 
 ### C2 — preserve behavior
 
-Reuse immutable descriptions or builders creating fresh paths and mutable repositories per call. Preserve absent versus blank, header boundaries, headerless plain-view omission, distinct archive paths, ordering, ASCII bytes and reproducibility across roots. Keep both named nodes and the existing real CLI/subprocess failure and exit checks. Compare matched family timings, slow nodes, duplication and reviewable case/line changes; report costs and no assumed speed gain. Only a certifying run supports whole-suite timing.
+Reuse immutable descriptions or builders creating fresh paths and mutable repositories per call. Preserve absent versus blank, header boundaries, headerless plain-view omission, distinct archive paths, ordering, ASCII bytes and reproducibility across roots. Keep both named nodes and the existing real CLI/subprocess failure and exit checks. Report changed setup and assertion counts without a before/after runtime claim. Only a certifying run supports whole-suite timing.
 
 ### C3 — module practice
 
@@ -47,7 +46,7 @@ Both module copies carry consistent concise guidance for behavior and fault inve
 
 ## Scope delta
 
-**Scope delta**: preserved. The module update is the Maintainer's explicit addition to the accepted pilot. A protected file or failed extraction stops the pilot for Maintainer disposition, not silent substitution or scope removal.
+**Scope delta**: degraded with the Maintainer's explicit allowance below. The module update remains accepted scope. The named methods stay in their original file; the trust-inventory classification, installed-roster eligibility check, protected-file review/baseline work, extraction and matched timing baseline do not gate this pilot. Functional verification and ordinary reviews remain required.
 
 ## Verification
 
@@ -122,3 +121,19 @@ keep the pilot waiting; a protected-lane pilot would require explicit acceptance
 of the changed maintenance outcome. No extraction, substitution or waiver is
 made here. The consolidated choice is in
 `dev/strategy/2026-10-28-codex-v06-decision-master.md`.
+
+## Maintainer pilot-file allowance -- Codex (Implementation, Luna) -- 2026-10-29
+
+Maintainer clarification in chat, relayed by Codex:
+
+> “Again, no need to treat a file as protected in that sense.”
+
+This authorizes proceeding with the original two-node pilot in
+`bootstrap/tests/test_board_json_contract.py` without the trust-inventory
+protected-file eligibility, additional review, or baseline checks. It
+supersedes the pending extraction/path request above and the pilot-blocking
+eligibility sentence in the test-trust-boundary plan. Keep both methods in
+this file, preserve their behavior and fault detection, run the functional
+checks in Verification, and obtain normal plan and code reviews. No pre-edit
+family run or matched timing baseline is required. This allowance is limited
+to this pilot and changes no other trust-boundary work.

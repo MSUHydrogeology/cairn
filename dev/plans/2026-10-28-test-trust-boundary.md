@@ -557,3 +557,18 @@ The old-checker comparison and bridge decision in C3 are not required against
 the historical anchor. No claim that the boundary is active precedes actual
 installation. The ordinary-test pilot retains its installed-roster eligibility
 fence; this amendment does not authorize protected edits or an anchor change.
+
+## Maintainer pilot-file clarification -- Codex (Implementation, Luna) -- 2026-10-29
+
+Maintainer clarification in chat, relayed by Codex:
+
+> “Again, no need to treat a file as protected in that sense.”
+
+For the ordinary-test-maintenance pilot only, this supersedes the earlier C4–C5
+eligibility sentence requiring the delivered roster to exclude
+`bootstrap/tests/test_board_json_contract.py`. The Maintainer authorizes the
+original pilot methods to remain in and be changed in that file without the
+trust-inventory protected-file eligibility, additional review or baseline
+checks. The separate ordinary-test plan still requires functional verification
+and ordinary plan/code reviews. This clarification changes no other protected
+classification, test-trust implementation or anchor/ceremony requirement.
