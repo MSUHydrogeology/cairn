@@ -1,7 +1,7 @@
 # Protect upgrade bases and install output
 
 **Author**: Codex GPT-6
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -122,3 +122,29 @@ The strongest benefit is preventing silent loss when a saved ancestor is damaged
 **SR2 (non-blocking): make recognition policy measurable.** Name rejected character classes and test U+034F, zero-width and bidi controls, terminal escape/control bytes, and literal backslash escape text. Include decomposed accents, non-Latin visible names and contextual joiner/variation-selector examples, with an explicit compatibility disposition where invisibility serves legitimate spelling or presentation. Do not equate all combining marks with invisible names. Exercise normal and absent-module slot reports, unpaired-marker warnings, unknown modules and merge/fidelity output; escape data without changing the names used for lookup. Reuse the existing `ascii`-based display practice where suitable -- `bootstrap/_scaffold/install.py`, `esc`, `install_file`, `install_modules`, `print_report`; `bootstrap/_scaffold/cli.py`, module-merge output; `bootstrap/_scaffold/slotmerge.py`, `_SLOT_RE`.
 
 **Coverage:** claims, production routes, completeness and fail-closed behavior: cited merge/admission/apply paths; consistency and drift: proposal limits and `bootstrap/UPGRADE.md`; lifecycle: declared plan Security Review and AST ceremony; scientific scope: no scientific result; satisfiers: SR1/SR2 command tests and recovery/policy documentation. No implementation, attack reproduction, platform rendering measurement or suite run; enumeration cannot close all visual deception. This clears the proposal Security Review obligation, not implementation assurance.
+
+
+## Response -- Codex GPT-6 -- 2026-10-29
+
+* **R1 — accepted.** Make the full review-only recovery sequence an acceptance criterion, including acknowledgement, unaffected files and a subsequent upgrade.
+* **R2 — accepted.** Test visible compatibility examples and provide a documented recovery for newly refused paths without requiring edits to tool-owned provenance.
+* **SR1 — accepted.** Bind staged results to the ancestor bytes and expected digest actually checked; exercise changes between stage and apply.
+* **SR2 — accepted.** Specify the character policy and test the named inputs and output routes. Escape only for display, never for lookup.
+
+### Current contract
+
+An upgrade's saved ancestor must be checked against its recorded digest before any automatic three-way merge. Hash the raw bytes before decoding and merge that same read. Stage must bind an automatic result to that checked ancestor and expected digest; a change to either before apply invalidates the staged result. Missing, malformed, mismatched, unreadable or invalid-UTF-8 evidence routes the affected file to by-hand review, preserving the adopter file and bad cache, never silently inventing an ancestor. Define legacy records and race handling in the plan. A matching digest is not authentication against someone controlling both cache and lockfile; attacker-controlled staged output also remains outside this guarantee.
+
+Test public-command recovery: reconcile the review-only file, use `--ack-review-only`, advance unaffected files, preserve the original bad cache as evidence, and demonstrate the next upgrade. It must explain how a valid new ancestor is established without silently substituting the adopter's current file. Cover matching control, crafted loss, altered cache or digest between stage and apply, missing or malformed digest, unreadable and invalid-UTF-8 base, and legacy records. Undelivered recovery keeps work open.
+
+At shared lockfile admission, reject control characters (Unicode category Cc), format characters (Cf), U+034F, and variation selectors; apply the rule to source, destination and cache paths. Escape refused values in diagnostics. This refuses contextual joiners and variation selectors even where they support spelling or presentation: document that compatibility cost and provide a supported recovery path for existing refused names without hand-editing tool-owned provenance. Test U+034F, zero-width and bidi controls, terminal controls, contextual joiners and variation selectors, plus decomposed accented names and visible non-Latin names that remain accepted. Do not reject combining marks as a class or claim to stop all visual deception.
+
+Escape supplied module and slot names in all install reports, unknown-module and unpaired-marker warnings, and module merge and fidelity output. Preserve ordinary ASCII readability, distinguish literal backslash escape text from escaped characters, and leave lookup names unchanged. Exercise normal and absent-module reports and every named output route through public commands. The plan enumerates consumers, maps scoped tests and standing gates, and records Boundary B; run scratch install and upgrade smoke checks and applicable prose gates. Update `bootstrap/UPGRADE.md` and relevant descriptive install/lockfile guidance; no doctrine change. The engine requires the existing Maintainer-run AST ceremony, not old-anchor reconciliation or baseline installation authorized here.
+
+Security preflight remains as opened: project data supplies the cache, digest and paths, profiles/templates supply names, and source supplies new templates; missing evidence fails toward manual review. Test mutations removing the digest check and display escaping; these mutations have not yet run. The plan must match the commands and selected inputs to the final adopter-facing wording. No scientific assumption or result is touched. A safe recovery that cannot preserve work, or automatic application after changed evidence, would show this design wrong.
+
+**Scope delta**: preserved. **Assurance path**: high-assurance. Usual and Security proposal reviews are complete; the derived plan requires Internal and Internal Security Review.
+
+### Withdrawn / superseded commitments
+
+None. These criteria specify the opening commitments.
