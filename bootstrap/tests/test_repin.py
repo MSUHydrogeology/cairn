@@ -229,12 +229,17 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     assert generated.returncode == 0, generated.stderr
     public_key = key.with_suffix(".pub").read_text().split()
     signer_roster_rel = "dev/.cairn/allowed_signers"
+    ast_engine = "bootstrap/_scaffold/install.py"
     (repo / signer_roster_rel).write_text(f"scratch@example.invalid {public_key[0]} {public_key[1]}\n")
     candidate_paths = ("scripts/repin.py", "bootstrap/tests/test_repin.py",
-                       "dev/plans/2026-10-29-forward-trust-baseline.md", signer_roster_rel)
+                       "dev/plans/2026-10-29-forward-trust-baseline.md", signer_roster_rel, ast_engine)
     for relative in candidate_paths:
         if relative != signer_roster_rel:
             (repo / relative).write_bytes((REAL / relative).read_bytes())
+    # Force a fresh AST obligation so the refusal branch remains exercised
+    # after the repository's reviewed baseline pin is refreshed.
+    with (repo / ast_engine).open("ab") as engine:
+        engine.write(b"\n\ndef scratch_baseline_candidate():\n    return 'prepared'\n")
     credential_marker = tmp_path / "candidate-saw-credential"
     sentinel = repo / "bootstrap/tests/test_baseline_collection_environment.py"
     sentinel.write_text(
@@ -351,23 +356,144 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     fingerprint = subprocess.run(["ssh-keygen", "-l", "-f", str(key.with_suffix(".pub"))],
                                  capture_output=True, text=True, check=True).stdout.split()[1]
     refs_before_install = RP.git(repo, "for-each-ref", "--format=%(refname) %(objectname)").decode()
-    wrong_fingerprint = "SHA256:" + "A" * 43
-    refused = subprocess.run(
-        [PY, str(repo / "scripts/repin.py"), "baseline-install", "--candidate", candidate,
-         "--package-dir", str(output), "--approved-roster", str(roster),
-         "--reader-record", str(reader), "--signing-key", str(key.with_suffix(".pub")),
-         "--expected-fingerprint", wrong_fingerprint, "--confirm-package-sha256",
-         RP.sha((output / "baseline-package.json").read_bytes())],
-        cwd=repo, env=install_env, capture_output=True, text=True, check=False)
-    assert refused.returncode == 2 and "does not match" in refused.stderr
+    branch_ref = subprocess.run(["git", "-C", str(repo), "symbolic-ref", "HEAD"],
+                                capture_output=True, text=True, check=True).stdout.strip()
+    package_path = output / "baseline-package.json"
+    package_digest = RP.sha(package_path.read_bytes())
+    ordinary = subprocess.run([PY, str(repo / "scripts/repin.py"), "status"], cwd=repo,
+                              env=install_env, capture_output=True, text=True, check=False)
+    assert ordinary.returncode == 2 and "does not resolve" in ordinary.stderr
     assert RP.git(repo, "for-each-ref", "--format=%(refname) %(objectname)").decode() == refs_before_install
-    install = subprocess.run(
+
+    def invoke_install(*, approved=roster, record=reader, expected=fingerprint,
+                       package_path=output):
+        return subprocess.run(
+            [PY, str(repo / "scripts/repin.py"), "baseline-install", "--candidate", candidate,
+             "--package-dir", str(package_path), "--approved-roster", str(approved),
+             "--reader-record", str(record), "--signing-key", str(key.with_suffix(".pub")),
+             "--expected-fingerprint", expected, "--confirm-package-sha256", package_digest],
+            cwd=repo, env=install_env, capture_output=True, text=True, check=False)
+
+    def assert_refusal_without_move(result, why):
+        assert result.returncode == 2 and why in result.stderr, result.stdout + result.stderr
+        assert RP.git(repo, "for-each-ref", "--format=%(refname) %(objectname)").decode() == refs_before_install
+
+    missing = subprocess.run(
         [PY, str(repo / "scripts/repin.py"), "baseline-install", "--candidate", candidate,
          "--package-dir", str(output), "--approved-roster", str(roster),
-         "--reader-record", str(reader), "--signing-key", str(key.with_suffix(".pub")),
-         "--expected-fingerprint", fingerprint, "--confirm-package-sha256",
-         RP.sha((output / "baseline-package.json").read_bytes())],
+         "--signing-key", str(key.with_suffix(".pub")), "--expected-fingerprint", fingerprint,
+         "--confirm-package-sha256", package_digest],
         cwd=repo, env=install_env, capture_output=True, text=True, check=False)
+    assert_refusal_without_move(missing, "--reader-record")
+
+    substituted = tmp_path / "substituted-roster.json"
+    substituted.write_bytes(roster.read_bytes() + b" ")
+    assert_refusal_without_move(invoke_install(approved=substituted), "stale or mismatched")
+    roster_link = tmp_path / "approved-roster-link.json"
+    roster_link.symlink_to(roster)
+    assert_refusal_without_move(invoke_install(approved=roster_link), "symlink")
+    package_link = tmp_path / "package-link"
+    package_link.symlink_to(output, target_is_directory=True)
+    assert_refusal_without_move(invoke_install(package_path=package_link), "symlink")
+    manifest_path = output / "gate_manifest.json"
+    manifest_bytes = manifest_path.read_bytes()
+    manifest_path.unlink()
+    manifest_path.symlink_to(roster)
+    assert_refusal_without_move(invoke_install(), "plain files")
+    manifest_path.unlink()
+    manifest_path.write_bytes(manifest_bytes)
+
+    original_package = package_path.read_bytes()
+    package_path.write_bytes(original_package + b" ")
+    assert_refusal_without_move(invoke_install(), "bytes differ from the independently confirmed digest")
+    package_path.write_bytes(original_package)
+
+    original_reader = reader.read_bytes()
+    reader.write_bytes(original_reader + b" ")
+    assert_refusal_without_move(invoke_install(), "stale or mismatched")
+    reader.write_bytes(original_reader)
+
+    # A mode change hidden from status still cannot substitute the executing
+    # installer for the bytes committed at the reviewed candidate.
+    installer_path = repo / "scripts/repin.py"
+    installer_bytes = installer_path.read_bytes()
+    subprocess.run(["git", "-C", str(repo), "update-index", "--assume-unchanged",
+                    "scripts/repin.py"], env=git_env, check=True)
+    try:
+        installer_path.write_bytes(installer_bytes + b"\n# substituted executing bytes\n")
+        changed = invoke_install()
+        assert_refusal_without_move(changed, "running installer differs")
+    finally:
+        installer_path.write_bytes(installer_bytes)
+        subprocess.run(["git", "-C", str(repo), "update-index", "--no-assume-unchanged",
+                        "scripts/repin.py"], env=git_env, check=True)
+
+    wrong_fingerprint = "SHA256:" + "A" * 43
+    assert_refusal_without_move(invoke_install(expected=wrong_fingerprint), "does not match")
+
+    # Race a late anchor creation after the installer observed it as absent.
+    # The expected-old transaction must then refuse without moving the branch
+    # or replacing the ref the racing writer installed.
+    original_loader = RP.load_listed
+    raced_anchor = candidate
+
+    def load_with_anchor_race(ext, session_path):
+        made = original_loader(ext, session_path)
+        preflight = __import__("sys").modules["bootstrap.tests._gate_preflight"]
+        advance = preflight._advance_both_refs
+
+        def race_before_transaction(target_repo, branch, new, *, branch_old, anchor_old):
+            subprocess.run(["git", "-C", str(target_repo), "update-ref",
+                            "refs/cairn/gate-anchor", raced_anchor],
+                           env=git_env, capture_output=True, text=True, check=True)
+            return advance(target_repo, branch, new, branch_old=branch_old,
+                           anchor_old=anchor_old)
+
+        preflight._advance_both_refs = race_before_transaction
+        return made
+
+    monkeypatch.setattr(RP, "load_listed", load_with_anchor_race)
+    with pytest.raises(RP.Refuse, match="atomic branch and anchor update refused"):
+        RP.baseline_install(repo, candidate, output, roster, reader,
+                            str(key.with_suffix(".pub")), fingerprint, package_digest)
+    assert subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
+                          capture_output=True, text=True, check=True).stdout.strip() == candidate
+    assert subprocess.run(["git", "-C", str(repo), "rev-parse", "refs/cairn/gate-anchor"],
+                         capture_output=True, text=True, check=True).stdout.strip() == raced_anchor
+    subprocess.run(["git", "-C", str(repo), "update-ref", "-d", "refs/cairn/gate-anchor"],
+                   env=git_env, check=True)
+
+    stale_branch = subprocess.run(["git", "-C", str(repo), "rev-parse", f"{candidate}^"],
+                                  capture_output=True, text=True, check=True).stdout.strip()
+
+    def load_with_branch_race(ext, session_path):
+        made = original_loader(ext, session_path)
+        preflight = __import__("sys").modules["bootstrap.tests._gate_preflight"]
+        advance = preflight._advance_both_refs
+
+        def race_before_transaction(target_repo, branch, new, *, branch_old, anchor_old):
+            subprocess.run(["git", "-C", str(target_repo), "update-ref", branch, stale_branch],
+                           env=git_env, capture_output=True, text=True, check=True)
+            return advance(target_repo, branch, new, branch_old=branch_old,
+                           anchor_old=anchor_old)
+
+        preflight._advance_both_refs = race_before_transaction
+        return made
+
+    monkeypatch.setattr(RP, "load_listed", load_with_branch_race)
+    with pytest.raises(RP.Refuse, match="atomic branch and anchor update refused"):
+        RP.baseline_install(repo, candidate, output, roster, reader,
+                            str(key.with_suffix(".pub")), fingerprint, package_digest)
+    assert subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
+                          capture_output=True, text=True, check=True).stdout.strip() == stale_branch
+    assert subprocess.run(["git", "-C", str(repo), "rev-parse", "--verify",
+                           "refs/cairn/gate-anchor"], capture_output=True, text=True,
+                          check=False).returncode != 0
+    subprocess.run(["git", "-C", str(repo), "update-ref", branch_ref, candidate, stale_branch],
+                   env=git_env, check=True)
+    monkeypatch.setattr(RP, "load_listed", original_loader)
+
+    install = invoke_install()
     assert install.returncode == 0, install.stdout + install.stderr
     assert not credential_marker.exists(), "installation ran candidate tests"
     new = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
