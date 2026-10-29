@@ -1,7 +1,7 @@
 # Protect upgrade bases and install output
 
 **Author**: Codex GPT-6
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -64,3 +64,33 @@ A valid existing install cannot upgrade without an explained recovery path; a mi
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+
+## Review -- Codex gpt-6.1-sol -- 2026-10-29
+
+```
+Reviewed commit: ea14ccbf9053e6bc46a017ce01ff39f12b0e2185
+Target: opening proposal and cited code, queue and prior review
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: protect the ancestor before trusting a clean merge and make supplied names recognizable. Doing nothing retains a real unchecked read, not merely a hypothetical new feature -- `bootstrap/_scaffold/upgrade.py`, `_compute_upgrade`.
+2. **Best alternative.** Extend existing review-only classification and existing escaping practice; avoid a second recovery mechanism or an ASCII-only filesystem policy. This retains all three proposed outcomes -- `bootstrap/UPGRADE.md`, completion gate; `bootstrap/_scaffold/install.py`, local `esc` helper.
+3. **What would show it wrong.** A cache mismatch can still advance an automatic result, or a previously supported visible name loses an explained upgrade route. Existing staged acknowledgement must remain a meaningful recovery path -- `bootstrap/_scaffold/upgrade.py`, `_apply_upgrade`; `bootstrap/UPGRADE.md`, migrating an existing project.
+
+The strongest case is preservation of an adopter's accumulated methodology edits: a clean three-way merge is trustworthy only relative to its ancestor. The queue explicitly groups these four older findings; this proposal preserves them without claiming authentication or a universal defense against misleading text (`dev/PLANNING.md`, four older upgrade and install findings).
+
+**R1 (non-blocking): make recovery a plan acceptance criterion.** Specify what happens after a damaged ancestor becomes review-only, including `--ack-review-only`, advancement of unaffected files, preservation of the bad cache and the next upgrade. Test that full sequence, rather than only refusal. The existing documentation tells migrated adopters to reconcile pairs and acknowledge them; an unconditional apply-time check could accidentally make that recovery impossible. A command-level recovery test and updated `bootstrap/UPGRADE.md` close this recommendation. This specifies the promised recovery; it removes no scope.
+
+**R2 (non-blocking): choose compatibility examples before the character rule.** Include decomposed accented names and a visible non-Latin name, alongside isolated invisible characters. A rule rejecting all combining marks would reject ordinary visible names. State how a project whose existing lockfile contains a newly forbidden name can recover without hand-editing tool-owned provenance. Public-command tests plus the documented policy close this recommendation -- `bootstrap/_scaffold/upgrade.py`, `_contained_lockfile_path`; `bootstrap/UPGRADE.md`, two on-disk artifacts.
+
+Implementation cost includes more than a digest call: apply consumes staged results, output has multiple producers, and the engine requires review and AST ceremony. These costs are proportionate to preventing silent loss; there is no scientific calculation change. Reuse the existing digest comparison pattern (`bootstrap/verify_integrity.py`, `_note_file`) while hashing raw bytes before decoding or conditional-region sizing.
+
+**Coverage:** claims and failure behavior: `_compute_upgrade` and prior SR6; production routes and completeness: `_apply_upgrade`, R1/R2; consistency and drift: queue and `bootstrap/UPGRADE.md`; lifecycle: declared Security obligations and existing AST ceremony; scientific scope: methodology-file preservation, no numerical result; satisfiers: R1/R2. **Not covered / low confidence:** no end-to-end loss reproduction, implementation tests, measured runtime, Unicode policy implementation or Windows rendering; no suite run. This ordinary pass does not discharge Security Review.
