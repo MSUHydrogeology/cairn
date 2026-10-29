@@ -200,7 +200,8 @@ class TestRegistryIntegrity:
     ])
     @pytest.mark.parametrize("member_index", range(5))
     def test_content_apparatus_member_failure_refuses_before_launch(
-            self, tmp_path: Path, failure: str, member_index: int) -> None:
+            self, tmp_path: Path, failure: str, member_index: int,
+            monkeypatch: pytest.MonkeyPatch) -> None:
         entry = mod._REGISTRY["content-security"]
         records = {}
         for rel in (entry.runner_repository_path,
@@ -223,6 +224,10 @@ class TestRegistryIntegrity:
             records[target]["living_state"] = "false"
         with pytest.raises(mod._Degraded):
             mod._bind_runner(entry, records, tmp_path)
+        monkeypatch.setattr(mod, "_REGISTRY", {entry.module_id: entry})
+        leg = mod._evaluate_capability(entry.module_id, tmp_path, records)
+        assert leg["aggregate"] == mod.DEGRADED
+        assert leg["child_launched"] is False
 
     @pytest.mark.parametrize("bad_paths", [
         "scripts/unsafe.txt", ("../escape",), ("scripts/dup", "scripts/dup"),
