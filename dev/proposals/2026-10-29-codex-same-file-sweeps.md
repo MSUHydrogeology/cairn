@@ -1,7 +1,7 @@
 # Detect and record same-file commit sweeps
 
 **Author**: Codex gpt-6.1-sol
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual
 **Plan review**: required(Internal)
 **Opened**: 2026-10-29
@@ -109,3 +109,68 @@ or if the count is represented as comprehensive despite unreported sweeps.
 
 **Assurance path**: standard. This changes coordination guidance and advisory
 reporting, not the work-intent enforcement or an adopter executable contract.
+
+## Review -- Codex gpt-6.1-sol -- 2026-10-29
+
+```
+Reviewed commit: 86a1b18e98b0accdeed295b2095a3c666f209465
+Target: opening proposal
+Prior findings: none
+Assurance path: standard (declared; disputed below)
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**:
+
+1. **Should this happen as framed?** The lightweight check and honest reporting are worthwhile, but the counting unit and prevention claim need correction before acceptance -- Proposal and Rationale above; `tools/evolution_infer.py::evaluate_tracker`.
+2. **Best alternative.** Extend the existing diff read and require same-file serialization during inspection through commit; retain manual incident reporting rather than build attribution machinery or isolate every edit -- `AGENTS.md` > Git and commit workflow; `doctrine/coordination.md` > Tier 1 and Tier 2.
+3. **What would show it wrong.** One multipath sweep satisfying recurrence, staged foreign text escaping inspection, or another writer changing the file after inspection would invalidate the claimed protection -- Proposal above; `tools/evolution_infer.py::evaluate_tracker`; `doctrine/coordination.md` > Tier 1.
+
+The strongest benefit is restoring the author's ability to see what they are
+signing while making an advisory zero count honest. Claims cannot establish
+line authorship; the proposal correctly rejects that shortcut. The deferred
+shared-write row records an earlier August observation and the October event,
+so the proposal is not resting solely on one incident (`dev/PLANNING.md` >
+Deferred). Keep this an extension of existing commit inspection: a second
+routine inspection would add cost without a new instrument.
+
+**R1 -- Blocking: the assurance declaration contradicts the template.**
+The proposal explicitly edits `doctrine/coordination.md`, but declares standard
+assurance, ordinary-only reviews and an N/A security preflight. The current
+`dev/proposals/_template.md` > Assurance path explicitly makes governing
+doctrine mandatory high-assurance and a Security-Review trigger. Satisfier:
+revise the declarations and answer the preflight for the actual surface;
+this usual pass discharges no Security Review.
+
+**R2 -- Blocking: one incident can become recurrence.** “One incident per
+commit and affected path” produces two `occurred` rows for a single commit
+sweeping two paths. `evaluate_tracker` counts rows, so threshold two is met
+without a second failure. Satisfier: define one countable event per sweep
+commit with affected paths attached, or an equivalent deduplication contract;
+add a two-path-one-commit negative case alongside the two-commit positive
+case. Separate occurrence date from discovery date so a late report does not
+silently move an old incident into the rolling window.
+
+**R3 -- Blocking: define the complete diff and its stable interval.** The
+existing plain `git diff <paths>` omits staged text, although a path commit
+collects that text too. Inspection also precedes commit: another writer can
+append afterward. Satisfier: prescribe inspection against HEAD for tracked
+candidate paths (and direct inspection for new files), start agreed same-file
+serialization before inspection and retain it through commit, and test staged
+foreign content plus an intervening writer. Describe residual noncooperation
+as an advisory limitation. Author testimony or recorded provenance must
+confirm attribution; a diff alone only shows content.
+
+**R4 -- Non-blocking: minimize incident evidence.** Prefer commit/path and
+confirmation references; avoid copying private chat, credentials or unrelated
+uncommitted text into a committed tracker. Satisfier: state the evidence
+minimum and local-versus-published destination in tracker guidance.
+
+**Covered**: claims/design/failure modes (R2–R3, gate evaluator); production
+entry-point intent (Evidence plan); consistency/drift/lifecycle (R1,
+coordination doctrine); scope and satisfiers (alternatives, R1–R4). **Not
+covered / low confidence**: no live concurrency experiment, privacy audit,
+implementation tests or scientific calculation; no broad suite run.
