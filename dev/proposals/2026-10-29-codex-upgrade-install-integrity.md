@@ -94,3 +94,31 @@ The strongest case is preservation of an adopter's accumulated methodology edits
 Implementation cost includes more than a digest call: apply consumes staged results, output has multiple producers, and the engine requires review and AST ceremony. These costs are proportionate to preventing silent loss; there is no scientific calculation change. Reuse the existing digest comparison pattern (`bootstrap/verify_integrity.py`, `_note_file`) while hashing raw bytes before decoding or conditional-region sizing.
 
 **Coverage:** claims and failure behavior: `_compute_upgrade` and prior SR6; production routes and completeness: `_apply_upgrade`, R1/R2; consistency and drift: queue and `bootstrap/UPGRADE.md`; lifecycle: declared Security obligations and existing AST ceremony; scientific scope: methodology-file preservation, no numerical result; satisfiers: R1/R2. **Not covered / low confidence:** no end-to-end loss reproduction, implementation tests, measured runtime, Unicode policy implementation or Windows rendering; no suite run. This ordinary pass does not discharge Security Review.
+
+
+## Review -- Codex GPT-6 Security reviewer -- 2026-10-29
+
+```
+Reviewed commit: 7137c0ad7ca21b612e00770c9bbef8de1c902810
+Target: opening proposal, usual review, and committed engine paths
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. An unchecked saved ancestor can steer a merge, and printable text is not necessarily recognizable. The proposal correctly limits its digest claim to consistency, rather than authentication -- `bootstrap/_scaffold/upgrade.py`, `_compute_upgrade` and `_contained_lockfile_path`.
+2. **Best alternative.** Use the existing review-only path for invalid ancestors, one explicit character policy at path admission, and consistent escaping at display boundaries. Doing nothing preserves the unchecked merge input; ASCII-only paths sacrifice legitimate names without fixing ancestor integrity -- `bootstrap/_scaffold/upgrade.py`, `_apply_upgrade`; `bootstrap/_scaffold/install.py`, `print_report`.
+3. **What would show it wrong.** A changed ancestor or expected digest can still authorize an automatic staged result, or a legitimate supported name becomes unrecoverable. Test the real stage/apply and acknowledgement sequence, including the interval between commands -- `bootstrap/_scaffold/upgrade.py`, `_compute_upgrade` and `_apply_upgrade`.
+
+The strongest benefit is preventing silent loss when a saved ancestor is damaged or changed independently. Someone already controlling both the cache and lockfile can forge their agreement; someone controlling staged output can also edit what will be applied. This change should not be presented as containing arbitrary project write access. The separate display risk is misleading the operator; these observations do not establish code execution.
+
+**SR1 (non-blocking): bind verification to the bytes consumed.** The plan should hash raw ancestor bytes before decoding, then merge that same read. Bind staged automatic results to the relevant expected digest and checked ancestor, and define what changes between stage and apply invalidate them. Current apply compares lock commit, tokens and roster, not the base digest; recomputing only a current cache/digest agreement would not prove that the staged result used it. Cover altered cache, altered digest, missing/malformed digest, unreadable/invalid-UTF-8 base, legacy records, and an unmodified control through public commands. Specify recovery without overwriting the original bad cache. This sharpens the proposal's existing race and preservation commitments -- `bootstrap/_scaffold/upgrade.py`, `_compute_upgrade`, `_stage_upgrade`, `_apply_upgrade`.
+
+**SR2 (non-blocking): make recognition policy measurable.** Name rejected character classes and test U+034F, zero-width and bidi controls, terminal escape/control bytes, and literal backslash escape text. Include decomposed accents, non-Latin visible names and contextual joiner/variation-selector examples, with an explicit compatibility disposition where invisibility serves legitimate spelling or presentation. Do not equate all combining marks with invisible names. Exercise normal and absent-module slot reports, unpaired-marker warnings, unknown modules and merge/fidelity output; escape data without changing the names used for lookup. Reuse the existing `ascii`-based display practice where suitable -- `bootstrap/_scaffold/install.py`, `esc`, `install_file`, `install_modules`, `print_report`; `bootstrap/_scaffold/cli.py`, module-merge output; `bootstrap/_scaffold/slotmerge.py`, `_SLOT_RE`.
+
+**Coverage:** claims, production routes, completeness and fail-closed behavior: cited merge/admission/apply paths; consistency and drift: proposal limits and `bootstrap/UPGRADE.md`; lifecycle: declared plan Security Review and AST ceremony; scientific scope: no scientific result; satisfiers: SR1/SR2 command tests and recovery/policy documentation. No implementation, attack reproduction, platform rendering measurement or suite run; enumeration cannot close all visual deception. This clears the proposal Security Review obligation, not implementation assurance.
