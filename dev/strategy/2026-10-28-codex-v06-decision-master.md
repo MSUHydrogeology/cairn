@@ -40,8 +40,9 @@ addresses the existing v0.6 two-command item, builds on v0.5 `repin`, and
 includes the trust plan's required full prior-anchor verifier. Both independent
 Sol reviews and the author's response are recorded; the Maintainer approved the
 proposal in `02a81d33`. The [plan](../plans/2026-10-29-ceremony-commands.md)
-opened in `df4f9ac5` and awaits ordinary and Security plan reviews. No signing,
-re-anchor or push is authorized by this briefing.
+opened in `df4f9ac5`; ordinary and Security plan findings were folded in
+`23430733`. Implementation starts with the reusable prior-anchor verifier. No
+signing, re-anchor or push is authorized by this briefing.
 
 ## Remaining decisions and actions
 
