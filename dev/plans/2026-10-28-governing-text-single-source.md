@@ -1,7 +1,7 @@
 # Plan: Governing text inventory and routing
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-governing-text-single-source.md
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Map where rules come from and reach adopters before choosing how to reduce repeated editing.
@@ -570,3 +570,27 @@ passed.
 | Edited-subsection parity and before/after count | Source and shipped Scope delta sections match after whitespace normalization. Each shrank from 273 words / 29 lines to 243 words / 27 lines. The other task-floor example was not edited. Whole-template byte parity is not expected because installed slots and adopter-specific verification text differ. | direct comparison |
 
 **Known omissions / limits**: No full suite, certification, re-anchor, or reference change was performed. The Maintainer waived historical anchor comparison and directed this source work to proceed; the earlier read-only `repin status` refusal on a mismatched `_gate_manifest.py` remains unresolved, so this record claims no anchor/roster installation or ceremony result. Mutation controls establish sensitivity to the three named breaks, not equivalence of every possible wording. No adopter-use trial ran. The independent code review remains next.
+
+## Code review -- Codex (GPT-6), independent reviewer -- 2026-10-29
+
+Reviewed commit: d498b308b70b21c7309a010e7eb58e0642ab9988
+Target: C3 implementation 64a233757f303b32c5f6c521e733c78ada36ae5e..72fecafe69f3c12e8b8c43f2b501e47955684aaa and C4 evidence
+Prior findings: none
+
+**Foundations**
+
+1. **Does it do what it claims?** The edited section is shorter and retains the actionable scope rules, but the comparison does not establish the full measured change required by C3. -- `dev/plans/_template.md` > Scope delta; F1 below.
+2. **Best alternative.** Keep the focused cut and report the unchanged or changed values against each C1 measure, including costs and both examples. -- `dev/plans/2026-10-28-governing-text-single-source/editing-baseline.tsv`.
+3. **What would show it wrong.** A lost installed obligation or a comparison showing no improvement would challenge the result. -- falsification ledger below.
+
+**F1 — Blocking: complete the comparison on the same measures.** C3 requires comparing both C1 edits after the change using the same measures. The baseline records presentation files, implementation footprint, owning checks, lifecycle and ceremony cost, and installed reader path as well as section length. The addendum reports the Scope delta length and installed controls, and says the task-floor example was unchanged, but does not repeat or explicitly reconcile the other measures for both examples. Record comparable after values or explain with evidence why a baseline measure is unchanged or inapplicable; distinguish the 30-word point-of-use cut from any reduction in edit or ceremony effort. -- C1, C3 and `dev/plans/2026-10-28-governing-text-single-source/editing-baseline.tsv`.
+
+**Bounding**: WIDER RUN REQUIRED -- complete the comparison evidence; this does not require a full suite.
+
+**Falsification ledger**
+
+- Installed solo profile: a fresh clone of d498b308 and a fresh target were used with Python 3.13.13 and `bootstrap/scaffold.py --config bootstrap/profiles/solo-greenfield.yml --target <fresh target> --non-interactive --allow-dev`. The installed output passed `_missing_installed_plan_scope_obligations`; independently replacing the unassigned-remainder Maintainer duty produced the expected missing-obligation result. An initial probe failed to match the line-wrapped text; a whitespace-aware probe was then used.
+- Changed rule: compared the two template diffs and inspected installed authority and the surviving rationale in `templates/core/AGENTS.md` and `templates/core/dev/agent_collaboration.md`. The deleted text is explanatory; no actionable clause was deleted in the diff.
+- Comparison: read C1's baseline and C4's addendum against C3's same-measures criterion; the omissions are F1.
+
+**Covered**: scope clause preservation, one installed negative control, simplification claim, and the change-verification record. **Not covered**: all wording mutations, an adopter-use trial, historical anchor comparison, or the full suite.
