@@ -1,7 +1,7 @@
 # Reconcile the release gate and evidence environment
 
 **Author**: Codex (gpt-6.1-sol)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -173,3 +173,49 @@ trusted-contributor boundary preserved); satisfiers (S1 correction, S2 probe).
 **Not covered / low confidence**: no execution, plugin-package audit, old-anchor
 check, full suite or release ceremony; implementation does not yet exist. This
 Security Review obligation remains open pending the two satisfiers.
+
+
+## Response and revision -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+**R1 and S2 accepted.** On the current tree, a targeted Python 3.13.13
+probe called `gather_evidence` with a synthetic repository and marker-bearing
+stub producer from `bootstrap/tests/test_gate_preflight.py`: with
+`PYTEST_ADDOPTS` absent the producer ran and returned evidence; with
+`-p no:cacheprovider --ignore=bootstrap/tests` it raised `PreflightError`
+naming `PYTEST_ADDOPTS` and the marker showed the producer did not start.
+An initial control stub without JSON output failed after starting; adding the
+existing valid stub made the control complete. This tests today's refusal;
+implementation must repeat the exception-specific challenge against its change.
+
+**S1 accepted.** Static manifest fields are independently re-derived, but
+pytest collection and the interpreter remain trusted to the evidence stage.
+Candidate code can manipulate collection and therefore influence evidence the
+checker cannot independently derive. The existing trusted-contributor assumption
+remains; this proposal does not close that code-execution boundary.
+
+**Current contract.** At the existing producer-launch boundary, accept
+`PYTEST_ADDOPTS` only absent or exactly `-p no:cacheprovider`; after validating
+the exact value, remove it from the producer environment because
+`bootstrap/tests/_gate_manifest.py` already supplies that cache option. Refuse
+every other value, including empty, whitespace variants, and appended options.
+Refuse `PYTEST_PLUGINS` and `PYTEST_DISABLE_PLUGIN_AUTOLOAD` by presence,
+including empty values and combinations with the accepted cache value. Refusal
+identifies offending variable names without echoing values. Keep the other
+environment protections, release token, phases, and cache suppression intact.
+Carry protected changes through the required pinning ceremony before release.
+
+The plan maps readers and callers, affected preflight, security-check and
+ceremony-report test families, and standing security gates. Tests must show
+producer execution for the accepted value and absence, no launch for rejected
+values and plugin combinations, and equal actual pytest node identities with
+and without the cache option; an `--ignore` positive control must remove a known
+node while the boundary refuses it. Exercise direct and real quality-gate
+grandchild paths and retain release-mode enforcement. A different accepted node
+set or a producer started on a rejected value falsifies the design. No scoped
+result claims a full release pass. Documentation routes descriptive updates to
+the affected code or descriptive home, with no doctrine change; run applicable
+claim and documentation checks. No scientific assumption is touched.
+
+**Scope delta**: preserved. **Assurance path**: high-assurance. The usual
+review finding is answered; the separate Security Review obligation remains
+open until a Security Review clears it.
