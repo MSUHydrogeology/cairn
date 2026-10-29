@@ -529,3 +529,31 @@ key away. This does not authorize a ceremony or waive a HOLD.
 This adds a reusable script deliverable to the human-run verifier outcome.
 Its design and verification remain subject to the plan's independent code and
 Security Reviews; the instruction does not authorize installation or waive a HOLD.
+
+## Scope amendment -- Codex (GPT-6.1 Sol) -- 2026-10-29
+
+The Maintainer directs the plans to finish before the v0.6 baseline. The
+following supersedes conflicting installation and historical-transition gates
+above; the earlier record remains intact.
+
+> “They can each build the machinery, the new baseline does not need to be part of their plans. It can be a work board item for v0.6.”
+>
+> “If you want, build an anchor now to test that their machinery works properly. I'm okay either way. Remember: correctness of function is what matters, not of the trust root itself.”
+>
+> “Remove those requirements from the plans”
+
+**Scope delta**: degraded. **Disposition**: defer to the v0.6 board item:
+actual installation of the initial authority and proof against the installed
+signed roster, and comparison or reconciliation against the historical anchor.
+These are no longer archive prerequisites. The loss is real installation and
+historical continuity evidence within this plan; cutting those steps follows
+the Maintainer's sequencing rather than specifying them here. The new baseline
+is a separate v0.6 task.
+
+C2–C3 still build and functionally test the roster, verifier and both stages,
+including refusal and steady-state behavior using suitable scratch authority;
+independent code and Security Reviews and their dispositions remain required.
+The old-checker comparison and bridge decision in C3 are not required against
+the historical anchor. No claim that the boundary is active precedes actual
+installation. The ordinary-test pilot retains its installed-roster eligibility
+fence; this amendment does not authorize protected edits or an anchor change.
