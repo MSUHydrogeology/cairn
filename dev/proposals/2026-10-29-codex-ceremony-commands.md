@@ -127,3 +127,59 @@ scope/domain/satisfiers (#8–9): queued row, F1–F2; no scientific claim.
 **Not covered / low confidence:** implementation does not yet exist; no ceremony,
 signing, ref movement, mutation or full suite run. This pass does not discharge
 the separate Security Review.
+
+## Review -- Codex (gpt-6.1-sol, high), Security Reviewer -- 2026-10-29
+
+```
+Reviewed commit: 9c331e14ac232d3f7012b5bb8b9b1d068b26321b
+Target: opening proposal, trust-ceremony boundary
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, with the inherited independent scan preserved explicitly. Authenticating prior P, checking raw candidate C and obtaining bounded human dispositions can reduce assembly errors without granting candidate authority. -- Proposal; `scripts/repin.py:273`; `bootstrap/REANCHOR_RUNBOOK.md:74`.
+2. **Best alternative.** Extend the existing driver and staged launcher, retaining its ordinary refusal until a reviewed transition can demonstrate equivalent safeguards. The manual runbook remains the stopping path if that cannot be shown. -- `scripts/repin.py:975`; `scripts/repin.py:1162`; `bootstrap/REANCHOR_RUNBOOK.md:229`.
+3. **What would show it wrong.** A candidate checker can substitute its own scan digest, a protected HOLD receives an unbounded waiver, or signing starts before authenticating prior authority and completing full collection. -- `bootstrap/reanchor.sh:766`; `bootstrap/REANCHOR_RUNBOOK.md:87`; `bootstrap/REANCHOR_RUNBOOK.md:95`.
+
+The proposal's strongest design choice is keeping prior authority separate from
+candidate evidence. It explicitly retains signature authentication, immutable
+candidate bytes, full collection with the key away, protected HOLDs, and human
+approval. It also admits that candidate pytest code remains host-capable; byte
+checks do not establish containment. A transition is work to demonstrate, not a
+flag that bypasses the current refusal.
+
+**SR1 — Blocking: retain E7 and both installation bridges explicitly.** The
+promised comparison list is E1–E6, H and K. E7 is absent. E7 independently runs
+the prior anchor's scanner and compares its digest with the report; the report's
+own claim that its scanner is anchored is insufficient. The current runbook
+requires the dormant-roster and active-checker bridges as separate reviewed,
+Maintainer-authorized ceremonies, each with its own candidate, packet, reader
+record, comparisons and E7. The checker deliberately retains the old scanner's
+semantics during these transitions. A generic promise to preserve stage
+comparisons leaves this independently established value outside the named
+contract. -- Proposal; `bootstrap/REANCHOR_RUNBOOK.md:17`;
+`bootstrap/REANCHOR_RUNBOOK.md:64`; `bootstrap/tests/_gate_preflight.py:1637`.
+
+**Satisfier:** explicitly preserve E7 from authenticated prior P, require its
+agreement with the report before signing, and retain both distinct bridge
+ceremonies and authorizations. Map scratch tests through the delivered public
+commands proving an altered candidate scan digest refuses in each bridge, with
+passing controls; reuse the existing adversarial case in
+`bootstrap/tests/test_repin_ceremony.py:1533`. No outcome is removed.
+
+**Covered:** claims, production paths, completeness and refusal (#1–4):
+`boot`, `manifest_status`, `build_packet`, `run_ceremony` in `scripts/repin.py`;
+`bootstrap/reanchor-launcher.template.sh:42`; runbook steps 1–3.
+Reuse, drift and lifecycle (#5–7): archived repin plan Source proposal;
+trust plan C2–C5; runbook installation bridges; SR1.
+Scope/domain and satisfiers (#8–9): proposal S1–S5 and SR1; no scientific result.
+**Not covered / low confidence:** source inspection only; no implementation,
+scratch ceremony, mutation, signing, key access, ref movement or full suite run.
+This pass identifies the correction needed to discharge its Security Review
+obligation; it does not authorize C4 or pushing.
