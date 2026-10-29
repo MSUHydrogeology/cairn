@@ -1,7 +1,7 @@
 # Keep the interpreter binding in Git's local directory
 
 **Author**: Codex gpt-6.1-sol
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -260,3 +260,31 @@ to establish those properties; no executable probe, suite or native-platform
 run was performed. Executable provenance, trusted-administration compromise
 and same-user races remain explicit assumptions. This clears the proposal
 Security obligation only; plan and implementation evidence remain owed.
+
+
+## Response -- Codex gpt-6.1-sol -- 2026-10-29
+
+The Security Review closes S1 and S2 with no new findings. The contract is unchanged; copied administration remains a Maintainer decision.
+
+## Current contract
+
+Move the binding to a Cairn-owned file in each worktree’s Git administrative directory, separate from checkout content, patches and content-only archives. Never read or migrate the old binding; retain its ignore rule and instruct operators to rerun install with their chosen interpreter.
+
+For both install and session, Git discovery must identify the exact supplied project root as its worktree root, not an ancestor. Verify this using a scrubbed Git environment. A normal repository, linked worktree, separate Git directory and submodule are supported when Git identifies that exact root and its per-worktree administrative directory. Normal Git file pointers are permitted, not filesystem links or reparse points in the pointer or binding path. Ambiguous or unsafe discovery refuses access with guidance. Copied `.git` administration or a delivered pointer can still supply a binding. Operators must trust that administration and rebind after receiving it from an untrusted source. Same-user races and executable provenance remain outside this boundary.
+
+An install into a non-repository target succeeds without a binding, reports that fact and explains how to initialize Git and rerun the install using the intended interpreter. A nested target without its own repository behaves likewise and never accesses its ancestor binding. Session without a repository uses the current interpreter with explicit guidance; an actual discovery error or unsafe state refuses, not a silent fallback. Re-running install after Git initialization writes the binding; existing bindings are preserved unless forced, without overriding safety.
+
+Inspect path components without following links; only true absence falls back. Dangling links, wrong types, unreadable state and unsafe path components refuse before launching the selected program. Preserve strict schema, executable shape and tracked in-project executable checks; a stale executable retains its warned fallback. Writes are confined to the verified per-worktree administrative directory using a dedicated safety check, without relaxing the scaffold's target-tree write guard. No unsafe destination is overwritten even under force.
+
+Inventory readers, writers and documentation; update `AGENTS.md`, its shipped equivalent, `bootstrap/UPGRADE.md` and `bootstrap/SAFETY.md`. Correct the copied-folder claim. The plan maps wide Boundary B and standing gates. Exercise real scaffold and session entry points for normal, linked, separate-directory and submodule repositories, non-repository and nested targets, old malicious bindings, hostile Git environment, unsafe destinations with and without force, and valid, malformed, stale and tracked executables. Prove ancestor isolation, containment, refusal before launch and worktree independence. Use portable tests that run on Windows, not only shell-script fixtures. Native Windows evidence must cover discovery and junction/reparse handling before implementation acceptance; explicitly record any unsupported link case and keep a required case open if it cannot be checked. Run prose and applicable standing gates; certification is separate.
+
+Security preflight: the operator supplies Git administration and the executable; project content may supply the legacy file. The old-binding marker test must fail when selection is deliberately redirected to it, and has not yet been run. The plan maps commands to revised guidance. Missing state falls back only as specified; unsafe and unreadable state refuses. Control of trusted administration or the executable still wins. No scientific assumption is touched. Redirection, interference or failed rebinding falsifies the design.
+
+**Scope delta**: preserved. Copied administration remains a residual for the Maintainer to judge.
+
+**Assurance path**: high-assurance; usual and Security Reviews and Internal plus Internal Security plan review remain required.
+
+### Withdrawn / superseded commitments
+
+The opening summary overstates copied-project protection; copied administration remains trusted input.
+
