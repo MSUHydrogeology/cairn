@@ -572,3 +572,48 @@ trust-inventory protected-file eligibility, additional review or baseline
 checks. The separate ordinary-test plan still requires functional verification
 and ordinary plan/code reviews. This clarification changes no other protected
 classification, test-trust implementation or anchor/ceremony requirement.
+
+## Implementation verification -- Codex (GPT-6.1 Sol) -- 2026-10-29
+
+**Boundary B mode**: wide. **Certified by**: pending.
+**Tested commit**: `e0908bb39661ab0312e168ee056d54edebdd17df`.
+**Reviewed implementation range**: `d866caef605e1dc7ae7a3b6a14a9269909513d67..e0908bb39661ab0312e168ee056d54edebdd17df`.
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13.
+A fresh detached clone had a clean tracked and untracked state before and after;
+its HEAD remained the tested SHA. Its local `refs/cairn/gate-anchor` pointed to
+that SHA as disposable test authority. Fixture ceremonies created and signed
+their own temporary authority. No live reference, signing key or baseline was
+changed. Subsequent plan-only changes, including the pilot allowance at
+`fb7e8751`, were not part of the tested commit.
+
+The combined mapped command used `PYTHONDONTWRITEBYTECODE=1` and host signing
+and terminal access:
+
+    /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_gate_manifest.py bootstrap/tests/test_gate_transition.py bootstrap/tests/test_gate_preflight.py bootstrap/tests/test_gate_reanchor.py bootstrap/tests/test_ceremony_review_report.py bootstrap/tests/test_reanchor.py bootstrap/tests/test_reanchor_driver_disclosures.py bootstrap/tests/test_repin.py bootstrap/tests/test_repin_ceremony.py bootstrap/tests/test_oracle_activation.py bootstrap/tests/test_security_check.py bootstrap/tests/test_security_marker.py -q --tb=short
+
+It passed **1,110 tests in 1,000.94 seconds**, with no skips, xfails or xpasses.
+Three warnings were the same `stevedore` deprecation about `verify_requirements`.
+The run includes the disposable signed-anchor two-stage transition test added at
+`e0908bb3`. It covers the mapped manifest, authority, transition, stage,
+ceremony, release-outcome and consumer families; it is not full-tree certification.
+
+The canonical interpreter's claim checker passed on `AGENTS.md`, the runbook
+and this plan (four declared path exemptions in the plan). `check_cairn.py`
+passed for those three files. Its whole-tree invocation reported one issue in
+`dev/proposals/2026-10-29-codex-dispatcher-content-scan.md:100`: the prose
+checker matched an imperative-override phrase within an example; this is an
+unrelated checker false positive, not a pass of that invocation. `link_check.py`
+passed across 189 Markdown files (84 external links not probed);
+`sync_doc_snippets.py --check` passed across 428 documents; neutrality reported
+zero failures and 43 informational records. The earlier restricted run was
+stopped at 854 passed and 25 failures: it lacked a clone-local anchor ref and
+its environment could not reliably start SSH agents or drive signing terminals.
+Both anchor-dependent nodes and three representative signing nodes passed after
+the disposable ref and required host permissions were supplied; the combined
+run above supersedes that incomplete result.
+
+**Omissions and disposition**: no full suite, certification, actual baseline
+installation, historical-anchor reconciliation or live re-anchor was performed.
+Independent code and Security Reviews, including falsification of this evidence
+and the remaining plan criteria, are still owed. This record does not declare
+the boundary installed or the plan ready to archive.
