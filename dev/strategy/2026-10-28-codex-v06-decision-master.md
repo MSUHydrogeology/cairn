@@ -16,16 +16,16 @@ its contract and status. This briefing grants no approval and replaces no
 Decision. Pushing, publishing, repository settings changes and issue closure
 remain unauthorized.
 
-Keep the release boundary: v0.6 makes existing capabilities work; v0.7 adds
-capabilities and adopter research. This five-plan batch does not finish v0.6.
+v0.6 makes existing capabilities work; v0.7 adds capabilities and adopter
+research. This five-plan batch does not complete v0.6.
 
 ## Delivered work and current holds
 
 | Plan | Result |
 |---|---|
-| [Model floors](../plans/archive/2026-10-28-model-floor-alignment.md) | Implemented, independently reviewed and archived. Local vendor assignments and shipped generic task floors align; 574 mapped passes under Python 3.13.13. Certification/re-anchor debt remains live in the roadmap. |
-| [Scoped verification](../plans/archive/2026-10-28-scoped-change-verification.md) | Implemented; 2,700 collected/executed nodes reconciled, five guard cases passed, environment-denied security cases passed with required local capability. Independent example adjudication and ordinary/Security reviews completed. Both reviews hold completion for the prescribed frozen-file ceremony. Later naming examples corrected with 656 mapped passes under Python 3.13.13. |
-| [Governing text](../plans/archive/2026-10-28-governing-text-single-source.md) | Archived after inventory, routing, and scoped consolidation. Routing chosen at `aa9fc08b`, coordination default at `7013de1d`, and document-wide path declarations at `560a178c`. The remaining forward-baseline installation is a separate v0.6 roadmap item. |
+| [Model floors](../plans/archive/2026-10-28-model-floor-alignment.md) | Implemented, reviewed and archived; shipped generic task floors align with vendor assignments. Certification/re-anchor remain on the roadmap. |
+| [Scoped verification](../plans/archive/2026-10-28-scoped-change-verification.md) | Implemented; 2,700 nodes reconciled, five guard cases and required local-capability security cases passed. Independent examples and ordinary/Security reviews complete; both hold archive for the frozen-file ceremony. Naming examples later corrected (656 passes, Python 3.13.13). |
+| [Governing text](../plans/archive/2026-10-28-governing-text-single-source.md) | Archived after inventory and consolidation; forward-baseline installation remains separate v0.6 work. |
 | [Test trust boundary](../plans/archive/2026-10-28-test-trust-boundary.md) | Roster and dormant setting approved; the dormant candidate is committed. Final verification and reviews wait on the reusable verifier workflow below; existing protection remains active. |
 | [Ordinary test maintenance](../plans/archive/2026-10-28-ordinary-test-maintenance.md) | Reviewed plan; implementation waits because the chosen board file contains security defenses and remains protected. |
 | [Release evidence environment](../plans/archive/2026-10-29-release-evidence-environment.md) | C1's exact cache-only pytest exception was implemented at `0c07eb37`, wide-verified and accepted by Internal and Security code reviews (`Certified by: pending`). Plan archived at `81072be0` after Maintainer-authorized deferral of C2 packet/reader and C3 prior-verifier, pinning and signing to the forward-baseline board item. C3's Maintainer-only fence remains; no ceremony or full-suite certification ran. |
@@ -50,15 +50,12 @@ is authorized by this briefing.
 
 **Chosen:** route public methodology to `docs/methodology/`, keep operating
 duties in installed files and project rules in `dev/rules/` (`aa9fc08b`). The
-[inventory](2026-10-28-codex-governing-text-inventory.md) mapped 190 headings,
-55 obligation groups and 21 editing measurements. The Maintainer also chose:
+Maintainer also chose the coordination default (`7013de1d`): claim intent,
+block provable live-session conflicts, warn on stale/tokenless claims, and keep
+warn/confirm modes and hooks. Explicit literal path declarations may recur with
+exact matching and provenance (`560a178c`); checker logic is unchanged.
 
 Proposed path: `docs/methodology/` (not yet created).
-
-| Conflict | Recommended choice and conceded prescription |
-|---|---|
-| Coordination defaults | **Chosen (`7013de1d`):** block provable live-session conflicts; agents claim intent before editing. Warn for stale/tokenless cases; retain warn/confirm modes and opt-in hooks. Update the different published default. |
-| Path declarations | **Chosen (`560a178c`):** an explicitly declared literal path may recur document-wide, with exact matching and provenance. Instructions updated; siblings, descendants, look-alikes and malformed declarations stay unexempted. Checker logic is unchanged. |
 
 Retain all 21 partial-reach obligation groups until installed homes and usable
 pointers are shown. No accepted duty is lost by consolidation. C3 must show an
@@ -78,11 +75,10 @@ protection; ordinary Python can still influence protected execution.
 
 **Recommend:** separately authorize extracting the two named ordinary methods
 to `bootstrap/tests/test_board_json_values.py`, preserving names and updating
-the pilot path. Security helpers and cases stay protected. This adds scope,
-independent reads and a protected-node transition; roster approval did not
-authorize it. The alternative is to leave the pilot waiting or explicitly lose
-its protected-lane outcome. Keep the testing-module update; simulation guidance
-stays v0.7.
+the pilot path. Security helpers and cases stay protected. This is new scope
+despite roster approval and requires independent reads and a protected-node
+transition. Otherwise leave the pilot waiting or explicitly lose its protected-
+lane outcome. Keep the testing-module update; simulation guidance stays v0.7.
 
 Proposed path: `bootstrap/tests/test_board_json_values.py` (not yet created).
 
@@ -91,22 +87,19 @@ Proposed path: `bootstrap/tests/test_board_json_values.py` (not yet created).
 The Maintainer directed stopping checks of intervening changes against the old
 anchor and re-anchoring at v0.6. The
 [exploration](2026-10-29-sol-forward-baseline.md) proposes one reviewed, signed
-baseline with the approved roster. This gives up P443-to-release drift checks;
-it does not certify earlier history. The prior 83 HOLD reports remain historical,
-not a prerequisite list. The trust, verification and ceremony plans must align;
-the exact candidate, package and signer still need Maintainer authorization,
-and pushing remains separate. The dormant bridge at `6e3197f6` is approved but
-not installed; its earlier runs are not certification. Frozen checker wording
-must be accounted for in the release baseline.
+baseline with the approved roster. This gives up P443-to-release drift checks
+and certifies no earlier history; the 83 prior HOLDs are not a prerequisite.
+Align trust, verification and ceremony plans. Candidate, package and signer
+still need Maintainer authorization; pushing is separate. The dormant bridge at
+`6e3197f6` is approved but not installed, and its runs are not certification.
+Account for frozen checker wording in the release baseline.
 
 ### 5. Queued convention choice: session handoff marker
 
-A scratch history reproduced the default `Goodnight` search missing a `Handoff:`
-commit; the documented generic handoff obligation does not prescribe a subject.
-**Recommend:** use the existing `--handoff-marker` option in Cairn now and settle
-a canonical/compatible convention before changing adopters' default. No code
-changed; this remains a separate queued choice, not a prerequisite for the open
-proposal decisions.
+A scratch history reproduced `Goodnight` missing a `Handoff:` commit. **Recommend:**
+use `--handoff-marker` in Cairn and settle a canonical convention before
+changing adopters' default. No code changed; this is queued, not a prerequisite
+for the open decisions.
 
 ### 6. Upgrade base and install-output integrity
 
@@ -145,6 +138,30 @@ for trailing-dot/space names and limits the claim: hard links under other names
 and races after checks remain possible. The plan owes Internal and Internal
 Security Review and the Maintainer-run AST ceremony; no implementation is
 assessed.
+
+### 9. Prepare the handoff before pruning
+
+**Awaiting the Maintainer's Decision.** The [proposal](../proposals/2026-10-29-codex-handoff-prune.md),
+handed off at `c6c6bbea`, adds non-destructive preparation that surfaces
+capture prompts and a prune preview, while preserving `--handoff` as the
+guarded user-run deletion command. The usual and Security Reviews accepted
+without findings. Preparation cannot prove no session is appending; the user
+must establish quiet when running the command. Implementation still owes both
+plan reviews and the doctrine-evolution gate.
+
+### 10. Bind the interpreter in Git's per-worktree administration
+
+**Awaiting the Maintainer's Decision.** The [proposal](../proposals/2026-10-29-codex-git-interpreter-binding.md),
+handed off at `74b5917f`, moves the binding from checkout content into verified
+per-worktree Git administration. Linked worktrees, separate Git directories
+and submodules qualify only when Git identifies the exact supplied root.
+Non-repositories can install without a binding, then rebind after Git
+initialization; the legacy file is never read or migrated, and unsafe state
+refuses before launch. The revised usual findings were answered and Security
+Review accepted. Copied `.git` administration or a delivered Git pointer can
+still supply the binding; this residual is for Maintainer judgment. Native
+Windows discovery and junction/reparse evidence remain required before
+acceptance; plan review requires Internal and Internal Security Review.
 
 ### Certification cost — held for evidence, not a current Decision
 
