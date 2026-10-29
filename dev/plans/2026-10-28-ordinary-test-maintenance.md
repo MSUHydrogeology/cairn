@@ -1,7 +1,7 @@
 # Plan: Ordinary test maintenance
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-ordinary-test-maintenance.md
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal)
 **Opened**: 2026-10-28
 **In brief**: Simplify one board test cluster without losing fault detection and share the resulting test-maintenance practice.
@@ -202,3 +202,27 @@ run. No pre-edit family or matched timing baseline was run under the
 Maintainer's allowance. No full suite, certifying run, mutation ledger or
 adopter trial was run; no install timing was separately measured. Normal code
 review remains due.
+
+## Code review -- Codex (GPT-6), independent reviewer -- 2026-10-29
+
+Reviewed commit: f44c287a31480435973b8b2a0e5c1c74186aa6c8
+Target: 8b851656..70db63fd and verification at 930384b4
+Prior findings: none
+
+**Foundations**
+
+1. **Does it do what it claims?** The local capture helper preserves the three entry-point calls and return checks, and the module copies match; the verification record is incomplete. -- `bootstrap/tests/test_board_json_contract.py`; `dev/modules/testing-discipline.md`; F1 below.
+2. **Best alternative.** Retain the small helper and module wording, and supply the missing evidence rather than repeat unrelated checks. -- plan C2 and Verification.
+3. **What would show it wrong.** A failed named behavior, changed capture semantics or incorrect installed content would undermine the claim. -- falsification ledger below.
+
+**F1 — Blocking: complete the change-verification record.** The plan requires commands, outcomes, timing and changed setup and assertion counts. The record names families and summaries but does not give the actual commands or elapsed times for the install and gates, nor the changed setup and assertion counts. Add those facts from the run; where unavailable, repeat the affected checks on a clean final commit and record the results. -- plan C2, Verification and Implementation verification.
+
+**Bounding**: WIDER RUN REQUIRED -- supply the missing change-specific evidence above; this does not require a full suite.
+
+**Falsification ledger**
+
+- Named board nodes: independent run under Python 3.13.13 in a fresh archive of f44c287a, `python -m pytest bootstrap/tests/test_board_json_contract.py -k 'all_record_values_and_absent_vs_blank_and_headerless_files or archives_unique_path_key_and_deterministic_ascii_json' -q`: 2 passed, 23 deselected.
+- Capture helper: compared 70db63fd with its parent; each invocation still asserts the return code and immediately consumes captured output. No behavioral difference found by inspection.
+- Installation: inspected `bootstrap/_scaffold/config.py` and mapped owners; the recorded install compares the installed module to the shipped template. The two committed module copies have identical changes.
+
+**Covered**: named behavior, capture ordering, installed module route, verification record and review range. **Not covered**: mutations, an adopter trial, or a full suite. A detached worktree could not be created because the repository metadata is read-only; the targeted run used an archive and did not mutate it.
