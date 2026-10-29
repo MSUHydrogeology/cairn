@@ -39,6 +39,8 @@ the repository, so work can continue across sessions, tools, and collaborators.
 Cairn is a set of files and local tools, not a hosted development service.
 It works with different agent tools and programming languages. You can use
 the written guidance on its own or install the templates and supporting tools.
+Windows is natively supported; the [quickstart](docs/quickstart.md) includes
+PowerShell steps.
 
 ## How the work moves
 

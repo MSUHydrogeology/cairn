@@ -13,6 +13,9 @@ below. ([`examples/scientific-minimal/`](../examples/scientific-minimal/)
 shows the same shape on a tiny science workflow — a mass-balance
 invariant — if you want a domain-flavored example.)
 
+Cairn supports Windows natively; the [quickstart](quickstart.md) includes
+PowerShell steps.
+
 > **Honest framing.** The five steps below add friction *before*
 > code: you write the decision down first, review it, accept it,
 > *then* implement. That is the design. The payback is fewer
