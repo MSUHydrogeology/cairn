@@ -374,6 +374,11 @@ def _plant_stage(world: World) -> Path:
     meta = {
         "lock_commit": lock.get("cairn_commit"), "lock_version": lock.get("cairn_version"),
         "to_ref": None, "tokens": lock.get("tokens"), "modules": lock.get("modules"),
+        "discovery_inputs": {
+            rel: ("sha256:" + hashlib.sha256((world.project / rel).read_bytes()).hexdigest()
+                  if (world.project / rel).is_file() else "absent")
+            for rel in ("dev/PLANNING.md", "dev/modules/README.md")
+        },
         "new_version": "9.9.9", "new_commit": "0" * 40, "staged_files": ["docs/notes.md"],
         "kinds": {"docs/notes.md": "clean"}, "ours_hashes": {}, "expected_absent": [],
         "review_only": [], "module_blocked": [], "new_entries": {}, "verbatim_rehash": [],

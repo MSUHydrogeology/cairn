@@ -76,6 +76,7 @@ from .config import (
 from .lockfile import _BASE_CACHE_REL, _LOCKFILE_REL
 from .install import (
     InstallResult,
+    ModuleDiscoveryConflict,
     _FORGE_REFERENCE_DIRS,
     _ONBOARDING_PRESETS,
     capability_install_notice_lines,
@@ -575,11 +576,15 @@ def main(argv: list[str] | None = None) -> int:
     # exit (no traceback), mirroring the skills-fanout guard.
     try:
         onboarding_results = install_onboarding(
-            templates_root, target, preset_name,
+            templates_root, target, preset_name, modules=modules,
             axes=embedded_axes, force=args.force,
         )
     except ScaffoldSecurityError as exc:
         print(f"error: onboarding install refused: {exc}", file=sys.stderr)
+        return 2
+    except ModuleDiscoveryConflict as exc:
+        print(f"error: module discovery reconciliation refused: {exc}",
+              file=sys.stderr)
         return 2
 
     # Install module templates
@@ -744,9 +749,11 @@ def main(argv: list[str] | None = None) -> int:
             "tool and makes no claim about this repository. Run the\n"
             "dispatcher yourself to see what it reports:\n"
             "  python scripts/run_security_verification.py local\n"
-            "Its registry admits a fixed, source-owned set of capabilities\n"
-            "(api-web-security-modules Chunk G); a selected capability with\n"
-            "no admitted registry entry reports INCOMPLETE."
+            "Its registry admits a fixed, source-owned set of capabilities.\n"
+            "The content-security leg is a pattern tripwire over configured\n"
+            "tracked text, not proof of safety or checkout authenticity.\n"
+            "Other selected legs can report INCOMPLETE when their evidence\n"
+            "is unavailable."
         )
 
     # Write the install lockfile + base-template cache: the upgrade

@@ -76,7 +76,9 @@ from .lockfile import (
 )
 from .install import (
     _lock_file_list,
+    _reconcile_generated_blocks,
     fan_out_skills,
+    ModuleDiscoveryConflict,
     model_selection_notice_lines,
     seed_gitignore,
     trusted_upstream,
@@ -1223,6 +1225,13 @@ def _write_stage(
             adopt_hints.append(
                 f"{fp.dst}@{_sha256_hex(ours_bytes)}"
                 f"@{_sha256_hex(fp.theirs_raw.encode('utf-8'))}")
+    discovery_inputs: dict[str, str] = {}
+    for rel in ("dev/PLANNING.md", "dev/modules/README.md"):
+        path = target / rel
+        _assert_safe_write(path, target)
+        discovery_inputs[rel] = (
+            "sha256:" + _sha256_hex(path.read_bytes()) if path.is_file()
+            else "absent")
     # #48: a verbatim file already byte-identical to the new upstream
     # (verbatim-up-to-date) but whose lockfile hash is stale -- the adopter
     # hand-synced it to a later Cairn before upgrading. Record it so --apply
@@ -1246,6 +1255,7 @@ def _write_stage(
         "to_ref": to_ref,
         "tokens": lock.get("tokens"),
         "modules": lock.get("modules"),
+        "discovery_inputs": discovery_inputs,
         "new_version": _cairn_version(cairn_root),
         "new_commit": to_ref or _cairn_commit(cairn_root),
         "new_source_repository": _new_source_repository,
@@ -1761,6 +1771,77 @@ def _adopt_token_unfilled(value: str | None) -> bool:
     return v.startswith("<") and v.endswith(">")
 
 
+def _prepare_module_discovery(
+    target: Path, modules: list[str], templates_root: Path,
+) -> list[tuple[Path, bytes]]:
+    """Prepare and preflight the inventory and task slot before adoption writes."""
+    from .install import _substitute_module_inventory
+    from .install import _legacy_module_seed_ids
+
+    planning = target / "dev" / "PLANNING.md"
+    inventory = target / "dev" / "modules" / "README.md"
+    for path in (planning, inventory):
+        _assert_safe_write(path, target)
+    if not planning.is_file():
+        raise ModuleDiscoveryConflict(
+            "dev/PLANNING.md is missing; restore it before module adoption")
+    planning_text = planning.read_text(encoding="utf-8")
+    planned = _reconcile_generated_blocks(
+        planning_text, modules, kind="task",
+        legacy_seeds=_legacy_module_seed_ids(templates_root))
+    if inventory.is_file():
+        inventory_text = inventory.read_text(encoding="utf-8")
+    else:
+        source = templates_root / "core" / "dev" / "modules" / "README.md"
+        if not source.is_file():
+            raise ModuleDiscoveryConflict(
+                "the module inventory has no trustworthy base; create "
+                "dev/modules/README.md from the current scaffold and retry")
+        inventory_text = source.read_text(encoding="utf-8")
+    catalog = _substitute_module_inventory(inventory_text, modules)
+    updates = []
+    if planned.encode("utf-8") != planning.read_bytes():
+        updates.append((planning, planned.encode("utf-8")))
+    if catalog.encode("utf-8") != (inventory.read_bytes()
+                                    if inventory.exists() else b""):
+        updates.append((inventory, catalog.encode("utf-8")))
+    return updates
+
+
+def _apply_module_discovery(updates: list[tuple[Path, bytes]], target: Path) -> None:
+    for path, data in updates:
+        _write_by_replacing(path, data, target)
+
+
+def _record_discovery_outputs(
+    target: Path, templates_root: Path, lock: dict[str, Any],
+    updates: list[tuple[Path, bytes]], cache_writes: list[tuple[Path, bytes]],
+) -> None:
+    """Advance lock hashes for generated discovery surfaces in the same commit."""
+    cache_writes.extend(updates)
+    by_dst = {str(path.relative_to(target)): data for path, data in updates}
+    files = [dict(rec) for rec in lock.get("files", [])]
+    tracked = {rec.get("dst"): rec for rec in files}
+    for dst, data in by_dst.items():
+        rec = tracked.get(dst)
+        if rec is not None:
+            rec["hash"] = "sha256:" + _sha256_hex(data)
+            continue
+        if dst != "dev/modules/README.md":
+            continue
+        src_rel = "core/dev/modules/README.md"
+        source = templates_root / src_rel
+        if not source.is_file():
+            raise ModuleDiscoveryConflict(
+                "the inventory source is missing; cannot update its lock baseline")
+        rec, cache_write = _record_fork_entry(
+            target, src_rel, dst, False, source.read_bytes(), data)
+        files.append(rec)
+        if cache_write is not None:
+            cache_writes.append(cache_write)
+    lock["files"] = files
+
+
 def _cmd_adopt_module(
     target: Path, name: str, cairn_root: Path, templates_root: Path,
 ) -> int:
@@ -1807,8 +1888,19 @@ def _cmd_adopt_module(
               f"{', '.join(sorted(_MODULE_MAPPINGS))}.", file=sys.stderr)
         return 1
     if name in lock.get("modules", []):
+        try:
+            updates = _prepare_module_discovery(
+                target, sorted(set(lock.get("modules", []))), templates_root)
+            caches: list[tuple[Path, bytes]] = []
+            _record_discovery_outputs(target, templates_root, lock, updates, caches)
+            if updates or caches:
+                _commit_lock_and_caches(target, lock, caches)
+        except (ScaffoldSecurityError, ModuleDiscoveryConflict) as exc:
+            print(f"error: module discovery adoption refused: {exc}",
+                  file=sys.stderr)
+            return 2
         print(f"  [info] module {name!r} is already recorded in "
-              f"{_LOCKFILE_REL}; nothing to adopt.", file=sys.stderr)
+              f"{_LOCKFILE_REL}; discovery is reconciled.", file=sys.stderr)
         return 0
 
     # D1 step 1 -- the candidate token map: this module's required tokens,
@@ -1862,6 +1954,15 @@ def _cmd_adopt_module(
         )
         print(f"error: .gitignore seed refused (containment): {exc}\n"
               f"  {remedy}.",
+              file=sys.stderr)
+        return 2
+
+    try:
+        discovery_updates = _prepare_module_discovery(
+            target, sorted(set(lock.get("modules", [])) | {name}),
+            templates_root)
+    except (ScaffoldSecurityError, ModuleDiscoveryConflict) as exc:
+        print(f"error: module discovery adoption refused: {exc}",
               file=sys.stderr)
         return 2
 
@@ -1942,7 +2043,14 @@ def _cmd_adopt_module(
     lock["files"] = new_files
     lock["modules"] = sorted(set(lock.get("modules", [])) | {name})
     lock["tokens"] = tokens  # D1 step 1's persist -- a superset of lock_tokens
-    _commit_lock_and_caches(target, lock, cache_writes)
+    try:
+        _record_discovery_outputs(
+            target, templates_root, lock, discovery_updates, cache_writes)
+        _commit_lock_and_caches(target, lock, cache_writes)
+    except (ScaffoldSecurityError, ModuleDiscoveryConflict) as exc:
+        print(f"error: module discovery adoption refused: {exc}",
+              file=sys.stderr)
+        return 2
     seeded = seed_gitignore(target, _GITIGNORE_SEEDS.get(name, ()))
     note = f"; seeded .gitignore: {', '.join(seeded)}" if seeded else ""
     skip_note = (
@@ -2943,6 +3051,22 @@ def _apply_upgrade(
         print("error: staged upgrade is stale (lockfile/tokens/roster changed "
               "since --stage); re-run `upgrade --stage`.", file=sys.stderr)
         return 1
+    discovery_inputs = meta.get("discovery_inputs")
+    expected_discovery_paths = {"dev/PLANNING.md", "dev/modules/README.md"}
+    if not isinstance(discovery_inputs, dict) or \
+            set(discovery_inputs) != expected_discovery_paths:
+        print("error: staged discovery inputs are missing or malformed; "
+              "re-run `upgrade --stage`.", file=sys.stderr)
+        return 1
+    for rel in sorted(expected_discovery_paths):
+        path = target / rel
+        _assert_safe_write(path, target)
+        actual = ("sha256:" + _sha256_hex(path.read_bytes())
+                  if path.is_file() else "absent")
+        if discovery_inputs.get(rel) != actual:
+            print(f"error: {rel} changed since --stage; refusing --apply. "
+                  "Re-run `upgrade --stage`.", file=sys.stderr)
+            return 1
     # (b) staged-manifest exactness: the files on disk under the
     #     stage must be EXACTLY the metadata's staged set -- no missing, no
     #     extra (a corrupted/hand-edited stage must not apply a subset).

@@ -28,6 +28,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from bootstrap.scaffold import main  # noqa: E402
+from bootstrap._scaffold.config import _MODULE_DISCOVERY, _MODULE_MAPPINGS  # noqa: E402
 from bootstrap._scaffold.lockfile import read_lockfile  # noqa: E402
 
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -58,9 +59,78 @@ def _scaffold(
 
 def _seed_slot(target: Path) -> str:
     text = (target / "dev" / "PLANNING.md").read_text(encoding="utf-8")
-    start = text.index("<!-- preset:")
+    slot = text.index("<!-- cairn:slot onboarding-tasks -->")
+    start = text.find("<!-- preset:", slot)
+    if start < 0:
+        start = slot
     end = text.index("<!-- cairn:end onboarding-tasks -->")
     return text[start:end]
+
+
+def test_selected_modules_have_usable_tasks(tmp_path: Path) -> None:
+    """Exact selection controls task and inventory rows, including empty."""
+    selected = list(_MODULE_MAPPINGS)
+    cfg = tmp_path / "profile.yml"
+    cfg.write_text(
+        "project_name: ModuleDiscoveryTest\ntest_command: pytest\n"
+        "python_package: src\nmodules:\n"
+        + "".join(f"  - {name}\n" for name in selected), encoding="utf-8")
+    assert main(["--config", str(cfg), "--target", str(tmp_path),
+                 "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]) == 0
+    slot = _seed_slot(tmp_path)
+    inventory = (tmp_path / "dev/modules/README.md").read_text(encoding="utf-8")
+    for name, (_purpose, entry, action, result) in _MODULE_DISCOVERY.items():
+        assert f"module-task id={name}" in slot
+        assert f"{name}**" in slot
+        assert f"`{entry}`" in slot
+        assert action in slot and result in slot
+        assert f"module id={name}" in inventory
+    lock = read_lockfile(tmp_path)
+    assert lock is not None
+    assert (tmp_path / "dev/PLANNING.md").read_text(encoding="utf-8")
+    assert "dev/modules/README.md" in {record["dst"] for record in lock["files"]}
+
+
+def test_empty_selection_has_no_module_tasks(tmp_path: Path) -> None:
+    cfg = tmp_path / "profile.yml"
+    cfg.write_text("project_name: EmptyRoster\ntest_command: pytest\nmodules: []\n",
+                   encoding="utf-8")
+    assert main(["--config", str(cfg), "--target", str(tmp_path),
+                 "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]) == 0
+    assert "module-task id=" not in _seed_slot(tmp_path)
+    assert "module id=" not in (tmp_path / "dev/modules/README.md").read_text()
+
+
+def test_reinstall_preserves_completion_and_refuses_loss(tmp_path: Path) -> None:
+    """Repeated install keeps completed work and refuses its removal."""
+    cfg = tmp_path / "profile.yml"
+
+    def install(modules: list[str]) -> int:
+        cfg.write_text(
+            "project_name: PreserveModuleTask\ntest_command: pytest\nmodules:\n"
+            + "".join(f"  - {name}\n" for name in modules),
+            encoding="utf-8")
+        return main(["--config", str(cfg), "--target", str(tmp_path),
+                     "--cairn-root", str(CAIRN_ROOT), "--allow-dev"])
+
+    assert install(["reflections"]) == 0
+    planning = tmp_path / "dev/PLANNING.md"
+    planning.write_text(planning.read_text().replace(
+        "* [ ] **reflections**", "* [x] **reflections**"), encoding="utf-8")
+    inventory_path = tmp_path / "dev/modules/README.md"
+    inventory_path.write_text(inventory_path.read_text().replace(
+        "A local reflection in dev/reflections/.",
+        "A local reflection in dev/reflections/.\n  Adopter note retained."),
+        encoding="utf-8")
+    assert install(["reflections"]) == 0
+    assert "Adopter note retained." in inventory_path.read_text(encoding="utf-8")
+    before_planning = planning.read_bytes()
+    before_inventory = (tmp_path / "dev/modules/README.md").read_bytes()
+    before_lock = (tmp_path / "dev/.cairn/cairn-lock.yml").read_bytes()
+    assert install([]) == 2
+    assert planning.read_bytes() == before_planning
+    assert (tmp_path / "dev/modules/README.md").read_bytes() == before_inventory
+    assert (tmp_path / "dev/.cairn/cairn-lock.yml").read_bytes() == before_lock
 
 
 class TestModelMappingWaitingSeed:
@@ -149,6 +219,8 @@ def test_unconditional_collaborative_team_renders_every_seed(tmp_path: Path) -> 
         "fill-team-roster-day-one",
     ):
         assert f"id: {seed_id}" in slot, f"expected seed {seed_id} at canonical axes"
+    assert "module-task id=dual-review" not in slot
+    assert "module-task id=coordination-tiers" not in slot
 
 
 # --- high-rigor-legacy: only one coordination seed, one tour seed --------

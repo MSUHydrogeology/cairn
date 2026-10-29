@@ -30,6 +30,7 @@ from typing import Any, Callable
 from .config import (
     _CORE_MAPPINGS,
     _MODULE_MAPPINGS,
+    _MODULE_DISCOVERY,
     _SKILLS_GITIGNORE,
     _SKILLS_MAPPINGS,
     duplicate_destinations,
@@ -264,6 +265,38 @@ def seed_gitignore(
 #: ``--dry-run``).
 InstallResult = tuple[Path, list[str], list[str], str]
 # (target_path, unfilled_token_names, block_slot_names, status)
+
+
+class ModuleDiscoveryConflict(ValueError):
+    """A generated module entry cannot be reconciled without losing work."""
+
+
+_LEGACY_SEED_MODULES = {
+    "read-coordination-doctrine": "coordination-tiers",
+    "install-work-intent-hooks": "coordination-tiers",
+    "read-dual-review-module": "dual-review",
+    "read-security-review-module": "security-review",
+    "read-dual-language-tests-module": "dual-language-tests",
+    "read-legacy-agent-module": "legacy-agent",
+    "fill-model-selection-mapping": "model-selection",
+}
+
+
+def _legacy_module_seed_ids(templates_root: Path) -> dict[str, dict[str, str]]:
+    """Read the exact historical module seeds shipped in the three presets."""
+    result: dict[str, dict[str, str]] = {}
+    for preset in _ONBOARDING_PRESETS:
+        path = templates_root / "onboarding" / f"{preset}.md"
+        if not path.is_file():
+            continue
+        for block in _extract_seed_tasks(path.read_text(encoding="utf-8")):
+            match = _ONBOARDING_SEED_RE.match(block.splitlines()[0])
+            if match is None:
+                continue
+            id_match = re.search(r"\bid:\s*([^\s\]]+)", block.splitlines()[0])
+            if id_match and id_match.group(1) in _LEGACY_SEED_MODULES:
+                result.setdefault(id_match.group(1), {})[block] = _LEGACY_SEED_MODULES[id_match.group(1)]
+    return result
 
 
 def _install_one(
@@ -1121,6 +1154,7 @@ def _render_onboarding_slot(preset_name: str, seed_blocks: list[str]) -> str:
 
 def _rendered_onboarding_overlay(
     preset_name: str, preset_text: str, axes: dict[str, object] | None,
+    modules: list[str] | None = None,
 ) -> str:
     """The ``dev/PLANNING.md`` ``onboarding-tasks`` slot content for
     *preset_text*, gated by the resolved roster (finding 3,
@@ -1143,7 +1177,139 @@ def _rendered_onboarding_overlay(
     """
     stripped = strip_conditional_regions(preset_text, axes or {})
     seed_blocks = _extract_seed_tasks(stripped)
+    represented = {
+        _LEGACY_SEED_MODULES[match.group(1)]
+        for block in seed_blocks
+        if (match := re.search(r"\bid:\s*([^\s\]]+)", block.splitlines()[0]))
+        and match.group(1) in _LEGACY_SEED_MODULES
+    }
+    seed_blocks.extend(_module_task_blocks(modules or [], skip=represented))
     return _render_onboarding_slot(preset_name, seed_blocks)
+
+
+def _module_task_blocks(modules: list[str], *, skip: set[str] | None = None) -> list[str]:
+    return [
+        f"<!-- cairn:module-task id={name} -->\n"
+        f"* [ ] **{name}** — {purpose}\n"
+        f"  First use: {action} Expected result: {result}\n"
+        f"  Entry point: `{entry}`.\n"
+        f"<!-- cairn:module-task-end id={name} -->"
+        for name in modules
+        if name in _MODULE_DISCOVERY
+        for purpose, entry, action, result in (_MODULE_DISCOVERY[name],)
+        if name not in (skip or set())
+    ]
+
+
+def _render_module_inventory(modules: list[str]) -> str:
+    """Render the generated block of the passive module inventory."""
+    rows = []
+    for name in modules:
+        metadata = _MODULE_DISCOVERY.get(name)
+        if metadata is None:
+            continue
+        purpose, entry, action, result = metadata
+        rows.extend((f"<!-- cairn:module id={name} -->",
+                     f"- **{name}** — {purpose}",
+                     f"  Entry point: `{entry}`. First use: {action} Result: {result}",
+                     f"<!-- cairn:module-end id={name} -->"))
+    return "\n".join(rows)
+
+
+def _substitute_module_inventory(text: str, modules: list[str]) -> str:
+    return _reconcile_generated_blocks(text, modules, kind="inventory")
+
+
+def _reconcile_generated_blocks(
+    text: str, modules: list[str], *, kind: str,
+    legacy_seeds: dict[str, dict[str, str]] | None = None,
+) -> str:
+    """Reconcile marked module entries while preserving edits and completion.
+
+    ``kind`` is ``task`` for the planning slot or ``inventory`` for its
+    sibling catalog.  A selected edited entry stays byte-for-byte; removing
+    one refuses so the operator can save its work first.
+    """
+    if kind == "task":
+        start_marker, end_marker = "<!-- cairn:slot onboarding-tasks -->", "<!-- cairn:end onboarding-tasks -->"
+        item_start = "<!-- cairn:module-task id="
+        item_end = "<!-- cairn:module-task-end id="
+        renderer = lambda name: _module_task_blocks([name])[0]
+    else:
+        start_marker, end_marker = "<!-- cairn:generated-modules:start -->", "<!-- cairn:generated-modules:end -->"
+        item_start = "<!-- cairn:module id="
+        item_end = "<!-- cairn:module-end id="
+        renderer = lambda name: _render_module_inventory([name])
+    start = text.find(start_marker)
+    end = text.find(end_marker, start + len(start_marker)) if start >= 0 else -1
+    if start < 0 or end < 0:
+        raise ModuleDiscoveryConflict(f"missing or malformed {kind} markers")
+    body_start = start + len(start_marker)
+    body = text[body_start:end]
+    matches = list(re.finditer(r"(?m)^" + re.escape(item_start) + r"([a-z0-9-]+) -->\n", body))
+    entries: dict[str, tuple[str, str]] = {}
+    spans: list[tuple[int, int]] = []
+    for match in matches:
+        name = match.group(1)
+        close = re.search(r"(?m)^" + re.escape(item_end + name + " -->") + r"\s*$", body[match.end():])
+        if close is None or name in entries:
+            raise ModuleDiscoveryConflict(f"malformed or duplicate {kind} entry for {name}")
+        block_end = match.end() + close.end()
+        block = body[match.start():block_end].rstrip("\n")
+        canonical = renderer(name)
+        normalized = re.sub(r"\[x\]", "[ ]", block, flags=re.IGNORECASE)
+        entries[name] = (block, canonical)
+        spans.append((match.start(), block_end))
+    selected = set(modules)
+    represented: set[str] = set()
+    if kind == "task" and legacy_seeds:
+        for seed in _extract_seed_tasks(body):
+            match = re.search(r"\bid:\s*([^\s\]]+)", seed.splitlines()[0])
+            if not match or match.group(1) not in legacy_seeds:
+                continue
+            seed_id = match.group(1)
+            module = _LEGACY_SEED_MODULES[seed_id]
+            normalized = re.sub(r"\[x\]", "[ ]", seed, flags=re.IGNORECASE)
+            if seed in legacy_seeds[seed_id] or normalized in legacy_seeds[seed_id]:
+                represented.add(module)
+            elif module in selected:
+                raise ModuleDiscoveryConflict(
+                    f"legacy task {seed_id!r} may represent module {module!r} "
+                    "but differs from its shipped text; reconcile it manually "
+                    "before adopting")
+    additions: list[str] = []
+    for name, (block, canonical) in entries.items():
+        if name in selected:
+            if block == canonical:
+                continue
+            # Checkbox completion alone is retained; any other edit is also
+            # retained while selected.
+            continue
+        normalized = re.sub(r"\[x\]", "[ ]", block, flags=re.IGNORECASE)
+        completed = re.search(r"\[[xX]\]", block) is not None
+        if completed or normalized != canonical:
+            raise ModuleDiscoveryConflict(
+                f"{kind} entry for {name} was edited or completed; save its work, "
+                "remove the marked entry manually, then retry")
+    for name in modules:
+        if name not in entries and name in _MODULE_DISCOVERY and name not in represented:
+            additions.append(renderer(name))
+    # Delete only clean entries whose module is no longer selected.
+    chunks: list[str] = []
+    cursor = 0
+    for match in matches:
+        name = match.group(1)
+        close = re.search(r"(?m)^" + re.escape(item_end + name + " -->") + r"\s*$", body[match.end():])
+        block_end = match.end() + close.end()  # validated above
+        chunks.append(body[cursor:match.start()])
+        if name in selected:
+            chunks.append(body[match.start():block_end])
+        cursor = block_end
+    chunks.append(body[cursor:])
+    reconciled = "".join(chunks).rstrip()
+    if additions:
+        reconciled = (reconciled + "\n" if reconciled else "\n") + "\n".join(additions)
+    return text[:body_start] + reconciled + "\n" + text[end:]
 
 
 def _substitute_slot(
@@ -1183,13 +1349,15 @@ def install_onboarding(
     target: Path,
     preset_name: str | None,
     *,
+    modules: list[str] | None = None,
     axes: dict[str, object] | None = None,
     dry_run: bool = False,
     force: bool = False,
 ) -> list[InstallResult]:
     """Install the install-time onboarding artifacts.
 
-    Nothing is written without a named preset. With one, two writes:
+    The inventory is written for the resolved module roster. With a preset,
+    its existing seed tasks are combined with module-specific first-use tasks.
 
     C. Inline seed tasks + the ``<!-- preset: <name> -->`` metadata
        comment into ``dev/PLANNING.md``'s ``onboarding-tasks`` slot.
@@ -1217,11 +1385,10 @@ def install_onboarding(
     results: list[InstallResult] = []
 
     # ----- Preset-conditional: slot substitution (C) + tour pages (E) ----
-    if not preset_name or preset_name not in _ONBOARDING_PRESETS:
-        return results
-
-    src = templates_root / "onboarding" / f"{preset_name}.md"
-    if not src.exists():
+    valid_preset = bool(preset_name and preset_name in _ONBOARDING_PRESETS)
+    src = (templates_root / "onboarding" / f"{preset_name}.md"
+           if valid_preset else None)
+    if valid_preset and src is not None and not src.exists():
         print(
             f"  [warn] onboarding preset source missing: "
             f"templates/onboarding/{preset_name}.md",
@@ -1229,22 +1396,60 @@ def install_onboarding(
         )
         return results
 
-    preset_text = src.read_text(encoding="utf-8")
-    rendered = _rendered_onboarding_overlay(preset_name, preset_text, axes)
+    preset_text = src.read_text(encoding="utf-8") if src is not None else ""
+    rendered = (_rendered_onboarding_overlay(preset_name or "custom",
+                                              preset_text, axes, modules)
+                if valid_preset else _render_onboarding_slot(
+                    "custom", _module_task_blocks(modules or [])))
+
+    # Prepare and preflight both generated surfaces before writing either.
+    planning_dst = target / "dev" / "PLANNING.md"
+    inventory_dst = target / "dev" / "modules" / "README.md"
+    inventory_update: tuple[str, str] | None = None
+    _assert_safe_write(planning_dst, target)
+    _assert_safe_write(inventory_dst, target)
+    planning_probe = (planning_dst.read_text(encoding="utf-8")
+                      if planning_dst.is_file() else "")
+    reconcile_tasks = (valid_preset or bool(modules)
+                       or "<!-- cairn:module-task id=" in planning_probe)
+    if inventory_dst.is_file():
+        current_inventory = inventory_dst.read_text(encoding="utf-8")
+        reconcile_inventory = (valid_preset or bool(modules)
+                               or "<!-- cairn:module id=" in current_inventory)
+        if reconcile_inventory:
+            updated_inventory = _substitute_module_inventory(
+                current_inventory, modules or [])
+            if updated_inventory != current_inventory:
+                inventory_update = (current_inventory, updated_inventory)
 
     # Write C: substitute into installed PLANNING.md's slot.
-    planning_dst = target / "dev" / "PLANNING.md"
     if not planning_dst.exists():
         print(
             f"  [warn] onboarding: dev/PLANNING.md not yet installed -- "
             f"slot substitution skipped (run after install_core)",
             file=sys.stderr,
         )
-    else:
+    elif reconcile_tasks:
         planning_text = planning_dst.read_text(encoding="utf-8")
-        new_text, ok = _substitute_slot(
-            planning_text, "onboarding-tasks", rendered,
-        )
+        if "<!-- cairn:module-task id=" in planning_text:
+            new_text = _reconcile_generated_blocks(
+                planning_text, modules or [], kind="task",
+                legacy_seeds=_legacy_module_seed_ids(templates_root))
+            ok = True
+        else:
+            slot_body = planning_text.split(
+                "<!-- cairn:slot onboarding-tasks -->", 1)[-1].split(
+                "<!-- cairn:end onboarding-tasks -->", 1)[0]
+            if "(Empty at adoption" in slot_body or not slot_body.strip():
+                new_text, ok = _substitute_slot(
+                    planning_text, "onboarding-tasks", rendered)
+            else:
+                # Legacy preset seeds are adopter state. Preserve them and add
+                # marked tasks; never infer selection from that prose.
+                new_text = _reconcile_generated_blocks(
+                    planning_text, modules or [], kind="task",
+                    legacy_seeds=_legacy_module_seed_ids(templates_root))
+                ok = True
         if not ok:
             print(
                 f"  [warn] onboarding: `onboarding-tasks` slot not found "
@@ -1258,6 +1463,14 @@ def install_onboarding(
                 _assert_safe_write(planning_dst, target)
                 planning_dst.write_text(new_text, encoding="utf-8")
                 results.append((planning_dst, [], [], "installed"))
+
+    if inventory_update is not None:
+        _before, updated_inventory = inventory_update
+        if dry_run:
+            results.append((inventory_dst, [], [], "dry-run"))
+        else:
+            inventory_dst.write_text(updated_inventory, encoding="utf-8")
+            results.append((inventory_dst, [], [], "installed"))
 
     # Write E: ship the shared onboarding reference docs into the
     # installed-source dir so the presets' "walk this doc" refs resolve
@@ -1734,10 +1947,7 @@ def write_install_lockfile(
     # and PLANNING.md is checked against the token-substituted raw
     # template (the baseline behavior).
     onboarding_overlay: str | None = None
-    if (
-        onboarding_preset
-        and onboarding_preset in _ONBOARDING_PRESETS
-    ):
+    if onboarding_preset and onboarding_preset in _ONBOARDING_PRESETS:
         preset_src = (
             templates_root / "onboarding" / f"{onboarding_preset}.md"
         )
@@ -1746,7 +1956,11 @@ def write_install_lockfile(
                 onboarding_preset,
                 preset_src.read_text(encoding="utf-8"),
                 profile.get("axes"),
+                modules,
             )
+    elif modules:
+        onboarding_overlay = _render_onboarding_slot(
+            "custom", _module_task_blocks(modules))
 
     # Pre-compute the module-merge overlay, grouped per target file in
     # directive order, so the `would` calculation below applies the SAME
@@ -1808,6 +2022,8 @@ def write_install_lockfile(
                     substituted, "onboarding-tasks", onboarding_overlay,
                 )
                 substituted = with_overlay if ok else substituted
+            if dst_rel == "dev/modules/README.md":
+                substituted = _substitute_module_inventory(substituted, modules)
             # Applied AFTER the onboarding overlay because that is the live
             # order too (`install_onboarding` runs before the merge pass),
             # and a merge into `dev/PLANNING.md` would otherwise see a

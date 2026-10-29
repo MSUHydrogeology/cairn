@@ -545,6 +545,7 @@ _CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
     ("core/VENDOR.md",                              "VENDOR.md"),
     # dev/ tree
     ("core/dev/README.md",                          "dev/README.md"),
+    ("core/dev/modules/README.md",                  "dev/modules/README.md"),
     ("core/dev/PLANNING.md",                        "dev/PLANNING.md"),
     ("core/dev/agent_collaboration.md",             "dev/agent_collaboration.md"),
     ("core/dev/proposals/_template.md",             "dev/proposals/_template.md"),
@@ -1481,6 +1482,34 @@ _MODULE_REQUIRED_TOKENS: dict[str, tuple[str, ...]] = {
     # python-security's bandit/source gate scans {{python_package}};
     # there is no safe default for an adopter's own package directory.
     "python-security": ("python_package",),
+}
+
+# Human-facing discovery and first-use guidance.  The roster is the authority
+# for which rows are rendered; this table only supplies inert prose.  Keep the
+# keys in step with _MODULE_MAPPINGS (test_module_roster pins completeness).
+_MODULE_DISCOVERY: dict[str, tuple[str, str, str, str]] = {
+    "reflections": ("Keep a short record of what changed and what the next session needs.", "dev/reflections/README.md", "Read the module and reflection guide; write one session reflection.", "A local reflection in dev/reflections/."),
+    "claim-check": ("Check repository paths and line citations in durable records.", "scripts/claim_check.py", "Run the installed checker on one existing document.", "A report of checked path and line claims."),
+    "incident-trackers": ("Record recurring friction and incidents for later review.", "dev/modules/incident_log_template.md", "Copy the tracker template for one relevant incident class.", "A project tracker based on the shipped template."),
+    "documentation-plan": ("Route project documentation to the right home.", "docs/DOCUMENTATION_PLAN.md", "Tailor the installed placement plan to this project.", "A project-specific documentation map."),
+    "dual-review": ("Plan staffing for a Maintainer-called external read.", "dev/modules/dual-review.md", "Read the module and document a staffing approach if a read is called.", "A staffing choice, without creating a review obligation."),
+    "domain-agents": ("Define bounded roles for specialist knowledge.", "dev/modules/domain-agents.md", "Identify one domain and a possible agent boundary.", "A candidate role boundary."),
+    "legacy-agent": ("Focus agent work on inherited-system risks.", "dev/modules/legacy-agent.md", "Identify one inherited area where the guidance applies.", "A candidate legacy-system focus."),
+    "dual-language-tests": ("Map behavior that crosses language boundaries.", "dev/modules/dual-language-tests.md", "Identify one behavior needing cross-language coverage.", "A candidate test mapping."),
+    "coordination-tiers": ("Coordinate concurrent work with explicit claims.", "tools/intent.py", "Read the module and inspect the intent command help.", "A first team coordination procedure."),
+    "security-review": ("Identify trust boundaries that may need review.", "dev/modules/security-review.md", "Name one trust boundary and a candidate trigger for Maintainer consideration.", "A boundary and trigger proposal."),
+    "issue-capture": ("Choose a route for capturing friction or gaps.", "dev/modules/issue-capture.md", "Choose how to record one gap; do not create an external issue without authorization.", "A capture route."),
+    "model-selection": ("Record the team's actual model assignments.", "dev/.cairn/model-selection-mapping.yml", "Fill the mapping and run python scripts/check_model_selection.py.", "A checked model assignment map."),
+    "testing-discipline": ("Tie changed behavior to an owning test.", "dev/modules/testing-discipline.md", "Map one changed behavior to a test.", "A concrete test ownership example."),
+    "doc-drift-prevention": ("Check links and synchronized documentation snippets.", "scripts/link_check.py", "Run the installed link checker according to its help.", "A link report for the installed documentation."),
+    "examples-gallery": ("Track useful examples and their source of truth.", "dev/modules/examples-gallery.md", "Identify one example and its owning source.", "A candidate gallery entry."),
+    "content-security": ("Inspect chosen local content for prompt-injection patterns.", "scripts/content_scan.py", "Read the module and scanner usage, then scan a chosen local input.", "A scan report for human review."),
+    "python-security": ("Audit a declared Python package with configured tools.", "scripts/run_security_audit.py", "Configure the required package value before running the audit.", "A configured audit input; network access remains opt-in."),
+    "portable-security-sweeps": ("Run configured offline secret-exposure checks.", "scripts/run_portable_security_sweeps.py", "Configure the policy and required local adapter before a sweep.", "A configured offline sweep."),
+    "api-access-security": ("Check authorized cross-principal API access.", "dev/.cairn/api-access-policy.json", "Fill the policy for an authorized target before running its check.", "An authorized policy; no automatic network access."),
+    "web-hosting-security": ("Check authorized web-hosting configuration.", "dev/.cairn/web-hosting-policy.json", "Fill the policy for an authorized target before running its check.", "An authorized policy; no automatic network access."),
+    "architecture-review": ("Choose a review approach for inherited, new, or mixed architecture.", "dev/architecture_review.md", "Use the installed rubric to choose an approach.", "An adapted rubric; no expanded architecture obligation."),
+    "security-verification": ("Understand the installed dispatcher and its admitted capabilities.", "scripts/run_security_verification.py", "Inspect the dispatcher and its initially empty capability registry.", "A clear view of admitted checks; none is assumed."),
 }
 
 # Required tokens and token gates answer opposite questions and must remain

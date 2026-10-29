@@ -29,6 +29,14 @@ instance; the module file states the tool's contract.
 
 ## The modules
 
+The scaffold writes a project-specific inventory to
+dev/modules/README.md. That inventory lists only the resolved roster and
+points to a first-use action and installed entry point for each selected
+module. The planning board also receives one optional, marked first-use task
+per selected module. Neither artifact runs commands or makes a module
+mandatory. If you copy a module by hand, run `upgrade --adopt-module` for that
+module so the inventory, task list, and lockfile can be reconciled.
+
 | Set | Module | Selected when |
 |-----|--------|---------------|
 | default-on | `claim-check` | default |

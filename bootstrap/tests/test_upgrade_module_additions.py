@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import sys
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -364,6 +365,95 @@ def test_symlinked_destination_after_stage_blocks_apply(tmp_path: Path):
     link.parent.mkdir(parents=True, exist_ok=True)
     link.symlink_to(target / "nonexistent-target")
     assert s.main(base + ["--apply"]) != 0
+
+
+@pytest.mark.parametrize("changed", ["planning", "inventory"])
+def test_staged_module_discovery_refuses_changed_inputs(
+    tmp_path: Path, changed: str,
+) -> None:
+    """A staged apply refuses changed discovery bytes without partial writes."""
+    target = tmp_path.resolve()
+    _install(target)
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--stage"]) == 0
+    planning = target / "dev/PLANNING.md"
+    inventory = target / "dev/modules/README.md"
+    lock = target / s._LOCKFILE_REL
+    before = (planning.read_bytes(), inventory.read_bytes(), lock.read_bytes())
+    path = planning if changed == "planning" else inventory
+    path.write_bytes(path.read_bytes() + b"\nchanged after stage\n")
+    changed_bytes = path.read_bytes()
+    assert s.main(base + ["--apply"]) != 0
+    assert planning.read_bytes() == (changed_bytes if path == planning else before[0])
+    assert inventory.read_bytes() == (changed_bytes if path == inventory else before[1])
+    assert lock.read_bytes() == before[2]
+
+
+def test_adoption_reconciles_tasks_and_inventory(tmp_path: Path) -> None:
+    """A newly adopted module gains discoverable first-use guidance."""
+    target = tmp_path.resolve()
+    cfg = target / "profile.yml"
+    cfg.write_text(
+        "project_name: AdoptionDiscovery\ntest_command: pytest\n"
+        "preset: solo-greenfield\n", encoding="utf-8")
+    assert s.main(["--config", str(cfg), "--target", str(target),
+                   "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]) == 0
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--adopt-module", "dual-review"]) == 0
+    planning = (target / "dev/PLANNING.md").read_text(encoding="utf-8")
+    inventory = (target / "dev/modules/README.md").read_text(encoding="utf-8")
+    assert "module-task id=dual-review" in planning
+    assert "module id=dual-review" in inventory
+    lock = s.read_lockfile(target)
+    assert lock is not None and "dual-review" in lock["modules"]
+    assert "dev/modules/README.md" in {record["dst"] for record in lock["files"]}
+
+
+def test_already_recorded_adoption_repairs_missing_discovery(tmp_path: Path) -> None:
+    """Repeat adoption repairs missing marked entries without losing selection."""
+    target = tmp_path.resolve()
+    cfg = target / "profile.yml"
+    cfg.write_text(
+        "project_name: AdoptionDiscovery\ntest_command: pytest\n"
+        "preset: solo-greenfield\n", encoding="utf-8")
+    assert s.main(["--config", str(cfg), "--target", str(target),
+                   "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]) == 0
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--adopt-module", "dual-review"]) == 0
+    planning = target / "dev/PLANNING.md"
+    planning.write_text(re.sub(
+        r"(?ms)^<!-- cairn:module-task id=dual-review -->.*?"
+        r"^<!-- cairn:module-task-end id=dual-review -->\n?", "",
+        planning.read_text(encoding="utf-8")), encoding="utf-8")
+    assert s.main(base + ["--adopt-module", "dual-review"]) == 0
+    assert "module-task id=dual-review" in planning.read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("rel", ["dev/PLANNING.md", "dev/modules/README.md"])
+def test_adoption_refuses_linked_discovery_destinations(
+    tmp_path: Path, rel: str,
+) -> None:
+    """Adoption preflights both generated paths before changing any state."""
+    target = tmp_path / "target"
+    target.mkdir()
+    cfg = target / "profile.yml"
+    cfg.write_text(
+        "project_name: AdoptionDiscovery\ntest_command: pytest\n"
+        "preset: solo-greenfield\n", encoding="utf-8")
+    assert s.main(["--config", str(cfg), "--target", str(target),
+                   "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]) == 0
+    lock_path = target / s._LOCKFILE_REL
+    lock_before = lock_path.read_bytes()
+    victim = tmp_path / "victim.md"
+    victim.write_text("outside-preserved\n", encoding="utf-8")
+    destination = target / rel
+    destination.unlink()
+    destination.symlink_to(victim)
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--adopt-module", "dual-review"]) == 2
+    assert victim.read_text(encoding="utf-8") == "outside-preserved\n"
+    assert lock_path.read_bytes() == lock_before
+    assert destination.is_symlink()
 
 
 # ---------------------------------------------------------------------------

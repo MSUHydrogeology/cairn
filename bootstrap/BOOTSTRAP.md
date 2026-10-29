@@ -302,7 +302,10 @@ The script:
   **rename it to your AI tool's auto-loaded file** (`CLAUDE.md`, …) and
   keep it thin (see `AGENTS.md` > "Vendor addendum").
 * Copies the selected module files into the target's `dev/modules/`
-  directory.
+  directory, writes the installed inventory at dev/modules/README.md for the
+  resolved roster, and adds one marked first-use task per selected module to
+  the `onboarding-tasks` slot in dev/PLANNING.md. The tasks are guidance only;
+  the scaffold runs none.
 * Installs any **optional top-level templates** the profile's axes
   select — e.g. `CONTRIBUTING.md` at human-team `small-multi` /
   `large-multi` (I-5 step 4) — and surfaces them for recording under
@@ -333,6 +336,16 @@ python <path/to/cairn>/bootstrap/scaffold.py \
 Before running `--force` against an already-customized target,
 commit your current state so git records what the overwrite would
 discard.
+
+**Manual module copy.** Copying module files by hand does not update the
+installed inventory, the planning tasks, or the lockfile. After copying, run
+`python <path/to/cairn>/bootstrap/scaffold.py upgrade --target . --adopt-module <module-name>`.
+This records the module and reconciles the installed inventory at
+dev/modules/README.md, the task in dev/PLANNING.md, and
+dev/.cairn/cairn-lock.yml. If it reports an
+edited task that must be removed, save that work elsewhere, remove only the
+named marked task, and retry. The command does not detect arbitrary manual
+copies on its own; name the module explicitly.
 
 **Licensing of the installed files.** Cairn asks essentially nothing of
 you: keep the installed `NOTICE.md`, and keep the SPDX header on any
