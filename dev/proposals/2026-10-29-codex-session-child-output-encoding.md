@@ -195,3 +195,68 @@ against the named commit; no scientific surface is involved. This is design
 review, not implementation verification. No full suite, Security Review,
 protected-test ceremony, or historical trust-root reconciliation was performed;
 the separately required Security Review remains open.
+
+
+## Review -- Codex Security (gpt-6.1-sol) -- 2026-10-29
+
+```
+Reviewed commit: 19cd3fcd75a7895c68a5be7e13d12f07662c2c7f
+Target: opening proposal and ordinary review
+Prior findings: none for this obligation; ordinary R1/R2 remain with author
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: captured child output crosses a real
+   display boundary, and reusing the encoder removes terminal controls without
+   changing executable authority -- `tools/session.py:1795`,
+   `tools/session.py:1829`, `tools/session.py:1864`.
+2. **Best alternative.** Preserve useful report lines by encoding each LF-delimited
+   payload segment and writing trusted separators, if the author chooses that
+   layout in response to R1; whole-payload encoding plus a trusted final newline
+   is simpler but less readable -- `tools/session.py:189`,
+   `tools/evolution_infer.py:364`.
+3. **What would show it wrong.** A raw ESC, C1 control, CR or bidi override in
+   displayed child data, or a formatting repair that decodes an encoded escape,
+   defeats the boundary -- `tools/session.py:110`, `tools/session.py:213`.
+
+The proposal's strongest property is placement: it treats returned text as
+untrusted even when the command and interpreter are fixed. The three stdout
+writes and nonzero-stderr branches bypass the existing encoder. The encoder
+escapes both ESC and the C1 control range, covering terminal command introducers;
+it also escapes carriage returns, backspaces and the enumerated invisible
+characters. This protects terminal presentation, not truthfulness of printable
+messages, child authenticity, or execution of a malicious project tool. S1/S5
+correctly keep those claims separate.
+
+A read-only AST probe of the encoder definitions from the reviewed commit used
+an ordinary multiline header with tabs, CR, an ESC erase-display sequence, an
+ESC clipboard-control sequence, a C1 introducer and a bidi override. Its result
+contained printable escapes and no raw ESC, C1 or LF. This establishes both the
+security mechanism and ordinary R1's formatting cost; it is not a live-terminal
+experiment or implementation evidence.
+
+**Implementation recommendation:** retain meaningful line layout without
+weakening the encoder. If choosing per-line framing, split only on literal LF,
+encode every resulting segment, and emit separators as parent-owned framing.
+Do not use general escape decoding, weaken `encode_display`, or turn CR and
+Unicode separators into trusted line breaks through `splitlines()`. Include a
+payload containing literal backslash escape notation to prove it is never
+interpreted. Add ESC/OSC and CR cases beside the existing C1/bidi/invisible
+fixture; cover successful stdout and nonzero stderr for each helper, with a
+normal multiline report and subsequent parent message. These recommendations
+refine the proposed tests; ordinary R1/R2 still need their author dispositions.
+
+**Coverage:** claims and trust boundary: named writes and encoder above; public
+paths and exception-only test gap:
+`bootstrap/tests/test_session_binding_gate_and_printing_hold.py:598`; layout and
+failure behavior: ordinary R1/R2; scope and lifecycle: this proposal's security
+preflight and assurance declaration. No scientific premise applies. No shipped
+bytes changed, full suite ran, protected-test ceremony ran, or historical trust
+root was reconciled. This clears this proposal's Security Review obligation;
+implementation and plan security reviews remain separately owed.
