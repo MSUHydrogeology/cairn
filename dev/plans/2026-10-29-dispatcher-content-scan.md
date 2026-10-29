@@ -147,3 +147,34 @@ The Security plan pass is recorded above; its findings are addressed in the oper
 **Non-pass disposition**: the first restricted-environment run of the first command produced 289 passed and one failure because its force-injected child could not bind a loopback socket. The test passed alone with loopback access enabled, then the complete mapped command passed (290 passed) with that same access. This is environmental, not waived. No skips, xfails or xpasses were reported in the successful runs.
 
 **Known omissions**: no whole-tree certification, re-anchor, historical-anchor reconciliation, live-reference probe, or push was performed; those are outside this plan's Boundary B. `check_cairn.py` did not probe its 83 external links. The checks do not authenticate a checkout against an attacker able to replace both apparatus bytes and lock records, as stated in C1.
+
+
+## Code review -- Codex (gpt-6.1-sol, independent reviewer) -- 2026-10-29
+
+**Reviewed commit**: 902cf35f
+**Target**: implementation range `a6c151f1..3dcb5806a0442b959a81cc3287a9ded9c5b44a4a` and verification at `902cf35f`
+**Prior findings**: none
+
+**Foundations**
+
+1. **Does it do what it claims?** The content leg binds the five installed paths before launching the child and maps flags to findings, but the stated reviewed range includes additional onboarding changes without their owning tests in the author's verification record -- `templates/modules/default-on/run_security_verification.py::_bind_runner`, `scripts/content_scan_runner.py::main`, and the verification record above.
+2. **Best alternative.** Keep the existing runner and fixed registry; accurately delimit the change or add the missing author-owned evidence, and correct the runner path in the ledger -- `bootstrap/_scaffold/install.py` and `dev/plans/2026-10-29-dispatcher-content-scan/implementation-verification.md`.
+3. **What would show it wrong.** A changed onboarding behavior failing its owning tests, or a bound member reaching the child after drift, would falsify the claims -- see the falsification ledger below.
+
+**Bounding**: WIDER RUN REQUIRED -- the stated range includes `d3c9b80a` and `258dbb26`, which change `bootstrap/_scaffold/install.py` and onboarding, preset and scaffold tests. The Boundary B record lists neither those owning test families nor a separate evidence record for them. The author must either establish the correct independently verified range and cite evidence for every change in it, or record the missing checks on the candidate commit. My passing run below does not substitute for the author's record.
+
+### Findings
+
+**CR1 -- Verification does not cover the stated range.** The verification names `a6c151f1..3dcb5806`, but that range includes the no-preset onboarding implementation and changed tests. Its commands omit `test_install_time_onboarding.py`, `test_onboarding_slot_substitution.py`, `test_presets.py`, and `test_scaffold.py`. The stated wide coverage therefore does not establish all changed behavior. Supply an author-owned change-specific record or establish the narrower range and cite the separate record covering the omitted changes.
+
+**CR2 -- Ledger identifies the wrong bound runner.** The first five rows of the implementation ledger name `templates/modules/default-on/run_security_verification.py`; the test obtains `entry.runner_repository_path`, which is `scripts/content_scan_runner.py`. Correct the rows so the evidence identifies the member actually mutated.
+
+### Falsification ledger
+
+* Challenged the unrecorded onboarding surface in a fresh local clone detached at `3dcb5806`: `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_install_time_onboarding.py bootstrap/tests/test_onboarding_slot_substitution.py bootstrap/tests/test_presets.py bootstrap/tests/test_scaffold.py` passed 182 tests in 4.40 seconds. This challenges CR1's consequence but does not repair the missing author record.
+* Compared the five-member control and mutations in `bootstrap/tests/test_security_verification.py::TestRegistryIntegrity` to the registry and ledger: the actual runner is `scripts/content_scan_runner.py`; the ledger labels another file. This produced CR2.
+* Read `scripts/content_scan_runner.py::run_content_scan` and `main`: any remaining flag returns 1 and maps to FINDINGS; stale evidence returns 3 and maps to DEGRADED. Reviewed installed selection, opt-out, combinations and policy-finalize test paths in `TestComposition` and the verification record; did not independently repeat those mapped tests.
+
+**Waiting-line check:** No Maintainer-gated chunk or deviation request is declared in the reviewed plan range; `git log -p -- dev/plans/2026-10-29-dispatcher-content-scan.md` was inspected.
+
+**Coverage:** Reviewed registry and binding, result mapping, selected installed paths, policy retention tests, and recorded evidence; challenged onboarding tests and ledger naming as above. Did not run the whole suite, independently mutate every member, or assess the separate Security Review obligation. No scientific result is involved.
