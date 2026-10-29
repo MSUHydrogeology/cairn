@@ -1,7 +1,7 @@
 # Plan: Governing text inventory and routing
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-governing-text-single-source.md
-**Status**: revising-code
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Map where rules come from and reach adopters before choosing how to reduce repeated editing.
@@ -594,3 +594,20 @@ Prior findings: none
 - Comparison: read C1's baseline and C4's addendum against C3's same-measures criterion; the omissions are F1.
 
 **Covered**: scope clause preservation, one installed negative control, simplification claim, and the change-verification record. **Not covered**: all wording mutations, an adopter-use trial, historical anchor comparison, or the full suite.
+
+
+## Response to code review -- F1 same-measures comparison -- Codex (Implementation, Luna) -- 2026-10-29
+
+| C1 measure | Operating-rule example: task capability floor | Template-instruction example: Scope delta |
+|---|---|---|
+| Maintained presentation | All five C1 presentations remain at their recorded values: `AGENTS.md` 145 words, `templates/core/AGENTS.md` 145, `doctrine/roles.md` 902, and both model-selection module copies 510 each. Direct comparison of the C1 excerpts at `e9928009` and this implementation at `72fecafe` found identical bytes in every measured range. The later 12-line addition elsewhere in `AGENTS.md` is separate protected-test guidance, outside the measured floor excerpt. | Each of the two point-of-use sections is now 243 words and 27 lines, down from 273 words and 29 lines in C1. The same 30-word, 2-line reduction appears in the internal and shipped templates; their complete files intentionally differ in adopter slots and verification guidance. |
+| Presentation-file count | Five, unchanged; no floor presentation was edited by C3. | Two, unchanged. Both copies still carry the rule; the edit retained the two-copy maintenance cost. |
+| Implementation footprint | The C1 value of 15 files describes the earlier historical task-floor implementation. It remains historical and is not reduced by this C3 change, which did not edit those five presentations. | The C3 implementation commit changed four paths: the two template copies, the existing scope owner test and this plan. The follow-up verification commit changed the plan and its measurement TSV. This is a 30-word-per-copy reading reduction, not a reduction in the number of files or lifecycle steps. |
+| Owning checks | The C1 record of 574 historical checks remains the prior implementation's evidence. In this pass, the model-tier owner family reported 10 passes, as part of the final 781-test Boundary B selection. No new floor check was added. | The owner test remains at 89 collected cases, as in C1. It passed 89/89 in the focused run (0.34 s); its existing accepted-floor case now exercises real installed output and detects three named mutations in each profile. Boundary B ran that file within 781 mapped passes (6.57 s). |
+| Related guarded surfaces | The C1 task-floor wording is unchanged; the 14-surface Scope-delta guard map is not a task-floor measure. | The accepted-scope owner still enumerates 14 related contract surfaces. C3 changed the two template copies within that set; no other Scope-delta source was edited by the implementation commit. The earlier 8-lines-per-template floor insertion remains intact; this change removes only the repeated rationale. |
+| Installed reader path | Still `AGENTS.md` > Roles for both profiles, with the model-selection module only in the fuller profile. The final fresh installs contain 69 and 101 files respectively; both contain the Model tier rule in `AGENTS.md`, the solo install has no model-selection module, and the fuller install has it. The existing model-tier tests verify the solo installed rule. | Still `dev/plans/_template.md` > Scope delta in both profiles. The 69-file and 101-file final installs contain the shipped plan template byte-for-byte. The installed semantic control passes both intact outputs and detects all six named mutations. |
+| Project adaptation caveat | The task-specific model mapping remains project-owned; no change was made to that caveat. | Not applicable to the Scope-delta template measure. |
+| Lifecycle and ceremony cost | No new work was required for this example; its prior C1 history remains the applicable edit-cost evidence. | The cut improves point-of-use length only. The work still required both source copies, an existing owner-test edit, mapped tests, two installs, a verification record and independent review. No re-anchor or reference change was made; the Maintainer's direction waived historical anchor comparison. No ceremony result is claimed. |
+| Final installed positive reading | The C1 baseline had both profiles receiving the floor. The final installs reconfirmed the same paths; the model-tier suite passed. | The C1 baseline had the accepted floor, grouped remainder and Maintainer authority present in both profiles but no installed semantic guard. After C3, both intact outputs pass the guard, while reviewer-authority inversion, per-entry-disposition deletion and proposed-expansion inversion are each detected in both outputs. |
+
+F1 is accepted. The rows above reconcile each C1 measure without replacing its original value; the appended entries in `editing-baseline.tsv` retain the before/after counts and source commit. The 30-word reduction is a point-of-use simplification; the measured file count, checks and lifecycle effort do not show a workflow or ceremony saving. No implementation, test, executable-template or fixture bytes changed after `72fecafe`, so the implementation verification remains tied to that commit. This response changes only the plan evidence and its status. No broad suite was rerun for this prose-only record. Status returns to `awaiting-code-review` for review of the response.
