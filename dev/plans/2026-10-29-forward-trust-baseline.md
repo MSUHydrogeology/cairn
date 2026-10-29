@@ -1,7 +1,7 @@
 # Plan: Forward trust baseline machinery
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-forward-trust-baseline.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Build and test a reusable way to establish a reviewed starting point for future trust checks.
