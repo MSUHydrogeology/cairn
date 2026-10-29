@@ -307,6 +307,7 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
                              "interpreter": sys.version.split()[0], "tool_hashes": tool_hashes,
                              "reviewer": "independent scratch reviewer", "reviewed": True}))
     output = tmp_path / "baseline-package"
+    refs_before = RP.git(repo, "for-each-ref", "--format=%(refname) %(objectname)").decode()
     result = subprocess.run([PY, str(repo / "scripts/repin.py"), "baseline-prepare",
                              "--candidate", candidate, "--approved-roster", str(roster),
                              "--reader-record", str(reader), "--output-dir", str(output)],
@@ -322,6 +323,8 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     assert package["reader_record_sha256"] == RP.sha(reader.read_bytes())
     assert json.loads((output / "gate_manifest.json").read_bytes()) == manifest
     assert not credential_marker.exists(), "candidate collection inherited a signing credential"
+    refs_after = RP.git(repo, "for-each-ref", "--format=%(refname) %(objectname)").decode()
+    assert refs_after == refs_before, "preparation changed a repository ref"
     assert "no authority changed" in result.stdout
 
 
