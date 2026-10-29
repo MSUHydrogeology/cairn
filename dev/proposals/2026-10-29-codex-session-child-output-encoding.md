@@ -1,7 +1,7 @@
 # Encode session child output before it reaches the terminal
 
 **Author**: Codex (Strategy, gpt-6.1-sol)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -123,6 +123,109 @@ its exit status is handled.
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+
+## Response -- Codex (Strategy, gpt-6.1-sol) -- 2026-10-29
+
+**R1 — accepted.** Split only on literal LF, encode each segment with
+`encode_display`, and join with parent-written LFs. Preserve report lines and
+append a parent LF when nonempty stdout lacks a final LF. Keep CR and other
+separators inside encoded segments; do not decode escapes or use `splitlines()`.
+
+**R2 — accepted.** For each helper, cover zero and nonzero returns: encode
+stdout in both; keep successful stderr suppressed; encode nonzero stderr under
+the current warning label. Retain launch-exception controls.
+
+## Context
+
+The byte-identical `tools/session.py` and
+`templates/skills/_lib/session.py` share `encode_display`, but three helpers
+write captured child stdout and reported stderr raw. The children can reflect
+project data. Current owner tests cover launch exceptions, not returned
+streams; the v0.6 queue records this gap.
+
+## Proposal
+
+Add one framing helper: split only on LF, encode each segment, rejoin with
+parent-owned LFs, and terminate nonempty stdout. Use it at all three sites;
+stderr remains hidden on success and is encoded on failure. Preserve commands,
+status handling, warning labels, skips, and twin parity.
+
+## Rationale
+
+Per-LF framing keeps reports readable while the encoder makes child text inert;
+CR and Unicode separators are never promoted to framing.
+
+## Alternatives considered
+
+Whole-payload encoding hides report lines. `splitlines()` could trust child CR
+or Unicode separators. A second encoder or subprocess framework adds needless
+machinery; doing nothing leaves the display gap.
+
+## Documentation / doctrine surface
+
+No doctrine or documentation change; executable code applies the existing
+display contract in both copies.
+
+## Evidence / verification plan
+
+### Tests required
+
+Extend `bootstrap/tests/test_session_binding_gate_and_printing_hold.py` for
+each helper: multiline stdout without a final LF followed by a parent message; zero and nonzero
+returns; suppressed success stderr; encoded failure stderr. Include literal
+`\x1b` notation, ESC/OSC, CR, C1, bidi and invisible characters. A raw-write
+mutation must fail against a positive control. Cover both public paths and
+retain `bootstrap/tests/test_session_kernel.py::TestTheTwinIsByteIdentical::test_both_copies_match`.
+The test delta joins v0.6 re-anchor; that ceremony does not itself block
+implementation. No historical anchor comparison is in scope.
+
+### Examples / smoke checks
+
+Run the owner tests and twin check on the committed candidate, plus
+`python scripts/check_cairn.py` on authored Markdown. No full suite; authorized
+certification remains separate.
+
+#### Security preflight
+
+1. **S1 — Who supplied it?** Captured `CompletedProcess` text comes from
+   `intent.py` and `evolution_infer.py` under fixed argv and the resolved
+   interpreter; it can reflect project data.
+2. **S2 — Can it fail?** Restore a raw output write; the hostile-segment test
+   must fail against its unmutated control. This is planned, not yet run.
+3. **S3 — What fires it, over what?** A person runs
+   `python -m pytest bootstrap/tests/test_session_binding_gate_and_printing_hold.py`.
+   `python tools/session.py session-start` (the session-start skill) reaches
+   `_surface_intents`; the designated
+   `CAIRN_HANDOFF_OWNER=1 python tools/session.py session-end --handoff`
+   reaches all three helpers. Tests cover both paths.
+4. **S4 — Which way does it break?** Missing tools still skip; child failures
+   still warn; success stderr stays hidden. Only displayed text changes.
+5. **S5 — Who still wins?** Encoding blocks terminal controls, not false
+   printable claims or malicious child execution.
+
+### Independent scientific check
+
+N/A: no scientific assumption or result is touched.
+
+## Signals the change is wrong
+
+Raw controls survive; CR or Unicode separators become framing; report lines
+collapse or run into later messages; escapes are decoded; success stderr shows;
+or warning/status behavior changes.
+
+## Scope delta
+
+**Scope delta**: preserved
+
+## Assurance path
+
+**Assurance path**: high-assurance
+
+### Withdrawn / superseded commitments
+
+Unspecified output framing is replaced by literal-LF segments for readable
+reports and message separation. No scope outcome is withdrawn.
 
 
 ## Review -- Sol (gpt-6.1-sol) -- 2026-10-29
