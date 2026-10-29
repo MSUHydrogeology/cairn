@@ -1,7 +1,7 @@
 # Re-anchor and repin as human-run commands
 
 **Author**: Codex (gpt-6.1-terra)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -207,3 +207,9 @@ Route instructions to `bootstrap/REANCHOR_RUNBOOK.md`, governing changes if need
 ### Withdrawn / superseded commitments
 
 The unsupported assertion that the Maintainer cannot assemble git commands is superseded by the recorded words above; no outcome is withdrawn.
+
+## Decision -- Maintainer -- 2026-10-29
+
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim and visually isolated (no paraphrase):
+
+> Yes, I approve it and authorize you to scribe
