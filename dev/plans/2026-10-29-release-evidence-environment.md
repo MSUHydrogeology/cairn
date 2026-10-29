@@ -1,7 +1,7 @@
 # Plan: Release evidence environment
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-release-evidence-environment.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Let release evidence run with the cache-only pytest setting while refusing settings that can steer collection.
@@ -41,3 +41,29 @@ Security preflight S2 and S3: C1 runs the appended-selector mutation and control
 Boundary A and B use Python 3.13.x and the owning families: `bootstrap/tests/test_gate_preflight.py`, `bootstrap/tests/test_security_check.py`, `bootstrap/tests/test_quality_gate_order_independence.py`, `bootstrap/tests/test_ceremony_review_report.py`, and `bootstrap/tests/test_gate_reanchor.py`. Exercise the actual evidence entry point, release environment and real grandchild, including the node-identity and selector controls above. Search readers and callers again after edits and add any affected consumer checks. Run applicable security gates and documentation checks (`python scripts/claim_check.py` on changed documents, `python scripts/check_cairn.py`, and `python scripts/link_check.py` when documentation changes); inspect their triggers and record outcomes. Split test invocations within the guard's file limit and reconcile their union.
 
 Boundary B is **wide** for this trust ceremony: after the final implementation commit, run the reviewed mapping on a clean unchanged commit; record tested SHA, range, interpreter, pre/post state, commands, counts, timings, non-pass dispositions, omissions and `Certified by: pending`. No full-suite certification or release run is implied; those occur only at authorized integration points. The protected-file pinning follows the runbook, not an old-anchor reconciliation invented here. Boundary C is the independent code reviewer's targeted falsification, including the recorded mutation and control.
+
+
+## Plan review -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+```
+Reviewed commit: 82bc87e4f6c0614c7437fd538f1c64d7368dc701
+Target: scope, sequence, acceptance criteria and verification
+Prior findings: none
+Assurance path: Internal + Internal Security Review
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+
+**Foundations**:
+
+1. **Should this happen as framed?** The literal admission, removal before launch, refusal cases and collection controls deliver the accepted contract, subject to completing the verification map -- source proposal Current contract and plan C1.
+2. **Best alternative.** Retain the existing boundary and producer cache option; moving the option to both launchers would add paths without improving the accepted outcome -- `bootstrap/tests/_gate_preflight.py:1900-1939`, `bootstrap/tests/_gate_manifest.py:514-523`.
+3. **What would show it wrong.** A different collected node set under the admitted value, or a producer start after the appended selector, would defeat the plan's stated safety outcome -- plan C1 and source proposal Current contract.
+
+**R1 -- blocking: make standing security gates reviewable before implementation.** Verification says to run applicable security gates and inspect their triggers, but names neither the gates nor their commands or properties. The template requires the reviewed mapping to identify every standing non-pytest gate for each touched surface before implementation; leaving discovery until execution prevents this review from checking whether the map covers the protected boundary. Identify the applicable gates, their triggers and properties, or record a supported N/A after inspecting the relevant triggers. Keep the mapped tests and scoped wide Boundary B; this does not call for a full suite. -- `dev/plans/_template.md`, Verification; plan Verification.
+
+**Covered**: accepted scope and refusal cases (source proposal Current contract and plan C1); sequencing and Maintainer fence (plan C2-C3 and `bootstrap/REANCHOR_RUNBOOK.md`); consumer and verification mapping (plan Verification and R1); reuse and residual collection authority (plan Scope and source proposal Response); lifecycle and doctrine placement (plan header and Scope). The plan follows the runbook for pinning and does not require a separate historical-anchor reconciliation.
+
+**Not covered / low confidence**: no independent execution, complete inventory of security gates, packet preparation, release run or Security Review. This pass clears only the ordinary plan-review obligation.
