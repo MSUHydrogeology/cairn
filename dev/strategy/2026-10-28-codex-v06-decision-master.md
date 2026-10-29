@@ -57,11 +57,9 @@ a rename alone saves no editing.
 
 Proposed path: `docs/methodology/` (not yet created).
 
-The [inventory and recommendation](2026-10-28-codex-governing-text-inventory.md)
-map 190 document headings plus five fenced examples, 55 obligation groups and
-21 editing measurements. Fresh installs wrote 69/101 files, without doctrine.
-They revealed two conflicts requiring separate choices, rather than an
-implied wording cleanup:
+The [inventory](2026-10-28-codex-governing-text-inventory.md) mapped 190
+headings, 55 obligation groups and 21 editing measurements. Two conflicts
+needed separate choices rather than a wording cleanup:
 
 | Conflict | Recommended choice and conceded prescription |
 |---|---|
@@ -79,25 +77,15 @@ improvement; affected frozen tests still wait for the trust-boundary work.
 ### 2. Approved initial test-protection roster
 
 **Approved:** the [refreshed roster](../plans/archive/2026-10-28-test-trust-boundary/c1b-roster-6cc95fa7.json)
-at commit `884e6d53`, raw SHA-256
-`188fa76d82744be571bdc7ca91a43d605776b9df5ba0ac729e2cf22af66b8cc4`.
-The [classification evidence](../plans/archive/2026-10-28-test-trust-boundary/c1b-evidence-6cc95fa7.json)
-contains every file's reason and preserved mechanisms.
+at `884e6d53`; its [classification evidence](../plans/archive/2026-10-28-test-trust-boundary/c1b-evidence-6cc95fa7.json)
+records each file and preserved mechanism. It covers 78 test files and 12
+controls, leaving 51 ordinary tests. Implementation adds a protected roster
+file, so the projected frozen-path count is 148 pending final verification.
+Membership is unchanged; installation and speedup are not established.
 
-It protects **78 test files plus 12 Python controls**, leaving **51 test files
-ordinary**. The refreshed census has 5,490 nodes in 129 test files: 3,954 in
-protected files and 1,536 in ordinary files. The approved classification
-projected 147 frozen paths from the current 197. The implementation adds one
-protected roster-data file, making the prospective total 148; that figure awaits
-final verification. Approved test membership is unchanged. The boundary is not
-yet installed, and no speedup has been measured.
-
-The accepted trust Decision already concedes blanket ordinary-test byte and
-node/marker HOLD protection. Ordinary Python can still influence protected
-execution; narrower protection is not equivalent tamper resistance. Actual
-release skip/xfail/xpass refusal stays. Roster approval authorizes neither
-installation nor a waiver of existing ceremony/review obligations. The Maintainer approved the exact list in `3e9f8fc2`; implementation and
-independent reviews precede installation.
+Roster approval at `3e9f8fc2` authorizes neither installation nor waiver of
+ceremonies. Ordinary tests retain the accepted byte and node/marker HOLD
+protection; ordinary Python can still influence protected execution.
 
 ### 3. Allow a preparatory extraction for the maintenance pilot
 
@@ -147,6 +135,38 @@ commit; the documented generic handoff obligation does not prescribe a subject.
 **Recommend:** use the existing `--handoff-marker` option in Cairn now and settle
 a canonical/compatible convention before changing adopters' default. No code
 changed; this remains queued rather than blocking the four actions above.
+
+### 6. Release evidence environment
+
+**Awaiting the Maintainer's Decision.** The [proposal](../proposals/2026-10-29-codex-release-evidence-environment.md)
+allows only absent or exact cache-only `PYTEST_ADDOPTS`, removes it before
+producer launch, and continues refusing other values and plugin variables.
+The usual review's probe blocker was answered with a control and appended-option
+refusal showing no producer launch; Security Review accepted the correction
+that collection remains trusted. Both proposal reviews are complete. No
+implementation or release ceremony was assessed; the proposal remains
+`awaiting-decision` and its plan owes both Internal reviews and file pinning.
+
+### 7. Upgrade base and install-output integrity
+
+**Awaiting the Maintainer's Decision.** The [proposal](../proposals/2026-10-29-codex-upgrade-install-integrity.md)
+checks saved ancestor bytes before merging, sends invalid evidence to manual
+review, and defines path-name and display-escaping rules. Both reviews accepted;
+the response incorporated recovery, byte-binding and compatibility guidance.
+The digest is not authentication against a jointly controlled cache and
+lockfile. No implementation was assessed; the plan owes both Internal reviews
+and the existing AST ceremony. No old-anchor reconciliation or baseline
+installation is authorized.
+
+### 8. Directories occupying tracked upgrade paths
+
+**Awaiting the Maintainer's Decision.** The [proposal](../proposals/2026-10-29-codex-upgrade-directory-collisions.md)
+hard-blocks a directory at a tracked destination, preserving contents until
+resolution and a fresh stage; it allows no partial apply or adoption. Both
+reviews accepted without findings. The response added observation-point,
+recovery and containment guidance. No implementation was assessed; the plan
+owes both Internal reviews and the existing AST ceremony. Arbitrary races
+after checks are outside the claim.
 
 ## Issue triage, staffing and close-out
 
