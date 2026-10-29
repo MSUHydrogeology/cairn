@@ -1,7 +1,7 @@
 # Plan: Test trust boundary
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-test-trust-boundary.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Protect the tests that defend trust while reporting ordinary test changes without requiring a new trust anchor.
@@ -798,3 +798,27 @@ baseline installation and historical-anchor reconciliation remain deferred by
 the Maintainer's quoted amendment to the separate v0.6 board item. Under that
 amendment the functional scope, independent reviews, and recorded evidence are
 complete; no live authority was changed. The plan is ready to archive.
+
+
+## Lasting-truth migration -- Codex (GPT-6.1 Sol) -- 2026-10-29
+
+Dispositions:
+* Actual installation of initial authority and proof against the installed signed roster -> defer (separate v0.6 baseline work) -> `dev/PLANNING.md` > Establish the v0.6 forward baseline. [Maintainer: “They can each build the machinery, the new baseline does not need to be part of their plans. It can be a work board item for v0.6.”]
+* Historical-anchor comparison or reconciliation -> defer (separate v0.6 baseline work) -> `dev/PLANNING.md` > Establish the v0.6 forward baseline. [Maintainer: “Remove those requirements from the plans”]
+
+**Evidence shipped**: approved roster and inventory, producer and verifier
+changes, independent static derivation, stage and authority checks, runbook and
+governing text; the 1,122-test scoped verification and independent ordinary and
+Security Review ledgers are recorded above. The simulated change matrix and
+real-file review probes have the stated limits.
+
+**Evidence deferred**: actual installation and proof against its signed roster;
+historical-anchor comparison or reconciliation. No full-suite certification
+was made. **Deferred evidence home**: the separate v0.6 forward-baseline row in
+`dev/PLANNING.md`; certification remains pending until an authorized run.
+
+**Fidelity sign-off**: implementation commits `979018d4`, `26f65e18`,
+`71ec71b3`, `cd6e1ddf`, `f66732ea`, `bef293ff`, `e1b8f8e9` and `fb84084c`
+carry the accepted proposal's **Complete current contract** as amended by the
+Maintainer's scope amendment above. The amendment explicitly defers installation
+and historical continuity; the narrowed boundary is not active yet.

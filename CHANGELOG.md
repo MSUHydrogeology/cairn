@@ -38,6 +38,8 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+- The test-trust boundary machinery distinguishes protected tests from ordinary test changes, with signed-roster authority and two-stage checks. Installation remains a separate v0.6 baseline task. ([plan](dev/plans/archive/2026-10-28-test-trust-boundary.md))
+
 - The ordinary board JSON pilot now centralizes repeated archive-output capture while preserving its behavior checks, and adds matching test-maintenance guidance to the shipped and self-hosted modules. ([plan](dev/plans/archive/2026-10-28-ordinary-test-maintenance.md))
 - Change verification is mapped per change and tree certification is separate; plan, proposal, and strategy names now include their opening date. ([plan](dev/plans/archive/2026-10-28-scoped-change-verification.md); [verification doctrine](doctrine/plans.md))
 - Capability floors now follow the task: ordinary authorship and reviews are medium, while executing an accepted reviewed plan is low, including high-risk chunks. Cairn's dated local model mapping records three assigned families per tier. ([plan](dev/plans/archive/2026-10-28-model-floor-alignment.md); [roles](doctrine/roles.md))
