@@ -521,6 +521,13 @@ trustworthy is the signature on the commit it names.
   `bootstrap/_scaffold/`) parses untrusted module and profile files, does path
   handling and YAML loading, and writes into a target tree — guarded by a
   symlink/containment check and a Bandit gate over the whole engine package.
+* **Protected tests and control machinery.** The approved protected test roster,
+  `bootstrap/tests/conftest.py`, `__init__.py`, `security_manifest.py`,
+  `_ast_attest.py`, `_loader_proto.py`, `_gate_*.py`, `_oracle*.py`, and
+  gate and AST control fixtures are high-risk surfaces. Ordinary tests are
+  not high risk solely because they live under `bootstrap/tests/`; their edits
+  follow the existing trivial or planned lane. The present broad frozen policy
+  remains in force until the Maintainer installs a narrower signed boundary.
 * **Vendor-neutrality.** Doctrine and templates must name no AI model/vendor
   (`scripts/quality_gate.py --sub neutrality`); names live only in the
   deliberation record or behind a `vendor-ok` marker.

@@ -12,6 +12,30 @@ as you, such as a malicious local agent or the candidate's own tests, which stag
 stage 2 loads while you type the key's passphrase. H below catches a change to two
 files, not Python's library folder or your tools.
 
+### Installing the protected-test boundary
+
+The current signed anchor retains the broad frozen policy. The first reviewed
+bridge candidate carries the approved roster with the checker in dormant mode:
+its first supervised transition freezes that roster but keeps the broad
+manifest. A second, separately reviewed candidate changes the checker to active
+mode. Only a second Maintainer-authorized ceremony from the signed bridge anchor
+can install the narrower manifest. For each transition, use its own packet,
+reader record, candidate, comparisons and authorization; complete the checks on
+this page, including E7, for both. Do not treat the proposed roster or a test
+run as installation.
+
+After that installation, the signed prior anchor supplies the roster. The gate
+manifest verifier freezes named security and trust tests, records the full
+pytest collection, and holds on lost or newly skipped protected nodes. Ordinary
+test changes and marker changes are reported as notes. New trust tests need a
+reviewed admission and re-anchor before they become protected. Ordinary test
+code can still influence protected collection and execution.
+
+The launcher runs the candidate's producer and re-derives its static fields;
+it does not run the prior-manifest verifier. The separate verifier command in
+step 2 compares the candidate against the prior signed manifest and performs
+full collection. `repin`'s drift display is static and does not replace it.
+
 ### Prerequisites
 The instantiated launcher and the authorization packet (from the builder), your values file, your
 ceremony key (in no agent), and the candidate ref `$CAND`, whose tip commit is the reader's record,
@@ -46,6 +70,40 @@ ssh-add -l; SSH_AUTH_SOCK=$(launchctl getenv SSH_AUTH_SOCK) ssh-add -l
 ```
 
 ### 2. Stage 1, with no key
+
+First run the prior verifier with the key away. The builder prepares a
+separate clean target at the exact committed candidate, a verifier and manifest
+from the known signature-verified prior anchor, and **one ready-to-run command**
+with all paths and commit IDs filled in. The independent reader checks the
+verifier and manifest against the prior anchor's raw objects, checks the target
+against the candidate, and records the hashes and command for you. The builder
+also supplies the hash commands. Compare their results with the reader's record;
+if they differ, stop. Run the supplied verifier command; you need not construct
+its paths or Git commands yourself.
+
+For the builder and reader, the prepared command must invoke the prior anchor's
+`_gate_manifest.py verify` using the canonical Python with pytest installed,
+with `--target-repo` set to the committed candidate, `--manifest` set to the
+prior anchor's extracted manifest, `--anchor-ref` and `--trusted-ref` set to
+that prior anchor's full commit ID, `--trusted-repo` set to the verified Git
+repository, and `--require-anchor`. Do not add `--no-collect`: the command must
+collect the full candidate suite. Verify the target is clean and matches the
+candidate's committed bytes before handing it over. Use an empty environment
+with the required `HOME` and `PATH`, and Python's `-E -s` options. The command
+imports candidate test code, so it must run with the key away.
+
+A nonzero exit is a HOLD. Stop. The builder and reader prepare a grouped,
+reviewable disposition naming every changed or lost protected file, node and
+marker, the source plan and commit, and any unexplained delta. The Maintainer
+may decide a bounded batch, but each item needs an explicit disposition under
+the existing ceremony. A reviewed intentional change is still a HOLD; a new
+or unexplained item stops the ceremony. Do not silently bypass one. Before the narrow boundary is installed, the prior broad
+policy applies; afterward ordinary changes are notes. This command is a
+human-run check, not an automatic launcher step. The candidate can influence
+collection and execute code in the collection process.
+
+Then run the launcher:
+
 ```
 L $CAND --validate
 L $CAND
