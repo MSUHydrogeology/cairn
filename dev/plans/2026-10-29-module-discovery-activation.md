@@ -1,7 +1,7 @@
 # Plan: Module discovery and first use
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-module-discovery-activation.md
-**Status**: revising-code
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Make installed modules discoverable and give each selected module a useful first task.
@@ -231,3 +231,23 @@ The last four rows ran as four explicit pytest nodes in `bootstrap/tests/test_up
 **Evidence and sweep**: Read committed reconciliation, adoption preparation/commit ordering, apply input checks, plan and prior verification. The new identity guard precedes catalog indexing. Selection remains lock/profile authority and no task executes. The latest record supplies manual-copy evidence and dispositions its loopback restriction; certification remains pending. The shared renderer remains preferable to another installer. S1 names the missing preservation case and its satisfier.
 
 **Coverage / gaps**: This pass covers the Security obligation only. Did not run the full suite, old-anchor verification, every module task, concurrent filesystem races or arbitrary crash recovery; those are not claimed certified. Existing checks passing do not settle S1. Independent ordinary review remains separate.
+
+
+## Response to Security code review -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+S1 accepted. Only the complete unchanged placeholder or an empty slot may be replaced. A placeholder containing edits or other work is ambiguous and now refuses with instructions to save and reconcile it; the public repeat-install regression checks planning, inventory and lock bytes remain unchanged. Conservative refusal preserves the accepted legacy reconciliation scope.
+
+## Implementation verification -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+**Implementation verified at 8ca130c6.**
+
+**Boundary B mode**: wide
+**Certified by**: pending
+
+**Tested range**: `a6c151f1..8ca130c6`; Python 3.13.13 (`/Users/kendal30/conda_envs/lhm/bin/python3.13`). An independent local clone at the candidate commit was clean before and after. The 17 mapped test families named in the previous verification, including security lint and the new public repeat-install regression, passed 814 tests in 62.14 seconds with loopback access allowed; no skips.
+
+**Public paths and gates**: `--summary`, `--dry-run`, and temporary installation passed for preset, exact, empty and add/remove profiles (12 invocations); `--manifest` passed with 87 data rows. Manual copy of dual-review, explicit adoption and repeat adoption passed, preserving copied bytes and checking inventory, task and lock. `check_cairn.py` and `link_check.py` passed on 186 Markdown files, claim checks passed for the two changed shipped documents, `sync_doc_snippets.py --check` passed on 436 documents, and the neutrality gate passed with 0 failures and 43 informational findings. External links were not probed.
+
+**Mutation ledger**: in four separate candidate copies, the mapped checks killed each break: removed selected tasks (`test_selected_modules_have_usable_tasks`), added unselected tasks (`test_unselected_modules_have_no_tasks_or_inventory_rows`), bypassed completed-work refusal (`test_reinstall_preserves_completion_and_refuses_loss`), and corrupted the baseline hash (`test_selected_modules_have_usable_tasks`). Their unmutated controls passed in the mapped run.
+
+**Omissions**: no scientific check applies. Whole-tree certification remains pending; no coverage outside the named mappings and public paths is claimed.
