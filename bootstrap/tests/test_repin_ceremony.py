@@ -2394,8 +2394,7 @@ def test_transition_packet_uses_signed_prior_authority_and_preserves_ordinary_re
 
 
 def test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anchor(cbed):
-    """The maintained transition preparer and launcher complete a scratch-only
-    authority change using the fixture's throwaway signer and anchor."""
+    """Transition authority first, then review an AST deletion and rerun fresh."""
     fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
                                  capture_output=True, text=True, check=True).stdout.split()[1]
     preflight = cbed.read("bootstrap/tests/_gate_preflight.py")
@@ -2434,7 +2433,63 @@ def test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anch
                            [("Enter passphrase for", PASSPHRASE)], env=env, cwd=cbed.repo)
     assert code == 0, stage2
     assert "transition" in stage2.lower()
-    assert cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip() != prior
+    transitioned_anchor = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
+    assert transitioned_anchor != prior
+    assert cbed.git("rev-parse", "HEAD").stdout.strip() == transitioned_anchor
+
+    # The ordinary AST pin preparer intentionally refuses while the preflight
+    # differs from P. Finish the reviewed authority transition first; then the
+    # same Maintainer command can prepare the symbol deletion against the new P.
+    for name in ("authorization-packet.txt", "reanchor-launcher.sh", "package.json"):
+        (cbed.cdir / name).unlink(missing_ok=True)
+    baseline = json.loads(cbed.read(BASELINE))
+    missing = next(key for key in baseline if key.endswith(":f"))
+    cbed.write(ENGINE, "def renamed():\n    return 1\n")
+    cbed.commit("remove the baselined symbol")
+    ast_packet = cbed.run("packet", "--ceremony-dir", str(cbed.cdir))
+    assert ast_packet.returncode == 0, ast_packet.stdout + ast_packet.stderr
+    packaged = cbed.run("package", "--ceremony-dir", str(cbed.cdir), "--delete-symbol", missing)
+    assert packaged.returncode == 0, packaged.stdout + packaged.stderr
+    transaction = cbed.cdir / REPIN.TXN_NAME
+    transaction_digest = hashlib.sha256(transaction.read_bytes()).hexdigest()
+    ast_reader = cbed.root / "ast-reader-inputs.txt"
+    prepared_reader = cbed.run("prepare-reader", "--ceremony-dir", str(cbed.cdir),
+                               "--output", str(ast_reader), "--expected-fingerprint", fingerprint)
+    assert prepared_reader.returncode == 0, prepared_reader.stdout + prepared_reader.stderr
+    assert "ast-transaction-sha256 " + transaction_digest in ast_reader.read_text()
+    cbed.write(RECORD, ast_reader.read_text())
+    cbed.git("commit", "-q", "-m", "reader records AST deletion", "--", RECORD)
+    read_tip = cbed.git("rev-parse", "HEAD").stdout.strip()
+    command = [PY, str(cbed.repo / "scripts/repin.py"), "apply-reviewed-pin",
+               "--ceremony-dir", str(cbed.cdir)]
+    code, stopped = run_pty(command, [("Write these files?", "yes")],
+                            env=cbed.env, cwd=cbed.repo)
+    assert code == 0, stopped
+    assert "Written, not committed" in stopped
+    assert cbed.git("rev-parse", "HEAD").stdout.strip() == read_tip
+    assert missing not in json.loads(cbed.read(BASELINE))
+    cbed.git("commit", "-q", "-m", "commit reviewed AST pin", "--", BASELINE, KNOWN_NEW)
+    assert cbed.git("status", "--porcelain").stdout == ""
+
+    # The prior packet and stage-one package bind the old candidate. Discard
+    # those scratch files and prepare a fresh ordinary packet at the new tip.
+    for name in ("authorization-packet.txt", "reanchor-launcher.sh", "package.json", REPIN.TXN_NAME):
+        (cbed.cdir / name).unlink(missing_ok=True)
+    ordinary = cbed.run("packet", "--ceremony-dir", str(cbed.cdir))
+    assert ordinary.returncode == 0, ordinary.stdout + ordinary.stderr
+    cbed.launcher_digest = hashlib.sha256(
+        (cbed.cdir / "reanchor-launcher.sh").read_bytes()).hexdigest()
+    fresh_reader = cbed.root / "fresh-reader-inputs.txt"
+    fresh = cbed.run("prepare-reader", "--ceremony-dir", str(cbed.cdir),
+                     "--output", str(fresh_reader), "--expected-fingerprint", fingerprint)
+    assert fresh.returncode == 0, fresh.stdout + fresh.stderr
+    cbed.write(RECORD, fresh_reader.read_text())
+    cbed.git("commit", "-q", "-m", "reader records fresh package", "--", RECORD)
+    cbed.recorded = (cbed.git("rev-parse", "HEAD").stdout.strip(), cbed.packet_and_launcher())
+    final_anchor = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
+    code, rerun = full_run(cbed)
+    assert code == 0, rerun
+    assert cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip() != final_anchor
 
 
 def test_prepare_values_writes_fresh_reviewable_inputs_without_overwriting(cbed):
