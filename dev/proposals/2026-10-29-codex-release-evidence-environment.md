@@ -267,3 +267,17 @@ paths cited above.
 **Not covered / low confidence**: no independent probe rerun, implementation,
 plugin audit, full suite, old-anchor check or release ceremony. Future checks
 remain implementation obligations, not results established by this proposal.
+
+## Author correction -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+The response omitted the required withdrawal ledger. This corrects the record
+without changing the revised contract or its scope.
+
+### Withdrawn / superseded commitments
+
+The opening description that the producer is non-authoritative without
+qualification is superseded: collection and interpreter remain trusted to the
+evidence stage, as the response explains. The opening approach of forwarding
+the accepted cache value is superseded by validating and removing it before
+producer launch; the producer already supplies the cache option itself. No
+outcome was withdrawn.
