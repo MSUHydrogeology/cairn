@@ -5930,3 +5930,40 @@ class TestRunbookPublicationText:
         assert "Phase 5" in text.split("---")[0], (
             "the header enumerates the phases an implementing agent must not "
             "perform; Phase 5 is one of them")
+
+
+def test_reviewed_transition_admits_a_new_protected_test(tmp_path, monkeypatch):
+    """A signed prior roster changes only through a reviewed transition."""
+    repo, anchor, _, _ = _ceremony_repo(tmp_path)
+    rel = "bootstrap/tests/test_smoke.py"
+    roster_path = repo / P.G._PROTECTED_ROSTER_REL
+    roster = json.loads(roster_path.read_text(encoding="utf-8"))
+    assert rel not in roster["protected_python_paths"]
+    roster["protected_python_paths"] = sorted(roster["protected_python_paths"] + [rel])
+    roster_path.write_text(json.dumps(roster, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    candidate = _signed_commit(repo, "reviewed protected test admission")
+    with pytest.raises(P.PreflightError, match="without a reviewed transition"):
+        P.resolve_protected_roster(anchor, candidate, transition=None, repo=repo)
+    review = tmp_path / "admission-review.txt"
+    review.write_text(_review_manifest(repo, candidate), encoding="utf-8")
+    P._phase = P._PHASE_CANDIDATE
+    result = _two_stage(repo, monkeypatch, review_manifest=str(review),
+                        reviewed_candidate=candidate)
+    admitted = P.resolve_protected_roster(result["new_anchor"], candidate,
+                                          transition=None, repo=repo)
+    assert rel in admitted["protected_python_paths"]
+
+
+def test_ordinary_test_edit_uses_steady_state_ceremony(tmp_path, monkeypatch):
+    """An ordinary test edit leaves the roster unchanged and needs no transition."""
+    repo, anchor, _, _ = _ceremony_repo(tmp_path)
+    rel = "bootstrap/tests/test_smoke.py"
+    before = P.resolve_protected_roster(anchor, anchor, transition=None, repo=repo)
+    assert rel not in before["protected_python_paths"]
+    _write(repo, rel, "def test_smoke():\n    assert 1 + 1 == 2\n")
+    candidate = _signed_commit(repo, "ordinary test maintenance")
+    P._phase = P._PHASE_CANDIDATE
+    result = _two_stage(repo, monkeypatch)
+    after = P.resolve_protected_roster(result["new_anchor"], candidate,
+                                       transition=None, repo=repo)
+    assert after == before

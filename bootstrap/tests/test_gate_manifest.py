@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import ast
 import copy
+import io
 import json
 import subprocess
 import sys
@@ -549,3 +550,80 @@ class TestV1V2Differential:
             "with the manifest pinning an object format and the target's "
             "unreadable, the pinned half of the contract is unverifiable -- "
             "that is a HOLD, not an OK")
+
+
+@pytest.mark.parametrize("change, expected", [
+    ("edit", "UNPROTECTED-CHANGED"),
+    ("addition", "UNPROTECTED-NEW"),
+    ("deletion", "UNPROTECTED-REMOVED"),
+    ("rename", "UNPROTECTED-REMOVED"),
+    ("marker", "SKIP-XFAIL-ORDINARY"),
+])
+def test_ordinary_changes_are_individually_reported_without_hold(
+        produced, tmp_path, monkeypatch, change, expected):
+    """Each ordinary change remains visible without blocking verification."""
+    ordinary = "bootstrap/tests/test_agreement_retired.py"
+    other = "bootstrap/tests/test_new_ordinary_matrix.py"
+    node = next(n for n in produced["collection"]["node_ids"]
+                if n.startswith(ordinary + "::")
+                and n not in produced["collection"]["skip_xfail_marked"])
+    manifest = copy.deepcopy(produced)
+    current = G._ordinary_test_files(_REPO, produced["protected_roster"])
+    ids = set(produced["collection"]["node_ids"])
+    marks = set(produced["collection"]["skip_xfail_marked"])
+    if change == "edit":
+        current[ordinary] = "0" * 64
+    elif change == "addition":
+        current[other] = "1" * 64
+        ids.add(other + "::test_new")
+    elif change == "deletion":
+        del current[ordinary]
+        ids = {n for n in ids if not n.startswith(ordinary + "::")}
+    elif change == "rename":
+        current[other] = current.pop(ordinary)
+        ids = {n.replace(ordinary + "::", other + "::", 1) for n in ids}
+    else:
+        marks.add(node)
+    monkeypatch.setattr(G, "_ordinary_test_files", lambda repo, roster: current)
+    monkeypatch.setattr(G, "_collect", lambda repo=_REPO: (sorted(ids), sorted(marks), 0))
+    output = io.StringIO()
+    assert G.verify(_write_manifest(tmp_path, manifest), repo=_REPO, out=output) == 0
+    assert expected in output.getvalue()
+    if change == "rename":
+        assert "UNPROTECTED-NEW" in output.getvalue()
+
+
+@pytest.mark.parametrize("change, expected", [
+    ("edit", "FROZEN-MODIFIED"),
+    ("addition", "FROZEN-MODIFIED"),
+    ("deletion", "COLLECTION-DROPPED"),
+    ("rename", "COLLECTION-DROPPED"),
+    ("marker", "SKIP-XFAIL-NEW"),
+])
+def test_protected_changes_individually_hold(
+        produced, tmp_path, monkeypatch, change, expected):
+    """A protected byte change, node loss or new marker blocks verification."""
+    manifest = copy.deepcopy(produced)
+    protected = "bootstrap/tests/test_ast_attest.py"
+    ids = set(produced["collection"]["node_ids"])
+    marks = set(produced["collection"]["skip_xfail_marked"])
+    node = next(n for n in ids if n.startswith(protected + "::") and n not in marks)
+    if change in ("edit", "addition"):
+        # The manifest pins the old bytes; a mismatch models either edit.
+        entry = manifest["frozen_files"][protected]
+        if isinstance(entry, dict):
+            entry["sha256"] = "0" * 64
+        else:
+            manifest["frozen_files"][protected] = "0" * 64
+        if change == "addition":
+            ids.add(protected + "::test_new")
+    elif change in ("deletion", "rename"):
+        ids.remove(node)
+        if change == "rename":
+            ids.add(node + "_renamed")
+    else:
+        marks.add(node)
+    monkeypatch.setattr(G, "_collect", lambda repo=_REPO: (sorted(ids), sorted(marks), 0))
+    output = io.StringIO()
+    assert G.verify(_write_manifest(tmp_path, manifest), repo=_REPO, out=output) == 1
+    assert expected in output.getvalue()
