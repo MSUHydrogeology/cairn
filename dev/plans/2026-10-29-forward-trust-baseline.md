@@ -156,3 +156,26 @@ Prior findings: none
 **Bounding**: ACCEPTED for C1 fixture preparation only. This does not clear final code or Security Review, independently approve the reader closure, authorize installation, or certify the tree.
 
 **Covered:** claims, completeness, drift and reuse (lenses 1, 3, 5, 6: exact output comparison and existing transaction); fail-closed behavior (4: two perturbations against passing controls); lifecycle and scope (7, 8: C1 preparation remains separate from C4); satisfier (9: no finding). **Not covered / low confidence:** public installation/preparation integration (2), semantic re-review of the underlying engine changes, final reader/package authority, historical reconciliation and real installation. No signing, anchor movement, full suite or broad suite was run. Final implementation verification and the plan's ordinary and Security code reviews remain open.
+
+## Implementation verification -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+**Boundary B mode**: wide
+**Certified by**: pending
+
+**Tested commit**: `dccaf4e6b43b63ce98577307065464214a5d754e`
+**Range**: `1867e666..dccaf4e6b43b63ce98577307065464214a5d754e`
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` -- Python 3.13.13
+**Clean pre/post state**: detached worktree at the tested commit had no status output before or after mapped tests; the implementation checkout retained only unrelated untracked `.claude/` and `dev/measurement/collision_log.md` files.
+
+The reviewed map covers the baseline preparation and installation public paths, ordinary signed-prior and refusal behavior, extraction and checked loading, stale inputs and atomic ref refusal, post-install protected bytes/nodes/markers, ordinary notes and unrostered notices, and release skip/xfail/xpass outcomes. Commands ran against the clean detached worktree with `PYTHONDONTWRITEBYTECODE=1`; scratch repositories and keys only:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_repin.py -q
+PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest --lf bootstrap/tests/test_repin_ceremony.py -q
+PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_repin_ceremony.py -q  # dynamically deselect first 37 already-run nodes
+PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_gate_preflight.py bootstrap/tests/test_gate_transition.py bootstrap/tests/test_gate_reanchor.py bootstrap/tests/test_reanchor.py bootstrap/tests/test_reanchor_driver_disclosures.py bootstrap/tests/test_gate_manifest.py bootstrap/tests/test_security_check.py bootstrap/tests/test_security_marker.py -q
+```
+
+The 109 `test_repin.py` nodes passed (119.93s). The ceremony family had 151 nodes: 31 passed in the first mapped attempt, six scratch signing cases initially failed because the regular sandbox could not deliver the PTY passphrase to `ssh-keygen`, then all six passed under approved host execution (one representative node and the other five with `--lf`); the remaining 114 passed with the first 37 nodes deselected (404.08s). The eight remaining mapped files passed 766 nodes (305.07s). Total mapped outcomes: **1,026 passed**. The first sandbox attempt was interrupted after the six diagnosed failures; no unresolved test failure remains. The eight-file run emitted three existing `stevedore` deprecation warnings. No live key, live ref, push, historical-anchor comparison, candidate signing, or full suite was used.
+
+The reader-input and runbook change also passed Python 3.13 `py_compile`; its focused public-path and credential-scrub nodes passed 2/2. `claim_check.py`, `check_cairn.py`, `link_check.py`, `sync_doc_snippets.py --check`, and the neutrality/redundancy quality gates passed for the changed runbook (0 failures; one unrelated redundancy information item). The separate C4 Maintainer-only installation remains unperformed.
