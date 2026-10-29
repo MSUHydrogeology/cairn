@@ -1,7 +1,7 @@
 # Plan: Module discovery and first use
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-module-discovery-activation.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Make installed modules discoverable and give each selected module a useful first task.
