@@ -1,7 +1,7 @@
 # Make the default security dispatcher run the content tripwire
 
 **Author**: Codex (gpt-6.1-sol)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -249,3 +249,107 @@ lifecycle, scope and satisfiers. No historical trust reconciliation, runtime
 implementation certification, adversarial execution or scientific result was
 reviewed. Safeguards above refine the proposal's existing required plan work;
 this pass clears the proposal Security Review, not future registry admission.
+
+## Response -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+Both reviews accept with no findings. The plan must bind executable dependencies
+before execution, check containment and ancestor links, and specify reviewed
+policy edits, lock and upgrade reconciliation. API/web living-state authority
+does not automatically apply. Emit one bounded child document without human
+diagnostics on stdout; preserve timeout, byte cap, exit agreement and terminal
+escaping. Decide the residual-flag mapping and test the installed path. No
+particular schema or binding mode is approved.
+
+Link and claim checks and credential forwarding remain outside scope; neither
+review closes that remainder. Plan and registry Security Reviews remain owed.
+
+## Context
+
+The Cairn self-check is not installed for adopters; the dispatcher does not
+select the installed content runner. Its registry already admits API and web.
+
+## Proposal
+
+Admit the installed content-security self-audit as an offline dispatcher leg,
+using the existing runner and scanner, by a compatible output mode or minimal
+adapter. Preserve direct advisory invocation; map scanner findings visibly to
+`FINDINGS` in the dispatcher and never report `CLEAN` for failure to scan,
+stale baseline, missing or altered required inputs, invalid child output or
+execution failure. Document exact mapping and limits. Select only when installed; preserve opt-out,
+other legs and precedence. Run via the dispatcher on request, never at install.
+Correct guidance and stale strategy claims.
+
+Meet all six admission conditions. Bind runner, adapter, scanner, roots,
+residuals and allowlist; preserve policy maintenance and fail closed. Any
+schema extension must be minimal, reviewed and negatively tested.
+
+## Rationale
+
+Reuse the installed runner's audited set and failure modes instead of claiming
+Cairn-specific checks as adopter evidence.
+
+## Alternatives considered
+
+The uninstalled self-check cannot run for adopters; doing nothing leaves no
+content leg. Running at install would bypass the operator request.
+
+## Documentation / doctrine surface
+
+Update installed module and dispatcher guidance and the stale strategy claim;
+route instructions and description by `docs/DOCUMENTATION_PLAN.md`. Security,
+registry, mapping and adopter-executed contracts are high-risk; no doctrine
+premise changes.
+
+## Evidence / verification plan
+
+Map dependencies, policy, lock records and readers. Exercise real default,
+opt-out and API/web installs: clean, findings, precedence, child failures,
+changed inputs, unsafe paths, empty and stale sets, direct runner and upgrades.
+False clean or missing leg falsifies the change. Coverage is tracked Markdown
+and text in configured roots, excluding archives and base cache; discussion
+prose retains the bare-URL blind spot.
+
+### Tests required
+
+Start with `bootstrap/tests/test_security_verification.py` and
+`bootstrap/tests/test_security_stack.py`; search install/upgrade owners. The
+plan names exact nodes, public entry paths and negative controls per binding
+and schema field.
+
+### Examples / smoke checks
+
+Run temporary default and opt-out installs, their dispatcher,
+`python scripts/check_cairn.py`, and applicable claim, link and neutrality
+gates. Record scoped verification; certification and re-anchor are separate.
+
+#### Security preflight — five questions, answered in writing
+
+S1: Adopter-controlled roster, lock and policy do not select executable paths.
+S2: Opening records clean and flagged probes; mutate bindings and child evidence.
+A digest against the same attacker-controlled lock is not authentication.
+S3: The operator runs `python scripts/run_security_verification.py local` over
+configured roots; verify selection. S4: Unsafe inputs and failures cannot yield
+`CLEAN`. S5: An attacker controlling the tree can replace authority and scanner;
+a clean scan cannot authenticate it or detect every hostile instruction.
+
+### Independent scientific check
+
+N/A: no scientific assumption or result touched.
+
+## Signals the change is wrong
+
+A stock install reports clean without scanning, hides a finding, blocks
+legitimate policy maintenance or breaks the direct advisory command.
+
+## Scope delta
+
+**Scope delta**: preserved
+
+## Assurance path
+
+**Assurance path**: high-assurance — dispatcher, security verification and
+adopter-executed install surfaces.
+
+### Withdrawn / superseded commitments
+
+None.
