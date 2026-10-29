@@ -270,3 +270,24 @@ link destinations and operative targets use the dated paths.
 **Prose gates**: `python3.13 scripts/check_cairn.py` and `python3.13 scripts/link_check.py` each passed over 186 Markdown files. `python3.13 scripts/quality_gate.py --sub neutrality --sub redundancy` reported zero failures. `python3.13 scripts/claim_check.py doctrine/plans.md` and the corresponding command for `doctrine/proposals.md` both passed. A positive control matched seven obsolete forms in the pre-edit blobs at `918638f5`; the same obsolete-form search returned no matches in the current documents, while the explicit dated forms remain present.
 
 This follow-up does not run or discharge the Maintainer-only frozen-file ceremony. No whole suite, manifest verification, trust-root operation, or push was performed.
+
+## Scope amendment -- Codex (GPT-6.1 Sol) -- 2026-10-29
+
+The Maintainer directs the plans to finish before the v0.6 baseline. The
+following supersedes the frozen-file historical-anchor ceremony as an archive
+prerequisite and the conflicting response above; earlier records remain intact.
+
+> “They can each build the machinery, the new baseline does not need to be part of their plans. It can be a work board item for v0.6.”
+>
+> “If you want, build an anchor now to test that their machinery works properly. I'm okay either way. Remember: correctness of function is what matters, not of the trust root itself.”
+>
+> “Remove those requirements from the plans”
+
+**Scope delta**: degraded. **Disposition**: defer to the v0.6 board item:
+the actual frozen-file re-anchor and historical-anchor comparison or
+reconciliation. The loss is that ceremony evidence within this plan; cutting it
+follows the Maintainer's sequencing rather than specifying it here. Functional
+verification and independent reviews remain required. This amendment itself
+does not declare review findings resolved, change the trust root, or authorize
+signing or pushing. Respond to the existing review findings under the revised
+scope before moving the plan forward.
