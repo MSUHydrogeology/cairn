@@ -174,3 +174,71 @@ entry-point intent (Evidence plan); consistency/drift/lifecycle (R1,
 coordination doctrine); scope and satisfiers (alternatives, R1–R4). **Not
 covered / low confidence**: no live concurrency experiment, privacy audit,
 implementation tests or scientific calculation; no broad suite run.
+
+## Review -- Codex GPT-6 Security reviewer -- 2026-10-29
+
+```
+Reviewed commit: 77010b3edc70c57f0e8272df6eeb1ac39632a8f1
+Target: opening proposal and usual review
+Prior findings: usual R1–R4 considered, not closed
+Assurance path: standard (declared; incorrect for the proposed doctrine edit)
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**:
+
+1. **Should this happen as framed?** Improve the existing commit inspection and
+   report confirmed failures, but do not present a momentary diff read as
+   protection across a shared-write interval --
+   `doctrine/coordination.md:68` and Proposal above.
+2. **Best alternative.** Agreed serialization of the affected file from the
+   existing inspection through commit, with separate worktrees when that cannot
+   be maintained; keep confirmation and reporting human-operated --
+   `doctrine/coordination.md:105` and Alternatives above.
+3. **What would show it wrong.** A post-inspection append is swept, a legitimate
+   authored integration is called a sweep without confirmation, or one commit
+   meets recurrence through multiple path rows -- usual R2–R3;
+   `tools/evolution_infer.py:222`.
+
+This addresses attribution integrity without giving a claims database authority
+it cannot justify. The data remain project-supplied: the diff shows changed
+text, claims show declared intent, and neither identifies who wrote a line.
+The existing gate is a read-only suggestion, not permission to alter doctrine
+(`tools/evolution_infer.py`, module docstring). Preserve that separation.
+
+**S1 -- Blocking: declare and account for the actual security surface.**
+Concur with usual R1. Editing governing doctrine requires high assurance and
+Security Review regardless of whether this particular mechanism enforces
+anything. Answer the five preflight questions for the human classification,
+incident recording and advisory output: identify supplied evidence, deliberate
+misclassification controls, triggers, uncertainty handling and the remaining
+noncooperating-writer capability. Satisfier: corrected declarations and written
+preflight under `dev/proposals/_template.md` > Assurance path / Security preflight.
+This pass does not clear the obligation while those answers are absent.
+
+**S2 -- Blocking: close the inspection interval and confirmation gaps.**
+Concur with usual R3. Inspect the tracked candidate against HEAD, covering
+staged and unstaged text, and inspect new files directly. Agree serialization
+before inspection and retain it through commit; an active claim alone is not
+that agreement. If the inspected bytes change, inspect again before committing.
+Uncertain authorship remains uncertain until confirmed by an author or recorded
+provenance. Satisfier: the revised prescription and the staged-content,
+intervening-write and legitimate-integration controls requested in R3. Keep
+noncooperation an explicit residual limitation, not a new automated detector.
+
+Concur with R2's event identity and occurrence-date correction: the evaluator
+counts rows without commit deduplication (`tools/evolution_infer.py:233`).
+Concur with R4's evidence minimization: commit/path plus a short confirmation
+reference suffices; do not publish private conversations, sensitive file content
+or unrelated uncommitted text. State the local reporting home and any committed
+summary separately. No transcript collection or extra routine is needed.
+
+Covered: claims, production path and fail-closed limits (gate module and
+`evaluate_tracker`); design/reuse/drift (coordination doctrine and S2);
+lifecycle, scope and satisfiers (S1–S2, R2–R4). Not covered / low confidence:
+no concurrency experiment, independent authorship confirmation of the historical
+incident, implementation verification or privacy inventory; no suite run.
+No scientific result is involved.
