@@ -592,11 +592,11 @@ def lockfile_correction(ctx):
     return (header + "\n" + json.dumps(doc, indent=2, sort_keys=True) + "\n").encode()
 
 
-def render_changes(rel, old_raw, new_raw):
+def render_changes(rel, old_raw, new_raw, *, reviewed_deletions=()):
     """Every key the write changes, from the bytes on disk against the bytes to be
     written.  Not stored text and not the checker's classifier."""
     old, new = parse_output(rel, old_raw), parse_output(rel, new_raw)
-    if rel == BASELINE_REL and set(old) != set(new):
+    if rel == BASELINE_REL and (set(old) - set(new) != set(reviewed_deletions) or set(new) - set(old)):
         raise Refuse("the pin would add or drop a baseline key. That is a full "
                      "re-pin, which erases the motion record. Nothing was written.")
     fmt = lambda v: "(absent)" if v is None else json.dumps(v, sort_keys=True)
@@ -604,7 +604,7 @@ def render_changes(rel, old_raw, new_raw):
             for k in sorted(set(old) | set(new)) if old.get(k) != new.get(k)]
 
 
-def build_transaction(ctx):
+def build_transaction(ctx, *, reviewed_deletions=()):
     """The AST pin as data: the new bytes of each output and what they replace.
     None when no pin is owed."""
     if ctx["closure_changed"]:
@@ -612,13 +612,16 @@ def build_transaction(ctx):
                      + ", ".join(d(m) for m in ctx["closure_changed"])
                      + ". That is a transition ceremony, not an AST pin.")
     view = ast_view(ctx)
-    if view["missing"] or view["dup"]:
-        raise Refuse("a baselined symbol is missing or defined twice. That is a review "
-                     "item, never a pin. Run `status` and read the symbols named.")
+    deletions = sorted(reviewed_deletions)
+    if view["dup"] or sorted(view["missing"]) != deletions:
+        raise Refuse("a baselined symbol is missing or defined twice. Name every reviewed deletion "
+                     "exactly; duplicates cannot be pinned. Run `status` and read the symbols named.")
     ext, new, files = ctx["ext"], {}, set()
     old = {rel: (ext / rel).read_bytes() for rel in OUTPUTS if (ext / rel).is_file()}
-    if view["owed"]:
+    if view["owed"] or deletions:
         base = json.loads(old[BASELINE_REL])
+        for key in deletions:
+            del base[key]
         for key, (_old, digest, _file) in view["changed"].items():
             base[key]["digest"], base[key]["span"] = digest, view["spans"][key]
         new[BASELINE_REL] = dump(base)
@@ -631,7 +634,8 @@ def build_transaction(ctx):
         if ast_view(ctx, check)["owed"]:
             raise Refuse("the pin built here would not account for the engine. Nothing was "
                          "written; this is a defect in repin, so tell the Maintainer.")
-        files = {v[2] for v in view["changed"].values()}
+        files = set(ctx["engine"]) if deletions else set()
+        files |= {v[2] for v in view["changed"].values()}
         files |= {view["new_files"][k] for k in view["rekeyed"] + view["added"]}
     lock = lockfile_correction(ctx)
     if lock is not None:
@@ -639,13 +643,14 @@ def build_transaction(ctx):
     if not new:
         return None
     return {"schema": "repin-ast-transaction/v1", "head": ctx["head"], "anchor": ctx["anchor"],
+            "reviewed_deletions": deletions,
             "influences": {"python": sys.version, "git_version": git_text(ctx["repo"], "--version"),
                            "display_encoder_blob": ctx["session_oid"]},
             "files": sorted(files),
             "outputs": {rel: {"preimage_blob": git_text(ctx["repo"], "rev-parse", f"{ctx['head']}:{rel}"),
                               "preimage_sha256": sha(old[rel]), "new_sha256": sha(raw),
                               "new_text": raw.decode()} for rel, raw in new.items()},
-            "summary": [ln for rel, raw in new.items() for ln in render_changes(rel, old[rel], raw)]}
+            "summary": [ln for rel, raw in new.items() for ln in render_changes(rel, old[rel], raw, reviewed_deletions=deletions if rel == BASELINE_REL else ())]}
 
 
 def encode_txn(txn):
@@ -757,7 +762,7 @@ def apply_pin(ctx, cdir, raw, *, reviewed_head=None):
         plan.append((rel, target, disk, new))
     say("\nSummary 1: every key this write changes, from the file on disk against the bytes to be written")
     for rel, _t, disk, new in plan:
-        for line in render_changes(rel, disk, new):
+        for line in render_changes(rel, disk, new, reviewed_deletions=txn.get("reviewed_deletions", ()) if rel == BASELINE_REL else ()):
             say(line)
     if KNOWN_NEW_REL in txn["outputs"]:
         say("  The known-new file is a frozen gate file: changing it owes a re-anchor ceremony.")
@@ -812,9 +817,9 @@ def apply_pin(ctx, cdir, raw, *, reviewed_head=None):
 NOTHING_OWED = "\nNo pin is owed: the baseline accounts for the engine and the lockfile has nothing to correct."
 
 
-def package(ctx, cdir=None):
+def package(ctx, cdir=None, *, reviewed_deletions=()):
     """The AST pin's transaction, its digest and (with a folder) the file; no repository write."""
-    txn = build_transaction(ctx)
+    txn = build_transaction(ctx, reviewed_deletions=reviewed_deletions)
     if txn is None:
         say(NOTHING_OWED)
         return None
@@ -1500,7 +1505,8 @@ def prepare_reader_inputs(ctx, cdir, output):
     transaction = cdir / TXN_NAME
     if transaction.exists() or transaction.is_symlink():
         txn_raw = read_safe(transaction, own=True)
-        expected = build_transaction(ctx)
+        txn = json.loads(txn_raw)
+        expected = build_transaction(ctx, reviewed_deletions=txn.get("reviewed_deletions", ()))
         if expected is None or encode_txn(expected) != txn_raw:
             raise Refuse("prepared transaction does not match this read commit.")
         lines.append(f"ast-transaction-sha256 {sha(txn_raw)}")
@@ -1575,7 +1581,7 @@ def apply_reviewed_pin(ctx, cdir):
     if parents != [txn.get("head")]:
         raise Refuse("the reader record must be the sole child of the transaction's read commit.")
     prior_ctx = dict(ctx, head=txn["head"])
-    expected = build_transaction(prior_ctx)
+    expected = build_transaction(prior_ctx, reviewed_deletions=txn.get("reviewed_deletions", ()))
     if expected is None or encode_txn(expected) != raw:
         raise Refuse("the transaction no longer matches the independently reviewed commit.")
     return apply_pin(ctx, cdir, raw, reviewed_head=txn["head"])
@@ -1822,6 +1828,8 @@ def main(argv=None, *, launchctl=launchctl_socket):
     pk = sub.add_parser("package", help="compute the AST pin's transaction and print its "
                         "digest; writes only into --ceremony-dir")
     pk.add_argument("--ceremony-dir", metavar="DIR", help="a folder to keep the transaction in")
+    pk.add_argument("--delete-symbol", action="append", default=[], metavar="KEY",
+                    help="exact missing baseline symbol for independent review; repeat for each")
     pt = sub.add_parser("packet", help="write the packet and the launcher for an ordinary ceremony "
                         "into --ceremony-dir; refuses a ceremony that changes an authority file")
     pt.add_argument("--ceremony-dir", required=True, metavar="DIR", help="a folder that holds neither yet")
@@ -1905,7 +1913,7 @@ def main(argv=None, *, launchctl=launchctl_socket):
             say("  lockfile correction owed: " + ("no" if lockfile_correction(ctx) is None else "yes"))
             manifest_status(ctx, args.dropped_from)
         elif args.verb == "package":
-            package(ctx, args.ceremony_dir)
+            package(ctx, args.ceremony_dir, reviewed_deletions=args.delete_symbol)
         elif args.verb == "packet":
             build_packet(ctx, args.ceremony_dir)
         elif args.verb == "transition-packet":

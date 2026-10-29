@@ -2475,3 +2475,38 @@ def test_ceremony_refuses_unreviewed_ast_write(cbed):
                              ("Do the two digests match", "yes"), ("Write these files?", "yes")])
     assert code == 2 and "have the reader record its digest" in out
     assert "Write these files?" not in out and (cbed.repo / BASELINE).read_bytes() == before
+
+
+def test_reviewed_symbol_deletion_is_exactly_named_recorded_and_written(cbed):
+    baseline = json.loads(cbed.read(BASELINE))
+    missing = next(key for key in baseline if key.endswith(":f"))
+    cbed.write(ENGINE, "def renamed():\n    return 1\n")
+    cbed.commit("remove f and add renamed")
+    absent = cbed.run("package", "--ceremony-dir", str(cbed.cdir))
+    assert absent.returncode == 2 and "missing or defined twice" in absent.stderr
+    wrong = cbed.run("package", "--ceremony-dir", str(cbed.cdir), "--delete-symbol", "FunctionDef:wrong")
+    assert wrong.returncode == 2
+    package = cbed.run("package", "--ceremony-dir", str(cbed.cdir), "--delete-symbol", missing)
+    assert package.returncode == 0, package.stdout + package.stderr
+    raw = (cbed.cdir / REPIN.TXN_NAME).read_bytes()
+    assert json.loads(raw)["reviewed_deletions"] == [missing]
+    fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
+                                 capture_output=True, text=True, check=True).stdout.split()[1]
+    inputs = cbed.root / "deletion-reader-inputs"
+    prepared = cbed.run("prepare-reader", "--ceremony-dir", str(cbed.cdir), "--output", str(inputs),
+                        "--expected-fingerprint", fingerprint)
+    assert prepared.returncode == 0, prepared.stdout + prepared.stderr
+    assert hashlib.sha256(raw).hexdigest() in inputs.read_text()
+    cbed.write(RECORD, inputs.read_text())
+    cbed.git("add", RECORD)
+    cbed.git("commit", "-q", "-m", "reader record", "--", RECORD)
+    cmd = [PY, str(cbed.repo / "scripts/repin.py"), "apply-reviewed-pin", "--ceremony-dir", str(cbed.cdir)]
+    (cbed.cdir / REPIN.TXN_NAME).write_bytes(raw + b" ")
+    code, out = run_pty(cmd, [("Write these files?", "yes")], env=cbed.env, cwd=cbed.repo)
+    assert code == 2 and "does not bind this exact AST transaction" in out
+    assert missing in json.loads(cbed.read(BASELINE))
+    (cbed.cdir / REPIN.TXN_NAME).write_bytes(raw)
+    code, out = run_pty(cmd, [("Write these files?", "yes")], env=cbed.env, cwd=cbed.repo)
+    assert code == 0, out
+    assert missing not in json.loads(cbed.read(BASELINE))
+    assert "Written, not committed" in out
