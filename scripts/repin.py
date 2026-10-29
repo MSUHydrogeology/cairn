@@ -1700,11 +1700,10 @@ def run_ceremony(ctx, args, launchctl, rec):
     check_stop_records(ctx, cdir, args.first_run)
     key_checks(rec, pub, private, fingerprint, launchctl, "before stage 1")
     # 5. an owed pin is written, then this stops (a first run shows a lockfile correction and leaves it)
-    raw = None if args.first_run else package(ctx, cdir)
-    if raw:
-        apply_pin(ctx, cdir, raw)
-        rec.append("yes typed on a terminal: Write these files? (AST pin)")
-        return None, None
+    if not args.first_run and build_transaction(ctx) is not None:
+        raise Refuse("an AST or lockfile transaction is owed. Prepare it at the read commit, "
+                     "have the reader record its digest, then run apply-reviewed-pin. "
+                     "No files were written.")
     # 6. stage 1: candidate code runs, in a new session with no terminal and a short environment
     if Path(field["package"]).exists():
         raise Refuse(f"{d(field['package'])} already exists; stage 1 must not overwrite it. Move it aside.")

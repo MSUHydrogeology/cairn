@@ -532,7 +532,7 @@ def test_first_run_with_an_ast_pin_and_a_lockfile_correction_still_refuses(cbed)
     assert (cbed.repo / LOCKFILE).read_bytes() == before
 
 
-def test_an_ordinary_ceremony_applies_a_lockfile_only_correction_and_stops(cbed):
+def test_ceremony_refuses_unreviewed_lockfile_correction(cbed):
     # a signed anchor that already carries the stale lockfile: the key is decrypted only to sign it
     sh("ssh-keygen", "-q", "-p", "-P", PASSPHRASE, "-N", "", "-f", str(cbed.key), cwd=cbed.root, env=cbed.env)
     cbed.sign = True
@@ -545,10 +545,10 @@ def test_an_ordinary_ceremony_applies_a_lockfile_only_correction_and_stops(cbed)
     before, head = (cbed.repo / LOCKFILE).read_bytes(), cbed.git("rev-parse", "HEAD").stdout.strip()
     code, out = drive(cbed, [("Paste the launcher digest", cbed.launcher_digest),
                              ("Do the two digests match", "yes"), ("Write these files?", "yes")])
-    assert code == 0, out
-    assert "Written, not committed" in out and "Enter passphrase" not in out
-    assert (cbed.repo / LOCKFILE).read_bytes() != before and cbed.git("rev-parse", "HEAD").stdout.strip() == head
-    assert cbed.git("status", "--porcelain").stdout.split() == ["M", LOCKFILE]
+    assert code == 2, out
+    assert "have the reader record its digest" in out and "Enter passphrase" not in out
+    assert (cbed.repo / LOCKFILE).read_bytes() == before and cbed.git("rev-parse", "HEAD").stdout.strip() == head
+    assert cbed.git("status", "--porcelain").stdout == ""
 
 
 # --------------------------------------------------------------------------
@@ -558,8 +558,20 @@ def test_an_ordinary_ceremony_applies_a_lockfile_only_correction_and_stops(cbed)
 def stop_after_pin(cbed, reply="yes"):
     cbed.write(ENGINE, "def f():\n    return 2\n")
     cbed.commit("change f")
-    return drive(cbed, [("Paste the launcher digest", cbed.launcher_digest),
-                        ("Do the two digests match", "yes"), ("Write these files?", reply)])
+    package = cbed.run("package", "--ceremony-dir", str(cbed.cdir))
+    assert package.returncode == 0, package.stdout + package.stderr
+    fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
+                                 capture_output=True, text=True, check=True).stdout.split()[1]
+    inputs = cbed.root / "pin-reader-inputs"
+    prepared = cbed.run("prepare-reader", "--ceremony-dir", str(cbed.cdir), "--output", str(inputs),
+                        "--expected-fingerprint", fingerprint)
+    assert prepared.returncode == 0, prepared.stdout + prepared.stderr
+    cbed.write(RECORD, inputs.read_text())
+    cbed.git("add", RECORD)
+    cbed.git("commit", "-q", "-m", "reader record", "--", RECORD)
+    return run_pty([PY, str(cbed.repo / "scripts/repin.py"), "apply-reviewed-pin",
+                    "--ceremony-dir", str(cbed.cdir)], [("Write these files?", reply)],
+                   env=cbed.env, cwd=cbed.repo)
 
 
 def pin_paths(cbed):
@@ -629,11 +641,8 @@ def test_a_commit_adding_one_more_path_refuses(cbed):
     def add_path():
         cbed.write("extra.txt", "one more path\n")
         cbed.git("add", "extra.txt")
-    cbed.write(ENGINE, "def f():\n    return 2\n")
-    cbed.commit("change f")
-    code, out = drive(cbed, [("Paste the launcher digest", cbed.launcher_digest),
-                             ("Do the two digests match", "yes"), ("Write these files?", "yes")])
-    assert code == 0
+    code, out = stop_after_pin(cbed)
+    assert code == 0, out
     cbed.write("extra.txt", "one more path\n")
     cbed.git("add", "extra.txt")
     cbed.git("commit", "-q", "-m", "AST pin plus a path", BASELINE, "extra.txt")
@@ -2456,3 +2465,13 @@ def test_reviewed_ast_transaction_requires_record_before_write_and_stops(cbed):
     assert code == 0, out
     assert "Written, not committed" in out and cbed.git("rev-parse", "HEAD").stdout.strip() == record_commit
     assert cbed.git("status", "--porcelain").stdout.split() == ["M", BASELINE]
+
+
+def test_ceremony_refuses_unreviewed_ast_write(cbed):
+    cbed.write(ENGINE, "def f():\n    return 2\n")
+    cbed.commit("change engine")
+    before = (cbed.repo / BASELINE).read_bytes()
+    code, out = drive(cbed, [("Paste the launcher digest", cbed.launcher_digest),
+                             ("Do the two digests match", "yes"), ("Write these files?", "yes")])
+    assert code == 2 and "have the reader record its digest" in out
+    assert "Write these files?" not in out and (cbed.repo / BASELINE).read_bytes() == before
