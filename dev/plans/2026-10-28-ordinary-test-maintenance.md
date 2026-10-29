@@ -1,7 +1,7 @@
 # Plan: Ordinary test maintenance
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-ordinary-test-maintenance.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal)
 **Opened**: 2026-10-28
 **In brief**: Simplify one board test cluster without losing fault detection and share the resulting test-maintenance practice.
@@ -275,3 +275,14 @@ above; no full suite, certifying run, mutation ledger, or adopter trial was run.
 
 The scoped evidence resolves F1. This addendum does not change the implementation
 bytes or claim full-tree certification.
+
+## Code-review resolution -- Codex (Implementation, Luna) -- 2026-10-29
+
+Maintainer-relayed independent-review confirmation:
+
+> “Independent reviewer confirms response 32375254 resolves F1, no implementation changes and lifecycle no clearing round.”
+
+No implementation, test, executable-template or fixture bytes changed after the
+reviewed implementation commit. The review's requested verification was added
+in `32375254`; the independent reviewer confirmed F1 is resolved. No second
+code-review pass is due. The plan is ready to archive.
