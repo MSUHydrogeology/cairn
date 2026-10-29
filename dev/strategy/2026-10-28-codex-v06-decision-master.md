@@ -37,11 +37,10 @@ Use `python tools/board.py --maintainer` for declared next moves.
 
 The [ceremony-command proposal](../proposals/archive/2026-10-29-codex-ceremony-commands.md)
 addresses the existing v0.6 two-command item, builds on v0.5 `repin`, and
-includes the trust plan's required full prior-anchor verifier. Both independent
-Sol reviews and the author's response are recorded; the Maintainer approved the
-proposal in `02a81d33`. The [plan](../plans/2026-10-29-ceremony-commands.md)
-opened in `df4f9ac5`; ordinary and Security plan findings were folded in
-`23430733`. Implementation starts with the reusable prior-anchor verifier. No
+originally included a full prior-anchor verifier. The Maintainer approved it
+in `02a81d33`; the [plan](../plans/2026-10-29-ceremony-commands.md) was
+reviewed and began implementation. The later v0.6 baseline direction below
+changes the prior-anchor premise and needs to be carried into the plans. No
 signing, re-anchor or push is authorized by this briefing.
 
 ## Remaining decisions and actions
@@ -117,35 +116,29 @@ waiting, or explicitly accept the outcome loss of a protected-lane pilot. No
 other test family is silently substituted. The existing testing-module update
 remains required; new simulation guidance stays v0.7.
 
-### 4. Complete the prescribed Maintainer ceremonies
+### 4. Establish a forward-trust baseline at v0.6
 
-The verification plan remains `revising-code`; ordinary review `f19f4f53`,
-Security review `9d813013` and author response `e9928009` preserve the hold.
-Its declared next move is the existing frozen-file ceremony: inspect
-`python bootstrap/tests/_gate_manifest.py verify` within
-`bootstrap/REANCHOR_RUNBOOK.md`, resolve and record discrepancies, then obtain
-the applicable Maintainer disposition. This briefing authorizes no manifest
-edit, signing, root change or waiver. Certification remains pending.
+The Maintainer's October 29 direction is to stop requiring checks of intervening
+changes against the old anchor and re-anchor at v0.6. The
+[forward-baseline exploration](2026-10-29-sol-forward-baseline.md) proposes one
+reviewed, signed baseline with the approved test roster, rather than two
+compatibility checkpoints. Future protected changes would be checked against
+that new baseline. The user has not authorized installation now.
 
-The path-instruction update also changed the frozen local and shipped checker
-module descriptions; their applicable Maintainer ceremony remains owed under the
-governing-text plan.
+This gives up P443-to-release protected-drift verification; it does not certify
+earlier history. The prior 83 HOLD reports remain historical evidence, not a
+list to reconcile as a prerequisite. Independent review and tests of the current
+baseline remain needed. The trust, verification and ceremony plans must be
+aligned with the new direction; their existing review records are not rewritten.
+The exact candidate, package and signer need Maintainer authorization at v0.6;
+pushing remains separate.
 
-The old-anchor E7 comparison required the accepted two-transition bridge. The
-Maintainer explicitly approved the dormant first-bridge setting, committed at
-`6e3197f6`; the active second transition is separate. Preliminary review probes
-detected all 29 identified forwarding mutations. The latest dormant
-candidate's final scoped run was interrupted when the Maintainer requested a
-reusable script, so implementation and independent reviews remain open. The
-previous 1,085-pass run covered a different, active candidate and does not
-certify the dormant one.
-
-The prior-anchor verifier reported 83 HOLD entries on the measured candidate;
-22 frozen paths each produced two reports, alongside 37 dropped nodes and two
-marker reports. No HOLD has been disposed. The reusable ceremony proposal above
-must provide the practical scripted verifier workflow. The trust plan still
-requires independent code and Security Reviews, Maintainer-only transitions
-and steady-state proof; no boundary is installed.
+The dormant bridge candidate was approved and committed at `6e3197f6`, but no
+boundary was installed. Its earlier scoped runs and preliminary reviews are
+historical evidence, not certification of the proposed new baseline. The
+path-instruction change also leaves frozen checker descriptions to account for
+in the release baseline. The approved split remains 78 protected test files,
+12 controls and 51 ordinary tests; no further reclassification is implied.
 
 ### 5. Queued convention choice: session handoff marker
 
