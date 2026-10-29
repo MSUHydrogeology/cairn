@@ -1,7 +1,7 @@
 # Reconcile the release gate and evidence environment
 
 **Author**: Codex (gpt-6.1-sol)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -281,3 +281,10 @@ evidence stage, as the response explains. The opening approach of forwarding
 the accepted cache value is superseded by validating and removing it before
 producer launch; the producer already supplies the cache option itself. No
 outcome was withdrawn.
+
+
+## Decision -- Maintainer -- 2026-10-29
+
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim and visually isolated:
+
+> "Yes."
