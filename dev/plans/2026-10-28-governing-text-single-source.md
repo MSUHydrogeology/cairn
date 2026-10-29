@@ -611,3 +611,68 @@ Prior findings: none
 | Final installed positive reading | The C1 baseline had both profiles receiving the floor. The final installs reconfirmed the same paths; the model-tier suite passed. | The C1 baseline had the accepted floor, grouped remainder and Maintainer authority present in both profiles but no installed semantic guard. After C3, both intact outputs pass the guard, while reviewer-authority inversion, per-entry-disposition deletion and proposed-expansion inversion are each detected in both outputs. |
 
 F1 is accepted. The rows above reconcile each C1 measure without replacing its original value; the appended entries in `editing-baseline.tsv` retain the before/after counts and source commit. The 30-word reduction is a point-of-use simplification; the measured file count, checks and lifecycle effort do not show a workflow or ceremony saving. No implementation, test, executable-template or fixture bytes changed after `72fecafe`, so the implementation verification remains tied to that commit. This response changes only the plan evidence and its status. No broad suite was rerun for this prose-only record. Status returns to `awaiting-code-review` for review of the response.
+
+## Code review -- Codex (GPT-6.1 Sol), Security Review -- 2026-10-29
+
+```
+Reviewed commit: 3993aef0
+Target: C3 implementation 72fecafe, scoped evidence d498b308 and same-measures response
+Prior findings: none for this code Security Review obligation
+```
+
+**Obligation**: Security Review of rule preservation and installed scope authority.
+**Findings**: none. **Bounding**: ACCEPTED for the changed rule surfaces and
+installed guards. This review performs no authority installation or ceremony.
+
+**Foundations**
+
+1. **Does it do what it claims?** The cut removes repeated explanation while keeping the operative accepted-scope floor, Maintainer-only concession, grouped per-entry dispositions and installed reader path. Real installed controls and independent deletion probes confirmed those duties remain reachable. -- `72fecafe` template diff; `templates/core/dev/plans/_template.md` Scope delta; ledger below.
+2. **Best alternative.** Retain the short rule at its point of use and reuse the existing scope owner test for installed output; moving the operating obligation into unshipped doctrine would weaken reach. -- `bootstrap/tests/test_scope_reduction_trap.py` `_assert_installed_scope_delta_obligations`; `bootstrap/_scaffold/config.py` `_CORE_MAPPINGS`.
+3. **What would show it wrong?** An install losing Maintainer authority or an assignment/Decision duty, or a guard satisfied by a copied clause outside the operative section. -- falsification ledger below.
+
+**Falsification ledger.** Python 3.13.13; fresh no-hardlink clone detached at
+`3993aef0`. The implementation test and both changed templates are byte-identical
+to `72fecafe`. No shared source, live key or reference changed.
+
+- Ran `python -m pytest bootstrap/tests/test_scope_reduction_trap.py -q --tb=short -p no:cacheprovider`:
+  **89 passed in 0.43 seconds**, including the author's two-profile installed
+  controls. This is an owner check, not independent falsification by itself.
+- Independently ran the real scaffold command for `solo-greenfield.yml` and
+  `high-rigor-legacy.yml`, each into three separate fresh empty targets. Each
+  installed template first passed `_missing_installed_plan_scope_obligations`.
+  Then edited the installed file and read it back through that guard:
+  - solo / remove the quoted Maintainer allowance: killed; missing allowance duty;
+  - fuller / remove the quoted Maintainer allowance: killed; missing allowance duty;
+  - solo / remove the future-plan assignment and Decision quotation: killed;
+    missing assignment/Decision duty;
+  - fuller / remove the future-plan assignment and Decision quotation: killed;
+    missing assignment/Decision duty;
+  - solo / replace the operative section with reviewer permission and move intact
+    duties into an unrelated appendix: killed; missing Maintainer-only duty;
+  - fuller / the same out-of-section decoy: killed; missing Maintainer-only duty.
+  All six mutations were confirmed to change the text; none was equivalent or
+  survived. These extend the author's three named installed mutation cases.
+
+**Reasoning and coverage.** Claims, delivery, completeness and refusal (#1–4):
+the template diff retains the obligations and the real installations above test
+the actual core mapping, rather than only a source copy. The guard isolates the
+Scope delta section, so an unrelated mention cannot satisfy the tested duties.
+Reuse, drift and placement (#5–7): reviewed the existing scope owner, core mapping,
+source/shipped section parity and surviving rationale in installed `AGENTS.md`
+and collaboration text. The local and shipped full templates intentionally differ
+outside that section; whole-file parity is not claimed. Scope and satisfiers
+(#8–9): the same-measures response acknowledges unchanged presentation-file and
+ceremony effort; the measured improvement is 30 fewer words at each point of use,
+not an unmeasured operational saving. The plan history records the routing and
+conflict Waiting lines and the Maintainer's choices before their changes.
+
+The earlier path-instruction correction describes the existing exact,
+document-wide registry; its recorded installed positive and sibling/declaration
+negative controls and focused review remain the evidence for that slice. This
+pass did not repeat those checks, the 781-test mapping, all wording permutations,
+an adopter-use trial, historical-anchor reconciliation or a ceremony. Pattern
+checks prove sensitivity to particular breaks, not general natural-language
+semantic equivalence or truth of a Scope delta declaration. No runtime authority
+or new execution surface was added by this template change. Under the Maintainer's
+source-work direction, future baseline installation is separate; this pass
+clears the distinct code Security Review obligation without claiming installation.
