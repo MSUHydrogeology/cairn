@@ -509,3 +509,23 @@ independent code and Security Reviews, C4 installation/re-anchor and C5
 steady-state approval remain pending. Do not treat the prospective narrowed
 manifest as installed or the implementation as verified until Terra resolves
 the mapped non-passes and a new final-commit Boundary B record succeeds.
+
+## Maintainer operator clarification -- relayed by Codex (Implementation Terra) -- 2026-10-29
+
+> I am fine with running something, it just has to meet the skills of this maintainer.
+
+The earlier capability statement relayed in the same instruction was:
+
+> I could definitely do a `reanchor` and a `repin` and confirm shas and enter my passphrase
+
+The builder prepares the verifier command and its paths, and the reader checks
+its provenance; the Maintainer compares the recorded hashes and runs it with the
+key away. This does not authorize a ceremony or waive a HOLD.
+
+## Maintainer script instruction -- relayed by Codex (Implementation Terra) -- 2026-10-29
+
+> And remember we want scripts, not one-off commands!
+
+This adds a reusable script deliverable to the human-run verifier outcome.
+Its design and verification remain subject to the plan's independent code and
+Security Reviews; the instruction does not authorize installation or waive a HOLD.
