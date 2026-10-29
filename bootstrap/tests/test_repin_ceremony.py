@@ -2311,7 +2311,7 @@ def test_collection_observer_refuses_replay_errors_and_multiple_calls(tmp_path, 
         assert capture.read_text() == '{"old":"capture"}'
 
 
-@pytest.mark.parametrize("alteration", ["ignored", "dependency", "target", "symlink_parent"])
+@pytest.mark.parametrize("alteration", ["ignored", "dependency", "target", "symlink_parent", "gitlink", "python"])
 def test_prepared_verifier_refuses_untrusted_evidence_before_collection(cbed, tmp_path, alteration):
     full_verifier_anchor(cbed)
     fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
@@ -2335,9 +2335,17 @@ def test_prepared_verifier_refuses_untrusted_evidence_before_collection(cbed, tm
     elif alteration == "dependency":
         del packet["prior_dependencies"]["bootstrap/tests/_gate_manifest.py"]
         packet_path.write_text(json.dumps(packet))
+    elif alteration == "python":
+        packet["python"] = str(sentinel)
+        packet_path.write_text(json.dumps(packet))
     elif alteration == "target":
         packet["target"] = str(tmp_path)
         packet_path.write_text(json.dumps(packet))
+    elif alteration == "gitlink":
+        dotgit = evidence / "candidate" / ".git"
+        moved = tmp_path / "moved-git"
+        dotgit.rename(moved)
+        dotgit.symlink_to(moved, target_is_directory=True)
     else:
         link = tmp_path / "linked-evidence"
         link.symlink_to(evidence, target_is_directory=True)

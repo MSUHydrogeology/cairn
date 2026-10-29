@@ -988,6 +988,7 @@ def _verifier_prepare(repo, prior, candidate, trusted_ref, expected_fingerprint,
         "observer": str(observer_path), "observer_sha256": observer_digest,
         "preparer_sha256": sha(preparer),
         "python": os.path.realpath(sys.executable),
+        "python_sha256": sha(Path(os.path.realpath(sys.executable)).read_bytes()),
         "warning": "This preparer is not P-authenticated authority; the independent reader must verify P, signer provenance, and all hashes.",
     }
     path = evidence / VERIFIER_PACKET
@@ -998,7 +999,7 @@ def _verifier_prepare(repo, prior, candidate, trusted_ref, expected_fingerprint,
     say(f"verifier  sha256 {record['verifier_sha256']}  manifest sha256 {record['manifest_sha256']}")
     say(f"observer  {observer_path}  sha256 {observer_digest}")
     say(f"preparer  scripts/repin.py at C sha256 {record['preparer_sha256']}")
-    say("Reader must independently verify P's signed commit, signer provenance, dependency hashes, and exact clean C bytes.")
+    say("Reader must independently verify P's signed commit, signer provenance, dependency hashes, exact clean C bytes, and the Python path and digest.")
     say("The target contains candidate code. Run the verifier only with the signing key away.")
     return path
 
@@ -1013,6 +1014,12 @@ def _candidate_tree_digest(repo, commit):
 
 def _assert_candidate_bytes(repo, commit, target):
     """Compare the clean worktree against every raw object in C; refuse links."""
+    dotgit = target / ".git"
+    if dotgit.is_symlink() or not dotgit.is_dir():
+        raise Refuse("candidate Git metadata must be its own plain .git directory.")
+    actual_gitdir = Path(git_text(target, "rev-parse", "--absolute-git-dir"))
+    if _plain_absolute_path(actual_gitdir) != dotgit:
+        raise Refuse("candidate Git metadata is not contained in its prepared target.")
     entries = []
     for row in git(repo, "ls-tree", "-r", "-z", "--full-tree", commit).split(b"\0"):
         if not row:
@@ -1195,12 +1202,16 @@ def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, conf
     pinned_version = manifest_obj.get("interpreter", {}).get("version_info", [])
     if list(sys.version_info[:2]) != list(pinned_version[:2]):
         raise Refuse("the canonical interpreter minor does not match P's signed manifest.")
+    python = packet["python"]
+    current_python = os.path.realpath(sys.executable)
+    if (not isinstance(python, str) or python != current_python
+            or packet.get("python_sha256") != sha(Path(current_python).read_bytes())):
+        raise Refuse("the reviewed Python executable differs from this running interpreter.")
     if not confirm_key_away:
         raise Refuse("explicitly confirm the signing key is away before full collection.")
     say("The following full collection executes candidate code. Confirm the signing key is away and type YES.")
     if input("Signing key away? [YES]: ").strip() != "YES":
         raise Refuse("operator did not confirm key absence; verifier was not run.")
-    python = packet["python"]
     verifier = evidence / "prior" / VERIFIER_REL
     manifest = evidence / "prior" / "gate_manifest.json"
     env = {"HOME": "/nonexistent", "PATH": "/usr/bin:/bin", "LC_ALL": "C",
@@ -1239,6 +1250,8 @@ def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, conf
         path = _plain_absolute_path(evidence / "prior" / ("gate_manifest.json" if rel == VERIFIER_MANIFEST_REL else rel))
         if raw is None or sha(raw) != expected or path.is_symlink() or path.read_bytes() != raw:
             raise Refuse(f"prior verifier evidence changed during collection at {d(rel)}.")
+    if sha(Path(current_python).read_bytes()) != packet["python_sha256"]:
+        raise Refuse("the reviewed Python executable changed during collection.")
     if observer.is_symlink() or sha(observer.read_bytes()) != packet["observer_sha256"]:
         raise Refuse("collection observer changed during candidate execution.")
     (evidence / "verifier-report.txt").write_bytes(report)
@@ -1256,6 +1269,7 @@ def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, conf
                "candidate": candidate, "verifier_sha256": packet["verifier_sha256"],
                "manifest_sha256": packet["manifest_sha256"], "report_sha256": report_sha,
                "preparer_sha256": packet["preparer_sha256"],
+               "python_sha256": packet["python_sha256"],
                "collection_baseline_sha256": sha(dump(manifest_obj.get("collection", {}))),
                "collection_result_sha256": sha(collection_semantic),
                "collection_nonce": nonce, "collection_path": str(capture),
@@ -1305,7 +1319,7 @@ def _check_dispositions(path, binding):
     if path.is_symlink() or not path.is_file():
         raise Refuse("disposition record is missing or a symlink.")
     obj = _unique_json(path.read_bytes(), "disposition")
-    for key in ("schema", "prior_anchor", "candidate", "preparer_sha256", "verifier_sha256", "manifest_sha256", "observer_sha256", "report_sha256", "collection_baseline_sha256", "collection_result_sha256", "collection_node_count", "collection_marked_count", "argv", "environment", "exit", "holds", "notes"):
+    for key in ("schema", "prior_anchor", "candidate", "preparer_sha256", "python_sha256", "verifier_sha256", "manifest_sha256", "observer_sha256", "report_sha256", "collection_baseline_sha256", "collection_result_sha256", "collection_node_count", "collection_marked_count", "argv", "environment", "exit", "holds", "notes"):
         if obj.get(key) != binding.get(key):
             raise Refuse(f"disposition evidence is stale or differs at {key}; fresh review is required.")
     items = obj.get("items")
