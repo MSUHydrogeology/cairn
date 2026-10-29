@@ -221,3 +221,38 @@ Standing gates on the same checkout passed: `python scripts/check_cairn.py` (187
 ## Response to code review -- Codex (gpt-6.1-sol) -- 2026-10-29
 
 R1 accepted: `locale.getpreferredencoding(False)` follows Python UTF-8 mode, matching subprocess's default text encoding. R2 accepted: both streams decode strictly before either is displayed, while successful stderr remains suppressed. The real-child controls and wide verification above cover all three helpers. No scope was removed.
+
+## Code review -- Codex (gpt-6.1-sol, Security) -- 2026-10-29
+
+```
+Reviewed commit: ad46f86e97a16305467f4342dd6e89080e466dbb
+Target: acaa1484 implementation, decoding revision through ad46f86e, evidence at 923b765e
+Prior findings: ordinary R1/R2 addressed by author; no prior code Security pass
+```
+
+**Obligation**: Security Review of session child-output display boundary
+**Tier**: Internal
+**Findings**: none
+**Verdict**: CLEAR
+
+**Foundations**:
+
+1. **Should this happen as framed?** The three helpers preserve CR through byte capture and encode child text before display; the decoding revision retains strict failure for both streams -- `tools/session.py` > `_decode_child_output`, `_prune_intents`, `_surface_intents`, `_run_evolution_infer`, and ledger below.
+2. **Best alternative.** Keep the existing shared encoder and literal-LF framing; a second escape table or transport framework adds no protection here -- `tools/session.py` > `encode_display` and `_encode_child_output`.
+3. **What would show it wrong.** A real child's terminal control reaching the terminal, CR becoming a report line, or malformed suppressed stderr allowing partial child display would defeat the boundary -- falsification ledger below.
+
+**Bounding**: ACCEPTED -- challenged real transport, all three display consumers and both strict-decoding failure streams. The wide author record at `923b765e` covers the mapped five families, new UTF-8-mode controls, public paths and standing gates; certification remains pending.
+
+**Falsification ledger:** A fresh detached checkout of `ad46f86e`, using `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13), ran a standalone standard-library probe through each actual helper with a real child:
+
+| Probe | Result |
+|---|---|
+| Each helper, exit zero and one; stdout/stderr contain literal LF, bare CR, CRLF, OSC 52/ESC/BEL, C1 CSI, Unicode line/paragraph separators, bidi controls, Hangul filler and literal backslash notation | Six branches passed: LF retained; other controls encoded; parent message remains on a separate line; successful stderr suppressed and nonzero stderr visible. |
+| Each helper, exit zero; valid stdout followed by malformed stdout or malformed stderr bytes | Six branches raised `UnicodeDecodeError`; no valid child prefix was displayed before failure. |
+| Compare source and shipped twin bytes | Identical. |
+
+These probes extend the recorded regression checks by attacking clipboard-control output, Unicode separators and display-before-decode failure. No mutations were required for a new universal claim; the author's existing ledger enumerates the three stdout raw-write mutants separately, including its ineffective self-hosted-only initial probe. The revised decoder uses `locale.getpreferredencoding(False)`, matching subprocess's UTF-8-mode default; both streams decode before suppression. Reading the revision found no newly introduced defect.
+
+**Covered:** claims and real production paths (#1–2: ledger); framing, malformed bytes and failure visibility (#3–4: ledger and helper bodies); reuse and drift (#5–6: `encode_display`/`_encode_child_output`, twin comparison and committed revision); lifecycle and scope (#7–8: operative C1/C2, reviewed history has no reached Maintainer fence or scope cut); satisfiers (#9: no findings). No scientific method changes.
+
+**Not covered / low confidence:** no full-suite run, historical anchor comparison, protected-test re-anchor, external links or hostile native terminal emulator execution. The fixed encoder's wider Unicode policy and executable provenance were not re-audited. Printable false claims remain outside this display boundary. The protected-test ceremony remains owed at v0.6.
