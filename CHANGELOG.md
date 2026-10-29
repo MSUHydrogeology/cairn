@@ -38,6 +38,8 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+- The evidence-stage boundary admits and removes only pytest’s exact cache-only setting; the wide scoped checks and both independent C1 reviews are recorded. The protected-file packet, reader and Maintainer-only installation steps are deferred to the v0.6 baseline work item by Maintainer authorization. ([plan](dev/plans/archive/2026-10-29-release-evidence-environment.md))
+
 - Forward-baseline preparation and installation now use independently reviewed inputs and scratch-tested refusal and protection checks. Actual installation and tree certification remain separate v0.6 work. ([plan](dev/plans/archive/2026-10-29-forward-trust-baseline.md); [runbook](bootstrap/REANCHOR_RUNBOOK.md))
 
 - Installed modules now have a selection-specific inventory and optional first-use tasks, including later adoption and conservative recovery when existing work conflicts. Whole-tree certification remains pending. ([plan](dev/plans/archive/2026-10-29-module-discovery-activation.md))

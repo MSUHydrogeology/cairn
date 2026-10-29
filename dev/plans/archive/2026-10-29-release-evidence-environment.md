@@ -1,7 +1,7 @@
 # Plan: Release evidence environment
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-release-evidence-environment.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Let release evidence run with the cache-only pytest setting while refusing settings that can steer collection.
