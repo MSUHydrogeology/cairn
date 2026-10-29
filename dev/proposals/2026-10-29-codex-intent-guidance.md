@@ -1,7 +1,7 @@
 # Make work-intent guidance match enforcement and session identity
 
 **Author**: Codex (GPT-6)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual
 **Plan review**: required(Internal)
 **Opened**: 2026-10-29
@@ -93,3 +93,57 @@ case where the implementation only warns.
 ## Assurance path
 
 **Assurance path**: standard
+
+
+## Review -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+Reviewed commit: 3fd6237aefd67267fa4dc8ffad0070c387987fba
+Target: opening proposal
+Prior findings: none
+Assurance path: standard (challenged below)
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** Correcting the misleading assurance and preserving distinct session identities is worthwhile, but the declared documentation boundary excludes a directly contradictory governing rule -- `dev/agent_collaboration.md`, coordination paragraph; `doctrine/coordination.md`, “Enforcing the coordination check”.
+2. **Best alternative.** Keep behavior unchanged, reconcile the governing default explicitly, and update both repository guidance and its shipped source; this reaches the same cause without inventing another identity mechanism -- `tools/_intent/conflict.py::_read_enforce_mode`; `bootstrap/_scaffold/config.py`, coordination-tiers install mapping.
+3. **What would show it wrong.** Instructions that resolve differently across command shells, collapse sibling sessions, or promise blocking without a session token would defeat the remedy -- `tools/_intent/identity.py::resolve_agent_identity`, `resolve_session_token`; `tools/_intent/conflict.py::other_session_overlaps`, `_precommit_check_impl`.
+
+The strongest version is a short, practical explanation of existing behavior,
+with one safe example a contributor can follow before a claim and commit.
+
+**IG1 -- blocking: the doctrine exclusion leaves the central contradiction.**
+`doctrine/coordination.md` says advisory by default, concurrent teams default to
+confirm, and block is opt-in. The engine and both coordination modules instead
+say block is the default. “Verify other current guidance” cannot deliver an
+accurate account while the proposal forbids correcting that governing source.
+State how this contradiction is resolved, preferably by including the precise
+doctrine correction while preserving behavior. That includes a mandatory
+high-assurance surface under `dev/proposals/_template.md`, “Assurance path”:
+revise the assurance declaration and review obligations accordingly. This usual
+pass clears no Security Review obligation. No baseline outcome needs dropping.
+
+**IG2 -- blocking: name the shipped source and the practical example.**
+The scaffold installs
+`templates/modules/team-gated/coordination-tiers.md` into the adopter's
+`dev/modules/coordination-tiers.md`; editing Cairn's development copy alone
+would leave adopters without the remedy. Include both homes explicitly and
+require one illustrative command sequence using synthetic identifiers or
+placeholders, never actual session identifiers. Show that each fresh command
+shell must receive the same session-specific override when one is used; a
+shell-local assignment in a previous invocation is insufficient. Explain that
+an override alone supplies no session token, so it does not enable blocking in
+a shell without a harness token. Compare `whoami` in each relevant environment;
+prefer automatic harness identity, and never recommend a machine-global export.
+Evidence: `tools/_intent/identity.py::resolve_session_token` ignores overrides;
+`tools/_intent/conflict.py::other_session_overlaps` compares resolved agent
+strings only after token availability gates own-claim recognition.
+
+**Coverage:** read the committed proposal, governing coordination text, both
+module homes, scaffold install mapping, identity resolver, conflict decision,
+and CLI diagnostic entry point. No implementation exists to test; the reported
+v0.6 incident was not independently reproduced. No hook installation, behavioral
+mutation, full suite, or scientific validation was performed.
