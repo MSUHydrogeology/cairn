@@ -275,13 +275,12 @@ class TestOnboardingDocDelivery:
 
 
 class TestNoPresetPath:
-    def test_explicit_modules_install_leaves_slot_empty(
+    def test_explicit_modules_install_adds_tasks_without_preset_seeds(
         self, tmp_path: Path,
     ) -> None:
         """A profile that uses `modules:` without `preset:` is the
-        explicit-modules path.  No onboarding install fires; the slot
-        body keeps its empty placeholder + the `dev/modules/onboarding/`
-        directory exists (from `_DEV_DIRS`) but holds no preset file."""
+        explicit-modules path. It gets module tasks, without preset metadata
+        or preset-only seed content."""
         assert _scaffold(tmp_path, None) == 0
 
         planning = (tmp_path / "dev" / "PLANNING.md").read_text(
@@ -305,6 +304,7 @@ class TestNoPresetPath:
             f"preset metadata leaked into slot under explicit-modules "
             f"path; slot body:\n{slot_body}"
         )
+        assert "module-task id=reflections" in slot_body
         # No preset source file installed.
         onboarding_dir = tmp_path / "dev" / "modules" / "onboarding"
         assert onboarding_dir.is_dir()

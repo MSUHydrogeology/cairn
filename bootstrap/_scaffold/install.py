@@ -1201,6 +1201,12 @@ def _module_task_blocks(modules: list[str], *, skip: set[str] | None = None) -> 
     ]
 
 
+def _render_module_task_overlay(modules: list[str]) -> str:
+    """Render explicit-roster tasks without adding preset metadata or seeds."""
+    blocks = _module_task_blocks(modules)
+    return "\n\n".join(blocks) + ("\n" if blocks else "")
+
+
 def _render_module_inventory(modules: list[str]) -> str:
     """Render the generated block of the passive module inventory."""
     rows = []
@@ -1399,8 +1405,7 @@ def install_onboarding(
     preset_text = src.read_text(encoding="utf-8") if src is not None else ""
     rendered = (_rendered_onboarding_overlay(preset_name or "custom",
                                               preset_text, axes, modules)
-                if valid_preset else _render_onboarding_slot(
-                    "custom", _module_task_blocks(modules or [])))
+                if valid_preset else _render_module_task_overlay(modules or []))
 
     # Prepare and preflight both generated surfaces before writing either.
     planning_dst = target / "dev" / "PLANNING.md"
@@ -1477,33 +1482,34 @@ def install_onboarding(
     # in the adopter.  Sourced from cairn/docs/; skipped when the file
     # exists unless --force.  Shared across presets, so a preset selection
     # ships both regardless of which one.
-    docs_root = templates_root.parent / "docs"
-    for doc_name in _ONBOARDING_DOC_NAMES:
-        doc_src = docs_root / doc_name
-        doc_dst = target / _ONBOARDING_DOC_DST_DIR_REL / doc_name
-        if not doc_src.exists():
-            print(
-                f"  [warn] onboarding doc source missing: docs/{doc_name}",
-                file=sys.stderr,
+    if valid_preset:
+        docs_root = templates_root.parent / "docs"
+        for doc_name in _ONBOARDING_DOC_NAMES:
+            doc_src = docs_root / doc_name
+            doc_dst = target / _ONBOARDING_DOC_DST_DIR_REL / doc_name
+            if not doc_src.exists():
+                print(
+                    f"  [warn] onboarding doc source missing: docs/{doc_name}",
+                    file=sys.stderr,
+                )
+                continue
+            if dry_run:
+                results.append((doc_dst, [], [], "dry-run"))
+                continue
+            if doc_dst.exists() and not force:
+                print(
+                    f"  [skip] {doc_dst}: already exists -- pass --force to "
+                    f"overwrite",
+                    file=sys.stderr,
+                )
+                results.append((doc_dst, [], [], "skipped-exists"))
+                continue
+            _assert_safe_write(doc_dst, target)
+            doc_dst.parent.mkdir(parents=True, exist_ok=True)
+            doc_dst.write_text(
+                doc_src.read_text(encoding="utf-8"), encoding="utf-8"
             )
-            continue
-        if dry_run:
-            results.append((doc_dst, [], [], "dry-run"))
-            continue
-        if doc_dst.exists() and not force:
-            print(
-                f"  [skip] {doc_dst}: already exists -- pass --force to "
-                f"overwrite",
-                file=sys.stderr,
-            )
-            results.append((doc_dst, [], [], "skipped-exists"))
-            continue
-        _assert_safe_write(doc_dst, target)
-        doc_dst.parent.mkdir(parents=True, exist_ok=True)
-        doc_dst.write_text(
-            doc_src.read_text(encoding="utf-8"), encoding="utf-8"
-        )
-        results.append((doc_dst, [], [], "installed"))
+            results.append((doc_dst, [], [], "installed"))
 
     return results
 
@@ -1959,8 +1965,7 @@ def write_install_lockfile(
                 modules,
             )
     elif modules:
-        onboarding_overlay = _render_onboarding_slot(
-            "custom", _module_task_blocks(modules))
+        onboarding_overlay = _render_module_task_overlay(modules)
 
     # Pre-compute the module-merge overlay, grouped per target file in
     # directive order, so the `would` calculation below applies the SAME

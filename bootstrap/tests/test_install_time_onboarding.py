@@ -228,9 +228,14 @@ class TestInstallOutputEndsWithThePointerToTheList:
         assert out.count(POINTER) == 1
         assert out.index("Wrote dev/.cairn/cairn-lock.yml") < out.index(POINTER)
 
-    def test_it_is_absent_without_a_profile(self, tmp_path: Path, capsys) -> None:
+    def test_it_points_to_module_tasks_without_a_preset(self, tmp_path: Path, capsys) -> None:
         assert _install(tmp_path / "t", None) == 0
-        assert POINTER not in capsys.readouterr().out
+        out = capsys.readouterr().out
+        assert out.count(POINTER) == 1
+        assert _last_line(out) == POINTER
+        planning = (tmp_path / "t" / "dev" / "PLANNING.md").read_text(
+            encoding="utf-8")
+        assert "module-task id=reflections" in planning
 
     def test_it_is_absent_under_dry_run(self, tmp_path: Path, capsys) -> None:
         assert _install(tmp_path / "t", PROFILES[0], extra=("--dry-run",)) == 0
