@@ -293,12 +293,7 @@ def baseline_prepare(repo, candidate, approved_roster, reader_record, output_dir
     try:
         extracted = temp / "candidate"
         ents = extract(repo, candidate, extracted)
-        required = {"bootstrap/tests/fixtures/protected_test_roster.json",
-                    MANIFEST_REL, REPIN_REL, RUNBOOK,
-                    "dev/.cairn/allowed_signers",
-                    "tools/session.py",
-                    "bootstrap/reanchor.sh", "bootstrap/reanchor-launcher.template.sh",
-                    *LISTED, *ctx_baseline_tool_paths()}
+        required = baseline_required_paths()
         paths = {path for _mode, _oid, path in ents}
         sys.path.insert(0, str(extracted))
         try:
@@ -379,6 +374,87 @@ def baseline_prepare(repo, candidate, approved_roster, reader_record, output_dir
 def ctx_baseline_tool_paths():
     """The independent derivation and manifest producer used for preparation."""
     return ["bootstrap/tests/_gate_manifest.py", "bootstrap/tests/_gate_preflight.py"]
+
+
+def baseline_required_paths():
+    """Closed candidate input set used by both reader preparation and packaging."""
+    return {"bootstrap/tests/fixtures/protected_test_roster.json",
+            MANIFEST_REL, REPIN_REL, RUNBOOK, "dev/.cairn/allowed_signers", "tools/session.py",
+            "bootstrap/reanchor.sh", "bootstrap/reanchor-launcher.template.sh",
+            *LISTED, *ctx_baseline_tool_paths()}
+
+
+def baseline_reader_inputs(repo, candidate, approved_roster, output):
+    """Write a reviewer-editable record draft bound to independently derived C1 inputs."""
+    repo = _plain_absolute_path(repo)
+    candidate = git_text(repo, "rev-parse", "--verify", candidate + "^{commit}")
+    if git(repo, "cat-file", "blob", f"{candidate}:{REPIN_REL}") != Path(__file__).read_bytes():
+        raise Refuse("running reader-input tool differs from scripts/repin.py at the committed candidate.")
+    roster_path, output_path = _plain_absolute_path(approved_roster), _plain_absolute_path(output)
+    if (roster_path.is_symlink() or not roster_path.is_file()
+            or output_path.exists() or output_path.is_symlink() or output_path.parent.is_symlink()
+            or not output_path.parent.is_dir()):
+        raise Refuse("approved roster must be a plain file and reader draft must be a new file in a plain folder.")
+    if any(path == repo or repo in path.parents for path in (roster_path, output_path)):
+        raise Refuse("approved roster and reader draft must be outside the candidate checkout.")
+    roster_raw = roster_path.read_bytes()
+    tmp = Path(tempfile.mkdtemp(prefix="repin-baseline-reader-"))
+    try:
+        extracted = tmp / "candidate"
+        ents = extract(repo, candidate, extracted)
+        required = baseline_required_paths()
+        paths = {path for _mode, _oid, path in ents}
+        if not required.issubset(paths):
+            raise Refuse("candidate is missing required baseline or authority files: "
+                         + ", ".join(sorted(required - paths)))
+        sys.path.insert(0, str(extracted))
+        try:
+            import importlib
+            gm = importlib.import_module("bootstrap.tests._gate_manifest")
+            gp = importlib.import_module("bootstrap.tests._gate_preflight")
+            approved = gm._roster_from_bytes(roster_raw, require_initial_approval=True)
+            if (approved["path"] not in required or git(
+                    repo, "cat-file", "blob", f"{candidate}:{approved['path']}", check=False) != roster_raw):
+                raise Refuse("candidate roster differs from the independently supplied approved roster.")
+            engine = sorted(p for _mode, _oid, p in ents
+                            if re.fullmatch(r"bootstrap/_scaffold/[^/]+\.py", p))
+            transaction = build_transaction(
+                {"repo": repo, "head": candidate, "anchor": "no-signed-predecessor",
+                 "ext": extracted, "tmp": tmp, "engine": engine, "ents": ents,
+                 "closure_changed": [], "baseline_mode": True,
+                 "session_oid": git_text(repo, "rev-parse", f"{candidate}:tools/session.py")},
+                baseline=True)
+            if transaction is not None:
+                raise Refuse("candidate still owes reviewed AST or lockfile preparation; commit it before reader review.")
+            manifest = gm.produce(extracted, protected_roster=approved)
+            static = gp.rederive_static_manifest(candidate, protected_roster=approved, repo=repo)
+            if not manifest.get("collection", {}).get("node_ids"):
+                raise Refuse("candidate collection is empty.")
+            manifest = gp.authoritative_manifest(manifest, static)
+        except (OSError, RuntimeError, ValueError, KeyError, ImportError) as exc:
+            if isinstance(exc, Refuse):
+                raise
+            raise Refuse(f"candidate reader inputs could not be derived: {exc}") from None
+        finally:
+            if sys.path and sys.path[0] == str(extracted):
+                sys.path.pop(0)
+        manifest_raw = dump(manifest)
+        tool_hashes = {p: sha(git(repo, "cat-file", "blob", f"{candidate}:{p}"))
+                       for p in sorted(required) if p.endswith(".py") or p in
+                       (RUNBOOK, "bootstrap/reanchor.sh", "bootstrap/reanchor-launcher.template.sh",
+                        "dev/.cairn/allowed_signers")}
+        record = {"schema": "cairn-baseline-reader/v1", "candidate": candidate,
+                  "roster_sha256": sha(roster_raw), "manifest_sha256": sha(manifest_raw),
+                  "collection_sha256": sha(dump({"node_ids": manifest["collection"]["node_ids"],
+                                                   "skip_xfail_marked": manifest["collection"]["skip_xfail_marked"]})),
+                  "interpreter": sys.version.split()[0], "tool_hashes": tool_hashes,
+                  "reviewer": "", "reviewed": False}
+        write_new(output_path, dump(record))
+        say(f"wrote unreviewed reader draft {output_path} for candidate {candidate}; "
+            "independently verify every field, then fill reviewer and reviewed before preparation")
+        return record
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 def baseline_install(repo, candidate, package_dir, approved_roster, reader_record,
@@ -545,12 +621,6 @@ def baseline_install(repo, candidate, package_dir, approved_roster, reader_recor
                 del sys.modules[name]
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
-
-
-def package_collection_sha(manifest):
-    collection = manifest.get("collection", {})
-    return sha(dump({"node_ids": collection.get("node_ids"),
-                     "skip_xfail_marked": collection.get("skip_xfail_marked")}))
 
 
 #: The in-process modules, each after the ones it imports.  The others in LISTED
@@ -2315,6 +2385,10 @@ def main(argv=None, *, launchctl=launchctl_socket):
     bp.add_argument("--approved-roster", required=True, metavar="FILE")
     bp.add_argument("--reader-record", required=True, metavar="FILE")
     bp.add_argument("--output-dir", required=True, metavar="DIR")
+    bri = sub.add_parser("baseline-reader-inputs", help="prepare an unreviewed independent reader-record draft")
+    bri.add_argument("--candidate", default="HEAD", metavar="SHA|REF")
+    bri.add_argument("--approved-roster", required=True, metavar="FILE")
+    bri.add_argument("--output", required=True, metavar="FILE")
     bi = sub.add_parser("baseline-install", help="install an independently reviewed forward baseline")
     bi.add_argument("--candidate", default="HEAD", metavar="SHA|REF")
     bi.add_argument("--package-dir", required=True, metavar="DIR")
@@ -2324,7 +2398,7 @@ def main(argv=None, *, launchctl=launchctl_socket):
     bi.add_argument("--expected-fingerprint", required=True, metavar="SHA256:...")
     bi.add_argument("--confirm-package-sha256", required=True, metavar="SHA256")
     args = ap.parse_args(argv)
-    if args.verb == "baseline-prepare":
+    if args.verb in ("baseline-prepare", "baseline-reader-inputs"):
         saved_env = dict(os.environ)
         safe_home = tempfile.mkdtemp(prefix="repin-baseline-home-")
         safe_env = {key: os.environ[key] for key in ("PATH", "TMPDIR", "SYSTEMROOT")
@@ -2334,8 +2408,12 @@ def main(argv=None, *, launchctl=launchctl_socket):
         try:
             os.environ.clear()
             os.environ.update(safe_env)
-            baseline_prepare(Path(__file__).resolve().parent.parent, args.candidate,
-                             args.approved_roster, args.reader_record, args.output_dir)
+            repo = Path(__file__).resolve().parent.parent
+            if args.verb == "baseline-prepare":
+                baseline_prepare(repo, args.candidate, args.approved_roster,
+                                 args.reader_record, args.output_dir)
+            else:
+                baseline_reader_inputs(repo, args.candidate, args.approved_roster, args.output)
             return 0
         except (Refuse, OSError, ValueError, KeyError) as exc:
             print(f"\nrepin stopped; no authority changed.\n  {exc}", file=sys.stderr)

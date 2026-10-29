@@ -8,8 +8,8 @@ condition is fine, so a refusal is shown to be this check and not a broken bed.
 """
 from __future__ import annotations
 
-import hashlib
 import ast
+import hashlib
 import io
 import json
 import os
@@ -275,6 +275,14 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     assert missing.returncode == 2, missing.stdout + missing.stderr
     assert "owes reviewed AST or lockfile preparation" in missing.stderr
     assert not pending.exists()
+    pending_reader = tmp_path / "pending-reader.json"
+    reader_refusal = subprocess.run(
+        [PY, str(repo / "scripts/repin.py"), "baseline-reader-inputs", "--candidate", candidate,
+         "--approved-roster", str(roster), "--output", str(pending_reader)],
+        cwd=repo, env=git_env, capture_output=True, text=True, check=False)
+    assert reader_refusal.returncode == 2
+    assert "owes reviewed AST or lockfile preparation" in reader_refusal.stderr
+    assert not pending_reader.exists()
 
     initial_tree = tmp_path / "ast-input"
     ents = RP.extract(repo, candidate, initial_tree)
@@ -300,30 +308,20 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     monkeypatch.setattr(os, "environ", {"PATH": os.environ["PATH"], "HOME": str(tmp_path),
                                         "LC_ALL": "C", "GIT_CONFIG_GLOBAL": os.devnull,
                                         "GIT_CONFIG_NOSYSTEM": "1", "GIT_TERMINAL_PROMPT": "0"})
-    extracted = tmp_path / "reader-candidate"
-    ents = RP.extract(repo, candidate, extracted)
-    approved = GM._roster_from_bytes(roster.read_bytes(), require_initial_approval=True)
-    manifest = GM.produce(extracted, protected_roster=approved)
-    static = GP.rederive_static_manifest(candidate, protected_roster=approved, repo=repo)
-    manifest = GP.authoritative_manifest(manifest, static)
-    tool_paths = {approved["path"], RP.MANIFEST_REL, RP.REPIN_REL, RP.RUNBOOK,
-                  "bootstrap/reanchor.sh", "bootstrap/reanchor-launcher.template.sh",
-                  "dev/.cairn/allowed_signers", "tools/session.py",
-                  *RP.LISTED, *RP.ctx_baseline_tool_paths()}
-    tool_hashes = {p: RP.sha(RP.git(repo, "cat-file", "blob", f"{candidate}:{p}"))
-                   for p in sorted(tool_paths)
-                   if p.endswith(".py") or p in
-                   (RP.RUNBOOK, "bootstrap/reanchor.sh", "bootstrap/reanchor-launcher.template.sh",
-                    "dev/.cairn/allowed_signers")}
-    manifest_raw = RP.dump(manifest)
-    collection_sha = RP.package_collection_sha(manifest)
     reader = tmp_path / "reader.json"
-    reader.write_text(_dump({"schema": "cairn-baseline-reader/v1", "candidate": candidate,
-                             "roster_sha256": RP.sha(roster.read_bytes()),
-                             "manifest_sha256": RP.sha(manifest_raw),
-                             "collection_sha256": collection_sha,
-                             "interpreter": sys.version.split()[0], "tool_hashes": tool_hashes,
-                             "reviewer": "independent scratch reviewer", "reviewed": True}))
+    reader_env = {**git_env, "SSH_AUTH_SOCK": "/tmp/unavailable-agent.sock",
+                  "GPG_AGENT_INFO": "/tmp/unavailable-gpg-agent",
+                  "AWS_SECRET_ACCESS_KEY": "must-not-reach-candidate"}
+    prepared_reader = subprocess.run(
+        [PY, str(repo / "scripts/repin.py"), "baseline-reader-inputs", "--candidate", candidate,
+         "--approved-roster", str(roster), "--output", str(reader)],
+        cwd=repo, env=reader_env, capture_output=True, text=True, check=False)
+    assert prepared_reader.returncode == 0, prepared_reader.stdout + prepared_reader.stderr
+    reader_draft = json.loads(reader.read_text())
+    assert reader_draft["reviewer"] == "" and reader_draft["reviewed"] is False
+    reader_draft["reviewer"], reader_draft["reviewed"] = "independent scratch reviewer", True
+    reader.write_text(_dump(reader_draft))
+    assert not credential_marker.exists(), "reader-input collection inherited a signing credential"
     output = tmp_path / "baseline-package"
     refs_before = RP.git(repo, "for-each-ref", "--format=%(refname) %(objectname)").decode()
     result = subprocess.run([PY, str(repo / "scripts/repin.py"), "baseline-prepare",
@@ -338,8 +336,10 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     package = json.loads((output / "baseline-package.json").read_text())
     assert package["candidate"] == candidate
     assert package["manifest_sha256"] == RP.sha((output / "gate_manifest.json").read_bytes())
+    assert package["manifest_sha256"] == reader_draft["manifest_sha256"]
+    assert package["collection_sha256"] == reader_draft["collection_sha256"]
     assert package["reader_record_sha256"] == RP.sha(reader.read_bytes())
-    assert json.loads((output / "gate_manifest.json").read_bytes()) == manifest
+    assert set(reader_draft["tool_hashes"]) == set(package["tool_hashes"])
     assert not credential_marker.exists(), "candidate collection inherited a signing credential"
     refs_after = RP.git(repo, "for-each-ref", "--format=%(refname) %(objectname)").decode()
     assert refs_after == refs_before, "preparation changed a repository ref"
@@ -828,14 +828,14 @@ except R.Refuse as exc:
 def test_environment_reads_are_confined_to_git_signer_terminal_and_baseline_scrub():
     """Ordinary checks use their fixed values; candidate collection gets a scrubbed environment."""
     source = (REAL / "scripts/repin.py").read_text()
-    ordinary_source = source[:source.index('if args.verb == "baseline-prepare":')]
+    ordinary_source = source[:source.index('if args.verb in ("baseline-prepare", "baseline-reader-inputs"):')]
     ordinary = [line.strip() for line in ordinary_source.splitlines() if "os.environ" in line]
     assert ordinary == [
         'env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}',
         'sockets = [s for s in dict.fromkeys([os.environ.get("SSH_AUTH_SOCK"), launchctl()]) if s]',
         'term = os.environ.get("TERM", "xterm")',
     ]
-    scrub = source[source.index('if args.verb == "baseline-prepare":'):]
+    scrub = source[source.index('if args.verb in ("baseline-prepare", "baseline-reader-inputs"):'):]
     assert 'safe_env = {key: os.environ[key] for key in ("PATH", "TMPDIR", "SYSTEMROOT")' in scrub
     assert 'safe_env.update(HOME=safe_home, LC_ALL="C", GIT_TERMINAL_PROMPT="0",' in scrub
     assert "SSH_AUTH_SOCK" not in scrub and "AWS_SECRET_ACCESS_KEY" not in scrub

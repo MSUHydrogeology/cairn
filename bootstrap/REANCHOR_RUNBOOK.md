@@ -98,10 +98,97 @@ When an AST pin is owed, run `python scripts/repin.py package --ceremony-dir <di
 
 These commands prepare inputs; the `ceremony --transition` command above carries the reviewed changed-authority sequence through the same maintained checks and signature verification. It authenticates the prior anchor using its old roster and still requires the independent reader and Maintainer decisions.
 
+## Preparing the forward baseline
+
+The explicit baseline path prepares a new signed trust root when there is no
+authenticated signed predecessor. It is independent of `ceremony --first-run`:
+failure to authenticate an ordinary prior anchor never selects this path, and
+the ordinary signed-prior ceremony remains unchanged. This plan builds and
+reviews the machinery only. **Do not install a real baseline under this plan.**
+The separate v0.6 work-board item must authorize the exact candidate, package
+and signer, and the Maintainer alone performs that installation after its
+recorded certification and required release checks.
+
+The approved test roster is the exact C1c file
+`dev/plans/archive/2026-10-28-test-trust-boundary/c1b-roster-6cc95fa7.json`,
+with SHA-256
+`188fa76d82744be571bdc7ca91a43d605776b9df5ba0ac729e2cf22af66b8cc4`. Copy
+those exact bytes to a plain file outside the checkout; the command refuses a
+roster supplied from inside the candidate repository. The candidate's roster
+must match them byte for byte.
+
+First commit the candidate and all owed AST or lockfile preparation. Then the
+independent reader prepares an unreviewed draft from the committed candidate
+and approved roster:
+
+```sh
+python scripts/repin.py baseline-reader-inputs \
+  --candidate <candidate-commit> \
+  --approved-roster <external-approved-roster.json> \
+  --output <new-reader-record.json>
+```
+
+This command checks the candidate's raw Git tree, refuses remaining AST or
+lockfile debt, derives the manifest and test collection, and records the
+interpreter and complete reader-reviewed tool hashes. It runs candidate test
+collection, with signing credentials removed from the collection environment;
+collection is code execution and this is not host containment. The output is a
+draft only: its `reviewer` is empty and `reviewed` is false. The reader
+independently checks the exact candidate, approved roster, manifest,
+collection, interpreter and every tool hash, then records their name and sets
+`reviewed` to `true`. A draft or an unreviewed record cannot prepare a package.
+
+With that reviewed record, prepare the package in a new folder outside the
+checkout:
+
+```sh
+python scripts/repin.py baseline-prepare \
+  --candidate <same-candidate-commit> \
+  --approved-roster <same-external-approved-roster.json> \
+  --reader-record <reviewed-reader-record.json> \
+  --output-dir <new-baseline-package-folder>
+```
+
+Preparation re-extracts the candidate and rechecks its static manifest,
+collection, tool closure, reader record and preparation debt. It writes
+`gate_manifest.json` and `baseline-package.json`; it signs nothing and moves no
+ref. The Maintainer and independent reader compare the candidate id, package
+digest, manifest and collection digests, approved roster digest, reader record
+digest, interpreter, tool hashes and `old_anchor_id` with their independently
+held copies. `old_anchor_id` is recorded as context only; this ceremony does
+not authenticate or compare the historical anchor.
+
+Only when the separate Maintainer-only installation item authorizes these exact
+bytes does the Maintainer run the explicit installer. Supply the independently
+authorized signer fingerprint and confirm the package digest measured over the
+file bytes, for example with `shasum -a 256`:
+
+```sh
+python scripts/repin.py baseline-install \
+  --candidate <same-candidate-commit> \
+  --package-dir <reviewed-baseline-package-folder> \
+  --approved-roster <same-external-approved-roster.json> \
+  --reader-record <same-reviewed-reader-record.json> \
+  --signing-key <recorded-public-key> \
+  --expected-fingerprint <independently-authorized-SHA256-fingerprint> \
+  --confirm-package-sha256 <measured-package-sha256>
+```
+
+Before signing, the installer checks the clean exact candidate, package and
+reader digests, approved roster, interpreter, executing tool closure, static
+manifest fields, and signer identity and roster membership. It runs no
+candidate tests. It creates one signed commit whose sole parent is the
+candidate and whose only changed path is the manifest, verifies that commit,
+then advances the branch and anchor in one expected-old transaction. A stale
+branch or anchor leaves the installer's two refs unmoved. A successful install
+records the observed prior anchor id without comparing it to historical trust.
+This command does not push; publication remains a separate Maintainer action.
+
 ## The first ceremony
 
-The first ceremony has no anchored E7 scan. Prepare and review its packet and
-reader record, then run:
+The ordinary `--first-run` ceremony is a separate existing path with no
+anchored E7 scan; it is not the forward-baseline installer and is never an
+automatic fallback. Prepare and review its packet and reader record, then run:
 
 ```sh
 python scripts/repin.py ceremony --first-run --reviewed-commit <reviewed-commit> --values <values-file> --ceremony-dir <ceremony-folder>
