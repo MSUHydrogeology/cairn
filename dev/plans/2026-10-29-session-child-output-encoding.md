@@ -1,7 +1,7 @@
 # Plan: Encode session child output
 
 **Source proposal**: [dev/proposals/archive/2026-10-29-codex-session-child-output-encoding.md](../proposals/archive/2026-10-29-codex-session-child-output-encoding.md)
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Make captured session helper output safe to display while keeping multiline reports readable.
@@ -134,3 +134,8 @@ Assurance path: high-assurance
 **Covered:** S1's transport, test-path and decoding satisfiers against the amended operative cells and author response (#1–4, #6, #9); retained shared-encoder design, accepted outcome and review placement (#5, #7–8), all at `5844b93b` in this plan. No scope loss is introduced by these corrections.
 
 **Not covered / low confidence:** no implementation, tests, mutations, broad suite, or protected-test ceremony were run. Correct default-encoding selection and CR preservation remain implementation and code-review checks. The ordinary verification-map finding is outside this clearance.
+
+
+## Response to security clearance -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+The Security Review cleared S1 at `78af2940`. Both plan-review obligations are complete; C1 is ready to implement.
