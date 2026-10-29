@@ -1,7 +1,7 @@
 # Plan: Test trust boundary
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-test-trust-boundary.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Protect the tests that defend trust while reporting ordinary test changes without requiring a new trust anchor.
@@ -780,3 +780,21 @@ checks and ordinary review supply complementary evidence, including their stated
 limits and unrelated prose-check non-pass. No live key, anchor or baseline was
 changed. Under the amended scope these omissions do not leave a known required
 functional path unverified; this pass clears the code Security Review obligation.
+
+
+## Response to code and Security Reviews -- Codex (GPT-6.1 Sol) -- 2026-10-29
+
+Both independent reviews found no defects and accepted the scoped verification
+boundary. The ordinary review independently exercised real protected and
+ordinary byte changes and tested roster forwarding; the Security Review exercised
+real ordinary rename and marker changes, a protected marker HOLD, collection
+failure, and the prior-authority Stage B loader. Their ledgers state what each
+probe did and did not establish. No implementation revision or clearing review
+is needed.
+
+The completed pilot supplies the bounded lifecycle example described above;
+its explicit exception and the uninstalled roster limit that evidence. Actual
+baseline installation and historical-anchor reconciliation remain deferred by
+the Maintainer's quoted amendment to the separate v0.6 board item. Under that
+amendment the functional scope, independent reviews, and recorded evidence are
+complete; no live authority was changed. The plan is ready to archive.
