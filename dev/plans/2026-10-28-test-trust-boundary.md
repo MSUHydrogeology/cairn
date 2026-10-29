@@ -685,3 +685,30 @@ the simulated verifier matrix, the scratch admission and steady-state evidence,
 the pilot's limited lifecycle example, and the recorded whole-tree prose-check
 non-pass. The Maintainer's v0.6 amendment defers actual baseline installation and
 historical-anchor reconciliation; neither was performed or is claimed here.
+
+## Code review -- Codex (GPT-6.1 Terra) -- 2026-10-29
+
+```
+Reviewed commit: 05d8076cc802c21e3b494c375f8dc058b2abe98b
+Target: d866caef..fb84084c implementation and later pilot/ceremony evidence through 05d8076c
+Prior findings: none
+```
+
+**Findings**: none. **Bounding**: ACCEPTED for the mapped implementation,
+subject to the separately owed Security Review and Maintainer-deferred baseline.
+
+**Foundations**
+
+1. **Does it do what it claims?** The retained implementation uses the approved roster through the producer, independent derivation and stage checks; real protected and ordinary byte edits produced the expected different outcomes in the ledger. -- `bootstrap/tests/_gate_preflight.py:3423`; ledger below.
+2. **Best alternative.** Reuse the existing prior-anchor roster and static-derivation paths, as implemented; the separate maintained verifier command gives the operator a repeatable trigger without claiming the launcher invokes it. -- `bootstrap/tests/_gate_preflight.py:1971`; `bootstrap/REANCHOR_RUNBOOK.md:40`.
+3. **What would show it wrong?** A protected loss passing, an ordinary edit holding, or a roster lost at a consumer would falsify the boundary. -- falsification ledger below.
+
+**Falsification ledger.** Python 3.13.13, isolated clones, no live key or ref.
+
+- At `05d8076c`, two fresh clones produced a manifest using the exact approved roster and verified an unchanged control (exit 0). A real edit to `test_ast_attest.py` returned 1 and `FROZEN-MODIFIED`; a real edit to `test_agreement_retired.py` returned 0 and `UNPROTECTED-CHANGED`. Collection was disabled for these byte probes; they do not test node or marker collection. An initial harness captured the wrong output stream and failed its assertion despite printing the expected outcomes; corrected fresh-clone controls and probes passed.
+- On `933575ac`, the unmutated `TestThreeCommandIntegration::test_approved_first_roster_transition_then_signed_anchor_steady_state` passed (1 in 12.66 s), using disposable fixture signatures. The three `_gate_*.py` source files are byte-identical at `05d8076c`. Separate fresh-clone mutations replaced the forwarded roster with `None` at each tree-enumerated call below. Each was killed, not assumed equivalent. The integration test killed the unmarked sites; `*` marks a focused control and forwarding probe, `†` a focused behavior test, and `‡` the rostered Stage-B test with the mutant committed only in its disposable clone so executing code matched fixture P:
+  - `_gate_preflight.py`: `range_scan:1612*`, `range_review_report:1625`, `range_review_report:1653*`, `check_static_manifest:2287`, `rederive_and_bind:2619`, `blessing_plan:3117`, `stage1:3425`, `stage1:3427`, `stage1:3445`, `stage1:3449`, `apply_now:3653`, `apply_now:3717`, `apply_now:3742`, `apply_now:3763`, `apply_now:3845`, `check:3915*`, `check:3929`; positional calls `check_frozen_surface:801†`, `_frozen_policy:1602`, `gather_evidence:1931`, `rederive_static_manifest:2147` and `:2186`.
+  - `_gate_manifest.py`: `produce:554`, `produce:621`, `verify:724†`, `verify:833†`. The focused `verify:724` mutant was committed in its disposable clone before testing to avoid a false kill from its own modified source hash.
+  - `_gate_reanchor.py`: `gather_evidence:342*`, `promote_data_only:532‡` and `:537‡`. The Stage-B control passed; both mutants refused the trusted manifest comparison. The `*` probes stubbed unrelated calls and observed the passed value; they establish forwarding, not end-to-end equivalence.
+
+**Evidence and limits.** The wide record reports 1,122 passes at `fb84084c` and names the simulated matrix, disposable authority, key-channel stub and non-pass; later board and ceremony test changes have their own records at `32375254` and `d6b9ec76`. The matrix is simulated; the two real byte edits above supplement it, but do not establish real rename, marker or collection behavior. The pilot was expressly allowed in a still-protected file and does not prove an installed ordinary lane. The later maintained verifier is human-triggered, not an automatic launcher check (`bootstrap/REANCHOR_RUNBOOK.md:40`). The whole-tree prose check's unrelated non-pass is disclosed; no full suite or historical-anchor comparison ran. The plan's roster-approval Waiting line is present in `git log -p`; the installation fence was not reached. Claims, paths, failure handling and evidence (#1–4) are addressed by the ledger and `_gate_manifest.py:714`; reuse, drift and placement (#5–7) by the runbook and `_gate_preflight.py:1971`; scope and satisfiers (#8–9) by the Maintainer amendment and pilot clarification above. This pass does not clear Security Review or install an anchor.
