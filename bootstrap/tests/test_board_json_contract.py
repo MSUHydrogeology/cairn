@@ -1044,12 +1044,13 @@ class TestOutputIsDeterministic:
         ]
         assert all(a["archived"] is False for a in doc_live["artifacts"])
 
-        assert board.main(["--json", "--archive", "--root", str(root_a)]) == 0
-        out_a1 = capsys.readouterr().out
-        assert board.main(["--json", "--archive", "--root", str(root_a)]) == 0
-        out_a2 = capsys.readouterr().out
-        assert board.main(["--json", "--archive", "--root", str(root_b)]) == 0
-        out_b = capsys.readouterr().out
+        def render_archive(root: Path) -> str:
+            assert board.main(["--json", "--archive", "--root", str(root)]) == 0
+            return capsys.readouterr().out
+
+        out_a1 = render_archive(root_a)
+        out_a2 = render_archive(root_a)
+        out_b = render_archive(root_b)
 
         assert out_a1 == out_a2 == out_b
         assert out_a1.isascii()
