@@ -712,3 +712,71 @@ subject to the separately owed Security Review and Maintainer-deferred baseline.
   - `_gate_reanchor.py`: `gather_evidence:342*`, `promote_data_only:532‡` and `:537‡`. The Stage-B control passed; both mutants refused the trusted manifest comparison. The `*` probes stubbed unrelated calls and observed the passed value; they establish forwarding, not end-to-end equivalence.
 
 **Evidence and limits.** The wide record reports 1,122 passes at `fb84084c` and names the simulated matrix, disposable authority, key-channel stub and non-pass; later board and ceremony test changes have their own records at `32375254` and `d6b9ec76`. The matrix is simulated; the two real byte edits above supplement it, but do not establish real rename, marker or collection behavior. The pilot was expressly allowed in a still-protected file and does not prove an installed ordinary lane. The later maintained verifier is human-triggered, not an automatic launcher check (`bootstrap/REANCHOR_RUNBOOK.md:40`). The whole-tree prose check's unrelated non-pass is disclosed; no full suite or historical-anchor comparison ran. The plan's roster-approval Waiting line is present in `git log -p`; the installation fence was not reached. Claims, paths, failure handling and evidence (#1–4) are addressed by the ledger and `_gate_manifest.py:714`; reuse, drift and placement (#5–7) by the runbook and `_gate_preflight.py:1971`; scope and satisfiers (#8–9) by the Maintainer amendment and pilot clarification above. This pass does not clear Security Review or install an anchor.
+
+## Code review -- Codex (GPT-6.1 Sol), Security Review -- 2026-10-29
+
+```
+Reviewed commit: c1a950bd
+Target: d866caef..fb84084c trust-boundary implementation; evidence and amendments through c1a950bd
+Prior findings: none for this code Security Review obligation
+```
+
+**Obligation**: Security Review of the protected-test roster and authority paths.
+**Findings**: none. **Bounding**: ACCEPTED for functional correctness under the
+Maintainer's amended scope. The future narrowed roster remains uninstalled.
+
+**Foundations**
+
+1. **Does it do what it claims?** The roster comes from prior authority or a validated transition, and protected collection changes refuse while ordinary changes remain visible notes. Independent real-file probes confirmed the distinction. -- `bootstrap/tests/_gate_preflight.py:1971`; `bootstrap/tests/_gate_manifest.py:833`; ledger below.
+2. **Best alternative.** Keep the existing static re-derivation and pinned prior-source loader rather than add another membership authority; retain the maintained human-run verifier as the collection trigger. -- `bootstrap/tests/_gate_reanchor.py:174`; `bootstrap/tests/_gate_preflight.py:3423`; `bootstrap/REANCHOR_RUNBOOK.md:40`.
+3. **What would show it wrong?** Protected markers passing, ordinary maintenance holding, collection failure passing, or candidate authority executing in Stage B would break the claimed boundary. -- falsification ledger below.
+
+**Falsification ledger.** Python 3.13.13; every real-file change used a fresh
+no-hardlink local clone detached at `c1a950bd`. Each clone first ran real
+`produce` with the approved initial roster and real collecting `verify` on an
+unchanged control, exit 0. No collection result was stubbed. These are local
+functional probes, with no signature or installed-authority claim.
+
+- Appending a module skip marker to ordinary `test_agreement_retired.py`:
+  verifier exit 0, `UNPROTECTED-CHANGED` and `SKIP-XFAIL-ORDINARY` notes.
+- Renaming that ordinary file to `test_security_probe_ordinary.py`: exit 0,
+  `UNPROTECTED-REMOVED`, `UNPROTECTED-NEW`, ordinary dropped-node notes and
+  added-node notes. The census reported the new filename.
+- Adding a module skip marker to protected `test_ast_attest.py`: exit 1,
+  `FROZEN-MODIFIED` and `SKIP-XFAIL-NEW` HOLDs. The deliberate break was killed.
+- Replacing the ordinary file with invalid Python: exit 1 and collection-failed
+  HOLD (pytest rc=2). Ordinary classification did not mask collection failure.
+- An initial ordinary-marker probe accidentally put imports before a future
+  import. It correctly refused with a collection error; a corrected probe in
+  another fresh clone produced the first result above.
+
+A separate clean detached clone with disposable anchor ref ran
+`python -m pytest bootstrap/tests/test_gate_reanchor.py::test_rostered_stage_b_executes_only_preflight_bytes_pinned_by_p -q --tb=short`:
+**1 passed in 13.96 seconds**. Its fixture dirties invoking preflight source
+with an execution marker, then proves Stage B uses P's pinned source and never
+creates that marker; a committed unauthorized replacement also refuses. This
+supplements, rather than replaces, the independent real-file probes.
+
+**Evidence and coverage.** Reviewed anchor/candidate identity, initial admission,
+steady-state membership, static comparison, pinned-source loading, malformed
+roster refusal and release-outcome evidence (#1–4):
+`_gate_manifest.py` roster parser and verifier, `_gate_preflight.py`
+`resolve_protected_roster` and stage functions, `_gate_reanchor.py`
+`promote_data_only`, and the wide 1,122-pass record. Repeated reuse search for
+`_frozen_files`, `produce` and `rederive_static_manifest`; existing paths carry
+the mechanism. Documentation and lifecycle placement (#5–7): runbook Stage 1
+names the human-triggered maintained verifier and explicitly disclaims automatic
+launcher invocation; `AGENTS.md` retains broad protection until installation.
+Scope and satisfiers (#8–9): the accepted execution-influence loss is explicit;
+ordinary Python still executes during collection, so these checks establish no
+host containment. The plan history contains the classification Waiting line;
+installation was deferred before that fence became the next move.
+
+This pass does not repeat the ordinary review's forwarding-mutation set or the
+author's mapped suite. It did not independently exercise every real deletion,
+rename, marker or admission permutation, release skip/xfail/xpass, signing-key
+channel, full suite, historical comparison or installation. The recorded mapped
+checks and ordinary review supply complementary evidence, including their stated
+limits and unrelated prose-check non-pass. No live key, anchor or baseline was
+changed. Under the amended scope these omissions do not leave a known required
+functional path unverified; this pass clears the code Security Review obligation.
