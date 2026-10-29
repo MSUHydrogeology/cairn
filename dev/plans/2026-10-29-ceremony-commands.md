@@ -2,7 +2,7 @@
 
 **Author**: Codex (gpt-6.1-terra)
 **Source proposal**: [dev/proposals/archive/2026-10-29-codex-ceremony-commands.md](../proposals/archive/2026-10-29-codex-ceremony-commands.md)
-**Status**: revising-code
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Give the Maintainer reusable commands for checking and carrying out trust ceremonies with human approval.
@@ -309,3 +309,58 @@ plan can advance; C4 remains fenced and has not been performed.
 - Combined probe: adapted the existing deletion test in the disposable clone to also change `_PROTECTED_ROSTER_MODE` from dormant to active before its candidate commit. The public `package --delete-symbol` returned 2, reporting that `_gate_preflight.py` differs from the anchor; the expected successful preparation failed. This is a workflow probe, not a claim that the safety refusal is itself wrong.
 
 **Coverage and limits:** reviewed C2, scope amendment, final verification record, relevant public dispatch and the two fixture paths. The wide record reports 1,110 passes on `e0908bb3`; this pass did not reproduce that run or inspect every changed surface, and does not discharge Security Review. The missing combined workflow and its recovery check require new change-specific evidence; no full suite was run.
+
+## Response to code review -- Codex (Implementation) -- 2026-10-29
+
+| Finding | Disposition | Evidence |
+|---|---|---|
+| F1 | Accepted. The refusal is correct while the candidate preflight differs from P. Complete the reviewed authority transition first; then prepare the AST deletion against the new anchor, record it, apply without an automatic commit, commit the two exact AST outputs, and prepare a fresh ordinary packet and reader record for the rerun. | `bootstrap/tests/test_repin_ceremony.py::test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anchor`; implementation commit `d6b9ec76`. |
+
+No production command change was needed: the existing transition preparer,
+launcher and AST pin commands support this ordering. The expanded scratch test
+covers both transition stages, the reviewed deletion transaction and reader
+record, the no-auto-commit stop, the exact-path commit, fresh packet and reader
+inputs, and a successful ordinary ceremony rerun. This uses only fixture keys
+and refs. The scoped rerun evidence follows; no live installation or historical
+comparison is claimed.
+
+## Implementation verification addendum -- F1 -- Codex -- 2026-10-29
+
+**Boundary B mode**: wide. **Certified by**: pending.
+**Changed implementation commit**: `d6b9ec76f02319115da95cd6e554107db863f741`.
+**Changed family interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13.
+
+The post-`fb84084c` change to the ceremony plan's mapped test families is limited
+to `bootstrap/tests/test_repin_ceremony.py`; other mapped families are byte
+identical to the clean `fb84084c` checkout. That commit's twelve-family run is
+recorded in `dev/plans/archive/2026-10-28-test-trust-boundary.md`: 1,122 passed
+in 1,001.78 seconds, with three `stevedore` deprecation warnings. The complete
+changed ceremony family was then rerun on a fresh detached worktree at d6b9:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest \
+  bootstrap/tests/test_repin_ceremony.py -q --tb=short
+```
+
+It passed **155 tests in 480.63 seconds**. No skips, xfails or xpasses were
+reported. The worktree began detached at d6b9 and was clean after the run; its
+tests created their own temporary keys, repositories and anchor refs. No live
+key, ref or baseline was changed. The mapped evidence is composed from the
+fb840 twelve-family run and the full changed-family rerun at d6b9; the eleven
+unchanged mapped families were not repeated after d6b9. A restricted attempt
+at d6b9 was interrupted after 61 passes and 25 signing/PTY failures; rerunning
+with the required host signing and terminal access passed the whole family.
+No full suite or certification run was made.
+
+**Disposition**: F1's supported ordering and recovery are demonstrated on
+disposable authority. The reviewer may assess the composed wide coverage; no
+new whole-tree certification, real bridge authorization, historical-anchor
+comparison, live installation or push is claimed. Independent Security Review
+remains required.
+
+For this response, `claim_check.py` reported no flags and file-scoped
+`check_cairn.py` reported no issues. `link_check.py` passed across 187 Markdown
+files (84 external links not probed); `sync_doc_snippets.py --check` passed
+across 428 documents; neutrality reported zero failures and 43 informational
+records. `git diff --check` passed. The earlier whole-tree prose finding is
+recorded above and was not changed.
