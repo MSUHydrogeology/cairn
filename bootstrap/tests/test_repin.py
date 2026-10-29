@@ -9,6 +9,7 @@ condition is fine, so a refusal is shown to be this check and not a broken bed.
 from __future__ import annotations
 
 import hashlib
+import ast
 import io
 import json
 import os
@@ -506,6 +507,48 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     anchor = subprocess.run(["git", "-C", str(repo), "rev-parse", "refs/cairn/gate-anchor"],
                             capture_output=True, text=True, check=True).stdout.strip()
     assert anchor == new
+
+    def verify_installed_baseline(*, collect=False):
+        args = [PY, "-m", "bootstrap.tests._gate_manifest", "verify",
+                "--target-repo", str(repo), "--anchor-ref", new]
+        if not collect:
+            args.append("--no-collect")
+        return subprocess.run(args, cwd=REAL, env=git_env,
+                              capture_output=True, text=True, check=False)
+
+    intact = verify_installed_baseline()
+    assert intact.returncode == 0, intact.stdout + intact.stderr
+
+    protected_test = repo / "bootstrap/tests/test_repin.py"
+    protected_original = protected_test.read_bytes()
+    protected_test.write_bytes(protected_original + b"\n# scratch protected-byte loss\n")
+    byte_loss = verify_installed_baseline()
+    assert byte_loss.returncode == 1 and "FROZEN-MODIFIED: bootstrap/tests/test_repin.py" in byte_loss.stderr
+    protected_test.write_bytes(protected_original)
+
+    tree = ast.parse(protected_original.decode("utf-8"))
+    removed_name = "test_environment_reads_are_confined_to_git_signer_terminal_and_baseline_scrub"
+    target = next(node for node in tree.body if isinstance(node, ast.FunctionDef)
+                  and node.name == removed_name)
+    start = min([target.lineno, *(d.lineno for d in target.decorator_list)])
+    lines = protected_original.decode("utf-8").splitlines(keepends=True)
+    del lines[start - 1:target.end_lineno]
+    protected_test.write_text("".join(lines), encoding="utf-8")
+    node_loss = verify_installed_baseline(collect=True)
+    assert node_loss.returncode == 1 and f"COLLECTION-DROPPED: bootstrap/tests/test_repin.py::{removed_name}" in node_loss.stderr
+    protected_test.write_bytes(protected_original)
+
+    protected_test.write_bytes(protected_original + b"\npytestmark = pytest.mark.skip('scratch new protected marker')\n")
+    marker_loss = verify_installed_baseline(collect=True)
+    assert marker_loss.returncode == 1 and "SKIP-XFAIL-NEW: bootstrap/tests/test_repin.py::" in marker_loss.stderr
+    protected_test.write_bytes(protected_original)
+
+    ordinary_test = repo / "bootstrap/tests/test_baseline_ordinary_added.py"
+    ordinary_test.write_text("def test_new_ordinary_baseline_node():\n    assert True\n", encoding="utf-8")
+    ordinary = verify_installed_baseline(collect=True)
+    assert ordinary.returncode == 0, ordinary.stdout + ordinary.stderr
+    assert "UNPROTECTED-NEW: bootstrap/tests/test_baseline_ordinary_added.py" in ordinary.stderr
+    assert "COLLECTION-ADDED: bootstrap/tests/test_baseline_ordinary_added.py::test_new_ordinary_baseline_node" in ordinary.stderr
 
 
 def test_a_case_colliding_tree_refuses_before_import(bed):
