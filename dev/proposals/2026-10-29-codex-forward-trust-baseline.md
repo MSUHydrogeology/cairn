@@ -1,7 +1,7 @@
 # Establish a forward trust baseline
 
 **Author**: Codex (plan coordinator)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -94,3 +94,31 @@ Review the current controls and proposed mechanism through ordinary and Security
 ### Withdrawn / superseded commitments
 
 The opening's requirement that installation precede affected-plan archival is withdrawn to follow the Maintainer's clarification. Installation remains a separate v0.6 work-board item, with release readiness dependent on its completion.
+
+
+## Review -- Codex (gpt-6.1-sol), proposal reviewer -- 2026-10-29
+
+```
+Reviewed commit: 5ac029eb499f6e481d1a84e16c0d1bc5f4745357
+Target: opening proposal and Author revision / Current contract
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: finish and review machinery independently, then install one explicitly approved baseline before v0.6 readiness. The revised contract names the historical assurance being surrendered instead of treating signing as proof. -- Author revision / Current contract; `dev/plans/2026-10-28-test-trust-boundary.md`, C3–C5.
+2. **Best alternative.** Extend existing extraction, package, static derivation and signing paths with an explicit bootstrap mode. A manual one-off loses reusable refusal checks; keeping historical bridges defeats the stated direction. -- `scripts/repin.py`, `extract`, `build_packet`, `run_ceremony`; `bootstrap/tests/_gate_preflight.py`, `rederive_static_manifest`.
+3. **What would show it wrong.** A baseline that admits another roster, signs stale bytes, or cannot subsequently detect protected loss defeats the forward guarantee; a board dependency that still prevents machinery archival defeats the sequencing. -- Current contract; `bootstrap/tests/_gate_reanchor.py`, `gather_evidence`, `promote_data_only`; trust plan C2–C5.
+
+The strongest version is a deliberate restart of trust, with useful automation retained and the Maintainer approving the exact starting bytes. Existing commands cannot simply be relabeled: they authenticate prior authority and the ordinary driver refuses changed authority. The proposed reviewed mode acknowledges that design work rather than presenting it as already available.
+
+**F1 — Non-blocking: make candidate preparation explicit in the plan.** A manifest-only installation commit is feasible only after other required baseline material is present in the candidate. The current driver separately prepares reviewed AST/lockfile changes and refuses an owed transaction before stage 1. Reusing that preparation avoids discovering an extra authority write during signing. **Satisfier:** the derived plan identifies whether AST/lockfile preparation is required, who reviews and commits it, and tests refusal if the candidate lacks required material. Keep those writes before the final candidate/package review; do not revive historical comparison. -- `scripts/repin.py`, `build_transaction`, `apply_reviewed_pin`, `run_ceremony`; proposal installation parent/manifest-only invariant.
+
+The smallest route preserves reusable preparation and installation checks, amends each source plan's actual fence, and assigns installation to one v0.6 board item. It loses historical protected-drift checks and installation-before-archive guarantees as declared; only the Maintainer can allow those losses. Machinery archival must not claim the narrower boundary is active. The baseline item must retain certification, installation evidence and forward-behavior checks before release readiness.
+
+**Covered:** claims, completeness and refusal (1,3,4: the named driver and promotion functions); production-path design (2: proposed scratch public-entry probes); reuse, consistency and drift (5,6: driver functions, runbook preparation/verifier instructions, trust plan C3–C5, ceremony-commands plan C1–C4); lifecycle and scope (7,8: Current contract, scoped-change-verification plan's pending frozen-file ceremony); satisfier (9: F1). Source was read at the reviewed commit. **Not covered / low confidence:** no tests, mutations, signing, host containment assessment or ref changes; feasibility is design inspection, not implementation evidence. This pass does not discharge Security Review.
