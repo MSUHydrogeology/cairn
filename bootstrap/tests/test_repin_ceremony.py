@@ -2377,3 +2377,29 @@ def test_transition_packet_uses_signed_prior_authority_and_preserves_ordinary_re
     assert made.returncode == 0, made.stdout + made.stderr
     assert len(list(out.iterdir())) == 2
     assert hashlib.sha256(cbed.read("bootstrap/tests/_gate_manifest.py").encode()).hexdigest() in (out / "authorization-packet.txt").read_text()
+
+
+def test_prepare_values_writes_fresh_reviewable_inputs_without_overwriting(cbed):
+    output = cbed.root / "prepared-values"
+    argv = ("prepare-values", "--output", str(output), "--signing-key", str(cbed.key) + ".pub",
+            "--home", str(cbed.home), "--ceremony-dir", str(cbed.cdir))
+    made = cbed.run(*argv)
+    assert made.returncode == 0, made.stdout + made.stderr
+    values = dict(line.split(" ", 1) for line in output.read_text().splitlines())
+    assert values["checkout"] == str(cbed.repo)
+    assert values["signing_key"] == str(cbed.key) + ".pub"
+    assert not Path(values["package"]).exists()
+    assert hashlib.sha256(output.read_bytes()).hexdigest() in made.stdout
+    checked = subprocess.run(["/bin/sh", str(cbed.cdir / "reanchor-launcher.sh"),
+                              str(cbed.cdir / "authorization-packet.txt"), str(output),
+                              cbed.git("rev-parse", "HEAD").stdout.strip(), "--validate"],
+                             env={"HOME": str(cbed.home), "PATH": "/usr/bin:/bin", "LC_ALL": "C"},
+                             capture_output=True, text=True)
+    assert checked.returncode == 0, checked.stdout + checked.stderr
+    before = output.read_bytes()
+    again = cbed.run(*argv)
+    assert again.returncode == 2 and output.read_bytes() == before
+    inside = cbed.run("prepare-values", "--output", str(cbed.repo / "values"),
+                      "--signing-key", str(cbed.key) + ".pub", "--home", str(cbed.home),
+                      "--ceremony-dir", str(cbed.cdir))
+    assert inside.returncode == 2 and not (cbed.repo / "values").exists()

@@ -1723,6 +1723,38 @@ def finish(ctx, path, digest, done, rec):
             f"origin {branch}:{branch} {ANCHOR_REF}:{ANCHOR_REF}")
 
 
+def prepare_values(repo, output, signing_key, home, ceremony_dir):
+    """Write a fresh, reviewable values file with no authority or secret."""
+    repo = _plain_absolute_path(repo)
+    output = _plain_absolute_path(output)
+    signing_key = _plain_absolute_path(signing_key)
+    home = _plain_absolute_path(home)
+    cdir = _plain_absolute_path(ceremony_dir)
+    if not signing_key.is_file() or not home.is_dir() or not cdir.is_dir():
+        raise Refuse("the public key, home and ceremony directory must exist.")
+    if repo == cdir or repo in cdir.parents or repo == output or repo in output.parents:
+        raise Refuse("the values file and ceremony directory must be outside the checkout.")
+    package = cdir / ("authorization-package-" + secrets.token_hex(16) + ".json")
+    values = {"schema": "cairn-ceremony-values/v1", "checkout": str(repo),
+              "signing_key": str(signing_key), "package": str(package), "home": str(home)}
+    for tool in ("env", "git", "python", "mktemp", "mkdir", "shasum", "sort", "cat"):
+        located = sys.executable if tool == "python" else shutil.which(tool)
+        if not located:
+            raise Refuse(f"cannot locate executable {tool}.")
+        resolved = Path(os.path.realpath(located))
+        if not resolved.is_file() or not os.access(resolved, os.X_OK):
+            raise Refuse(f"{tool} is not an executable regular file.")
+        values[tool] = str(resolved)
+    if any(any(ord(c) < 32 or ord(c) == 127 for c in value) or value.rstrip() != value
+           or len((key + " " + value).encode()) > 4096 for key, value in values.items()):
+        raise Refuse("a value contains a control character, trailing space or overlong line.")
+    raw = "".join(f"{key} {value}\n" for key, value in values.items()).encode()
+    write_new(output, raw)
+    say(f"wrote values {d(str(output))} sha256 {sha(raw)}")
+    say(f"fresh package path {d(str(package))}")
+    say("The reader checks every path and digest; the launcher validates the file before use.")
+
+
 def main(argv=None, *, launchctl=launchctl_socket):
     ap = argparse.ArgumentParser(prog="repin", description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="verb", required=True)
@@ -1735,6 +1767,11 @@ def main(argv=None, *, launchctl=launchctl_socket):
     pt = sub.add_parser("packet", help="write the packet and the launcher for an ordinary ceremony "
                         "into --ceremony-dir; refuses a ceremony that changes an authority file")
     pt.add_argument("--ceremony-dir", required=True, metavar="DIR", help="a folder that holds neither yet")
+    vp = sub.add_parser("prepare-values", help="write fresh reviewable ceremony values")
+    vp.add_argument("--output", required=True, metavar="FILE")
+    vp.add_argument("--signing-key", required=True, metavar="PUBLIC-KEY")
+    vp.add_argument("--home", required=True, metavar="DIR")
+    vp.add_argument("--ceremony-dir", required=True, metavar="DIR")
     tp = sub.add_parser("transition-packet", help="prepare a packet using authenticated prior authority")
     tp.add_argument("--ceremony-dir", required=True, metavar="DIR")
     tp.add_argument("--expected-fingerprint", required=True, metavar="SHA256:...")
@@ -1762,6 +1799,14 @@ def main(argv=None, *, launchctl=launchctl_socket):
     vr.add_argument("--operator-confirms-key-away", action="store_true",
                     help="operator states that the signing key is away; a second terminal YES is required")
     args = ap.parse_args(argv)
+    if args.verb == "prepare-values":
+        try:
+            prepare_values(Path(__file__).resolve().parent.parent, args.output, args.signing_key,
+                           args.home, args.ceremony_dir)
+            return 0
+        except (Refuse, OSError, ValueError) as exc:
+            print(f"\nrepin stopped; no authority changed.\n  {exc}", file=sys.stderr)
+            return 2
     if args.verb in ("prepare-verifier", "verify-candidate"):
         try:
             if args.verb == "prepare-verifier":
