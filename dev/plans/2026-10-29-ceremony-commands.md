@@ -380,3 +380,77 @@ recorded above and was not changed.
 **Falsification ledger:** In a fresh detached clone of `1b38a64e`, Python 3.13.13, the changed public integration node passed in 18.68 seconds. An independent probe moved the symbol deletion into the transition candidate; it reached stage 2 but failed with an incorrect-passphrase error under the test terminal, so that probe is inconclusive and does not establish a supported combined-candidate path. The demonstrated sequence instead commits the deletion after the transition. No real key or ref was used.
 
 **Coverage and limits:** Compared the changed test and response with F1 and inspected the composed wide evidence; unchanged mapped families rely on the recorded earlier run. This focused rereview does not revisit the rest of the implementation or discharge Security Review. No broad suite was run.
+
+## Code review -- Codex (GPT-6.1 Sol), Security Review -- 2026-10-29
+
+```
+Reviewed commit: 1b38a64e58c532da31fba67816c1986125ac7986
+Target: reusable ceremony implementation through d6b9ec76 and amended verification record
+Prior findings: none for this code Security Review obligation
+```
+
+**Obligation**: Security Review of authenticated prior tools, evidence bindings,
+AST write authorization and ceremony composition.
+**Findings**: none additional. **Bounding**: ACCEPTED for the tested security
+mechanisms at the reviewed commit; this does not accept the incomplete operator
+workflow identified by ordinary F2 at `64a23375`. That finding remains blocking.
+
+**Foundations**
+
+1. **Does it do what it claims?** Prior tools are authenticated against immutable signed P and an independently supplied fingerprint; the public verifier binds its collection and report, and stale dispositions refuse. The complete script-led workflow is still unestablished. -- `scripts/repin.py:923`, `:1156`, `:1328`; ledger below; ordinary F2.
+2. **Best alternative.** Reuse the existing prior-tool extraction and raw candidate checks, keep the separate reader authorization before an AST write, and finish the script-led comparisons without replacing prior authority with candidate claims. -- `scripts/repin.py:1025`, `:1482`, `:1567`; ordinary F2.
+3. **What would show it wrong?** A public verifier accepting a substituted signer/tool, a disposition replay after collection or HOLD changes, an unreviewed AST write, or signing after a damaged comparison. -- falsification ledger below.
+
+**Falsification ledger.** Canonical Python 3.13.13; fresh no-hardlink local
+clones detached at `1b38a64e`; fixture keys, repositories and refs only.
+
+- Unchanged public controls `test_prepare_and_run_verifier_binds_signed_prior_to_raw_candidate`
+  and `test_hold_dispositions_bind_every_exact_item_to_the_report` in
+  `bootstrap/tests/test_repin_ceremony.py`: **2 passed in 15.62 seconds**.
+  These exercised authenticated P, exact C, full live collection, explicit
+  key-away confirmation, direct P-report equality, all three human disposition
+  choices and a stale report-digest refusal. A recorded `proceed` still returned
+  HOLD, rather than authorizing signing.
+- In another fresh clone, extended the latter fixture into three independent
+  public-command probes. Each first produced its real HOLD report and accepted
+  matching dispositions while preserving exit 1. Then changed respectively
+  `collection_result_sha256`, `candidate`, or `holds` in the disposition record.
+  Each fresh verifier invocation returned 2 and named that exact stale field.
+  **3 passed in 34.16 seconds**. These input substitutions were killed; the
+  unmodified matching-disposition runs were their passing controls. Only the
+  disposable test harness changed, never production command bytes.
+
+**Security reasoning and evidence.** The verifier rechecks P's signature,
+manifest-pinned dependency bytes, observer and interpreter after collection,
+and rechecks exact candidate bytes before using the report. Its capture rejects
+missing/duplicate/stale data and failed collection. The observer is separately
+hashed preparation code, not falsely attributed to signed P. Signature input
+requires the independent fingerprint, so P's own allowed-signers file is not
+its only authentication source. -- `scripts/repin.py` `verify_checkpoint`,
+`_verifier_prepare`, `_validate_collection_capture` and `_verifier_run`.
+The AST writer recomputes the exact transaction, requires a sole-child reader
+record binding its digest, asks before writing and stops without committing.
+Ordinary boot still refuses changed authority; transition preparation loads P's
+pinned code. -- `boot`, `apply_reviewed_pin`, `apply_pin` and `build_packet`.
+
+The runbook's full verifier remains a separately invoked human prerequisite;
+`run_ceremony` does not consume its binding as an automatic signing gate. The
+runbook preserves independent E7 and Y1–Y5, but their script-led composition is
+ordinary F2's unsatisfied outcome. No claim is made that the scratch transition
+node exercised that complete documented sequence. Candidate collection can
+execute host-capable code; an empty environment and executable hashes do not
+contain it or authenticate the preparer. These limits are stated in the runbook.
+
+**Coverage and limits.** Claims, public paths, completeness and refusal (#1–4):
+above source paths and probes; reuse, drift and lifecycle (#5–7): repeated
+`repin|reanchor|scan-digest` search, existing launcher and runbook Stage 1;
+scope and satisfiers (#8–9): Maintainer amendment defers historical continuity,
+83 actual dispositions and installation, while ordinary F2 retains the operator
+outcome. The composed evidence is plausible: comparing the twelve mapped
+families from `fb84084c` to `d6b9ec76` lists only the ceremony family, whose
+complete rerun records 155 passes. No broad suite was repeated. This pass did
+not independently replay every tamper/interruption/signing case, historical
+bridge comparison or live installation. No live key, anchor or baseline changed.
+Security acceptance is limited to the reviewed mechanisms; an implementation
+revision adding the missing operator commands needs its own recorded checks and
+assessment of any newly introduced security defects before closure.
