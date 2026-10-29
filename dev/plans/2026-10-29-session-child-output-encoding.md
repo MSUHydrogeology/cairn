@@ -107,3 +107,30 @@ A read-only standard-library probe under canonical Python 3.13.13 launched a Pyt
 | S1 | Accepted. C1 preserves CR through byte capture and strict default-encoding decoding, and requires real-child controls for each helper and failure stderr. |
 
 The Security Review obligation remains open until a Security Review clears it; implementation has not begun.
+
+
+## Plan review -- Codex (gpt-6.1-sol, Security) -- 2026-10-29
+
+```
+Reviewed commit: 5844b93b
+Target: amended C1 and Verification against open S1 only
+Prior findings: S1 from fd68aaca
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal
+**Findings**: none remaining for S1
+**Verdict**: CLEAR
+
+**Foundations**:
+
+1. **Should this happen as framed?** C1 now requires byte capture with CR preserved until encoding, and real-child controls through every affected helper including failure stderr; this closes the planned transport gap -- this plan > Acceptance criteria at `5844b93b`.
+2. **Best alternative.** The revised byte capture, default-encoding strict decoding and existing encoder deliver the accepted outcome without a subprocess framework or second escape policy -- this plan > Acceptance criteria and Scope at `5844b93b`.
+3. **What would show it wrong.** A real child's bare CR becoming framing, a CRLF losing its CR, or decoding diverging from existing text-mode strict behavior would fail the amended criteria; the mapped owner file is the person-run check -- this plan > Acceptance criteria and Verification at `5844b93b`.
+
+**S1 cleared at plan level.** The revision supplies each requested satisfier: capture without universal-newline conversion, explicit preservation of current default encoding and strict decoding exceptions, real subprocess bytes through all three helpers and nonzero stderr, and retained LF readability and branch controls. The existing command, warning, skip and status contracts remain required. These are requirements for implementation, not a claim that implementation already passes. This pass clears only the open Security obligation; it does not repeat ordinary plan review.
+
+**Covered:** S1's transport, test-path and decoding satisfiers against the amended operative cells and author response (#1–4, #6, #9); retained shared-encoder design, accepted outcome and review placement (#5, #7–8), all at `5844b93b` in this plan. No scope loss is introduced by these corrections.
+
+**Not covered / low confidence:** no implementation, tests, mutations, broad suite, or protected-test ceremony were run. Correct default-encoding selection and CR preservation remain implementation and code-review checks. The ordinary verification-map finding is outside this clearance.
