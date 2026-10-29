@@ -534,3 +534,43 @@ and Security Review must assess this revised implementation and its composition.
 **Falsification ledger.** Python 3.13.13, disposable fixture keys and repositories: `test_prior_scanner_disagreement_stops_before_signing` passed, exercising disagreement before signing. `test_documented_verifier_then_ceremony_on_disposable_authority` reached signing but failed to supply the disposable key passphrase in the restricted test environment; this is inconclusive, not a product failure. The author records a successful unrestricted run of the affected family at `c0ceaa26`. No live key or ref was used. The tests ran from the shared checkout rather than the intended detached copy; their fixture repositories were temporary.
 
 **Coverage and limits.** Inspected the runbook, changed surfaces and composed Boundary B record. The other mapped families rely on the earlier recorded run; no broad suite was repeated. Native Windows was not tested and the record identifies POSIX shell paths. The Maintainer's amendment defers historical-anchor comparison and live installation; neither is claimed here. This pass does not discharge Security Review or establish host containment of candidate code.
+
+
+## Code review -- Codex (GPT-6.1 Sol, high), Security Review -- 2026-10-29
+
+```
+Reviewed commit: e1c74d76426a56b46b0cc408727af58d5c0ce5ff
+Target: aeb04b8d and c0ceaa26; changed ceremony and pin-commit boundaries
+Prior findings: revised operator commands following ordinary F2
+```
+
+**Obligation**: Security Review of revised implementation
+**Findings**: none additional. **Bounding**: ACCEPTED for this delta and the
+recorded composed coverage; certification remains pending.
+
+**Foundations**
+
+1. **Does it do what it claims?** The transition authenticates the prior signer with the prior roster, retains candidate-roster signing, and compares the pre-candidate scan with the displayed report before approval. The separate commit command binds reader, transaction, stop record and exact output bytes before its own yes. -- `scripts/repin.py:815`, `:1748`, `:1789`, `:1818`.
+2. **Best alternative.** Reuse the existing authenticated launcher, reader binding and Git environment filter, with a separate pin-commit approval. The full verifier remains an explicit operator step; the runbook says so and preserves the residual candidate-code risk. -- `scripts/repin.py:1602`; `bootstrap/REANCHOR_RUNBOOK.md:21`, `:94`.
+3. **What would show it wrong?** Substituted report output reaching signing, or a configured signature program admitting a forged checkpoint, would break the changed boundary. -- falsification ledger below.
+
+**Falsification ledger.** All probes used a fresh no-hardlink detached local
+clone of the reviewed commit, disposable fixture keys/repositories, canonical
+Python 3.13.13 and no live refs. The production files were unchanged.
+
+- Controls: focused `test_prior_scanner_disagreement_stops_before_signing`, `test_a_signature_program_named_in_the_repository_cannot_make_the_verify_command_say_good`, and `test_checkpoint_verifier_accepts_only_the_expected_roster_key` in `bootstrap/tests/test_repin_ceremony.py`: **5 passed, 7.09 s**. These challenge disagreement, configured verifier forgery and expected-key/roster rejection.
+- Independent temporary harness using that family's real driver fixture: duplicate the complete displayed report, remove its scan digest, or return failed `show-report` with otherwise valid output. **3 passed, 16.05 s**: each refused before a passphrase and retained its disposable anchor. These attacks exercise cardinality, missing evidence and command-exit handling separately from changing the scanner result.
+
+**Coverage and limits.** Claims, public path, completeness and refusal (1–4):
+above probes and cited driver branches. Reuse, consistency and drift (5–6):
+repeated positive `repin|reanchor|scan-digest` search, command dispatch and runbook;
+`c0ceaa26` changes only the driver and the final record reruns its three mapped
+consumers. Lifecycle and scope (7–8): the separate yes authorizes the named Git
+commit, ordinary boot still refuses changed authority, and installation,
+historical reconciliation and real-report dispositions remain under the quoted
+amendment. No findings require satisfiers (9). No full suite, live signing,
+installation, push or historical-anchor reconstruction was performed. This pass
+does not independently replay the entire signing sequence or every earlier
+mutation; it accepts the composed author evidence for those paths. Candidate
+code can still compromise the operator's host, and normal Git identity/hooks
+are deliberately used for the separately approved commit.
