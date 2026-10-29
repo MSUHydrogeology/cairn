@@ -64,3 +64,34 @@ Assurance path: high-assurance
 The criteria explicitly cover literal LF framing, literal escape notation, hostile characters, both return branches, suppressed successful stderr, and reported failure stderr at each helper. They also require real public-path coverage or an equivalent call-site mapping and per-helper raw-write mutations. These are appropriate to the accepted Response.
 
 **Coverage:** read the committed plan, accepted proposal, template, three committed call sites, and a reader search. No implementation tests, mutations, Security Review, protected-test ceremony, or full suite were run; this pass does not assess the independent security obligation.
+
+
+## Plan review -- Codex (gpt-6.1-sol, Security) -- 2026-10-29
+
+```
+Reviewed commit: a4399b820b9d1211014f4e33f45a36d06aa523a2
+Target: plan against accepted revised proposal and ordinary plan review
+Prior findings: none for this obligation
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**:
+
+1. **Should this happen as framed?** The planned encoder and literal-LF framing preserve the accepted boundary, but child capture currently destroys CR before that boundary -- `tools/session.py:1791`, `tools/session.py:1821`, `tools/session.py:1855`.
+2. **Best alternative.** Keep one encoder and one framing helper; preserve CR during capture and test real child bytes rather than add another escaping policy -- `tools/session.py:189`, this plan > Acceptance criteria.
+3. **What would show it wrong.** A child emitting CR that becomes a new report line defeats the promised LF-only contract; the Python 3.13.13 subprocess probe below demonstrates this before encoding -- `tools/session.py:1792`, `tools/session.py:1825`, `tools/session.py:1859`.
+
+**S1 -- blocking: preserve CR before framing and test the real transport.** All three calls use `subprocess.run(..., text=True)`. Its newline conversion turns child CR and CRLF into LF before a proposed framing helper sees the returned string. Splitting that string only on LF therefore still promotes child CR to framing. Stand-ins returning a `CompletedProcess` string containing CR bypass the conversion and could pass while the real path violates C1 and the accepted Response.
+
+A read-only standard-library probe under canonical Python 3.13.13 launched a Python child using the same `capture_output=True, text=True, check=False` options. The child wrote stdout bytes `a\rb\r\nc\nd` and stderr bytes `e\rf`; the returned strings were `a\nb\nc\nd` and `e\nf`. This measures the capture behavior, not unimplemented framing code.
+
+**Satisfier:** make capture preserve CR until `encode_display` handles it, without changing argv, status handling, skips or warning labels. Map real subprocess controls through each actual helper, including failure stderr: bare CR must remain an escaped segment character, CRLF must not silently discard CR, and literal LF must retain readable report separation. Keep stand-ins for branch coverage, ordinary Unicode text, literal escapes, ESC/OSC, C1, bidi and invisible characters, success-stderr suppression, and later parent messages. Define byte decoding and malformed-byte disposition if capture changes to bytes. This delivers existing accepted scope; it does not require a new subprocess framework.
+
+**Covered:** claims and production path (#1–2), capture/framing completeness and failure visibility (#3–4), reuse and drift (#5–6: repeated the plan's named search plus `rg 'subprocess|stdout|stderr' tools/session.py`), lifecycle and scope (#7–8: accepted Response, C1/C2, and v0.6 ceremony deferral), and satisfier (#9 above). The ordinary review's wide-map finding remains separate. No scientific result is involved.
+
+**Not covered / low confidence:** no implementation exists in this range; no tests, mutations, full suite, or protected-test ceremony were run. Printable false claims remain outside the encoder's protection, as the accepted preflight states. This security obligation remains open pending the author's response.
