@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import sys
 import subprocess
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -88,7 +89,17 @@ def test_selected_modules_have_usable_tasks(tmp_path: Path) -> None:
     lock = read_lockfile(tmp_path)
     assert lock is not None
     assert (tmp_path / "dev/PLANNING.md").read_text(encoding="utf-8")
-    assert "dev/modules/README.md" in {record["dst"] for record in lock["files"]}
+    inventory_record = next(
+        record for record in lock["files"]
+        if record["dst"] == "dev/modules/README.md"
+    )
+    assert inventory_record["hash"] == "sha256:" + hashlib.sha256(
+        (tmp_path / "dev/modules/README.md").read_bytes()
+    ).hexdigest()
+    cached_baseline = tmp_path / inventory_record["base_cache"]
+    assert inventory_record["base_hash"] == "sha256:" + hashlib.sha256(
+        cached_baseline.read_bytes()
+    ).hexdigest()
 
 
 def test_empty_selection_has_no_module_tasks(tmp_path: Path) -> None:
