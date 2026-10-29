@@ -314,7 +314,7 @@ def check_loaded(before, made, ext, frozen):
                      f"checked list. Nothing further was run.")
 
 
-def boot(repo, tmp):
+def boot(repo, tmp, *, prior_authority=False):
     """The reading order.  Returns the context every verb works from."""
     global D
     before = set(sys.modules)
@@ -335,18 +335,21 @@ def boot(repo, tmp):
     D, session_oid, session_path = load_encoder(repo, anchor, tmp)
     ext = tmp / "ext"
     ents = extract(repo, head, ext)
+    authority = tmp / "authority" if prior_authority else ext
+    if prior_authority:
+        extract(repo, anchor, authority)
     for rel in LISTED:
-        got = sha((ext / rel).read_bytes()) if (ext / rel).is_file() else None
+        got = sha((authority / rel).read_bytes()) if (authority / rel).is_file() else None
         if got != frozen.get(rel):
             raise Refuse(f"{rel} at HEAD does not equal the anchor's entry "
                          f"({got} against {frozen.get(rel)}). Its bytes decide what "
                          f"this tool runs, so nothing was imported. Only the by-hand "
                          f"ceremony in {RUNBOOK} anchors new bytes.")
-    made = load_listed(ext, session_path)
+    made = load_listed(authority, session_path)
     ctx = {k: sys.modules[v] for k, v in (("gm", "bootstrap.tests._gate_manifest"),
                                           ("gp", "bootstrap.tests._gate_preflight"),
                                           ("rc", "scripts.reanchor_ceremony"))}
-    check_loaded(before, made, ext, frozen)
+    check_loaded(before, made, authority, frozen)
     running = Path(__file__).read_bytes()
     entry = frozen.get(REPIN_REL)
     at_head = (ext / REPIN_REL).read_bytes() if (ext / REPIN_REL).is_file() else None
@@ -355,6 +358,7 @@ def boot(repo, tmp):
              "no anchored entry" if entry is None else "differs from the anchor")
     ctx.update(repo=repo, tmp=tmp, ext=ext, head=head, anchor=anchor, man=man,
                frozen=frozen, ents=ents, session_oid=session_oid, repin_state=state,
+               prior_authority=prior_authority,
                engine=sorted(p for _, _, p in ents if re.fullmatch(
                    r"bootstrap/_scaffold/[^/]+\.py", p)))
     if not ctx["engine"]:
@@ -469,7 +473,8 @@ def first_screen(ctx):
         f"{'match' if list(sys.version_info[:2]) == pin[:2] else 'DIFFERENT MINOR'})")
     say(f"process  isolated={bool(sys.flags.isolated)}  compiled files go to "
         f"{d(str(sys.pycache_prefix))}")
-    say(f"checked  {len(LISTED)} files at HEAD equal the anchor's entries before any import; "
+    source = "the anchor" if ctx["prior_authority"] else "HEAD"
+    say(f"checked  {len(LISTED)} files at {source} equal the anchor's entries before any import; "
         f"the display encoder is the anchor's blob {ctx['session_oid']}")
     say(f"repin    {REPIN_REL}: {ctx['repin_state']}")
     changed = ctx["closure_changed"]
@@ -1432,15 +1437,17 @@ def write_new(path, raw):
         fh.write(raw)
 
 
-def build_packet(ctx, cdir):
+def build_packet(ctx, cdir, *, transition=False):
     """`packet`: write the packet over HEAD's authority files and the launcher (the anchor's
     template with the packet's digest in its one slot).  Ordinary ceremonies only: a changed
     authority file means the packet and launcher are built by hand, so nothing is written."""
-    if ctx["closure_changed"]:
+    if ctx["closure_changed"] and not transition:
         raise Refuse("these authority files differ from the anchor: "
                      + ", ".join(d(m) for m in ctx["closure_changed"])
                      + f". That is a transition ceremony; its packet and launcher are built by hand "
                      f"under {RUNBOOK}. Nothing was written.")
+    if transition and not ctx["closure_changed"]:
+        raise Refuse("the authority closure is unchanged; use the ordinary packet command.")
     check_preconditions(ctx, need_terminal=False)
     cdir = plain_folder(cdir)
     template, members = anchored_template(ctx)
@@ -1728,6 +1735,9 @@ def main(argv=None, *, launchctl=launchctl_socket):
     pt = sub.add_parser("packet", help="write the packet and the launcher for an ordinary ceremony "
                         "into --ceremony-dir; refuses a ceremony that changes an authority file")
     pt.add_argument("--ceremony-dir", required=True, metavar="DIR", help="a folder that holds neither yet")
+    tp = sub.add_parser("transition-packet", help="prepare a packet using authenticated prior authority")
+    tp.add_argument("--ceremony-dir", required=True, metavar="DIR")
+    tp.add_argument("--expected-fingerprint", required=True, metavar="SHA256:...")
     ce = sub.add_parser("ceremony", help="the whole re-anchor: checks, an owed AST pin (then stop), "
                         "the launcher's two stages, verification")
     ce.add_argument("--values", required=True, metavar="FILE", help="your values file")
@@ -1766,7 +1776,20 @@ def main(argv=None, *, launchctl=launchctl_socket):
     tmp = Path(tempfile.mkdtemp(prefix="repin-"))
     rec, done = [], None
     try:
-        ctx = boot(Path(__file__).resolve().parent.parent, tmp)
+        repo = Path(__file__).resolve().parent.parent
+        if args.verb == "transition-packet":
+            prior = git_text(repo, "rev-parse", "--verify", ANCHOR_REF + "^{commit}")
+            roster = tmp / "prior-roster"
+            roster.write_bytes(git(repo, "cat-file", "blob", f"{prior}:{ROSTER_REL}"))
+            if not re.fullmatch(r"SHA256:[A-Za-z0-9+/]{43}", args.expected_fingerprint):
+                raise Refuse("supply the independently trusted SHA256 signing fingerprint.")
+            good, _, _ = verify_checkpoint(repo, prior, roster, args.expected_fingerprint)
+            if not good:
+                raise Refuse("the prior anchor does not verify by the independently trusted fingerprint.")
+            head = git_text(repo, "rev-parse", "--verify", "HEAD^{commit}")
+            if git(repo, "cat-file", "blob", f"{head}:{REPIN_REL}") != Path(__file__).read_bytes():
+                raise Refuse("the running preparation script differs from committed candidate C.")
+        ctx = boot(repo, tmp, prior_authority=args.verb == "transition-packet")
         first_screen(ctx)
         if args.verb == "status":
             show_ast(ctx, ast_view(ctx))
@@ -1776,6 +1799,8 @@ def main(argv=None, *, launchctl=launchctl_socket):
             package(ctx, args.ceremony_dir)
         elif args.verb == "packet":
             build_packet(ctx, args.ceremony_dir)
+        elif args.verb == "transition-packet":
+            build_packet(ctx, args.ceremony_dir, transition=True)
         else:
             try:
                 done = run_ceremony(ctx, args, launchctl, rec)

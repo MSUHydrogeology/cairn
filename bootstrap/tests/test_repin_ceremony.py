@@ -2357,3 +2357,23 @@ def test_prepared_verifier_refuses_untrusted_evidence_before_collection(cbed, tm
     assert result.returncode == 2, (result.stdout, result.stderr)
     assert "Signing key away?" not in result.stdout
     assert sentinel.read_bytes() == b"do not delete"
+
+
+def test_transition_packet_uses_signed_prior_authority_and_preserves_ordinary_refusal(cbed):
+    fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
+                                 capture_output=True, text=True, check=True).stdout.split()[1]
+    cbed.write("bootstrap/tests/_gate_manifest.py",
+               cbed.read("bootstrap/tests/_gate_manifest.py") + "\n# changed candidate checker\n")
+    cbed.commit("changed authority")
+    ordinary, refused = packet_into(cbed, "ordinary")
+    assert refused.returncode == 2 and not list(ordinary.iterdir())
+    out = cbed.root / "transition"
+    out.mkdir()
+    bad = cbed.run("transition-packet", "--ceremony-dir", str(out),
+                   "--expected-fingerprint", "SHA256:" + "A" * 43)
+    assert bad.returncode == 2 and not list(out.iterdir())
+    made = cbed.run("transition-packet", "--ceremony-dir", str(out),
+                    "--expected-fingerprint", fingerprint)
+    assert made.returncode == 0, made.stdout + made.stderr
+    assert len(list(out.iterdir())) == 2
+    assert hashlib.sha256(cbed.read("bootstrap/tests/_gate_manifest.py").encode()).hexdigest() in (out / "authorization-packet.txt").read_text()
