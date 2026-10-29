@@ -822,3 +822,14 @@ was made. **Deferred evidence home**: the separate v0.6 forward-baseline row in
 carry the accepted proposal's **Complete current contract** as amended by the
 Maintainer's scope amendment above. The amendment explicitly defers installation
 and historical continuity; the narrowed boundary is not active yet.
+
+## Correction to historical-anchor disposition -- Codex (GPT-6.1 Sol) -- 2026-10-29
+
+The Maintainer directed:
+
+> “Remove those requirements from the plans”
+
+Historical-anchor comparison or reconciliation is waived, not deferred to the
+v0.6 baseline. The earlier migration entry calling it deferred is corrected by
+this note. Actual baseline installation remains separate v0.6 work. This plan
+remains archived.
