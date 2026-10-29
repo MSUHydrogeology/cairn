@@ -1,7 +1,7 @@
 # Re-anchor and repin as human-run commands
 
 **Author**: Codex (gpt-6.1-terra)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -183,3 +183,27 @@ Scope/domain and satisfiers (#8–9): proposal S1–S5 and SR1; no scientific re
 scratch ceremony, mutation, signing, key access, ref movement or full suite run.
 This pass identifies the correction needed to discharge its Security Review
 obligation; it does not authorize C4 or pushing.
+
+## Response -- Codex (gpt-6.1-terra) -- 2026-10-29
+
+F1, F2 and SR1: Accepted; addressed in the contract below.
+
+## Complete current contract
+
+The Maintainer said: “I could definitely do a `reanchor` and a `repin` and confirm shas and enter my passphrase” (`dev/PLANNING.md`); the trust plan records “And remember we want scripts, not one-off commands!” (`dev/plans/2026-10-28-test-trust-boundary.md`). Reuse `scripts/repin.py`, `scripts/reanchor_ceremony.py` and `bootstrap/reanchor.sh`; the existing ordinary ceremony signs and verifies, but status skips collection and changed authority is refused. The trust boundary remains inactive until its authorized ceremony.
+
+Deliver reusable tested `reanchor` and `repin` commands. Scripts prepare required values, packets, launcher and reader inputs; documentation names the preparer and independent checker of each. Demonstrate documented ordinary and changed-authority entry points from preparation through reviewed AST deletion, reader record, AST write, exact-path commit, stop, interruption and rerun. The Maintainer runs commands, compares hashes, approves bounded evidence and enters the passphrase; push remains separate. No automatic AST commit without explicit Maintainer authorization. Preserve stop records and fresh package names on repeat runs.
+
+Before signing, the human runs a reusable full verifier with the key away. Authenticate immutable signed prior anchor P, its checker and manifest; inspect clean committed candidate C as raw object bytes and hashes; require the anchor and full collection. An independent reader checks verifier provenance; the Maintainer compares hashes. Present exact and grouped protected HOLDs and ordinary notes, requiring explicit dispositions bounded to the displayed evidence. Missing or inconsistent inputs, collection errors and unapproved HOLDs refuse. Explain residual candidate execution influence.
+
+Prepare and present checks, run stage 1, display raw and expected values and compare E1–E6, H and K, capture Y1–Y5, record approval, run stage 2 and verify its signature. E5 independently checks launcher bytes. E7 independently runs the authenticated prior P scanner and must agree with the report digest before signing. The dormant-roster and active-checker transitions remain distinct ceremonies, each with its own candidate, packet, reader record, comparisons and Maintainer authorization; never infer the second from the first. Keep prior scanner semantics and existing changed-authority refusal; do not let candidate code authorize itself. Stop if a safe transition cannot be demonstrated. The trust plan remains open until its own verification and authorized ceremony complete.
+
+The plan maps exact nodes and callers in `bootstrap/tests/test_repin.py`, `bootstrap/tests/test_repin_ceremony.py`, `bootstrap/tests/test_reanchor.py`, `bootstrap/tests/test_reanchor_driver_disclosures.py`, and manifest, transition and preflight families. Public-entry scratch tests use throwaway keys, honest controls and tampering: signature, checker, raw C hashes, roster, full collection, dispositions, comparisons, interruption and repeat runs. For each bridge, alter the candidate scan digest and prove E7 refuses, with passing controls; reuse the adversarial case in `bootstrap/tests/test_repin_ceremony.py`. Demonstrate one signing prompt and signature verification. No real key, ref or push. Run claim, link, snippet, neutrality and `python scripts/check_cairn.py` gates; certification remains separate.
+
+P and signer configuration supply authority; C supplies objects and executable tests. Missing anchors, parse errors, incomplete collection and mismatches refuse. A candidate author without the signing key can still influence host execution; same-user compromise remains outside this assurance. Proposed mutations are not yet run. Implement and test the human command and its description together. No scientific assumption is touched. A self-authorizing checker, unapproved HOLD, bypassed E7 or prior-P check, omitted collection or unusable documented workflow falsifies delivery.
+
+Route instructions to `bootstrap/REANCHOR_RUNBOOK.md`, governing changes if needed to `AGENTS.md`, and deliberation to `dev/`; revise the trust plan through its lifecycle if needed. Manual and candidate-specific scripts leave the reusable obligation unmet; ordinary-only automation omits transition. Implementation and Security Review cost remain. **Assurance path**: high-assurance. **Scope delta**: preserved.
+
+### Withdrawn / superseded commitments
+
+The unsupported assertion that the Maintainer cannot assemble git commands is superseded by the recorded words above; no outcome is withdrawn.
