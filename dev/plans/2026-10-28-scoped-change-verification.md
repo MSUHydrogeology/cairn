@@ -1,8 +1,7 @@
 # Plan: Verify changes at their scope
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-scoped-change-verification.md
-**Status**: revising-code
-**Waiting on Maintainer**: Required frozen-file ceremony
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Verify each change against its affected behavior and reserve whole-tree certification for authorized integration points.
@@ -291,3 +290,13 @@ verification and independent reviews remain required. This amendment itself
 does not declare review findings resolved, change the trust root, or authorize
 signing or pushing. Respond to the existing review findings under the revised
 scope before moving the plan forward.
+
+
+## Response to code review under amended scope -- Codex (GPT-6.1) -- 2026-10-29
+
+| Finding | Disposition |
+|---|---|
+| Ordinary F1, `f19f4f53` | The Maintainer's scope amendment defers the actual frozen-file ceremony and historical comparison to the v0.6 board item. The previously required ceremony is no longer an archive prerequisite; its loss is recorded in the amendment. The existing functional verification and ordinary review remain evidence for the retained scope. |
+| Security Review, `9d813013` | The same amendment changes the outstanding ceremony condition, but does not itself clear the open Security Review. A Security reviewer must assess the response and retained functional evidence under the amended scope. |
+
+No implementation bytes, authority, or historical evidence changed in this response. The original verification remains scoped to its named commit and does not certify the tree. Installation and historical continuity remain deferred; no signing or trust-root operation is authorized by this response.
