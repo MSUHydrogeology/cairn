@@ -112,6 +112,22 @@ def test_empty_selection_has_no_module_tasks(tmp_path: Path) -> None:
     assert "module id=" not in (tmp_path / "dev/modules/README.md").read_text()
 
 
+def test_unselected_modules_have_no_tasks_or_inventory_rows(tmp_path: Path) -> None:
+    """The explicit roster, rather than the available catalog, drives output."""
+    cfg = tmp_path / "profile.yml"
+    cfg.write_text(
+        "project_name: NarrowRoster\ntest_command: pytest\nmodules:\n"
+        "  - reflections\n", encoding="utf-8")
+    assert main(["--config", str(cfg), "--target", str(tmp_path),
+                 "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]) == 0
+    slot = _seed_slot(tmp_path)
+    inventory = (tmp_path / "dev/modules/README.md").read_text(encoding="utf-8")
+    assert "module-task id=reflections" in slot
+    assert "module id=reflections" in inventory
+    assert "module-task id=dual-review" not in slot
+    assert "module id=dual-review" not in inventory
+
+
 def test_reinstall_preserves_completion_and_refuses_loss(tmp_path: Path) -> None:
     """Repeated install keeps completed work and refuses its removal."""
     cfg = tmp_path / "profile.yml"
