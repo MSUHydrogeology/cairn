@@ -216,6 +216,22 @@ def test_baseline_preparation_requires_independent_inputs(bed, tmp_path):
     assert not output.exists()
 
 
+@pytest.mark.parametrize("reader_json", ["[]", "null", '"reader"', "42", "true"])
+def test_baseline_preparation_refuses_nonobject_reader_record(bed, tmp_path, reader_json):
+    """Non-object reader JSON is refused before a package can be written."""
+    roster = tmp_path / "approved-roster.json"
+    roster.write_bytes((REAL / GM._PROTECTED_ROSTER_REL).read_bytes())
+    reader = tmp_path / "reader.json"
+    reader.write_text(reader_json)
+    output = tmp_path / "baseline-package"
+    result = bed.run("baseline-prepare", "--approved-roster", str(roster),
+                     "--reader-record", str(reader), "--output-dir", str(output))
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert "independent reader record is missing, malformed" in result.stderr
+    assert "Traceback" not in result.stderr
+    assert not output.exists()
+
+
 def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path, monkeypatch):
     """The public command packages raw candidate bytes and independently bound evidence."""
     repo = tmp_path / "repo"

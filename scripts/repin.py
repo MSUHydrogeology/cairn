@@ -282,7 +282,8 @@ def baseline_prepare(repo, candidate, approved_roster, reader_record, output_dir
     roster_raw = roster_path.read_bytes()
     reader_raw = reader_path.read_bytes()
     reader = _unique_json(reader_raw, "baseline reader record")
-    if (reader.get("schema") != "cairn-baseline-reader/v1"
+    if (not isinstance(reader, dict)
+            or reader.get("schema") != "cairn-baseline-reader/v1"
             or reader.get("candidate") != candidate
             or reader.get("roster_sha256") != sha(roster_raw)
             or not isinstance(reader.get("reviewer"), str) or not reader["reviewer"].strip()
