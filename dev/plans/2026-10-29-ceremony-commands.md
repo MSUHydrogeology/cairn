@@ -2,7 +2,7 @@
 
 **Author**: Codex (gpt-6.1-terra)
 **Source proposal**: [dev/proposals/archive/2026-10-29-codex-ceremony-commands.md](../proposals/archive/2026-10-29-codex-ceremony-commands.md)
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Give the Maintainer reusable commands for checking and carrying out trust ceremonies with human approval.
@@ -32,11 +32,11 @@ Operator description belongs in the runbook; deliberation here. No doctrine chan
 
 ## Acceptance criteria
 
-**C1.** With key away, authenticate immutable signed prior anchor P, its `bootstrap/tests/_gate_preflight.py` and `bootstrap/tests/fixtures/gate_manifest.json`; inspect clean committed C from raw objects and hashes. Require anchor and full collection. Display exact and grouped protected HOLDs and ordinary notes, including all candidate reports; require human dispositions bounded to displayed evidence, never automatic waivers. Missing or inconsistent inputs, collection errors and unresolved HOLDs refuse. An independent reader checks verifier provenance; document residual candidate-code influence. The 83 pending candidate reports require disposition on actual evidence, not an assumed waiver.
+**C1.** With key away, authenticate signed immutable prior P, its manifest, `_gate_manifest.py` verifier, `_gate_preflight.py` E7 scanner and their full dependency bytes; an independent reader checks provenance. Prepare a separate clean target independently checked against exact committed C using raw object bytes and hashes. The documented human command invokes P's verifier using the verified external trusted repository and P for trusted and anchor references, `--require-anchor`, full collection, empty environment and Python `-E -s`. It runs before signing, including before narrowed authority is installed. Show exact and grouped protected HOLDs and ordinary notes; bind each explicit human disposition to displayed items, P, C and verified report/collection. Changed evidence or new unexplained HOLDs require fresh review; missing inputs, inconsistent bytes, collection errors or unresolved HOLDs refuse. No automatic waiver; all 83 pending candidate reports require actual disposition. Document candidate-code execution influence.
 
-**C2.** Document and demonstrate preparation through reviewed AST deletions, reader record, write, exact-path commit, stop, interruption and fresh-package rerun for ordinary and changed-authority paths. Preserve Y1–Y5, stage 1, raw and expected E1–E6, H and K comparisons, human approval, stage 2 and signature verification with one passphrase. E5 independently checks launcher bytes. E7 runs authenticated old-P scanner and agrees with the report before signing. Dormant-roster and active-checker bridges each have their own candidate, packet, reader record, comparisons and explicit Maintainer authorization. Preserve prior scanner semantics; refuse an unsafe transition.
+**C2.** Reusable scripts prepare values, packet, launcher and reader inputs; the runbook names each preparer and independent checker. Demonstrate ordinary and changed-authority paths through reviewed AST deletion, reader record before write, exact-path commit, stop, interruption and fresh-package rerun without improvised commands. The Maintainer runs commands, compares hashes, approves bounded evidence and enters the passphrase; no automatic AST commit without explicit authorization, and push is separate. Preserve Y1–Y5, stage 1, raw and expected E1–E6, H and K comparisons, approval, stage 2 and signature verification with one passphrase. E5 independently checks launcher bytes. E7 independently runs authenticated old-P scanner and agrees with the report before signing. Dormant-roster and active-checker bridges each have their own candidate, packet, reader record, comparisons and authorization. Preserve prior scanner semantics; refuse unsafe transitions.
 
-**C3.** Exercise documented public commands in scratch repositories with throwaway keys, honest controls and mutations of signature, checker, raw C hash, roster, collection, disposition and comparisons. In each bridge an altered candidate scan digest must fail E7 with a passing control. Verify one signing prompt, signature and no push. No real key or ref changes.
+**C3.** Documented public commands run in scratch repositories with throwaway keys and passing controls. Mutate P signature, verifier, dependency and manifest; raw C hashes, roster, collection and anchor settings; report, disposition, new HOLD, packet, launcher, package and comparisons. Each stale or substituted binding refuses before signing; exercise path containment, symlink refusal, interruption and fresh-package reruns. Each bridge's altered candidate scan digest fails E7 against its passing control. Verify one signing prompt, signature and no push; no real key or ref changes.
 
 **C4.** No implementation agent performs actual signing or ref installation. Each bridge needs its own authorization and evidence; neither authorization implies the other, a HOLD waiver or a push.
 
@@ -46,7 +46,9 @@ Operator description belongs in the runbook; deliberation here. No doctrine chan
 
 ## Verification
 
-Boundary A maps `bootstrap/tests/test_repin.py` (boot, AST and refusal), `bootstrap/tests/test_repin_ceremony.py` (public staged entry, signing and E7), `bootstrap/tests/test_reanchor.py` and `bootstrap/tests/test_reanchor_driver_disclosures.py` (launcher and disclosures), plus `bootstrap/tests/test_gate_manifest.py`, `bootstrap/tests/test_gate_transition.py`, `bootstrap/tests/test_gate_preflight.py`, `bootstrap/tests/test_gate_reanchor.py` and `bootstrap/tests/test_ceremony_review_report.py` (manifest, transition, prior checker and reports). Add public-entry cases to these owning families; trace changed callers and fixtures and add their owners before implementation verification. Run `python scripts/check_cairn.py`, `python scripts/claim_check.py`, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py --check`, and `python scripts/quality_gate.py --sub neutrality` for their respective prose, claim, link, snippet and neutrality properties; resolve any unsupported invocation before use.
+Boundary A: extend v0.5 `scripts/repin.py` callers `boot`, `manifest_status`, `build_packet`, `check_stop_records`, `run_ceremony` and the staged launcher; trace affected fixtures and consumers before implementation. Existing controls: `bootstrap/tests/test_repin.py::test_a_tracked_symlink_or_submodule_refuses_before_import`, `::test_a_symlinked_target_or_parent_is_not_followed`, `::test_the_apply_step_makes_no_commit_and_stops`; `bootstrap/tests/test_repin_ceremony.py::test_a_full_ceremony_signs_once_with_the_typed_passphrase`, `::test_a_package_rewritten_between_the_report_and_the_yes_refuses`, `::test_the_launcher_is_hashed_again_before_each_of_its_two_runs`, `::test_an_owed_ast_pin_is_written_the_stop_line_printed_and_a_rerun_proceeds`, and `::test_a_candidate_checker_that_hides_the_scan_cannot_change_what_the_page_prints`. Add public-entry controls and mutations for C1–C3 to these families, including both bridge E7 cases and full-verifier trigger. `bootstrap/tests/test_gate_manifest.py::test_trusted_verifier_detects_tamper_in_separate_target_tree`, `::test_anchor_from_trusted_repo_refuses_target_owned_forge`, `::test_require_anchor_holds_without_ref` and protected/ordinary tests own verifier behavior; `bootstrap/tests/test_gate_transition.py::test_altered_checker_rejected` owns transition substitution. Run owning families `bootstrap/tests/test_gate_preflight.py`, `bootstrap/tests/test_gate_reanchor.py`, `bootstrap/tests/test_ceremony_review_report.py`, `bootstrap/tests/test_reanchor.py`, and `bootstrap/tests/test_reanchor_driver_disclosures.py` for stage, report and launcher consumers.
+
+Run `python scripts/check_cairn.py`, `python scripts/claim_check.py <changed-doc>`, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py --check`, and `python scripts/quality_gate.py --sub neutrality` for prose, claims, links, snippets and neutrality.
 
 Boundary B is **wide** for this trust ceremony: run the mapped families, documented scratch entry paths, mutation controls and standing gates on the clean final implementation SHA with canonical Python 3.13; record exact SHA, range, commands, timings, counts, omissions and non-passes, clean pre/post state, and **Certified by**: pending. No full-suite certification is implied. Fresh independent Terra plan review and Sol Internal Security Review precede implementation; independent code and Security Reviews falsify the final range. C4 stays fenced.
 
@@ -142,3 +144,12 @@ contract and trust-plan installation boundary; satisfiers (9): S1–S2.
 tests, mutations, actual signing, ref movement, certification or push performed.
 This review authorizes no ceremony and claims no protection from same-user
 compromise.
+
+## Response to plan review -- Codex (gpt-6.1-terra) -- 2026-10-29
+
+| Finding | Disposition | Operative cells |
+|---|---|---|
+| F1, S1 | Accepted | C1, C3 and Verification distinguish authenticated verifier and scanner and test the human trigger. |
+| F2 | Accepted | C1–C2 specify preparation, independent checks and complete operator workflow. |
+| F3 | Accepted | Verification maps callers, existing nodes, new public-entry tests and consumers. |
+| S2 | Accepted | C1–C3 bind dispositions and require tamper, extraction and recovery controls. |
