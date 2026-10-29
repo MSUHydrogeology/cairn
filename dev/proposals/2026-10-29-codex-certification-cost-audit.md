@@ -1,7 +1,7 @@
 # Find a safe test-family speed improvement
 
 **Author**: Codex (GPT-6, proposal author)
-**Status**: awaiting-decision
+**Status**: revising
 **Review**: usual
 **Plan review**: required(Internal)
 **Opened**: 2026-10-29
@@ -193,3 +193,28 @@ The audit-only prohibition on ordinary test changes is superseded by the
 bounded implementation path above. The concrete improvement proposal remains,
 but can be appended here instead of opened as a separate file. The original
 evidence and stop conditions remain in force.
+
+## Review -- Codex (Sol), Proposal reviewer -- 2026-10-29
+
+```
+Reviewed commit: 299c3e19c2c1cf453fec20cb4d71338dd6f74b80
+Target: Response and Current contract, widened implementation scope only
+Prior findings: F1 (response and new authority sequence)
+Assurance path: standard (declared)
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** The widened outcome reaches an actual ordinary-family change and keeps the no-candidate stop, but the proposed second Decision in this same file cannot follow acceptance of an unspecified first scope. -- proposal `## Current contract`; `doctrine/lifecycle.md:169-185`.
+2. **Best alternative.** Collect timing only during the next independently authorized certification, then identify the family and mechanism in this still-open proposal *before its first Decision*. One reviewed concrete Decision can authorize one plan. Doing nothing avoids work but leaves the historical cost above budget. -- proposal `## Current contract`; `dev/PLANNING.md:121`; `doctrine/lifecycle.md:169-185`.
+3. **What would show it wrong.** Stop without test edits if the report, installed protection classification, scoped baseline or fault controls cannot support an ordinary-family improvement. -- proposal `## Current contract`, paragraphs 1-3.
+
+The Response preserves the original audit evidence, gives an explicit negative-result stop, and excludes protected files, trust-boundary judgments, dependencies, contract changes and baseline installation from the ordinary path (`299c3e19`, `## Current contract`). Those are real bounds on the new implementation scope. One lifecycle defect remains.
+
+**F2 — Blocking: put the concrete choice before the first Decision.** The file is now `awaiting-decision`, while its new contract says a later family and mechanism will be appended here for another review and Maintainer Decision. Once this proposal is accepted, Cairn allows substantive change only through a *new* proposal; an inline Decision is for a bounded procedural gap, not a new test design. A Decision now would either authorize an unknown implementation or force the extra proposal cycle F1 challenged. Close by specifying one sequence: leave this proposal undecided while the next separately authorized certification supplies timing; append the selected family, mechanism, fault controls and protection evidence for review; then ask the Maintainer for one concrete Decision, followed by the reviewed plan. If there is no candidate, record the negative result and seek a terminal Decision without test edits. Alternatively, accept an audit-only Decision now and open a new proposal later, acknowledging the extra cycle. The first sequence keeps the new outcome without blanket authority or an extra suite run. -- `doctrine/lifecycle.md:169-185`; proposal `## Current contract`, paragraphs 1-3; `AGENTS.md` > Verification boundaries.
+
+**Covered**: claims and drift (proposal `## Current contract`, paragraphs 1-3); public paths and design completeness (proposal `## Current contract`, paragraph 3); fail-closed scope (proposal `## Current contract`, paragraphs 2-3); cross-document and lifecycle fit (`doctrine/lifecycle.md:169-185`; `AGENTS.md` > The lifecycle); scientific and domain scope (proposal `## Current contract`, paragraph 4); satisfier (F2 above). **Not covered / low confidence**: I did not run a suite, inspect a duration report or know the eventual family. The review addresses only material added at `299c3e19`.
