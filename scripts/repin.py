@@ -806,12 +806,71 @@ def apply_pin(ctx, cdir, raw, *, reviewed_head=None):
     record = Path(cdir) / f"{STOP_PREFIX}{digest[:16]}.json"
     record.write_bytes(dump({"schema": "repin-ast-stop/v1", "head": head, "paths": blobs,
                              "transaction": digest}))
-    say(f"\nWritten, not committed. HEAD is still {head}.\nCommit exactly these paths:\n"
-        f"  git commit {' '.join(blobs)} -m \"AST pin\"\nPut in the commit body: transaction "
-        f"digest {digest}, python {sys.version.split()[0]}, new blob ids "
-        + ", ".join(f"{Path(r).name} {b}" for r, b in blobs.items())
-        + f".\nThen run ceremony again; its re-run check reads {record.name}.")
+    say(f"\nWritten, not committed. HEAD is still {head}.\n"
+        f"Run commit-reviewed-pin --ceremony-dir {d(str(cdir))} to review and commit exactly: "
+        + ", ".join(blobs) + f".\nThen prepare fresh ceremony evidence; the re-run check reads {record.name}.")
     return record
+
+
+def commit_reviewed_pin(ctx, cdir):
+    """Commit only the previously approved write after rechecking its stop record."""
+    cdir = plain_folder(cdir)
+    raw = read_safe(cdir / TXN_NAME, own=True)
+    digest = sha(raw)
+    record = json.loads(read_safe(cdir / f"{STOP_PREFIX}{digest[:16]}.json", own=True))
+    txn = json.loads(raw)
+    if not (sys.stdin.isatty() and sys.stdout.isatty()):
+        raise Refuse("a terminal is required to authorize the commit.")
+    check_record(ctx, sha(read_safe(cdir / PACKET_NAME)), sha(read_safe(cdir / LAUNCHER_NAME)))
+    reader = (ctx["ext"] / RECORD_REL).read_text("utf-8")
+    if re.findall(r"^ast-transaction-sha256 ([0-9a-f]{64})$", reader, re.M) != [digest]:
+        raise Refuse("the reader record does not bind this transaction.")
+    if git_text(ctx["repo"], "rev-list", "--parents", "-n", "1", ctx["head"]).split()[1:] != [txn.get("head")]:
+        raise Refuse("the reader record is not the sole child of the reviewed commit.")
+    paths = record.get("paths")
+    if (record.get("schema") != "repin-ast-stop/v1" or record.get("transaction") != digest
+            or record.get("head") != ctx["head"] or not isinstance(paths, dict)
+            or not paths or set(paths) != set(txn.get("outputs", {}))
+            or not set(paths) <= set(OUTPUTS)):
+        raise Refuse("the stop record does not bind this transaction and HEAD.")
+
+    def validate():
+        check_head(ctx)
+        if set(worktree_diff(ctx)) != set(paths):
+            raise Refuse("the changed files differ from the stop record; no commit was made.")
+        for rel, blob in paths.items():
+            target = ctx["repo"] / rel
+            if (not os.path.lexists(target) or target.resolve() != target
+                    or not stat.S_ISREG(os.lstat(target).st_mode)):
+                raise Refuse(f"{rel} is not a regular file without links; no commit was made.")
+            data = read_safe(target)
+            expected = txn["outputs"][rel]
+            if (sha(data) != expected["new_sha256"] or data != expected["new_text"].encode()
+                    or git(ctx["repo"], "hash-object", "--no-filters", "--stdin", input=data).decode().strip() != blob):
+                raise Refuse(f"{rel} differs from the reviewed write; no commit was made.")
+
+    validate()
+    say("Commit exactly these reviewed paths: " + ", ".join(sorted(paths)))
+    if not ask_yes("Commit these files?"):
+        raise Refuse("no `yes` was typed. No commit was made.")
+    validate()
+    message = f"AST pin\n\nTransaction: {digest}\nPython: {sys.version.split()[0]}"
+    # A commit needs the operator's normal Git identity and hooks. Strip only
+    # environment overrides so a global user.name/user.email still works.
+    commit_env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    commit_env.update(GIT_TERMINAL_PROMPT="0", LC_ALL="C")
+    result = subprocess.run([GIT, "--no-replace-objects", "-c", "core.useReplaceRefs=false",
+                             "-C", str(ctx["repo"]), "commit", "-m", message, "--", *sorted(paths)],
+                            env=commit_env, capture_output=True, text=True, check=False)
+    relay(result.stdout + result.stderr)
+    if result.returncode:
+        raise Refuse("the exact-path commit failed; inspect the repository before retrying.")
+    new = git_text(ctx["repo"], "rev-parse", "HEAD^{commit}")
+    parents = git_text(ctx["repo"], "rev-list", "--parents", "-n", "1", new).split()[1:]
+    if parents != [record["head"]]:
+        raise Refuse("the resulting commit has an unexpected parent; inspect it before proceeding.")
+    check_stop_records(dict(ctx, head=new), cdir, False)
+    say(f"Committed reviewed pin at {new}; prepare fresh ceremony evidence.")
 
 
 NOTHING_OWED = "\nNo pin is owed: the baseline accounts for the engine and the lockfile has nothing to correct."
@@ -915,7 +974,9 @@ def blob_at(repo, rev, path):
 def verify_checkpoint(repo, commit, roster, fingerprint):
     """True only for a good signature, checked against *roster*, by *fingerprint*."""
     out = git(repo, "-c", "gpg.format=ssh", "-c", f"gpg.ssh.allowedSignersFile={roster}",
-              "-c", f"gpg.ssh.program={KEYGEN}", "log", "-1", "--format=%G?%x00%GK", commit)
+              "-c", f"gpg.ssh.program={KEYGEN}", "-c", f"gpg.program={os.devnull}",
+              "-c", f"gpg.openpgp.program={os.devnull}", "-c", f"gpg.x509.program={os.devnull}",
+              "log", "-1", "--format=%G?%x00%GK", commit)
     status, _, key = out.decode().strip().partition("\0")
     return status == "G" and key == fingerprint, status, key
 
@@ -1348,7 +1409,9 @@ def anchor_state(ctx, roster):
 
 def last_signed(ctx, roster):
     rows = git(ctx["repo"], "-c", "gpg.format=ssh", "-c", f"gpg.ssh.allowedSignersFile={roster}",
-               "-c", f"gpg.ssh.program={KEYGEN}", "log", "--first-parent", "-n", "2000",
+               "-c", f"gpg.ssh.program={KEYGEN}", "-c", f"gpg.program={os.devnull}",
+               "-c", f"gpg.openpgp.program={os.devnull}", "-c", f"gpg.x509.program={os.devnull}",
+               "log", "--first-parent", "-n", "2000",
                "--format=%H%x00%G?", ctx["anchor"]).decode().splitlines()
     for n, row in enumerate(rows):
         if row.endswith("\0G"):
@@ -1673,9 +1736,9 @@ def run_ceremony(ctx, args, launchctl, rec):
     if r.returncode:
         relay(r.stdout + r.stderr)
         raise Refuse("the launcher's validate refused the values file. No report was shown.")
-    # 3. roster and anchor
-    # The packet's member rows were compared with HEAD above, the roster's included,
-    # so this copy is the roster the packet pins.
+    # 3. roster and anchor. During a reviewed authority transition the old
+    # anchor must be checked with its own roster, while the candidate roster
+    # remains the authority for the signature this ceremony will create.
     roster = tmp / "roster"
     roster.write_bytes((ctx["ext"] / ROSTER_REL).read_bytes())
     fingerprint = key_fingerprint(rec, pub)
@@ -1684,7 +1747,17 @@ def run_ceremony(ctx, args, launchctl, rec):
     if not any(kt in t and kd in t and t.index(kd) == t.index(kt) + 1
                for t in (ln.split() for ln in roster.read_text().splitlines())):
         raise Refuse(f"the signing key {fingerprint} is not in the packet-pinned roster.")
-    status, signer = anchor_state(ctx, roster)
+    anchor_roster = roster
+    if args.transition:
+        if not ctx["prior_authority"] or not re.fullmatch(
+                r"SHA256:[A-Za-z0-9+/]{43}", args.expected_fingerprint or ""):
+            raise Refuse("a transition ceremony needs prior-authority boot and an independently trusted fingerprint.")
+        anchor_roster = ctx["tmp"] / "authority-roster"
+        anchor_roster.write_bytes((ctx["tmp"] / "authority" / ROSTER_REL).read_bytes())
+    status, signer = anchor_state(ctx, anchor_roster)
+    if args.transition and (status != "G" or signer != args.expected_fingerprint):
+        raise Refuse(f"the prior anchor must verify with the independently trusted fingerprint "
+                     f"({status}, {signer!r}, expected {args.expected_fingerprint}).")
     if status == "N" and args.first_run:
         known, n = last_signed(ctx, roster)
         say(f"  the comparison base {ctx['anchor']} is unsigned; the last signed anchor is "
@@ -1695,9 +1768,11 @@ def run_ceremony(ctx, args, launchctl, rec):
                      f"by a roster key. " + ("An unsigned anchor needs --first-run." if status == "N"
                                              else "--first-run does not waive a signature that fails."))
     # 4. the reading order's last findings
-    if ctx["closure_changed"]:
+    if ctx["closure_changed"] and not args.transition:
         raise Refuse("authority files differ from the anchor: " + ", ".join(d(m) for m in ctx["closure_changed"])
                      + f". That is a transition ceremony. Run it by hand under {RUNBOOK}.")
+    if args.transition and not ctx["closure_changed"]:
+        raise Refuse("--transition requires changed authority files; use the ordinary ceremony.")
     if args.first_run:
         check_first_run(ctx, args.reviewed_commit)
     elif args.reviewed_commit or ctx["repin_state"] != "anchored":
@@ -1706,10 +1781,19 @@ def run_ceremony(ctx, args, launchctl, rec):
     check_stop_records(ctx, cdir, args.first_run)
     key_checks(rec, pub, private, fingerprint, launchctl, "before stage 1")
     # 5. an owed pin is written, then this stops (a first run shows a lockfile correction and leaves it)
-    if not args.first_run and build_transaction(ctx) is not None:
+    if not args.first_run and not args.transition and build_transaction(ctx) is not None:
         raise Refuse("an AST or lockfile transaction is owed. Prepare it at the read commit, "
                      "have the reader record its digest, then run apply-reviewed-pin. "
                      "No files were written.")
+    # Read the prior scanner before stage 1 can run candidate code. Keep the
+    # result in this process until the report is available for comparison.
+    prior_scan = None
+    if not args.first_run:
+        scan = reading("scan-digest")
+        scan_lines = scan.stdout.splitlines()
+        if scan.returncode or not scan_lines or not re.fullmatch(r"[0-9a-f]{64}", scan_lines[-1]):
+            raise Refuse("the prior scanner failed; nothing was signed.")
+        prior_scan = scan_lines[-1]
     # 6. stage 1: candidate code runs, in a new session with no terminal and a short environment
     if Path(field["package"]).exists():
         raise Refuse(f"{d(field['package'])} already exists; stage 1 must not overwrite it. Move it aside.")
@@ -1723,13 +1807,24 @@ def run_ceremony(ctx, args, launchctl, rec):
     # 7. Summary 2
     package_file = Path(field["package"])
     own = sha(read_safe(package_file))
-    theirs = [t for t in reading("hash-package").stdout.split() if len(t) == 64 and t.isalnum()]
-    if theirs[:1] != [own]:
+    hashed = reading("hash-package")
+    theirs = [t for t in hashed.stdout.split() if len(t) == 64 and t.isalnum()]
+    if hashed.returncode or theirs[:1] != [own]:
         raise Refuse("the launcher's hash of the package and this program's disagree.")
+    report = reading("show-report")
+    if report.returncode:
+        raise Refuse("the launcher could not show the authorization report. Nothing was signed.")
+    # E7 uses the authenticated anchor scanner, independently of the candidate
+    # report. Compare the exact digest displayed to the operator before approval.
+    if not args.first_run:
+        report_digests = re.findall(r"(?m)^\s*scan digest\s+([0-9a-f]{64})\s*$", report.stdout)
+        if report_digests != [prior_scan]:
+            raise Refuse("the prior scanner and authorization report disagree. Nothing was signed.")
+        rec.append(f"prior scanner and report scan digest agree: {prior_scan}")
     say("\nSummary 2: what you are about to sign")
-    relay(reading("show-report").stdout)
+    relay(report.stdout)
     manifest_status(ctx)
-    say(f"authority files changed since the anchor: 0 of {len(ctx['closure'])}\n"
+    say(f"authority files changed since the anchor: {len(ctx['closure_changed'])} of {len(ctx['closure'])}\n"
         f"anchor signature: {'good, by a roster key' if status == 'G' else 'unsigned (first run)'}\n"
         f"signing key fingerprint: {fingerprint}\npackage digest: {own}")
     rec.append(f"package digest {own}")
@@ -1847,12 +1942,18 @@ def main(argv=None, *, launchctl=launchctl_socket):
     ri.add_argument("--expected-fingerprint", required=True, metavar="SHA256:...")
     apin = sub.add_parser("apply-reviewed-pin", help="apply a transaction bound by the reader record")
     apin.add_argument("--ceremony-dir", required=True, metavar="DIR")
+    cp = sub.add_parser("commit-reviewed-pin", help="commit the approved AST write after a separate yes")
+    cp.add_argument("--ceremony-dir", required=True, metavar="DIR")
     ce = sub.add_parser("ceremony", help="the whole re-anchor: checks, an owed AST pin (then stop), "
                         "the launcher's two stages, verification")
     ce.add_argument("--values", required=True, metavar="FILE", help="your values file")
     ce.add_argument("--ceremony-dir", required=True, metavar="DIR", help="holds the packet and "
                     "launcher, and receives the transaction, stop record and record")
     ce.add_argument("--first-run", action="store_true", help="the anchor does not pin this tool yet")
+    ce.add_argument("--transition", action="store_true",
+                    help="run the script-led ceremony for reviewed changed authority")
+    ce.add_argument("--expected-fingerprint", metavar="SHA256:...",
+                    help="independently trusted prior signer; required with --transition")
     ce.add_argument("--reviewed-commit", metavar="ID", help="with --first-run: the last commit the "
                     "code reviewer read that edited this tool or its tests")
     pv = sub.add_parser("prepare-verifier", help="prepare signed prior-P verifier and exact candidate evidence")
@@ -1906,7 +2007,13 @@ def main(argv=None, *, launchctl=launchctl_socket):
             head = git_text(repo, "rev-parse", "--verify", "HEAD^{commit}")
             if git(repo, "cat-file", "blob", f"{head}:{REPIN_REL}") != Path(__file__).read_bytes():
                 raise Refuse("the running preparation script differs from committed candidate C.")
-        ctx = boot(repo, tmp, prior_authority=args.verb in ("transition-packet", "prepare-reader"))
+        transition_ceremony = args.verb == "ceremony" and args.transition
+        if args.verb == "ceremony" and args.transition and args.first_run:
+            raise Refuse("--transition cannot be combined with --first-run.")
+        if args.verb == "ceremony" and args.expected_fingerprint and not args.transition:
+            raise Refuse("--expected-fingerprint is only used with --transition.")
+        ctx = boot(repo, tmp, prior_authority=args.verb in ("transition-packet", "prepare-reader")
+                   or transition_ceremony)
         first_screen(ctx)
         if args.verb == "status":
             show_ast(ctx, ast_view(ctx))
@@ -1922,13 +2029,15 @@ def main(argv=None, *, launchctl=launchctl_socket):
             prepare_reader_inputs(ctx, args.ceremony_dir, args.output)
         elif args.verb == "apply-reviewed-pin":
             apply_reviewed_pin(ctx, args.ceremony_dir)
+        elif args.verb == "commit-reviewed-pin":
+            commit_reviewed_pin(ctx, args.ceremony_dir)
         else:
             try:
                 done = run_ceremony(ctx, args, launchctl, rec)
             finally:
                 if Path(args.ceremony_dir).is_dir():
                     finish(ctx, *write_record(args.ceremony_dir, rec), done, rec)
-        if args.verb not in ("ceremony", "apply-reviewed-pin"):
+        if args.verb not in ("ceremony", "apply-reviewed-pin", "commit-reviewed-pin"):
             check_head(ctx)
         return 0
     except Refuse as exc:

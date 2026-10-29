@@ -695,8 +695,8 @@ def test_the_apply_step_makes_no_commit_and_stops(bed):
     code, out = snippet(bed, APPLY, YES)
     assert "RESULT: ok" in out, out
     assert bed.git("rev-parse", "HEAD").stdout.strip() == head
-    assert reads(bed) != before and f"git commit {BASELINE}" in out
-    assert "Written, not committed" in out and "run ceremony again" in out
+    assert reads(bed) != before and "commit-reviewed-pin" in out and BASELINE in out
+    assert "Written, not committed" in out and "prepare fresh ceremony evidence" in out
     assert bed.git("status", "--porcelain").stdout.split() == ["M", BASELINE]
     stop = json.loads(next((bed.root / "ceremony").glob("ast-pin-stop-*.json")).read_text())
     assert stop["head"] == head and list(stop["paths"]) == [BASELINE]

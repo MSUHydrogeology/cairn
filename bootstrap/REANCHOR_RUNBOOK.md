@@ -1,43 +1,19 @@
 # Supervised re-anchor runbook (differential-oracle gate)
 
-> **Maintainer-only.** Agents build the packet and read the change; **you** compare, answer and sign. No agent signs, loads your key or pushes. The page ends at the marker; below it is reference, except Phase 5, the push, which is the last step and is yours.
+> **Maintainer-only.** Agents prepare the packet and read the change; **you** inspect the script's bound comparisons, make the recorded decisions and sign. No agent signs, loads your key or pushes. The page ends at the marker; below it is reference, except Phase 5, the push, which is the last step and is yours.
 
-**What your yes protects.** Against honest agent mistakes: the anchor moves only to the commit a fresh reader read. It does **not** protect against code running as you, such as a malicious local agent or the candidate's own tests; stage 1 can fool every comparison here and leave files that stage 2 loads while you type the key's passphrase. H below catches a change to two files, not Python's library folder or your tools.
+**What your yes protects.** Against honest agent mistakes: the anchor moves only to the commit a fresh reader read. It does **not** protect against code running as you, such as a malicious local agent or the candidate's own tests; stage 1 can fool the script's comparisons and leave files that stage 2 loads while you type the key's passphrase. The driver watches the launcher, values file and Python executable; it does not contain code or protect Python's library folder or your other tools.
 
 ### Trust-boundary state
 
 The current signed anchor retains the broad frozen policy. The dormant-roster and active-checker bridges are separate reviewed ceremonies, each with its own candidate, packet, reader record, E5/E7 checks and Maintainer authorization; neither authorizes the other. See the reference section for details.
 
-After installation, signed P supplies the roster; named security/trust tests are protected and ordinary changes remain notes. The launcher does not run the prior-manifest verifier; Step 2 does full collection. Candidate code can influence both.
+After installation, signed P supplies the roster; named security/trust tests are protected and ordinary changes remain notes. The launcher does not run the prior-manifest verifier; the separate maintained verifier command below performs full collection. Candidate code can influence both.
 
 ### Prerequisites
-Have the builder's instantiated launcher and authorization packet, a ceremony key kept out of agents, and a values file with real executable paths. Set the candidate ref `$CAND` to the reader-record tip and `$REV` to its `read-commit`; stale values require repair and `--validate`.
+Have the builder's instantiated launcher and authorization packet, a ceremony key kept out of agents, and a values file with real executable paths. The driver requires the reader-record commit at `HEAD`; its checks refuse stale or mismatched values.
 
-### 1. Before stage 1: what was read (no candidate code has run yet)
-Each result must match; otherwise stop. `g` is sterile Git and `L` the launcher, both run in an empty environment.
-```
-g() { env -i HOME=/nonexistent GIT_NO_LAZY_FETCH=1 <git> --no-pager --no-replace-objects -c core.useReplaceRefs=false -c core.hooksPath=/dev/null -c core.fsmonitor=false -C <checkout> "$@"; }
-L() { env -i HOME=<home> PATH=/usr/bin:/bin TERM="$TERM" LANG=C /bin/sh <launcher> <packet> <values> "$@"; }
-# R0  the record, read from the commit: read-commit, packet-sha256, launcher-sha256
-g cat-file blob $CAND:dev/ceremony-record.md
-# R1  prints the candidate's id, then $REV, and nothing else
-g rev-list --parents -n1 $CAND
-# R2  prints only dev/ceremony-record.md
-g diff-tree --no-renames --name-only -r $REV $CAND
-# R4  prints SAME
-diff <(g cat-file blob $CAND:dev/ceremony-record.md | grep '^member ' | sort) <(grep '^member ' <packet> | sort) && echo SAME || echo DIFFERENT
-# E5  both print SAME: the launcher is the reviewed template with one slot filled
-g diff-tree --quiet --no-renames $REV $CAND -- bootstrap/reanchor-launcher.template.sh && echo SAME || echo DIFFERENT
-g cat-file blob $CAND:bootstrap/reanchor-launcher.template.sh | sed "s/@PACKET_SHA256@/$(shasum -a 256 <packet> | cut -c1-64)/" | cmp - <launcher> && echo SAME || echo DIFFERENT
-# E7  second and later (the first has none): the last line is the anchor's scan digest, which the report's must equal; runs `/usr/bin/git`, not the one in your values file
-L $CAND --scan-digest
-# H   write both digests down; step 3 must print the same two
-shasum -a 256 <values> <python>
-# K   neither lists your key
-ssh-add -l; SSH_AUTH_SOCK=$(launchctl getenv SSH_AUTH_SOCK) ssh-add -l
-```
-
-### 2. Stage 1, with no key
+### Run the maintained verifier and ceremony
 
 Use the maintained `repin prepare-verifier` and `repin verify-candidate` commands described in the reference section below. The preparer defaults to installed P and committed C, takes the independently trusted signer fingerprint, prepares the hashes and clean target, and does not act as authority. The independent reader checks P provenance and the exact P/C bytes before collection.
 
@@ -45,36 +21,36 @@ The verifier runs P's full `_gate_manifest.py verify` with `-I -E -s`, an empty 
 
 A HOLD remains a HOLD. The command lists every exact protected HOLD and ordinary note. A human may record a bounded `proceed`, `stop` or `defer` disposition with a reason; a fresh full run refuses if P, C, report, collection or displayed items change. That record does not clear the HOLD or authorize signing; the existing ceremony's human approval remains required. New or unexplained HOLDs stop unless the Maintainer decides under the existing ceremony. The launcher does not run this verifier automatically.
 
-Then run the launcher:
+After the independent reader has verified the packet and committed its record
+alone at the read tip, use the maintained driver. It performs the packet,
+record, launcher-template, values, roster, anchor, package and report checks;
+shows the Y1–Y5 summary; repeats watched-file and key checks before stage 2;
+signs once; and verifies the new signature against the packet's roster. It
+stops on any mismatch. Do not `ssh-add` the key; the signer asks for its
+passphrase. Do not invoke the launcher by hand or reproduce E/R/H/K
+comparisons in shell. The driver does not push.
 
-```
-L $CAND --validate
-L $CAND
-L $CAND --show-report
-```
-Read what `--show-report` prints and answer its five yes/no questions (Y1 to Y5);
-any no stops here.
+For an ordinary ceremony:
 
-### 3. Compare, then sign
+```sh
+python scripts/repin.py ceremony --values <values-file> --ceremony-dir <ceremony-folder>
 ```
-# E1  equals `launcher-sha256` in the record and the reader's hand-off; R3 equals `packet-sha256`
-shasum -a 256 <launcher> <packet>
-# E2  equals the report's candidate id
-g rev-parse HEAD
-# E3  equals the report's package sha256
-L $CAND --hash-package
-# E4  your key's fingerprint is on the report's roster list
-ssh-keygen -lf <key.pub>
-# E6  equals the report's path for that tool, for every tool in your values file
-readlink -f "$(command -v <tool>)"
+
+For a reviewed authority transition, first prepare its packet with
+`transition-packet` and reader inputs with `prepare-reader` as described below.
+After the reader's record-only commit, run the same driver with the independent
+fingerprint of the prior signer:
+
+```sh
+python scripts/repin.py ceremony --transition --expected-fingerprint <SHA256:...> \
+  --values <values-file> --ceremony-dir <ceremony-folder>
 ```
-Before stage 2 repeat E1, E6, H and K: nothing may differ from step 1; check `ssh-add -l` and inspect `ps -axo pid,command` for leftover stage-1 processes (a look, not proof). Stage 2 asks once for the passphrase; Do not `ssh-add` the key. Pass E3's digest:
-```
-env -i HOME=<home> PATH=/usr/bin:/bin TERM="$TERM" LANG=C /bin/sh <launcher> <packet> <values> $CAND --stage2 <digest>
-# V   good: exit 0 and `Good "git" signature for <name> with` your key's fingerprint (E4); else no push
-g -c gpg.format=ssh -c gpg.ssh.program=/usr/bin/ssh-keygen -c gpg.program=/usr/bin/false -c gpg.openpgp.program=/usr/bin/false -c gpg.x509.program=/usr/bin/false -c gpg.ssh.allowedSignersFile=<checkout>/dev/.cairn/allowed_signers verify-commit refs/cairn/gate-anchor
-```
-Bad is any `error`, `No principal matched`, another fingerprint, a non-zero exit or no output: do not push. Publishing both refs atomically is the Maintainer's separate Phase 5 step. Nothing in this page calls `_gate_reanchor.py promote`.
+
+The transition mode authenticates the old anchor with the old roster and uses
+the candidate roster for the new signature. It does not install a baseline or
+move any real ref during testing. Publishing both refs atomically is a separate
+Maintainer action after the ceremony. Nothing in this page calls
+`_gate_reanchor.py promote`.
 <!-- end of page -->
 
 <!-- `dev/.cairn/trusted-activation.yml` and `dev/.cairn/promotion-authorization.yml`
@@ -118,29 +94,30 @@ The builder can prepare the values file and a fresh package path with
 
 For an ordinary ceremony, `python scripts/repin.py packet --ceremony-dir <directory>` prepares the packet and launcher. `python scripts/repin.py prepare-reader --ceremony-dir <directory> --output <new-reader-inputs-file> --expected-fingerprint <independently-trusted-SHA256-fingerprint>` prepares the candidate and member hashes for the independent reader. These inputs are not a review or an authorization. The reader verifies the underlying objects and records their review at the read commit before the Maintainer acts.
 
-When an AST pin is owed, run `python scripts/repin.py package --ceremony-dir <directory>` at the read commit before the reader writes their record. For a reviewed missing symbol, add `--delete-symbol <exact-baseline-key>` for each missing key; omitted or extra keys refuse. Prepare reader inputs after the package so they include its digest. Once the independent reader has verified and committed the record alone on that read commit, `python scripts/repin.py apply-reviewed-pin --ceremony-dir <directory>` checks the binding, asks the Maintainer before writing, and stops with an exact-path commit instruction. It does not commit. After that commit, prepare fresh ceremony evidence for the new candidate.
+When an AST pin is owed, run `python scripts/repin.py package --ceremony-dir <directory>` at the read commit before the reader writes their record. For a reviewed missing symbol, add `--delete-symbol <exact-baseline-key>` for each missing key; omitted or extra keys refuse. Prepare reader inputs after the package so they include its digest. Once the independent reader has verified and committed the record alone on that read commit, `python scripts/repin.py apply-reviewed-pin --ceremony-dir <directory>` checks the binding, asks the Maintainer before writing, and stops with an exact-path commit instruction. It does not commit. Run `python scripts/repin.py commit-reviewed-pin --ceremony-dir <directory>` and approve the exact paths to make that commit. Then prepare fresh ceremony evidence for the new candidate.
 
-These preparation commands do not complete a changed-authority ceremony. The existing transition procedure and the independent comparisons on the page above remain in force until a tested replacement is available.
+These commands prepare inputs; the `ceremony --transition` command above carries the reviewed changed-authority sequence through the same maintained checks and signature verification. It authenticates the prior anchor using its old roster and still requires the independent reader and Maintainer decisions.
 
 ## The first ceremony
 
-The anchor still holds the old text, so no tool of this design can run it and E7
-has no anchored scan: it rests on the builder, the reader and the record, and the
-report and record say so. You authorize it in your own words, naming
-`bootstrap/_scaffold/`, `bootstrap/security_check.py`,
-`bootstrap/tests/_gate_manifest.py` and the dropped test nodes by count and
-commit, and you name the known manifest and AST failures as the Y4 allowance.
+The first ceremony has no anchored E7 scan. Prepare and review its packet and
+reader record, then run:
 
-## The packet, for whoever builds one by hand
+```sh
+python scripts/repin.py ceremony --first-run --reviewed-commit <reviewed-commit> --values <values-file> --ceremony-dir <ceremony-folder>
+```
 
-`repin packet` writes the packet and the launcher for an ordinary ceremony. By
-hand, the packet is one record per line, no control characters, each line under
-4096 bytes, blank lines and `#` lines ignored: `schema cairn-authorization-packet/v1`;
-`provenance <text, at most 120 characters>`; `artifact bootstrap/reanchor.sh`;
-`artifact_sha256 <64 hex>`; then one `member <64 hex> <path>` per closure file, in
-`LC_ALL=C` order, exactly the twelve the launcher template lists as its fixed
-member set. It carries no candidate id. Its SHA-256 replaces `@PACKET_SHA256@`, the
-one slot in the template, and that file is the launcher.
+The driver states the checks it cannot establish and asks for the Maintainer's
+decision; it does not waive an unreviewed change.
+
+## Packet format
+
+`repin packet` writes the packet and launcher. The packet uses schema
+`cairn-authorization-packet/v1`, a provenance field, the artifact
+`bootstrap/reanchor.sh`, its `artifact_sha256`, and one `member` digest per
+closure file. The launcher contains the packet's SHA-256 in its one
+`@PACKET_SHA256@` slot. The packet carries no candidate id; the reader record
+binds the exact candidate.
 
 ## What each comparison protects, and what it does not
 
@@ -149,10 +126,10 @@ one slot in the template, and that file is the launcher.
 | E1, R3 | you run the launcher and packet the reader recorded | that the reader read well |
 | E2 | the commit you sign is the commit the report describes | that the commit is safe |
 | E3 | the package you confirm is the bytes the report described | that the package is harmless |
-| E4 | your key is one the anchored roster lists | which key a later roster adds |
+| E4 | your key is in the packet-pinned candidate roster | that the roster change itself was safe |
 | E5, R1 to R4 | the answers come from git objects read before stage 1 starts the candidate's tests, with no replace entry, hook or filter, not from repository state those tests could have written; the launcher is the reviewed template with one slot filled; the record is the one commit on what was read and names this packet, launcher and these files | that the template is safe; what the reader wrote in the record; code already running as you |
 | E6 | the programs run before any candidate byte are the ones you named | the bytes of those programs: a tool you own can be replaced; and `--scan-digest` (E7) runs the anchor's checker with `/usr/bin/git` from `PATH`, not the git your values file names |
-| E7 | the digest the report prints is the one the anchor's own checker computes over this range, started by the launcher from raw objects before any candidate byte | that the hits listed in the report are the scan behind that digest (it binds the digest only, and the report's line saying who made the scan is the report's own claim); a change that matches no scan pattern; test files and pytest settings, which stage 1 runs and the scan does not read; the first ceremony, which has no anchored scan |
+| E7 | the digest the report prints is the one the anchor's own checker computes over this range, started by the launcher from raw objects before candidate code and compared before signing | that the hits listed in the report are the scan behind that digest (it binds the digest only, and the report's line saying who made the scan is the report's own claim); a change that matches no scan pattern; test files and pytest settings, which stage 1 runs and the scan does not read; the first ceremony, which has no anchored scan |
 | H | the values file and the Python are the bytes they were before stage 1 | Python's library folder, your other tools, or a change made and undone between the two hashes; nor a process stage 1 left running, which could change either file after the second hash, because `repin` only checks the hash and cannot stop it |
 | K | no agent, the login session's included, holds your key when you run stage 1 and stage 2 | an agent started in between |
 | V | the new anchor carries a good signature by a key the roster lists | that the key was yours alone: you compare its fingerprint with E4 |
