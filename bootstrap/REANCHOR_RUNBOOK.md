@@ -11,7 +11,7 @@ The current signed anchor retains the broad frozen policy. The dormant-roster an
 After installation, signed P supplies the roster; named security/trust tests are protected and ordinary changes remain notes. The launcher does not run the prior-manifest verifier; Step 2 does full collection. Candidate code can influence both.
 
 ### Prerequisites
-Have the builder's launcher and packet, a key kept out of agents, and a values file copied from `bootstrap/reanchor-values.example` with real executable paths. Set `$CAND` to the reader-record tip and `$REV` to its `read-commit`; stale values require repair and `--validate`.
+Have the builder's instantiated launcher and authorization packet, a ceremony key kept out of agents, and a values file with real executable paths. Set the candidate ref `$CAND` to the reader-record tip and `$REV` to its `read-commit`; stale values require repair and `--validate`.
 
 ### 1. Before stage 1: what was read (no candidate code has run yet)
 Each result must match; otherwise stop. `g` is sterile Git and `L` the launcher, both run in an empty environment.
@@ -110,6 +110,17 @@ This invokes P's `_gate_manifest.py` verifier through a small observer stored in
 Before collection, the helper prints its command and asks you to type `YES` confirming the signing key is away. It invokes Python `-I -E -s` with `HOME=/nonexistent`, `PATH=/usr/bin:/bin`, and `LC_ALL=C`; P receives the verified external trusted repository, its full commit ID as both `--anchor-ref` and `--trusted-ref`, `--require-anchor`, and no `--no-collect`. The verifier process and target are rechecked after collection. Candidate tests can execute code on this machine and can influence the process; the helper does not claim containment.
 
 If the P verifier returns a HOLD, the first run writes a `verifier-dispositions-<nonce>.json` template with every exact HOLD. Fill every row with `proceed`, `stop` or `defer` and a specific reason. Then rerun the full command with `--dispositions <that-file>`. Identical P/C/report/collection evidence can reuse the disposition; changed report, collection, tool bytes or items require fresh review. A complete disposition record records a human choice but does not clear the verifier's HOLD, waive it automatically or authorize signing. The Maintainer's later ceremony approval still controls. A verifier error, missing collection, malformed capture, failed raw-byte check, new unexplained HOLD or changed evidence is a stop.
+
+## Preparing reusable inputs
+
+The builder can prepare the values file and a fresh package path with
+`python scripts/repin.py prepare-values --output <new-values-file> --signing-key <public-key> --home <home> --ceremony-dir <outside-checkout-directory>`. The command prints the values-file digest. The independent reader checks every path and digest; the launcher validates the file before use. After a tool upgrade a recorded executable path goes stale, and that is not a malfunction: prepare and check fresh values. No secret is written.
+
+For an ordinary ceremony, `python scripts/repin.py packet --ceremony-dir <directory>` prepares the packet and launcher. `python scripts/repin.py prepare-reader --ceremony-dir <directory> --output <new-reader-inputs-file> --expected-fingerprint <independently-trusted-SHA256-fingerprint>` prepares the candidate and member hashes for the independent reader. These inputs are not a review or an authorization. The reader verifies the underlying objects and records their review at the read commit before the Maintainer acts.
+
+When an AST pin is owed, run `python scripts/repin.py package --ceremony-dir <directory>` at the read commit before the reader writes their record. For a reviewed missing symbol, add `--delete-symbol <exact-baseline-key>` for each missing key; omitted or extra keys refuse. Prepare reader inputs after the package so they include its digest. Once the independent reader has verified and committed the record alone on that read commit, `python scripts/repin.py apply-reviewed-pin --ceremony-dir <directory>` checks the binding, asks the Maintainer before writing, and stops with an exact-path commit instruction. It does not commit. After that commit, prepare fresh ceremony evidence for the new candidate.
+
+These preparation commands do not complete a changed-authority ceremony. The existing transition procedure and the independent comparisons on the page above remain in force until a tested replacement is available.
 
 ## The first ceremony
 
