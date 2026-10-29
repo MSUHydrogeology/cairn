@@ -1,7 +1,7 @@
 # Protect nested Git data during upgrade
 
 **Author**: Codex GPT-6
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -60,3 +60,65 @@ A nested Git path is read or written through an upgrade, refusal changes Git dat
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+
+## Review -- Codex gpt-6.1-sol -- 2026-10-29
+
+```
+Reviewed commit: 21f7eef7c45c7476907a85f442e92db79cbc589b
+Target: opening proposal and cited upgrade guard/callers
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: protect nested Git names at the existing common guard, but align the read-protection claim with the proposed lexical boundary -- `bootstrap/_scaffold/upgrade.py:171-235`.
+2. **Best alternative.** An any-component predicate in that guard is simpler than separate hook, stage and lockfile filters; doing nothing preserves the demonstrated write -- `dev/plans/archive/2026-10-26-code-review-lockfile-path-findings.md`, F2.
+3. **What would show it wrong.** Refusal of an ordinary lookalike or a matching name reaching an upgrade consumer defeats the contract; an in-project link reaching Git data defeats the broader read claim -- `bootstrap/tests/test_upgrade_lockfile_path_containment.py:343-363`, `bootstrap/_scaffold/upgrade.py:664-668`.
+
+The proposal addresses the cause rather than a single hook spelling. The
+existing guard's callers are `_check_lockfile_paths` (project `dst` and
+`base_cache`, source `src`), the two source readers, and `_apply_upgrade`'s
+staged names. The staged-name set includes `staged_files`, `review_only`,
+`module_blocked`, `expected_absent`, `kinds` and `new_entries`. The central
+lockfile check precedes plan, stage, apply, finalize, collision adoption,
+retired removal and module adoption dispatch; the existing tests' `_ACTIONS`
+set omits module adoption, so the plan's promised caller search matters.
+Source readers use a different tree label and should retain their behavior.
+
+**R1 -- clarify named paths versus resolved read targets (blocking).** The
+proposal says to reject matching supplied components, but its wrongness signal
+says any nested Git path being read is failure. Those differ: the current
+guard deliberately permits links that resolve inside the project, and
+`_compute_upgrade` reads `dst_abs` through such a link. A plain name such as
+an ordinary notes file linked to a nested Git description file contains no matching component.
+No concurrent writer is needed. State whether the commitment protects supplied
+names only or also resolved read targets. I recommend retaining the small
+named-component change and explicitly documenting this residual read exposure
+in the proposal and descriptive guidance, with a regression showing that
+ordinary contained links remain compatible. That narrower claim loses a
+blanket guarantee against Git reads through aliases, while still closing the
+measured direct hook-write cause; it does not concede any accepted scope.
+Alternatively, protecting resolved Git targets needs an explicit contract and
+coverage preserving legitimate contained links. Satisfier: an appended Response
+settling the boundary and matching tests/documentation criteria.
+
+The dot/space rule is a conservative lexical restriction portable across
+hosts; it intentionally refuses some distinct POSIX names. Preserve that
+compatibility cost in the documentation rather than presenting a non-Windows
+run as proof of Windows filesystem equivalence. The proposal already avoids
+that measurement claim and preserves ordinary `.git`-prefixed lookalikes.
+
+**Covered:** claims, completeness and fail-closed behavior: guard and callers
+above; production-path coverage: containment tests' `_ACTIONS` and public
+`upgrade` helper; consistency and drift: `bootstrap/UPGRADE.md:367`;
+lifecycle and placement: proposal review headers and documentation section;
+scope and satisfier: R1. No scientific method is changed.
+**Not covered / low confidence:** no runtime reproduction, Windows filesystem
+run, implementation or Security Review; source inspection cannot establish
+future test effectiveness or protection against filesystem races.
