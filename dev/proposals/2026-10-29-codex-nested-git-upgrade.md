@@ -311,3 +311,55 @@ satisfier: R1 disposition and withdrawal ledger. No scientific method changes.
 **Not covered / low confidence:** no implementation, runtime reproduction,
 Windows filesystem experiment, future mutation effectiveness, hard-link identity
 protection or hostile concurrent-writer protection. No tests or full suite run.
+
+
+## Review -- Codex GPT-6 Security reviewer -- 2026-10-29 -- resolved targets
+
+```
+Reviewed commit: 976edb7aaca86f8907075567787b8d49ed42e6e9
+Target: Response and current contract, including new resolved-target requirement
+Prior findings: S1; usual R1 addressed by the same revision
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: checking supplied names and contained resolved targets closes the stable-symlink gap without prohibiting ordinary contained read links -- `dev/proposals/2026-10-29-codex-nested-git-upgrade.md:201-218`.
+2. **Best alternative.** Reuse the common guard's existing resolution and containment boundary, then apply the same component rule to both names; separate per-command filters would duplicate policy -- `bootstrap/_scaffold/upgrade.py:221-235`.
+3. **What would show it wrong.** A matching resolved target read through an alias, ordinary contained-link refusal, or changed protected state on refusal defeats the revised contract and its public-command criteria -- `dev/proposals/2026-10-29-codex-nested-git-upgrade.md:222-245`.
+
+**S1 closed at proposal stage.** The Response selects resolved-target protection,
+accounts for filesystem inputs supplied by reference, and requires public-command
+alias coverage for both destination and base-cache records. It retains ordinary
+contained read links and stricter write-link refusal. This supplies the mechanism
+and satisfier missing from the opening; implementation remains to be proved.
+
+The new requirement fits the existing guard: it already resolves the joined
+path relative to the resolved root before returning the original name. The
+proposed additional comparison concerns project-relative components, so a
+project stored beneath a Git-named ancestor need not be refused merely because
+of that external ancestor. Existing containment failures must still refuse
+before any read (`bootstrap/_scaffold/upgrade.py:228-235`).
+
+The withdrawal ledger explicitly replaces the lexical-only mechanism rather
+than abandoning stable-symlink read protection. The declared hard-link limitation
+is a file-identity gap, not a hidden claim that name resolution can establish
+identity isolation; filesystem races are also expressly excluded. These are
+acceptable stated limits for this named-path boundary, and the descriptive
+update must carry them. This acceptance does not assert isolation of all Git
+bytes or Windows filesystem equivalence.
+
+**Covered:** claims, completeness and fail-closed direction: revised contract
+and existing guard above; production-path criteria and compatibility: Response
+lines 222-245 and `bootstrap/tests/test_upgrade_lockfile_path_containment.py:343-363`;
+consistency, drift and lifecycle: Response's documentation, assurance and
+Maintainer-run re-anchor commitments; scope and satisfier: withdrawal ledger
+and S1 closure. No scientific assumption changes.
+**Not covered / low confidence:** proposal design only; no implementation,
+runtime reproduction, native Windows run, hard-link isolation, filesystem-race
+protection or future mutation effectiveness. No suite was run. The proposal's
+Security Review obligation is cleared; plan and code security obligations remain.
