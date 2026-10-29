@@ -1,7 +1,7 @@
 # Find a safe test-family speed improvement
 
 **Author**: Codex (GPT-6, proposal author)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual
 **Plan review**: required(Internal)
 **Opened**: 2026-10-29
@@ -104,3 +104,28 @@ limitation instead of claiming a speed improvement.
 ## Assurance path
 
 **Assurance path**: standard
+
+## Review -- Codex (Sol), Proposal reviewer -- 2026-10-29
+
+```
+Reviewed commit: fd16a586cbd91c73924aa80b9f6b48238b2e5b28
+Target: opening proposal, Context through Assurance path
+Prior findings: none
+Assurance path: standard (declared)
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** Measuring the next required certification is justified; making that measurement a separate proposal and plan does not yet make certification faster. The opened outcome ends with another proposal, not a changed test family. -- proposal `## Proposal`; `dev/PLANNING.md:121`.
+2. **Best alternative.** Capture the same duration report in the next independently authorized certification, then use it as the Context and evidence for one implementation proposal about the leading eligible family. Doing nothing saves this work but leaves the measured 24 minute 55 second cost unexplained. -- `dev/strategy/2026-10-29-codex-certifying-run-cost.md:79-92`; `dev/PLANNING.md:121`.
+3. **What would show it wrong.** Withdraw the family optimization if the report shows no eligible family with avoidable repeated work or if a proposed shortcut loses a fault check; do not infer a whole-suite gain from scoped timing. -- proposal `## Signals the change is wrong`; `dev/plans/archive/corpus-tier-cost.md:284-287`.
+
+The proposal has a sound measurement boundary: it adds reporting to an already required run, preserves the fixed shuffle seed, distinguishes historical from current timing, and keeps test edits outside this audit (`AGENTS.md` > Verification boundaries; proposal `## Context`, `## Proposal`). I found one framing problem.
+
+**F1 — Blocking: connect the lifecycle outcome to an actual speed change.** This proposal would commit a ranking, inspection, scoped baseline, and fault matrix, then require a second proposal before any test changes. That adds a proposal, review, plan and plan review to reach the implementation the roadmap seeks, without reducing the certification cost itself. The top family is not known yet, so the simpler path is to retain the complete duration report during the next independently authorized certification and open **one** targeted implementation proposal when its eligible family and proposed change are known. Put the ranking, protection classification, public entry points, scoped baseline and fault controls in that proposal; if there is no useful candidate, record the negative result and stop. This loses a standalone audit plan, but not the evidence needed to choose or reject a speed change. No extra suite run is needed. Close by withdrawing this audit-only proposal in favor of that path, or by revising its outcome to include a bounded implementation with a reviewed plan and an explicit no-candidate stop. -- proposal `## Proposal`, `## Evidence / verification plan`; `dev/strategy/2026-10-29-codex-certifying-run-cost.md:79-95`; `dev/PLANNING.md:121`.
+
+**Covered**: claims and drift (`dev/PLANNING.md:121`; proposal `## Context`); real test path (`bootstrap/tests/conftest.py:225-258`; proposal `### Tests required`); design, fail-closed behavior and scope (proposal `## Proposal`, `## Signals the change is wrong`); cross-document fit (`dev/strategy/2026-10-29-codex-certifying-run-cost.md:79-95`); lifecycle placement (`AGENTS.md` > The lifecycle); satisfier (F1 above). **Not covered / low confidence**: I did not run a suite, inspect an uncollected duration report, or determine which current family is slowest. The local Python 3.13 pytest help lists both requested duration flags; it does not establish that the next certification will produce a usable ranking.
