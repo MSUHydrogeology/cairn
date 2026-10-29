@@ -223,10 +223,18 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     assert clone.returncode == 0, clone.stderr
     git_env = {"PATH": os.environ["PATH"], "HOME": str(tmp_path), "LC_ALL": "C",
                "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"}
+    key = tmp_path / "scratch-signer"
+    generated = subprocess.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", str(key)],
+                               capture_output=True, text=True, check=False)
+    assert generated.returncode == 0, generated.stderr
+    public_key = key.with_suffix(".pub").read_text().split()
+    signer_roster_rel = "dev/.cairn/allowed_signers"
+    (repo / signer_roster_rel).write_text(f"scratch@example.invalid {public_key[0]} {public_key[1]}\n")
     candidate_paths = ("scripts/repin.py", "bootstrap/tests/test_repin.py",
-                       "dev/plans/2026-10-29-forward-trust-baseline.md")
+                       "dev/plans/2026-10-29-forward-trust-baseline.md", signer_roster_rel)
     for relative in candidate_paths:
-        (repo / relative).write_bytes((REAL / relative).read_bytes())
+        if relative != signer_roster_rel:
+            (repo / relative).write_bytes((REAL / relative).read_bytes())
     credential_marker = tmp_path / "candidate-saw-credential"
     sentinel = repo / "bootstrap/tests/test_baseline_collection_environment.py"
     sentinel.write_text(
@@ -294,11 +302,13 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     manifest = GP.authoritative_manifest(manifest, static)
     tool_paths = {approved["path"], RP.MANIFEST_REL, RP.REPIN_REL, RP.RUNBOOK,
                   "bootstrap/reanchor.sh", "bootstrap/reanchor-launcher.template.sh",
+                  "dev/.cairn/allowed_signers", "tools/session.py",
                   *RP.LISTED, *RP.ctx_baseline_tool_paths()}
     tool_hashes = {p: RP.sha(RP.git(repo, "cat-file", "blob", f"{candidate}:{p}"))
                    for p in sorted(tool_paths)
                    if p.endswith(".py") or p in
-                   (RP.RUNBOOK, "bootstrap/reanchor.sh", "bootstrap/reanchor-launcher.template.sh")}
+                   (RP.RUNBOOK, "bootstrap/reanchor.sh", "bootstrap/reanchor-launcher.template.sh",
+                    "dev/.cairn/allowed_signers")}
     manifest_raw = RP.dump(manifest)
     collection_sha = RP.package_collection_sha(manifest)
     reader = tmp_path / "reader.json"
@@ -328,6 +338,48 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     refs_after = RP.git(repo, "for-each-ref", "--format=%(refname) %(objectname)").decode()
     assert refs_after == refs_before, "preparation changed a repository ref"
     assert "no authority changed" in result.stdout
+    # The install path consumes only the checked manifest and package. This
+    # scratch signing demonstration must not execute the candidate's tests.
+    install_env = {**git_env, "SSH_AUTH_SOCK": "/tmp/unavailable-agent.sock",
+                   "GPG_AGENT_INFO": "/tmp/unavailable-gpg-agent",
+                   "AWS_SECRET_ACCESS_KEY": "must-not-reach-candidate"}
+    for name, value in (("user.name", "Scratch Maintainer"),
+                        ("user.email", "scratch@example.invalid")):
+        configured = subprocess.run(["git", "-C", str(repo), "config", name, value],
+                                    env=git_env, capture_output=True, text=True, check=False)
+        assert configured.returncode == 0, configured.stderr
+    fingerprint = subprocess.run(["ssh-keygen", "-l", "-f", str(key.with_suffix(".pub"))],
+                                 capture_output=True, text=True, check=True).stdout.split()[1]
+    refs_before_install = RP.git(repo, "for-each-ref", "--format=%(refname) %(objectname)").decode()
+    wrong_fingerprint = "SHA256:" + "A" * 43
+    refused = subprocess.run(
+        [PY, str(repo / "scripts/repin.py"), "baseline-install", "--candidate", candidate,
+         "--package-dir", str(output), "--approved-roster", str(roster),
+         "--reader-record", str(reader), "--signing-key", str(key.with_suffix(".pub")),
+         "--expected-fingerprint", wrong_fingerprint, "--confirm-package-sha256",
+         RP.sha((output / "baseline-package.json").read_bytes())],
+        cwd=repo, env=install_env, capture_output=True, text=True, check=False)
+    assert refused.returncode == 2 and "does not match" in refused.stderr
+    assert RP.git(repo, "for-each-ref", "--format=%(refname) %(objectname)").decode() == refs_before_install
+    install = subprocess.run(
+        [PY, str(repo / "scripts/repin.py"), "baseline-install", "--candidate", candidate,
+         "--package-dir", str(output), "--approved-roster", str(roster),
+         "--reader-record", str(reader), "--signing-key", str(key.with_suffix(".pub")),
+         "--expected-fingerprint", fingerprint, "--confirm-package-sha256",
+         RP.sha((output / "baseline-package.json").read_bytes())],
+        cwd=repo, env=install_env, capture_output=True, text=True, check=False)
+    assert install.returncode == 0, install.stdout + install.stderr
+    assert not credential_marker.exists(), "installation ran candidate tests"
+    new = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
+                         capture_output=True, text=True, check=True).stdout.strip()
+    assert subprocess.run(["git", "-C", str(repo), "rev-parse", f"{new}^"],
+                          capture_output=True, text=True, check=True).stdout.strip() == candidate
+    changed = subprocess.run(["git", "-C", str(repo), "diff", "--name-only", f"{candidate}..{new}"],
+                             capture_output=True, text=True, check=True).stdout.splitlines()
+    assert changed == [RP.MANIFEST_REL]
+    anchor = subprocess.run(["git", "-C", str(repo), "rev-parse", "refs/cairn/gate-anchor"],
+                            capture_output=True, text=True, check=True).stdout.strip()
+    assert anchor == new
 
 
 def test_a_case_colliding_tree_refuses_before_import(bed):
@@ -604,14 +656,20 @@ except R.Refuse as exc:
     assert "same head passes" in r.stdout and "refused" in r.stdout, r.stdout + r.stderr
 
 
-def test_the_status_command_reads_only_the_fixed_environment_variables():
-    """A tripwire, not a proof: no environment variable steers a check.  The reads are
-    the filter that strips the environment for git, the agent socket the key check
-    must ask about, and the terminal type handed to the signer."""
-    reads = [ln for ln in (REAL / "scripts/repin.py").read_text().splitlines() if "os.environ" in ln]
-    names = [("GIT_" if "GIT_" in ln else "SSH_AUTH_SOCK" if "SSH_AUTH_SOCK" in ln else "TERM" if "TERM" in ln else ln)
-             for ln in reads]
-    assert names == ["GIT_", "SSH_AUTH_SOCK", "TERM"], reads
+def test_environment_reads_are_confined_to_git_signer_terminal_and_baseline_scrub():
+    """Ordinary checks use their fixed values; candidate collection gets a scrubbed environment."""
+    source = (REAL / "scripts/repin.py").read_text()
+    ordinary_source = source[:source.index('if args.verb == "baseline-prepare":')]
+    ordinary = [line.strip() for line in ordinary_source.splitlines() if "os.environ" in line]
+    assert ordinary == [
+        'env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}',
+        'sockets = [s for s in dict.fromkeys([os.environ.get("SSH_AUTH_SOCK"), launchctl()]) if s]',
+        'term = os.environ.get("TERM", "xterm")',
+    ]
+    scrub = source[source.index('if args.verb == "baseline-prepare":'):]
+    assert 'safe_env = {key: os.environ[key] for key in ("PATH", "TMPDIR", "SYSTEMROOT")' in scrub
+    assert 'safe_env.update(HOME=safe_home, LC_ALL="C", GIT_TERMINAL_PROMPT="0",' in scrub
+    assert "SSH_AUTH_SOCK" not in scrub and "AWS_SECRET_ACCESS_KEY" not in scrub
 
 
 # --------------------------------------------------------------------------

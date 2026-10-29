@@ -295,6 +295,8 @@ def baseline_prepare(repo, candidate, approved_roster, reader_record, output_dir
         ents = extract(repo, candidate, extracted)
         required = {"bootstrap/tests/fixtures/protected_test_roster.json",
                     MANIFEST_REL, REPIN_REL, RUNBOOK,
+                    "dev/.cairn/allowed_signers",
+                    "tools/session.py",
                     "bootstrap/reanchor.sh", "bootstrap/reanchor-launcher.template.sh",
                     *LISTED, *ctx_baseline_tool_paths()}
         paths = {path for _mode, _oid, path in ents}
@@ -342,9 +344,13 @@ def baseline_prepare(repo, candidate, approved_roster, reader_record, output_dir
             if sys.path and sys.path[0] == str(extracted):
                 sys.path.pop(0)
         raw_manifest = dump(manifest)
+        # Bind the program that prepares and installs this baseline too. The
+        # reader's record is a review of the whole execution path, not just the
+        # shared checker modules.
         tool_hashes = {p: sha(git(repo, "cat-file", "blob", f"{candidate}:{p}"))
                        for p in sorted(required) if p.endswith(".py") or p in
-                       (RUNBOOK, "bootstrap/reanchor.sh", "bootstrap/reanchor-launcher.template.sh")}
+                       (RUNBOOK, "bootstrap/reanchor.sh", "bootstrap/reanchor-launcher.template.sh",
+                        "dev/.cairn/allowed_signers")}
         package = {"schema": "cairn-baseline-package/v1", "candidate": candidate,
                    "candidate_tree_sha256": _candidate_tree_digest(repo, candidate),
                    "roster_sha256": sha(roster_raw), "manifest_sha256": sha(raw_manifest),
@@ -373,6 +379,172 @@ def baseline_prepare(repo, candidate, approved_roster, reader_record, output_dir
 def ctx_baseline_tool_paths():
     """The independent derivation and manifest producer used for preparation."""
     return ["bootstrap/tests/_gate_manifest.py", "bootstrap/tests/_gate_preflight.py"]
+
+
+def baseline_install(repo, candidate, package_dir, approved_roster, reader_record,
+                     signing_key, expected_fingerprint, confirmed_package_sha256):
+    """Install a reviewed baseline package through the existing signed-commit path.
+
+    This is intentionally separate from ``ceremony``: an absent or invalid
+    prior anchor never selects it. All package, reader, candidate and signer
+    checks happen before the first signing operation. Candidate tests are not
+    run here; collection is the reader-bound result prepared in C1.
+    """
+    repo = _plain_absolute_path(repo)
+    candidate = git_text(repo, "rev-parse", "--verify", candidate + "^{commit}")
+    if git_text(repo, "rev-parse", "--verify", "HEAD^{commit}") != candidate:
+        raise Refuse("baseline installation requires HEAD to be the exact reviewed candidate.")
+    if git(repo, "status", "--porcelain", check=False):
+        raise Refuse("baseline installation requires a clean candidate worktree and index.")
+    if git(repo, "cat-file", "blob", f"{candidate}:{REPIN_REL}") != Path(__file__).read_bytes():
+        raise Refuse("running installer differs from scripts/repin.py at the reviewed candidate.")
+
+    package_dir = _plain_absolute_path(package_dir)
+    roster_path = _plain_absolute_path(approved_roster)
+    reader_path = _plain_absolute_path(reader_record)
+    for path in (package_dir, roster_path, reader_path):
+        if path == repo or repo in path.parents:
+            raise Refuse("package, approved roster and reader record must be outside the checkout.")
+    if package_dir.is_symlink() or not package_dir.is_dir():
+        raise Refuse("baseline package directory must be a plain directory.")
+    if any(path.is_symlink() or not path.is_file() for path in (roster_path, reader_path)):
+        raise Refuse("approved roster and reader record must be plain files.")
+    package_file, manifest_file = package_dir / "baseline-package.json", package_dir / "gate_manifest.json"
+    if any(path.is_symlink() or not path.is_file() for path in (package_file, manifest_file)):
+        raise Refuse("baseline package and manifest must be plain files.")
+    package_raw, manifest_raw = package_file.read_bytes(), manifest_file.read_bytes()
+    if sha(package_raw) != confirmed_package_sha256:
+        raise Refuse("baseline package bytes differ from the independently confirmed digest.")
+    package = _unique_json(package_raw, "baseline package")
+    expected_fields = {"schema", "candidate", "candidate_tree_sha256", "roster_sha256",
+                       "manifest_sha256", "collection_sha256", "interpreter", "python",
+                       "python_sha256", "tool_hashes", "reader_record_sha256",
+                       "reader_record", "old_anchor_id"}
+    if (not isinstance(package, dict) or set(package) != expected_fields
+            or package.get("schema") != "cairn-baseline-package/v1"):
+        raise Refuse("baseline package has an unknown schema or fields.")
+    roster_raw, reader_raw = roster_path.read_bytes(), reader_path.read_bytes()
+    if (len(package_raw) > 8 * 1024 * 1024 or len(manifest_raw) > 8 * 1024 * 1024
+            or len(roster_raw) > 2 * 1024 * 1024 or len(reader_raw) > 2 * 1024 * 1024
+            or not isinstance(package.get("tool_hashes"), dict)
+            or not package["tool_hashes"]
+            or any(not isinstance(k, str) or not isinstance(v, str)
+                   or not re.fullmatch(r"[0-9a-f]{64}", v)
+                   for k, v in package["tool_hashes"].items())
+            or not re.fullmatch(r"[0-9a-f]{64}", confirmed_package_sha256 or "")):
+        raise Refuse("baseline package or independent inputs are malformed or exceed their size limits.")
+    if (package["candidate"] != candidate
+            or package["candidate_tree_sha256"] != _candidate_tree_digest(repo, candidate)
+            or package["roster_sha256"] != sha(roster_raw)
+            or package["manifest_sha256"] != sha(manifest_raw)
+            or package["reader_record_sha256"] != sha(reader_raw)
+            or package["reader_record"] != str(reader_path)
+            or package["interpreter"] != sys.version.split()[0]
+            or package["python"] != os.path.realpath(sys.executable)
+            or package["python_sha256"] != sha(Path(os.path.realpath(sys.executable)).read_bytes())):
+        raise Refuse("baseline package is stale or mismatched against candidate, roster, reader, or interpreter.")
+    manifest = _unique_json(manifest_raw, "baseline manifest")
+    if not isinstance(manifest, dict):
+        raise Refuse("baseline manifest is not a JSON object.")
+    if sha(dump({"node_ids": manifest.get("collection", {}).get("node_ids"),
+                 "skip_xfail_marked": manifest.get("collection", {}).get("skip_xfail_marked")})) != package["collection_sha256"]:
+        raise Refuse("baseline package collection digest does not match its manifest.")
+    if not re.fullmatch(r"SHA256:[A-Za-z0-9+/]{43}", expected_fingerprint or ""):
+        raise Refuse("supply the independently authorized signer fingerprint.")
+    reader = _unique_json(reader_raw, "baseline reader record")
+    if not isinstance(reader, dict):
+        raise Refuse("independent baseline reader record is not a JSON object.")
+    expected_reader = {"schema": "cairn-baseline-reader/v1", "candidate": candidate,
+                       "roster_sha256": package["roster_sha256"],
+                       "manifest_sha256": package["manifest_sha256"],
+                       "collection_sha256": package["collection_sha256"],
+                       "interpreter": package["interpreter"],
+                       "tool_hashes": package["tool_hashes"]}
+    if (set(reader) != set(expected_reader) | {"reviewer", "reviewed"}
+            or any(reader.get(key) != value for key, value in expected_reader.items())
+            or reader.get("reviewed") is not True
+            or not isinstance(reader.get("reviewer"), str) or not reader["reviewer"].strip()):
+        raise Refuse("independent baseline reader record is missing, malformed or stale.")
+
+    tmp = Path(tempfile.mkdtemp(prefix="repin-baseline-install-"))
+    try:
+        extracted = tmp / "candidate"
+        entries = extract(repo, candidate, extracted)
+        paths = {path for _mode, _oid, path in entries}
+        if set(package["tool_hashes"]) != set(package["tool_hashes"]).intersection(paths):
+            raise Refuse("baseline package tool closure contains a path outside the candidate.")
+        for rel, digest in package["tool_hashes"].items():
+            if not isinstance(digest, str) or sha((extracted / rel).read_bytes()) != digest:
+                raise Refuse(f"candidate execution closure differs from package at {d(rel)}.")
+        required_tool_hashes = (set(LISTED) | set(ctx_baseline_tool_paths())
+                                | {REPIN_REL, "tools/session.py", "dev/.cairn/allowed_signers"})
+        if required_tool_hashes - set(package["tool_hashes"]):
+            raise Refuse("baseline package does not bind the complete installer and checker closure.")
+        # Imports below come only from the raw-object extraction whose full
+        # closure has just been checked. No candidate test module is imported.
+        before = set(sys.modules)
+        made = {}
+        try:
+            made = load_listed(extracted, extracted / "tools/session.py")
+            check_loaded(before, made, extracted, package["tool_hashes"])
+            gm = sys.modules["bootstrap.tests._gate_manifest"]
+            gp = sys.modules["bootstrap.tests._gate_preflight"]
+            roster = gm._roster_from_bytes(roster_raw, require_initial_approval=True)
+            static = gp.rederive_static_manifest(candidate, protected_roster=roster, repo=repo)
+            rebuilt = gp.authoritative_manifest(manifest, static)
+            if dump(rebuilt) != manifest_raw:
+                raise Refuse("baseline manifest static fields do not rederive from the candidate.")
+            reader_ctx = {"repo": repo, "head": candidate, "baseline": package}
+            check_record(reader_ctx, sha(package_raw), package["reader_record_sha256"],
+                         baseline_record=reader_path)
+            signer_path, signer_fingerprint = gp.validate_signing_key(signing_key)
+            if signer_fingerprint != expected_fingerprint:
+                raise Refuse("signing key does not match the independently authorized fingerprint.")
+            signer_roster_path = extracted / "dev/.cairn/allowed_signers"
+            signer_roster_raw = signer_roster_path.read_bytes()
+            public = Path(signer_path).read_text(encoding="utf-8").split()
+            if len(public) < 2 or not any(
+                    fields[i:i + 2] == public[:2]
+                    for line in signer_roster_raw.decode("utf-8").splitlines()
+                    for fields in [line.split()] for i in range(max(0, len(fields) - 1))):
+                raise Refuse("signing key is not present in the candidate's reader-bound signer roster.")
+            principals = gp.parse_principals(signer_roster_raw.decode("utf-8"))
+            width = len(git_text(repo, "rev-parse", "--verify", "HEAD^{commit}"))
+            observed_anchor = git_text(repo, "rev-parse", "--verify",
+                                       ANCHOR_REF + "^{commit}") if git(
+                                           repo, "rev-parse", "--verify", ANCHOR_REF + "^{commit}",
+                                           check=False) else "0" * width
+            branch = git_text(repo, "symbolic-ref", "HEAD")
+            if not branch.startswith("refs/heads/") or git_text(repo, "rev-parse", branch) != candidate:
+                raise Refuse("baseline install requires the reviewed candidate at the current branch tip.")
+            gp._require_direct_ref(branch, repo=repo)
+            if git(repo, "rev-parse", "--verify", ANCHOR_REF, check=False):
+                gp._require_direct_ref(ANCHOR_REF, repo=repo)
+            message = ("Cairn forward trust baseline\n\n"
+                       f"Candidate: {candidate}\nCandidate tree SHA-256: {package['candidate_tree_sha256']}\n"
+                       f"Manifest SHA-256: {package['manifest_sha256']}\n"
+                       f"Approved roster SHA-256: {package['roster_sha256']}\n"
+                       f"Reader record SHA-256: {package['reader_record_sha256']}\n"
+                       f"Authorized signer: {expected_fingerprint}\n"
+                       f"Observed prior anchor: {observed_anchor}\n")
+            new, blob = gp._construct_signed_commit(repo, candidate, manifest_raw, message,
+                                                     signing_key=signer_path)
+            gp.verify_constructed(repo, new, candidate,
+                                  manifest_sha256="sha256:" + package["manifest_sha256"], message=message,
+                                  principals=principals, roster_path=signer_roster_path,
+                                  expected_fingerprint=expected_fingerprint)
+            ok, detail = gp._advance_both_refs(repo, branch, new, branch_old=candidate,
+                                               anchor_old=observed_anchor)
+            if not ok:
+                raise Refuse("atomic branch and anchor update refused; neither ref moved: " + detail)
+            gp._sync_worktree(repo, manifest_raw, blob)
+            say(f"installed reviewed baseline {new}; atomic refs advanced from observed anchor {observed_anchor}")
+            return new
+        finally:
+            for name in reversed([n for n in made if n in sys.modules]):
+                del sys.modules[name]
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 def package_collection_sha(manifest):
@@ -2143,6 +2315,14 @@ def main(argv=None, *, launchctl=launchctl_socket):
     bp.add_argument("--approved-roster", required=True, metavar="FILE")
     bp.add_argument("--reader-record", required=True, metavar="FILE")
     bp.add_argument("--output-dir", required=True, metavar="DIR")
+    bi = sub.add_parser("baseline-install", help="install an independently reviewed forward baseline")
+    bi.add_argument("--candidate", default="HEAD", metavar="SHA|REF")
+    bi.add_argument("--package-dir", required=True, metavar="DIR")
+    bi.add_argument("--approved-roster", required=True, metavar="FILE")
+    bi.add_argument("--reader-record", required=True, metavar="FILE")
+    bi.add_argument("--signing-key", required=True, metavar="PUBLIC-KEY")
+    bi.add_argument("--expected-fingerprint", required=True, metavar="SHA256:...")
+    bi.add_argument("--confirm-package-sha256", required=True, metavar="SHA256")
     args = ap.parse_args(argv)
     if args.verb == "baseline-prepare":
         saved_env = dict(os.environ)
@@ -2164,6 +2344,17 @@ def main(argv=None, *, launchctl=launchctl_socket):
             os.environ.clear()
             os.environ.update(saved_env)
             shutil.rmtree(safe_home, ignore_errors=True)
+    if args.verb == "baseline-install":
+        try:
+            baseline_install(Path(__file__).resolve().parent.parent, args.candidate,
+                             args.package_dir, args.approved_roster, args.reader_record,
+                             args.signing_key, args.expected_fingerprint,
+                             args.confirm_package_sha256)
+            return 0
+        except (Refuse, OSError, ValueError, KeyError, RuntimeError) as exc:
+            print(f"\nrepin stopped; no ref moved unless atomic install completed.\n  {exc}",
+                  file=sys.stderr)
+            return 2
     if args.verb == "prepare-values":
         try:
             prepare_values(Path(__file__).resolve().parent.parent, args.output, args.signing_key,
