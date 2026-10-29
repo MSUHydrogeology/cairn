@@ -1,7 +1,7 @@
 # Plan: Module discovery and first use
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-module-discovery-activation.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Make installed modules discoverable and give each selected module a useful first task.
@@ -12,7 +12,7 @@ The accepted proposal requires selection-specific inventory and first-use tasks 
 
 ## Scope
 
-Change the scaffold install, upgrade, lock baseline and manifest paths, module metadata and onboarding templates, installed session pointers and bootstrap manual-adoption instructions. The 22-module task and entry-point design is in [inventory](2026-10-29-module-discovery-activation/inventory.md); validate each against the installed files, including required inputs and expected results. No new architecture rubric or recurring obligation is introduced.
+Change the scaffold install, upgrade, lock baseline and manifest paths, module metadata and onboarding templates, installed session pointers and bootstrap manual-adoption instructions. The 22-module task and entry-point design is in [inventory](2026-10-29-module-discovery-activation/inventory.md); validate each against the installed files, including required inputs and expected results. The [reconciliation design](2026-10-29-module-discovery-activation/reconciliation.md) fixes representation, migration, ordering and test inputs. No new architecture rubric or recurring obligation is introduced.
 
 **Reuse.** Searches `rg 'onboarding|render.*lock|adopt.module|MODULE' bootstrap/_scaffold/{install,upgrade,cli}.py` and `_MODULE_MAPPINGS` in `config.py` found `_rendered_onboarding_overlay`, shared with clean lock rendering, and the existing adoption and path guards. Generalize those paths rather than scan the target for authority or create a parallel installer. Search readers and callers of each changed surface before implementation and extend the map below for any found.
 
@@ -32,7 +32,7 @@ Route installed inventory and manual-copy steps to module/bootstrap documentatio
 
 **C1.** The actual resolved roster, including preset, exact list, empty list and add/remove, drives one inventory entry and distinct task per selected module. Each entry names purpose and a shipped usable entry point; each task gives inputs and observable result. No unselected task appears; no installer executes a task. The live output, manifest and clean lock baseline agree. Existing preset tasks remain intact without duplication. Session pointers discover the inventory without mandating use.
 
-**C2.** Install and `upgrade --adopt-module` reconcile marked generated entries by module identity, preserving unrelated text, checked state and edits. An unchanged generated entry can be added or removed; an edited or completed entry whose removal or replacement would lose work causes a reported conflict with explicit manual steps and no partial inventory, planning or lock update. Legacy unmarked or ambiguous content is never guessed away: migrate only when unambiguous, otherwise report manual reconciliation. Repeat adoption, including already-adopted modules, repairs safely or reports conflict. Manual-copy instructions name the concrete inventory, task and lock steps; they do not claim detection. Validate all target paths and conflicts before writes; preserve existing upgrade safeguards.
+**C2.** Install and `upgrade --adopt-module` reconcile marked generated entries by module identity, preserving unrelated text, checked state and edits. An unchanged generated entry can be added or removed; an edited or completed entry whose removal or replacement would lose work causes a reported conflict with explicit manual steps and no partial inventory, planning or lock update. Legacy unmarked or ambiguous content is never guessed away: migrate only when unambiguous, otherwise report manual reconciliation. Repeat adoption, including already-adopted modules, repairs safely or reports conflict. Manual-copy instructions name the concrete inventory, task and lock steps; they do not claim detection. Prepare and preflight as specified in the reconciliation design before generated writes, the adoption loop and the already-recorded shortcut; revalidate staged inputs at apply. Refusal preserves inventory, planning and lock bytes, without claiming rollback of unrelated prior installer writes. Preserve existing upgrade safeguards.
 
 **C3.** Public-entry tests independently compare selection to tasks, verify each shipped entry point, preservation, idempotence, removal, conflicts, linked destinations and clean baseline across install and upgrade plan/stage/apply. Four separate mutations remove a selected task, add an unselected task, alter preserved work, and change the baseline; each relevant check fails against an unmutated passing control. Record commands and outcomes. No scientific check applies.
 
@@ -42,7 +42,7 @@ Route installed inventory and manual-copy steps to module/bootstrap documentatio
 
 ## Verification
 
-Boundary A: run `bootstrap/tests/test_onboarding_seed_roster.py`, `test_module_roster.py`, `test_module_merge_lockfile.py`, `test_upgrade_module.py`, and `test_upgrade_module_additions.py` under `bootstrap/tests/`, plus new behavioral nodes in those owning files for the criteria above. Search `rg -n 'onboarding|_MODULE_MAPPINGS|adopt.module|rendered_onboarding' bootstrap/tests bootstrap/_scaffold templates` for consumers and add their owning tests. Exercise `bootstrap/scaffold.py --summary`, `--dry-run`, `--manifest` and temporary installs for representative preset, exact, empty and add/remove profiles; verify manual and automated later adoption. Run `python scripts/check_cairn.py`, `python scripts/claim_check.py` on changed prose, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py --check`, and applicable neutrality gate. Respect existing frozen-file and AST-pin ceremonies; if triggered, stop at their Maintainer fence.
+Boundary A: execute the named nodes and input sets in the reconciliation design, then run `bootstrap/tests/test_onboarding_seed_roster.py`, `test_module_roster.py`, `test_module_merge_lockfile.py`, `test_upgrade_module.py`, and `test_upgrade_module_additions.py` under `bootstrap/tests/`, plus new behavioral nodes in those owning files for the criteria above. Search `rg -n 'onboarding|_MODULE_MAPPINGS|adopt.module|rendered_onboarding' bootstrap/tests bootstrap/_scaffold templates` for consumers and add their owning tests. Exercise `bootstrap/scaffold.py --summary`, `--dry-run`, `--manifest` and temporary installs for representative preset, exact, empty and add/remove profiles; verify manual and automated later adoption. Run `python scripts/check_cairn.py`, `python scripts/claim_check.py` on changed prose, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py --check`, applicable neutrality gate, and `bootstrap/tests/test_security_lint.py` (disposition any Bandit skip). Respect existing frozen-file and AST-pin ceremonies; if triggered, stop at their Maintainer fence.
 
 Boundary B: **wide**, because installation and lockfile are contracts. On the clean final implementation commit under Python 3.13, run the mapped families, discovered consumers, public paths, mutation controls and standing gates; record tested SHA, range, interpreter, clean pre/post state, commands, counts, timings, non-pass dispositions and omissions, with `Certified by: pending`. Do not run the full suite absent an authorized certification point. Independent code review owns Boundary C falsification.
 
@@ -101,3 +101,12 @@ The satisfier is a folded ordering design plus named public-entry tests: initial
 **Evidence and sweep.** Selection remains resolved-profile/mapping authority, not inventory text; tasks do not execute during install, and optionality remains explicit (C1; accepted Security preflight S1–S5). Existing target/ancestor guards are reusable, not proof of coverage for new writes (`bootstrap/_scaffold/security.py:110`). The inventory retains legacy/new/mixed architecture choice and policy-input preparation without automatic network activity. No new scientific or doctrine premise is introduced. Ordinary P1/P2 cover representation, legacy migration and independent selection expectations; this pass adds failure ordering and containment satisfiers, not historical trust reconstruction.
 
 **Coverage / gaps**: Read committed plan, inventory, accepted proposal, current template, install/adopt and stage/apply control paths and security-test owners. No prospective implementation, tasks or suites were executed. This records the required Security plan pass; the author must fold S1 with ordinary P1/P2 before implementation.
+
+
+## Response to plan review -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+| Finding | Disposition |
+|---|---|
+| P1 | Accepted; Scope, C2 and reconciliation design specify authority, representation, prior bases, legacy migration and recovery. |
+| P2 | Accepted; Verification and the design map name public paths, planned nodes and inputs. |
+| S1 | Accepted; C2 and ordering design fix preflight, apply revalidation, refusal scope and containment tests, including security lint. |
