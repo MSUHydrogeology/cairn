@@ -1449,9 +1449,15 @@ def install_onboarding(
             slot_body = planning_text.split(
                 "<!-- cairn:slot onboarding-tasks -->", 1)[-1].split(
                 "<!-- cairn:end onboarding-tasks -->", 1)[0]
-            if "(Empty at adoption" in slot_body or not slot_body.strip():
+            if slot_body.strip() in (
+                "", "(Empty at adoption unless the bootstrap fills it from a profile\npreset.)"
+            ):
                 new_text, ok = _substitute_slot(
                     planning_text, "onboarding-tasks", rendered)
+            elif "(Empty at adoption" in slot_body:
+                raise ModuleDiscoveryConflict(
+                    "onboarding placeholder contains additional or edited work; "
+                    "save that work and reconcile the slot manually, then retry")
             else:
                 # Legacy preset seeds are adopter state. Preserve them and add
                 # marked tasks; never infer selection from that prose.

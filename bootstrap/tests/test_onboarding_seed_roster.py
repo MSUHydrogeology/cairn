@@ -160,6 +160,28 @@ def test_reinstall_preserves_completion_and_refuses_loss(tmp_path: Path) -> None
     assert (tmp_path / "dev/.cairn/cairn-lock.yml").read_bytes() == before_lock
 
 
+def test_reinstall_preserves_work_beside_empty_placeholder(tmp_path: Path) -> None:
+    """A populated placeholder slot retains unrelated completed work."""
+    cfg = tmp_path / "profile.yml"
+    cfg.write_text("project_name: PreserveWork\ntest_command: pytest\nmodules: []\n",
+                   encoding="utf-8")
+    args = ["--config", str(cfg), "--target", str(tmp_path),
+            "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]
+    assert main(args) == 0
+    planning = tmp_path / "dev/PLANNING.md"
+    marker = "<!-- cairn:end onboarding-tasks -->"
+    task = "* [x] Preserve my completed research task\n"
+    planning.write_text(planning.read_text(encoding="utf-8").replace(
+        marker, task + marker), encoding="utf-8")
+    paths = (planning, tmp_path / "dev/modules/README.md",
+             tmp_path / "dev/.cairn/cairn-lock.yml")
+    before = tuple(path.read_bytes() for path in paths)
+    cfg.write_text("project_name: PreserveWork\ntest_command: pytest\n"
+                   "modules:\n  - dual-review\n", encoding="utf-8")
+    assert main(args) == 2
+    assert tuple(path.read_bytes() for path in paths) == before
+
+
 class TestModelMappingWaitingSeed:
     @pytest.mark.parametrize("preset", ("collaborative-team", "high-rigor-legacy"))
     def test_seed_renders_and_board_lists_it(self, tmp_path: Path, preset: str) -> None:
