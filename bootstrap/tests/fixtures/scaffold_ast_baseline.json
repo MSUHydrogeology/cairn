@@ -1088,10 +1088,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:install_onboarding": {
-    "digest": "9e5ccff18985b42a",
+    "digest": "534a0d310b8d42c3",
     "span": [
-      1353,
-      1514
+      1357,
+      1524
     ],
     "type": "FunctionDef"
   },
