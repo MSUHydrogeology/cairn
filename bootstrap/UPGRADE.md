@@ -102,8 +102,13 @@ many records it did not record.
 clears them too, without waiting for a commit: a deleted retired file is not one
 of the files a bare finalize hashes, so the edit check (see "The edit check"
 under `--apply`) does not ask about it. Until a record is cleared,
-`verify_integrity.py` prints a `missing:` line for a deleted file that is not
-living state.
+`verify_integrity.py` reports a deleted retired file without a stale
+living-state flag as `missing:`. An older lockfile can retain
+`living_state: true` for the deleted fold-back ledger, which current integrity
+checks reject as `illegal living_state opt-out` before reporting it as missing.
+Clear that retired-file record with `upgrade --remove-retired` or
+`upgrade --finalize dev/.cairn/cairn_foldback.md`, then run the integrity check
+again; the stale flag is part of the record being cleared.
 
 **A leftover folder.** If `scripts/_onboarding/` holds only `__pycache__` after
 the step, it is safe to delete. Nothing imports it. Cairn has not tested that
