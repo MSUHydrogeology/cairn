@@ -33,14 +33,15 @@ The source Decisions are `63e315fa`, `f110d263`, `cca436a9`, `cea1299d` and
 `439c7b34`. All five plans were authorized; their later explicit fences remain.
 Use `python tools/board.py --maintainer` for declared next moves.
 
-## Pending proposal decision
+## Ceremony-command plan
 
-The [ceremony-command proposal](../proposals/2026-10-29-codex-ceremony-commands.md)
+The [ceremony-command proposal](../proposals/archive/2026-10-29-codex-ceremony-commands.md)
 addresses the existing v0.6 two-command item, builds on v0.5 `repin`, and
 includes the trust plan's required full prior-anchor verifier. Both independent
-Sol reviews are recorded; the author's response is at `7222f1a6`. It awaits
-the Maintainer's Decision before a plan or implementation. No signing, re-anchor
-or push is authorized by this briefing.
+Sol reviews and the author's response are recorded; the Maintainer approved the
+proposal in `02a81d33`. The [plan](../plans/2026-10-29-ceremony-commands.md)
+opened in `df4f9ac5` and awaits ordinary and Security plan reviews. No signing,
+re-anchor or push is authorized by this briefing.
 
 ## Remaining decisions and actions
 
