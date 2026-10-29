@@ -204,3 +204,37 @@ Prior findings: none
 **Bounding**: ACCEPTED for the recorded wide mapping, subject to F1 and change-specific verification of its repair. The record identifies the mapped families, interpreter, scratch signing disposition and omissions; the targeted malformed-input probe exposed a behavior the mapped passing results did not establish. C4 is a separately gated item, not reached in the reviewed range; the plan's verification preserves its separate certification.
 
 **Covered:** claims, public path and refusal (lenses 1–4: preparation code and ledger); reuse and consistency (5–6: transaction and reader checks); lifecycle and scope (7–8: separate C4); satisfier (9: F1). **Not covered / low confidence:** independent signing and atomic-ref mutation tests, all extraction attacks, actual installation and host containment; the Security Review remains separate. The runbook's operator sequence was read, but no real ceremony was performed.
+
+
+## Code review -- Codex (gpt-6.1-sol), Security reviewer -- 2026-10-29
+
+```
+Reviewed commit: dccaf4e6b43b63ce98577307065464214a5d754e
+Target: forward-baseline changes in 1867e666..dccaf4e6; verification at e71cb267
+Prior findings: none
+```
+
+**Obligation**: Security code review of C1–C3.
+**Tier**: Internal Security Review
+**Findings**: none additional to ordinary F1; this pass does not dispose F1.
+
+**Foundations**
+
+1. **Does it do what it claims?** The explicit installer checks independent reader/package agreement and signer identity before signing; checked extraction supplies its imports and the existing expected-old transaction updates both refs. The targeted adversarial run retained those refusals and successful installation. -- `scripts/repin.py`, `baseline_install`, `load_listed`; ledger below.
+2. **Best alternative.** Retain the shared signing, constructed-commit verification and atomic-ref helpers; the baseline's separate explicit entry avoids weakening ordinary prior authentication. No simpler substitute preserves these boundaries. -- `scripts/repin.py`, `main`; `bootstrap/tests/_gate_preflight.py`, `_construct_signed_commit`, `verify_constructed`, `_advance_both_refs`.
+3. **What would show it wrong?** A changed execution closure reaching signing without the independent reader's agreement, candidate parent-package execution at installation, or partial ref update would defeat the separation. -- falsification ledger below.
+
+**Falsification ledger.** A fresh detached worktree at the reviewed commit supplied unchanged implementation bytes. Canonical Python 3.13.13 ran one augmented scratch harness, `python -m pytest bootstrap/tests/test_repin.py::test_baseline_preparation_builds_exact_package_after_reader_binding -q`: **1 passed, 27.78s**. Only the disposable test was augmented; scratch repositories, refs and generated keys were used.
+
+| Surface / attempted break | Observed result |
+|---|---|
+| Add `../outside.py` or an absolute outside path to package tool hashes; recompute the independently confirmed package digest, leaving the reader unchanged | Both refused at reader binding; refs unchanged. A new package digest alone cannot authorize changed tools. |
+| Commit a candidate `scripts` package initializer writing a marker, then clear the marker before installation | Successful public installation left the marker absent. Candidate-test credential sentinel also stayed absent. |
+| Harness controls: wrong fingerprint, changed installer hidden from status, stale reader/package, symlinked inputs, missing reader, late anchor creation and stale branch | All retained refusal/no-move assertions; both ref-race controls left the competing writer's value intact. |
+| Passing control: explicit installation, then protected byte/node/marker losses and ordinary added test | Manifest-only signed child and equal branch/anchor; losses HOLD, ordinary addition notices. |
+
+An earlier bootstrap-parent initializer experiment made collection fail and preparation refused; a collection-only diagnostic identified an existing import assumption. It was replaced with the collecting scripts-parent case. The detached-source harness also needed an explicit scratch branch. These were probe setup corrections, not implementation failures.
+
+**Bounding**: ACCEPTED for the recorded wide mapping, subject to ordinary F1 and its repair evidence. Static inspection traced approved-roster parsing, reader/tool closure binding and no ordinary-to-baseline fallback. C4 remains separately fenced; no Waiting line is owed for installation this range did not reach.
+
+**Covered:** claims, public paths, completeness and refusal (lenses 1–4: ledger and installer); reuse, consistency and drift (5–6: shared helpers and `bootstrap/REANCHOR_RUNBOOK.md`, forward-baseline sequence); lifecycle/scope (7–8: explicit modes and separate C4); satisfier (9: no additional finding). **Not covered / low confidence:** host compromise, candidate collection containment, real installation, historical-anchor comparison, full-suite certification and exhaustive hostile-path permutations. Reader independence remains a human authorization boundary; hashes do not authenticate its author. No live key/ref, push or full test suite was used.
