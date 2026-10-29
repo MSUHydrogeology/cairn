@@ -1,7 +1,7 @@
 # Establish a forward trust baseline
 
 **Author**: Codex (plan coordinator)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -179,3 +179,9 @@ Review the proposed design and current controls through ordinary and Security pa
 ### Withdrawn / superseded commitments
 
 The opening's requirement that installation precede affected-plan archival is superseded by the Maintainer's clarification recorded in the author revision. No other commitment is withdrawn; the grouped scope loss is presented for the Maintainer's Decision.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-29
+
+**ACCEPTED, as revised with recorded scope loss.** The Maintainer's authorization, quoted **verbatim and visually isolated**:
+
+> "Accept as revised with the recorded scope loss"
