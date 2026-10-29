@@ -528,6 +528,11 @@ trustworthy is the signature on the commit it names.
   not high risk solely because they live under `bootstrap/tests/`; their edits
   follow the existing trivial or planned lane. The present broad frozen policy
   remains in force until the Maintainer installs a narrower signed boundary.
+  After installation, the re-anchor verifier freezes named security and trust
+  tests, records the full collection, and holds on lost or newly skipped
+  protected nodes. The Maintainer runs the prepared prior-verifier command in
+  `bootstrap/REANCHOR_RUNBOOK.md` with the key away; the launcher does not run
+  it automatically. Ordinary deltas remain visible notes.
 * **Vendor-neutrality.** Doctrine and templates must name no AI model/vendor
   (`scripts/quality_gate.py --sub neutrality`); names live only in the
   deliberation record or behind a `vendor-ok` marker.
