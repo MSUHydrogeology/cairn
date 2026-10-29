@@ -2,7 +2,7 @@
 
 **Author**: Codex (gpt-6.1-terra)
 **Source proposal**: [dev/proposals/archive/2026-10-29-codex-ceremony-commands.md](../proposals/archive/2026-10-29-codex-ceremony-commands.md)
-**Status**: revising-code
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Give the Maintainer reusable commands for checking and carrying out trust ceremonies with human approval.
@@ -454,3 +454,69 @@ bridge comparison or live installation. No live key, anchor or baseline changed.
 Security acceptance is limited to the reviewed mechanisms; an implementation
 revision adding the missing operator commands needs its own recorded checks and
 assessment of any newly introduced security defects before closure.
+
+
+## Response to code review -- Codex (GPT-6.1 Sol, Implementation) -- 2026-10-29
+
+| Finding | Disposition | Evidence |
+|---|---|---|
+| F2 | Accepted. The runbook points to maintained preparation, verifier, ceremony and separately approved exact-path pin commit commands. The driver authenticates the prior signer for a transition, runs the prior scan before candidate code, compares its digest with the report, and refuses command failures and mismatches before signing. | Implementation `aeb04b8d`; environment repair `c0ceaa26`; verification below. |
+
+The changed operator path retains an independent reader, human decisions and a
+separate signature; neither the verifier disposition nor the pin write itself
+commits or signs. A maintained commit command checks the reader and stop-record
+bindings and exact output bytes, asks separately, and commits named paths. The
+scratch controls exercise the verifier followed by a ceremony and the transition,
+reviewed deletion, refusal, commit and fresh ordinary rerun. The record does not
+claim a real baseline, historical-anchor reconciliation or push.
+
+## Implementation verification -- Codex (GPT-6.1 Sol) -- 2026-10-29
+
+**Boundary B mode**: wide. **Certified by**: pending. **Reviewed range**:
+`1b38a64e58c532da31fba67816c1986125ac7986..c0ceaa26c87aa90704424523929601b4ab5d955d`.
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13.
+Both test runs used separate clean, detached no-hardlink local clones, with
+copy-local disposable anchor refs, temporary fixture keys and `PYTHONDONTWRITEBYTECODE=1`.
+Each clone had a clean Git status before and after its run and retained its
+specified HEAD. No live key, ref, baseline or push was changed.
+
+| Command | Exit | Outcome | Elapsed |
+|---|---:|---|---:|
+| Mapped twelve-family pytest command below, at `aeb04b8d8fcc47c4822e5f736e141f42e1c51e84` | 1 | 1,117 passed; 1 failed; 3 deprecation warnings; no skips, xfails or xpasses reported | 921.06 s |
+| Three affected families below, at `c0ceaa26c87aa90704424523929601b4ab5d955d` | 0 | 332 passed; no skips, xfails or xpasses reported | 603.93 s |
+| `python scripts/claim_check.py bootstrap/REANCHOR_RUNBOOK.md` | 0 | no flags | 0.04 s |
+| `python scripts/link_check.py` | 0 | 186 Markdown files; 84 external links unprobed | 0.20 s |
+| `python scripts/sync_doc_snippets.py --check` | 0 | 428 documents; no drift | 0.15 s |
+| `python scripts/quality_gate.py --sub neutrality` | 0 | 0 failures; 43 informational rows | 0.88 s |
+| `python scripts/check_cairn.py` | 1 | one unrelated existing finding, described below | 1.26 s |
+
+The test commands (using the interpreter above) were:
+
+```sh
+python -m pytest bootstrap/tests/test_gate_manifest.py bootstrap/tests/test_gate_transition.py bootstrap/tests/test_gate_preflight.py bootstrap/tests/test_gate_reanchor.py bootstrap/tests/test_ceremony_review_report.py bootstrap/tests/test_reanchor.py bootstrap/tests/test_reanchor_driver_disclosures.py bootstrap/tests/test_repin.py bootstrap/tests/test_repin_ceremony.py bootstrap/tests/test_oracle_activation.py bootstrap/tests/test_security_check.py bootstrap/tests/test_security_marker.py -q --tb=short
+python -m pytest bootstrap/tests/test_repin.py bootstrap/tests/test_repin_ceremony.py bootstrap/tests/test_ceremony_review_report.py -q --tb=short
+```
+
+**Non-pass disposition.** The wide run's only failure was
+`test_the_status_command_reads_only_the_fixed_environment_variables`: the
+implementation introduced a second textual environment filter. `c0ceaa26`
+reuses the existing filter and preserves global Git identity; the failing node
+and the full affected-family rerun pass. The earlier preliminary family run was
+interrupted after 144 passes, before the clean-copy run, and is not counted as
+verification. `check_cairn.py` still flags the previously recorded unrelated
+imperative-override example in
+`dev/proposals/2026-10-29-codex-dispatcher-content-scan.md:100`; it was not changed.
+
+**Composition and limits.** The only file changed between the two tested commits
+is `scripts/repin.py`. A search of the mapped test families for its path and
+imports found the two repin families and the report family, rerun at the final
+commit; the other mapped families retain the preceding run's evidence. This
+composition does not claim unknown dependencies are covered. The controls cover
+pre-signing scanner disagreement, prior-scan ordering, signed-prior verifier and
+full collection, reader and launcher substitutions, exact-path commit denial and
+changed bytes, global-only Git identity, and fresh scratch rerun. Native Windows
+was not tested; the ceremony uses POSIX shell paths, and the non-SSH verifier
+refusal uses Python's platform-specific null device. The Maintainer's amendment
+continues to defer actual installation, historical comparisons and disposition of
+the 83 real reports. No whole-suite certification was run. Independent code
+and Security Review must assess this revised implementation and its composition.
