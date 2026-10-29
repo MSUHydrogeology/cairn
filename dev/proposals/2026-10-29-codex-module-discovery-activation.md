@@ -201,3 +201,63 @@ its cited implementation, not verification of prospective rendering or merge
 behavior. No installer or upgrade probes were run. The separate Security
 Review obligation remains open. Exact module/task inventory, dependency inputs,
 upgrade migration and bounded verification mapping remain owed by the plan.
+
+
+## Review -- Codex Security (gpt-6.1-sol) -- 2026-10-29
+
+```
+Reviewed commit: 768b123da9a17c9ba0d78183090384954c14cc70
+Target: opening proposal, Context through Assurance path
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. Discoverability and first-use tasks can improve installed capabilities without giving inventory text authority to execute commands. The proposal expressly separates selection, discovery and execution -- opening Security preflight S1 and S4; `bootstrap/_scaffold/upgrade.py:1764`.
+2. **Best alternative.** Extend the existing mapped install and adoption paths with shared rendering and conservative reconciliation. Avoid a separate filesystem scanner or mandatory execution ceremony; the current renderer already shares live and clean-baseline computation -- `bootstrap/_scaffold/install.py:1133`.
+3. **What would show it wrong.** An edited or completed task overwritten during repetition or adoption, or an inventory pointing outside the installed selection, defeats this contract. The proposal explicitly makes these failures disqualifying and requires public-entry coverage -- opening Evidence / verification plan; `bootstrap/tests/test_onboarding_seed_roster.py::_scaffold`.
+
+The strongest version provides dependable automation for ordinary installs and
+adoptions, while preserving a person's work and giving a concrete recovery
+instruction when edits prevent safe reconciliation. The opening contract
+already requires that behavior; no additional blocking requirement is needed
+at the proposal stage.
+
+**Security evidence and sweep.** The relevant inputs are the resolved profile,
+shipped mappings/templates, lock metadata and existing target files. Current
+adoption accepts a named module only from the mapping, preserves existing
+module destinations with advisories, and records upstream bases separately
+from adopter bytes (`bootstrap/_scaffold/upgrade.py:1764`). Its already-adopted
+shortcut means task repair and idempotence must be designed deliberately;
+merely appending code after that return would miss repeated adoption. Current
+onboarding substitutes the whole slot, so reusing it unchanged would lose local
+work (`bootstrap/_scaffold/install.py:1220`). These are implementation hazards
+covered by the proposal's preservation and repeat-operation criteria, rather
+than evidence that its promised new behavior exists today.
+
+For fail-closed behavior, new inventory and planning writes must retain target
+containment, including linked destinations and parent directories; the current
+write guard states those checks (`bootstrap/_scaffold/security.py:110`).
+Upgrade tests already exercise linked destinations after staging and occupied
+destination collisions (`bootstrap/tests/test_upgrade_module_additions.py`).
+The plan must map those risks to the new writes and their real commands.
+Independent selection expectations matter: sharing the renderer prevents drift
+but cannot detect a wrong module roster, as S2 already acknowledges.
+
+Placement, scope and documentation agree: this is installation/adoption work,
+not automatic module execution or expansion of architecture advice. A local
+inventory cannot authenticate a hostile but valid module instruction; S5 states
+that limit. No scientific result changes. There are no findings needing a
+satisfier. This review adds no historical trust-root reconstruction ceremony:
+the concrete risks are current input selection, target writes and edit loss.
+
+**Coverage / gaps**: Proposal Security Review only; no prospective implementation
+or security checks were executed. Exact update semantics, failure ordering,
+new-write containment and adversarial public-entry tests remain for the plan
+and implementation. This ACCEPT clears this proposal's Security Review
+obligation, not the separately declared plan Security Review.
