@@ -1,7 +1,7 @@
 # Plan: Ordinary test maintenance
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-ordinary-test-maintenance.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal)
 **Opened**: 2026-10-28
 **In brief**: Simplify one board test cluster without losing fault detection and share the resulting test-maintenance practice.
@@ -286,3 +286,31 @@ No implementation, test, executable-template or fixture bytes changed after the
 reviewed implementation commit. The review's requested verification was added
 in `32375254`; the independent reviewer confirmed F1 is resolved. No second
 code-review pass is due. The plan is ready to archive.
+
+## Lasting-truth migration -- Codex (Implementation, Luna) -- 2026-10-29
+
+Dispositions: none
+
+**Evidence shipped**: C1's behavior/fault inventory and retained-property map;
+C2's local archive-output capture helper in `bootstrap/tests/test_board_json_contract.py`;
+C3's matching shipped and self-hosted testing-discipline guidance; the high-rigor
+install and mapped test/gate evidence at `32375254`. The independent code
+review and F1 response are recorded above.
+
+**Evidence deferred**: No pre-edit family run or timing control was made; the
+Maintainer explicitly waived both prerequisites in the pilot-file allowance.
+No whole-suite/certifying run was made because the plan required scoped evidence
+and certification is a separate authorized integration point. No mutation
+ledger or adopter trial was part of the accepted plan's checks.
+
+**Deferred evidence home**: None of those checks remains an open plan
+requirement. The broader test-maintenance effort remains on its existing live
+row, `dev/PLANNING.md` > Deferred follow-ups (durable home) > “Maintain and
+consolidate Cairn’s existing test suite.”
+
+**Fidelity sign-off**: implementation commit `70db63fd` matches the accepted
+C1–C3 plan criteria and the proposal's accepted `### Complete current contract`
+section (Decision `cea1299d`), subject to the Maintainer's pilot-file allowance
+recorded above and committed at `fb7e8751`. Both named methods remain in their
+original file, the local helper preserves the three real board invocations, and
+the module changes match the planned shipped/self-hosted practice.
