@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import ast
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -22,7 +23,7 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.tests import _ast_attest as A
+from bootstrap.tests import _ast_attest as A, _gate_manifest as GM
 from bootstrap.tests.test_repin import (  # noqa: F401 -- `template` is a fixture
     BASELINE, ENGINE, KNOWN_NEW, LISTED, MANIFEST, PY, REAL, Bed, _dump, a_copy_of_this_interpreter, run_mixed,
     run_pty, template)
@@ -38,6 +39,9 @@ CLOSURE = ["bootstrap/REANCHOR_RUNBOOK.md", "bootstrap/reanchor-launcher.templat
 MAPS = "bootstrap/_scaffold/maps.py"
 RECORD = "dev/ceremony-record.md"
 LAUNCHER_TEMPLATE = REAL / "bootstrap/reanchor-launcher.template.sh"
+_repin_spec = importlib.util.spec_from_file_location("repin_ceremony_tests", REAL / "scripts/repin.py")
+REPIN = importlib.util.module_from_spec(_repin_spec)
+_repin_spec.loader.exec_module(REPIN)
 
 pytestmark = pytest.mark.skipif(not (shutil.which("ssh-keygen") and shutil.which("ssh-agent")),
                                 reason="the signing tests need ssh-keygen and ssh-agent")
@@ -186,6 +190,22 @@ def cbed(ceremony_template, tmp_path):
     bed.commit("work to bless")
     bed.make_packet()
     return bed
+
+
+def full_verifier_anchor(bed):
+    """Turn the scratch anchor into a signed full-census verifier control."""
+    sh("ssh-keygen", "-q", "-p", "-P", PASSPHRASE, "-N", "", "-f", str(bed.key),
+       cwd=bed.root, env=bed.env)
+    bed.sign = True
+    bed.write(".gitignore", "__pycache__/\n*.pyc\n")
+    bed.commit("ignore collection bytecode")
+    bed.write(MANIFEST, _dump(GM.produce(bed.repo)))
+    head = bed.commit("full verifier fixture manifest")
+    bed.git("update-ref", "refs/cairn/gate-anchor", head)
+    sh("ssh-keygen", "-q", "-p", "-P", "", "-N", PASSPHRASE, "-f", str(bed.key),
+       cwd=bed.root, env=bed.env)
+    bed.sign = False
+    return head
 
 
 HOOK = """
@@ -2006,3 +2026,285 @@ def test_the_record_checks_read_committed_objects_and_not_files_a_stage_one_run_
     template = cbed.repo / "bootstrap/reanchor-launcher.template.sh"
     template.write_text(template.read_text() + "# rewritten after stage 1\n")
     assert [run_page_command(cbed, c).stdout for c in commands] == before
+
+
+def test_prepare_and_run_verifier_binds_signed_prior_to_raw_candidate(cbed, tmp_path):
+    """The public preparation and verification verbs use raw P tools and exact C bytes."""
+    full_verifier_anchor(cbed)
+    evidence = tmp_path / "evidence"
+    fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
+                                 capture_output=True, text=True, check=True).stdout.split()[1]
+    prior = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
+    candidate = cbed.git("rev-parse", "HEAD").stdout.strip()
+    prepared = subprocess.run(
+        [sys.executable, str(REAL / "scripts/repin.py"), "prepare-verifier",
+         "--trusted-repo", str(cbed.repo), "--prior-anchor", prior,
+         "--candidate", candidate, "--trusted-ref", "refs/cairn/gate-anchor",
+         "--expected-fingerprint", fingerprint, "--evidence-dir", str(evidence)],
+        cwd=REAL, capture_output=True, text=True, check=False)
+    assert prepared.returncode == 0, (prepared.stdout, prepared.stderr)
+    packet = json.loads((evidence / "verifier-evidence.json").read_text())
+    assert packet["signer_fingerprint"] == packet["expected_fingerprint"] == fingerprint
+    assert packet["candidate"] == candidate
+    assert packet["verifier_sha256"] == hashlib.sha256(
+        (evidence / "prior/bootstrap/tests/_gate_manifest.py").read_bytes()).hexdigest()
+    checked = subprocess.run(
+        [sys.executable, str(REAL / "scripts/repin.py"), "verify-candidate",
+         "--evidence-dir", str(evidence), "--expected-fingerprint", fingerprint,
+         "--operator-confirms-key-away"], cwd=REAL, input="YES\n", capture_output=True,
+        text=True, check=False)
+    assert checked.returncode == 0, (checked.stdout, checked.stderr)
+    binding = json.loads((evidence / "verifier-report-binding.json").read_text())
+    assert binding["prior_anchor"] == prior and binding["candidate"] == candidate
+    assert binding["exit"] == 0 and binding["report_sha256"]
+    argv_line = next(line for line in checked.stdout.splitlines() if line.startswith("verifier argv "))
+    verifier_argv = json.loads(argv_line.removeprefix("verifier argv "))
+    assert verifier_argv[1:4] == ["-I", "-E", "-s"]
+    assert "--require-anchor" in verifier_argv and "--no-collect" not in verifier_argv
+    assert binding["collection_baseline_sha256"]
+    collection_raw = Path(binding["collection_path"]).read_bytes()
+    collection = json.loads(collection_raw)
+    semantic = (json.dumps({"node_ids": collection["node_ids"],
+                            "skip_xfail_marked": collection["skip_xfail_marked"],
+                            "exit": collection["exit"]}, indent=2, sort_keys=True) + "\n").encode()
+    assert binding["collection_result_sha256"] == hashlib.sha256(semantic).hexdigest()
+    assert binding["collection_node_count"] == len(collection["node_ids"]) > 0
+    direct_argv = [packet["python"], "-I", "-E", "-s",
+                   str(evidence / "prior/bootstrap/tests/_gate_manifest.py"), "verify",
+                   "--target-repo", packet["target"], "--manifest",
+                   str(evidence / "prior/gate_manifest.json"), "--anchor-ref", prior,
+                   "--require-anchor", "--trusted-repo", str(cbed.repo),
+                   "--trusted-ref", prior]
+    direct = subprocess.run(direct_argv, cwd="/",
+                            env={"HOME": "/nonexistent", "PATH": "/usr/bin:/bin", "LC_ALL": "C"},
+                            capture_output=True, text=True, check=False)
+    assert direct.returncode == binding["exit"] == 0
+    assert direct.stdout + direct.stderr == (evidence / "verifier-report.txt").read_text()
+
+
+def test_prior_verifier_refuses_wrong_independent_fingerprint_before_collection(cbed, tmp_path):
+    evidence = tmp_path / "evidence"
+    prior = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
+    candidate = cbed.git("rev-parse", "HEAD").stdout.strip()
+    wrong = "SHA256:" + "A" * 43
+    result = subprocess.run(
+        [sys.executable, str(REAL / "scripts/repin.py"), "prepare-verifier",
+         "--trusted-repo", str(cbed.repo), "--prior-anchor", prior,
+         "--candidate", candidate, "--trusted-ref", "refs/cairn/gate-anchor",
+         "--expected-fingerprint", wrong, "--evidence-dir", str(evidence)],
+        cwd=REAL, capture_output=True, text=True, check=False)
+    assert result.returncode == 2
+    assert "prior signature did not verify against the independent fingerprint" in result.stderr
+    assert not (evidence / "verifier-evidence.json").exists()
+
+
+@pytest.mark.parametrize("relative,needle", [
+    ("prior/bootstrap/tests/_gate_manifest.py", "prior verifier evidence changed at"),
+    ("verifier-observer.py", "collection observer differs from the reviewed preparation code"),
+])
+def test_prior_tool_or_observer_tamper_refuses_before_key_confirmation(cbed, tmp_path, relative, needle):
+    evidence = tmp_path / "evidence"
+    fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
+                                 capture_output=True, text=True, check=True).stdout.split()[1]
+    prior = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
+    candidate = cbed.git("rev-parse", "HEAD").stdout.strip()
+    prepared = subprocess.run(
+        [sys.executable, str(REAL / "scripts/repin.py"), "prepare-verifier",
+         "--trusted-repo", str(cbed.repo), "--prior-anchor", prior,
+         "--candidate", candidate, "--trusted-ref", "refs/cairn/gate-anchor",
+         "--expected-fingerprint", fingerprint, "--evidence-dir", str(evidence)],
+        cwd=REAL, capture_output=True, text=True, check=False)
+    assert prepared.returncode == 0, (prepared.stdout, prepared.stderr)
+    target = evidence / relative
+    target.write_bytes(target.read_bytes() + b"\n# tampered after preparation\n")
+    checked = subprocess.run(
+        [sys.executable, str(REAL / "scripts/repin.py"), "verify-candidate",
+         "--evidence-dir", str(evidence), "--expected-fingerprint", fingerprint,
+         "--operator-confirms-key-away"], cwd=REAL, input="NO\n", capture_output=True,
+        text=True, check=False)
+    assert checked.returncode == 2 and needle in checked.stderr
+    assert "Signing key away?" not in checked.stdout
+
+
+def test_prepared_candidate_tamper_refuses_before_key_confirmation(cbed, tmp_path):
+    evidence = tmp_path / "evidence"
+    fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
+                                 capture_output=True, text=True, check=True).stdout.split()[1]
+    prior = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
+    candidate = cbed.git("rev-parse", "HEAD").stdout.strip()
+    prepared = subprocess.run(
+        [sys.executable, str(REAL / "scripts/repin.py"), "prepare-verifier",
+         "--trusted-repo", str(cbed.repo), "--prior-anchor", prior,
+         "--candidate", candidate, "--trusted-ref", "refs/cairn/gate-anchor",
+         "--expected-fingerprint", fingerprint, "--evidence-dir", str(evidence)],
+        cwd=REAL, capture_output=True, text=True, check=False)
+    assert prepared.returncode == 0, (prepared.stdout, prepared.stderr)
+    target = Path(json.loads((evidence / "verifier-evidence.json").read_text())["target"])
+    changed = target / "bootstrap/tests/test_smoke.py"
+    changed.write_text(changed.read_text() + "\n# tampered after preparation\n")
+    checked = subprocess.run(
+        [sys.executable, str(REAL / "scripts/repin.py"), "verify-candidate",
+         "--evidence-dir", str(evidence), "--expected-fingerprint", fingerprint,
+         "--operator-confirms-key-away"], cwd=REAL, input="NO\n", capture_output=True,
+        text=True, check=False)
+    assert checked.returncode == 2
+    assert "worktree bytes differ from raw C object" in checked.stderr
+    assert "Signing key away?" not in checked.stdout
+
+
+def test_hold_dispositions_bind_every_exact_item_to_the_report(cbed, tmp_path):
+    full_verifier_anchor(cbed)
+    evidence = tmp_path / "evidence"
+    fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
+                                 capture_output=True, text=True, check=True).stdout.split()[1]
+    prior = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
+    damaged = cbed.read("bootstrap/tests/_gate_manifest.py") + "\n# reviewed candidate change\n"
+    cbed.write("bootstrap/tests/_gate_manifest.py", damaged)
+    candidate = cbed.commit("candidate changes prior verifier bytes")
+    prepared = subprocess.run(
+        [sys.executable, str(REAL / "scripts/repin.py"), "prepare-verifier",
+         "--trusted-repo", str(cbed.repo), "--prior-anchor", prior,
+         "--candidate", candidate, "--trusted-ref", "refs/cairn/gate-anchor",
+         "--expected-fingerprint", fingerprint, "--evidence-dir", str(evidence)],
+        cwd=REAL, capture_output=True, text=True, check=False)
+    assert prepared.returncode == 0, (prepared.stdout, prepared.stderr)
+    argv = [sys.executable, str(REAL / "scripts/repin.py"), "verify-candidate",
+            "--evidence-dir", str(evidence), "--expected-fingerprint", fingerprint,
+            "--operator-confirms-key-away"]
+    first = subprocess.run(argv, cwd=REAL, input="YES\n", capture_output=True,
+                           text=True, check=False)
+    assert first.returncode == 1
+    evidence_packet = json.loads((evidence / "verifier-evidence.json").read_text())
+    direct = subprocess.run(
+        [evidence_packet["python"], "-I", "-E", "-s",
+         str(evidence / "prior/bootstrap/tests/_gate_manifest.py"), "verify",
+         "--target-repo", evidence_packet["target"], "--manifest",
+         str(evidence / "prior/gate_manifest.json"), "--anchor-ref", prior,
+         "--require-anchor", "--trusted-repo", str(cbed.repo), "--trusted-ref", prior],
+        cwd="/", env={"HOME": "/nonexistent", "PATH": "/usr/bin:/bin", "LC_ALL": "C"},
+        capture_output=True, text=True, check=False)
+    assert direct.returncode == first.returncode
+    assert direct.stdout + direct.stderr == (evidence / "verifier-report.txt").read_text()
+    template = next(evidence.glob("verifier-dispositions-*.json"))
+    items = json.loads(template.read_text())
+    assert items["holds"] and any("FROZEN-MODIFIED: bootstrap/tests/_gate_manifest.py" in h
+                                  for h in items["holds"])
+    for item in items["items"]:
+        item["disposition"] = "proceed"
+        item["reason"] = "Reviewed intentional candidate change; Maintainer will decide at ceremony."
+    template.write_text(json.dumps(items, sort_keys=True))
+    approved_record = subprocess.run(argv + ["--dispositions", str(template)], cwd=REAL,
+                                     input="YES\n", capture_output=True, text=True, check=False)
+    assert approved_record.returncode == 0, (approved_record.stdout, approved_record.stderr)
+    assert "underlying verifier remains HOLD" in approved_record.stdout
+    items["report_sha256"] = "0" * 64
+    template.write_text(json.dumps(items, sort_keys=True))
+    stale = subprocess.run(argv + ["--dispositions", str(template)], cwd=REAL,
+                           input="YES\n", capture_output=True, text=True, check=False)
+    assert stale.returncode == 2
+    assert "stale or differs at report_sha256" in stale.stderr
+
+
+def test_verifier_binds_added_collection_nodes_as_ordinary_notes(cbed, tmp_path):
+    full_verifier_anchor(cbed)
+    evidence = tmp_path / "evidence"
+    fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
+                                 capture_output=True, text=True, check=True).stdout.split()[1]
+    prior = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
+    cbed.write("bootstrap/tests/test_added_ordinary.py", "def test_added_ordinary_node():\n    assert True\n")
+    candidate = cbed.commit("add ordinary test")
+    prepared = subprocess.run(
+        [sys.executable, str(REAL / "scripts/repin.py"), "prepare-verifier",
+         "--trusted-repo", str(cbed.repo), "--prior-anchor", prior,
+         "--candidate", candidate, "--trusted-ref", "refs/cairn/gate-anchor",
+         "--expected-fingerprint", fingerprint, "--evidence-dir", str(evidence)],
+        cwd=REAL, capture_output=True, text=True, check=False)
+    assert prepared.returncode == 0, (prepared.stdout, prepared.stderr)
+    checked = subprocess.run(
+        [sys.executable, str(REAL / "scripts/repin.py"), "verify-candidate",
+         "--evidence-dir", str(evidence), "--expected-fingerprint", fingerprint,
+         "--operator-confirms-key-away"], cwd=REAL, input="YES\n", capture_output=True,
+        text=True, check=False)
+    assert checked.returncode == 0, (checked.stdout, checked.stderr)
+    binding = json.loads((evidence / "verifier-report-binding.json").read_text())
+    collection = json.loads(Path(binding["collection_path"]).read_text())
+    assert "bootstrap/tests/test_added_ordinary.py::test_added_ordinary_node" in collection["node_ids"]
+    report = (evidence / "verifier-report.txt").read_text()
+    assert "COLLECTION-ADDED: bootstrap/tests/test_added_ordinary.py::test_added_ordinary_node" in report
+    assert binding["collection_node_count"] == len(collection["node_ids"])
+
+
+def test_verifier_binds_new_skip_marker_as_a_hold(cbed, tmp_path):
+    full_verifier_anchor(cbed)
+    evidence = tmp_path / "evidence"
+    fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
+                                 capture_output=True, text=True, check=True).stdout.split()[1]
+    prior = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
+    cbed.write("bootstrap/tests/test_smoke.py",
+               "import pytest\n@pytest.mark.skip(reason='new protected marker')\ndef test_smoke():\n    assert True\n")
+    candidate = cbed.commit("add protected skip marker")
+    prepared = subprocess.run(
+        [sys.executable, str(REAL / "scripts/repin.py"), "prepare-verifier",
+         "--trusted-repo", str(cbed.repo), "--prior-anchor", prior,
+         "--candidate", candidate, "--trusted-ref", "refs/cairn/gate-anchor",
+         "--expected-fingerprint", fingerprint, "--evidence-dir", str(evidence)],
+        cwd=REAL, capture_output=True, text=True, check=False)
+    assert prepared.returncode == 0, (prepared.stdout, prepared.stderr)
+    checked = subprocess.run(
+        [sys.executable, str(REAL / "scripts/repin.py"), "verify-candidate",
+         "--evidence-dir", str(evidence), "--expected-fingerprint", fingerprint,
+         "--operator-confirms-key-away"], cwd=REAL, input="YES\n", capture_output=True,
+        text=True, check=False)
+    assert checked.returncode == 1
+    binding = json.loads((evidence / "verifier-report-binding.json").read_text())
+    collection = json.loads(Path(binding["collection_path"]).read_text())
+    assert "bootstrap/tests/test_smoke.py::test_smoke" in collection["skip_xfail_marked"]
+    report = (evidence / "verifier-report.txt").read_text()
+    assert "SKIP-XFAIL-NEW: bootstrap/tests/test_smoke.py::test_smoke" in report
+
+
+def test_collection_capture_rejects_stale_malformed_duplicate_and_error_records():
+    valid = {"nonce": "fresh", "prior_anchor": "P", "candidate": "C",
+             "target_repo": "/target", "call_count": 1, "exit": 0,
+             "verifier_exit": 0, "node_ids": ["test_one"], "skip_xfail_marked": []}
+    kwargs = dict(nonce="fresh", prior="P", candidate="C", target="/target", verifier_exit=0)
+    assert REPIN._validate_collection_capture(json.dumps(valid).encode(), **kwargs) == valid
+    invalid = []
+    for key, value in (("nonce", "stale"), ("call_count", 2), ("exit", 2),
+                       ("verifier_exit", 2), ("node_ids", ["test_one", "test_one"]),
+                       ("skip_xfail_marked", ["other"]), ("target_repo", "/elsewhere")):
+        invalid.append(json.dumps(dict(valid, **{key: value})).encode())
+    invalid.append(b'{"nonce":"fresh","nonce":"stale"}')
+    for raw in invalid:
+        with pytest.raises((REPIN.Refuse, ValueError)):
+            REPIN._validate_collection_capture(raw, **kwargs)
+
+
+@pytest.mark.parametrize("mode", ["multiple_calls", "collection_error", "stale_path"])
+def test_collection_observer_refuses_replay_errors_and_multiple_calls(tmp_path, mode):
+    observer = tmp_path / "observer.py"
+    observer.write_text(REPIN.OBSERVER_SOURCE)
+    tool = tmp_path / "fake_prior_verifier.py"
+    if mode == "multiple_calls":
+        tool.write_text("def _collect(repo): return (['test_one'], [], 0)\n"
+                        "def main(): _collect('target'); _collect('target'); return 0\n")
+    elif mode == "collection_error":
+        tool.write_text("def _collect(repo): raise RuntimeError('collection failed')\n"
+                        "def main(): _collect('target'); return 0\n")
+    else:
+        tool.write_text("def _collect(repo): return (['test_one'], [], 0)\n"
+                        "def main(): _collect('target'); return 0\n")
+    capture = tmp_path / "capture.json"
+    if mode == "stale_path":
+        capture.write_text('{"old":"capture"}')
+    result = subprocess.run([sys.executable, "-I", "-E", "-s", str(observer), str(capture),
+                             "fresh", "P", "C", str(tool), "verify"],
+                            cwd="/", env={"HOME": "/nonexistent", "PATH": "/usr/bin:/bin",
+                                          "LC_ALL": "C"}, capture_output=True, text=True)
+    assert result.returncode != 0
+    if mode == "multiple_calls":
+        assert result.returncode == 81 and not capture.exists()
+    elif mode == "collection_error":
+        assert "collection failed" in result.stderr and not capture.exists()
+    else:
+        assert capture.read_text() == '{"old":"capture"}'

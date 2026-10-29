@@ -1,52 +1,20 @@
 # Supervised re-anchor runbook (differential-oracle gate)
 
-> **Maintainer-only.** Agents build the packet and read the change; **you**
-> compare, answer and sign. No agent signs, loads your key or pushes. The page
-> ends at the marker line; below it is reference, except Phase 5, the push, which
-> is the last step and is yours.
+> **Maintainer-only.** Agents build the packet and read the change; **you** compare, answer and sign. No agent signs, loads your key or pushes. The page ends at the marker; below it is reference, except Phase 5, the push, which is the last step and is yours.
 
-**What your yes protects.** Against honest agent mistakes: the anchor moves only
-to the commit a fresh reader read. It does **not** protect against code running
-as you, such as a malicious local agent or the candidate's own tests, which stage
-1 runs on this machine: it can fool every comparison here and leave files that
-stage 2 loads while you type the key's passphrase. H below catches a change to two
-files, not Python's library folder or your tools.
+**What your yes protects.** Against honest agent mistakes: the anchor moves only to the commit a fresh reader read. It does **not** protect against code running as you, such as a malicious local agent or the candidate's own tests; stage 1 can fool every comparison here and leave files that stage 2 loads while you type the key's passphrase. H below catches a change to two files, not Python's library folder or your tools.
 
-### Installing the protected-test boundary
+### Trust-boundary state
 
-The current signed anchor retains the broad frozen policy. The first reviewed
-bridge candidate carries the approved roster with the checker in dormant mode:
-its first supervised transition freezes that roster but keeps the broad
-manifest. A second, separately reviewed candidate changes the checker to active
-mode. Only a second Maintainer-authorized ceremony from the signed bridge anchor
-can install the narrower manifest. For each transition, use its own packet,
-reader record, candidate, comparisons and authorization; complete the checks on
-this page, including E7, for both. Do not treat the proposed roster or a test
-run as installation.
+The current signed anchor retains the broad frozen policy. The dormant-roster and active-checker bridges are separate reviewed ceremonies, each with its own candidate, packet, reader record, E5/E7 checks and Maintainer authorization; neither authorizes the other. See the reference section for details.
 
-After that installation, the signed prior anchor supplies the roster. The gate
-manifest verifier freezes named security and trust tests, records the full
-pytest collection, and holds on lost or newly skipped protected nodes. Ordinary
-test changes and marker changes are reported as notes. New trust tests need a
-reviewed admission and re-anchor before they become protected. Ordinary test
-code can still influence protected collection and execution.
-
-The launcher runs the candidate's producer and re-derives its static fields;
-it does not run the prior-manifest verifier. The separate verifier command in
-step 2 compares the candidate against the prior signed manifest and performs
-full collection. `repin`'s drift display is static and does not replace it.
+After installation, signed P supplies the roster; named security/trust tests are protected and ordinary changes remain notes. The launcher does not run the prior-manifest verifier; Step 2 does full collection. Candidate code can influence both.
 
 ### Prerequisites
-The instantiated launcher and the authorization packet (from the builder), your values file, your
-ceremony key (in no agent), and the candidate ref `$CAND`, whose tip commit is the reader's record,
-`dev/ceremony-record.md`. Set `REV` to its `read-commit` line (R0 prints it). Make the values file
-once: copy `bootstrap/reanchor-values.example` outside the repository, naming each tool by its real
-file, never a link. It goes stale, and that is not a malfunction: a toolchain upgrade breaks it, the
-refusal is correct: fix the path, run `--validate`.
+Have the builder's launcher and packet, a key kept out of agents, and a values file copied from `bootstrap/reanchor-values.example` with real executable paths. Set `$CAND` to the reader-record tip and `$REV` to its `read-commit`; stale values require repair and `--validate`.
 
 ### 1. Before stage 1: what was read (no candidate code has run yet)
-Each result must equal what is said; any difference: stop. `g` is git without
-replace entries, hooks, filters or a pager, and `L` the launcher, each in an empty environment.
+Each result must match; otherwise stop. `g` is sterile Git and `L` the launcher, both run in an empty environment.
 ```
 g() { env -i HOME=/nonexistent GIT_NO_LAZY_FETCH=1 <git> --no-pager --no-replace-objects -c core.useReplaceRefs=false -c core.hooksPath=/dev/null -c core.fsmonitor=false -C <checkout> "$@"; }
 L() { env -i HOME=<home> PATH=/usr/bin:/bin TERM="$TERM" LANG=C /bin/sh <launcher> <packet> <values> "$@"; }
@@ -71,36 +39,11 @@ ssh-add -l; SSH_AUTH_SOCK=$(launchctl getenv SSH_AUTH_SOCK) ssh-add -l
 
 ### 2. Stage 1, with no key
 
-First run the prior verifier with the key away. The builder prepares a
-separate clean target at the exact committed candidate, a verifier and manifest
-from the known signature-verified prior anchor, and **one ready-to-run command**
-with all paths and commit IDs filled in. The independent reader checks the
-verifier and manifest against the prior anchor's raw objects, checks the target
-against the candidate, and records the hashes and command for you. The builder
-also supplies the hash commands. Compare their results with the reader's record;
-if they differ, stop. Run the supplied verifier command; you need not construct
-its paths or Git commands yourself.
+Use the maintained `repin prepare-verifier` and `repin verify-candidate` commands described in the reference section below. The preparer defaults to installed P and committed C, takes the independently trusted signer fingerprint, prepares the hashes and clean target, and does not act as authority. The independent reader checks P provenance and the exact P/C bytes before collection.
 
-For the builder and reader, the prepared command must invoke the prior anchor's
-`_gate_manifest.py verify` using the canonical Python with pytest installed,
-with `--target-repo` set to the committed candidate, `--manifest` set to the
-prior anchor's extracted manifest, `--anchor-ref` and `--trusted-ref` set to
-that prior anchor's full commit ID, `--trusted-repo` set to the verified Git
-repository, and `--require-anchor`. Do not add `--no-collect`: the command must
-collect the full candidate suite. Verify the target is clean and matches the
-candidate's committed bytes before handing it over. Use an empty environment
-with the required `HOME` and `PATH`, and Python's `-E -s` options. The command
-imports candidate test code, so it must run with the key away.
+The verifier runs P's full `_gate_manifest.py verify` with `-I -E -s`, an empty environment, immutable P for both anchor and trusted refs, `--require-anchor`, and no `--no-collect`. It requires your `YES` confirmation that the signing key is away. Candidate code executes during collection; these checks do not contain that code or establish host isolation.
 
-A nonzero exit is a HOLD. Stop. The builder and reader prepare a grouped,
-reviewable disposition naming every changed or lost protected file, node and
-marker, the source plan and commit, and any unexplained delta. The Maintainer
-may decide a bounded batch, but each item needs an explicit disposition under
-the existing ceremony. A reviewed intentional change is still a HOLD; a new
-or unexplained item stops the ceremony. Do not silently bypass one. Before the narrow boundary is installed, the prior broad
-policy applies; afterward ordinary changes are notes. This command is a
-human-run check, not an automatic launcher step. The candidate can influence
-collection and execute code in the collection process.
+A HOLD remains a HOLD. The command lists every exact protected HOLD and ordinary note. A human may record a bounded `proceed`, `stop` or `defer` disposition with a reason; a fresh full run refuses if P, C, report, collection or displayed items change. That record does not clear the HOLD or authorize signing; the existing ceremony's human approval remains required. New or unexplained HOLDs stop unless the Maintainer decides under the existing ceremony. The launcher does not run this verifier automatically.
 
 Then run the launcher:
 
@@ -125,17 +68,13 @@ ssh-keygen -lf <key.pub>
 # E6  equals the report's path for that tool, for every tool in your values file
 readlink -f "$(command -v <tool>)"
 ```
-Just before stage 2 repeat E1, E6, H and K: nothing may differ from step 1. Check
-`ps -axo pid,command` for anything stage 1 left running (a look, not proof).
-Stage 2 asks for the passphrase once. Do not `ssh-add` the key. Pass E3's digest:
+Before stage 2 repeat E1, E6, H and K: nothing may differ from step 1; check `ssh-add -l` and inspect `ps -axo pid,command` for leftover stage-1 processes (a look, not proof). Stage 2 asks once for the passphrase; Do not `ssh-add` the key. Pass E3's digest:
 ```
 env -i HOME=<home> PATH=/usr/bin:/bin TERM="$TERM" LANG=C /bin/sh <launcher> <packet> <values> $CAND --stage2 <digest>
 # V   good: exit 0 and `Good "git" signature for <name> with` your key's fingerprint (E4); else no push
 g -c gpg.format=ssh -c gpg.ssh.program=/usr/bin/ssh-keygen -c gpg.program=/usr/bin/false -c gpg.openpgp.program=/usr/bin/false -c gpg.x509.program=/usr/bin/false -c gpg.ssh.allowedSignersFile=<checkout>/dev/.cairn/allowed_signers verify-commit refs/cairn/gate-anchor
 ```
-Bad is any `error`, `No principal matched`, another fingerprint, a non-zero exit
-or no output: do not push. Then publish both refs in one atomic push (Phase 5, below). Nothing in
-this page calls `_gate_reanchor.py promote`; it stays callable.
+Bad is any `error`, `No principal matched`, another fingerprint, a non-zero exit or no output: do not push. Publishing both refs atomically is the Maintainer's separate Phase 5 step. Nothing in this page calls `_gate_reanchor.py promote`.
 <!-- end of page -->
 
 <!-- `dev/.cairn/trusted-activation.yml` and `dev/.cairn/promotion-authorization.yml`
@@ -143,6 +82,34 @@ this page calls `_gate_reanchor.py promote`; it stays callable.
      re-anchor flow creates them.  Their claim-check exemption moved to
      dev/.cairn/claim-check-allow.json on 2026-08-27; this note names them so a
      reader still learns why the paths do not resolve. -->
+
+## Prior verifier preparation
+
+The short Stage 1 procedure uses these maintained entry points. Run preparation from the committed candidate checkout, with a new evidence-folder path whose parent already exists. The script verifies its own bytes equal `scripts/repin.py` at C, authenticates P's signed commit against the independently supplied fingerprint, and reads P's manifest and tool dependencies as raw objects. The prior manifest's allowed-signers file is verification input, never the sole trust root. The reader independently checks the expected signer source, P's signature and reachability, all emitted hashes, and the C target before collection.
+
+```sh
+python scripts/repin.py prepare-verifier \
+  --trusted-repo <trusted-checkout> \
+  --evidence-dir <new-evidence-folder> \
+  --expected-fingerprint <independently-trusted-SHA256-fingerprint>
+```
+
+P defaults to `refs/cairn/gate-anchor`; C defaults to committed `HEAD`. The command creates a no-hardlink scratch clone at C and checks every tracked worktree byte against the raw C object, refusing symlinks, submodules, changed HEAD or a dirty tree. It extracts `_gate_manifest.py`, `_gate_preflight.py`, the manifest and the verifier/scanner dependency closure from P. It prints P, C, signer, preparer, verifier, observer and manifest digests. The preparer is candidate code under review, not authenticated authority.
+
+The independent reader verifies the displayed P signer fingerprint against an independent trust source, confirms that fingerprint matches the verified signed commit, checks the P manifest and every extracted dependency against raw P objects, and checks the scratch target against exact C. Stop on any disagreement. Then run:
+
+```sh
+python scripts/repin.py verify-candidate \
+  --evidence-dir <prepared-evidence-folder> \
+  --expected-fingerprint <same-independently-trusted-SHA256-fingerprint> \
+  --operator-confirms-key-away
+```
+
+This invokes P's `_gate_manifest.py` verifier through a small observer stored in the evidence folder. The observer's exact source hash is separate from the P tool hash and is part of the report binding; the independent reader checks it. The observer imports no candidate helper, calls P's original `_collect` once with the same target, records its returned node IDs and skip/xfail IDs, and returns that result unchanged. It writes a nonce-bound capture exclusively. Missing, malformed, duplicate, repeated or mismatched data refuses. The command checks the report's collection deltas against the captured collection and binds P, C, verifier, manifest, observer, report, collection, HOLDs and ordinary notes.
+
+Before collection, the helper prints its command and asks you to type `YES` confirming the signing key is away. It invokes Python `-I -E -s` with `HOME=/nonexistent`, `PATH=/usr/bin:/bin`, and `LC_ALL=C`; P receives the verified external trusted repository, its full commit ID as both `--anchor-ref` and `--trusted-ref`, `--require-anchor`, and no `--no-collect`. The verifier process and target are rechecked after collection. Candidate tests can execute code on this machine and can influence the process; the helper does not claim containment.
+
+If the P verifier returns a HOLD, the first run writes a `verifier-dispositions-<nonce>.json` template with every exact HOLD. Fill every row with `proceed`, `stop` or `defer` and a specific reason. Then rerun the full command with `--dispositions <that-file>`. Identical P/C/report/collection evidence can reuse the disposition; changed report, collection, tool bytes or items require fresh review. A complete disposition record records a human choice but does not clear the verifier's HOLD, waive it automatically or authorize signing. The Maintainer's later ceremony approval still controls. A verifier error, missing collection, malformed capture, failed raw-byte check, new unexplained HOLD or changed evidence is a stop.
 
 ## The first ceremony
 
