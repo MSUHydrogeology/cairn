@@ -68,6 +68,7 @@ from __future__ import annotations
 import argparse
 import datetime as _dt
 import json
+import locale
 import os
 import re
 import secrets
@@ -217,6 +218,21 @@ def encode_display(value: str) -> str:
         else:
             out.append(char)
     return "".join(out)
+
+
+def _decode_child_output(value: bytes | str) -> str:
+    """Decode a captured child stream like text-mode subprocess, without newline conversion."""
+    if isinstance(value, str):
+        return value
+    return value.decode(locale.getencoding(), errors="strict")
+
+
+def _encode_child_output(value: str, *, terminate: bool = False) -> str:
+    """Encode child text while reserving report line breaks to the parent."""
+    framed = "\n".join(encode_display(part) for part in value.split("\n"))
+    if terminate and framed and not framed.endswith("\n"):
+        framed += "\n"
+    return framed
 
 
 #: A handoff lease is considered *expired* after this many seconds without a
@@ -1789,12 +1805,12 @@ def _prune_intents(root: Path, interpreter: str, days: int, *,
         argv.append("--dry-run")
     try:
         proc = subprocess.run(
-            argv, cwd=str(root), capture_output=True, text=True, check=False,
+            argv, cwd=str(root), capture_output=True, check=False,
             env=_git_env(),
         )
-        sys.stdout.write(proc.stdout)
+        sys.stdout.write(_encode_child_output(_decode_child_output(proc.stdout), terminate=True))
         if proc.returncode != 0 and proc.stderr:
-            _warn(proc.stderr.strip())
+            _warn(_encode_child_output(_decode_child_output(proc.stderr).strip()))
     except OSError as exc:  # pragma: no cover -- defensive
         _warn(f"intent prune failed to run: {encode_display(str(exc))}")
 
@@ -1822,13 +1838,12 @@ def _surface_intents(root: Path, interpreter: str) -> None:
             [interpreter, str(intent_tool), "list"],
             cwd=str(root),
             capture_output=True,
-            text=True,
             check=False,
             env=_git_env(),
         )
-        sys.stdout.write(proc.stdout)
+        sys.stdout.write(_encode_child_output(_decode_child_output(proc.stdout), terminate=True))
         if proc.returncode != 0 and proc.stderr:
-            _warn(f"intent list reported: {proc.stderr.strip()}")
+            _warn(f"intent list reported: {_encode_child_output(_decode_child_output(proc.stderr).strip())}")
     except OSError as exc:
         _warn(f"could not run intent.py list: {encode_display(str(exc))}")
 
@@ -1856,14 +1871,13 @@ def _run_evolution_infer(root: Path, interpreter: str) -> None:
             [interpreter, str(tool)],
             cwd=str(root),
             capture_output=True,
-            text=True,
             check=False,
             env=_git_env(),
         )
         if proc.stdout:
-            sys.stdout.write(proc.stdout)
+            sys.stdout.write(_encode_child_output(_decode_child_output(proc.stdout), terminate=True))
         if proc.returncode != 0 and proc.stderr:
-            _warn(f"evolution_infer reported: {proc.stderr.strip()}")
+            _warn(f"evolution_infer reported: {_encode_child_output(_decode_child_output(proc.stderr).strip())}")
     except OSError as exc:
         _warn(f"could not run evolution_infer.py: {encode_display(str(exc))}")
 

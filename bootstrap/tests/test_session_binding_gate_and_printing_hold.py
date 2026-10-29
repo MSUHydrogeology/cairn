@@ -628,3 +628,99 @@ def test_a_value_the_project_chooses_is_printed_encoded(site, tmp_path, monkeypa
     assert text, "the site printed nothing, so the test did not reach it"
     _assert_inert(text)
     assert "\\u3164" in text
+
+
+_CHILD_STDOUT = (
+    b"alpha\nbeta\\x1b\x1b]8;;https://example.test\x07link\x1b]8;;"
+    b"\rbare\r\nlast\xc2\x9b\xe2\x80\xae\xe3\x85\xa4\xe2\x80\x8b"
+)
+_CHILD_STDERR = b"error\r\nnext\xc2\x9b"
+
+
+def _child_tool(root: Path, *, returncode: int) -> Path:
+    tool = root / "tools" / "intent.py"
+    tool.parent.mkdir(parents=True, exist_ok=True)
+    tool.write_text(
+        "import sys\n"
+        f"sys.stdout.buffer.write(bytes.fromhex('{_CHILD_STDOUT.hex()}'))\n"
+        f"sys.stderr.buffer.write(bytes.fromhex('{_CHILD_STDERR.hex()}'))\n"
+        f"raise SystemExit({returncode})\n",
+        encoding="utf-8",
+    )
+    return tool
+
+
+def _assert_child_display_contract(output: str) -> None:
+    assert "alpha\nbeta\\x5cx1b" in output
+    assert "\\x1b]8;;https://example.test\\x07link\\x1b]8;;" in output
+    assert "\\x0dbare\\x0d\nlast" in output
+    assert output.endswith("last\\x9b\\u202e\\u3164\\u200b\n")
+    assert "\r" not in output and "\x1b" not in output
+
+
+@pytest.mark.parametrize("helper", ["prune", "surface", "evolution"])
+@pytest.mark.parametrize("returncode", [0, 1])
+def test_child_streams_are_framed_and_encoded_through_real_subprocess(
+    helper, returncode, tmp_path, monkeypatch, capsys
+):
+    root = tmp_path.resolve() / "child-project"
+    root.mkdir()
+    tool = _child_tool(root, returncode=returncode)
+    monkeypatch.setattr(lifecycle, "_sibling_tool", lambda name: tool)
+    # prune resolves from root first; the two other helpers use the sibling tool.
+    if helper == "prune":
+        lifecycle._prune_intents(root, sys.executable, 30, dry_run=True)
+    elif helper == "surface":
+        lifecycle._surface_intents(root, sys.executable)
+    else:
+        lifecycle._run_evolution_infer(root, sys.executable)
+    print("parent-after-child")
+    captured = capsys.readouterr()
+    assert captured.out.endswith("parent-after-child\n")
+    child_out, parent = captured.out.rsplit("parent-after-child\n", 1)
+    assert parent == ""
+    assert child_out.endswith("last\\x9b\\u202e\\u3164\\u200b\n")
+    if helper != "evolution":
+        assert child_out.startswith("\n")  # the helper's section heading precedes its stream
+    _assert_child_display_contract(child_out)
+    assert ("error\\x0d\nnext\\x9b" in captured.err) is (returncode != 0)
+    assert "\\x9b" not in captured.err if returncode == 0 else True
+
+
+@pytest.mark.parametrize("helper", ["prune", "surface", "evolution"])
+def test_raw_child_write_mutant_is_caught_by_real_child_contract(
+    helper, tmp_path, monkeypatch, capsys
+):
+    root = tmp_path.resolve() / "mutant-project"
+    root.mkdir()
+    tool = _child_tool(root, returncode=0)
+    monkeypatch.setattr(lifecycle, "_sibling_tool", lambda name: tool)
+    monkeypatch.setattr(lifecycle, "_encode_child_output", lambda value, **kwargs: value)
+    if helper == "prune":
+        lifecycle._prune_intents(root, sys.executable, 30, dry_run=True)
+    elif helper == "surface":
+        lifecycle._surface_intents(root, sys.executable)
+    else:
+        lifecycle._run_evolution_infer(root, sys.executable)
+    output = capsys.readouterr().out
+    with pytest.raises(AssertionError):
+        _assert_child_display_contract(output)
+
+
+@pytest.mark.parametrize("helper", ["prune", "surface", "evolution"])
+def test_malformed_child_bytes_keep_strict_decode_failure(
+    helper, tmp_path, monkeypatch
+):
+    root = tmp_path.resolve() / "malformed-project"
+    root.mkdir()
+    tool = root / "tools" / "intent.py"
+    tool.parent.mkdir()
+    tool.write_text("import sys\nsys.stdout.buffer.write(b'\\xff')\n", encoding="utf-8")
+    monkeypatch.setattr(lifecycle, "_sibling_tool", lambda name: tool)
+    with pytest.raises(UnicodeDecodeError):
+        if helper == "prune":
+            lifecycle._prune_intents(root, sys.executable, 30, dry_run=True)
+        elif helper == "surface":
+            lifecycle._surface_intents(root, sys.executable)
+        else:
+            lifecycle._run_evolution_infer(root, sys.executable)
