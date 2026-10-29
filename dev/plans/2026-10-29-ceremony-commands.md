@@ -167,3 +167,42 @@ C1 adds and documents the prior-verifier entrypoints, while retaining the workin
 **Boundary A mode**: bounded for C1 preparation and full-verifier evidence. `bootstrap/tests/test_repin_ceremony.py -q`: 142 passed in 459.17s. This includes direct P CLI comparison for pass and HOLD, independent wrong-fingerprint refusal, P/observer/target tamper refusal, stale disposition refusal, ordinary collection additions, protected marker HOLDs, and stale/malformed/multiple/error capture controls. `bootstrap/tests/test_repin.py::test_a_tracked_symlink_or_submodule_refuses_before_import`, `::test_a_symlinked_target_or_parent_is_not_followed`, `::test_the_apply_step_makes_no_commit_and_stops`: 4 passed. Runbook/page/parser nodes: 8 passed. Additional C1 controls: 10 passed. `py_compile`, `claim_check`, `git diff --check`, `check_cairn.py` (187 Markdown), `link_check.py` (187 Markdown), `sync_doc_snippets.py --check` (423 docs), and neutrality (0 failures) passed.
 
 One earlier normal sandbox run reported 133 passed and 5 failures: four stale wording assertions were corrected without removing their safety semantics; the stage-two fixture failed to supply its dummy passphrase. That stage-two node also failed from an archived pre-C1 `HEAD` under the same sandbox, passed when rerun with host PTY/signing access, and passed within the final 142-test family run. A separate temporary encrypted-key check confirmed local signing capability. This is retained as evidence, not an outstanding C1 failure. No full-suite or `CAIRN_FULL_SUITE` run was made. C2, wide Boundary B on the final SHA, independent code/Security Reviews, and C4 remain open.
+
+## C2 scratch-anchor probe -- Codex (GPT-6.1 Sol) -- 2026-10-29
+
+This probe checks existing public ceremony paths using the test fixture's
+throwaway signed anchor and key. The fixture creates a scratch repository under
+pytest's temporary directory. Its ref movement cannot change the shared
+checkout. This does not compare or reconcile P443 history.
+
+**Tested commit**: `83444e568ea215f6e6b8dc7451a15b2f2a399590`. No implementation
+bytes changed for this probe; it is progress evidence, not C2 completion or
+Boundary B.
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+(Python 3.13.13).
+
+**Pre-run state**: no tracked changes; unrelated untracked `.claude/` and
+`dev/measurement/collision_log.md` were present and preserved. **Post-run
+state**: same tracked and untracked state.
+
+| Command | Exit | Outcome | Elapsed |
+|---|---:|---|---:|
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_repin_ceremony.py::test_a_full_ceremony_signs_once_with_the_typed_passphrase bootstrap/tests/test_repin_ceremony.py::test_transition_packet_uses_signed_prior_authority_and_preserves_ordinary_refusal` | 0 | 2 passed | 10.90 s |
+
+The first node signs and advances only the fixture's scratch anchor. The second
+confirms ordinary packet refusal and transition packet/reader-input preparation
+against a signed fixture anchor; it does not sign or install a transition. No
+real key, live ref, push, old-HOLD disposition, bridge installation, full-suite
+run, or certification was performed. The runbook still requires the separate
+bridge paths, and the newer v0.6 forward-baseline direction still needs a
+lifecycle-aligned scope decision before further transition-specific code.
+
+**Applicable prose gates**: `claim_check.py` passed for this plan; `link_check.py`
+scanned 192 Markdown files with no issues (84 external links were not probed);
+`sync_doc_snippets.py --check` scanned 428 documents with no drift; neutrality
+reported 0 failures and 43 information rows. `check_cairn.py` exited 1 for an
+imperative-override phrase at line 100 of the unrelated
+`dev/proposals/2026-10-29-codex-dispatcher-content-scan.md`; I left that file
+untouched. Searching `bootstrap/tests` found no test reading this plan; the
+same search matched this plan as its positive control.
