@@ -78,3 +78,67 @@ Assurance path: high-assurance
 **Covered:** claims and completeness (1,3): runbook verifier and source contract; production path and refusal (2,4): `scripts/repin.py:971`, `:1063`, runbook E5/E7 and F1–F3; cross-document and drift (5,6): plan, source contract, trust plan S3 and runbook; lifecycle (7): plan C3–C4 and trust plan C4–C5; scope/domain (8): source contract and plan Scope delta, no scientific result; satisfiers (9): F1–F3. Reuse searches `rg 'repin|reanchor|scan-digest' scripts bootstrap` and `rg 'def (boot|run_ceremony|build_packet|check_stop_records)|commit|delet' scripts/repin.py` have known matches.
 
 **Not covered / low confidence:** review is source inspection only; no tests, mutations, signing or ref changes. This pass does not discharge Internal Security Review.
+
+## Plan review -- Codex (gpt-6.1-sol, high), Security Reviewer -- 2026-10-29
+
+```
+Reviewed commit: df4f9ac5290fae5260db52c9016ae918be7c2f68
+Target: opening plan and inherited trust-ceremony contract
+Prior findings: none for this obligation
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+
+**Foundations**
+
+1. **Should this happen as framed?** The plan retains both separately authorized bridges, independent E5/E7 and human signing, but must identify the full verifier and bind reusable approvals to their evidence. -- C1–C4; `bootstrap/REANCHOR_RUNBOOK.md:74`.
+2. **Best alternative.** Extend the existing raw-object extraction, staged launcher and prior tools; preserve ordinary boot refusal and add a reviewed transition path rather than bypassing it. This delivers the accepted outcomes. -- `scripts/repin.py:273`; `bootstrap/reanchor-launcher.template.sh:704`.
+3. **What would show it wrong.** Candidate verifier substitution, a replayed approval covering a new HOLD, or signing after stale evidence would defeat the trust boundary. -- `bootstrap/tests/_gate_manifest.py:666`; `bootstrap/tests/test_repin_ceremony.py:381`.
+
+The strongest design choice is keeping signed prior authority separate from
+candidate evidence and retaining two distinct bridge ceremonies. C1 explicitly
+requires full collection before signing with the key away; Scope avoids making
+installation a prerequisite for its own verifier. Host-capable candidate tests
+remain an admitted limitation, not an isolation claim.
+
+**S1 — Blocking: authenticate the verifier that actually checks HOLDs.** C1
+names P's `_gate_preflight.py`, the E7 scanner, but omits P's
+`_gate_manifest.py`, which performs the prior-manifest verification. Authenticating
+one does not authenticate the other. **Satisfier:** name and independently check
+both tools and their required dependency bytes from immutable signature-verified
+P, together with P's manifest. Require the prepared public command to invoke
+P's manifest verifier on a separately clean, exact C target, with immutable P
+for both trusted/anchor references, the verified trusted repository,
+`--require-anchor`, full collection and the runbook's empty environment and
+Python `-E -s`. Test substituted verifier/manifest and omitted collection or
+anchor settings through that command with passing controls; preserve independent
+E7. This agrees with ordinary F1. -- C1; `bootstrap/REANCHOR_RUNBOOK.md:74`;
+`bootstrap/tests/_gate_manifest.py:666`.
+
+**S2 — Blocking: specify stale-evidence and recovery refusals.** “Mutation of
+… disposition” does not establish what a reusable approval authorizes or whether
+rerunning after a stop can reuse it. **Satisfier:** map public-entry controls
+proving dispositions name exact displayed items and bind P, C and the verified
+report/collection; changed evidence or a new/unexplained HOLD requires fresh
+review and disposition before signing. Map packet, launcher and package/report
+substitution between stages, and interrupted/fresh-package reruns, to explicit
+refusal cases. Preserve raw-object extraction, path containment and symlink
+refusal in preparation and demonstrate those guards with controls. Reuse the
+existing package-rewrite, launcher-revalidation and safe-extraction cases;
+these detect mistakes without claiming containment against code running as the
+operator. -- C1–C3; `scripts/repin.py:168`;
+`bootstrap/tests/test_repin_ceremony.py:381`, `:1054`;
+`bootstrap/tests/test_repin.py:324`, `:953`.
+
+**Covered:** claims/reuse/drift (1,5,6): committed `git grep` for `boot`,
+`verify`, `scan-digest`, cited prior tools and runbook; public paths,
+completeness/refusal (2–4): cited launcher, verifier and tampering tests;
+lifecycle (7): C4 and runbook's two bridges; scope/domain (8): accepted source
+contract and trust-plan installation boundary; satisfiers (9): S1–S2.
+**Not covered / low confidence:** source inspection only; no implementation,
+tests, mutations, actual signing, ref movement, certification or push performed.
+This review authorizes no ceremony and claims no protection from same-user
+compromise.
