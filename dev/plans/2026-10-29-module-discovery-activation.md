@@ -279,3 +279,27 @@ S1 accepted. Only the complete unchanged placeholder or an empty slot may be rep
 **Evidence and sweep**: Read the committed repair and its public regression alongside the appended response and final-candidate verification. The exact comparison removes the substring-based deletion authority; the refusal occurs before inventory or planning writes. The latest record reports 814 mapped passes under Python 3.13.13, including security lint and the new regression, with no skips, and records public and manual-copy paths. Those author measurements were inspected rather than rerun. No new scope or mechanism is introduced; no additional defects were found in this repair.
 
 **Coverage / gaps**: This pass clears the previously open Security S1 obligation only, relying on the preceding Security pass for unchanged paths. No broad suite, old-anchor check, concurrent filesystem-race probe or full module-task audit was run. Whole-tree certification remains pending and ordinary review remains separate.
+
+## Code review -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+**Reviewed commit**: 54783c0f (implementation 8ca130c6)
+**Obligation**: Internal revision review
+**Findings**: no new defects found
+**Bounding**: ACCEPTED
+
+**Foundations**:
+
+1. **Does it do what it claims?** The revision refuses a populated placeholder before replacing it, and unknown task identities now produce actionable conflicts; the final verification records the mapped families and public paths at the candidate -- `bootstrap/_scaffold/install.py:1265`, `bootstrap/_scaffold/install.py:1452`, verification above.
+2. **Best alternative.** Retaining the existing reconciliation path with conservative refusal is simpler than inferring whether edited placeholder content is disposable -- `bootstrap/_scaffold/install.py:1452`.
+3. **What would show it wrong?** A repeat install that discards work or an unknown task that escapes conflict handling would break the claim -- falsification ledger below.
+
+**Falsification ledger** (fresh archive of `8ca130c6`, Python 3.13.13):
+
+| Challenge | Result |
+|---|---|
+| Run the onboarding roster family, including populated-placeholder preservation and completed-work removal | 18 passed in 0.81 seconds. |
+| Reconcile a completed task marked `retired-module` against an empty roster | Raised `ModuleDiscoveryConflict` with instructions to save and remove the marked entry; no uncaught `IndexError`. |
+
+**Evidence and sweep**: Read the revision, prior findings and response, C2, and the final verification record. The record covers the previously missing final-commit public paths and manual-copy adoption, the named owning families and security lint; certification is pending. The independent probe challenges the prior unknown-identity failure; the roster family exercises the changed placeholder branch. No broader run was made.
+
+**Coverage / gaps**: This ordinary revision pass addresses the changed code and prior ordinary findings. It does not re-review unchanged implementation, exercise every module task, external links, concurrent races or crash recovery; the separate Security Review addresses its own obligation.
