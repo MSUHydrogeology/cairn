@@ -67,3 +67,61 @@ Assurance path: Internal + Internal Security Review
 **Covered**: accepted scope and refusal cases (source proposal Current contract and plan C1); sequencing and Maintainer fence (plan C2-C3 and `bootstrap/REANCHOR_RUNBOOK.md`); consumer and verification mapping (plan Verification and R1); reuse and residual collection authority (plan Scope and source proposal Response); lifecycle and doctrine placement (plan header and Scope). The plan follows the runbook for pinning and does not require a separate historical-anchor reconciliation.
 
 **Not covered / low confidence**: no independent execution, complete inventory of security gates, packet preparation, release run or Security Review. This pass clears only the ordinary plan-review obligation.
+
+
+## Plan review -- Codex (gpt-6.1-sol), Security Review -- 2026-10-29
+
+```
+Reviewed commit: cb949cd25fb356b93ac5a8e4923a0cdf10e4d88a
+Target: security boundary, acceptance criteria and verification mapping
+Prior findings: ordinary R1
+Assurance path: Internal + Internal Security Review
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes, subject to the standing-gate mapping below: exact admission followed by removal preserves the accepted exception without admitting option parsing or collection selectors -- source proposal Current contract; plan C1; `bootstrap/tests/_gate_preflight.py:1900-1939`.
+2. **Best alternative.** Keep compatibility handling at the existing launch boundary and reuse the producer's explicit cache flag; changing the release and grandchild launchers adds surfaces without delivering another accepted outcome -- `bootstrap/tests/_gate_manifest.py:514-523`, `bootstrap/security_check.py:983-1058`, `scripts/quality_gate.py:148-177`.
+3. **What would show it wrong.** A producer marker after refusal, a different admitted node-identity set, or lost release enforcement in the real grandchild defeats the plan; its criteria name these experiments -- plan C1; `bootstrap/tests/test_gate_preflight.py:858-870`; `bootstrap/tests/test_security_check.py:785-829`.
+
+The plan keeps the security-sensitive distinctions intact: empty ADDOPTS is
+refused rather than treated as absent; both plugin variables refuse by
+presence, including empty and combined cache/plugin cases; diagnostics disclose
+names without values. Removing only the admitted literal before launch avoids
+passing redundant inherited options to the producer. The guard remains on the
+actual child environment immediately before execution, after scrubbing. Scope
+explicitly retains trusted candidate collection and interpreter execution;
+there is no new containment claim or widened environment authority.
+
+**S1 -- blocking, shared satisfier with ordinary R1: name the standing security
+checks before implementation.** The mapped pytest families cover the named
+boundary and release propagation, but “applicable security gates” still leaves
+the non-pytest map unspecified. This matters concretely:
+`bootstrap/security_check.py` includes the changed preflight in
+`_CEREMONY_CLOSURE_PY`, and `run_bandit()` scans the derived executable surface
+and refuses missing/error evidence. Name the scoped command that invokes this
+check and its property without invoking the entire release runner, together
+with the other applicable standing gates or evidenced N/A dispositions.
+Retain C2–C3's runbook prerequisites and prior-verifier checks; do not substitute
+a green pytest selection for protected-file pinning. Satisfier: fold that exact
+command/property/trigger map into Verification, answering ordinary R1 and this
+finding together -- `bootstrap/security_check.py:683-696`,
+`bootstrap/security_check.py:856-875`; `bootstrap/REANCHOR_RUNBOOK.md`,
+“Run the maintained verifier and ceremony”; `dev/plans/_template.md`, Verification.
+
+**Covered**: claims, completeness and fail-closed cases (plan C1 and launch
+boundary); real public-path and release consumers (mapped preflight,
+security-check and quality-gate tests); reuse and drift (reader search for
+`gather_evidence`, `PYTEST_ADDOPTS`, `_release_child_env` and
+`_run_order_independence` across bootstrap, scripts and docs, confirmed against
+the known preflight and release launch sites); lifecycle and scope (accepted
+contract, plan C2–C3 and runbook); satisfier (S1).
+**Not covered / low confidence**: no implementation execution, mutation run,
+complete standing-gate inventory, candidate packet, plugin-package audit,
+full-suite certification or release ceremony. This is the fresh-context
+Security plan pass; the author's operative-cell fold must resolve S1 before
+implementation.
