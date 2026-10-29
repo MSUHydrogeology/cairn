@@ -363,3 +363,71 @@ and S1 closure. No scientific assumption changes.
 runtime reproduction, native Windows run, hard-link isolation, filesystem-race
 protection or future mutation effectiveness. No suite was run. The proposal's
 Security Review obligation is cleared; plan and code security obligations remain.
+
+
+## Response -- Codex GPT-6 -- 2026-10-29 -- resolved-target reviews
+
+Both passes accept without findings. I accept the guidance to reuse existing
+resolution, compare components relative to the resolved project root, return
+the unresolved path, and preserve handling of missing targets. The Security
+Review closes S1; implementation and plan security obligations remain.
+
+### Current contract
+
+For project paths supplied by lockfile records or staged review metadata,
+refuse a component equivalent to `.git` after case folding and stripping trailing
+ASCII dots and spaces, both in the supplied path and in its resolved target
+relative to the resolved project root. Apply before reads or writes at the
+existing project path boundary, including destinations, base caches and staged
+names. Preserve source-tree handling, existing containment and link refusals,
+and ordinary contained read links. Refuse with an escaped diagnostic. Recovery
+is to correct or remove the offending record or discard the untrusted stage and
+create a fresh one; do not remove Git data to pass. Preserve `.gitignore`,
+`.github` and `.git-notes.md`. The portable lexical rule also refuses distinct
+POSIX components such as `.git.`; document that compatibility cost.
+
+This checks path names and resolved symlink targets, not file identity: a hard
+link to Git data under a different name can still expose the same bytes. An
+actor racing filesystem operations after a check may also succeed. Neither is
+a claim of protection against arbitrary aliases or concurrent writers. The
+planned change closes the demonstrated supplied-name hook write and stable
+symlink-to-Git read cases.
+
+Update `bootstrap/UPGRADE.md` with the boundary, compatibility cost, residual
+hard-link and race limits, and recovery. This is descriptive guidance; no
+doctrine change is proposed. In `bootstrap/tests/test_upgrade_lockfile_path_containment.py`
+and owning upgrade tests, exercise public commands with nested Git names and
+stable contained aliases for both `dst` and `base_cache`, case and trailing
+dot/space variants, stage metadata, protected bytes, lockfile and stage state,
+valid lookalikes, normal contained links, source-tree behavior and recovery.
+Search every guard caller and cover relevant public entry points; retain existing
+containment and write-link refusals. The plan maps owners, consumers and
+standing gates, records wide Boundary B on the final implementation commit, and
+keeps certification separate. Exercise scratch public commands and applicable
+claim, link, snippet, neutrality and `python scripts/check_cairn.py` checks.
+The engine change requires the existing Maintainer-run AST re-anchor; this
+proposal does not authorize it.
+
+The adopter supplies records, stage and filesystem; Cairn supplies its source
+tree. Removing supplied-name filtering or resolved-target filtering, case
+folding, or trailing-character normalization must fail corresponding tests;
+these mutations have not run. Public commands select lockfile and staged names;
+the updated guidance must match their checked input set. Invalid names, escaped
+targets and matched components refuse before access, granting less authority.
+A hard link under another name and a race after checks remain possible. No
+scientific result is touched. A matching supplied or resolved path reaching an
+upgrade read or write, a protected byte or metadata change on refusal, a blocked
+valid lookalike or ordinary contained link, or unusable recovery falsifies this
+contract.
+
+**Scope delta**: preserved. The opening's broad phrase did not describe hard
+links; the explicit file-identity limit above is a known gap, not a claim that
+all ways to refer to Git bytes are contained. **Assurance path**: high-assurance.
+The derived plan requires Internal and Internal Security Review.
+
+### Withdrawn / superseded commitments
+
+The opening's lexical-only mechanism is superseded by checks of both supplied
+and resolved path components, to deliver its stated read protection for stable
+symlink aliases.
+
