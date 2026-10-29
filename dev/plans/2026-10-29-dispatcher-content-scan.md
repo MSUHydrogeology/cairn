@@ -1,7 +1,7 @@
 # Plan: Connect the content tripwire to the security dispatcher
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-dispatcher-content-scan.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Run the installed content tripwire through the local security command and report its limited evidence honestly.
@@ -15,6 +15,8 @@ The Maintainer accepted the revised proposal: admit the installed content-securi
 Change the dispatcher registry and binding schema, content runner, installed guidance, relevant install/upgrade and security tests, and the stale security strategy claim. No installation runs a scan. Link/claim checking and credential forwarding are not included; the combined strategic gap remains open. No doctrine premise changes; installed instructions belong in module guidance, implementation description in descriptive documentation, and deliberation in the strategy record.
 
 **Reuse.** Search `rg -n 'content_scan|security_verification' bootstrap/tests bootstrap/_scaffold/config.py` found the installed runner, scanner, dispatcher and their test owners. Extend the runner with a fixed dispatcher mode and reuse its audit; keep its ordinary invocation unchanged. Reuse the dispatcher's existing containment, symlink, digest, child execution and result validation checks for each member.
+
+The five verbatim destinations each have a `dev/.cairn/cairn-lock.yml` file record keyed by `dst`; the dispatcher reads its `hash` before launch. `scripts/content_scan_runner.py` is the source-owned runner and reads/imports `scripts/content_scan.py`; those two are executable apparatus maintained by Cairn. The runner reads `scripts/content_scan_roots.txt`, `scripts/content_scan_residuals.txt`, and `scripts/content_scan_allowlist.txt`: adopter-reviewed policy, installed with Cairn defaults. The lock writer records each destination; scoped finalize advances its `hash`; upgrade classifies verbatim changes using `base_hash`, preserving the upstream baseline. The dispatcher binds all five before launching the runner, which imports the scanner only afterward.
 
 ## Sequence
 
@@ -34,7 +36,7 @@ The fixed child mode emits one bounded schema-valid JSON document on stdout; dia
 
 ### C2
 
-Document a deliberate policy edit as a reviewed change to the policy and its corresponding lock digest together, with the command or exact supported procedure established from the existing lock writer; no automatic trust of changed bytes. Test that ordinary reviewed edits can be reconciled and survive upgrade without silently accepting drift; if the existing upgrade cannot preserve this, implement and test the necessary reconciliation without broadening authority. Verify fresh default and opted-out installs and API/web combinations via `python scripts/run_security_verification.py local`; preserve `python scripts/content_scan_runner.py` behavior.
+Document this procedure: review the intended policy edits, then from the Cairn checkout run `python bootstrap/scaffold.py upgrade --target <adopter-root> --finalize <selected-policy-path>`, naming each changed destination explicitly; review and commit the policy and resulting lock diff together. Scoped finalize attests current bytes, not the fact of review; never use bare finalize to accept policy drift. The original `base_hash` remains the upstream baseline. Test that selected reconciliation leaves unrelated drift unblessed, the real dispatcher accepts the intended policy, and a subsequent upstream policy change preserves the customized file without silently trusting or overwriting it. First prove the existing upgrade behavior; if it cannot satisfy this, stop for a reviewed plan correction before changing the engine. Verify fresh default and opted-out installs and API/web combinations via `python scripts/run_security_verification.py local`; preserve `python scripts/content_scan_runner.py` behavior.
 
 Describe only tracked Markdown/text under configured roots, excluding archives and base cache; untracked files and bare URLs in discussion prose are blind spots. A clean result is a pattern tripwire, not a safety or checkout-authenticity guarantee. Meet the six admission conditions in `templates/modules/default-on/security-verification.md`, including reviewed execution evidence and registry Security Review.
 
@@ -49,6 +51,8 @@ Record the tests and mutations below on the final implementation commit. A false
 ## Verification
 
 Boundary A and B use the canonical Python 3.13 interpreter. This is a contract and trust surface: Boundary B is wide, on a clean final implementation commit, with `Certified by: pending`. Run the owning families `bootstrap/tests/test_security_verification.py`, `bootstrap/tests/test_security_stack.py`, `bootstrap/tests/test_default_security_stance.py`, `bootstrap/tests/test_module_merge_lockfile.py`, and `bootstrap/tests/test_notice_install.py`; search again for changed mappings and lock consumers and add any owner found. Split selections at the guard limit and reconcile the executed union. Include real temporary default and opt-out installs and the local command, clean and flagged content, API/web combinations, direct runner and upgrade.
+
+Map existing nodes: `bootstrap/tests/test_security_verification.py::TestRegistryIntegrity::test_every_admission_field_is_required` covers required fields; `::TestParentComputedBinding::test_runner_or_policy_digest_mismatch_is_degraded` and `::TestParentComputedBinding::test_symlinked_runner_or_policy_is_refused` cover existing binding; `::TestComposition::test_the_dispatcher_runs_from_a_real_fresh_scaffold` covers the public command; `::TestDispatchBehavior` covers isolation and child failures. `bootstrap/tests/test_security_stack.py::TestRunnerExitContract` and `::TestAuditRootsManifest` cover direct behavior and audited roots. Add focused nodes for the new tuple's closed shape and each member, real default/opt-out/combined selection, flags including residuals, and scoped finalize plus subsequent upstream upgrade. Include `bootstrap/tests/test_lockfile_provenance.py` and search finalize/upgrade owners for the reconciliation path; retain owning families above for the wide run.
 
 Add negative controls for every new schema field and bound member: missing, changed, unsafe or symlinked member, malformed or duplicate records, policy edits before and after reviewed reconciliation, empty/invalid roots and stale baseline. Exercise malformed child JSON, exit mismatch, timeout, output cap, precedence, and accepted residual findings. Mutate each bound member and child evidence separately and record the failing control with an unmutated control; this does not claim protection against an attacker replacing both lock and files. Verify the actual audited set against the documentation.
 
@@ -106,3 +110,12 @@ Satisfier: fold the exact reviewed edit/finalize/lock-review procedure and the f
 The remaining security design is proportionate: validate scanner and policy siblings before child import, keep argv source-owned, preserve isolated Python and closed child environment, and map any flag to FINDINGS. Existing same-user check/use races and host Git provenance remain trusted-tree limits, not new authentication promises -- `templates/modules/default-on/run_security_verification.py::_is_regular_and_unsymlinked`, `_run_child`; `templates/modules/team-gated/content_scan_runner.py::_resolve_git`.
 
 **Coverage:** Covered claims, public-path evidence design, completeness, fail-closed behavior, drift, lifecycle, scope and satisfiers through the cited bindings, install/finalize/upgrade owners, accepted proposal and `bootstrap/tests/test_security_verification.py::TestComposition`. Not covered: runtime implementation, mutations or certification; no tests or full suite run, and no scientific result is involved. This records the Security plan pass; the author must fold findings before implementation.
+
+## Response to plan review -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+| Finding | Disposition |
+|---|---|
+| P1 | Folded: Scope maps the five records, readers and owners; C2 specifies reviewed scoped finalize and upgrade proof; Verification maps existing nodes and new controls. |
+| S1 | Folded: C2 preserves `base_hash`, requires review of policy and lock, excludes unscoped finalize, and stops for plan correction if existing upgrade cannot preserve policy. |
+
+The Security plan pass is recorded above; its findings are addressed in the operative cells. Plan review has one round.
