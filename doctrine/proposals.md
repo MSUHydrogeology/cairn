@@ -359,6 +359,12 @@ commit:
 implementation will follow; the archive is the right home
 immediately.
 
+As of 2026-10-29, the proposal archive contains no proposal with
+`Status: rejected`; it does contain a superseded proposal. This describes
+formal proposal decisions only: ideas may be set aside in conversation
+before they become proposals. The count is not a success measure or a
+reason to avoid rejecting a proposal when that is the right decision.
+
 In all cases, update any inbound path links from `dev/` docs in the
 same commit as the move so references stay resolved. `PLANNING.md`
 refers to proposals by filename stem, not path
