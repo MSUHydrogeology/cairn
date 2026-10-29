@@ -1,7 +1,7 @@
 # Make work-intent guidance match enforcement and session identity
 
 **Author**: Codex (GPT-6)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -404,3 +404,90 @@ lifecycle placement are covered by those named paths. No hook installed,
 original incident reproduced, mutation rerun, full suite or scientific check
 performed. The eventual implementation and plan Security Review remain owed;
 this acceptance clears only this proposal's Security obligation.
+
+## Response -- Codex (GPT-6) -- 2026-10-29
+
+IG3 and IGS4 accepted. The changed summary appears in parent help, so the
+public trigger is `python tools/intent.py --help`, not the subcommand help.
+Manual release takes a claim ID and does not resolve or authenticate a label;
+the consistent-label requirement applies to claim, commit and inherited
+auto-release. The revised contract below supersedes the conflicting statements.
+
+## Current contract -- 2026-10-29 (revised)
+
+**Review**: usual + Security Review
+**Plan review**: required(Internal + Internal Security Review)
+**Assurance path**: high-assurance
+
+Correct `doctrine/coordination.md` to reflect the recorded C2 coordination
+choice in `dev/plans/archive/2026-10-28-governing-text-single-source.md` and
+the actual conditional block default, retaining warn and confirm options.
+The choice predates the reported incident; the Maintainer judges its bearing
+on the doctrine-evolution gate. Correct `dev/agent_collaboration.md`,
+`dev/modules/coordination-tiers.md` and its shipped source
+`templates/modules/team-gated/coordination-tiers.md`. Correct the help text in
+`tools/_intent/cli.py` and `templates/modules/team-gated/_intent/cli.py`.
+Search related current descriptions and fix directly relevant contradictions.
+Do not change hook or identity behavior.
+
+Explain that the hook is opt-in; a fresh overlapping claim blocks by default
+only when a session token is available and the resolved agent label differs.
+Unclaimed and stale paths warn; without a token cross-claim blocking is withheld;
+configured warn and confirm have their existing effects. Use the same
+session-specific resolved label for claim, commit and inherited post-commit
+auto-release. Manual release uses the claim ID; it does not require the
+claimant's label or authenticate ownership. Prefer harness-derived identity;
+compare `whoami` across relevant command environments when diagnosing mismatch.
+A synthetic example supplies an override separately to each fresh shell that
+needs it, including the commit launching the hook, without publishing real
+identifiers or recommending a global export. An override alone supplies no
+session token. Distinct concurrent sessions must not share an override: own
+claim recognition compares labels once a token is available, so sharing can
+hide a real collision. Labels and logs are cooperative, not authentication
+against an actor controlling either.
+
+The plan maps real CLI help and `whoami`, pre-commit and post-commit paths,
+paired-source parity, document readers and standing gates. Under Python 3.13.x,
+assert corrected parent `--help` output for both source copies and demonstrate
+the assertion fails when `warn-by-default` is restored. Verify the stated
+conditional defaults and identity exceptions against real entry points,
+including no-token and same-label cases. Search tests and manifests for all
+changed surfaces, with a known hit as control; record owners and omissions.
+Run applicable claim, link, snippet and neutrality gates. No full certification
+is implied. A false default, collapsed sibling identities, or an authentication
+claim falsifies the change.
+
+### Security preflight
+
+S1: Existing configuration, environment, claim log and staged paths supply
+inputs to the existing check; a participant can control environment and log.
+This change decides prose and help, not access.
+
+S2: The scratch control recorded above distinguishes the current incorrect
+parent-help literal from its replacement, but does not establish enforcement.
+The plan must run the corrected assertion and reverse mutation on both copies.
+
+S3: `python tools/intent.py --help` is the human-triggered public output for
+this summary. The plan specifies the exact test commands and source copies.
+The proposed statement is that the opt-in check blocks fresh cross-session
+claims by default subject to the token and other exceptions above. No automatic
+prose-accuracy check is claimed.
+
+S4: Absent, malformed or unknown enforce configuration defaults to block; no
+token or stale claims withhold cross-claim blocking. No fallback changes are
+proposed. Incorrect guidance can mislead users about these boundaries.
+
+S5: An actor controlling environment or claim log can share or forge a label
+and hide a conflict. Documentation cannot prevent that; this remains an open
+cooperative boundary, not authentication.
+
+### Independent scientific check
+
+N/A: no scientific assumption or result touched.
+
+### Withdrawn / superseded commitments
+
+The earlier subcommand-help trigger and the implication that manual release
+requires the same label are replaced by parent help and release-by-ID above.
+The previously withdrawn doctrine exclusion and standard assurance remain
+superseded. The original practical documentation outcome is preserved.
