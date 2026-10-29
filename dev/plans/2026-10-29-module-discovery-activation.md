@@ -1,7 +1,7 @@
 # Plan: Module discovery and first use
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-module-discovery-activation.md
-**Status**: revising-code
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Make installed modules discoverable and give each selected module a useful first task.
@@ -191,3 +191,8 @@ P1 accepted: unknown marked identities now stop reconciliation with instructions
 **Mutation ledger**: four separate copies of the candidate, each with one deliberate break, killed by the corresponding test in `bootstrap/tests/test_onboarding_seed_roster.py`: remove selected tasks (`test_selected_modules_have_usable_tasks`); add unselected tasks (`test_unselected_modules_have_no_tasks_or_inventory_rows`); bypass preservation refusal (`test_reinstall_preserves_completion_and_refuses_loss`); corrupt the baseline hash (`test_selected_modules_have_usable_tasks`). The unmutated controls passed in the mapped run.
 
 **Omissions**: no scientific check applies; whole-tree certification remains pending. Manual-copy execution remains an unmet final-commit check; no coverage outside the named mappings and public paths is claimed.
+
+
+## Implementation verification addendum -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+**Implementation verified at d83b0faf.** The outstanding manual-copy check passed on the same clean candidate clone under Python 3.13.13. In a temporary project installed with `solo-greenfield`, copied `templates/modules/team-gated/dual-review.md` to `dev/modules/dual-review.md`, then ran the documented `bootstrap/scaffold.py upgrade --target <project> --cairn-root <candidate> --adopt-module dual-review`. The copied bytes remained intact; inventory, task and lock named the module. Repeating adoption left all three artifacts unchanged. An added completed unknown marked task caused exit 2 with manual guidance and preserved all three artifacts; saving and removing that block followed by retry succeeded. The candidate clone remained clean after the check. This completes the manual-copy omission stated above; certification remains pending.
