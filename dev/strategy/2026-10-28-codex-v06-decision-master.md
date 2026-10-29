@@ -26,8 +26,8 @@ capabilities and adopter research. This five-plan batch does not finish v0.6.
 | [Model floors](../plans/archive/2026-10-28-model-floor-alignment.md) | Implemented, independently reviewed and archived. Local vendor assignments and shipped generic task floors align; 574 mapped passes under Python 3.13.13. Certification/re-anchor debt remains live in the roadmap. |
 | [Scoped verification](../plans/archive/2026-10-28-scoped-change-verification.md) | Implemented; 2,700 collected/executed nodes reconciled, five guard cases passed, environment-denied security cases passed with required local capability. Independent example adjudication and ordinary/Security reviews completed. Both reviews hold completion for the prescribed frozen-file ceremony. Later naming examples corrected with 656 mapped passes under Python 3.13.13. |
 | [Governing text](../plans/2026-10-28-governing-text-single-source.md) | Routing chosen at `aa9fc08b`, coordination default at `7013de1d`, and document-wide path declarations at `560a178c`. Path instructions updated and the focused review finding addressed at `860481db`; remaining consolidation and ceremony gates stay open. |
-| [Test trust boundary](../plans/2026-10-28-test-trust-boundary.md) | Roster and dormant setting approved; the dormant candidate is committed. Final verification and reviews wait on the reusable verifier workflow below; existing protection remains active. |
-| [Ordinary test maintenance](../plans/2026-10-28-ordinary-test-maintenance.md) | Reviewed plan; implementation cannot start because the chosen board file contains security defenses and remains protected. |
+| [Test trust boundary](../plans/archive/2026-10-28-test-trust-boundary.md) | Roster and dormant setting approved; the dormant candidate is committed. Final verification and reviews wait on the reusable verifier workflow below; existing protection remains active. |
+| [Ordinary test maintenance](../plans/archive/2026-10-28-ordinary-test-maintenance.md) | Reviewed plan; implementation cannot start because the chosen board file contains security defenses and remains protected. |
 
 The source Decisions are `63e315fa`, `f110d263`, `cca436a9`, `cea1299d` and
 `439c7b34`. All five plans were authorized; their later explicit fences remain.
@@ -78,10 +78,10 @@ improvement; affected frozen tests still wait for the trust-boundary work.
 
 ### 2. Approved initial test-protection roster
 
-**Approved:** the [refreshed roster](../plans/2026-10-28-test-trust-boundary/c1b-roster-6cc95fa7.json)
+**Approved:** the [refreshed roster](../plans/archive/2026-10-28-test-trust-boundary/c1b-roster-6cc95fa7.json)
 at commit `884e6d53`, raw SHA-256
 `188fa76d82744be571bdc7ca91a43d605776b9df5ba0ac729e2cf22af66b8cc4`.
-The [classification evidence](../plans/2026-10-28-test-trust-boundary/c1b-evidence-6cc95fa7.json)
+The [classification evidence](../plans/archive/2026-10-28-test-trust-boundary/c1b-evidence-6cc95fa7.json)
 contains every file's reason and preserved mechanisms.
 
 It protects **78 test files plus 12 Python controls**, leaving **51 test files
