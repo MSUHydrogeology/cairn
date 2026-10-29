@@ -1,7 +1,7 @@
 # Re-anchor and repin as human-run commands
 
 **Author**: Codex (gpt-6.1-terra)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -72,3 +72,58 @@ A candidate-controlled checker can approve itself; an unapproved protected loss 
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+
+## Review -- Codex (gpt-6.1-sol, high) -- 2026-10-29
+
+```
+Reviewed commit: 9c331e14ac232d3f7012b5bb8b9b1d068b26321b
+Target: opening proposal
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: reusable human-run commands address the recorded operator burden, and integrating the prior verifier delivers an already accepted outcome. Retain the existing ordinary path rather than replacing it. -- `dev/PLANNING.md:126`; `dev/plans/2026-10-28-test-trust-boundary.md:514`; `scripts/repin.py:1063`.
+2. **Best alternative.** Extend the v0.5 driver and staged artifact with a separately reviewed transition path; keeping only the manual page leaves the recorded need unmet. The proposal chooses this stronger alternative, but needs an operator-level completion criterion. -- `dev/plans/archive/repin-build.md:13`; `bootstrap/REANCHOR_RUNBOOK.md:74`; Proposal.
+3. **What would show it wrong.** If the documented commands still require improvised commands to prepare or resume the supported workflow, or invoke candidate authority in place of authenticated P, this framing fails its purpose. -- `scripts/repin.py:759`; `scripts/repin.py:1162`; Signals the change is wrong.
+
+The strongest part is its separation of prior authority, candidate evidence and
+human approval. It recognizes that collection executes candidate code, preserves
+E5, keeps push separate and refuses an undemonstrated transition.
+
+**F1 — Blocking: prove the operator workflow, including stops.** The smoke check
+requires a complete scratch ceremony, but does not require following the actual
+operator instructions from preparation through an owed AST write, commit, stop
+and rerun. The current driver prints a Git commit command and stops; packet,
+reader record and values preparation are also prerequisites. A happy-path test
+can therefore pass while the Maintainer still needs a fresh sequence assembled
+for each run. **Satisfier:** carry an explicit outcome into the plan: reusable
+scripts prepare the required details; document who prepares and checks each
+input; demonstrate both ordinary and changed-authority workflows, including
+reviewed deletion and interruption/resume, through those documented entry points.
+The Maintainer's actions must fit the recorded run/compare/approve/passphrase
+brief. Preserve human approval and the existing no-automatic-AST-commit contract
+unless its change is expressly decided. This removes no accepted outcome. --
+`dev/PLANNING.md:126`; `dev/plans/2026-10-28-test-trust-boundary.md:514`;
+`dev/plans/archive/repin-build.md:13`; `scripts/repin.py:759`.
+
+**F2 — Nonblocking: separate observation from inference.** “Cannot assemble git
+commands” is stronger than the recorded capability statement. **Satisfier:**
+quote or accurately summarize the request for reusable scripts suitable to this
+Maintainer, and label any further usability assumption. -- Context;
+`dev/plans/2026-10-28-test-trust-boundary.md:514`.
+
+**Covered:** claims/reuse/drift (#1,5,6): v0.5 driver and archived plan above;
+production path/completeness/failure (#2–4): `run_ceremony`, `build_packet`,
+`check_stop_records` in `scripts/repin.py` and runbook steps 1–3;
+lifecycle (#7): trust plan C4–C5 and proposal documentation routing;
+scope/domain/satisfiers (#8–9): queued row, F1–F2; no scientific claim.
+**Not covered / low confidence:** implementation does not yet exist; no ceremony,
+signing, ref movement, mutation or full suite run. This pass does not discharge
+the separate Security Review.
