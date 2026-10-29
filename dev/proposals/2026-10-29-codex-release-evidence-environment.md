@@ -219,3 +219,51 @@ claim and documentation checks. No scientific assumption is touched.
 **Scope delta**: preserved. **Assurance path**: high-assurance. The usual
 review finding is answered; the separate Security Review obligation remains
 open until a Security Review clears it.
+
+
+## Review -- Codex (gpt-6.1-sol), Security closure -- 2026-10-29
+
+```
+Reviewed commit: 1f95dd18
+Target: Response and revision; security findings S1 and S2
+Prior findings: S1, S2
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: the revision preserves the literal exception while explicitly retaining the evidence stage's collection authority and trusted-contributor assumption -- Response and revision, S1 accepted; `bootstrap/tests/_gate_preflight.py:1846-1850`.
+2. **Best alternative.** Validate and remove the exact cache value at the boundary, reusing the producer's explicit option; the revision now adopts this simpler path without removing an outcome -- Current contract; `bootstrap/tests/_gate_manifest.py:514-523`.
+3. **What would show it wrong.** A producer starting on a rejected value or unequal node identities under the admitted value would defeat the design; the revision retains both falsifiers and records today's control and rejection -- Response and revision, R1 and S2 accepted, and verification paragraph.
+
+**S1 closed.** The revision distinguishes independently derived static fields
+from collection and interpreter evidence, which remain trusted to execution of
+the candidate. It names collection manipulation as a remaining capability and
+keeps the existing trusted-contributor assumption. This matches the actual
+residual warning rather than claiming containment.
+
+**S2 closed at proposal stage.** The author's Python 3.13.13 probe record
+reports a completed absent-variable control and an appended-selector refusal
+through `gather_evidence`, with marker evidence of no producer launch. The
+initial invalid control and corrected valid stub are disclosed. This supplies
+the previously missing executed experiment; it does not claim an implemented
+exception was tested. The revised contract separately requires repeating the
+exception-specific challenge, empty plugin values, combined plugin/cache
+values, equal collected identities, and the selector positive control during
+implementation. Diagnostic values will not be echoed.
+
+The Security Review obligation on this proposal is cleared. This is advice for
+the Maintainer's Decision, not a Decision or permission to skip plan review,
+implementation verification, or the protected-file pinning ceremony.
+
+**Covered**: prior security findings and their satisfiers, fail-closed literal
+admission, plugin combinations, diagnostics, residual authority and preserved
+scope -- revised Current contract and probe record, against the production
+paths cited above.
+**Not covered / low confidence**: no independent probe rerun, implementation,
+plugin audit, full suite, old-anchor check or release ceremony. Future checks
+remain implementation obligations, not results established by this proposal.
