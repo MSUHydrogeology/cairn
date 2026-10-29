@@ -263,10 +263,8 @@ simply fell short has no assignment to quote, and its remainder goes to the
 Maintainer.
 
 **A reviewer cannot create that authority by calling the remainder "out of
-scope."** Narrowing is the path of least resistance in review: it costs the
-reviewer nothing, reads as prudence, and can never be shown wrong, because the
-wider version is never built. Neither author nor reviewer may concede a
-baseline outcome; only the Maintainer can.
+scope."** Neither author nor reviewer may concede a baseline outcome; only the
+Maintainer can.
 
 If scope is reduced, declare it here — one grouped record, not a set of roadmap
 rows, and each entry blocks archive until dispositioned:

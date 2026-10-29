@@ -28,6 +28,7 @@ Run from the Cairn repo root:
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -258,15 +259,129 @@ def _normalized(rel: str) -> str:
     return re.sub(r"\s+", " ", (CAIRN_ROOT / rel).read_text(encoding="utf-8"))
 
 
+_INSTALLED_PLAN_SCOPE_OBLIGATIONS = {
+    "accepted scope is the baseline":
+        r"baseline is the scope as accepted by the proposal",
+    "dropping an outcome is a deviation":
+        r"dropping an outcome it committed to is a deviation exactly as adding one is",
+    "only the Maintainer may concede a baseline outcome":
+        r"Neither author nor reviewer may concede a baseline outcome; only the Maintainer can",
+    "future-plan deferral carries its assignment and Decision":
+        r"the `defer` line quotes that assigning sentence and the Decision, which is the authorization",
+    "an unassigned remainder returns to the Maintainer":
+        r"its remainder goes to the Maintainer",
+    "the declaration has one grouped record":
+        r"one grouped record, not a set of roadmap rows",
+    "each removed unit gets its own disposition":
+        r"One line per removed unit, each carrying its own",
+    "a home is not a disposition":
+        r"a group-level home is a location, not a decision",
+    "the reason and Maintainer allowance are recorded":
+        r"why specifying was rejected in favour of cutting, and quote the Maintainer's allowance",
+    "a review-proposed expansion is not a reduction":
+        r"Declining a proposed \*?expansion\*? is not a reduction",
+    "the chunk fence does not cut accepted scope":
+        r"A chunk's own fence bounds this pass, not the accepted proposal",
+}
+
+
+def _missing_installed_plan_scope_obligations(text: str) -> list[str]:
+    """Return lost Scope-delta duties from an adopter's installed plan template."""
+    heading = re.search(r"(?m)^## Scope delta\s*$", text)
+    if not heading:
+        return sorted(_INSTALLED_PLAN_SCOPE_OBLIGATIONS)
+    end = re.search(r"(?m)^## ", text[heading.end():])
+    section = text[heading.start():] if end is None else text[
+        heading.start():heading.end() + end.start()
+    ]
+    flat = re.sub(r"\s+", " ", section)
+    missing = [
+        label for label, pattern in _INSTALLED_PLAN_SCOPE_OBLIGATIONS.items()
+        if not re.search(pattern, flat)
+    ]
+    if "**Scope delta**: preserved | degraded | lost" not in flat:
+        missing.append("the declaration vocabulary stays stable")
+    return sorted(missing)
+
+
+def _assert_installed_scope_delta_obligations(tmp_path: Path) -> None:
+    """Check the actual installed plan shape and challenge its main safeguards."""
+    profiles = (
+        "solo-greenfield.yml",
+        "high-rigor-legacy.yml",
+    )
+    for profile_name in profiles:
+        target = tmp_path / profile_name.removesuffix(".yml")
+        target.mkdir()
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(CAIRN_ROOT / "bootstrap/scaffold.py"),
+                "--config", str(CAIRN_ROOT / "bootstrap/profiles" / profile_name),
+                "--target", str(target),
+                "--cairn-root", str(CAIRN_ROOT),
+                "--non-interactive", "--allow-dev",
+            ],
+            cwd=CAIRN_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
+        installed = (target / "dev/plans/_template.md").read_text(
+            encoding="utf-8"
+        )
+        assert _missing_installed_plan_scope_obligations(installed) == []
+
+        mutants = (
+            (
+                "reviewer authority inversion",
+                re.sub(
+                    r"Neither author nor reviewer may concede a baseline outcome;\s*only the\s+Maintainer can\.",
+                    "The reviewer may concede a baseline outcome.",
+                    installed,
+                    count=1,
+                ),
+                "only the Maintainer may concede a baseline outcome",
+            ),
+            (
+                "per-entry disposition deletion",
+                re.sub(r"each\s+carrying\s+its\s+own", "", installed, count=1),
+                "each removed unit gets its own disposition",
+            ),
+            (
+                "proposed-expansion inversion",
+                re.sub(
+                    r"Declining\s+a\s+proposed\s+(\*?expansion\*?)\s+is\s+not\s+a\s+reduction",
+                    r"Declining a proposed \1 is a reduction",
+                    installed,
+                    count=1,
+                ),
+                "a review-proposed expansion is not a reduction",
+            ),
+        )
+        for mutant_name, mutant, expected_gap in mutants:
+            assert mutant != installed, (
+                f"{profile_name} mutation setup failed for {mutant_name}"
+            )
+            gaps = _missing_installed_plan_scope_obligations(mutant)
+            assert expected_gap in gaps, (
+                f"{profile_name} installed guard missed {mutant_name}; gaps={gaps}"
+            )
+
+
 @pytest.mark.parametrize("rel,label,pattern", _CASES,
                          ids=[f"{r}::{l}" for r, l, _ in _CASES])
 def test_scope_reduction_obligation_present(rel: str, label: str,
-                                            pattern: str) -> None:
+                                            pattern: str,
+                                            tmp_path: Path) -> None:
     assert re.search(pattern, _normalized(rel)), (
         f"{rel} no longer expresses the scope-reduction obligation {label!r}. "
         f"The canonical rule is in doctrine/dual-review.md, which adopters "
         f"never receive; removing it here removes it for them."
     )
+    if rel == "dev/plans/_template.md" and label == "accepted scope is a floor":
+        _assert_installed_scope_delta_obligations(tmp_path)
 
 
 def test_the_canonical_section_exists_and_sits_beside_its_mirror() -> None:

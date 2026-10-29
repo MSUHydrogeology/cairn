@@ -520,3 +520,26 @@ remaining outcomes and the plan stay open.
 **Installed entry-point controls**: ran each profile's installed `scripts/claim_check.py` against three synthetic documents rooted in that installation. The intact declaration plus a later exact recurrence passed and reported one exemption. Removing the declaration failed on the unresolved path. Changing the repeated path to a look-alike sibling failed on that unresolved path. All three outcomes matched the intended exact-match behavior in both profiles.
 
 **Omissions**: no source or frozen test bytes changed; no test suite, mutation framework, full-suite run, ceremony, or whole-plan before/after edit comparison ran. These checks establish current installed checker behavior, not semantic equivalence of all surrounding doctrine prose. C3's other conditional edits and C4 remain open; the v0.6 re-anchor remains deferred under the Maintainer's direction.
+
+## C3 scope-delta template simplification -- Codex (Implementation, Luna) -- 2026-10-29
+
+The plan-template pair no longer repeats the rationale that narrowing is the
+path of least resistance. The same reason remains in installed `AGENTS.md` and
+the installed review-loop document; the templates retain the actionable floor,
+baseline, sequencing, Maintainer authority, grouped record, per-entry
+disposition, deferral, expansion and chunk-fence instructions. Both copies
+remain byte-identical. C3 adds an installed-output control to the existing
+scope-reduction owner test without changing its collected node set.
+
+The C1 editing comparison remains scoped to its two measured examples: the
+task-floor presentations are unchanged, while the repeated Scope-delta
+explanation is shorter in both plan-template copies. Final before/after counts
+and install/test evidence belong in C4 after the final implementation commit.
+
+Maintainer direction relayed for this implementation is to finish the source
+work without requiring historical anchor comparison and without changing the
+actual reference. The read-only `python scripts/repin.py status` command refused
+before import because the current `_gate_manifest.py` bytes differ from its
+anchor entry. No re-anchor or reference change was made, and this record does
+not claim that the proposed protected roster is installed or the ceremony has
+passed.
