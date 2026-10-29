@@ -125,3 +125,71 @@ this defect. No scientific result or doctrine changes. I did not rerun the
 scratch reproduction, implement a fix, run mutation checks or any suite, or
 establish resistance to concurrent hostile writers. This usual pass does not
 clear the separately declared Security Review.
+
+## Review -- Codex GPT-6 Security reviewer -- 2026-10-29
+
+```
+Reviewed commit: c4b6a46376153131ef376aead82f715e3fd1637e
+Target: opening proposal and usual review
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. A folder occupying a tracked file's
+   name must remain adopter-owned and block application, rather than become
+   missing-file recovery or an acknowledged omission. The current file read
+   precedes classification -- `bootstrap/_scaffold/upgrade.py:668`.
+2. **Best alternative.** Refuse the entire operation on the first directory.
+   That protects contents but loses the useful unaffected-file report. Reusing
+   unconditional blocking, without addition adoption or review buffers, delivers
+   the proposed protection with less new authority --
+   `bootstrap/_scaffold/upgrade.py:1032` and
+   `bootstrap/_scaffold/upgrade.py:3112`.
+3. **What would show it wrong.** A folder appearing after classification or
+   staging still produces a traceback, permits a write, or advances its record;
+   or a repaired live path unlocks an old blocked stage. Classification alone
+   cannot meet the contract: later file reads remain --
+   `bootstrap/_scaffold/upgrade.py:1137` and
+   `bootstrap/_scaffold/upgrade.py:3140`.
+
+The design protects the right asset: adopter contents, including nested files,
+without authorizing deletion, flattening, adoption or a substitute file. The
+usual review's override and unchanged-metadata probes are appropriate. A hard
+block should precede application writes and metadata advancement; the useful
+unaffected-file information need not mean partial application of a blocked stage.
+
+For the plan, spell out the observation points rather than only adding an
+`is_dir` classification. A normal file may become a directory between computing
+plans and writing the stage, or between stage and apply. Stage's no-op comparison,
+snapshot and review-buffer reads are separate exposure points. A controlled
+transition at these boundaries must leave contents intact and give a recoverable
+refusal. This follows the opening's occupied-path-between-commands requirement,
+not a request to contain arbitrary concurrent hostile writers.
+
+Keep directory detection subordinate to existing path containment and symlink
+refusals. A symlink to a directory is not permission to follow or remove its
+referent; symlinked parents and dangling links must retain their refusal behavior.
+The existing write guard rejects destination and ancestor links, and the
+lockfile-path tests explicitly exercise outside and dangling referents --
+`bootstrap/_scaffold/security.py:110`;
+`bootstrap/tests/test_upgrade_lockfile_path_containment.py:484`. Include these
+consumers in the plan's mapping. Recovery should move retained contents aside,
+restore the intended file or absence, and create a fresh stage; no cleanup
+command or stronger race-resistance promise is needed.
+
+Covered: claims and failure paths (`upgrade.py:668`, `:1137`, `:3140`);
+public-path test design and containment consumers
+(`bootstrap/tests/test_upgrade_lockfile_path_containment.py`); design, reuse and
+scope (Proposal, Alternatives, S4–S5); documentation and lifecycle placement
+(Documentation / doctrine surface, Assurance path). No scientific assumptions
+are touched. Not covered / low confidence: no implementation exists to verify;
+I did not execute mutations, reproduce the scratch failure, run a suite, or
+establish protection against filesystem changes after a check. S2 explicitly
+leaves mutation evidence for implementation; this acceptance clears the proposal
+Security Review, not the future plan or code obligations.
