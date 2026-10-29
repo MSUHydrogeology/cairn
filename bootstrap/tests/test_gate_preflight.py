@@ -957,6 +957,13 @@ def _extract_anchored(repo: Path, dest: Path) -> Path:
     return dest / "bootstrap/tests/_gate_preflight.py"
 
 
+@pytest.fixture(autouse=True)
+def _restore_roster_mode(monkeypatch):
+    # Synthetic installed anchors exercise the future active checker; restore
+    # the committed checkpoint mode after each test.
+    monkeypatch.setattr(P, "_PROTECTED_ROSTER_MODE", P._PROTECTED_ROSTER_MODE)
+
+
 def _ceremony_repo(tmp_path: Path, *, rosterless: bool = False):
     """A repo where the whole ceremony can actually run.
 
@@ -965,6 +972,8 @@ def _ceremony_repo(tmp_path: Path, *, rosterless: bool = False):
     and pins that key in the roster at the anchor.
     """
     repo = _repo(tmp_path)
+    if not rosterless:
+        P._PROTECTED_ROSTER_MODE = "active"
     key = _keypair(tmp_path, "maint")
     keydata = " ".join(key.with_suffix(".pub").read_text().split()[:2])
 
@@ -975,7 +984,12 @@ def _ceremony_repo(tmp_path: Path, *, rosterless: bool = False):
             continue
         dst = repo / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
-        dst.write_bytes(src.read_bytes())
+        data = src.read_bytes()
+        if not rosterless and rel == "bootstrap/tests/_gate_preflight.py":
+            data = data.replace(b'_PROTECTED_ROSTER_MODE = "dormant"',
+                                b'_PROTECTED_ROSTER_MODE = "active"', 1)
+            assert b'_PROTECTED_ROSTER_MODE = "active"' in data
+        dst.write_bytes(data)
     roster_src = _REPO / P.G._PROTECTED_ROSTER_REL
     roster_data = json.loads(roster_src.read_text(encoding="utf-8"))
     frozen_paths = (set(roster_data["protected_python_paths"])
