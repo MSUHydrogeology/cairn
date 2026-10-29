@@ -617,3 +617,44 @@ installation, historical-anchor reconciliation or live re-anchor was performed.
 Independent code and Security Reviews, including falsification of this evidence
 and the remaining plan criteria, are still owed. This record does not declare
 the boundary installed or the plan ready to archive.
+
+## Implementation verification -- separate change and admission controls -- Codex (GPT-6.1 Sol) -- 2026-10-29
+
+**Boundary B mode**: wide. **Certified by**: pending. This supersedes the
+preceding scoped test count for the implementation through `fb84084c`.
+**Tested commit**: `fb84084c6b8cf785eb9c5f9ebe6ebb76aab517e9`.
+**Reviewed implementation range**: `d866caef605e1dc7ae7a3b6a14a9269909513d67..fb84084c6b8cf785eb9c5f9ebe6ebb76aab517e9`.
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13.
+The fresh detached clone was clean before and after and retained the tested
+HEAD; its disposable `refs/cairn/gate-anchor` pointed to the tested commit.
+The fixture ceremonies created their own disposable signed authority. No live
+anchor or signing key was changed.
+
+The twelve-family command in the preceding record ran unchanged, with host
+signing and terminal access: **1,122 passed, 3 warnings in 1,001.78 seconds**.
+No skip, xfail or xpass was reported. The three warnings are the same
+`stevedore` `verify_requirements` deprecation. The added matrix exercises
+ordinary and protected edit, addition, deletion, rename and marker cases
+separately at the verifier, using simulated byte and collection differences;
+it is not a real-file mutation ledger. The new signed-fixture test refuses an
+unreviewed roster change and then runs both stages to admit a newly protected
+test. A second signed-fixture test runs an ordinary edit through a two-stage
+steady-state ceremony with unchanged membership. The key-channel probe in those
+fixture stage tests is stubbed; the mapped signing and terminal families test
+that channel separately.
+
+`link_check.py` passed across 189 Markdown files (84 external links not probed),
+`sync_doc_snippets.py --check` passed across 428 documents, and neutrality
+reported zero failures and 43 informational records. The whole-tree
+`check_cairn.py` invocation reported the same unrelated example at
+`dev/proposals/2026-10-29-codex-dispatcher-content-scan.md:100`; it is not
+recorded as a pass. Claim checks and the targeted prose check are recorded in
+the preceding verification; this change adds tests only.
+
+**Remaining evidence**: the verifier matrix simulates differences rather than
+mutating real files, and the ordinary steady-state ceremony does not itself
+show a completed ordinary-edit deliberation lifecycle. The ordinary-test pilot
+has reached code review separately. Independent code and Security Reviews must
+assess these limits and the complete implementation; no full suite or actual
+baseline installation was performed. Later commits, including ceremony test
+work, are outside this tested SHA.
