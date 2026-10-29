@@ -520,3 +520,17 @@ refusal uses Python's platform-specific null device. The Maintainer's amendment
 continues to defer actual installation, historical comparisons and disposition of
 the 83 real reports. No whole-suite certification was run. Independent code
 and Security Review must assess this revised implementation and its composition.
+
+## Code review -- Codex (GPT-6.1 Sol) -- 2026-10-29
+
+**Reviewed commit**: `e1c74d76`, focusing on `aeb04b8d..c0ceaa26` and the response to F2. **Findings**: none additional. **Bounding**: ACCEPTED for the recorded mapped coverage, subject to the separate Security Review.
+
+**Foundations**
+
+1. **Does it do what it claims?** The runbook now directs the operator through maintained verifier, preparation, ceremony and separately approved pin-commit commands, while retaining the human reader and signing decisions; the recorded scratch controls exercise the sequence. -- `bootstrap/REANCHOR_RUNBOOK.md`, “Run the maintained verifier and ceremony”; verification above.
+2. **Best alternative.** Reuse these entry points and keep the verifier's HOLD and signing decisions explicit; the launcher does not automatically enforce the separate verifier. -- runbook prerequisites and `scripts/repin.py`.
+3. **What would show it wrong?** A scanner mismatch reaching signing or a documented disposable workflow failing under its supported signing environment. -- falsification ledger below.
+
+**Falsification ledger.** Python 3.13.13, disposable fixture keys and repositories: `test_prior_scanner_disagreement_stops_before_signing` passed, exercising disagreement before signing. `test_documented_verifier_then_ceremony_on_disposable_authority` reached signing but failed to supply the disposable key passphrase in the restricted test environment; this is inconclusive, not a product failure. The author records a successful unrestricted run of the affected family at `c0ceaa26`. No live key or ref was used. The tests ran from the shared checkout rather than the intended detached copy; their fixture repositories were temporary.
+
+**Coverage and limits.** Inspected the runbook, changed surfaces and composed Boundary B record. The other mapped families rely on the earlier recorded run; no broad suite was repeated. Native Windows was not tested and the record identifies POSIX shell paths. The Maintainer's amendment defers historical-anchor comparison and live installation; neither is claimed here. This pass does not discharge Security Review or establish host containment of candidate code.
