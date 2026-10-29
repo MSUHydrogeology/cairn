@@ -317,11 +317,13 @@ def baseline_prepare(repo, candidate, approved_roster, reader_record, output_dir
             raise Refuse(f"independent approved roster is invalid: {exc}") from None
         engine = sorted(p for _m, _o, p in ents
                         if re.fullmatch(r"bootstrap/_scaffold/[^/]+\.py", p))
-        probe_ctx = {"ext": extracted, "tmp": temp, "engine": engine,
-                     "ents": ents, "closure_changed": []}
-        ast = ast_view(probe_ctx)
-        lock = lockfile_correction(probe_ctx)
-        if ast["owed"] or lock is not None:
+        probe_ctx = {"repo": repo, "head": candidate, "anchor": "no-signed-predecessor",
+                     "ext": extracted, "tmp": temp, "engine": engine, "ents": ents,
+                     "closure_changed": [], "baseline_mode": True,
+                     "session_oid": git_text(repo, "rev-parse",
+                                              f"{candidate}:tools/session.py")}
+        transaction = build_transaction(probe_ctx, baseline=True)
+        if transaction is not None:
             raise Refuse("candidate still owes reviewed AST or lockfile preparation. Complete and "
                          "commit those changes before preparing the final baseline package.")
         # Load the candidate's manifest producer and independent static checker
@@ -730,10 +732,12 @@ def render_changes(rel, old_raw, new_raw, *, reviewed_deletions=()):
             for k in sorted(set(old) | set(new)) if old.get(k) != new.get(k)]
 
 
-def build_transaction(ctx, *, reviewed_deletions=()):
+def build_transaction(ctx, *, reviewed_deletions=(), baseline=False):
     """The AST pin as data: the new bytes of each output and what they replace.
     None when no pin is owed."""
-    if ctx["closure_changed"]:
+    if baseline and ctx.get("baseline_mode") is not True:
+        raise Refuse("baseline transaction checks require the explicit baseline preparation context.")
+    if ctx["closure_changed"] and not baseline:
         raise Refuse("these authority files differ from the anchor: "
                      + ", ".join(d(m) for m in ctx["closure_changed"])
                      + ". That is a transition ceremony, not an AST pin.")

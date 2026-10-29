@@ -269,8 +269,10 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     txn = RP.build_transaction({"repo": repo, "head": candidate, "anchor": "no-predecessor",
                                  "ext": initial_tree, "tmp": tmp_path, "ents": ents,
                                  "engine": engine, "closure_changed": [],
+                                 "baseline_mode": True,
                                  "session_oid": RP.git_text(repo, "rev-parse",
-                                                            f"{candidate}:tools/session.py")})
+                                                            f"{candidate}:tools/session.py")},
+                               baseline=True)
     assert txn is not None and txn["outputs"]
     for relative, output_row in txn["outputs"].items():
         (repo / relative).write_bytes(output_row["new_text"].encode())
