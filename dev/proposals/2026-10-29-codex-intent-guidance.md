@@ -1,7 +1,7 @@
 # Make work-intent guidance match enforcement and session identity
 
 **Author**: Codex (GPT-6)
-**Status**: awaiting-decision
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -306,3 +306,48 @@ not establish the conditional enforcement behavior, test the shipped twin, or
 exercise hook installation. The implementation plan must still test those
 paths and run the corrected-help assertion with the reverse mutation (restore
 `warn-by-default` and show the assertion fails) under the canonical interpreter.
+
+
+## Review -- Codex (gpt-6.1-sol), widened scope -- 2026-10-29
+
+Reviewed commit: 2daccd7640ae12e24418cdfe842e33601f915079
+Target: new current contract and preflight control evidence
+Prior findings: IG1 and IG2 satisfied by the revised commitments
+Assurance path: high-assurance
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** The expanded documentation correction is warranted: the previously recorded Maintainer choice supports the existing conditional block behavior, rather than creating a new incident-derived rule -- `dev/plans/archive/2026-10-28-governing-text-single-source.md`, “C2 coordination choice”; `tools/_intent/conflict.py::_read_enforce_mode`.
+2. **Best alternative.** Preserve that narrow behavioral boundary and correct the real public help trigger; separate new enforcement design would add no value to this remedy -- `tools/_intent/cli.py`, `build_parser` install-precommit parser declaration.
+3. **What would show it wrong.** A help assertion aimed at output that never contains the changed phrase cannot verify the correction -- `python tools/intent.py install-precommit --help` versus `python tools/intent.py --help`.
+
+The revision closes IG1 and IG2: it names governing and shipped homes,
+upgrades assurance and review obligations, and specifies distinct synthetic
+labels across command environments. Its plan commitments cover paired sources,
+actual entry points, same-label/no-token exceptions and known readers. The C2
+quote precedes the reported incident and explicitly selects live-conflict
+blocking. The current proposal changes no operative behavior; the future plan
+must retain that stated boundary. This usual pass does not discharge Security.
+
+**IG3 -- blocking: name the help output containing the claim.**
+S3 calls `python tools/intent.py install-precommit --help` the public help for
+the correction. That subcommand's output contains only its usage and options;
+`warn-by-default` appears in the parent `python tools/intent.py --help`, because
+it is the subparser's `help=` argument, not its description. Both commands were
+read-only probes under Python 3.12.9; the cited CLI bytes match the reviewed
+commit. The new scratch evidence correctly says the real `--help` entry point
+was used but does not repair S3's contradictory command. **Satisfier:** append
+the corrected trigger and require the plan's positive assertion and reverse
+mutation on parent help, for both source copies under Python 3.13.x. Keep the
+subcommand-help check only if it protects another named property. The existing
+scratch result is appropriately limited and does not substitute for that plan
+verification.
+
+**Coverage:** focused on newly admitted doctrine and CLI-help scope, C2
+authority, plan verification commitments, and scratch evidence limits. No
+implementation, hook installation, mutation, full suite or Security clearance;
+future plan's exact test mapping remains to be reviewed.
