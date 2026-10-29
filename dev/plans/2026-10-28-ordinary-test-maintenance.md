@@ -160,3 +160,45 @@ the repeated public-entry invocation and capture sequence inside the second
 test; a local helper can shorten that sequence without hiding fixture data or
 changing shared helpers. No pre-edit test-family run or timing baseline was
 made, as authorized above. No test property is proposed for removal.
+
+## Implementation verification -- Codex (Implementation, Luna) -- 2026-10-29
+
+**Boundary B mode**: wide
+**Certified by**: pending
+**Implementation verified at**: `70db63fd10cfa115a7053f4d1d5726968bed59d1`
+**Tested commit**: `70db63fd10cfa115a7053f4d1d5726968bed59d1`
+**Reviewed range**: `8b851656..70db63fd`
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` -- Python 3.13.13
+**Pre-run state**: clean detached worktree at the tested commit.
+**Post-run state**: same commit; clean worktree.
+
+The `test_board_json_contract.py` owning family passed **25 tests in 1.69 s**,
+including both named pilot nodes and their real `tools/board.py` entry paths.
+The mapped `test_practice_modules.py`, `test_doc_governance.py`,
+`test_presets.py`, and `test_profiles_smoke.py` families passed **85 tests in
+0.75 s**. No skips, xfails or xpasses were reported.
+
+The actual CLI install of `bootstrap/profiles/high-rigor-legacy.yml` exited 0
+and produced 101 files, including `dev/modules/testing-discipline.md`. That
+installed file compared byte-identically with the changed shipped template and
+contained the new behavior/fault, consolidation, fresh-state, and scope/runtime
+guidance; the previous tier-alone and no-test-craft claims were absent. The
+install target was fresh and outside the source worktree.
+
+**Gates**: claim checks passed for both module copies and this plan; full
+`link_check.py` passed across 189 Markdown files (84 external links were not
+probed); `check_cairn.py` passed on the changed template and plan; neutrality
+reported zero failures and 43 informational entries; redundancy reported zero
+failures. A separate whole-tree `check_cairn.py` invocation found one
+unrelated `imperative-override` finding at
+`dev/proposals/2026-10-29-codex-dispatcher-content-scan.md:100`; it is outside
+this reviewed range. No synced snippet block changed.
+
+**Coverage / omissions**: the two properties and fault sets are mapped above;
+all named tests and assertion behavior remain. No source schema, board command,
+shared test helper, or product code changed. The only test change centralizes
+the repeated command/output capture; all three return-code assertions still
+run. No pre-edit family or matched timing baseline was run under the
+Maintainer's allowance. No full suite, certifying run, mutation ledger or
+adopter trial was run; no install timing was separately measured. Normal code
+review remains due.
