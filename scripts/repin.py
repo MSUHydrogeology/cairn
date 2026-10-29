@@ -733,7 +733,7 @@ def ask_yes(question):
         return False
 
 
-def apply_pin(ctx, cdir, raw):
+def apply_pin(ctx, cdir, raw, *, reviewed_head=None):
     """`ceremony` step 5: write the AST pin this process just packaged, after one yes.
     Never commits.  *raw* is the transaction packaged in this very process."""
     check_preconditions(ctx)
@@ -741,7 +741,7 @@ def apply_pin(ctx, cdir, raw):
     if read_safe(Path(cdir) / TXN_NAME, own=True) != raw:
         raise Refuse("the transaction file changed after it was packaged. Nothing was written.")
     txn = json.loads(raw)
-    if txn["head"] != head or not txn["outputs"] or not set(txn["outputs"]) <= set(OUTPUTS):
+    if txn["head"] != (reviewed_head or head) or not txn["outputs"] or not set(txn["outputs"]) <= set(OUTPUTS):
         raise Refuse(f"the transaction names paths outside {', '.join(OUTPUTS)} (the gate "
                      f"manifest is never written here) or another HEAD. Nothing was written.")
     modes, plan = {p: m for m, _o, p in ctx["ents"]}, []
@@ -1497,6 +1497,13 @@ def prepare_reader_inputs(ctx, cdir, output):
              f"read-commit {ctx['head']}", f"prior-anchor {ctx['anchor']}",
              f"packet-sha256 {sha(packet_raw)}", f"launcher-sha256 {sha(launcher_raw)}"]
     lines.extend(f"member {sha((ctx['ext'] / m).read_bytes())} {m}" for m in members)
+    transaction = cdir / TXN_NAME
+    if transaction.exists() or transaction.is_symlink():
+        txn_raw = read_safe(transaction, own=True)
+        expected = build_transaction(ctx)
+        if expected is None or encode_txn(expected) != txn_raw:
+            raise Refuse("prepared transaction does not match this read commit.")
+        lines.append(f"ast-transaction-sha256 {sha(txn_raw)}")
     raw = ("\n".join(lines) + "\n").encode()
     write_new(output, raw)
     say(f"wrote reader inputs {d(str(output))} sha256 {sha(raw)}")
@@ -1549,6 +1556,29 @@ def check_record(ctx, packet_digest, launcher_digest):
                             ("authority files", want, members)):
         if got != said:
             raise Refuse(f"the {what} differ from the ones {RECORD_REL} names. Do not run this.")
+
+
+def apply_reviewed_pin(ctx, cdir):
+    """Apply only the transaction the independent record bound before writing."""
+    check_preconditions(ctx)
+    cdir = plain_folder(cdir)
+    packet = read_safe(cdir / PACKET_NAME)
+    launcher = read_safe(cdir / LAUNCHER_NAME)
+    check_record(ctx, sha(packet), sha(launcher))
+    raw = read_safe(cdir / TXN_NAME, own=True)
+    record = (ctx["ext"] / RECORD_REL).read_text("utf-8")
+    matches = re.findall(r"^ast-transaction-sha256 ([0-9a-f]{64})$", record, re.M)
+    if matches != [sha(raw)]:
+        raise Refuse("the reader record does not bind this exact AST transaction.")
+    txn = json.loads(raw)
+    parents = git_text(ctx["repo"], "rev-list", "--parents", "-n", "1", ctx["head"]).split()[1:]
+    if parents != [txn.get("head")]:
+        raise Refuse("the reader record must be the sole child of the transaction's read commit.")
+    prior_ctx = dict(ctx, head=txn["head"])
+    expected = build_transaction(prior_ctx)
+    if expected is None or encode_txn(expected) != raw:
+        raise Refuse("the transaction no longer matches the independently reviewed commit.")
+    return apply_pin(ctx, cdir, raw, reviewed_head=txn["head"])
 
 
 def write_record(cdir, lines):
@@ -1808,6 +1838,8 @@ def main(argv=None, *, launchctl=launchctl_socket):
     ri.add_argument("--ceremony-dir", required=True, metavar="DIR")
     ri.add_argument("--output", required=True, metavar="FILE")
     ri.add_argument("--expected-fingerprint", required=True, metavar="SHA256:...")
+    apin = sub.add_parser("apply-reviewed-pin", help="apply a transaction bound by the reader record")
+    apin.add_argument("--ceremony-dir", required=True, metavar="DIR")
     ce = sub.add_parser("ceremony", help="the whole re-anchor: checks, an owed AST pin (then stop), "
                         "the launcher's two stages, verification")
     ce.add_argument("--values", required=True, metavar="FILE", help="your values file")
@@ -1881,13 +1913,15 @@ def main(argv=None, *, launchctl=launchctl_socket):
             build_packet(ctx, args.ceremony_dir, transition=True)
         elif args.verb == "prepare-reader":
             prepare_reader_inputs(ctx, args.ceremony_dir, args.output)
+        elif args.verb == "apply-reviewed-pin":
+            apply_reviewed_pin(ctx, args.ceremony_dir)
         else:
             try:
                 done = run_ceremony(ctx, args, launchctl, rec)
             finally:
                 if Path(args.ceremony_dir).is_dir():
                     finish(ctx, *write_record(args.ceremony_dir, rec), done, rec)
-        if args.verb != "ceremony":
+        if args.verb not in ("ceremony", "apply-reviewed-pin"):
             check_head(ctx)
         return 0
     except Refuse as exc:

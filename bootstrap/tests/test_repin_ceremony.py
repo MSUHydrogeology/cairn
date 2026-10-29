@@ -2427,3 +2427,32 @@ def test_reader_inputs_bind_candidate_packet_and_prior_template_without_claiming
     (cbed.cdir / "reanchor-launcher.sh").write_text("substituted")
     refused = cbed.run(*argv)
     assert refused.returncode == 2 and not output.exists()
+
+
+def test_reviewed_ast_transaction_requires_record_before_write_and_stops(cbed):
+    cbed.write(ENGINE, "def f():\n    return 2\n")
+    read_commit = cbed.commit("change engine")
+    package = cbed.run("package", "--ceremony-dir", str(cbed.cdir))
+    assert package.returncode == 0, package.stdout + package.stderr
+    transaction = cbed.cdir / REPIN.TXN_NAME
+    digest = hashlib.sha256(transaction.read_bytes()).hexdigest()
+    fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
+                                 capture_output=True, text=True, check=True).stdout.split()[1]
+    inputs = cbed.root / "ast-reader-inputs"
+    prepared = cbed.run("prepare-reader", "--ceremony-dir", str(cbed.cdir), "--output", str(inputs),
+                        "--expected-fingerprint", fingerprint)
+    assert prepared.returncode == 0, prepared.stdout + prepared.stderr
+    assert "ast-transaction-sha256 " + digest in inputs.read_text()
+    # Without a reader's record there is no write, even if the operator answers yes.
+    cmd = [PY, str(cbed.repo / "scripts/repin.py"), "apply-reviewed-pin", "--ceremony-dir", str(cbed.cdir)]
+    code, out = run_pty(cmd, [("Write these files?", "yes")], env=cbed.env, cwd=cbed.repo)
+    assert code == 2 and cbed.git("rev-parse", "HEAD").stdout.strip() == read_commit
+    assert cbed.git("status", "--porcelain").stdout == ""
+    cbed.write(RECORD, inputs.read_text())
+    cbed.git("add", RECORD)
+    cbed.git("commit", "-q", "-m", "reader record", "--", RECORD)
+    record_commit = cbed.git("rev-parse", "HEAD").stdout.strip()
+    code, out = run_pty(cmd, [("Write these files?", "yes")], env=cbed.env, cwd=cbed.repo)
+    assert code == 0, out
+    assert "Written, not committed" in out and cbed.git("rev-parse", "HEAD").stdout.strip() == record_commit
+    assert cbed.git("status", "--porcelain").stdout.split() == ["M", BASELINE]
