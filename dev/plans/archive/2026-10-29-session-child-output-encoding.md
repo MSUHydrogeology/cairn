@@ -1,7 +1,7 @@
 # Plan: Encode session child output
 
-**Source proposal**: [dev/proposals/archive/2026-10-29-codex-session-child-output-encoding.md](../proposals/archive/2026-10-29-codex-session-child-output-encoding.md)
-**Status**: ready-to-archive
+**Source proposal**: [dev/proposals/archive/2026-10-29-codex-session-child-output-encoding.md](../../proposals/archive/2026-10-29-codex-session-child-output-encoding.md)
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Make captured session helper output safe to display while keeping multiline reports readable.
@@ -256,3 +256,10 @@ These probes extend the recorded regression checks by attacking clipboard-contro
 **Covered:** claims and real production paths (#1–2: ledger); framing, malformed bytes and failure visibility (#3–4: ledger and helper bodies); reuse and drift (#5–6: `encode_display`/`_encode_child_output`, twin comparison and committed revision); lifecycle and scope (#7–8: operative C1/C2, reviewed history has no reached Maintainer fence or scope cut); satisfiers (#9: no findings). No scientific method changes.
 
 **Not covered / low confidence:** no full-suite run, historical anchor comparison, protected-test re-anchor, external links or hostile native terminal emulator execution. The fixed encoder's wider Unicode policy and executable provenance were not re-audited. Printable false claims remain outside this display boundary. The protected-test ceremony remains owed at v0.6.
+
+
+## Dispositions
+
+Dispositions: accept -- ordinary review R1/R2 fixed and verified at `ad46f86e`; the Security Review cleared the display boundary at `9c66dd13` and found no new defect in the revision. No second ordinary review is triggered.
+
+Dispositions: defer -- protected-test re-anchor is homed in `dev/PLANNING.md` > Establish the v0.6 forward baseline, an in-motion release item. Maintainer: “They can each build the machinery, the new baseline does not need to be part of their plans. It can be a work board item for v0.6.”
