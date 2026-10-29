@@ -1,7 +1,7 @@
 # Find and activate installed modules
 
 **Author**: Codex (gpt-6.1-sol)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -136,3 +136,68 @@ maintenance cost of keeping inventory and tasks correct exceeds their use.
 
 **Assurance path**: high-assurance — install contract, scaffold engine and
 adopter-executed surfaces are in scope.
+
+
+## Review -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+```
+Reviewed commit: e593133bdecef4d2da35d2ee1ab2ef0df94fa059
+Target: opening proposal, Context through Assurance path
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. Discovery and a usable first task
+   repair a concrete installation gap without requiring routine execution of
+   every capability: onboarding currently depends on a preset, while module
+   selection also supports exact lists and defaults --
+   `bootstrap/_scaffold/cli.py:328`, `bootstrap/_scaffold/cli.py:563`.
+2. **Best alternative.** Extend the existing onboarding slot and module
+   documentation from the resolved module mappings, rather than introducing a
+   parallel workflow or scanning arbitrary files for installation authority.
+   The proposal permits that simpler mechanism and requires its baseline to
+   agree with installation -- `bootstrap/_scaffold/config.py:1018`,
+   `bootstrap/_scaffold/install.py:1122`, `templates/modules/README.md`.
+3. **What would show it wrong.** A task that cannot run from an installed
+   tree, a selected module without a task, or an adoption that loses completed
+   work defeats the purpose. Existing public-entry tests establish an
+   appropriate starting pattern, but do not yet prove the proposed behavior --
+   `bootstrap/tests/test_onboarding_seed_roster.py::TestModelMappingWaitingSeed`.
+
+The strongest version of this proposal makes capabilities useful after both
+initial installation and later adoption. It does not turn an installed
+capability into an obligation to execute it. The opening contract states that
+boundary explicitly and includes a manual reconciliation route when preserving
+adopter work prevents a safe automatic update.
+
+**Evidence and sweep.** Claims and production-path coverage: the committed CLI
+calls preset onboarding before installing the resolved modules; the existing
+onboarding tests invoke the scaffold's real `main`. Design completeness and
+silent failure: the proposal covers empty/exact lists, add/remove, edited and
+completed tasks, repeated operations and explicit conflicts. The plan must
+choose update semantics before implementation. Cross-document consistency and
+drift: the source catalog is a descriptive table, while the engine's mappings
+include further entries such as `incident-trackers` and `documentation-plan`;
+using the mappings as the audit set avoids treating that table as exhaustive
+(`templates/modules/README.md`, `bootstrap/_scaffold/config.py`). Later
+adoption is real: the bootstrap describes manual copying, and the upgrade
+handler records module files and lock metadata without updating onboarding
+(`bootstrap/BOOTSTRAP.md:648`, `bootstrap/_scaffold/upgrade.py:1764`).
+Lifecycle placement and scope: pointers belong in existing session templates,
+first-use work in the existing onboarding slot, and architectural expansion
+remains separately scheduled (`dev/PLANNING.md`,
+`docs/DOCUMENTATION_PLAN.md`). No scientific premise changes. No finding needs
+a satisfier; the proposal's verification section already names observable
+failure conditions.
+
+**Coverage / gaps**: This is an ordinary proposal review of committed text and
+its cited implementation, not verification of prospective rendering or merge
+behavior. No installer or upgrade probes were run. The separate Security
+Review obligation remains open. Exact module/task inventory, dependency inputs,
+upgrade migration and bounded verification mapping remain owed by the plan.
