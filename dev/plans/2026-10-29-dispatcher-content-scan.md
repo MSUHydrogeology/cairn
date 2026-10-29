@@ -178,3 +178,12 @@ The Security plan pass is recorded above; its findings are addressed in the oper
 **Waiting-line check:** No Maintainer-gated chunk or deviation request is declared in the reviewed plan range; `git log -p -- dev/plans/2026-10-29-dispatcher-content-scan.md` was inspected.
 
 **Coverage:** Reviewed registry and binding, result mapping, selected installed paths, policy retention tests, and recorded evidence; challenged onboarding tests and ledger naming as above. Did not run the whole suite, independently mutate every member, or assess the separate Security Review obligation. No scientific result is involved.
+
+## Response to code review -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+| Finding | Disposition |
+|---|---|
+| CR1 | Addressed with separately attributed evidence. On clean commit `3dcb5806`, the author ran the four omitted onboarding, preset and scaffold test files: 182 passed. The module-discovery changes have independent wide evidence on clean commit `eee603a6`, recorded in `dev/plans/2026-10-29-module-discovery-activation.md` and committed at `f51b84b1`; that record names all mapped tests, gates, interpreter and mutation outcomes. The supplemental record distinguishes dispatcher-owned commits `dc309b0e` and `3dcb5806` from module-owned changes and identifies the integrated tested candidate. See the implementation verification evidence file for the commands and attribution.
+| CR2 | Corrected: the mutated runner is `scripts/content_scan_runner.py`, the value of `entry.runner_repository_path`; all five ledger rows now name that path. |
+
+The original Boundary B record remains the author's result on `3dcb5806`; the later module agent run is cited as independent coverage, not represented as the author's run. The usual code-review response is recorded. The required Security Review remains pending; no `Bounding: ACCEPTED` determination or archive transition is made here.
