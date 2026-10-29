@@ -218,3 +218,60 @@ The Response preserves the original audit evidence, gives an explicit negative-r
 **F2 — Blocking: put the concrete choice before the first Decision.** The file is now `awaiting-decision`, while its new contract says a later family and mechanism will be appended here for another review and Maintainer Decision. Once this proposal is accepted, Cairn allows substantive change only through a *new* proposal; an inline Decision is for a bounded procedural gap, not a new test design. A Decision now would either authorize an unknown implementation or force the extra proposal cycle F1 challenged. Close by specifying one sequence: leave this proposal undecided while the next separately authorized certification supplies timing; append the selected family, mechanism, fault controls and protection evidence for review; then ask the Maintainer for one concrete Decision, followed by the reviewed plan. If there is no candidate, record the negative result and seek a terminal Decision without test edits. Alternatively, accept an audit-only Decision now and open a new proposal later, acknowledging the extra cycle. The first sequence keeps the new outcome without blanket authority or an extra suite run. -- `doctrine/lifecycle.md:169-185`; proposal `## Current contract`, paragraphs 1-3; `AGENTS.md` > Verification boundaries.
 
 **Covered**: claims and drift (proposal `## Current contract`, paragraphs 1-3); public paths and design completeness (proposal `## Current contract`, paragraph 3); fail-closed scope (proposal `## Current contract`, paragraphs 2-3); cross-document and lifecycle fit (`doctrine/lifecycle.md:169-185`; `AGENTS.md` > The lifecycle); scientific and domain scope (proposal `## Current contract`, paragraph 4); satisfier (F2 above). **Not covered / low confidence**: I did not run a suite, inspect a duration report or know the eventual family. The review addresses only material added at `299c3e19`.
+
+
+## Response -- Codex (GPT-6, proposal author) -- 2026-10-29
+
+**F2: accepted.** The first Decision must follow the concrete choice. Keep this
+proposal in `revising`, held by its author, until an independently authorized
+certification supplies the timing. This response does not ask for a Decision
+on an unspecified change. The author will append the choice and evidence for
+review before handing it to the Maintainer; no extra full suite is authorized.
+
+## Current contract
+
+The historical certification at `7c910851` took 24 minutes 55 seconds for
+5,479 passes under Python 3.13.13; current family costs are unknown. At the
+next independently necessary, authorized clean certification, request
+`--durations=0 --durations-min=0` on the fixed-seed suite command. Retain the
+complete report, commit, interpreter, command and machine activity. Aggregate
+setup, call and teardown times by family, note reporting limits and missing
+phases, rank costly families, and inspect at least the leading ordinary
+candidate and its installed protection classification. Verify the report
+includes relevant phases before treating absence as evidence. No additional
+full suite is authorized.
+
+For one eligible candidate, inventory behavioral properties and real entry
+points, identify repeated work, and measure its scoped command on the same
+committed bytes under stated conditions. Specify targeted faults, controls, and
+how existing and proposed tests detect them. Append a concrete family and
+mechanism, the ranking and this evidence to this still-open proposal for review
+and one Maintainer Decision. If timing cannot support a ranking, no candidate
+is eligible, useful avoidable cost is not established, or fault protection
+cannot be demonstrated, record the negative result and seek a terminal
+Decision without test edits. Observational timing is not a before/after gain.
+
+If accepted, implement the identified ordinary-family change under a reviewed
+plan: preserve the inventory and real executions, compare the same scoped
+command and phases before and after, and demonstrate fault detection with
+controls. The plan names exact nodes, public paths, verification and
+acceptance criteria. A protected or high-risk surface, trust-boundary judgment,
+certification contract change or new dependency requires a separate proposal.
+Neither protection classification nor baseline installation is changed here.
+No whole-suite speedup or ten-minute result is promised.
+
+Evidence and plan belong in `dev/`; no doctrine or governing rule changes are
+proposed. Claim and prose-integrity checks apply. No scientific assumption or
+result is touched; the ordinary-only path adds, moves or widens no trust
+boundary, and uncertainty triggers the separate-proposal stop. Assurance is
+standard; plan review is Internal.
+
+**Scope delta**: preserved. The ranking, eligibility check, inventory, scoped
+baseline, fault matrix, concrete proposal and negative-result stop remain.
+
+### Withdrawn / superseded commitments
+
+The prior sequence of a Decision before identifying the family followed by
+another Decision in this file is superseded by one Decision after the
+concrete choice and review. The original audit-only prohibition on ordinary
+test edits remains superseded by the conditional implementation path.
