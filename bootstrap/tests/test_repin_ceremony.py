@@ -2393,6 +2393,50 @@ def test_transition_packet_uses_signed_prior_authority_and_preserves_ordinary_re
     assert "read-commit " + cbed.git("rev-parse", "HEAD").stdout.strip() in inputs.read_text()
 
 
+def test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anchor(cbed):
+    """The maintained transition preparer and launcher complete a scratch-only
+    authority change using the fixture's throwaway signer and anchor."""
+    fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
+                                 capture_output=True, text=True, check=True).stdout.split()[1]
+    preflight = cbed.read("bootstrap/tests/_gate_preflight.py")
+    assert '_PROTECTED_ROSTER_MODE = "dormant"' in preflight
+    cbed.write("bootstrap/tests/_gate_preflight.py",
+               preflight.replace('_PROTECTED_ROSTER_MODE = "dormant"',
+                                 '_PROTECTED_ROSTER_MODE = "active"'))
+    cbed.commit("change the scratch verifier")
+    (cbed.cdir / "authorization-packet.txt").unlink()
+    (cbed.cdir / "reanchor-launcher.sh").unlink()
+    prepared = cbed.run("transition-packet", "--ceremony-dir", str(cbed.cdir),
+                        "--expected-fingerprint", fingerprint)
+    assert prepared.returncode == 0, prepared.stdout + prepared.stderr
+    reader_inputs = cbed.root / "transition-reader-inputs.txt"
+    reader = cbed.run("prepare-reader", "--ceremony-dir", str(cbed.cdir),
+                      "--output", str(reader_inputs), "--expected-fingerprint", fingerprint)
+    assert reader.returncode == 0, reader.stdout + reader.stderr
+    assert "not an independent review" in reader.stdout
+    cbed.ensure_record()
+
+    launcher = cbed.cdir / "reanchor-launcher.sh"
+    packet = cbed.cdir / "authorization-packet.txt"
+    candidate = cbed.git("rev-parse", "HEAD").stdout.strip()
+    env = dict(cbed.env, TERM="xterm")
+    stage1 = subprocess.run(["/bin/sh", str(launcher), str(packet), str(cbed.values), candidate],
+                            cwd=cbed.repo, env=env, capture_output=True, text=True, check=False)
+    assert stage1.returncode == 0, stage1.stdout + stage1.stderr
+    assert "transition" in stage1.stdout.lower()
+    package = cbed.cdir / "package.json"
+    assert package.is_file()
+    package_digest = hashlib.sha256(package.read_bytes()).hexdigest()
+
+    prior = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
+    code, stage2 = run_pty(["/bin/sh", str(launcher), str(packet), str(cbed.values), candidate,
+                            "--stage2", package_digest],
+                           [("Enter passphrase for", PASSPHRASE)], env=env, cwd=cbed.repo)
+    assert code == 0, stage2
+    assert "transition" in stage2.lower()
+    assert cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip() != prior
+
+
 def test_prepare_values_writes_fresh_reviewable_inputs_without_overwriting(cbed):
     output = cbed.root / "prepared-values"
     argv = ("prepare-values", "--output", str(output), "--signing-key", str(cbed.key) + ".pub",
