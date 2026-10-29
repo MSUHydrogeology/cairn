@@ -73,3 +73,29 @@ Assurance path: high-assurance
 **F2 — Blocking: identify the installation execution path and its binding trigger.** C2 requires the launcher, installer and complete imported closure to be bound and compared, but names neither the proposed entry points nor where the independent reader record and approval are checked before execution and signing. This leaves the proposal review's accepted S1 and the security preflight's trigger unresolved at the point the plan is reviewed. Identify the intended existing entry points and how the independently reviewed closure and signer expectation reach the check, including any new mode or boundary whose exact implementation can be refined in code. -- proposal Response S1; `scripts/repin.py` (`run_ceremony`, `check_record`); `bootstrap/tests/_gate_reanchor.py` (`_verify_executing_authority_code`).
 
 **Covered:** claims, completeness and refusal (lenses 1, 3, 4: plan C1–C2 and accepted Current contract); public paths (2: plan Verification and F1); reuse, consistency and drift (5, 6: named ceremony functions and runbook scope); lifecycle and scope (7, 8: C4 and proposal Decision); satisfiers (9: F1–F2). **Not covered / low confidence:** no execution, mutations, signing or ref changes; closure feasibility and host containment remain for implementation and Security Review. This pass clears only the ordinary plan-review obligation.
+
+
+## Plan review -- Codex (gpt-6.1-sol), Security reviewer -- 2026-10-29
+
+```
+Reviewed commit: 5c42b8cb5584629f8a9eefec026503a6defeb42a
+Target: operative plan, accepted source contract, ordinary plan review
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+
+**Foundations**
+
+1. **Should this happen as framed?** The plan preserves the accepted forward guarantee and separate installation authority, but leaves the bootstrap authority trigger unspecified; implementation must wait for that correction. -- plan C1–C4; source proposal Current contract and Response S1; ordinary review F2.
+2. **Best alternative.** Add an explicit baseline mode within the existing ceremony, with independently approved authority inputs and unchanged ordinary signed-prior checks. Reuse object extraction and the atomic transaction rather than weakening the existing first-run path. -- `scripts/repin.py`, `extract`, `run_ceremony`; `bootstrap/tests/_gate_preflight.py`, `check`.
+3. **What would show it wrong?** An ordinary invocation obtaining baseline authority after prior authentication fails, a candidate choosing its own reader/signer expectations, or substituted executing code reaching signing defeats the accepted separation. -- source proposal security preflight S1–S4; `scripts/repin.py`, `check_record`, `run_ceremony`.
+
+**S1 — Blocking: specify the independent authority and mode boundary.** Ordinary F2 correctly identifies the missing execution path. Make its security requirements concrete in the operative cells: name the planned preparation/installation entry points and explicit mode; identify where independent roster, reader record, reviewed closure and signer expectation enter, and who compares/authorizes them before execution with signing credentials. A digest in a candidate-generated package is consistency evidence, not independent permission. State that missing, malformed or mismatched independent inputs refuse and that ordinary authentication failure never selects baseline mode or the existing unsigned `--first-run` route. Add public-path controls for valid ordinary signed-prior operation, invalid/missing prior authentication without explicit baseline selection, and baseline admission only with the independent inputs; show neither ref moves on refusal. This closes accepted preflight S3–S4 without requiring historical comparison. -- `scripts/repin.py`, `check_record`, `run_ceremony`, `main`; source proposal Response S1 and Current contract.
+
+**S2 — Blocking: retain extraction and execution-boundary checks in the mapping.** Ordinary F1's mapping must include the new mode's containment/membership and no-candidate-execution promises, not only package substitutions. Name public-path tests for malicious tracked paths/symlinks, changed or extra extracted files, and an installation candidate-test sentinel that must never execute. Preserve existing checked-module loading and off-list-import refusal on any reused boot path. Existing extraction tests establish useful owners, but do not establish the new mode reaches those controls. This asks for file containment and phase separation, not host isolation: hostile collection remains an acknowledged risk. -- `scripts/repin.py`, `extract`, `run_ceremony`; `bootstrap/tests/test_repin.py`, `test_a_tracked_symlink_or_submodule_refuses_before_import`, `test_an_unusable_tracked_path_refuses_and_writes_nothing_outside_the_extraction`, `test_a_loaded_local_module_outside_the_list_refuses`.
+
+**Covered:** claims, public paths, completeness and refusal (lenses 1–4: S1–S2 and committed functions above); reuse, consistency and drift (5–6: extraction, reader record, first-run handling and source contract); lifecycle/scope (7–8: C4 and accepted grouped historical loss); satisfiers (9: concrete cell and test additions in S1–S2). **Not covered / low confidence:** design inspection only; no execution, mutations, signing, ref changes or host-isolation proof. No historic-anchor comparison or broad run is requested. This records the Security plan-review pass; findings require author disposition before implementation.
