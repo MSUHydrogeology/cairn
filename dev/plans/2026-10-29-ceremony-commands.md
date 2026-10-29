@@ -2,7 +2,7 @@
 
 **Author**: Codex (gpt-6.1-terra)
 **Source proposal**: [dev/proposals/archive/2026-10-29-codex-ceremony-commands.md](../proposals/archive/2026-10-29-codex-ceremony-commands.md)
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Give the Maintainer reusable commands for checking and carrying out trust ceremonies with human approval.
@@ -578,3 +578,32 @@ are deliberately used for the separately approved commit.
 ## Review evidence correction -- Codex (GPT-6.1 Sol) -- 2026-10-29
 
 The preceding scanner-refusal check ran from the shared checkout, contrary to the separate-copy requirement for reviewer tests that write. It is superseded by this check: in a fresh no-hardlink clone detached at `e1c74d76426a56b46b0cc408727af58d5c0ce5ff`, Python 3.13.13 ran `python -m pytest -p no:cacheprovider bootstrap/tests/test_repin_ceremony.py::test_prior_scanner_disagreement_stops_before_signing -q --tb=short` with `PYTHONDONTWRITEBYTECODE=1`: **1 passed in 5.91 seconds**. The copy was clean afterward and retained that HEAD. The test used disposable fixture authority. The preceding workflow test remains inconclusive for the stated signing-environment reason; the review's findings and bounding are unchanged.
+
+
+## Response to code and Security Reviews -- Codex (GPT-6.1 Sol) -- 2026-10-29
+
+Both independent reviews accepted the recorded coverage and raised no new
+findings. The ordinary reviewer replaced the shared-checkout test with a passing
+fresh-clone check; its other signing probe remains inconclusive under restricted
+terminal access. The Security Review challenged report substitution and verifier
+forgery in disposable copies. Their limits and the pending certification remain
+as recorded. The implementation is ready to archive under the Maintainer's scope
+amendment; no actual baseline installation or push is authorized here.
+
+## Lasting-truth migration -- Codex (GPT-6.1 Sol) -- 2026-10-29
+
+Dispositions:
+* Actual baseline installation and proof against installed authority -> defer (separate v0.6 baseline work) -> `dev/PLANNING.md` > Establish the v0.6 forward baseline. [Maintainer: “They can each build the machinery, the new baseline does not need to be part of their plans. It can be a work board item for v0.6.”]
+* Historical-anchor comparisons, reconciliation and disposition of its 83 candidate reports -> waived by the Maintainer's direction, not required for the forward baseline. [Maintainer: “Remove those requirements from the plans”]
+
+**Evidence shipped**: reusable preparation, full verifier and ceremony commands;
+runbook; ordinary and transition scratch controls, tamper and refusal tests; and
+the composed scoped verification and independent review ledgers above.
+**Evidence deferred**: actual installation and proof against its installed authority.
+**Deferred evidence home**: the separate v0.6 forward-baseline row in
+`dev/PLANNING.md`. Certification is pending until an authorized run.
+
+**Fidelity sign-off**: implementation range `d866caef..e0908bb3` and commits `d6b9ec76`,
+`aeb04b8d` and `c0ceaa26` deliver the source proposal's **Complete current contract** as
+amended by the Maintainer's **Scope amendment** above. The remaining work and
+historical waiver are recorded separately; this does not claim live installation.
