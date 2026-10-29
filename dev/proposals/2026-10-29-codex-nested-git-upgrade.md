@@ -122,3 +122,65 @@ scope and satisfier: R1. No scientific method is changed.
 **Not covered / low confidence:** no runtime reproduction, Windows filesystem
 run, implementation or Security Review; source inspection cannot establish
 future test effectiveness or protection against filesystem races.
+
+
+## Review -- Codex GPT-6 Security reviewer -- 2026-10-29
+
+```
+Reviewed commit: 17dff8a2315ac6a67995f7f46d84d097cb161c46
+Target: opening proposal, usual review R1, and cited upgrade path boundary
+Prior findings: usual R1 remains open
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** Close the demonstrated nested hook-write path, but settle the difference between names and actual read targets before approval -- `bootstrap/_scaffold/upgrade.py:171-235`.
+2. **Best alternative.** Keep one project-name predicate at the common guard, with an accurately bounded promise; a blanket Git-data access guarantee needs additional target checks -- `bootstrap/_scaffold/upgrade.py:221-235`.
+3. **What would show it wrong.** A stable contained link into Git data defeats the opening read guarantee without any filesystem race, while ordinary contained links are expressly compatible -- `bootstrap/_scaffold/upgrade.py:664-668`, `bootstrap/tests/test_upgrade_lockfile_path_containment.py:343-363`.
+
+The direct write fix is justified: Git metadata includes executable hooks, not
+merely descriptive files. Checking every supplied component closes the demonstrated
+nested-name hole without inventing a second path parser. Existing write protection
+separately rejects symlinks before destination writes; preserving it is necessary,
+not evidence that reads reject the same links
+(`bootstrap/_scaffold/upgrade.py:3178-3184`).
+
+**S1 -- settle the access boundary (blocking; joins usual R1).** A harmless
+supplied name can point to a nested repository's Git data while staying inside
+the project. The guard returns the unresolved name; destination bytes and base
+cache text are then read through it (`bootstrap/_scaffold/upgrade.py:228-235`,
+`bootstrap/_scaffold/upgrade.py:664-668`,
+`bootstrap/_scaffold/upgrade.py:708-709`). This is a pre-existing filesystem
+arrangement, not the concurrent-writer capability excluded in S5. The opening
+wrongness signal and S5 therefore promise more than the proposed mechanism.
+
+I recommend the small lexical boundary for closing the measured direct-write
+cause, with an explicit residual exposure: Git data can still be read through
+contained aliases. That loses the opening blanket read outcome; record the
+scope delta and obtain the Maintainer's allowance rather than silently treating
+it as preserved. Alternatively retain that outcome and specify resolved-target
+refusal while preserving ordinary contained links. Satisfier: an appended
+Response carrying the complete chosen contract, matching wrongness signals,
+S1/S5 accounting, documentation criteria and public-command tests for both
+`dst` and `base_cache` aliases. This Security obligation remains open until the
+boundary is settled.
+
+The conservative dot/space and case rule also rejects distinct POSIX names;
+name that compatibility cost in `bootstrap/UPGRADE.md`. Keep diagnostics escaped
+and recovery limited to correcting records or replacing the untrusted stage:
+Git data must not be removed to make an upgrade pass. Public refusal tests should
+observe protected bytes, lockfile and stage state, rather than only an error code.
+
+**Covered:** claims, completeness and fail-closed behavior: guard/read/write
+sites above; public coverage and compatibility: cited containment test and
+proposal verification criteria; consistency and drift: `bootstrap/UPGRADE.md:367`;
+lifecycle, scope and satisfier: S1 and declared high-assurance path. No scientific
+assumption changes.
+**Not covered / low confidence:** source inspection only; no runtime reproduction,
+Windows filesystem behavior, future implementation, mutation effectiveness,
+hard-link aliases or concurrent filesystem writers. No suite was run.
