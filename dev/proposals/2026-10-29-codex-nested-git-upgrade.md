@@ -254,3 +254,60 @@ The derived plan requires Internal and Internal Security Review.
 The opening's lexical-only mechanism is superseded by checks of both supplied
 and resolved path components, to deliver its stated read protection for stable
 symlink aliases.
+
+
+## Review -- Codex gpt-6.1-sol -- 2026-10-29 -- resolved-target revision
+
+```
+Reviewed commit: 976edb7aaca86f8907075567787b8d49ed42e6e9
+Target: Response's new resolved-target mechanism and compatibility contract
+Prior findings: usual R1 closed; Security S1 belongs to its reviewer
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the revision now specifies both names and contained symlink targets, closing the mismatch identified in R1 while retaining ordinary contained read links -- Response, Current contract; `bootstrap/_scaffold/upgrade.py:228-235`.
+2. **Best alternative.** Reuse the target already resolved for containment, and apply one component predicate to both relative paths; a separate filesystem walker adds complexity without improving the declared race boundary -- `bootstrap/_scaffold/upgrade.py:228-235`.
+3. **What would show it wrong.** A stable contained alias to Git data being read, or a normal contained read link being rejected, would falsify the revision's explicit public-command criteria -- Response, Current contract; `bootstrap/tests/test_upgrade_lockfile_path_containment.py:343-363`.
+
+This pass addresses newly specified material, not a clearing round. The design
+can remain small: the guard already resolves the joined name relative to the
+resolved root. Inspect those relative components as well as supplied components;
+keep returning the unresolved path so existing callers and write-link refusals
+retain their established behavior. No new parser, dependency or platform API is
+needed. Keeping the resolved root out of the component set matters: installing
+in a project whose ancestor has a reserved spelling is different from naming
+Git data inside that project.
+
+The new check distinguishes a link into nested Git data from an ordinary
+contained link without banning all read links. Existing helper coverage already
+includes a contained link and a dangling link that resolves outside; preserve
+those cases (`bootstrap/tests/test_upgrade_lockfile_path_containment.py:484-497`).
+Public `dst` and `base_cache` alias coverage promised in the Response is the
+appropriate behavioral proof beyond that helper. Resolving a missing target
+must retain existing containment behavior rather than introduce an accidental
+requirement that every target already exist.
+
+The rule remains a portable conservative name policy, not a claim to enumerate
+all filesystem aliases. Applying it to resolved relative components is coherent
+with the same POSIX compatibility cost as supplied names. The explicit hard-link
+and race limits prevent an unsupported file-identity guarantee. The withdrawal
+ledger correctly identifies the replaced lexical-only mechanism; the revision
+retains the direct-write outcome and adds the mechanism needed for its stable
+symlink-read outcome. R1 is satisfied. Security S1 is not discharged by this
+usual review.
+
+**Covered:** claims, completeness and fail-closed behavior: existing resolve
+and containment guard above; production-path coverage: Response's public alias
+criteria and cited contained-link test; consistency and drift: Response's
+matching documentation, compatibility and recovery commitments; lifecycle and
+placement: new-material scope and separate Security obligation; scope and
+satisfier: R1 disposition and withdrawal ledger. No scientific method changes.
+**Not covered / low confidence:** no implementation, runtime reproduction,
+Windows filesystem experiment, future mutation effectiveness, hard-link identity
+protection or hostile concurrent-writer protection. No tests or full suite run.
