@@ -1,7 +1,7 @@
 # Plan: Release evidence environment
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-release-evidence-environment.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Let release evidence run with the cache-only pytest setting while refusing settings that can steer collection.
@@ -38,7 +38,13 @@ Security preflight S2 and S3: C1 runs the appended-selector mutation and control
 
 ## Verification
 
-Boundary A and B use Python 3.13.x and the owning families: `bootstrap/tests/test_gate_preflight.py`, `bootstrap/tests/test_security_check.py`, `bootstrap/tests/test_quality_gate_order_independence.py`, `bootstrap/tests/test_ceremony_review_report.py`, and `bootstrap/tests/test_gate_reanchor.py`. Exercise the actual evidence entry point, release environment and real grandchild, including the node-identity and selector controls above. Search readers and callers again after edits and add any affected consumer checks. Run applicable security gates and documentation checks (`python scripts/claim_check.py` on changed documents, `python scripts/check_cairn.py`, and `python scripts/link_check.py` when documentation changes); inspect their triggers and record outcomes. Split test invocations within the guard's file limit and reconcile their union.
+Boundary A and B use Python 3.13.x and the owning families: `bootstrap/tests/test_gate_preflight.py`, `bootstrap/tests/test_security_check.py`, `bootstrap/tests/test_quality_gate_order_independence.py`, `bootstrap/tests/test_ceremony_review_report.py`, `bootstrap/tests/test_gate_reanchor.py`, and `bootstrap/tests/test_security_lint.py` (scan coverage). Exercise the actual evidence entry point, release environment and real grandchild, including the node-identity and selector controls above. Search readers and callers again after edits and add any affected consumer checks. Run these standing non-pytest checks and record outcomes:
+
+* `python -c 'import sys; from bootstrap.security_check import run_bandit; sys.exit(run_bandit())'` invokes the release runner's Bandit phase directly, without its full suite. `scan_targets()` includes the ceremony authority closure, including the changed preflight; the phase rejects scanner errors, unallowlisted MEDIUM+ findings and stale allowlist entries. Missing Bandit is a failure, not a skip.
+* For changed Markdown, run `python scripts/claim_check.py <file>` on each document, `python scripts/check_cairn.py` for internal links and claims, and `python scripts/link_check.py` for cross-references. Run `python scripts/quality_gate.py --sub neutrality` if doctrine or shipped templates change; neither is in the current scope. Snippet sync is N/A unless a synced source or block changes.
+* The prior-manifest verifier is a manual Maintainer-triggered ceremony check, not a Boundary B gate or an automatic release phase. C2–C3 follow `bootstrap/REANCHOR_RUNBOOK.md`: the prepared `python scripts/repin.py verify-candidate` invokes the authenticated prior verifier with full collection against the candidate before the Maintainer's signing decision. Its HOLDs and errors are not replaced by Bandit or pytest.
+
+Split test invocations within the guard's file limit and reconcile their union.
 
 Boundary B is **wide** for this trust ceremony: after the final implementation commit, run the reviewed mapping on a clean unchanged commit; record tested SHA, range, interpreter, pre/post state, commands, counts, timings, non-pass dispositions, omissions and `Certified by: pending`. No full-suite certification or release run is implied; those occur only at authorized integration points. The protected-file pinning follows the runbook, not an old-anchor reconciliation invented here. Boundary C is the independent code reviewer's targeted falsification, including the recorded mutation and control.
 
@@ -125,3 +131,10 @@ complete standing-gate inventory, candidate packet, plugin-package audit,
 full-suite certification or release ceremony. This is the fresh-context
 Security plan pass; the author's operative-cell fold must resolve S1 before
 implementation.
+
+
+## Response to plan review -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+| Finding | Disposition |
+|---|---|
+| R1, S1 | Accepted. Verification now names the directly invoked Bandit phase, its closure and failure properties, documentation checks and conditional gates, and the Maintainer-triggered prior verifier. The scoped test map includes scan-coverage tests. |
