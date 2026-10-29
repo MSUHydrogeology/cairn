@@ -1262,6 +1262,10 @@ def _reconcile_generated_blocks(
             raise ModuleDiscoveryConflict(f"malformed or duplicate {kind} entry for {name}")
         block_end = match.end() + close.end()
         block = body[match.start():block_end].rstrip("\n")
+        if name not in _MODULE_DISCOVERY:
+            raise ModuleDiscoveryConflict(
+                f"unknown {kind} entry for {name!r}; save its contents and "
+                "remove the marked entry manually, then retry")
         canonical = renderer(name)
         normalized = re.sub(r"\[x\]", "[ ]", block, flags=re.IGNORECASE)
         entries[name] = (block, canonical)

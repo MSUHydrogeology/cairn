@@ -409,6 +409,30 @@ def test_adoption_reconciles_tasks_and_inventory(tmp_path: Path) -> None:
     assert "dev/modules/README.md" in {record["dst"] for record in lock["files"]}
 
 
+
+def test_adoption_refuses_unknown_marked_task_without_losing_work(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    """An obsolete task identity requires manual reconciliation before adoption."""
+    target = tmp_path.resolve()
+    _install(target)
+    planning = target / "dev/PLANNING.md"
+    inventory = target / "dev/modules/README.md"
+    lock = target / s._LOCKFILE_REL
+    text = planning.read_text(encoding="utf-8")
+    marker = "<!-- cairn:end onboarding-tasks -->"
+    text = text.replace(marker, "<!-- cairn:module-task id=retired-module -->\n"
+                        "* [x] My preserved work\n"
+                        "<!-- cairn:module-task-end id=retired-module -->\n" + marker)
+    planning.write_text(text, encoding="utf-8")
+    before = tuple(path.read_bytes() for path in (planning, inventory, lock))
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    assert s.main(base + ["--adopt-module", "dual-review"]) == 2
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+    assert "retired-module" in output and "manually" in output and "retry" in output
+    assert tuple(path.read_bytes() for path in (planning, inventory, lock)) == before
+
 def test_already_recorded_adoption_repairs_missing_discovery(tmp_path: Path) -> None:
     """Repeat adoption repairs missing marked entries without losing selection."""
     target = tmp_path.resolve()
