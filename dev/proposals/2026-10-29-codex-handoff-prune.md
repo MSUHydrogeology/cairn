@@ -1,7 +1,7 @@
 # Prepare the handoff before the user runs pruning
 
 **Author**: Codex gpt-6.1-sol
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -117,3 +117,56 @@ quiet without pretending that the intent ledger proves it.
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+
+## Review -- Codex gpt-6.1-sol -- 2026-10-29
+
+```
+Reviewed commit: 828ba4a1857912f236235055503bb7edebe5795f
+Target: opening proposal, Context through Assurance path
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: capture must precede deletion, and the user should receive the existing prune command after the owner finishes the handoff. The recorded request and current order disagree -- `dev/PLANNING.md`, “Handoff skill hands the prune to the user”; `tools/session.py::_do_full_handoff`.
+2. **Best alternative.** Share the existing survey, preview and prompt helpers between preparation and pruning; a prose-only reorder cannot expose the capture prompt through the current dry run, which returns before it. This preserves one agent task sequence and one user command -- `tools/session.py::cmd_session_end`, `tools/session.py::_do_full_handoff`; `.agents/skills/session-end/SKILL.md`, sections 1–2.
+3. **What would show it wrong.** Preparation mutating a prune target, or the skill treating a quiet ledger as proof of no live appender, would defeat the premise. The proposed temporary-repository CLI checks and explicit conditional handoff target those failures -- this proposal, “Tests required” and “Proposal”; `.agents/skills/session-end/SKILL.md`, “Run the full handoff last”.
+
+The strongest feature is the split at the actual responsibility boundary: the
+agent completes capture and the durable handoff, then the user performs the
+existing destructive operation. Preparation earns its existence because the
+current dry run omits the evidence used for judgment. Keeping `--handoff`
+compatible avoids another prune interface and another user ceremony. Repeating
+read-only output is acceptable provided its completion message does not send
+the user back through the owner's already completed tasks.
+
+The readiness wording is appropriately limited: fresh claims matter, but an
+old or empty ledger cannot establish that no session will append. Giving the
+command with an unresolved condition preserves the requested handoff without
+inventing a readiness token or granting permission to run it early. The
+proposal retains manual invocation, reflection-only default, single ownership,
+containment, marker and lock protections. Acceptance of this design does not
+clear its separate Security Review or the expressly retained doctrine-evolution
+gate.
+
+**Covered**: claims and drift (#1, #6): roadmap request against
+`tools/session.py::_do_full_handoff`; production-path verification design (#2):
+proposed real-CLI temporary-repository checks, with existing examples in
+`bootstrap/tests/test_session_routines.py::test_handoff_prunes_the_intent_surface`;
+completeness and failure disposition (#3, #4): conditional readiness and preserved
+guards in Proposal and security preflight; consistency and reuse (#5): existing
+CLI helper boundary and skill sections 1–2; lifecycle placement (#7):
+`doctrine/session-routines.md`, “The routine has two modes”; scope and satisfiers
+(#8, #9): non-pruning preparation contract and “Tests required”. No findings need
+satisfiers.
+
+**Not covered / low confidence**: no implementation exists to falsify; no CLI
+was run in handoff or prune mode, and no test suite was run. Security Review
+remains separate. The plan must resolve exact test nodes, shared-helper design,
+install consumers and the doctrine-evolution gate before implementation.
