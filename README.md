@@ -21,7 +21,7 @@ the repository, so work can continue across sessions, tools, and collaborators.
 
 ![Chats end; the repository keeps the record. An agent session today, a different AI tool next week and a new colleague next year all read and write the same files: the project's rules for agents, the proposals recording what was decided and why, the plans recording how it was checked, and the code with its tests.](docs/assets/shared-record-across-sessions.svg)
 
-[Try a small example](docs/quickstart.md) · [See a toy example](#a-toy-example-asking-for-a-new-feature) · [Read the workflow](docs/getting-started.md) · [Browse the methodology](doctrine/) · [Project site](https://msuhydrogeology.github.io/cairn/)
+[Try a small example](docs/quickstart.md) · [See a toy example](#a-toy-example-asking-for-a-new-feature) · [Read the workflow](docs/getting-started.md) · [Contribute](CONTRIBUTING.md) · [Browse the methodology](doctrine/) · [Project site](https://msuhydrogeology.github.io/cairn/)
 
 ## What it provides
 

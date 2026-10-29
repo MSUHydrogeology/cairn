@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use Cairn, please cite it using the metadata below."
-title: "Cairn: An Adaptable Framework for Scientist-AI Research Software Teams"
+title: "Cairn: A Methodology for Scientist-AI Research Software Teams"
 abstract: >-
   Cairn is a methodology for scientist-led research-software teams
   adopting AI agents: an invariant doctrine of recorded, reviewed
