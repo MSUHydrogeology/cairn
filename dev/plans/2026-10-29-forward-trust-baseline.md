@@ -120,3 +120,7 @@ Assurance path: high-assurance
 | S2 | Accepted: C2 and Verification require public-path containment, checked loading, off-list refusal and a no-candidate-test sentinel. |
 
 Both plan-review passes are recorded, including the Internal Security Review obligation. Their blocking findings are folded into the operative cells; implementation follows the single plan-review round. Host compromise and hostile collection remain limitations, not claims of containment.
+
+## Author correction -- Codex -- 2026-10-29
+
+The Scope line's `c1b-proposed-roster.json` path is stale: its own recorded status is proposed, and it predates the exact approval below. Use the Maintainer-approved `dev/plans/archive/2026-10-28-test-trust-boundary/c1b-roster-6cc95fa7.json`, committed at `884e6d53b4f6ff6329a1148dc49a32294628109f`, raw SHA-256 `188fa76d82744be571bdc7ca91a43d605776b9df5ba0ac729e2cf22af66b8cc4`. The approval is recorded in `dev/plans/archive/2026-10-28-test-trust-boundary.md`, `C1c roster approval`; its bytes match `bootstrap/tests/fixtures/protected_test_roster.json` and `_APPROVED_INITIAL_ROSTER_SHA256`. The roster itself is unchanged.

@@ -30,6 +30,7 @@ fresh bytecode folder.  A same-user edit to this file is outside what it can det
 """
 import os
 import sys
+import tempfile
 
 if __name__ == "__main__":
     if not sys.flags.isolated:
@@ -251,6 +252,131 @@ def extract(repo, head, dest):
         if sha(target.read_bytes()) != sha(blobs[oid]):
             raise Refuse(f"{d(path)} read back from disk differs from its blob.")
     return ents
+
+
+def baseline_prepare(repo, candidate, approved_roster, reader_record, output_dir):
+    """Prepare a no-predecessor baseline package from one committed candidate.
+
+    The approved roster and reader record are inputs from outside the candidate.
+    Candidate code is collected only in an extracted tree with an allowlisted
+    environment; it never receives the caller's signing credentials. This
+    command prepares evidence only and cannot sign or move a ref.
+    """
+    repo = Path(repo).resolve()
+    candidate = git_text(repo, "rev-parse", "--verify", candidate + "^{commit}")
+    if git(repo, "cat-file", "blob", f"{candidate}:{REPIN_REL}", check=False) != Path(__file__).read_bytes():
+        raise Refuse("running scripts/repin.py differs from the committed candidate; commit and review it first.")
+    output = _plain_absolute_path(output_dir)
+    parent = output.parent
+    if output.exists() or output.is_symlink() or parent.is_symlink() or not parent.is_dir():
+        raise Refuse("baseline package path must be new, with an existing plain parent.")
+    roster_path = _plain_absolute_path(approved_roster)
+    reader_path = _plain_absolute_path(reader_record)
+    for path in (roster_path, reader_path):
+        if path.is_symlink() or not path.is_file():
+            raise Refuse("independent approved roster and reader record must be plain files.")
+        if path == repo or repo in path.parents:
+            raise Refuse("approved roster and reader record must be supplied outside the candidate checkout.")
+    if output == repo or repo in output.parents:
+        raise Refuse("baseline package must be written outside the candidate checkout.")
+    roster_raw = roster_path.read_bytes()
+    reader_raw = reader_path.read_bytes()
+    reader = _unique_json(reader_raw, "baseline reader record")
+    if (reader.get("schema") != "cairn-baseline-reader/v1"
+            or reader.get("candidate") != candidate
+            or reader.get("roster_sha256") != sha(roster_raw)
+            or not isinstance(reader.get("reviewer"), str) or not reader["reviewer"].strip()
+            or reader.get("reviewed") is not True):
+        raise Refuse("independent reader record is missing, malformed, or bound to different inputs.")
+
+    temp = Path(tempfile.mkdtemp(prefix="repin-baseline-"))
+    try:
+        extracted = temp / "candidate"
+        ents = extract(repo, candidate, extracted)
+        required = {"bootstrap/tests/fixtures/protected_test_roster.json",
+                    MANIFEST_REL, REPIN_REL, RUNBOOK,
+                    "bootstrap/reanchor.sh", "bootstrap/reanchor-launcher.template.sh",
+                    *LISTED, *ctx_baseline_tool_paths()}
+        paths = {path for _mode, _oid, path in ents}
+        sys.path.insert(0, str(extracted))
+        try:
+            import importlib
+            gm = importlib.import_module("bootstrap.tests._gate_manifest")
+            gp = importlib.import_module("bootstrap.tests._gate_preflight")
+            approved = gm._roster_from_bytes(roster_raw, require_initial_approval=True)
+            if not required.issubset(paths):
+                raise Refuse("candidate is missing required baseline or authority files: "
+                             + ", ".join(sorted(required - paths)))
+            if approved["path"] not in required or git(
+                    repo, "cat-file", "blob", f"{candidate}:{approved['path']}",
+                    check=False) != roster_raw:
+                raise Refuse("candidate roster differs from the independently supplied approved roster.")
+        except (OSError, RuntimeError, ValueError, KeyError, ImportError) as exc:
+            if isinstance(exc, Refuse):
+                raise
+            raise Refuse(f"independent approved roster is invalid: {exc}") from None
+        engine = sorted(p for _m, _o, p in ents
+                        if re.fullmatch(r"bootstrap/_scaffold/[^/]+\.py", p))
+        probe_ctx = {"ext": extracted, "tmp": temp, "engine": engine,
+                     "ents": ents, "closure_changed": []}
+        ast = ast_view(probe_ctx)
+        lock = lockfile_correction(probe_ctx)
+        if ast["owed"] or lock is not None:
+            raise Refuse("candidate still owes reviewed AST or lockfile preparation. Complete and "
+                         "commit those changes before preparing the final baseline package.")
+        # Load the candidate's manifest producer and independent static checker
+        # from the extracted candidate, then compare their derived static fields.
+        try:
+            manifest = gm.produce(extracted, protected_roster=approved)
+            static = gp.rederive_static_manifest(candidate, protected_roster=approved, repo=repo)
+            if manifest.get("collection", {}).get("node_ids") == []:
+                raise Refuse("candidate collection is empty.")
+            manifest = gp.authoritative_manifest(manifest, static)
+        except (OSError, RuntimeError, ValueError, KeyError, ImportError) as exc:
+            if isinstance(exc, Refuse):
+                raise
+            raise Refuse(f"candidate static derivation failed: {exc}") from None
+        finally:
+            if sys.path and sys.path[0] == str(extracted):
+                sys.path.pop(0)
+        raw_manifest = dump(manifest)
+        tool_hashes = {p: sha(git(repo, "cat-file", "blob", f"{candidate}:{p}"))
+                       for p in sorted(required) if p.endswith(".py") or p in
+                       (RUNBOOK, "bootstrap/reanchor.sh", "bootstrap/reanchor-launcher.template.sh")}
+        package = {"schema": "cairn-baseline-package/v1", "candidate": candidate,
+                   "candidate_tree_sha256": _candidate_tree_digest(repo, candidate),
+                   "roster_sha256": sha(roster_raw), "manifest_sha256": sha(raw_manifest),
+                   "collection_sha256": sha(dump({"node_ids": manifest["collection"]["node_ids"],
+                                                   "skip_xfail_marked": manifest["collection"]["skip_xfail_marked"]})),
+                   "interpreter": sys.version.split()[0], "python": os.path.realpath(sys.executable),
+                   "python_sha256": sha(Path(os.path.realpath(sys.executable)).read_bytes()),
+                   "tool_hashes": tool_hashes, "reader_record_sha256": sha(reader_raw),
+                   "reader_record": str(reader_path), "old_anchor_id": (
+                       git(repo, "rev-parse", "--verify", ANCHOR_REF + "^{commit}",
+                           check=False) or b"missing").decode().strip()}
+        packet = dump(package)
+        baseline_ctx = {"repo": repo, "head": candidate, "baseline": package,
+                        "baseline_manifest": raw_manifest}
+        check_record(baseline_ctx, sha(packet), package["reader_record_sha256"],
+                     baseline_record=reader_path)
+        build_packet(baseline_ctx, output, baseline=True)
+        say(f"prepared baseline package for candidate {candidate}; no authority changed")
+        say(f"manifest {sha(raw_manifest)}; collection {manifest['collection']['node_count']} nodes; "
+            f"reader record {sha(reader_raw)}")
+        return package
+    finally:
+        shutil.rmtree(temp, ignore_errors=True)
+
+
+def ctx_baseline_tool_paths():
+    """The independent derivation and manifest producer used for preparation."""
+    return ["bootstrap/tests/_gate_manifest.py", "bootstrap/tests/_gate_preflight.py"]
+
+
+def package_collection_sha(manifest):
+    collection = manifest.get("collection", {})
+    return sha(dump({"node_ids": collection.get("node_ids"),
+                     "skip_xfail_marked": collection.get("skip_xfail_marked")}))
 
 
 #: The in-process modules, each after the ones it imports.  The others in LISTED
@@ -1506,10 +1632,27 @@ def write_new(path, raw):
         fh.write(raw)
 
 
-def build_packet(ctx, cdir, *, transition=False):
+def build_packet(ctx, cdir, *, transition=False, baseline=False):
     """`packet`: write the packet over HEAD's authority files and the launcher (the anchor's
     template with the packet's digest in its one slot).  Ordinary ceremonies only: a changed
-    authority file means the packet and launcher are built by hand, so nothing is written."""
+    authority file means the packet and launcher are built by hand, so nothing is written.
+
+    Baseline mode uses the same exclusive packet writer for the independently
+    checked manifest/package pair; it is selected by the explicit baseline
+    preparation command and never enters the ordinary ceremony path.
+    """
+    if baseline:
+        output = _plain_absolute_path(cdir)
+        if output.exists() or output.is_symlink() or output == ctx["repo"] or ctx["repo"] in output.parents:
+            raise Refuse("baseline package destination must be new and outside the checkout.")
+        output.mkdir()
+        try:
+            write_new(output / "gate_manifest.json", ctx["baseline_manifest"])
+            write_new(output / "baseline-package.json", dump(ctx["baseline"]))
+        except BaseException:
+            shutil.rmtree(output, ignore_errors=True)
+            raise
+        return sha(dump(ctx["baseline"]))
     if ctx["closure_changed"] and not transition:
         raise Refuse("these authority files differ from the anchor: "
                      + ", ".join(d(m) for m in ctx["closure_changed"])
@@ -1600,9 +1743,28 @@ def record_values(text):
     return one, members
 
 
-def check_record(ctx, packet_digest, launcher_digest):
+def check_record(ctx, packet_digest, launcher_digest, *, baseline_record=None):
     """The reader's record is the candidate's tip: committed on the commit the reader read,
     changing only itself, and naming this packet, this launcher and these member bytes."""
+    if baseline_record is not None:
+        path = _plain_absolute_path(baseline_record)
+        if path.is_symlink() or not path.is_file():
+            raise Refuse("independent baseline reader record is missing or a symlink.")
+        record = _unique_json(path.read_bytes(), "baseline reader record")
+        package = ctx["baseline"]
+        expected = {"schema": "cairn-baseline-reader/v1", "candidate": package["candidate"],
+                    "roster_sha256": package["roster_sha256"],
+                    "manifest_sha256": package["manifest_sha256"],
+                    "collection_sha256": package["collection_sha256"],
+                    "interpreter": package["interpreter"], "tool_hashes": package["tool_hashes"]}
+        if (set(record) != set(expected) | {"reviewer", "reviewed"}
+                or any(record.get(key) != value for key, value in expected.items())):
+            raise Refuse("independent baseline reader record is stale or mismatched.")
+        if (record.get("reviewed") is not True or not isinstance(record.get("reviewer"), str)
+                or not record["reviewer"].strip()
+                or package["reader_record_sha256"] != sha(path.read_bytes())):
+            raise Refuse("independent baseline reader record lacks review attribution or digest binding.")
+        return
     repo, head, ext = ctx["repo"], ctx["head"], ctx["ext"]
     if not (ext / RECORD_REL).is_file():
         raise Refuse(f"{RECORD_REL} is not committed at HEAD. The reader commits it on the commit "
@@ -1972,7 +2134,32 @@ def main(argv=None, *, launchctl=launchctl_socket):
     vr.add_argument("--dispositions", metavar="FILE", help="human dispositions bound to the exact prior report")
     vr.add_argument("--operator-confirms-key-away", action="store_true",
                     help="operator states that the signing key is away; a second terminal YES is required")
+    bp = sub.add_parser("baseline-prepare", help="prepare a no-signed-predecessor baseline package")
+    bp.add_argument("--candidate", default="HEAD", metavar="SHA|REF")
+    bp.add_argument("--approved-roster", required=True, metavar="FILE")
+    bp.add_argument("--reader-record", required=True, metavar="FILE")
+    bp.add_argument("--output-dir", required=True, metavar="DIR")
     args = ap.parse_args(argv)
+    if args.verb == "baseline-prepare":
+        saved_env = dict(os.environ)
+        safe_home = tempfile.mkdtemp(prefix="repin-baseline-home-")
+        safe_env = {key: os.environ[key] for key in ("PATH", "TMPDIR", "SYSTEMROOT")
+                    if key in os.environ}
+        safe_env.update(HOME=safe_home, LC_ALL="C", GIT_TERMINAL_PROMPT="0",
+                        GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull)
+        try:
+            os.environ.clear()
+            os.environ.update(safe_env)
+            baseline_prepare(Path(__file__).resolve().parent.parent, args.candidate,
+                             args.approved_roster, args.reader_record, args.output_dir)
+            return 0
+        except (Refuse, OSError, ValueError, KeyError) as exc:
+            print(f"\nrepin stopped; no authority changed.\n  {exc}", file=sys.stderr)
+            return 2
+        finally:
+            os.environ.clear()
+            os.environ.update(saved_env)
+            shutil.rmtree(safe_home, ignore_errors=True)
     if args.verb == "prepare-values":
         try:
             prepare_values(Path(__file__).resolve().parent.parent, args.output, args.signing_key,

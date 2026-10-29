@@ -27,6 +27,8 @@ import pytest
 
 from bootstrap.tests import _ast_attest as A
 from bootstrap.tests import _gate_manifest as GM
+from bootstrap.tests import _gate_preflight as GP
+from scripts import repin as RP
 
 REAL = Path(__file__).resolve().parents[2]
 PY = sys.executable
@@ -178,6 +180,149 @@ def test_the_extraction_ignores_gitattributes(bed):
         assert ENGINE not in tar.getnames(), "the instrument is wrong: git archive kept the file"
     out = ok(bed.run("status"))
     assert "over 1 committed engine modules" in out
+
+
+def test_baseline_preparation_refuses_substituted_external_roster_before_collection(bed, tmp_path):
+    """The explicit baseline path requires the approved roster supplied outside C."""
+    roster = tmp_path / "approved-roster.json"
+    roster.write_bytes((REAL / GM._PROTECTED_ROSTER_REL).read_bytes() + b" ")
+    reader = tmp_path / "reader.json"
+    reader.write_text(_dump({"schema": "cairn-baseline-reader/v1",
+                             "candidate": bed.git("rev-parse", "HEAD").stdout.strip(),
+                             "roster_sha256": hashlib.sha256(roster.read_bytes()).hexdigest(),
+                             "reviewer": "scratch", "reviewed": True}))
+    output = tmp_path / "baseline-package"
+    before = bed.git("rev-parse", "HEAD").stdout.strip()
+    result = bed.run("baseline-prepare", "--approved-roster", str(roster),
+                     "--reader-record", str(reader), "--output-dir", str(output))
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert "independent approved roster is invalid" in result.stderr
+    assert bed.git("rev-parse", "HEAD").stdout.strip() == before
+    assert not output.exists()
+
+
+def test_baseline_preparation_requires_independent_inputs(bed, tmp_path):
+    """Missing reader authority cannot fall through to ordinary first-run behavior."""
+    roster = tmp_path / "approved-roster.json"
+    roster.write_bytes((REAL / GM._PROTECTED_ROSTER_REL).read_bytes())
+    output = tmp_path / "baseline-package"
+    before = bed.git("rev-parse", "HEAD").stdout.strip()
+    result = bed.run("baseline-prepare", "--approved-roster", str(roster),
+                     "--output-dir", str(output))
+    assert result.returncode == 2
+    assert "--reader-record" in result.stderr
+    assert bed.git("rev-parse", "HEAD").stdout.strip() == before
+    assert not output.exists()
+
+
+def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path, monkeypatch):
+    """The public command packages raw candidate bytes and independently bound evidence."""
+    repo = tmp_path / "repo"
+    clone = subprocess.run(["git", "clone", "--no-hardlinks", str(REAL), str(repo)],
+                           capture_output=True, text=True, check=False)
+    assert clone.returncode == 0, clone.stderr
+    git_env = {"PATH": os.environ["PATH"], "HOME": str(tmp_path), "LC_ALL": "C",
+               "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"}
+    candidate_paths = ("scripts/repin.py", "bootstrap/tests/test_repin.py",
+                       "dev/plans/2026-10-29-forward-trust-baseline.md")
+    for relative in candidate_paths:
+        (repo / relative).write_bytes((REAL / relative).read_bytes())
+    credential_marker = tmp_path / "candidate-saw-credential"
+    sentinel = repo / "bootstrap/tests/test_baseline_collection_environment.py"
+    sentinel.write_text(
+        "import os\n"
+        f"marker = {str(credential_marker)!r}\n"
+        "names = ('SSH_AUTH_SOCK', 'GPG_AGENT_INFO', 'AWS_SECRET_ACCESS_KEY')\n"
+        "present = [name for name in names if os.environ.get(name)]\n"
+        "if present:\n"
+        "    open(marker, 'w', encoding='utf-8').write(','.join(present))\n",
+        encoding="utf-8")
+    subprocess.run(["git", "-C", str(repo), "add", *candidate_paths],
+                   env=git_env, check=True)
+    subprocess.run(["git", "-C", str(repo), "add", str(sentinel.relative_to(repo))],
+                   env=git_env, check=True)
+    subprocess.run(["git", "-C", str(repo), "-c", "user.name=scratch",
+                    "-c", "user.email=scratch@example.invalid", "commit", "-m", "baseline candidate"],
+                   env=git_env, capture_output=True, text=True, check=True)
+    candidate = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
+                               capture_output=True, text=True, check=True).stdout.strip()
+
+    roster = tmp_path / "approved-roster.json"
+    roster.write_bytes((repo / GM._PROTECTED_ROSTER_REL).read_bytes())
+    missing_reader = tmp_path / "missing-prep-reader.json"
+    missing_reader.write_text(_dump({"schema": "cairn-baseline-reader/v1", "candidate": candidate,
+                                     "roster_sha256": RP.sha(roster.read_bytes()),
+                                     "reviewer": "scratch", "reviewed": True}))
+    pending = tmp_path / "pending-baseline-package"
+    missing = subprocess.run([PY, str(repo / "scripts/repin.py"), "baseline-prepare",
+                              "--candidate", candidate, "--approved-roster", str(roster),
+                              "--reader-record", str(missing_reader), "--output-dir", str(pending)],
+                             cwd=repo, env=git_env, capture_output=True, text=True, check=False)
+    assert missing.returncode == 2, missing.stdout + missing.stderr
+    assert "owes reviewed AST or lockfile preparation" in missing.stderr
+    assert not pending.exists()
+
+    initial_tree = tmp_path / "ast-input"
+    ents = RP.extract(repo, candidate, initial_tree)
+    engine = sorted(path for _mode, _oid, path in ents
+                    if path.startswith("bootstrap/_scaffold/") and path.endswith(".py"))
+    txn = RP.build_transaction({"repo": repo, "head": candidate, "anchor": "no-predecessor",
+                                 "ext": initial_tree, "tmp": tmp_path, "ents": ents,
+                                 "engine": engine, "closure_changed": [],
+                                 "session_oid": RP.git_text(repo, "rev-parse",
+                                                            f"{candidate}:tools/session.py")})
+    assert txn is not None and txn["outputs"]
+    for relative, output_row in txn["outputs"].items():
+        (repo / relative).write_bytes(output_row["new_text"].encode())
+    prepared_paths = sorted(txn["outputs"])
+    subprocess.run(["git", "-C", str(repo), "add", *prepared_paths], env=git_env, check=True)
+    subprocess.run(["git", "-C", str(repo), "-c", "user.name=scratch",
+                    "-c", "user.email=scratch@example.invalid", "commit", "-m", "AST preparation"],
+                   env=git_env, capture_output=True, text=True, check=True)
+    candidate = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
+                               capture_output=True, text=True, check=True).stdout.strip()
+    monkeypatch.setattr(os, "environ", {"PATH": os.environ["PATH"], "HOME": str(tmp_path),
+                                        "LC_ALL": "C", "GIT_CONFIG_GLOBAL": os.devnull,
+                                        "GIT_CONFIG_NOSYSTEM": "1", "GIT_TERMINAL_PROMPT": "0"})
+    extracted = tmp_path / "reader-candidate"
+    ents = RP.extract(repo, candidate, extracted)
+    approved = GM._roster_from_bytes(roster.read_bytes(), require_initial_approval=True)
+    manifest = GM.produce(extracted, protected_roster=approved)
+    static = GP.rederive_static_manifest(candidate, protected_roster=approved, repo=repo)
+    manifest = GP.authoritative_manifest(manifest, static)
+    tool_paths = {approved["path"], RP.MANIFEST_REL, RP.REPIN_REL, RP.RUNBOOK,
+                  "bootstrap/reanchor.sh", "bootstrap/reanchor-launcher.template.sh",
+                  *RP.LISTED, *RP.ctx_baseline_tool_paths()}
+    tool_hashes = {p: RP.sha(RP.git(repo, "cat-file", "blob", f"{candidate}:{p}"))
+                   for p in sorted(tool_paths)
+                   if p.endswith(".py") or p in
+                   (RP.RUNBOOK, "bootstrap/reanchor.sh", "bootstrap/reanchor-launcher.template.sh")}
+    manifest_raw = RP.dump(manifest)
+    collection_sha = RP.package_collection_sha(manifest)
+    reader = tmp_path / "reader.json"
+    reader.write_text(_dump({"schema": "cairn-baseline-reader/v1", "candidate": candidate,
+                             "roster_sha256": RP.sha(roster.read_bytes()),
+                             "manifest_sha256": RP.sha(manifest_raw),
+                             "collection_sha256": collection_sha,
+                             "interpreter": sys.version.split()[0], "tool_hashes": tool_hashes,
+                             "reviewer": "independent scratch reviewer", "reviewed": True}))
+    output = tmp_path / "baseline-package"
+    result = subprocess.run([PY, str(repo / "scripts/repin.py"), "baseline-prepare",
+                             "--candidate", candidate, "--approved-roster", str(roster),
+                             "--reader-record", str(reader), "--output-dir", str(output)],
+                            cwd=repo,
+                            env={**git_env, "SSH_AUTH_SOCK": "/tmp/unavailable-agent.sock",
+                                 "GPG_AGENT_INFO": "/tmp/unavailable-gpg-agent",
+                                 "AWS_SECRET_ACCESS_KEY": "must-not-reach-candidate"},
+                            capture_output=True, text=True, check=False)
+    assert result.returncode == 0, result.stdout + result.stderr
+    package = json.loads((output / "baseline-package.json").read_text())
+    assert package["candidate"] == candidate
+    assert package["manifest_sha256"] == RP.sha((output / "gate_manifest.json").read_bytes())
+    assert package["reader_record_sha256"] == RP.sha(reader.read_bytes())
+    assert json.loads((output / "gate_manifest.json").read_bytes()) == manifest
+    assert not credential_marker.exists(), "candidate collection inherited a signing credential"
+    assert "no authority changed" in result.stdout
 
 
 def test_a_case_colliding_tree_refuses_before_import(bed):
