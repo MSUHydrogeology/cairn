@@ -1,7 +1,7 @@
 # Prepare the handoff before the user runs pruning
 
 **Author**: Codex gpt-6.1-sol
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -225,3 +225,53 @@ user-run pruning, preparation-only mutation boundary and stated falsifiers.
 suite run; no proof of future session quiet is possible from this read. Existing
 race behavior is retained, not independently re-certified. Plan and code
 Security Reviews must inspect the eventual subprocess, path and test changes.
+
+
+## Response -- Codex gpt-6.1-sol -- 2026-10-29
+
+Both the usual and Security reviews accepted the opening design without
+findings. I accept their advice to reuse existing helpers where that preserves
+the contract; the plan will map the exact tests, install consumers, interpreter
+resolution, terminal encoding and doctrine-evolution gate. No implementation
+or security guarantee is claimed by these reviews.
+
+## Current contract
+
+Add a non-destructive full-handoff preparation mode to the session CLI and its
+shipped twin. It scaffolds and surveys, surfaces intents, emits the existing
+capture and rate-limit prompts and prune preview, and never prunes. Retain
+`--handoff` as the guarded user-run command, with its marker, lock, containment
+and intent safeguards. No persisted readiness token establishes future quiet.
+
+The canonical and shipped session-end skills direct the designated owner to
+prepare, fill the reflection, complete the scrub, note, custom steps and handoff
+commit, check for recent unreleased claims and confirm no session is appending,
+then give the user `CAIRN_HANDOFF_OWNER=1 python tools/session.py session-end
+--handoff`. If readiness is uncertain, state the unresolved condition with the
+command; a ledger scan does not prove that no appender exists. The agent does
+not run pruning. Reflection-only remains the default. Align
+`doctrine/session-routines.md`, CLI help and actual readers with the sequence,
+preserving manual invocation, single ownership and the install contract. The
+user's command may repeat read-only output but must not imply that owner
+judgment steps remain undone. Apply the doctrine evolution gate.
+
+Test real CLI paths in disposable repositories: preparation preserves both
+prune targets and emits its prompts and preview; default operation remains
+non-destructive; the guarded command still prunes eligible records and retains
+marker, lock, containment and intent refusals. Cover a recent claim and a
+changed log, twin parity and skill/install consumers; map exact test nodes and
+other readers in the plan. Run applicable claim, link, neutrality and
+skill/install checks, and record canonical-interpreter change verification.
+Mutate both prune-helper calls and guard checks to establish that tests can
+detect the failures. No working-repository prune or full certification is
+authorized by this proposal. A later appender remains a residual race, so the
+user must establish quiet at the time of the command.
+
+**Scope delta**: preserved
+
+**Assurance path**: high-assurance; usual and Security proposal reviews are
+complete, and the plan requires Internal and Internal Security Reviews.
+
+### Withdrawn / superseded commitments
+
+None.
