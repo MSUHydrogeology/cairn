@@ -75,3 +75,34 @@ The accepted proposal explicitly requires the plan to map dependencies, policy o
 Recommend an explicit path → record → reader → owner map for the runner, scanner and three policy files; establish the supported reviewed policy/lock reconciliation and upgrade path, or identify the precise change needed and its authority boundary. Map existing nodes and proposed new tests to selection, every bound member and schema field, real installs, direct invocation, policy reconciliation, upgrade and failure behavior. Retain the wide contract-surface verification and the guard-limit union; do not replace it with an unrequested full suite. If the procedure cannot be established safely, leave implementation blocked rather than choosing an unreviewed authority during C2.
 
 **Coverage:** Read the committed plan and accepted proposal, installed mapping, runner dependencies, dispatcher test names, and lock writer locations for claims, completeness, scope, verification and alternatives. This is a plan review; no implementation or runtime checks were performed. The separate Internal Security Review remains owed.
+
+
+## Plan review -- Codex (gpt-6.1-sol, Security reviewer) -- 2026-10-29
+
+Reviewed commit: 426fb26ccfce8255075e4a7df66e967b2161e80c
+Target: operative plan; dependency execution and reviewed policy authority
+Prior findings: ordinary P1 (not discharged by this pass)
+Assurance path: high-assurance
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: 1 blocking
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Does the plan deliver the Decision?** Its fixed dependency tuple, pre-launch checks and strict child result deliver the intended narrowing, but reviewed policy authority is still deferred to implementation -- plan C1/C2; accepted proposal, Response and Evidence / verification plan.
+2. **Best alternative.** Establish the existing scoped finalize path and preserved upstream baseline before inventing another reconciliation mechanism; bind all five files without extending living-state exceptions -- `bootstrap/_scaffold/upgrade.py::_cmd_finalize_lockfile`, `bootstrap/_scaffold/lockfile.py::classify_verbatim`.
+3. **What would show it wrong.** A finalized roots/residual/allowlist edit that becomes silently overwritten or an altered apparatus member launched unchecked defeats the security outcome -- `bootstrap/_scaffold/upgrade.py::_compute_upgrade`, `templates/modules/default-on/run_security_verification.py::_bind_runner`.
+
+### S1 -- Settle the policy authority transition before implementation
+
+This reinforces ordinary P1 rather than adding a second mechanism. C2 leaves the supported procedure and possible upgrade change to the implementer. That is a security design decision: which reviewed bytes the dispatcher accepts, and whether upgrade preserves them. The install writer is not a reconciliation command: `bootstrap/_scaffold/install.py::write_install_lockfile` refuses diverged installed bytes. All five content apparatus files are currently verbatim installs -- `bootstrap/_scaffold/config.py`, content-security mapping.
+
+There is already a practical candidate. `bootstrap/_scaffold/upgrade.py::_cmd_finalize_lockfile` supports named paths, advances their `hash`, preserves the original verbatim `base_hash`, and refuses unmatched names. Upgrade classifies verbatim files against `base_hash` where available, so a deliberate policy fork should remain locally modified rather than become replaceable merely because its accepted `hash` advanced. Scoped finalize skips the whole-tree dirty check; it is deliberate re-attestation, not proof that a review happened. The guidance must name the human review and exact selected paths before that command, then review/commit the resulting lock change. Neither bare finalize nor the API/web living-state exception should become an automatic policy acceptance step.
+
+Satisfier: fold the exact reviewed edit/finalize/lock-review procedure and the five-path record/reader/owner map into C2; name tests proving selected policy reconciliation leaves unrelated drift unblessed, the real dispatcher then accepts the intended bytes, and a later upstream policy change preserves the customized policy without silently trusting or overwriting it. Determine whether existing behavior suffices before authorizing any engine change. This preserves accepted scope.
+
+The remaining security design is proportionate: validate scanner and policy siblings before child import, keep argv source-owned, preserve isolated Python and closed child environment, and map any flag to FINDINGS. Existing same-user check/use races and host Git provenance remain trusted-tree limits, not new authentication promises -- `templates/modules/default-on/run_security_verification.py::_is_regular_and_unsymlinked`, `_run_child`; `templates/modules/team-gated/content_scan_runner.py::_resolve_git`.
+
+**Coverage:** Covered claims, public-path evidence design, completeness, fail-closed behavior, drift, lifecycle, scope and satisfiers through the cited bindings, install/finalize/upgrade owners, accepted proposal and `bootstrap/tests/test_security_verification.py::TestComposition`. Not covered: runtime implementation, mutations or certification; no tests or full suite run, and no scientific result is involved. This records the Security plan pass; the author must fold findings before implementation.
