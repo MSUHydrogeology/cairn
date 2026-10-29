@@ -1,7 +1,7 @@
 # Plan: Connect the content tripwire to the security dispatcher
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-dispatcher-content-scan.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Run the installed content tripwire through the local security command and report its limited evidence honestly.
@@ -158,7 +158,7 @@ The Security plan pass is recorded above; its findings are addressed in the oper
 **Foundations**
 
 1. **Does it do what it claims?** The content leg binds the five installed paths before launching the child and maps flags to findings, but the stated reviewed range includes additional onboarding changes without their owning tests in the author's verification record -- `templates/modules/default-on/run_security_verification.py::_bind_runner`, `scripts/content_scan_runner.py::main`, and the verification record above.
-2. **Best alternative.** Keep the existing runner and fixed registry; accurately delimit the change or add the missing author-owned evidence, and correct the runner path in the ledger -- `bootstrap/_scaffold/install.py` and `dev/plans/2026-10-29-dispatcher-content-scan/implementation-verification.md`.
+2. **Best alternative.** Keep the existing runner and fixed registry; accurately delimit the change or add the missing author-owned evidence, and correct the runner path in the ledger -- `bootstrap/_scaffold/install.py` and `dev/plans/archive/2026-10-29-dispatcher-content-scan/implementation-verification.md`.
 3. **What would show it wrong.** A changed onboarding behavior failing its owning tests, or a bound member reaching the child after drift, would falsify the claims -- see the falsification ledger below.
 
 **Bounding**: WIDER RUN REQUIRED -- the stated range includes `d3c9b80a` and `258dbb26`, which change `bootstrap/_scaffold/install.py` and onboarding, preset and scaffold tests. The Boundary B record lists neither those owning test families nor a separate evidence record for them. The author must either establish the correct independently verified range and cite evidence for every change in it, or record the missing checks on the candidate commit. My passing run below does not substitute for the author's record.
@@ -183,7 +183,7 @@ The Security plan pass is recorded above; its findings are addressed in the oper
 
 | Finding | Disposition |
 |---|---|
-| CR1 | Addressed with separately attributed evidence. On clean commit `3dcb5806`, the author ran the four omitted onboarding, preset and scaffold test files: 182 passed. The module-discovery changes have independent wide evidence on clean commit `eee603a6`, recorded in `dev/plans/2026-10-29-module-discovery-activation.md` and committed at `f51b84b1`; that record names all mapped tests, gates, interpreter and mutation outcomes. The supplemental record distinguishes dispatcher-owned commits `dc309b0e` and `3dcb5806` from module-owned changes and identifies the integrated tested candidate. See the implementation verification evidence file for the commands and attribution.
+| CR1 | Addressed with separately attributed evidence. On clean commit `3dcb5806`, the author ran the four omitted onboarding, preset and scaffold test files: 182 passed. The module-discovery changes have independent wide evidence on clean commit `eee603a6`, recorded in `dev/plans/2026-10-29-module-discovery-activation.md` and committed at `f51b84b1`; that record names all mapped tests, gates, interpreter and mutation outcomes. The supplemental record distinguishes dispatcher-owned commits `dc309b0e` and `3dcb5806` from module-owned changes and identifies the integrated tested candidate. See `dev/plans/archive/2026-10-29-dispatcher-content-scan/implementation-verification.md` for commands and attribution.
 | CR2 | Corrected: the mutated runner is `scripts/content_scan_runner.py`, the value of `entry.runner_repository_path`; all five ledger rows now name that path. |
 
 The original Boundary B record remains the author's result on `3dcb5806`; the later module agent run is cited as independent coverage, not represented as the author's run. The usual code-review response is recorded. The required Security Review remains pending; no `Bounding: ACCEPTED` determination or archive transition is made here.
@@ -218,3 +218,18 @@ Python 3.13.13 at `/Users/kendal30/conda_envs/lhm/bin/python3.13`; control in a 
 **Waiting-line check:** No fenced chunk or deviation request in this plan's reviewed range; its sequence is C1–C3 without a Maintainer fence.
 
 **Coverage:** Claims, production paths, completeness and fail-closed evidence: registry/binding, above controls and mutations, and the recorded installed-command tests. Consistency, reuse and drift: fixed registry reuses `_bind_runner`, paired runner sources, installed policy guidance and corrected ledger at `7a541182`. Lifecycle, scope and satisfiers: scoped-finalize authority and C1–C3; no findings require a satisfier. No scientific calculation is involved. **Not covered / low confidence:** did not repeat the author's install/upgrade families, authenticate host Git or a checkout whose attacker controls both lock and apparatus, close the documented same-user check/use race, run certification or perform a re-anchor. These are limits, not clean security claims.
+
+## Lasting-truth migration -- 2026-10-29
+
+**Dispositions**:
+
+* Link/claim-check legs -> defer (they remain separate security-verification work; the accepted content leg does not provide them) -> `dev/PLANNING.md` > Security cluster strategic items. Maintainer authorization, 2026-10-27: *"Let's add those security items to v0.6"*.
+* API/web credential pass-through -> defer (the separate trust question remains open; no credentials are forwarded by this change) -> `dev/PLANNING.md` > Security cluster strategic items. Maintainer authorization, 2026-10-27: *"Let's add those security items to v0.6"*.
+
+**Evidence shipped**: Boundary B wide test families and standing gates at `3dcb5806`; the author’s separate onboarding/preset/scaffold selection (182 passed); independent module-discovery integration evidence at `eee603a6` (`dev/plans/2026-10-29-module-discovery-activation.md`, committed at `f51b84b1`); 25 per-member binding mutants with a positive control; and the Security Review’s fresh control and independent binding/child-evidence mutations. Implementation evidence and exact outcomes are recorded in this plan and its archived `implementation-verification.md` file.
+
+**Evidence deferred**: no whole-tree certifying run or re-anchor was performed. The plan explicitly treats certification as a separate integration ceremony; `Certified by: pending` remains in the Boundary B record. The local link gate did not probe external URLs (83 were reported unprobed); the plan required local link integrity, not an external-link probe. No Boundary B acceptance check remains unmet.
+
+**Deferred evidence home**: certification status remains in the Boundary B record and follows the authorized integration-point rule in `AGENTS.md` > Verification boundaries. The separate link/claim and credential follow-ups are on the Security cluster row in `dev/PLANNING.md`; no other evidence was left without a required home.
+
+**Fidelity sign-off**: dispatcher implementation commits `dc309b0ee7efa68cc345f6d7776e41df3e1f9dbf` and `3dcb5806a0442b959a81cc3287a9ded9c5b44a4a` implement the accepted Revised `## Proposal` section in `dev/proposals/archive/2026-10-29-codex-dispatcher-content-scan.md` at `a204f67d`. Concurrent module-discovery changes are separately attributed and verified in the module-discovery plan; they are not represented as dispatcher-owned commits.
