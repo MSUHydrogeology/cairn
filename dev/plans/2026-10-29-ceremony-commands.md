@@ -2,7 +2,7 @@
 
 **Author**: Codex (gpt-6.1-terra)
 **Source proposal**: [dev/proposals/archive/2026-10-29-codex-ceremony-commands.md](../proposals/archive/2026-10-29-codex-ceremony-commands.md)
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Give the Maintainer reusable commands for checking and carrying out trust ceremonies with human approval.
@@ -289,3 +289,23 @@ to the v0.6 board item. No live ceremony, real signing key, live ref movement,
 push, full-suite certification or claim of an installed trust boundary is
 included here. Independent code and Security Reviews remain owed before the
 plan can advance; C4 remains fenced and has not been performed.
+
+## Code review -- Codex (GPT-6.1 Sol) -- 2026-10-29
+
+**Reviewed commit**: `a87bf158` (implementation through `e0908bb3`).
+**Findings**: raised. **Bounding**: WIDER RUN REQUIRED.
+
+**Foundations**
+
+1. **Does it do what it claims?** Separate deletion and transition controls pass, but a combined candidate stops before its reviewed deletion can be prepared; C2's end-to-end changed-authority demonstration remains unestablished. -- F1 and ledger below.
+2. **Best alternative.** Show a supported ordering with maintained commands and a disposable anchor, or extend the preparation path if the accepted workflow cannot otherwise be delivered. -- `scripts/repin.py:1909`; C2.
+3. **What would show it wrong?** A scratch candidate combining a removed baselined symbol and changed authority, exercised through the actual commands. -- falsification ledger below.
+
+**F1 — Blocking: demonstrate the changed-authority deletion workflow.** C2 retains the requirement to demonstrate ordinary and changed-authority paths through reviewed AST deletion, reader record, exact-path commit, stop and fresh-package rerun. The amendment defers historical comparisons and real installation, not this functional demonstration. The transition test changes authority but does not delete a symbol; the deletion test does not change authority. In a scratch fixture combining both, `package --delete-symbol` refuses because the candidate preflight differs from the anchor. This does not prove that a supported sequential ordering is impossible, but the recorded evidence does not demonstrate one. **Satisfier:** demonstrate the complete changed-authority workflow, including deletion and recovery, using maintained commands and disposable authority; repair the commands if needed, and record fresh wide verification. -- `bootstrap/tests/test_repin_ceremony.py:2396`, `:2524`; `scripts/repin.py:1909`.
+
+**Falsification ledger** (fresh detached clone at `a87bf158`, Python 3.13.13; no live key or ref):
+
+- Unmodified controls `test_reviewed_ast_transaction_requires_record_before_write_and_stops` and `test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anchor`: 2 passed in 13.30 s.
+- Combined probe: adapted the existing deletion test in the disposable clone to also change `_PROTECTED_ROSTER_MODE` from dormant to active before its candidate commit. The public `package --delete-symbol` returned 2, reporting that `_gate_preflight.py` differs from the anchor; the expected successful preparation failed. This is a workflow probe, not a claim that the safety refusal is itself wrong.
+
+**Coverage and limits:** reviewed C2, scope amendment, final verification record, relevant public dispatch and the two fixture paths. The wide record reports 1,110 passes on `e0908bb3`; this pass did not reproduce that run or inspect every changed surface, and does not discharge Security Review. The missing combined workflow and its recovery check require new change-specific evidence; no full suite was run.
