@@ -73,3 +73,31 @@ Assurance path: required(Internal + Internal Security Review)
 **Evidence and sweep.** The inventory lists 22 distinct modules and names a first action and expected result for each; C1 requires validating their shipped entry points and inputs. The plan retains optionality, architecture scope, no task execution, and four independent mutation controls. Its shared-renderer direction is simpler than another installation mechanism. The two findings address design completeness, production paths and the evidence trigger; no scientific result is changed.
 
 **Coverage / gaps**: Read the committed plan, inventory, accepted proposal, template and relevant installer/upgrade entry points. Did not execute prospective tasks or enumerate every installed artifact; their validation remains an implementation criterion. This pass clears only the ordinary plan-review obligation; the separate Security Review remains open.
+
+
+## Plan review -- Codex Security (gpt-6.1-sol) -- 2026-10-29
+
+```
+Reviewed commit: 3c19dcfc3c4d627f7504232952d92ef6c75fea03
+Target: operative plan, inventory, accepted proposal and ordinary findings
+Prior findings: none for this obligation; ordinary P1 and P2 remain open
+Assurance path: required(Internal + Internal Security Review)
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+
+**Foundations**:
+
+1. **Should this happen as framed?** The plan preserves the accepted security boundaries, but needs an explicit integration order before its no-partial-update promise can guide implementation -- C2; `bootstrap/_scaffold/cli.py:563`; `bootstrap/_scaffold/upgrade.py:1764`.
+2. **Best alternative.** Extend the existing shared renderer and guarded adoption path with a read-only reconciliation preparation step before committing generated changes; retain conservative manual recovery when legacy identity is uncertain -- `bootstrap/_scaffold/install.py:1122`; `bootstrap/_scaffold/security.py:110`.
+3. **What would show it wrong.** A linked inventory destination or edited task discovered after another generated artifact or its lock record changes would defeat containment or conflict preservation -- C2; `bootstrap/tests/test_upgrade_module_additions.py::test_symlinked_destination_after_stage_blocks_apply`.
+
+**S1 — Specify the security integration points and their checks.** This specializes ordinary P1/P2 rather than requesting a second mechanism. The current install CLI writes core and skills before onboarding, then installs modules; adoption creates missing module destinations inside its loop and commits lock/cache afterward, while an already-recorded module returns before that loop. C2 promises validation before writes and no partial inventory/planning/lock update, but does not locate preparation, refusal and commit relative to these paths or upgrade stage/apply. Appending reconciliation after adoption's loop or leaving its early return unchanged would break that promise. Specify which generated artifacts are prepared together, where each public path checks conflicts and containment, and when their lock/base changes commit. Define the scope of the no-partial-update guarantee without silently expanding it to rollback of every pre-existing installer write. For stage/apply, revalidate destinations and preservation assumptions at apply rather than relying solely on stage-time checks.
+
+The satisfier is a folded ordering design plus named public-entry tests: initial/repeated install, new/already-recorded adoption, and staged upgrade with a destination or task changed after staging. Assert unchanged inventory, planning and lock bytes on refusal; include linked destination, dangling link and linked parent for the new inventory and planning writes. Extend the existing containment owners rather than creating a parallel guard (`bootstrap/tests/test_upgrade_lockfile_path_containment.py`, `bootstrap/tests/test_upgrade_module_additions.py`). Map the engine's standing security lint explicitly: `bootstrap/tests/test_security_lint.py` documents its Bandit trigger and missing-tool skip; disposition every non-pass under Boundary B. No broad-suite run is needed for this plan review.
+
+**Evidence and sweep.** Selection remains resolved-profile/mapping authority, not inventory text; tasks do not execute during install, and optionality remains explicit (C1; accepted Security preflight S1–S5). Existing target/ancestor guards are reusable, not proof of coverage for new writes (`bootstrap/_scaffold/security.py:110`). The inventory retains legacy/new/mixed architecture choice and policy-input preparation without automatic network activity. No new scientific or doctrine premise is introduced. Ordinary P1/P2 cover representation, legacy migration and independent selection expectations; this pass adds failure ordering and containment satisfiers, not historical trust reconstruction.
+
+**Coverage / gaps**: Read committed plan, inventory, accepted proposal, current template, install/adopt and stage/apply control paths and security-test owners. No prospective implementation, tasks or suites were executed. This records the required Security plan pass; the author must fold S1 with ordinary P1/P2 before implementation.
