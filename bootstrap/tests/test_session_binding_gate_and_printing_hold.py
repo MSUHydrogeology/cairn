@@ -724,3 +724,42 @@ def test_malformed_child_bytes_keep_strict_decode_failure(
             lifecycle._surface_intents(root, sys.executable)
         else:
             lifecycle._run_evolution_infer(root, sys.executable)
+
+
+@pytest.mark.parametrize("helper", ["prune", "surface", "evolution"])
+def test_successful_child_stderr_is_decoded_strictly(helper, tmp_path, monkeypatch):
+    root = tmp_path.resolve()
+    tool = root / "tools" / "intent.py"
+    tool.parent.mkdir()
+    tool.write_text("import sys\nsys.stderr.buffer.write(b'\\xff')\n", encoding="utf-8")
+    monkeypatch.setattr(lifecycle, "_sibling_tool", lambda name: tool)
+    with pytest.raises(UnicodeDecodeError):
+        if helper == "prune":
+            lifecycle._prune_intents(root, sys.executable, 30, dry_run=True)
+        elif helper == "surface":
+            lifecycle._surface_intents(root, sys.executable)
+        else:
+            lifecycle._run_evolution_infer(root, sys.executable)
+
+
+@pytest.mark.parametrize("helper", ["prune", "surface", "evolution"])
+def test_child_decoding_respects_utf8_mode(helper, tmp_path):
+    root = tmp_path.resolve()
+    tool = root / "tools" / "intent.py"
+    tool.parent.mkdir()
+    tool.write_text("import sys\nsys.stdout.buffer.write(bytes.fromhex('c3a9'))\n", encoding="utf-8")
+    script = (
+        "import sys; from pathlib import Path; "
+        f"sys.path.insert(0, {str(Path(lifecycle.__file__).parent)!r}); "
+        "import session as s; "
+        f"root=Path({str(root)!r}); tool=Path({str(tool)!r}); "
+        "s._sibling_tool=lambda name: tool; "
+        f"helper={helper!r}; "
+        "s._prune_intents(root, sys.executable, 30, dry_run=True) if helper == 'prune' "
+        "else s._surface_intents(root, sys.executable) if helper == 'surface' "
+        "else s._run_evolution_infer(root, sys.executable)"
+    )
+    env = dict(os.environ, LC_ALL="C", PYTHONUTF8="1")
+    result = subprocess.run([sys.executable, "-c", script], capture_output=True, env=env)
+    assert result.returncode == 0, result.stderr
+    assert "é" in result.stdout.decode("utf-8")

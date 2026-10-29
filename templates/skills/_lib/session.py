@@ -224,7 +224,7 @@ def _decode_child_output(value: bytes | str) -> str:
     """Decode a captured child stream like text-mode subprocess, without newline conversion."""
     if isinstance(value, str):
         return value
-    return value.decode(locale.getencoding(), errors="strict")
+    return value.decode(locale.getpreferredencoding(False), errors="strict")
 
 
 def _encode_child_output(value: str, *, terminate: bool = False) -> str:
@@ -1808,9 +1808,11 @@ def _prune_intents(root: Path, interpreter: str, days: int, *,
             argv, cwd=str(root), capture_output=True, check=False,
             env=_git_env(),
         )
-        sys.stdout.write(_encode_child_output(_decode_child_output(proc.stdout), terminate=True))
-        if proc.returncode != 0 and proc.stderr:
-            _warn(_encode_child_output(_decode_child_output(proc.stderr).strip()))
+        stdout = _decode_child_output(proc.stdout)
+        stderr = _decode_child_output(proc.stderr)
+        sys.stdout.write(_encode_child_output(stdout, terminate=True))
+        if proc.returncode != 0 and stderr:
+            _warn(_encode_child_output(stderr.strip()))
     except OSError as exc:  # pragma: no cover -- defensive
         _warn(f"intent prune failed to run: {encode_display(str(exc))}")
 
@@ -1841,9 +1843,11 @@ def _surface_intents(root: Path, interpreter: str) -> None:
             check=False,
             env=_git_env(),
         )
-        sys.stdout.write(_encode_child_output(_decode_child_output(proc.stdout), terminate=True))
-        if proc.returncode != 0 and proc.stderr:
-            _warn(f"intent list reported: {_encode_child_output(_decode_child_output(proc.stderr).strip())}")
+        stdout = _decode_child_output(proc.stdout)
+        stderr = _decode_child_output(proc.stderr)
+        sys.stdout.write(_encode_child_output(stdout, terminate=True))
+        if proc.returncode != 0 and stderr:
+            _warn(f"intent list reported: {_encode_child_output(stderr.strip())}")
     except OSError as exc:
         _warn(f"could not run intent.py list: {encode_display(str(exc))}")
 
@@ -1874,10 +1878,12 @@ def _run_evolution_infer(root: Path, interpreter: str) -> None:
             check=False,
             env=_git_env(),
         )
-        if proc.stdout:
-            sys.stdout.write(_encode_child_output(_decode_child_output(proc.stdout), terminate=True))
-        if proc.returncode != 0 and proc.stderr:
-            _warn(f"evolution_infer reported: {_encode_child_output(_decode_child_output(proc.stderr).strip())}")
+        stdout = _decode_child_output(proc.stdout)
+        stderr = _decode_child_output(proc.stderr)
+        if stdout:
+            sys.stdout.write(_encode_child_output(stdout, terminate=True))
+        if proc.returncode != 0 and stderr:
+            _warn(f"evolution_infer reported: {_encode_child_output(stderr.strip())}")
     except OSError as exc:
         _warn(f"could not run evolution_infer.py: {encode_display(str(exc))}")
 
