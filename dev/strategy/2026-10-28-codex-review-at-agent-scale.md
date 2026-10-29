@@ -94,7 +94,7 @@ Routine agent review still needs independent reconstruction, actionable findings
 
 Choose pilot projects, capability evidence, declaration upkeep, language coverage and refresh ownership. Measure annotation effort as well as runtime/token cost. On milestone histories containing justified growth and independently prepared duplication, drift and capability overclaims, compare scientists' accuracy/time explaining the system and identifying worthwhile consolidation against `board.py`, `gauge.py` and the rubric alone. Count false alarms and missed problems; evaluate routine defect detection separately. Reject graphics that improve neither understanding nor decisions, or require unreliable guesses to populate.
 
-Compose with [engineering practices](2026-10-27-codex-adopter-engineering-practices.md), [scientific testing](2026-10-27-antigravity-judicious-testing-and-simulation-verification.md) and [scoped verification](../plans/2026-10-28-scoped-change-verification.md); their scopes remain intact.
+Compose with [engineering practices](2026-10-27-codex-adopter-engineering-practices.md), [scientific testing](2026-10-27-antigravity-judicious-testing-and-simulation-verification.md) and [scoped verification](../plans/archive/2026-10-28-scoped-change-verification.md); their scopes remain intact.
 
 ## Fold-up note
 

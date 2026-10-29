@@ -1,7 +1,7 @@
 # Plan: Verify changes at their scope
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-scoped-change-verification.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Verify each change against its affected behavior and reserve whole-tree certification for authorized integration points.
@@ -332,3 +332,14 @@ No implementation bytes, authority, or historical evidence changed in this respo
 ## Response to Security Review -- Codex (GPT-6.1) -- 2026-10-29
 
 Security Review at `46c46490` clears its remaining obligation under the amended scope. The ordinary finding was disposed in the preceding response; no implementation revision followed. The plan is ready for archive with baseline installation and historical comparison deferred to the v0.6 board item. Certification remains pending.
+
+
+## Lasting-truth migration -- Codex (GPT-6.1) -- 2026-10-29
+
+**Dispositions**: deferred actual frozen-file re-anchor and historical-anchor comparison -> `dev/PLANNING.md` > Establish the v0.6 forward baseline (in-motion baseline work). Maintainer: “They can each build the machinery, the new baseline does not need to be part of their plans. It can be a work board item for v0.6.”
+
+**Evidence shipped**: governing and shipped rules and their mapped tests in `89e44c78`, `0566202e`, and `69b8bc7e`; independent example adjudication and split execution records accompany this plan. Functional verification at `e052da5c`, follow-up at `5c525367`, and reviews `f19f4f53`, `9d813013`, and `46c46490` state their own coverage and omissions.
+
+**Evidence deferred**: actual frozen-file re-anchor and historical-anchor comparison; **deferred evidence home**: `dev/PLANNING.md` > Establish the v0.6 forward baseline. Whole-tree certification remains pending as a separate authorized integration operation.
+
+**Fidelity sign-off**: implementation `89e44c78`, `0566202e`, and `69b8bc7e` matches the accepted proposal's `Current contract` and Decision at `f110d263`, subject to the Maintainer's recorded scope amendment `a7efef1f`. The date-naming instruction and follow-up correction are recorded in this plan.
