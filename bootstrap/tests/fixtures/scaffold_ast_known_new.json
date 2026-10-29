@@ -35,6 +35,12 @@
   "Assign:_IF_RE": [
     "36d695ac37c412f9"
   ],
+  "Assign:_LEGACY_SEED_MODULES": [
+    "acf24bbee166b7a2"
+  ],
+  "Assign:_MODULE_DISCOVERY": [
+    "17bf9526c8ac57d7"
+  ],
   "Assign:_MODULE_REQUIRED_TOKENS": [
     "a72b4e9c40b9610c"
   ],
@@ -77,6 +83,9 @@
   "ClassDef:EngineFinder": [
     "91ed5661f8da0a11"
   ],
+  "ClassDef:ModuleDiscoveryConflict": [
+    "41c6d9d43969ab4e"
+  ],
   "ClassDef:ProfileGrammarError": [
     "bf03503efab39e2c"
   ],
@@ -91,6 +100,9 @@
   ],
   "FunctionDef:_adopt_token_unfilled": [
     "b9c092921239de51"
+  ],
+  "FunctionDef:_apply_module_discovery": [
+    "d5e48c33dd7af1cd"
   ],
   "FunctionDef:_ask_git": [
     "134d343fd3d9b5f7"
@@ -152,6 +164,9 @@
   "FunctionDef:_git_in_project": [
     "9c91eee46e5b1bd8"
   ],
+  "FunctionDef:_legacy_module_seed_ids": [
+    "e232e44863919e59"
+  ],
   "FunctionDef:_linked_vendor_wrapper_names": [
     "3d52bc49a7ca3e1d"
   ],
@@ -161,14 +176,26 @@
   "FunctionDef:_mapping_is_unfilled": [
     "cf878ddc12c8b28b"
   ],
+  "FunctionDef:_module_task_blocks": [
+    "8aee3b0a99cbc17e"
+  ],
   "FunctionDef:_parse_collision_auth": [
     "86f293fad30fd98c"
+  ],
+  "FunctionDef:_prepare_module_discovery": [
+    "7cf8a49b692cac89"
   ],
   "FunctionDef:_print_adopt_command": [
     "0359d3ca4d4c8a79"
   ],
   "FunctionDef:_read_regular_bytes": [
     "fea7c9399cf2c67f"
+  ],
+  "FunctionDef:_reconcile_generated_blocks": [
+    "fdaf2b7a37998e3a"
+  ],
+  "FunctionDef:_record_discovery_outputs": [
+    "4fa88c228c4335d2"
   ],
   "FunctionDef:_record_fork_entry": [
     "88df7af466835cdb"
@@ -182,8 +209,14 @@
   "FunctionDef:_remove_unchanged_file": [
     "c1491fc384040188"
   ],
+  "FunctionDef:_render_module_inventory": [
+    "1a84d2a3cd128151"
+  ],
+  "FunctionDef:_render_module_task_overlay": [
+    "c86d79b3dfcf3916"
+  ],
   "FunctionDef:_rendered_onboarding_overlay": [
-    "5b08be7902e89353"
+    "b8ef5f39cadbf79d"
   ],
   "FunctionDef:_resolve_current_profile": [
     "92d800225f4df000"
@@ -193,6 +226,9 @@
   ],
   "FunctionDef:_stage_exclusive": [
     "a4ae528b29ebf978"
+  ],
+  "FunctionDef:_substitute_module_inventory": [
+    "60c7172b94b5ec55"
   ],
   "FunctionDef:_working_file_differs": [
     "e91f267fbcf9b659"

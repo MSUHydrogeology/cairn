@@ -64,10 +64,10 @@
     "type": "Assign"
   },
   "Assign:_CORE_MAPPINGS": {
-    "digest": "372c01231f7f676b",
+    "digest": "c534a74591faa24d",
     "span": [
       534,
-      571
+      572
     ],
     "type": "AnnAssign"
   },
@@ -488,10 +488,10 @@
     "type": "Expr"
   },
   "FunctionDef:_apply_upgrade": {
-    "digest": "ec7f3bb7c8027f96",
+    "digest": "b530c703cdd6597a",
     "span": [
-      2876,
-      3186
+      2984,
+      3310
     ],
     "type": "FunctionDef"
   },
@@ -584,10 +584,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_adopt_module": {
-    "digest": "c4ee1bcae92a9f80",
+    "digest": "37b05ffc167f5fe1",
     "span": [
-      1417,
-      1589
+      1845,
+      2067
     ],
     "type": "FunctionDef"
   },
@@ -896,10 +896,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_write_stage": {
-    "digest": "12582d06bedaa995",
+    "digest": "cd268a8ac2e861ea",
     "span": [
-      744,
-      938
+      1069,
+      1289
     ],
     "type": "FunctionDef"
   },
@@ -1088,10 +1088,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:install_onboarding": {
-    "digest": "62270884cb7691d3",
+    "digest": "9e5ccff18985b42a",
     "span": [
-      1181,
-      1295
+      1353,
+      1514
     ],
     "type": "FunctionDef"
   },
@@ -1128,10 +1128,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:main": {
-    "digest": "0e7fd61ed751de18",
+    "digest": "87efbd5b7d0dce5c",
     "span": [
-      189,
-      782
+      190,
+      789
     ],
     "type": "FunctionDef"
   },
@@ -1256,10 +1256,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:write_install_lockfile": {
-    "digest": "014a76282a5efabf",
+    "digest": "4b3028089330ea54",
     "span": [
-      1679,
-      1890
+      1898,
+      2111
     ],
     "type": "FunctionDef"
   },
