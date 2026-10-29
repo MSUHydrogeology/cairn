@@ -1674,6 +1674,10 @@ class TestThreeCommandIntegration:
                 "_PROTECTED_ROSTER_MODE = \"dormant\"",
                 "_PROTECTED_ROSTER_MODE = \"active\"", 1),
             encoding="utf-8")
+        # A changed ordinary test makes broad and narrowed report policies
+        # observably different throughout the stage-2 reconstruction.
+        _write(repo, "bootstrap/tests/test_smoke.py",
+               "def test_smoke():\n    assert True\n    assert 1 + 1 == 2\n")
         second_head = _signed_commit(repo, "activate reviewed protected roster")
         second_review = tmp_path / "activate-roster-review.txt"
         second_review.write_text(_review_manifest(repo, second_head),
@@ -1690,6 +1694,10 @@ class TestThreeCommandIntegration:
         second_package = json.loads(
             (repo.parent / "authorization-package.json").read_text(
                 encoding="utf-8"))
+        path_entries = {entry["display"]: entry
+                        for entry in second_package["range_report"]["paths"]}
+        assert path_entries["bootstrap/tests/test_smoke.py"]["class"] == "outside-coverage"
+        assert path_entries["bootstrap/tests/test_smoke.py"]["role"] == "other"
         old_extract = tmp_path / "bridge-anchor-checker"
         old_extract.mkdir()
         subprocess.run(
@@ -1713,7 +1721,7 @@ class TestThreeCommandIntegration:
 
         # Exercise both ceremony stages after P carries the narrowed manifest.
         _write(repo, "bootstrap/tests/test_smoke.py",
-               "def test_smoke():\n    assert True\n    assert 1 + 1 == 2\n")
+               "def test_smoke():\n    assert True\n    assert 2 + 2 == 4\n")
         steady_head = _signed_commit(repo, "steady-state candidate")
         P._phase = P._PHASE_CANDIDATE   # separate process in the recorded ceremony
         steady = _two_stage(repo, monkeypatch)
