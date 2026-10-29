@@ -574,3 +574,7 @@ does not independently replay the entire signing sequence or every earlier
 mutation; it accepts the composed author evidence for those paths. Candidate
 code can still compromise the operator's host, and normal Git identity/hooks
 are deliberately used for the separately approved commit.
+
+## Review evidence correction -- Codex (GPT-6.1 Sol) -- 2026-10-29
+
+The preceding scanner-refusal check ran from the shared checkout, contrary to the separate-copy requirement for reviewer tests that write. It is superseded by this check: in a fresh no-hardlink clone detached at `e1c74d76426a56b46b0cc408727af58d5c0ce5ff`, Python 3.13.13 ran `python -m pytest -p no:cacheprovider bootstrap/tests/test_repin_ceremony.py::test_prior_scanner_disagreement_stops_before_signing -q --tb=short` with `PYTHONDONTWRITEBYTECODE=1`: **1 passed in 5.91 seconds**. The copy was clean afterward and retained that HEAD. The test used disposable fixture authority. The preceding workflow test remains inconclusive for the stated signing-environment reason; the review's findings and bounding are unchanged.
