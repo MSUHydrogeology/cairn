@@ -26,12 +26,21 @@ capabilities and adopter research. This five-plan batch does not finish v0.6.
 | [Model floors](../plans/archive/2026-10-28-model-floor-alignment.md) | Implemented, independently reviewed and archived. Local vendor assignments and shipped generic task floors align; 574 mapped passes under Python 3.13.13. Certification/re-anchor debt remains live in the roadmap. |
 | [Scoped verification](../plans/2026-10-28-scoped-change-verification.md) | Implemented; 2,700 collected/executed nodes reconciled, five guard cases passed, environment-denied security cases passed with required local capability. Independent example adjudication and ordinary/Security reviews completed. Both reviews hold completion for the prescribed frozen-file ceremony. Later naming examples corrected with 656 mapped passes under Python 3.13.13. |
 | [Governing text](../plans/2026-10-28-governing-text-single-source.md) | Routing chosen at `aa9fc08b`, coordination default at `7013de1d`, and document-wide path declarations at `560a178c`. Path instructions updated and the focused review finding addressed at `860481db`; remaining consolidation and ceremony gates stay open. |
-| [Test trust boundary](../plans/2026-10-28-test-trust-boundary.md) | Exact roster approved at `3e9f8fc2`; implementation is blocked on approval review of the dormant bridge candidate. Existing protection remains active. |
+| [Test trust boundary](../plans/2026-10-28-test-trust-boundary.md) | Roster and dormant setting approved; the dormant candidate is committed. Final verification and reviews wait on the reusable verifier workflow below; existing protection remains active. |
 | [Ordinary test maintenance](../plans/2026-10-28-ordinary-test-maintenance.md) | Reviewed plan; implementation cannot start because the chosen board file contains security defenses and remains protected. |
 
 The source Decisions are `63e315fa`, `f110d263`, `cca436a9`, `cea1299d` and
 `439c7b34`. All five plans were authorized; their later explicit fences remain.
 Use `python tools/board.py --maintainer` for declared next moves.
+
+## Pending proposal decision
+
+The [ceremony-command proposal](../proposals/2026-10-29-codex-ceremony-commands.md)
+addresses the existing v0.6 two-command item, builds on v0.5 `repin`, and
+includes the trust plan's required full prior-anchor verifier. Both independent
+Sol reviews are recorded; the author's response is at `7222f1a6`. It awaits
+the Maintainer's Decision before a plan or implementation. No signing, re-anchor
+or push is authorized by this briefing.
 
 ## Remaining decisions and actions
 
@@ -121,18 +130,20 @@ module descriptions; their applicable Maintainer ceremony remains owed under the
 governing-text plan.
 
 The old-anchor E7 comparison required the accepted two-transition bridge. The
-active-mode candidate `bbe5ecb6` passed 1,085 scoped tests, but cannot itself
-represent the required dormant first checkpoint. A one-line dormant setting in
-`bootstrap/tests/_gate_preflight.py` is prepared and uncommitted. Automatic
-approval review rejected its local commit, citing the security impact and
-insufficient explicit authorization; it prohibited bypass. The Maintainer must
-explicitly authorize that proposed local change before another attempt. The
-preliminary code review also has three surviving mutations not yet shown
-equivalent; neither independent review is complete.
+Maintainer explicitly approved the dormant first-bridge setting, committed at
+`6e3197f6`; the active second transition is separate. Preliminary review probes
+detected all 29 identified forwarding mutations. The latest dormant
+candidate's final scoped run was interrupted when the Maintainer requested a
+reusable script, so implementation and independent reviews remain open. The
+previous 1,085-pass run covered a different, active candidate and does not
+certify the dormant one.
 
-The trust plan still requires independent code and Security Reviews, then its
-Maintainer-only authority transitions/re-anchors and steady-state proof. The
-prepared change does not install a boundary or authorize a ceremony.
+The prior-anchor verifier reported 83 HOLD entries on the measured candidate;
+22 frozen paths each produced two reports, alongside 37 dropped nodes and two
+marker reports. No HOLD has been disposed. The reusable ceremony proposal above
+must provide the practical scripted verifier workflow. The trust plan still
+requires independent code and Security Reviews, Maintainer-only transitions
+and steady-state proof; no boundary is installed.
 
 ### 5. Queued convention choice: session handoff marker
 
