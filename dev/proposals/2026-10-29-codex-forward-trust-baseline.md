@@ -122,3 +122,30 @@ The strongest version is a deliberate restart of trust, with useful automation r
 The smallest route preserves reusable preparation and installation checks, amends each source plan's actual fence, and assigns installation to one v0.6 board item. It loses historical protected-drift checks and installation-before-archive guarantees as declared; only the Maintainer can allow those losses. Machinery archival must not claim the narrower boundary is active. The baseline item must retain certification, installation evidence and forward-behavior checks before release readiness.
 
 **Covered:** claims, completeness and refusal (1,3,4: the named driver and promotion functions); production-path design (2: proposed scratch public-entry probes); reuse, consistency and drift (5,6: driver functions, runbook preparation/verifier instructions, trust plan C3–C5, ceremony-commands plan C1–C4); lifecycle and scope (7,8: Current contract, scoped-change-verification plan's pending frozen-file ceremony); satisfier (9: F1). Source was read at the reviewed commit. **Not covered / low confidence:** no tests, mutations, signing, host containment assessment or ref changes; feasibility is design inspection, not implementation evidence. This pass does not discharge Security Review.
+
+## Security Review -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+```
+Reviewed commit: 5ac029eb499f6e481d1a84e16c0d1bc5f4745357
+Target: opening proposal and Author revision / Current contract
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, subject to the Maintainer's explicit scope allowance: a deliberate new trust root can protect future comparisons without claiming historical clearance. Separate machinery archival is coherent only while release readiness retains actual installation. -- Current contract; `bootstrap/tests/_gate_reanchor.py`, `gather_evidence` and `promote_data_only`.
+2. **Best alternative.** Extend existing extraction, package, independent-reader and signing machinery with a narrowly selected bootstrap mode; do not turn ordinary prior-authentication refusals into optional checks. Doing nothing preserves the unwanted historical dependency. -- `scripts/repin.py`, `build_packet`, `_verifier_prepare`, `run_ceremony`.
+3. **What would show it wrong?** A candidate-selected authority roster, substituted executing installer, incorrect signer, or partial/stale ref update would defeat the starting authority; protected loss passing after installation would defeat forward protection. These are required future refusal probes, not measured successes. -- Current contract; `scripts/repin.py`, `verify_checkpoint`, `check_record`; `bootstrap/tests/_gate_reanchor.py`, `_verify_executing_authority_code`.
+
+The reviewed proposal recognizes the central security limit: deriving hashes from candidate bytes establishes consistency, not permission to trust those bytes. The independent approval and reader must supply that permission. Existing prior-code authentication cannot simply be bypassed globally. Retaining it for subsequent ceremonies is part of the useful protection this design buys.
+
+**S1 — Non-blocking plan requirement: pin the bootstrap authority before execution.** The plan must identify exactly which reviewed launcher, installer and imported closure execute during installation, bind those bytes to the reader record and approval, and refuse substitution before signing or ref updates. Give the signer fingerprint an independently supplied expectation; candidate `allowed_signers` membership alone is insufficient. Test changed executing code, wrong fingerprint, stale reader/package, and either ref changing before the atomic transaction, including proof that neither ref moves on refusal. The proposal's tool-hash and exact-signer promises support this; the plan must make their trigger concrete. -- `scripts/repin.py`, `load_encoder`, `build_packet`, `check_record`, `run_ceremony`; `bootstrap/tests/_gate_reanchor.py`, `_verify_executing_authority_code`, `_cas_advance_ref`.
+
+**S2 — Non-blocking release dependency: preserve the actual release command.** Record baseline installation and canonical pre-reanchor certification separately from the release security run. The certification pair alone does not invoke the release-mode outcome refusal, Bandit or release state checks. **Satisfier:** the work-board dependency and operator instructions retain `python bootstrap/security_check.py` at the eventual clean release commit, with its required tools and no skip/xfail/xpass outcomes; no run is authorized by this review. -- `bootstrap/security_check.py`, module contract, `_release_child_env`, `run_suite`, `main`.
+
+**Covered:** claims and authority/failure paths (lenses 1,3,4: named functions); public-path verification requirements (2: Current contract); reuse, consistency and drift (5,6: existing packet/prior-verifier/ceremony paths and release command); lifecycle and scope (7,8: revised archival boundary and grouped historical loss); concrete satisfiers (9: S1–S2). These source files are unchanged from the reviewed commit. **Not covered / low confidence:** no executable probes, mutations, signing or ref moves; no host isolation proof. Credential scrubbing is not containment of hostile collection. This clears the proposal Security Review obligation only, not future plan/code review or installation authorization.
