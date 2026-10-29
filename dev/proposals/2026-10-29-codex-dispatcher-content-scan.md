@@ -1,7 +1,7 @@
 # Make the default security dispatcher run the content tripwire
 
 **Author**: Codex (gpt-6.1-sol)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -135,3 +135,55 @@ ordinary policy maintenance, or makes a direct advisory scan a breaking change.
 
 **Assurance path**: high-assurance — dispatcher, security verification and
 adopter-executed install surfaces.
+
+
+## Review -- Codex (gpt-6.1-sol, proposal reviewer) -- 2026-10-29
+
+```
+Reviewed commit: 3632612cd657f4f14ee77595b1a5ed5d3a96413e
+Target: opening proposal
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: connecting the existing installed content runner supplies the missing default capability without importing Cairn-only helpers; doing nothing leaves that capability unselected -- `bootstrap/_scaffold/config.py`, `templates/modules/default-on/run_security_verification.py`.
+2. **Best alternative.** Extend the existing runner with a dispatcher output mode if that preserves its direct contract; a thin adapter is justified only if it avoids changing that contract, and must bind the imported apparatus too -- `templates/modules/team-gated/content_scan_runner.py`, `templates/modules/default-on/security-verification.md`.
+3. **What would show it wrong.** A clean aggregate after an empty audited set, stale baseline or changed scanner, or an inability to maintain legitimate policy, would defeat its purpose -- `templates/modules/team-gated/content_scan_runner.py::audited_text_files`, `templates/modules/team-gated/content_scan_runner.py::run_content_scan`, proposal Evidence / verification plan.
+
+The useful outcome is a real offline check behind the command already given to
+adopters. Reusing the installed runner reaches that cause; registering the
+Cairn self-check would not, because it imports Cairn-only helpers. The proposed
+real-install dispatcher tests are the right public-path evidence, including
+findings and failure cases rather than merely a successful child stub.
+
+The replacement is narrower than running all of `scripts/check_cairn.py`:
+that tool also checks links and claim paths over tracked Markdown. The installed
+runner checks configured tracked Markdown/text roots and excludes archives and
+the vendor base cache. This is appropriate for the queued **content-security**
+admission, not evidence that those other prose checks run through the
+dispatcher. The strategy's separate credential-forwarding objective remains
+unfulfilled, as the proposal expressly says. Acceptance here does not concede
+that remainder or authorize closing the entire combined strategic gap --
+`dev/strategy/2026-08-05-codex-security-strategy.md`, strategic gap 4;
+`dev/PLANNING.md`, security cluster; `scripts/check_cairn.py`;
+`templates/modules/team-gated/content_scan_roots.txt`.
+
+The dependency-group requirement matters: the current registry represents one
+runner and one policy, while this runner imports a scanner and reads three
+policy files. The proposal correctly makes safe binding and deliberate policy
+maintenance prerequisites rather than treating an adapter digest as sufficient.
+The plan must resolve those choices before implementation; the present review
+approves no particular schema extension or living-state narrowing.
+
+**Coverage:** Read committed proposal, selection/mapping, runner, scanner,
+registry contract, existing dispatcher tests, queue and strategy for claims,
+public path, completeness, failure behavior, drift, lifecycle and scope. No
+scientific result is involved. No implementation was run or approved; runtime,
+upgrade and adversarial binding evidence remain plan/code work. This usual
+review does not discharge the separate Security Review.
