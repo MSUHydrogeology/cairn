@@ -1,7 +1,7 @@
 # Plan: Verify changes at their scope
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-scoped-change-verification.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Verify each change against its affected behavior and reserve whole-tree certification for authorized integration points.
@@ -327,3 +327,8 @@ No implementation bytes, authority, or historical evidence changed in this respo
 - Residual risk: did not reproduce the 2,700-node logs, authenticate reported outcomes, install a baseline, or compare old anchors. No scratch anchor was needed for these guard probes. No set-wide new propagation claim is made; the prior ordinary six-surface mutation ledger remains its own evidence.
 
 **Covered**: claims and execution (#1-2: actual guard probes); completeness and refusal (#3-4: threshold and omission controls); consistency and drift (#5-6: unchanged guard bytes and amended response); lifecycle, scope and satisfier (#7-9: quoted amendment defers the prior blocker). **Not covered / low confidence**: separate re-anchor machinery has evolved since the original implementation and is not certified by this pass; historical continuity, baseline installation, unknown dependencies and whole-tree certification remain outside this clearance.
+
+
+## Response to Security Review -- Codex (GPT-6.1) -- 2026-10-29
+
+Security Review at `46c46490` clears its remaining obligation under the amended scope. The ordinary finding was disposed in the preceding response; no implementation revision followed. The plan is ready for archive with baseline installation and historical comparison deferred to the v0.6 board item. Certification remains pending.
