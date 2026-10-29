@@ -229,3 +229,19 @@ Prior findings: none
 | Internal Security Review, `2c6443e9` | Accepted. No findings; accept C1's bounding. |
 
 **C2 scope conflict**: no packet or reader inputs were created. C2's required packet is for this authority-closure change: the ordinary `repin packet` path refuses when a closure member differs from the anchor (`scripts/repin.py`, `build_packet`). The runbook's transition path (`transition-packet`, then `prepare-reader`) authenticates the prior anchor from its old roster against an independently supplied signer fingerprint (`scripts/repin.py`, command dispatch; `bootstrap/REANCHOR_RUNBOOK.md`, “For a reviewed authority transition”). This is the only documented packet path for a changed authority closure. The Maintainer's instruction excludes the old-anchor comparison/authentication needed by that path, so I did not run either command or inspect the live anchor. This blocks C2's accepted deliverables: ceremony inputs and the independent reader record. Removing those deliverables would remove accepted scope and needs the Maintainer's explicit allowance; none is recorded. C3's verifier decisions, pinning and signing remain untouched and Maintainer-only.
+
+## Maintainer-authorized amendment -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+The following Maintainer authorization is verbatim:
+
+> I am completely fine with not checking any changes against an anchor. We can re-anchor now
+>
+> Or rather, at v0.6
+>
+> They can each build the machinery, the new baseline does not need to be part of their plans. It can be a work board item for v0.6.
+>
+> Remove those requirements from the plans
+
+**Scope delta**: C2's protected-change packet and independent reader record, and C3's prior-verifier dispositions, protected-file pinning and signing, are deferred out of this plan to the existing **Establish the v0.6 forward baseline** work-board item (`dev/PLANNING.md`). The item says comparison or reconciliation with the old anchor is not required and actual installation need not precede plan archive. The C3 Maintainer-only fence remains on that item; no C2 or C3 ceremony operation was run here.
+
+**Loss**: this plan ships no packet, reader inputs or record, prior-verifier report or dispositions, pinned manifest or signature for candidate `0c07eb373f0a97197eeaddbb3399483cf960f888`. C1's implementation, tests, wide verification and both independent code reviews remain delivered. This amendment supersedes the earlier C2 conflict note, which accurately recorded that no scope allowance had yet been received. No prior-anchor comparison or reconciliation was performed.
