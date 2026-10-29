@@ -205,7 +205,7 @@ The registry supports two entry types:
 
 Worked example (the number and its comment share one line):
 
-> Cairn's `claim_check` watch file is currently 1704 lines `<!-- verify: claim_check_watch_file_lines -->`.
+> Cairn's `claim_check` watch file is currently 1715 lines `<!-- verify: claim_check_watch_file_lines -->`.
 
 `verify_counts.py` re-measures that file and flags the line above if the line
 count changes.
