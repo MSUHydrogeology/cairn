@@ -191,3 +191,32 @@ Prior findings: none
 **Covered**: accepted scope and exact admission (`_gate_preflight.py`); producer refusal and removal plus node identities (ledger); release and real grandchild propagation and standing gates (implementation verification's mapped results); verification range and omissions (implementation verification); waiting-line history (`git log -p` over the range: no fenced chunk became the next move). The separate Security Review remains owed.
 
 **Not covered / low confidence**: no full suite, release run, prior-manifest verifier, packet, signing, ref operation or historic anchor. Candidate code and collection remain trusted as the accepted contract states.
+
+## Code review -- Codex (gpt-6.1-sol), Security Review -- 2026-10-29
+
+```
+Reviewed commit: 0c07eb373f0a97197eeaddbb3399483cf960f888
+Target: 35cf29f492ad226f513b7a09f9e1b215c57b1ada..0c07eb373f0a97197eeaddbb3399483cf960f888; verification through 235eeb8a718a42118d824072d9f5acdba295b772
+Prior findings: none
+```
+
+**Obligation**: Security Review of C1's protected evidence-launch boundary
+**Tier**: Internal Security Review
+**Findings**: none
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: literal equality admits only the accepted cache setting, removes it before execution, and preserves presence-based plugin refusal on the scrubbed child environment -- `bootstrap/tests/_gate_preflight.py`, `gather_evidence`; falsification ledger below.
+2. **Best alternative.** Keep this small boundary change and the producer's explicit cache suppression; parsing options or editing the two release launchers adds authority without improving this contract -- `bootstrap/tests/_gate_manifest.py`, `_collect`; `bootstrap/security_check.py`, `_release_child_env`; `scripts/quality_gate.py`, `_run_order_independence`.
+3. **What would show it wrong.** An injected option or plugin reaching the producer, an admitted value surviving into its environment, or credentials surviving the scrub would defeat the boundary -- falsification ledger below.
+
+**Bounding**: ACCEPTED for C1. The wide change-specific record covers the owning families, release/grandchild consumers and Bandit; the two socket-dependent failures have explicit successful rerun dispositions. C2-C3's packet, prior verifier and Maintainer-only signing remain open, rather than supplied by these results.
+
+**Falsification ledger** (fresh detached checkout of `0c07eb37`; Python 3.13.13):
+
+- Independent direct `gather_evidence` probe against a temporary committed marker producer, with explicit empty protected roster: absence and exact literal controls both launched; the producer saw no ADDOPTS, PYTHONPATH or injected credential-token variable, and HOME was redirected. Caller environment was restored afterward.
+- The same probe crossed ten ADDOPTS states with absent, empty PLUGINS and empty DISABLE_PLUGIN_AUTOLOAD: 30 cases, two launches and 28 pre-launch refusals. Besides the controls, states were empty, leading tab, internal tab, trailing newline, appended terminal escape, appended selector, appended ignore and trailing nonbreaking space. Refusals left no producer marker; nonexact values were absent from diagnostics. No historical anchor or live ref was used.
+
+**Covered**: claims, production boundary, edge cases and fail-closed behavior (ledger); reuse, drift and consumer consistency (known-positive search for `gather_evidence`, `PYTEST_ADDOPTS`, `_release_child_env` and `_run_order_independence`, followed by opening the boundary, producer and both consumer launch paths); lifecycle and scope (accepted contract, C1-C3 and verification through `235eeb8a`); satisfiers (no finding). Waiting-line history across the range reaches no Maintainer fence.
+
+**Not covered / low confidence**: no independent full suite, release run, prior verifier, protected packet, pinning, signing, live ref operation or historical comparison; no plugin-package audit. Candidate code, interpreter execution and collection remain trusted. This clears only the C1 Security code-review obligation.
