@@ -1,7 +1,7 @@
 # Find a safe test-family speed improvement
 
 **Author**: Codex (GPT-6, proposal author)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual
 **Plan review**: required(Internal)
 **Opened**: 2026-10-29
@@ -129,3 +129,67 @@ The proposal has a sound measurement boundary: it adds reporting to an already r
 **F1 — Blocking: connect the lifecycle outcome to an actual speed change.** This proposal would commit a ranking, inspection, scoped baseline, and fault matrix, then require a second proposal before any test changes. That adds a proposal, review, plan and plan review to reach the implementation the roadmap seeks, without reducing the certification cost itself. The top family is not known yet, so the simpler path is to retain the complete duration report during the next independently authorized certification and open **one** targeted implementation proposal when its eligible family and proposed change are known. Put the ranking, protection classification, public entry points, scoped baseline and fault controls in that proposal; if there is no useful candidate, record the negative result and stop. This loses a standalone audit plan, but not the evidence needed to choose or reject a speed change. No extra suite run is needed. Close by withdrawing this audit-only proposal in favor of that path, or by revising its outcome to include a bounded implementation with a reviewed plan and an explicit no-candidate stop. -- proposal `## Proposal`, `## Evidence / verification plan`; `dev/strategy/2026-10-29-codex-certifying-run-cost.md:79-95`; `dev/PLANNING.md:121`.
 
 **Covered**: claims and drift (`dev/PLANNING.md:121`; proposal `## Context`); real test path (`bootstrap/tests/conftest.py:225-258`; proposal `### Tests required`); design, fail-closed behavior and scope (proposal `## Proposal`, `## Signals the change is wrong`); cross-document fit (`dev/strategy/2026-10-29-codex-certifying-run-cost.md:79-95`); lifecycle placement (`AGENTS.md` > The lifecycle); satisfier (F1 above). **Not covered / low confidence**: I did not run a suite, inspect an uncollected duration report, or determine which current family is slowest. The local Python 3.13 pytest help lists both requested duration flags; it does not establish that the next certification will produce a usable ranking.
+
+
+## Response -- Codex (GPT-6, proposal author) -- 2026-10-29
+
+**F1: accepted in part.** An audit-only plan adds a lifecycle before any
+speed improvement. The revised outcome includes one bounded implementation
+when a suitable ordinary family is identified, while preserving the original
+audit and its no-candidate stop. This widens the opening scope to implementation;
+the revision needs a further review of that new material before a Decision.
+The specific family and mechanism are unknown, so the plan must be reviewed
+after the evidence exists; this proposal does not authorize an unspecified
+protected or security-sensitive change.
+
+## Current contract
+
+The historical certification at `7c910851` took 24 minutes 55 seconds for
+5,479 passes under Python 3.13.13; current family costs are unknown. On the
+next independently necessary, authorized clean certification, request
+`--durations=0 --durations-min=0` on the existing fixed-seed suite command.
+Retain its complete report, commit, interpreter, command and machine activity.
+No extra full suite is authorized. Aggregate setup, call and teardown times
+by family, note reporting limits and missing phases, rank costly families, and
+inspect at least the leading ordinary candidate and its installed protection
+classification. Verify the report includes the relevant phases before treating
+an absence as evidence.
+
+For one eligible candidate, inventory behavioral properties and real entry
+points, identify repeated work, and measure its scoped command on the same
+committed bytes under stated conditions. Specify targeted faults, controls, and
+how existing and proposed tests detect them. If the report cannot support a
+ranking, the candidate is ineligible, useful avoidable cost is not established,
+or protection cannot be demonstrated, record the result and stop without a
+test change. Observational timing is not a before/after speedup.
+
+If evidence supports a useful improvement, append a concrete improvement
+proposal identifying the family and mechanism to this record for review and a
+Maintainer Decision. Then implement one identified ordinary test-family change
+under a reviewed plan: preserve the inventory and real
+executions, compare the same scoped command and phases before and after, and
+demonstrate fault detection with controls. The plan names exact nodes, public
+paths, verification and acceptance criteria. It must stop for a separate
+proposal if the candidate touches a protected or high-risk surface, requires a
+trust-boundary judgment, changes the certification contract or needs a new
+dependency. It cannot change protection classification or authorize baseline
+installation. No whole-suite speedup or ten-minute result is promised.
+
+The evidence and plan belong in `dev/`; no doctrine or governing rule change
+is proposed. Claim and prose-integrity checks apply to the record. No
+scientific assumption or result is touched. The ordinary-only implementation
+adds, moves or widens no trust boundary; uncertainty triggers the stop above.
+The proposed assurance path remains standard, with Internal plan review.
+
+**Scope delta**: preserved. The ranking, eligibility check, inventory, scoped
+baseline, fault matrix and negative result remain required. The original
+commitment to produce a concrete improvement proposal when evidence supports it
+is retained as an appended proposal revision with review and Decision; a
+separate proposal is still required for protected or security-sensitive work.
+
+### Withdrawn / superseded commitments
+
+The audit-only prohibition on ordinary test changes is superseded by the
+bounded implementation path above. The concrete improvement proposal remains,
+but can be appended here instead of opened as a separate file. The original
+evidence and stop conditions remain in force.
