@@ -1,7 +1,7 @@
 # Plan: Encode session child output
 
 **Source proposal**: [dev/proposals/archive/2026-10-29-codex-session-child-output-encoding.md](../proposals/archive/2026-10-29-codex-session-child-output-encoding.md)
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Make captured session helper output safe to display while keeping multiline reports readable.
@@ -176,3 +176,28 @@ Each mutation replaced that helper's encoded stdout write with a direct decoded 
 Standing gates passed on the same clean worktree: `python scripts/check_cairn.py` (187 Markdown files; 83 external links not probed), `python scripts/link_check.py` (187 files; 84 external links not probed), `python scripts/sync_doc_snippets.py --check` (433 documents; no drift), and `python scripts/quality_gate.py --sub neutrality` (0 failures, 43 informational findings). After this record was written, `python scripts/claim_check.py dev/plans/2026-10-29-session-child-output-encoding.md` passed with no claim-check flags.
 
 The plan's exclusions remain: `test_session_writes_contained.py` and `test_session_start_drain_rules.py` do not own output capture or encoding. No full-suite certification, protected-test re-anchor ceremony, historical anchor comparison, external-link probing, or independent code review is claimed. The protected-test obligation remains for the v0.6 re-anchor.
+
+
+## Code review -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+```
+Reviewed commit: 6db8f3ffd52024f36bf64ec18b7b0a6c2101ca54
+Target: implementation acaa1484 and Boundary B evidence at 6db8f3ff
+Prior findings: none
+```
+
+**Foundations**:
+
+1. **Should this happen as framed?** The encoding and LF framing address the display boundary, but decoding does not preserve the approved behavior -- `tools/session.py` > `_decode_child_output` and the falsification ledger below.
+2. **Best alternative.** Retain the shared framing helper while selecting the subprocess text-mode encoding and decoding both streams before applying suppression -- `tools/session.py` > `_decode_child_output`, `_prune_intents`.
+3. **What would show it wrong.** A UTF-8-mode locale and malformed suppressed stderr break the stated decoding contract -- see the falsification ledger below.
+
+**Bounding**: WIDER RUN REQUIRED -- add checks for subprocess default encoding under UTF-8 mode and malformed stderr on a successful child through each helper, and record them with the revised final-commit evidence.
+
+**R1 -- blocking: match text-mode default encoding in UTF-8 mode.** `locale.getencoding()` ignores Python UTF-8 mode. On canonical Python 3.13.13 with `LC_ALL=C PYTHONUTF8=1`, a real text-mode subprocess decoded UTF-8 bytes for `é`, while `_decode_child_output` raised `UnicodeDecodeError` because `locale.getencoding()` returned `US-ASCII`. Select the same default encoding used by subprocess and exercise this environment through the helpers.
+
+**R2 -- blocking: preserve malformed successful stderr behavior.** Previously `subprocess.run(..., text=True)` decoded both captured streams before returning, even when stderr would later be suppressed. The new helpers decode stderr only on nonzero exit, so a successful child emitting malformed stderr now returns normally. Decode both streams strictly before branch-specific display, while retaining successful-stderr suppression. Add real-child tests for the successful branch.
+
+**Falsification ledger:** On a fresh archive of `6db8f3ff`, canonical Python 3.13.13 with `LC_ALL=C PYTHONUTF8=1` ran a real child emitting bytes `c3 a9`: text-mode returned `'é'`; `_decode_child_output` raised an ASCII decode error. A second real child exited zero after writing byte `ff` to stderr: text-mode raised `UnicodeDecodeError`; the new branch condition skips decoding that stream, as shown in all three helper bodies. These are independent targeted probes, not a repeat of Boundary B.
+
+**Coverage:** Read the implementation diff, acceptance criteria, review history, and Boundary B mapping and results; challenged decoding and success stderr, and checked the range for reached fences or deviation requests (none). The recorded real-child and mutation results support the remaining framing claims but were not rerun in this pass. No full suite, protected-test ceremony, or security review was run.
