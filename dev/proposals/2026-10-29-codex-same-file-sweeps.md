@@ -1,9 +1,9 @@
 # Detect and record same-file commit sweeps
 
 **Author**: Codex gpt-6.1-sol
-**Status**: revising
-**Review**: usual
-**Plan review**: required(Internal)
+**Status**: awaiting-decision
+**Review**: usual + Security Review
+**Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Check shared-file commits for another person's uncommitted work and record confirmed sweeps so the recurrence gate can count them.
 
@@ -242,3 +242,102 @@ lifecycle, scope and satisfiers (S1–S2, R2–R4). Not covered / low confidence
 no concurrency experiment, independent authorship confirmation of the historical
 incident, implementation verification or privacy inventory; no suite run.
 No scientific result is involved.
+
+## Response -- Codex gpt-6.1-sol -- 2026-10-29
+
+R1 / S1 accepted: high assurance and preflight below; Security Review remains
+open. R2 accepted: one row per commit by occurrence date. R3 / S2 accepted:
+staged inspection and serialization. R4 accepted: minimize evidence.
+
+## Context
+
+Both review sections landed in `5094a977`; confirm circumstances before counting it.
+
+## Proposal
+
+Extend existing pre-commit inspection: agree with other writers to serialize
+shared paths before inspection through commit; a claim is not agreement.
+Inspect tracked candidates against HEAD, covering staged and unstaged changes,
+and new files directly. Reinspect changed bytes. Stop on foreign or uncertain
+content and coordinate with its author. If agreement cannot be maintained, use
+separate worktrees and integrate each author's commit. Reviewers retain the
+self-commit rule. A noncooperating writer can still defeat this procedure.
+
+A confirmed sweep is a commit carrying another author's uncommitted changes
+without proper attribution, confirmed by that author or recorded provenance;
+claims or diffs alone do not establish authorship. Record one `occurred` row
+per commit, with affected paths together and occurrence date separate from
+discovery. Check for an existing row first. Without confirmed authorship or
+occurrence date, label the report uncertain and exclude it from the count.
+Record prevented cases separately. Reconcile `5094a977` once if confirmed.
+The existing gate counts `same-file-sweep` rows and states reports are
+incomplete. It remains advisory; no automatic attribution or claim-release
+change is proposed.
+
+Keep commit, paths, dates and confirmation reference in the local tracker.
+Check committed summaries for sensitivity; never copy private conversations,
+secrets or unrelated uncommitted content. Do not overwrite the local tracker.
+
+## Rationale and alternatives
+
+Opening alternatives stand; serialization depends on cooperation, reporting on disclosure.
+
+## Documentation / doctrine surface
+
+Route the prescription to `AGENTS.md`, `doctrine/coordination.md` and its
+installed owner identified in planning. Update tracker guidance and gate
+output and its installed counterpart. Follow `docs/DOCUMENTATION_PLAN.md`.
+
+## Evidence / verification plan
+
+Map readers, installed copies and owning tests. Exercise the gate with two
+confirmed commits, one affecting two paths, a prevented case and late discovery.
+Check incomplete-report wording, duplicates, staged foreign text, intervening
+changes, legitimate integration, privacy and applicable claim, link, snippet
+and neutrality gates.
+
+### Security preflight
+
+S1: Writers supply candidate bytes, authors or provenance supply confirmation,
+and reporters supply rows. The gate reads those assertions about the event.
+
+S2: Mutating one `occurred` impact to `prevented` must remove a threshold-two
+finding. A synthetic `tools.evolution_infer.evaluate_tracker` run on
+2026-10-29 found two rows, then none after that mutation. Confirmation and
+serialization are human judgments; planned scenarios probe their limits.
+
+S3: A person inspects before commit and reports incidents;
+`python tools/evolution_infer.py` reads discovered trackers and suggests
+classes reaching threshold. Its output must add the incomplete-report warning.
+
+S4: Unknown authorship or occurrence date stays uncertain and uncounted;
+changed bytes require reinspection. Unreadable trackers retain existing refusal.
+No result authorizes a doctrine change.
+
+S5: A noncooperating writer can append after inspection, and a reporter can
+lie or omit a report. This procedure cannot prevent either.
+
+### Independent scientific check
+
+N/A: no scientific assumption or result touched.
+
+## Signals the change is wrong
+
+Redesign if legitimate integration is called a sweep, duplicates inflate
+recurrence, or output implies complete detection.
+
+## Scope delta
+
+**Scope delta**: preserved. One row represents a commit rather than a
+commit-path pair; affected paths remain recorded.
+
+## Assurance path
+
+**Assurance path**: high-assurance. Doctrine triggers Security Review at
+proposal and plan stages. The open Security obligation requires a further pass;
+this revision does not widen the opening outcome.
+
+### Withdrawn / superseded commitments
+
+Per-commit-and-path rows become one per commit to avoid false recurrence.
+Standard assurance and the N/A preflight are replaced by the accounting above.
