@@ -1,7 +1,7 @@
 # Find and activate installed modules
 
 **Author**: Codex (gpt-6.1-sol)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -261,3 +261,111 @@ or security checks were executed. Exact update semantics, failure ordering,
 new-write containment and adversarial public-entry tests remain for the plan
 and implementation. This ACCEPT clears this proposal's Security Review
 obligation, not the separately declared plan Security Review.
+
+## Response -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+Both reviews accept with no findings. The plan must settle rendering, inventory,
+upgrade migration and update semantics; map new-write containment and failure
+ordering; and test repeat adoption, including the existing already-adopted
+shortcut. It must inventory the engine mappings rather than assume the source
+catalog is exhaustive. The Security Review clears the proposal obligation;
+the separately declared plan Security Review remains owed.
+
+## Context
+
+Preset onboarding does not cover every resolved selection. The source catalog
+is not an installed inventory; explicit module adoption updates module files
+and lock metadata without adding onboarding tasks. See the opening Context.
+
+## Proposal
+
+Audit module mappings, selection, installed outputs, entry points and adoption.
+Provide an installed, agent-discoverable inventory of actual selected modules,
+purpose and usable entry points; add relevant lifecycle pointers without
+requiring routine use. Commands and artifacts must resolve and explain inputs.
+Give each installed module a distinct actionable first-use task in the existing
+onboarding slot, naming a command or artifact and expected result, including
+non-preset installs. On later adoption including `upgrade --adopt-module`,
+provide the task and inventory update; document concrete manual-copy steps.
+Preserve existing and completed tasks, avoid duplicates and absent-module
+tasks, and never silently delete edits. Where safe reconciliation is not
+possible, report the conflict and a manual action. The plan decides generation,
+updates and upgrades; live rendering and clean lockfile baseline must agree.
+Modules remain optional. Existing architecture advice may be used for legacy,
+new or mixed systems; v0.7 expansion remains separate.
+
+## Rationale
+
+Selection-specific tasks and a local inventory give adopters and agents a
+usable starting point without requiring execution of all capabilities.
+
+## Alternatives considered
+
+Preset seeds alone leave gaps; a recurring requirement to run every module
+would impose work regardless of selection or need.
+
+## Documentation / doctrine surface
+
+Route discovery and manual adoption instructions to installed bootstrap and
+module documentation, operational pointers to shipped governing/session
+templates, and deliberation to `dev/` under `docs/DOCUMENTATION_PLAN.md`.
+This changes the install contract and engine, not a doctrine premise.
+
+## Evidence / verification plan
+
+Inventory every mapped module, task, expected result and entry point; search
+readers and callers. Exercise real preset, explicit, empty and add/remove
+installs and both later-adoption paths. Verify every task and entry point,
+repeats, completed tasks, edits, removals, conflicts, containment, upgrade and
+lockfile agreement. Missing tasks, broken paths, lost edits or divergent
+baselines falsify the change. Map exact nodes and consumers in the plan.
+
+### Tests required
+
+Start with `bootstrap/tests/test_onboarding_seed_roster.py`,
+`bootstrap/tests/test_module_roster.py`,
+`bootstrap/tests/test_module_merge_lockfile.py`,
+`bootstrap/tests/test_upgrade_module.py`, and
+`bootstrap/tests/test_upgrade_module_additions.py`; add public-entry tests.
+
+### Examples / smoke checks
+
+Run scaffold summary, dry-run and manifest with representative profiles, real
+temporary installs, `python scripts/check_cairn.py` and applicable claim, link,
+snippet and neutrality gates.
+
+#### Security preflight — five questions, answered in writing
+
+S1: Inputs are profile, shipped mappings and templates, and adopter files;
+inventory text does not authorize selection or execution. S2: Mutations removing
+a task, adding an unselected task, changing preserved work and changing the
+lock baseline must fail their tests; runs are owed at implementation. Shared
+rendering alone does not establish selection correctness. S3: Install and
+upgrade select resolved profiles and target files; the plan names exact tests
+and inputs. The first-use task claim covers selected modules; manual copy needs
+the documented update. S4: Invalid profiles, unsafe paths and conflicts fail
+closed or require manual reconciliation, never overwrite or execute. S5: An
+attacker controlling a profile or adopter file may still supply a hostile
+valid instruction; inventory does not authenticate content.
+
+### Independent scientific check
+
+N/A: no scientific assumption or result touched.
+
+## Signals the change is wrong
+
+Tasks are unusable, edits lost, optional capabilities made mandatory, or
+maintenance costs exceed use.
+
+## Scope delta
+
+**Scope delta**: preserved
+
+## Assurance path
+
+**Assurance path**: high-assurance — install contract, engine and
+adopter-executed surfaces.
+
+### Withdrawn / superseded commitments
+
+None.
