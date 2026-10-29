@@ -187,3 +187,34 @@ The Security plan pass is recorded above; its findings are addressed in the oper
 | CR2 | Corrected: the mutated runner is `scripts/content_scan_runner.py`, the value of `entry.runner_repository_path`; all five ledger rows now name that path. |
 
 The original Boundary B record remains the author's result on `3dcb5806`; the later module agent run is cited as independent coverage, not represented as the author's run. The usual code-review response is recorded. The required Security Review remains pending; no `Bounding: ACCEPTED` determination or archive transition is made here.
+
+
+## Code review -- Codex (gpt-6.1-sol, independent Security reviewer) -- 2026-10-29
+
+**Reviewed commit**: `3dcb5806a0442b959a81cc3287a9ded9c5b44a4a`
+**Target**: dispatcher-owned implementation commits `dc309b0e` and `3dcb5806`; plan and corrected evidence through `7a541182`
+**Prior findings**: none in this Security code pass
+**Obligation**: Security Review of registry admission, apparatus binding and child evidence
+**Tier**: Internal Security Review
+**Findings**: none
+
+**Foundations**
+
+1. **Does it do what it claims?** Yes within its trusted-checkout boundary: all five members bind before launch, policy drift requires explicit reconciliation, and uncertain child evidence degrades -- `templates/modules/default-on/run_security_verification.py::_bind_runner`, `_evaluate_capability`; `bootstrap/tests/test_security_stack.py::TestContentPolicyReconciliation`.
+2. **Best alternative.** Retain the fixed registry and existing scoped finalize rather than introduce another policy authority; the original upstream baseline remains distinct from accepted local bytes -- `bootstrap/_scaffold/upgrade.py::_cmd_finalize_lockfile`, `bootstrap/_scaffold/lockfile.py::classify_verbatim`.
+3. **What would show it wrong.** Unchecked apparatus launch, hidden residual findings or an empty audit accepted as clean would defeat admission -- see the falsification ledger below.
+
+**Bounding**: ACCEPTED -- challenged each bound member and child evidence independently; the wide author record and its range correction identify the owning integration paths and separately attributed module evidence. Certification remains pending.
+
+### Falsification ledger
+
+Python 3.13.13 at `/Users/kendal30/conda_envs/lhm/bin/python3.13`; control in a fresh detached worktree at the reviewed commit; each mutant in a separate fresh local clone of those bytes. No broad suite was run.
+
+* Unmutated control: `python3.13 -m pytest -q bootstrap/tests/test_security_verification.py::TestRegistryIntegrity bootstrap/tests/test_security_verification.py::TestDispatchBehavior::test_process_exit_and_result_must_agree bootstrap/tests/test_security_stack.py::TestRunnerExitContract` -- 58 passed, 1.06 s.
+* Enumerated the complete member set from `_REGISTRY["content-security"]`, then bypassed binding for exactly one member per clone. Ran `TestRegistryIntegrity::test_content_apparatus_member_failure_refuses_before_launch` in each clone: `scripts/content_scan_runner.py` killed; `scripts/content_scan.py` killed; `scripts/content_scan_roots.txt` killed; `scripts/content_scan_residuals.txt` killed; `scripts/content_scan_allowlist.txt` killed. Each mutant produced 5 failed / 20 passed: the checks detect removal of each member's guard.
+* Removed the nonempty-files condition in both byte-identical runner copies: `TestRunnerExitContract::test_empty_audit_cannot_become_clean_dispatcher_evidence` killed the mutant (1 failed).
+* Changed residual-only FINDINGS to CLEAN in both runner copies: `TestRunnerExitContract::test_dispatcher_mode_emits_one_closed_result_document` killed the mutant (1 failed).
+
+**Waiting-line check:** No fenced chunk or deviation request in this plan's reviewed range; its sequence is C1–C3 without a Maintainer fence.
+
+**Coverage:** Claims, production paths, completeness and fail-closed evidence: registry/binding, above controls and mutations, and the recorded installed-command tests. Consistency, reuse and drift: fixed registry reuses `_bind_runner`, paired runner sources, installed policy guidance and corrected ledger at `7a541182`. Lifecycle, scope and satisfiers: scoped-finalize authority and C1–C3; no findings require a satisfier. No scientific calculation is involved. **Not covered / low confidence:** did not repeat the author's install/upgrade families, authenticate host Git or a checkout whose attacker controls both lock and apparatus, close the documented same-user check/use race, run certification or perform a re-anchor. These are limits, not clean security claims.
