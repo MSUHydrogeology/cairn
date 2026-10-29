@@ -1,7 +1,7 @@
 # Plan: Connect the content tripwire to the security dispatcher
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-dispatcher-content-scan.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Run the installed content tripwire through the local security command and report its limited evidence honestly.
@@ -53,3 +53,25 @@ Boundary A and B use the canonical Python 3.13 interpreter. This is a contract a
 Add negative controls for every new schema field and bound member: missing, changed, unsafe or symlinked member, malformed or duplicate records, policy edits before and after reviewed reconciliation, empty/invalid roots and stale baseline. Exercise malformed child JSON, exit mismatch, timeout, output cap, precedence, and accepted residual findings. Mutate each bound member and child evidence separately and record the failing control with an unmutated control; this does not claim protection against an attacker replacing both lock and files. Verify the actual audited set against the documentation.
 
 Run `python scripts/check_cairn.py`, `python scripts/claim_check.py` on changed documents, `python scripts/link_check.py`, and `python scripts/quality_gate.py --sub neutrality` for prose and standing checks; run other standing gates found for touched surfaces. Record commands, counts, non-pass dispositions, elapsed times, pre/post state, tested SHA and known omissions in the implementation verification record. Independent code review performs targeted falsification rather than repeating Boundary B. Certification and re-anchor are separate authorized ceremonies; do not run the full suite here.
+
+
+## Plan review -- Codex (gpt-6.1-sol, ordinary reviewer) -- 2026-10-29
+
+**Reviewed commit**: a204f67d
+**Tier**: Internal
+**Findings**: 1 blocking
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Does the plan deliver the Decision?** Not yet: it postpones the accepted dependency, ownership and lock-reader mapping and exact test-node map until implementation, leaving policy reconciliation and its evidence unspecified -- accepted proposal, Evidence / verification plan; plan C2 and Verification.
+2. **Best alternative.** Keep the existing runner and dispatcher binding mechanisms as planned, but map the five installed paths to their lock records, readers and policy owner, decide the reviewed edit and upgrade procedure, and name existing test nodes plus new behaviors before implementation; this is a clarification, not a new subsystem -- `bootstrap/_scaffold/config.py`, content-security mapping; `bootstrap/_scaffold/install.py::write_install_lockfile`; `bootstrap/tests/test_security_verification.py`.
+3. **What would show it cannot deliver?** A reviewed policy edit that cannot be reconciled without silently accepting drift, or a changed input that still yields clean, would defeat the accepted outcome -- plan C2 and Verification; `templates/modules/team-gated/content_scan_runner.py::_load_content_scan`.
+
+### P1 -- Map the authority and verification before execution
+
+The accepted proposal explicitly requires the plan to map dependencies, policy ownership, lock records and readers, and to name exact test nodes. C1 names a binding tuple and C2 asks the implementer to establish a procedure from the existing writer, but neither identifies the records and readers or determines how a reviewed policy edit is made authoritative and survives upgrade. The Verification section names whole families and says to search again; it does not map existing nodes to the new contract or identify which behaviors require new nodes. For example, `TestParentComputedBinding::test_runner_or_policy_digest_mismatch_is_degraded` and `TestComposition::test_the_dispatcher_runs_from_a_real_fresh_scaffold` already exercise relevant but narrower paths. Without the map a reviewer cannot assess whether the planned authority transition or specific evidence reaches the accepted outcome.
+
+Recommend an explicit path → record → reader → owner map for the runner, scanner and three policy files; establish the supported reviewed policy/lock reconciliation and upgrade path, or identify the precise change needed and its authority boundary. Map existing nodes and proposed new tests to selection, every bound member and schema field, real installs, direct invocation, policy reconciliation, upgrade and failure behavior. Retain the wide contract-surface verification and the guard-limit union; do not replace it with an unrequested full suite. If the procedure cannot be established safely, leave implementation blocked rather than choosing an unreviewed authority during C2.
+
+**Coverage:** Read the committed plan and accepted proposal, installed mapping, runner dependencies, dispatcher test names, and lock writer locations for claims, completeness, scope, verification and alternatives. This is a plan review; no implementation or runtime checks were performed. The separate Internal Security Review remains owed.
