@@ -163,3 +163,31 @@ implementation.
 The evidence tests prove the exact cache-only option is removed before producer launch, all other tested addopts and plugin controls refuse before launch, and real pytest node identities match with and without the cache-only option (2 nodes); `--ignore` drops a node and is refused through `gather_evidence` before the producer marker appears. The accepted-option producer marker passed.
 
 **Omissions**: no full-suite certification, release run, prior-manifest verifier, packet preparation, pinning, signing, live ref operation, push, or historical comparison. C2-C3 and independent code review remain open. No known mapped consumer or required check remains unrun; the two socket-dependent cases passed in the focused rerun.
+
+## Code review -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+```
+Reviewed commit: 235eeb8a
+Target: 35cf29f492ad226f513b7a09f9e1b215c57b1ada..0c07eb373f0a97197eeaddbb3399483cf960f888, and verification at 235eeb8a
+Prior findings: none
+```
+
+**Obligation**: Internal
+**Findings**: none
+
+**Foundations**:
+
+1. **Does it do what it claims?** The boundary admits the literal and removes it, and refuses other values and plugin variables before producer launch; the targeted controls passed -- `bootstrap/tests/_gate_preflight.py`, `TestEvidenceStage` controls below.
+2. **Best alternative.** The existing boundary and producer cache option avoid a second policy or option parser; no simpler build preserves the accepted exact-match contract -- `bootstrap/tests/_gate_preflight.py`, `bootstrap/tests/_gate_manifest.py`.
+3. **What would show it wrong.** Producer execution under a selector or plugin control, or retention of the admitted setting, would defeat the contract -- falsification ledger below.
+
+**Bounding**: ACCEPTED. The changed launch boundary, its real collection control and the mapped downstream release and grandchild tests are covered by the author's wide record; the independent selector mutation challenged the boundary and its mapped tests.
+
+**Falsification ledger** (detached checkout of `0c07eb37`, Python 3.13.13):
+
+- Control: `python -m pytest bootstrap/tests/test_gate_preflight.py -q -k 'non_exact_addopts_refuses or plugin_control_refuses or exact_cache_option_is_removed or real_pytest_node_ids'` -- 12 passed, 325 deselected. This exercises producer markers, removal, plugin presence and real pytest collection identities.
+- Mutant: replace exact comparison with a prefix comparison, admitting an appended selector. `python -m pytest bootstrap/tests/test_gate_preflight.py -q -k 'non_exact_addopts_refuses'` -- killed: 2 failed, 4 passed, 331 deselected; the appended selector and trailing-space cases reached the producer and failed the diagnostic assertion.
+
+**Covered**: accepted scope and exact admission (`_gate_preflight.py`); producer refusal and removal plus node identities (ledger); release and real grandchild propagation and standing gates (implementation verification's mapped results); verification range and omissions (implementation verification); waiting-line history (`git log -p` over the range: no fenced chunk became the next move). The separate Security Review remains owed.
+
+**Not covered / low confidence**: no full suite, release run, prior-manifest verifier, packet, signing, ref operation or historic anchor. Candidate code and collection remain trusted as the accepted contract states.
