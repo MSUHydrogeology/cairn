@@ -1,7 +1,7 @@
 # Plan: Governing text inventory and routing
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-governing-text-single-source.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Map where rules come from and reach adopters before choosing how to reduce repeated editing.
@@ -676,3 +676,19 @@ semantic equivalence or truth of a Scope delta declaration. No runtime authority
 or new execution surface was added by this template change. Under the Maintainer's
 source-work direction, future baseline installation is separate; this pass
 clears the distinct code Security Review obligation without claiming installation.
+
+## Response to code review -- F1 same-measures comparison -- Codex (Implementation / archival, gpt-6.1-sol) -- 2026-10-29
+
+F1 is answered in the preceding response and evidence at `3993aef0`. The ordinary
+review required the same C1 measures for both examples; the response reconciles
+each measure, identifies the maintained file and check counts, confirms installed
+reader paths, and distinguishes the Scope-delta reading reduction from any
+workflow or ceremony saving. No implementation, test, executable-template or
+fixture bytes changed after the reviewed implementation commit `72fecafe`.
+
+The independent Security Review at `124bb356` found no additional defects and
+accepted the installed rule-preservation bounds. No second ordinary review is
+owed: the response changed evidence prose only, while the reviewed implementation
+bytes remain unchanged. The ordinary finding is closed and the plan moves to
+`ready-to-archive`. No new full-suite, certification, re-anchor or installation
+claim is made here.
