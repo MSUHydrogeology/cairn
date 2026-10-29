@@ -1,7 +1,7 @@
 # Plan: Connect the content tripwire to the security dispatcher
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-dispatcher-content-scan.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Run the installed content tripwire through the local security command and report its limited evidence honestly.
@@ -119,3 +119,31 @@ The remaining security design is proportionate: validate scanner and policy sibl
 | S1 | Folded: C2 preserves `base_hash`, requires review of policy and lock, excludes unscoped finalize, and stops for plan correction if existing upgrade cannot preserve policy. |
 
 The Security plan pass is recorded above; its findings are addressed in the operative cells. Plan review has one round.
+
+## Implementation verification -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+**Boundary B mode**: wide. The changed dispatcher registry and runner form a contract and trust surface; the affected set includes install selection, lockfile provenance/finalize and upgrade preservation, child execution, the shipped local command, direct runner behavior, and installed guidance. The five owning families below plus `test_lockfile_provenance.py`, real default/opt-out installs, API/web combinations, and the local dispatcher cover the mapped integrations and public paths. The exact contract cannot be bounded to one test module.
+
+**Certified by**: pending
+**Tested commit**: `3dcb5806a0442b959a81cc3287a9ded9c5b44a4a`
+**Reviewed range**: `a6c151f1..3dcb5806a0442b959a81cc3287a9ded9c5b44a4a` (module-discovery integration base through final dispatcher implementation)
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` -- Python 3.13.13
+
+**Pre-run state**: fresh local clone at the tested commit; detached `HEAD` matched the tested SHA; `git status --short` empty.
+**Post-run state**: same `HEAD`; `git status --short` empty and `git diff --stat` empty. Pytest cache and all temporary adopter installs were ignored or created outside the clone.
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---:|---|---:|
+| `python3.13 -m pytest bootstrap/tests/test_security_verification.py bootstrap/tests/test_security_stack.py bootstrap/tests/test_default_security_stance.py` | 0 | 290 passed | 22.55 s |
+| `python3.13 -m pytest bootstrap/tests/test_module_merge_lockfile.py bootstrap/tests/test_notice_install.py bootstrap/tests/test_lockfile_provenance.py` | 0 | 38 passed | 1.47 s |
+| `python3.13 -m pytest -q bootstrap/tests/test_security_verification.py::TestNoCapabilityContract::test_a_socket_opening_child_is_excluded_by_admission_not_blocked_at_runtime` (loopback-enabled rerun) | 0 | 1 passed | 0.05 s |
+| `python3.13 scripts/check_cairn.py` | 0 | 187 Markdown files; no issues; 83 external links not probed | not timed |
+| `python3.13 scripts/claim_check.py <each changed plan/module/strategy document>` | 0 | all four documents OK; security-verification module had two declared path exemptions | not timed |
+| `python3.13 scripts/link_check.py <six changed plan/module/template Markdown files>` | 0 | 6 files; no issues | not timed |
+| `python3.13 scripts/quality_gate.py --sub neutrality` | 0 | 0 failures; 43 informational findings | not timed |
+
+**Plan-specific acceptance commands**: the two owning-family commands above cover the required wide mapping. They include real temporary adopter installs, opt-out, API/web combinations, direct runner and dispatcher behavior, child failure handling, scoped finalize and upgrade preservation. `bootstrap/tests/test_security_verification.py::TestRegistryIntegrity::test_content_entry_binds_every_immutable_apparatus_member` is the positive control; its 25 per-member mutation cases all fail closed before child launch. The full mutation ledger is [implementation-verification.md](2026-10-29-dispatcher-content-scan/implementation-verification.md).
+
+**Non-pass disposition**: the first restricted-environment run of the first command produced 289 passed and one failure because its force-injected child could not bind a loopback socket. The test passed alone with loopback access enabled, then the complete mapped command passed (290 passed) with that same access. This is environmental, not waived. No skips, xfails or xpasses were reported in the successful runs.
+
+**Known omissions**: no whole-tree certification, re-anchor, historical-anchor reconciliation, live-reference probe, or push was performed; those are outside this plan's Boundary B. `check_cairn.py` did not probe its 83 external links. The checks do not authenticate a checkout against an attacker able to replace both apparatus bytes and lock records, as stated in C1.
