@@ -300,3 +300,30 @@ scope before moving the plan forward.
 | Security Review, `9d813013` | The same amendment changes the outstanding ceremony condition, but does not itself clear the open Security Review. A Security reviewer must assess the response and retained functional evidence under the amended scope. |
 
 No implementation bytes, authority, or historical evidence changed in this response. The original verification remains scoped to its named commit and does not certify the tree. Installation and historical continuity remain deferred; no signing or trust-root operation is authorized by this response.
+
+## Code review -- Codex GPT-6.1 (Security Reviewer) -- 2026-10-29
+
+**Reviewed commit**: `d97287d21f3071c5cc533138afe55027db96e530`; implementation endpoint `69b8bc7e` and follow-up prose `5c525367`.
+**Target**: outstanding Security Review at `9d813013`, scope amendment `a7efef1f`, and response `d97287d2`.
+**Prior findings**: Security Review F1, prescribed frozen-file ceremony.
+**Tier**: Security Review
+**Obligation**: Security Review of governing/vendor-neutrality verification rules and preservation of required security and trust ceremonies, under the Maintainer's amended scope.
+**Verdict**: PASS -- this Security Review obligation is cleared under the amended scope. Installation and historical-anchor continuity remain deferred.
+
+**Foundations**
+
+1. **Does it do what it claims?** The retained verification separates mapped functional evidence from certification; the only prior blocking condition was explicitly removed as an archive prerequisite by the Maintainer. -- Scope amendment, response under amended scope, and original Implementation verification.
+2. **Best alternative.** Retain the existing guard and independent coverage judgment, with baseline installation tracked separately; no replacement bypass or approval stage is needed. -- `bootstrap/tests/conftest.py::_refuse_broad_run_if_warranted`; amendment `a7efef1f`.
+3. **What would show it wrong?** Refusal lost above the file threshold, a pending collection stop overwritten, or incomplete consumer/security evidence accepted as completion would defeat the retained contract. -- falsification ledger below.
+
+**Bounding**: ACCEPTED -- the formerly missing ceremony is a recorded Maintainer-authorized scope reduction, not an unperformed retained functional check. This verdict does not certify the tree or authorize installation, signing, or pushing.
+
+**Falsification ledger** (fresh detached worktree at `d97287d2`; Python 3.13.13):
+
+- Surfaces probed: opened the guard and its refusal-message test; `git diff 69b8bc7e d97287d2 -- bootstrap/tests/conftest.py bootstrap/tests/test_certifying_run_rule.py` is empty. The original tested executable guard bytes remain current.
+- Negative/edge attempts: ran `test_broad_run_guard.py::test_the_file_threshold_boundary_is_exact` and `::test_the_guard_refusal_follows_a_late_deselection`; both passed, exercising actual pytest subprocess refusal and preserved selection behavior.
+- Verification: those nodes plus `test_certifying_run_rule.py::test_the_broad_run_refusal_no_longer_offers_the_override`, invoked with `python3.13 -m pytest -q` and `--quality-gate-shuffle-seed=0`, yielded 3 passed in 2.06s. The refusal test includes an unconditional-push negative control. No full-suite override was set.
+- Challenged omitted-evidence acceptance by reading committed examples B/C and independent adjudication at `26c8a055`: both remain rejected with the missing consumer/security nodes named. Original evidence reports same-SHA successful reruns of the three environment-denied nodes; the executed union alone is not treated as proof of passing.
+- Residual risk: did not reproduce the 2,700-node logs, authenticate reported outcomes, install a baseline, or compare old anchors. No scratch anchor was needed for these guard probes. No set-wide new propagation claim is made; the prior ordinary six-surface mutation ledger remains its own evidence.
+
+**Covered**: claims and execution (#1-2: actual guard probes); completeness and refusal (#3-4: threshold and omission controls); consistency and drift (#5-6: unchanged guard bytes and amended response); lifecycle, scope and satisfier (#7-9: quoted amendment defers the prior blocker). **Not covered / low confidence**: separate re-anchor machinery has evolved since the original implementation and is not certified by this pass; historical continuity, baseline installation, unknown dependencies and whole-tree certification remain outside this clearance.
