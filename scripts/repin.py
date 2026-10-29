@@ -1474,6 +1474,35 @@ def build_packet(ctx, cdir, *, transition=False):
         f"this HEAD, changing only that file.")
 
 
+def prepare_reader_inputs(ctx, cdir, output):
+    """Prepare facts for a separate reader; this is not the reader's record."""
+    cdir = _plain_absolute_path(cdir)
+    output = _plain_absolute_path(output)
+    repo = ctx["repo"]
+    if output == repo or repo in output.parents:
+        raise Refuse("reader inputs must be written outside the checkout.")
+    packet = cdir / PACKET_NAME
+    launcher = cdir / LAUNCHER_NAME
+    packet_raw, launcher_raw = read_safe(packet), read_safe(launcher)
+    template, members = anchored_template(ctx)
+    if launcher_raw != template.replace(SLOT.encode(), sha(packet_raw).encode()):
+        raise Refuse("launcher differs from the prior template and packet.")
+    try:
+        state = ctx["rc"].compare(repo, ctx["head"], packet)
+    except SystemExit:
+        raise Refuse("candidate and packet could not be compared.")
+    if not ctx["rc"].check_packet_pair(state, packet, launcher):
+        raise Refuse("candidate, packet and launcher do not agree.")
+    lines = ["# Reader inputs -- verify independently before writing a record",
+             f"read-commit {ctx['head']}", f"prior-anchor {ctx['anchor']}",
+             f"packet-sha256 {sha(packet_raw)}", f"launcher-sha256 {sha(launcher_raw)}"]
+    lines.extend(f"member {sha((ctx['ext'] / m).read_bytes())} {m}" for m in members)
+    raw = ("\n".join(lines) + "\n").encode()
+    write_new(output, raw)
+    say(f"wrote reader inputs {d(str(output))} sha256 {sha(raw)}")
+    say("These are preparation data, not an independent review or authorization.")
+
+
 def record_values(text):
     """The record's digest lines as data: the commit read, the packet, the launcher and each
     member.  A line repeated is a record that disagrees with itself."""
@@ -1775,6 +1804,10 @@ def main(argv=None, *, launchctl=launchctl_socket):
     tp = sub.add_parser("transition-packet", help="prepare a packet using authenticated prior authority")
     tp.add_argument("--ceremony-dir", required=True, metavar="DIR")
     tp.add_argument("--expected-fingerprint", required=True, metavar="SHA256:...")
+    ri = sub.add_parser("prepare-reader", help="prepare facts for an independent reader")
+    ri.add_argument("--ceremony-dir", required=True, metavar="DIR")
+    ri.add_argument("--output", required=True, metavar="FILE")
+    ri.add_argument("--expected-fingerprint", required=True, metavar="SHA256:...")
     ce = sub.add_parser("ceremony", help="the whole re-anchor: checks, an owed AST pin (then stop), "
                         "the launcher's two stages, verification")
     ce.add_argument("--values", required=True, metavar="FILE", help="your values file")
@@ -1822,7 +1855,7 @@ def main(argv=None, *, launchctl=launchctl_socket):
     rec, done = [], None
     try:
         repo = Path(__file__).resolve().parent.parent
-        if args.verb == "transition-packet":
+        if args.verb in ("transition-packet", "prepare-reader"):
             prior = git_text(repo, "rev-parse", "--verify", ANCHOR_REF + "^{commit}")
             roster = tmp / "prior-roster"
             roster.write_bytes(git(repo, "cat-file", "blob", f"{prior}:{ROSTER_REL}"))
@@ -1834,7 +1867,7 @@ def main(argv=None, *, launchctl=launchctl_socket):
             head = git_text(repo, "rev-parse", "--verify", "HEAD^{commit}")
             if git(repo, "cat-file", "blob", f"{head}:{REPIN_REL}") != Path(__file__).read_bytes():
                 raise Refuse("the running preparation script differs from committed candidate C.")
-        ctx = boot(repo, tmp, prior_authority=args.verb == "transition-packet")
+        ctx = boot(repo, tmp, prior_authority=args.verb in ("transition-packet", "prepare-reader"))
         first_screen(ctx)
         if args.verb == "status":
             show_ast(ctx, ast_view(ctx))
@@ -1846,6 +1879,8 @@ def main(argv=None, *, launchctl=launchctl_socket):
             build_packet(ctx, args.ceremony_dir)
         elif args.verb == "transition-packet":
             build_packet(ctx, args.ceremony_dir, transition=True)
+        elif args.verb == "prepare-reader":
+            prepare_reader_inputs(ctx, args.ceremony_dir, args.output)
         else:
             try:
                 done = run_ceremony(ctx, args, launchctl, rec)

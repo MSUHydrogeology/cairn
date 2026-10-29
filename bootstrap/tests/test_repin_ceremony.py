@@ -2377,6 +2377,11 @@ def test_transition_packet_uses_signed_prior_authority_and_preserves_ordinary_re
     assert made.returncode == 0, made.stdout + made.stderr
     assert len(list(out.iterdir())) == 2
     assert hashlib.sha256(cbed.read("bootstrap/tests/_gate_manifest.py").encode()).hexdigest() in (out / "authorization-packet.txt").read_text()
+    inputs = cbed.root / "transition-reader-inputs"
+    prepared = cbed.run("prepare-reader", "--ceremony-dir", str(out), "--output", str(inputs),
+                        "--expected-fingerprint", fingerprint)
+    assert prepared.returncode == 0, prepared.stdout + prepared.stderr
+    assert "read-commit " + cbed.git("rev-parse", "HEAD").stdout.strip() in inputs.read_text()
 
 
 def test_prepare_values_writes_fresh_reviewable_inputs_without_overwriting(cbed):
@@ -2403,3 +2408,22 @@ def test_prepare_values_writes_fresh_reviewable_inputs_without_overwriting(cbed)
                       "--signing-key", str(cbed.key) + ".pub", "--home", str(cbed.home),
                       "--ceremony-dir", str(cbed.cdir))
     assert inside.returncode == 2 and not (cbed.repo / "values").exists()
+
+
+def test_reader_inputs_bind_candidate_packet_and_prior_template_without_claiming_review(cbed):
+    fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
+                                 capture_output=True, text=True, check=True).stdout.split()[1]
+    output = cbed.root / "reader-inputs.txt"
+    argv = ("prepare-reader", "--ceremony-dir", str(cbed.cdir), "--output", str(output),
+            "--expected-fingerprint", fingerprint)
+    result = cbed.run(*argv)
+    assert result.returncode == 0, result.stdout + result.stderr
+    text = output.read_text()
+    assert "not an independent review" in result.stdout
+    assert "read-commit " + cbed.git("rev-parse", "HEAD").stdout.strip() in text
+    assert "launcher-sha256 " + cbed.launcher_digest in text
+    assert cbed.run(*argv).returncode == 2
+    output.unlink()
+    (cbed.cdir / "reanchor-launcher.sh").write_text("substituted")
+    refused = cbed.run(*argv)
+    assert refused.returncode == 2 and not output.exists()
