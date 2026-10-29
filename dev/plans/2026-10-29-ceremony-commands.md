@@ -206,3 +206,29 @@ imperative-override phrase at line 100 of the unrelated
 `dev/proposals/2026-10-29-codex-dispatcher-content-scan.md`; I left that file
 untouched. Searching `bootstrap/tests` found no test reading this plan; the
 same search matched this plan as its positive control.
+
+## Scope amendment -- Codex (GPT-6.1 Sol) -- 2026-10-29
+
+The Maintainer directs the plans to finish before the v0.6 baseline. The
+following supersedes conflicting historical-transition and installation gates
+above; the earlier record remains intact.
+
+> “They can each build the machinery, the new baseline does not need to be part of their plans. It can be a work board item for v0.6.”
+>
+> “If you want, build an anchor now to test that their machinery works properly. I'm okay either way. Remember: correctness of function is what matters, not of the trust root itself.”
+>
+> “Remove those requirements from the plans”
+
+**Scope delta**: degraded. **Disposition**: defer to the v0.6 board item:
+actual signing and installation, historical-anchor comparisons and reconciliation,
+and actual disposition of the 83 candidate reports. These are no longer
+archive prerequisites. The loss is evidence about the historical anchor and
+real installation within this plan; cutting those steps follows the Maintainer's
+sequencing rather than specifying them here.
+
+C1–C3 still build the reusable machinery and functionally test its authentication,
+bindings, refusal paths and ceremony commands using suitable scratch authority.
+The tests and independent code and Security Reviews remain required; a scratch
+anchor is optional as a means, not a real trust root. Historical bridge-specific
+comparisons and authorizations are not required to archive. No actual signing,
+ref installation or push is authorized by this amendment.
