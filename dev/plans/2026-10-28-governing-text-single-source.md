@@ -506,3 +506,17 @@ verification, profile-wide install, or gate-manifest ceremony ran. Both frozen
 checker files still require the applicable Maintainer ceremony under C4; the
 manifest was not changed. The focused F1 correction is verified, while C3's
 remaining outcomes and the plan stay open.
+
+## C3 installed typed-path behavior probe -- Codex (Implementation, Luna) -- 2026-10-29
+
+**Scope**: real installed-checker behavior for the accepted exact, document-wide typed-path declaration correction. This is a targeted C3 evidence slice, not final Boundary B or C4 completion.
+
+**Source commit**: `8b140246865bc5192199a800f8acd1ca6f3dea75`.
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` -- Python 3.13.13.
+**Source worktree state**: clean before and after the probe. Fresh detached worktree; the two install targets and synthetic controls were outside the source tree.
+
+**Installations**: `bootstrap/scaffold.py --config bootstrap/profiles/solo-greenfield.yml --target /private/tmp/cairn-gov-small-control-20261029 --non-interactive --allow-dev` exited 0; 72 files were present after installation. The equivalent `high-rigor-legacy.yml` command targeting `/private/tmp/cairn-gov-full-control-20261029` exited 0; 104 files were present. In both outputs, `scripts/claim_check.py` compared byte-identically with the source checker.
+
+**Installed entry-point controls**: ran each profile's installed `scripts/claim_check.py` against three synthetic documents rooted in that installation. The intact declaration plus a later exact recurrence passed and reported one exemption. Removing the declaration failed on the unresolved path. Changing the repeated path to a look-alike sibling failed on that unresolved path. All three outcomes matched the intended exact-match behavior in both profiles.
+
+**Omissions**: no source or frozen test bytes changed; no test suite, mutation framework, full-suite run, ceremony, or whole-plan before/after edit comparison ran. These checks establish current installed checker behavior, not semantic equivalence of all surrounding doctrine prose. C3's other conditional edits and C4 remain open; the v0.6 re-anchor remains deferred under the Maintainer's direction.
