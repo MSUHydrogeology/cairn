@@ -2076,7 +2076,7 @@ def test_prepare_and_run_verifier_binds_signed_prior_to_raw_candidate(cbed, tmp_
                    "--require-anchor", "--trusted-repo", str(cbed.repo),
                    "--trusted-ref", prior]
     direct = subprocess.run(direct_argv, cwd="/",
-                            env={"HOME": "/nonexistent", "PATH": "/usr/bin:/bin", "LC_ALL": "C"},
+                            env={"HOME": "/nonexistent", "PATH": "/usr/bin:/bin", "LC_ALL": "C", "PYTHONDONTWRITEBYTECODE": "1"},
                             capture_output=True, text=True, check=False)
     assert direct.returncode == binding["exit"] == 0
     assert direct.stdout + direct.stderr == (evidence / "verifier-report.txt").read_text()
@@ -2181,7 +2181,7 @@ def test_hold_dispositions_bind_every_exact_item_to_the_report(cbed, tmp_path):
          "--target-repo", evidence_packet["target"], "--manifest",
          str(evidence / "prior/gate_manifest.json"), "--anchor-ref", prior,
          "--require-anchor", "--trusted-repo", str(cbed.repo), "--trusted-ref", prior],
-        cwd="/", env={"HOME": "/nonexistent", "PATH": "/usr/bin:/bin", "LC_ALL": "C"},
+        cwd="/", env={"HOME": "/nonexistent", "PATH": "/usr/bin:/bin", "LC_ALL": "C", "PYTHONDONTWRITEBYTECODE": "1"},
         capture_output=True, text=True, check=False)
     assert direct.returncode == first.returncode
     assert direct.stdout + direct.stderr == (evidence / "verifier-report.txt").read_text()
@@ -2189,14 +2189,15 @@ def test_hold_dispositions_bind_every_exact_item_to_the_report(cbed, tmp_path):
     items = json.loads(template.read_text())
     assert items["holds"] and any("FROZEN-MODIFIED: bootstrap/tests/_gate_manifest.py" in h
                                   for h in items["holds"])
-    for item in items["items"]:
-        item["disposition"] = "proceed"
-        item["reason"] = "Reviewed intentional candidate change; Maintainer will decide at ceremony."
-    template.write_text(json.dumps(items, sort_keys=True))
-    approved_record = subprocess.run(argv + ["--dispositions", str(template)], cwd=REAL,
-                                     input="YES\n", capture_output=True, text=True, check=False)
-    assert approved_record.returncode == 0, (approved_record.stdout, approved_record.stderr)
-    assert "underlying verifier remains HOLD" in approved_record.stdout
+    for disposition in ("proceed", "stop", "defer", "mixed"):
+        for index, item in enumerate(items["items"]):
+            item["disposition"] = ("stop" if index % 2 else "proceed") if disposition == "mixed" else disposition
+            item["reason"] = "Reviewed candidate change; Maintainer decides at ceremony."
+        template.write_text(json.dumps(items, sort_keys=True))
+        recorded = subprocess.run(argv + ["--dispositions", str(template)], cwd=REAL,
+                                  input="YES\n", capture_output=True, text=True, check=False)
+        assert recorded.returncode == 1, (disposition, recorded.stdout, recorded.stderr)
+        assert "underlying verifier remains HOLD" in recorded.stdout
     items["report_sha256"] = "0" * 64
     template.write_text(json.dumps(items, sort_keys=True))
     stale = subprocess.run(argv + ["--dispositions", str(template)], cwd=REAL,
@@ -2308,3 +2309,43 @@ def test_collection_observer_refuses_replay_errors_and_multiple_calls(tmp_path, 
         assert "collection failed" in result.stderr and not capture.exists()
     else:
         assert capture.read_text() == '{"old":"capture"}'
+
+
+@pytest.mark.parametrize("alteration", ["ignored", "dependency", "target", "symlink_parent"])
+def test_prepared_verifier_refuses_untrusted_evidence_before_collection(cbed, tmp_path, alteration):
+    full_verifier_anchor(cbed)
+    fingerprint = subprocess.run(["ssh-keygen", "-lf", str(cbed.key) + ".pub"],
+                                 capture_output=True, text=True, check=True).stdout.split()[1]
+    prior = cbed.git("rev-parse", "refs/cairn/gate-anchor").stdout.strip()
+    candidate = cbed.git("rev-parse", "HEAD").stdout.strip()
+    evidence = tmp_path / "evidence"
+    prepare = [sys.executable, str(REAL / "scripts/repin.py"), "prepare-verifier",
+               "--trusted-repo", str(cbed.repo), "--prior-anchor", prior,
+               "--candidate", candidate, "--trusted-ref", prior,
+               "--expected-fingerprint", fingerprint, "--evidence-dir", str(evidence)]
+    result = subprocess.run(prepare, cwd=REAL, capture_output=True, text=True)
+    assert result.returncode == 0, (result.stdout, result.stderr)
+    packet_path = evidence / "verifier-evidence.json"
+    packet = json.loads(packet_path.read_text())
+    sentinel = tmp_path / "sentinel.pyc"
+    sentinel.write_bytes(b"do not delete")
+    if alteration == "ignored":
+        # Git ignores this file, but Python could import it during collection.
+        (evidence / "candidate" / "bootstrap" / "tests" / "unexpected.pyc").write_bytes(b"ignored")
+    elif alteration == "dependency":
+        del packet["prior_dependencies"]["bootstrap/tests/_gate_manifest.py"]
+        packet_path.write_text(json.dumps(packet))
+    elif alteration == "target":
+        packet["target"] = str(tmp_path)
+        packet_path.write_text(json.dumps(packet))
+    else:
+        link = tmp_path / "linked-evidence"
+        link.symlink_to(evidence, target_is_directory=True)
+        evidence = link
+    result = subprocess.run([sys.executable, str(REAL / "scripts/repin.py"), "verify-candidate",
+                             "--evidence-dir", str(evidence), "--expected-fingerprint", fingerprint,
+                             "--operator-confirms-key-away"], cwd=REAL, input="YES\n",
+                            capture_output=True, text=True)
+    assert result.returncode == 2, (result.stdout, result.stderr)
+    assert "Signing key away?" not in result.stdout
+    assert sentinel.read_bytes() == b"do not delete"

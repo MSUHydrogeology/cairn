@@ -933,7 +933,7 @@ def _verifier_prepare(repo, prior, candidate, trusted_ref, expected_fingerprint,
     manifest_raw = git(repo, "cat-file", "blob", f"{prior}:{MANIFEST_REL}", check=False)
     if roster_raw is None or manifest_raw is None:
         raise Refuse("prior anchor lacks its signer roster or gate manifest.")
-    evidence = Path(evidence_dir).absolute()
+    evidence = _plain_absolute_path(evidence_dir)
     parent = evidence.parent
     if (evidence.exists() or evidence.is_symlink() or parent.is_symlink()
             or not parent.is_dir()):
@@ -1033,6 +1033,25 @@ def _assert_candidate_bytes(repo, commit, target):
         raw = git(repo, "cat-file", "blob", oid)
         if path.read_bytes() != raw:
             raise Refuse(f"candidate worktree bytes differ from raw C object {d(rel)}.")
+    # Git status hides ignored files and can trust index flags. Enumerate the
+    # filesystem independently so candidate imports see only committed bytes.
+    expected_files = {rel for rel, _ in entries}
+    expected_dirs = {str(parent) for rel in expected_files
+                     for parent in Path(rel).parents if str(parent) != "."}
+    for root, dirs, files in os.walk(target, topdown=True, followlinks=False):
+        base = Path(root)
+        if base == target and ".git" in dirs:
+            dirs.remove(".git")
+        for name in dirs:
+            path = base / name
+            rel = path.relative_to(target).as_posix()
+            if path.is_symlink() or rel not in expected_dirs:
+                raise Refuse(f"candidate has an unexpected directory or link: {d(rel)}.")
+        for name in files:
+            path = base / name
+            rel = path.relative_to(target).as_posix()
+            if path.is_symlink() or rel not in expected_files:
+                raise Refuse(f"candidate has an unexpected file or link: {d(rel)}.")
     status = git(target, "status", "--porcelain=v1", "--untracked-files=all")
     if status.strip():
         raise Refuse("candidate worktree is not clean before verifier execution: " + d(status.strip()))
@@ -1040,25 +1059,13 @@ def _assert_candidate_bytes(repo, commit, target):
         raise Refuse("candidate worktree HEAD no longer equals exact candidate C.")
 
 
-def _clear_python_caches(target):
-    """Remove only interpreter-created bytecode from the disposable candidate copy."""
-    for root, dirs, files in os.walk(target, topdown=True, followlinks=False):
-        base = Path(root)
-        for name in list(dirs):
-            path = base / name
-            if name == "__pycache__":
-                if path.is_symlink():
-                    raise Refuse("candidate collection left a symlinked bytecode folder.")
-                shutil.rmtree(path)
-                dirs.remove(name)
-            elif path.is_symlink():
-                raise Refuse(f"candidate collection left a symlinked directory at {d(str(path))}.")
-        for name in files:
-            path = base / name
-            if path.suffix == ".pyc":
-                if path.is_symlink() or not path.is_file():
-                    raise Refuse("candidate collection left a non-regular bytecode file.")
-                path.unlink()
+def _plain_absolute_path(path):
+    """Refuse symlinks in every existing component before using a path."""
+    path = Path(os.path.abspath(path))
+    for part in (path, *path.parents):
+        if part.is_symlink():
+            raise Refuse(f"path has a symlink component: {d(str(part))}.")
+    return path
 
 
 def _verify_collection_report(manifest, collection, report):
@@ -1130,7 +1137,7 @@ def _validate_collection_capture(raw, *, nonce, prior, candidate, target, verifi
 
 
 def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, confirm_key_away=False):
-    evidence = Path(evidence_dir).resolve()
+    evidence = _plain_absolute_path(evidence_dir)
     packet_path = evidence / VERIFIER_PACKET
     if packet_path.is_symlink() or not packet_path.is_file():
         raise Refuse("prior verifier evidence packet is missing or a symlink.")
@@ -1148,22 +1155,41 @@ def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, conf
             or git_text(repo, "rev-parse", "--verify", packet["trusted_ref"] + "^{commit}")
             != packet["trusted_ref"]):
         raise Refuse("P, C, or trusted ref moved; prepare and review fresh evidence.")
-    roster_path = evidence / "prior" / "allowed_signers"
+    roster_path = _plain_absolute_path(evidence / "prior" / "allowed_signers")
+    if roster_path.read_bytes() != git(repo, "cat-file", "blob", f"{prior}:{ROSTER_REL}"):
+        raise Refuse("prior signer roster differs from immutable P.")
     good, state, signer = verify_checkpoint(repo, prior, roster_path, expected_fingerprint)
     if not good or signer != packet["signer_fingerprint"]:
         raise Refuse(f"P signature/fingerprint no longer verifies ({state}, {signer!r}).")
-    for rel, expected in packet["prior_dependencies"].items():
+    manifest_raw = git(repo, "cat-file", "blob", f"{prior}:{VERIFIER_MANIFEST_REL}")
+    frozen = json.loads(manifest_raw).get("frozen_files", {})
+    dependencies = packet["prior_dependencies"]
+    if set(dependencies) != set(VERIFIER_SCANNER_PATHS) | {VERIFIER_MANIFEST_REL}:
+        raise Refuse("prior verifier dependency set differs from the complete required set.")
+    for rel in VERIFIER_SCANNER_PATHS:
+        entry = frozen.get(rel)
+        pinned = entry if isinstance(entry, str) else entry.get("sha256") if isinstance(entry, dict) else None
+        if not pinned or dependencies[rel] != pinned:
+            raise Refuse(f"prior verifier dependency is not pinned by P at {d(rel)}.")
+    if (dependencies[VERIFIER_MANIFEST_REL] != sha(manifest_raw)
+            or packet.get("manifest_sha256") != sha(manifest_raw)
+            or packet.get("verifier_sha256") != dependencies[VERIFIER_REL]):
+        raise Refuse("prior verifier or manifest digest differs from immutable P.")
+    for rel, expected in dependencies.items():
         raw = git(repo, "cat-file", "blob", f"{prior}:{rel}", check=False)
-        path = evidence / "prior" / ("gate_manifest.json" if rel == VERIFIER_MANIFEST_REL else rel)
+        path = _plain_absolute_path(evidence / "prior" / ("gate_manifest.json" if rel == VERIFIER_MANIFEST_REL else rel))
         if raw is None or sha(raw) != expected or path.is_symlink() or path.read_bytes() != raw:
             raise Refuse(f"prior verifier evidence changed at {d(rel)}; prepare again.")
-    observer = Path(packet["observer"])
+    observer = _plain_absolute_path(packet["observer"])
+    if observer != evidence / "verifier-observer.py":
+        raise Refuse("observer is not the prepared evidence directory's observer.")
     if (packet.get("observer_sha256") != sha(OBSERVER_SOURCE.encode())
             or observer.is_symlink() or not observer.is_file()
             or sha(observer.read_bytes()) != packet["observer_sha256"]):
         raise Refuse("the collection observer differs from the reviewed preparation code.")
-    target = Path(packet["target"])
-    _clear_python_caches(target)
+    target = _plain_absolute_path(packet["target"])
+    if target != evidence / "candidate":
+        raise Refuse("candidate target is not the prepared evidence directory's candidate.")
     _assert_candidate_bytes(repo, candidate, target)
     manifest_obj = json.loads((evidence / "prior" / "gate_manifest.json").read_bytes())
     pinned_version = manifest_obj.get("interpreter", {}).get("version_info", [])
@@ -1177,7 +1203,8 @@ def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, conf
     python = packet["python"]
     verifier = evidence / "prior" / VERIFIER_REL
     manifest = evidence / "prior" / "gate_manifest.json"
-    env = {"HOME": "/nonexistent", "PATH": "/usr/bin:/bin", "LC_ALL": "C"}
+    env = {"HOME": "/nonexistent", "PATH": "/usr/bin:/bin", "LC_ALL": "C",
+           "PYTHONDONTWRITEBYTECODE": "1"}
     nonce = secrets.token_hex(16)
     capture = evidence / f"verifier-collection-{nonce}.json"
     if capture.exists() or capture.is_symlink():
@@ -1185,7 +1212,7 @@ def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, conf
     verifier_args = ["verify", "--target-repo", str(target), "--manifest", str(manifest),
                      "--anchor-ref", prior, "--require-anchor", "--trusted-repo", str(repo),
                      "--trusted-ref", prior]
-    argv = [python, "-I", "-E", "-s", str(observer), str(capture), nonce, prior,
+    argv = [python, "-I", "-E", "-s", "-B", str(observer), str(capture), nonce, prior,
             candidate, str(verifier), *verifier_args]
     say("Running authenticated P verifier with full collection.")
     say("verifier argv " + json.dumps(argv))
@@ -1209,7 +1236,7 @@ def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, conf
         raise Refuse(f"P signature/fingerprint changed during candidate collection ({state}, {signer!r}).")
     for rel, expected in packet["prior_dependencies"].items():
         raw = git(repo, "cat-file", "blob", f"{prior}:{rel}", check=False)
-        path = evidence / "prior" / ("gate_manifest.json" if rel == VERIFIER_MANIFEST_REL else rel)
+        path = _plain_absolute_path(evidence / "prior" / ("gate_manifest.json" if rel == VERIFIER_MANIFEST_REL else rel))
         if raw is None or sha(raw) != expected or path.is_symlink() or path.read_bytes() != raw:
             raise Refuse(f"prior verifier evidence changed during collection at {d(rel)}.")
     if observer.is_symlink() or sha(observer.read_bytes()) != packet["observer_sha256"]:
@@ -1218,13 +1245,12 @@ def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, conf
     collection_semantic = dump({"node_ids": collection["node_ids"],
                                 "skip_xfail_marked": collection["skip_xfail_marked"],
                                 "exit": collection["exit"]})
-    _clear_python_caches(target)
     _assert_candidate_bytes(repo, candidate, target)
     holds = [ln.strip() for ln in report.decode("utf-8", "replace").splitlines()
              if ln.startswith("  ") and not ln.lstrip().startswith("[gate-manifest]")]
     notes = [ln.strip() for ln in report.decode("utf-8", "replace").splitlines()
              if ln.strip().startswith("[gate-manifest] note:")]
-    bound_argv = [python, "-I", "-E", "-s", str(observer), "<fresh-capture>",
+    bound_argv = [python, "-I", "-E", "-s", "-B", str(observer), "<fresh-capture>",
                   "<fresh-nonce>", prior, candidate, str(verifier), *verifier_args]
     binding = {"schema": "cairn-verifier-report-binding/v1", "prior_anchor": prior,
                "candidate": candidate, "verifier_sha256": packet["verifier_sha256"],
@@ -1257,7 +1283,7 @@ def _verifier_run(evidence_dir, expected_fingerprint, dispositions=None, *, conf
         if dispositions:
             _check_dispositions(disposition_path, binding)
             say("Recorded dispositions match every exact HOLD and this report. The underlying verifier remains HOLD; this consistency check does not authorize signing or continuation.")
-            return 0
+            return 1
         else:
             _write_disposition_template(disposition_path, binding)
             say(f"No signing authorization: verifier returned {result.returncode}. Review and disposition every displayed HOLD: {disposition_path}")
