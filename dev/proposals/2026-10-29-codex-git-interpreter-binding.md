@@ -1,7 +1,7 @@
 # Keep the interpreter binding in Git's local directory
 
 **Author**: Codex gpt-6.1-sol
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -62,3 +62,68 @@ A delivered checkout can redirect the selected binding, a linked worktree change
 ## Assurance path
 
 **Assurance path**: high-assurance.
+
+
+## Review -- Codex gpt-6.1-sol -- 2026-10-29
+
+```
+Reviewed commit: dd42c5603f8a48332387243d502ed425fe5d660b
+Target: opening proposal
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes to separating executable selection from ordinary repository content; revise the installation and delivery claims before accepting the contract -- `bootstrap/SAFETY.md`, interpreter-binding residual-risk section.
+2. **Best alternative.** Using the current interpreter exclusively removes the binding reader and migration burden, but loses persistent environment selection when shell activation is absent; retaining that benefit justifies a small local binding -- `bootstrap/_scaffold/install.py::write_local_env`.
+3. **What would show it wrong.** A routine first install cannot complete, a nested target writes its parent's binding, or a delivered folder still selects an executable despite the advertised protection -- `bootstrap/tests/test_skills_install.py::scaffolded`, proposal Signals section.
+
+The strongest benefit is practical: a patch or checkout cannot silently turn a
+local environment preference into a command launcher. Per-worktree storage also
+keeps independent environments independent. Avoiding automatic migration is the
+right default; re-running install needs a precise, usable rebinding path.
+
+**U1 -- blocking: settle the repository-less and nested-target install contract.**
+The existing `scaffolded` fixture installs successfully before `git init`;
+`test_installed_cli_runs_read_only` initializes Git afterwards. The proposal
+requires a repository for the new writer without saying whether ordinary install
+now fails, succeeds without a binding, or initializes Git. Git discovery can
+also find an ancestor repository when the target is merely its subdirectory.
+“From the target” does not establish that the discovered repository belongs to
+that target. **Satisfier:** specify first-install and nested-target behavior,
+including the visible result and exact later rebinding step. Require tests for
+both through scaffold `main`, proving no ancestor binding is changed. This
+preserves the outcome; it makes its prerequisites explicit.
+
+**U2 -- blocking: narrow the delivered-folder claim accurately.**
+The In brief promises that a “copied project” cannot supply the program, while
+the Rationale correctly limits the separation to ordinary checkout, patch and
+archive. Copying a working folder including its Git administration directory
+copies the new binding too. `bootstrap/SAFETY.md` explicitly includes copying
+the whole working folder among today's five routes. **Satisfier:** distinguish
+content-only delivery from delivery of Git administrative state in the current
+contract and revised safety guidance; record the latter as a remaining trust
+assumption, including linked-worktree pointer delivery. Do not describe all
+five routes as closed. This corrects the claim; accepting the residual belongs
+to the Maintainer.
+
+**U3 -- blocking: make Windows coverage explicit.**
+Both named binding test modules skip the entire module on Windows because their
+stand-in interpreter is a shell script. Naming those files does not cover new
+Git-directory discovery, junction/reparse handling, or native path behavior on
+Windows. **Satisfier:** require portable production-entry tests and state which
+native-platform evidence is required before implementation acceptance; retain
+an explicit gap for any unsupported link case.
+
+**Covered:** claims/design/failure behavior/domain scope: U1–U3; production
+paths: the cited install fixture and both binding modules; consistency/drift:
+`bootstrap/SAFETY.md`, `bootstrap/UPGRADE.md`; lifecycle: proposal security and
+plan declarations; satisfiers: each finding above. **Not covered / low
+confidence:** no implementation exists to execute; no native Windows or HFS+
+run; no full suite; executable provenance and Git-administration compromise
+remain outside this usual pass. The separate Security Review remains open.
