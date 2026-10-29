@@ -351,3 +351,56 @@ verification.
 authority, plan verification commitments, and scratch evidence limits. No
 implementation, hook installation, mutation, full suite or Security clearance;
 future plan's exact test mapping remains to be reviewed.
+
+
+## Review -- Codex (GPT-6) Security -- 2026-10-29
+
+Reviewed commit: 2daccd7640ae12e24418cdfe842e33601f915079
+Target: revised contract at 06abaaeb and preflight control evidence
+Prior findings: IGS1, IGS2, IGS3 closed for proposal design
+Assurance path: high-assurance
+
+**Tier**: Security Review
+**Findings**: raised (non-blocking precision notes below)
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the revision describes existing behavior and implements an independently recorded Maintainer choice, rather than inferring new doctrine from the reported incident -- `dev/plans/archive/2026-10-28-governing-text-single-source.md`, “C2 coordination choice”; current contract at 06abaaeb.
+2. **Best alternative.** Keep the limited prose/help correction, synthetic example and source/twin checks; an authentication feature or new global configuration adds cost without resolving this documentation drift -- current contract; `tools/_intent/identity.py::resolve_agent_identity`, `resolve_session_token`.
+3. **What would show it wrong.** Shared labels hiding a real conflict, tokenless blocking promises or mismatched hook environments would invalidate the instructions; the revision explicitly requires checks for those cases -- `tools/_intent/conflict.py::other_session_overlaps`, `_precommit_check_impl`; `tools/_intent/hooks.py::_build_hook_block`.
+
+IGS1 is satisfied at this stage by high-assurance and Security plan-review
+declarations, five explicit preflight answers, and the prior C2 authorization:
+“Blocking for live-session conflicts” predates the reported incident. This is
+evidence for correction of existing policy, not this review inventing a
+high-risk classification. The Maintainer retains the proposal Decision.
+
+IGS2 is satisfied by the required environment-specific example, preference for
+harness-derived identity, explicit no-token and same-label cases, and the
+cooperative rather than authentication boundary. IGS3 is satisfied by admitting
+both CLI help copies and their scoped verification. No executable behavior or
+new trust root is proposed.
+
+**IGS4 -- non-blocking: make the plan's instruments precise.** The
+`warn-by-default` text is top-level subparser-summary help: inspect with
+`python tools/intent.py --help`, not only `install-precommit --help`. The latter
+shows options without that summary (`tools/_intent/cli.py`, parser construction).
+The recorded probe correctly says it ran `--help` and limits its result; it is
+not enforcement evidence. Map the corrected assertion, reverse mutation, both
+twins and canonical interpreter explicitly in the plan. Ordinary finding IG3
+separately requires correction of the contradictory S3 command.
+
+Also distinguish manual release from automatic release: manual release takes
+a claim ID without resolving identity (`tools/_intent/cli.py::_cmd_release`;
+`tools/_intent/record_io.py::write_release`). Consistent environments remain a
+useful habit; do not claim the manual operation authenticates or requires the
+claimant's label. This clarification preserves the requested workflow.
+
+**Coverage:** examined the committed revision, withdrawal ledger, probe limits,
+prior C2 authority, policy defaults/exemptions, identity and release paths,
+hook inheritance and public help. Claims, failure behavior, drift, scope and
+lifecycle placement are covered by those named paths. No hook installed,
+original incident reproduced, mutation rerun, full suite or scientific check
+performed. The eventual implementation and plan Security Review remain owed;
+this acceptance clears only this proposal's Security obligation.
