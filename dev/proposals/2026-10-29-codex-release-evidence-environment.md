@@ -114,3 +114,62 @@ change; literal exception only); satisfier (R1's recorded probe).
 **Not covered / low confidence**: no independent execution or complete release
 run; no implementation exists to assess. This usual pass does not clear the
 separate Security Review obligation.
+
+
+## Review -- Codex (gpt-6.1-sol), Security Review -- 2026-10-29
+
+```
+Reviewed commit: 58eced7f
+Target: opening proposal and security preflight
+Prior findings: ordinary R1 remains open
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: a single literal exception reconciles the release environment with evidence admission without granting selector or plugin-loading options; doing nothing preserves the release conflict -- `bootstrap/security_check.py:1007-1013`, `bootstrap/tests/_gate_preflight.py:1920-1929`.
+2. **Best alternative.** Validate then remove the admitted variable before producer launch, retaining the producer's explicit cache suppression; this keeps the exception at one boundary and preserves all opened outcomes -- `bootstrap/tests/_gate_manifest.py:514-523`.
+3. **What would show it wrong.** Producer execution after any rejected environment, or different node identities under the admitted cache-only value, defeats the boundary claim; missing proof remains a Decision blocker -- proposal Tests required, Examples / smoke checks, and ordinary R1.
+
+The proposed compatibility exception is appropriately exact. Presence-based
+refusal remains necessary for both plugin variables, including empty values:
+plugin loading can change collection without a selector. Rejecting empty,
+whitespace-variant and appended `PYTEST_ADDOPTS` values avoids an option parser
+becoming a new admission mechanism. The current launch checks the actual child
+environment after scrubbing, immediately before `subprocess.run`; preserve that
+placement (`bootstrap/tests/_gate_preflight.py:1900-1939`). No broader environment
+allowlist or launcher refactor is needed to deliver the proposed result.
+
+**S1 — blocking: state the collection authority accurately.** The preflight's
+S5 calls the producer explicitly non-authoritative. The actual residual warning
+makes an essential exception: static fields are independently re-derived, but
+pytest collection and interpreter remain trusted to the evidence stage
+(`bootstrap/tests/_gate_preflight.py:1846-1850`, `_EXECUTABLE_ONLY_FIELDS`). A
+candidate that manipulates its collection hook can therefore affect the evidence
+that the checker cannot independently derive. Correct S5 to name that remaining
+authority and retain the trusted-contributor assumption. This is a correction to
+the threat description, not a request to close the pre-existing code-execution
+boundary or expand the implementation.
+
+**S2 — blocking, shared satisfier with ordinary R1:** the security preflight
+explicitly leaves its required failing experiment unrun. Record the control and
+appended-selector refusal through `gather_evidence`, with proof the producer did
+not start, before Decision. Existing marker instrumentation in
+`bootstrap/tests/test_gate_preflight.py::TestEvidenceStage::test_a_variable_that_steers_collection_refuses_and_runs_no_producer`
+is sufficient; do not repeat a full suite. The future exception-specific tests
+must additionally prove empty plugin values still refuse and that the exact
+cache option cannot mask a simultaneously present plugin variable. The refusal
+message should identify offending variable names without echoing their values.
+
+**Covered**: claims and residual authority (S1); real launch and fail-closed
+placement (preflight lines above); completeness (literal comparison and combined
+plugin case); consistency/drift (producer's explicit cache flag); lifecycle
+(proposal Security preflight and required pinning ceremony); scope (existing
+trusted-contributor boundary preserved); satisfiers (S1 correction, S2 probe).
+**Not covered / low confidence**: no execution, plugin-package audit, old-anchor
+check, full suite or release ceremony; implementation does not yet exist. This
+Security Review obligation remains open pending the two satisfiers.
