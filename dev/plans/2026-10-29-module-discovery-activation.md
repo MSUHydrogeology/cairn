@@ -1,7 +1,7 @@
 # Plan: Module discovery and first use
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-module-discovery-activation.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Make installed modules discoverable and give each selected module a useful first task.
@@ -110,3 +110,31 @@ The satisfier is a folded ordering design plus named public-entry tests: initial
 | P1 | Accepted; Scope, C2 and reconciliation design specify authority, representation, prior bases, legacy migration and recovery. |
 | P2 | Accepted; Verification and the design map name public paths, planned nodes and inputs. |
 | S1 | Accepted; C2 and ordering design fix preflight, apply revalidation, refusal scope and containment tests, including security lint. |
+
+## Implementation verification -- Codex -- 2026-10-29
+
+**Implementation verified at eee603a6.**
+
+**Boundary B mode**: wide
+**Certified by**: pending
+
+**Tested range**: `a6c151f1..eee603a6` (module discovery implementation and focused compatibility/coverage updates).
+**Interpreter**: Python 3.13.13.
+**Clean pre/post state**: detached worktree `/private/tmp/cairn-module-discovery-boundary-b-final3` at `eee603a6`; clean before and after the recorded commands.
+
+**Mapped families and consumers**: `python -m pytest bootstrap/tests/test_scaffold.py bootstrap/tests/test_presets.py bootstrap/tests/test_onboarding_seed_roster.py bootstrap/tests/test_module_roster.py bootstrap/tests/test_module_merge_lockfile.py bootstrap/tests/test_upgrade_module.py bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_upgrade_lockfile_path_containment.py bootstrap/tests/test_notice_install.py bootstrap/tests/test_install_time_onboarding.py bootstrap/tests/test_onboarding_slot_substitution.py bootstrap/tests/test_skills_onboarding.py bootstrap/tests/test_security_lint.py bootstrap/tests/test_security_verification.py bootstrap/tests/test_security_stack.py bootstrap/tests/test_security_capability_install.py bootstrap/tests/test_intents_tool.py` — 812 passed in 63.79 seconds. This covers install, exact/empty selection, adoption, repeat adoption, lock rendering, staged apply, containment, consumer tests and the security verification paths. `test_security_lint.py` ran 11 tests; none skipped.
+
+**Public paths and gates**: `scripts/check_cairn.py` passed (188 Markdown files); `scripts/claim_check.py bootstrap/BOOTSTRAP.md` and `scripts/claim_check.py templates/modules/README.md` passed; `scripts/link_check.py` passed (188 Markdown files); `scripts/sync_doc_snippets.py --check` passed (436 documents); `scripts/quality_gate.py --sub neutrality` passed (0 failures, 43 informational findings). No full-suite run was made. Public `--summary`, `--dry-run` and `--manifest` smoke checks and representative preset, exact, empty and add/remove installs were run during Boundary A; the manifest reported 87 data rows.
+
+**Mutation ledger** (four separate plain-file copies extracted from `eee603a6`; each mutant changed one behavior; each named test failed on the mutant):
+
+| Mutation | Deliberate break | Check and outcome |
+|---|---|---|
+| Selected task removed | Explicit-roster renderer returns no tasks. | `test_selected_modules_have_usable_tasks` — killed (1 failed). |
+| Unselected task added | Renderer uses the whole discovery catalog, ignoring the selected roster. | `test_unselected_modules_have_no_tasks_or_inventory_rows` — killed (1 failed). |
+| Preserved work discarded | Removal conflict guard is bypassed for completed or edited entries. | `test_reinstall_preserves_completion_and_refuses_loss` — killed (1 failed). |
+| Baseline changed | Inventory cache `base_hash` is replaced with an incorrect digest. | `test_selected_modules_have_usable_tasks` — killed (1 failed). |
+
+**Unmutated control**: on the clean `eee603a6` worktree, the four corresponding control nodes (`test_selected_modules_have_usable_tasks`, `test_unselected_modules_have_no_tasks_or_inventory_rows`, `test_reinstall_preserves_completion_and_refuses_loss`, and `test_live_install_writes_a_lockfile_when_a_module_merge_lands`) passed 4/4. The full mapped run above then passed 812/812 on the same commit.
+
+**Omissions**: no scientific check applies. The whole-tree certifying pair was not run; certification remains pending. External links were not probed by the local link gate. No behavior outside the mapped families and named public paths is claimed covered.
