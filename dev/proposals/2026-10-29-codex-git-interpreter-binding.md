@@ -127,3 +127,67 @@ plan declarations; satisfiers: each finding above. **Not covered / low
 confidence:** no implementation exists to execute; no native Windows or HFS+
 run; no full suite; executable provenance and Git-administration compromise
 remain outside this usual pass. The separate Security Review remains open.
+
+
+## Review -- Codex gpt-6.1-sol Security -- 2026-10-29
+
+```
+Reviewed commit: f413f3415d43ca21076d9a095bd74253b47c47a3
+Target: opening proposal and usual review
+Prior findings: none for this obligation
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** Move the binding, but distinguish trusted Git administration from delivered content before claiming the boundary closes -- `bootstrap/SAFETY.md:275-309`.
+2. **Best alternative.** Always using the running interpreter eliminates this executable-selection file; retain a binding only for persistent environment selection without shell activation -- `tools/session.py:947-993`, `bootstrap/_scaffold/install.py:435-467`.
+3. **What would show it wrong.** A nested target consumes its ancestor's binding, or an admitted Git pointer selects checkout-owned state, defeats the intended separation -- proposal Proposal and Security preflight S1/S5.
+
+The strongest version separates a useful machine-local choice from ordinary
+project content without automatically promoting the old, unauthenticated file.
+Per-worktree storage is appropriate: sharing through the common directory would
+make independently installed environments interfere. Explicit rebinding and
+keeping the legacy ignore rule are sound.
+
+**S1 -- blocking: state where administrative authority begins.** Agree with
+U1/U2: “from the target” and “unsafe links” do not yet specify whether a
+repository subdirectory, a nested repository, or a regular `.git` pointer is
+accepted. Git's answer identifies a directory; it does not prove an operator
+created it. A copied directory including administration or a delivered worktree
+pointer still supplies administrative authority. The opening summary's copied
+project claim therefore exceeds S5's threat model. **Satisfier:** define the
+accepted relationship between install/session root, worktree root and private
+Git directory; explicitly distinguish normal linked-worktree pointers from
+untrusted delivered administration. State whether external separate Git
+directories and submodules are supported or visibly refused. Require real
+entry-point cases proving no ancestor binding is consumed or changed, no
+content-only delivered file becomes authority, and copied administration
+remains an explicit residual rather than a closed route. This specifies the
+boundary; it does not authorize dropping an outcome.
+
+**S2 -- blocking: give refusal and containment an observable contract.** The
+proposal promises both existing fallbacks “where applicable” and refusal of
+unsafe or unreadable state. Today's missing-file shortcut precedes the link
+and index checks (`tools/session.py:995-997`); copying that order could classify
+a dangling binding link as absence. The existing writer confines writes to the
+target (`bootstrap/_scaffold/install.py:462-466`), whereas linked-worktree
+administration normally lies outside it. **Satisfier:** distinguish true
+absence from dangling links, wrong file types and unreadable state before
+fallback, and define containment against the verified per-worktree directory,
+without broadly relaxing the scaffold's existing target guard. Require
+non-clobber and force cases for unsafe existing destinations, with no escaped
+write or selected-executable launch. As U3 notes, portable tests must not all
+skip Windows; state native junction/reparse evidence and any remaining gap.
+
+**Coverage:** claims, design, fail-closed behavior and scope: S1/S2; production
+path and consistency/drift: cited reader/writer and safety text; lifecycle:
+required separate Security plan pass; satisfiers: above. Scientific validity:
+not applicable. **Not covered:** implementation does not exist; no executable
+probe, native Windows/HFS+ run or suite was performed. Git executable provenance,
+same-user races and compromised local administration are not authenticated by
+this relocation. The Security obligation remains open pending these satisfiers.
