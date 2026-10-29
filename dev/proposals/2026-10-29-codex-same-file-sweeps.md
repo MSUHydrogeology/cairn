@@ -341,3 +341,66 @@ this revision does not widen the opening outcome.
 
 Per-commit-and-path rows become one per commit to avoid false recurrence.
 Standard assurance and the N/A preflight are replaced by the accounting above.
+
+## Review -- Codex GPT-6 Security reviewer -- 2026-10-29 -- obligation closure
+
+```
+Reviewed commit: bc6159d4c9b4d2dfac5a17755cc72445add62d76
+Target: author Response and complete revised contract
+Prior findings: Security S1–S2; related usual R1–R4
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: none remaining
+**Verdict**: ACCEPT
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The revised procedure protects
+   attribution through agreed serialization while honestly limiting its claim
+   to cooperating writers and reported events -- revised Proposal and Security
+   preflight S4–S5.
+2. **Best alternative.** Keep the existing inspection, using separate worktrees
+   when serialization cannot be maintained. No attribution detector or new
+   standing routine is needed -- revised Proposal and Rationale and alternatives;
+   `doctrine/coordination.md:68`.
+3. **What would show it wrong.** A legitimate integration becomes a confirmed
+   incident, one commit supplies duplicate recurrence, or the output suggests
+   complete detection. These remain explicit rejection signals with planned
+   controls -- revised Evidence / verification plan and Signals the change is
+   wrong; `tools/evolution_infer.py:222`.
+
+**S1 closed.** The header now declares both Security Review obligations, and the
+current assurance section declares high-assurance. The five preflight answers
+identify project-supplied bytes and reporter assertions, a recorded gate mutation,
+human triggers, uncertainty handling, and noncooperation or dishonest reports
+that remain possible. An advisory result grants no doctrine authority. This
+supplies the missing accounting; it does not claim the gate validates testimony.
+
+**S2 closed.** The complete current prescription starts agreement before
+inspection, retains it through commit, distinguishes claims from agreement,
+inspects tracked candidates against HEAD and new files directly, and requires
+reinspection when bytes change. Foreign or uncertain content stops the commit.
+Author confirmation or recorded provenance establishes attribution; a diff or
+claim alone cannot. The stated staged-content, intervening-change and legitimate
+integration scenarios remain required implementation evidence, not measured
+prevention claims.
+
+The related counting and privacy corrections are adequate: one confirmed row
+per commit, paths grouped, existing rows checked, occurrence and discovery dates
+separated, uncertainty excluded, and prevented cases distinct. Minimal references
+stay in the local tracker; committed summaries are screened, with private
+conversations, secrets and unrelated working text excluded. The historical event
+is conditional on confirmation rather than pre-judged. This retains the opened
+outcomes. The withdrawal ledger identifies both replaced commitments, with the
+counting change preserving affected-path information.
+
+Covered: claims/failure limits (revised S1–S5); production and recurrence design
+(`evaluate_tracker`, revised Evidence plan); reuse, drift and scope (revised
+Proposal and withdrawal ledger); lifecycle/placement (header, Documentation /
+doctrine surface, Assurance path); satisfiers (S1–S2 above). Not covered / low
+confidence: I did not rerun the reported synthetic mutation, establish historical
+authorship, execute concurrency or privacy scenarios, or run a suite. Future plan
+and code Security Reviews remain required. This pass clears the open proposal
+Security Review only.
