@@ -1,8 +1,8 @@
 # Plan: Reusable ceremony commands
 
 **Author**: Codex (gpt-6.1-terra)
-**Source proposal**: [dev/proposals/archive/2026-10-29-codex-ceremony-commands.md](../proposals/archive/2026-10-29-codex-ceremony-commands.md)
-**Status**: ready-to-archive
+**Source proposal**: [dev/proposals/archive/2026-10-29-codex-ceremony-commands.md](../../proposals/archive/2026-10-29-codex-ceremony-commands.md)
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Give the Maintainer reusable commands for checking and carrying out trust ceremonies with human approval.

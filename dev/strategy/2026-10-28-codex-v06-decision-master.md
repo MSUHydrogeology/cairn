@@ -38,10 +38,10 @@ Use `python tools/board.py --maintainer` for declared next moves.
 The [ceremony-command proposal](../proposals/archive/2026-10-29-codex-ceremony-commands.md)
 addresses the existing v0.6 two-command item, builds on v0.5 `repin`, and
 originally included a full prior-anchor verifier. The Maintainer approved it
-in `02a81d33`; the [plan](../plans/2026-10-29-ceremony-commands.md) was
-reviewed and began implementation. The later v0.6 baseline direction below
-changes the prior-anchor premise and needs to be carried into the plans. No
-signing, re-anchor or push is authorized by this briefing.
+in `02a81d33`; the [plan](../plans/archive/2026-10-29-ceremony-commands.md)
+completed its reviewed command machinery and scratch verification. Actual
+installation remains separate v0.6 baseline work. No signing, re-anchor or push
+is authorized by this briefing.
 
 ## Remaining decisions and actions
 
