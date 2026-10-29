@@ -24,7 +24,9 @@ Run from the cairn repo root:
 from __future__ import annotations
 
 import builtins
+import hashlib
 import importlib.util
+import json
 import os
 import re
 import shutil
@@ -341,6 +343,19 @@ def _seed_apparatus(root: Path) -> None:
 
 
 class TestAuditRootsManifest:
+    def test_shipped_audited_set_matches_its_documented_roots(self, csr):
+        manifest = _TEAM_GATED / "content_scan_roots.txt"
+        documented = (CAIRN_ROOT / "dev" / "modules" /
+                     "content-security.md").read_text(encoding="utf-8")
+        roots = csr.load_audit_roots(manifest, CAIRN_ROOT)
+        assert roots == [
+            ("AGENTS.md", True), (".agents/skills", True), ("dev", True),
+            ("docs", False), ("RULES.md", False), ("CLAUDE.md", False),
+            ("VENDOR.md", False),
+        ]
+        assert "`!AGENTS.md`, `!.agents/skills`, `!dev`" in documented
+        assert "`docs`, `RULES.md`, `CLAUDE.md`, and `VENDOR.md` optional" in documented
+
     def test_valid_roots_parse(self, csr, tmp_path):
         # load_audit_roots returns (rel, required) tuples; `!` => required.
         m = tmp_path / "roots.txt"
@@ -432,6 +447,47 @@ class TestHomoglyphAllowanceRV5:
 
 @pytest.mark.skipif(not _HAS_GIT, reason="git not available")
 class TestRunnerExitContract:
+
+    def test_dispatcher_mode_emits_one_closed_result_document(
+            self, csr, capsys, monkeypatch):
+        monkeypatch.setattr(
+            csr, "audit", lambda: (1, [Path("a.md")], [object()], [], []))
+        assert csr.main(["--dispatcher"]) == 10
+        out = capsys.readouterr().out
+        assert len(out.splitlines()) == 1
+        result = json.loads(out)
+        assert set(result) == {
+            "schema", "capability", "contract", "evidence_mode",
+            "result", "details"}
+        assert result["result"] == "FINDINGS"
+        assert result["capability"] == "content-security"
+        assert result["evidence_mode"] == "offline"
+        assert "including 0 new" in result["details"]
+
+    def test_empty_audit_cannot_become_clean_dispatcher_evidence(
+            self, csr, capsys, monkeypatch):
+        monkeypatch.setattr(csr, "audit", lambda: (0, [], [], [], []))
+        assert csr.main(["--dispatcher"]) == 20
+        result = json.loads(capsys.readouterr().out)
+        assert result["result"] == "DEGRADED"
+
+    @pytest.mark.parametrize("failure_code", [2, 3])
+    def test_failed_or_stale_audit_cannot_become_clean_dispatcher_evidence(
+            self, csr, capsys, monkeypatch, failure_code):
+        monkeypatch.setattr(
+            csr, "audit", lambda: (failure_code, [], [], [], [("stale", 1)]))
+        assert csr.main(["--dispatcher"]) == 20
+        result = json.loads(capsys.readouterr().out)
+        assert result["result"] == "DEGRADED"
+
+    def test_direct_runner_rejects_unknown_mode_without_changing_no_arg_path(
+            self, csr, capsys, monkeypatch):
+        monkeypatch.setattr(
+            csr, "audit", lambda: (0, [Path("a.md")], [], [], []))
+        assert csr.main([]) == 0
+        assert "content_scan runner: scanned 1" in capsys.readouterr().out
+        with pytest.raises(SystemExit):
+            csr.main(["--unknown"])
     def _run(self, csr, root):
         return csr.audit(
             root,
@@ -785,6 +841,83 @@ def _install_modules(target: Path, modules: list[str], *, python_package: str | 
         "--config", str(cfg), "--target", str(target),
         "--cairn-root", str(CAIRN_ROOT), "--allow-dev",
     ])
+
+
+@pytest.mark.skipif(not _HAS_GIT, reason="git not available")
+class TestContentPolicyReconciliation:
+    def test_scoped_finalize_updates_only_reviewed_policy_and_dispatcher_accepts_it(
+            self, tmp_path, capsys):
+        _git_repo(tmp_path)
+        assert _install_modules(
+            tmp_path, ["content-security", "security-verification"],
+            python_package=None) == 0
+        _git_commit_all(tmp_path)
+        lock_before = _read_lock(tmp_path)
+        by_dst_before = {r["dst"]: r for r in lock_before["files"]}
+        policy_rel = "scripts/content_scan_allowlist.txt"
+        policy_path = tmp_path / policy_rel
+        old_base_hash = by_dst_before[policy_rel].get("base_hash")
+        policy_path.write_text(
+            policy_path.read_text(encoding="utf-8") + "reviewed.example\n",
+            encoding="utf-8")
+        unrelated_rel = "AGENTS.md"
+        unrelated_path = tmp_path / unrelated_rel
+        unrelated_path.write_text(
+            unrelated_path.read_text(encoding="utf-8")
+            + "\nLocally reviewed addition.\n", encoding="utf-8")
+
+        before_finalize = subprocess.run(
+            [sys.executable, str(tmp_path / "scripts" / "run_security_verification.py"),
+             "local"], cwd=str(tmp_path), capture_output=True, text=True)
+        before_report = json.loads(next(
+            line for line in before_finalize.stdout.splitlines()
+            if line.startswith("{")))
+        assert before_finalize.returncode == 20
+        assert before_report["aggregate"] == "DEGRADED"
+        assert "digest mismatch" in before_report["legs"][0]["detail"]
+
+        assert s.main([
+            "upgrade", "--target", str(tmp_path), "--finalize", policy_rel,
+            "--cairn-root", str(CAIRN_ROOT),
+        ]) == 0
+        capsys.readouterr()
+        lock_after = _read_lock(tmp_path)
+        by_dst_after = {r["dst"]: r for r in lock_after["files"]}
+        new_policy_hash = "sha256:" + hashlib.sha256(
+            policy_path.read_bytes()).hexdigest()
+        assert by_dst_after[policy_rel]["hash"] == new_policy_hash
+        assert by_dst_after[policy_rel].get("base_hash") == old_base_hash
+        assert by_dst_after[unrelated_rel]["hash"] == by_dst_before[unrelated_rel]["hash"]
+        assert hashlib.sha256(unrelated_path.read_bytes()).hexdigest() != \
+            by_dst_after[unrelated_rel]["hash"].removeprefix("sha256:")
+
+        proc = subprocess.run(
+            [sys.executable, str(tmp_path / "scripts" / "run_security_verification.py"),
+             "local"], cwd=str(tmp_path), capture_output=True, text=True)
+        report = json.loads(
+            next(line for line in proc.stdout.splitlines() if line.startswith("{")))
+        assert proc.returncode == 0, proc.stdout + proc.stderr
+        assert report["aggregate"] == "CLEAN"
+        assert report["legs"][0]["module_id"] == "content-security"
+
+        upstream_root = tmp_path / "next-upstream"
+        (upstream_root / "templates").mkdir(parents=True)
+        shutil.copytree(TEMPLATES_ROOT, upstream_root / "templates",
+                        dirs_exist_ok=True)
+        upstream_policy = (upstream_root / "templates" / "modules" /
+                           "team-gated" / "content_scan_allowlist.txt")
+        upstream_policy.write_text(
+            upstream_policy.read_text(encoding="utf-8")
+            + "upstream.example\n", encoding="utf-8")
+        assert s.main([
+            "upgrade", "--plan", "--target", str(tmp_path),
+            "--cairn-root", str(upstream_root),
+        ]) == 0
+        upgrade_report = capsys.readouterr().out
+        assert "verbatim-locally-modified" in upgrade_report
+        assert policy_rel in upgrade_report
+        assert "reviewed.example" in policy_path.read_text(encoding="utf-8")
+        assert "upstream.example" not in policy_path.read_text(encoding="utf-8")
 
 
 @pytest.mark.skipif(not _HAS_GIT, reason="git not available")

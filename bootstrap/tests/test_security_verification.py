@@ -121,7 +121,8 @@ def _entry(module_id: str = "widget-security", *,
            accepted_process_exits: frozenset = frozenset({0, 1}),
            result_to_aggregate_mapping: dict | None = None,
            runner_binding_mode: str = "immutable_digest",
-           policy_binding_mode: str = "none"):
+           policy_binding_mode: str = "none",
+           additional_immutable_paths: tuple[str, ...] = ()):
     if result_to_aggregate_mapping is None:
         result_to_aggregate_mapping = {
             "CLEAN": (0, mod.CLEAN),
@@ -141,6 +142,7 @@ def _entry(module_id: str = "widget-security", *,
         result_to_aggregate_mapping=result_to_aggregate_mapping,
         runner_binding_mode=runner_binding_mode,
         policy_binding_mode=policy_binding_mode,
+        additional_immutable_paths=additional_immutable_paths,
     )
 
 
@@ -183,11 +185,92 @@ def _setup_clean_leg(tmp_path: Path, *, module_id: str = "widget-security",
 
 class TestRegistryIntegrity:
 
-    def test_shipped_registry_admits_exactly_the_two_landed_capabilities(
+    def test_content_entry_binds_every_immutable_apparatus_member(
+            self, tmp_path: Path) -> None:
+        entry = mod._REGISTRY["content-security"]
+        records = {}
+        for rel in (entry.runner_repository_path,
+                    *entry.additional_immutable_paths):
+            records[rel] = _write_file(tmp_path, rel, b"trusted bytes\n")
+        assert mod._bind_runner(entry, records, tmp_path) == (
+            tmp_path / entry.runner_repository_path)
+
+    @pytest.mark.parametrize("failure", [
+        "missing", "changed", "symlink", "bad-record", "wrong-type",
+    ])
+    @pytest.mark.parametrize("member_index", range(5))
+    def test_content_apparatus_member_failure_refuses_before_launch(
+            self, tmp_path: Path, failure: str, member_index: int) -> None:
+        entry = mod._REGISTRY["content-security"]
+        records = {}
+        for rel in (entry.runner_repository_path,
+                    *entry.additional_immutable_paths):
+            records[rel] = _write_file(tmp_path, rel, b"trusted bytes\n")
+        bound = (entry.runner_repository_path, *entry.additional_immutable_paths)
+        assert mod._bind_runner(entry, records, tmp_path) == tmp_path / bound[0]
+        target = bound[member_index]
+        path = tmp_path / target
+        if failure == "missing":
+            del records[target]
+        elif failure == "changed":
+            path.write_bytes(b"changed bytes\n")
+        elif failure == "symlink":
+            path.unlink()
+            path.symlink_to(tmp_path / "outside")
+        elif failure == "bad-record":
+            records[target]["unrecognized"] = True
+        elif failure == "wrong-type":
+            records[target]["living_state"] = "false"
+        with pytest.raises(mod._Degraded):
+            mod._bind_runner(entry, records, tmp_path)
+
+    @pytest.mark.parametrize("bad_paths", [
+        "scripts/unsafe.txt", ("../escape",), ("scripts/dup", "scripts/dup"),
+    ])
+    def test_additional_immutable_path_schema_is_closed(
+            self, tmp_path: Path, bad_paths) -> None:
+        base = {
+            "module_id": "widget-security",
+            "runner_repository_path": "scripts/widget.py",
+            "argv_mode": ("local", "--child-document"),
+            "policy_repository_path": None,
+            "child_schema_version": _VALID_SCHEMA,
+            "capability_contract_version": _VALID_CONTRACT,
+            "evidence_mode": _VALID_EVIDENCE,
+            "accepted_process_exits": frozenset({0}),
+            "result_to_aggregate_mapping": {"CLEAN": (0, mod.CLEAN)},
+            "runner_binding_mode": "immutable_digest",
+            "policy_binding_mode": "none",
+            "additional_immutable_paths": bad_paths,
+        }
+        if isinstance(bad_paths, str):
+            with pytest.raises(ValueError, match="tuple"):
+                mod.RegistryEntry(**base)
+        elif any(".." in Path(path).parts for path in bad_paths):
+            base["additional_immutable_paths"] = ("../escape",)
+            entry = mod.RegistryEntry(**base)
+            root = tmp_path
+            records = {entry.runner_repository_path: _write_file(
+                root, entry.runner_repository_path, b"runner")}
+            with pytest.raises(mod._Degraded, match="unsafe"):
+                mod._bind_runner(entry, records, root)
+        else:
+            with pytest.raises(ValueError, match="duplicates"):
+                mod.RegistryEntry(**base)
+
+    def test_duplicate_or_malformed_lock_records_are_refused(self) -> None:
+        record = {"src": "x", "dst": "scripts/x", "verbatim": True,
+                  "hash": "sha256:" + "0" * 64}
+        with pytest.raises(mod._Degraded, match="duplicate"):
+            mod._records_by_dst({"files": [record, dict(record)]})
+        with pytest.raises(mod._Degraded, match="malformed"):
+            mod._records_by_dst({"files": [None]})
+
+    def test_shipped_registry_admits_the_three_landed_capabilities(
             self) -> None:
         """The closed registry, corrected once the second capability landed:
         the registry shipped EMPTY at activation v1 and admits exactly two
-        entries as of this chunk -- no more, no dormant third. Asserted
+        entries in this tree -- no more, no dormant fourth. Asserted
         against the SHIPPED source, read independently -- never against
         ``mod`` (other tests monkeypatch its ``_REGISTRY``). The eleven-field
         shape of each entry is TestEveryRegistryFieldIsExplicitAndATwelfthIsRefused's job, not this
@@ -195,7 +278,7 @@ class TestRegistryIntegrity:
         made."""
         fresh = _load_fresh("cairn_security_verification_t1_fresh")
         assert set(fresh._REGISTRY) == {
-            "api-access-security", "web-hosting-security"}
+            "content-security", "api-access-security", "web-hosting-security"}
 
     def test_no_lockfile_or_policy_field_can_enter_the_registry(
             self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -274,10 +357,10 @@ class TestRegistryIntegrity:
             result_to_aggregate_mapping={"CLEAN": (0, mod.CLEAN)},
             runner_binding_mode="immutable_digest",
             policy_binding_mode="none",
+            additional_immutable_paths=(),
         )
-        assert set(full_kwargs) == {
-            f for f in mod.RegistryEntry.__dataclass_fields__
-        }, "test fixture drifted from the eleven-field contract"
+        assert set(full_kwargs) == set(mod.RegistryEntry.__dataclass_fields__), \
+            "test fixture drifted from the registry field contract"
         for field in full_kwargs:
             partial = dict(full_kwargs)
             del partial[field]
@@ -930,6 +1013,7 @@ class TestUnrecognizedKeyRefusal:
             result_to_aggregate_mapping={"CLEAN": (0, mod.CLEAN)},
             runner_binding_mode="immutable_digest",
             policy_binding_mode="none",
+            additional_immutable_paths=(),
         )
         base[bad_key] = "malicious"
         with pytest.raises(TypeError) as exc:
@@ -1018,6 +1102,17 @@ def _scaffold(tmp_path: Path, body: str = "", *,
         "--cairn-root", str(CAIRN_ROOT), "--allow-dev", "--non-interactive",
     ])
     return rc, target
+
+
+def _commit_test_checkout(root: Path) -> None:
+    import subprocess as sp
+
+    sp.run(["git", "-C", str(root), "init", "-q", "-b", "main"], check=True)
+    sp.run(["git", "-C", str(root), "config", "user.email",
+            "test@example.invalid"], check=True)
+    sp.run(["git", "-C", str(root), "config", "user.name", "Test"], check=True)
+    sp.run(["git", "-C", str(root), "add", "-A"], check=True)
+    sp.run(["git", "-C", str(root), "commit", "-qm", "install baseline"], check=True)
 
 
 def _merge_content() -> str:
@@ -1318,32 +1413,19 @@ class TestComposition:
 
     def test_the_dispatcher_runs_from_a_real_fresh_scaffold(
             self, tmp_path: Path) -> None:
-        """**Resolved.**  This node
-        used to characterize a measured contradiction: a stock
-        `solo-greenfield` install exited 5 (INCOMPLETE) instead of the
-        plan's criterion of 0 (NOT APPLICABLE), because `content-security`
-        (default-on, matches the OLD `-security` name-suffix heuristic) had
-        no admitted registry entry.  Chunk G replaces that heuristic with a
-        source-owned declared-capability set (`_DECLARED_CAPABILITY_MODULES`)
-        that does not contain `content-security`, so it is no longer
-        selected and the plan's original criterion now holds directly, with
-        no isolation step needed.  Re-measured against THIS tree (not
-        carried from the plan or the prior docstring): see this file's
-        `test_the_declared_set_is_not_a_name_suffix_heuristic` for the
-        narrow regression version of this exact claim.
+        """A stock install selects content-security and the dispatcher
+        returns its real, lock-bound result. The temporary adopter is made a
+        committed Git checkout because the audit's tracked-file set comes
+        from Git; without that required input it must fail closed.
 
-        Hazard perturbations: break the lockfile read path (point
-        `_LOCKFILE` at a non-existent relative location) and the machine
-        object's `status` changes; emit exit 0 with no machine object at all
-        and every machine assertion below goes red while the exit code and
-        the human line still match; widen `_DECLARED_CAPABILITY_MODULES`
-        back to a `-security` suffix match and this node goes red on
-        `content-security` reappearing in `obj["legs"]`.
+        The scan's trusted input is the committed adopter tree, not the
+        temporary scaffold's untracked working files.
         """
         import subprocess as sp
 
         rc, target = _scaffold(tmp_path, "preset: solo-greenfield\n")
         assert rc == 0
+        _commit_test_checkout(target)
         dispatcher = target / DISPATCHER_DST
         assert dispatcher.is_file()
 
@@ -1353,19 +1435,62 @@ class TestComposition:
         )
         assert proc.returncode == 0, proc.stdout + proc.stderr
         assert proc.stdout.splitlines()[0] == (
-            "NOT APPLICABLE: no selected local security capability")
-        obj = json.loads(proc.stdout.splitlines()[1])
+            "CLEAN: 1 capability leg(s) evaluated")
+        obj = _machine_object(proc)
 
         assert obj["schema"] == "cairn.security_verification.dispatcher/v1"
         assert set(obj) >= {
             "schema", "status", "ok", "aggregate", "evidence_count", "legs"}
-        assert obj["status"] == "not_applicable"
+        assert obj["status"] == "evaluated"
         assert obj["ok"] is True
+        assert obj["aggregate"] == "CLEAN"
+        assert obj["evidence_count"] == 1
+        assert obj["legs"][0]["module_id"] == "content-security"
+        assert obj["legs"][0]["aggregate_label"] == "CLEAN"
+        assert "tripwire, not proof" in obj["legs"][0]["detail"]
+
+    def test_content_opt_out_leaves_no_dispatcher_capability_selected(
+            self, tmp_path: Path) -> None:
+        import subprocess as sp
+
+        rc, target = _scaffold(
+            tmp_path,
+            "preset: solo-greenfield\nmodules_remove:\n  - content-security\n")
+        assert rc == 0
+        _commit_test_checkout(target)
+        proc = sp.run(
+            [sys.executable, str(target / DISPATCHER_DST), "local"],
+            cwd=str(target), capture_output=True, text=True, check=False)
+        assert proc.returncode == 0, proc.stdout + proc.stderr
+        obj = _machine_object(proc)
         assert obj["aggregate"] == "NOT_APPLICABLE"
         assert obj["evidence_count"] == 0
         assert obj["legs"] == []
-        for word in ("CLEAN", "secure", "passed security", "no vulnerabilities"):
-            assert word not in proc.stdout, (word, proc.stdout)
+
+    @pytest.mark.parametrize("modules", [
+        ["content-security", "security-verification", "api-access-security"],
+        ["content-security", "security-verification", "web-hosting-security"],
+        ["content-security", "security-verification", "api-access-security",
+         "web-hosting-security"],
+    ])
+    def test_api_web_combinations_run_through_the_local_dispatcher(
+            self, tmp_path: Path, modules: list[str]) -> None:
+        import subprocess as sp
+
+        module_lines = "modules:\n" + "".join(f"  - {name}\n" for name in modules)
+        rc, target = _scaffold(tmp_path, module_lines)
+        assert rc == 0
+        _commit_test_checkout(target)
+        proc = sp.run(
+            [sys.executable, str(target / DISPATCHER_DST), "local"],
+            cwd=str(target), capture_output=True, text=True, check=False)
+        obj = _machine_object(proc)
+        assert proc.returncode == {
+            "CLEAN": 0, "INCOMPLETE": 5, "FINDINGS": 10, "DEGRADED": 20,
+        }[obj["aggregate"]], proc.stdout + proc.stderr
+        actual = {leg["module_id"] for leg in obj["legs"]}
+        assert actual == set(modules) - {"security-verification"}
+        assert obj["legs"]
 
 
 class TestTheHighRiskDesignationChannels:
@@ -1634,15 +1759,21 @@ def _machine_object(proc) -> dict:
 
 
 class TestEveryRegistryFieldIsExplicitAndATwelfthIsRefused:
-    """The two admitted entries, all eleven fields explicit, none
-    defaulted or inferred; each constructs from exactly its
-    eleven fields, and a twelfth is refused by attempting it."""
+    """The three admitted entries have required fields and reject unknown
+    fields; the fixed content apparatus tuple is explicit."""
 
-    def test_the_two_entries_carry_all_eleven_fields_explicit(self) -> None:
+    def test_entries_carry_all_registry_fields_explicit(self) -> None:
         """Read from a FRESH, un-monkeypatched load of the shipped
         source, so a monkeypatched registry cannot make this pass."""
         fresh = _load_fresh("cairn_security_verification_g1_shape_fresh")
-        assert set(fresh._REGISTRY) == {_API_MODULE, _WEB_MODULE}
+        assert set(fresh._REGISTRY) == {
+            "content-security", _API_MODULE, _WEB_MODULE}
+        content = fresh._REGISTRY["content-security"]
+        assert content.argv_mode == ("--dispatcher",)
+        assert content.additional_immutable_paths == (
+            "scripts/content_scan.py", "scripts/content_scan_roots.txt",
+            "scripts/content_scan_residuals.txt",
+            "scripts/content_scan_allowlist.txt")
 
         expected_result_mapping = {
             "CLEAN": (0, fresh.CLEAN),
@@ -1659,6 +1790,7 @@ class TestEveryRegistryFieldIsExplicitAndATwelfthIsRefused:
             result_to_aggregate_mapping=expected_result_mapping,
             runner_binding_mode="immutable_digest",
             policy_binding_mode="living_state",
+            additional_immutable_paths=(),
         )
         per_module = {
             _API_MODULE: dict(
@@ -1670,14 +1802,15 @@ class TestEveryRegistryFieldIsExplicitAndATwelfthIsRefused:
                 policy_repository_path=_WEB_POLICY_DST,
             ),
         }
-        eleven_fields = {
+        registry_fields = {
             "module_id", "runner_repository_path", "argv_mode",
             "policy_repository_path", "child_schema_version",
             "capability_contract_version", "evidence_mode",
             "accepted_process_exits", "result_to_aggregate_mapping",
             "runner_binding_mode", "policy_binding_mode",
+            "additional_immutable_paths",
         }
-        assert set(fresh.RegistryEntry.__dataclass_fields__) == eleven_fields
+        assert set(fresh.RegistryEntry.__dataclass_fields__) == registry_fields
         for module_id, specific in per_module.items():
             entry = fresh._REGISTRY[module_id]
             assert entry.module_id == module_id
@@ -1701,14 +1834,14 @@ class TestEveryRegistryFieldIsExplicitAndATwelfthIsRefused:
         assert fresh._LIVING_STATE_DSTS == frozenset(
             {_API_POLICY_DST, _WEB_POLICY_DST})
 
-    def test_each_entry_constructs_with_exactly_the_eleven_fields(
+    def test_each_entry_constructs_with_exactly_its_required_fields(
             self) -> None:
         """Each of this scope\'s two entries constructs cleanly from
         exactly its own eleven admitted fields -- tried directly, not
         inferred from the module import having already succeeded."""
         fresh = _load_fresh(
             "cairn_security_verification_g2_construct_fresh")
-        for module_id in (_API_MODULE, _WEB_MODULE):
+        for module_id in ("content-security", _API_MODULE, _WEB_MODULE):
             entry = fresh._REGISTRY[module_id]
             kwargs = {
                 f: getattr(entry, f)
@@ -1720,14 +1853,14 @@ class TestEveryRegistryFieldIsExplicitAndATwelfthIsRefused:
     @pytest.mark.parametrize("bad_key", [
         "principal", "scope", "twelfth_field",
     ])
-    def test_a_twelfth_field_on_either_entry_is_refused_by_attempting_it(
+    def test_unknown_field_on_each_entry_is_refused_by_attempting_it(
             self, bad_key: str) -> None:
         """Tried against THESE two entries\' own eleven-field shape
         -- not inferred from the dataclass being frozen, and not a repeat
         of the synthetic widget-security shape."""
         fresh = _load_fresh(
             "cairn_security_verification_g2_twelfth_field_fresh")
-        for module_id in (_API_MODULE, _WEB_MODULE):
+        for module_id in ("content-security", _API_MODULE, _WEB_MODULE):
             entry = fresh._REGISTRY[module_id]
             base = {
                 f: getattr(entry, f)
@@ -1788,15 +1921,13 @@ class TestTheDeclaredCapabilitySetReplacesTheNameSuffixHeuristic:
     ``-security`` name-suffix heuristic."""
 
     def test_the_declared_set_is_not_a_name_suffix_heuristic(self) -> None:
-        """The measured defect this replaces: ``content-security`` is
-        default-on, matches the OLD ``-security`` suffix, and has no
-        registry entry. It must be EXCLUDED from selection now, and the
-        two real capabilities must be INCLUDED without relying on their
+        """Declared selection includes the default-on content tripwire
+        and the two real capabilities without relying on their
         names ending in ``-security`` (they do, but that is not why they
         are selected -- only declaration is)."""
-        assert "content-security" not in mod._DECLARED_CAPABILITY_MODULES
+        assert "content-security" in mod._DECLARED_CAPABILITY_MODULES
         lock = {"modules": ["content-security", _API_MODULE]}
-        assert mod._selected_capability_ids(lock) == [_API_MODULE]
+        assert mod._selected_capability_ids(lock) == [_API_MODULE, "content-security"]
 
     def test_a_declared_installed_capability_with_no_registry_entry_stays_visible(  # noqa: E501
             self, monkeypatch: pytest.MonkeyPatch) -> None:

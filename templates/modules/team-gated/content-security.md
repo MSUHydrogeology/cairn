@@ -108,7 +108,8 @@ required**: a required root that is absent or contributes no tracked text
 unmarked root is optional (scanned when present). The manifest is **itself in
 the audited set** — a hostile edit to it is scanned. It ships with the
 core-guaranteed surface required (`!AGENTS.md`, `!.agents/skills`, `!dev`) and
-`docs` + the vendor wrapper optional, plus a section for your own extensions;
+`docs`, `RULES.md`, `CLAUDE.md`, and `VENDOR.md` optional, plus a section for
+your own extensions;
 **if you add agent-loaded instruction files outside those roots, add their root
 here** (mark it `!` if your repo guarantees it). The runner makes no
 completeness claim — it scans exactly what the manifest names.
@@ -138,6 +139,25 @@ the canonical sentinel `# content-scan-residual-baseline v1` — a zero-byte,
 whitespace-only, or sentinel-less file is rejected (exit 2), so accidental
 truncation cannot degrade to a clean pass. The shipped template is a
 deliberately-empty, sentinel-bearing baseline.
+
+### Review and reconcile policy edits
+
+The roots manifest, residual baseline, and URL allowlist are installed policy.
+Before changing one, review the intended content and scope. From the Cairn
+checkout, reconcile only the reviewed destination with:
+
+> `python bootstrap/scaffold.py upgrade --target <adopter-root> --finalize <selected-policy-path>`
+
+Name each changed policy destination explicitly. Then review the policy diff
+and its `dev/.cairn/cairn-lock.yml` hash change together and commit them
+together. Scoped finalize records the current bytes; it does not record that
+anyone reviewed them. Do not use bare `--finalize` to accept policy drift.
+The lock record's `base_hash` remains the upstream baseline, so later upstream
+changes can distinguish the adopter's policy fork and preserve it for review.
+The dispatcher checks the resulting bytes against the lock record before it
+starts the runner. These hashes detect unilateral drift within the checkout;
+they do not authenticate a checkout whose files and lock were changed by the
+same actor.
 
 The URL allowlist (`content_scan_allowlist.txt`) is a **noise policy, not a
 trust boundary**: it clears trusted-publication citation hosts only.

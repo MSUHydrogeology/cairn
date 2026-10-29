@@ -65,7 +65,7 @@ Every security capability, boundary, or open gap belongs to one of five clusters
 ### 2. `[VER]` Verification capabilities and coverage
 **Question:** What security evidence can an adopter or Maintainer gather, what files does each check inspect, and can coverage silently narrow?
 * **Standing boundary:**
-  * **Default-on content scanning (`content-security`) and local verification dispatcher (`security-verification`):** `scripts/check_cairn.py` scans templates and docs for hidden Unicode, bidirectional overrides, and prompt-injection patterns; `run_security_verification.py` dispatches admitted local runners with a stripped environment and fixed `0 / 5 / 10 / 20` exit codes.
+  * **Default-on content scanning (`content-security`) and local verification dispatcher (`security-verification`):** `scripts/check_cairn.py` scans Cairn's templates and docs. In adopter installs, `scripts/run_security_verification.py local` dispatches the installed content tripwire alongside any admitted API or web leg. The content leg binds its runner, scanner, roots manifest, residual baseline, and allowlist to lockfile digests before launch. A clean result covers only the configured tracked text set and is a pattern tripwire, not proof of safety or checkout authenticity. The direct `python scripts/content_scan_runner.py` command remains advisory.
   * **Language and portable sweeps:** `python-security` (Bandit + `pip-audit` against OSV) and `portable-security-sweeps` (offline Gitleaks with binary digest verification before launch).
   * **Design-time preflight:** Proposal templates include a 5-question security preflight block for changes touching untrusted input, filesystem/process boundaries, or trust roots.
 
@@ -108,8 +108,8 @@ Looking past individual bug fixes, six structural gaps remain where Cairn's arch
 * **Strategic fix:** Store local-only machine binding state under `.git/cairn/` (outside the working tree, so archives and patches cannot write it) or pair it with a tracked witness digest.
 
 ### 4. Make the default-on security dispatcher useful out of the box (`[VER-3 / SP8-3]`)
-* **The pattern:** `security-verification` (`run_security_verification.py`) ships default-on in every install, but its admitted runner registry ships empty (`CHANGELOG.md`), so running the documented verification command on a stock install always exits `5` (`INCOMPLETE`). Meanwhile, credentialed local runners (`api-access-security`, `web-hosting-security`) can never report `CLEAN` through the dispatcher because it strips all credential environment variables (`SP8-3`).
-* **Strategic fix:** Admit the default-on `content-security` (`check_cairn.py`) runner into the dispatcher registry so a fresh install gets a meaningful, working check out of the box, and define an explicit ordinal-derived credential pass-through mode for loopback `api-access-security` runs.
+* **The pattern:** *(historical; content leg resolved by the 2026-10-29 dispatcher content-scan plan)* `security-verification` (`run_security_verification.py`) originally shipped default-on with an empty registry, so a stock install reported `INCOMPLETE`. The separate credential question for local `api-access-security` and `web-hosting-security` legs remains open: the dispatcher strips credential environment variables (`SP8-3`).
+* **Strategic fix:** *(partly resolved by the accepted 2026-10-29 dispatcher content-scan plan)* Admit the installed content-security tripwire into the fixed registry, bind all five apparatus files, and keep its blind spots explicit. The separate credential pass-through question for loopback `api-access-security` remains open.
 
 ### 5. Close the remaining trust-root ceremony gaps (`[TRU-4 / TRU-5 / TRU-7]`)
 * **The pattern:** `scripts/repin.py` automates the arithmetic of updating the AST and gate-manifest pins, but four small gaps remain around the anchor and test runner itself:

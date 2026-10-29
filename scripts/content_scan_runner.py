@@ -67,6 +67,8 @@ not a proof that prose is safe.
 from __future__ import annotations
 
 import hashlib
+import contextlib
+import json
 import importlib.util
 import os
 import re
@@ -638,6 +640,36 @@ def _print_summary(code: int, files, all_flags, new_flags, stale) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    if argv is None:
+        argv = (["--dispatcher"] if sys.argv[1:] == ["--dispatcher"] else [])
+    if argv == ["--dispatcher"]:
+        # The dispatcher owns stdout as a machine channel. Any diagnostics
+        # produced by the audit remain visible but cannot corrupt its JSON.
+        with contextlib.redirect_stdout(sys.stderr):
+            code, files, all_flags, new_flags, stale = audit()
+        if code == 0 and files:
+            result, exit_code = "CLEAN", 0
+            details = (f"content tripwire scanned {len(files)} tracked text "
+                       "file(s); no flags (tripwire, not proof)")
+        elif code == 1:
+            result, exit_code = "FINDINGS", 10
+            details = (f"content tripwire found {len(all_flags)} flag(s), "
+                       f"including {len(new_flags)} new; human review required")
+        else:
+            result, exit_code = "DEGRADED", 20
+            details = ("content tripwire could not establish valid current "
+                       "evidence, including a nonempty audited set")
+        print(json.dumps({
+            "schema": "cairn.security.capability-result.v1",
+            "capability": "content-security",
+            "contract": "1",
+            "evidence_mode": "offline",
+            "result": result,
+            "details": details,
+        }, sort_keys=True))
+        return exit_code
+    if argv:
+        raise SystemExit("usage: content_scan_runner.py [--dispatcher]")
     code, files, all_flags, new_flags, stale = audit()
     _print_summary(code, files, all_flags, new_flags, stale)
     return code

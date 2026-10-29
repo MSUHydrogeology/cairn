@@ -35,8 +35,8 @@ directive below):
 > **Security verification.** `python scripts/run_security_verification.py
 > local` runs every selected security capability's local evidence leg
 > through the dispatcher's fixed registry and prints one aggregate verdict.
-> A `NOT APPLICABLE` result means no capability has an admitted local entry
-> yet — it is the absence of evidence, never a passing check. The
+> A `NOT APPLICABLE` result means no installed security capability is selected
+> for this run — it is the absence of evidence, never a passing check. The
 > dispatcher, its source-owned registry, its child result schema, its
 > binding-mode schema, and every registry entry are **high-risk
 > Security-Review surfaces**: a change to any of them takes a Security
@@ -50,8 +50,8 @@ slot in `AGENTS.md` says the same).
 
 ## `NOT_APPLICABLE` is not evidence
 
-`NOT_APPLICABLE` is a state distinct from `CLEAN`. It means "no admitted
-local capability was asked of me" — it is not evidence, and it must never be
+`NOT_APPLICABLE` is a state distinct from `CLEAN`. It means "no installed
+capability with a source-owned registry entry was selected" — it is not evidence, and it must never be
 reported, aggregated, or badged as a passing check. Its exit code, `0`,
 means "nothing was asked of me," not "nothing is wrong." A tool that reads
 exit `0` as a passing security gate before checking `aggregate ==
@@ -82,8 +82,14 @@ hold:
    replace the digest (see "The binding-mode schema" below) — an executed
    run, never a design argument.
 
-At v1 the shipped registry is **empty**: no capability meets this bar yet.
-Every adopter's first run reports `NOT_APPLICABLE`.
+The registry admits three offline or local legs: `content-security`,
+`api-access-security`, and `web-hosting-security`. The content-security leg
+binds its runner, scanner, roots manifest, residual baseline, and URL allowlist
+to their installed lockfile hashes before the runner starts. Its result is a
+pattern tripwire over the configured tracked text set, not a safety or
+checkout-authenticity guarantee. A stock installation that includes
+`content-security` runs that leg; an explicit opt-out removes it from the
+selected set.
 
 ## The aggregate ladder
 
@@ -96,7 +102,7 @@ precedent, plus a fifth, distinct state:
 | `5` | `INCOMPLETE` | A selected capability has no admitted local registry entry, or a leg's own contract reports incomplete coverage. |
 | `10` | `FINDINGS` | An admitted leg reports a finding. |
 | `20` | `DEGRADED` | A binding check failed, or a child could not be trusted to have run cleanly. |
-| (n/a, exit `0`) | `NOT_APPLICABLE` | No installed capability has an admitted local entry. **Not** a synonym for `CLEAN`. |
+| (n/a, exit `0`) | `NOT_APPLICABLE` | No installed capability with an admitted local entry was selected. **Not** a synonym for `CLEAN`. |
 
 Precedence is `DEGRADED > FINDINGS > INCOMPLETE > CLEAN`: aggregation can
 only ever **narrow**, never launder an incomplete or degraded leg into a
@@ -104,10 +110,9 @@ clean summary.
 
 ## The binding-mode schema
 
-Every registry entry declares two apparatus-level bindings — the v1
-question named four candidates (runner, policy, principal, scope); exactly
-two are apparatus-level. **Principal and scope are child-policy semantics
-with no apparatus field**, by decision, not by oversight: a capability's own
+Every registry entry declares apparatus-level bindings. The v1 question named
+four candidates (runner, policy, principal, scope); by design, principal and
+scope are child-policy semantics with no apparatus field. A capability's own
 policy file states which principal or scope its checks cover, and the
 dispatcher never reads that content.
 
@@ -116,6 +121,11 @@ dispatcher never reads that content.
   against its lockfile record; a future "living runner" cannot appear by
   omission, only by a source edit widening this set, which is itself a
   registry-schema change and its own Security Review.
+  The content-security entry also names a fixed tuple of additional
+  immutable-digest files. Each must have exactly one valid lock record and be
+  a regular, contained, non-symlinked file whose bytes match the recorded
+  hash before the child starts. The tuple is source-owned; adopter input does
+  not choose paths or arguments.
 * **`policy_binding_mode`** — `{"none", "immutable_digest", "living_state"}`.
   * `"none"` — the capability has no policy file; `policy_repository_path`
     must be `None`.
@@ -137,9 +147,8 @@ dispatcher never reads that content.
     is a tracked file, so a candidate change to it appears in the diff a
     reviewer reads), not a digest comparison.
 
-**At v1, `_LIVING_STATE_DSTS` is empty and no `"living_state"` registry
-entry exists.** No capability plan may add one until the Maintainer
-ratifies the living-state narrowing.
+The living-state set contains only the two API and web policy destinations;
+the content-security apparatus uses immutable digests and has no policy file.
 
 ## Recovery from INCOMPLETE or DEGRADED
 
@@ -148,7 +157,7 @@ ratifies the living-state narrowing.
   network-egress-gated pass that was disabled). Enable the capability's own
   prerequisites, or wait for the capability to be admitted upstream; the
   dispatcher itself has no mechanism to widen coverage.
-* **`DEGRADED`** — a runner or policy digest mismatch (the shipped file was
+* **`DEGRADED`** — a runner, scanner, or policy digest mismatch (the shipped file was
   modified after install — re-verify the install, or the file was
   legitimately upgraded and the lockfile needs a `verbatim_rehash`), a
   symlinked runner or policy (remove the symlink and restore the tracked
@@ -194,8 +203,8 @@ capability's own runner may open a connection under its own `local` /
 **Security verification.** `python scripts/run_security_verification.py
 local` runs every selected security capability's local evidence leg through
 the dispatcher's fixed registry and prints one aggregate verdict. A `NOT
-APPLICABLE` result means no capability has an admitted local entry yet — it
-is the absence of evidence, never a passing check. The dispatcher, its
+APPLICABLE` result means no installed capability with a registry entry was
+selected — it is the absence of evidence, never a passing check. The dispatcher, its
 source-owned registry, its child result schema, its binding-mode schema,
 and every registry entry are **high-risk Security-Review surfaces**.
 <!-- cairn:merge-content-end -->

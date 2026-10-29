@@ -59,6 +59,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -116,6 +117,7 @@ _POLICY_BINDING_MODES: frozenset[str] = frozenset(
 #: Review, exactly as widening `_RUNNER_BINDING_MODES` would.
 _ARGV_MODES: frozenset[tuple[str, ...]] = frozenset({
     ("local", "--child-document"),
+    ("--dispatcher",),
 })
 
 #: The lockfile-record keys this dispatcher recognizes for a runner or policy
@@ -251,6 +253,7 @@ class RegistryEntry:
     result_to_aggregate_mapping: "dict[str, tuple[int, int]]"
     runner_binding_mode: str
     policy_binding_mode: str
+    additional_immutable_paths: tuple[str, ...]
 
     def __post_init__(self) -> None:
         if self.argv_mode not in _ARGV_MODES:
@@ -269,6 +272,16 @@ class RegistryEntry:
             raise ValueError(
                 f"policy_binding_mode {self.policy_binding_mode!r} is not "
                 f"one of {sorted(_POLICY_BINDING_MODES)}")
+        if not isinstance(self.additional_immutable_paths, tuple) or any(
+                not isinstance(path, str) or not path
+                for path in self.additional_immutable_paths):
+            raise ValueError(
+                "additional_immutable_paths must be a tuple of nonempty paths")
+        if len(set(self.additional_immutable_paths)) != len(
+                self.additional_immutable_paths):
+            raise ValueError("additional_immutable_paths contains duplicates")
+        if self.runner_repository_path in self.additional_immutable_paths:
+            raise ValueError("additional_immutable_paths repeats the runner path")
         wants_path = self.policy_binding_mode != "none"
         has_path = self.policy_repository_path is not None
         if wants_path != has_path:
@@ -299,9 +312,12 @@ class RegistryEntry:
 # ``living_state`` policy binding -- execution evidence for the compensating
 # controls that replace the digest (additionally gated on Maintainer
 # ratification of the living-state narrowing). No entry met that bar until
-# now.
+# now. The 2026-10-29 dispatcher-content-scan plan admits the offline
+# content-security tripwire after binding its runner, scanner, roots,
+# residual baseline, and allowlist to installed lock records. That entry has
+# no adopter-controlled path or policy field.
 #
-# Two entries admitted:
+# Three entries admitted:
 # ``api-access-security`` and ``web-hosting-security``, the two capabilities
 # this plan pair ships. Both clear every gate above: the accepted proposal,
 # this reviewed plan (with both declared review rounds landed), the complete
@@ -310,10 +326,32 @@ class RegistryEntry:
 # both declare ``policy_binding_mode: living_state`` -- the Maintainer's
 # ratification of the living-state narrowing plus execution evidence for
 # its compensating controls (``_LIVING_STATE_DSTS`` above carries both policy
-# destinations, added in this SAME commit). No other entry meets the bar; the
-# registry admits exactly these two.
+# destinations, added in this SAME commit). Together with content-security,
+# the registry admits exactly these three.
 # ---------------------------------------------------------------------------
 _REGISTRY: dict[str, RegistryEntry] = {
+    "content-security": RegistryEntry(
+        module_id="content-security",
+        runner_repository_path="scripts/content_scan_runner.py",
+        argv_mode=("--dispatcher",),
+        policy_repository_path=None,
+        child_schema_version="cairn.security.capability-result.v1",
+        capability_contract_version="1",
+        evidence_mode="offline",
+        accepted_process_exits=frozenset({0, 5, 10, 20}),
+        result_to_aggregate_mapping={
+            "CLEAN": (0, CLEAN), "INCOMPLETE": (5, INCOMPLETE),
+            "FINDINGS": (10, FINDINGS), "DEGRADED": (20, DEGRADED),
+        },
+        runner_binding_mode="immutable_digest",
+        policy_binding_mode="none",
+        additional_immutable_paths=(
+            "scripts/content_scan.py",
+            "scripts/content_scan_roots.txt",
+            "scripts/content_scan_residuals.txt",
+            "scripts/content_scan_allowlist.txt",
+        ),
+    ),
     "api-access-security": RegistryEntry(
         module_id="api-access-security",
         runner_repository_path="scripts/api_access_security.py",
@@ -331,6 +369,7 @@ _REGISTRY: dict[str, RegistryEntry] = {
         },
         runner_binding_mode="immutable_digest",
         policy_binding_mode="living_state",
+        additional_immutable_paths=(),
     ),
     "web-hosting-security": RegistryEntry(
         module_id="web-hosting-security",
@@ -349,6 +388,7 @@ _REGISTRY: dict[str, RegistryEntry] = {
         },
         runner_binding_mode="immutable_digest",
         policy_binding_mode="living_state",
+        additional_immutable_paths=(),
     ),
 }
 
@@ -387,13 +427,9 @@ def _load_lockfile(path: Path | None = None) -> dict[str, Any] | None:
 
 #: The declared, source-owned set of module IDs this dispatcher treats as a
 #: security capability (api-web-security-modules / Chunk G, replacing the
-#: prior ``-security`` NAME-SUFFIX heuristic, which was wrong in both
-#: directions: ``content-security`` is default-on, matches the suffix, has
-#: no admitted registry entry, and made a stock install exit 5 INCOMPLETE
-#: with nothing wrong -- measured, not hypothetical, at
-#: ``bootstrap/_scaffold/config.py``'s prior ``_DEFAULT_ON_MODULES`` comment
-#: and ``test_security_verification.py``'s prior characterization; and a
-#: capability named without the suffix would have been missed entirely.
+#: prior ``-security`` NAME-SUFFIX heuristic. Explicit declaration keeps
+#: selection independent of module naming; content-security is admitted only
+#: after its reviewed offline leg and apparatus bindings landed.
 #:
 #: Deliberately kept SEPARATE from `_REGISTRY` -- never narrow this set to
 #: `installed & set(_REGISTRY)`. The fail-closed signal this dispatcher must
@@ -405,7 +441,7 @@ def _load_lockfile(path: Path | None = None) -> dict[str, Any] | None:
 #: property this set exists to protect. Do not "simplify" this to a registry
 #: intersection.
 _DECLARED_CAPABILITY_MODULES: frozenset[str] = frozenset({
-    "api-access-security", "web-hosting-security",
+    "content-security", "api-access-security", "web-hosting-security",
 })
 
 
@@ -421,9 +457,18 @@ def _selected_capability_ids(lock: dict[str, Any]) -> list[str]:
 
 def _records_by_dst(lock: dict[str, Any]) -> dict[str, dict[str, Any]]:
     out: dict[str, dict[str, Any]] = {}
-    for rec in lock.get("files") or []:
-        if isinstance(rec, dict) and isinstance(rec.get("dst"), str):
-            out[rec["dst"]] = rec
+    files = lock.get("files")
+    if not isinstance(files, list):
+        raise _Degraded("install lockfile files field is not a list")
+    for index, rec in enumerate(files):
+        if not isinstance(rec, dict) or not isinstance(rec.get("dst"), str):
+            raise _Degraded(
+                f"install lockfile file record {index} is malformed")
+        dst = rec["dst"]
+        if not dst or dst in out:
+            raise _Degraded(
+                f"install lockfile has an empty or duplicate destination {dst!r}")
+        out[dst] = rec
     return out
 
 
@@ -477,30 +522,50 @@ def _is_regular_and_unsymlinked(path: Path, root: Path) -> bool:
 
 def _bind_runner(entry: RegistryEntry, records: dict[str, Any],
                   repo_root: Path) -> Path:
-    rec = records.get(entry.runner_repository_path)
-    if rec is None:
-        raise _Degraded(
-            f"no lockfile record for runner "
-            f"{entry.runner_repository_path!r}")
-    bad = _record_keys_ok(rec)
-    if bad:
-        raise _Degraded(
-            f"runner record for {entry.runner_repository_path!r}: {bad}")
-    path = repo_root / entry.runner_repository_path
-    if not _is_regular_and_unsymlinked(path, repo_root):
-        raise _Degraded(
-            f"runner {entry.runner_repository_path!r} is missing, not a "
-            "regular file, or reached through a symlink (tamper)")
-    if rec.get("living_state"):
-        raise _Degraded(
-            f"runner {entry.runner_repository_path!r} record declares "
-            "living_state; runner_binding_mode is immutable_digest-only")
-    digest = _sha256_of(path)
-    if digest != rec.get("hash"):
-        raise _Degraded(
-            f"runner {entry.runner_repository_path!r} digest mismatch "
-            "(tamper / drift)")
-    return path
+    bound = (entry.runner_repository_path, *entry.additional_immutable_paths)
+    for rel in bound:
+        if not isinstance(rel, str):
+            raise _Degraded("runner apparatus path has an invalid type")
+        rel_path = Path(rel)
+        if (rel_path.is_absolute() or rel.startswith("/") or "\\" in rel
+                or any(part in {"", ".", ".."} for part in rel.split("/"))):
+            raise _Degraded(f"runner apparatus path {rel!r} is unsafe")
+        rec = records.get(rel)
+        if not isinstance(rec, dict):
+            raise _Degraded(f"no valid lockfile record for runner apparatus {rel!r}")
+        bad = _record_keys_ok(rec)
+        if bad:
+            raise _Degraded(f"runner record for {rel!r}: {bad}")
+        if (rec.get("dst") != rel or not isinstance(rec.get("src"), str)
+                or rec.get("verbatim") is not True):
+            raise _Degraded(f"runner apparatus record for {rel!r} has invalid fields")
+        if ("living_state" in rec
+                and not isinstance(rec["living_state"], bool)):
+            raise _Degraded(
+                f"runner apparatus record for {rel!r} has a wrongly typed living_state")
+        if "base_cache" in rec and not isinstance(rec["base_cache"], str):
+            raise _Degraded(
+                f"runner apparatus record for {rel!r} has a wrongly typed base_cache")
+        if ("base_hash" in rec and (not isinstance(rec["base_hash"], str)
+                or not re.fullmatch(r"sha256:[0-9a-f]{64}", rec["base_hash"]))):
+            raise _Degraded(
+                f"runner apparatus record for {rel!r} has an invalid base_hash")
+        path = repo_root / rel
+        if not _is_regular_and_unsymlinked(path, repo_root):
+            raise _Degraded(
+                f"runner apparatus {rel!r} is missing, not a regular file, "
+                "or reached through a symlink (tamper)")
+        if rec.get("living_state"):
+            raise _Degraded(
+                f"runner apparatus {rel!r} record declares living_state; "
+                "runner_binding_mode is immutable_digest-only")
+        digest_record = rec.get("hash")
+        if not isinstance(digest_record, str) or not re.fullmatch(
+                r"sha256:[0-9a-f]{64}", digest_record):
+            raise _Degraded(f"runner apparatus record for {rel!r} has an invalid hash")
+        if _sha256_of(path) != digest_record:
+            raise _Degraded(f"runner apparatus {rel!r} digest mismatch (tamper / drift)")
+    return repo_root / entry.runner_repository_path
 
 
 def _bind_policy(entry: RegistryEntry, records: dict[str, Any],
@@ -836,10 +901,8 @@ def main(argv: list[str] | None = None) -> int:
     lock = _load_lockfile()
     if lock is None:
         if not _REGISTRY:
-            # Nothing could be admitted regardless of the lockfile's state
-            # (the shipped registry is empty at v1) -- NOT_APPLICABLE, not a
-            # spurious DEGRADED, matching the Decision's "the no-capability
-            # runtime effect is nil."
+            # No selected capability can be established without a lockfile;
+            # preserve NOT_APPLICABLE only when no source-owned entry exists.
             return _print_not_applicable(
                 "no selected local security capability (install lockfile "
                 "unavailable; the shipped registry is empty regardless)")
@@ -856,7 +919,15 @@ def main(argv: list[str] | None = None) -> int:
     if not capability_ids:
         return _print_not_applicable("no selected local security capability")
 
-    records = _records_by_dst(lock)
+    try:
+        records = _records_by_dst(lock)
+    except _Degraded as exc:
+        return _print_result(_build_report([{
+            "module_id": None, "aggregate": DEGRADED,
+            "aggregate_label": "DEGRADED", "detail": _safe_render(exc.reason),
+            "evidence_mode": None, "child_launched": False,
+            "runner_digest": None, "policy": None,
+        }]))
     legs = [
         _evaluate_capability(module_id, _REPO_ROOT, records)
         for module_id in capability_ids

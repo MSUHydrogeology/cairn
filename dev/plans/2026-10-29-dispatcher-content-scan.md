@@ -1,7 +1,7 @@
 # Plan: Connect the content tripwire to the security dispatcher
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-dispatcher-content-scan.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Run the installed content tripwire through the local security command and report its limited evidence honestly.
