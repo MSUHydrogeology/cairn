@@ -1,9 +1,9 @@
 # Make work-intent guidance match enforcement and session identity
 
 **Author**: Codex (GPT-6)
-**Status**: revising
-**Review**: usual
-**Plan review**: required(Internal)
+**Status**: awaiting-decision
+**Review**: usual + Security Review
+**Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Align work-intent guidance with the hook's actual behavior and explain how to keep a claim associated with its committing session.
 
@@ -205,3 +205,92 @@ conflict defaults/exemptions/TTL, and hook environment inheritance. No hooks
 installed, raw session identifiers disclosed, incident reproduced, behavioral
 mutation or full suite run; no scientific result touched. Final wording and
 security preflight remain unreviewed.
+
+## Response -- Codex (GPT-6) -- 2026-10-29
+
+IG1 and IGS1 accepted: include the doctrine correction, high-assurance path,
+and Security plan review. The recorded Maintainer choice in
+`dev/plans/archive/2026-10-28-governing-text-single-source.md` (C2 coordination
+choice) independently predates this reported incident and chooses blocking for
+live-session conflicts. The correction implements that choice; it is not a new
+rule inferred from this incident. The Maintainer can decide whether this basis
+satisfies the doctrine-evolution gate; no high-risk classification is assumed.
+IG2 and IGS2 accepted: include both module homes, a synthetic example and
+identity limitations. IGS3 accepted: include both CLI help copies with scoped
+verification. No enforcement behavior changes.
+
+## Current contract -- 2026-10-29
+
+**Review**: usual + Security Review
+**Plan review**: required(Internal + Internal Security Review)
+**Assurance path**: high-assurance
+
+Correct `doctrine/coordination.md` to reflect the recorded C2 choice and the
+actual conditional block default, retaining warn and confirm options. Correct
+`dev/agent_collaboration.md`, `dev/modules/coordination-tiers.md`, and its
+shipped source `templates/modules/team-gated/coordination-tiers.md`. Correct
+“warn-by-default” in both `tools/_intent/cli.py` and its shipped twin
+`templates/modules/team-gated/_intent/cli.py`; this is help text only. Search
+current related descriptions and fix directly relevant contradictions, without
+changing hook or identity behavior.
+
+The text must explain that the hook is opt-in; a fresh overlapping claim blocks
+by default only when a session token is available and the resolved agent label
+differs. Unclaimed and stale paths warn; without a token cross-claim blocking
+is withheld; configured warn and confirm have their existing effects. Use the
+same session-specific resolved label for claim, commit and its inherited
+post-commit auto-release, and manual release. Prefer the harness-derived label;
+compare `whoami` in each command environment when diagnosing a mismatch. A
+synthetic example must show an override supplied separately to every fresh
+command shell, including the commit that launches the hook, without publishing
+real identifiers or recommending a global export. An override alone supplies
+no session token. Distinct concurrent sessions must not share an override: own
+claim recognition compares labels once a token is available, so sharing can
+hide a real collision. These labels and the log are cooperative coordination,
+not authentication against an actor controlling either.
+
+The plan maps the real CLI help and `whoami`, pre-commit and post-commit paths,
+paired-source parity, relevant document readers and standing gates. Verify
+conditional defaults, exclusions and identity statements against the actual
+entry points, including no-token and same-label cases. Search tests and
+manifests for all changed surfaces, using a known hit as a control; record
+owners and omissions. Run claim, link, snippet and neutrality gates as
+applicable. The plan specifies scoped commands and no full certification is
+implied. False default, collapsed sibling identities, or a claim that the
+example authenticates a session falsifies the change.
+
+### Security preflight
+
+S1: Existing configuration, environment, claim log and staged paths supply
+inputs to the existing check; a participant can control its environment and
+log. This change decides only what the prose and help say, not access.
+
+S2: The accuracy control is a comparison with existing implementation and real
+CLI behavior, not an automated security control. A proposed mutation changing
+“block” to “warn” in help must be caught by the scoped help assertion; it has
+not yet been run and the plan must record the control and result.
+
+S3: The plan will identify the exact test command and twin paths it covers;
+`python tools/intent.py install-precommit --help` is the human-triggered public
+help. The current proposed adopter-facing statement is that the opt-in check
+blocks fresh cross-session claims by default subject to the token and other
+exceptions above. No automatic check of prose accuracy is claimed.
+
+S4: The existing absent, malformed or unknown enforce configuration defaults
+to block, while no token or stale claims withhold the cross-claim block; no
+fallback changes are proposed. Incorrect guidance could mislead a user about
+those boundaries.
+
+S5: A participant controlling environment or claim log can share or forge a
+label and hide a conflict; documentation cannot prevent that. This is an open
+cooperative boundary, not authentication or a closed attacker class.
+
+### Independent scientific check
+
+N/A: no scientific assumption or result touched.
+
+### Withdrawn / superseded commitments
+
+The opening exclusion of doctrine and standard assurance declaration are
+superseded by the explicitly named doctrine correction and high-assurance path.
+The original practical documentation outcome remains preserved.
