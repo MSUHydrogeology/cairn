@@ -1,7 +1,7 @@
 # Report directories occupying tracked upgrade paths
 
 **Author**: Codex GPT-6
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -60,3 +60,68 @@ A directory or its contents can be overwritten, a blocked record advances, an or
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+
+## Review -- Codex GPT-6.1 Sol -- 2026-10-29
+
+```
+Reviewed commit: 4662a3df71caea3db3c1aa5ecf2850d49bda7a97
+Target: opening proposal, Context through Assurance path
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. Preserve adopter contents and replace
+   the traceback with a useful per-file block. The ordinary-record read occurs
+   before classification, unlike retired records; the earlier reproduced folder
+   case independently supports the reported failure --
+   `bootstrap/_scaffold/upgrade.py:668`;
+   `dev/proposals/archive/2026-10-26-claude-upgrade-removes-untouched-retired-files.md`,
+   case 7 and review F7.
+2. **Best alternative.** Refuse the entire command before reading any tracked
+   directory. That is simpler but discards the useful unaffected-file plan.
+   Reuse the existing unconditional apply block, with a directory-specific
+   diagnostic and no file review pair or adoption authorization --
+   `bootstrap/_scaffold/upgrade.py:1032` and
+   `bootstrap/_scaffold/upgrade.py:3112`.
+3. **What would show it wrong.** A successful apply after the directory appears,
+   changed contents, advanced blocked metadata, or no recovery after moving the
+   directory aside and restaging would defeat the proposal. Existing stage-time
+   snapshots read files directly, so classification alone cannot deliver this --
+   `bootstrap/_scaffold/upgrade.py:1137` and
+   `bootstrap/_scaffold/upgrade.py:3140`.
+
+The proposed outcome is appropriately small: no new ownership or automatic
+cleanup, and an operator can retain the folder elsewhere, restore the intended
+file or choose its absence, then make a new stage. Doing nothing preserves an
+already-recorded failure, rather than avoiding speculative work.
+
+For the eventual plan, keep the distinction between **reusing a block** and
+**reusing addition recovery** explicit. Existing blocked-addition guidance offers
+`--adopt-collisions`, while its stage path makes file-based review buffers
+(`bootstrap/_scaffold/upgrade.py:1190`). A tracked directory should inherit
+neither behavior. The proposal's preservation and hard-block requirements already
+exclude those outcomes; this is implementation guidance, not a scope addition.
+
+The public-command test requirement is sound; existing public stage/apply cases
+have a home in `bootstrap/tests/test_upgrade.py`. Include the override flags in
+the refusal cases, verify unchanged lockfile and base-cache bytes as well as
+folder contents, and exercise an existing stage whose original file becomes a
+directory. Keep a blocked stage blocked even if the operator fixes the live path
+without restaging. These concretize the stated hard-block and new-stage contract.
+The preflight correctly distinguishes between-command changes from hostile
+concurrent filesystem races; the plan must keep that limit explicit.
+
+Coverage: claims, public-path test design, failure behavior, recovery, existing
+reuse, documentation placement and scope were assessed against the named commit;
+`bootstrap/UPGRADE.md` owns software guidance and `dev/PLANNING.md:61` records
+this defect. No scientific result or doctrine changes. I did not rerun the
+scratch reproduction, implement a fix, run mutation checks or any suite, or
+establish resistance to concurrent hostile writers. This usual pass does not
+clear the separately declared Security Review.
