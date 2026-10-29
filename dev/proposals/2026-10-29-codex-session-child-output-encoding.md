@@ -1,7 +1,7 @@
 # Encode session child output before it reaches the terminal
 
 **Author**: Codex (Strategy, gpt-6.1-sol)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -123,3 +123,75 @@ its exit status is handled.
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+
+## Review -- Sol (gpt-6.1-sol) -- 2026-10-29
+
+```
+Reviewed commit: a764d5dae0dc8ed76250ceab47e9ef2f23a2fce5
+Target: opening proposal
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**:
+
+1. **Should this happen as framed?** Close the raw-child-output gap, but state
+   the intended display layout before approval: the existing encoder makes
+   ordinary report newlines literal escapes -- `tools/session.py:189`,
+   `tools/session.py:1795`, `tools/session.py:1829`, `tools/session.py:1864`.
+2. **Best alternative.** Keep the one encoder and add trusted output framing
+   outside encoded child text; a subprocess framework adds no needed protection
+   here, while doing nothing leaves raw display controls --
+   `tools/session.py:110`, `tools/session.py:213`, `tools/session.py:1795`.
+3. **What would show it wrong.** A representative multi-line report that loses
+   usable separation from subsequent session messages, or a nonzero child whose
+   stderr reaches the warning unencoded, defeats the intended outcome --
+   `tools/evolution_infer.py:364`, `tools/session.py:1796`,
+   `tools/session.py:1830`, `tools/session.py:1865`.
+
+The proposal correctly treats child output as untrusted display data, keeps the
+existing encoder, preserves subprocess selection and failure handling, and
+requires the shipped twin to match. The raw stdout and conditional stderr
+writes exist at all three named sites in the reviewed commit. The cited tests
+exercise launch exceptions, not returned child streams
+(`bootstrap/tests/test_session_binding_gate_and_printing_hold.py:598`).
+
+**R1 -- blocking: specify framing for encoded reports.** The encoder escapes LF,
+CR, tabs, backslashes and pipes as well as hostile invisible characters
+(`tools/session.py:110`, `tools/session.py:213`). Applying it to the whole
+stdout therefore removes the child's final newline and collapses multiline
+reports. A read-only probe executing the encoder definitions from
+`git show a764d5da:tools/session.py` transformed an evolution-report header,
+blank line and suggestion line into one string containing three literal
+`\x0a` escapes and no real line terminator. The next lifecycle message would
+be written directly after that escaped tail. The actual child report is
+multiline (`tools/evolution_infer.py:364`). "Ordinary text remains visible"
+does not decide whether that result is acceptable.
+
+**Satisfier:** state the intended representation and trusted framing in the
+Response and derived plan. The smallest option is an encoded payload followed
+by a parent-generated newline; if multiline readability is required, specify
+how trusted separators are reconstructed without passing child controls raw.
+Keep the single encoder. Add a representative multiline report followed by a
+session message to the acceptance examples, asserting the chosen separation
+and escaped hostile payload. No outcome needs to be removed.
+
+**R2 -- non-blocking clarification:** explicitly require both zero and nonzero
+return codes in the child-stream controls. Stderr is displayed only for
+nonzero returns at all three sites; zero-return stand-ins carrying hostile
+stderr cannot test those branches. The satisfier is a verification mapping
+that reaches each conditional warning and also preserves successful-child
+stderr suppression (`tools/session.py:1796`, `tools/session.py:1830`,
+`tools/session.py:1865`).
+
+**Coverage:** checked claims, entry-path wiring, encoder reuse, layout and
+failure branches, source/test consistency, lifecycle placement and scope
+against the named commit; no scientific surface is involved. This is design
+review, not implementation verification. No full suite, Security Review,
+protected-test ceremony, or historical trust-root reconciliation was performed;
+the separately required Security Review remains open.
