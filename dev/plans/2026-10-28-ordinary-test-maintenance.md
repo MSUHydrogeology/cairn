@@ -1,7 +1,7 @@
 # Plan: Ordinary test maintenance
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-ordinary-test-maintenance.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal)
 **Opened**: 2026-10-28
 **In brief**: Simplify one board test cluster without losing fault detection and share the resulting test-maintenance practice.
@@ -137,3 +137,26 @@ this file, preserve their behavior and fault detection, run the functional
 checks in Verification, and obtain normal plan and code reviews. No pre-edit
 family run or matched timing baseline is required. This allowance is limited
 to this pilot and changes no other trust-boundary work.
+
+## C1 inventory -- Codex (Implementation, Luna) -- 2026-10-29
+
+**Source snapshot**: `fb7e8751` (Maintainer pilot allowance committed).
+
+The first named test builds complete, blank-field and headerless artifacts
+through `_write`, invokes the real `board.main` JSON entry point through
+`_run_json`, compares the complete schema-1 record, distinguishes absent from
+blank values, and confirms that plain output omits headerless artifacts. Its
+failure witnesses include forged or late fields, title/in-brief substitution,
+blank-to-absent coercion, dropped JSON records and accidental plain-board rows.
+
+The second named test builds equal live/archive stems under two fresh roots and
+checks archive inclusion, distinct path keys, same-root repeatability,
+cross-root byte equality, ASCII-only sorted-key serialization, and the empty
+root schema. Its failure witnesses include path collision, unstable ordering or
+serialization, non-ASCII bytes, root-dependent output and omitted empty schema.
+
+Both test nodes and all listed assertions remain. The only candidate cleanup is
+the repeated public-entry invocation and capture sequence inside the second
+test; a local helper can shorten that sequence without hiding fixture data or
+changing shared helpers. No pre-edit test-family run or timing baseline was
+made, as authorized above. No test property is proposed for removal.
