@@ -1,7 +1,7 @@
 # Plan: Ordinary test maintenance
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-ordinary-test-maintenance.md
-**Status**: revising-code
+**Status**: awaiting-code-review
 **Plan review**: required(Internal)
 **Opened**: 2026-10-28
 **In brief**: Simplify one board test cluster without losing fault detection and share the resulting test-maintenance practice.
@@ -226,3 +226,52 @@ Prior findings: none
 - Installation: inspected `bootstrap/_scaffold/config.py` and mapped owners; the recorded install compares the installed module to the shipped template. The two committed module copies have identical changes.
 
 **Covered**: named behavior, capture ordering, installed module route, verification record and review range. **Not covered**: mutations, an adopter trial, or a full suite. A detached worktree could not be created because the repository metadata is read-only; the targeted run used an archive and did not mutate it.
+
+## Response to code review -- Codex (Implementation, Luna) -- 2026-10-29
+
+| Finding | Disposition |
+|---|---|
+| F1 | Accepted. The original run summary omitted literal commands and per-command elapsed times, and did not quantify setup/assertion changes. I repeated the mapped test families, install and gates in a clean checkout of the tested implementation commit; the addendum records those commands and results. |
+
+## Implementation verification addendum -- Codex (Implementation, Luna) -- 2026-10-29
+
+This addendum completes the evidence for implementation commit
+`70db63fd10cfa115a7053f4d1d5726968bed59d1`. It was rechecked in a clean local
+clone detached at that commit, with `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+(Python 3.13.13). The checkout was clean before and after. All reported elapsed
+times are `/usr/bin/time -p` real seconds. No skips, xfails or xpasses occurred.
+
+| Command | Result | Real time |
+|---|---|---:|
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_board_json_contract.py -q` | 25 passed | 1.61 s |
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_practice_modules.py bootstrap/tests/test_doc_governance.py bootstrap/tests/test_presets.py bootstrap/tests/test_profiles_smoke.py -q` | 85 passed | 0.91 s |
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 bootstrap/scaffold.py --config bootstrap/profiles/high-rigor-legacy.yml --target /private/tmp/cairn-install-target.D8T1e9` | exit 0; 101 files installed; installed testing module byte-identical to `templates/modules/team-gated/testing-discipline.md` | 0.28 s |
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 scripts/claim_check.py templates/modules/team-gated/testing-discipline.md` | passed | 0.04 s |
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 scripts/claim_check.py dev/modules/testing-discipline.md` | passed | 0.03 s |
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 scripts/claim_check.py dev/plans/2026-10-28-ordinary-test-maintenance.md` | passed | 0.03 s |
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 scripts/link_check.py` | passed; 189 Markdown files; 84 external links not probed | 0.21 s |
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 scripts/check_cairn.py templates/modules/team-gated/testing-discipline.md dev/plans/2026-10-28-ordinary-test-maintenance.md` | passed; 2 files | 0.08 s |
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 scripts/quality_gate.py --sub neutrality` | 0 failures, 43 informational entries | 0.91 s |
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 scripts/quality_gate.py --sub redundancy` | 0 failures, 0 informational entries | 0.34 s |
+
+The first install attempt,
+`/Users/kendal30/conda_envs/lhm/bin/python3.13 bootstrap/scaffold.py --config bootstrap/profiles/high-rigor-legacy.yml --target /private/tmp/cairn-install-target.tdkZ7P`,
+exited 2 because that temporary target path did not exist. Creating an empty
+temporary directory and rerunning the listed command succeeded. The successful install contained the updated
+behavior/fault, consolidation, fresh-state and scope/runtime guidance; the
+installed wording matched the shipped template byte for byte.
+
+For the two named methods, AST counts before -> after were: `_write` setup
+calls **3 -> 3** in each method; `assert` statements **11 -> 11** in the
+record-values method and **13 -> 11** in the deterministic-output method. The
+two fewer assertion statements are the return-code checks moved into the local
+helper; that helper runs three times, so all **3** return-code checks still
+execute. The deterministic method's three `board.main` calls likewise remain
+three helper invocations; no test data setup, fixture, named test, or behavior
+assertion was removed. No pre-edit test-family timing baseline was run, as
+authorized by the Maintainer's allowance, and no before/after runtime claim is
+made. The mapped test families provide the named-node and module-owner counts
+above; no full suite, certifying run, mutation ledger, or adopter trial was run.
+
+The scoped evidence resolves F1. This addendum does not change the implementation
+bytes or claim full-tree certification.
