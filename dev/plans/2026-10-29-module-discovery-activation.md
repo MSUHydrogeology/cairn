@@ -1,7 +1,7 @@
 # Plan: Module discovery and first use
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-module-discovery-activation.md
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Make installed modules discoverable and give each selected module a useful first task.
@@ -138,3 +138,32 @@ The satisfier is a folded ordering design plus named public-entry tests: initial
 **Unmutated control**: on the clean `eee603a6` worktree, the four corresponding control nodes (`test_selected_modules_have_usable_tasks`, `test_unselected_modules_have_no_tasks_or_inventory_rows`, `test_reinstall_preserves_completion_and_refuses_loss`, and `test_live_install_writes_a_lockfile_when_a_module_merge_lands`) passed 4/4. The full mapped run above then passed 812/812 on the same commit.
 
 **Omissions**: no scientific check applies. The whole-tree certifying pair was not run; certification remains pending. External links were not probed by the local link gate. No behavior outside the mapped families and named public paths is claimed covered.
+
+
+## Code review -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+**Reviewed commit**: f51b84b1 (implementation eee603a6)
+**Obligation**: Internal
+**Findings**: raised
+**Bounding**: WIDER RUN REQUIRED
+
+**Foundations**:
+
+1. **Does it do what it claims?** Not yet: an unknown marked task crashes instead of reporting an actionable reconciliation conflict; the stable verification also omits its required public-path checks -- `bootstrap/_scaffold/install.py:1243`, verification above.
+2. **Best alternative.** Treat an unrecognized task identity as an ambiguous edited entry and refuse with recovery guidance, retaining the existing shared reconciliation path -- `bootstrap/_scaffold/install.py:1265`.
+3. **What would show it wrong?** A marked, completed task with an unknown identity breaks the reconciliation path; see the falsification ledger below.
+
+**P1 -- Unknown marked task produces an uncaught exception.** The task renderer indexes the first result for any parsed identity, but the renderer returns an empty list for an identity absent from the current catalog. A retired module or edited marker therefore raises `IndexError` before the conflict handler can provide manual recovery. Guard unknown identities and report a `ModuleDiscoveryConflict`, preserving the existing artifacts; exercise the public adoption path.
+
+**P2 -- Complete the final-commit public-path verification.** The plan requires the public summary, dry-run, manifest and representative install paths at Boundary B on the clean final commit. The record reports these only at Boundary A. Run and record those prescribed checks at the final implementation commit; the mapped test families do not replace the explicit public-path criterion.
+
+**Falsification ledger** (plain-file archive of eee603a6, Python 3.13.13):
+
+| Challenge | Result |
+|---|---|
+| Reconcile a completed task marked `retired-module`, absent from the catalog, with an empty roster | `IndexError` at `install.py:1243`; expected a reported conflict. |
+| `test_upgrade_module_additions.py` in the archive | 21 passed, then `test_module_additions_under_explicit_to_are_hard_blocked` failed because the archive has no Git repository for its `HEAD` check; this is an environment limitation, not an implementation finding. |
+
+**Evidence and sweep**: Reviewed the committed implementation diff, reconciliation path, acceptance criteria and Boundary B record. Existing checks cover selected and unselected entries, preservation and lock baselines; the archive probe challenges an identity outside the current catalog. The verification record identifies Python, counts, clean state and non-pass disposition; certification remains pending.
+
+**Coverage / gaps**: This is the ordinary code review only; the separate Security Review remains open. I did not rerun the broad suite, inspect every module task, or independently exercise all public paths. The missing final-commit public checks require a new implementation verification record.
