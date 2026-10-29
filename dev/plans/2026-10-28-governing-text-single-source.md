@@ -1,7 +1,7 @@
 # Plan: Governing text inventory and routing
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-governing-text-single-source.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Map where rules come from and reach adopters before choosing how to reduce repeated editing.
@@ -543,3 +543,30 @@ before import because the current `_gate_manifest.py` bytes differ from its
 anchor entry. No re-anchor or reference change was made, and this record does
 not claim that the proposed protected roster is installed or the ceremony has
 passed.
+
+
+## Implementation verification -- C3 scope delta and C4 -- Codex (Implementation, Luna) -- 2026-10-29
+
+**Boundary B mode**: wide. This contract/template change was checked across the scope owner, template readers, scaffold, install, review, and verification test families, plus real small and fuller profile installs. Effects are bounded to the plan-template Scope delta rationale and its installed guard; the changed source and shipped subsections match after whitespace normalization. The full template files intentionally differ in other generated-slot and adopter-verification guidance.
+
+**Certified by**: pending
+**Implementation verified at**: `72fecafe69f3c12e8b8c43f2b501e47955684aaa`
+**Tested commit**: `72fecafe69f3c12e8b8c43f2b501e47955684aaa`
+**Reviewed range**: `64a233757f303b32c5f6c521e733c78ada36ae5e..72fecafe69f3c12e8b8c43f2b501e47955684aaa`
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` -- Python 3.13.13.
+**Pre-run state**: fresh clone, detached at tested commit; `git status --short` empty.
+**Post-run state**: `git status --short` empty; `HEAD` unchanged at tested commit.
+
+| Command or check | Outcome | Timing |
+|---|---|---:|
+| `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -p no:cacheprovider -q bootstrap/tests/test_scope_reduction_trap.py bootstrap/tests/test_model_tier_rule_ships.py bootstrap/tests/test_review_stance_in_shipped_files.py bootstrap/tests/test_scaffold.py bootstrap/tests/test_board_json_contract.py bootstrap/tests/test_scientific_check_guidance_ships.py bootstrap/tests/test_verification_boundaries.py bootstrap/tests/test_certifying_run_rule.py bootstrap/tests/test_install_report_slots.py bootstrap/tests/test_quickstart_sequence.py bootstrap/tests/test_documentation_plan_module.py bootstrap/tests/test_replacement_tools.py --tb=short` | 781 passed; no failures, skips or xfails reported | 6.57 s |
+| `bootstrap/scaffold.py --config bootstrap/profiles/solo-greenfield.yml --target <fresh empty target> --cairn-root <tested clone> --non-interactive --allow-dev` | exit 0; 69 files; installed `dev/plans/_template.md` is byte-identical to shipped source | 0.116 s |
+| Same command with `high-rigor-legacy.yml` | exit 0; 101 files; installed `dev/plans/_template.md` is byte-identical to shipped source | 0.085 s |
+| Installed-output semantic control in `test_scope_reduction_trap.py` | Both profiles pass the intact output; each of three mutations per profile is detected: reviewer-authority inversion, removal of per-entry disposition, and proposed-expansion inversion | included above |
+| `python scripts/claim_check.py <each of the plan and two templates>` | all three passed; five expected plan path exemptions were reported | 0.03 s combined |
+| `python scripts/check_cairn.py dev/plans/2026-10-28-governing-text-single-source.md dev/plans/_template.md templates/core/dev/plans/_template.md` | 3 Markdown files scanned; passed | 0.03 s |
+| `python scripts/link_check.py` on the same three files | 3 Markdown files scanned; passed | <0.01 s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 failures; 43 informational neutrality entries; 0 redundancy findings | 1.00 s |
+| Edited-subsection parity and before/after count | Source and shipped Scope delta sections match after whitespace normalization. Each shrank from 273 words / 29 lines to 243 words / 27 lines. The other task-floor example was not edited. Whole-template byte parity is not expected because installed slots and adopter-specific verification text differ. | direct comparison |
+
+**Known omissions / limits**: No full suite, certification, re-anchor, or reference change was performed. The Maintainer waived historical anchor comparison and directed this source work to proceed; the earlier read-only `repin status` refusal on a mismatched `_gate_manifest.py` remains unresolved, so this record claims no anchor/roster installation or ceremony result. Mutation controls establish sensitivity to the three named breaks, not equivalence of every possible wording. No adopter-use trial ran. The independent code review remains next.
