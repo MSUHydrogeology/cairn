@@ -1,7 +1,7 @@
 # Establish a forward trust baseline
 
 **Author**: Codex (plan coordinator)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
