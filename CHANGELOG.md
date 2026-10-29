@@ -44,6 +44,8 @@ and a new empty `Unreleased` is started above.
 - Change verification is mapped per change and tree certification is separate; plan, proposal, and strategy names now include their opening date. ([plan](dev/plans/archive/2026-10-28-scoped-change-verification.md); [verification doctrine](doctrine/plans.md))
 - Capability floors now follow the task: ordinary authorship and reviews are medium, while executing an accepted reviewed plan is low, including high-risk chunks. Cairn's dated local model mapping records three assigned families per tier. ([plan](dev/plans/archive/2026-10-28-model-floor-alignment.md); [roles](doctrine/roles.md))
 
+- The governing-text inventory selected a documentation home for public methodology explanation while keeping operative duties in usable installed homes; the accepted-scope template now removes repeated rationale without claiming lower review or ceremony cost. The separate v0.6 baseline remains open. ([plan](dev/plans/archive/2026-10-28-governing-text-single-source.md))
+
 ## 0.5.0 — 2026-10-28
 
 ### Changed — `docs/plain-language.md` is a full adoption page for Cairn Plain Language

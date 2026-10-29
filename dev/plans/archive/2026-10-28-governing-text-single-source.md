@@ -1,7 +1,7 @@
 # Plan: Governing text inventory and routing
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-governing-text-single-source.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Map where rules come from and reach adopters before choosing how to reduce repeated editing.
@@ -33,7 +33,7 @@ do not assume the present placement is justified.
 
 C1 outputs:
 - `dev/strategy/2026-10-28-codex-governing-text-inventory.md`
-- `dev/plans/2026-10-28-governing-text-single-source/doctrine-sections.tsv` (per-heading evidence)
+- `dev/plans/archive/2026-10-28-governing-text-single-source/doctrine-sections.tsv` (per-heading evidence)
 
 ## Sequence
 
@@ -253,7 +253,7 @@ separate.
 - `python -m pytest -q bootstrap/tests/test_documentation_plan_module.py bootstrap/tests/test_review_sweep_ships.py bootstrap/tests/test_review_and_verification_rules_ship.py` -- 275 passed in 1.12s.
 - `python scripts/check_cairn.py` on the inventory note and updated plan; `claim_check.py` and `link_check.py` on both files -- all pass; one Markdown file scanned per call. The test-reader search found no test importing or reading the new note/TSV (a known `doctrine/lifecycle.md` reference matched as the positive control).
 - `python scripts/quality_gate.py --sub neutrality --sub redundancy` -- 0 failures, 43 informational entries, no redundancy findings.
-- Per-heading source record: `dev/plans/governing-text-single-source/doctrine-sections.tsv` contains 195 H1-H3 rows from 15 doctrine files at the measured SHA. Inventory note: `dev/strategy/2026-10-28-governing-text-inventory.md` (1,378 words).
+- Per-heading source record: `dev/plans/archive/2026-10-28-governing-text-single-source/doctrine-sections.tsv` contains 195 H1-H3 rows from 15 doctrine files at the measured SHA. Inventory note: `dev/strategy/2026-10-28-codex-governing-text-inventory.md` (1,378 words).
 
 **Timing**: pytest-reported 0.25s and 1.12s; the install and prose-gate calls completed in under 2s each by tool wall time.
 **Non-pass disposition**: no test skips or failures. Quality-gate informational entries were reported, not failures. Installs completed but retain the onboarding notes above.
@@ -580,10 +580,10 @@ Prior findings: none
 **Foundations**
 
 1. **Does it do what it claims?** The edited section is shorter and retains the actionable scope rules, but the comparison does not establish the full measured change required by C3. -- `dev/plans/_template.md` > Scope delta; F1 below.
-2. **Best alternative.** Keep the focused cut and report the unchanged or changed values against each C1 measure, including costs and both examples. -- `dev/plans/2026-10-28-governing-text-single-source/editing-baseline.tsv`.
+2. **Best alternative.** Keep the focused cut and report the unchanged or changed values against each C1 measure, including costs and both examples. -- `dev/plans/archive/2026-10-28-governing-text-single-source/editing-baseline.tsv`.
 3. **What would show it wrong.** A lost installed obligation or a comparison showing no improvement would challenge the result. -- falsification ledger below.
 
-**F1 — Blocking: complete the comparison on the same measures.** C3 requires comparing both C1 edits after the change using the same measures. The baseline records presentation files, implementation footprint, owning checks, lifecycle and ceremony cost, and installed reader path as well as section length. The addendum reports the Scope delta length and installed controls, and says the task-floor example was unchanged, but does not repeat or explicitly reconcile the other measures for both examples. Record comparable after values or explain with evidence why a baseline measure is unchanged or inapplicable; distinguish the 30-word point-of-use cut from any reduction in edit or ceremony effort. -- C1, C3 and `dev/plans/2026-10-28-governing-text-single-source/editing-baseline.tsv`.
+**F1 — Blocking: complete the comparison on the same measures.** C3 requires comparing both C1 edits after the change using the same measures. The baseline records presentation files, implementation footprint, owning checks, lifecycle and ceremony cost, and installed reader path as well as section length. The addendum reports the Scope delta length and installed controls, and says the task-floor example was unchanged, but does not repeat or explicitly reconcile the other measures for both examples. Record comparable after values or explain with evidence why a baseline measure is unchanged or inapplicable; distinguish the 30-word point-of-use cut from any reduction in edit or ceremony effort. -- C1, C3 and `dev/plans/archive/2026-10-28-governing-text-single-source/editing-baseline.tsv`.
 
 **Bounding**: WIDER RUN REQUIRED -- complete the comparison evidence; this does not require a full suite.
 
@@ -692,3 +692,24 @@ owed: the response changed evidence prose only, while the reviewed implementatio
 bytes remain unchanged. The ordinary finding is closed and the plan moves to
 `ready-to-archive`. No new full-suite, certification, re-anchor or installation
 claim is made here.
+
+## Dispositions
+
+**Dispositions**: deferred follow-up carried to its live v0.6 roadmap home.
+
+* The forward-baseline installation and proof remain separate from this plan;
+  actual installation was explicitly excluded as a prerequisite for plan
+  archive. Disposition: `defer` -> `dev/PLANNING.md` > “Establish the v0.6
+  forward baseline”. Maintainer authorization, verbatim: “They can each build
+  the machinery, the new baseline does not need to be part of their plans. It
+  can be a work board item for v0.6.” The existing row includes this plan’s
+  related frozen-file work and says old-anchor comparison is not required.
+
+## Archive -- Codex (Implementation / archival, gpt-6.1-sol) -- 2026-10-29
+
+The plan’s accepted outcomes and both review obligations are complete. The
+ordinary code-review finding is answered, the Security Review cleared installed
+rule preservation, and the implementation evidence remains tied to
+`72fecafe`. The only remaining follow-up is dispositioned above to its existing
+Maintainer-authorized v0.6 board row. The forward-baseline installation,
+certification, and re-anchor ceremony are not claimed by this archive.

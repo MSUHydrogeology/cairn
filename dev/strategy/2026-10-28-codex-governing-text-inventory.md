@@ -5,7 +5,7 @@
 **Date**: 2026-10-28
 **Status**: settled
 **Type**: comparative-research
-**Surfaces this would feed**: `dev/plans/2026-10-28-governing-text-single-source.md` C2
+**Execution record**: `dev/plans/archive/2026-10-28-governing-text-single-source.md`
 
 ## The question / felt gap
 
@@ -15,9 +15,9 @@ Recommend public methodology explanation/reference under **`docs/`**, with compl
 
 Refresh source: **`e9928009078b666b753b3b0502af14d9d2421922`**, after model-floor review/archive and scoped-verification ordinary/Security reviews. Scoped-verification still carries its ceremony hold; this inventory neither archives it nor certifies the tree.
 
-The [section table](../plans/2026-10-28-governing-text-single-source/doctrine-sections.tsv) preserves all 195 original records at `0ac350c0`, adding current coordinates and section-purpose/routing judgments: **190 document headings plus five fenced examples**, across 15 files, now 6,125 lines. Three headings were retitled. Original content classes are lexical signals; the added judgments classify section purpose, not exhaustive clause equivalence.
+The [section table](../plans/archive/2026-10-28-governing-text-single-source/doctrine-sections.tsv) preserves all 195 original records at `0ac350c0`, adding current coordinates and section-purpose/routing judgments: **190 document headings plus five fenced examples**, across 15 files, now 6,125 lines. Three headings were retitled. Original content classes are lexical signals; the added judgments classify section purpose, not exhaustive clause equivalence.
 
-The [operative map](../plans/2026-10-28-governing-text-single-source/operative-obligations.tsv) records 55 obligation groups, source anchors, installed sources/destinations, triggers, semantic gaps/conflicts and mapped/related tests. Some test families check mechanisms; their presence does not prove they read public prose. Blank test cells mean unmapped, not proof no test exists. The [editing baseline](../plans/2026-10-28-governing-text-single-source/editing-baseline.tsv) records 21 measures. Read committed sources/history, inspected actual installed output, and reused identified test records without repeating owner suites. Python 3.13.13 ran fresh installs and prose checks. No operative rule changed. A necessary public contract without a suitable retained home would challenge the routing recommendation.
+The [operative map](../plans/archive/2026-10-28-governing-text-single-source/operative-obligations.tsv) records 55 obligation groups, source anchors, installed sources/destinations, triggers, semantic gaps/conflicts and mapped/related tests. Some test families check mechanisms; their presence does not prove they read public prose. Blank test cells mean unmapped, not proof no test exists. The [editing baseline](../plans/archive/2026-10-28-governing-text-single-source/editing-baseline.tsv) records 21 measures. Read committed sources/history, inspected actual installed output, and reused identified test records without repeating owner suites. Python 3.13.13 ran fresh installs and prose checks. No operative rule changed. A necessary public contract without a suitable retained home would challenge the routing recommendation.
 
 ## Findings
 
