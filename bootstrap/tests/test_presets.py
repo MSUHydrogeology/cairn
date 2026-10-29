@@ -249,7 +249,8 @@ class TestBackwardCompat:
         ])
         assert rc == 0
         mdir = tmp_path / "dev" / "modules"
-        assert not list(mdir.glob("*.md")) if mdir.exists() else True
+        assert [p.name for p in mdir.glob("*.md")] == ["README.md"]
+        assert "<!-- cairn:module id=" not in (mdir / "README.md").read_text()
 
     def test_modules_plus_preset_is_hard_error(self, tmp_path: Path) -> None:
         cfg = self._write(

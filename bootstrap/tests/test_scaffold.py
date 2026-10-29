@@ -1184,5 +1184,7 @@ class TestCLI:
         assert rc == 0
         modules_dir = tmp_path / "dev" / "modules"
         assert modules_dir.exists()
-        # No .md files installed
-        assert list(modules_dir.glob("*.md")) == []
+        # The generated inventory is always present, but an empty selection
+        # must not claim any module or create module task entries.
+        assert [p.name for p in modules_dir.glob("*.md")] == ["README.md"]
+        assert "<!-- cairn:module id=" not in (modules_dir / "README.md").read_text()
