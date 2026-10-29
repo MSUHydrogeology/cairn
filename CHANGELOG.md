@@ -38,6 +38,8 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+- Forward-baseline preparation and installation now use independently reviewed inputs and scratch-tested refusal and protection checks. Actual installation and tree certification remain separate v0.6 work. ([plan](dev/plans/archive/2026-10-29-forward-trust-baseline.md); [runbook](bootstrap/REANCHOR_RUNBOOK.md))
+
 - Installed modules now have a selection-specific inventory and optional first-use tasks, including later adoption and conservative recovery when existing work conflicts. Whole-tree certification remains pending. ([plan](dev/plans/archive/2026-10-29-module-discovery-activation.md))
 
 - The local security dispatcher now admits the installed content-security tripwire, binds its five-file apparatus before launch, and reports unreliable or flagged evidence without claiming clean; scoped policy reconciliation preserves the upstream baseline. The Security Review accepted the implementation; whole-tree certification remains pending, and link/claim-check legs plus API/web credential pass-through remain separate work. ([plan](dev/plans/archive/2026-10-29-dispatcher-content-scan.md); [security strategy](dev/strategy/2026-08-05-codex-security-strategy.md))

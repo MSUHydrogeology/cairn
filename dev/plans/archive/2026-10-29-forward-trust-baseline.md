@@ -1,7 +1,7 @@
 # Plan: Forward trust baseline machinery
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-forward-trust-baseline.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Build and test a reusable way to establish a reviewed starting point for future trust checks.
@@ -274,3 +274,7 @@ All pytest commands used `PYTHONDONTWRITEBYTECODE=1` and the interpreter above. 
 | `python scripts/claim_check.py` on this plan and on `bootstrap/REANCHOR_RUNBOOK.md`; `python scripts/check_cairn.py`; `python scripts/link_check.py`; `python scripts/sync_doc_snippets.py --check`; `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | All passed; quality gates 0 failures, 43 neutrality and 1 redundancy information items | Not captured |
 
 The eight-file collection contained 766 nodes; the first 242 comprised the 240 passes and the two subsequently passing scratch-agent nodes. The remaining 524 passed, giving 766/766. Across all mapped files, 1,031 passed, with no skips, xfails or xpasses. **Non-pass disposition**: an initial clone run stopped at a missing clone-local anchor (98 passed, 1 failed); the corrected run above covers it. An initial sandbox ceremony run stopped after 6 passed and 3 failed when scratch signing could not receive a PTY passphrase; the host run passed all 151. The two scratch-agent failures above were socket permission refusals, resolved by the host rerun. The initial claim-check invocation supplied two filenames and was rejected by its argument parser; the separate invocations passed. **Plan-specific acceptance commands**: mapped public-mode tests and documentation gates above; scratch controls and mutations are recorded in the earlier implementation and review sections. **Known omissions**: individual documentation-gate timings were not captured; C4 real installation, historical-anchor comparison, live signing and full-suite certification were not run. C4 remains separately Maintainer-only.
+
+## Dispositions
+
+**Dispositions**: C4 actual installation and its certification -- defer to the “Establish the v0.6 forward baseline” row in `dev/PLANNING.md`. The Maintainer authorized the separate home: “They can each build the machinery, the new baseline does not need to be part of their plans. It can be a work board item for v0.6.” Installation remains Maintainer-only.
