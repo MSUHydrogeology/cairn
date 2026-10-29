@@ -1,7 +1,7 @@
 # Plan: Forward trust baseline machinery
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-forward-trust-baseline.md
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Build and test a reusable way to establish a reviewed starting point for future trust checks.
@@ -252,3 +252,25 @@ At `9c9a4679ee0da6ffe66e37ac58384d4fab4a65ef`, containing repair `7287e628`, can
 | `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_repin.py -k 'baseline_preparation_refuses_nonobject_reader_record or baseline_preparation_refuses_substituted_external_roster_before_collection or baseline_preparation_requires_independent_inputs'` | 0 | 7 passed, 107 deselected; no skips, xfails or xpasses | 1.60s |
 
 Tracked files and HEAD were unchanged before and after; unrelated untracked `.claude/` and `dev/measurement/collision_log.md` were present throughout. These checks cover the changed refusal and two adjacent controls, not the plan's full wide mapping. No live refs, signing or full suite were used. **Certified by**: pending. The final-commit Boundary B record and its prescribed checks remain outstanding.
+
+## Implementation verification -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+**Boundary B mode**: wide -- the reviewed map covers the trust ceremony and its public preparation and installation paths; the ten owning test files and documentation gates are listed in Verification above. Narrower bounds would not cover the prescribed ceremony checks.
+**Certified by**: pending
+**Tested commit**: `bf5babe11a2afbad20ca754d245ec4458c6794b7`
+**Reviewed range**: `1867e666..bf5babe11a2afbad20ca754d245ec4458c6794b7`
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13.
+**Pre-run state**: clean detached disposable clone at tested HEAD. **Post-run state**: clean, same HEAD. A clone-local anchor was set to tested HEAD after the missing-anchor refusal; no live ref was read or changed.
+
+All pytest commands used `PYTHONDONTWRITEBYTECODE=1` and the interpreter above. The eight-file list below is the last three bullets of Verification, in their listed order.
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---:|---|---:|
+| `python -m pytest bootstrap/tests/test_repin.py -q` | 0 | 114 passed | 130.64s |
+| `python -m pytest bootstrap/tests/test_repin_ceremony.py -q` (host access) | 0 | 151 passed | 533.63s |
+| `python -m pytest <eight mapped files> -q` (clone-local anchor) | 2, interrupted | 240 passed; 2 failed creating scratch agent sockets | 133.17s |
+| `python -m pytest -q` with the two failed `TestCandidateCodeCannotSignFromStageOne` nodes (host access) | 0 | 2 passed | 0.52s |
+| `python -m pytest <eight mapped files> -q` with first 242 collected nodes deselected (host access) | 0 | 524 passed, 242 deselected; 3 existing stevedore warnings | 201.97s |
+| `python scripts/claim_check.py` on this plan and on `bootstrap/REANCHOR_RUNBOOK.md`; `python scripts/check_cairn.py`; `python scripts/link_check.py`; `python scripts/sync_doc_snippets.py --check`; `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | All passed; quality gates 0 failures, 43 neutrality and 1 redundancy information items | Not captured |
+
+The eight-file collection contained 766 nodes; the first 242 comprised the 240 passes and the two subsequently passing scratch-agent nodes. The remaining 524 passed, giving 766/766. Across all mapped files, 1,031 passed, with no skips, xfails or xpasses. **Non-pass disposition**: an initial clone run stopped at a missing clone-local anchor (98 passed, 1 failed); the corrected run above covers it. An initial sandbox ceremony run stopped after 6 passed and 3 failed when scratch signing could not receive a PTY passphrase; the host run passed all 151. The two scratch-agent failures above were socket permission refusals, resolved by the host rerun. The initial claim-check invocation supplied two filenames and was rejected by its argument parser; the separate invocations passed. **Plan-specific acceptance commands**: mapped public-mode tests and documentation gates above; scratch controls and mutations are recorded in the earlier implementation and review sections. **Known omissions**: individual documentation-gate timings were not captured; C4 real installation, historical-anchor comparison, live signing and full-suite certification were not run. C4 remains separately Maintainer-only.
