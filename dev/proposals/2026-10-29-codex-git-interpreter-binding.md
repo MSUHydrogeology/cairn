@@ -217,3 +217,46 @@ Security preflight: the operator supplies Git administration and the executable;
 ### Withdrawn / superseded commitments
 
 The opening summary overstates copied-project protection; copied administration remains trusted input.
+
+
+## Review -- Codex gpt-6.1-sol Security -- 2026-10-29
+
+```
+Reviewed commit: 734d88db5ba276d17f550cf34b63b420c6faace9
+Target: Response, Current contract and withdrawal ledger
+Prior findings: S1, S2
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the revised boundary separates checkout content from explicitly trusted Git administration and no longer claims protection from copied administration -- Current contract, paragraphs 1–2.
+2. **Best alternative.** Always use the running interpreter; the retained binding buys persistent environment choice, now with explicit repository prerequisites and safe rebinding -- Current contract, paragraphs 1–3; `tools/session.py:947-993`.
+3. **What would show it wrong.** Ancestor access, redirected writes or launch from an unsafe binding falsifies the contract; the required entry-point cases now name those observations -- Current contract, paragraphs 3–5.
+
+**S1 closed at proposal stage.** The contract requires exact worktree-root
+identity; explicitly supports linked, separate-directory and submodule roots;
+and distinguishes absent repositories from discovery errors. Nested targets
+cannot consume or change ancestor bindings. Copied administration and delivered
+Git pointers are explicitly trusted inputs, not authenticated by discovery.
+The withdrawal ledger correctly replaces the opening overclaim without
+pretending the residual was closed. The Maintainer still judges that residual.
+
+**S2 closed at proposal stage.** True absence is distinct from dangling links,
+wrong types and unreadable state. Force cannot override destination safety.
+Containment uses a dedicated administrative-directory guard and leaves the
+scaffold's target guard intact. The contract requires portable entry-point
+tests plus native Windows discovery and junction/reparse evidence before
+implementation acceptance; an unmet required case stays open.
+
+**Coverage:** discovery, trust, containment, absence/refusal, copied-state claims,
+portability and withdrawal accounting: the cited revised contract. No new
+blocker found within this obligation. **Not covered:** no implementation exists
+to establish those properties; no executable probe, suite or native-platform
+run was performed. Executable provenance, trusted-administration compromise
+and same-user races remain explicit assumptions. This clears the proposal
+Security obligation only; plan and implementation evidence remain owed.
