@@ -23,9 +23,9 @@ Change `tools/session.py`, its shipped twin `templates/skills/_lib/session.py`, 
 
 ## Acceptance criteria
 
-**C1.** Split only literal LF, encode every segment with `encode_display`, and rejoin using parent-owned LFs. Terminate nonempty stdout lacking a final LF; never decode escapes or promote CR or Unicode separators to framing. Each helper encodes stdout on zero and nonzero returns, suppresses success stderr, and encodes reported nonzero stderr under its existing warning label. Preserve command selection, exit handling, skips and launch exceptions. Both source copies remain byte-identical.
+**C1.** Capture child streams as bytes and decode using the same default encoding and strict error behavior as the current text-mode subprocess, without universal newline conversion. Malformed bytes retain the current decoding exception behavior. Split only literal LF, encode every segment with `encode_display`, and rejoin using parent-owned LFs. Terminate nonempty stdout lacking a final LF; never decode escapes or promote CR or Unicode separators to framing. Each helper encodes stdout on zero and nonzero returns, suppresses success stderr, and encodes reported nonzero stderr under its existing warning label. Preserve command selection, exit handling, skips and launch exceptions. Both source copies remain byte-identical.
 
-For each helper, test both return branches with multiline output, a subsequent parent message, literal backslash escape notation, ESC/OSC, CR, C1, bidi and invisible characters. Assert ordinary text, safe rendering, warning and suppression behavior, and child invocation. Cover `session-start` and handoff public paths or demonstrate equivalent real call-site coverage. A raw-write mutation at each helper must fail against an unmutated control. S2's mutations occur in C1; S3's person-run test command is in Verification. The independent scientific check is not applicable.
+For each helper, test both return branches with multiline output, a subsequent parent message, literal backslash escape notation, ESC/OSC, CR, C1, bidi and invisible characters. Assert ordinary text, safe rendering, warning and suppression behavior, and child invocation. Exercise real subprocess bytes through each helper, including nonzero stderr: bare CR and the CR in CRLF remain encoded, while LF separates lines. Cover `session-start` and handoff public paths or demonstrate equivalent real call-site coverage. A raw-write mutation at each helper must fail against an unmutated control. S2's mutations occur in C1; S3's person-run test command is in Verification. The independent scientific check is not applicable.
 
 **C2.** Record clean-commit verification and non-passes; preserve the protected-test ceremony obligation for the v0.6 re-anchor. Do not claim that ceremony or historical anchor comparison occurred. Independent code review follows.
 
@@ -35,9 +35,11 @@ For each helper, test both return branches with multiline output, a subsequent p
 
 ## Verification
 
-Boundary A: `python -m pytest bootstrap/tests/test_session_binding_gate_and_printing_hold.py` owns returned streams, exceptions and new public-path controls; `python -m pytest bootstrap/tests/test_session_kernel.py::TestTheTwinIsByteIdentical::test_both_copies_match` checks the shipped twin. Run both during iteration, plus the raw-write mutations and positive control in isolated copies. Preserve the call-site and public-path mapping in the tests and evidence. Run `python scripts/check_cairn.py` for authored Markdown and `python scripts/claim_check.py` on the plan. The protected-test change joins the existing v0.6 re-anchor; follow `bootstrap/REANCHOR_RUNBOOK.md` for its applicable Maintainer ceremony, without performing or claiming it here.
+Boundary A: run `python -m pytest bootstrap/tests/test_session_binding_gate_and_printing_hold.py` for new real-child transport, hostile streams, branch and exception controls; `bootstrap/tests/test_session_kernel.py` for encoder and twin parity; `bootstrap/tests/test_session_routines.py` for session-start and handoff wiring and prune behavior; `bootstrap/tests/test_session_failsafe.py` for handoff and interpreter failure behavior; and `bootstrap/tests/test_session_binding_untracked.py` for real session-start and binding integration. Run each as `python -m pytest <file>`, splitting invocations if needed. Search `rg 'session.py|test_session' bootstrap/tests/test_session*.py` also finds `test_session_writes_contained.py` (write containment) and `test_session_start_drain_rules.py` (skill rules); neither owns changed output or capture behavior, so they are excluded. New controls exercise real child bytes through all three helpers and the public paths as stated in C1. Run the unmutated control and one raw-write mutant per helper in isolated copies.
 
-Boundary B is **wide** for this security boundary: after the final implementation commit, run the mapped test file, twin node, mutation controls and applicable standing gates under canonical Python 3.13 on a clean unchanged commit. Record tested SHA and range, interpreter, pre/post state, commands, counts, elapsed times, non-pass dispositions and omissions, with **Certified by**: pending. The clean unmutated control and each helper's raw-write mutant must be reported separately. No full-suite certification is implied. Boundary C is independent targeted falsification by the code reviewer, who assesses the evidence and bounding.
+Run `python scripts/check_cairn.py`, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py --check`, and `python scripts/quality_gate.py --sub neutrality` for Markdown links, cross-references, synced snippets and neutrality, and `python scripts/claim_check.py` on authored Markdown. The protected-test change joins the existing v0.6 re-anchor; follow `bootstrap/REANCHOR_RUNBOOK.md` for its applicable Maintainer ceremony, without performing or claiming it here.
+
+Boundary B is **wide** for this security boundary: after the final implementation commit, run the mapped families, real-child controls, mutations and standing gates under canonical Python 3.13 on a clean unchanged commit. Record tested SHA and range, interpreter, pre/post state, commands, counts, elapsed times, non-pass dispositions and omissions, with **Certified by**: pending. Report the unmutated control and each helper's raw-write mutant separately. No full-suite certification is implied. Boundary C is independent targeted falsification by the code reviewer, who assesses the evidence and bounding.
 
 
 ## Plan review -- Codex (gpt-6.1-sol) -- 2026-10-29
@@ -95,3 +97,13 @@ A read-only standard-library probe under canonical Python 3.13.13 launched a Pyt
 **Covered:** claims and production path (#1–2), capture/framing completeness and failure visibility (#3–4), reuse and drift (#5–6: repeated the plan's named search plus `rg 'subprocess|stdout|stderr' tools/session.py`), lifecycle and scope (#7–8: accepted Response, C1/C2, and v0.6 ceremony deferral), and satisfier (#9 above). The ordinary review's wide-map finding remains separate. No scientific result is involved.
 
 **Not covered / low confidence:** no implementation exists in this range; no tests, mutations, full suite, or protected-test ceremony were run. Printable false claims remain outside the encoder's protection, as the accepted preflight states. This security obligation remains open pending the author's response.
+
+
+## Response to plan reviews -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+| Finding | Disposition |
+|---|---|
+| R1 | Accepted. Verification now maps owning families, public paths, standing gates and exclusions. |
+| S1 | Accepted. C1 preserves CR through byte capture and strict default-encoding decoding, and requires real-child controls for each helper and failure stderr. |
+
+The Security Review obligation remains open until a Security Review clears it; implementation has not begun.
