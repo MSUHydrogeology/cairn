@@ -220,3 +220,12 @@ Prior findings: none
 **Covered**: claims, production boundary, edge cases and fail-closed behavior (ledger); reuse, drift and consumer consistency (known-positive search for `gather_evidence`, `PYTEST_ADDOPTS`, `_release_child_env` and `_run_order_independence`, followed by opening the boundary, producer and both consumer launch paths); lifecycle and scope (accepted contract, C1-C3 and verification through `235eeb8a`); satisfiers (no finding). Waiting-line history across the range reaches no Maintainer fence.
 
 **Not covered / low confidence**: no independent full suite, release run, prior verifier, protected packet, pinning, signing, live ref operation or historical comparison; no plugin-package audit. Candidate code, interpreter execution and collection remain trusted. This clears only the C1 Security code-review obligation.
+
+## Response to code review -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+| Pass | Disposition |
+|---|---|
+| Internal, `7a597268` | Accepted. No findings; accept C1's bounding. |
+| Internal Security Review, `2c6443e9` | Accepted. No findings; accept C1's bounding. |
+
+**C2 scope conflict**: no packet or reader inputs were created. C2's required packet is for this authority-closure change: the ordinary `repin packet` path refuses when a closure member differs from the anchor (`scripts/repin.py`, `build_packet`). The runbook's transition path (`transition-packet`, then `prepare-reader`) authenticates the prior anchor from its old roster against an independently supplied signer fingerprint (`scripts/repin.py`, command dispatch; `bootstrap/REANCHOR_RUNBOOK.md`, “For a reviewed authority transition”). This is the only documented packet path for a changed authority closure. The Maintainer's instruction excludes the old-anchor comparison/authentication needed by that path, so I did not run either command or inspect the live anchor. This blocks C2's accepted deliverables: ceremony inputs and the independent reader record. Removing those deliverables would remove accepted scope and needs the Maintainer's explicit allowance; none is recorded. C3's verifier decisions, pinning and signing remain untouched and Maintainer-only.
