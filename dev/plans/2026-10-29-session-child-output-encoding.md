@@ -1,7 +1,7 @@
 # Plan: Encode session child output
 
 **Source proposal**: [dev/proposals/archive/2026-10-29-codex-session-child-output-encoding.md](../proposals/archive/2026-10-29-codex-session-child-output-encoding.md)
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Make captured session helper output safe to display while keeping multiline reports readable.
@@ -201,3 +201,23 @@ Prior findings: none
 **Falsification ledger:** On a fresh archive of `6db8f3ff`, canonical Python 3.13.13 with `LC_ALL=C PYTHONUTF8=1` ran a real child emitting bytes `c3 a9`: text-mode returned `'é'`; `_decode_child_output` raised an ASCII decode error. A second real child exited zero after writing byte `ff` to stderr: text-mode raised `UnicodeDecodeError`; the new branch condition skips decoding that stream, as shown in all three helper bodies. These are independent targeted probes, not a repeat of Boundary B.
 
 **Coverage:** Read the implementation diff, acceptance criteria, review history, and Boundary B mapping and results; challenged decoding and success stderr, and checked the range for reached fences or deviation requests (none). The recorded real-child and mutation results support the remaining framing claims but were not rerun in this pass. No full suite, protected-test ceremony, or security review was run.
+
+
+## Implementation verification -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+**Implementation verified at**: `ad46f86e`
+**Boundary B mode**: wide
+**Certified by**: pending
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` -- Python 3.13.13
+**Range**: `acaa1484..ad46f86e`; both session copies match.
+**Pre/post state**: clean detached checkout at `ad46f86e`; checks left it clean.
+
+The mapped five session families ran together with `python -m pytest` on the five files named in Verification: 181 passed in 11.83 s, with no skips or other non-passes. The six added real-child cases exercise UTF-8 mode and malformed successful stderr through each helper. They cover the changed decoder and its three consumers; the existing tests cover both return branches and public paths.
+
+The unmutated child-stream control passed within the 181 tests. In separate copies, replacing encoded stdout with raw stdout in each helper and running `python -m pytest bootstrap/tests/test_session_binding_gate_and_printing_hold.py -q -k 'child_streams and <helper>'` killed each mutant: prune, surface and evolution each had two failures. An initial probe mutated only the self-hosted copy while the test imports the shipped copy; all three survived that ineffective probe. Mutating the imported twin produced the results above.
+
+Standing gates on the same checkout passed: `python scripts/check_cairn.py` (187 files, 83 external links unprobed), `python scripts/link_check.py` (187 files, 84 external links unprobed), `python scripts/sync_doc_snippets.py --check` (433 documents, no drift), and `python scripts/quality_gate.py --sub neutrality` (zero failures, 43 informational). No full certification, external-link probing or protected-test re-anchor is claimed; the latter remains for v0.6. Gate timings were not captured.
+
+## Response to code review -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+R1 accepted: `locale.getpreferredencoding(False)` follows Python UTF-8 mode, matching subprocess's default text encoding. R2 accepted: both streams decode strictly before either is displayed, while successful stderr remains suppressed. The real-child controls and wide verification above cover all three helpers. No scope was removed.
