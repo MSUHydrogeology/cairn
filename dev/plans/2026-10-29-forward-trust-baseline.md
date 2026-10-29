@@ -1,24 +1,24 @@
 # Plan: Forward trust baseline machinery
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-forward-trust-baseline.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Build and test a reusable way to establish a reviewed starting point for future trust checks.
 
 ## Source proposal
 
-The Maintainer accepted the revised forward-baseline contract and its grouped historical scope loss. Build the machinery and independently review it before the separate v0.6 installation. The old protections remain active until installation.
+The Maintainer accepted the revised contract and grouped historical loss. Build and independently review the machinery before separate v0.6 installation; existing protections remain active until then.
 
 ## Scope
 
-Implement an explicit no-signed-predecessor preparation and installation path in the existing ceremony machinery, its tests and operator documentation. The approved roster is `dev/plans/archive/2026-10-28-test-trust-boundary/c1b-proposed-roster.json`: 78 test files and 12 controlling Python modules, plus its approved protected scripts, modules and fixtures. Do not reclassify it. Preserve ordinary signed-prior authentication and future comparisons. The existing board item in `dev/PLANNING.md` carries real installation; affected plans have already archived under their amended fences. No real ref move, signing, push or historical comparison is authorized here.
+Implement a no-signed-predecessor ceremony. The approved roster is `dev/plans/archive/2026-10-28-test-trust-boundary/c1b-proposed-roster.json`: 78 test files and 12 controlling Python modules, plus protected scripts, modules and fixtures. Preserve signed-prior authentication and comparisons. `dev/PLANNING.md` carries real installation. No real ref move, signing, push or historical comparison is authorized here.
 
-**Reuse.** Search `scripts/repin.py` for `extract`, `build_packet`, `build_transaction`, `apply_reviewed_pin`, `check_record`, and `run_ceremony`; `bootstrap/tests/_gate_preflight.py` for `rederive_static_manifest`; and `bootstrap/tests/_gate_reanchor.py` for authority and ref checks. Extend those paths where their guarantees fit rather than duplicating them. Trace changed imports and callers before implementation.
+**Reuse.** `scripts/repin.py` provides extraction, preparation and ceremony; `bootstrap/tests/_gate_preflight.py` independently derives static fields and `bootstrap/tests/_gate_reanchor.py` checks authority and refs. Extend these where suitable; trace changed imports and callers.
 
 ### Documentation / doctrine surface
 
-Update descriptive operator instructions in `bootstrap/REANCHOR_RUNBOOK.md` and governing text only if the reviewed mechanism requires it; route any prescription under `docs/DOCUMENTATION_PLAN.md`. The separate board item must retain certification before real re-anchor and `python bootstrap/security_check.py` at the eventual clean release commit with required tools and no skip, xfail or xpass; update it at the archive serialization point if needed.
+Update `bootstrap/REANCHOR_RUNBOOK.md`; route prescriptions under `docs/DOCUMENTATION_PLAN.md`. At archive, ensure the board item retains pre-reanchor certification and `python bootstrap/security_check.py` at the clean release commit with required tools and no skip, xfail or xpass.
 
 ## Sequence
 
@@ -26,18 +26,21 @@ Update descriptive operator instructions in `bootstrap/REANCHOR_RUNBOOK.md` and 
 |---|---|---|---|
 | C1 | Define and implement candidate preparation and package | Plan reviews | Extraction, independent roster/static derivation, preparation and reader binding |
 | C2 | Implement installation and forward verification | C1 | Refusal checks, signed commit and atomic ref transaction; scratch demonstrations |
-| C3 | Document and verify | C2 | Operator instructions, scoped evidence, independent code and Security Reviews |
+| C2b | Prove refusal and future protection | C2 | Scratch controls and signed-prior behavior |
+| C3 | Document and verify | C2b | Operator instructions, scoped evidence, independent code and Security Reviews |
 | C4 | Actual baseline installation | MAINTAINER-ONLY: separate exact candidate, package and signer authorization | Separate v0.6 board item, not a prerequisite for this plan's archive |
 
 ## Acceptance criteria
 
-**C1.** Extract the clean committed candidate from Git objects; check containment and membership; collect without signing credentials. Bind the independently supplied approved roster, candidate, manifest, collection, interpreter, tool hashes and reader record. Determine required AST/lockfile preparation using existing transaction checks: an implementer prepares and commits any required changes, an independent reviewer reviews them before final candidate/package review, and missing preparation refuses. Independently derive static fields; candidate-controlled expectations cannot authorize its roster.
+**C1.** Add an explicit baseline preparation mode to `scripts/repin.py` `main`, using `extract`, `build_packet` and `check_record`; it never follows from failure of ordinary authentication. Extract the clean committed candidate from Git objects; check containment and membership; collect without signing credentials. Bind the independently supplied approved roster, candidate, manifest, collection, interpreter, tool hashes and reader record. Determine required AST/lockfile preparation using existing transaction checks: an implementer prepares and commits any required changes, an independent reviewer reviews them before final candidate/package review, and missing preparation refuses. Independently derive static fields; candidate-controlled expectations cannot authorize its roster.
 
-**C2.** Bind the reviewed launcher, installer and its complete imported execution closure to the reader record and approval; compare executing bytes before signing or ref updates. Expected signer fingerprint is supplied independently of candidate signers. Installation rechecks candidate and package, runs no candidate tests, signs once, verifies candidate parent and manifest-only change, records old anchor ID without comparison, and atomically updates both refs against observed values. Scratch public-path controls demonstrate refusal of roster substitution, missing preparation, changed executing code, wrong signer, stale reader/package and either stale ref, with neither ref moved on refusal. A disposable anchor demonstrates subsequent protected byte/node loss and new-marker HOLDs; ordinary changes yield notes, unrostered tests notice, and full collection and release outcome refusal remain intact. New protected tests require reviewed admission.
+**C2.** Add an explicit baseline installation mode to `scripts/repin.py` `main` / `run_ceremony`, retaining checked-module loading and off-list-import refusal. An independently reviewed reader record binds the launcher, installer and complete imported execution closure. Before invoking installation with signing credentials, the Maintainer compares that record, the independently approved roster and package against the exact candidate and independently supplies and authorizes the signer fingerprint; the installation entry point checks those inputs and executing bytes before signing or ref updates. Missing, malformed or mismatched independent inputs refuse. Ordinary prior-authentication failure never selects baseline mode or unsigned `--first-run`; valid ordinary signed-prior operation remains intact. Installation rechecks candidate and package, runs no candidate tests, signs once, verifies candidate parent and manifest-only change, records old anchor ID without comparison, and atomically updates both refs against observed values. 
 
-**C3.** Document actual human-invoked commands and their checks, limitations and independent approval inputs. Record passing controls, mutations and omissions. Ordinary and Security code reviews challenge current controls and the new public paths. Machinery archive does not claim the boundary is installed.
+**C2b.** Scratch public-path controls demonstrate refusal of roster substitution, missing preparation, changed executing code, wrong signer, stale reader/package, missing or invalid prior authentication without explicit baseline mode, missing independent inputs and either stale ref, with neither ref moved on refusal. Admission requires all independent inputs. Malicious paths and symlinks, changed or extra extraction files refuse; an installation candidate-test sentinel never executes. A disposable anchor demonstrates subsequent protected byte/node loss and new-marker HOLDs; ordinary changes yield notes, unrostered tests notice, and full collection and release outcome refusal remain intact. New protected tests require reviewed admission.
 
-**C4.** The Maintainer independently authorizes and performs installation for the exact candidate, package and signer after canonical certification. The separate release security run remains required at the eventual clean release commit. This plan does not execute C4.
+**C3.** Document operator commands, checks, limitations and independent inputs. Record controls, mutations and omissions. Ordinary and Security code reviews challenge controls and public paths. Archive does not claim installation.
+
+**C4.** The Maintainer authorizes and performs installation for the exact candidate, package and signer after certification. C4 is separate; release security remains required.
 
 ## Scope delta
 
@@ -45,9 +48,15 @@ Update descriptive operator instructions in `bootstrap/REANCHOR_RUNBOOK.md` and 
 
 ## Verification
 
-Boundary A and B use the canonical Python 3.13 interpreter. Map changed callers and exact nodes before implementation, adding tests to these owning families: `bootstrap/tests/test_gate_manifest.py` (roster, collection, protected and ordinary outcomes); `bootstrap/tests/test_gate_preflight.py` and `bootstrap/tests/test_gate_transition.py` (closure, static derivation and substitution); `bootstrap/tests/test_gate_reanchor.py` (installation and signed-prior checks); `bootstrap/tests/test_reanchor.py`, `bootstrap/tests/test_reanchor_driver_disclosures.py`, `bootstrap/tests/test_repin.py` and `bootstrap/tests/test_repin_ceremony.py` (public ceremony paths); `bootstrap/tests/test_security_check.py` and `bootstrap/tests/test_security_marker.py` (release outcomes). Include newly identified callers and fixtures. Run scoped families in guard-compliant batches, reconcile their union, and record counts and non-passes. Exercise real preparation and installation in disposable repositories with unmutated controls and each C2 refusal; record each result. Run claim, link, snippet, neutrality and prose-integrity gates as applicable to changed documentation.
+Boundary A and B use canonical Python 3.13. Run the following focused owning files with `python -m pytest <file ...>` in guard-compliant batches, reconciling their union; add public-mode tests in the named files:
 
-Boundary B is **wide** for this trust ceremony: on the final clean committed implementation run the mapped families, public paths and standing gates, record SHA, range, interpreter, clean pre/post state, timings, outcomes and omissions, and `Certified by: pending`. A missing required check keeps the work open. No full certification is authorized by this plan; the separate installation item retains it. Boundary C belongs to independent reviewers, who falsify the claims and assess the mapping without running the full suite.
+- `bootstrap/tests/test_repin.py` and `bootstrap/tests/test_repin_ceremony.py`: preparation and installation entry points, checked loading/off-list imports, containment and membership including malicious paths, symlinks and changed or extra extracted files; an installation sentinel proves candidate tests do not run.
+- `bootstrap/tests/test_gate_preflight.py` and `bootstrap/tests/test_gate_transition.py`: independently supplied roster, static derivation, authority closure, ordinary signed-prior success and refusal without valid prior authority or explicit baseline selection.
+- `bootstrap/tests/test_gate_reanchor.py`, `bootstrap/tests/test_reanchor.py` and `bootstrap/tests/test_reanchor_driver_disclosures.py`: reader and executing-code binding, independent signer, stale package and each ref, atomic no-move refusal, manifest-only signed parent, and later signed-prior comparisons. Add missing preparation and input refusal tests here or in the public ceremony family.
+- `bootstrap/tests/test_gate_manifest.py`: protected bytes, nodes and markers, ordinary notes, unrostered notice and full collection; `bootstrap/tests/test_security_check.py` and `bootstrap/tests/test_security_marker.py`: release skip, xfail and xpass refusal.
+
+Use disposable repositories for public preparation, installation and subsequent protected-loss checks; record each mutation and its passing control. Add discovered callers and fixtures to the implementation record. Run `python scripts/claim_check.py <changed-document>` for claims, `python scripts/check_cairn.py` for prose and internal links, `python scripts/link_check.py` for cross references, `python scripts/sync_doc_snippets.py --check` for snippet drift, and `python scripts/quality_gate.py --sub neutrality --sub redundancy` for prose neutrality and duplication; confirm each command's supported arguments before use. Record omissions and non-passes.
+Boundary B is **wide** for this trust ceremony: run the mapping on the final clean commit; record SHA, range, interpreter, pre/post state, timings, outcomes, omissions and `Certified by: pending`. A missing required check keeps the work open. The separate installation item retains certification. Boundary C belongs to independent reviewers, who falsify the claims and assess the mapping without running the full suite.
 
 ## Plan review -- Codex (gpt-6.1-sol) -- 2026-10-29
 
@@ -99,3 +108,15 @@ Assurance path: high-assurance
 **S2 — Blocking: retain extraction and execution-boundary checks in the mapping.** Ordinary F1's mapping must include the new mode's containment/membership and no-candidate-execution promises, not only package substitutions. Name public-path tests for malicious tracked paths/symlinks, changed or extra extracted files, and an installation candidate-test sentinel that must never execute. Preserve existing checked-module loading and off-list-import refusal on any reused boot path. Existing extraction tests establish useful owners, but do not establish the new mode reaches those controls. This asks for file containment and phase separation, not host isolation: hostile collection remains an acknowledged risk. -- `scripts/repin.py`, `extract`, `run_ceremony`; `bootstrap/tests/test_repin.py`, `test_a_tracked_symlink_or_submodule_refuses_before_import`, `test_an_unusable_tracked_path_refuses_and_writes_nothing_outside_the_extraction`, `test_a_loaded_local_module_outside_the_list_refuses`.
 
 **Covered:** claims, public paths, completeness and refusal (lenses 1–4: S1–S2 and committed functions above); reuse, consistency and drift (5–6: extraction, reader record, first-run handling and source contract); lifecycle/scope (7–8: C4 and accepted grouped historical loss); satisfiers (9: concrete cell and test additions in S1–S2). **Not covered / low confidence:** design inspection only; no execution, mutations, signing, ref changes or host-isolation proof. No historic-anchor comparison or broad run is requested. This records the Security plan-review pass; findings require author disposition before implementation.
+
+
+## Response to plan review -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+| Finding | Disposition |
+|---|---|
+| F1 | Accepted: Verification maps each invariant and public path to owning files, planned tests and gate commands. |
+| F2 | Accepted: C1–C2 name the explicit entry points, independent inputs and pre-signing checks. |
+| S1 | Accepted: C1–C2 specify selection, independent approval and refusal, including no fallback from ordinary authentication. |
+| S2 | Accepted: C2 and Verification require public-path containment, checked loading, off-list refusal and a no-candidate-test sentinel. |
+
+Both plan-review passes are recorded, including the Internal Security Review obligation. Their blocking findings are folded into the operative cells; implementation follows the single plan-review round. Host compromise and hostile collection remain limitations, not claims of containment.
