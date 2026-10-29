@@ -1,7 +1,7 @@
 # Plan: Module discovery and first use
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-module-discovery-activation.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Make installed modules discoverable and give each selected module a useful first task.
@@ -303,3 +303,8 @@ S1 accepted. Only the complete unchanged placeholder or an empty slot may be rep
 **Evidence and sweep**: Read the revision, prior findings and response, C2, and the final verification record. The record covers the previously missing final-commit public paths and manual-copy adoption, the named owning families and security lint; certification is pending. The independent probe challenges the prior unknown-identity failure; the roster family exercises the changed placeholder branch. No broader run was made.
 
 **Coverage / gaps**: This ordinary revision pass addresses the changed code and prior ordinary findings. It does not re-review unchanged implementation, exercise every module task, external links, concurrent races or crash recovery; the separate Security Review addresses its own obligation.
+
+
+## Dispositions
+
+Ordinary P1 and P2 and Security S1 were fixed in scope and independently reviewed; no deferred follow-ups remain. The Security review cleared S1 and the ordinary revision review found no new defects. Whole-tree certification remains pending as recorded above.
