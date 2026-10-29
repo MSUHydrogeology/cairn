@@ -1,7 +1,7 @@
 # Re-anchor and repin as human-run commands
 
 **Author**: Codex (gpt-6.1-terra)
-**Status**: accepted
+**Status**: archived
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
