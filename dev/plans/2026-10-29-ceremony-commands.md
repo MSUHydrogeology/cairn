@@ -2,7 +2,7 @@
 
 **Author**: Codex (gpt-6.1-terra)
 **Source proposal**: [dev/proposals/archive/2026-10-29-codex-ceremony-commands.md](../proposals/archive/2026-10-29-codex-ceremony-commands.md)
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Give the Maintainer reusable commands for checking and carrying out trust ceremonies with human approval.
@@ -153,3 +153,17 @@ compromise.
 | F2 | Accepted | C1–C2 specify preparation, independent checks and complete operator workflow. |
 | F3 | Accepted | Verification maps callers, existing nodes, new public-entry tests and consumers. |
 | S2 | Accepted | C1–C3 bind dispositions and require tamper, extraction and recovery controls. |
+
+## Implementation verification -- Codex (gpt-6-luna) -- 2026-10-29
+
+**C1 commit**: `efcc3a46ef7072ec8a832d8259ed2119f79a4bad` (range `b6eae8655a3ede9083f3e59beaa2718fb1ea20d8..efcc3a46ef7072ec8a832d8259ed2119f79a4bad`). The tested C1 bytes are the committed bytes. Canonical interpreter: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13). Before the C1 commit, its three claimed source paths were the only tracked changes; after commit they are clean. The unrelated untracked `.claude/` and `dev/measurement/collision_log.md` were preserved.
+
+**Maintainer direction** (2026-10-29):
+
+> Well, also with the runbook it should just point to scripts
+
+C1 adds and documents the prior-verifier entrypoints, while retaining the working interim ceremony checks. C2 must provide the remaining reusable ordinary and transition ceremony paths before the runbook can become pointer-only; no C2 capability is claimed here.
+
+**Boundary A mode**: bounded for C1 preparation and full-verifier evidence. `bootstrap/tests/test_repin_ceremony.py -q`: 142 passed in 459.17s. This includes direct P CLI comparison for pass and HOLD, independent wrong-fingerprint refusal, P/observer/target tamper refusal, stale disposition refusal, ordinary collection additions, protected marker HOLDs, and stale/malformed/multiple/error capture controls. `bootstrap/tests/test_repin.py::test_a_tracked_symlink_or_submodule_refuses_before_import`, `::test_a_symlinked_target_or_parent_is_not_followed`, `::test_the_apply_step_makes_no_commit_and_stops`: 4 passed. Runbook/page/parser nodes: 8 passed. Additional C1 controls: 10 passed. `py_compile`, `claim_check`, `git diff --check`, `check_cairn.py` (187 Markdown), `link_check.py` (187 Markdown), `sync_doc_snippets.py --check` (423 docs), and neutrality (0 failures) passed.
+
+One earlier normal sandbox run reported 133 passed and 5 failures: four stale wording assertions were corrected without removing their safety semantics; the stage-two fixture failed to supply its dummy passphrase. That stage-two node also failed from an archived pre-C1 `HEAD` under the same sandbox, passed when rerun with host PTY/signing access, and passed within the final 142-test family run. A separate temporary encrypted-key check confirmed local signing capability. This is retained as evidence, not an outstanding C1 failure. No full-suite or `CAIRN_FULL_SUITE` run was made. C2, wide Boundary B on the final SHA, independent code/Security Reviews, and C4 remain open.
