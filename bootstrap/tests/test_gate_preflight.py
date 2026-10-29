@@ -855,18 +855,78 @@ class TestEvidenceStage:
         assert art["manifest"]["saw_home"] != str(Path.home()), (
             "HOME must be redirected away from the real home directory")
 
-    @pytest.mark.parametrize("name", ["PYTEST_ADDOPTS", "PYTEST_PLUGINS",
-                                      "PYTEST_DISABLE_PLUGIN_AUTOLOAD"])
-    def test_a_variable_that_steers_collection_refuses_and_runs_no_producer(
-            self, tmp_path, monkeypatch, name):
+    @pytest.mark.parametrize("value", ["", " ", "-p no:cacheprovider ",
+                                        " -p no:cacheprovider",
+                                        "-p no:cacheprovider --ignore=tests",
+                                        "--ignore=bootstrap/tests"])
+    def test_non_exact_addopts_refuses_before_producer_and_hides_value(
+            self, tmp_path, monkeypatch, value):
         marker = tmp_path / "producer-ran"
         repo = _evidence_repo(
             tmp_path, f"open({str(marker)!r}, 'w').close()\n")
-        monkeypatch.setenv(name, "--ignore=bootstrap/tests")
+        monkeypatch.setenv("PYTEST_ADDOPTS", value)
+        buf = io.StringIO()
+        with pytest.raises(P.PreflightError) as exc:
+            P.gather_evidence("HEAD", repo=repo, out=buf)
+        assert "PYTEST_ADDOPTS" in str(exc.value)
+        if value.strip():
+            assert value.strip() not in str(exc.value)
+        assert not marker.exists(), "the producer must not start"
+
+    @pytest.mark.parametrize("name", ["PYTEST_PLUGINS",
+                                      "PYTEST_DISABLE_PLUGIN_AUTOLOAD"])
+    @pytest.mark.parametrize("value", ["", "plugin_name"])
+    def test_plugin_control_refuses_by_presence_even_with_cache_option(
+            self, tmp_path, monkeypatch, name, value):
+        marker = tmp_path / "producer-ran"
+        repo = _evidence_repo(
+            tmp_path, f"open({str(marker)!r}, 'w').close()\n")
+        monkeypatch.setenv("PYTEST_ADDOPTS", "-p no:cacheprovider")
+        monkeypatch.setenv(name, value)
         with pytest.raises(P.PreflightError, match=name):
             P.gather_evidence("HEAD", repo=repo,
-                              out=__import__("io").StringIO())
+                              out=io.StringIO())
         assert not marker.exists(), "the producer must not start"
+
+    def test_real_pytest_node_ids_match_with_and_without_cache_option(
+            self, tmp_path):
+        tests = tmp_path / "tests"
+        tests.mkdir()
+        (tests / "test_a.py").write_text("def test_first(): pass\n")
+        (tests / "test_b.py").write_text("def test_second(): pass\n")
+        base_env = os.environ.copy()
+        base_env.pop("PYTEST_ADDOPTS", None)
+
+        def collected(addopts=None):
+            env = base_env.copy()
+            if addopts is not None:
+                env["PYTEST_ADDOPTS"] = addopts
+            result = _run(sys.executable, "-m", "pytest", "--collect-only",
+                          "-q", "tests", cwd=tmp_path, env=env)
+            assert result.returncode == 0, result.stderr
+            return sorted(line for line in result.stdout.splitlines()
+                          if "::" in line)
+
+        ordinary = collected()
+        cache_disabled = collected("-p no:cacheprovider")
+        reduced = collected("--ignore=tests/test_b.py")
+        assert ordinary == cache_disabled
+        assert len(ordinary) == 2
+        assert len(reduced) == 1 and reduced != ordinary
+
+    def test_exact_cache_option_is_removed_before_producer_launch(
+            self, tmp_path, monkeypatch):
+        marker = tmp_path / "producer-ran"
+        observed = tmp_path / "observed-addopts"
+        repo = _evidence_repo(
+            tmp_path,
+            f"import json, os, sys; open({str(marker)!r}, 'w').close(); "
+            f"open({str(observed)!r}, 'w').write(repr(os.environ.get('PYTEST_ADDOPTS')))\n"
+            + _STUB_PRODUCER)
+        monkeypatch.setenv("PYTEST_ADDOPTS", "-p no:cacheprovider")
+        P.gather_evidence("HEAD", repo=repo, out=io.StringIO())
+        assert marker.exists(), "the control producer must run"
+        assert observed.read_text() == "None"
 
     def test_the_variable_pytest_sets_for_itself_does_not_refuse(
             self, tmp_path, monkeypatch):
