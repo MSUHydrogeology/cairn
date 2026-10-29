@@ -1,7 +1,7 @@
 # Make the default security dispatcher run the content tripwire
 
 **Author**: Codex (gpt-6.1-sol)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -353,3 +353,9 @@ adopter-executed install surfaces.
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-29
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated**:
+
+> "Okay, that all sounds good! Please scribe my acceptance of all three as revised."
