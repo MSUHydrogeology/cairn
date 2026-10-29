@@ -167,3 +167,27 @@ The satisfier is a folded ordering design plus named public-entry tests: initial
 **Evidence and sweep**: Reviewed the committed implementation diff, reconciliation path, acceptance criteria and Boundary B record. Existing checks cover selected and unselected entries, preservation and lock baselines; the archive probe challenges an identity outside the current catalog. The verification record identifies Python, counts, clean state and non-pass disposition; certification remains pending.
 
 **Coverage / gaps**: This is the ordinary code review only; the separate Security Review remains open. I did not rerun the broad suite, inspect every module task, or independently exercise all public paths. The missing final-commit public checks require a new implementation verification record.
+
+
+## Response to code review -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+P1 accepted: unknown marked identities now stop reconciliation with instructions to save and remove the entry manually, and a public adoption regression checks that planning, inventory and lock bytes remain unchanged. P2 accepted: the final candidate was checked through the required command-line paths below.
+
+## Implementation verification -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+**Candidate tested at d83b0faf; verification remains open for manual-copy execution.**
+
+**Boundary B mode**: wide
+**Certified by**: pending
+
+**Tested range**: `a6c151f1..d83b0faf`; Python 3.13.13 (`/Users/kendal30/conda_envs/lhm/bin/python3.13`). An independent local clone at `d83b0faf` was clean before and after. A detached worktree could not be created under the filesystem permissions.
+
+**Mapped families and consumers**: repeated the 17 named test families in the preceding verification, including security lint: 812 passed and one failed in 64.57 seconds. The failure was `test_security_verification.py::TestNoCapabilityContract::test_a_socket_opening_child_is_excluded_by_admission_not_blocked_at_runtime`, whose loopback bind was denied in the restricted environment; the same node passed (1 passed in 0.05 seconds) with loopback access permitted. No skips. The new public adoption regression passed in the mapped run.
+
+**Public paths**: `bootstrap/scaffold.py` with `--summary`, `--dry-run`, and a real temporary install each succeeded for preset `solo-greenfield`, exact `reflections` plus `dual-review`, empty roster, and `high-rigor-legacy` with `examples-gallery` added and `security-review` removed (12 successful invocations). `--manifest` succeeded with 87 data rows. The mapped adoption tests cover automated later adoption; manual-copy execution was not repeated in this run.
+
+**Gates**: `scripts/check_cairn.py` passed (188 Markdown files), claim checks passed for `bootstrap/BOOTSTRAP.md` and `templates/modules/README.md`, `scripts/link_check.py` passed (188 files), `scripts/sync_doc_snippets.py --check` passed (436 documents), and `scripts/quality_gate.py --sub neutrality` passed (0 failures, 43 informational findings). External links were not probed.
+
+**Mutation ledger**: four separate copies of the candidate, each with one deliberate break, killed by the corresponding test in `bootstrap/tests/test_onboarding_seed_roster.py`: remove selected tasks (`test_selected_modules_have_usable_tasks`); add unselected tasks (`test_unselected_modules_have_no_tasks_or_inventory_rows`); bypass preservation refusal (`test_reinstall_preserves_completion_and_refuses_loss`); corrupt the baseline hash (`test_selected_modules_have_usable_tasks`). The unmutated controls passed in the mapped run.
+
+**Omissions**: no scientific check applies; whole-tree certification remains pending. Manual-copy execution remains an unmet final-commit check; no coverage outside the named mappings and public paths is claimed.
