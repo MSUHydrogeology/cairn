@@ -2094,9 +2094,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_start.add_argument(
         "--handoff-marker",
-        default="Goodnight",
+        default="Handoff",
         help="Commit-subject prefix marking the last handoff. "
-             "Default: 'Goodnight'.",
+             "Default: 'Handoff'.",
     )
     p_start.add_argument(
         "--fallback-commits",

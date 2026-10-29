@@ -92,7 +92,7 @@ def repo(tmp_path: Path) -> Path:
 
 
 def test_session_start_lists_commits_since_handoff(repo, monkeypatch, capsys):
-    _commit(repo, "Goodnight: prior session arc")
+    _commit(repo, "Handoff: prior session arc")
     _commit(repo, "work after the handoff")
     monkeypatch.chdir(repo)
 
@@ -100,15 +100,15 @@ def test_session_start_lists_commits_since_handoff(repo, monkeypatch, capsys):
 
     out = capsys.readouterr().out
     assert rc == 0
-    # The range is anchored at the Goodnight commit, so post-handoff work shows
+    # The range is anchored at the Handoff commit, so post-handoff work shows
     # and the pre-handoff commits do not.
     assert "work after the handoff" in out
     assert "initial commit" not in out
-    assert "commits since last 'Goodnight' handoff" in out
+    assert "commits since last 'Handoff' handoff" in out
 
 
 def test_session_start_ep4_fallback_without_handoff(repo, monkeypatch, capsys):
-    # No "Goodnight" commit exists -> graceful fallback, never a crash.
+    # No "Handoff" commit exists -> graceful fallback, never a crash.
     monkeypatch.chdir(repo)
 
     rc = lifecycle.main(["session-start", "--fallback-commits", "5"])
@@ -116,7 +116,7 @@ def test_session_start_ep4_fallback_without_handoff(repo, monkeypatch, capsys):
     captured = capsys.readouterr()
     assert rc == 0
     assert "initial commit" in captured.out  # the fallback window shows history
-    assert "no 'Goodnight' commit found" in captured.err  # the loud note
+    assert "no 'Handoff' commit found" in captured.err  # the loud note
 
 
 def test_session_start_surfaces_in_flight_threads(repo, monkeypatch, capsys):
