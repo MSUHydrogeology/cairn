@@ -1,7 +1,7 @@
 # Plan: Encode session child output
 
 **Source proposal**: [dev/proposals/archive/2026-10-29-codex-session-child-output-encoding.md](../proposals/archive/2026-10-29-codex-session-child-output-encoding.md)
-**Status**: ready-to-implement
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Make captured session helper output safe to display while keeping multiline reports readable.
@@ -139,3 +139,40 @@ Assurance path: high-assurance
 ## Response to security clearance -- Codex (gpt-6.1-sol) -- 2026-10-29
 
 The Security Review cleared S1 at `78af2940`. Both plan-review obligations are complete; C1 is ready to implement.
+
+
+## Implementation verification -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+**Implementation verified at**: `acaa14848ce733c49171a584705b2dd3572b7c87`
+**Boundary B mode**: wide
+**Certified by**: pending
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` -- Python 3.13.13
+**Range**: implementation commit `acaa1484`; source kernel and shipped twin are byte-identical.
+**Pre-state**: clean detached worktree at `acaa1484`.
+**Post-state**: clean detached worktree at `acaa1484`; no tracked or untracked files changed by the checks.
+
+The mapped owning families passed on the unchanged commit:
+
+| Command | Result | Time |
+|---|---:|---:|
+| `python -m pytest bootstrap/tests/test_session_binding_gate_and_printing_hold.py` | 55 passed | 1.54 s |
+| `python -m pytest bootstrap/tests/test_session_kernel.py` | 18 passed | 0.04 s |
+| `python -m pytest bootstrap/tests/test_session_routines.py` | 26 passed | 1.54 s |
+| `python -m pytest bootstrap/tests/test_session_failsafe.py` | 28 passed | 1.71 s |
+| `python -m pytest bootstrap/tests/test_session_binding_untracked.py` | 48 passed | 6.08 s |
+
+The real-child controls cover `session-start` through the binding/untracked family and handoff through the routines family. They exercise both exit branches and malformed bytes through each helper; successful stderr is suppressed, nonzero stderr is reported, LF remains readable, and CR, CRLF's CR, terminal controls, C1, bidi and invisible characters stay encoded. The parent message after each child remains distinct.
+
+**Falsification ledger** (each mutant used a fresh detached worktree of the implementation commit; the unmutated control above passed):
+
+| Mutant | Probe | Result |
+|---|---|---|
+| `_prune_intents` raw stdout write | `python -m pytest bootstrap/tests/test_session_binding_gate_and_printing_hold.py -k 'child_streams and prune'` | Killed: 2 failed (zero and nonzero return) |
+| `_surface_intents` raw stdout write | `python -m pytest bootstrap/tests/test_session_binding_gate_and_printing_hold.py -k 'child_streams and surface'` | Killed: 2 failed (zero and nonzero return) |
+| `_run_evolution_infer` raw stdout write | `python -m pytest bootstrap/tests/test_session_binding_gate_and_printing_hold.py -k 'child_streams and evolution'` | Killed: 2 failed (zero and nonzero return) |
+
+Each mutation replaced that helper's encoded stdout write with a direct decoded write. The real-child test failed on the exposed characters and missing parent terminator. No mutant was equivalent or survived.
+
+Standing gates passed on the same clean worktree: `python scripts/check_cairn.py` (187 Markdown files; 83 external links not probed), `python scripts/link_check.py` (187 files; 84 external links not probed), `python scripts/sync_doc_snippets.py --check` (433 documents; no drift), and `python scripts/quality_gate.py --sub neutrality` (0 failures, 43 informational findings). After this record was written, `python scripts/claim_check.py dev/plans/2026-10-29-session-child-output-encoding.md` passed with no claim-check flags.
+
+The plan's exclusions remain: `test_session_writes_contained.py` and `test_session_start_drain_rules.py` do not own output capture or encoding. No full-suite certification, protected-test re-anchor ceremony, historical anchor comparison, external-link probing, or independent code review is claimed. The protected-test obligation remains for the v0.6 re-anchor.
