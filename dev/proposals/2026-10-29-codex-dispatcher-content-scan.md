@@ -187,3 +187,65 @@ public path, completeness, failure behavior, drift, lifecycle and scope. No
 scientific result is involved. No implementation was run or approved; runtime,
 upgrade and adversarial binding evidence remain plan/code work. This usual
 review does not discharge the separate Security Review.
+
+## Review -- Codex (gpt-6.1-sol, Security Review) -- 2026-10-29
+
+```
+Reviewed commit: b51e6864a6907e307bc79c26f542470cbe820f9f
+Target: opening proposal; dispatcher/content-scanner security boundary
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the installed tripwire can supply useful offline evidence while retaining the trusted-checkout limit; doing nothing leaves content outside the declared capability set -- `templates/modules/default-on/run_security_verification.py::_DECLARED_CAPABILITY_MODULES`, `templates/modules/team-gated/content_scan_runner.py`.
+2. **Best alternative.** A dispatcher output mode on the existing runner avoids another executable; use an adapter only if it better preserves the direct contract, with equivalent dependency binding -- `templates/modules/team-gated/content_scan_runner.py::main`, `templates/modules/default-on/security-verification.md`, admission rule.
+3. **What would show it wrong.** A clean leg after altered scanner apparatus, a hidden finding, or an empty audited set would defeat admission; inability to maintain reviewed policy would make the design impractical -- proposal Evidence / verification plan; `templates/modules/team-gated/content_scan_runner.py::audit`.
+
+The proposal addresses the central security problem explicitly: the parent must
+bind the dependency group, not merely a wrapper that imports unchecked code.
+The existing runner executes `content_scan.py` in-process and reads roots,
+residuals and allowlist siblings. The present registry cannot represent that
+group. Requiring a reviewed schema decision before implementation, rather than
+admitting the adapter under the current one-policy model, is proportionate --
+`templates/modules/team-gated/content_scan_runner.py::_load_content_scan`,
+`templates/modules/default-on/run_security_verification.py::RegistryEntry`.
+
+Recommend three concrete safeguards in the plan. First, bind every executable
+dependency before import or launch; apply the existing ancestor-symlink and
+containment checks to every member. Specify how legitimate policy edits become
+reviewed authority, including upgrade and lock reconciliation. Do not silently
+reuse the API/web living-state exception: it admits specific destinations with
+capability-specific compensating controls, not arbitrary scanner inputs --
+`templates/modules/default-on/run_security_verification.py::_bind_policy`,
+`templates/modules/default-on/security-verification.md`, binding-mode schema.
+
+Second, emit exactly one bounded child document. The runner currently prints
+progress and human diagnostics; its ordinary stdout cannot pass the dispatcher's
+strict JSON parser. Keep those diagnostics out of child stdout and preserve the
+parent's timeout, byte cap, exit/result agreement and terminal escaping. Define
+whether accepted residual flags still yield `FINDINGS`: the current runner
+returns exit 1 for any remaining flag, even when `new_flags` is empty --
+`templates/modules/default-on/run_security_verification.py::_evaluate_capability`,
+`templates/modules/team-gated/content_scan_runner.py::run_content_scan`.
+
+Third, describe coverage precisely: tracked Markdown/text under configured roots,
+with the documented archive/cache exclusions; untracked files are not included.
+Retain the bare-URL discussion-prose blind spot and the inability to authenticate
+a checkout controlling its own lock records. Test the real installed command,
+including opt-out and each bound-input failure, before registry admission --
+`templates/modules/team-gated/content_scan_runner.py::audited_text_files`,
+`bootstrap/tests/test_security_verification.py`.
+
+**Coverage:** Read committed proposal, registry selection/binding/invocation,
+scanner suppression and output paths, install mapping, admission guidance and
+real-install test owners for claims, completeness, failure behavior, drift,
+lifecycle, scope and satisfiers. No historical trust reconciliation, runtime
+implementation certification, adversarial execution or scientific result was
+reviewed. Safeguards above refine the proposal's existing required plan work;
+this pass clears the proposal Security Review, not future registry admission.
