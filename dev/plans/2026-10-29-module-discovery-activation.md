@@ -251,3 +251,31 @@ S1 accepted. Only the complete unchanged placeholder or an empty slot may be rep
 **Mutation ledger**: in four separate candidate copies, the mapped checks killed each break: removed selected tasks (`test_selected_modules_have_usable_tasks`), added unselected tasks (`test_unselected_modules_have_no_tasks_or_inventory_rows`), bypassed completed-work refusal (`test_reinstall_preserves_completion_and_refuses_loss`), and corrupted the baseline hash (`test_selected_modules_have_usable_tasks`). Their unmutated controls passed in the mapped run.
 
 **Omissions**: no scientific check applies. Whole-tree certification remains pending; no coverage outside the named mappings and public paths is claimed.
+
+
+## Code review -- Codex Security (gpt-6.1-sol) -- 2026-10-29
+
+**Reviewed commit**: 8ca130c68381a5c399357f41694d762ae3cd5a2f
+**Target**: S1 repair and implementation evidence at 54783c0f.
+**Prior findings**: Security S1.
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none; S1 cleared.
+**Bounding**: ACCEPTED for the module-discovery Security obligation.
+
+**Foundations**:
+
+1. **Does it do what it claims?** The repaired branch refuses populated placeholders before generated writes, preserving all three artifacts; pristine placeholders still initialize successfully — `bootstrap/_scaffold/install.py:1451` and public probes below.
+2. **Best alternative.** Exact pristine-placeholder recognition with conservative manual reconciliation is the smallest safe repair; it retains the shared reconciliation path and accepted preservation contract — `bootstrap/_scaffold/install.py:1451`.
+3. **What would show it wrong?** Silent loss on the previously breaking input, or refusal of the pristine control, would defeat the repair — falsification ledger below.
+
+**Falsification ledger** — fresh independent local clone detached at 8ca130c6; Python 3.13.13. Each public probe created its own temporary project and called the installer through `bootstrap.scaffold.main`:
+
+| Challenge | Result |
+|---|---|
+| Install explicit empty roster; retain the shipped placeholder and append a completed personal research task; repeat selecting dual-review | Initial exit 0, repeat exit 2, manual reconciliation guidance present; planning, inventory and lock byte snapshots all unchanged. |
+| Same initial install and selection change with the untouched shipped placeholder | Both calls exit 0; selected dual-review task appears. |
+
+**Evidence and sweep**: Read the committed repair and its public regression alongside the appended response and final-candidate verification. The exact comparison removes the substring-based deletion authority; the refusal occurs before inventory or planning writes. The latest record reports 814 mapped passes under Python 3.13.13, including security lint and the new regression, with no skips, and records public and manual-copy paths. Those author measurements were inspected rather than rerun. No new scope or mechanism is introduced; no additional defects were found in this repair.
+
+**Coverage / gaps**: This pass clears the previously open Security S1 obligation only, relying on the preceding Security pass for unchanged paths. No broad suite, old-anchor check, concurrent filesystem-race probe or full module-task audit was run. Whole-tree certification remains pending and ordinary review remains separate.
