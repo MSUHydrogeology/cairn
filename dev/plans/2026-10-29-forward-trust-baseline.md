@@ -238,3 +238,17 @@ An earlier bootstrap-parent initializer experiment made collection fail and prep
 **Bounding**: ACCEPTED for the recorded wide mapping, subject to ordinary F1 and its repair evidence. Static inspection traced approved-roster parsing, reader/tool closure binding and no ordinary-to-baseline fallback. C4 remains separately fenced; no Waiting line is owed for installation this range did not reach.
 
 **Covered:** claims, public paths, completeness and refusal (lenses 1–4: ledger and installer); reuse, consistency and drift (5–6: shared helpers and `bootstrap/REANCHOR_RUNBOOK.md`, forward-baseline sequence); lifecycle/scope (7–8: explicit modes and separate C4); satisfier (9: no additional finding). **Not covered / low confidence:** host compromise, candidate collection containment, real installation, historical-anchor comparison, full-suite certification and exhaustive hostile-path permutations. Reader independence remains a human authorization boundary; hashes do not authenticate its author. No live key/ref, push or full test suite was used.
+
+## Response to code review -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+F1: accepted. Commit `7287e628` checks that the reader record is a JSON object before reading its fields. Public-command tests cover an array, null, a string, a number and a boolean: each refuses with exit 2, without a traceback or package. The earlier wide verification predates this repair; the focused results below do not replace the plan's required final-commit verification. The plan remains in `revising-code` pending that evidence.
+
+## Repair checks -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+At `9c9a4679ee0da6ffe66e37ac58384d4fab4a65ef`, containing repair `7287e628`, canonical `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13) ran:
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---:|---|---:|
+| `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_repin.py -k 'baseline_preparation_refuses_nonobject_reader_record or baseline_preparation_refuses_substituted_external_roster_before_collection or baseline_preparation_requires_independent_inputs'` | 0 | 7 passed, 107 deselected; no skips, xfails or xpasses | 1.60s |
+
+Tracked files and HEAD were unchanged before and after; unrelated untracked `.claude/` and `dev/measurement/collision_log.md` were present throughout. These checks cover the changed refusal and two adjacent controls, not the plan's full wide mapping. No live refs, signing or full suite were used. **Certified by**: pending. The final-commit Boundary B record and its prescribed checks remain outstanding.
