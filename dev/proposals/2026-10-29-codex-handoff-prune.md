@@ -170,3 +170,58 @@ satisfiers.
 was run in handoff or prune mode, and no test suite was run. Security Review
 remains separate. The plan must resolve exact test nodes, shared-helper design,
 install consumers and the doctrine-evolution gate before implementation.
+
+
+## Review -- Codex gpt-6.1-sol Security -- 2026-10-29
+
+```
+Reviewed commit: 6aac69c8fdddc24af6ddb6546cca05a2555a7c3a
+Target: opening proposal, security preflight and usual review
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Preparing capture before deletion and leaving pruning to the user implements the requested responsibility boundary without removing existing refusals -- `dev/PLANNING.md`, “Handoff skill hands the prune to the user”; `tools/session.py::_do_full_handoff`.
+2. **Best alternative.** Reuse the existing preview, intent-survey and prompt helpers in a preparation path. A readiness token would expire immediately as evidence of quiet, and prose alone cannot expose prompts beyond the current dry-run return -- `tools/session.py::_do_full_handoff`; `templates/modules/team-gated/_intent/record_io.py::prune_released_pairs`.
+3. **What would show it wrong.** Preparation invoking either prune helper, an agent executing the destructive command, or a claim that a ledger scan proves no live appender would defeat the boundary -- proposal “Tests required” and S1–S5; `.agents/skills/session-end/SKILL.md`, “Run the full handoff last”.
+
+The useful security property is responsibility made explicit: the agent prepares
+and records the handoff, while the user runs a guarded destructive operation.
+The proposal does not turn the owner marker into authorization or the handoff
+lock into protection against ordinary claim/release writers. It explicitly
+retains the residual race and requires quiet at the user's later run. Giving a
+conditional command when quiet cannot be established is honest provided the
+condition remains attached to it, as the proposed contract requires.
+
+I opened the actual trigger: `cmd_session_end` enters `_do_full_handoff` only
+for the handoff path; that path previews, returns early for dry-run, then checks
+the marker and obtains `HandoffLock` before pruning. The capture prompt and
+rate-limit checker currently occur after pruning. The intent rewrite's
+`prune_released_pairs` documents and implements recent-claim refusal and a
+pre-replace change check; these narrow the appender race rather than close it.
+Preserving these safeguards and adding preparation does not require pretending
+that earlier inspection can serialize the later user action.
+
+S2 candidly identifies future mutations rather than claiming execution. The
+plan must map real CLI tests to both copies, preserve executable resolution and
+terminal encoding, and demonstrate preparation leaves both prune targets
+unchanged. This pass accepts the design; it does not attest unbuilt checks.
+
+**Covered**: claims, completeness and fail-closed behavior (#1, #3, #4):
+`tools/session.py::_do_full_handoff` and intent `record_io.py::prune_released_pairs`;
+production-path evidence (#2): proposed temporary-repository CLI checks and
+`bootstrap/tests/test_session_failsafe.py::test_handoff_without_marker_refuses_nonblocking`;
+consistency, drift and placement (#5–#7): canonical skill step 1, roadmap request
+and proposed doctrine alignment; scope and satisfiers (#8, #9): preserved
+user-run pruning, preparation-only mutation boundary and stated falsifiers.
+
+**Not covered / low confidence**: no implementation, CLI execution, mutation or
+suite run; no proof of future session quiet is possible from this read. Existing
+race behavior is retained, not independently re-certified. Plan and code
+Security Reviews must inspect the eventual subprocess, path and test changes.
