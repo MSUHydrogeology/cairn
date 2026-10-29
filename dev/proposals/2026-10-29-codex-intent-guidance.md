@@ -147,3 +147,61 @@ module homes, scaffold install mapping, identity resolver, conflict decision,
 and CLI diagnostic entry point. No implementation exists to test; the reported
 v0.6 incident was not independently reproduced. No hook installation, behavioral
 mutation, full suite, or scientific validation was performed.
+
+
+## Review -- Codex (GPT-6) Security -- 2026-10-29
+
+Reviewed commit: cf0f2a1d
+Target: opening proposal and usual review's proposed doctrine correction
+Prior findings: IG1 and IG2 remain author obligations
+Assurance path: standard (insufficient for the proposed doctrine scope)
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** Correcting guidance preserves coordination, but excluding doctrine leaves contradictory authority over refusals; a doc-only reconciliation is justified, not a new identity mechanism -- `doctrine/coordination.md`, “Enforcing the coordination check”; `tools/_intent/conflict.py::_read_enforce_mode`.
+2. **Best alternative.** Describe the existing conditional block default, keep session identity distinct, and update the installed source alongside local guidance; no extra hook or permanent override is needed -- `templates/modules/team-gated/coordination-tiers.md`, “Enforce mode”; `tools/_intent/identity.py::resolve_agent_identity`.
+3. **What would show it wrong.** A shared override hides a competing session when tokens exist, while an override without a harness token cannot make blocking effective -- `tools/_intent/conflict.py::other_session_overlaps`, `_precommit_check_impl`; `tools/_intent/identity.py::resolve_session_token`.
+
+The useful outcome is a short explanation a contributor can follow without
+weakening coordination or changing executable behavior. This pass agrees with
+IG1 and IG2; it does not clear the Security obligation for an unwritten revision.
+
+**IGS1 -- blocking: account for the governing correction before approval.**
+The current security-preflight N/A and standard declaration do not cover the
+doctrine correction recommended by IG1. The proposal template makes doctrine
+high-assurance and requires its Security treatment. Append the full revised
+contract, review declarations, and five preflight answers, scoped to prose
+accuracy rather than inventing new executable controls. Also identify how the
+doctrine-evolution gate is met: `doctrine/rationale.md`, “How the doctrine evolves
+under evidence”, forbids deriving doctrine from one incident without Maintainer
+high-risk classification. Evidence that this restores an already decided
+default, or recorded recurrence/synthesis, can distinguish correction from a
+new incident-driven rule; do not assume this review supplies that authority.
+
+**IGS2 -- blocking: do not describe identity as authentication.**
+Make the acceptance check require consistency across claim, commit, post-commit
+auto-release, and any manual release environments, while preserving distinct
+sibling identities. The hook inherits the committing environment; its captured
+interpreter does not retain an earlier command's override (`tools/_intent/hooks.py`,
+post-commit block). With a token, own-claim recognition compares agent strings,
+not token equality; a shared override can therefore suppress a real collision.
+Without a token, all overlaps warn and enforcement is withheld. The safe
+satisfier is the IG2 synthetic example plus an explicit statement that these
+are cooperative coordination labels, not proof against an actor controlling
+environment or log contents. No new authentication feature is requested.
+
+**IGS3 -- non-blocking: disclose one executable-help contradiction.**
+`tools/_intent/cli.py` still calls install-precommit “warn-by-default”. Include
+its disposition in the revision: correct help text with the appropriate scoped
+verification if admitted, or explicitly leave that known gap for Maintainer
+disposition. Do not silently claim all current guidance agrees.
+
+**Coverage:** read committed doctrine, both module homes, identity resolution,
+conflict defaults/exemptions/TTL, and hook environment inheritance. No hooks
+installed, raw session identifiers disclosed, incident reproduced, behavioral
+mutation or full suite run; no scientific result touched. Final wording and
+security preflight remain unreviewed.
