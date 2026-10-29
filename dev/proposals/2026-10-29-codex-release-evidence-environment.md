@@ -1,7 +1,7 @@
 # Reconcile the release gate and evidence environment
 
 **Author**: Codex (gpt-6.1-sol)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -58,3 +58,59 @@ N/A: no scientific assumption or result touched.
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+
+## Review -- GPT-6.1 Sol -- 2026-10-29
+
+```
+Reviewed commit: 9eff8888d1f0c7f20d2dde812f9f6e542adda2a9
+Target: opening proposal
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: the release command manufactures the value the evidence boundary refuses; the literal exception repairs that conflict without admitting selectors -- `bootstrap/security_check.py:1007-1013`, `bootstrap/tests/_gate_preflight.py:1920-1929`.
+2. **Best alternative.** Put the option in the release suite and quality-gate pytest argument lists, retaining unconditional refusal. This avoids an environment exception but changes two launchers and propagation expectations; the proposed literal exception is smaller -- `bootstrap/security_check.py:1034-1037`, `scripts/quality_gate.py:158-175`.
+3. **What would show it wrong.** A changed collected node set under the admitted value, or producer execution after an appended selector, defeats the safety claim; compare node identities, not counts -- `bootstrap/tests/_gate_manifest.py:498-523`, proposal Examples / smoke checks.
+
+The strongest case is a narrow repair of a real release blocker. Doing nothing
+preserves a refusal but leaves the release command unable to complete under
+its own environment; the recorded waiver covers only 0.5.0
+(`dev/PLANNING.md:125`). The trigger is the Maintainer running
+`python bootstrap/security_check.py`, whose suite and quality-gate subprocesses
+receive `_release_child_env`; `_run_order_independence` copies that environment
+to pytest. This is not an automatic release check.
+
+**R1 — blocking: supply the security preflight's failing experiment.** S2
+explicitly says its mutation has not been run, whereas
+`dev/proposals/_template.md` requires confirming the failing probe was run.
+The recorded unset/exact conflict proves the defect, not that the selector
+refusal still stops execution. Before Decision, record a scoped control and
+an appended-selector refusal through `gather_evidence`, including the
+producer-not-started observation. Existing
+`bootstrap/tests/test_gate_preflight.py::TestEvidenceStage::test_a_variable_that_steers_collection_refuses_and_runs_no_producer`
+shows an available marker-based instrument. The future implementation's
+exception-specific mutation remains required; no whole-suite run is needed
+to close this proposal finding.
+
+**Non-blocking simplification.** The producer already supplies
+`-p no:cacheprovider` explicitly in `_gate_manifest._collect`. Consider removing
+the admitted literal from its child environment after validation rather than
+forwarding it redundantly (`bootstrap/tests/_gate_manifest.py:518-522`). This
+preserves every proposed outcome and confines compatibility handling to the
+boundary; it does not justify accepting any additional value.
+
+**Covered**: claims and production path (launch sites above); completeness and
+fail-closed behavior (Proposal and R1); consistency and drift
+(`dev/PLANNING.md:125`, `_gate_manifest._collect`); lifecycle placement
+(Security preflight and pinning requirement); domain/scope (no scientific
+change; literal exception only); satisfier (R1's recorded probe).
+**Not covered / low confidence**: no independent execution or complete release
+run; no implementation exists to assess. This usual pass does not clear the
+separate Security Review obligation.
