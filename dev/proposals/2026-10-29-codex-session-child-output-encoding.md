@@ -1,7 +1,7 @@
 # Encode session child output before it reaches the terminal
 
 **Author**: Codex (Strategy, gpt-6.1-sol)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -363,3 +363,9 @@ preflight and assurance declaration. No scientific premise applies. No shipped
 bytes changed, full suite ran, protected-test ceremony ran, or historical trust
 root was reconciled. This clears this proposal's Security Review obligation;
 implementation and plan security reviews remain separately owed.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-29
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated**:
+
+> "Okay, that all sounds good! Please scribe my acceptance of all three as revised."
