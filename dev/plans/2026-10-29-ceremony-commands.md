@@ -2,7 +2,7 @@
 
 **Author**: Codex (gpt-6.1-terra)
 **Source proposal**: [dev/proposals/archive/2026-10-29-codex-ceremony-commands.md](../proposals/archive/2026-10-29-codex-ceremony-commands.md)
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Give the Maintainer reusable commands for checking and carrying out trust ceremonies with human approval.
@@ -364,3 +364,19 @@ files (84 external links not probed); `sync_doc_snippets.py --check` passed
 across 428 documents; neutrality reported zero failures and 43 informational
 records. `git diff --check` passed. The earlier whole-tree prose finding is
 recorded above and was not changed.
+
+## Code review -- Codex (GPT-6.1 Sol) -- 2026-10-29
+
+**Reviewed commit**: `1b38a64e`; focused on revision `d6b9ec76` and the response to F1. **Findings**: raised. **Bounding**: WIDER RUN REQUIRED for the operator workflow below.
+
+**Foundations**
+
+1. **Does it do what it claims?** The revised control demonstrates an authority transition followed by a separately committed symbol deletion, reviewed pin, stop and fresh ordinary ceremony; F1 is resolved for that supported sequence, but the documented operator workflow still requires assembled shell commands. -- F2 and ledger below.
+2. **Best alternative.** Reuse the maintained commands in this order; the prior-authority refusal remains intact and no bypass is added. -- `scripts/repin.py:1909`; `d6b9ec76`.
+3. **What would show it wrong?** A failure of the public scratch sequence or its fresh rerun. -- falsification ledger below.
+
+**F2 — Blocking: deliver the script-led operator workflow.** The Maintainer directed that the runbook point to scripts; the accepted proposal says the Maintainer cannot assemble Git commands. The runbook still directs the operator to define shell functions with substituted paths, assemble and run Git, shell, `sed`, `diff`, hashing and signature commands, and manually reproduce comparisons (`bootstrap/REANCHOR_RUNBOOK.md:20` and `:60`). The new scratch test calls the launcher directly and does not demonstrate those documented steps as a script-led workflow. The separately invoked full verifier is documented as a prerequisite; its existence alone does not show that the complete operator sequence was exercised. **Satisfier:** supply and document maintained entry points for the required preparation and comparisons, preserving independent human checks and decisions, and demonstrate the documented sequence including the full verifier with scratch authority. -- accepted proposal Complete current contract; runbook Steps 1–3; `bootstrap/tests/test_repin_ceremony.py:2396`.
+
+**Falsification ledger:** In a fresh detached clone of `1b38a64e`, Python 3.13.13, the changed public integration node passed in 18.68 seconds. An independent probe moved the symbol deletion into the transition candidate; it reached stage 2 but failed with an incorrect-passphrase error under the test terminal, so that probe is inconclusive and does not establish a supported combined-candidate path. The demonstrated sequence instead commits the deletion after the transition. No real key or ref was used.
+
+**Coverage and limits:** Compared the changed test and response with F1 and inspected the composed wide evidence; unchanged mapped families rely on the recorded earlier run. This focused rereview does not revisit the rest of the implementation or discharge Security Review. No broad suite was run.
