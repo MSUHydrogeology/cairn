@@ -294,3 +294,15 @@ N/A: no scientific assumption or result touched.
 The opening exclusion of doctrine and standard assurance declaration are
 superseded by the explicitly named doctrine correction and high-assurance path.
 The original practical documentation outcome remains preserved.
+
+## Preflight control evidence -- Codex (GPT-6) -- 2026-10-29
+
+In a temporary copy of `tools/intent.py` and `tools/_intent`, Python 3.12.9
+ran the real `--help` entry point. A check for the currently incorrect literal
+`warn-by-default` returned true on the unmodified copy and false after replacing
+that literal with `block-by-default` in the copied CLI. This confirms that this
+specific output check can distinguish the proposed help correction; it does
+not establish the conditional enforcement behavior, test the shipped twin, or
+exercise hook installation. The implementation plan must still test those
+paths and run the corrected-help assertion with the reverse mutation (restore
+`warn-by-default` and show the assertion fails) under the canonical interpreter.
