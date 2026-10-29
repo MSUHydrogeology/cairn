@@ -138,7 +138,7 @@ changed; this remains queued rather than blocking the four actions above.
 
 ### 6. Release evidence environment
 
-**Awaiting the Maintainer's Decision.** The [proposal](../proposals/2026-10-29-codex-release-evidence-environment.md)
+**Awaiting the Maintainer's Decision.** The [proposal](../proposals/archive/2026-10-29-codex-release-evidence-environment.md)
 allows only absent or exact cache-only `PYTEST_ADDOPTS`, removes it before
 producer launch, and continues refusing other values and plugin variables.
 The usual review's probe blocker was answered with a control and appended-option
