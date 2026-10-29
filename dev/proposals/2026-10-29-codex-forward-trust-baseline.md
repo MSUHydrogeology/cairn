@@ -70,3 +70,27 @@ Withdraw or repair if real installation permits roster substitution, a protected
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Author revision -- Codex (plan coordinator) -- 2026-10-29
+
+The Maintainer clarified the sequencing after this proposal opened:
+
+> They can each build the machinery, the new baseline does not need to be part of their plans. It can be a work board item for v0.6.
+
+This replaces the opening's instruction that installation precede affected-plan archival. The current proposed contract follows; it remains subject to review and a Maintainer Decision.
+
+### Current contract
+
+Amend the affected plans so they can finish their reviewed machinery, verification and independent reviews and archive without installing the new baseline. Record the baseline installation separately as a v0.6 work-board item, before release readiness. Installation remains Maintainer-only and separately authorized for the exact candidate, package and signer; no ref move or push is authorized here. Existing protections continue until a reviewed replacement is installed.
+
+Replace initial historical comparison against the old anchor with a separately reviewed no-signed-predecessor baseline mechanism. Reuse existing preparation and re-anchor commands where suitable. Proposed preparation extracts a clean committed candidate from Git objects, checks containment and membership, collects without signing credentials, binds the approved roster and independently derives static manifest fields. A package binds candidate, manifest, collection, interpreter and tool hashes and an independent reader record. Proposed installation rechecks the package and candidate, runs no candidate tests, signs once, checks the signed commit's parent and manifest-only change, and atomically updates branch and anchor against observed values. Record the old anchor ID without assessing intervening changes against it. This mechanism is a proposal, not an approved design.
+
+Retain exact approved roster membership, protected scripts, modules and fixtures, authority closure, independent derivation, protected-byte and node-loss and new-marker HOLDs, ordinary notes, unrostered-test notice, full collection and actual release skip/xfail/xpass refusal. After installation, the signed baseline supplies trusted code and roster membership for later comparisons. New protected tests require reviewed admission. Signing identifies approved bytes; it does not prove them harmless. Candidate collection can influence execution; a compromised host or overlooked malicious behavior remains a risk.
+
+The grouped scope loss requiring Maintainer allowance includes initial P443-to-release protected-drift verification, old-P/E7 comparison, initial compatibility transitions and each affected plan's requirement to complete its installation or frozen-file ceremony before archive. The 83 prior HOLD reports remain unresolved historical evidence, not cleared findings. No roster reclassification or pilot extraction is included. Identify and amend each affected plan's actual fence rather than adding the new ceremony to every plan. Preserve its other accepted outcomes and independent reviews.
+
+Review the current controls and proposed mechanism through ordinary and Security passes. Map affected consumers and tests, exercise the public preparation and installation paths in scratch repositories and challenge roster substitution, stale packages, signer mismatch, protected loss, ordinary notes and future signed-prior checks. Record mutation controls and omissions; run applicable documentation gates and the required canonical certification before actual re-anchor. The work-board item must retain that installation and certification dependency without holding machinery-plan archival.
+
+### Withdrawn / superseded commitments
+
+The opening's requirement that installation precede affected-plan archival is withdrawn to follow the Maintainer's clarification. Installation remains a separate v0.6 work-board item, with release readiness dependent on its completion.
