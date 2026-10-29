@@ -2,7 +2,7 @@
 
 **Author**: Codex (gpt-6.1-terra)
 **Source proposal**: [dev/proposals/archive/2026-10-29-codex-ceremony-commands.md](../proposals/archive/2026-10-29-codex-ceremony-commands.md)
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Give the Maintainer reusable commands for checking and carrying out trust ceremonies with human approval.
@@ -232,3 +232,60 @@ The tests and independent code and Security Reviews remain required; a scratch
 anchor is optional as a means, not a real trust root. Historical bridge-specific
 comparisons and authorizations are not required to archive. No actual signing,
 ref installation or push is authorized by this amendment.
+
+## Implementation verification -- Codex -- 2026-10-29
+
+**Boundary B mode**: wide. **Certified by**: pending.
+**Tested commit**: `e0908bb39661ab0312e168ee056d54edebdd17df`.
+**Reviewed implementation range**: `d866caef605e1dc7ae7a3b6a14a9269909513d67..e0908bb39661ab0312e168ee056d54edebdd17df`.
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13.
+
+The run used a fresh detached clone, clean in tracked and untracked state before
+and after, with HEAD unchanged at the tested SHA. Only the clone-local
+`refs/cairn/gate-anchor` pointed to that SHA as disposable authority; fixture
+ceremonies used their own temporary keys and repositories. No live reference,
+key, baseline or push was changed.
+
+**Mapped command** (host signing and terminal access, bytecode writing disabled):
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest \
+  bootstrap/tests/test_gate_manifest.py bootstrap/tests/test_gate_transition.py \
+  bootstrap/tests/test_gate_preflight.py bootstrap/tests/test_gate_reanchor.py \
+  bootstrap/tests/test_ceremony_review_report.py bootstrap/tests/test_reanchor.py \
+  bootstrap/tests/test_reanchor_driver_disclosures.py bootstrap/tests/test_repin.py \
+  bootstrap/tests/test_repin_ceremony.py bootstrap/tests/test_oracle_activation.py \
+  bootstrap/tests/test_security_check.py bootstrap/tests/test_security_marker.py \
+  -q --tb=short
+```
+
+Result: **1,110 passed in 1,000.94 seconds**, with no skips, xfails or xpasses.
+Three warnings were `stevedore` deprecations for `verify_requirements`. This
+includes the ordinary scratch ceremony, the transition packet controls and the
+two-stage disposable-anchor transition at
+`bootstrap/tests/test_repin_ceremony.py::test_a_transition_packet_drives_both_stages_against_a_disposable_signed_anchor`.
+The earlier duplicate run was stopped for coordination after 135 passes and is
+not counted; the combined run above covers the complete mapped set. No full
+suite or certification run was made.
+
+The claim checker passed on `AGENTS.md`, `bootstrap/REANCHOR_RUNBOOK.md` and
+the trust-boundary plan; after this record was added it also passed on this
+plan. The file-scoped `check_cairn.py` check passed on this plan and the other
+three documents. Whole-tree
+`check_cairn.py` reported one unrelated issue at
+`dev/proposals/2026-10-29-codex-dispatcher-content-scan.md:100`, where an
+imperative-override phrase in an example was matched. That finding was not
+changed. `link_check.py` passed across 189 Markdown files (84 external links
+were not probed); `sync_doc_snippets.py --check` passed across 428 documents;
+neutrality reported zero failures and 43 informational records.
+
+For this appended record, `claim_check.py` reported no flags and file-scoped
+`check_cairn.py` reported no issues. `git diff --check` passed before commit.
+
+**Remaining scope and omissions**: the Maintainer's appended amendment defers
+historical-anchor reconciliation, actual bridge-specific authorizations and
+comparisons, disposition of the 83 candidate reports, and actual installation
+to the v0.6 board item. No live ceremony, real signing key, live ref movement,
+push, full-suite certification or claim of an installed trust boundary is
+included here. Independent code and Security Reviews remain owed before the
+plan can advance; C4 remains fenced and has not been performed.
