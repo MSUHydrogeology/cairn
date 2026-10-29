@@ -1,7 +1,7 @@
 # Plan: Forward trust baseline machinery
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-forward-trust-baseline.md
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Build and test a reusable way to establish a reviewed starting point for future trust checks.
@@ -179,3 +179,28 @@ PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytes
 The 109 `test_repin.py` nodes passed (119.93s). The ceremony family had 151 nodes: 31 passed in the first mapped attempt, six scratch signing cases initially failed because the regular sandbox could not deliver the PTY passphrase to `ssh-keygen`, then all six passed under approved host execution (one representative node and the other five with `--lf`); the remaining 114 passed with the first 37 nodes deselected (404.08s). The eight remaining mapped files passed 766 nodes (305.07s). Total mapped outcomes: **1,026 passed**. The first sandbox attempt was interrupted after the six diagnosed failures; no unresolved test failure remains. The eight-file run emitted three existing `stevedore` deprecation warnings. No live key, live ref, push, historical-anchor comparison, candidate signing, or full suite was used.
 
 The reader-input and runbook change also passed Python 3.13 `py_compile`; its focused public-path and credential-scrub nodes passed 2/2. `claim_check.py`, `check_cairn.py`, `link_check.py`, `sync_doc_snippets.py --check`, and the neutrality/redundancy quality gates passed for the changed runbook (0 failures; one unrelated redundancy information item). The separate C4 Maintainer-only installation remains unperformed.
+
+
+## Code review -- Codex (gpt-6.1-sol) -- 2026-10-29
+
+```
+Reviewed commit: dccaf4e6b43b63ce98577307065464214a5d754e
+Target: forward-baseline changes in 1867e666..dccaf4e6 and verification at e71cb267
+Prior findings: none
+```
+
+**Findings**: raised
+
+**Foundations**
+
+1. **Does it do what it claims?** The explicit preparation and installation paths bind candidate, independent record and signer, but malformed reader input escapes the intended refusal path. -- `scripts/repin.py`, `baseline_prepare`; F1.
+2. **Best alternative.** Keep the existing explicit modes and shared transaction; validate the reader's JSON type before inspecting fields. -- `scripts/repin.py`, `baseline_prepare` and `baseline_install`.
+3. **What would show it wrong?** A malformed independent input that escapes the advertised refusal, or substituted roster accepted by preparation. -- falsification ledger below.
+
+**F1 -- malformed reader JSON produces an unhandled traceback.** `baseline-prepare` calls `reader.get` without checking that parsed JSON is an object. A valid JSON array (`[]`) exits 1 with `AttributeError` and a traceback instead of the command's explicit malformed-input refusal and exit 2. The probe stopped before package creation; this is an operator-facing failure, not evidence of an authority bypass. Check the type before field access and cover non-object JSON through the public command. -- `scripts/repin.py`, `baseline_prepare`; probe below.
+
+**Falsification ledger.** On a fresh detached checkout of dccaf4e6, canonical Python 3.13.13 ran the existing public preparation controls for a substituted roster and missing reader: 2 passed. A separate scratch test using the same public `bed.run` entry point supplied an approved roster and reader bytes `[]`: it failed its expected exit-2 assertion, reporting exit 1 and `AttributeError: 'list' object has no attribute 'get'`. No output package was reached. These are targeted checks, not the Boundary B replay; no live refs, signing, historical comparison or full suite were used.
+
+**Bounding**: ACCEPTED for the recorded wide mapping, subject to F1 and change-specific verification of its repair. The record identifies the mapped families, interpreter, scratch signing disposition and omissions; the targeted malformed-input probe exposed a behavior the mapped passing results did not establish. C4 is a separately gated item, not reached in the reviewed range; the plan's verification preserves its separate certification.
+
+**Covered:** claims, public path and refusal (lenses 1–4: preparation code and ledger); reuse and consistency (5–6: transaction and reader checks); lifecycle and scope (7–8: separate C4); satisfier (9: F1). **Not covered / low confidence:** independent signing and atomic-ref mutation tests, all extraction attacks, actual installation and host containment; the Security Review remains separate. The runbook's operator sequence was read, but no real ceremony was performed.
