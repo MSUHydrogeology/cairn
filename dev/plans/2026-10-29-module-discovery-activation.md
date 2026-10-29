@@ -1,7 +1,7 @@
 # Plan: Module discovery and first use
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-module-discovery-activation.md
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
 **In brief**: Make installed modules discoverable and give each selected module a useful first task.
@@ -196,3 +196,38 @@ P1 accepted: unknown marked identities now stop reconciliation with instructions
 ## Implementation verification addendum -- Codex (gpt-6.1-sol) -- 2026-10-29
 
 **Implementation verified at d83b0faf.** The outstanding manual-copy check passed on the same clean candidate clone under Python 3.13.13. In a temporary project installed with `solo-greenfield`, copied `templates/modules/team-gated/dual-review.md` to `dev/modules/dual-review.md`, then ran the documented `bootstrap/scaffold.py upgrade --target <project> --cairn-root <candidate> --adopt-module dual-review`. The copied bytes remained intact; inventory, task and lock named the module. Repeating adoption left all three artifacts unchanged. An added completed unknown marked task caused exit 2 with manual guidance and preserved all three artifacts; saving and removing that block followed by retry succeeded. The candidate clone remained clean after the check. This completes the manual-copy omission stated above; certification remains pending.
+
+
+## Code review -- Codex Security (gpt-6.1-sol) -- 2026-10-29
+
+**Reviewed commit**: d83b0faf9e466aab924455a4e3f279b7fe072f8e
+**Target**: module-discovery implementation and repair; verification through 1afdf46b.
+**Prior findings**: ordinary P1/P2 answered; Security obligation previously open.
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Bounding**: WIDER RUN REQUIRED — add public repeat-install coverage for a populated legacy placeholder slot, then record final-commit evidence.
+
+**Foundations**:
+
+1. **Does it do what it claims?** Adoption refuses unknown identities safely, but repeated installation can silently erase completed unrelated work, violating C2 — `bootstrap/_scaffold/install.py:1451` and ledger below.
+2. **Best alternative.** Recognize only an exact unchanged empty-slot placeholder; send any populated slot through conservative reconciliation, preserving surrounding text — `bootstrap/_scaffold/install.py:1248` and `bootstrap/_scaffold/install.py:1451`.
+3. **What would show it wrong?** Adding completed work beside the retained empty-slot hint before later module selection demonstrates loss through the public installer — falsification ledger below.
+
+**S1 — A placeholder substring authorizes destructive replacement.** The unmarked-slot branch treats any occurrence of `(Empty at adoption` as proof that the entire slot is disposable. An adopter can retain that hint while adding a completed personal task. Selecting a module on a repeat install then replaces the slot wholesale, silently deleting that task. This violates preservation of unrelated text and completed work and bypasses the conservative legacy path. Recommend matching the complete pristine placeholder only; otherwise reconcile while retaining unrelated content, or refuse with recovery instructions. Add a public repeat-install regression that starts empty, adds completed work beside the hint, selects a module and asserts preservation or refusal with unchanged planning, inventory and lock. This restores accepted scope.
+
+**Falsification ledger** — independent local clone detached at d83b0faf, Python 3.13.13; detached-worktree creation was refused by filesystem permissions:
+
+| Challenge | Result |
+|---|---|
+| Public installer: initial profile uses `modules: []`; insert `(Empty at adoption)` plus `* [x] Preserve my completed research task` into the onboarding slot; repeat with a block-list selecting dual-review | Both calls exit 0; completed personal task disappears. Helper-level control reproduces the same loss. |
+| Unknown marked completed task during public adoption | Existing targeted regression passes; guidance and all three byte snapshots preserved. |
+| Linked discovery destinations during adoption | Existing targeted parametrized checks pass. |
+| Change discovery input after stage | Existing targeted parametrized checks pass; apply refuses. |
+| Already-recorded adoption repairs missing discovery | Existing targeted check passes. |
+
+The last four rows ran as four explicit pytest nodes in `bootstrap/tests/test_upgrade_module_additions.py`: 6 passed in 0.75 seconds, no skips. These challenge containment, stale staging, repeat adoption and the repair independently of the author's broad command. No mutation was needed to expose S1.
+
+**Evidence and sweep**: Read committed reconciliation, adoption preparation/commit ordering, apply input checks, plan and prior verification. The new identity guard precedes catalog indexing. Selection remains lock/profile authority and no task executes. The latest record supplies manual-copy evidence and dispositions its loopback restriction; certification remains pending. The shared renderer remains preferable to another installer. S1 names the missing preservation case and its satisfier.
+
+**Coverage / gaps**: This pass covers the Security obligation only. Did not run the full suite, old-anchor verification, every module task, concurrent filesystem races or arbitrary crash recovery; those are not claimed certified. Existing checks passing do not settle S1. Independent ordinary review remains separate.
