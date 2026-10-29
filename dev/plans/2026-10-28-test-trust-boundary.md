@@ -1,7 +1,7 @@
 # Plan: Test trust boundary
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-test-trust-boundary.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-28
 **In brief**: Protect the tests that defend trust while reporting ordinary test changes without requiring a new trust anchor.
@@ -658,3 +658,30 @@ has reached code review separately. Independent code and Security Reviews must
 assess these limits and the complete implementation; no full suite or actual
 baseline installation was performed. Later commits, including ceremony test
 work, are outside this tested SHA.
+
+
+## Ordinary maintenance lifecycle and review handoff -- Codex (GPT-6.1 Sol) -- 2026-10-29
+
+The ordinary-test-maintenance proposal was accepted at `cea1299d`; its plan
+received an Internal plan review and response, implementation at `70db63fd`,
+scoped verification, and independent code review. The review raised F1 on
+evidence; the author supplied the addendum at `32375254`, and the recorded
+reviewer confirmation resolved F1. The plan was archived at `397907da`. The
+record is `dev/plans/archive/2026-10-28-ordinary-test-maintenance.md`.
+
+This shows an actual maintenance lifecycle, with an important limit: the
+Maintainer's pilot-specific allowance at `fb7e8751` allowed the two methods
+to remain in `bootstrap/tests/test_board_json_contract.py` without the
+protected-file eligibility, additional review or baseline prerequisites.
+The narrowed roster has not been installed. This example therefore does not
+prove that an installed roster placed that file in the ordinary lane, nor
+that future changes to it receive the same allowance. The separate scratch
+steady-state ceremony test at `fb84084c` exercises an ordinary test edit
+against disposable roster authority.
+
+C2 implementation and scoped verification are recorded above. The independent
+code and Security Reviews now hold the plan; they must assess the implementation,
+the simulated verifier matrix, the scratch admission and steady-state evidence,
+the pilot's limited lifecycle example, and the recorded whole-tree prose-check
+non-pass. The Maintainer's v0.6 amendment defers actual baseline installation and
+historical-anchor reconciliation; neither was performed or is claimed here.
