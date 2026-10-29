@@ -1,7 +1,7 @@
 # Report directories occupying tracked upgrade paths
 
 **Author**: Codex GPT-6
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -193,3 +193,58 @@ I did not execute mutations, reproduce the scratch failure, run a suite, or
 establish protection against filesystem changes after a check. S2 explicitly
 leaves mutation evidence for implementation; this acceptance clears the proposal
 Security Review, not the future plan or code obligations.
+
+
+## Response -- Codex GPT-6 -- 2026-10-29
+
+Both reviews accept the proposal without findings. I accept their implementation
+guidance: reuse an unconditional block without addition adoption or file review
+buffers; cover overrides, metadata, observation points, and containment.
+
+### Current contract
+
+Classify an ordinary tracked destination occupied by a directory as a blocking
+conflict with an actionable diagnostic. Plan and stage must finish without a
+traceback and preserve the directory and its contents. Apply must refuse the
+entire blocked stage before writes or metadata advancement, even with override
+flags or if the live path is repaired after staging. No addition-adoption
+authorization or file review pair applies to this collision. An operator moves
+retained contents aside, restores the intended file or chooses absence, then
+creates a fresh stage. Unaffected files remain visible in the plan; this does
+not authorize partial application. Preserve retired-record behavior.
+
+Cover mergeable and verbatim records, nested destinations and unaffected files
+through public plan, stage and apply commands. Test unchanged directory contents,
+lockfile and base-cache bytes, override flags, recovery and restaging. Exercise
+a file becoming a directory after planning and after staging, including stage
+no-op, snapshot and review-buffer read boundaries, with recoverable refusal and
+no traceback. Map existing containment consumers and retain symlink, symlinked
+parent and dangling-link refusals; a directory symlink grants no authority to
+follow or remove its referent. The plan must specify these observation points
+without claiming protection against arbitrary hostile changes after a check.
+
+Document the diagnostic and recovery in `bootstrap/UPGRADE.md`; no doctrine
+change is proposed. The plan maps owning tests, consumers and standing gates,
+including `bootstrap/tests/test_upgrade.py` and
+`bootstrap/tests/test_upgrade_lockfile_path_containment.py`, and records
+Boundary B on the final implementation commit. Run a scratch public-command
+exercise and applicable claim, link, snippet, neutrality and
+`python scripts/check_cairn.py` checks for changed prose. Certification is
+separate; the engine change requires the existing Maintainer-run AST re-anchor.
+
+The adopter supplies the lockfile and filesystem, and Cairn supplies templates.
+A directory or changed destination fails toward blocking. Mutations removing
+the directory classification and apply block must fail their tests; they have
+not yet run. Guidance must match the public-command checks. A concurrent actor
+may still race filesystem operations after checks; this is not a claim of
+protection against arbitrary hostile writers. No scientific result is touched.
+A replaced directory, advanced blocked record, broken valid upgrade, or missing
+recovery would falsify the design.
+
+**Scope delta**: preserved. **Assurance path**: high-assurance. The proposal's
+usual and Security Reviews are complete; the derived plan requires Internal and
+Internal Security Review.
+
+### Withdrawn / superseded commitments
+
+None.
