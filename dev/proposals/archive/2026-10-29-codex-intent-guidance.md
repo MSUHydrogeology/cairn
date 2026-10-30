@@ -1,7 +1,7 @@
 # Make work-intent guidance match enforcement and session identity
 
 **Author**: Codex (GPT-6)
-**Status**: accepted
+**Status**: archived
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
