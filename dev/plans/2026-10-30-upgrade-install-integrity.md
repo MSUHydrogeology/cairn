@@ -294,3 +294,21 @@ repair and a passing final verification record remain outstanding. No full
 suite, re-anchor, Windows terminal rendering, or arbitrary concurrent-writer
 probe was run. Synced snippets were unchanged, so snippet synchronization was
 not triggered.
+
+## Code review follow-up -- Codex GPT-6 Security reviewer -- 2026-10-30
+
+**Reviewed commit:** `3fd8dab395eb0cbb46953dada9297bdfbb9daf75`; verification follow-up through `872d1972`. **Obligation:** Security Review of the scaffold / merge engine. **Tier:** Internal Security Review. **Disposition:** interim; Security obligation remains open.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: `upgrade.py` now stages a fresh random recovery path and refuses an occupied destination; the public regression preserves both corrupt ancestors and completes the second recovery.
+2. **Best alternative:** Retain stage-bound allocation and refusal of occupied paths; `_contained_lockfile_path` and `_assert_safe_write` reuse existing containment checks.
+3. **What would show it wrong?** A repeated recovery overwriting evidence, accepting a malformed or occupied recovery path, or failing a required mapped check; the latter remains evidenced below.
+
+**CR1:** The repeated-recovery behavior is repaired on the reviewed bytes; final closure still requires passing required change verification. **CR2:** The wide verification follow-up records six failures, including the inventory discrepancy awaiting a separate Maintainer Decision. None is waived here. No final Security clearance is given.
+
+**Falsification ledger:** In an isolated archive of `3fd8dab3`, Python 3.13.13, `python -m pytest bootstrap/tests/test_upgrade.py -k 'bad_ancestor_uses_review_recovery_and_preserves_evidence or stage_ancestor' -q` passed 7 tests, 109 deselected, 5.20s. Inspected the staged path's fixed destination digest and 32-hex nonce validation, old-path inequality, containment and occupied-path refusal in `_apply_upgrade`; the regression exercises two public recovery cycles. The recorded wide run at `22c49ec2` has 219 passes and 6 failures in its first mapped group; it is not a passing Boundary B. This follow-up took approximately 3 minutes; token use unknown.
+
+**Bounding:** WIDER RUN REQUIRED: resolve the mapped non-passes and record passing final-commit verification.
+
+**Coverage:** Claims and satisfier: C1 and the regression; production path and completeness: `_write_stage` and `_apply_upgrade`; fail-closed and reuse: path validation and containment; consistency and drift: recorded verification and plan C3; lifecycle and scope: unresolved CR2 and separate Decision. Did not rerun wide checks, mutate output routes, probe concurrent writers or assess platform rendering. No full suite or re-anchor was run.
