@@ -1,83 +1,84 @@
 # Meter agent cost from the tools' own logs
 
 **Author**: Claude Opus 5.5 (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the meter reads files outside the repository, a new trust boundary
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
-**In brief**: Count agents' real token and time use from logs their tools already keep, show it to the Maintainer beside Cairn's existing measures, and stop unattended runs at a spending ceiling, without asking agents to report anything.
+**In brief**: Count agents' real token and time use from logs their tools already keep, show it to the Maintainer, and stop unattended runs at a spending limit, without asking agents to report anything.
 
 ## Context
 
 The Maintainer wants data to begin a Cairn budgeting capability (chat,
-2026-10-30). Self-report has failed: since the Tokens fields landed
-(`3cceb2c0`), every filled entry reads `unknown`, about 55 entries and no
-numbers. Agents cannot see their own counts.
+2026-10-30). Self-report has failed: since `3cceb2c0`, all of about 55
+filled Tokens entries read `unknown`.
 
 The tools already log every model call. Measured on this machine,
 2026-10-30:
 
-- Claude Code keeps one log folder per project. This project's holds 1,752
-  files (1.27 GB) and 77,190 distinct model calls; one full pass reading only
-  usage fields took 5.4 seconds.
-- Codex opens each session file with the working folder, git remote, branch
-  and commit, and logs a running total and a per-turn count of tokens.
+- Claude Code keeps one log folder per project; this project's holds 1,752
+  files (1.27 GB) and 77,190 distinct model calls, read in 5.4 seconds.
+- Codex opens each session file with folder, git remote, branch and commit,
+  and logs running and per-turn token totals.
 - Three traps: records repeat (7,085 records, 3,118 calls in one session);
-  98.3% of tokens are cache re-reads, priced at about a tenth of fresh input;
-  subagents log separately (341 files for one session).
-- The join to work already exists. A claim's id is the tool name plus the
-  first 8 hex characters of SHA-256 of the tool's session id
-  (`tools/_intent/identity.py:45-75`); this session's log id reproduces its
-  claim prefix, `0ae5e069`.
+  98.3% of tokens are cache re-reads; subagents log separately.
+- A claim's id carries the first 8 hex characters of SHA-256 of the tool's
+  session id (`tools/_intent/identity.py:45-75`), so logs join to claims.
 
-Cairn already measures size, not spend: `tools/gauge.py` (lines by kind),
-`scripts/token_budget.py` (4,281 tokens per session load today) and
-`tools/audit_report.py`, all warn-only. The board row "Lightweight team
-measurement" (`dev/PLANNING.md:100`) asks for a proposal first;
+Cairn measures size, not spend (`tools/gauge.py`, `scripts/token_budget.py`);
 `doctrine/rationale.md:584-588` says the cost side is not mechanized.
 
 ## Proposal
 
 **1. The meter.** One standard-library script, one small reader per tool.
-- **Content-blind:** reads usage numbers, timestamps, ids, folder and git
-  remote; never message text.
-- **Counting rules:** remove repeated records by message id; keep fresh
-  input, cache write, cache read and output separate; fold subagent logs into
-  their parent session; take a session's last running total, never a sum of
-  running totals; confirm whether a tool's cached input sits inside its input
-  figure before adding.
+- **Opted in, private:** reads only log roots and projects the Maintainer
+  lists in local configuration. The cross-project ledger lives in a private
+  per-user folder, never a repository; each project gets only its own
+  aggregates, in its gitignored `dev/measurement/` slot.
+- **No message content kept or shown:** parsing may read whole lines, but
+  only usage numbers, timestamps and ids are kept. Git remotes are stored
+  with credentials removed; errors name a file and line, never its text.
+- **Bounded inputs:** regular files only, no links, a per-line size cap,
+  finite non-negative numbers (`NaN` is invalid), reusing
+  `_read_regular_bytes` (`tools/session.py:657`). Ledger writes are atomic
+  and refuse links.
+- **Counting rules:** drop repeated records by message id; keep the four
+  token kinds separate; fold subagents into their parent; use a session's
+  last running total, never a sum; confirm whether cached input sits inside
+  a tool's input figure.
 - **Project:** chosen by git remote, so one run covers every project.
-- **Work:** the claim digest links tokens to files and their artifact;
-  anything outside a claim is shown as unattributed.
-- **Test waiting:** command timestamps give time spent in test runs and how
-  often each is repeated.
-- **Output:** a gitignored ledger plus a reader, the slot
-  `dev/measurement/README.md` already reserves; each run reads only new log
-  lines. Missing logs are `unknown`, never zero.
-- **Units:** raw kinds, a weighted figure from a small price-ratio table, and
-  plan percentage where the tool reports it.
+- **Gathering (Maintainer's contract, relayed in review):** per-item
+  attribution when reliable, otherwise daily totals; refreshed at
+  `session-end --handoff`. Because claims are pruned
+  (`tools/_intent/record_io.py:288`), the meter keeps its own
+  session-to-claim mapping when it first sees a claim. Ambiguous coverage
+  is shown, not guessed.
+- **Test waiting:** command timestamps give time in test runs and repeats.
+- **Incremental:** each run reads only new lines and must equal a full
+  rebuild. Missing logs are `unknown`, never zero.
+- **Units:** raw kinds, a weighted figure from a price-ratio table, and plan
+  percentage where reported.
 
 **2. A pulse report.** `tools/gauge.py --pulse` prints, by week and
 project: metered tokens and time per artifact, test-wait time, review passes,
-model-tier mix, and always-loaded cost from `token_budget.py`. This delivers
-the board row's first item; its other two (review side-file attribution, a
-`dev/measurement/` archive folder) come as the strategy note specifies.
+model-tier mix and always-loaded cost, completing the board row.
 
-**3. A spending ceiling for unattended runs.** Before each drain item, read
-the plan percentage, or else the meter's weekly figure, against a ceiling the
-Maintainer sets in local configuration. At the ceiling, stop and leave a
-note. If the figure cannot be read, unattended work stops. Attended sessions
-are never stopped.
+**3. A cooperative spending stop for unattended runs.** The Maintainer's
+local policy names the source and account, one unit (plan percent for a
+named window, or weighted tokens per day), the limit and the maximum age of
+a reading. Before each drain item the meter refreshes; the item starts only
+on a fresh, finite reading in that unit below the limit. Stale, missing,
+invalid or mismatched readings stop unattended work. Attended work is never
+stopped. This is a between-item stop, not a spending guarantee: one item or
+concurrent sessions can overshoot.
 
-**4. Numbers for the Maintainer, not targets.** No per-artifact budgets or
-scores; agents are not asked to read or act on the figures. Budgets come
-later, set by the Maintainer from the data, in their own proposal.
+**4. Numbers for the Maintainer, not targets.** Agents get no per-artifact
+budgets or scores. Budgets come later, from the data, in their own proposal.
 
-**5. Q1 for the Decision.** Once the meter passes its checks, retire the
-self-reported Tokens and Elapsed fields in both templates (recommended), or
-keep them. This changes a choice the Maintainer made on the apparatus
-proposal's Q1, so it is theirs.
+**5. Q1 for the Decision.** Retire the self-reported Tokens field once the
+meter passes its checks (recommended); keep Elapsed until metered time is
+shown equivalent. This changes the Maintainer's apparatus Q1 choice.
 
 Proposed paths:
 - tools/meter.py
@@ -85,46 +86,48 @@ Proposed paths:
 
 ## Rationale
 
-Counts come from the source, cost agents nothing, cover past work and every
-project, and stay out of the agents' loop, so they inform judgment without
-becoming the thing agents optimize.
+Counts come from the source, cost agents nothing, and stay out of the
+agents' loop, so they inform judgment without becoming a target.
 
 ## Alternatives considered
 
-A local proxy sees every prompt and credential, and gateways can move
-billing off the plan. Built-in telemetry suits a live ceiling later.
-Self-report yields `unknown`. Per-artifact budgets invite gaming.
+A proxy sees every prompt and credential. Built-in telemetry suits a live
+stop later. Self-report yields `unknown`. Budgets per artifact invite gaming.
+The `ccusage` reader breaks the standard-library rule but is an
+independent count to compare against.
 
 ## Documentation / doctrine surface
 
-`tools/gauge.py`; `dev/measurement/README.md`; `.gitignore`; the drain step
-of the session-start skill and its shipped copy; both templates (Q1); the
-`incident-trackers` module for the shipped copy; `doctrine/rationale.md:584-588`.
-Per-tool readers carry `vendor-ok`; shipped prose names no vendor.
+`tools/gauge.py`; `dev/measurement/README.md`; the drain step and its shipped
+copy; both templates (Q1); `doctrine/rationale.md:584-588`. Per-tool readers
+carry `vendor-ok`.
 
 ## Evidence / verification plan
 
 ### Tests required
 
-The meter test module (proposed above), tiny fixtures, under one second: a
-fixture secret never reaches output; repeated records count once; running
-totals are not summed; a subagent rolls up to its parent; the digest joins a
-claim; a malformed line yields `unknown`; the ceiling stops at its limit and
-when unreadable.
+The meter test module, tiny fixtures, under one second: secrets in message
+text and in a remote URL never reach output or errors; links, non-regular
+files and oversized lines are refused; repeated records count once; running
+totals are not summed, including inherited ones; subagents roll up;
+incremental equals rebuild across rotation; `NaN`, stale, wrong-unit and
+over-limit readings each stop the drain.
 
 ### Examples / smoke checks
 
-Over one week, the meter's weighted total moves with the plan percentage;
-one session matches the tool's own report.
+Over one week, the meter's weighted total moves with the plan percentage,
+and its counts match `ccusage` on the same logs.
 
 #### Security preflight
 
-S1: the tools write the logs, and a measured agent could alter its own; the
-figures inform, they do not authorize. S2: the content-blind test fails if
-any text field reaches output. S3: a person runs the meter; the ceiling runs
-before each unattended item. S4: a parse error yields `unknown`; an
-unreadable ceiling stops unattended work only. S5: an agent editing logs or
-working outside claims still understates cost.
+S1: the tools write the logs and a measured agent could alter them; the
+readings do authorize another unattended item, so only a fresh valid reading
+under the Maintainer's policy does. S2: the secret fixtures fail if text
+reaches output. S3: a person or `--handoff` runs the meter; the drain runs
+it before each item. S4: every invalid input stops unattended work; attended
+work is untouched. S5, declared residuals: log tampering and overshoot by
+one item or concurrent sessions; this is cooperative control, not
+authenticated enforcement.
 
 ### Independent scientific check
 
@@ -132,8 +135,8 @@ N/A: no scientific assumption or result touched.
 
 ## Signals the change is wrong
 
-The meter and the plan percentage disagree; agents start citing the figures
-to justify cuts; the suite slows; nobody reads the pulse.
+The meter disagrees with the plan percentage or `ccusage`; agents cite the
+figures to justify cuts; the suite slows; nobody reads the pulse.
 
 ## Scope delta
 
@@ -141,8 +144,7 @@ to justify cuts; the suite slows; nobody reads the pulse.
 
 ## Assurance path
 
-**Assurance path**: high-assurance — new trust boundary and an
-unattended-run control.
+**Assurance path**: high-assurance — new trust boundary; unattended-run control.
 
 ## Review -- Codex -- 2026-10-30
 
@@ -252,3 +254,35 @@ bookkeeping.
 **Coverage:** Read committed contract, drain and file-safety helpers; executed only the
 JSON/comparison primitive. No private-log scan, meter implementation, platform matrix or
 end-to-end security test. Obligation remains open.
+
+## Response -- Claude Opus 5.5 -- 2026-10-30
+
+Answers Codex's usual review (`742c3cc9`, MC1 to MC3) and Security Review
+(`b70fdbdf`, MS1, MS2, S5). The operative sections are revised in place;
+both reviews are unchanged. Status moves to `awaiting-decision`.
+
+- **MC1 and MS2, accept.** Sources and projects are opted in by the
+  Maintainer; the cross-project ledger is private and per-user; remotes lose
+  credentials; errors carry no text. Inputs are regular files only, linkless,
+  size-capped and finite, reusing `_read_regular_bytes`; ledger writes are
+  atomic and refuse links. "Content-blind" now promises no content kept or
+  shown, not that bytes are never read. Fixtures cover each boundary.
+- **MC2 and MS1, accept.** The stop binds source, account, unit, window,
+  limit and freshness in Maintainer policy, refreshes before each item, and
+  stops on anything stale, missing, invalid or mismatched. S1 now says the
+  readings authorize continuation. It is declared a cooperative between-item
+  stop.
+- **MC3, accept.** The Maintainer's per-item-else-daily contract, refreshed
+  at `--handoff`, is adopted as relayed in the review; the meter keeps its
+  own claim mapping against pruning; incremental-equals-rebuild, inherited
+  totals and rotation are tested. Elapsed stays until metered time is shown
+  equivalent; Q1 now retires only Tokens.
+- **`ccusage`, accept as a control:** its counts are compared, its code is
+  not adopted.
+- **S5, accept** as declared residuals.
+
+### Withdrawn / superseded commitments
+
+- "Content-blind: never message text": replaced by no content kept or shown.
+- "Retire Tokens and Elapsed": Elapsed is retained.
+- "The figures inform, they do not authorize": withdrawn as untrue.
