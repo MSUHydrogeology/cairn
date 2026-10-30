@@ -137,3 +137,21 @@ Assurance path: high-assurance
 3. **What would show it wrong?** A configured direct and dispatched run disagree, an undeclared credential reaches the API child, or another leg receives one. The proposal calls for real entry-point tests and two mutations to distinguish delivery from isolation; these are commitments, not results yet.
 
 **Coverage**: Read the committed proposal and the dispatcher, runner, and integration-test paths cited above. Did not execute the matrix, inspect every policy validation edge, or assess the security boundary in depth; the separate Security Review remains owed.
+
+## Security Review -- Codex GPT-6.1 Sol -- 2026-10-30
+
+**Reviewed commit**: 169c8806; ordinary review: 3aa87d26
+**Obligation**: Internal Security Review (proposal)
+**Verdict**: PROCEED
+**Elapsed**: approximately 3 minutes
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. `_build_child_env` excludes API credentials, while the API runner requires policy-derived names. Exact local-section delivery restores the automated path without giving other children secrets. In the committed policy module, `Policy.credential_names("local")` already supplies the needed names; its schema keeps local and deployed ordinals disjoint. No new credential registry is necessary.
+2. **Best alternative.** Direct runner execution avoids changing the dispatcher but loses the requested automation. The smallest useful automated design reuses that existing validated section-to-name operation, retaining the runner's verified-engine-before-credential ordering and loopback refusal. Broad prefix forwarding would expose deployed-only credentials.
+3. **What would show it wrong?** Unchecked code executes in the credential-bearing parent, an invalid policy broadens delivery, or a child receives a credential outside the selected local set. The proposed binding preservation and delivery/isolation mutations address these risks; outcomes remain unmeasured.
+
+**Non-blocking advice**: The plan should show exactly how existing validation is reused without importing unchecked adopter code into the parent. `_load_engine` executes sibling package initialization; blindly importing the facade or package adds authority beyond copying selected environment entries. Close this advice with a concrete verified loading path and a negative tamper test, without another parser or plugin framework.
+
+**Coverage**: Read committed proposal, dispatcher environment/launch/binding paths, API loader/credential ordering, and policy name derivation. Did not execute implementation checks, audit all policy schema cases, or concurrent host compromise; no implementation reviewed.
