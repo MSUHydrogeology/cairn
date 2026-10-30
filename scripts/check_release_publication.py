@@ -11,8 +11,6 @@ source archives; those remain part of the Maintainer's release review.
 from __future__ import annotations
 
 import argparse
-import functools
-import http.client
 import json
 import os
 import re
@@ -20,7 +18,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -37,86 +34,6 @@ _OBJECT_ID_RE = re.compile(r"[0-9a-fA-F]{40}\Z")
 
 class CheckError(Exception):
     """A fail-closed input or remote-read failure."""
-
-
-class _DeadlineLineReader:
-    """Read HTTP status and headers one byte at a time under one deadline."""
-
-    def __init__(self, sock, deadline: float) -> None:
-        self._sock = sock
-        self._deadline = deadline
-
-    def readline(self, limit: int = -1) -> bytes:
-        line = bytearray()
-        while limit < 0 or len(line) < limit:
-            remaining = self._deadline - time.monotonic()
-            if remaining <= 0:
-                raise TimeoutError("GitHub Release API response exceeded its total deadline")
-            self._sock.settimeout(remaining)
-            byte = self._sock.recv(1)
-            if time.monotonic() > self._deadline:
-                raise TimeoutError("GitHub Release API response exceeded its total deadline")
-            if not byte:
-                break
-            line.extend(byte)
-            if byte == b"\n":
-                break
-        return bytes(line)
-
-
-class _DeadlineHTTPResponse(http.client.HTTPResponse):
-    def __init__(self, sock, *args, deadline: float, **kwargs) -> None:
-        self._deadline = deadline
-        super().__init__(sock, *args, **kwargs)
-
-    def begin(self) -> None:
-        if self.headers is not None:
-            return
-        response_file = self.fp
-        raw = getattr(response_file, "raw", None)
-        sock = getattr(raw, "_sock", None)
-        if sock is None:
-            raise CheckError("GitHub Release API headers cannot be read with a total deadline")
-        self.fp = _DeadlineLineReader(sock, self._deadline)
-        try:
-            super().begin()
-        finally:
-            self.fp = response_file
-
-
-class _DeadlineHTTPSConnection(http.client.HTTPSConnection):
-    def __init__(self, host, *args, deadline: float, **kwargs) -> None:
-        self._deadline = deadline
-        super().__init__(host, *args, **kwargs)
-
-    def connect(self) -> None:
-        remaining = self._deadline - time.monotonic()
-        if remaining <= 0:
-            raise TimeoutError("GitHub Release API request exceeded its total deadline")
-        self.timeout = min(self.timeout or remaining, remaining)
-        super().connect()
-
-    def getresponse(self):
-        original_response_class = self.response_class
-        self.response_class = functools.partial(
-            _DeadlineHTTPResponse, deadline=self._deadline)
-        try:
-            return super().getresponse()
-        finally:
-            self.response_class = original_response_class
-
-
-class _DeadlineHTTPSHandler(urllib.request.HTTPSHandler):
-    def __init__(self, deadline: float) -> None:
-        super().__init__()
-        self._deadline = deadline
-
-    def https_open(self, request):
-        def connection_factory(host, **kwargs):
-            return _DeadlineHTTPSConnection(
-                host, deadline=self._deadline, **kwargs)
-
-        return self.do_open(connection_factory, request, context=self._context)
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -136,14 +53,18 @@ def _safe_detail(value: object, limit: int = 400) -> str:
     return escaped[:limit] or "no diagnostic"
 
 
-def _validate_components(owner: str, repository: str, tag: str,
-                         expected_commit: str) -> None:
+def _validate_api_components(owner: str, repository: str, tag: str) -> None:
     for label, value in (("owner", owner), ("repository", repository)):
         if (not _COMPONENT_RE.fullmatch(value) or value in {".", ".."}):
             raise CheckError(
                 f"{label} must be one safe GitHub path component")
     if not tag or any(ord(char) < 32 or ord(char) == 127 for char in tag):
         raise CheckError("tag must be a nonempty Git tag name without controls")
+
+
+def _validate_components(owner: str, repository: str, tag: str,
+                         expected_commit: str) -> None:
+    _validate_api_components(owner, repository, tag)
     if not _OBJECT_ID_RE.fullmatch(expected_commit):
         raise CheckError("expected commit must be a full 40-hex object id")
 
@@ -205,34 +126,8 @@ def _release_api_url(owner: str, repository: str, tag: str) -> str:
     return f"{_API_ROOT}/{owner}/{repository}/releases/tags/{tag_component}"
 
 
-def _read_release_body(response, deadline: float) -> bytes:
-    """Read one chunk at a time, shrinking socket timeouts to the deadline."""
-    response_file = getattr(response, "fp", None)
-    body_file = getattr(response_file, "fp", response_file)
-    raw = getattr(body_file, "raw", None)
-    sock = getattr(raw, "_sock", None)
-    read_chunk = getattr(response, "read1", None)
-    if sock is None or not callable(read_chunk):
-        raise CheckError("GitHub Release API response cannot be read with a total deadline")
-
-    body = bytearray()
-    while True:
-        remaining = deadline - time.monotonic()
-        if remaining <= 0:
-            raise TimeoutError("GitHub Release API response exceeded its total deadline")
-        sock.settimeout(remaining)
-        chunk = read_chunk(min(64 * 1024, _MAX_RELEASE_BYTES + 1 - len(body)))
-        if time.monotonic() > deadline:
-            raise TimeoutError("GitHub Release API response exceeded its total deadline")
-        if not chunk:
-            return bytes(body)
-        body.extend(chunk)
-        if len(body) > _MAX_RELEASE_BYTES:
-            raise CheckError("GitHub Release API response exceeded 1 MiB")
-
-
-def _fetch_release(owner: str, repository: str, tag: str) -> None:
-    """Require the fixed-host Release API to report a published matching tag."""
+def _fetch_release_in_process(owner: str, repository: str, tag: str) -> None:
+    """Read and validate the fixed-host Release inside the bounded child."""
     url = _release_api_url(owner, repository, tag)
     request = urllib.request.Request(
         url,
@@ -243,16 +138,14 @@ def _fetch_release(owner: str, repository: str, tag: str) -> None:
         },
         method="GET",
     )
-    deadline = time.monotonic() + _HTTP_TIMEOUT_SECONDS
     opener = urllib.request.build_opener(
-        urllib.request.ProxyHandler({}), _NoRedirect(),
-        _DeadlineHTTPSHandler(deadline))
+        urllib.request.ProxyHandler({}), _NoRedirect())
     try:
         with opener.open(request, timeout=_HTTP_TIMEOUT_SECONDS) as response:
             status = response.getcode()
             if status != 200:
                 raise CheckError(f"GitHub Release API returned HTTP {status}")
-            body = _read_release_body(response, deadline)
+            body = response.read(_MAX_RELEASE_BYTES + 1)
     except urllib.error.HTTPError as exc:
         exc.close()
         raise CheckError(
@@ -264,6 +157,8 @@ def _fetch_release(owner: str, repository: str, tag: str) -> None:
     except (OSError, TimeoutError) as exc:
         raise CheckError(
             f"GitHub Release API read failed: {_safe_detail(exc)}") from exc
+    if len(body) > _MAX_RELEASE_BYTES:
+        raise CheckError("GitHub Release API response exceeded 1 MiB")
     try:
         release = json.loads(body.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
@@ -277,6 +172,62 @@ def _fetch_release(owner: str, repository: str, tag: str) -> None:
     published_at = release.get("published_at")
     if not isinstance(published_at, str) or not published_at.strip():
         raise CheckError("Release has no nonempty published_at timestamp")
+
+
+def _api_child_env() -> dict[str, str]:
+    """Keep the API worker independent of Python, proxy and credential env vars."""
+    env: dict[str, str] = {}
+    if os.name == "nt" and os.environ.get("SYSTEMROOT"):
+        env["SYSTEMROOT"] = os.environ["SYSTEMROOT"]
+    return env
+
+
+def _api_child_command(owner: str, repository: str, tag: str) -> list[str]:
+    return [
+        sys.executable, "-I", str(Path(__file__).resolve()), "--_api-child",
+        owner, repository, tag,
+    ]
+
+
+def _fetch_release(owner: str, repository: str, tag: str) -> None:
+    """Bound the entire API fetch, including DNS and header parsing, by a child timeout."""
+    command = _api_child_command(owner, repository, tag)
+    try:
+        with tempfile.TemporaryDirectory(prefix="cairn-release-api-") as raw_cwd:
+            result = subprocess.run(
+                command, cwd=raw_cwd, env=_api_child_env(), shell=False,
+                stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                encoding="utf-8", errors="replace", check=False,
+                timeout=_HTTP_TIMEOUT_SECONDS,
+            )
+    except subprocess.TimeoutExpired as exc:
+        raise CheckError(
+            f"GitHub Release API request timed out after {_HTTP_TIMEOUT_SECONDS} seconds"
+        ) from exc
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise CheckError(
+            f"GitHub Release API worker could not run: {_safe_detail(exc)}") from exc
+    if result.returncode != 0:
+        detail = result.stderr.strip()
+        if detail.startswith("ERROR: "):
+            detail = detail[7:]
+        raise CheckError(
+            f"GitHub Release API read failed: {_safe_detail(detail)}")
+
+
+def _api_child_main(argv: list[str]) -> int:
+    if len(argv) != 3:
+        print("ERROR: internal API worker requires owner, repository and tag",
+              file=sys.stderr)
+        return 2
+    owner, repository, tag = argv
+    try:
+        _validate_api_components(owner, repository, tag)
+        _fetch_release_in_process(owner, repository, tag)
+    except CheckError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+    return 0
 
 
 def _git_config_args() -> list[str]:
@@ -354,6 +305,9 @@ def _check(owner: str, repository: str, tag: str,
 
 
 def main(argv: list[str] | None = None) -> int:
+    arguments = sys.argv[1:] if argv is None else argv
+    if arguments and arguments[0] == "--_api-child":
+        return _api_child_main(arguments[1:])
     parser = argparse.ArgumentParser(
         description=("Check that a published GitHub Release exists for an "
                      "annotated remote tag on the independently supplied gate commit."))
@@ -362,7 +316,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--tag", required=True, help="published Git tag")
     parser.add_argument("--expected-commit", required=True, metavar="FULL_SHA",
                         help="full 40-hex commit id recorded by the release gate")
-    args = parser.parse_args(argv)
+    args = parser.parse_args(arguments)
     if args.repository.count("/") != 1:
         print("ERROR: --repository must have the form OWNER/REPO", file=sys.stderr)
         return 2
