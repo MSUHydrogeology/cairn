@@ -181,3 +181,31 @@ Both plan-review obligations are complete. Scope remains preserved; implementati
 **Bounding**: WIDER RUN REQUIRED -- the repeated-recovery public path and the failed mapped test need passing coverage and a new final-commit verification record.
 
 **Coverage:** Reviewed ancestor checks, stage/apply and recovery logic, verification record and plan criteria; challenged the public recovery path and mapped non-pass. Did not independently run the full mapped families, exercise every display route or assess terminal rendering; Security Review remains separate. No full suite was run.
+
+## Code review -- Codex GPT-6 Security reviewer -- 2026-10-30
+
+**Reviewed commit**: `38e3a2758d39f6a9920713cdf9fcdb87703f3e95`; plan and ordinary review through `9ea6f2bc`.
+**Target**: implementation range `85a9b6d2`..`38e3a275`, ancestor consistency, recovery, containment and supplied-name output.
+**Prior findings**: none closed; ordinary CR1 independently reproduced.
+**Obligation**: Security Review of the scaffold / merge engine
+**Tier**: Internal Security Review
+**Findings**: raised; existing CR1 also blocks this obligation.
+
+**Foundations**
+
+1. **Should this happen as framed?** Hashing precedes decoding and the merge consumes the checked read; recovery preserves evidence on a failed write, but a second corruption cannot complete recovery -- `bootstrap/_scaffold/upgrade.py`, `_compute_upgrade`, `_recovered_base_cache_path`, `_apply_upgrade`; ledger below.
+2. **Best alternative.** Retain the checked-read and stage-bound identity design; allocate a fresh safe recovery ancestor without replacing earlier evidence, as CR1 requests -- `bootstrap/_scaffold/upgrade.py`, recovery-cache collision check.
+3. **What would show it wrong.** Substituted bytes reach the merge, failed recovery destroys evidence, or repeated corruption prevents supported recovery -- falsification ledger below.
+
+**Security disposition.** CR1 is confirmed independently: the first recovery works, but corrupting its recovered ancestor makes the second acknowledged apply refuse because the destination-derived cache path is already occupied by that corruption. Keeping evidence is correct; reusing its name for the next ancestor prevents the promised recovery. The satisfier remains a distinct safe allocation, two successive public-command recoveries preserving both bad ancestors, and final-commit change verification. This pass does not clear the Security obligation. CR2's failed mapped check also remains unresolved; this pass does not waive it.
+
+**Falsification ledger** (fresh detached checkout of the reviewed commit; Python 3.13.13):
+
+- Checked-read substitution: wrap `_read_regular_bytes` to replace the AGENTS ancestor immediately after returning its original bytes. `_compute_upgrade` reads that cache once and merges the checked bytes, retaining the adopter slot; substituted content does not enter the result. Passed.
+- Recovery storage failure: through public stage and acknowledged apply, inject `OSError` at `_write_by_replacing` for the recovered cache. Apply refuses; original bad cache, lockfile, reconciled adopter file and stage survive. Remove the fault and retry the same apply: succeeds, preserving the original bad cache. Passed.
+- Repeated corruption: public stage, manual reconciliation and acknowledged apply succeeds once; corrupt the newly recorded cache and repeat. Second apply returns 1, preserving the corrupt cache, lockfile and stage. Reproduces CR1.
+- Scratch-only probe selection: `python -m pytest bootstrap/tests/test_security_upgrade_probe.py -q` (reviewer-created probe file in the detached copy): 3 passed, 1.28s. An initial probe expected `clean` rather than the correct `clean-locally-modified`; corrected the probe expectation, with no production changes.
+
+**Bounding**: WIDER RUN REQUIRED -- repeated-recovery behavior needs passing public coverage and a new final-commit verification record; the mapped failure in CR2 also remains open.
+
+**Coverage:** claims, production paths, completeness and fail-closed behavior: probes above and stage/apply identity checks; reuse and consistency: existing path admission, replacing writer and display helper; drift: C1/C2 and public-path mapping against the changed engine and output calls; lifecycle/scope: separate Security obligation, pending certification and Maintainer-run AST ceremony. Waiting-line history reaches no fence or deviation. No new scope proposed. Did not mutate every output route, rerun Boundary B, test arbitrary concurrent writes, platform rendering or the historical anchor. No full suite or re-anchor run.
