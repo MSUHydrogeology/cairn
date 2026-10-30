@@ -46,3 +46,36 @@ Update `dev/measurement/README.md`, `doctrine/rationale.md`, the drain and shipp
 Boundary A maps changed behavior to the proposed meter test module (privacy, bounds, counting, rotation, attribution and admission), `bootstrap/tests/test_session_routines.py` and `bootstrap/tests/test_session_failsafe.py` (handoff and safe file behavior), `bootstrap/tests/test_session_start_drain_rules.py` (drain), `bootstrap/tests/test_skill_contract.py` and `bootstrap/tests/test_review_stance_in_shipped_files.py` (shipped instructions), and `bootstrap/tests/test_claim_check_module.py` (template claims). Search readers and byte pins for each changed file and add their owning checks to this map before implementation. Exercise actual public entry points and Windows-compatible paths. Run `python scripts/claim_check.py` on changed documents, `python scripts/check_cairn.py`, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py --check` if supported, and relevant neutrality gates; inspect triggers and use their documented invocation. Secret, malformed input and admission fixtures must fail under the corresponding broken behavior. The independent comparison and week-long smoke are acceptance checks, not a substitute for fixtures.
 
 Boundary B: wide, because local ingestion and admission cross a trust boundary. On the final clean implementation commit under canonical Python 3.13.x, run the mapped owning families, affected public paths, standing gates and acceptance checks; record the full template fields, counts, clean pre/post state, elapsed time, omissions, and `Certified by: pending`. A missing comparison or other unmet check keeps work open. Boundary C: independent code review challenges the map and highest-risk claims with targeted falsification; it does not rerun Boundary B. Full-tree certification is separate and only at the authorized integration points.
+
+## Plan review -- Codex gpt-6.1-terra -- 2026-10-30
+
+**Reviewed commit**: ad7b9c3f
+**Tier**: Internal
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Delivery:** The criteria preserve the accepted meter and cooperative stop,
+   but the shipped entry points cannot call a meter that is not installed --
+   plan Scope; `bootstrap/_scaffold/config.py:912-915`.
+2. **Alternative:** Reuse the existing shipped-tool mapping and handoff kernel
+   rather than invent another delivery mechanism, while preserving all accepted
+   outcomes -- `bootstrap/_scaffold/config.py:912-915`, `tools/session.py:2013`.
+3. **Falsifier:** A fresh Windows or other supported-platform install cannot
+   refresh its meter before drain or handoff, or its mapped checks cannot detect
+   that failure -- plan Verification; `templates/skills/session-start/SKILL.md:82`.
+
+**Finding -- blocking:** The plan names only `tools/meter.py` and its test as
+proposed paths, while it changes the shipped drain and handoff. The installer
+maps the shipped session kernel from `templates/skills/_lib/session.py`, and
+there is no meter mapping in the committed installer. An adopter can therefore
+receive instructions or a kernel that calls a missing tool. Specify how the
+meter and its dependencies are delivered and upgraded, including any required
+installer/manifest work, and map a fresh-install and upgrade public-entry test
+on supported platforms. Preserve the accepted scope and its security obligations.
+
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Coverage:** Read the committed plan, accepted proposal, plan template, drain,
+handoff and installer mapping. Did not inspect private logs, run the meter or
+exercise Windows; separate Security Review remains open.
