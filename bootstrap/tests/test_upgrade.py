@@ -2436,9 +2436,9 @@ class TestTrackedDirectoryCollisions:
         assert not (tmp_path / "dev/.cairn-upgrade/review-only/AGENTS.md.ours").exists()
         assert (dst / "nested.txt").read_bytes() == b"preserve"
 
-    @pytest.mark.parametrize("old_stage", [False, True])
+    @pytest.mark.parametrize("observation", ["complete", "missing", "empty", "omitted"])
     def test_noop_tracked_file_becoming_directory_blocks_apply(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], old_stage: bool,
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], observation: str,
     ) -> None:
         assert _install(tmp_path) == 0
         TestUpgradeModes()._diverge_base(tmp_path)
@@ -2448,12 +2448,17 @@ class TestTrackedDirectoryCollisions:
         meta = json.loads((stage / s._STAGE_META).read_text())
         lock = s.read_lockfile(tmp_path)
         rec = next(r for r in lock["files"]
-                   if r["dst"] in meta["directory_observed"]
+                   if r["src"] != "core/VENDOR.md"
+                   and r["dst"] in meta["directory_observed"]
                    and r["dst"] not in meta["staged_files"]
                    and (tmp_path / r["dst"]).is_file())
-        if old_stage:
+        if observation == "missing":
             del meta["directory_observed"]
-            (stage / s._STAGE_META).write_text(json.dumps(meta))
+        elif observation == "empty":
+            meta["directory_observed"] = []
+        elif observation == "omitted":
+            meta["directory_observed"].remove(rec["dst"])
+        (stage / s._STAGE_META).write_text(json.dumps(meta))
         dst = tmp_path / rec["dst"]
         dst.unlink()
         dst.mkdir()
@@ -2469,14 +2474,35 @@ class TestTrackedDirectoryCollisions:
                      "--cairn-root", str(CAIRN_ROOT)])
         err = capsys.readouterr().err
         assert rc == 1
-        assert ("lacks directory observations" if old_stage else
-                "became directories") in err
+        expected = {"complete": "became directories",
+                    "missing": "lacks directory observations",
+                    "empty": "incomplete directory observations",
+                    "omitted": "incomplete directory observations"}
+        assert expected[observation] in err
         assert content.read_bytes() == b"preserve"
         assert content.stat().st_mode == before.st_mode
         assert content.stat().st_mtime_ns == before.st_mtime_ns
         assert lock_path.read_bytes() == lock_before
         assert cache_path.read_bytes() == cache_before
         assert stage.exists()
+
+    def test_restage_after_removing_directory_allows_absent_path(
+        self, tmp_path: Path,
+    ) -> None:
+        assert _install(tmp_path) == 0
+        dst = tmp_path / ".agents/skills/_data/vendor_targets.yml"
+        dst.unlink()
+        dst.mkdir()
+        (dst / "data").write_text("preserve")
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        dst.rename(tmp_path / "saved-directory")
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        assert s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                       "--ack-review-only", "--force",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        assert (tmp_path / "saved-directory/data").read_text() == "preserve"
 
     def test_plan_stage_and_recovery_preserve_mergeable_directory(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str],

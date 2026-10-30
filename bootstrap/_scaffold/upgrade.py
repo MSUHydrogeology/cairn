@@ -3199,6 +3199,21 @@ def _apply_upgrade(
         print("error: staged upgrade lacks directory observations; "
               "run `upgrade --stage` again before applying.", file=sys.stderr)
         return 1
+    # Derive ordinary tracked destinations from the lock, independently of
+    # the review area's editable observation list. Retired records are not
+    # upgrade destinations. A renamed vendor wrapper cannot be derived from
+    # its canonical lock destination here.
+    retired = {(src, dst) for src, dst, _verbatim, _digests in _RETIRED_INSTALLS
+               if not (templates_root / src).exists()}
+    required_observations = {
+        rec["dst"] for rec in lock.get("files", [])
+        if (rec["src"], rec["dst"]) not in retired
+        and rec["src"] != "core/VENDOR.md"
+    }
+    if not required_observations.issubset(meta["directory_observed"]):
+        print("error: staged upgrade has incomplete directory observations; "
+              "run `upgrade --stage` again before applying.", file=sys.stderr)
+        return 1
     files_dir = stage / "files"
     staged_meta = sorted(meta.get("staged_files", []))
 
