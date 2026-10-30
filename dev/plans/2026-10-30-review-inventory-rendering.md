@@ -1,7 +1,7 @@
 # Plan: Render the review inventory
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-review-inventory-rendering.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Show the selected modules in the upstream review copy so local edits remain visible.
@@ -12,7 +12,7 @@ The accepted proposal requires an independently rendered inventory review copy, 
 
 ## Scope
 
-Change `bootstrap/_scaffold/upgrade.py` and the owning tests, principally `bootstrap/tests/test_upgrade.py`. Reuse the inventory renderer and reconciliation in `bootstrap/_scaffold/install.py`; searches for `generated-modules`, `review-only`, and inventory readers found the template, install and upgrade engines, and the upgrade, module-addition, added-slot, skill and side-door tests. Keep other review pairs and reconciliation untouched. The selected-source metadata must match the running renderer's metadata before reuse; for `--to`, compare the selected source's metadata-bearing config bytes with the running source without executing historical code. Refuse if equality cannot be established, a member is unknown, or upstream structure is invalid. This conservative check may refuse a source with unrelated config changes; it never claims a faithful comparison when metadata differs. Validate generated and per-entry markers, including duplicate, nested and unmatched markers, before using the reconciler. Treat upstream pre-existing entries as upstream text, validate their structure and identity, and use reconciliation only when it can faithfully represent the selected roster; otherwise refuse.
+Change `bootstrap/_scaffold/upgrade.py` and the owning tests, principally `bootstrap/tests/test_upgrade.py`. Reuse the inventory renderer and reconciliation in `bootstrap/_scaffold/install.py`; searches for `generated-modules`, `review-only`, and inventory readers found the template, install and upgrade engines, and the upgrade, module-addition, added-slot, skill and side-door tests. Keep other review pairs and reconciliation untouched. For a review-only inventory under explicit `--to`, refuse staging: the running renderer cannot establish historical rendering fidelity without a historical compatibility mechanism. Do not execute historical code or add such a mechanism. For the current source, render only when the source and running renderer are the same; otherwise refuse. Also refuse an unknown member or invalid upstream structure. Validate generated and per-entry markers, including duplicate, nested and unmatched markers, before using the reconciler. Treat upstream pre-existing entries as upstream text, validate their structure and identity, and use reconciliation only when it can faithfully represent the selected roster; otherwise refuse.
 
 ### Documentation / doctrine surface
 
@@ -26,7 +26,7 @@ No doctrine surface. Update the upgrade engine's descriptive review-pair text; c
 
 ## Acceptance criteria
 
-C1: The selected upstream inventory is rendered for every recorded module, including an empty roster, with independently asserted expected entries. `.ours` retains local edits, `.theirs` excludes them, and missing installed inventory has no `.ours`. Unknown members, missing or malformed upstream markers, and unverified or different source metadata refuse stage without a usable partial stage; existing installed bytes and raw ancestor evidence remain unchanged. Historical tests deliberately change source descriptions and prove refusal; matching source metadata permits rendering. Duplicate, nested, unmatched and pre-existing entry cases are covered. Other review pairs, path containment, staged-input protection and apply semantics remain intact. Public install, `--init-lock`, and `--stage` paths are exercised. Separate mutations removing rendering and substituting `.ours` must each be killed by independent assertions; record control, counts and outcomes. No scientific claim is touched.
+C1: The selected upstream inventory is rendered for every recorded module, including an empty roster, with independently asserted expected entries. `.ours` retains local edits, `.theirs` excludes them, and missing installed inventory has no `.ours`. Unknown members, missing or malformed upstream markers, and an explicit historical source or unverified current source refuse stage without a usable partial stage; existing installed bytes and raw ancestor evidence remain unchanged. Historical tests separately change descriptions and renderer behavior, the latter with unchanged metadata, and prove refusal and cleanup through `--to --stage`; current-source staging renders normally. Duplicate, nested, unmatched and pre-existing entry cases are covered. Other review pairs, path containment, staged-input protection and apply semantics remain intact. Public install, `--init-lock`, and `--stage` paths are exercised. Separate mutations removing rendering and substituting `.ours` must each be killed by independent assertions; record control, counts and outcomes. No scientific claim is touched.
 
 ## Scope delta
 
@@ -87,3 +87,7 @@ Token use: unknown
 The other producer and consumer boundaries are mapped: the current renderer silently skips unknown members, and the reconciler retains selected pre-existing blocks; the plan requires membership and marker validation plus faithful handling before reuse. Its public-path tests and separate mutations challenge both omission and copied local content. The wide mapping includes containment and staged-input consumers; its cost is bounded to named families rather than full-tree certification -- `bootstrap/_scaffold/install.py::_render_module_inventory`, `_reconcile_generated_blocks`, and plan Verification.
 
 Coverage: reviewed the accepted contract, source selection, roster, marker handling, staged review and mapped checks against the named commit. No implementation, test, mutation, historical-source probe, full suite or re-anchor was run; failure cleanup and actual check cost remain to be measured during implementation.
+
+## Response to plan review -- Codex (gpt-6.1-sol) -- 2026-10-30
+
+Both blocking findings accepted. Scope and C1 now refuse a review-only inventory under explicit `--to`, avoiding historical code execution and compatibility machinery; the historical renderer-change and metadata-change fixtures exercise refusal and cleanup. This preserves the proposal’s explicit refusal outcome. Elapsed time: approximately 3 minutes; tokens: unknown.
