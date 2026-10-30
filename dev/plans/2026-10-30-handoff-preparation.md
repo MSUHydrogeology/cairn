@@ -1,7 +1,7 @@
 # Plan: Prepare handoff before user pruning
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-handoff-prune.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30
@@ -37,6 +37,14 @@ in `doctrine/rationale.md` > How the doctrine evolves under evidence is met,
 with its evidence. If none is established, stop and seek the Maintainer's
 resolution; acceptance alone does not waive that gate. Update CLI description
 and help and affected descriptive readers to match the implemented paths.
+
+**Maintainer allowance -- 2026-10-30**: The team did not establish a doctrine-
+evolution trigger. The Maintainer was asked whether implementation could
+proceed under the approved handoff scope despite that missing evidence, with
+the allowance recorded here. The answer authorizes proceeding; it does not
+claim that a trigger was met or classify the change as high-risk.
+
+> Proceed and record allowance (Recommended)
 
 ## Sequence
 
