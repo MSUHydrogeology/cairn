@@ -159,25 +159,25 @@ the guidance and parent CLI help correction without changing enforcement.
 The ordinary and Security code reviews accepted the implementation; the
 recorded gate-manifest ceremony remains separate v0.6 baseline work.
 
-### 13. Repair certification test failures — awaiting Decision
+### 13. Repair certification test failures — accepted
 
-The [proposal](../proposals/2026-10-30-codex-certification-test-repairs.md),
-awaits Decision. The uncertified `8b51bb2e` run had 5,622 passes and six
+The [proposal](../proposals/archive/2026-10-30-codex-certification-test-repairs.md)
+was accepted at `322eafb5`. The uncertified `8b51bb2e` run had 5,622 passes and six
 failures: five in test infrastructure, one in unrelated upgrade behavior.
 Reproduce ordering before choosing isolation; retain the safety assertions.
 Four affected files remain frozen, with ceremony owed.
 
-### 14. Render generated inventory in upgrade review copies — awaiting Decision
+### 14. Render generated inventory in upgrade review copies — accepted
 
-The [proposal](../proposals/2026-10-30-codex-review-inventory-rendering.md),
-awaits Decision. Render upstream `.theirs` from the recorded roster; keep
+The [proposal](../proposals/archive/2026-10-30-codex-review-inventory-rendering.md)
+was accepted at `9db57ec6`. Render upstream `.theirs` from the recorded roster; keep
 `.ours` as adopter bytes. Preserve ancestor and apply behavior; handle
 historical `--to` and invalid markers without a false comparison.
 
-### 15. Reduce repeated setup in review-sweep tests — awaiting Decision
+### 15. Reduce repeated setup in review-sweep tests — accepted
 
-The [speed proposal](../proposals/2026-10-29-codex-certification-cost-audit.md),
-awaits Decision. Change `installs` from module to session scope, retaining
+The [speed proposal](../proposals/archive/2026-10-29-codex-certification-cost-audit.md)
+was accepted at `3b675bb0`. Change `installs` from module to session scope, retaining
 every node. One scoped run per variant passed 391 tests (18.55 versus 0.65
 seconds); neither timing stability nor full-suite speedup is established.
 The file remains frozen, so its ceremony is owed. A plan must test shuffled
@@ -194,11 +194,11 @@ trigger, durable decisions, byte binding and old profile context across partial
 upgrades. This **loses** the board's required incorporation-or-disposition
 outcome; only the Maintainer can allow that loss or keep #35 for redesign.
 
-### 17. Refuse linked files during lockfile migration — awaiting Decision
+### 17. Refuse linked files during lockfile migration — accepted
 
-The [proposal](../proposals/2026-10-30-codex-init-lock-linked-files.md),
-responded at `e6c69148`, cleared Security Review at `52a7feb3` and awaits
-Decision. `--init-lock` currently hashes a linked installed file's target,
+The [proposal](../proposals/archive/2026-10-30-codex-init-lock-linked-files.md)
+was accepted at `06af4aeb` after Security Review clearance at `52a7feb3`.
+`--init-lock` currently hashes a linked installed file's target,
 even outside the project. Reuse its link guard before mapped-file reads in a
 stable tree. Legitimate linked installs must replace the linked file or folder
 with an ordinary copy before migration. A separate fidelity-manifest reader
