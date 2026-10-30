@@ -4,6 +4,10 @@
 Use native Windows, Python 3.13, pytest and Git. Preserve the output in the
 plan's verification record. A failed or skipped case leaves evidence open;
 this runner does not certify the whole tree.
+
+For Miniconda, activate the Python environment in the current shell before
+running this script. The copied-interpreter test needs runtime DLLs such as
+zlib.dll to be available through the activated environment.
 """
 from __future__ import annotations
 
@@ -28,6 +32,8 @@ def main() -> int:
         print("Tracked checkout is dirty; no evidence collected:\n" + status.stdout, file=sys.stderr)
         return 2
     print(f"Interpreter: {sys.executable} ({sys.version})", flush=True)
+    print("Miniconda users: activate this Python environment in the current shell "
+          "before running, so copied-interpreter DLLs are available.", flush=True)
     print("File symlink cases require Windows Developer Mode or symlink privileges; "
           "creation failures leave evidence open.", flush=True)
     subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, check=True)
