@@ -183,3 +183,23 @@ run on a clean, unchanged commit; the two mapped non-passes remain unresolved.
 The public recovery rehearsal and the four mutants are measured, but C2 and the
 implementation remain open pending a clean wide Boundary B record and
 independent code and Security reviews. No full suite or certifying run was run.
+
+## Interim code review -- Codex GPT-6.1 -- 2026-10-30
+
+**Reviewed implementation**: `f8f96cdb8afbbc565de7a7bc51f9d5da586ec83d`
+**Tier**: Internal
+**Findings**: verification remains incomplete; this is not a completed code review.
+**Bounding**: WIDER RUN REQUIRED -- the plan's wide Boundary B is pending and its two mapped failures remain unresolved; the author must supply the required clean final-commit evidence before acceptance.
+
+**Foundations**
+
+1. **Does it do what it claims?** The shared guard checks both supplied and resolved project components, while retaining the unresolved return and the source-tree distinction; the targeted checks below did not break those claims -- `bootstrap/_scaffold/upgrade.py`, `_contained_lockfile_path` at the reviewed commit.
+2. **Best alternative.** The shared guard is simpler than duplicating the check at each reader, provided the remaining verification establishes the callers and public paths -- this plan's Scope and Verification.
+3. **What would show it wrong?** A protected path reaching a read or write, an ordinary contained link being refused, or state changing on refusal would break the contract -- falsification ledger below.
+
+**Falsification ledger** (separate detached worktree at the reviewed commit, Python 3.13.13):
+
+* Ran `python3.13 -m pytest -q bootstrap/tests/test_upgrade_lockfile_path_containment.py bootstrap/tests/test_upgrade_refuses_hostile_project_data.py -k 'git or contained_link or pristine_lockfile or stage_refuses'`: 76 passed, 198 deselected. This challenges supplied and resolved names, stage metadata and ordinary links; it is not the plan's complete verification.
+* Independently called the guard with a missing target under a mixed-case, trailing-dot Git component and with a contained alias to a mixed-case trailing-space Git directory: both refused. An ordinary contained link, `.gitignore`, `.github/config`, `.git-notes.md`, a source-tree Git name, and a project under an external `.git` ancestor were accepted. This probe did not exercise the public commands.
+
+**Covered:** shared path guard, supplied and resolved paths, benign names, source distinction and selected stage tests. **Not covered / low confidence:** the complete public-command and stage collection contract, independent mutation of each member, Windows behavior, races and hard links; the author has not supplied complete Boundary B. This interim pass does not clear the separate Security Review obligation or authorize archive.
