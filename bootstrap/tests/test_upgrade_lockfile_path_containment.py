@@ -304,6 +304,38 @@ def test_a_base_cache_that_leaves_the_project_is_refused_on_every_action(world, 
     assert_nothing_left_the_tree(world, outside_before)
 
 
+@pytest.mark.skipif(shutil.which("git") is None, reason="git is not available here")
+@needs_links
+def test_a_contained_base_cache_alias_into_git_data_is_refused_without_changing_it(world):
+    """A project-contained link cannot make the saved-ancestor reader reach Git data."""
+    initialized = subprocess.run(
+        ["git", "init", "-q", str(world.project)],
+        capture_output=True, text=True, timeout=30,
+    )
+    assert initialized.returncode == 0, initialized.stderr
+    description = world.project / ".git" / "description"
+    assert description.is_file()
+    docs = world.project / "docs"
+    docs.mkdir(exist_ok=True)
+    try:
+        os.symlink(world.project / ".git", docs / "history")
+    except OSError:
+        pytest.skip("symlinks are not available here")
+
+    lock = read_lock(world.project)
+    record_for(lock, "AGENTS.md")["base_cache"] = "docs/history/description"
+    write_lock(world.project, lock)
+    description_before = description.read_bytes()
+    project_before = snapshot(world.project)
+
+    for action in _ACTIONS:
+        proc = upgrade(world.project, *action)
+        assert_refused(proc, world, "base_cache")
+        assert description.read_bytes() == description_before
+        assert snapshot(world.project) == project_before
+        assert not (world.project / STAGE_REL).exists()
+
+
 @needs_links
 def test_a_saved_ancestor_folder_that_is_a_link_out_is_refused_with_a_clean_lockfile(world):
     """No record was edited: the folder of saved ancestors is a link to a folder
