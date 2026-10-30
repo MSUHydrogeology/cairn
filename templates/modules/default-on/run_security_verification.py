@@ -57,6 +57,8 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.abc
+import importlib.util
 import json
 import os
 import re
@@ -64,7 +66,6 @@ import subprocess
 import sys
 import tempfile
 import time
-import types
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -587,6 +588,28 @@ def _api_engine_paths(repo_root: Path) -> tuple[str, ...]:
     raise _Degraded("API policy engine is missing")
 
 
+class _BoundSourceLoader(importlib.abc.SourceLoader):
+    """Load only a bound engine member's source, never its bytecode cache."""
+
+    def __init__(self, fullname: str, path: Path) -> None:
+        self._fullname = fullname
+        self._path = path
+
+    def get_filename(self, fullname: str) -> str:
+        if fullname != self._fullname:
+            raise ImportError("bound source loader name mismatch")
+        return str(self._path)
+
+    def get_data(self, path: str) -> bytes:
+        if Path(path) != self._path:
+            raise OSError("bound source loader path mismatch")
+        return self._path.read_bytes()
+
+    def get_code(self, fullname: str):
+        source = self.get_data(self.get_filename(fullname))
+        return compile(source, str(self._path), "exec", dont_inherit=True)
+
+
 def _load_api_local_credential_names(
         repo_root: Path, engine_paths: tuple[str, ...]) -> tuple[str, ...]:
     """Validate the bound local policy using source-only engine modules."""
@@ -596,24 +619,29 @@ def _load_api_local_credential_names(
     if any(name in sys.modules for name in module_names):
         raise _Degraded("API policy engine module substitution")
     paths = {Path(path).name: repo_root / path for path in engine_paths}
-    package = types.ModuleType(package_name)
-    package.__file__ = str(paths["__init__.py"])
-    package.__package__ = package_name
+    package_loader = _BoundSourceLoader(package_name, paths["__init__.py"])
+    package_spec = importlib.util.spec_from_loader(
+        package_name, package_loader, origin=str(paths["__init__.py"]),
+        is_package=True,
+    )
+    if package_spec is None:
+        raise _Degraded("API policy engine module load failed")
+    package = importlib.util.module_from_spec(package_spec)
     package.__path__ = [str(paths["__init__.py"].parent)]
     sys.modules[package_name] = package
     try:
-        for member in ("report.py", "net.py", "policy.py", "__init__.py"):
-            name = package_name if member == "__init__.py" else (
-                f"{package_name}.{member[:-3]}")
-            module = package if member == "__init__.py" else types.ModuleType(name)
-            module.__file__ = str(paths[member])
-            module.__package__ = package_name
-            if member != "__init__.py":
-                sys.modules[name] = module
-                setattr(package, member[:-3], module)
-            source = paths[member].read_bytes()
-            code = compile(source, str(paths[member]), "exec", dont_inherit=True)
-            exec(code, module.__dict__)
+        for member in ("report.py", "net.py", "policy.py"):
+            name = f"{package_name}.{member[:-3]}"
+            loader = _BoundSourceLoader(name, paths[member])
+            spec = importlib.util.spec_from_loader(
+                name, loader, origin=str(paths[member]), is_package=False)
+            if spec is None:
+                raise _Degraded("API policy engine module load failed")
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[name] = module
+            setattr(package, member[:-3], module)
+            loader.exec_module(module)
+        package_loader.exec_module(package)
         engine = sys.modules[f"{package_name}.policy"]
         # Import-time completeness plus contract agreement precede policy read.
         sys.modules[package_name].verify_engine_complete()
