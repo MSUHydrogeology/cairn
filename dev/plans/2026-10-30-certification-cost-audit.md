@@ -1,7 +1,7 @@
 # Plan: Reuse review-sweep installations
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-certification-cost-audit.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal)
 **Opened**: 2026-10-30
 **In brief**: Share each profile's real test installation across the session to avoid repeated setup.
@@ -106,3 +106,23 @@ The timed commands used the same arguments on isolated committed copies with no 
 **Plan-specific acceptance commands**: covered by the timed repeated controls, final fixed and alternate shuffle selections, nine installed-tree fault probes, frozen-file refusal node and prose gates above. The 391-node count reconciles across both seeds; no test node was removed. No manifest hash, protection classification or live reference changed.
 
 **Known omissions**: no full-tree certification, repin, re-anchor or anchor comparison was run; these remain separate ceremonies. **Certified by** remains pending, and the frozen-file ceremony remains due. External links were not probed by the Markdown checks. The implementation commit `e270902d` preceded the `implementing` status commit `6fc4d9ea` because the pre-implementation transition was missed; this record does not claim an earlier transition.
+
+## Code review -- Codex GPT-6 Internal Reviewer -- 2026-10-30
+
+Reviewed `6fc4d9ea` (implementation `e270902d`) in an isolated copy. Elapsed: about 6 minutes. Tokens: unknown. **Tier**: Internal. **Findings**: none. **Verdict / Bounding**: ACCEPT / ACCEPTED.
+
+**Foundations**
+
+1. **Should it happen?** Yes. The fixture invokes `bootstrap/scaffold.py` for each profile; four consumers read separate installed trees (`test_review_sweep_ships.py:318-440`). Recorded repeated controls show 391 passes and setup falling from 31.26s to 0.58s/0.49s (Implementation verification).
+2. **Best alternative.** Keep module scope and repeated installs; session scope preserves the CLI and nodes (`e270902d` diff; `conftest.py:239-252`).
+3. **What would show it wrong?** A shared-tree write, shuffled failure, or surviving installed-content fault. None appeared in the checks below.
+
+**Falsification ledger**
+
+- **Surfaces:** `rg` found four `installs` consumers; `bootstrap/profiles/*.yml` lists three profiles. Consumers write no install; one mutates local text, another inserts the source root into `sys.path` (`test_review_sweep_ships.py:366-440`).
+- **Edge attempt:** each installed tree passed before and after a temporary fault; its named assertion failed under the fault.
+- **Verification:** Python 3.13.13, interleaved seed 1: 391 passed in 0.86s. Nine temporary fault probes: 9 passed in 0.44s. I assessed recorded phase sums; did not rerun timings or the full suite.
+- **Residual risk:** only scoped speed is measured. The changed SHA differs from `gate_manifest.json:7817`; the frozen-file ceremony remains due at the authorized cut or request.
+- **Mutation:** control 391 passed; lens 4 deletion, wrapped pointer deletion and unknown placeholder, once per profile: 9 total, 9 killed, no survivors or measured equivalents.
+
+**Covered:** claims/drift (`e270902d`, verification record); production path/design (`test_review_sweep_ships.py:318-440`); fail-closed (nine faults); cross-document/lifecycle (`protected_test_roster.json:493`, `gate_manifest.json:7817`); domain scope/satisfier (one-line diff). **Not covered / low confidence:** whole-suite speed, certification, repin, re-anchor and anchor comparison.
