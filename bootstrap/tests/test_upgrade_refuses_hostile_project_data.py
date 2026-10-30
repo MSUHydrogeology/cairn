@@ -871,9 +871,11 @@ def test_apply_refuses_a_review_area_whose_metadata_is_not_an_object(world, meta
 def test_apply_still_applies_a_review_area_of_plain_names(world):
     """What the refusals above leave alone: a stage of plain names applies."""
     _project_with_a_profile(world)
-    (world.project / "docs").mkdir(exist_ok=True)
-    (world.project / "docs" / "notes.md").write_text("old\n", encoding="utf-8")
-    _plant_stage(world)
+    stage = _plant_stage(world)
+    meta_path = stage / "stage-metadata.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    meta["directory_observed"] = [rec["dst"] for rec in read_lock(world.project)["files"]]
+    meta_path.write_text(json.dumps(meta), encoding="utf-8")
     proc = upgrade(world.project, "--apply")
     assert proc.returncode == 0, proc.stdout + proc.stderr
     assert (world.project / "docs" / "notes.md").read_text(encoding="utf-8") == "staged notes\n"
