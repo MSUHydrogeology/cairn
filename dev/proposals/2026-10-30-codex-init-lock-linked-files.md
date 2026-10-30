@@ -1,7 +1,7 @@
 # Refuse linked installed files during lockfile migration
 
 **Author**: Codex GPT-6.1 Sol (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
@@ -271,3 +271,11 @@ Assurance path: high-assurance
 **SR1 cleared.** The response identifies the separate check and read, explicitly excludes atomic protection against concurrent path replacement, and carries that limit into the guide and docstring requirements. **SR2 cleared.** It narrows the broad docstring and records the independent fidelity-manifest reader as a remaining gap. The withdrawal ledger identifies the superseded unqualified wording and remedy; the stable-tree refusal outcomes remain specified.
 
 **Covered**: both security findings, revised threat boundary, mapped-path tests and withdrawal ledger (response `SR1`, `SR2`, `Current proposal`, `Current verification and documentation`, and `Withdrawn / superseded commitments`). **Not covered / low confidence**: no implementation or concurrent replacement was tested; this clearance does not establish atomic containment or cover the separate manifest reader.
+
+## Decision -- Maintainer -- 2026-10-30
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated** (chat, 2026-10-30; scribed by Antigravity):
+
+> "Please scribe my decisions as you recommend on those five."
+
+Accepted as revised with high-assurance and required Internal + Internal Security Review plan review.
