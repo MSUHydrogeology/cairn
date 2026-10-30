@@ -155,3 +155,21 @@ The Internal Security Review raised no additional findings and cleared its oblig
 **Falsification ledger**: In a detached copy of b925187e, added a scratch test using `_install`, `_diverge_base`, public stage and apply, and selected an existing tracked regular file absent from `staged_files`. Replaced `.agents/skills/_data/vendor_targets.yml` with a directory containing `data`, then invoked apply with `--force`. `/Users/kendal30/conda_envs/lhm/bin/python -m pytest -q -s bootstrap/tests/test_upgrade.py::test_review_noop_tracked_path_becomes_directory --tb=short` on Python 3.13.13 failed the expected refusal assertion: apply returned 0 (1 failed). This is a controlled change between commands, not an arbitrary concurrent change after a check. The scratch test was not added to the implementation.
 
 Coverage: inspected the recorded Boundary B and the implementation's classification, staging and apply write-set checks, and independently challenged the no-op post-stage case. This is an interim pass: the two mapped required failures remain open, and other planned observation points, recovery, hostile metadata, symlink behavior, independent Security Review, and any corrected implementation were not independently tested here. No implementation verification or completion is claimed; the plan remains implementing.
+
+## Interim code review follow-up -- Codex GPT-6.1 Sol -- 2026-10-30
+
+**Reviewed commit**: a584f84d3f749b947a71e2399aa0578502208ff1
+**Reviewed range**: b925187e798be7cd3a1c9ce2dec7d9f8398bce6a..a584f84d3f749b947a71e2399aa0578502208ff1
+**Tier**: Internal
+**Findings**: none in this follow-up; interim, not a completed code review
+**Bounding**: ACCEPTED for the earlier no-op destination finding only; final Boundary B and required mapped failures remain open.
+
+**Foundations**:
+
+1. **Does it do what it claims?** The correction records applicable planned destinations, including no-op files, validates their stage names, and checks them before apply writes; the public regression and a distinct nested verbatim probe both refuse the post-stage directory -- `bootstrap/_scaffold/upgrade.py:1393`, `:3155`, `:3424` and the ledger below.
+2. **Best alternative.** The new stage list reuses the existing path validation and apply refusal, and is smaller than adding a second planning pass at apply; no further change is recommended for this finding -- `bootstrap/_scaffold/upgrade.py:3151-3190`, `:3410-3441`.
+3. **What would show it wrong?** A no-op destination becoming a directory after staging must make public apply fail without lockfile advancement or content loss; the ledger below records two attempts.
+
+**Falsification ledger**: A separate local clone at a584f84d was used because the shared repository's Git metadata did not permit a detached worktree. The unmodified focused regression and hostile stage-name selection passed: `/Users/kendal30/conda_envs/lhm/bin/python -m pytest -q bootstrap/tests/test_upgrade.py::TestTrackedDirectoryCollisions::test_noop_tracked_file_becoming_directory_blocks_apply bootstrap/tests/test_upgrade_refuses_hostile_project_data.py -k 'directory_observed or noop_tracked_file_becoming_directory_blocks_apply' --tb=short` (9 passed, 182 deselected; Python 3.13.13). In that clone, a scratch public-command test changed a different, nested *verbatim* no-op destination into a directory after staging, then applied with both overrides. Apply returned 1, named the directory, preserved its nested bytes, left the lockfile unchanged, and retained the stage. Its invocation passed; importing an existing test class also collected 27 unrelated tests, for 28 passed total. The scratch test was not added to the implementation.
+
+**Covered**: claims and public entry (#1-2), no-op and nested-path edge cases (#3), unconditional refusal (#4), reuse (#5), agreement with C1 and `bootstrap/UPGRADE.md` (#6), plan status and required evidence (#7), accepted scope (#8), and the earlier P1 satisfier (#9), at the code and commands cited above. **Not covered / low confidence**: no independent check of every original observation point, symlink precedence, arbitrary concurrent changes, or the full mapped run. The two recorded mapped failures, final-commit Boundary B, and separate Security Review are unresolved; the plan stays implementing.
