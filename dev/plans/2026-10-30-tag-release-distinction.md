@@ -366,3 +366,22 @@ snippet markers.
 **Known omissions**: live GitHub state and cached archive contents remain
 unverified; Release notes and source links remain a human review. Elapsed
 verification was about 2 minutes; token use unknown.
+
+## Code review -- Codex GPT-6.1 Sol (Security Reviewer, second pass) -- 2026-10-30
+
+**Reviewed commit**: `0ecd4f49bed89e2811b6de437ff7802087c46a09`; verification `21d14cb8`.
+**Obligation**: Internal Security Review. **Tier**: Internal Security Review.
+**Verdict**: REVISE; two-pass cap reached, unresolved criterion to Maintainer.
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes; C1's independent identity and read-only publication check remain useful (`_fetch_release`, `_parse_remote_refs`).
+2. **Best alternative.** Run ordinary urllib in a standard-library worker subprocess with a parent timeout and bounded result. This retains the accepted outcomes and can replace the custom header classes and private socket traversal; manual checking loses the repeatable command.
+3. **What would show it wrong?** Connection acquisition exceeding the total deadline (Protocol; probe below).
+
+**P1 remains blocking — DNS is outside the deadline.** `_DeadlineHTTPSConnection.connect` sets a socket timeout, but hostname resolution precedes socket operations. In an extraction of this commit, public `main` used real urllib/HTTPS connection code with only `socket.getaddrinfo` replaced by a resolver sleeping 0.35 seconds then failing. A 0.1-second budget refused after 0.358 seconds. Thus the accepted overall bound is still unmet. Close with an enforceable outer deadline covering resolution, connection, headers and body, plus a delayed-resolver public-command regression. The Maintainer must disposition this named unmet criterion at the cap; a future certification does not close it.
+
+**Falsification ledger**: Python 3.13.13 DNS probe above; subprocess timeout control stopped a 0.35-second sleeper after 0.107 seconds with budget 0.1. Inspected new header reader and Boundary B's 32-test record. Subprocess control measured macOS only; Windows startup/termination and a complete worker design remain unverified. No suite rerun or mutations. **Bounding**: WIDER RUN REQUIRED for connection acquisition.
+
+**Covered**: claims/production/completeness/failure (DNS probe, `connect`); consistency/drift/lifecycle/scope (Protocol, correction record, C1); reuse/satisfier (subprocess alternative and P1). **Not covered**: live GitHub, chunk framing, archives, signatures, full suite or re-anchor.
