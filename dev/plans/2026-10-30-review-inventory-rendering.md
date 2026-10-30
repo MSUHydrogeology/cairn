@@ -273,3 +273,66 @@ Tokens: unknown
 **Falsification ledger.** Isolated committed copy, Python 3.13.13: the outside-block unmatched-marker probe succeeded when refusal was expected. Source inspection checked both current and historical byte comparisons, roster validation, stage cleanup ordering, and reconciler handling. Boundary B records 345 mapped passes and two killed mutations; I checked its SHA, clean states and mapping without rerunning implementation checks.
 
 Coverage: claims, edges and fail-closed behavior (`upgrade.py:360-437,1265-1284`); reuse, drift and compatibility (`install.py:1336-1450`, plan Scope); lifecycle, scope and satisfier (accepted proposal and C1); scientific validity (no scientific claim). No full suite, re-anchor, public-path reproduction of this probe, concurrent replacement test, or apply run was performed.
+
+## Response to code review -- Codex GPT-6 -- 2026-10-30
+
+Accepted the finding. `_render_review_inventory` now scans module entry markers
+across the entire selected inventory and refuses a matched pair outside the
+generated section. The public `--stage` test places a balanced pair outside
+that section and asserts refusal, stale-stage removal, and unchanged installed
+and ancestor bytes. A mutation disabling the placement check is killed by this
+case. No accepted scope was removed.
+
+## Implementation verification -- Codex GPT-6 follow-up -- 2026-10-30
+
+This record addresses the malformed-marker finding in the Security Review at
+`fabde037`; it replaces earlier Boundary B evidence for the current candidate.
+
+**Boundary B mode**: wide. The engine behavior and same mapped consumers remain
+in scope; the final marker-placement test now covers a balanced entry pair
+outside the generated section through public `--stage`.
+
+**Certified by**: pending
+
+**Tested commit**: `fbf5bd131ca6d605d68620a6733ac87a55d001a6`
+
+**Reviewed range**: `eeec9646fbac4b1f32b4d58c80812864bd6a92e0..fbf5bd131ca6d605d68620a6733ac87a55d001a6`
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python`, CPython
+3.13.13. The worktree's per-worktree interpreter binding is absent; this uses
+the repository-documented runtime directly and does not change that binding.
+
+**Pre-run state**: clean clone at the tested SHA; `git status --short` empty.
+
+**Post-run state**: clean clone at the identical tested SHA; `git status --short`
+empty.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python -m pytest -q bootstrap/tests/test_upgrade.py` | 0 | 141 passed | 31.33 s | unknown |
+| `python -m pytest -q bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_module_merge_lockfile.py` | 0 | 64 passed | 23.00 s | unknown |
+| `python -m pytest -q bootstrap/tests/test_upgrade_added_slots.py bootstrap/tests/test_upgrade_side_door_parity.py bootstrap/tests/test_skills_upgrade.py` | 0 | 48 passed | 16.74 s | unknown |
+| `python -m pytest -q bootstrap/tests/test_upgrade_lockfile_path_containment.py` | 0 | 93 passed | 8.73 s | unknown |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | 0 failures; neutrality 43 info, redundancy 1 info | about 1 s | unknown |
+| `python scripts/claim_check.py dev/plans/2026-10-30-review-inventory-rendering.md` | 0 | No flags | <0.01 s | unknown |
+| `python scripts/check_cairn.py` | 0 | 197 Markdown files; no issues; 94 external links not probed | 1.2 s | unknown |
+| `python scripts/link_check.py` | 0 | 197 Markdown files; no issues; 95 external links not probed | 0.1 s | unknown |
+| `python scripts/sync_doc_snippets.py --check` | 0 | 476 documents; no drift | 0.1 s | unknown |
+| `python -m pytest -q bootstrap/tests/test_upgrade.py -k malformed_upstream_inventory` (clean control) | 0 | 6 passed, 135 deselected | 0.76 s | unknown |
+| Same focused command with marker-placement check disabled | 1 | 5 passed, 1 failed; outside-generated case killed the mutant | 0.65 s | unknown |
+
+**Mutation summary**: the unmutated control was the clean tested commit;
+six malformed-inventory parameter cases passed. Total 1; killed 1; survivors
+0; measured equivalents 0. The mutant disabled the whole-file placement
+check; the balanced outside-block pair was accepted and the public staging
+test failed. Mutation token use unknown.
+
+**Non-pass disposition**: the mutant's exit 1 is the expected kill. All mapped
+tests and required standing gates passed. The quality-gate informational
+lines, including the existing R6 note for `_apply_module_discovery`, are not
+failures.
+
+**Known omissions**: no full-tree certifying suite or re-anchor was run; neither
+is authorized here. The mapped check did not run `--apply`; independent review
+follow-up remains needed to confirm this finding is closed. External links were
+not probed.
