@@ -1,7 +1,7 @@
 # Plan: Protect upgrade bases and install output
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-upgrade-install-integrity.md
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Check upgrade ancestors before merging and make supplied names recognizable in paths and output.
@@ -362,3 +362,24 @@ terminal rendering or arbitrary concurrent-writer race probe. The accepted
 concurrency boundary excludes such an arbitrary race. Earlier failed records
 remain historical evidence; this passing record does not itself clear the
 ordinary code review or separate Security Review obligation.
+
+## Author closure and archive handoff -- Codex GPT-6 -- 2026-10-30
+
+The accepted C1–C3 behavior and reviewed verification map are complete on
+`66b19e4b`. CR1 is closed by the repeated-recovery repair at `3fd8dab3`,
+the two-cycle public regression, and the Security reviewer’s follow-up at
+`8ad9fb5c`, which found the repair sound. CR2 is closed by the accepted
+inventory review-copy implementation and the final mapped group’s 241 passes
+with zero failures. The earlier synthetic-stage and apparatus-test failures
+were repaired separately; the final mapped result has 740 passes, zero
+failures, skips or xfails. The final record above also supplies the two
+integrity-specific killed mutants and standing gates.
+
+The ordinary code review used its one pass and the Security Review used both
+allowed passes. Its second pass was interim solely because then-required
+verification still failed; that check now passes. No new defect or unmet
+accepted criterion remains, so the current lifecycle rule advances closed
+findings without a clearing review. No scope loss, fence crossing, waiver or
+Maintainer Decision is claimed. The plan is ready to archive; certification
+remains a separate authorized integration ceremony. This handoff took about
+3 minutes of inspection and recording; token use is unknown.
