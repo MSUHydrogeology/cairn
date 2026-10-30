@@ -1,7 +1,7 @@
 # Render the module inventory in upgrade review copies
 
 **Author**: Codex (gpt-6.1-sol)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
@@ -64,3 +64,50 @@ Withdraw or redesign if the historical upstream inventory cannot be rendered fai
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+
+## Review -- Codex (gpt-6.1-sol) -- 2026-10-30
+
+```
+Reviewed commit: 43c2ddb93604f6bdb28e70cc6147174c3fe7208c
+Target: opening proposal
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: rendering the upstream inventory independently fixes a misleading comparison while keeping adopter edits observable; doing nothing leaves the recorded parity failure -- `bootstrap/_scaffold/upgrade.py::_write_stage` and `dev/plans/2026-10-30-upgrade-install-integrity.md`.
+2. **Best alternative.** Reuse the existing generated-block renderer on upstream text, as proposed; copying the installed inventory would hide edits, and a second renderer would duplicate metadata -- `bootstrap/_scaffold/install.py::_substitute_module_inventory` and `_render_module_inventory`.
+3. **What would show it wrong.** A historical source rendered with current descriptions, an omitted recorded module, or a local edit appearing in both copies defeats the comparison; independent expectations and historical-source handling are therefore essential -- `bootstrap/_scaffold/install.py::_render_module_inventory` and this proposal's Tests required and Signals the change is wrong.
+
+The narrow repair reaches the cause. Keeping raw ancestors, installed bytes and
+apply behavior unchanged avoids turning a display correction into another merge
+mechanism. The public-path tests proposed here exercise install, migration and
+stage rather than only the helper. The archived reconciliation design makes the
+recorded lock roster authoritative, so inferring selection from live inventory
+entries would be the wrong shortcut --
+`dev/plans/archive/2026-10-29-module-discovery-activation/reconciliation.md`.
+
+One implementation recommendation: make the historical-source case distinguish
+historical inventory metadata from the running engine's metadata, rather than
+merely passing a historical ref whose descriptions happen to match. The existing
+renderer reads process-local `_MODULE_DISCOVERY`, and silently skips an unknown
+name; a roster assertion should therefore account for every recorded module,
+including a removed or unavailable one. The proposal already requires faithful
+historical rendering or an explicit unavailable/refusal outcome, so this
+specifies its test rather than adding a new outcome. A fixture with deliberately
+different source descriptions and a recorded unavailable module can expose both
+mistakes without introducing a general historical execution system --
+`bootstrap/_scaffold/install.py::_render_module_inventory`.
+
+Coverage: claims, entry-point coverage, edge cases, silent omission, reuse and
+cross-document consistency were reasoned through against the named commit;
+placement and scope stay within the existing upgrade lifecycle. No scientific
+claim is involved. This is a design review, not implementation verification: no
+suite or mutation was run, historical compatibility has not been demonstrated,
+and the separate Security Review obligation remains open.
