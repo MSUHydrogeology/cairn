@@ -38,6 +38,8 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+- Certification tests now repair dispatcher record fixtures and the archived baseline path, and isolate the real ceremony boot while retaining adversarial controls. The frozen-file ceremony remains part of the separate v0.6 baseline. ([plan](dev/plans/archive/2026-10-30-certification-test-repairs.md))
+
 - Upgrade now checks saved ancestor bytes before merge, preserves corrupt evidence through repeated manual recovery, refuses specified invisible path characters, and escapes supplied install names in reports. The digest detects inconsistent local records; it does not authenticate a jointly edited cache and lockfile. ([plan](dev/plans/archive/2026-10-30-upgrade-install-integrity.md))
 
 - Upgrade now refuses project paths that name nested Git data or resolve into it, across lockfile destinations, base caches and staged review metadata. Ordinary contained read links remain supported; hard-link aliases and post-check races are outside this boundary. ([plan](dev/plans/archive/2026-10-30-nested-git-upgrade.md))
