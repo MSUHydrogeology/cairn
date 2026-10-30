@@ -38,6 +38,8 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+- Upgrade now refuses project paths that name nested Git data or resolve into it, across lockfile destinations, base caches and staged review metadata. Ordinary contained read links remain supported; hard-link aliases and post-check races are outside this boundary. ([plan](dev/plans/archive/2026-10-30-nested-git-upgrade.md))
+
 - Shuffled review-sweep tests now reuse each of three profile installs for the pytest session, cutting measured setup from 31.26s to 0.58s and 0.49s in the 391-node interleaved selection. All nine installed-content fault controls still fail. The frozen-file ceremony and tree certification remain in the separate v0.6 baseline. ([plan](dev/plans/archive/2026-10-30-certification-cost-audit.md))
 
 - Upgrade review copies now render the recorded module roster into upstream `.theirs` while keeping adopter bytes in `.ours`; unverified historical renderers and malformed inventory markers refuse staging. ([plan](dev/plans/archive/2026-10-30-review-inventory-rendering.md))

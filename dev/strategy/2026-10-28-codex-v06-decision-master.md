@@ -113,15 +113,17 @@ map adds machinery. Post-check races remain.
 with failed integrity, or require restoration, which loses accepted scope and
 needs a Scope delta. Reviews and mapped verification remain open.
 
-### 8. Nested Git paths during upgrade — accepted
+### 8. Nested Git paths during upgrade — delivered
 
 The [archived proposal](../proposals/archive/2026-10-29-codex-nested-git-upgrade.md)
-and [plan](../plans/2026-10-30-nested-git-upgrade.md) are accepted; the plan is
-`implementing`. Refuse `.git` components in supplied and resolved project
-paths, including lockfile destinations, caches and staged names. Keep ordinary
-contained links and lookalikes. Trailing-dot/space compatibility costs remain;
-hard links under other names and post-check races are not covered. Implementation
-verification and the separate Maintainer-run AST ceremony remain.
+and [archived plan](../plans/archive/2026-10-30-nested-git-upgrade.md) record
+the completed implementation, clean wide verification and both independent
+reviews. Upgrade refuses `.git` components in supplied and resolved project
+paths, including lockfile destinations, caches and staged names. Ordinary
+contained links and lookalikes remain valid. The conservative trailing-dot/space
+rule can refuse distinct POSIX names; hard links under other names and
+post-check races remain outside the protection. Certification and any
+Maintainer-run AST ceremony are separate from this plan.
 
 ### 9. Prepare the handoff before pruning — accepted
 

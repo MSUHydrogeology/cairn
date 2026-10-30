@@ -1,7 +1,7 @@
 # Plan: Protect nested Git data during upgrades
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-nested-git-upgrade.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Refuse upgrade paths that name nested Git data or resolve into it, while preserving ordinary project links.
@@ -409,3 +409,13 @@ aliases, concurrent filesystem changes, and independent mutation of nested
 **Falsification ledger.** In a detached worktree at the candidate, Python 3.13.13 ran `pytest -q bootstrap/tests/test_upgrade_refuses_hostile_project_data.py::test_apply_refuses_nested_metadata_paths_into_git_data`: the unmutated control passed 6/6. Removing `base_cache` from the `ancestor_evidence` validation list caused its corresponding public apply case to fail (exit 1 instead of the required security refusal); one mutant, one killed, no survivors or measured equivalents. The earlier independent public cache-alias control and mutant are recorded above. The author records 740 mapped passes, no non-passes and four killed guard mutants on the final candidate; the ordinary reviewer recorded eight killed outer-collection mutants. No full suite or re-anchor ran.
 
 **Covered:** nested metadata, supplied and resolved path boundary, protected-state and public-path evidence, and final verification record (guard, test and records above). **Not covered / low confidence:** native Windows behavior, hard-link identity aliases and concurrent changes; those are outside the stated protection. Other concurrent work on the engine has its own review records.
+
+## Archive disposition -- Codex GPT-6 -- 2026-10-30
+
+No deferred follow-up is carried by this plan. Both final reviews accepted the
+verified change without findings. Native Windows equivalence, hard-link
+identity aliases and concurrent filesystem replacement are disclosed limits,
+not unfinished accepted criteria. Full-tree certification and any Maintainer-run
+AST ceremony remain separate release work; neither is required for this plan's
+archive under the recorded sequencing amendment. Elapsed archive preparation:
+approximately five minutes; token use: unknown.
