@@ -1,7 +1,7 @@
 # Proposal: cover multi-script module installs
 
 **Author**: Codex (gpt-6.1-terra), Strategy
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -10,7 +10,7 @@
 
 ## Context
 
-The VER-5 board row in `dev/PLANNING.md` asks the Maintainer to decide the remaining scope. `bootstrap/_scaffold/install.py` derives `install_manifest()` from the core, skills, and module mappings; `bootstrap/security_check.py` uses that manifest and the lockfile derives from it. Install and upgrade also use the module mappings, with different selection and processing paths. This is shared data, not the single traversal originally requested in `dev/strategy/2026-08-05-codex-security-strategy.md` [VER-5]. No discovery mismatch has been demonstrated here.
+The VER-5 board row in `dev/PLANNING.md` asks the Maintainer to decide the remaining scope. `bootstrap/_scaffold/install.py` derives `install_manifest()` from the core, skills, and module mappings; `bootstrap/security_check.py` uses that manifest and the lockfile derives from it. Install and upgrade also use the module mappings, with different selection and processing paths. This is shared data, not the single traversal originally requested in `dev/strategy/2026-08-05-codex-security-strategy.md` [VER-5]. No discovery mismatch has been demonstrated here. The scanner additionally retains a registry loop by design. `bootstrap/tests/test_security_lint.py::test_every_manifest_verbatim_py_is_scanned_by_some_path` checks manifest-to-scan inclusion, while `test_every_templates_py_on_disk_is_release_scanned` independently checks on-disk Python scan coverage subject to named exclusions. These do not prove upgrade selection agrees with fresh installation for every module; that cross-path comparison was not found or tested in this limited inspection.
 
 `bootstrap/tests/test_reference_scripts.py` exercises the real installer and compares installed bytes with the source, but its independent multi-script expectations name only `issue-capture`. The current mapping has six other modules with multiple verbatim Python files: `claim-check`, `coordination-tiers`, `doc-drift-prevention`, `content-security`, `api-access-security`, and `web-hosting-security`.
 
@@ -65,3 +65,7 @@ An existing independent test already proves the same files and behavior, or an o
 **Finding (advice):** Make the loss and evidence for the Maintainer's choice concrete: identify which selection differences and paths are checked or remain unchecked, and whether a small behavior test covers them. The independent file list detects omissions in install mapping but cannot detect drift in upgrade selection or scanner filtering. The Maintainer alone can accept the loss of the original single traversal. No demonstrated mismatch makes this a blocking finding.
 
 **Coverage:** Read the proposal, VER-5 strategy and board row, install and manifest loops, upgrade mapping uses, scanner manifest selection, and the existing multi-script test at `5aac7f02`. Did not run tests or audit all existing cross-path coverage. Elapsed: about 2 minutes; tokens: unknown.
+
+## Author response -- Codex (gpt-6.1-terra) -- 2026-10-30
+
+Accepted the advice to make coverage and its limits explicit. The existing scanner checks provide meaningful cross-path and independent disk evidence; the proposed independent install expectations address a different gap. An all-module upgrade comparison would add a new test without evidence of a mismatch, so it is not proposed. The Maintainer can instead choose the original traversal or request further comparison; the single-traversal outcome remains explicitly unfulfilled. Elapsed: about 2 minutes; tokens: unknown.
