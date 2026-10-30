@@ -185,3 +185,65 @@ Tokens: unknown
 **Falsification ledger.** Clean clone 9675ea1b: nine focused inventory tests passed (Python 3.13.13). Helper probes refused duplicate entries and mismatched current metadata, preserved a selected edited upstream entry, and refused an edited unselected one. Boundary B records 343 mapped passes and two killed mutations; I checked SHA, clean states, families and gates against the plan without rerunning them.
 
 Coverage: claims/path/edges/fail-closed (`upgrade.py:360-437,1265-1284,1405-1423`; probes), reuse/drift (`install.py:1336-1450`; proposal Current contract), lifecycle/scope/satisfier (plan C1; finding), scientific validity (no scientific claim). No full suite, apply run, concurrent-path replacement, or code Security Review; the latter remains owed.
+
+## Implementation verification -- Codex GPT-6 follow-up -- 2026-10-30
+
+This record covers the two public-path tests added for the blocking findings in
+the code review at `0f766e0d`; it supersedes the earlier Boundary B record for
+the latest candidate.
+
+**Boundary B mode**: wide. The prior map remains appropriate: this follow-up
+adds public `--stage` coverage for missing installed inventory and duplicate
+per-entry markers, while the reviewed engine behavior and its consumers remain
+covered by the same owning families and standing gates.
+
+**Certified by**: pending
+
+**Tested commit**: `b8ab602ece9ce6102e08c726d4a77da257c46721`
+
+**Reviewed range**: `eeec9646fbac4b1f32b4d58c80812864bd6a92e0..b8ab602ece9ce6102e08c726d4a77da257c46721`
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python`, CPython
+3.13.13; same repository-documented runtime as the prior record. The local
+per-worktree Git interpreter binding is absent; this check used the documented
+runtime directly and did not change the binding.
+
+**Pre-run state**: clean clone at the tested SHA; `git status --short` empty.
+
+**Post-run state**: clean clone at the identical tested SHA; `git status --short`
+empty.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python -m pytest -q bootstrap/tests/test_upgrade.py` | 0 | 140 passed | 32.32 s | unknown |
+| `python -m pytest -q bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_module_merge_lockfile.py` | 0 | 64 passed | 24.25 s | unknown |
+| `python -m pytest -q bootstrap/tests/test_upgrade_added_slots.py bootstrap/tests/test_upgrade_side_door_parity.py bootstrap/tests/test_skills_upgrade.py` | 0 | 48 passed | 16.96 s | unknown |
+| `python -m pytest -q bootstrap/tests/test_upgrade_lockfile_path_containment.py` | 0 | 93 passed | 9.49 s | unknown |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | 0 failures; neutrality 43 info, redundancy 1 info | 1.18 s | unknown |
+| `python scripts/claim_check.py` on upgrade.py, test_upgrade.py, and this plan | 0 | All three files passed | <0.01 s each | unknown |
+| `python scripts/check_cairn.py` | 0 | 199 Markdown files; no issues; 94 external links not probed | 1.26 s | unknown |
+| `python scripts/link_check.py` | 0 | 199 Markdown files; no issues; 95 external links not probed | 0.11 s | unknown |
+| `python scripts/sync_doc_snippets.py --check` | 0 | 476 documents; no drift | 0.12 s | unknown |
+
+**Mutation summary**: the unmutated control was a clean clone of the tested
+commit; five focused inventory cases passed. Total 2; killed 2; survivors 0;
+measured equivalents 0. Removing `_render_review_inventory` was killed by the
+selected-entry assertion and duplicate-entry refusal/cleanup assertion; the
+five-case mutation run had 4 failures and 1 pass. Substituting installed `.ours`
+for `.theirs` was killed by the local-note exclusion and missing-inventory
+assertions; its five-case run had 4 failures and 1 pass. Each mutant ran in a
+separate clone of the tested commit. Mutation token use unknown.
+
+**Non-pass disposition**: no mapped test or required gate failed. Mutation
+exits of 1 are expected kills. The quality-gate informational lines, including
+the existing R6 note for `_apply_module_discovery`, are not failures.
+
+**Plan-specific acceptance commands**: the new missing-installed-inventory
+test asserts `.theirs` exists and `.ours` does not. The duplicate-entry test
+injects two markers with the same module id through the public `--stage` path,
+then asserts refusal, stale-stage cleanup, and unchanged installed and ancestor
+bytes. Both passed in the mapped upgrade family.
+
+**Known omissions**: no full-tree certifying suite or re-anchor was run; neither
+is authorized here. Boundary C and the code Security Review remain with
+independent reviewers. External links reported as unprobed were not fetched.
