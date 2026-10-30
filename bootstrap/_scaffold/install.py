@@ -1399,12 +1399,15 @@ def _reconcile_generated_blocks(
         offset += len(raw_line)
     if len(region_opens) != 1 or len(region_closes) != 1:
         raise ModuleDiscoveryConflict(
-            f"missing, malformed, or duplicate {kind} region markers")
+            f"missing, malformed, or duplicate {kind} region markers; save "
+            "the files and reconcile manually before retrying")
     open_offset, open_line = region_opens[0]
     close_offset, close_line = region_closes[0]
     if (open_line != start_marker or close_line != end_marker
             or close_offset <= open_offset):
-        raise ModuleDiscoveryConflict(f"missing or malformed {kind} markers")
+        raise ModuleDiscoveryConflict(
+            f"missing, malformed, or reversed {kind} region markers; save "
+            "the files and reconcile manually before retrying")
     body_start = open_offset + len(start_marker)
     end = close_offset
     body = text[body_start:end]

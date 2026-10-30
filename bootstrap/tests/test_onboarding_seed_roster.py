@@ -160,15 +160,11 @@ def test_reinstall_preserves_completion_and_refuses_loss(tmp_path: Path) -> None
     assert (tmp_path / "dev/.cairn/cairn-lock.yml").read_bytes() == before_lock
 
 
-@pytest.mark.parametrize("surface,damage", [
-    ("task", "malformed-opener"),
-    ("task", "missing-closer"),
-    ("task", "duplicate-entry"),
-    ("task", "nested-entry"),
-    ("task", "crossed-entry"),
-    ("task", "duplicate-region"),
-    ("task", "reversed-region"),
-    ("inventory", "malformed-closer"),
+@pytest.mark.parametrize("surface", ["task", "inventory"])
+@pytest.mark.parametrize("damage", [
+    "malformed-opener", "malformed-closer", "missing-closer",
+    "duplicate-entry", "nested-entry", "crossed-entry", "duplicate-region",
+    "reversed-region", "missing-region-open", "missing-region-close",
 ])
 def test_refuses_ambiguous_markers_without_writes(
     tmp_path: Path, surface: str, damage: str, capsys: pytest.CaptureFixture[str],
@@ -190,15 +186,15 @@ def test_refuses_ambiguous_markers_without_writes(
     path = planning if surface == "task" else inventory
     text = path.read_text(encoding="utf-8")
     if surface == "task":
-        opener = "<!-- cairn:module-task id=reflections -->"
-        closer = "<!-- cairn:module-task-end id=reflections -->"
+        entry, end_entry = "module-task", "module-task-end"
         region_open = "<!-- cairn:slot onboarding-tasks -->"
         region_close = "<!-- cairn:end onboarding-tasks -->"
     else:
-        opener = "<!-- cairn:module id=reflections -->"
-        closer = "<!-- cairn:module-end id=reflections -->"
+        entry, end_entry = "module", "module-end"
         region_open = "<!-- cairn:generated-modules:start -->"
         region_close = "<!-- cairn:generated-modules:end -->"
+    opener = f"<!-- cairn:{entry} id=reflections -->"
+    closer = f"<!-- cairn:{end_entry} id=reflections -->"
     if damage == "malformed-opener":
         text = text.replace(opener, opener.replace(" id=", "  id="), 1)
     elif damage == "malformed-closer":
@@ -213,8 +209,8 @@ def test_refuses_ambiguous_markers_without_writes(
     elif damage == "nested-entry":
         text = text.replace(opener, opener + "\n" + opener, 1)
     elif damage == "crossed-entry":
-        second_opener = "<!-- cairn:module-task id=dual-review -->"
-        second_closer = "<!-- cairn:module-task-end id=dual-review -->"
+        second_opener = f"<!-- cairn:{entry} id=dual-review -->"
+        second_closer = f"<!-- cairn:{end_entry} id=dual-review -->"
         first_start = text.index(opener)
         first_end = text.index(closer, first_start) + len(closer)
         second_start = text.index(second_opener, first_end)
@@ -232,6 +228,10 @@ def test_refuses_ambiguous_markers_without_writes(
         text = text.replace(region_open, "__CAIRN_REGION_OPEN__", 1)
         text = text.replace(region_close, region_open, 1)
         text = text.replace("__CAIRN_REGION_OPEN__", region_close, 1)
+    elif damage == "missing-region-open":
+        text = text.replace(region_open, "__CAIRN_REGION_OPEN__", 1)
+    elif damage == "missing-region-close":
+        text = text.replace(region_close, "__CAIRN_REGION_CLOSE__", 1)
     path.write_text(text, encoding="utf-8")
     before = tuple(p.read_bytes() for p in (planning, inventory, lock))
 
@@ -245,7 +245,10 @@ def test_refuses_ambiguous_markers_without_writes(
     assert main(args) == 2
     captured = capsys.readouterr()
     output = captured.out + captured.err
-    assert "manually" in output or "malformed" in output
+    assert "manually" in output
+    if damage in {"duplicate-region", "reversed-region",
+                  "missing-region-open", "missing-region-close"}:
+        assert "save" in output and "reconcile" in output
     assert tuple(p.read_bytes() for p in (planning, inventory, lock)) == before
 
 
