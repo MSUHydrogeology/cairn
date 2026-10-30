@@ -149,3 +149,30 @@ The strongest case is that the operator, rather than a text merger, must decide 
 **R2 (blocking): Define what each disposition records and what a later upgrade sees.** The proposal promises both an accepted preview and a deliberate local exception, while a pending file keeps its old base (lines 25-33). Today `--apply` advances the global Cairn commit and changes a file's base only when its staged content is applied; other records carry over unchanged (`bootstrap/_scaffold/upgrade.py:3572-3640`). If a local exception retains that old base, the same upstream change is offered again; if it advances the base, the next run may no longer show the rejected upstream rule. State which bytes and decision evidence are recorded for each outcome, whether the exception remains visible later, and how pending differs from deliberately retained after a sibling advances. Close with a two-upgrade test for each outcome and a retry after a sibling applied.
 
 **Coverage**: Claims and design (#1, #3) -- classifier and lock update cited in R1/R2; public path (#2) -- `bootstrap/tests/test_upgrade.py:765-793` currently probes classification, and proposal lines 70-78 call for public commands; silent failure (#4) -- `bootstrap/_scaffold/upgrade.py:3372-3380` shows the current blanket review-only override; cross-document and drift (#5, #6) -- `dev/PLANNING.md:115`, `bootstrap/UPGRADE.md:190-232`, and `bootstrap/UPGRADE.md:283-315`; lifecycle (#7) -- proposal lines 25-38 place the decision at upgrade; domain and scope (#8) -- stock assembled file in R1; satisfiers (#9) -- the tests and contract wording named in R1/R2. **Not covered / low confidence**: I did not run an installed-project reproduction or inspect every lockfile consumer; this is a read of the committed proposal and current production paths, not implementation verification.
+
+## Review -- Codex GPT-6 (Security Reviewer) -- 2026-10-30
+
+```
+Reviewed commit: 6a40450b2c0d0bf0a8c1db7d3beb357f625bac63
+Target: opening proposal, Context through Assurance path
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** The per-file decision addresses a real authority gap, but its binding and partial-upgrade behavior need a concrete security contract before implementation -- `bootstrap/_scaffold/upgrade.py:1223-1254`.
+2. **Best alternative.** Retain the current review instruction and avoid a new gate; it costs less but depends on the operator noticing semantic disagreement in every merged file -- `bootstrap/UPGRADE.md:190-232`.
+3. **What would show it wrong.** Withdraw or redesign if a path decision can authorize different review bytes, or an unresolved file loses its old interpretation after a sibling advances -- `bootstrap/_scaffold/upgrade.py:669-676`.
+
+The operator should decide the meaning of the upstream policy change. The proposed hold makes that decision visible, but it must survive mutable staging and a partial upgrade without silently changing what was approved or what remains to be decided.
+
+**S1 (blocking): Bind the decision to the reviewed material, not merely stage metadata.** The proposal requires changed stage evidence to keep a file pending, but does not say how the decision remains independent of the mutable stage. The existing collision-adoption path explicitly warns that someone able to change candidate bytes can also rewrite staged hashes, and obtains operator-supplied digests instead (`bootstrap/_scaffold/upgrade.py:2233-2246`, `bootstrap/_scaffold/upgrade.py:2307-2318`). Specify the threat boundary and how a path, choice, and the old, local, upstream and merged views are bound to what the operator actually reviewed; revalidate the bytes used for the write. Test changing each relevant view together with its metadata, swapping paths or choices, and stale authorization through the public command. A separately supplied digest is an existing option, not a required interface. State the added operator steps and what tampering remains outside the threat model.
+
+**S2 (blocking): Preserve pending interpretation across partial apply.** Apply currently writes all staged new bases, advances the global profile and source metadata, and deletes the stage (`bootstrap/_scaffold/upgrade.py:3521-3530`, `bootstrap/_scaffold/upgrade.py:3575-3595`, `bootstrap/_scaffold/upgrade.py:3689`). The next merge sizes the old base under that global profile (`bootstrap/_scaffold/upgrade.py:669-676`). Keeping only the old base bytes for a pending file therefore does not by itself preserve its old materialized view when the profile changed. Specify how pending files retain the necessary old context and review opportunity when siblings advance, including retries and failures; test a profile-changing partial apply followed by a second public upgrade. Also cover a two-sided change whose merged output already equals the local file: staging currently skips such a no-op (`bootstrap/_scaffold/upgrade.py:1223-1230`), but the proposed decision still applies. This adds a decision even without a content write; make that cost visible.
+
+**Coverage**: Input authority and fail-closed behavior -- `bootstrap/_scaffold/upgrade.py:2233-2246`, `bootstrap/_scaffold/upgrade.py:3220-3293`; trigger and no-op -- `bootstrap/_scaffold/upgrade.py:801-824`, `bootstrap/_scaffold/upgrade.py:1223-1230`; partial-write and retry context -- `bootstrap/_scaffold/upgrade.py:3500-3530`, `bootstrap/_scaffold/upgrade.py:3572-3692`; user cost and alternative -- `bootstrap/UPGRADE.md:190-232`. **Not covered**: no implementation exists to mutate; I did not run the suite, inspect every lockfile consumer, or compare a historical anchor. A malicious operator can still knowingly approve harmful policy, as the proposal says.
