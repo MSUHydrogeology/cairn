@@ -128,3 +128,20 @@ Ordinary review found no findings. Accepted Security Review advice: Scope and C1
 | Configured dispatch test in deployed-admission mutation copy | 1 | Mutant killed: exact local credential-name assertion rejected added P3 | 0.76 s | unknown |
 
 **Boundary B**: Pending the separate Security Review. Run once after both reviews on a clean, unchanged final commit under canonical Python 3.13.x; mode remains **wide** for this credential trust boundary. Full-tree certification and re-anchor were not run.
+
+## Security code review -- Codex GPT-6.1 Sol -- 2026-10-30
+
+**Reviewed commits**: implementation `4d96b627`, iteration/response `a061fa6d`.
+**Obligation**: Internal Security Review (code)
+**Verdict**: PROCEED; no blocking findings.
+**Elapsed**: approximately 7 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should it happen as framed?** Yes. `_evaluate_capability` binds the selected engine members and policy before parent execution; `_load_api_local_credential_names` compiles source directly and reuses validated local-principal derivation. `_build_child_env` receives those names only for the API leg. This delivers C1.
+2. **Best alternative.** Retain this bound source-only loading. Ordinary import loaders can execute unchecked cached bytes; a prefix allowlist would admit unrelated credentials. 
+3. **What would show it wrong?** Unbound code execution, module substitution, or an omitted/local or admitted/deployed credential surviving checks. In a separate archive of `a061fa6d`, Python 3.12.9 ran the configured, engine-tamper, invalid-policy, missing-credential and minimal-environment selection: **6 passed in 1.44 seconds**. A separate loader probe excluded an unchecked-hash poisoned cache and refused all four private package/member substitutions. Both required handoff mutations are recorded killed.
+
+**Non-blocking advice**: Strengthen the committed cache-poison fixture with valid unchecked-hash bytecode. Its current timestamp cache comes from another source and may be rejected by an ordinary loader without testing cache exclusion. The stronger parent-loader probe passed.
+
+**Coverage**: Examined credential derivation, binding/engine ordering, isolated child environment and confidentiality assertions. The two Bandit skips concern scanner availability and scanner shadow isolation; neither exercises this handoff. Did not run Bandit, Windows, full certification or Boundary B. A later modified loopback attempt hit socket permission denial before dispatch. Boundary B remains due after review.
