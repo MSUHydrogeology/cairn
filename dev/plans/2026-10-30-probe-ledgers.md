@@ -48,6 +48,37 @@ Gate triggers and runners: `claim_check.py` takes one named document and calls `
 
 Boundary B: wide, because governing and shipped review contracts change. After the final implementation commit, run the mapped checks on a clean unchanged commit under canonical Python 3.13.x and append the required verification record, including the tested range, state, outcomes, elapsed time, tokens, non-pass dispositions and omissions; certification remains pending. Include affected owning families, installed paths and standing gates. Full-tree certification and re-anchor are separate ceremonies, not per-plan checks.
 
+## Implementation verification -- Codex gpt-6-luna -- 2026-10-30
+
+**Boundary B mode**: wide. The governing review instructions, installed copies, authoring templates and review doctrine changed. The mapped suite exercises source, shipped and installed text; its install fixture invokes the scaffold CLI for all shipped profiles.
+
+**Certified by**: pending
+
+**Tested commit**: `2fc884de1b756add61e61816d48aa598590cbe2d`
+
+**Reviewed range**: `d268d574c31434ec9a27329e9a5219cae5b1c4a7..2fc884de1b756add61e61816d48aa598590cbe2d`; includes implementation commit `bf5d566d94fd64a20031ce9325581f132783f23e` and the separate metered-cost Decision commit `2fc884de`.
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13.
+
+**Pre-run state**: clean clone at the tested SHA; `git status --porcelain=v1` empty.
+
+**Post-run state**: clean clone at the same tested SHA; `git status --porcelain=v1` empty.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+| --- | ---: | --- | ---: | --- |
+| `python -m pytest bootstrap/tests/test_review_sweep_ships.py bootstrap/tests/test_review_stance_in_shipped_files.py bootstrap/tests/test_review_and_verification_rules_ship.py` | 0 | 774 passed; 0 failed, skipped, xfailed or xpassed | 2.64 s | unknown |
+| `python scripts/claim_check.py` on each of the 11 changed documents | 0 | 11 passed; no claim-check flags | about 0.23 s combined command time | unknown |
+| `python scripts/check_cairn.py` | 0 | 189 Markdown files; no issues; 87 external links not probed | 1.25 s | unknown |
+| `python scripts/link_check.py` | 0 | 189 Markdown files; no issues; 88 external links not probed | 0.18 s | unknown |
+| `python scripts/sync_doc_snippets.py` | 0 | 485 documents; no drift | 0.19 s | unknown |
+| `python scripts/quality_gate.py --sub neutrality` | 0 | 0 failures; 43 informational messages | 0.90 s | unknown |
+
+**Non-pass disposition**: none. Neutrality messages were informational; external URLs were not probed by the mapped local checks.
+
+**Plan-specific acceptance commands**: the mapped three-file test run, document claim checks, Cairn content/link checks, snippet synchronization and neutrality gate all passed.
+
+**Known omissions**: no full-suite certification or re-anchor was run; both remain separate authorized ceremonies. External links were not probed. Detailed mutation controls remain in the mapped test families; no additional manual mutation run was performed.
+
 Boundary C: a fresh code reviewer independently challenges the changed authority and evidence, verifies the Boundary B record and decides whether its bounds suffice. Ordinary and Security Reviews remain separate.
 
 ## Plan review -- Codex gpt-6 -- 2026-10-30
