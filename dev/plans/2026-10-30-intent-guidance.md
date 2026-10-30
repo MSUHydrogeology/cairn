@@ -183,3 +183,22 @@ initial Python 3.12.9 test attempt was interrupted and is excluded as evidence.
 **Known omissions**: The 83 external links are not fetched by the doc checker.
 No certifying full-suite run or gate-manifest re-anchor was performed; the
 certificate remains pending and the Maintainer owns the ceremony.
+
+## Code review -- Codex (GPT-6) -- 2026-10-30
+
+Reviewed commit: 394aaf3c24b8bd7b8a3f409cc2af35e3341b68a7
+Implementation: 82b08e8e..be41b61e; verification: 394aaf3c
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Bounding**: ACCEPTED
+
+**Foundations**
+
+1. **Does it do what it claims?** The guidance describes the conditional block, exemptions, identity and release paths implemented by `tools/_intent/conflict.py::_precommit_check_impl`, `other_session_overlaps`, and `tools/_intent/cli.py::_cmd_release` and `_cmd_auto_release`; the two CLI and module copies match at the tested commit.
+2. **Best alternative.** Retain the human comparison and real-entry-point help assertion: a prose checker would not establish the behavioral statements, while the help assertion checks both published entry points (`bootstrap/tests/test_intents_tool.py::TestIntentParentHelp`).
+3. **What would show it wrong?** A mode, exemption, identity or shipped-help counterexample would break the claim; the falsification ledger below records the challenges made.
+
+**Falsification ledger.** In a fresh detached local clone at 394aaf3c, Python 3.13.13 ran targeted real-entry-point identity, release, exemption, stale-claim, auto-release and parent-help cases: 9 passed, 125 deselected. The unmutated parent-help case passed in that control. Replacing the corrected parent-help phrase with `warn-by-default` in `tools/_intent/cli.py` killed the source mutant (1 assertion failure); independently replacing it in `templates/modules/team-gated/_intent/cli.py` killed the shipped mutant (1 assertion failure). Each mutant was reset before the other. The tests and mutations ran only in the disposable copy. I compared the verification record with the range, the identity and conflict branches, and the manual and automatic release commands; the record names its interpreter, tested commit, coverage, omissions and pending ceremony.
+
+**Coverage:** Examined the changed guidance and help, acceptance criteria, implementation branches and verification record. Targeted checks did not exercise every enforce mode or independently reproduce the full mapped selection; the implementation record supplies those results. No full suite or re-anchor was run. This ordinary pass does not discharge the separate Security Review.
