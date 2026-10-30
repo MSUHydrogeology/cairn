@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import secrets
 import sys
 import unicodedata
 from pathlib import Path
@@ -409,8 +410,8 @@ def _lock_record_identity(record: dict[str, Any]) -> str:
     return "sha256:" + _sha256_hex(encoded)
 
 
-def _recovered_base_cache_path(dst: str) -> str:
-    return f"{_BASE_CACHE_REL}/recovered/{_sha256_hex(dst.encode('utf-8'))}.md"
+def _recovered_base_cache_path(dst: str, nonce: str) -> str:
+    return f"{_BASE_CACHE_REL}/recovered/{_sha256_hex(dst.encode('utf-8'))}-{nonce}.md"
 
 
 def _has_forbidden_path_character(value: str) -> bool:
@@ -1246,7 +1247,7 @@ def _write_stage(
                 # Recovery never replaces the evidence at its original path.
                 # The valid upstream ancestor gets a distinct, stable path;
                 # the original bad cache remains available for inspection.
-                recovered_rel = _recovered_base_cache_path(fp.dst)
+                recovered_rel = _recovered_base_cache_path(fp.dst, secrets.token_hex(16))
                 recovery_bases[fp.dst] = {
                     "src": fp.ancestor_evidence.get("src", ""),
                     "dst": fp.dst,
@@ -3239,8 +3240,12 @@ def _apply_upgrade(
             print("error: staged recovery evidence is malformed; re-run "
                   "`upgrade --stage`.", file=sys.stderr)
             return 1
-        expected_cache = _recovered_base_cache_path(dst)
-        if item.get("new_base_cache") != expected_cache:
+        cache_name = item.get("new_base_cache")
+        prefix = _recovered_base_cache_path(dst, "")
+        if (not isinstance(cache_name, str)
+                or cache_name == item.get("old_base_cache")
+                or not re.fullmatch(
+                    re.escape(prefix[:-3]) + r"[0-9a-f]{32}\.md", cache_name)):
             print(f"error: recovery cache path for {dst} is stale or malformed; "
                   "re-run `upgrade --stage`.", file=sys.stderr)
             return 1
@@ -3322,7 +3327,7 @@ def _apply_upgrade(
             _assert_safe_write(recovered_file, target)
             recovered_bytes = _read_regular_bytes(recovered_file)
             new_cache = _contained_lockfile_path(
-                target, _recovered_base_cache_path(dst), "base_cache", "the project")
+                target, item["new_base_cache"], "base_cache", "the project")
             _assert_safe_write(new_cache, target)
         except (KeyError, OSError, ScaffoldSecurityError):
             recovered_bytes = None
@@ -3331,15 +3336,10 @@ def _apply_upgrade(
                   "before `--apply --ack-review-only`; no recovery was applied.",
                   file=sys.stderr)
             return 1
-        if new_cache.exists():
-            try:
-                prior = _read_regular_bytes(new_cache)
-            except OSError:
-                prior = None
-            if prior != recovery_raw[dst]:
-                print(f"error: recovery cache for {dst} already holds different "
-                      "content; it was left untouched.", file=sys.stderr)
-                return 1
+        if new_cache.exists() or new_cache.is_symlink():
+            print(f"error: recovery cache for {dst} is occupied; it was left "
+                  "untouched. Re-run `upgrade --stage`.", file=sys.stderr)
+            return 1
     if (set(review_only) != set(recovery_map)
             or any(dst not in evidence_map for dst in review_only)):
         print("error: staged review-only files lack bound recovery evidence; "
@@ -3456,7 +3456,7 @@ def _apply_upgrade(
                       + ", ".join(applied_before_late_failure), file=sys.stderr)
             return 1
         cache_abs = _contained_lockfile_path(
-            target, _recovered_base_cache_path(dst), "base_cache", "the project")
+            target, item["new_base_cache"], "base_cache", "the project")
         _assert_safe_write(cache_abs, target)
         try:
             cache_abs.parent.mkdir(parents=True, exist_ok=True)
@@ -3516,7 +3516,7 @@ def _apply_upgrade(
         if recovery_item is not None:
             recovered_dst = recovery_item["dst"]
             rec["dst"] = recovered_dst
-            rec["base_cache"] = _recovered_base_cache_path(recovery_item["dst"])
+            rec["base_cache"] = recovery_item["new_base_cache"]
             rec["base_hash"] = recovery_item["new_upstream_hash"]
             rec["hash"] = "sha256:" + _sha256_hex((target / recovered_dst).read_bytes())
         # Renamed vendor wrapper (#45): _compute_upgrade staged the *resolved*

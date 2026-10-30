@@ -620,6 +620,21 @@ class TestUpgradeModes:
 
         assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
                        "--cairn-root", str(CAIRN_ROOT)]) == 0
+        if bad_evidence == "altered-cache":
+            new_base.write_bytes(b"second corrupted ancestor")
+            assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                           "--cairn-root", str(CAIRN_ROOT)]) == 0
+            review = stage / "review-only" / "AGENTS.md.theirs"
+            (tmp_path / "AGENTS.md").write_text(review.read_text(), encoding="utf-8")
+            assert s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                           "--ack-review-only", "--cairn-root", str(CAIRN_ROOT)]) == 0
+            second = next(r for r in s.read_lockfile(tmp_path)["files"]
+                          if r["dst"] == "AGENTS.md")
+            assert second["base_cache"] != rec_after["base_cache"]
+            assert new_base.read_bytes() == b"second corrupted ancestor"
+            assert cache.read_bytes() == bad_cache_before_apply
+            assert (tmp_path / second["base_cache"]).read_bytes() == (
+                TEMPLATES_ROOT / second["src"]).read_bytes()
 
     def test_apply_rejects_stale_stage(self, tmp_path: Path) -> None:
         assert _install(tmp_path) == 0
