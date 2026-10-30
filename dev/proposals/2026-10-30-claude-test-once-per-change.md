@@ -36,10 +36,10 @@ file when it imports it or cites its path or file name. Run those, plus the
 standing prose gates for prose. `python tools/test_tiers.py for <paths>`
 lists them, and the list is not widened by judgment. For most changes it is
 a few files.
-Governing text is the exception: 50 of 132 test files cite `AGENTS.md`,
-over the broad-run guard's 40, so the run narrows to tests pinning the
-changed passages and records the rest as omitted. Folder sweepers are caught
-at the release run.
+For governing text, pass the complete reviewed commit range with
+`--range BASE..HEAD`. Narrow readers to tests pinning changed passages only
+when the broad reader list exceeds 40, and report every omitted reader.
+Folder sweepers are caught at the release run.
 
 **2. Review (C): the tightest scope.** The reviewer reads the change and the
 author's iteration evidence, then runs targeted checks that try to break it.

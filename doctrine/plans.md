@@ -310,10 +310,11 @@ one broad command is not independent review.
 ### Boundary A — Iteration (scoped)
 
 For each changed file, `python tools/test_tiers.py for <paths>` lists tests
-that import it or cite its path or file name. Run that list while iterating;
+that import it or cite its path or file name. For `AGENTS.md`, include the full
+reviewed commit range with `--range BASE..HEAD`. Run that list while iterating;
 do not widen it by judgment. Run applicable standing prose gates for prose.
-For governing text, when the list exceeds the runner's limit, use only tests
-pinning the changed passages and record the omitted tests. Folder sweepers are
+For governing text, when the broad reader list exceeds 40, use only tests
+pinning the changed passages and report every omitted reader. Folder sweepers are
 covered by the release run. Unknown dependencies are not claimed as covered.
 A known required path, check, or acceptance criterion that remains unmet keeps
 the change open.

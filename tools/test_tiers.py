@@ -13,7 +13,7 @@ automatically by its name or stopped until a pattern places it.
   python tools/test_tiers.py check
   python tools/test_tiers.py list [TIER]
   python tools/test_tiers.py files TIER    # paths for a scoped pytest run
-  python tools/test_tiers.py for PATH...   # tests naming changed files
+  python tools/test_tiers.py for [--range BASE..HEAD] PATH...
 
 ``files`` only prints paths. A tier larger than the broad-run guard allows
 is still refused by that guard outside a certifying run; this tool does not
@@ -86,12 +86,17 @@ def classify(files: list[Path], tiers: list[dict]):
     return owner, unplaced, unused
 
 
-def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT) -> list[Path]:
+def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT, *,
+                    reviewed_range: str | None = None,
+                    broad_limit: int = 40,
+                    omitted: list[Path] | None = None) -> list[Path]:
     """Select test files that name a changed file by path or file name.
 
     Folder sweeps do not name their discovered members and are intentionally
-    absent; release verification covers those wider effects. For AGENTS.md,
-    the current diff narrows the list to tests pinning changed passages.
+    absent; release verification covers those wider effects. AGENTS.md needs
+    an explicit reviewed commit range so later commits cannot erase its diff.
+    Its readers narrow to changed passages only when their broad list exceeds
+    the runner limit; excluded readers are returned through ``omitted``.
     """
     needles: set[str] = set()
     governing_passages: list[str] = []
@@ -111,30 +116,28 @@ def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT) -> l
             changed_test_files.add(candidate)
         if path.name == "AGENTS.md":
             governing_path_requested = True
+            if not reviewed_range:
+                raise ValueError("AGENTS.md selection requires --range BASE..HEAD")
             changed = subprocess.run(
-                ["git", "-C", str(root), "diff", "--unified=0", "HEAD", "--",
+                ["git", "-C", str(root), "diff", "--unified=0", reviewed_range, "--",
                  path.as_posix()], text=True, capture_output=True, check=False)
-            if changed.returncode == 0 and not any(
-                    line.startswith(("+", "-"))
-                    and not line.startswith(("+++", "---"))
-                    for line in changed.stdout.splitlines()):
-                changed = subprocess.run(
-                    ["git", "-C", str(root), "diff", "--unified=0", "HEAD^", "HEAD",
-                     "--", path.as_posix()], text=True, capture_output=True, check=False)
-            if changed.returncode == 0:
-                governing_passages.extend(
-                    " ".join(re.findall(r"[a-z0-9_]+", line.lower()))
-                    for line in changed.stdout.splitlines()
-                    if line.startswith(("+", "-"))
-                    and not line.startswith(("+++", "---"))
-                    and len(re.findall(r"[a-z0-9_]+", line.lower())) >= 5)
+            if changed.returncode:
+                raise ValueError(f"invalid reviewed range {reviewed_range!r}: "
+                                 f"{changed.stderr.strip()}")
+            governing_passages.extend(
+                " ".join(re.findall(r"[a-z0-9_]+", line.lower()))
+                for line in changed.stdout.splitlines()
+                if line.startswith(("+", "-"))
+                and not line.startswith(("+++", "---"))
+                and len(re.findall(r"[a-z0-9_]+", line.lower())) >= 5)
         else:
             needles.add(path.as_posix())
             needles.add(path.name)
             if path.suffix == ".py":
                 needles.add(path.stem)
                 needles.add(path.with_suffix("").as_posix().replace("/", "."))
-    selected = []
+    candidates = []
+    governing_readers = []
     for test in files:
         source = test.read_text(encoding="utf-8", errors="replace")
         normalized = " ".join(re.findall(r"[a-z0-9_]+", source.lower()))
@@ -147,9 +150,27 @@ def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT) -> l
                 break
         names_requested_files = any(needle in source for needle in needles)
         if (test in changed_test_files or pins_changed_passage or names_requested_files
-                or (governing_path_requested and not governing_passages
-                    and "AGENTS.md" in source)):
-            selected.append(test)
+                or (governing_path_requested and "AGENTS.md" in source)):
+            candidates.append(test)
+        if governing_path_requested and "AGENTS.md" in source:
+            governing_readers.append(test)
+    selected = candidates
+    if governing_path_requested and len(governing_readers) > broad_limit:
+        def pins_changed_passage(test: Path) -> bool:
+            normalized = " ".join(re.findall(
+                r"[a-z0-9_]+", test.read_text(
+                    encoding="utf-8", errors="replace").lower()))
+            return any(
+                any(" ".join(words[i:i + 5]) in normalized
+                    for i in range(max(0, len(words) - 4)))
+                for words in (passage.split() for passage in governing_passages))
+
+        selected = [test for test in candidates
+                    if test not in governing_readers or test in changed_test_files
+                    or pins_changed_passage(test)]
+        excluded = [test for test in governing_readers if test not in selected]
+        if omitted is not None:
+            omitted.extend(excluded)
     return selected
 
 
@@ -164,6 +185,8 @@ def main(argv: list[str] | None = None, *, config: Path = CONFIG,
     fs = sub.add_parser("files", help="print the paths in one tier")
     fs.add_argument("tier")
     scoped = sub.add_parser("for", help="tests that name changed file paths")
+    scoped.add_argument("--range", dest="reviewed_range",
+                        help="commit range covered by this review (required for AGENTS.md)")
     scoped.add_argument("paths", nargs="+")
     args = ap.parse_args(argv)
 
@@ -175,7 +198,10 @@ def main(argv: list[str] | None = None, *, config: Path = CONFIG,
     files = find_test_files(test_dir)
     if args.verb == "for":
         try:
-            chosen = tests_for_paths(args.paths, files, root)
+            omitted: list[Path] = []
+            chosen = tests_for_paths(args.paths, files, root,
+                                     reviewed_range=args.reviewed_range,
+                                     omitted=omitted)
         except ValueError as exc:
             print(str(exc), file=err)
             return 2
@@ -183,6 +209,9 @@ def main(argv: list[str] | None = None, *, config: Path = CONFIG,
             print(path.relative_to(root) if path.is_relative_to(root) else path,
                   file=out)
         print(f"{len(chosen)} test files selected for the requested paths", file=err)
+        if omitted:
+            print(f"{len(omitted)} AGENTS.md readers omitted above the guard: "
+                  + ", ".join(str(p.relative_to(root)) for p in omitted), file=err)
         return 0
     owner, unplaced, unused = classify(files, tiers)
     known = [t["name"] for t in tiers]

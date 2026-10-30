@@ -296,9 +296,10 @@ standing prose gates for prose.
 Before implementation, run `python tools/test_tiers.py for <paths>` to list
 tests that import or cite each changed file by path or file name. This list is
 the iteration scope; do not widen it by judgment. Run applicable standing prose
-gates for prose. For governing text like AGENTS.md, if the broad list exceeds
-the runner's limit, the selector returns only tests pinning changed passages
-and reports the rest as omitted. Folder sweepers are covered by the release
+gates for prose. For governing text like AGENTS.md, pass the complete reviewed
+range with `--range BASE..HEAD`. If its broad reader list exceeds 40, the
+selector returns only tests pinning changed passages and reports every
+omitted reader. Folder sweepers are covered by the release
 run. The selector claims no unknown dependencies. A known missing path,
 required check, or unmet criterion keeps the change open.
 
