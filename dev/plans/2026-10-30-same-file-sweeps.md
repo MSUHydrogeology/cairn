@@ -158,3 +158,50 @@ not implementation verification or certification.
 |---|---|
 | P1 | Accepted. Verification maps the real gate, installed readers, human probes and standing gates; C1 places occurrence date in `Date`. |
 | S1 | Accepted. C1 keeps uncertain reports outside countable rows; Verification maps confirmation, inspection and mutation controls. Security obligation remains open for its reviewer. |
+
+## Plan review -- Codex GPT-6 Security reviewer -- 2026-10-30 -- obligation closure
+
+```
+Reviewed commit: b934c1650899aed67dd77bc0c398e9ebc1458617
+Target: amended C1, Verification and response, solely open Security S1
+Prior findings: Security S1; related ordinary P1
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none remaining
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The revised map connects the security controls to real gate tests, installed consumers and documented human probes -- C1 and Verification.
+2. **Best alternative.** Keep the existing parser and advisory output, using explicit reporting rules rather than a new authorship detector -- C1; `tools/evolution_infer.py::parse_incidents`.
+3. **What would show it wrong.** Uncertain testimony counted as occurred, discovery replacing occurrence date, or a single multipath commit reaching recurrence would contradict named acceptance cases -- C1 and Verification, first and third bullets.
+
+**S1 closed.** C1 now places occurrence date in the existing `Date` column,
+records discovery separately, and keeps uncertain reports outside the Incidents
+table and never `occurred`. These rules fit what the parser actually reads.
+Verification assigns single/multiple commits, prevented and uncertain cases,
+dates, both output formats and the controlled mutation to real `main` fixture
+tests in `bootstrap/tests/test_evolution_infer.py`. It names the installed
+verbatim test and session consumer family, tracker schema and installed
+coordination classes, additional readers from a controlled search, and focused
+guidance assertions. Staged foreign bytes, intervening changes, legitimate
+integration, duplication and privacy remain documented human probes rather
+than claims that testimony can be machine-authenticated.
+
+The snippet command is now explicit, alongside claim, prose, link and
+neutrality/redundancy gates. The frozen-file obligation remains with the
+Maintainer-run ceremony in `bootstrap/REANCHOR_RUNBOOK.md`; this clearance
+authorizes neither re-anchoring nor bypassing its HOLDs. The plan identifies
+new tests as work to add, not checks already passed. Existing named classes
+and the verbatim installed test resolve in the reviewed commit. This closes
+the missing plan mapping without reducing scope or claiming implementation
+verification. No other part of the plan is reopened.
+
+Covered: S1's reporting semantics, entry-point mapping, installed consumers,
+human confirmation/inspection probes and standing checks (C1, Verification;
+commit-pinned reads of `bootstrap/tests/test_evolution_infer.py` and
+`bootstrap/REANCHOR_RUNBOOK.md`). Not covered / low confidence: no tests or
+mutation run, concurrency experiment, historical confirmation or local privacy
+audit. Those are implementation evidence still owed; certification was not run.
