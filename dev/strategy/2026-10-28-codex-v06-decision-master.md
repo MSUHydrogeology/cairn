@@ -187,7 +187,7 @@ authorized.
 
 ### 16. Clean customized upgrade merges — rejected
 
-The [proposal](../proposals/2026-10-30-codex-upgrade-semantic-adoption.md) was
+The [proposal](../proposals/archive/2026-10-30-codex-upgrade-semantic-adoption.md) was
 rejected as framed. The Maintainer retained #35 for a smaller, lower-burden
 redesign; no engine implementation is authorized. A clean merge may still
 retain conflicting policy, and the requested incorporation-or-disposition
