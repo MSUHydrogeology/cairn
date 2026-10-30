@@ -73,3 +73,31 @@ Assurance path: high-assurance
 **PR1: Complete the reviewed entry-point and wording mapping before implementation.** The accepted security preflight requires the plan to enumerate entry points and reconcile the exact adopter-facing wording with the selected tests before implementation. The plan instead says to check help and entry points and search for consumers before implementation, and groups output paths under broad test families. For example, `install.py` emits unpaired-marker warnings while `cli.py` emits merge and fidelity results; their distinct routes are not mapped to commands and tests. This leaves the author to decide coverage after the one plan review. Enumerate each public entry point and selected input, map each named output and recovery route to its owning test file or node, and reconcile the planned adopter-facing wording with those assertions in the operative cells. Retain all accepted routes and the scoped guard-respecting runs.
 
 **Coverage:** Compared accepted current contract, recovery, character policy, stage binding, public paths and verification with the plan; inspected the named production output routes and template requirements. No implementation, command execution, timing or Windows rendering was tested. This pass clears only the ordinary Internal obligation.
+
+
+## Plan review -- Codex GPT-6 Security reviewer -- 2026-10-30
+
+```
+Reviewed commit: a40d1e88f1ae19feb317aed8468ea37275727e92
+Target: operative plan, accepted proposal, ordinary review and engine boundaries
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+
+**Foundations**
+
+1. **Should this happen as framed?** The plan preserves the accepted raw-byte check, stage binding, recovery and display policy, but leaves the promised race handling undefined -- `dev/plans/2026-10-30-upgrade-install-integrity.md`, C1; `dev/proposals/archive/2026-10-29-codex-upgrade-install-integrity.md`, Current contract.
+2. **Best alternative.** Extend the existing stage metadata and pre-write apply gates with an explicit evidence snapshot and revalidation contract; no new authentication or general transaction system is needed -- `bootstrap/_scaffold/upgrade.py`, `_write_stage` and `_apply_upgrade`.
+3. **What would show it wrong.** A cache or digest change after an initial apply check still permits an automatic write, or failed recovery replaces the original bad cache -- `bootstrap/_scaffold/upgrade.py`, `_apply_upgrade`, file swap and new-base refresh.
+
+**SRP1: Define the race and preservation contract before implementation.** C1 requires invalidation “including race/error paths,” but does not say when evidence is revalidated, what snapshot is compared, or what state survives a late failure. The accepted contract explicitly requires the plan to define races. Existing apply reads the lockfile before entering `_apply_upgrade`, performs several gates, writes staged destinations, then overwrites new-base cache paths and finally replaces the lockfile. Simply comparing cache/digest agreement once at entry would leave a later change unaddressed; comparing only current agreement would also admit jointly changed evidence unrelated to the stage.
+
+In the operative cells, name the stage-bound evidence (including expected digest and identity of the ancestor record), its apply comparison and revalidation point relative to writes, and the supported concurrency boundary. State what happens when evidence changes or becomes unreadable during that interval, including whether any earlier writes can have occurred and how retry preserves adopter content and the original bad cache. Define where recovery stores a new valid ancestor without replacing that preserved evidence. This need not promise protection against arbitrary concurrent project write access, which the accepted proposal excludes. Map deterministic changed-after-check and read/write-failure cases, with a matching control, to the public apply/recovery tests. These criteria specify accepted race handling and preservation; they remove no outcome.
+
+The character policy correctly separates admission from display and retains decomposed accents and visible non-Latin names. Keep existing containment and path-shape restrictions when extending admission; do not substitute a smaller forbidden-character set for them. The named display routes and compatibility recovery still need the command/input/assertion mapping requested by ordinary PR1; this pass does not duplicate that finding.
+
+**Coverage:** claims, completeness and fail-closed behavior: C1 and `_compute_upgrade`/`_apply_upgrade`; production paths and drift: `_write_stage`, install `print_report`, CLI merge/fidelity output and ordinary PR1; reuse and consistency: searches for `base_hash`, `_contained_lockfile_path`, `print_report` and `fidelity_warnings`; lifecycle: declared obligations and Maintainer-only AST ceremony; domain/scope: consistency rather than authentication, no scientific result; satisfier: explicit operative contract and mapped race/failure tests above. **Not covered / low confidence:** no implementation, mutation, runtime, command execution or platform rendering tests; no suite run. This is the Security plan pass, not implementation assurance.
