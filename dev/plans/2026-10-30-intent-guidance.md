@@ -1,7 +1,7 @@
 # Plan: Align work-intent guidance with behavior
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-intent-guidance.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30
@@ -52,3 +52,25 @@ Boundary A runs the mapped checks during iteration; Boundary B repeats them on t
 * `bootstrap/tests/test_coordination_broad_intent.py`, `bootstrap/tests/test_upgrade_module_additions.py`, `bootstrap/tests/test_review_sweep_ships.py`, and `bootstrap/tests/test_review_stance_in_shipped_files.py`: installed module and collaboration readers. Search all changed paths in tests and manifests again, with a known match as control, and add actual owners and public paths found. Split pytest selections within the guard limit and reconcile the union.
 * Run `python scripts/claim_check.py` on changed documents, `python scripts/check_cairn.py`, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py` in check mode if supported, and `python scripts/quality_gate.py --sub neutrality --sub redundancy`; establish the snippet command's actual mode before running it. Record any omissions and resolve missing required coverage before handoff.
 * Record frozen-file changes for the existing Maintainer-run gate-manifest re-anchor ceremony under `bootstrap/REANCHOR_RUNBOOK.md`; do not treat a green suite as re-anchoring. Boundary C belongs to the independent code reviewer, who challenges the verification record and runs targeted falsification.
+
+
+## Plan review -- Codex (GPT-6) -- 2026-10-30
+
+Reviewed commit: e5d6f6d5e31f35414842ca320f8eab932fe12b0a
+Target: operative plan and accepted revised proposal
+Prior findings: none
+Assurance path: high-assurance
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+
+**Foundations**
+
+1. **Should this happen as framed?** The plan carries the conditional default, parent help, shipped twins and release-by-ID, but its verification does not require the accepted comparison of final statements to the implementation -- `dev/proposals/archive/2026-10-29-codex-intent-guidance.md`, final current contract; `dev/plans/2026-10-30-intent-guidance.md`, Verification.
+2. **Best alternative.** Keep the existing targeted tests and add a documented, human-run comparison and controlled search rather than constructing a prose checker -- `tools/_intent/identity.py`, `tools/_intent/conflict.py`, `tools/_intent/hooks.py`.
+3. **What would show it wrong.** A final statement that passes the mapped tests while misstating a mode, an exemption, or an identity environment would show the mapping cannot establish the accepted outcome -- `bootstrap/tests/test_intents_tool.py`, enforce-mode and identity tests.
+
+**IGP1 -- blocking: map the accepted prose comparison and reader search.** C1 specifies what the prose must say, and the test mapping exercises behavior, but neither requires comparing the resulting wording with the actual identity resolver, conflict decision and hook lifecycle. Existing behavioral tests can pass even when new prose misdescribes them; the parent-help assertion covers only that one help phrase. The accepted contract also requires searching current related descriptions using a known matching phrase as a positive control, whereas the plan specifies a controlled search only for tests and manifests. Add both human-run checks to the reviewed mapping, name the sources and positive control, and record their results and any contradictions corrected. This preserves the accepted scope and does not require an automated prose check.
+
+**Coverage:** Read the committed plan, accepted proposal and review history, parser help declaration, and relevant existing test descriptions. No tests or mutations were run; this review did not independently inspect every installed reader or the Security Review obligation.
