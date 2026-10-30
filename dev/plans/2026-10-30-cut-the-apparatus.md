@@ -1,7 +1,7 @@
 # Plan: Deliver the outcome with less apparatus
 
 **Source proposal**: dev/proposals/archive/2026-10-30-claude-cut-the-apparatus.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal)
 **Opened**: 2026-10-30
 **In brief**: Reduce recurring review and instruction overhead while preserving agreed outcomes and required assurance.
@@ -83,3 +83,70 @@ Assurance path: high-assurance -- governing doctrine
 - **P3, accept:** C1 states each tier's review and plan outcome.
 
 The operative cells carry the corrections; the Internal plan review is complete.
+
+## Implementation verification -- Codex (GPT-6.1 SOL) -- 2026-10-30
+
+**Boundary B mode**: wide. This changes governing contracts and shipped
+instructions. The mapping covers review, scope, model-tier, writing, session,
+verification, installer, upgrade, scaffold, certifying-run, comprehension,
+stewardship, note, slot, documentation and integrity readers. Narrower bounds
+could miss a shipped reader or a removed module slot.
+
+**Certified by**: pending
+**Tested commit**: `3cceb2c06f9d894adb1ec2dcb2d3ce72f999ff07`
+**Reviewed range**: `2e8cb0fea7158d83645b1ad473c34dba322da957..3cceb2c06f9d894adb1ec2dcb2d3ce72f999ff07`
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13)
+**Pre-run state**: fresh detached worktree at `/tmp/cairn-boundary-b-k7Z7nH`; `git status --porcelain` empty; HEAD tested commit.
+**Post-run state**: `git status --porcelain` empty; HEAD unchanged.
+**Elapsed**: about 16 seconds of wall time for the parallel check groups and final claim/gate pass.
+**Tokens**: unknown.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| Python 3.13.13 `-m pytest -q --tb=no` on group A below | 0 | 1,252 passed; 0 failed/skipped/xfail/xpass | 13.81 s | unknown |
+| Python 3.13.13 `-m pytest -q --tb=no` on group B below | 0 | 256 passed; 0 failed/skipped/xfail/xpass | 7.79 s | unknown |
+| `python3.13 scripts/check_cairn.py` | 0 | 199 Markdown files; 0 issues | within 1.60 s combined | unknown |
+| `python3.13 scripts/link_check.py` | 0 | 199 Markdown files; 0 issues | within 1.60 s combined | unknown |
+| `python3.13 scripts/sync_doc_snippets.py` | 0 | 468 documents; 0 drift | within 1.60 s combined | unknown |
+| `python3.13 scripts/claim_check.py` on every changed Markdown file | 0 | 31 files; 0 flags | 1.07 s | unknown |
+| `python3.13 scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | 0 failures; informational notes only | 1.12 s | unknown |
+
+Every `python3.13` above means the absolute interpreter in the field above.
+For pytest groups, prepend `bootstrap/tests/` to each listed basename. The
+claim-check selection was the Markdown paths in `git diff HEAD^ HEAD --name-only`.
+
+Group A (exact pytest selection): `test_review_and_verification_rules_ship.py`,
+`test_scope_reduction_trap.py`, `test_model_tier_rule_ships.py`,
+`test_writing_rules_ship.py`, `test_review_stance_in_shipped_files.py`,
+`test_review_sweep_ships.py`, `test_session_start_drain_rules.py`,
+`test_verification_boundaries.py`, `test_skills_install.py`,
+`test_skills_upgrade.py`, `test_scaffold.py`, `test_certifying_run_rule.py`,
+`test_comprehension_floor.py`, `test_stewardship_rules_ship.py`,
+`test_next_session_local_note.py`, `test_quickstart_sequence.py`,
+`test_install_report_slots.py`, `test_documentation_plan_module.py`,
+`test_verify_integrity.py` (all under `bootstrap/tests/`).
+
+Group B (exact pytest selection): `test_agreement_retired.py`,
+`test_check_cairn_content.py`, `test_doc_drift_tools.py`,
+`test_fork_advisory.py`, `test_generated_output_scan.py`,
+`test_install_time_onboarding.py`, `test_link_check_exclusions.py`,
+`test_loop_fidelity_gate.py`, `test_notice_install.py`,
+`test_quality_gate_neutrality.py`, `test_replacement_tools.py`
+(all under `bootstrap/tests/`).
+
+**Non-pass disposition**: none. The prose gates reported informational
+exemptions and one existing redundancy note, not failures. Whole-tree link
+checks initially found an archived-proposal link in `dev/PLANNING.md:53`; its
+target was repaired before this commit and both gates then passed.
+
+**Plan-specific acceptance commands**: mapped and discovered readers above;
+word counts were 2,455 for root `AGENTS.md` and 2,378 for the shipped copy;
+session-start copies matched byte-for-byte. The four shipped module slots
+remain installed and their supplier tests passed. No security designation
+changed, so the conditional security-verification family was not triggered.
+
+**Known omissions**: the one-month review-commit ratio in C3 is a future
+indicator and cannot yet be measured; it remains open. No independent
+scientific check was specified. External URLs (98 in `check_cairn`, 99 in
+`link_check`) were not probed by these offline gates. The full-tree certifying
+suite was not run, as this plan does not authorize it.
