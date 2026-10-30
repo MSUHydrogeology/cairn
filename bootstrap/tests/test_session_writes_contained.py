@@ -1210,6 +1210,22 @@ def _site_handoff_manifest(tmp_path, monkeypatch, capsys):
     return capsys.readouterr().out
 
 
+def _site_handoff_preparation_manifest(tmp_path, monkeypatch, capsys):
+    root = tmp_path.resolve() / "proj"
+    folder = root / "dev" / "reflections"
+    folder.mkdir(parents=True)
+    old = folder / ("2020-01-01-" + _ESC + ".md")
+    old.write_text("x", encoding="utf-8")
+    _init_repo(root)
+    monkeypatch.chdir(root)
+    monkeypatch.setenv("CAIRN_AGENT", "tester")
+    monkeypatch.setenv("CAIRN_SESSION", "prepare-session")
+    monkeypatch.setattr(lifecycle, "_sibling_tool", lambda _name: None)
+    assert lifecycle.main(["session-end", "--prepare-handoff"]) == 0
+    assert old.read_text(encoding="utf-8") == "x"
+    return capsys.readouterr().out
+
+
 def _lock_file(root: Path, **fields) -> None:
     folder = lifecycle._state_dir(root)
     folder.mkdir(parents=True)
@@ -1271,6 +1287,7 @@ _MESSAGE_SITES = {
     "divergence-warning-folder-name": _site_divergence_warning_in_a_folder_named_with_escapes,
     "unsafe-vendor-path-warning": _site_unsafe_vendor_path_warning,
     "handoff-manifest": _site_handoff_manifest,
+    "handoff-preparation-manifest": _site_handoff_preparation_manifest,
     "lock-refusal": _site_lock_refusal,
     "lock-reclaim-warning": _site_lock_reclaim_warning,
     "prune-warning": _site_prune_warning,

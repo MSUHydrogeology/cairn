@@ -19,38 +19,23 @@ roadmap). The canonical doctrine for *what* this routine is and *why* lives in
 python tools/session.py session-end $ARGUMENTS
 ```
 
-`$ARGUMENTS` is whatever follows the command (e.g. `/session-end --handoff`):
+`$ARGUMENTS` is whatever follows the command (e.g. `/session-end
+--prepare-handoff`):
 
 * **(no arguments) -- reflection-only, the safe default every agent runs.**
   Scaffolds your per-session reflection file and surfaces open threads; writes
   nothing destructive.
-* **`--handoff` -- the full handoff, the designated full-handoff owner only.**
-  Preview first (changes nothing): `python tools/session.py session-end
-  --handoff --dry-run`. Then run it with the owner marker:
+* **`--prepare-handoff` -- the designated full-handoff owner only.** This
+  scaffolds the reflection, surveys open threads, surfaces active intents when
+  `intent.py` is installed, and emits the prune preview, capture prompt and
+  rate-limit output. It does not invoke either prune helper or change existing
+  reflection files or the intent log. The intent listing is only a snapshot: it
+  cannot prove that no session is appending now or that the log will stay quiet.
+  `--dry-run` also suppresses the reflection scaffold.
 
   ```
-  CAIRN_HANDOFF_OWNER=1 python tools/session.py session-end --handoff
+  python tools/session.py session-end --prepare-handoff
   ```
-
-  The marker is an **anti-accidental-run gate, not an authorization control**;
-  a fail-closed lock prevents two concurrent owners from a double roadmap-scrub.
-  The CLI runs only the mechanizable steps: prune reflections, metrics, surface
-  active intents, and **prune the work-intent log** -- the one step that
-  *rewrites* a coordination surface. It removes released claim/release pairs past
-  a grace window (default 30d) and never removes an unreleased claim, which it
-  reports instead. `dev/modules/coordination-tiers.md` specifies this as the
-  goodnight *prune-intents* step; `--handoff --dry-run` lists it before it runs.
-
-  **Run the full handoff last -- after other sessions have ended.** This is a
-  precondition of the intent-log prune, not just tidiness. The prune *rewrites*
-  the same file that ordinary `claim` / `release` **append** to, and those
-  appends hold no lock; the fail-closed lock above serializes two *handoffs*,
-  never a handoff against a live session. So a session appending during the
-  rewrite can lose one advisory record. The prune refuses while any unreleased
-  claim is newer than the claim-TTL, and skips if the file changes underneath
-  it -- but running last is what makes the window *quiet* rather than merely
-  narrow. Worst case if you ignore this: a warning row that never clears, on a
-  gitignored local file, fixable by appending one release line.
 
 ## 2. Judgment steps (yours, not the tool's)
 
@@ -79,3 +64,25 @@ file or a board row for each claim.
 -- the adopter's concrete routine (doc builds, changelog cadence, test
 invocations, foldback capture) lives there, not in this generic skill. A missing
 file or a missing section means no custom steps.
+
+## 3. Give the user the guarded prune command
+
+After the reflection, roadmap scrub, next-session note, custom steps and
+handoff commit are complete, check for unreleased claims newer than the claim
+TTL and confirm that no session is appending to the intent log. A ledger scan
+cannot establish that there is no live appender or guarantee future quiet. If
+either condition is uncertain, state the unresolved condition beside the
+command. Do not run the prune as the agent.
+
+Give the user this exact command:
+
+```
+CAIRN_HANDOFF_OWNER=1 python tools/session.py session-end --handoff
+```
+
+The command may repeat the reflection preview. Under the existing
+designation-marker and fail-closed lock guards, it prunes eligible reflections,
+surfaces active intents, and attempts to prune eligible released intent pairs.
+The marker is an anti-accidental-run gate, not an authorization control. The
+command does not fill in the owner's reflection or perform the scrub, note,
+custom steps or handoff commit.

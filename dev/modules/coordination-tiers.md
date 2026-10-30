@@ -270,22 +270,27 @@ sequenced alongside the goodnight routine in
 `doctrine/session-routines.md`):
 
 > **Goodnight intent-hygiene steps (concurrent teams).**
-> The full-handoff owner's goodnight routine includes two
-> steps that operate on the coordination surfaces:
+> The full-handoff routine has two steps on the coordination
+> surfaces, with different owners and timing:
 >
-> * **Prune-intents** — completed claim/release pairs are
->   compacted out of the log past a grace window; the active
->   set holds only intents whose work is still in flight.
+> * **Prune-intents** — after the owner completes the reflection,
+>   roadmap scrub, next-session note, custom steps and handoff
+>   commit, the user runs
+>   `CAIRN_HANDOFF_OWNER=1 python tools/session.py session-end --handoff`.
+>   It compacts completed claim/release pairs past a grace
+>   window; active claims are reported and never removed.
+>   The owner's `--prepare-handoff` run only lists current intents;
+>   it cannot establish that no session is appending or will append.
 > * **Migrate-collisions** — any `true-staged-index`
->   events from the day's reflections are appended to
->   the collision log.
+>   events from the day's reflections are appended to the
+>   collision log by the full-handoff owner during the scrub.
 >
-> Both steps run once per session-day, by one writer, at
-> the same point in the routine where roadmap scrub and
-> reflections read already occur. The single-writer-at-
-> goodnight shape is what lets the prune step run without
-> reintroducing the very coordination hazard the
-> work-intent protocol exists to prevent.
+> Each step runs once per session-day: the owner migrates
+> collisions during the scrub, then the user runs the prune
+> after confirming no other session is appending. This
+> sequencing is what lets the prune run without reintroducing
+> the coordination hazard the work-intent protocol exists to
+> prevent.
 
 A sequential team runs neither extension; a concurrent
 team that selected this module receives both.

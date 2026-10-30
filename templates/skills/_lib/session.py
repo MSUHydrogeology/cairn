@@ -5,17 +5,18 @@
 """Cairn session kernel -- the mechanizable half of the two session routines.
 
 `session-start` gathers orientation state and performs one idempotent write
-(the skills fan-out self-heal); `session-end` scaffolds a reflection and, behind
-an explicit marker and a fail-closed lock, runs the full handoff.  The skills'
-`SKILL.md` bodies carry the judgment steps; the mechanical ones live here,
-because a deterministic tool beats a prose checklist an agent can misread or
-skip.
+(the skills fan-out self-heal); `session-end` scaffolds a reflection, offers a
+non-destructive handoff preparation path, and runs the destructive prune only
+behind an explicit marker and a fail-closed lock. The skills' `SKILL.md` bodies
+carry the judgment steps; the mechanical ones live here, because a deterministic
+tool beats a prose checklist an agent can misread or skip.
 
 Two safety properties are load-bearing and are not negotiable defaults:
 
-* **No network.**  The surface is local git state, the reflections / handoff
-  files, and the intents log -- read everywhere except the full handoff, which
-  prunes released pairs from it (`_prune_intents`).
+* **No network.** The surface is local git state, the reflections / handoff
+  files, and the intents log. Preparation only reads these surfaces; the
+  guarded full handoff prunes released pairs from the intents log
+  (`_prune_intents`).
 * **Reflection-only by default.**  `session-end` performs only non-destructive
   work; the destructive full-handoff path is gated behind `--handoff` plus a
   maintainer-designation marker and a concurrent-handoff lock.  So even if a
@@ -60,7 +61,8 @@ preview, so the flag would promise a preview it cannot give.
 Standard-library only, vendor-neutral.  Usage:
 
     python tools/session.py session-start
-    python tools/session.py session-end [--handoff] [--dry-run]
+    python tools/session.py session-end \
+        [--prepare-handoff | --handoff] [--dry-run]
 """
 
 from __future__ import annotations
@@ -1746,20 +1748,15 @@ class HandoffLock:
         return False
 
 
-def _prune_reflections(root: Path, days: int, *, dry_run: bool) -> List[Path]:
-    """Prune reflections older than `days` (the goodnight ephemerality step).
-
-    Returns the files pruned (or, under `dry_run`, the files that *would* be
-    pruned).  Only dated `<YYYY-MM-DD>-*.md` files are considered; `README.md`
-    and any non-dated file are left alone.
-    """
+def _reflection_prune_candidates(root: Path, days: int) -> List[Path]:
+    """List dated reflections older than `days` without changing any file."""
     refl_dir = _reflections_dir(root)
-    # a linked reflections folder would have its dated files deleted wherever it
-    # points; refuse before listing, on a dry run too
+    # A linked reflections folder could send the preview somewhere unexpected;
+    # refuse before listing, just as the destructive path does.
     _assert_not_linked(refl_dir, root)
-    pruned: List[Path] = []
     if not refl_dir.is_dir():
-        return pruned
+        return []
+    candidates: List[Path] = []
     cutoff = _dt.date.today() - _dt.timedelta(days=days)
     for path in sorted(refl_dir.glob("*.md")):
         if path.name == "README.md":
@@ -1769,14 +1766,21 @@ def _prune_reflections(root: Path, days: int, *, dry_run: bool) -> List[Path]:
         except ValueError:
             continue  # not a dated reflection
         if file_date < cutoff:
-            pruned.append(path)
-            if not dry_run:
-                try:
-                    path.unlink()
-                except OSError as exc:
-                    _warn(f"could not prune {encode_display(path.name)}: "
-                          f"{encode_display(str(exc))}")
-    return pruned
+            candidates.append(path)
+    return candidates
+
+
+def _prune_reflections(root: Path, days: int, *, dry_run: bool) -> List[Path]:
+    """Prune old reflections, or report the same candidates under `dry_run`."""
+    candidates = _reflection_prune_candidates(root, days)
+    if not dry_run:
+        for path in candidates:
+            try:
+                path.unlink()
+            except OSError as exc:
+                _warn(f"could not prune {encode_display(path.name)}: "
+                      f"{encode_display(str(exc))}")
+    return candidates
 
 
 def _prune_intents(root: Path, interpreter: str, days: int, *,
@@ -1971,6 +1975,40 @@ def _do_thread_survey(root: Path) -> None:
         print(f"{_PREFIX} (no open proposals or plans)")
 
 
+def _do_handoff_preparation(root: Path, args: argparse.Namespace) -> int:
+    """Gather handoff evidence and prompts without invoking either pruner."""
+    interpreter, _ = _resolve_interpreter(root)
+
+    _emit_section("full-handoff preparation manifest")
+    would_prune = _reflection_prune_candidates(
+        root, args.reflection_grace_days
+    )
+    names = encode_display(", ".join(p.name for p in would_prune)) or "(none)"
+    _emit(f"would prune {len(would_prune)} reflection(s) older than "
+          f"{args.reflection_grace_days}d: {names}")
+    _surface_intents(root, interpreter)
+    _emit(f"would prune released work-intent pairs older than "
+          f"{args.intent_grace_days}d (never an unreleased claim) if installed")
+    _emit("would run the rate-limit gate (read-only) if installed")
+
+    _emit(
+        "scan today's doctrine activity for portable improvements worth "
+        "filing upstream? (capture stays judgment -- an empty capture is "
+        "success; never manufacture marginal candidates)"
+    )
+    _emit_section("rate-limit gate + fold-up backlog")
+    _run_evolution_infer(root, interpreter)
+
+    _emit(
+        "handoff preparation complete. This intent listing is a snapshot; it "
+        "cannot prove that no session is appending or that the log will stay "
+        "quiet. Complete the reflection, roadmap scrub, next-session note, "
+        "custom steps, and handoff commit; then check recent claims and confirm "
+        "no session is appending before the user runs the guarded prune."
+    )
+    return 0
+
+
 def cmd_session_end(args: argparse.Namespace) -> int:
     """Goodnight.  Reflection-only by default; full handoff under `--handoff`.
 
@@ -1979,11 +2017,13 @@ def cmd_session_end(args: argparse.Namespace) -> int:
     harness ignores `disable-model-invocation` and auto-fires this,
     the worst case is a stray reflection file, never a roadmap scrub.
 
-    Full handoff (`--handoff`): the mechanizable destructive steps (prune
-    reflections, run metrics, surface intents) run **only** behind (1) a
-    mutation manifest, (2) the maintainer-designation marker, and (3) the
-    fail-closed concurrent-handoff lock.  The roadmap scrub +
-    next-session note + handoff commit remain the owner's judgment steps.
+    Handoff preparation (`--prepare-handoff`): the evidence, previews and
+    prompts are gathered without pruning. Full handoff (`--handoff`): the
+    mechanizable steps (prune reflections and released intents, surface active
+    intents, run metrics) run **only** behind (1) a mutation manifest, (2) the
+    maintainer-designation marker, and (3) the fail-closed concurrent-handoff
+    lock. The roadmap scrub, next-session note, custom steps and handoff commit
+    are the owner's judgment steps before the user runs the prune.
     """
     root = _repo_root()
 
@@ -1991,11 +2031,14 @@ def cmd_session_end(args: argparse.Namespace) -> int:
     _do_reflection(root, args.dry_run)
     _do_thread_survey(root)
 
+    if args.prepare_handoff:
+        return _do_handoff_preparation(root, args)
+
     if not args.handoff:
         _emit(
-            "reflection-only goodnight complete.  The full handoff (roadmap "
-            "scrub, next-session note, prune, metrics, handoff commit) is a "
-            "designated-owner action under `--handoff`."
+            "reflection-only goodnight complete. The designated owner can use "
+            "--prepare-handoff to gather full-handoff evidence and prompts; "
+            "only the guarded --handoff path prunes."
         )
         return 0
 
@@ -2074,8 +2117,9 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
         _run_evolution_infer(root, interpreter)
 
     _emit(
-        "full-handoff mechanizable steps complete.  The roadmap scrub, "
-        "next-session note, and handoff commit are your judgment steps."
+        "guarded pruning complete. This command does not fill in the "
+        "reflection or perform the roadmap scrub, next-session note, custom "
+        "steps, or handoff commit."
     )
     return 0
 
@@ -2116,16 +2160,26 @@ def build_parser() -> argparse.ArgumentParser:
     p_end = sub.add_parser(
         "session-end",
         help="Goodnight.  Reflection-only by default; the full handoff is "
-             "gated behind --handoff + a designation marker + a "
-             "concurrent-handoff lock.",
+             "prepared non-destructively with --prepare-handoff; pruning "
+             "requires --handoff + designation marker + concurrent-handoff "
+             "lock.",
     )
-    p_end.add_argument(
+    handoff_mode = p_end.add_mutually_exclusive_group()
+    handoff_mode.add_argument(
+        "--prepare-handoff",
+        action="store_true",
+        help="Scaffold and survey, surface intents, and emit prompts and a "
+             "prune preview without pruning. A snapshot does not establish "
+             "future quiet.",
+    )
+    handoff_mode.add_argument(
         "--handoff",
         action="store_true",
-        help="Run the full-handoff path (designated owner only): emits a "
-             "mutation manifest, then -- with the designation marker and the "
-             "concurrent-handoff lock -- runs the destructive steps. Refuses "
-             "non-interactively without the marker.",
+        help="Run the guarded user-prune path after the designated owner "
+             "finishes judgment steps: emits a mutation manifest, then -- "
+             "with the designation marker and concurrent-handoff lock -- "
+             "prunes eligible records. Refuses non-interactively without "
+             "the marker.",
     )
     p_end.add_argument(
         "--reflection-grace-days",
@@ -2144,8 +2198,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_end.add_argument(
         "--dry-run",
         action="store_true",
-        help="Print planned writes / a full-handoff mutation manifest and exit "
-             "without writing anything.",
+        help="Print planned writes or a handoff manifest and exit without "
+             "writing or pruning.",
     )
     p_end.set_defaults(func=cmd_session_end)
 

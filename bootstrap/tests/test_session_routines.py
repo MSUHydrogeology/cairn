@@ -12,9 +12,10 @@ Covers Chunk 1 of the executing plan
   hard-require a team-gated module.
 * session-end (reflection-only, the safe default): scaffolds the reflection
   file at `dev/reflections/<date>-<agent>.md`; surfaces open threads.
-* `--dry-run`: the only side-effecting subcommand writes nothing.
-* `--handoff`: refuses (the guarded full-handoff path lands in the next chunk),
-  so the tool can never run an unguarded destructive step.
+* `--prepare-handoff`: gathers prompts and previews without invoking either
+  prune helper or changing existing reflection and intent records.
+* `--dry-run`: suppresses reflection scaffolding and writes nothing.
+* `--handoff`: keeps pruning behind the owner marker and the fail-closed lock.
 * loud-failure: running outside a git repo fails with an actionable message,
   not a stack trace.
 
@@ -253,6 +254,39 @@ def test_session_end_handoff_refuses_without_marker(repo, monkeypatch, capsys):
 
     assert rc == 1
     assert "no maintainer-designation marker" in capsys.readouterr().err
+
+
+def test_handoff_preparation_never_calls_either_pruner(
+    repo, monkeypatch, capsys
+):
+    monkeypatch.setenv("CAIRN_AGENT", "tester")
+    monkeypatch.setenv("CAIRN_SESSION", "prepare-session")
+    monkeypatch.chdir(repo)
+    reflections = repo / "dev" / "reflections"
+    reflections.mkdir(parents=True)
+    old = reflections / "2000-01-01-old.md"
+    old.write_bytes(b"keep this reflection\n")
+    intents = repo / "dev" / "intents.jsonl"
+    intents.write_bytes(b"keep this intent log\n")
+
+    def forbidden(*_args, **_kwargs):
+        pytest.fail("handoff preparation invoked a prune helper")
+
+    monkeypatch.setattr(lifecycle, "_prune_reflections", forbidden)
+    monkeypatch.setattr(lifecycle, "_prune_intents", forbidden)
+    monkeypatch.setattr(lifecycle, "_sibling_tool", lambda _name: None)
+
+    rc = lifecycle.main(["session-end", "--prepare-handoff"])
+
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "would prune 1 reflection" in out
+    assert "scan today's doctrine activity" in out
+    assert "rate-limit gate + fold-up backlog" in out
+    assert "This intent listing is a snapshot" in out
+    assert old.read_bytes() == b"keep this reflection\n"
+    assert intents.read_bytes() == b"keep this intent log\n"
+    assert list(reflections.glob("*-tester-prepare-session.md"))
 
 
 # --- loud failure ------------------------------------------------------------

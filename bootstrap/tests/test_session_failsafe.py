@@ -7,6 +7,9 @@ Covers the load-bearing safety properties:
   reflection-only; `--handoff` without the designation marker refuses
   non-interactively (exits non-zero, never blocks on input); with the marker it
   proceeds.
+* **Non-destructive handoff preparation.** The real `tools/session.py` command
+  surfaces a changed intent log, emits its prompts and prune preview, and
+  preserves both targets until the user-run guarded command.
 * **`--handoff --dry-run` mutation manifest.**  Emits the manifest, mutates
   nothing, needs no marker.
 * **The concurrent-handoff lock.**  A second handoff fails closed while a
@@ -31,6 +34,7 @@ import importlib.util
 import inspect
 import json
 import os
+import shutil
 import stat
 import subprocess
 import sys
@@ -152,12 +156,88 @@ def test_handoff_with_marker_runs_and_prunes(repo, monkeypatch, capsys):
     assert not (lifecycle._state_dir(repo) / "handoff.lock").exists()  # released
 
 
+def test_real_cli_preparation_preserves_targets_and_user_command_prunes(
+    repo,
+):
+    """Exercise preparation, a changed intent log, then the guarded user path."""
+    old_reflection = repo / "dev" / "reflections" / "2000-01-01-old.md"
+    old_reflection.parent.mkdir(parents=True)
+    old_reflection.write_bytes(b"old reflection\n")
+    intent_log = repo / "dev" / "intents.jsonl"
+    session_cli = CAIRN_ROOT / "tools" / "session.py"
+    intent_cli = CAIRN_ROOT / "tools" / "intent.py"
+    # Install real sibling tools into this disposable repository so their
+    # file-relative ledgers are confined here rather than to Cairn's checkout.
+    tools = repo / "tools"
+    tools.mkdir()
+    shutil.copy2(session_cli, tools / "session.py")
+    shutil.copy2(intent_cli, tools / "intent.py")
+    shutil.copytree(CAIRN_ROOT / "tools" / "_intent", tools / "_intent")
+    session_cli = tools / "session.py"
+    intent_cli = tools / "intent.py"
+    env = os.environ.copy()
+    env["CAIRN_AGENT"] = "test-owner"
+    env["CAIRN_SESSION"] = "handoff-prep"
+    env.pop("CAIRN_HANDOFF_OWNER", None)
+
+    before = subprocess.run(
+        [sys.executable, str(session_cli), "session-end", "--prepare-handoff"],
+        cwd=repo, env=env, capture_output=True, text=True, check=False,
+    )
+    assert before.returncode == 0, before.stderr
+    assert "would prune 1 reflection" in before.stdout
+    assert "active work-intents" in before.stdout
+    assert "scan today's doctrine activity" in before.stdout
+    assert "rate-limit gate + fold-up backlog" in before.stdout
+    assert "cannot prove that no session is appending" in before.stdout
+    assert old_reflection.read_bytes() == b"old reflection\n"
+    assert not intent_log.exists()
+    assert list(
+        (repo / "dev" / "reflections").glob("*-test-owner-handoff-prep.md")
+    )
+
+    # A claim appended after preparation appears in the next read; no readiness
+    # state was saved, and preparation leaves the changed log byte-for-byte.
+    claimed = subprocess.run(
+        [sys.executable, str(intent_cli), "claim", "--files", "late.py",
+         "--action", "claim after preparation", "--agent", "late-session"],
+        cwd=repo, env=env, capture_output=True, text=True, check=False,
+    )
+    assert claimed.returncode == 0, claimed.stderr
+    claim_id = claimed.stdout.strip().splitlines()[-1]
+    changed_log = intent_log.read_bytes()
+    after = subprocess.run(
+        [sys.executable, str(session_cli), "session-end", "--prepare-handoff"],
+        cwd=repo, env=env, capture_output=True, text=True, check=False,
+    )
+    assert after.returncode == 0, after.stderr
+    assert "late.py" in after.stdout
+    assert intent_log.read_bytes() == changed_log
+    assert old_reflection.read_bytes() == b"old reflection\n"
+
+    released = subprocess.run(
+        [sys.executable, str(intent_cli), "release", claim_id],
+        cwd=repo, env=env, capture_output=True, text=True, check=False,
+    )
+    assert released.returncode == 0, released.stderr
+    env["CAIRN_HANDOFF_OWNER"] = "1"
+    user_run = subprocess.run(
+        [sys.executable, str(session_cli), "session-end", "--handoff"],
+        cwd=repo, env=env, capture_output=True, text=True, check=False,
+    )
+    assert user_run.returncode == 0, user_run.stderr
+    assert "pruned 1 reflection" in user_run.stdout
+    assert "does not fill in the reflection" in user_run.stdout
+    assert not old_reflection.exists()
+    assert not (repo / "dev" / ".cairn" / "handoff.lock").exists()
+
+
 def test_handoff_marker_via_state_file(repo, capsys):
     (lifecycle._state_dir(repo)).mkdir(parents=True)
     (lifecycle._state_dir(repo) / "handoff-owner").write_text("", encoding="utf-8")
     rc = lifecycle.main(["session-end", "--handoff"])
     assert rc == 0
-    assert "full-handoff mechanizable steps complete" in capsys.readouterr().out
+    assert "guarded pruning complete" in capsys.readouterr().out
 
 
 # --- the concurrent-handoff lock ---------------------------------------------
