@@ -533,3 +533,18 @@ not a passing result. No full certification run occurred.
 **Coverage:** claims and production path: portable file and ledger; design/fail-closed: resolver and installer guards and Windows cases at portable test lines 344–391; consistency/drift: `AGENTS.md`, `bootstrap/SAFETY.md`, `bootstrap/UPGRADE.md`; lifecycle/scope: C1–C2, coverage inventory and Maintainer allowance; satisfiers: CR1/CR2/WR1/WR2 follow-ups above. **Not covered:** native Windows execution, same-user races, executable provenance, full suite, re-anchor or the separate Security Review. Native Windows remains a follow-up, not a passing result.
 
 **Elapsed / tokens**: approximately 8 minutes / unknown.
+
+## Security code review -- Codex GPT-6 -- 2026-10-30
+
+**Reviewed commit**: `a57baaa0` (implementation `a2f7bbf9`).
+**Obligation**: Internal Security Review. **Findings**: no new blocking defects found. **Bounding**: ACCEPTED for the mapped change, subject to the Maintainer's recorded Windows follow-up.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. Git discovery removes caller `GIT_*` variables, requires the exact root, and both writer and reader reject linked binding components before access (`bootstrap/_scaffold/install.py::write_local_env`, `tools/session.py::_git_binding_path` and `_resolve_interpreter`). Copied administration and delivered pointers remain explicitly trusted inputs (plan Scope).
+2. **Best alternative.** Retain the existing guarded resolver and writer with per-worktree storage; returning to checkout storage would lose the intended separation (`coverage.md`, reader/writer inventory).
+3. **What would show it wrong?** A hostile Git environment selecting another administration, a linked binding reaching a sub-tool, or legacy checkout content selecting an executable would defeat the boundary (portable tests and ledger below).
+
+**Falsification ledger.** On an isolated archive of `a2f7bbf9`, Python 3.13.13, `python -m pytest bootstrap/tests/test_git_interpreter_binding_portable.py -q` produced **15 passed, 8 skipped** in 1.35s. The existing entry-point legacy-redirection control and mutant both met their assertions; the mutant was killed. The eight native Windows cases were skipped, not passed. Prior independent source and shipped malformed-administration mutants were each killed in the `e063ae4e` review above. Inspected `scripts/run_windows_interpreter_binding.py:34-45`: its XML parser reads a pytest-generated report in a temporary directory; the narrow `nosec B314` rationale is proportionate to that local trusted-process boundary, not a claim that arbitrary XML is safe.
+
+**Coverage:** claims and scope: plan C1/C2 and Maintainer allowance; production path, adversarial inputs and failure behavior: reader/writer guards and portable ledger; consistency and reuse: coverage inventory and prior two-copy mutation; lifecycle and evidence: `a57baaa0` wide record and deferred Windows cases. **Not covered:** native Windows execution, same-user races, executable provenance, arbitrary hostile pytest plugins, or full certification. Elapsed: unknown; tokens: unknown.
