@@ -54,15 +54,15 @@ def _load_quality_gate(name: str = "_verification_boundaries_quality_gate") -> M
 def _operational_violations(text: str) -> list[str]:
     text = " ".join(text.split())
     required = {
-        "Boundary A": "Iteration (scoped)",
-        "Boundary B mode": "Boundary B mode**: bounded | wide",
-        "Boundary C": "Falsification (independent)",
-        "wide owning coverage": "`wide` covers the owning test families",
+        "Boundary A": "Boundary A is scoped iteration",
+        "Boundary B mode": "Boundary B mode is `bounded | wide`",
+        "Boundary C": "Boundary C is independent falsification",
+        "wide owning coverage": "wide covers owning test families",
         "contract and ceremony fence": "Use `wide` for a contract or trust-ceremony surface",
-        "known check blocks completion": "certification cannot supply it later",
+        "known check blocks completion": "future certification cannot close it",
         "separate certification": "Change verification and tree certification are separate",
         "record heading": "## Implementation verification -- <agent> -- YYYY-MM-DD",
-        "invalidation": "changed implementation",
+        "invalidation": "Changed implementation invalidates the record",
         "release separation": "Release verification is a separate strict ceremony",
     }
     return [label for label, token in required.items() if token not in text]

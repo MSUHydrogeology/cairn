@@ -107,8 +107,8 @@ flowchart LR
 | Transition | Authority | Machine-verifiable preconditions |
 |---|---|---|
 | → **awaiting-review** | author | the file exists under `dev/proposals/`; carries the house front-matter (`Author`, `Date opened`, `Status: awaiting-review`) and the opening sections (context, the change, alternatives, evidence/verification plan, signals-it-is-wrong); a mandatory `Plan review:` line is present. |
-| awaiting-review → **revising** | a reviewer (AI or human), **not the author** | a `## Review -- <reviewer> ... ` section is appended; its author token is **not** the proposal's author (reviewer-authorship); prior sections are unmodified (append-only). |
-| revising → **awaiting-decision** | author | a `## Response` **and one complete current-contract revision** (`## Revised proposal` or `## Revision <n>`, carrying its mandatory `### Withdrawn / superseded commitments` ledger) are appended; prior sections unmodified. The revision is **not optional** — a Response with none refuses. The revision carries the proposal to the Decision; it returns to `awaiting-review` instead **only when it widened scope** (material the review never saw), and only that material gets the round. |
+| awaiting-review → **revising** | a reviewer (AI or human), **not the author** | a `## Review -- <reviewer> ... ` section is appended; its author token is **not** the proposal's author (reviewer-authorship); operative sections may be revised in place; earlier versions remain in git history. |
+| revising → **awaiting-decision** | author | a `## Response` listing one disposition per finding is appended, and the author revises operative proposal sections in place; reviews and prior responses remain untouched. The current `### Withdrawn / superseded commitments` ledger records replacements and withdrawals. The revision carries the proposal to the Decision; it returns to `awaiting-review` instead **only when it widened scope** (material the review never saw), and only that material gets the round. |
 | awaiting-decision → **accepted** | **Human Maintainer** | a `## Decision -- <Maintainer> ... ` section is appended that (a) is authored by the human Maintainer identity, (b) **quotes an authorization verbatim** in an isolated blockquote, (c) is **Decision-only** — the commit touches nothing but this section, and (d) does **not** archive the file (an accepted proposal stays in `dev/proposals/`). |
 | awaiting-decision → **rejected** / **superseded** | **Human Maintainer** | as **accepted**, except the Decision commit **also** archives the file (moves it to `archive/`). |
 
@@ -166,8 +166,8 @@ tier is read as written, never rewritten or warned. Full contract in
 | awaiting-code-review *or* revising-code → **ready-to-archive** → **archived** | author | **the plan-archive precondition holds: a code review has occurred** (the archive commit is distinct from the implementing commits); **and** every explicitly-deferred follow-up carries a recorded disposition in an auditable `Dispositions: …` block (the older `Follow-ups migrated to: …` spelling stays valid), presented as one batch at archive-preparation, with any `defer` carrying the Maintainer's quoted authorization; the loop-fidelity sign-off names the implementing commit and the governing Revised section. |
 
 A plan is an execution artifact: `Status:`, progress markers, and commit
-hashes update **in place**. But review-finding and archive sections are
-**append-only**, mirroring the proposal contract.
+hashes update **in place**. Review-finding and archive sections are appended
+and never edited.
 
 ## What is machine-verifiable vs. human-owned
 

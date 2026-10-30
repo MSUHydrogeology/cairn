@@ -80,9 +80,15 @@ trying to do before saying what is wrong with it. A review that opens with
 findings reads as a verdict, and an author defends rather than thinks.
 
 A finding is **blocking** or **non-blocking**, and says what evidence would
-close it. "This is too large" is not a finding. Non-blocking says only that
-shipping would not do damage that is hard to undo; it does not make a finding
-deferrable.
+close it. Blocking means hard-to-undo damage or an unmet accepted criterion or
+required check. Authors dispose of other advice in one line each; this does not
+waive a criterion or check. A review is at most 300 words and preserves its
+verdict, findings and coverage gap. "This is too large" is not a finding.
+
+A reviewer may identify avoidable burden by naming a simpler adequate
+alternative whose total cost to build, run, understand and maintain is lower.
+The author decides whether to adopt it; no per-addition accounting or proof of
+a global optimum is required.
 
 ## The review sweep
 

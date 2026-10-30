@@ -37,7 +37,7 @@ _REQUIRED = {
     "lead plain, keep precision beneath":
         r"[Ll]ead plain.{0,60}precision",
     "an unmet understanding halts the Decision":
-        r"mandatory pause|not decidable",
+        r"if it fails, pause|mandatory pause|not decidable",
     "points at the rationale rather than restating it":
         r"doctrine/rationale\.md",
 }
@@ -68,7 +68,7 @@ def test_comprehension_floor_sits_in_the_review_section(rel: str) -> None:
     text = _text(rel)
     review = re.search(r"^## Review$(.*?)^## ", text, re.M | re.S)
     assert review, f"{rel} has no '## Review' section"
-    assert re.search(r"mandatory pause|not decidable", review.group(1)), (
+    assert re.search(r"if it fails, pause|mandatory pause|not decidable", review.group(1)), (
         f"{rel} states the comprehension floor outside its '## Review' "
         f"section; it is an obligation about review and belongs there."
     )

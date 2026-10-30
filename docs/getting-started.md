@@ -28,7 +28,7 @@ PowerShell steps.
 Not every change needs all five. A change is sorted into one of three lanes
 first, and the steps below are the deliberate lane, the heaviest one:
 
-![Three lanes: most changes take a light path. A typo or one-line fix is the change with its test and needs no review. A change whose shape is settled gets a short change note and a review first. Only a new feature, a contract change or a high-risk surface gets a proposal, a review, the Maintainer's decision and a plan. When unsure, take the heavier lane; every step is a commit.](assets/three-lanes-of-change.svg)
+![Three lanes: most changes take a light path. A typo or one-line fix is the change with its test and needs no review. A change whose shape is settled gets a short change note and a review first. Only a new feature, a contract change or a high-risk surface gets a proposal, a review, the Maintainer's decision and a plan. Ordinary ceremony uncertainty takes the lighter lane with a reason; stop on a newly discovered trust boundary. Every lifecycle step is a commit.](assets/three-lanes-of-change.svg)
 
 A substantive change moves through
 [propose → review → decide → implement → record](../doctrine/lifecycle.md).
@@ -43,8 +43,9 @@ considered. The act of writing it is the point: it forces the
 reasoning into the open *before* code is written, where it can be
 reviewed cheaply.
 
-A proposal is **append-only**: reviews and the decision are *added*
-to it, never edited over. The file is the audit trail.
+A proposal's operative text is revised in place while active; git preserves
+earlier versions. Reviews, responses and decisions are appended and never
+edited. The file and its history are the audit trail.
 
 ### 2. Review
 

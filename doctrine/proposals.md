@@ -50,8 +50,9 @@ The directory location encodes **work-status** (queued without plan /
 in-flight with plan / shipped); the `Status:` field encodes
 **deliberation state**. Two orthogonal axes.
 
-Two rules are bright-line — **append-only** and **one commit per
-transition** — each detailed in its own subsection below.
+Two rules are bright-line — append the review record without editing it, and
+make **one commit per transition**. Operative proposal text revises in place;
+git preserves its history.
 
 **A proposal is a Stage 1 Registered Report** (see
 `doctrine/lifecycle.md` > "The lifecycle as a Registered Report").
@@ -72,11 +73,11 @@ changed at each round:
 * Commit on **opening** a proposal (status `awaiting-review`).
 * Commit on **appending a Review** — a *blocking* review moves status to
   `revising`; a *clearing* one moves it to `awaiting-decision`.
-* Commit on **appending a Response and its complete current-contract
-  revision** (status -> back to `awaiting-review`) — the two land
-  together, because a Response without a revision does not answer the
-  review. If multiple review rounds happen, each Review / Response pair
-  gets its own commit.
+* Commit on **appending a Response and revising the operative text in place**.
+  The Response lists one disposition and reason per finding; the operative
+  wording is current in the artifact and earlier versions remain in git.
+  Reviews, responses and decisions are never edited. A scope-widening revision
+  gets a review of its new material only.
 * Commit on **the Maintainer's Decision** (status -> `accepted` /
   `rejected` / `superseded`).
   * For `accepted` proposals, the Decision commit flips status
@@ -92,24 +93,16 @@ Bundling multiple lifecycle stages into one commit hides who changed
 what; bundling lifecycle work with implementation work hides when the
 deliberation actually closed. Keep them separate.
 
-### Append-only is bright-line
+### The current proposal and its history
 
-Each round is **append-only**. Earlier sections are **immutable** —
-don't rewrite, edit, or "tighten" them. Add new content as a new
-section below the existing arc. Reading the file top-to-bottom gives
-the full discussion as it actually unfolded, which is what makes the
-file readable cold and what gives the review system its bite: the
-Maintainer's Decision is on the text they read, not on text edited
-later.
+Revise the operative proposal sections in place while the artifact is active.
+They are the current contract. Git history preserves what was believed at each
+earlier commit. Reviews, responses and decisions append and are never edited;
+the Maintainer's Decision is made on the proposal text at that commit. The
+Response lists one disposition and reason per finding and updates the
+`Withdrawn / superseded commitments` ledger; it does not repeat the design.
 
-The rule is **bright-line**. Even small wording tweaks — softening
-"caps" to "goals", changing a single word, "reviewability tightening"
-of prior sections, fixing what reads with hindsight as an unclear
-phrasing — violate append-only when applied to prior content. If
-you want a section to read differently, append a new section that
-revises the framing explicitly; don't quietly edit the original.
-
-*One bounded exception: inserting a `claim_check` marker line —
+*One bounded exception for appended review records: inserting a `claim_check` marker line —
 `Proposed/Untracked/External-repo paths:` — adjacent to a path token
 is **mechanical maintenance, not authoring a review** (additive-only,
 mechanical, its own labeled `claim-marker maintenance:` commit,
@@ -117,7 +110,7 @@ typo-guarded). See the claim-marker maintenance doctrine in
 `doctrine/lifecycle.md` > "The proposal lifecycle", and the marker
 doctrine below.*
 
-**The ONE content exception**: link maintenance. When a referenced
+**Link-target maintenance in appended records**: when a referenced
 file moves on disk, you may update the path inside the link target
 part `](url)` so the link still resolves. The display text and the
 surrounding prose stay as written. Never use this exception as cover
@@ -145,13 +138,9 @@ to `dev/proposals/archive/`, the file is **closed**. No edits beyond
 link maintenance. The Maintainer's Decision is locked to the text as
 it stood at terminal status.
 
-If experience has shown an accepted proposal's convention is too
-tight, too loose, or wrong, the right channel is to **open a new
-proposal** that explicitly amends or supersedes the original. That
-creates an honest deliberation record (and lets the friendly-
-adversary review process scrutinize the amendment, which is the
-whole point of the system). Don't quietly edit the archived
-deliberation.
+If experience shows an accepted commitment must change, open a new proposal
+that explicitly amends or supersedes the archived one. Do not edit the archived
+record.
 
 ---
 
@@ -164,8 +153,9 @@ opened only when that procedure's first rule assigns the
 **deliberate** lane: the change touches a high-risk surface
 `AGENTS.md` names, breaks or widens a contract, is release or security
 ceremony, is a major new feature, or the author or Maintainer elects
-it for anything else genuinely architectural. **Uncertainty resolves
-upward.**
+it for anything else genuinely architectural. Ordinary uncertainty about
+ceremony takes the lighter lane with a reason; a newly discovered trust
+boundary stops work for reassessment.
 
 **Revives a deferred follow-up from `dev/PLANNING.md`** is a further
 deliberate-lane trigger when the original proposal/plan named only the
@@ -308,7 +298,7 @@ Forward-reference and sibling-repo paths land most often in
 `claim_check` at its source. The agent **committing** a review
 section runs `claim_check` and marks any flagged path; under the
 `AGENTS.md` claim-marker-maintenance exception, inserting the marker
-is permitted even inside another agent's append-only section
+is permitted even inside another agent's appended review section
 (additive marker line only, in its own `claim-marker maintenance:`
 commit). **Typo guard**: before marking, confirm the flagged path is
 not a typo of a real local path — fix or surface it rather than
@@ -545,52 +535,14 @@ so a `<sha>` is referenceable):
 * **[F2]** accept (rewrote inline) — …
 * **[F3]** accept (followup commit `<sha>`) — …
 
-### Append one complete current contract with the Response, every time
+### Revise operative proposal text in place
 
-**This rule governs the proposal, the deliberate lane's own artifact —
-the standard lane's change note does not carry it** (`doctrine/lifecycle.md`
-> "Write once, restate never"). A proposal can run to hundreds of lines
-across several rounds, where a delta-only record forces the next reader
-to reassemble the contract from the whole history; a ≤150-line change
-note does not have that problem, so it is not asked to pay that cost.
-
-A Response disposes findings; it does not restate the design. On its own it
-leaves the next reviewer to reassemble the contract out of the whole history —
-the repeated reading this rule exists to remove. So beside every Response append
-one **complete current-contract revision** — `## Revised proposal`, or `##
-Revision <n>` — and update `Status:` back to `awaiting-review`.
-
-Not a delta and not a diff: one self-contained statement of scope and
-exclusions, invariants, failure dispositions, public paths, evidence, omissions
-and deferred work, plus the mandatory ledger:
-
-    ### Withdrawn / superseded commitments
-    * <earlier commitment, the replacement or withdrawal, and the reason>
-
-**The ledger is a real `###` heading at the left margin.** The block above is
-indented, which makes it an example rather than a heading; a copy inside a
-fenced block is not a heading either. Un-indent it when you use it.
-
-**The heading is mandatory even when its value is `None`.** Write `* None`
-rather than leaving it empty or omitting it: a revision that quietly drops an
-earlier commitment is exactly what the heading exists to make visible, and only
-a written `None` distinguishes "nothing was withdrawn" from "nobody checked".
-
-The **newest reviewed** complete revision is what the Decision and the
-implementation bind. Every earlier section stays as immutable history — you are
-appending a new contract, never editing the old one.
-
-**It is not conditional on how much changed.** An earlier form of this rule said
-to write a revision "if accepted critiques substantially change the proposal",
-which made the completeness of the record depend on the author's own estimate of
-significance. The lifecycle conformance check now refuses a Response with no
-revision anywhere in the artifact, and refuses a revision whose ledger is absent,
-bare, or duplicated. Either order is fine — the revision may sit above or below
-its Response — and no ratio of revisions to rounds is required.
-
-What the check *cannot* do is read: it never judges whether the revision is
-genuinely complete, and it never verifies that the ledger is true. Both are the
-reviewer's, per the comparison in `doctrine/dual-review.md`.
+While a proposal is active, revise its operative sections in place. Git history
+preserves earlier versions. A Response records one disposition and reason per
+finding; it does not repeat the proposal. Reviews, responses and decisions
+remain appended and unchanged. Keep the `Withdrawn / superseded commitments`
+ledger current so a later reader can see what changed. A scope-widening
+revision receives a review of the new material only.
 
 ## Plan review — the derived plan's tier
 

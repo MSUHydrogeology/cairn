@@ -49,19 +49,18 @@ awaiting-review <-> revising -> awaiting-decision
 ```
 
 Each status names **who holds it next**. A review moves a proposal to
-`revising`; **the author's Response and revision carry it to
-`awaiting-decision`**, which is the Maintainer's. There is no clearing round —
-no review is run merely to move a status — except a Security Review, which
-clears the obligation it was raised against. A second review round exists only
-when the revision **widened scope** — material the review never saw.
+`revising`; the author's response carries it to `awaiting-decision`. One usual
+proposal review and response suffice. A second pass applies only to widened
+scope; Security Review is separately capped at two passes. At the cap, only
+unresolved blockers or unmet accepted criteria/checks go to the Maintainer by
+name. Clean work advances without a clearing review.
 `accepted` is terminal — archiving is a file move, not a status.
 
 Two rules are bright-line:
 
-* **Append-only.** Never edit a prior section — append a revising one. The
-  record shows what was believed *at each point*, not a tidied final state. A
-  Response carries the complete current contract, so a reader never has to
-  reassemble it from diffs.
+* **Revise operative text in place.** Update the current proposal sections
+  rather than appending a full replacement. Git history preserves prior
+  wording. Reviews, responses and decisions remain appended and unchanged.
 * **One commit per transition.** Open, review, response, and decision each get
   their own commit; bundling hides who changed what.
 
@@ -82,7 +81,9 @@ question, each ending in the file, test, line or command that backs it.
 **Improve means recommend**: the reviewer proposes the better version ("don't do
 this" and "do it differently" count) and the author decides. **There is no
 quota of findings.** "No defects found" is allowed only with the three answers
-evidenced and the gaps named.
+evidenced and the gaps named. Keep each review pass to 300 words, preserving
+verdict, findings and coverage gap. Resolve non-blocking advice in one line per
+finding; do not waive accepted criteria or required checks.
 Reviews are **attributed and self-committed**: a review you did not write is not
 yours to sign, and an independent read is only independent if its author is its
 committer.
@@ -133,7 +134,7 @@ The proposal stays one file: reviews, responses and decisions are appended to it
 
 * **Count words, not lines — never unwrap lines to look short.** Keep an
   opening proposal to **≤ 1,000 words (~6 KB)** and each appended review pass
-  or response to **≤ 600 words (~4 KB)**. Wrap prose normally; putting a
+  or response to **≤ 300 words (~2 KB)**. Wrap prose normally; putting a
   paragraph on one 400-character line to lower `wc -l` saves zero tokens.
 * **Never copy template boilerplate or later-stage sections.** Copy only the
   opening headings (`## Context` through `## Assurance path`) below the rule;
@@ -171,6 +172,7 @@ placeholder in a finished artifact, because the board prints whatever the line h
 **Author**: {{agent or human}}
 **Status**: awaiting-review
 **Review**: {{usual | usual + Security Review}}
+**Proposed tier**: {{light | standard | heavy}} — light is the default; the author may propose a higher tier, which stands unless the Decision changes it
 **Plan review**: {{required(Internal) | required(Internal + Internal Security Review)}} — the tier the derived plan will declare, decided here where the surface is still visible; or `not required(no plan: <how each plan-skip condition holds>)` when the change needs no plan (the skip conditions are in the plan triage rule)
 **Opened**: {{YYYY-MM-DD}}
 **In brief**: {{one plain sentence: what changes and why it matters}}
@@ -423,6 +425,9 @@ Assurance path: <the declared path>
 **Findings**: {{raised | none}}
 **Verdict**: {{ACCEPT | REVISE}}
 
+**Elapsed**: <duration>
+**Tokens**: <reported or defensibly estimated count | unknown>
+
 *On a read the Maintainer called, replace the Tier line with these two, and set
 the Maintainer's words beneath them, verbatim and apart:*
 
@@ -442,13 +447,17 @@ answering a Response, also verify its withdrawal ledger.
 
 ## Response -- {{author}} -- {{YYYY-MM-DD}}
 
-One disposition per finding, followed by the complete current contract at
-left-margin headings (not a diff against the opening proposal, and not nested
-as H3s inside an earlier section). End the revision with a real H3 headed
-`### Withdrawn / superseded commitments` listing every dropped or replaced
-commitment with why, or `None` if nothing was withdrawn.
+List one disposition per finding and the reason. Revise operative proposal
+text in place; do not repeat it here. End with a real H3 headed
+`### Withdrawn / superseded commitments` listing commitments replaced or
+dropped and why, or `None` if none. Reviews and prior responses stay intact.
+Record elapsed time and token use for this step; use `unknown` when unavailable.
 
 ## Decision -- {{Maintainer}} -- {{YYYY-MM-DD}}
+
+Record elapsed time and token use for this step; use `unknown` when unavailable.
+
+**Tier**: {{light | standard | heavy}}
 
 **{{ACCEPTED | REJECTED | SUPERSEDED}}.** The Maintainer's authorization,
 quoted **verbatim and visually isolated** (no paraphrase):

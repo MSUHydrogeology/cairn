@@ -74,78 +74,76 @@ _FILE_IDS = {SHIPPED: "shipped", OWN: "own"}
 _OBLIGATIONS = {
     # A review reads a commit, and writes only its own record in a shared tree.
     "review-reads-a-commit":
-        r"[Aa] review reads a commit, (never|not) a shared working tree",
+        r"Reviewers read a commit, never a shared working tree",
     "reviewer-writes-only-its-own-record":
-        r"makes one write: its own review record",
+        r"writes only their own review record, claimed first",
     "shared-paths-are-serialized-through-commit":
-        r"agree with other writers to serialize those paths through the commit; a work claim alone is not agreement",
+        r"agree with other writers to serialize them through the commit",
     "candidate-inspection-includes-staged-and-unstaged-bytes":
-        r"Compare each tracked candidate with `HEAD`, including both staged and unstaged bytes",
+        r"Inspect your (own )?candidate against `HEAD`, including staged and unstaged bytes",
     "changed-bytes-are-reinspected":
-        r"Reinspect any bytes that change before the commit",
+        r"Reinspect changed bytes",
     "foreign-or-uncertain-content-stops-commit":
-        r"Stop and coordinate if a candidate contains foreign or uncertain content",
+        r"stop if a candidate contains another writer's work",
     "failed-serialization-uses-separate-worktrees":
-        r"use separate worktrees and integrate each author's commit",
+        r"use a fresh worktree for checks that write or mutate files",
     "noncooperating-writer-limit-is-explicit":
-        r"noncooperating writer can still change a file after inspection and defeat this procedure",
+        r"noncooperating writer can defeat shared-file inspection",
     "no-reverting-commands-in-a-shared-tree":
         r"no `restore`, `checkout`, `stash`, `reset` or `clean`",
     "other-writes-go-to-a-separate-copy":
-        r"separate copy of the reviewed commit",
+        r"separate copy of that commit",
     "figures-are-measured-on-the-commit":
-        r"measured on (that|the reviewed) commit's bytes",
+        r"measured on its bytes",
     # A set claim is settled by mutating every member, and reported in full.
     "set-claims-are-listed-from-the-tree-and-mutated":
-        r"list the set from the tree, not the diff, and mutate each member",
+        r"listing the set from the tree and mutating each member",
     "ledger-reports-each-mutant-against-a-control":
-        r"killed, survived,? or equivalent, beside an unmutated control",
+        r"against an unmutated control as killed, survived or measured equivalent",
     "ledger-never-reports-a-bare-count":
-        r"never as a bare \"?N of M",
+        r"control, total, killed, each survivor and each measured equivalent",
     "equivalence-is-measured-not-argued":
-        r"[Ee]quivalence is measured, not argued",
+        r"measured equivalent; an unmeasured equivalence is a survivor",
     "a-set-claim-is-the-mutation-trigger":
-        r"When a finding or claim says a value must reach every member of a set",
+        r"A claim that a value reaches every member of a set",
     "an-equivalent-mutant-passes-the-behaviour-test":
-        r"through the real entry point passes under the mutation",
+        r"behavior test through the real entry point passes under mutation",
     "unmeasured-equivalence-is-a-survivor":
-        r"(not|never) measured is reported as a survivor",
+        r"unmeasured equivalence is a survivor",
     "mutation-is-otherwise-the-reviewers-choice":
-        r"mutation stays the reviewer's choice",
+        r"Otherwise mutation is the reviewer's choice",
     # Boundary B reaches a trivial change, and its fence is defined in place.
     "boundary-b-governs-a-trivial-change":
-        r"[Bb]oundary B governs every implementation, a trivial change included",
+        r"Boundary B applies to every implementation, trivial changes included",
     "a-trivial-change-maps-to-the-tests-that-own-its-surface":
-        r"for a trivial change, with no proposal or plan, "
-        r"the tests that own each touched surface",
+        r"For trivial work, search for owning tests and readers",
     "bounded-mode-covers-affected-behavior-and-consumers":
-        r"`?bounded`? covers the mapped affected behavior and consumers",
+        r"Bounded covers affected behavior and consumers",
     "wide-mode-covers-known-families-and-public-paths":
-        r"`?wide`? covers the owning test families, known cross-surface integration and public paths",
+        r"wide covers owning test families, known integration and public paths",
     "contract-and-trust-surfaces-use-wide-mode":
-        r"Use `?wide`? for a contract or trust-ceremony surface",
+        r"Use `wide` for a contract or trust-ceremony surface",
     "unpinned-prose-on-a-high-risk-surface-runs-the-prose-gates":
-        r"prose change to a contract or high-risk surface does not trigger "
-        r"the full suite unless a test or manifest pins its bytes",
+        r"Do not run the suite unless prose bytes are pinned",
     "a-trivial-change-runs-on-exact-candidate-bytes":
         r"run those checks on the exact candidate bytes before commit",
     "a-trivial-change-records-the-search-and-checks-in-its-commit-body":
-        r"commit body records the mode,.*search, commands, counts, interpreter",
+        r"record the search, commands, counts, interpreter, outcomes and omissions in its commit body",
     "passing-known-checks-identifies-the-verified-commit":
-        r"Implementation verified at <SHA>",
+        r"SHA/range, interpreter, clean pre/post state",
     "a-plan-appends-its-verification-section":
-        r"[Aa] plan appends the tested SHA",
+        r"The author appends the record under `## Implementation verification",
     "owning-tests-are-found-by-search":
-        r"found by searching for what imports or reads the touched files",
+        r"search for owning tests and readers",
     "bounded-record-names-touched-surfaces-and-tests":
-        r"[Rr]ecord names the touched surfaces, the test files or nodes",
+        r"Name touched surfaces and test files or nodes in the record",
     "trust-ceremony-surface-is-defined":
-        r"trust-ceremony surface is any high-risk surface this file names",
+        r"trust ceremonies include named high-risk surfaces",
     # One term, defined where it is used.
     "substantive-surface-is-defined":
-        r"substantive surface\*{0,2} is anything that is not ordinary prose",
+        r"Pinned prose is a substantive surface",
     "pinned-prose-is-substantive":
-        r"and prose a test or manifest pins",
+        r"Pinned prose is a substantive surface",
 }
 
 #: label -> pattern that must NOT occur in either copy. Matched against
@@ -256,17 +254,17 @@ def test_an_empty_file_carries_no_obligation() -> None:
 
 
 @pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
-def test_the_commit_rule_sits_in_the_review_section(rel: str) -> None:
-    """Placement is part of the rule: it binds reviewers, so it lives in Review.
+def test_the_commit_rule_sits_in_the_working_tree_section(rel: str) -> None:
+    """Placement is part of the rule: it binds reviewers handling a shared tree.
 
     A reader looking for what a review may do must find it there without
     already knowing it exists.
     """
-    review = re.search(r"^## Review$(.*?)^## ", _text(rel), re.M | re.S)
-    assert review, f"{rel} has no '## Review' section"
+    review = re.search(r"^## Working tree and commits$(.*?)^## ", _text(rel), re.M | re.S)
+    assert review, f"{rel} has no '## Working tree and commits' section"
     assert re.search(_OBLIGATIONS["review-reads-a-commit"],
                      _collapse(review.group(1))), (
-        f"{rel} states the review-reads-a-commit rule outside '## Review'."
+        f"{rel} states the review-reads-a-commit rule outside working tree rules."
     )
 
 

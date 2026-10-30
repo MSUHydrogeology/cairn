@@ -20,8 +20,9 @@ no proposal and no code review. *Standard*: a change whose shape is settled gets
 a short change note, a review, then the change, its test and a code review.
 *Deliberate*: a new feature, a contract change or a high-risk surface gets a
 proposal, a review, the Maintainer's decision, a plan, a plan review, the
-implementation, a code review and an archive. When unsure, take the heavier
-lane.
+implementation, a code review and an archive. Ordinary ceremony uncertainty
+takes the lighter lane with a reason; a newly discovered trust boundary stops
+work for reassessment.
 
 **Change note** — the one short file (about 150 lines or fewer) that the
 standard lane uses in place of a proposal and a plan: why, what, approach,
@@ -40,10 +41,9 @@ proposal next. The older words `proposed`, `reviewed` and `revised` are retired.
 amends or replaces it. Distinct from rejected: the idea may live on, in the
 newer proposal. Like rejected, it archives in the Decision commit.
 
-**Append-only** — the rule that you add to a proposal rather than editing what
-is already there. Like a bound lab notebook: you can write a correction on the
-next page, but you do not erase the earlier entry. The record has to show what
-you believed *at the time*, not a cleaned-up version.
+**Append-only** — the rule that review, response and decision records are added
+and never edited. Proposal operative text is revised in place; git history
+preserves earlier wording.
 
 **Inline-revised** — the opposite rule, used for strategy notes (exploratory
 writing in `dev/strategy/`): take the review's point, edit the note, and delete

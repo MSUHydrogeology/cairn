@@ -244,8 +244,9 @@ the same review-before-archive guardrail.
 ## Mutability rule
 
 Plans are **execution artifacts**, not deliberation artifacts; they
-need ordinary status tracking as work proceeds without the
-bright-line append-only contract that proposals carry. Two classes
+need ordinary status tracking as work proceeds. Proposal operative sections
+also revise in place; git history preserves their earlier versions, while
+reviews, responses and decisions append unchanged. Two classes
 of edit:
 
 **Mutable in place** (status updates as work proceeds):
@@ -278,8 +279,7 @@ of edit:
   edit prior Sequence entries that are already in flight).
 * Review findings — both `## Plan review` and `## Code review`
   sections are append-only once a reviewer has added findings;
-  Sharpening subsections under either are also append-only. Mirrors
-  the proposal Review section's append-only contract.
+  Sharpening subsections under either are also append-only. Plan review and code review records are appended and never edited.
 * Archive decisions (Lasting-truth migration entries are append-only
   once written).
 
@@ -939,8 +939,9 @@ Sequence-revision rule (see Mutability rule above).
 
 A plan review has one round; the fold carries the plan forward and no
 second plan-review pass is run. The only plan-stage pass that may recur
-is a **Security Review**, which takes the rounds it needs to close the
-obligation it was raised against. When one does, each later pass gets its
+is a **Security Review**, which may take at most two passes to close the
+obligation it was raised against. An unresolved obligation at the cap goes
+to the Maintainer by name and does not clear automatically. Each pass gets its
 own dated subsection with a round suffix:
 
 ```

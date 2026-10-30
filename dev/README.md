@@ -14,7 +14,7 @@ project is doing, and why* from this tree alone.
 | `README.md` (this file) | The entry point to `dev/`. |
 | `agent_collaboration.md` | The role roster, the review loop, and the coordination doctrine. |
 | `PLANNING.md` | The roadmap board — queued and active work (a current-state index; completed work migrates out to archived plans, not a "completed" section). |
-| `proposals/` | The deliberation record — one file per substantive change, append-only. |
+| `proposals/` | One file per substantive change; operative text revises in place and reviews/responses append. |
 | `proposals/_template.md` | The proposal structure and the full lifecycle doctrine. |
 | `proposals/archive/` | Closed proposals — read for rationale; do not edit. |
 | `plans/` | Execution plans for non-trivial accepted proposals. |

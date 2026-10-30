@@ -140,7 +140,7 @@ A plan is one file by default: reviews, responses and records are appended to it
   opening plan body to **≤ 1,000 words (~6 KB)**, `## Acceptance criteria` to
   **≤ 150 words per chunk** (state what must hold when the chunk is done, not
   line-by-line code instructions), and each appended review pass or response to
-  **≤ 600 words (~4 KB)**. Wrap prose normally; long unwrapped lines save zero
+  **≤ 300 words (~2 KB)**. Wrap prose normally; long unwrapped lines save zero
   tokens.
 * **Never copy template boilerplate or later-stage sections.** Copy only the
   operative headings (`## Source proposal` through `## Verification`), replace
@@ -338,7 +338,7 @@ empty heading in a new plan. The record uses these exact fields:
 * **Interpreter/runtime** — canonical path and version.
 * **Pre-run state** and **Post-run state** — clean tree and identical tested
   `HEAD`.
-* A command table with **Command**, **Exit**, **Outcomes**, and **Elapsed**
+* A command table with **Command**, **Exit**, **Outcomes**, **Elapsed**, and **Tokens**
   columns, including pass/fail/skip/xfail/xpass counts where applicable.
 * **Non-pass disposition**, **Plan-specific acceptance commands**, and
   **Known omissions**.
@@ -352,8 +352,8 @@ public paths; preserve every prescribed contract and ceremony check. A known
 missing check keeps the change open, regardless of mode.
 
 Append the evidence as `## Implementation verification -- <agent> -- YYYY-MM-DD`:
-tested SHA, interpreter, clean pre/post state, commands, outcomes, timing,
-disposition of every non-pass, known omissions.
+tested SHA, interpreter, clean pre/post state, commands, outcomes, elapsed time,
+token use or `unknown`, disposition of every non-pass, known omissions.
 
 **Boundary C (falsification)** is the code reviewer's, and it is not re-running
 Boundary B's command. Verify the record against the reviewed range, then run
@@ -389,6 +389,10 @@ file.
 
 ## Plan review -- <reviewer> -- <YYYY-MM-DD>
 
+Keep this pass to 300 words, preserving its verdict, findings and coverage gap.
+Record elapsed time and reported or defensibly estimated token use; write
+`unknown` when unavailable.
+
 Open every pass with its basis, so a later reader knows what was actually read:
 
 ```
@@ -419,6 +423,11 @@ An H3 inside another pass does not count as a pass of its own — a heading at
 the left margin is what the checker reads.
 
 ## Code review -- <reviewer> -- <YYYY-MM-DD>
+
+Keep this pass to 300 words, preserving its verdict, findings and coverage gap.
+Record elapsed time and reported or defensibly estimated token use; write
+`unknown` when unavailable. Mutation summaries name the unmutated control,
+total, killed, each survivor, and each equivalent with its measured reason.
 
 Code review's floor is not the implementing agent; a fresh session clears it. It
 never reopens the Decision. Self-committed by its author; blocking findings move

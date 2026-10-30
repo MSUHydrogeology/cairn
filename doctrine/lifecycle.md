@@ -27,9 +27,9 @@ ask "why is it this way?" and find an answer that was not
 reconstructed from memory. Three properties make the record
 trustworthy:
 
-* **Append-only.** A proposal is never edited to change what it
-  said; a revising section is appended. The record preserves what
-  was believed *at each point*, not a tidied final state.
+* **History-preserving.** Proposal operative text is revised in place while
+  the artifact is active. Git preserves prior versions; review, response and
+  decision sections append unchanged.
 * **One commit per transition.** Open, review, response, and
   decision each land as their own commit. Bundling hides who
   changed what, and when.
@@ -68,24 +68,21 @@ order** — the first match assigns the lane:
    proposal. Its header fields, transitions, and warnings are the
    standard-note contract carried in the plan template.
 
-The **deliberate** lane is today's two-stage proposal-then-plan
-machinery below, unchanged: review obligations stay as declared and a
-declared tier is not a reviewer's lever (`dual-review.md`). A tier names
-the reviewer's **stance**, never their agent type, so every lane's
-obligations are satisfiable by every adopter. Election upward to the deliberate lane is open to the author or
-the Maintainer for anything else genuinely architectural.
-**Uncertainty resolves upward**, and only the Maintainer may override
-the procedure's result, on the record.
+The **deliberate** lane remains proposal then plan. The proposal Decision sets
+its ceremony tier: `light` is one short review and no plan; `standard` is one
+pass per stage; `heavy` adds Security Review. Light is the default. The
+author's higher proposed tier stands unless the Decision changes it. Named
+high-risk surfaces and added or widened trust boundaries trigger heavy. If an
+agent discovers a new boundary, it stops and reports it for reassessment.
+Ordinary uncertainty takes the lighter lane with a one-line reason. No agent
+raises a tier on its own. See `dual-review.md` for review caps and obligations.
 
 ### Write once, restate never — the standard lane's contrast
 
-The deliberate lane's proposal carries a bright-line rule: every
-Response appends **one complete current-contract revision**, never a
-delta (see `proposals.md` > "Append one complete current contract with
-the Response, every time"). That rule exists because a proposal can
-run to hundreds of lines across several rounds, and a delta-only
-record forces the next reader to reassemble the contract out of the
-whole history.
+In the deliberate lane, the proposal's operative text is the current contract.
+The author revises it in place and records one disposition per finding in the
+Response. Git history retains each prior version, so no full restatement is
+needed.
 
 The standard lane does not carry that cost, because it does not have
 that problem. A change note is short by construction (target ≤150
@@ -97,9 +94,8 @@ the note is in design; reviews, responses, and decisions **append**
 and are never edited, exactly as the deliberate lane's review record
 already does. **Write once, restate never** names the difference
 precisely: the note is written once and edited in place until review
-closes it, not rewritten in full at every round. The deliberate lane
-keeps full append-only, including the mandatory restatement, as
-today.
+closes it, not rewritten in full at every round. The deliberate lane follows the same in-place rule; its review, response and
+decision records remain appended.
 
 ## The lifecycle as a Registered Report
 
@@ -160,12 +156,10 @@ print a warning and still list it.
   alternatives considered, an evidence / verification plan, and the
   signals that would show the change is wrong — or has just answered
   a review. Either way the next move is someone else's.
-* **revising** — held by the author. A *blocking* review moved it
-  here (see `dual-review.md`); the author owes a Response **and** one
-  complete current-contract revision, which together carry it to
-  `awaiting-decision`. It returns to `awaiting-review` only when the
-  revision widened scope — added material the review never saw — and
-  only that material gets the round.
+* **revising** — held by the author. The author records one disposition per
+  finding and revises the operative text in place, then carries it to
+  `awaiting-decision`. A second pass is only for widened scope and covers only
+  the new material.
 * **awaiting-decision** — held by the Human Maintainer. The author's
   revision moved it here; no further authorship is owed, only the
   Decision.
@@ -179,19 +173,17 @@ print a warning and still list it.
   (see "Trivial vs. non-trivial"). Only a *rejected* or *superseded*
   proposal archives in the Decision commit itself.
 
-A proposal file is **append-only**: never edit a prior section —
-append a revising one. An accepted proposal is changed only by a
-new proposal that amends or supersedes it; that keeps the
-amendment itself open to review, which is the whole point of the
-system.
+A proposal's operative text is revised in place while it is active. Reviews,
+responses and decisions append and are never edited. Git history preserves
+earlier operative wording. After acceptance, a scope change uses a new proposal.
 
 **Claim-marker maintenance is not authoring a review.** One bounded
-exception to append-only: inserting a `claim_check` marker line (a
+exception for appended review records: inserting a `claim_check` marker line (a
 `Proposed paths:` / `Untracked paths:` / `External-repo paths:` line)
 adjacent to a path token — to clear a forward-reference or sibling-repo
 path flag the checker raises — is **mechanical maintenance, not authoring
 or editing the review**: attribution and substance are untouched. It is
-permitted even inside an append-only proposal/plan section, including
+permitted even inside an appended proposal/plan review section, including
 another agent's Review/Response/Decision section, bounded by four
 properties:
 
@@ -206,9 +198,8 @@ properties:
   (in another agent's section — you may not edit their content), never
   silence it.
 
-In plans, an ordinary task-checkbox / status update is mutable workflow,
-not this carve-out; the carve-out governs only the append-only
-review-finding sections.
+In plans, ordinary task-checkbox and status updates are mutable workflow; this
+carve-out applies only to appended review-finding sections.
 
 ### Trivial vs. non-trivial
 
@@ -273,8 +264,7 @@ holder.
 
 Unlike a proposal, a plan is an execution artifact: status,
 progress markers, and commit hashes are updated in place as work
-proceeds. But review findings and archive decisions are
-**append-only**, mirroring the proposal's contract.
+proceeds. Review findings and archive decisions are appended and never edited.
 
 ### The plan-archive precondition
 

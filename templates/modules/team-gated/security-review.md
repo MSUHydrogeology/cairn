@@ -52,6 +52,9 @@ boundary, not specific libraries:
 
 A change that adds, moves, or widens any of these boundaries is a
 trigger for a Security Review pass regardless of cadence.
+The proposal's `heavy` tier adds this pass to the usual review. Security
+Review has at most two passes; an unresolved obligation or blocking finding at
+the cap goes to the Maintainer by name and never clears automatically.
 
 **Automate what a tool can check.** Where the language ecosystem
 offers a static-analysis scanner for these boundary classes, wire a

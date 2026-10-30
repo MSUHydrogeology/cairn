@@ -21,10 +21,10 @@ says who moves next:
 `rejected` or `superseded`.
 
 A fresh reviewer who did not write the proposal appends a `## Review`.
-The author appends a `## Response` and a revised proposal. The
-Maintainer appends a `## Decision`. Proposals are append-only: nothing
-already written is edited, so the file shows what was believed at each
-point. A rejected or superseded proposal moves to
+The author appends a `## Response` with one disposition per finding and revises
+the operative proposal text in place. The Maintainer appends a `## Decision`.
+Git preserves earlier operative versions; reviews, responses and decisions are
+never edited. A rejected or superseded proposal moves to
 `dev/proposals/archive/` with its Decision; an accepted one moves when
 its plan opens or its change ships. `dev/proposals/_template.md` is the
 starting point.

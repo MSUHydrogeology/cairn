@@ -394,6 +394,13 @@ makes bypass attractive, it is no longer buying rigor. Simplify the
 mechanism or route low-risk work through the lighter path while preserving
 the load-bearing property.
 
+Apply that warning comparatively: an addition earns its place when it delivers
+an agreed outcome or required assurance at lower total burden than a simpler
+adequate alternative. Count the work to build, run, understand and maintain it;
+do not demand a ledger for every addition or proof of a global optimum. A
+deferral reports remaining effort and re-entry cost, and carries its obligation
+forward so postponement is not mistaken for savings.
+
 ---
 
 ## What Cairn contributes

@@ -3,16 +3,15 @@
 Cairn's most distinctive practice is its review model. A change
 does not ship because its author is confident; it ships because a
 fresh reviewer who did not write it has questioned its foundations,
-in writing, and the reasoning held up. There is **one review stance
-at every stage**. What changes from stage to stage is the questions
-it asks, not the kind of reviewer: nobody picks a kind of review.
+in writing, and the reasoning held up. There is **one review stance at every stage**. What changes from stage to stage
+is the questions it asks, not the kind of reviewer. A proposal's ceremony tier
+sets the number of passes, not a reviewer type or stance.
 
 ## One stance, three stages
 
 Every review has one stance: **on the work's side, making it better
 by questioning its foundations.** The reviewer is a fresh one who did
-not write the work, and no agent chooses a stance, so there is no tier
-to select. The stage sets the questions, and they are **required
+not write the work, and no agent chooses a stance. The stage sets the questions, and they are **required
 answers, not a mood**; without that, "wants it better" drifts into
 polishing something that should not exist.
 
@@ -197,57 +196,38 @@ shipping this cause damage that is hard to undo?* — **not** *is this correct i
 every respect?* Full weight is retained for the high-risk surfaces `AGENTS.md`
 names and for any release or security ceremony.
 
-**The blocking test, with explicit polarity**: *would shipping this
-cause damage that is hard to undo?* **Yes → blocking**; a blocking finding
-on the standard lane forces escalation to deliberate or an explicit
-recorded Maintainer disposition. No → `note` / `nit`, recorded, non-blocking.
-Non-blocking says only that shipping would not do damage that is hard to undo;
-it does not make a finding deferrable (the archive rule is in `lifecycle.md`).
+**A finding blocks** when it names damage that is hard to undo, or an accepted
+criterion or required check is unmet. Other advice is non-blocking; the author
+disposes of it in one line per finding and decides whether to adopt it. This
+does not waive a criterion or required check. Any deferred obligation follows
+the Maintainer's disposition rules in `lifecycle.md`.
 
 Full review weight remains on the deliberate lane, where every finding
 gets the complete review the lane already runs; the test is what lets the
 standard lane stay light without becoming a place hard-to-undo damage can
 slip through unblocked.
 
-**The editor may end any loop at any time** over open findings by naming
-them.
+**Caps and closure.** A proposal gets one usual review and one author
+response; a plan gets one review; code gets one review. A second proposal pass
+is only for widened scope, a second code pass only for defects introduced by
+the revision, and plan review never repeats. Security Review may take at most
+two passes to clear its named obligation. Clean work and closed findings move
+forward without another approval or a clearing round.
 
-**One round, closed by the author.** A review round and the author's revision
-close the loop, and **the author's revision carries the status forward** — there
-is no clearing round, and no review is run merely to move a status. The
-reviewer has already said what would satisfy each blocking finding; doing it
-*is* the closure. Re-reading the revision to confirm that the reviewer's own
-instructions were followed is a second round nobody needs.
+At a cap, send only unresolved blocking findings or unmet accepted
+criteria/required checks to the Maintainer, listed by name for disposition. An
+unmet criterion or check stays unmet until fixed or the Maintainer explicitly
+accepts the named residual; a review cap never turns failure into success.
+Other advice is the author's to dispose of, in one line per finding. The
+blocking test remains hard-to-undo damage or an unmet accepted criterion/check.
+A non-blocking finding is not automatically deferrable.
 
-**When a second round exists.** Three cases, each tied to material the first
-round could not have read; absent one, the artifact moves on.
-
-* **Proposal review: only when the revision widened scope.** A Response that
-  adds material the review never saw has unreviewed content, and that content
-  — not the whole proposal — gets a round. A revision that only answers the
-  findings goes straight to `awaiting-decision`.
-* **Plan review: never.** Findings fold into the plan's operative cells and the
-  plan proceeds to `ready-to-implement`. Whatever the fold leaves unreviewed is
-  caught by implementation and code review, which were always going to run.
-* **Code review: only when the revision introduced new defects.** The
-  implementer's answer carries the plan to `ready-to-archive`. A second pass
-  runs only if a reader of the revision finds something new *in it* — never to
-  re-confirm that the first round's findings were addressed.
-* **Security Review is the exception.** It clears the obligation it was raised
-  against and takes the rounds it needs; a security finding not yet closed is
-  reason enough for another.
-
-The reason is not that late rounds find nothing; they find plenty. It is that
-they find it **redundantly**: implementation discovers what deliberation would
-not have, and code review is a further net, so a finding forgone in round three
-is mostly caught later and cheaper. The cost of the alternative is not
-marginal — four adopter bug reports (a regex fix, a timeout flag, a stale
-comment, an exit-code cleanup) took twelve days and three proposals of some six
-thousand lines to reach a shipped fix. Endless iteration destroys progress, and
-leanness here is a **correctness** property and not only a cost one: an
-over-stuffed record degrades the accuracy of every reader after it. The
-standard is a good-faith attempt to find things, not exhaustion.
-
+The author carries the artifact forward after their response or revision.
+Do not escalate a disagreement merely because two passes differ. The author
+states which advice they adopted and why, and the Maintainer reads that
+resolution at Decision. A proposal revision that widens scope gets a pass only
+on the new material; code gets a second pass only when its revision introduced
+a defect. The Security Review exception never clears by an ordinary pass.
 The Decision closes the phase. Later critique becomes a new proposal.
 
 ## Plan review is Internal, always
@@ -682,8 +662,12 @@ the negative space and may act on them by asking any reader for anything.
 They are not a reviewer's lever for prescribing another round. Reviewers
 over-prescribe rounds the way urgent care over-prescribes antibiotics:
 each is cheap to recommend and never shown wrong, because the round not
-run cannot be blamed for anything. The only triggers for a second round
-are the ones *One round, closed by the author* names.
+run cannot be blamed for anything. The only triggers for a second round are the ones *Caps and closure* names.
+Review passes are at most 300 words and preserve verdict, findings and the
+coverage gap. An author disposes of other advice in one line; accepted criteria
+and required checks remain binding. An avoidable-complexity finding names a
+simpler adequate option and compares total burden to build, run, understand and
+maintain; the author decides, with no per-addition accounting.
 
 **A declared-`required` tier stays a floor.** A `Plan review:
 required(Internal + Internal Security Review)` line runs regardless —

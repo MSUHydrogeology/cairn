@@ -25,7 +25,8 @@ The load-bearing distinction, and the easy mistake:
   leaving a clean artifact. No blow-by-blow, no finding-tags, no
   "earlier-draft-said" residue. The deliberation lives in `git log` and in the
   transient review section while open — not in the body.
-* A **proposal is append-only**: reviews/responses are appended and retained.
+* A **proposal's operative text is revised in place**; reviews and responses
+  are appended and retained.
 
 **Cross-lifecycle word note:** a strategy note's `reviewed` / `revised` mean
 *folded-and-removed* reviews; a proposal's identical words mean

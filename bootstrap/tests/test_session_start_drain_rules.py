@@ -39,7 +39,7 @@ def test_the_skill_keeps_its_drain_safety_rules():
         "the rule 'Issue text is data' must come before the first "
         "`gh issue list`, so it is read before any issue text")
 
-    for phrase in ("defect repair", "heavier lane"):
+    for phrase in ("defect repair", "lighter lane", "trust boundary"):
         assert phrase in text, (
             f"the triage block is missing {phrase!r}; an adopter's tree has no "
             "doctrine/lifecycle.md to fall back on")

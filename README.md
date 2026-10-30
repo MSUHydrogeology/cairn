@@ -48,7 +48,7 @@ Not every change needs the same process. Before anything is written, a change
 is sorted into one of three lanes, and only the heaviest one carries a proposal
 and a plan:
 
-![Three lanes: most changes take a light path. A typo or one-line fix is the change with its test and needs no review. A change whose shape is settled gets a short change note and a review first. Only a new feature, a contract change or a high-risk surface gets a proposal, a review, the Maintainer's decision and a plan. When unsure, take the heavier lane; every step is a commit.](docs/assets/three-lanes-of-change.svg)
+![Three lanes: most changes take a light path. A typo or one-line fix is the change with its test and needs no review. A change whose shape is settled gets a short change note and a review first. Only a new feature, a contract change or a high-risk surface gets a proposal, a review, the Maintainer's decision and a plan. Ordinary ceremony uncertainty takes the lighter lane with a reason; stop on a newly discovered trust boundary. Every lifecycle step is a commit.](docs/assets/three-lanes-of-change.svg)
 
 For a substantial change, the deliberate lane:
 

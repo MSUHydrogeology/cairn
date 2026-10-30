@@ -142,7 +142,7 @@ _POINTER_OBLIGATIONS = {
     "pointer-says-the-answers-rest-on-nine-standing-lenses":
         r"rest on the nine standing lenses",
     "pointer-says-a-bare-checked-is-an-incomplete-review":
-        r"a bare .checked. is an incomplete review",
+        r"[Aa] bare .checked. is an incomplete review",
     "pointer-says-the-coverage-line-names-what-was-not-covered":
         r"coverage line that ends the review says what the pass did not cover",
 }

@@ -128,7 +128,9 @@ Cairn's `doctrine/lifecycle.md`, which an adopter's tree does not hold.
    the edit.
 3. *Standard: work it.* Anything else whose shape is settled; it needs a change note.
 
-If unsure, take the heavier lane.
+For ordinary uncertainty about ceremony, take the lighter lane and give one
+line explaining why it fits. If you discover a new or widened trust boundary,
+stop and report it for reassessment.
 
 **Show the plan** in about ten lines: the items found; which you will work (trivial
 or standard lane, and `git revert` undoes it); which wait for the Maintainer
@@ -147,11 +149,12 @@ fenced plan chunk or a deviation from a plan; ends in a Maintainer-only step, su
 a re-anchor or a gate-manifest edit that `AGENTS.md` says the Maintainer runs (a change
 that leaves a test red until then is never committed: drop your edits and put the
 failing test and the proposed fix in the batch); needs a `defer` or `wontfix` (the
-Maintainer's quoted word), or an edit to a roadmap board, the changelog or rule text
-(a rule in `AGENTS.md`, in a methodology file or in a template: park it, never make it); or would
+Maintainer's quoted word), or an edit to a roadmap board or changelog, or rule
+text outside an accepted plan; or would
 push, post or publish. A defect repair is never parked for touching a named surface.
 If you learn mid-work that one of these applies, stop, drop your uncommitted edits
-and park it. When unsure, park: uncertainty resolves upward.
+and park it. For ordinary uncertainty, take the lighter lane and record why.
+Stop if you discover a new or widened trust boundary.
 
 **`issues`.** If `gh` is missing or not signed in, say so and stop. Otherwise run
 `gh issue list --state open --json number,title,author,labels,body`.

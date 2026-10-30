@@ -214,6 +214,6 @@ one being deferred here does not contradict the other being shipped there.
 **Clearing the flags this checker raises.** A `claim_check` hard flag on a
 genuine forward-reference or sibling-repo path is cleared by inserting a
 marker line (`Proposed/Untracked/External-repo paths:`) adjacent to the
-token. Doing so inside an append-only proposal/plan section is the
+token. Doing so inside an appended proposal/plan review section is the
 sanctioned **claim-marker maintenance** carve-out (mechanical, additive-only,
 its own labeled commit, typo-guarded) — see the lifecycle doctrine.

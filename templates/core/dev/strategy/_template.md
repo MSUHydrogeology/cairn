@@ -42,8 +42,8 @@ registered report** (the commitment); a strategy note is what you write
 **The defining discipline — inline-revised, not append-only.** This is the
 load-bearing contrast with proposals, and the easy mistake to avoid:
 
-* A **proposal** is *append-only*: reviews and responses are appended and
-  **retained**; reading top-to-bottom replays the deliberation.
+* A **proposal's operative text is revised in place**; git history preserves
+  prior wording. Reviews, responses and decisions are appended and retained.
 * A **strategy note** is *inline-revised*: a review is folded **in and
   removed**, leaving a clean artifact. No blow-by-blow, no finding-tags, no
   "the earlier draft said…" residue. The deliberation lives in `git log` and

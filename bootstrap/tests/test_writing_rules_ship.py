@@ -149,8 +149,8 @@ def test_pointer_sentence_is_in_both_source_agents_files(source: str) -> None:
     """Cairn's own AGENTS.md and the shipped one must both carry the pointer."""
     agents = _flat((ROOT / source).read_text(encoding="utf-8"))
     assert _POINTER in agents
-    floor = agents.index("as a **mandatory pause**.")
-    assert agents.index(_POINTER) == floor + len("as a **mandatory pause**. ")
+    floor = agents.index("pause and say so.")
+    assert agents.index(_POINTER) == floor + len("pause and say so. ")
 
 
 @pytest.mark.parametrize(

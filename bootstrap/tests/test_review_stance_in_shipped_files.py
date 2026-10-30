@@ -192,6 +192,46 @@ _STANCE_OBLIGATIONS = {
         r"the check",
 }
 
+# The operational carrier is deliberately shorter than the authoring
+# templates. Pin each outcome in its compressed wording here; the expanded
+# template pins above still guard their own readers.
+_AGENTS_STANCE_OBLIGATIONS = {
+    "one-stance-at-every-stage": r"One review stance applies at every stage",
+    "a-fresh-reviewer-on-the-works-side": r"fresh reviewer who did not write the work, on the work's side",
+    "no-agent-picks-a-kind-of-review": r"no agent picks another kind",
+    "the-stage-sets-three-questions": r"should it happen as framed, what is the best alternative, and what would show it wrong",
+    "foundations-block-three-answers-each-with-its-evidence": r"three evidenced Foundations answers",
+    "improve-means-recommend": r"It recommends improvements; the author decides",
+    "no-quota-of-findings": r"There is no finding quota",
+    "a-clean-pass-needs-evidenced-answers-and-named-gaps": r"three evidenced Foundations answers.*?what the pass did not cover",
+    "code-review-floor-is-not-the-implementing-agent": r"code review is by someone other than the implementer",
+    "code-review-never-reopens-the-decision": r"does not reopen the Decision",
+    "a-clean-code-review-shows-a-falsification-ledger": r"Code review includes a falsification ledger",
+    "plan-review-is-fresh-context": r"Plan review is fresh-context",
+    "a-narrowing-is-a-scope-change-only-the-maintainer-concedes": r"narrower scope names what would be lost and why the rest still reaches the cause; only the Maintainer concedes a loss",
+    "a-high-risk-surface-takes-a-security-review": r"High-risk work keeps its separate Security Review obligation",
+    "usual-plus-security-review-is-two-passes-and-the-usual-pass-never-clears-the-second": r"usual \+ Security Review means two passes; the ordinary pass cannot clear it",
+    "a-plan-security-obligation-is-cleared-only-by-a-matching-obligation-line": r"required\(Internal \+ Internal Security Review\).*?matching Obligation line",
+    "no-tool-reads-the-obligation-line-a-reader-does": r"readers, not a tool, check that line",
+    "external-means-the-maintainer-called-it": r"The Maintainer alone calls an External read",
+    "a-call-names-one-artifact-that-exists-now": r"one named artifact that exists now",
+    "a-standing-call-is-a-floor-and-returns-only-by-proposal": r"standing call covering future artifacts requires a proposal",
+    "a-roster-you-set-is-not-a-call": r"team roster adds no read",
+    "distance-is-information-and-the-staffing-reviewer-follows-the-brief-and-says-so": r"called reviewer answers the same three questions and names the distance",
+    "called-by-carries-the-maintainers-words-verbatim": r"record and commit quote the Maintainer's call verbatim",
+    "called-by-quote-is-repeated-in-the-commit-body": r"record and commit quote the Maintainer's call verbatim",
+    "called-by-names-where-the-words-live": r"Called by: Maintainer -- Decision at <commit> or -- chat, <date>",
+    "tier-external-needs-called-by-else-read-as-the-usual-review": r"Tier: External without Called by is an ordinary pass",
+    "no-agent-declares-external-required-or-recommends-distance": r"Agents never request or declare External as required",
+    "an-agent-may-name-a-risk-and-coverage-gap": r"they may name a risk and coverage gap",
+    "a-called-read-adds-and-replaces-nothing": r"replaces no usual review",
+    "a-called-brief-adds-focus-and-removes-no-owed-answer": r"call adds focus, removes no owed answer",
+    "a-called-read-discharges-no-security-review-by-distance-or-brief": r"clears no Security Review",
+    "other-authority-lives-in-a-decision-or-a-plan-fence": r"grants no Decision or plan-fence authority",
+    "a-called-by-line-never-confers-authority": r"grants no Decision or plan-fence authority",
+    "nothing-checks-the-quote-a-reader-does": r"No tool checks the quote; the next reviewer and Maintainer do",
+}
+
 #: label -> pattern, for the review-loop document's roster (both copies).
 _ROSTER_OBLIGATIONS = {
     "one-reviewer-role-on-the-works-side":
@@ -382,9 +422,9 @@ def _review_section(rel: str) -> str:
 # --------------------------------------------------------------------------
 
 @pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
-@pytest.mark.parametrize("label", sorted(_STANCE_OBLIGATIONS))
+@pytest.mark.parametrize("label", sorted(_AGENTS_STANCE_OBLIGATIONS))
 def test_review_section_carries_the_obligation(label: str, rel: str) -> None:
-    assert label not in _missing(_review_section(rel), _STANCE_OBLIGATIONS), (
+    assert label not in _missing(_review_section(rel), _AGENTS_STANCE_OBLIGATIONS), (
         f"{rel} no longer carries {label!r} inside '## Review'. The doctrine "
         f"holds the same rule, but adopters never receive doctrine/; placement "
         f"in Review is part of the rule, because a reviewer looks there first."
@@ -394,15 +434,15 @@ def test_review_section_carries_the_obligation(label: str, rel: str) -> None:
 @pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
 def test_plan_review_never_has_a_second_round(rel: str) -> None:
     """This rule lives in Lifecycle, outside the Review section."""
-    lifecycle = _section(_text(rel), "The lifecycle")
-    assert "Plan review never has a second round." in _normalize(lifecycle)
+    lifecycle = _section(_text(rel), "Lifecycle and records")
+    assert "Plan review is one pass." in _normalize(lifecycle)
 
 
 @pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
 def test_the_stance_sits_in_the_review_section_only_once(rel: str) -> None:
     """The three stage questions are stated once, in Review, not repeated."""
     text = _normalize(_text(rel))
-    assert len(re.findall(r"The Decision settled the premise", text)) == 1
+    assert len(re.findall(r"The stage sets the questions", text)) == 1
 
 
 # --------------------------------------------------------------------------
@@ -518,9 +558,9 @@ def test_module_says_what_it_is_for(rel: str, label: str) -> None:
 @pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
 def test_deleting_the_called_by_authority_sentence_is_reported(rel: str) -> None:
     section = _review_section(rel)
-    assert _missing(section, _STANCE_OBLIGATIONS) == []
-    mutant = _delete_sentence(section, "Maintainer authorizations already live")
-    gone = _missing(mutant, _STANCE_OBLIGATIONS)
+    assert _missing(section, _AGENTS_STANCE_OBLIGATIONS) == []
+    mutant = _delete_sentence(section, "grants no Decision or plan-fence authority")
+    gone = _missing(mutant, _AGENTS_STANCE_OBLIGATIONS)
     assert "a-called-by-line-never-confers-authority" in gone
     assert "other-authority-lives-in-a-decision-or-a-plan-fence" in gone
 
@@ -528,19 +568,19 @@ def test_deleting_the_called_by_authority_sentence_is_reported(rel: str) -> None
 @pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
 def test_deleting_the_plan_obligation_sentence_is_reported(rel: str) -> None:
     section = _review_section(rel)
-    assert _missing(section, _STANCE_OBLIGATIONS) == []
-    mutant = _delete_sentence(section, "calls for security treatment declares")
+    assert _missing(section, _AGENTS_STANCE_OBLIGATIONS) == []
+    mutant = _delete_sentence(section, "matching `Obligation` line")
     assert "a-plan-security-obligation-is-cleared-only-by-a-matching-obligation-line" \
-        in _missing(mutant, _STANCE_OBLIGATIONS)
+        in _missing(mutant, _AGENTS_STANCE_OBLIGATIONS)
 
 
 @pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
 def test_deleting_the_two_pass_sentence_is_reported(rel: str) -> None:
     section = _review_section(rel)
-    assert _missing(section, _STANCE_OBLIGATIONS) == []
+    assert _missing(section, _AGENTS_STANCE_OBLIGATIONS) == []
     mutant = _delete_sentence(section, "means two passes")
     assert "usual-plus-security-review-is-two-passes-and-the-usual-pass-never-clears-the-second" \
-        in _missing(mutant, _STANCE_OBLIGATIONS)
+        in _missing(mutant, _AGENTS_STANCE_OBLIGATIONS)
 
 
 @pytest.mark.parametrize("rel", _CARRIER_FILES, ids=_FILE_IDS.get)
@@ -703,8 +743,9 @@ def test_proposal_header_offers_only_usual_values(rel: str) -> None:
     assert review_lines == ["**Review**: {{usual | usual + Security Review}}"]
     tier_lines = [l for l in _lines_starting(text, "**Tier**:")
                   if "External" not in l]
-    assert tier_lines == ["**Tier**: {{usual | Security Review}}"]
-    assert not any("standard" in l.lower() for l in review_lines + tier_lines)
+    assert tier_lines == ["**Tier**: {{usual | Security Review}}",
+                          "**Tier**: {{light | standard | heavy}}"]
+    assert not any("standard" in l.lower() for l in review_lines)
     # The Plan review line keeps the tokens it has always been ruled by.
     assert _lines_starting(text, "**Plan review**:")[0].startswith(
         "**Plan review**: {{required(Internal) | required(Internal + "
