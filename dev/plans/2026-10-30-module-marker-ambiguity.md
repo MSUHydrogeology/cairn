@@ -395,7 +395,7 @@ empty. **Post-run state**: clean, same clone and SHA.
 | Mutation 3: restore the pre-sequential independent-closer parser from `43af2e12^`; rerun public `-k crossed-entry` nodes in isolated clone | 1 | Killed: both task and inventory cases returned success instead of refusing | under 1 s | unknown |
 | `test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package` | 1 | 1 expected read-only diagnostic failure; see disposition below | 0.14 s | unknown |
 | AST runbook step 1 `_merge_current` / `_classify` | 0 | CHANGED 15; MISSING 0; DUPLICATE 0; NEW 143 | 0.2 s | unknown |
-| `claim_check`, `check_cairn`, `link_check`, `sync_doc_snippets.py --check`, neutrality/redundancy gates | 0 | Claim check no flags; Cairn/link 189 Markdown files; snippet check 482 docs; quality fail=0 (43 neutrality info, 1 redundancy info) | about 1.3 s in parallel | unknown |
+| `claim_check dev/plans/2026-10-30-module-marker-ambiguity.md`; `check_cairn.py`; `link_check.py`; `sync_doc_snippets.py --check`; `quality_gate.py --sub neutrality --sub redundancy` | 0 | Claim check no flags; Cairn/link 189 Markdown files (88/89 external links not probed); snippet check 482 docs; quality fail=0 (43 neutrality info, 1 redundancy info) | about 1.3 s in parallel | unknown |
 
 **Mutation summary**: The unmutated mapped control passed 340 tests. Total 3;
 killed 3; survivors 0; measured equivalents 0. Mutation 1 failed both public
