@@ -28,11 +28,12 @@ upgrade path rather than copying ad hoc.
 
 ## Reporting a vulnerability
 
-Report suspected vulnerabilities **privately to the maintainer** (do not
-open a public issue for an unfixed vulnerability): a hidden instruction in a
-template, a way to make the scaffold write outside its target, a bypass of
-the SSRF / content-integrity guards, or anything that could subvert a
-downstream adopter's agents. Include a reproducer where possible.
+Submit suspected vulnerabilities through
+[GitHub's private vulnerability reporting form](https://github.com/MSUHydrogeology/cairn/security/advisories/new).
+Do not open a public issue for an unfixed vulnerability. This includes a hidden
+instruction in a template, a way to make the scaffold write outside its target,
+a bypass of the SSRF / content-integrity guards, or anything that could subvert
+a downstream adopter's agents. Include a reproducer where possible.
 
 ## What an adopter should *not* trust blindly
 
