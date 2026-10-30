@@ -74,3 +74,27 @@ Assurance path: high-assurance
 **IGP1 -- blocking: map the accepted prose comparison and reader search.** C1 specifies what the prose must say, and the test mapping exercises behavior, but neither requires comparing the resulting wording with the actual identity resolver, conflict decision and hook lifecycle. Existing behavioral tests can pass even when new prose misdescribes them; the parent-help assertion covers only that one help phrase. The accepted contract also requires searching current related descriptions using a known matching phrase as a positive control, whereas the plan specifies a controlled search only for tests and manifests. Add both human-run checks to the reviewed mapping, name the sources and positive control, and record their results and any contradictions corrected. This preserves the accepted scope and does not require an automated prose check.
 
 **Coverage:** Read the committed plan, accepted proposal and review history, parser help declaration, and relevant existing test descriptions. No tests or mutations were run; this review did not independently inspect every installed reader or the Security Review obligation.
+
+
+## Plan review -- Codex (GPT-6), Security -- 2026-10-30
+
+Reviewed commit: b3276604c431de43f5f427214c8593ed64c9d1c8
+Target: operative plan against accepted revised contract and existing security boundaries
+Prior findings: IGP1 remains an author obligation
+Assurance path: high-assurance
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+
+**Foundations**
+
+1. **Should this happen as framed?** The plan preserves the accepted cooperative boundary and both shipped copies, but its explicit acceptance and verification mapping omit two existing exemptions from blocking -- `tools/_intent/conflict.py::_precommit_check_impl`.
+2. **Best alternative.** Keep the narrow correction and record a human comparison of final guidance with the decision branches, including exemptions, rather than introduce authentication or a prose checker -- `tools/_intent/identity.py::resolve_session_token`; `tools/_intent/conflict.py::_precommit_check_impl`.
+3. **What would show it wrong.** Guidance implying that a token and a fresh differently labelled claim necessarily cause refusal would be false when an exemption is set, even though the overlap warning remains -- `tools/_intent/conflict.py::classify_precommit_warnings`, `_precommit_check_impl`.
+
+**IGPS1 -- blocking: explicitly map the existing enforcement exemptions.** C1 and the test mapping enumerate token, label, freshness and mode conditions, but not `CAIRN_ALLOW_UNCLAIMED` or `solo_mode`. The actual decision returns success for either exemption before enforcing a fresh cross-claim; it still emits the other-session warning. This matters because the first name sounds limited to unclaimed paths. Add these existing exemptions and their warning/block distinction to the required final-text comparison and affected test mapping. Preserve their present behavior and avoid an unconditional assurance that distinct fresh claims block. This is a concrete part of IGP1's missing comparison, not a request for a new control or wider enforcement design.
+
+The remaining security treatment is adequate as planned: identity resolution keeps overrides separate from token availability, same-label suppression is acknowledged as cooperative, manual release is by ID, and auto-release inherits the committing environment. Evidence: `tools/_intent/identity.py::resolve_agent_identity`, `resolve_session_token`; `tools/_intent/conflict.py::other_session_overlaps`; `tools/_intent/cli.py::_cmd_release`, `_cmd_auto_release`; `tools/_intent/hooks.py::_build_hook_block`. C1 maps independent reverse help mutations in both intentional CLI twins; Verification retains installed paths and the owed frozen-file ceremony, matching `bootstrap/tests/fixtures/protected_test_roster.json`. The doctrine gate is a stop condition rather than assumed authority. IGP1 must also be folded: behavior tests alone cannot establish that final prose describes these paths accurately.
+
+**Coverage:** Read committed plan, accepted revised proposal and Decision, current plan template and review rules, identity/conflict/release/hook paths, existing test descriptions and protected roster. Covered claims, public paths, failure/exemption behavior, drift, scope and lifecycle placement through those sources. No tests, mutations, hook installation, certification, original-incident reproduction or exhaustive reader search performed. Implementation evidence and final prose remain future author obligations; this pass supplies no re-anchor or doctrine authorization.
