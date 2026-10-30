@@ -325,3 +325,44 @@ use unknown.
 **Falsification ledger**: Python 3.13.13 probes above; wrong peeled commit and unexpected ref both refused; hostile Git environment keys excluded. Inspected Git isolation, redirect refusal, strict Release fields and independent expected SHA. Boundary B names clean final bytes and 31 passing tests; its slow-drip test covers the body only. No implementation suite rerun or mutations. **Bounding**: WIDER RUN REQUIRED for pre-body deadline coverage.
 
 **Covered**: claims/production/completeness/failure (probe, `_fetch_release`); consistency/reuse/drift/lifecycle (guide The cut, Protocol, reader search with `PROVENANCE.md` positive control); scope (C1); satisfier (P1). **Not covered**: live GitHub, archives, signatures, full suite or re-anchor.
+
+## Response to Security Review -- Codex GPT-6.1 Sol -- 2026-10-30
+
+| Finding | Disposition |
+|---|---|
+| P1: response headers precede deadline enforcement | Fixed in `0ecd4f49`: the fixed HTTPS handler uses a deadline-aware HTTP response parser for status and headers, caps the connection timeout by remaining time, and shares the deadline with body reads. A slow-header socket-pair regression exercises public `main` through real `HTTPResponse.begin`; Boundary B was rerun on the fix. No clearing review was run. |
+
+## Implementation verification -- Codex GPT-6.1 Sol (header deadline correction) -- 2026-10-30
+
+**Boundary B mode**: wide. The correction covers fixed-host connection setup,
+HTTP status and headers, and the response body under one monotonic deadline. The
+public-command slow-header and slow-body socket-pair fixtures, owning test file,
+user guide and standing gates were rerun.
+
+**Certified by**: pending.
+**Tested commit**: `0ecd4f49bed89e2811b6de437ff7802087c46a09`.
+**Reviewed range**: `9d7f0cd20859eeceb01ba25606c1565a7d5fbe92` through `0ecd4f49bed89e2811b6de437ff7802087c46a09`.
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13, pytest 9.0.3, macOS.
+**Pre-run state**: clean detached checkout at the tested SHA.
+**Post-run state**: clean detached checkout at the same SHA; `git status --short` empty and `git rev-parse HEAD` unchanged.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python -m pytest bootstrap/tests/test_check_release_publication.py` | 0 | 32 passed; 0 failed, skipped, xfailed or xpassed; includes slow-header and slow-body refusal | 1.27 s | unknown |
+| `python scripts/claim_check.py` on the plan and guide | 0 | both passed; no flags | under 1 s each | unknown |
+| `python scripts/link_check.py` on the plan and guide | 0 | both passed; 1 Markdown file each; plan reports 2 external links not probed | under 1 s each | unknown |
+| `python scripts/check_cairn.py` on the plan and guide | 0 | both passed; 1 Markdown file each; plan reports 2 external links not probed | under 1 s each | unknown |
+| `python scripts/quality_gate.py --sub neutrality` | 0 | fail=0, info=43 | 0.87 s | unknown |
+| Reader/pin search and known-positive `PROVENANCE.md` control | 0 | one owning test reference; 6 positive-control matches; no additional byte-pin reader found | under 1 s | unknown |
+| Snippet-marker search in the guide | 1 | no markers; synchronization was unnecessary | under 1 s | unknown |
+
+**Non-pass disposition**: none; the zero-match snippet search is expected.
+The Security Review's P1 is addressed by `0ecd4f49` and the slow-header
+regression through the public command. No clearing review was run.
+**Plan-specific acceptance commands**: no live GitHub request, Release
+publication, tag-signature check, archive-byte check, full suite or re-anchor
+was run. Snippet synchronization was unnecessary because the guide contains no
+snippet markers.
+**Known omissions**: live GitHub state and cached archive contents remain
+unverified; Release notes and source links remain a human review. Elapsed
+verification was about 2 minutes; token use unknown.
