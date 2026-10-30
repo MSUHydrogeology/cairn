@@ -295,3 +295,55 @@ reviews remain open; reviewers must assess the final corrected candidate and
 the stated mutation and public-path coverage. The inventory discrepancy has a
 separate awaiting-decision proposal, and this record makes no Decision or
 scope concession.
+
+## Final implementation verification -- Codex GPT-6 -- 2026-10-30
+
+**Boundary B:** wide, complete for the reviewed mapping. **Certified by:**
+pending. **Candidate:** `66b19e4bfc1fce5da14af4aae553ea2ade4e043d`;
+implementation and corrections since `f8f96cdb`. The test copy was a detached
+local clone with Git history. `git status --short` was empty before and after
+the run. Interpreter: Python 3.13.13 at
+`/Users/kendal30/conda_envs/lhm/bin/python3.13`. Elapsed measured test time
+was about 140 seconds; reported token use is unknown.
+
+The following `python3.13 -m pytest -q --tb=short` selections ran in that
+clean copy, split to respect the broad-run file limit:
+
+| Test files under `bootstrap/tests/` | Outcome | Wall time |
+|---|---:|---:|
+| `test_upgrade.py`, `test_upgrade_lockfile_path_containment.py`, `test_upgrade_side_door_parity.py` | 241 passed | 44.66 s |
+| `test_upgrade_refuses_hostile_project_data.py`, `test_upgrade_module_additions.py`, `test_lockfile_provenance.py` | 259 passed | 47.40 s |
+| `test_install_report_slots.py`, `test_install_module.py`, `test_module_merge.py` | 36 passed | 0.98 s |
+| `test_scaffold.py` | 70 passed | 0.81 s |
+| `test_skills_upgrade.py`, `test_upgrade_added_slots.py`, `test_upgrade_edit_check_runs_no_project_programs.py` | 123 passed | 39.57 s |
+| `test_security_lint.py` | 11 passed | 1.97 s |
+
+The first two selections are the nested Git plan's owning and consumer
+families, including public `--plan`, `--stage`, `--apply`, nested destination,
+base-cache alias, staged-name, protected-state and recovery cases. The later
+selections are shared with the upgrade-integrity mapping. Total: **740 passed,
+zero failed, skipped or xfailed**. The old inventory, template and staged
+fixture failures no longer occur on these bytes.
+
+Four separate one-line mutants of `bootstrap/_scaffold/upgrade.py` were tested
+against an unmutated control at this commit. The control's two guard nodes and
+seven normalization cases passed (9/9). Removing supplied-name filtering made
+its guard node fail to refuse (1 failed): **killed**. Removing resolved-target
+filtering made its alias node fail to refuse (1 failed): **killed**. Removing
+case folding made three of seven variants fail to refuse (3 failed, 4 passed):
+**killed**. Removing trailing-dot/space normalization made four of seven
+variants fail to refuse (4 failed, 3 passed): **killed**. Total: **4 killed,
+0 survivors, 0 measured equivalents**. Each mutant copy differed from the
+candidate only at its named guard expression; `git diff --check` passed.
+
+On the same clean candidate, `python3.13 scripts/claim_check.py
+bootstrap/UPGRADE.md`, `python3.13 scripts/check_cairn.py` and
+`python3.13 scripts/link_check.py` passed (the latter two scanned 196 Markdown
+files each). `python3.13 scripts/quality_gate.py --sub neutrality` passed with
+`fail=0, info=43`. No synced snippet changed. No non-pass remains in the mapped
+checks. The earlier direct scratch public-command recovery rehearsal was not
+repeated; the final owning tests exercise those public commands. Native
+Windows equivalence, hard-link identity aliases and filesystem races were not
+tested and are outside the stated protection. No full-tree certifying suite or
+re-anchor ran. Independent code and Security reviews remain required before
+archive; this verification does not clear either review.
