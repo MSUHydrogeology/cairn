@@ -140,3 +140,57 @@ The current proposal's one-file wording still incurs a proposal decision, usual 
 
 **Covered**: claims and drift (`docs/release-process.md:133-145`, `dev/PLANNING.md` release row); test path and fail-closed design (proposal S1-S4 and the negative cases in PR1); cross-document consistency and reuse (`rg --files scripts tools | rg 'release|tag|publish|github'` found no release-publishing helper); lifecycle placement (`docs/release-process.md` > “The cut”); scope and cost (proposal Alternatives and `doctrine/plans.md` > “Plan triage rule”); satisfiers (PR1-PR2).
 **Not covered / low confidence**: no live GitHub Release, remote tag, cached download or authenticated GitHub command was exercised; this is a proposal read, not an implementation test.
+
+## Review -- Codex GPT-6 (Security Reviewer) -- 2026-10-30
+
+```
+Reviewed commit: cead97a6
+Target: proposal and release-publication trust boundary
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**:
+
+1. **Should this happen as framed?** Separate publication is needed, but the proposed evidence must not imply that a link and tag check proves the bytes of a cached source archive. The existing source-provenance control authenticates a signed tag, not a download's materialized tree. -- proposal Rationale and S3; `bootstrap/PROVENANCE.md:359-375`
+2. **Best alternative.** Keep publication with the Maintainer and use a small read-only check with the independently supplied gate commit for the remote tag and published Release; inspect notes separately and describe archive-link availability as such. A check needs no publishing authority. -- `docs/release-process.md:133-143`; proposal S1-S4
+3. **What would show it wrong?** A moved tag with a stale cached archive, a draft or absent Release, or a mismatched remote tag that the proposed check reports as a successful publication would disprove its claimed coverage. -- proposal S2-S3; `bootstrap/PROVENANCE.md:402-415`
+
+### Findings
+
+**SR1 (blocking) — Separate archive availability from content identity.** A
+remote peeled tag and working download links do not establish which tree a
+cached archive contains. The rationale says the Release presents the intended
+source commit, while S3 excludes checking cached downloads. Specify that the
+check proves only the remote tag's relationship to the recorded gate commit and
+that links are available; do not describe archive contents as verified. If
+archive identity is an intended outcome, specify an independent content check
+and its failure case instead. This preserves the proposed publication check
+without claiming protection it does not provide. Evidence: proposal Proposal,
+Rationale and S1-S3; `bootstrap/PROVENANCE.md:359-375`.
+
+**SR2 (blocking) — Resolve the signing conflict at the cut.** The proposal
+preserves the guide's existing alternative of an annotated tag on an approved
+commit, but `bootstrap/PROVENANCE.md:29-32` and `:396-406` require a signed
+release tag and explicitly retire that alternative. A newly explicit
+publication step could complete a release that fails the published provenance
+contract. Recommend making the cut refer to the signed-tag requirement and
+retaining the security-gate commit comparison; this repairs an existing
+inconsistency and requires the Maintainer's decision on the expanded scope.
+
+A read-only helper, if adopted, should reject absent, draft and mismatched
+Releases and failed or ambiguous remote responses, take the gate commit as an
+independent input, and avoid publishing credentials. The plan should define its
+actual endpoint, tag peeling and negative tests; a remote response and the
+expected commit are different trust inputs. This is a design recommendation,
+not evidence that such a helper already exists.
+
+**Covered**: release identity and provenance (`bootstrap/PROVENANCE.md:26-58`,
+`:387-420`); cut ordering (`docs/release-process.md:120-150`); proposal's five
+security answers and expected failure behavior; feasible read-only alternative.
+**Not covered**: no live Release, network response, archive bytes, tag signing,
+or publishing credentials were exercised; no implementation exists to test.
