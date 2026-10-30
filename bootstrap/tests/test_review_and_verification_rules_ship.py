@@ -289,3 +289,18 @@ def test_cairns_own_copy_claims_unconditionally() -> None:
     own = _collapse(_text(OWN))
     assert re.search(r"claimed first, and committed by explicit path", own)
     assert "if the project uses file claims" not in own
+
+
+def test_coordination_doctrine_guards_same_file_commits() -> None:
+    """Named paths still need agreement and inspection of all candidate bytes."""
+    text = _collapse(_text("doctrine/coordination.md"))
+    for phrase in (
+        "agree with the other writers to serialize them through the commit",
+        "including staged and unstaged changes",
+        "inspect new files directly",
+        "Reinspect bytes that change before committing",
+        "Stop and coordinate if content is foreign or uncertain",
+        "use separate worktrees and integrate each author's commit",
+        "A noncooperating writer can still change a file after inspection",
+    ):
+        assert phrase in text
