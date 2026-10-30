@@ -601,8 +601,10 @@ def _build_parser():
     p_install_pre = sub.add_parser(
         "install-precommit",
         help=(
-            "Install (or uninstall) the opt-in pre-commit work-intent "
-            "check (warn-by-default). The scaffold never runs this for you."
+            "Install (or uninstall) the pre-commit work-intent check. "
+            "It is opt-in; it warns on unclaimed paths and blocks only proven "
+            "fresh cross-session conflicts by default. The scaffold never "
+            "runs this for you."
         ),
     )
     p_install_pre.add_argument(

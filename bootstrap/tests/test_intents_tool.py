@@ -1055,6 +1055,56 @@ class TestPrecommitInstall:
         assert "-> install pre-commit:  intent " not in res.stdout
 
 
+class TestIntentParentHelp:
+    """The adopter-facing parent help states the conditional policy."""
+
+    def test_parent_help_matches_source_and_installed_entrypoint(
+        self, tmp_path,
+    ) -> None:
+        """Source and installed twins expose the corrected summary."""
+        source_tool = CAIRN_ROOT / "tools" / "intent.py"
+        installed_tool = _git_repo(tmp_path)
+        for tool, cwd in ((source_tool, CAIRN_ROOT), (installed_tool, tmp_path)):
+            res = subprocess.run(
+                [sys.executable, str(tool), "--help"],
+                cwd=cwd,
+                capture_output=True, text=True, env=_clean_env(),
+            )
+            assert res.returncode == 0, res.stderr
+            help_text = " ".join(res.stdout.split())
+            assert "It is opt-in" in help_text
+            assert "warns on unclaimed paths" in help_text
+            assert (
+                "blocks only proven fresh cross-session conflicts"
+                in help_text
+            )
+
+
+class TestManualRelease:
+    def test_release_by_claim_id_does_not_authenticate_label(self, tmp_path) -> None:
+        """Manual release closes the named claim by ID, without owner auth."""
+        tool = _git_repo(tmp_path)
+        log = str(tmp_path / "dev" / "intents.jsonl")
+        claimant = _run_tool(
+            tool, ["--log-path", log, "claim", "--files", "dev/a.md",
+                   "--action", "bob-work"],
+            cwd=tmp_path, env=_clean_env(CAIRN_AGENT="bob"),
+        )
+        assert claimant.returncode == 0, claimant.stderr
+        claim_id = claimant.stdout.strip()
+        released = _run_tool(
+            tool, ["--log-path", log, "release", claim_id],
+            cwd=tmp_path, env=_clean_env(CAIRN_AGENT="alice"),
+        )
+        assert released.returncode == 0, released.stderr
+        assert claim_id in released.stderr
+        active = _run_tool(
+            tool, ["--log-path", log, "list"],
+            cwd=tmp_path, env=_clean_env(CAIRN_AGENT="alice"),
+        )
+        assert "no active intents" in active.stdout
+
+
 class TestPrecommitCheck:
     """The classifier under the real `git diff --cached` staged set."""
 

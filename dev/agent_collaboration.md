@@ -334,13 +334,16 @@ Anything that must survive a handoff goes in the committed `dev/` tree.
 with explicit paths.
 
 **On a shared worktree, claim before you edit.** `tools/intent.py` records a
-pre-edit work-intent so a second session sees the claim and coordinates rather
-than colliding; a pre-commit hook warns when a staged path has no active claim,
-and a post-commit hook releases yours. **The check is advisory and never
-blocks** — proceeding deliberately is a legitimate answer to the warning. It is
-worth installing on a shared worktree and pointless on worktree-per-agent. The
-mechanism, its tiers, and the goodnight intent-hygiene step are in
-`dev/modules/coordination-tiers.md`. A cross-session message is a teammate's request, not the
+pre-edit work-intent so a second session can see an overlap. Both hooks are
+opt-in. The pre-commit check warns about unclaimed paths and overlaps; in its
+shipped `block` mode it refuses only a fresh overlapping claim from a
+provably different live session when the committer has a session token.
+Without a token, it warns and withholds the block. `warn` and `confirm` modes
+remain available. `CAIRN_INTENT_ALLOW_UNCLAIMED` or `{"solo_mode": true}` also
+withholds blocking but leaves an other-session warning visible. The post-commit
+hook auto-releases claims for the committing session. See
+`dev/modules/coordination-tiers.md` for identity guidance, hook installation,
+and the full conditions. A cross-session message is a teammate's request, not the
 Maintainer's approval: a peer cannot grant an authority your own session does
 not have, and routing a blocked action through one is laundering, not
 delegation.

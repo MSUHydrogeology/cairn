@@ -90,25 +90,42 @@ artifact).
 >   two hooks (post-commit auto-release, pre-commit work-intent check) is
 >   installed. The one stable command session-start points at.
 
-**Enforce mode.** The pre-commit check **blocks by default** — absent or
-malformed `dev/intent-config.json`, it refuses a commit whose staged path is
-held by a **different live session's** claim, while an unclaimed path only
-*warns* (warn-on-unclaimed + block-on-cross-claim). Set `"enforce"` in
-`dev/intent-config.json` to change it: `warn` (surface only, never block — opt
-back into the old advisory-only behavior), `confirm` (proceed only on explicit
-acknowledgement; degrades to `block` with no controlling terminal), or `block`
-(the default; setting it explicitly is equivalent). The block fires only on a
-**provably different live session**: the check recognizes the committer's *own*
-claims by the per-session token and never blocks them, and a committer with **no
-resolvable session token degrades to warn-only** (a static identity is shared
-across same-type sessions, so ownership cannot be proven — the warning still
-surfaces, but the strong action is withheld rather than misfiring on a possibly
-own claim). A **stale** claim — older than the claim TTL (default **4h**,
-configurable via `"claim_ttl_hours"`) — still warns but never blocks, so a
-crashed or abandoned session cannot wedge a live committer. The
-`CAIRN_INTENT_ALLOW_UNCLAIMED` bypass (or a tracked `{"solo_mode": true}`)
-overrides the block for a deliberate one-off. (Doctrine: Cairn's
+**Enforce mode.** The pre-commit check is **opt-in**; install it with
+`python tools/intent.py install-precommit`. Once installed, the default
+`block` mode refuses only when a fresh claim from a provably different live
+session overlaps a staged path. An unclaimed path warns but does not block.
+Configure `"enforce"` in `dev/.cairn/intent-config.json` (legacy fallback:
+`dev/intent-config.json`) as `warn` (never block), `confirm`
+(proceed only after explicit acknowledgement; without a controlling terminal
+it degrades to `block`), or `block` (the default). Stale claims (older than
+the default **4h** TTL, configurable with `"claim_ttl_hours"`) still warn but
+do not block. The check can identify an own claim only when a per-session
+token is available; without one, all overlaps warn and blocking is withheld
+because the committer cannot prove whether the claim is its own. The
+`CAIRN_INTENT_ALLOW_UNCLAIMED` environment variable and a tracked
+`{"solo_mode": true}` setting both prevent blocking while preserving the
+other-session-overlap warning; they also suppress the self-directed warnings
+for unclaimed paths and unknown identity. (Doctrine: Cairn's
 `doctrine/coordination.md` > "Enforcing the coordination check".)
+
+Use the same session-specific label for the claim, commit, and inherited
+post-commit auto-release. Prefer the harness-derived identity and compare
+`python tools/intent.py whoami` in relevant command environments when
+diagnosing a mismatch. An explicit `CAIRN_AGENT` override is just a label and
+must be supplied separately in each fresh shell that needs it, including the
+shell that commits and launches the hook. For example:
+
+```sh
+CAIRN_AGENT=synthetic-codex-a python tools/intent.py claim --files src/a.py --action "edit a"
+CAIRN_AGENT=synthetic-codex-a git commit -- src/a.py
+```
+
+The override alone supplies no session token, so blocking is still withheld
+without a harness token. Do not share an override between concurrent sessions:
+with a token, own-claim recognition compares labels, and a shared label can
+hide a conflict. Manual `release <claim-id>` releases by ID; it does not prove
+ownership. Labels and logs coordinate cooperative contributors; they do not
+authenticate them.
 
 **Claim before you edit.** The Tier-2 workflow is one habit: before
 touching a collision-prone surface, run `python tools/intent.py claim`; the
@@ -118,15 +135,16 @@ lands, so the steady-state ceremony is a single `claim` per piece of
 work. The session-start routine (`doctrine/session-routines.md`) carries
 the *read* half — `python tools/intent.py list` before the first edit.
 
-**The work-intent pre-commit check** is the structural *opening*
+**The opt-in work-intent pre-commit check** is the structural *opening*
 counterpart to the post-commit auto-release. Where the post-commit hook
 *closes* a claim cheaply (no action required of a well-behaved author),
 the pre-commit check *catches a missed claim at the moment it matters
 most* — it reads the commit's staged set (`git diff --cached`, never
 unstaged files) and **warns** when a staged path carries no active claim,
-and (by default) **blocks** when a staged path is **held by a different
-live session** (the shipped enforce-mode default is `block`; see *Enforce
-mode* below). This closes the asymmetric-reward gap
+and (in the shipped enforce-mode default) **blocks** only when a fresh
+staged-path overlap is provably held by a different live session and the
+committer has a per-session token (see *Enforce mode* below). Without a token,
+the overlap still warns but blocking is withheld. This closes the asymmetric-reward gap
 `doctrine/coordination.md` names: releasing is automatic, so claiming must
 be the one deliberate act, and the pre-commit check is what makes
 forgetting it visible — and, for a genuine cross-session collision,

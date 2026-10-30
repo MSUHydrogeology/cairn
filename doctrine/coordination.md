@@ -245,38 +245,56 @@ makes a release lifecycle (and its auto-close hook) correct under
 same-tool concurrency, which is the common case for AI-agent teams
 where one tool spawns many parallel sessions.
 
-### Enforcing the coordination check — bind, don't just warn
+### Enforcing the coordination check — warn, then bind a proven conflict
 
-The pre-commit work-intent check is *advisory* by default: it surfaces, on
-stderr, when a staged path is held by another active session's claim. A
-warn-only guard that fires on every commit — and especially one that
-**cry-wolfs** (warns on the committer's *own* claim) — trains agents to ignore
-it. Two rules keep the guard precise enough to heed and let it *bind* where a
-team wants it to:
+The pre-commit work-intent check is **opt-in**: the adopter installs it with
+`python tools/intent.py install-precommit`; the scaffold never installs it.
+Once installed, its shipped `block` enforce mode has a conditional default:
+an unclaimed staged path warns, while a commit is refused only when a fresh
+claim from a provably different live session overlaps a staged path. Freshness
+uses the claim TTL (four hours by default). Stale claims still warn but do not
+block. The check reports overlaps even when ownership cannot be proved; a
+block is withheld without a per-session token.
 
-* **Own-claim recognition keys on the per-session token, never the agent
-  name.** The check distinguishes the committer's *own* active claims from a
-  *different* session's and warns only about the latter. The match is gated on
-  a **resolvable per-session token** (the harness-session identity above): with
-  a token, only claims carrying *that same token* are "own"; **without** a
-  token the identity is the static agent name — shared by every concurrent
-  same-type session — so own-claim suppression is **disabled** and every
-  overlap is treated as other-session. The failure mode this rules out is the
-  dangerous one: a static name matching another session's claim and
-  *false-suppressing* it (a silent coordination miss). The safe direction is to
-  over-warn, never to silently drop.
-* **A configurable enforce mode** (read from the project's
-  `dev/intent-config.json`): `warn` (surface, never block — the safe default) /
-  `confirm` (proceed only on explicit acknowledgement) / `block` (refuse a
-  commit that touches a *different* active session's claimed path). `confirm`
-  with **no controlling terminal degrades to `block`** (fail-closed — a
-  headless agent never hangs on a prompt). The bypass env var that exempts the
-  unclaimed-path warning also overrides the enforce block (a deliberate
-  one-off). The profile's team posture sets the default: a `single` team stays
-  `warn`; a `concurrent-*` team defaults to `confirm` (raising awareness
-  without wedging a session); `block` is opt-in. The check is **fail-open by
-  construction** — an internal error allows the commit — so binding the guard
-  never risks wedging all commits on a tool bug.
+The setting is read from `dev/.cairn/intent-config.json` (with
+`dev/intent-config.json` as a migration fallback). `warn` mode never blocks,
+and `confirm` asks before proceeding; without a controlling terminal it
+degrades to `block`. The `CAIRN_INTENT_ALLOW_UNCLAIMED` environment variable
+and tracked `{"solo_mode": true}` setting both exempt a commit from blocking
+while leaving the other-session-overlap warning visible.
+They also suppress the self-directed unclaimed-path and unknown-identity
+warnings. These settings do not install the hook or change identity handling.
+
+* **Own-claim recognition uses the resolved label only when a session token
+  exists.** The token establishes that the committer has a session-specific
+  identity; the stored claim label is then compared with the resolved
+  committer label. Without a token, every overlap warns, because a static
+  agent label cannot establish which session owns the claim, and enforcement
+  is withheld. This avoids both a silent false-suppression and blocking a
+  possibly own claim.
+* **Enforce mode** is read from the project's intent configuration:
+  `warn` (surface, never block), `confirm` (proceed only after explicit
+  acknowledgement), or `block` (the shipped default). The `block` mode refuses
+  only a fresh cross-session overlap when a per-session token is available and
+  neither exemption is active. With no controlling terminal, `confirm`
+  degrades to `block`. The check is fail-open on internal errors, so a tool
+  failure does not wedge commits.
+
+Use the same session-specific label for `claim`, the commit, and inherited
+post-commit auto-release. Prefer the harness-derived identity. To diagnose a
+mismatch, compare `python tools/intent.py whoami` in each relevant command
+environment. If an explicit `CAIRN_AGENT` override is needed, provide the same
+session-specific value separately to each fresh shell that runs a claim or
+commit; the commit shell also launches the post-commit hook. For example,
+`CAIRN_AGENT=synthetic-codex-a python tools/intent.py claim --files src/a.py
+--action 'edit a'` and, in the fresh shell that commits,
+`CAIRN_AGENT=synthetic-codex-a git commit -- src/a.py`. The override sets a
+label; by itself it supplies no session token and cannot enable blocking.
+Distinct concurrent sessions must use distinct labels: when a token is
+available, sharing a label can make one session's claim look like the
+committer's own and hide a conflict. A manual `release <claim-id>` closes the
+claim by ID; it does not authenticate ownership. Labels and the append-only
+log are cooperative coordination signals, not authentication.
 
 These bind **within a shared working tree / shared local intents log** — the
 one-machine-many-sessions reality. They do **not** coordinate across

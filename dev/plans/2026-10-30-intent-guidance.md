@@ -1,7 +1,7 @@
 # Plan: Align work-intent guidance with behavior
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-intent-guidance.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30
@@ -106,3 +106,18 @@ The remaining security treatment is adequate as planned: identity resolution kee
 |---|---|
 | IGP1 | Accepted; Verification maps the human comparison and controlled related-description search, including recorded corrections. |
 | IGPS1 | Accepted; C1 and Verification name both exemptions and their warning-without-block behavior. |
+
+## Implementation note -- Codex (GPT-6) -- 2026-10-30
+
+The C1 acceptance text names `CAIRN_ALLOW_UNCLAIMED`; the implemented public
+variable is `CAIRN_INTENT_ALLOW_UNCLAIMED` (`tools/_intent/conflict.py`,
+`ALLOW_UNCLAIMED_ENV_VAR` and `_precommit_check_impl`). Guidance and checks use
+the actual name. This is a factual identifier correction only; enforcement and
+accepted scope are unchanged.
+
+The doctrine-edit gate is met as a correction to the recorded Maintainer
+choice, not a rule inferred from the incident. The C2 coordination choice in
+`dev/plans/archive/2026-10-28-governing-text-single-source.md` records the
+Maintainer's words: “Blocking for live-session conflicts, yes. Agents should
+claim intent prior to editing.” That choice predates the incident, and the
+accepted proposal identifies this correction as implementing it.
