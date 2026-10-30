@@ -11,6 +11,8 @@ source archives; those remain part of the Maintainer's release review.
 from __future__ import annotations
 
 import argparse
+import functools
+import http.client
 import json
 import os
 import re
@@ -35,6 +37,86 @@ _OBJECT_ID_RE = re.compile(r"[0-9a-fA-F]{40}\Z")
 
 class CheckError(Exception):
     """A fail-closed input or remote-read failure."""
+
+
+class _DeadlineLineReader:
+    """Read HTTP status and headers one byte at a time under one deadline."""
+
+    def __init__(self, sock, deadline: float) -> None:
+        self._sock = sock
+        self._deadline = deadline
+
+    def readline(self, limit: int = -1) -> bytes:
+        line = bytearray()
+        while limit < 0 or len(line) < limit:
+            remaining = self._deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError("GitHub Release API response exceeded its total deadline")
+            self._sock.settimeout(remaining)
+            byte = self._sock.recv(1)
+            if time.monotonic() > self._deadline:
+                raise TimeoutError("GitHub Release API response exceeded its total deadline")
+            if not byte:
+                break
+            line.extend(byte)
+            if byte == b"\n":
+                break
+        return bytes(line)
+
+
+class _DeadlineHTTPResponse(http.client.HTTPResponse):
+    def __init__(self, sock, *args, deadline: float, **kwargs) -> None:
+        self._deadline = deadline
+        super().__init__(sock, *args, **kwargs)
+
+    def begin(self) -> None:
+        if self.headers is not None:
+            return
+        response_file = self.fp
+        raw = getattr(response_file, "raw", None)
+        sock = getattr(raw, "_sock", None)
+        if sock is None:
+            raise CheckError("GitHub Release API headers cannot be read with a total deadline")
+        self.fp = _DeadlineLineReader(sock, self._deadline)
+        try:
+            super().begin()
+        finally:
+            self.fp = response_file
+
+
+class _DeadlineHTTPSConnection(http.client.HTTPSConnection):
+    def __init__(self, host, *args, deadline: float, **kwargs) -> None:
+        self._deadline = deadline
+        super().__init__(host, *args, **kwargs)
+
+    def connect(self) -> None:
+        remaining = self._deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("GitHub Release API request exceeded its total deadline")
+        self.timeout = min(self.timeout or remaining, remaining)
+        super().connect()
+
+    def getresponse(self):
+        original_response_class = self.response_class
+        self.response_class = functools.partial(
+            _DeadlineHTTPResponse, deadline=self._deadline)
+        try:
+            return super().getresponse()
+        finally:
+            self.response_class = original_response_class
+
+
+class _DeadlineHTTPSHandler(urllib.request.HTTPSHandler):
+    def __init__(self, deadline: float) -> None:
+        super().__init__()
+        self._deadline = deadline
+
+    def https_open(self, request):
+        def connection_factory(host, **kwargs):
+            return _DeadlineHTTPSConnection(
+                host, deadline=self._deadline, **kwargs)
+
+        return self.do_open(connection_factory, request, context=self._context)
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -161,9 +243,10 @@ def _fetch_release(owner: str, repository: str, tag: str) -> None:
         },
         method="GET",
     )
-    opener = urllib.request.build_opener(
-        urllib.request.ProxyHandler({}), _NoRedirect())
     deadline = time.monotonic() + _HTTP_TIMEOUT_SECONDS
+    opener = urllib.request.build_opener(
+        urllib.request.ProxyHandler({}), _NoRedirect(),
+        _DeadlineHTTPSHandler(deadline))
     try:
         with opener.open(request, timeout=_HTTP_TIMEOUT_SECONDS) as response:
             status = response.getcode()

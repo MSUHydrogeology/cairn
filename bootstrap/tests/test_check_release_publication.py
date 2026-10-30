@@ -451,6 +451,52 @@ def test_public_command_refuses_slow_drip_api_response_by_total_deadline(
     assert elapsed < 1.0
 
 
+def test_public_command_refuses_slow_drip_api_headers_by_total_deadline(
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str]) -> None:
+    build_opener = checker.urllib.request.build_opener
+    _stub_public_reads(monkeypatch)
+    monkeypatch.setattr(checker, "_HTTP_TIMEOUT_SECONDS", 0.25)
+    monkeypatch.setattr(checker.urllib.request, "build_opener", build_opener)
+    sender_threads: list[threading.Thread] = []
+
+    def socket_pair_connect(connection) -> None:
+        receiver, sender = socket.socketpair()
+        connection.sock = receiver
+
+        def send_headers_slowly() -> None:
+            headers = (
+                b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+            try:
+                for byte in headers:
+                    time.sleep(0.04)
+                    sender.sendall(bytes([byte]))
+            except OSError:
+                pass
+            finally:
+                sender.close()
+
+        sender_thread = threading.Thread(target=send_headers_slowly, daemon=True)
+        sender_thread.start()
+        sender_threads.append(sender_thread)
+
+    monkeypatch.setattr(
+        checker._DeadlineHTTPSConnection, "connect", socket_pair_connect)
+    started = time.monotonic()
+    result = checker.main([
+        "--repository", f"{OWNER}/{REPOSITORY}", "--tag", TAG,
+        "--expected-commit", GATE_COMMIT,
+    ])
+    elapsed = time.monotonic() - started
+    for sender_thread in sender_threads:
+        sender_thread.join(timeout=1)
+        assert not sender_thread.is_alive()
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "read failed" in captured.err
+    assert elapsed < 1.0
+
+
 def test_git_timeout_is_bounded_and_fails_closed(
         monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     def timed_out(argv, **kwargs):
