@@ -119,3 +119,18 @@ No additional security blocker found. Summaries do not waive required checks, an
 
 - **Folderless and existing-folder discovery / archive finding: accept.** In an isolated clone of reviewed commit `4009db75e15d4b3787d2fbff70815326e35d3bfa`, I created one plan without a folder and one plan with a same-stem folder containing `record.txt`. `tools/board.py --json` listed both live plan files; `tools/session.py`'s `_in_flight_items` listed both plans. I then moved both Markdown plans into `dev/plans/archive` with `git mv`, moved the existing sidecar folder alongside its plan, and committed only inside the temporary clone. `tools/board.py --json --archive` listed both archived plans, the existing `record.txt` remained byte-identical, and the folderless plan still had no folder. No temporary scenario files were written to the shared repository.
 - This exercises the actual board and session discovery readers and the manual Git archive path. Source inspection found no programmatic archive command. The earlier mapped session fixture covers a proposal, not a plan; no extra broad test run was made. Clean canonical Boundary B remains due after the Security Review.
+
+## Code review -- Codex gpt-6.1-sol -- 2026-10-30
+
+**Tier**: Internal Security Review
+**Reviewed**: implementation `dfb096b4`; scenario response `9a5065bb`. **Verdict**: Accept security implementation; Boundary B remains due. **Bounding**: mapped wide Boundary B remains appropriate. **Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. The four-path committed diff removes automatic folders without changing executable controls or existing evidence. Both templates permit necessary ceremony evidence and retain their distinct Security Review and required-verification rules (`dfb096b4`, plan templates).
+2. **Best alternative.** Keep concise summaries and canonical tests/scripts, with a justified exception for necessary implementation or existing ceremony evidence. This delivers the accepted rule without new machinery; an absolute ban could obstruct ceremony records (accepted proposal, Proposal).
+3. **What would show it wrong?** Treating summaries as permission to omit checks, excluding a required ceremony record, or losing existing evidence on archive. A targeted read-only assertion against committed bytes confirmed both templates retain the exception, sidecar prohibition, separate Security Review obligation and missing-check blocker. The author reports folderless discovery and byte-preserving archive scenarios in `9a5065bb`; this pass accepts that concise report.
+
+**Findings**: none. The preliminary dirty-tree Python 3.12 test figures do not close Boundary B; the plan explicitly owes a clean committed Python 3.13 wide selection after review.
+
+**Covered**: committed implementation and scenario-response records, accepted proposal, both template verification/security controls, doctrine and architecture-review artifact restriction. **Not covered**: independent scenario rerun, security-ceremony execution, exhaustive consumer discovery or final Boundary B. No suite, review sidecar or new enforcement mechanism.
