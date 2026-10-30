@@ -196,31 +196,45 @@ configured interpreter/runtime only before a push when required, before
 re-anchor, before a release cut, or when the Maintainer asks. It certifies every
 change at or before that commit for bisect. The reviewer never runs the full suite.
 
-During implementation, run the plan-mapped checks and standing gates. For
-trivial work, search for owning tests and readers, then run those checks on the
-exact candidate bytes before commit; record the search, commands, counts,
-interpreter, outcomes and omissions in its commit body. Pinned prose is a
-substantive surface; unpinned prose uses prose gates. Boundary B applies to
-every implementation, trivial changes included: after the
-final implementation commit and before code review, run the reviewed mapping
-on an unchanged clean commit under the configured interpreter/runtime. Record `bounded`
-or `wide`, `Certified by: pending`, SHA/range, interpreter, clean pre/post
-state, commands and counts, elapsed time, non-pass disposition and omissions.
+During implementation, run only the tests that name a changed file, plus
+standing prose gates for prose. A test names a file when it imports it or cites
+its path or file name. The project's test-tier tool's `for <paths>` subcommand
+lists that scope; run that list while iterating and do not widen it by judgment.
+For governing text like AGENTS.md, if the broad list exceeds the runner's
+limit, the selector returns only tests pinning changed passages and reports the
+rest as omitted. Folder sweepers are covered by the release run.
+Pinned prose is a substantive surface; unpinned prose uses prose gates.
+Boundary B applies to every implementation, trivial changes included: run one
+integration selection after code review when required, or after the final
+implementation when no code review applies. Use a clean, unchanged final commit
+under the configured interpreter/runtime. It consists of the iteration list
+for every file in the reviewed range and integration/workflow tests in the tier
+map that name those files. Record `bounded` or `wide`,
+`Certified by: pending`, SHA/range, interpreter, clean pre/post state,
+commands and counts, elapsed time, non-pass disposition and omissions.
+Timing targets are 30 seconds for iteration, 10 seconds per test file, 3
+minutes for integration, and 10 minutes for certification. They are
+diagnostics, not agent scores; a miss does not block work. Record misses, and
+put each test file over 10 seconds on the project's test-consolidation list,
+slowest first.
 Bounded covers affected behavior and consumers; wide covers owning test families,
 known integration and public paths, and standing gates. Use `wide` for a contract
 or trust-ceremony surface; trust ceremonies include named high-risk surfaces. Name
 touched surfaces and test files or nodes in the record. A known unmet check keeps work
 open; a future certification cannot close it. The author appends the record
 under `## Implementation verification -- <agent> -- YYYY-MM-DD` in the plan,
-or in the accepted proposal for light work with no plan. Planned code review
-independently falsifies named surfaces and verifies this record; it never runs
-the full suite. See the plan template for full Boundary A/B/C rules.
+or in the accepted proposal for light work with no plan. Code review reads the
+iteration evidence and runs the tightest targeted checks that could falsify the
+change; it never runs a suite. It names a missing test when coverage is absent.
+A review fix that changes more than a failing test returns to the same reviewer
+for a targeted look before the final integration run. See the plan template
+for full Boundary A/B/C rules.
 
 Boundary A is scoped iteration; Boundary B mode is `bounded | wide`; Boundary C
 is independent falsification. Its `Bounding` verdict is `WIDER RUN REQUIRED`
-when mapped checks are insufficient. An already-open plan keeps the
-verification contract written in it. Changed implementation invalidates the
-record. Change verification and tree
+when mapped checks are insufficient. An already-open plan may switch to this
+contract by one line in its record. The final integration run follows review,
+so review fixes are included. Change verification and tree
 certification are separate. Release verification is a separate strict ceremony.
 
 Prose-only work runs the relevant claim, link, snippet and neutrality gates,

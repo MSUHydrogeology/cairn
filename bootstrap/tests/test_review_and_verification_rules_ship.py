@@ -24,18 +24,12 @@ The rules pinned here:
   they exist: the trigger is a claim about a set (not any defect), and an
   equivalent mutant is one a behaviour test *passes* under (a test that fails
   has killed it).
-* **Boundary B governs a trivial change too.** Search for its owning tests
-  and readers, then run those checks on the exact candidate bytes before
-  commit, in an otherwise clean tree or separate copy. Its commit body records
-  the mode, pending tree certification, search, commands, counts, interpreter,
-  outcomes and omissions; the author owns the record and there is no Boundary
-  C. A passing record may say `Implementation verified at <SHA>`; a known
-  missing consumer, security check, or criterion keeps the work open. For
-  planned work, Boundary B is `bounded` for mapped affected behavior and
-  consumers, or `wide` for owning families, known integration and public paths,
-  and standing gates when effects cannot be confidently bounded. Use `wide`
-  for a contract or trust-ceremony surface. A full-tree certification is a
-  separate authorized integration run and cannot close a missing change check.
+* **Boundary B governs a trivial change too.** A test names a changed file
+  when it imports it or cites its path or file name. Use the project's test-tier
+  tool's `for <paths>` subcommand to list those tests; run that list while
+  iterating and do not widen it by judgment. After review, run one integration selection on the clean final
+  commit. A full-tree certification is a separate authorized integration run
+  and cannot close a missing change check.
 * **"Substantive surface" is defined once.** It is anything that is not
   ordinary prose, and that includes prose a test or manifest pins. A narrower
   "code" reading misses exactly the template rewrite whose pinned prose broke
@@ -118,7 +112,7 @@ _OBLIGATIONS = {
     "boundary-b-governs-a-trivial-change":
         r"Boundary B applies to every implementation, trivial changes included",
     "a-trivial-change-maps-to-the-tests-that-own-its-surface":
-        r"For trivial work, search for owning tests and readers",
+        r"A test names a file when it imports it or cites its path or file name",
     "bounded-mode-covers-affected-behavior-and-consumers":
         r"Bounded covers affected behavior and consumers",
     "wide-mode-covers-known-families-and-public-paths":
@@ -128,15 +122,15 @@ _OBLIGATIONS = {
     "unpinned-prose-on-a-high-risk-surface-runs-the-prose-gates":
         r"Do not run the suite unless prose bytes are pinned",
     "a-trivial-change-runs-on-exact-candidate-bytes":
-        r"run those checks on the exact candidate bytes before commit",
-    "a-trivial-change-records-the-search-and-checks-in-its-commit-body":
-        r"record the search, commands, counts, interpreter, outcomes and omissions in its commit body",
+        r"run that list while iterating",
+    "governing-text-omissions-are-reported":
+        r"reports the rest as omitted",
     "passing-known-checks-identifies-the-verified-commit":
         r"SHA/range, interpreter, clean pre/post state",
     "a-plan-appends-its-verification-section":
         r"The author appends the record under `## Implementation verification",
-    "owning-tests-are-found-by-search":
-        r"search for owning tests and readers",
+    "tests-are-selected-by-file-reference":
+        r"for <paths>",
     "bounded-record-names-touched-surfaces-and-tests":
         r"Name touched surfaces and test files or nodes in the record",
     "trust-ceremony-surface-is-defined":

@@ -289,32 +289,38 @@ not the accepted proposal.
 
 ## Verification
 
-**Boundary A (iteration, scoped).** The tests owning each touched surface,
-plus its standing gates.
+**Boundary A (iteration, scoped).** The tests naming each changed file, plus
+standing prose gates for prose.
 
 <!-- cairn:slot verification-commands -->
-Before implementation, make Boundary A a **reviewed mapping**: for each changed
-invariant and public path, name the exact affected test node/file and every
-standing non-pytest gate for the touched surface. Run that scope while
-iterating. There is no permanent fast tier: `bounded` uses the reviewed map
-when it covers affected behavior and consumers; `wide` runs the owning test
-families, known integration and public paths, and standing gates when effects
-cannot be confidently bounded. Neither mode claims unknown dependencies are
-covered. A known missing path, required check, or unmet criterion keeps the
-change open. For a selection above a guard's file limit, split it into
-invocations within the limit and reconcile the executed-test union with the
-original selection; preserve arguments and markers, and do not use an override.
+Before implementation, run `python tools/test_tiers.py for <paths>` to list
+tests that import or cite each changed file by path or file name. This list is
+the iteration scope; do not widen it by judgment. Run applicable standing prose
+gates for prose. For governing text like AGENTS.md, if the broad list exceeds
+the runner's limit, the selector returns only tests pinning changed passages
+and reports the rest as omitted. Folder sweepers are covered by the release
+run. The selector claims no unknown dependencies. A known missing path,
+required check, or unmet criterion keeps the change open.
 
-Boundary B runs once after the final implementation commit on a clean,
-unchanged commit under the canonical interpreter. Record
+Boundary B runs once after code review, on a clean, unchanged final commit
+under the canonical interpreter. It consists of the iteration list for every
+file in the reviewed range, plus integration and workflow tests in the tier
+map that name those files. Record
 `**Boundary B mode**: bounded | wide`. Use `wide` for a contract or
 trust-ceremony surface. A contract change includes its producers, consumers,
 and public paths; a trust ceremony retains every prescribed security and
-ceremony check. The change record carries
+ceremony check. `bounded` covers mapped affected behavior and consumers;
+`wide` covers owning test families, known integration and public paths, and
+standing gates when effects cannot be confidently bounded. The change record carries
 `**Certified by**: pending` until a separate authorized tree-certifying run
 covers the commit. A certifying run uses the project's full suite and standing
 gates only at the integration points in `AGENTS.md` > Verification boundaries;
 it is not a per-change command and does not replace missing change evidence.
+Timing targets are 30 seconds for iteration, 10 seconds per test file, 3
+minutes for integration, and 10 minutes for certification. These are
+diagnostics, not agent scores; a miss does not block work. Record misses and
+add each test file over 10 seconds to the test-consolidation list, slowest
+first.
 
 The commands and checks named for Boundary B are the mapped tests, each
 surface's standing gates, and all plan-specific acceptance commands, including
@@ -347,8 +353,8 @@ empty heading in a new plan. The record uses these exact fields:
   **Known omissions**.
 <!-- cairn:end verification-commands -->
 
-**Boundary B (integration).** After the final implementation commit, against a
-clean unchanged commit under the canonical interpreter. Record
+**Boundary B (integration).** Once after code review, against a clean,
+unchanged final commit under the canonical interpreter. Record
 `**Boundary B mode**: bounded | wide`. Use `wide` when the reviewed mapping
 cannot bound affected behavior confidently. Record the checked consumers and
 public paths; preserve every prescribed contract and ceremony check. A known
@@ -358,18 +364,14 @@ Append the evidence as `## Implementation verification -- <agent> -- YYYY-MM-DD`
 tested SHA, interpreter, clean pre/post state, commands, outcomes, elapsed time,
 token use or `unknown`, disposition of every non-pass, known omissions.
 
-**Boundary C (falsification)** is the code reviewer's, and it is not re-running
-Boundary B's command. Verify the record against the reviewed range, then run
-independent **targeted falsification** — attack the claims that would hurt most
-if wrong. Record `**Bounding**: ACCEPTED | WIDER RUN REQUIRED` only after
-challenging a named surface, mapped test, or stated omission. `WIDER RUN
-REQUIRED` names the missing behavior and check; the author adds the check and
-records new final-commit evidence before acceptance. A missing or invalid
-record, newly found dependency, undisposed skip/xfail/xpass, or changed
-implementation, test, executable-template, or fixture bytes requires valid new
-change-specific evidence. It does not by itself trigger a full-suite run. Tree
-certification remains a separate authorized integration run; a ceremony keeps
-its own required checks.
+**Boundary C (falsification)** is the code reviewer's, before Boundary B. Read
+the implementation and iteration evidence, then run only targeted checks that
+could falsify the change; never run a suite. Name a specific missing test when
+coverage is absent, and have the author add it. The final integration run then
+covers all review fixes. If a fix after a failed integration run changes more
+than the failing test, return it to the same reviewer for a targeted look
+before rerunning the integration selection. Tree certification remains a
+separate authorized integration run; a ceremony keeps its own required checks.
 
 <!-- Later-stage sections — do NOT copy into a new plan; append each
      section only when that lifecycle step occurs. -->

@@ -309,17 +309,14 @@ one broad command is not independent review.
 
 ### Boundary A — Iteration (scoped)
 
-Each chunk's acceptance criteria map the changed invariants and public paths to
-their affected tests and standing surface gates. The implementer runs that
-reviewed scope while iterating and adds newly discovered dependencies to the
-mapping before relying on them. A trivial change with no proposal or plan maps
-its owning tests and readers by searching what imports or reads the touched
-files, then runs those checks and applicable surface gates on the candidate
-bytes. Speed alone does not establish coverage. If effects cannot be
-confidently bounded, use `wide`: run the owning test families, known
-cross-surface integration and public paths, and standing gates. Unknown
-dependencies are not claimed as covered. A known required path, check, or
-acceptance criterion that remains unmet keeps the change open.
+For each changed file, `python tools/test_tiers.py for <paths>` lists tests
+that import it or cite its path or file name. Run that list while iterating;
+do not widen it by judgment. Run applicable standing prose gates for prose.
+For governing text, when the list exceeds the runner's limit, use only tests
+pinning the changed passages and record the omitted tests. Folder sweepers are
+covered by the release run. Unknown dependencies are not claimed as covered.
+A known required path, check, or acceptance criterion that remains unmet keeps
+the change open.
 
 **Tree certification is separate.** The full suite and standing gates are run
 on a clean committed tree only before a push when required (pushing may require
@@ -345,9 +342,12 @@ manifests, and prose a test or manifest pins.
 
 ### Boundary B — Integration (one stable change-verification record)
 
-After the final implementation commit and before code review, the implementer
-runs the reviewed mapping on a clean, stable commit using the configured
-canonical interpreter/runtime. Record `**Boundary B mode**: bounded | wide`.
+After code review, or after the final implementation commit when no code review
+applies, the implementer runs one final integration selection on a clean,
+stable commit using the configured canonical interpreter/runtime. It includes
+the iteration list for every file in the reviewed range, plus integration and
+workflow tests in the tier map that name those files. Record
+`**Boundary B mode**: bounded | wide`.
 `bounded` covers mapped affected behavior and consumers. `wide` covers the
 owning test families, known cross-surface integration and public paths, and
 standing gates when effects cannot be confidently bounded. Use `wide` for a
@@ -356,6 +356,11 @@ are covered. A contract change covers its producers,
 consumers and public paths; a trust ceremony retains every prescribed security
 and ceremony check. Missing known coverage or an unmet criterion keeps the work
 open; certification cannot fill that gap.
+
+Timing targets are 30 seconds for iteration, 10 seconds per test file, 3
+minutes for integration, and 10 minutes for certification. They are diagnostic,
+not agent scores; a miss does not block work. Record misses and add each test
+file over 10 seconds to the test-consolidation list, slowest first.
 
 If a required selection crosses the test runner's file limit, split it into
 invocations within the limit. Record each invocation's arguments and outcomes,
@@ -372,25 +377,21 @@ and check. The author runs that check and records new final-commit evidence
 before acceptance; otherwise the work stays open.
 
 **Boundary B governs every implementation, a trivial change included.** A
-trivial work has no reviewed plan mapping. Search for its owning tests and
-readers, then run them on the exact candidate bytes before committing, in an
-otherwise clean tree or a separate copy holding only the change. Its commit
-body records the mode, `Certified by: pending`, search, commands, counts,
-interpreter, outcomes and omissions; the resulting commit identifies those
-bytes. Passing known checks and criteria permits `Implementation verified at
-<SHA>`. The author owns the record, and trivial work has no Boundary C. A
-standard/heavy trivial proposal records its result in that commit body. For an
-accepted light proposal without a plan, the author instead appends Boundary B
-evidence to the proposal after the final implementation commit, then archives
-it; no code review is added. The defect-repair exception
-remains governed by the lifecycle's three conditions.
+trivial change uses the same file-name selector rather than searching readers.
+Boundary C, when required, is targeted review before Boundary B; it never runs
+a suite. For a light proposal without a plan, append Boundary B evidence to the
+proposal after its final integration selection, then archive it. A later fix
+after a failed selection that changes more than the failing test returns to
+the same reviewer for a targeted look before rerunning the integration
+selection. The defect-repair exception remains governed by the lifecycle's
+three conditions.
 
-**An already-open plan keeps the verification contract written in it.** A new
-scoped contract applies to it only through that plan's own append-only revision
-under the deviation rule. A plan that already requires a whole-tree run stays
-open until an authorized certifying run covers it or that plan is revised.
-Plan templates apply prospectively; archives are not retrofitted. A plan
-receives its implementation-verification record only after the run completes:
+**An already-open plan may switch to this contract by one line in its record.**
+Until it does, its written checks govern. A plan that already requires a
+whole-tree run stays open until an authorized certifying run covers it or that
+plan is revised. Plan templates apply prospectively; archives are not
+retrofitted. A plan receives its implementation-verification record only after
+the run completes:
 
 ```markdown
 ## Implementation verification -- <agent> -- YYYY-MM-DD
@@ -426,27 +427,25 @@ reviewed range, pre/post `HEAD` both equal the full tested revision, and the
 tree is clean before and after. A later review or record-only commit does not
 invalidate it.
 A later unrelated implementation commit neither falsifies what the record says
-about its named tree nor gains coverage from it. Any later commit included in
-the review that changes implementation, tests, executable templates, or
-fixtures in the reviewed range requires a replacement Boundary B record.
+about its named tree nor gains coverage from it. Boundary B follows code review
+and covers its fixes; a change made after that final integration run requires
+replacement evidence.
 
 This is a human-readable process attestation under a trusted-contributor model,
 not a signed receipt or parser-enforced claim. It does not authenticate the
 author or prove the commands ran. Release verification is a separate ceremony:
 an implementation record never satisfies or shortens a release gate.
 
-### Boundary C — Falsification (independent, challenging B)
+### Boundary C — Falsification (targeted review before B)
 
-Code review verifies the Boundary B record against the reviewed range, then
-performs independent targeted falsification under `doctrine/dual-review.md`;
-repeating the author's command is not structural independence. A missing or
-invalid record, an unrecorded dependency, an undisposed skip/xfail/xpass, or
-changed implementation, test, executable-template or fixture bytes requires a
-valid new change-specific record. Review findings name the missing behavior
-and check; the author runs them before acceptance. **The reviewer never runs
-the full suite.** A ceremony keeps every prescribed check, and whole-tree
-evidence comes from a separate authorized certifying run, never from a
-reviewer's rerun.
+Code review reads the iteration evidence and runs only targeted checks that
+could falsify the change. It does not run a suite. A review finding names the
+missing behavior and check; the author adds it, and the final integration
+selection covers it. A fix after a failed integration selection that changes
+more than the failing test returns to the same reviewer for a targeted look.
+A ceremony keeps every prescribed check, and whole-tree evidence comes from a
+separate authorized certifying run, never from a reviewer's rerun.
+This process does not automatically call for a whole-tree run.
 
 A replacement Boundary B record is required when any of these six
 record-replacement triggers applies:
@@ -454,8 +453,7 @@ record-replacement triggers applies:
 1. no valid Boundary B record exists;
 2. review discovers an unrecorded cross-surface dependency;
 3. a skip, xfail, or xpass lacks an adequate disposition;
-4. review sharpening changes implementation, tests, executable templates, or
-   fixtures in the reviewed range;
+4. a later change is made after a valid final integration record;
 5. the accepted plan's trust ceremony explicitly requires independent full
    execution; or
 6. the reviewer has a concrete reason to distrust or falsify the broad result.

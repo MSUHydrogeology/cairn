@@ -316,22 +316,17 @@ calls for security treatment declares the `+ Internal Security Review`
 obligation there; nothing upgrades a plan review to a mandated
 different-agent-type read.
 
-### Boundary C — Falsification (targeted, after change verification)
+### Boundary C — Falsification (targeted review before B)
 
-Independent review does not mean independently repeating every command the
-implementer ran. For work with a valid Boundary B record (`doctrine/plans.md`:
-a plan's Implementation verification section, the accepted light proposal's
-post-implementation verification section, or, where the Maintainer asks
-for a review of a trivial change, its commit body, whose candidate bytes are
-identified by the resulting commit and whose clean state is a tree clean apart
-from the change), the reviewer first checks
-that the tested revision and reviewed range cover the implementation, that the
-named paths and interpreter/runtime are credible, and that clean pre/post
-state and all outcomes are dispositioned. The reviewer then chooses tests and
-probes for changed public paths, negative or edge cases, cross-surface
-assumptions, and claims whose evidence is doubtful. Point to repeatable checks
-and state outcomes concisely; copying the implementation's command alone does
-not show independent falsification.
+Independent review does not mean repeating every command the implementer ran.
+The reviewer reads the implementation and iteration evidence, then chooses
+targeted checks for changed public paths, negative or edge cases, cross-surface
+assumptions, and claims whose evidence is doubtful. Never run a suite. Point to
+repeatable checks and state outcomes concisely; copying the implementation's
+command alone does not show independent falsification. Name a specific missing
+test when coverage is absent, and have the author add it before the final
+integration run. A fix after a failed integration run that changes more than
+the failing test returns to the same reviewer for a targeted look.
 
 **When a finding or claim says a value must reach every member of a set**
 (every call site, every rendering path), list the set from the tree, not the
@@ -350,25 +345,25 @@ change-verification record cites the certifying SHA as `**Certified by**`, or
 `pending`; later certification is appended separately. It does not supply a
 missing change check.
 
-A Boundary B record states `**Boundary B mode**: bounded | wide` and follows
-the plan doctrine's coverage fields. `bounded` must cover mapped affected
-behavior and consumers; `wide` names owning test families, known integration
-and public paths, and standing gates. Use `wide` for a contract or
-trust-ceremony surface. After
-challenging a named surface, mapped test, or stated omission, the reviewer
-records `**Bounding**: ACCEPTED | WIDER RUN REQUIRED`. The second verdict
-names the missing behavior and check, invalidates that record for acceptance,
-and returns it to the author for a wider run and new final-commit evidence.
-This is reviewer judgment, not a parser or selector.
+After challenging a named surface, mapped test, or stated omission, the
+reviewer records `**Bounding**: ACCEPTED | WIDER RUN REQUIRED`. The second
+verdict names the missing behavior and check and returns it to the author before
+the final integration run. This is reviewer judgment, not a parser or selector.
+This process does not automatically call for a whole-tree run.
 
-A missing or invalid record, an unrecorded cross-surface dependency, an
-undisposed skip/xfail/xpass, or changed implementation, test, executable
-template, or fixture bytes requires valid new change-specific evidence. It does
-not automatically require a whole-tree run. Review-only prose appended after a
-valid record does not invalidate it. A later unrelated commit cannot cite the
-old record as evidence for its own bytes. When a ceremony explicitly requires
-full execution, its authorized certifying run supplies that tree evidence; the
-reviewer does not run it.
+Boundary B is recorded after review, or after the final implementation commit
+where no code review applies. Its record follows the plan doctrine's coverage
+fields and names `**Boundary B mode**: bounded | wide`, its tested revision,
+reviewed range, interpreter/runtime,
+clean pre/post state, outcomes and omissions. `bounded` covers mapped affected
+behavior and consumers; `wide` covers owning test families, known integration
+and public paths, and standing gates. Use `wide` for a contract or
+trust-ceremony surface. Record the result in a plan's Implementation
+verification section, the accepted light proposal's post-implementation
+verification section, or, where the Maintainer asks for a review of a trivial
+change, its commit body. When a ceremony explicitly requires full execution, its
+authorized certifying run supplies that tree evidence; the reviewer does not
+run it.
 
 A replacement Boundary B record is required when any of these six
 record-replacement triggers applies:
@@ -376,8 +371,7 @@ record-replacement triggers applies:
 1. no valid Boundary B record exists;
 2. review discovers an unrecorded cross-surface dependency;
 3. a skip, xfail, or xpass lacks an adequate disposition;
-4. review sharpening changes implementation, tests, executable templates, or
-   fixtures in the reviewed range;
+4. a later change is made after a valid final integration record;
 5. the accepted plan's trust ceremony explicitly requires independent full
    execution; or
 6. the reviewer has a concrete reason to distrust or falsify the broad result.

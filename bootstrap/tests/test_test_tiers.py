@@ -13,6 +13,7 @@ from __future__ import annotations
 import importlib.util
 import io
 import json
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -96,3 +97,88 @@ def test_a_tier_without_patterns_is_refused_plainly(tmp_path):
         code, err = _check(config, folder)
         assert code == 2
         assert "needs a name and a non-empty list of patterns" in err
+
+
+def test_for_selects_imports_and_cited_paths_but_not_folder_sweepers(tmp_path):
+    target = tmp_path / "tools" / "example.py"
+    target.parent.mkdir()
+    target.write_text("VALUE = 1\n", encoding="utf-8")
+    template = tmp_path / "templates" / "core" / "AGENTS.md"
+    template.parent.mkdir(parents=True)
+    template.write_text("rule\n", encoding="utf-8")
+    tests = _tests(tmp_path, "test_imports_example", "test_imports_from_example",
+                   "test_cites_agents", "test_sweeps_templates")
+    (tests / "test_imports_example.py").write_text(
+        "import tools.example\n", encoding="utf-8")
+    (tests / "test_imports_from_example.py").write_text(
+        "from example import VALUE\n", encoding="utf-8")
+    (tests / "test_cites_agents.py").write_text(
+        'PINNED = "templates/core/AGENTS.md"\n', encoding="utf-8")
+    (tests / "test_sweeps_templates.py").write_text(
+        'for path in Path("templates").rglob("*.md"): pass\n',
+        encoding="utf-8")
+
+    out, err = io.StringIO(), io.StringIO()
+    code = tiers_tool.main(
+        ["for", "tools/example.py", "templates/core/AGENTS.md"],
+        config=_config(tmp_path, [{"name": "unit", "about": "", "patterns": ["test_*"]}]),
+        test_dir=tests, root=tmp_path, out=out, err=err)
+    assert code == 0
+    assert out.getvalue().splitlines() == [
+        "tests/test_cites_agents.py",
+        "tests/test_imports_example.py",
+        "tests/test_imports_from_example.py",
+    ]
+    assert "3 test files" in err.getvalue()
+
+
+def test_for_includes_a_changed_test_module_itself(tmp_path):
+    tests = _tests(tmp_path, "test_changed")
+    changed_test = tests / "test_changed.py"
+    changed_test.write_text("assert True\n", encoding="utf-8")
+    out, err = io.StringIO(), io.StringIO()
+    code = tiers_tool.main(
+        ["for", "tests/test_changed.py"],
+        config=_config(tmp_path, [{"name": "unit", "about": "", "patterns": ["test_*"]}]),
+        test_dir=tests, root=tmp_path, out=out, err=err)
+    assert code == 0
+    assert out.getvalue().splitlines() == ["tests/test_changed.py"]
+
+
+def test_for_rejects_paths_outside_project_root(tmp_path):
+    tests = _tests(tmp_path, "test_a")
+    out, err = io.StringIO(), io.StringIO()
+    code = tiers_tool.main(
+        ["for", "/outside/secret.py"],
+        config=_config(tmp_path, [{"name": "unit", "about": "", "patterns": ["test_*"]}]),
+        test_dir=tests, root=tmp_path, out=out, err=err)
+    assert code == 2
+    assert "outside project root" in err.getvalue()
+
+
+def test_for_narrows_agents_to_tests_pinning_changed_passages(tmp_path):
+    root = tmp_path / "project"
+    tests = root / "tests"
+    tests.mkdir(parents=True)
+    agents = root / "AGENTS.md"
+    agents.write_text("Boundary B runs before review.\n", encoding="utf-8")
+    pinned = tests / "test_pins_boundary.py"
+    pinned.write_text(
+        'RULE = "Boundary B runs after code review on the final commit"\n',
+        encoding="utf-8")
+    protected = tests / "test_protects_removed_boundary.py"
+    protected.write_text(
+        'FORBIDDEN = "Boundary B runs before review"\n', encoding="utf-8")
+    sweeper = tests / "test_sweeps_agents.py"
+    sweeper.write_text('assert Path("AGENTS.md").exists()\n', encoding="utf-8")
+    subprocess.run(["git", "init", "-q", str(root)], check=True)
+    subprocess.run(["git", "-C", str(root), "add", "AGENTS.md", "tests"], check=True)
+    subprocess.run([
+        "git", "-C", str(root), "-c", "user.name=Test", "-c",
+        "user.email=test@example.invalid", "commit", "-qm", "baseline",
+    ], check=True)
+    agents.write_text("Boundary B runs after code review on the final commit.\n",
+                      encoding="utf-8")
+
+    assert tiers_tool.tests_for_paths(
+        ["AGENTS.md"], [pinned, protected, sweeper], root=root) == [pinned, protected]

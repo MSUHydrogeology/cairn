@@ -32,7 +32,7 @@ REPLACEMENT_RECORD_TRIGGERS = (
     "no valid Boundary B record exists",
     "unrecorded cross-surface dependency",
     "skip, xfail, or xpass",
-    "changed implementation",
+    "a later change is made after a valid final integration record",
     "trust ceremony explicitly requires",
     "concrete reason to distrust or falsify",
 )
@@ -62,7 +62,7 @@ def _operational_violations(text: str) -> list[str]:
         "known check blocks completion": "future certification cannot close it",
         "separate certification": "Change verification and tree certification are separate",
         "record heading": "## Implementation verification -- <agent> -- YYYY-MM-DD",
-        "invalidation": "Changed implementation invalidates the record",
+        "integration follows review": "after code review",
         "release separation": "Release verification is a separate strict ceremony",
     }
     return [label for label, token in required.items() if token not in text]
@@ -151,7 +151,7 @@ def _record_violations(text: str) -> list[str]:
         "**Non-pass disposition**",
         "**Plan-specific acceptance commands**",
         "**Known omissions**",
-        "changed implementation, test, executable-template or fixture bytes",
+        "After code review, or after",
         "never satisfies or shortens a release gate",
         "not a signed receipt or parser-enforced claim",
     )
@@ -171,8 +171,8 @@ def test_record_schema_guard_detects_removed_reviewed_range() -> None:
 def _review_violations(text: str) -> list[str]:
     text = " ".join(text.split())
     required = (
-        "Falsification (targeted, after change verification)",
-        "Copying the implementation's command does not satisfy",
+        "Falsification (targeted review before B)",
+        "command alone does not show independent falsification",
         *REPLACEMENT_RECORD_TRIGGERS,
         "do not automatically call for a whole-tree run",
         "not authentication, malicious-committer protection, or a",
@@ -272,22 +272,12 @@ _APPLICABILITY_SURFACES = (SELF_AGENTS, ADOPTER_AGENTS, PLANS_DOCTRINE)
 
 @pytest.mark.parametrize("path", _APPLICABILITY_SURFACES,
                          ids=lambda p: str(p.relative_to(ROOT)))
-def test_already_open_plans_keep_their_written_contract(path) -> None:
-    """An accepted term that first landed with no guard at all.
-
-    Editing doctrine acts immediately; editing the plan templates acts
-    prospectively. Without this rule an in-flight plan receives two answers
-    about its own evidence obligation -- and two plans were executing when the
-    clause landed. The rule was accepted in the Decision, shipped in the
-    implementing commit, and was still deletable without any test
-    noticing it.
-    """
+def test_already_open_plans_can_switch_by_one_line(path) -> None:
+    """An open plan may opt into the new contract without rewriting its records."""
     normalized = " ".join(_read(path).split())
-    assert "already-open plan keeps the verification contract" in normalized, (
-        f"{path} no longer states that an already-open plan keeps the "
-        f"verification contract written in it. Bounded mode then silently "
-        f"becomes available to plans whose reviewed mapping never contemplated "
-        f"it."
+    assert "already-open plan may switch to this contract by one line in its record" in normalized, (
+        f"{path} no longer states the one-line path for an already-open plan to "
+        f"adopt this verification contract."
     )
 
 
@@ -313,7 +303,7 @@ def test_wider_run_verdict_invalidates_the_scoped_record() -> None:
     """`WIDER RUN REQUIRED` blocks acceptance until new B evidence exists."""
     normalized = " ".join(_read(REVIEW_DOCTRINE).split())
     assert "WIDER RUN REQUIRED" in normalized
-    assert "invalidates that record for acceptance" in normalized
+    assert "returns it to the author before the final integration run" in normalized
     assert "do not automatically call for a whole-tree run" in normalized
 
 
@@ -346,14 +336,16 @@ def _plan_template_violations(text: str) -> list[str]:
     normalized_all = " ".join(text.split())
     verification_required = (
         "Implementation verification -- <agent> -- YYYY-MM-DD",
-        "reviewed mapping",
+        "for <paths>",
+        "do not widen it by judgment",
+        "after code review",
         "Boundary B mode",
         "bounded | wide",
         "Certified by",
         *RECORD_FIELDS,
     )
     review_required = (
-        "targeted falsification",
+        "before Boundary B",
         "WIDER RUN REQUIRED",
         "keeps the change open",
         "a separate authorized integration run",

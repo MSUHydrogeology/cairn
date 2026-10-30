@@ -13,6 +13,7 @@ automatically by its name or stopped until a pattern places it.
   python tools/test_tiers.py check
   python tools/test_tiers.py list [TIER]
   python tools/test_tiers.py files TIER    # paths for a scoped pytest run
+  python tools/test_tiers.py for PATH...   # tests naming changed files
 
 ``files`` only prints paths. A tier larger than the broad-run guard allows
 is still refused by that guard outside a certifying run; this tool does not
@@ -23,6 +24,8 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import json
+import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -83,8 +86,76 @@ def classify(files: list[Path], tiers: list[dict]):
     return owner, unplaced, unused
 
 
+def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT) -> list[Path]:
+    """Select test files that name a changed file by path or file name.
+
+    Folder sweeps do not name their discovered members and are intentionally
+    absent; release verification covers those wider effects. For AGENTS.md,
+    the current diff narrows the list to tests pinning changed passages.
+    """
+    needles: set[str] = set()
+    governing_passages: list[str] = []
+    governing_path_requested = False
+    changed_test_files: set[Path] = set()
+    project_root = root.resolve()
+    for value in paths:
+        path = Path(value)
+        candidate = path.resolve() if path.is_absolute() else (project_root / path).resolve()
+        try:
+            path = candidate.relative_to(project_root)
+        except ValueError as exc:
+            raise ValueError(f"path is outside project root: {value}") from exc
+        if not path.name or not candidate.is_file():
+            raise ValueError(f"expected a file path: {value}")
+        if candidate in files:
+            changed_test_files.add(candidate)
+        if path.name == "AGENTS.md":
+            governing_path_requested = True
+            changed = subprocess.run(
+                ["git", "-C", str(root), "diff", "--unified=0", "HEAD", "--",
+                 path.as_posix()], text=True, capture_output=True, check=False)
+            if changed.returncode == 0 and not any(
+                    line.startswith(("+", "-"))
+                    and not line.startswith(("+++", "---"))
+                    for line in changed.stdout.splitlines()):
+                changed = subprocess.run(
+                    ["git", "-C", str(root), "diff", "--unified=0", "HEAD^", "HEAD",
+                     "--", path.as_posix()], text=True, capture_output=True, check=False)
+            if changed.returncode == 0:
+                governing_passages.extend(
+                    " ".join(re.findall(r"[a-z0-9_]+", line.lower()))
+                    for line in changed.stdout.splitlines()
+                    if line.startswith(("+", "-"))
+                    and not line.startswith(("+++", "---"))
+                    and len(re.findall(r"[a-z0-9_]+", line.lower())) >= 5)
+        else:
+            needles.add(path.as_posix())
+            needles.add(path.name)
+            if path.suffix == ".py":
+                needles.add(path.stem)
+                needles.add(path.with_suffix("").as_posix().replace("/", "."))
+    selected = []
+    for test in files:
+        source = test.read_text(encoding="utf-8", errors="replace")
+        normalized = " ".join(re.findall(r"[a-z0-9_]+", source.lower()))
+        pins_changed_passage = False
+        for passage in governing_passages:
+            words = passage.split()
+            if any(" ".join(words[i:i + 5]) in normalized
+                   for i in range(max(0, len(words) - 4))):
+                pins_changed_passage = True
+                break
+        names_requested_files = any(needle in source for needle in needles)
+        if (test in changed_test_files or pins_changed_passage or names_requested_files
+                or (governing_path_requested and not governing_passages
+                    and "AGENTS.md" in source)):
+            selected.append(test)
+    return selected
+
+
 def main(argv: list[str] | None = None, *, config: Path = CONFIG,
-         test_dir: Path = TEST_DIR, out=sys.stdout, err=sys.stderr) -> int:
+         test_dir: Path = TEST_DIR, root: Path = ROOT,
+         out=sys.stdout, err=sys.stderr) -> int:
     ap = argparse.ArgumentParser(prog="test_tiers", description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="verb", required=True)
     sub.add_parser("check", help="fail on an unplaced file or an unused pattern")
@@ -92,6 +163,8 @@ def main(argv: list[str] | None = None, *, config: Path = CONFIG,
     ls.add_argument("tier", nargs="?")
     fs = sub.add_parser("files", help="print the paths in one tier")
     fs.add_argument("tier")
+    scoped = sub.add_parser("for", help="tests that name changed file paths")
+    scoped.add_argument("paths", nargs="+")
     args = ap.parse_args(argv)
 
     try:
@@ -100,6 +173,17 @@ def main(argv: list[str] | None = None, *, config: Path = CONFIG,
         print(f"invalid tier configuration: {exc}", file=err)
         return 2
     files = find_test_files(test_dir)
+    if args.verb == "for":
+        try:
+            chosen = tests_for_paths(args.paths, files, root)
+        except ValueError as exc:
+            print(str(exc), file=err)
+            return 2
+        for path in chosen:
+            print(path.relative_to(root) if path.is_relative_to(root) else path,
+                  file=out)
+        print(f"{len(chosen)} test files selected for the requested paths", file=err)
+        return 0
     owner, unplaced, unused = classify(files, tiers)
     known = [t["name"] for t in tiers]
     if getattr(args, "tier", None) and args.tier not in known:
