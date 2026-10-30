@@ -1,7 +1,7 @@
 # Plan: Protect upgrade bases and install output
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-upgrade-install-integrity.md
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Check upgrade ancestors before merging and make supplied names recognizable in paths and output.
@@ -152,3 +152,32 @@ Both plan-review obligations are complete. Scope remains preserved; implementati
 **Plan-specific acceptance commands**: the mapped public-command tests above exercise `upgrade --plan`, `--stage`, `--apply`, `--apply --ack-review-only`, recovery followed by a later stage, install with normal/absent/unknown modules, and the listed output paths. The two scoped mutations were each made in a fresh detached copy; each relevant behavior test failed under mutation and passed on the unchanged commit.
 
 **Known omissions**: no full-suite certification was run; it remains pending at the authorized integration point. The Maintainer-run AST re-anchor was not performed. No Windows terminal rendering run was performed. The checks cover the named behavior and public paths, not arbitrary concurrent writes between revalidation and replacement, which the plan expressly bounds out.
+
+
+## Code review -- Codex GPT-6 -- 2026-10-30
+
+**Reviewed commit**: `38e3a2758d39f6a9920713cdf9fcdb87703f3e95`; verification record `9aac9c15`.
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+
+**Foundations**
+
+1. **Should this happen as framed?** The raw-byte check and stage binding address the accepted design, but recovery cannot repeat and a mapped check failed -- `bootstrap/_scaffold/upgrade.py`, `_recovered_base_cache_path`; Implementation verification above.
+2. **Best alternative.** Keep the recovery mechanism but allocate a distinct safe cache for each recovery, preserving previous evidence and supporting retry -- `bootstrap/_scaffold/upgrade.py`, `_apply_upgrade`.
+3. **What would show it wrong.** A second corrupted ancestor that cannot be reconciled, or a required mapped check that fails -- see falsification ledger below.
+
+**CR1: Repeated recovery cannot complete.** After a successful recovery, corrupt its new ancestor and repeat stage, manual reconciliation and acknowledged apply. The destination-derived recovered path is identical to the corrupt current cache, so apply refuses its different contents. The operator cannot complete recovery while preserving that evidence. Allocate a distinct safe path for the next ancestor, preserve the old cache, and test two successive recoveries through the public command.
+
+**CR2: The mapped Boundary B check did not pass.** `TestInitLock::test_review_pairs_leave_no_placeholder_the_install_filled` failed in the recorded run. Its characterization as pre-existing does not satisfy the plan's mapped command or C3's explicit rule that unmet checks keep work open. Resolve or otherwise obtain the Maintainer's authorization for a change to the accepted verification contract, then record valid evidence against the final implementation commit.
+
+**Falsification ledger** (Python 3.13.13, separate archive of reviewed commit):
+
+- Unmodified `pytest bootstrap/tests/test_upgrade.py -k 'bad_ancestor_uses_review_recovery_and_preserves_evidence or stage_ancestor' -q`: 7 passed; matching and invalid ancestor controls exercised.
+- Extended the existing altered-cache public test in that copy to corrupt the newly recovered cache and repeat reconciliation and acknowledged apply: 1 failed; apply refused the already occupied recovery cache. No production bytes were changed.
+- Inspected the recorded mapped failure and C3: the required command exited 1; no passing replacement is recorded.
+- Waiting-line history: no fenced chunk or deviation request was reached in this reviewed range; no waiting line was owed.
+
+**Bounding**: WIDER RUN REQUIRED -- the repeated-recovery public path and the failed mapped test need passing coverage and a new final-commit verification record.
+
+**Coverage:** Reviewed ancestor checks, stage/apply and recovery logic, verification record and plan criteria; challenged the public recovery path and mapped non-pass. Did not independently run the full mapped families, exercise every display route or assess terminal rendering; Security Review remains separate. No full suite was run.
