@@ -1,7 +1,7 @@
 # Plan: Deliver the outcome with less apparatus
 
 **Source proposal**: dev/proposals/archive/2026-10-30-claude-cut-the-apparatus.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal)
 **Opened**: 2026-10-30
 **In brief**: Reduce recurring review and instruction overhead while preserving agreed outcomes and required assurance.
@@ -45,3 +45,33 @@ Cross-cutting prescription stays in `AGENTS.md`, detailed rationale in doctrine,
 Boundary A and B use Python 3.13.x. This is a contract change: Boundary B is **wide**, on the final clean committed tree, with `Certified by: pending`; no full-suite run is implied. Search actual readers and pinned bytes before edits and include all affected owners and consumers, splitting guarded selections without overrides. The initial mapped families are `bootstrap/tests/test_review_and_verification_rules_ship.py`, `test_scope_reduction_trap.py`, `test_model_tier_rule_ships.py`, `test_writing_rules_ship.py`, `test_review_stance_in_shipped_files.py`, `test_review_sweep_ships.py`, `test_session_start_drain_rules.py`, `test_verification_boundaries.py`, and `test_scaffold.py`; add other owners discovered by the named searches. These check the rules, shipped text, lifecycle and adopter paths. Check the gate manifest before changing pinned files and follow its existing ceremony only if actually triggered; do not repin or re-anchor per plan.
 
 Run `python scripts/claim_check.py` on changed documents, `python scripts/check_cairn.py` for internal links and claims, `python scripts/link_check.py` for cross references, and `python scripts/quality_gate.py --sub neutrality --sub redundancy` for prose gates. Run snippet sync if a synced source changes. Record exact commands, outcomes and non-passes, elapsed time, interpreter, pre/post state, reviewed range and omissions in the implementation verification record. Code review independently challenges the record and its bounds; no certifying full suite is required here.
+
+## Plan review -- Codex (GPT-6) -- 2026-10-30
+
+```
+Reviewed commit: e72e0e9d5d3bb18aff041664ebba366e133fcc4d
+Target: operative plan against accepted proposal and Q1 addendum
+Prior findings: none
+Assurance path: high-assurance -- governing doctrine
+```
+
+**Obligation**: Internal plan review
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, with two contract and verification gaps closed: the chunks cover the six cuts and Q1, but C3 weakens an accepted outcome and the test map omits known consumers. -- proposal cuts 1–6, Q1 addendum, and plan C1–C3.
+2. **Best alternative.** Keep the three chunks and current files; add the missing target and affected readers to their existing cells, then use the plan's wide Boundary B. No new framework or routine full-suite run is needed. -- plan Sequence and Verification; `AGENTS.md` > Verification boundaries.
+3. **What would show it wrong.** A month with more than 3.5 review commits per archived artifact despite a claim of success, or an installed session skill retaining the old escalation rule, would falsify delivery. -- proposal Evidence / verification plan; `bootstrap/tests/test_skills_install.py:42`, `test_skills_upgrade.py:35`.
+
+### Findings
+
+1. **P1 -- Blocking: restore the accepted one-month target.** C3 names the 6.9 baseline but drops the accepted `at or below 3.5` target. The baseline alone permits a result such as 6.8 to be called progress, while the proposal's criterion fails. Put the target and its counting method in C3; keep the warning that the ratio is an indicator, not proof of value. Satisfier: C3 criterion. -- proposal Evidence / verification plan:122–123; plan C3.
+
+2. **P2 -- Blocking: map the known installed-skill consumers.** The plan changes both session-start skill copies, but its initial mapping omits `bootstrap/tests/test_skills_install.py` and `test_skills_upgrade.py`. Search may discover them later, but the pre-implementation map must make these known public paths reviewable now. Name the relevant install and upgrade nodes or families and their standing gates; retain discovery for further readers. The security-designation property in `test_security_verification.py` is relevant only if that designation changes. Satisfier: Verification cell. -- plan Scope and Verification; `test_skills_install.py:42,136–150`; `test_skills_upgrade.py:35,58–73`; `test_security_verification.py:1506–1551`; plan template Verification.
+
+3. **P3 -- Non-blocking: spell out the three tier outcomes.** C1 protects the light default and heavy triggers but does not state that light has one short review and no plan, standard one pass per stage, and heavy adds Security Review. This is the central ceremony change and merits a falsifiable C1 criterion. Satisfier: C1 criterion. -- proposal cut 2; plan C1.
+
+**Coverage.** Compared accepted scope, Q1, sequence, criteria, alternative, burden, placement, shipped paths, and named test readers (review sweep lenses 1, 2, 5, 7–9; cited above). Did not run implementation, tests, scaffold, month-long measurement, or Security Review. Existing Security Review obligations remain separate.
