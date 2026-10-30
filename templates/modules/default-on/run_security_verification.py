@@ -64,6 +64,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import types
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -199,11 +200,15 @@ _REQUIRED_CHILD_KEYS = frozenset(
      "details"})
 
 
-def _build_child_env() -> dict[str, str]:
-    return {
+def _build_child_env(credential_names: tuple[str, ...] = ()) -> dict[str, str]:
+    env = {
         k: v for k, v in os.environ.items()
         if k in _CHILD_ENV_ALLOWLIST or k.startswith(_CHILD_ENV_ALLOWLIST_PREFIXES)
     }
+    for name in credential_names:
+        if os.environ.get(name):
+            env[name] = os.environ[name]
+    return env
 
 
 def _safe_render(text: str) -> str:
@@ -521,8 +526,10 @@ def _is_regular_and_unsymlinked(path: Path, root: Path) -> bool:
 
 
 def _bind_runner(entry: RegistryEntry, records: dict[str, Any],
-                  repo_root: Path) -> Path:
-    bound = (entry.runner_repository_path, *entry.additional_immutable_paths)
+                  repo_root: Path,
+                  additional_paths: tuple[str, ...] = ()) -> Path:
+    bound = (entry.runner_repository_path, *entry.additional_immutable_paths,
+             *additional_paths)
     for rel in bound:
         if not isinstance(rel, str):
             raise _Degraded("runner apparatus path has an invalid type")
@@ -566,6 +573,60 @@ def _bind_runner(entry: RegistryEntry, records: dict[str, Any],
         if _sha256_of(path) != digest_record:
             raise _Degraded(f"runner apparatus {rel!r} digest mismatch (tamper / drift)")
     return repo_root / entry.runner_repository_path
+
+
+def _api_engine_paths(repo_root: Path) -> tuple[str, ...]:
+    """Return the exact sibling engine selected by the API facade."""
+    for dirname in ("_api_access_security", "_security_net"):
+        init = repo_root / "scripts" / dirname / "__init__.py"
+        if init.is_file():
+            return tuple(
+                f"scripts/{dirname}/{member}"
+                for member in ("__init__.py", "policy.py", "net.py", "report.py")
+            )
+    raise _Degraded("API policy engine is missing")
+
+
+def _load_api_local_credential_names(
+        repo_root: Path, engine_paths: tuple[str, ...]) -> tuple[str, ...]:
+    """Validate the bound local policy using source-only engine modules."""
+    package_name = "_cairn_dispatch_bound_api_engine"
+    module_names = (package_name, *(f"{package_name}.{name}" for name in
+                    ("report", "net", "policy")))
+    if any(name in sys.modules for name in module_names):
+        raise _Degraded("API policy engine module substitution")
+    paths = {Path(path).name: repo_root / path for path in engine_paths}
+    package = types.ModuleType(package_name)
+    package.__file__ = str(paths["__init__.py"])
+    package.__package__ = package_name
+    package.__path__ = [str(paths["__init__.py"].parent)]
+    sys.modules[package_name] = package
+    try:
+        for member in ("report.py", "net.py", "policy.py", "__init__.py"):
+            name = package_name if member == "__init__.py" else (
+                f"{package_name}.{member[:-3]}")
+            module = package if member == "__init__.py" else types.ModuleType(name)
+            module.__file__ = str(paths[member])
+            module.__package__ = package_name
+            if member != "__init__.py":
+                sys.modules[name] = module
+                setattr(package, member[:-3], module)
+            source = paths[member].read_bytes()
+            code = compile(source, str(paths[member]), "exec", dont_inherit=True)
+            exec(code, module.__dict__)
+        engine = sys.modules[f"{package_name}.policy"]
+        # Import-time completeness plus contract agreement precede policy read.
+        sys.modules[package_name].verify_engine_complete()
+        policy_path = repo_root / "dev/.cairn/api-access-policy.json"
+        policy = engine.load_policy(policy_path, kind="api")
+        return tuple(policy.credential_names("local"))
+    except _Degraded:
+        raise
+    except BaseException:
+        raise _Degraded("API policy validation failed") from None
+    finally:
+        for name in reversed(module_names):
+            sys.modules.pop(name, None)
 
 
 def _bind_policy(entry: RegistryEntry, records: dict[str, Any],
@@ -670,6 +731,7 @@ def _wait_bounded(proc: subprocess.Popen, out_p: Path, err_p: Path,
 
 def _run_child(
     entry: RegistryEntry, runner_path: Path,
+    credential_names: tuple[str, ...] = (),
 ) -> tuple[int | None, bytes, bool, bool]:
     """Launch the admitted child. Returns ``(exit_code, stdout_bytes,
     timed_out, overflowed)``. The child's argv is EXACTLY the registry
@@ -678,7 +740,7 @@ def _run_child(
     unbounded child could fill before being read; it is killed on
     timeout or byte-cap overflow."""
     argv = [sys.executable, "-I", str(runner_path), *entry.argv_mode]
-    env = _build_child_env()
+    env = _build_child_env(credential_names)
     with tempfile.TemporaryDirectory(prefix="cairn-secver-") as td:
         cwd = Path(td)
         out_p = cwd / "stdout.bin"
@@ -746,8 +808,14 @@ def _evaluate_capability(module_id: str, repo_root: Path,
             "runner_digest": None, "policy": None,
         }
 
+    engine_paths: tuple[str, ...] = ()
+    if module_id == "api-access-security":
+        try:
+            engine_paths = _api_engine_paths(repo_root)
+        except _Degraded as exc:
+            return _degraded_leg(entry, exc.reason, child_launched=False)
     try:
-        runner_path = _bind_runner(entry, records, repo_root)
+        runner_path = _bind_runner(entry, records, repo_root, engine_paths)
     except _Degraded as exc:
         return _degraded_leg(entry, exc.reason, child_launched=False)
     runner_digest = _sha256_of(runner_path)  # parent-computed
@@ -758,7 +826,17 @@ def _evaluate_capability(module_id: str, repo_root: Path,
         return _degraded_leg(entry, exc.reason, child_launched=False,
                               runner_digest=runner_digest)
 
-    code, out_bytes, timed_out, overflowed = _run_child(entry, runner_path)
+    credential_names: tuple[str, ...] = ()
+    if module_id == "api-access-security":
+        try:
+            credential_names = _load_api_local_credential_names(
+                repo_root, engine_paths)
+        except _Degraded as exc:
+            return _degraded_leg(entry, exc.reason, child_launched=False,
+                                  runner_digest=runner_digest,
+                                  policy=policy_report)
+    code, out_bytes, timed_out, overflowed = _run_child(
+        entry, runner_path, credential_names)
 
     if timed_out:
         return _degraded_leg(entry, "child timed out", child_launched=True,

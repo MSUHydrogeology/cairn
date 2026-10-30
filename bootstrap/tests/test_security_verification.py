@@ -24,6 +24,7 @@ import ast
 import hashlib
 import importlib.util
 import json
+import py_compile
 import sys
 import textwrap
 from pathlib import Path
@@ -2121,6 +2122,143 @@ class TestRealFacadesDrivenByTheRealDispatcher:
         assert by_module[_WEB_MODULE]["aggregate_label"] == "DEGRADED"
         assert by_module[_WEB_MODULE]["child_launched"] is False
         assert "digest mismatch" in by_module[_WEB_MODULE]["detail"]
+
+    def test_configured_api_dispatch_hands_only_validated_local_credentials(
+            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """The installed pair runs the configured two-principal loopback matrix."""
+        from bootstrap.tests.test_security_net import Fixture, wait_for
+        from bootstrap.tests.test_api_access_security import (
+            MARKER_P1, MARKER_P2, api_policy, api_responder, deployed_section,
+        )
+
+        fixture = Fixture(api_responder())
+        try:
+            target = _g_scaffold(
+                tmp_path, ["security-verification", _API_MODULE],
+                target_name="g-configured-api")
+            policy = api_policy(
+                fixture.port,
+                deployed=deployed_section("https://api.example.test"),
+            )
+            (target / _API_POLICY_DST).write_text(
+                json.dumps(policy), encoding="utf-8")
+            engine_paths = mod._api_engine_paths(target)
+            cached = Path(importlib.util.cache_from_source(
+                str(target / engine_paths[1])))
+            cached.parent.mkdir(parents=True, exist_ok=True)
+            poison = tmp_path / "poisoned_policy.py"
+            poison.write_text(
+                "raise RuntimeError('unbound cached code executed')\n",
+                encoding="utf-8")
+            py_compile.compile(str(poison), cfile=str(cached), doraise=True)
+
+            # A pre-existing private package name is refused before policy
+            # loading; restore it before testing the real subprocess path.
+            with monkeypatch.context() as patch:
+                patch.setitem(sys.modules,
+                              "_cairn_dispatch_bound_api_engine", object())
+                with pytest.raises(mod._Degraded):
+                    mod._load_api_local_credential_names(target, engine_paths)
+            for name, value in {
+                "CAIRN_API_P1_CREDENTIAL": MARKER_P1,
+                "CAIRN_API_P2_CREDENTIAL": MARKER_P2,
+                "CAIRN_API_P3_CREDENTIAL": "deployed-only-test-value",
+                "CAIRN_API_P4_CREDENTIAL": "unrelated-test-value",
+                "CAIRN_API_P004_CREDENTIAL": "malformed-test-value",
+            }.items():
+                monkeypatch.setenv(name, value)
+
+            selected_names = mod._load_api_local_credential_names(
+                target, engine_paths)
+            selected_env = mod._build_child_env(selected_names)
+            assert set(selected_names) == {
+                "CAIRN_API_P1_CREDENTIAL", "CAIRN_API_P2_CREDENTIAL"}
+            assert {name for name in selected_env
+                    if name.startswith("CAIRN_API_")} == set(selected_names)
+
+            dispatched = _run_dispatcher_local(target)
+            _direct, direct_document = _run_facade_child_document(
+                target, _API_RUNNER_DST)
+            assert dispatched.returncode == 0
+            report = _machine_object(dispatched)
+            [leg] = report["legs"]
+            assert report["aggregate"] == "CLEAN"
+            assert leg["aggregate_label"] == direct_document["result"] == "CLEAN"
+            assert wait_for(lambda: len(fixture.records) == 4)
+            for record in fixture.records:
+                assert record.header("Authorization") in {
+                    MARKER_P1, MARKER_P2}
+            combined = dispatched.stdout + dispatched.stderr
+            for secret in (
+                MARKER_P1, MARKER_P2, "deployed-only-test-value",
+                "unrelated-test-value", "malformed-test-value",
+                "CAIRN_API_P1_CREDENTIAL", "CAIRN_API_P3_CREDENTIAL",
+                "CAIRN_API_P4_CREDENTIAL", "CAIRN_API_P004_CREDENTIAL",
+            ):
+                assert secret not in combined
+        finally:
+            fixture.close()
+
+    @pytest.mark.parametrize("member_name", ["__init__.py", "policy.py"])
+    def test_api_engine_member_tampering_refuses_before_child_or_credentials(
+            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+            member_name: str) -> None:
+        target = _g_scaffold(
+            tmp_path, ["security-verification", _API_MODULE],
+            target_name="g-api-engine-tamper")
+        member = target / "scripts" / "_api_access_security" / member_name
+        member.write_bytes(member.read_bytes() + b"\n# tampered\n")
+        marker = "credential-test-marker"
+        monkeypatch.setenv("CAIRN_API_P1_CREDENTIAL", marker)
+
+        proc = _run_dispatcher_local(target)
+        report = _machine_object(proc)
+        [leg] = report["legs"]
+        assert proc.returncode == 20
+        assert leg["child_launched"] is False
+        assert "digest mismatch" in leg["detail"]
+        assert marker not in proc.stdout + proc.stderr
+
+    def test_invalid_api_policy_refuses_before_child_or_credential_read(
+            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        target = _g_scaffold(
+            tmp_path, ["security-verification", _API_MODULE],
+            target_name="g-api-invalid-policy")
+        (target / _API_POLICY_DST).write_text("{invalid", encoding="utf-8")
+        marker = "credential-test-marker"
+        monkeypatch.setenv("CAIRN_API_P1_CREDENTIAL", marker)
+
+        proc = _run_dispatcher_local(target)
+        report = _machine_object(proc)
+        [leg] = report["legs"]
+        assert proc.returncode == 20
+        assert leg["child_launched"] is False
+        assert leg["detail"] == "API policy validation failed"
+        assert marker not in proc.stdout + proc.stderr
+
+    def test_missing_local_credential_refuses_without_broadening(
+            self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        from bootstrap.tests.test_api_access_security import (
+            MARKER_P2, api_policy,
+        )
+
+        target = _g_scaffold(
+            tmp_path, ["security-verification", _API_MODULE],
+            target_name="g-api-missing-credential")
+        (target / _API_POLICY_DST).write_text(
+            json.dumps(api_policy(9)), encoding="utf-8")
+        monkeypatch.delenv("CAIRN_API_P1_CREDENTIAL", raising=False)
+        monkeypatch.setenv("CAIRN_API_P2_CREDENTIAL", MARKER_P2)
+        monkeypatch.setenv("CAIRN_API_P3_CREDENTIAL", "deployed-only-test-value")
+
+        proc = _run_dispatcher_local(target)
+        report = _machine_object(proc)
+        [leg] = report["legs"]
+        assert proc.returncode == 20
+        assert leg["aggregate_label"] == "DEGRADED"
+        assert leg["child_launched"] is True
+        assert "credential_absent" in leg["detail"]
+        assert "deployed-only-test-value" not in proc.stdout + proc.stderr
 
     def test_no_real_capability_selected_is_not_applicable(
             self, tmp_path: Path) -> None:
