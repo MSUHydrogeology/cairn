@@ -197,3 +197,58 @@ Strongest case: make expenditure visible without another agent reporting task.
 **Coverage:** Read identity, claim retention, drain/handoff and existing measurement
 tools. No private transcript scan, provider-count reproduction or implementation
 execution; separate Security Review remains open.
+
+## Review -- Codex (Security Review) -- 2026-10-30
+
+**Model**: Codex (runtime identifier unavailable)
+
+```
+Reviewed commit: 742c3cc98ef06efbf58dd90ce142871f32e8b45b
+Target: log ingestion, ledger, reporting and unattended admission
+Prior findings: MC1-MC3 remain open; separate obligation
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Obligation**: local usage-log ingestion and unattended-run control
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Premise:** Support local observation, not an authenticated quota guarantee. --
+   sections 1, 3.
+2. **Alternative:** Constrained ingestion and cooperative stopping, reusing existing
+   file-safety patterns. -- `tools/session.py:657`.
+3. **Falsifier:** Invalid usage permits continuation, or ledger output follows a link
+   outside its destination. -- proposed fixtures; Python 3.13.13 primitive probe below.
+
+Strongest case: measure expenditure without collecting prompts or imposing agent
+bookkeeping.
+
+### Security adjudication
+
+1. **MS1 -- Blocking; S1/S4.** MC2 remains open: measurements authorize another drain
+   item. Require Maintainer-controlled policy, matched account/unit/window, freshness
+   and finite nonnegative values. Primitive probe: Python JSON accepts `NaN`, yet `NaN
+   >= 100` is false; this is not an observed meter exploit. Stale, incomplete or invalid
+   data must stop unattended admission, never invalidate attended work.
+
+2. **MS2 -- Blocking; S2/S3.** MC1 remains open. Specify opted-in source roots, private
+   cross-project storage, redacted/escaped metadata and content-free errors. Bound reads
+   and prevent symlink escapes/non-regular inputs and redirected ledger writes; reuse
+   existing patterns rather than new machinery. Add fixtures for these boundaries.
+   Refresh before drain admission; daily/`--handoff` reporting cannot establish
+   freshness alone. "Content-blind" should prohibit body retention/disclosure, not
+   falsely promise JSON parsing never reads body bytes.
+
+3. **S5 ruling:** Mutable-log tampering and in-flight/concurrent overshoot are
+   acceptable only as explicitly declared cooperative-control residuals, not
+   authenticated spending enforcement.
+
+**Elapsed**: 3m13s (19:01:15-19:04:28 UTC; finalization excluded)
+**Tokens**: unknown
+
+**Coverage:** Read committed contract, drain and file-safety helpers; executed only the
+JSON/comparison primitive. No private-log scan, meter implementation, platform matrix or
+end-to-end security test. Obligation remains open.
