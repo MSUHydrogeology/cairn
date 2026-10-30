@@ -66,3 +66,27 @@ Assurance path: Internal + Internal Security Review
 **P1 -- Map the hostile stage consumer before implementation.** The plan changes stage bookkeeping and apply's hard-block checks, yet its wide mapping omits `bootstrap/tests/test_upgrade_refuses_hostile_project_data.py`, which drives public apply against hostile stage metadata, including `module_blocked` and staged names. The instruction to search again before implementation does not establish the reviewed mapping required by `dev/plans/_template.md` for a trust-boundary change. Add this owning family to the mapped runs, or identify the exact relevant nodes and justify any exclusions; retain the other mapped checks.
 
 Coverage: checked the accepted current contract and Decision, plan cells, stage reads and apply ordering, existing containment and hostile-stage test ownership, and template verification requirements. No implementation or test run was performed; arbitrary concurrent changes after a check and the separate Security Review remain outside this pass.
+
+
+## Plan review -- Codex GPT-6 Security reviewer -- 2026-10-30
+
+Reviewed commit: 6df03f2c2d750718263d9507a7508909147c4767
+Target: accepted contract, plan cells, ordinary review and security observation points
+Prior findings: none in this obligation; ordinary P1 remains open
+Assurance path: Internal + Internal Security Review
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none additional
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: the plan preserves adopter contents, blocks the entire apply before metadata advancement, and names later reads where a file may become a directory; the ordinary mapping finding still needs the author's response -- C1 and `bootstrap/_scaffold/upgrade.py:1137`.
+2. **Best alternative.** Extend the existing unconditional block and guarded read paths without addition adoption, review pairs or a new cleanup mechanism; this retains the accepted recovery outcome -- C1 and `bootstrap/_scaffold/upgrade.py:3112`.
+3. **What would show it wrong.** A controlled directory transition causes a traceback, changes contents or metadata, bypasses a block, or changes a symlink refusal into directory handling -- C1 and `bootstrap/_scaffold/security.py:110`.
+
+The accepted proposal's S1 and S4–S5 remain intact: the project supplies paths and lockfile data; refusal grants no replacement authority, and arbitrary writes after a check remain outside the claim. C1 explicitly covers classification, stage no-op comparison, snapshots, review buffers and apply, including override flags and a repaired live path that must not unlock an old stage. C2 locates the two required mutations and their unmutated controls; it does not substitute certification for these checks. These are suitable security acceptance criteria, rather than a stronger race-resistance claim.
+
+I agree with ordinary P1: hostile stage metadata is a consumer of this boundary. Its existing public apply test varies `module_blocked` and other stage fields with traversal, absolute, Git-control and non-string names (`bootstrap/tests/test_upgrade_refuses_hostile_project_data.py:784`). The author must add that owning family or justify exact-node coverage in the reviewed mapping. This pass adds no separate finding and does not dispose of P1. Keep containment and symlink checks ahead of directory classification, as C1 requires; `_assert_safe_write` rejects destination and ancestor links (`bootstrap/_scaffold/security.py:110`). A directory diagnostic must not become permission to follow a directory link or adopt a tracked directory.
+
+Coverage: claims, fail-closed design, reuse and scope were read against C1–C2 and `upgrade.py:1032`, `:1137`, `:1191`, `:3112` and `:3140`; public-path coverage and hostile inputs against the named test family; documentation drift and lifecycle against C2, Verification and the accepted proposal's Current contract. The existing block machinery was found by searching collision, directory and `module_blocked`, with positive matches at `upgrade.py:1032` and `:1276`. No scientific result is touched. No implementation, tests, mutations, certification or arbitrary concurrent-writer resistance was verified. This clears only the plan's Security Review obligation; ordinary P1 keeps the plan in revising-plan.
