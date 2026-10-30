@@ -1,0 +1,26 @@
+Extracts: collected counts, failed node IDs and summaries; tracebacks omitted.
+
+sweep
+collected 192 items / 96 deselected / 96 selected
+FAILED bootstrap/tests/test_review_sweep_ships.py::test_installed_loop_document_carries_the_obligation[lens-4-silent-failure-fail-closed-collaborative-team]
+FAILED bootstrap/tests/test_review_sweep_ships.py::test_installed_loop_document_carries_the_obligation[lens-4-silent-failure-fail-closed-high-rigor-legacy]
+FAILED bootstrap/tests/test_review_sweep_ships.py::test_installed_loop_document_carries_the_obligation[lens-4-silent-failure-fail-closed-solo-greenfield]
+================= 3 failed, 93 passed, 96 deselected in 0.40s ==================
+
+pointer
+collected 192 items / 96 deselected / 96 selected
+====================== 96 passed, 96 deselected in 0.37s =======================
+
+pointer2
+collected 192 items / 96 deselected / 96 selected
+FAILED bootstrap/tests/test_review_sweep_ships.py::test_installed_agents_md_carries_the_pointer[pointer-says-the-answers-rest-on-nine-standing-lenses-high-rigor-legacy]
+FAILED bootstrap/tests/test_review_sweep_ships.py::test_installed_agents_md_carries_the_pointer[pointer-says-the-answers-rest-on-nine-standing-lenses-collaborative-team]
+FAILED bootstrap/tests/test_review_sweep_ships.py::test_installed_agents_md_carries_the_pointer[pointer-says-the-answers-rest-on-nine-standing-lenses-solo-greenfield]
+================= 3 failed, 93 passed, 96 deselected in 0.42s ==================
+
+token
+collected 192 items / 96 deselected / 96 selected
+FAILED bootstrap/tests/test_review_sweep_ships.py::test_an_install_leaves_no_placeholder_the_engine_cannot_fill[high-rigor-legacy]
+FAILED bootstrap/tests/test_review_sweep_ships.py::test_an_install_leaves_no_placeholder_the_engine_cannot_fill[collaborative-team]
+FAILED bootstrap/tests/test_review_sweep_ships.py::test_an_install_leaves_no_placeholder_the_engine_cannot_fill[solo-greenfield]
+================= 3 failed, 93 passed, 96 deselected in 0.41s ==================

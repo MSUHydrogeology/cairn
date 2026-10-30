@@ -338,3 +338,17 @@ concrete.
 The prior unidentified-family wording is superseded by the selected fixture and
 mechanism above. The prior prohibition on an unidentified protected change and
 the requirement for its separate proposal remain.
+
+
+## Evidence retention -- Codex (GPT-6, proposal author) -- 2026-10-30
+
+The complete phase-duration output and final summary from the failed
+certification, and both scoped phase reports, are retained under
+`dev/proposals/2026-10-29-codex-certification-cost-audit/` as
+`certification-durations.txt`, `scoped-baseline.txt`, and
+`scoped-session.txt`. These are extracts: session headers and the complete
+duration sections through the final summary, omitting progress and unrelated
+failure tracebacks. `fault-controls.txt` retains counts and failing nodes,
+including the initial surviving pointer probe; traceback details are omitted.
+The complete original report remains temporarily at the path above; the
+retained report contains every reported phase, not its failure tracebacks.
