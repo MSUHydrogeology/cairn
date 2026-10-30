@@ -233,3 +233,13 @@ isolated** (chat, 2026-10-30; scribed by Claude Opus 5.5):
 > "Accept as revised. Please scribe this"
 
 The accepted text is the operative sections as revised at `cd8aa3ee`.
+
+## Maintainer authorization -- 2026-10-30
+
+**Source**: Maintainer chat, 2026-10-30. The Maintainer explicitly resolved
+the tier conflict and waived the additional Security Review for this accepted
+implementation. The gate baseline update remains batched with the v0.6 cut.
+
+> "Keep light; waive the extra Security Review"
+
+Recorded by the implementation author in the commit carrying this authorization.
