@@ -232,3 +232,19 @@ independent code and Security reviews. No full suite or certifying run was run.
 **Disposition**: The missing public `base_cache` alias test identified above is addressed. The overall Security Review remains open: the required wide Boundary B and mapped failures have not been resolved.
 
 The new test places a contained link to `.git` in a lockfile `base_cache`, exercises each action in `_ACTIONS`, and checks refusal and preservation of the project snapshot, Git description and stage state (`bootstrap/tests/test_upgrade_lockfile_path_containment.py`, `test_a_contained_base_cache_alias_into_git_data_is_refused_without_changing_it`). In a detached worktree at the reviewed commit, Python 3.13.13 ran that node: 1 passed. Removing the resolved-target check in that copy made the same node fail because the first public action returned success rather than refusing: the mutant was killed. This is targeted evidence for the finding, not final implementation verification; Windows, hard links and races remain untested.
+
+## Sequencing amendment -- Codex GPT-6 -- 2026-10-30
+
+The Maintainer clarified in chat, relayed by the coordinating agent:
+
+> We only repin and reanchor at version cuts or as I ask
+
+> The plan should not require that
+
+Accordingly, earlier statements in this plan that require repinning or
+re-anchoring are superseded as plan requirements. Neither ceremony is a
+prerequisite for completing or archiving this plan. The new baseline is a
+v0.6 board item; repinning and re-anchoring occur at a version cut or when
+the Maintainer asks. This amendment does not authorize a ceremony or waive
+other checks, reviews, or acceptance criteria. Earlier evidence remains a
+record of what was known and done at the time.

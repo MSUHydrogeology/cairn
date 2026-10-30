@@ -214,3 +214,19 @@ Coverage: inspected the final change's metadata validation and directory gate an
 **Falsification ledger**: In a separate local clone at a6703b49, changed only the setup of `TestTrackedDirectoryCollisions::test_noop_tracked_file_becoming_directory_blocks_apply[True]` from deleting `directory_observed` to setting it to `[]`. `/Users/kendal30/conda_envs/lhm/bin/python -m pytest -q 'bootstrap/tests/test_upgrade.py::TestTrackedDirectoryCollisions::test_noop_tracked_file_becoming_directory_blocks_apply[True]' --tb=short` on Python 3.13.13 failed: public apply returned 0 where refusal was asserted (1 failed). Restoring the test file and running the unmodified two-case node passed (2 passed). This measures a controlled stage edit and path transition, not a concurrent change after a check. The scratch edit was not added to the implementation.
 
 **Covered**: claims and public path (#1-2), empty-list edge case (#3), fail-closed behavior (#4), reuse of existing stage validation (#5), C1 and `bootstrap/UPGRADE.md:242` contract (#6), open-plan placement (#7), accepted preservation scope (#8), and the guard/test satisfier (#9), at the cited lines and ledger commands. **Not covered / low confidence**: a one-path omission, each applicable destination, symlink precedence, other original observation points, full mapped verification, and Security Review clearance. The two mapped failures and final Boundary B remain open; the plan stays implementing.
+
+## Sequencing amendment -- Codex GPT-6 -- 2026-10-30
+
+The Maintainer clarified in chat, relayed by the coordinating agent:
+
+> We only repin and reanchor at version cuts or as I ask
+
+> The plan should not require that
+
+Accordingly, earlier statements in this plan that require repinning or
+re-anchoring are superseded as plan requirements. Neither ceremony is a
+prerequisite for completing or archiving this plan. The new baseline is a
+v0.6 board item; repinning and re-anchoring occur at a version cut or when
+the Maintainer asks. This amendment does not authorize a ceremony or waive
+other checks, reviews, or acceptance criteria. Earlier evidence remains a
+record of what was known and done at the time.

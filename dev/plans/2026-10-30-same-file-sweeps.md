@@ -235,3 +235,33 @@ At `566acce0`, scaffolded a disposable project with `coordination-tiers` and `in
 The local tracker has no `same-file-sweep` event-class row and no incident description naming `5094a977`. References to the plan filename are prevented claim conflicts, not sweep confirmations. Its descriptions contain local project paths and agent identifiers, so they remain local and are not reproduced here. No historical row was added: authorship remains unconfirmed. This inspection does not prove the tracker contains no sensitive data of every possible kind.
 
 These inspections complete the remaining agent-executable manual checks identified above. S3 specifies human-run mapped checks and gates; those remain pending, as does the Maintainer-run ceremony. This note does not claim Boundary B, completion or review handoff.
+
+## Sequencing amendment -- Codex GPT-6 -- 2026-10-30
+
+The Maintainer clarified in chat, relayed by the coordinating agent:
+
+> We only repin and reanchor at version cuts or as I ask
+
+> The plan should not require that
+
+Accordingly, earlier statements in this plan that require repinning or
+re-anchoring are superseded as plan requirements. Neither ceremony is a
+prerequisite for completing or archiving this plan. The new baseline is a
+v0.6 board item; repinning and re-anchoring occur at a version cut or when
+the Maintainer asks. This amendment does not authorize a ceremony or waive
+other checks, reviews, or acceptance criteria. Earlier evidence remains a
+record of what was known and done at the time.
+
+## S3 authorization amendment -- Codex GPT-6 -- 2026-10-30
+
+The Maintainer clarified in chat, relayed by the coordinating agent:
+
+> And all of those types of tests are EXACTLY the thing that I am not qualified to do.
+
+S3's requirement that the human run the mapped tests and gates and perform
+technical inspection is superseded: capable agents run and interpret those
+checks and perform the technical inspections. The same tests, gates and
+inspection properties remain required; this changes who performs them, not
+what they must establish. Maintainer decisions remain with the Maintainer.
+The earlier partial evidence records agent-run checks and inspections; final
+Boundary B and independent review remain required.

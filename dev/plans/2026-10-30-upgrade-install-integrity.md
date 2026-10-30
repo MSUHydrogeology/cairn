@@ -223,3 +223,19 @@ Both plan-review obligations are complete. Scope remains preserved; implementati
 The repair was tested in an isolated archive of the then-current committed tree with only the two repair files overlaid. Their tested bytes were subsequently compared with commit `3fd8dab395eb0cbb46953dada9297bdfbb9daf75` and matched. With `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13), `python -m pytest bootstrap/tests/test_upgrade.py -k 'bad_ancestor_uses_review_recovery_and_preserves_evidence or stage_ancestor' -q` exited 0: 7 passed, 109 deselected, in 3.80 seconds. The altered-cache case exercises two stage, manual reconciliation and acknowledged apply cycles and checks both corrupt ancestors survive.
 
 This is targeted iteration evidence, not a new Boundary B record. The required mapped failure in CR2, final-commit wide verification, Security Review clearance, certification and the Maintainer-run AST ceremony remain outstanding. The plan stays `revising-code`; no full suite was run.
+
+## Sequencing amendment -- Codex GPT-6 -- 2026-10-30
+
+The Maintainer clarified in chat, relayed by the coordinating agent:
+
+> We only repin and reanchor at version cuts or as I ask
+
+> The plan should not require that
+
+Accordingly, earlier statements in this plan that require repinning or
+re-anchoring are superseded as plan requirements. Neither ceremony is a
+prerequisite for completing or archiving this plan. The new baseline is a
+v0.6 board item; repinning and re-anchoring occur at a version cut or when
+the Maintainer asks. This amendment does not authorize a ceremony or waive
+other checks, reviews, or acceptance criteria. Earlier evidence remains a
+record of what was known and done at the time.

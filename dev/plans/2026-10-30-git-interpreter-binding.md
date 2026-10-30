@@ -290,3 +290,19 @@ certification, code review, or push occurred.
 * In the same probe, a directory with no repository returned `fallback`, and a nested directory inside an initialized repository returned `fallback`. These challenge the changed condition's other branch. The worktree's tracked files remained clean after the probes.
 
 **Coverage:** claims, production path, edge cases and fail-closed behavior: the guard, new test and ledger above; consistency and reuse: the installer's analogous branch at `bootstrap/_scaffold/install.py::write_local_env` and the plan's C1 contract; drift and lifecycle: the commit's stated CR1 fix and the still-open C2 criterion; scope and satisfier: this revision changes only `tools/session.py` and its owning portable test, satisfying CR1 without reducing accepted work (`git show --stat a41787a7`). **Not covered:** native Windows discovery or junction/reparse behavior, full mapped Boundary B checks on the final commit, same-user races, executable provenance, or the separate Security Review. The plan stays `implementing`.
+
+## Sequencing amendment -- Codex GPT-6 -- 2026-10-30
+
+The Maintainer clarified in chat, relayed by the coordinating agent:
+
+> We only repin and reanchor at version cuts or as I ask
+
+> The plan should not require that
+
+Accordingly, earlier statements in this plan that require repinning or
+re-anchoring are superseded as plan requirements. Neither ceremony is a
+prerequisite for completing or archiving this plan. The new baseline is a
+v0.6 board item; repinning and re-anchoring occur at a version cut or when
+the Maintainer asks. This amendment does not authorize a ceremony or waive
+other checks, reviews, or acceptance criteria. Earlier evidence remains a
+record of what was known and done at the time.
