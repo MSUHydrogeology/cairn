@@ -38,6 +38,8 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+- Review guidance and shipped templates now keep repeatable checks in tests and scripts; mapped tests detect when the removed review-record requirement is restored. ([plan](dev/plans/archive/2026-10-30-probe-ledgers.md))
+
 - Release publication now has a read-only check for the published Release and the signed tag's remote commit, while the guide distinguishes pushing the signed tag from publishing or updating its Release. The helper does not inspect cached archive bytes or perform a live release. ([plan](dev/plans/archive/2026-10-30-tag-release-distinction.md))
 
 - Certification tests now repair dispatcher record fixtures and the archived baseline path, and isolate the real ceremony boot while retaining adversarial controls. The frozen-file ceremony remains part of the separate v0.6 baseline. ([plan](dev/plans/archive/2026-10-30-certification-test-repairs.md))

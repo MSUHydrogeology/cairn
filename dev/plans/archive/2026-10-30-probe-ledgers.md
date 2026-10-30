@@ -1,7 +1,7 @@
 # Plan: Keep probe evidence in tests and scripts
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-probe-ledgers.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Remove duplicate probe inventories while keeping evidence reproducible and review independent.
@@ -216,3 +216,16 @@ P1: accepted. The existing operative-carrier absence node now applies the forbid
 **Non-pass disposition**: none. Neutrality messages were informational; external URLs were not probed by the mapped local checks.
 
 **Known omissions**: no full-suite certification or re-anchor was run; both remain separate authorized ceremonies. External links were not probed.
+
+
+## Dispositions -- archive preparation -- 2026-10-30
+
+Dispositions: none
+
+**Lasting truth**: operative guidance now lives in `AGENTS.md`, `dev/agent_collaboration.md`, their shipped copies, the authoring templates, and the review doctrine. Reproducible checks live in the three mapped test families and run through installation paths; the exact restored requirement is detected by the existing carrier node.
+
+**Evidence shipped**: aligned governing and shipped guidance, templates and doctrine; mapped source and installed-file assertions; the operative-carrier forbidden-return check; the exact mutation control; and clean wide Boundary B evidence at `54784ece`.
+
+**Evidence deferred**: no plan-specific acceptance evidence remains. Whole-tree certification and re-anchor were outside this plan and remain separate authorized ceremonies; external URLs were not probed by the local gates.
+
+**Deferred evidence home**: whole-tree certification is governed by `AGENTS.md` > Verification; re-anchor by `bootstrap/REANCHOR_RUNBOOK.md`. No follow-up remains for the roadmap; external URL probing was not a plan acceptance check.
