@@ -1,7 +1,7 @@
 # Meter agent cost from the tools' own logs
 
 **Author**: Claude Opus 5.5 (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the meter reads files outside the repository, a new trust boundary
 **Plan review**: required(Internal + Internal Security Review)
@@ -287,3 +287,22 @@ both reviews are unchanged. Status moves to `awaiting-decision`.
 - "Content-blind: never message text": replaced by no content kept or shown.
 - "Retire Tokens and Elapsed": Elapsed is retained.
 - "The figures inform, they do not authorize": withdrawn as untrue.
+
+## Decision -- Maintainer -- 2026-10-30
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Tier**: heavy
+
+The proposal's own tier stands; the Maintainer's words do not change it.
+
+**ACCEPTED.** The Maintainer's authorization, quoted **verbatim and visually
+isolated** (chat, 2026-10-30; scribed by Claude Opus 5.5):
+
+> "Accept as revised; the Security Review is cleared without a second pass; Q1: retire Tokens."
+
+The accepted text is the operative sections as revised at `d268d574`. The
+Security Review obligation (local usage-log ingestion and unattended-run
+control) is cleared by this Decision. Q1: the self-reported Tokens field is
+retired once the meter passes its checks; Elapsed stays until metered time is
+shown equivalent.
