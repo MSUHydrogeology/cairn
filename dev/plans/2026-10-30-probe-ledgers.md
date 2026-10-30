@@ -1,7 +1,7 @@
 # Plan: Keep probe evidence in tests and scripts
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-probe-ledgers.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Remove duplicate probe inventories while keeping evidence reproducible and review independent.
