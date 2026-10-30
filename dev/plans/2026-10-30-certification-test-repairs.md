@@ -122,3 +122,22 @@ Elapsed: about 29 minutes. Tokens: unknown.
 **Standing gates.** `check_cairn.py` passed (199 Markdown files; 94 external links not probed); `link_check.py` passed (199 Markdown files; 95 external links not probed); `sync_doc_snippets.py --check` passed (476 documents, no drift); and `quality_gate.py --sub neutrality --sub redundancy` exited 0 with zero failures (43 neutrality information items and one redundancy information item). `claim_check.py` passed on this updated plan before commit.
 
 **Omissions and disposition.** No full-tree suite, live ref update, re-anchor or historical-anchor comparison was run. The separate frozen-file ceremony remains at the Maintainer's version-cut/request point. The restricted terminal attempt was fully rerun under host access and the required owning family passed; no test failure remains open from that attempt. Boundary C remains for independent code review.
+
+## Code review -- Codex (GPT-6.1 Sol) -- 2026-10-30
+
+```
+Reviewed implementation: f26b903d4308d6da7c9304ec2469e999cf984c4b
+Boundary B record: 8d0a6caf
+Tier: Internal; obligation: ordinary code review
+Elapsed: about 13 minutes; tokens: unknown
+```
+
+**Verdict: REVISE.** One blocking finding. **Bounding: WIDER RUN REQUIRED** after repair: include the inherited-marker order case in new clean-commit Boundary B evidence.
+
+**Foundations.** (1) Fixture fields and archived path match C1, but C2 isolation depends on ambient state (`test_security_finding_confidentiality.py:1492`, `test_repin.py:251`, `test_repin_ceremony.py:1847`). (2) Keep real boot in a child with a discriminator ambient environment alone cannot activate; retain both record checks (`test_repin_ceremony.py:1856-1862`). (3) Order failure, an undetected planted leak, or lost post-rewrite check would disprove the repair (plan C1/C2).
+
+**P1 — inherited marker disables isolation.** `test_repin_ceremony.py:1847` treats `CAIRN_REPIN_RECORD_CHECK_CHILD=1` as proof of a spawned child. In a separate clone of f26b903d, ceremony→authority passed normally (2/2, Python 3.13.13). With that inherited variable set, ceremony passed in the outer process and authority failed on `trusted import package conflicts at _gate_manifest` (1 passed, 1 failed). C2 remains unmet. Ensure an inherited marker cannot bypass isolation; pass both orders with it set.
+
+**Falsification ledger:** unmutated control, 2 passed; hostile environment probe, 1 passed/1 failed. No source mutant. `scripts/repin.py:1993-2037` reads extracted committed bytes; the child retains both calls.
+
+**Coverage:** claims and drift—f26b903d diff and Boundary B SHA/range; production path and failure direction—`REPIN.boot`, `check_record`, dispatcher fixture and planted-leak node; completeness and satisfier—inherited-marker probe; consistency, lifecycle and scope—proposal Current contract, plan C1/C2, frozen-file ceremony; scientific domain—none changed. **Not covered:** full suite, re-anchor, historical comparison, all owning families, or renderer/record-reader mutation. Separate code Security Review remains owed.
