@@ -13,6 +13,9 @@ The rules pinned here:
   anything else that writes runs in a separate copy. A reverted, uncommitted
   file cannot be brought back with git, so this is the rule that prevents lost
   work.
+* Shared-file commits are serialized before inspection. Tracked candidates are
+  compared with `HEAD` including staged and unstaged bytes; changed bytes are
+  reinspected, and foreign or uncertain content stops the commit.
 * **A claim that a value reaches every member of a set is settled by
   mutation.** The missing member is a line that is not there, so reading a
   diff cannot see it. The ledger reports every mutant against an unmutated
@@ -74,6 +77,18 @@ _OBLIGATIONS = {
         r"[Aa] review reads a commit, (never|not) a shared working tree",
     "reviewer-writes-only-its-own-record":
         r"makes one write: its own review record",
+    "shared-paths-are-serialized-through-commit":
+        r"agree with other writers to serialize those paths through the commit; a work claim alone is not agreement",
+    "candidate-inspection-includes-staged-and-unstaged-bytes":
+        r"Compare each tracked candidate with `HEAD`, including both staged and unstaged bytes",
+    "changed-bytes-are-reinspected":
+        r"Reinspect any bytes that change before the commit",
+    "foreign-or-uncertain-content-stops-commit":
+        r"Stop and coordinate if a candidate contains foreign or uncertain content",
+    "failed-serialization-uses-separate-worktrees":
+        r"use separate worktrees and integrate each author's commit",
+    "noncooperating-writer-limit-is-explicit":
+        r"noncooperating writer can still change a file after inspection and defeat this procedure",
     "no-reverting-commands-in-a-shared-tree":
         r"no `restore`, `checkout`, `stash`, `reset` or `clean`",
     "other-writes-go-to-a-separate-copy":

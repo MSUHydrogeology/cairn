@@ -293,6 +293,15 @@ explicit, ask. The roster is in `dev/agent_collaboration.md`.
     leaves the source-side deletion unstaged.
   * **Bright line** — never leave a `git add` / `git mv` exposed across tool
     calls, verification, or other work.
+* **Shared-file commit inspection** — before inspecting paths for a commit,
+  agree with other writers to serialize those paths through the commit; a work
+  claim alone is not agreement. Compare each tracked candidate with `HEAD`,
+  including both staged and unstaged bytes, and inspect new files directly.
+  Reinspect any bytes that change before the commit. Stop and coordinate if a
+  candidate contains foreign or uncertain content. If writers cannot hold the
+  agreement, use separate worktrees and integrate each author's commit. A
+  noncooperating writer can still change a file after inspection and defeat
+  this procedure.
 * **Untracked lifecycle artifacts — commit atomically.** If you write a plan,
   proposal or strategy doc meaning to ship it, commit it the *same turn*; never
   leave it untracked for another agent to inherit. If you can't commit this

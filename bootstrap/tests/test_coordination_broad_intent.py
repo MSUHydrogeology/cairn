@@ -91,6 +91,7 @@ class TestBroadIntentBoundary:
         module = tmp_path / "dev" / "modules" / "coordination-tiers.md"
         assert module.is_file(), "coordination-tiers doctrine not installed"
         text = module.read_text(encoding="utf-8")
+        collapsed = " ".join(text.split())
         assert _BROAD in text, "broad claim requirement missing from module"
         # Coordination surfaces additionally require the read half.
         assert "additionally requires the" in text and "`list`" in text, (
@@ -98,3 +99,8 @@ class TestBroadIntentBoundary:
         )
         # Lock-semantics preserved, not deleted.
         assert "courtesy signal, not a lock" in text
+        assert "Agree to serialize shared paths before inspecting them through commit" in collapsed
+        assert "including staged and unstaged bytes" in collapsed
+        assert "Reinspect bytes that change before the commit" in collapsed
+        assert "foreign or uncertain" in collapsed
+        assert "noncooperating writer" in collapsed

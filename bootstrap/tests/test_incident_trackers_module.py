@@ -7,9 +7,9 @@ Covers:
 * Install path: a default scaffold installs both the module
   doctrine + the forkable tracker template at the canonical
   destinations under `dev/modules/`.
-* Content fidelity: the forkable template carries the 7-column
-  canonical schema header line + names the three `Impact` values
-  (`occurred` / `prevented` / `non-conflict`).
+* Content fidelity: the forkable template carries the 7 canonical
+  columns plus same-file-sweep evidence fields and names the three
+  `Impact` values (`occurred` / `prevented` / `non-conflict`).
 * Cross-references: session-routines.md doctrine + rationale.md
   doctrine name the module's substrate role.
 
@@ -84,6 +84,9 @@ class TestInstallPath:
         assert _scaffold(tmp_path, None) == 0
         assert (tmp_path / MODULE_DOC_DST).is_file()
         assert (tmp_path / TRACKER_TEMPLATE_DST).is_file()
+        module_text = (tmp_path / MODULE_DOC_DST).read_text(encoding="utf-8")
+        assert "Same-file sweeps require human confirmation" in module_text
+        assert "reporting is complete" in module_text
 
     def test_default_install_scaffolds_strategy_dirs(
         self, tmp_path: Path,
@@ -106,7 +109,7 @@ class TestInstallPath:
 
 
 # ---------------------------------------------------------------------------
-# Content fidelity: canonical 7-column schema + 3 Impact values
+# Content fidelity: canonical schema + sweep evidence + Impact values
 # ---------------------------------------------------------------------------
 
 
@@ -127,6 +130,10 @@ class TestSchemaContract:
             "Impact",
             "Migrated From Reflection",
             "Resolved By",
+            "Commit",
+            "Affected Paths",
+            "Discovery Date",
+            "Confirmation Reference",
         ):
             assert column in text, (
                 f"canonical column {column!r} missing from "
@@ -159,6 +166,16 @@ class TestSchemaContract:
                 f"Resolved-By form {form!r} missing from forkable "
                 f"tracker template"
             )
+
+    def test_template_defines_confirmed_sweep_reporting(self) -> None:
+        text = (TEMPLATES_ROOT / "modules" / "default-on"
+                / "incident_log_template.md").read_text(encoding="utf-8")
+        assert "one row per commit" in text
+        assert "group all affected" in text and "paths in that row" in text
+        assert "occurrence date" in text
+        assert "uncertain reports" in text
+        assert "confirmation reference" in text
+        assert "never put them in this table as `occurred`" in text
 
 
 # ---------------------------------------------------------------------------

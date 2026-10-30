@@ -21,6 +21,7 @@ import datetime
 import importlib.util
 import io
 import json
+import subprocess
 import sys
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -79,6 +80,29 @@ def _tracker(window_line: str, rows: list[tuple[str, str, str]]) -> str:
     return body
 
 
+def _sweep_tracker(rows: list[tuple[str, str, str, str]]) -> str:
+    """Build a tracker with occurrence date, commit grouping and confirmation."""
+    body = (
+        "# Collision log\n\n**Rolling window**: 14 days.\n\n"
+        "## What counts\n\n* `same-file-sweep`\n\n"
+        "## Unconfirmed reports\n\n"
+        "| Date | Event Class | Claim | Impact |\n|---|---|---|---|\n"
+        f"| {_recent(0)} | same-file-sweep | claim only | occurred |\n\n"
+        "## Incidents\n\n"
+        "| Date | Event Class | Description | Recurrence-Window Match "
+        "| Impact | Migrated From Reflection | Resolved By | Commit | "
+        "Affected Paths | Discovery Date | Confirmation Reference |\n"
+        "|---|---|---|---|---|---|---|---|---|---|---|\n"
+    )
+    for occurrence, commit, paths, impact in rows:
+        body += (
+            f"| {occurrence} | same-file-sweep | confirmed sweep | auto | "
+            f"{impact} | direct | pending | {commit} | {paths} | "
+            f"{_recent(0)} | local author confirmation |\n"
+        )
+    return body
+
+
 # ---------------------------------------------------------------------------
 # Registration
 # ---------------------------------------------------------------------------
@@ -104,6 +128,29 @@ class TestRegistration:
         installed = tmp_path / "tools" / "evolution_infer.py"
         assert installed.is_file()
         assert installed.read_bytes() == TOOL_SRC.read_bytes()
+
+    def test_installed_tool_discloses_reporting_limit(
+            self, tmp_path: Path) -> None:
+        cfg = tmp_path / "profile.yml"
+        cfg.write_text(
+            "project_name: EvoTest\ntest_command: pytest\nmodules:\n"
+            "  - incident-trackers\n"
+        )
+        assert scaffold_main(
+            ["--config", str(cfg), "--target", str(tmp_path),
+             "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]
+        ) == 0
+        tracker = tmp_path / "dev" / "measurement" / "collision_log.md"
+        tracker.parent.mkdir(parents=True, exist_ok=True)
+        tracker.write_text(_sweep_tracker([]))
+        installed = tmp_path / "tools" / "evolution_infer.py"
+        result = subprocess.run(
+            [sys.executable, str(installed), "--root", str(tmp_path)],
+            check=False, capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        assert "REPORTING LIMIT" in result.stdout
+        assert "cannot detect unreported incidents" in result.stdout
 
 
 # ---------------------------------------------------------------------------
@@ -178,6 +225,81 @@ class TestGateEval:
         payload = json.loads(out.getvalue())
         assert len(payload["findings"]) == 1
         assert payload["findings"][0]["count"] == 2
+
+    def test_real_main_counts_confirmed_commits_not_paths(self, ei, tmp_path) -> None:
+        tracker = tmp_path / "dev" / "measurement" / "collision_log.md"
+        tracker.parent.mkdir(parents=True)
+        tracker.write_text(_sweep_tracker([
+            (_recent(1), "commit-a", "plan.md, proposal.md", "occurred"),
+        ]))
+        out = io.StringIO()
+        with redirect_stdout(out):
+            rc = ei.main(["--root", str(tmp_path), "--json"])
+        payload = json.loads(out.getvalue())
+        assert rc == 0
+        assert payload["findings"] == []
+
+        tracker.write_text(_sweep_tracker([
+            (_recent(1), "commit-a", "plan.md, proposal.md", "occurred"),
+            (_recent(2), "commit-b", "coordination.md", "occurred"),
+        ]))
+        out = io.StringIO()
+        with redirect_stdout(out):
+            rc = ei.main(["--root", str(tmp_path), "--json"])
+        payload = json.loads(out.getvalue())
+        assert rc == 0
+        assert [(f["event_class"], f["count"])
+                for f in payload["findings"]] == [("same-file-sweep", 2)]
+        assert payload["reporting"]["complete"] is False
+        assert payload["reporting"]["basis"] == "reported tracker rows only"
+
+    def test_prevented_uncertain_and_late_discovery_do_not_inflate_count(
+            self, ei, tmp_path) -> None:
+        tracker = tmp_path / "dev" / "measurement" / "collision_log.md"
+        tracker.parent.mkdir(parents=True)
+        tracker.write_text(_sweep_tracker([
+            (_recent(1), "commit-a", "plan.md, proposal.md", "occurred"),
+            (_recent(2), "commit-b", "coordination.md", "prevented"),
+            (_recent(20), "commit-c", "old.md", "occurred"),
+        ]))
+        out = io.StringIO()
+        with redirect_stdout(out):
+            rc = ei.main(["--root", str(tmp_path), "--json"])
+        payload = json.loads(out.getvalue())
+        assert rc == 0
+        assert payload["findings"] == []
+        assert payload["trackers_read"][0]["occurred_in_window"] == 1
+
+    def test_s2_prevented_mutation_removes_threshold_finding(
+            self, ei, tmp_path) -> None:
+        tracker = tmp_path / "dev" / "measurement" / "collision_log.md"
+        tracker.parent.mkdir(parents=True)
+        rows = [
+            (_recent(1), "commit-a", "plan.md, proposal.md", "occurred"),
+            (_recent(2), "commit-b", "coordination.md", "occurred"),
+        ]
+        tracker.write_text(_sweep_tracker(rows))
+        control = io.StringIO()
+        with redirect_stdout(control):
+            assert ei.main(["--root", str(tmp_path), "--json"]) == 0
+        assert len(json.loads(control.getvalue())["findings"]) == 1
+
+        rows[1] = (*rows[1][:3], "prevented")
+        tracker.write_text(_sweep_tracker(rows))
+        mutated = io.StringIO()
+        with redirect_stdout(mutated):
+            assert ei.main(["--root", str(tmp_path), "--json"]) == 0
+        assert json.loads(mutated.getvalue())["findings"] == []
+
+    def test_human_output_discloses_incomplete_reporting(self, ei, tmp_path) -> None:
+        tracker = tmp_path / "dev" / "measurement" / "collision_log.md"
+        tracker.parent.mkdir(parents=True)
+        tracker.write_text(_sweep_tracker([]))
+        out = io.StringIO()
+        with redirect_stdout(out):
+            assert ei.main(["--root", str(tmp_path)]) == 0
+        assert "REPORTING LIMIT" in out.getvalue()
+        assert "cannot detect unreported incidents" in out.getvalue()
 
     def test_file_without_incidents_table_skipped(self, ei, tmp_path) -> None:
         (tmp_path / "dev" / "measurement").mkdir(parents=True)

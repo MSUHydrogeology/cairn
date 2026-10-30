@@ -136,6 +136,16 @@ be evaluated until the adopter sets it). The tool **only suggests** —
 the decision to open a proposal stays human. The full handoff runs it
 read-only; run it any time with `python tools/evolution_infer.py`.
 
+**Same-file sweeps require human confirmation.** Record one `same-file-sweep`
+row per confirmed commit, with all affected paths together. Use `Date` for the
+occurrence date and `Discovery Date` for the date it was confirmed. A claim or
+diff alone does not establish authorship; keep uncertain reports outside the
+Incidents table and never count them as `occurred`. Keep the minimal
+confirmation reference local and screen committed summaries for private or
+unrelated text. The gate counts entered rows only: it cannot detect unreported
+incidents or verify confirmation evidence, so its suggestions do not show that
+reporting is complete.
+
 ## Forking the template
 
 Adopters fork **one or many** instances of

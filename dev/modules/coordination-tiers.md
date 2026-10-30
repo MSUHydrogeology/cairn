@@ -166,9 +166,11 @@ with no pathspec commits the *whole* staged index — sweeping another session's
 staged-but-uncommitted work into the wrong commit, under the wrong author. Three
 habits, in increasing strength:
 
-* **Verify the staged set before every commit** — `git status --short` (or a
-  working-tree diff over the paths you mean to commit), so you see exactly what
-  will land.
+* **Agree to serialize shared paths before inspecting them through commit.** A
+  claim is a signal, not agreement. Compare each tracked candidate with `HEAD`,
+  including staged and unstaged bytes; inspect new files directly. Reinspect
+  bytes that change before the commit. Stop and coordinate if any content is
+  foreign or uncertain.
 * **Scope commits explicitly in a shared tree** — `git commit -- <paths>`,
   naming the files the commit should contain. (Pathspec-commit takes
   *working-tree* content for those paths, so it is incompatible with
@@ -176,7 +178,10 @@ habits, in increasing strength:
 * **The root-cause cure is per-agent worktree isolation** — separate worktrees
   share no index, so there is no staged set to collide on. Pathspec-scoping and
   the fail-closed pre-commit hook are mitigations for the shared-tree case
-  adopters will still hit; worktree isolation removes the hazard.
+  adopters will still hit; worktree isolation removes the hazard. If writers
+  cannot hold serialization, use separate worktrees and integrate each
+  author's commit. A noncooperating writer can still defeat the shared-tree
+  procedure.
 
 Recurrence of the event this guards against — one session's commit sweeping
 another's staged work — is recorded as a `true-staged-index` entry in the

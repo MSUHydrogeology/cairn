@@ -1,7 +1,7 @@
 # Plan: Detect and record same-file sweeps
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-same-file-sweeps.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30
@@ -209,3 +209,7 @@ audit. Those are implementation evidence still owed; certification was not run.
 ## Response to Security clearance -- Codex gpt-6.1-sol -- 2026-10-30
 
 S1 is closed. The reviewed plan is ready to implement; the mapped checks and Maintainer-run ceremony remain owed.
+
+## Implementation note -- Codex GPT-6.1 -- 2026-10-30
+
+The proposed historical occurrence is not confirmed by the cited commit in this checkout. `git show --format=fuller --name-status 5094a977` reports only `dev/plans/upgrade-edit-check-no-repository-programs.md` changed, with commit subject `Plan upgrade-edit-check-no-repository-programs: Internal plan review (revising-plan)`. The local `dev/measurement/collision_log.md` records `work-intent-claim-conflict` rows as prevented, and contains no confirmed `same-file-sweep` row. I did not modify that local file or infer authorship. This does not establish the doctrine trigger for editing `doctrine/coordination.md`; that edit is held for Maintainer resolution. The `5094a977` event remains uncertain and is not recorded as occurred. C1 remains open: this checkpoint has no Boundary B record or implementation-verification claim, and no code-review handoff.

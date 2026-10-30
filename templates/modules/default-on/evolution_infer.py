@@ -17,7 +17,9 @@ text decision-support:
 It is **deterministic, rule-based, and zero-token** (no model calls): the
 recurrence count is *computed*, not eyeballed. It **only suggests** -- it
 emits text and **never mutates** the trackers, doctrine, or
-anything else (it opens no proposal and files no issue). Any richer
+anything else (it opens no proposal and files no issue). It counts reported
+rows only and cannot verify confirmation evidence; its output states this
+limit, so no count establishes that reporting is complete. Any richer
 LLM-driven clustering is a separate, on-demand command, deliberately *out*
 of this deterministic pipeline.
 
@@ -347,6 +349,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.json:
         print(json.dumps({
             "findings": findings,
+            "reporting": {
+                "complete": False,
+                "basis": "reported tracker rows only",
+                "limitation": (
+                    "The gate cannot detect unreported incidents or verify "
+                    "confirmation evidence."
+                ),
+            },
             "fail_closed_trackers": failclosed,
             "fail_closed_reasons": reasons,
             "trackers_read": read,
@@ -363,6 +373,10 @@ def main(argv: list[str] | None = None) -> int:
 
 def _print_human(findings, failclosed, reasons, read, skipped, args) -> None:
     print("evolution_infer: rate-limit gate (advisory only)")
+    print(
+        "REPORTING LIMIT: counts use reported tracker rows only; this tool "
+        "cannot detect unreported incidents or verify confirmation evidence."
+    )
     if read:
         print(f"\nREAD ({len(read)}):")
         for r in read:
