@@ -1,7 +1,7 @@
 # Plan: Refuse ambiguous module discovery markers
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-module-marker-ambiguity.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Refuse damaged generated module markers before repeat installation or adoption can duplicate or remove adopter work.
