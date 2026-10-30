@@ -362,3 +362,32 @@ The earlier blocking finding is closed. The public stage fixture uses a balanced
 **Falsification ledger.** On an isolated copy of `fbf5bd13`, Python 3.13.13 refused the original unmatched marker after the block, a balanced pair before it, and a malformed marker after it; a valid empty block succeeded. I inspected the correction, fixture and Boundary B record; the latter reports 346 mapped passes and one killed placement mutant. Implementation checks were not rerun.
 
 Coverage: claim and edge (`upgrade.py:411-438`, probes); fail-closed and path (`test_upgrade.py` malformed-stage fixture); reuse and drift (`install.py::_reconcile_generated_blocks`); scope and satisfier (plan C1 and response); scientific validity (no scientific claim). No full suite, re-anchor, apply run, or concurrent replacement test was performed.
+
+## Dispositions -- archive preparation -- 2026-10-30
+
+Dispositions: none. All accepted scope and review findings are closed. Full-tree
+certification and re-anchor are separate ceremonies, not deferred plan checks;
+the unprobed external links and out-of-scope apply/concurrent-replacement probes
+were not accepted checks.
+
+**Evidence shipped**: inventory rendering and renderer compatibility (`3ab14bf1`);
+independent roster/edit and malformed-marker tests (`9675ea1b`, `b8ab602e`,
+`cb3aaf0f`, `fbf5bd13`); final wide Boundary B and mutation records (`28fd2563`);
+ordinary review and correction (`0f766e0d`, `9267a559`); Security Review finding
+and accepted follow-up (`fabde037`, `583f6ddd`). Shared tests remain in their
+canonical homes. The Security Review at `583f6ddd` accepted the corrected
+marker-placement boundary.
+
+**Evidence deferred**: none among the plan-mapped checks. Full-tree certification
+and re-anchor remain separate authorized ceremonies; no issue or board follow-up
+was created or closed.
+
+**Deferred evidence home**: N/A.
+
+**Fidelity sign-off**: implementation commits `3ab14bf1`, `9675ea1b`,
+`b8ab602e`, `cb3aaf0f`, and `fbf5bd13` deliver the accepted proposal's
+`## Current contract`, accepted as revised at `9db57ec6`: `.theirs` renders the
+recorded roster from clean selected-source text; `.ours`, installed bytes, raw
+ancestors, other pairs and apply behavior are preserved; historical metadata
+and renderer compatibility are verified; invalid roster or markers refuse
+staging. No accepted outcome was removed.
