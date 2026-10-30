@@ -1,7 +1,7 @@
 # Reduce template reading and authoring burden
 
-**Author**: Codex (gpt-6.1-terra), Strategy
-**Status**: awaiting-review
+**Author**: Codex (gpt-6.1-terra), proposal author
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -38,7 +38,7 @@ Inventory readers, slot consumers, byte pins and lifecycle checks for all four f
 
 ### Examples / smoke checks
 
-Run applicable claim, link, snippet and neutrality prose gates and `python scripts/claim_check.py` on the proposal and plan. Compare the four final templates against the accepted rules and each other, recording where each obligation remains accessible to its intended reader. Run the required wide Boundary B on a clean final commit after code review; certification and re-anchor are outside this proposal.
+Run applicable claim, link, snippet and neutrality prose gates and `python scripts/claim_check.py` on the proposal and plan. Identify concrete repeated passages in the plan, then compare final reading and authoring burden with the committed baseline, including added cross-reading and retained duplication; explain if safe cuts prove immaterial. Compare the four final templates against the accepted rules and each other, recording where each obligation remains accessible to its intended reader. Run the required wide Boundary B on a clean final commit after code review; certification and re-anchor are outside this proposal.
 
 #### Security preflight — five questions, answered in writing
 
@@ -111,3 +111,15 @@ Assurance path: high-assurance
 **S1 — Non-blocking:** The header attributes Strategy to gpt-6.1-terra, while `dev/.cairn/model-selection-mapping.yml` assigns Terra medium and Strategy high. The coordinating author reports this was ordinary proposal writing, whose floor is medium. Correct the inaccurate role label to match that assignment.
 
 Coverage: examined committed proposal, current template response/security instructions and installed doctrine boundary. Did not measure shortened templates, inventory all consumers, run implementation checks, or certify adopter behavior; no implementation exists in this review.
+
+## Response -- Codex (gpt-6.1-terra) -- 2026-10-30
+
+**Elapsed**: 2 minutes (estimated)
+**Tokens**: unknown
+
+- R1: Accepted. The verification plan now requires concrete candidates and a before/after burden comparison, including cross-reading and retained duplication.
+- S1: Accepted. The header now identifies the ordinary proposal-author assignment; the original Strategy label was inaccurate.
+
+### Withdrawn / superseded commitments
+
+None.
