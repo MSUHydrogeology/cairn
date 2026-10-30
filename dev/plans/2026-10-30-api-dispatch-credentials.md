@@ -100,3 +100,31 @@ Ordinary review found no findings. Accepted Security Review advice: Scope and C1
 **Blocking finding**: C1 and Boundary A require separate local-omission and deployed-only-admission mutations and their results. Neither the plan at 4d96b627 nor that commit's message records these outcomes; the commit also reports an initial scoped run with a failure followed by focused checks, rather than a passing final scoped selection. Close by recording the required mutation outcomes and a passing applicable scoped selection, or the disposition of each non-pass, on the implementation's committed bytes.
 
 **Evidence and coverage**: Read the committed plan, dispatcher diff and added tests. In a separate archive of 4d96b627, Python 3.12.9 ran the configured, engine-tamper, invalid-policy and missing-credential nodes: 5 passed in 1.40 seconds. Did not audit all policy schema cases or Windows behavior; the separate Security Review and final Boundary B remain owed.
+
+## Implementation verification -- Codex GPT-6.1 Luna -- 2026-10-30
+
+**Boundary A**: `python tools/test_tiers.py for templates/modules/default-on/run_security_verification.py bootstrap/tests/test_security_verification.py` selected the nine files named below. On a clean Git clone of implementation commit `4d96b627`, Python 3.12.9 ran that selection: 519 passed, 2 skipped in 100.32 seconds. The iteration target is 30 seconds; this run exceeded it. Per-file durations were not collected, so no individual file is assigned to the >10-second list here.
+
+**Tested commit**: `4d96b627b35a99d52f59e67ad02a1c9c1c9ac54a`
+
+**Reviewed range**: `ea16abda64ba54c25eb1a43251225f8708576761..4d96b627b35a99d52f59e67ad02a1c9c1c9ac54a`
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/miniforge3/bin/python`, Python 3.12.9.
+
+**Pre-run state**: clean clone at `4d96b627`; no staged or unstaged changes.
+
+**Post-run state**: clean clone at the same commit; no staged or unstaged changes.
+
+**Scoped selection**: `bootstrap/tests/test_default_security_stance.py`, `test_module_merge_lockfile.py`, `test_notice_install.py`, `test_security_finding_confidentiality.py`, `test_security_lint.py`, `test_security_marker.py`, `test_security_stack.py`, `test_security_verification.py`, and `test_upgrade.py`. The two skips were the local Bandit-dependent checks: the standalone security-lint gate and the real-Bandit shadow-isolation check. Bandit was unavailable locally; those checks are not evidence for this credential handoff. The Security Review and post-review Boundary B remain owed.
+
+**Required mutations**: Starting from separate clean archives of `4d96b627`, the configured installed-dispatcher test `TestRealFacadesDrivenByTheRealDispatcher::test_configured_api_dispatch_hands_only_validated_local_credentials` was run once per mutant under Python 3.12.9. In the first copy, the dispatcher dropped one derived local credential; the test failed as required because dispatch returned exit 20 instead of the direct run's CLEAN exit 0 (1 failed in 0.98 seconds). In the second copy, the loader admitted `CAIRN_API_P3_CREDENTIAL`; the test failed as required at the exact local-name/environment assertion (1 failed in 0.76 seconds). Each mutant was killed; the unmutated control passed in the scoped selection.
+
+**Non-pass disposition**: An initial source archive without `.git` made four unrelated historical-upgrade tests fail because those tests require a Git checkout for `--to HEAD`. That archive was not a valid checkout. The required nine-file selection was rerun from a clean Git clone of the same implementation commit and passed as recorded above.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python -m pytest -q bootstrap/tests/test_default_security_stance.py bootstrap/tests/test_module_merge_lockfile.py bootstrap/tests/test_notice_install.py bootstrap/tests/test_security_finding_confidentiality.py bootstrap/tests/test_security_lint.py bootstrap/tests/test_security_marker.py bootstrap/tests/test_security_stack.py bootstrap/tests/test_security_verification.py bootstrap/tests/test_upgrade.py --tb=short` | 0 | 519 passed, 2 skipped (Bandit unavailable) | 100.32 s | unknown |
+| Configured dispatch test in local-omission mutation copy | 1 | Mutant killed: dispatched result became exit 20 instead of CLEAN exit 0 | 0.98 s | unknown |
+| Configured dispatch test in deployed-admission mutation copy | 1 | Mutant killed: exact local credential-name assertion rejected added P3 | 0.76 s | unknown |
+
+**Boundary B**: Pending the separate Security Review. Run once after both reviews on a clean, unchanged final commit under canonical Python 3.13.x; mode remains **wide** for this credential trust boundary. Full-tree certification and re-anchor were not run.
