@@ -1,7 +1,7 @@
 # Plan: Repair certification test measurements
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-certification-test-repairs.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Restore five certification test measurements while retaining their adversarial controls.
@@ -208,3 +208,15 @@ Elapsed: about 5 minutes; tokens: unknown
 **Falsification ledger.** On an isolated copy of e1b604ab, Python 3.13.13: unmutated record-check node 1 passed. Total mutants: 1; killed: 1; survivors: 0; measured equivalents: 0. Replacing the second child `check_record` call with a deliberate exception made that node fail with the exception, demonstrating the post-rewrite position is reached and child failure propagates. This probe does not establish the semantics of `check_record` itself.
 
 **Coverage:** claims and production path: implementation diff and `scripts/repin.py:1993`; completeness and fail-closed behavior: child return-code assertion and marker regression at `test_repin_ceremony.py:1868-1887`; cross-document consistency and reuse: plan Scope and searches for `install_dispatcher`, `REPIN.boot`, and `check_record`; drift and lifecycle: Boundary B at e1b604ab and separate manifest HOLD; domain and scope: three test files in the implementation diff, no scientific method changed; satisfier: C1/C2 and Boundary B mapped checks. **Not covered:** full suite, re-anchor, historic anchor comparison, independent renderer mutation, or rerunning the author's implementation checks.
+
+## Dispositions -- archive preparation -- 2026-10-30
+
+Dispositions: the separate frozen-file ceremony is deferred to the existing v0.6 forward-baseline work item; the plan explicitly assigns trust-anchor changes to that separate process, and `dev/PLANNING.md` > “Earlier frozen-test changes” now names these three changed files. Maintainer authorization on that board item: “They can each build the machinery, the new baseline does not need to be part of their plans. It can be a work board item for v0.6.” No other follow-up remains open.
+
+**Evidence shipped**: repaired dispatcher records and archived-plan path (`f26b903d`); isolated real ceremony boot and inherited-marker adversarial regression (`20b01625`); wide final-commit results and focused controls (this plan's `Implementation verification`); ordinary and Security code reviews (`6d29c86e`, `544b873f`).
+
+**Evidence deferred**: the full-tree certification run and frozen-file baseline ceremony were not run in this plan; both remain separate authorized v0.6 integration work.
+
+**Deferred evidence home**: `dev/PLANNING.md` > “Establish the v0.6 forward baseline” and “Earlier frozen-test changes,” which now lists `bootstrap/tests/test_security_finding_confidentiality.py`, `bootstrap/tests/test_repin.py`, and `bootstrap/tests/test_repin_ceremony.py`.
+
+**Fidelity sign-off**: implementation commits `f26b903d4308d6da7c9304ec2469e999cf984c4b` and `20b01625207d46171a95d42886936eeb2aa13378` deliver the accepted proposal's `## Current contract` as revised at Decision commit `322eafb5` (proposal archive, `2026-10-30-codex-certification-test-repairs.md`): fixture fields and archived path are repaired; real boot and both record checks remain isolated; refusal, adversarial and ordering controls remain. No accepted outcome was removed.
