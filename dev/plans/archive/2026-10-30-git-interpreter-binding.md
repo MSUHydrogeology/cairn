@@ -1,7 +1,7 @@
 # Plan: Bind the interpreter in per-worktree Git administration
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-git-interpreter-binding.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30
@@ -18,7 +18,7 @@ trust assumption, and requires native Windows evidence.
 
 Change the installer, session resolver and shipped copies, their consumers and
 owning tests; retain the legacy ignore rule. The reviewed reader, writer and
-shipped-copy inventory is in `dev/plans/2026-10-30-git-interpreter-binding/coverage.md`. Update `AGENTS.md`, its shipped equivalent,
+shipped-copy inventory is in `dev/plans/archive/2026-10-30-git-interpreter-binding/coverage.md`. Update `AGENTS.md`, its shipped equivalent,
 `bootstrap/UPGRADE.md` and `bootstrap/SAFETY.md`, including rebinding and the
 copied-administration and delivered-pointer residual. Same-user races and
 executable provenance remain outside the boundary. No scientific check applies.
@@ -192,7 +192,7 @@ remains for the author's response; this pass does not clear it.
 
 | Finding | Disposition |
 |---|---|
-| P1 | Accepted. Scope and Verification point to the completed inventory and executable mapping in `dev/plans/2026-10-30-git-interpreter-binding/coverage.md`, including shipped copies, uncovered portable tests and control/mutant command. |
+| P1 | Accepted. Scope and Verification point to the completed inventory and executable mapping in `dev/plans/archive/2026-10-30-git-interpreter-binding/coverage.md`, including shipped copies, uncovered portable tests and control/mutant command. |
 | S1 | Accepted. The inventory specifies pointer versus filesystem-link cases, absence and refusal, hostile discovery, force containment and no-launch checks, worktree isolation and native Windows junction/reparse evidence. |
 
 ## Implementation verification -- Codex GPT-6 -- 2026-10-30
@@ -355,7 +355,7 @@ certification run occurred.
 **Foundations**
 
 1. **Does it do what it claims?** The shipped resolver now has the same refusal branch as the source resolver, and my direct shipped-copy probe refused before the sub-tool. The recorded mapped test does not exercise that branch in the shipped copy -- `cmp tools/session.py templates/skills/_lib/session.py`; `bootstrap/tests/test_git_interpreter_binding_portable.py::test_invalid_git_directory_refuses_handoff_before_subtool`; ledger below.
-2. **Best alternative.** Extend the existing portable test to run the same malformed-administration case against both session paths, then repeat the mapped verification; this follows the plan's named coverage without a new mechanism -- `dev/plans/2026-10-30-git-interpreter-binding/coverage.md` (resolver row and final paragraph).
+2. **Best alternative.** Extend the existing portable test to run the same malformed-administration case against both session paths, then repeat the mapped verification; this follows the plan's named coverage without a new mechanism -- `dev/plans/archive/2026-10-30-git-interpreter-binding/coverage.md` (resolver row and final paragraph).
 3. **What would show it wrong?** A shipped copy that still falls back, reaches `_surface_intents`, or diverges from the source would defeat the fix; see the direct challenge and the missing mapped check in the ledger below.
 
 **CR2 -- blocking: shipped resolver branch lacks its mapped test.** The coverage inventory requires the portable file to exercise both session copies through the session entry point. Its `_session_module()` calls use only `SESSION_PATH`, which points to `tools/session.py`; `test_skills_install.py` runs the installed CLI only for an ordinary repository. The clean wide result therefore does not establish the shipped malformed-administration branch through the mapped test. **Satisfier:** add a shipped-copy case to `test_git_interpreter_binding_portable.py` that drives `main()` with an invalid `.git` entry and asserts no sub-tool launch, then record fresh final-commit Boundary B results. Keep the native Windows criterion open until demonstrated there.
@@ -428,7 +428,7 @@ full certification run occurred.
 **Foundations**
 
 1. **Does it do what it claims?** The six junction parameters are collected and the runner refuses a non-Windows host, but its success exit does not prove the stated clean checkout or absence of required skips -- `bootstrap/tests/test_git_interpreter_binding_portable.py:326-356`; `scripts/run_windows_interpreter_binding.py:17-28`; ledger below.
-2. **Best alternative.** Keep the small runner and existing portable file, but make the runner reject dirty or off-canonical runs and report required skips as open; add the missing entry-point and leaf-reparse probes in that file -- plan C2 and `dev/plans/2026-10-30-git-interpreter-binding/coverage.md` final paragraph.
+2. **Best alternative.** Keep the small runner and existing portable file, but make the runner reject dirty or off-canonical runs and report required skips as open; add the missing entry-point and leaf-reparse probes in that file -- plan C2 and `dev/plans/archive/2026-10-30-git-interpreter-binding/coverage.md` final paragraph.
 3. **What would show it wrong?** A runner success with changed tracked bytes or a required skip, or a binding-leaf reparse point accepted by either public path, would defeat the proposed Windows evidence; see the falsification ledger below.
 
 **WR1 -- runner can return success without its stated preconditions.** The docstring requires a clean committed checkout and Python 3.13, and says skipped required cases remain open. `git status --short` only prints its result; `check=True` checks Git's exit code, not cleanliness. `main()` does not check the interpreter version or parse pytest's skip outcome. A probe supplied a dirty status line and `1 skipped` with all subprocess exits zero; the runner returned zero. This is not a native Windows run, but it demonstrates the control-flow gap. **Satisfier:** refuse a nonempty tracked status and non-3.13 interpreter, and either make required skips fail the runner or require an explicit case-by-case disposition in the recorded Windows evidence.

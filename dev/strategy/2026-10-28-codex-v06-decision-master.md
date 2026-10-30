@@ -138,7 +138,7 @@ proceed, as recorded in the plan.
 ### 10. Bind the interpreter in Git's per-worktree administration — accepted
 
 The [archived proposal](../proposals/archive/2026-10-29-codex-git-interpreter-binding.md)
-and [plan](../plans/2026-10-30-git-interpreter-binding.md) are accepted
+and [plan](../plans/archive/2026-10-30-git-interpreter-binding.md) are accepted
 and implemented. Store the binding in verified per-worktree Git
 administration and require exact-root discovery. Non-repository installs can
 proceed without it and rebind later; never read or migrate the legacy file.
