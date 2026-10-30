@@ -441,3 +441,19 @@ separate Internal Security Review is outstanding.
 **Falsification ledger**: Inspected the sequential parser, install trigger, both adoption callers, public test parameters and recorded mutation outcomes. The missing inventory matrix and unhelpful region errors falsify complete acceptance; no implementation tests were rerun. **Bounding**: WIDER RUN REQUIRED for the missing required public combinations. Verification records identify clean commits, Python 3.13.13, mapped checks and the expected AST diagnostic disposition; unchanged implementation evidence is retained under the recorded Maintainer direction.
 
 **Covered**: claims, public path, completeness and failure direction, consistency and reuse, drift, lifecycle and scope, domain, and satisfier (paths and evidence above; no scientific change). **Not covered**: arbitrary prose rewriting, concurrent replacement, full suite, or the separate Security Review. **Elapsed**: about 4 minutes. **Tokens**: unknown.
+
+## Code Security Review -- Codex GPT-6.1 Sol -- 2026-10-30
+
+**Reviewed implementation**: `022f6abe`; verification `d310b0f4` / `a5fd365e`; handoff `bcdaa398`. **Obligation**: Internal Security Review. **Verdict**: ACCEPT. **Findings**: none.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. Sequential active-entry validation rejects nested/crossed identities before reconciliation; install preflights inventory before task writes, and adoption prepares both before applying either (`install.py:1400-1481,1621-1639`; `upgrade.py:2024-2057,2143,2212`). This protects adopter work without automatic repair.
+2. **Best alternative.** Keep the shared reconciler and bounded column-zero grammar. Independent closer searches permit overlapping spans; fuzzy recovery would guess ownership. The existing wrapper also serves upgrade rendering and lock precomputation (`install.py:1351,2249`; `upgrade.py:442`).
+3. **What would show it wrong?** Acceptance of malformed boundaries or any discovery/lock write during refusal would falsify the preservation contract. Public probes below challenged both outcomes.
+
+**Falsification ledger**: An isolated archive of `022f6abe`, using Python 3.13.13 at `/Users/kendal30/conda_envs/lhm/bin/python3.13`, passed six clean public-install controls. Six independent repeat-install probes crossed task/inventory with unknown identity, tab-suffixed closer and malformed region suffix. All returned 2 and preserved planning, inventory and lock bytes. These additional boundary cases did not rerun the implementation suite; no code mutations were performed.
+
+**Bounding**: sufficient for this security pass. The committed wide verification names 340 passing mapped tests, three killed public-path mutants, clean candidate state and standing gates; its expected read-only AST drift remains explicitly separate from functional acceptance. F1/F2 responses add the missing matrix and recovery direction without expanding trust authority.
+
+**Covered**: committed parser, callers, write ordering, refusal probes and verification record. **Not covered**: arbitrary owner rewriting, concurrent replacement, full-tree certification, re-anchor or independent repetition of implementation checks. **Elapsed**: about 5 minutes. **Tokens**: unknown.
