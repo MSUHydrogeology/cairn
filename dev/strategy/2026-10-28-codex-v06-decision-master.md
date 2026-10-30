@@ -107,11 +107,22 @@ installation or old-anchor reconciliation is authorized.
 
 The [archived proposal](../proposals/archive/2026-10-29-codex-upgrade-directory-collisions.md)
 and [plan](../plans/2026-10-30-upgrade-directory-collisions.md) are accepted;
-the plan is `ready-to-implement`. Hard-block a tracked destination occupied by
-a directory, preserving contents until resolution and a fresh stage. Keep
-unaffected-file reporting, but allow no partial apply, adoption or review pair.
-Arbitrary races after checks remain possible. Implementation verification and
-the separate Maintainer-run AST ceremony remain.
+the plan is `implementing`. Six focused public controls passed at `4a76dc54`.
+[Review `9b40d4d4`](../plans/2026-10-30-upgrade-directory-collisions.md)
+found a block: editing the stage to omit a renamed wrapper such as `CLAUDE.md`,
+then replacing that file with a directory, lets apply advance the lockfile and
+cache. The independent check excludes it because the lock names `VENDOR.md`.
+A small fail-closed remedy could refuse directories at unmapped known wrapper
+names and root `*.md` paths when `VENDOR.md` is absent; unrelated folders may
+also block. A separately trusted name mapping adds machinery. Neither guards
+arbitrary changes after a check.
+
+**Maintainer choice on recovery:** the accepted text permits absence after
+moving a folder, but `verify_integrity` rejects a missing tracked file. Keep
+absence as upgrade-only recovery and disclose failed integrity, or require a
+restored file for successful recovery. The latter loses accepted scope and
+needs an explicit Scope delta. No Decision is recorded; reviews and final
+mapped verification remain open.
 
 ### 8. Nested Git paths during upgrade — accepted
 
