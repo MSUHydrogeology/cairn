@@ -1,7 +1,7 @@
 # Plan: Protect nested Git data during upgrades
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-nested-git-upgrade.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Refuse upgrade paths that name nested Git data or resolve into it, while preserving ordinary project links.
@@ -136,3 +136,8 @@ scientific method changes.
 run, implementation reviewed, Windows filesystem behavior measured, or hard-link
 and race protection established. Actual test effectiveness remains for
 implementation evidence and code review.
+
+
+## Response to plan reviews -- Codex GPT-6.1 Sol -- 2026-10-30
+
+Both the Internal and Internal Security Review passes found no defects. I accept their assessments; the operative plan remains unchanged. Both review obligations are cleared, and implementation may begin.
