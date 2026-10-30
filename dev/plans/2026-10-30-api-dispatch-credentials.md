@@ -147,3 +147,18 @@ Ordinary review found no findings. Accepted Security Review advice: Scope and C1
 **Coverage**: Examined credential derivation, binding/engine ordering, isolated child environment and confidentiality assertions. The two Bandit skips concern scanner availability and scanner shadow isolation; neither exercises this handoff. Did not run Bandit, Windows, full certification or Boundary B. A later modified loopback attempt hit socket permission denial before dispatch. Boundary B remains due after review.
 
 **Author response**: Not adopted: the committed source-only loader already passed the Security Review's valid unchecked-hash bytecode probe, so a fixture-only change would duplicate this evidence without changing runtime behavior.
+
+## Targeted Security code review -- Codex GPT-6.1 Sol -- 2026-10-30
+
+**Reviewed commits**: loader replacement `2ccfc076`, metadata correction `1e849d4a`.
+**Obligation**: Internal Security Review (code, changed loader only)
+**Verdict**: PROCEED; no new findings.
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should it happen as framed?** Yes. `_BoundSourceLoader.get_code` reads the named source and compiles it directly, bypassing bytecode lookup. Binding still precedes loading. The explicit `__file__` assignments restore the package's existing relative completeness checks.
+2. **Best alternative.** Keep this source-loader override. A normal source loader could execute unchecked cached bytecode; weakening Bandit's rule would retain the reported lint failure rather than satisfying the accepted checks.
+3. **What would show it wrong?** A valid poisoned cache executing, substituted modules being accepted, or completeness failing because module metadata changed. In a separate archive of `1e849d4a`, Python 3.12.9 ran the engine-tamper and invalid-policy selection: **3 passed in 0.46 seconds**. A targeted loader probe placed valid unchecked-hash poison caches beside all four engine sources: local-name derivation and completeness still succeeded. Four private module substitutions, wrong loader name/path, and namespace cleanup also behaved as required.
+
+**Coverage**: Inspected the two loader diffs and falsified cache, substitution and metadata failure paths. Prior credential/environment review stands. Did not repeat the owning families, run Bandit, exercise Windows or conduct Boundary B; post-fix integration remains the author's obligation.
