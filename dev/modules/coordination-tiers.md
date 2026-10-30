@@ -154,7 +154,9 @@ blocking — rather than silent.
 > intentional-unclaimed commit silences the *self-directed* warnings (a
 > staged path with no claim; an unresolvable identity) with a per-commit
 > `CAIRN_INTENT_ALLOW_UNCLAIMED=1` env override, or repo-wide with a
-> tracked `dev/intent-config.json` carrying `{"solo_mode": true}`. An
+> tracked `dev/.cairn/intent-config.json` carrying
+> `{"solo_mode": true}` (legacy fallback:
+> `dev/intent-config.json`). An
 > **other-session-overlap** warning is **never** suppressed — that is the
 > coordination payoff, and it must always surface.
 
