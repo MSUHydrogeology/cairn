@@ -248,3 +248,50 @@ v0.6 board item; repinning and re-anchoring occur at a version cut or when
 the Maintainer asks. This amendment does not authorize a ceremony or waive
 other checks, reviews, or acceptance criteria. Earlier evidence remains a
 record of what was known and done at the time.
+
+## Implementation verification update -- Codex GPT-6 -- 2026-10-30
+
+**Boundary B mode:** wide, incomplete. **Certified by:** pending.
+**Candidate:** `22c49ec2bb588d1d237db14f44650caea77f4b33`, a clean detached
+clone with Git history, under Python 3.13.13 at
+`/Users/kendal30/conda_envs/lhm/bin/python3.13`. The reviewed implementation
+range starts at `f8f96cdb`; the plain-name staged-apply fixture was repaired
+at `4a76dc54`. `git status --short` was empty before and after the checks.
+The shared worktree remained outside the measurement. Elapsed measured command
+time was about 103 seconds for the two mapped test groups, security lint and
+prose gates; token use is unknown.
+
+* `python3.13 -m pytest -q --tb=short` on
+  `bootstrap/tests/test_upgrade.py`,
+  `bootstrap/tests/test_upgrade_lockfile_path_containment.py` and
+  `bootstrap/tests/test_upgrade_side_door_parity.py`: **219 passed, 6 failed** (49.09 seconds
+  wall). The failures are three `TestTemplateGatingSafety` assertions about
+  removed template headings/conditionals, two `TestInitLock` review-copy
+  assertions (generated module inventory and profile sizing), and
+  `test_a_hand_built_review_area_cannot_make_apply_record_a_path_outside_the_project`,
+  whose planted stage lacks the later required directory observations. These
+  are unresolved mapped checks, regardless of their separate causes.
+* `python3.13 -m pytest -q --tb=short` on
+  `bootstrap/tests/test_upgrade_refuses_hostile_project_data.py`,
+  `bootstrap/tests/test_upgrade_module_additions.py` and
+  `bootstrap/tests/test_lockfile_provenance.py`:
+  **254 passed** (48.01 seconds wall), including the public nested-name,
+  contained `dst` and `base_cache` aliases, staged-name and repaired plain-name
+  tests.
+* `python3.13 -m pytest -q bootstrap/tests/test_security_lint.py`:
+  **11 passed** (3.92 seconds wall).
+  `python3.13 scripts/claim_check.py bootstrap/UPGRADE.md` passed;
+  `python3.13 scripts/check_cairn.py` and
+  `python3.13 scripts/link_check.py` passed on 195 Markdown files each;
+  `python3.13 scripts/quality_gate.py --sub neutrality` reported
+  `fail=0, info=43`. These prose gates took about 2.6 seconds together.
+
+The earlier four mutation controls and mutants were measured at `f8f96cdb`;
+the nested Git guard has not changed since then, but the mutations were not
+remeasured on this candidate. The earlier public recovery rehearsal was also
+not repeated. No full-tree certifying suite or re-anchor was run. Boundary B
+cannot be closed while the six mapped failures remain. The code and Security
+reviews remain open; reviewers must assess the final corrected candidate and
+the stated mutation and public-path coverage. The inventory discrepancy has a
+separate awaiting-decision proposal, and this record makes no Decision or
+scope concession.
