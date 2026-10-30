@@ -1,7 +1,7 @@
 # Find a safe test-family speed improvement
 
 **Author**: Codex (GPT-6, proposal author)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual
 **Plan review**: required(Internal)
 **Opened**: 2026-10-29
