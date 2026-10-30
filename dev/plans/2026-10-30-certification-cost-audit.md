@@ -1,7 +1,7 @@
 # Plan: Reuse review-sweep installations
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-certification-cost-audit.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal)
 **Opened**: 2026-10-30
 **In brief**: Share each profile's real test installation across the session to avoid repeated setup.
@@ -69,3 +69,40 @@ The four fixture consumers read installed trees or alter local text copies, and 
 ## Response to plan review -- Codex (GPT-6.1 Sol) -- 2026-10-30
 
 The Internal review accepted with no findings. I accepted its focused-manifest advice in Boundary A and retained the wide final mapping. The consumer inventory, repeated timings, shuffled runs and fault controls remain implementation acceptance checks; the review did not claim they were already measured. Elapsed time: about 2 minutes. Token use: unknown.
+
+## Implementation verification -- Codex GPT-6 -- 2026-10-30
+
+**Boundary B mode**: wide. The changed test file is frozen in the installed manifest. The review-sweep owning family, interleaved `test_content_scan.py`, both shuffle seeds, installed-content faults, frozen-file refusal control and standing prose gates were checked.
+
+**Certified by**: pending
+**Tested commit**: `6fc4d9eaddf4dc5082022665097f6c4e5fe40bd4`
+**Reviewed range**: `291ab335959cb7e6328ed06060d5af6bf87af811..6fc4d9eaddf4dc5082022665097f6c4e5fe40bd4`
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` — Python 3.13.13, pytest 9.0.3
+**Pre-run state**: clean detached copy at `6fc4d9eaddf4dc5082022665097f6c4e5fe40bd4`.
+**Post-run state**: clean; same `HEAD`, no tracked or untracked changes. Mutants wrote only to pytest temporary install trees.
+
+The inventory found exactly four consumers in `bootstrap/tests/test_review_sweep_ships.py`: `test_installed_loop_document_carries_the_obligation`, `test_installed_agents_md_carries_the_pointer`, `test_an_install_without_the_sweep_is_reported`, and `test_an_install_leaves_no_placeholder_the_engine_cannot_fill`. They read the installed trees; the sweep-removal check edits a local string. No consumer needs a fresh tree. Three globbed shipped profiles still install through the real scaffold CLI into separate temporary trees.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python -m pytest bootstrap/tests/test_review_sweep_ships.py bootstrap/tests/test_content_scan.py --quality-gate-shuffle-seed=0 --durations=0 --durations-min=0` on baseline `291ab335` (two runs) | 0 | 391 passed each; 31.80s, 31.74s | pytest reported | unknown |
+| Same timed selection on implementation `e270902d` (two runs) | 0 | 391 passed each; 1.06s, 0.98s | pytest reported | unknown |
+| Same timed selection, baseline second-run phase sums | 0 | Review-sweep setup 31.26s, call 0.02s, teardown 0.00s; content-scan setup 0.00s, call 0.14s, teardown 0.00s | included above | unknown |
+| Same timed selection, implementation phase sums | 0 | Run 1: review-sweep setup 0.58s, call 0.02s, teardown 0.00s; content-scan call 0.15s. Run 2: review-sweep setup 0.49s, call 0.02s, teardown 0.00s; content-scan call 0.16s. Other phase sums 0.00s. | included above | unknown |
+| `python -m pytest -q bootstrap/tests/test_review_sweep_ships.py bootstrap/tests/test_content_scan.py --quality-gate-shuffle-seed=0` on final candidate | 0 | 391 passed | 0.88s | unknown |
+| Same final-candidate selection with `--quality-gate-shuffle-seed=1` | 0 | 391 passed; same 391 nodes collected | 0.82s | unknown |
+| Nine installed-copy fault probes through existing nodes, three faults per profile | 1 per mutant, expected | 9/9 killed: lens 4, matched pointer phrase, unknown placeholder, each for all three profiles; no survivors or measured equivalents | 10.9s total | unknown |
+| `python -m pytest -q bootstrap/tests/test_gate_manifest.py::test_verify_holds_on_frozen_file_modification` | 0 | 1 passed; refusal control holds | 8.46s | unknown |
+| `python scripts/claim_check.py dev/plans/2026-10-30-certification-cost-audit.md` | 0 | No claim-check flags | <1s | unknown |
+| `python scripts/check_cairn.py`; `python scripts/link_check.py`; `python scripts/sync_doc_snippets.py --check` | 0 each | 196 Markdown files clean; 94 and 95 external links respectively not probed; 477 docs scanned with no snippet drift | 3.2s total | unknown |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | Both gates: 0 failures; neutrality 43 informational entries, redundancy 1 informational entry | <1s | unknown |
+
+The timed commands used the same arguments on isolated committed copies with no overlapping test family. The second full baseline report and both implementation reports include setup, call and teardown entries; the first baseline console capture was truncated, so only its 31.80s pytest total is retained. The measured review-sweep setup fell from 31.26s to 0.58s and 0.49s; total elapsed fell from 31.74s to 1.06s and 0.98s. This is a scoped interleaving result, not a whole-suite speed claim. Shuffling alternates between the two modules, so module scope can reinstall the fixture when returning to its module; session scope retains the same three profile installations.
+
+**Mutation summary**: unmutated control — final scoped selection, 391 passed under each seed. Total 9 mutants; killed 9. Each profile (`collaborative-team`, `high-rigor-legacy`, `solo-greenfield`) was tested separately for each mutation. Survivors: none. Measured equivalents: none. An initial temporary-hook attempt did not match the installed bold lens labels or line-wrapped pointer and stopped before mutating; the corrected hook matched each target and the expected existing assertion node failed. The historical pointer probe also initially survived because its search missed wrapped text; the archived evidence records that corrected matching removed the phrase and was caught.
+
+**Non-pass disposition**: the nine fault commands intentionally exit 1 because the expected assertions reject each mutant. The first unmatched-hook attempts are instrumentation failures, not killed mutants, and are excluded from the count. All unmutated controls pass.
+
+**Plan-specific acceptance commands**: covered by the timed repeated controls, final fixed and alternate shuffle selections, nine installed-tree fault probes, frozen-file refusal node and prose gates above. The 391-node count reconciles across both seeds; no test node was removed. No manifest hash, protection classification or live reference changed.
+
+**Known omissions**: no full-tree certification, repin, re-anchor or anchor comparison was run; these remain separate ceremonies. **Certified by** remains pending, and the frozen-file ceremony remains due. External links were not probed by the Markdown checks. The implementation commit `e270902d` preceded the `implementing` status commit `6fc4d9ea` because the pre-implementation transition was missed; this record does not claim an earlier transition.
