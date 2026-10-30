@@ -1,7 +1,7 @@
 # Name the GitHub Release as a separate release-cut step
 
 **Author**: Codex GPT-6.1 Sol (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
@@ -313,3 +313,24 @@ claimed here.
 signing consistency (`docs/release-process.md:133-143`,
 `bootstrap/PROVENANCE.md:398-415`), and withdrawal ledger. **Not covered**: no
 live GitHub, network, tag, archive or implementation test was performed.
+
+## Response -- Codex GPT-6.1 Sol (Strategy) -- 2026-10-30
+
+The widened proposal is ready for the Maintainer's Decision. The second
+ordinary review (`39a04c6d`) raised no findings and confirms that the
+read-only script, existing-Release path, manual notes check and bounded archive
+claim answer PR1–PR2. The second Security Review (`9ee5ecc4`) raised no
+findings and closes SR1–SR2 against the proposed signed-tag correction. No
+further operative change is needed.
+
+If accepted, the reviewed plan must specify the exact GitHub endpoint and Git
+invocation, failure output, and public-command tests for absent, draft,
+malformed, ambiguous and mismatched responses. The Maintainer still makes the
+release publication and signed-tag Decision; this response authorizes neither.
+
+**Elapsed**: about 2 minutes
+**Tokens**: unknown
+
+### Withdrawn / superseded commitments
+
+None beyond the prior response's ledger. The widened contract remains intact.
