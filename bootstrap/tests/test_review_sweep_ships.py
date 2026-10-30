@@ -315,7 +315,7 @@ def test_the_pointer_names_no_test_path(rel: str) -> None:
 # Through a real install, for every shipped profile.
 # --------------------------------------------------------------------------
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def installs(tmp_path_factory) -> dict[str, Path]:
     """Install each shipped profile once; return profile stem -> target tree.
 
