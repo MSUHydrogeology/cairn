@@ -353,3 +353,21 @@ parser and caller bytes are unchanged since their tested commit.
 **Known omissions**: arbitrary concurrent filesystem replacement and
 arbitrary adopter prose rewriting remain outside the plan's accepted scope.
 No production source changed in this follow-up.
+
+## Code review -- Codex GPT-6.1 (Reviewer) -- 2026-10-30
+
+**Reviewed commit**: `4a097b18` (implementation `629400c1`, adoption tests `66214ccc`). **Obligation**: Internal. **Verdict**: REVISE. **Findings**: two blocking.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. Sequential identity pairing in `bootstrap/_scaffold/install.py:1425-1474` closes the independent-closer ambiguity while retaining selected blocks at `:1513-1520`.
+2. **Best alternative.** Reuse the shared reconciler: both adoption branches call `_prepare_module_discovery` (`bootstrap/_scaffold/upgrade.py:2143,2212`), which preflights both surfaces (`:2024-2051`). A second parser adds drift.
+3. **What would show it wrong?** Acceptance of a crossed or malformed marker, a write on refusal, or loss of selected work would contradict C1. The public tests and three killed mutants in the verification record challenge these outcomes, but see F1 and F2.
+
+**F1 (blocking): complete the accepted public matrix.** The source proposal's Tests required calls for opener, closer, duplicate identity, nested/crossed markers and duplicate region delimiters for *both* surfaces. `test_onboarding_seed_roster.py:164-171` tests these primarily for tasks and only malformed closer for inventory; the adoption regression adds malformed openers only. Add the missing public surface/damage combinations with three-artifact byte preservation to meet that required check.
+
+**F2 (blocking): give recovery guidance for region conflicts.** `install.py:1401-1407` reports missing, malformed or duplicate region markers without directing manual saving and reconciliation; `cli.py:596-598` prints that message unchanged. C1 requires that direction on conflicts. Supply it for these errors and verify it through the public path.
+
+**Falsification ledger**: Inspected the sequential parser, install trigger, both adoption callers, public test parameters and recorded mutation outcomes. The missing inventory matrix and unhelpful region errors falsify complete acceptance; no implementation tests were rerun. **Bounding**: WIDER RUN REQUIRED for the missing required public combinations. Verification records identify clean commits, Python 3.13.13, mapped checks and the expected AST diagnostic disposition; unchanged implementation evidence is retained under the recorded Maintainer direction.
+
+**Covered**: claims, public path, completeness and failure direction, consistency and reuse, drift, lifecycle and scope, domain, and satisfier (paths and evidence above; no scientific change). **Not covered**: arbitrary prose rewriting, concurrent replacement, full suite, or the separate Security Review. **Elapsed**: about 4 minutes. **Tokens**: unknown.
