@@ -88,6 +88,10 @@ def assert_plain_refusal(proc: subprocess.CompletedProcess[str], *, code: int = 
     assert "\x1b" not in said
 
 
+def assert_link_remedy(proc: subprocess.CompletedProcess[str]) -> None:
+    assert "Replace the link in that path with an ordinary file or directory, as appropriate" in proc.stderr
+
+
 def link(target: Path | str, name: Path) -> None:
     try:
         os.symlink(target, name)
@@ -288,7 +292,7 @@ def test_init_lock_refuses_a_profile_that_is_a_link(world, how):
     proc = upgrade(world.project, "--init-lock")
     assert_plain_refusal(proc)
     assert PROFILE_REL in proc.stderr, "the refusal must say which file it is about"
-    assert "Replace it with a regular file" in proc.stderr, "the refusal must say what to do"
+    assert_link_remedy(proc)
     assert world.marker not in proc.stdout + proc.stderr
     assert not (world.project / LOCK_REL).exists(), "no lockfile may be written"
     assert profile.is_symlink(), "the link must be left as it was"
@@ -315,7 +319,7 @@ def test_init_lock_refuses_a_cairn_folder_that_is_a_link(world, lockfile_behind_
     proc = upgrade(world.project, "--init-lock")
     assert_plain_refusal(proc)
     assert LOCK_REL in proc.stderr, "the refusal must say which file it is about"
-    assert "Replace it with a regular file" in proc.stderr, "the refusal must say what to do"
+    assert_link_remedy(proc)
     assert "already exists" not in proc.stdout + proc.stderr
     assert cairn.is_symlink(), "the link must be left as it was"
     assert snapshot(world.project) == project_before, "a refusal must change nothing"
@@ -346,6 +350,72 @@ def test_init_lock_with_a_complete_profile_still_writes_the_lockfile(world):
     first_line = proc.stdout.splitlines()[0]
     assert first_line.startswith(f"Wrote migrated {LOCK_REL} (") and first_line.endswith(" files).")
     assert read_lock(world.project)["tokens"]["project_name"] == "OrdinaryName"
+
+
+@needs_links
+@pytest.mark.parametrize("how", ["existing-outside-file", "existing-inside-file", "dangling"])
+def test_init_lock_refuses_a_mapped_file_that_is_a_link(world, how):
+    """A mapped destination link must stop before migration reads its bytes."""
+    world = _no_lockfile_world(world)
+    (world.project / PROFILE_REL).write_text(_complete_profile("MappedLink"), encoding="utf-8")
+    mapped = world.project / "AGENTS.md"
+    mapped.unlink()
+    if how == "existing-outside-file":
+        target = world.outside / "linked-agents.md"
+        target.write_text("outside linked bytes\n", encoding="utf-8")
+    elif how == "existing-inside-file":
+        target = world.project / "docs" / "linked-agents.md"
+        target.write_text("inside linked bytes\n", encoding="utf-8")
+    else:
+        target = world.outside / "missing-agents.md"
+    link(target, mapped)
+    project_before, outside_before = snapshot(world.project), snapshot(world.outside)
+
+    proc = upgrade(world.project, "--init-lock")
+
+    assert_plain_refusal(proc)
+    assert "AGENTS.md" in proc.stderr
+    assert_link_remedy(proc)
+    assert world.marker not in proc.stdout + proc.stderr
+    assert not (world.project / LOCK_REL).exists(), "no lockfile may be written"
+    assert snapshot(world.project) == project_before, "a refusal must change nothing"
+    assert snapshot(world.outside) == outside_before, "something outside the project changed"
+
+
+@needs_links
+def test_init_lock_refuses_a_mapped_file_below_a_linked_parent(world):
+    """A linked docs parent is checked at the mapped path and gives a folder remedy."""
+    world = _no_lockfile_world(world)
+    (world.project / PROFILE_REL).write_text(_complete_profile("MappedParent"), encoding="utf-8")
+    shutil.rmtree(world.project / "docs")
+    target = world.outside / "linked-docs"
+    target.mkdir()
+    (target / "DOCUMENTATION_PLAN.md").write_text("outside documentation\n", encoding="utf-8")
+    link(target, world.project / "docs")
+    project_before, outside_before = snapshot(world.project), snapshot(world.outside)
+
+    proc = upgrade(world.project, "--init-lock")
+
+    assert_plain_refusal(proc)
+    assert "docs/DOCUMENTATION_PLAN.md" in proc.stderr
+    assert "ordinary file or directory, as appropriate" in proc.stderr
+    assert world.marker not in proc.stdout + proc.stderr
+    assert not (world.project / LOCK_REL).exists(), "no lockfile may be written"
+    assert snapshot(world.project) == project_before, "a refusal must change nothing"
+    assert snapshot(world.outside) == outside_before, "something outside the project changed"
+
+
+def test_init_lock_migrates_an_ordinary_mapped_file_with_its_digest(world):
+    world = _no_lockfile_world(world)
+    (world.project / PROFILE_REL).write_text(_complete_profile("OrdinaryMapped"), encoding="utf-8")
+    mapped = world.project / "AGENTS.md"
+    mapped.write_text("ordinary project-owned bytes\n", encoding="utf-8")
+
+    proc = upgrade(world.project, "--init-lock")
+
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert record_for(read_lock(world.project), "AGENTS.md")["hash"] == (
+        "sha256:" + hashlib.sha256(mapped.read_bytes()).hexdigest())
 
 
 def test_init_lock_with_a_lockfile_already_there_still_changes_nothing(world):
@@ -384,7 +454,7 @@ def test_plan_and_stage_refuse_a_profile_that_is_a_link(world, tmp_path, flag, h
     proc = upgrade(world.project, flag)
     assert_plain_refusal(proc)
     assert PROFILE_REL in proc.stderr, "the refusal must say which file it is about"
-    assert "Replace it with a regular file" in proc.stderr, "the refusal must say what to do"
+    assert_link_remedy(proc)
     assert "[warn]" not in proc.stdout + proc.stderr, "the link was read before it was refused"
     assert profile.is_symlink(), "the link must be left as it was"
     assert not (world.project / STAGE_REL).exists(), "a refusal must write no review area"
@@ -498,7 +568,7 @@ def test_adoptions_refuse_a_profile_that_is_a_link(world, action, how):
     said = proc.stdout + proc.stderr
     assert_plain_refusal(proc)
     assert PROFILE_REL in proc.stderr, "the refusal must say which file it is about"
-    assert "Replace it with a regular file" in proc.stderr, "the refusal must say what to do"
+    assert_link_remedy(proc)
     assert _LINKED_PACKAGE not in said and _LINKED_AXIS not in said, "text from the linked file was shown"
     assert "[warn]" not in said, "the link was read before it was refused"
     assert not [name for name in opened if Path(name).name in {"profile.yml", target.name}], (
@@ -938,7 +1008,7 @@ def test_finalize_over_a_linked_vendor_wrapper_names_the_link(world):
     assert proc.returncode == 1, said
     assert "missing on disk" in proc.stderr
     assert "CLAUDE.md is a link" in proc.stderr
-    assert "Replace it with a regular file" in proc.stderr
+    assert_link_remedy(proc)
     assert world.marker not in said
     assert "Traceback" not in said
     assert_nothing_left_the_tree(world, outside_before)

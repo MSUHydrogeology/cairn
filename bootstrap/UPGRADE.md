@@ -433,13 +433,22 @@ you what changed.
   exit 0, and never reads the profile. Otherwise it refuses a link at
   `dev/.cairn/profile.yml` before it reads or writes it. Each refusal is the
   same exit 2, whether the link points to a file that exists or to nothing.
-  Two limits remain. Over a lockfile
-  that is itself a link, `--init-lock` and `--adopt-collisions` end in a Python
+  `--init-lock` also refuses links at mapped installed-file paths before it
+  tests whether those files exist or reads them. This includes a dangling
+  mapped file link and a linked parent such as `docs/`. The one-line refusal
+  names the mapped path without showing the target. Replace the link at that
+  path with an ordinary file or directory, as appropriate, then re-run.
+  This protects links already present when each mapped path is checked in a
+  stable project tree; a concurrent path replacement between the check and
+  read is outside this check. The separate fidelity-manifest reader can still
+  read a linked manifest under `dev/.cairn/` or legacy `dev/strategy/`.
+  One existing edge case remains. Over a lockfile that is itself a link,
+  `--init-lock` and `--adopt-collisions` end in a Python
   traceback with exit 1 instead of the one-line refusal; nothing is read or
   written outside the project. And `--init-lock` hashes each tracked file it
-  finds, a linked one included, so a link at one of those files puts the digest
-  of the file behind it in the new lockfile (measured with `AGENTS.md`); nothing
-  is written outside the project.
+  finds, after refusing any mapped destination that is already a link in the
+  stable tree; the concurrent replacement and separate manifest-reader limits
+  above still apply.
 * **The session helper refuses links and unsafe table rows.** `tools/session.py`
   (`session-start`, `session-end`) never writes through a link or outside the
   project. If `dev/`, `dev/reflections` or `dev/.cairn` is a link, `session-end`
