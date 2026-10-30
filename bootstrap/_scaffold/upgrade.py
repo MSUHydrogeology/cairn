@@ -411,17 +411,22 @@ def _render_review_inventory(
             "upstream inventory has duplicate or missing generated markers")
     if text.index(start) > text.index(end):
         raise ModuleDiscoveryConflict("upstream inventory markers are unmatched")
-    body = text[text.index(start) + len(start):text.index(end)]
+    body_start = text.index(start) + len(start)
+    body_end = text.index(end)
+    body = text[body_start:body_end]
     marker_re = re.compile(
         r"(?m)^<!-- cairn:(module(?:-end)?) id=([a-z0-9-]+) -->$")
     stack: list[str] = []
-    matches = list(marker_re.finditer(body))
-    if (body.count("<!-- cairn:module id=") != sum(
+    matches = list(marker_re.finditer(text))
+    if (text.count("<!-- cairn:module id=") != sum(
             match.group(1) == "module" for match in matches)
-            or body.count("<!-- cairn:module-end id=") != sum(
+            or text.count("<!-- cairn:module-end id=") != sum(
                 match.group(1) == "module-end" for match in matches)):
         raise ModuleDiscoveryConflict("upstream inventory has malformed entry markers")
     for match in matches:
+        if not body_start <= match.start() < body_end:
+            raise ModuleDiscoveryConflict(
+                "upstream inventory has an entry marker outside its generated block")
         closing, name = match.groups()
         if closing == "module":
             if stack:

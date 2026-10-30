@@ -1359,7 +1359,7 @@ class TestInitLock:
 
     @pytest.mark.parametrize("malformation", [
         "missing-template", "missing-generated", "duplicate-generated", "nested-entry",
-        "unmatched-entry",
+        "unmatched-entry", "entry-outside-generated",
     ])
     def test_malformed_upstream_inventory_refuses_without_partial_stage(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, malformation: str,
@@ -1383,6 +1383,11 @@ class TestInitLock:
                 "<!-- cairn:module-end id=coordination-tiers -->\n"
                 "<!-- cairn:module-end id=security-review -->\n"
                 "<!-- cairn:generated-modules:end -->")
+        elif malformation == "entry-outside-generated":
+            malformed = original.replace(
+                "<!-- cairn:generated-modules:end -->",
+                "<!-- cairn:generated-modules:end -->\n"
+                "<!-- cairn:module id=security-review -->")
         else:
             malformed = original.replace(
                 "<!-- cairn:generated-modules:end -->",
@@ -1399,9 +1404,12 @@ class TestInitLock:
                 if rel == "core/dev/modules/README.md"
                 else read_bytes(root, templates, rel, to_ref)),
         )
+        stage = tmp_path / "dev/.cairn-upgrade"
+        stage.mkdir(parents=True)
+        (stage / "stale-marker").write_text("previous stage")
         assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
                        "--cairn-root", str(CAIRN_ROOT)]) == 2
-        assert not (tmp_path / "dev/.cairn-upgrade").exists()
+        assert not stage.exists()
         assert (tmp_path / "dev/modules/README.md").read_bytes() == installed_before
         for rel, raw in ancestors_before.items():
             if (tmp_path / rel).exists():
