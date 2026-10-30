@@ -48,6 +48,8 @@ and a new empty `Unreleased` is started above.
 
 - Upgrade review copies now render the recorded module roster into upstream `.theirs` while keeping adopter bytes in `.ours`; unverified historical renderers and malformed inventory markers refuse staging. ([plan](dev/plans/archive/2026-10-30-review-inventory-rendering.md))
 
+- Repeat installation and module adoption now refuse ambiguous generated task or inventory markers before changing planning, inventory or lock bytes, with manual save-and-reconcile guidance. ([plan](dev/plans/archive/2026-10-30-module-marker-ambiguity.md))
+
 - `upgrade --init-lock` now refuses a planted link at any mapped installed path before checking existence or reading bytes in a stable tree. Ordinary-file migration and vendor-wrapper alias handling remain unchanged; concurrent path replacement and the separate fidelity-manifest reader remain outside the check. ([plan](dev/plans/archive/2026-10-30-init-lock-linked-files.md))
 
 - Review now has one bounded pass per stage, with light as the default proposal tier and added or widened trust boundaries retaining Security Review. Governing instructions are shorter; authors close non-blocking advice and carry deferred obligations forward. The one-month review-commit indicator remains on the board, and whole-tree certification remains a separate release check. ([plan](dev/plans/archive/2026-10-30-cut-the-apparatus.md))

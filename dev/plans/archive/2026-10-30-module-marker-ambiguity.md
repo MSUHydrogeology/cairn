@@ -1,7 +1,7 @@
 # Plan: Refuse ambiguous module discovery markers
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-module-marker-ambiguity.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Refuse damaged generated module markers before repeat installation or adoption can duplicate or remove adopter work.
@@ -457,3 +457,33 @@ separate Internal Security Review is outstanding.
 **Bounding**: sufficient for this security pass. The committed wide verification names 340 passing mapped tests, three killed public-path mutants, clean candidate state and standing gates; its expected read-only AST drift remains explicitly separate from functional acceptance. F1/F2 responses add the missing matrix and recovery direction without expanding trust authority.
 
 **Covered**: committed parser, callers, write ordering, refusal probes and verification record. **Not covered**: arbitrary owner rewriting, concurrent replacement, full-tree certification, re-anchor or independent repetition of implementation checks. **Elapsed**: about 5 minutes. **Tokens**: unknown.
+
+## Dispositions -- archive preparation -- 2026-10-30
+
+Dispositions: none. All accepted outcomes and review findings F1/F2 are
+complete; the Security Review accepted the implementation. Arbitrary owner
+prose rewriting and concurrent filesystem replacement remain explicit limits,
+not deferred plan checks. Full-tree certification and AST re-anchor are separate
+authorized ceremonies. No issue or roadmap row was created or closed; the
+active board entry disappeared when this plan moved to the archive.
+
+**Evidence shipped**: shared parser and public matrix (`022f6abe`), new and
+already-recorded adoption regression (`66214ccc`), installed recovery guidance
+(`51bd8761`), F1/F2 response and wide verification (`d310b0f4`), ordinary code
+review (`14ba6ca3`) and Internal Security Review (`25a7f61c`). Tests and engine
+code remain in their canonical homes. The release-history entry is in
+`CHANGELOG.md`.
+
+**Evidence deferred**: none among the plan-mapped checks. Full-tree
+certification and re-anchor are separate ceremonies, not deferred checks;
+external links were not probed by the link gate.
+
+**Deferred evidence home**: N/A.
+
+**Fidelity sign-off**: the accepted proposal's bounded marker grammar,
+empty-roster preflight, shared install/adoption path, refusal-before-write
+contract, manual recovery direction, preservation of selected edits and
+unrelated prose, and removal of clean unselected entries remain delivered.
+Public tests exercise both task and inventory damage, both adoption branches,
+and unchanged planning, inventory and lock bytes on refusal. No accepted
+outcome or scope was removed.
