@@ -135,3 +135,23 @@ The Internal Security Review raised no additional findings and cleared its oblig
 **Plan-specific acceptance commands**: the focused tests exercise public `upgrade --plan`, `--stage` and `--apply`, including mergeable and verbatim paths, a folder appearing between plan classification and stage, a folder appearing after stage, override flags, preservation, blocked-stage recovery, and a fresh successful stage/apply after restoring the file. `sync_doc_snippets.py` was not run because no synced snippet changed.
 
 **Known omissions**: the full suite and tree certification were not run; certification is separate and not authorized at this change boundary. The Maintainer-run AST re-anchor remains owed and was not authorized here. Arbitrary concurrent filesystem changes after a check are outside the claim. Independent code and Security Reviews remain owed. Do not archive until the two known required-test failures are resolved through their owning work and the reviews clear.
+
+## Interim code review -- Codex GPT-6 -- 2026-10-30
+
+**Reviewed commit**: b925187e798be7cd3a1c9ce2dec7d9f8398bce6a
+**Reviewed range**: c805d268cfe9720396b5ed6cb9e70877006c5a1f..b925187e798be7cd3a1c9ce2dec7d9f8398bce6a
+**Tier**: Internal
+**Findings**: raised; interim, not a completed review
+**Bounding**: WIDER RUN REQUIRED -- add coverage for tracked no-op destinations becoming directories after staging and verify the corrected public apply path.
+
+**Foundations**:
+
+1. **Does it do what it claims?** No: a tracked file omitted from the staged write set can become a directory after staging and apply succeeds, contrary to C1 and the guidance -- `bootstrap/_scaffold/upgrade.py:3419` and the falsification ledger below.
+2. **Best alternative.** Record and check the applicable tracked destinations at apply, including no-op paths, while retaining the existing containment and retired-record rules -- `bootstrap/_scaffold/upgrade.py:1219` and C1.
+3. **What would show it wrong?** The controlled post-stage transition and its result are in the falsification ledger below.
+
+**P1 -- A post-stage directory at a no-op tracked path does not block apply.** Stage omits a destination when its current bytes equal the planned result; apply checks only `staged_meta`, so that destination is never checked. In a scratch installation, after staging, replace an omitted tracked file with a folder containing adopter data and run apply with `--force`: apply returns 0 and advances, instead of refusing the entire apply before metadata advancement. The folder contents survived this run, but the accepted block and recovery contract did not. Include all applicable tracked paths in the apply observation and add a public-command regression covering this case.
+
+**Falsification ledger**: In a detached copy of b925187e, added a scratch test using `_install`, `_diverge_base`, public stage and apply, and selected an existing tracked regular file absent from `staged_files`. Replaced `.agents/skills/_data/vendor_targets.yml` with a directory containing `data`, then invoked apply with `--force`. `/Users/kendal30/conda_envs/lhm/bin/python -m pytest -q -s bootstrap/tests/test_upgrade.py::test_review_noop_tracked_path_becomes_directory --tb=short` on Python 3.13.13 failed the expected refusal assertion: apply returned 0 (1 failed). This is a controlled change between commands, not an arbitrary concurrent change after a check. The scratch test was not added to the implementation.
+
+Coverage: inspected the recorded Boundary B and the implementation's classification, staging and apply write-set checks, and independently challenged the no-op post-stage case. This is an interim pass: the two mapped required failures remain open, and other planned observation points, recovery, hostile metadata, symlink behavior, independent Security Review, and any corrected implementation were not independently tested here. No implementation verification or completion is claimed; the plan remains implementing.
