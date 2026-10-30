@@ -23,9 +23,8 @@ awaiting-plan-review -> revising-plan -> ready-to-implement
 
 Each status names **who holds it next**. Opening a plan archives its source
 proposal in the same commit. Name the plan
-`<YYYY-MM-DD>-<slug>.md`, using its opening date, and create a sibling
-document-owned evidence folder with the same stem. That folder archives with
-the plan; shared tests, scripts, and assets stay in their canonical homes.
+`<YYYY-MM-DD>-<slug>.md`, using its opening date. Plans need no folder by
+default; shared tests, scripts, and assets stay in their canonical homes.
 
 **Reviews, responses and decisions append and are never edited. Operative
 cells — Scope, Sequence, Acceptance criteria, Verification — revise in place
@@ -136,7 +135,7 @@ Maintainer check it.
 
 ## Keep the plan short
 
-A plan is one file by default: reviews, responses and records are appended to it. Keep what goes in it small. When something long would crowd it, give that its own file and cite it by path.
+A plan is one file by default: reviews, responses and records are appended to it. Keep what goes in it small. Create a separate artifact only when evidence genuinely needed for implementation or an existing required safety or security ceremony cannot reasonably fit in the concise record or its canonical home. Explain why and cite it in the plan. Do not create sidecars for reviewer convenience or to evade a length limit. Reviews accept concise summaries and may verify when necessary.
 
 * **Count words, not lines — never unwrap lines to look short.** Keep an
   opening plan body to **≤ 1,000 words (~6 KB)**, `## Acceptance criteria` to

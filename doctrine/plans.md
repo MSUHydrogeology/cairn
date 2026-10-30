@@ -40,10 +40,14 @@ flowchart TD
 ```
 
 The plan-open commit creates the plan and archives the source
-proposal. Name the plan `<YYYY-MM-DD>-<slug>.md`, using its opening date, and
-create a sibling document-owned evidence folder with the same stem; that
-folder archives with the plan. Shared tests, scripts and assets stay in their
-canonical homes. Proposal and strategy files use
+proposal. Name the plan `<YYYY-MM-DD>-<slug>.md`, using its opening date. A
+plan needs no folder by default; shared tests, scripts and assets stay in
+their canonical homes. A separate artifact is allowed only when evidence
+genuinely needed for implementation or an existing required safety or security
+ceremony cannot reasonably fit in the concise record or its canonical home;
+explain why and cite its path in the plan. Do not
+create sidecars for reviewer convenience or to evade a length limit. Reviews
+accept concise summaries and may verify when necessary. Proposal and strategy files use
 `<YYYY-MM-DD>-<author>-<slug>.md`. Retain opening dates when archiving and do
 not rename existing archived records. Each status names who holds it next.
 

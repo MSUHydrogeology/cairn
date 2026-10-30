@@ -15,7 +15,10 @@ It is intended to be cited by:
 
 * **Proposals** that frame an architecture-review program.
 * **Plans** that execute such a program — in-flight assessment artifacts
-  live under the plan's folder, not the top-level `dev/`.
+  needed to carry out implementation may live alongside the plan only when
+  their evidence cannot reasonably fit in the concise record or its canonical
+  home; explain why and cite each artifact in the plan. Do not create them to
+  provide review evidence.
 * **Assessment artifacts** the program produces.
 
 When future architecture reviews run, they cite back to this document
