@@ -194,3 +194,23 @@ Coverage: inspected the recorded Boundary B and the implementation's classificat
 **Falsification ledger**: In an isolated archive of a584f84d, modified the existing `TestTrackedDirectoryCollisions::test_noop_tracked_file_becoming_directory_blocks_apply` to remove `directory_observed` from the freshly written stage metadata before replacing the selected unchanged tracked file with a directory. `/Users/kendal30/conda_envs/lhm/bin/python -m pytest -q bootstrap/tests/test_upgrade.py::TestTrackedDirectoryCollisions::test_noop_tracked_file_becoming_directory_blocks_apply --tb=short` on Python 3.13.13 failed (1 failed): public apply with both override flags returned 0 and reported lockfile and base-cache advancement. This models the missing field in an older stage; it does not measure arbitrary concurrent changes.
 
 Coverage: inspected the final change's metadata validation and directory gate and challenged an omitted observation list. This is an interim pass: final-commit Boundary B is absent, two mapped required test failures remain open, and other stage metadata changes, containment, symlinks, recovery and corrected implementation were not independently tested here. No Security Review clearance or implementation verification is claimed.
+
+## Interim code review follow-up -- Codex GPT-6.1 Sol -- 2026-10-30
+
+**Reviewed commit**: a6703b494944fdbe349d2d2173b4899af1cef8ca
+**Reviewed range**: a584f84d3f749b947a71e2399aa0578502208ff1..a6703b494944fdbe349d2d2173b4899af1cef8ca
+**Tier**: Internal
+**Findings**: raised; interim, not a completed code review
+**Bounding**: WIDER RUN REQUIRED -- establish that apply checks the applicable tracked destinations even when the project-controlled observation list is present but incomplete.
+
+**Foundations**:
+
+1. **Does it do what it claims?** The new guard refuses a missing `directory_observed` field, but an empty field lets the original post-stage no-op collision advance under both overrides -- `bootstrap/_scaffold/upgrade.py:3198`, `:3428` and the ledger below.
+2. **Best alternative.** Validate the stage's observation list against an independently established applicable tracked set, or use that set directly at apply; retain the early missing-field refusal -- `bootstrap/_scaffold/upgrade.py:1393`, `:3198`, `:3424`.
+3. **What would show it wrong?** A controlled empty-list stage and directory transition should refuse apply before lockfile advancement; the public-command result is in the ledger below.
+
+**P1 -- A present but empty observation list bypasses the block.** Apply requires the key but accepts `[]`. In a stage with a tracked no-op destination absent from `staged_files`, replacing its observation list with `[]` and then changing that destination to a directory makes apply return 0 with `--force --ack-review-only`. A project-controlled stage can lose one or all observations, and the list's presence does not establish its completeness. The satisfier is a guard derived from an independent set of applicable tracked destinations, with public-path tests for incomplete stage metadata; the missing-field regression remains useful.
+
+**Falsification ledger**: In a separate local clone at a6703b49, changed only the setup of `TestTrackedDirectoryCollisions::test_noop_tracked_file_becoming_directory_blocks_apply[True]` from deleting `directory_observed` to setting it to `[]`. `/Users/kendal30/conda_envs/lhm/bin/python -m pytest -q 'bootstrap/tests/test_upgrade.py::TestTrackedDirectoryCollisions::test_noop_tracked_file_becoming_directory_blocks_apply[True]' --tb=short` on Python 3.13.13 failed: public apply returned 0 where refusal was asserted (1 failed). Restoring the test file and running the unmodified two-case node passed (2 passed). This measures a controlled stage edit and path transition, not a concurrent change after a check. The scratch edit was not added to the implementation.
+
+**Covered**: claims and public path (#1-2), empty-list edge case (#3), fail-closed behavior (#4), reuse of existing stage validation (#5), C1 and `bootstrap/UPGRADE.md:242` contract (#6), open-plan placement (#7), accepted preservation scope (#8), and the guard/test satisfier (#9), at the cited lines and ledger commands. **Not covered / low confidence**: a one-path omission, each applicable destination, symlink precedence, other original observation points, full mapped verification, and Security Review clearance. The two mapped failures and final Boundary B remain open; the plan stays implementing.
