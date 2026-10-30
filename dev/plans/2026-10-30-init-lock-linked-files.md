@@ -121,3 +121,26 @@ Both required reviews accepted the plan. R1 accepted: C1 now includes the existi
 **Non-pass disposition**: an earlier run on `7aa7417b` had 194 passed and one failed assertion because the vendor-wrapper alias uses its own unchanged remedy rather than `_refuse_if_linked`'s shared remedy. The assertion was corrected in `89206da8`; all mapped checks above then passed. No known mapped check remains unmet.
 
 **Omissions**: no full-tree certification or Maintainer AST re-anchor; both remain separate ceremonies. No concurrent path replacement was exercised; the check/read race and separate fidelity-manifest reader remain outside this change. The canonical Python 3.13.13 interpreter was invoked explicitly in the separate clone.
+
+## Code review -- Codex GPT-6.1 Sol (Internal Reviewer) -- 2026-10-30
+
+```
+Reviewed commit: 89206da8 (implementation); 46a5a191 (verification)
+Target: C1 and Boundary B
+Prior code findings: none
+Elapsed: approximately 5 minutes; tokens: unknown
+```
+
+**Tier**: Internal. **Verdict**: REVISE. **Bounding**: WIDER RUN REQUIRED.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The guard precedes `exists()` and `read_bytes()` in `bootstrap/_scaffold/upgrade.py:1793-1800`; the public linked-path and ordinary controls passed (5 tests, Python 3.13.13).
+2. **Best alternative.** Reuse `_refuse_if_linked` for leaf and ancestor checks (`upgrade.py:156-175`; `security.py:110-155`). Atomic reads address a wider threat than C1 accepts.
+3. **What would show it wrong?** A planted link migrating, changed snapshots, or an ordinary file failing would defeat C1. The public outside-link test failed under guard removal (exit 0 instead of 2); the unmutated control passed.
+
+**R1 — blocking: complete guide-reader checks.** Boundary A requires finding changed-file readers and running owning checks. The Boundary B record lists none for `bootstrap/UPGRADE.md`, yet `test_install_time_onboarding.py:372,384`, `test_review_stance_in_shipped_files.py:1487,1497`, `test_upgrade_removes_retired_files.py:1783`, `test_verify_integrity.py:1439,1446`, and `test_next_session_local_note.py:526` read it. Four guide-reading nodes passed in the reviewer's isolated copy; the author still owes clean-commit Boundary B evidence. Run and record relevant owning nodes; explain omissions.
+
+**Falsification ledger.** Surfaces: mapped loop, helper, alias resolver, guide and behavior table (`upgrade.py:1531-1580,1792-1823`; `SECURITY_MUTATIONS.md:120`). Edge attempt: outside, inside, dangling, linked-parent and ordinary digest passed (5 tests). Mutation: unmutated control 5 passed; one guard-removal mutant killed by outside-link node, 1 failed; survivors and measured equivalents none. Residual: no concurrent swap, full suite, re-anchor or per-destination mutation. Separate code Security Review remains owed.
+
+**Covered**: claims and fail-closed order (`upgrade.py:1793-1800`); public entry and edges (5 public nodes); design/reuse (`security.py:110-155`, `upgrade.py:1531-1580`); document consistency/drift (`UPGRADE.md:430-452`, `SECURITY_MUTATIONS.md:120`); lifecycle/scope (`plan C1`, Boundary B); satisfier (R1). **Not covered / low confidence**: concurrent replacement, every mapping mutated separately, unrelated upgrade actions and certification ceremonies.
