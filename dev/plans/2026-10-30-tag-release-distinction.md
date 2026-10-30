@@ -247,3 +247,21 @@ snippet markers.
 **Known omissions**: live GitHub state and cached archive contents are not
 verified by this helper; Release notes and source links remain a human review.
 Elapsed implementation verification was about 2 minutes; token use unknown.
+
+## Code review -- Codex GPT-6.1 Terra (Reviewer) -- 2026-10-30
+
+**Reviewed commit**: `85a8af1cfdd1de273fe2e00242efe360c44b8e5a`; verification record `147128ea`.
+**Obligation**: Internal. **Tier**: Internal. **Verdict**: REVISE.
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: the guide separates publication from the signed tag and the checker compares the remote peeled ref with the independently supplied gate SHA (`docs/release-process.md`, The cut; checker `_parse_remote_refs`).
+2. **Best alternative.** Retain the read-only helper with a total response deadline; manual checking would lose the accepted repeatable comparison (plan C1 and Protocol).
+3. **What would show it wrong?** A misleading Release or substituted tag passing, or an unbounded remote read, would defeat the check (plan Protocol; finding below).
+
+**P1 (blocking) — API read lacks the required total time bound.** `_fetch_release` passes 30 seconds to `opener.open` and then calls `response.read` without a deadline. That timeout limits socket inactivity, not total response time: a peer sending bytes periodically can keep the read open beyond 30 seconds. A local socket-pair probe with a 0.1-second timeout read five bytes sent every 0.06 seconds in 0.32 seconds. The plan requires the read bounded to 30 seconds; enforce and test an overall deadline, including slow-drip input.
+
+**Falsification ledger**: Wrong commit, duplicate and unexpected refs are refused by parser branches; tests exercise each through `main`. The malicious Git configuration fixture demonstrates an effective rewrite control and inspects the isolated child environment, but substitutes the transport for the final read. API timeout falsified as above. Verification record names clean commit, interpreter, mapped checks and omissions; it does not resolve the deadline gap. **Bounding**: WIDER RUN REQUIRED for a slow-drip deadline check after repair.
+
+**Covered**: acceptance and failure direction (C1 and parser); trust inputs and reuse (Git isolation and hostile fixture); drift, consistency and scope (guide and plan); test satisfier and verification record (Boundary B). **Not covered**: live GitHub, archive bytes, signature verification, full suite or separate Security Review. No mutations run.
