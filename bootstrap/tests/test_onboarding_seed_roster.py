@@ -175,9 +175,12 @@ def test_refuses_ambiguous_markers_without_writes(
 ) -> None:
     """Ambiguous boundaries refuse before planning, inventory or lock writes."""
     cfg = tmp_path / "profile.yml"
+    module_lines = "  - reflections\n"
+    if damage == "crossed-entry":
+        module_lines += "  - dual-review\n"
     cfg.write_text(
         "project_name: MarkerAmbiguity\ntest_command: pytest\nmodules:\n"
-        "  - reflections\n  - dual-review\n", encoding="utf-8")
+        + module_lines, encoding="utf-8")
     args = ["--config", str(cfg), "--target", str(tmp_path),
             "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]
     assert main(args) == 0
