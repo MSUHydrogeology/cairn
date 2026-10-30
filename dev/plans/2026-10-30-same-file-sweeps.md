@@ -1,7 +1,7 @@
 # Plan: Detect and record same-file sweeps
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-same-file-sweeps.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30
@@ -265,3 +265,19 @@ inspection properties remain required; this changes who performs them, not
 what they must establish. Maintainer decisions remain with the Maintainer.
 The earlier partial evidence records agent-run checks and inspections; final
 Boundary B and independent review remain required.
+
+## Implementation verification -- Codex GPT-6 -- 2026-10-30
+
+**Boundary B mode**: wide. Governing and installed coordination and tracker guidance, both advisory tool copies, their tests, session consumers and onboarding paths are covered by the reviewed mapping; a narrower bound would not cover the cross-surface contract. **Certified by**: pending.
+
+**Tested commit**: `76b5dbccbd3231b992c5daddb403f87e8b6b3d0d`. **Reviewed range**: `86223682d76ca180fed40831ead8f9505d6376f5..76b5dbccbd3231b992c5daddb403f87e8b6b3d0d`; the implementation commits are `1631e59d`, `566acce0`, and `76b5dbcc` within that range, which also includes unrelated work. **Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13. A fresh detached worktree at the tested commit was clean before and after. Prior manual probes and installed-output inspection at `566acce0` remain applicable: the later implementation commit adds only the doctrine assertion.
+
+| Command (Python 3.13.13) | Result | Test-reported time |
+|---|---|---|
+| `python -m pytest -q bootstrap/tests/test_evolution_infer.py bootstrap/tests/test_session_binding_gate_and_printing_hold.py` | 65 passed | 2.34s |
+| `python -m pytest -q bootstrap/tests/test_incident_trackers_module.py bootstrap/tests/test_coordination_broad_intent.py bootstrap/tests/test_intents_tool.py` | 147 passed | 10.25s |
+| `python -m pytest -q bootstrap/tests/test_default_security_stance.py bootstrap/tests/test_onboarding_seed_roster.py bootstrap/tests/test_review_and_verification_rules_ship.py bootstrap/tests/test_stewardship_rules_ship.py` | 120 passed | 2.03s |
+| `python scripts/claim_check.py <file>` for each of the seven changed guidance Markdown files named in the partial note | all passed | under 1s combined |
+| `python scripts/check_cairn.py`; `python scripts/link_check.py`; `python scripts/sync_doc_snippets.py --check`; `python scripts/quality_gate.py --sub neutrality --sub redundancy` | all passed; neutrality and redundancy each had zero failures | timing not captured |
+
+**Non-pass disposition**: no test failures, skips, xfails or xpasses reported. Quality gates reported informational items only. **Plan-specific acceptance commands**: the real gate's control and S2 prevented-impact mutation run in `test_evolution_infer.py`; the installed tool and coordination module, human inspection scenarios, tracker and reader checks are recorded in the preceding notes. **Known omissions**: the proposed historical incident lacks confirmation and was not recorded as occurred; external links were not probed. No full certification was run. `Implementation verified at 76b5dbccbd3231b992c5daddb403f87e8b6b3d0d`; handed to independent code review.
