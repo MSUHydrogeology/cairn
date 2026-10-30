@@ -5,8 +5,8 @@ humans — i.e. it can staff a read from a different agent type or
 from a different person.
 **Adds to:** the review section of `dev/agent_collaboration.md`.
 
-Every install already carries the one review, the nine lenses of
-the review sweep and the scope-reduction trap, in
+Every install already carries the review, the nine-lens reading aid
+and the scope-reduction trap, in
 `dev/agent_collaboration.md` > "The review sweep". This module adds
 one thing: how a team with two agent types, or several people,
 staffs a read the Maintainer has called. `AGENTS.md` > "Review"

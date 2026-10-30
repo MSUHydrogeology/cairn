@@ -30,8 +30,8 @@ which a reviewer never reopens.
 **Each pass opens with a `**Foundations**` block** of three lines, one
 answer per question, each ending in the file, test, line or command
 that backs it. A bare "yes" with nothing behind it is the "checked"
-failure the sweep already names. The nine lenses (below) are where the
-evidence for the three answers comes from, not a second checklist.
+failure the lenses can help expose. The nine lenses (below) are a reading aid,
+not a required checklist; the answers still need evidence and named gaps.
 
 **Improve means recommend.** The reviewer proposes the better version;
 "don't do this" and "do it differently" count. The author decides, and a
@@ -335,8 +335,9 @@ is doubtful. Copying the implementation's command does not satisfy that ledger.
 **When a finding or claim says a value must reach every member of a set**
 (every call site, every rendering path), list the set from the tree, not the
 diff, and mutate each member, in a separate copy; reading the diff does not
-settle it. A mutation ledger reports each mutant as killed, survived or
-equivalent, beside an unmutated control run, never as a bare "N of M killed".
+settle it. A mutation summary names the unmutated control, total mutants and
+killed count; it names each survivor and each measured equivalent with its
+reason, never as a bare "N of M killed". An unmeasured equivalence is a survivor.
 A mutant is one deliberate break, made to see whether any check notices: it is
 killed if some check fails on it, survived if every check still passes, and
 equivalent if the break changes no behaviour. Equivalence is measured, not
@@ -403,9 +404,9 @@ the skepticism; a clean pass whose three answers are evidenced and
 whose gaps are named does not.
 
 The standing form of that discipline is the **review sweep** — a fixed
-roster of lenses every reviewer works through and **reports coverage
-on**, each lens being **where the evidence for the review's three
-answers comes from**, not a second checklist. It exists because the
+roster of lenses reviewers can use as a reading aid, not a checklist they
+must complete or report lens by lens. Each lens can suggest where evidence
+for the review's three answers may come from. The roster exists because the
 most common first-pass miss is not a wrong judgment but an *unswept
 category*: the reviewer applied a narrow lens and never looked at a
 whole class of failure, and a later reader catches it not by being
@@ -476,19 +477,15 @@ where this change's bug lives.
    label it a scope-cut, take the `accept` disposition, and be
    conformant with every doctrine at once.
 
-**Falsifiable coverage, not "checked."** A swept lens is credible only
-if its claim is *falsifiable* — it cites the file path, test node,
-line, or command output that backs it ("#2: `tests/contract/foo.py::test_bar`
-calls the public entry"). A bare "#2: checked" is an *incomplete*
-review, not a pass. This is the guard against the sweep becoming a
-self-certification ritual.
+**Falsifiable evidence, not "checked."** A cited claim is credible only
+if it is *falsifiable* — it cites the file path, test node, line, or command
+output that backs it. A bare "checked" is an *incomplete* review. This is the
+guard against review becoming a self-certification ritual.
 
-**Signal the sweep is going ritual.** A coverage line that converges on
-a uniform "all lenses swept, clean" *across* changes — with no
-difference in finding density between a trivial change and a complex one
-— is the sweep going hollow, not the changes getting cleaner. When that
-pattern shows, the sweep has become a box-tick: tighten the lenses or
-trim the roster. The negative-space half of the coverage line
+**Signal the sweep is going ritual.** A coverage line that makes the same unsupported claims of breadth and
+confidence *across* changes — with no difference in finding density between
+a trivial change and a complex one — suggests the reading aid has become a
+box-tick. The negative-space half of the coverage line
 (*Not covered / low confidence*, below) is the early antidote — it
 forces naming what was *not* covered, which a hollow all-clear cannot.
 
@@ -504,11 +501,10 @@ For lens #2 (production path), for example:
 * **Code review** — does the landed test *actually call the public
   path* today?
 
-**The sweep is a floor, not a ceiling**, and it **never silently
-downgrades a declared-`required` review tier.** It names the minimum
-breadth to cover and report; its negative-space line tells the Maintainer
-what was not covered (see *The coverage line*, below), and a tier the
-lifecycle declared `required` still runs regardless.
+The reading aid does not change or downgrade a declared-`required` review
+tier. The coverage line tells the Maintainer what was not covered (see *The
+coverage line*, below), and a tier the lifecycle declared `required` still
+runs regardless.
 
 The domain adds its own probes — units, coordinate systems, numerical
 edges, resource resolution — so each adopter extends the roster with
@@ -644,12 +640,10 @@ Otherwise state the norm and accept the occasional miss.
 
 ## The coverage line — what the pass did not cover
 
-The review sweep is the one pass that runs, and it ends with a **two-part
-coverage line**. Not a verdict — a map of what the pass did and did not
+The review ends with a **two-part coverage line**. Not a verdict — a map of what the pass did and did not
 cover:
 
-* **Covered** — the lenses swept, each with its falsifiable citation
-  (the file / test-node / line / command that backs it).
+* **Covered** — what the pass examined, with evidence for its answers.
 * **Not covered / low confidence** — the negative space: "did not
   exercise the scientific math", "could not run the sibling-repo test",
   "no run against real data, only the fixtures." A
@@ -695,18 +689,16 @@ guesses rather than form their own. Brief on facts; trust the reviewer
 to bring the lens.
 
 **The review sweep is not telegraphing.** The standing review sweep
-(above) might look like it contradicts this — it hands the reviewer a
-list of lenses. It does not, and the distinction is exact: the sweep is
-a **generic, change-agnostic** roster of perspectives every reviewer
-applies to *every* change and reports coverage on. Telegraphing is
+(above) might look like it contradicts this — it offers the reviewer a
+list of lenses. It does not, and the distinction is exact: the sweep is a
+**generic, change-agnostic** roster of perspectives available to every
+reviewer, not a list that must be applied or reported for every change. Telegraphing is
 supplying **change-specific judgment** — "the bug is probably in the
 override path", "focus on the CRS handling here" — which seeds the
 answer for *this* change. A standing lens roster is the former; a hint
-about where this change fails is the latter. The reviewer reporting
-*which generic lenses they swept* (the coverage line) is the opposite
-of a briefing agent seeding *what to find*. Keep the brief on facts;
-the sweep is the reviewer's own standing instrument, not a lens you
-handed them.
+about where this change fails is the latter. The reviewer citing evidence and gaps is the opposite of a briefing agent
+seeding *what to find*. Keep the brief on facts; the roster remains a
+reviewer's optional reading aid, not a lens the brief assigns.
 
 The same applies to any review handoff and to any task brief at
 session start (an implementing agent picking up a plan): over-detailed
@@ -771,10 +763,10 @@ way earns trust the way a result does.
 ## Adaptation
 
 The review role is one any contributor can fill (`roles.md`).
-**Every install receives the review sweep and the scope-reduction trap**:
+**Every install receives the nine-lens reading aid and the scope-reduction trap**:
 they are in the review-loop document the kernel installs, and they are no
-longer team-gated. A solo, single-agent team runs the one review with its
-nine lenses and its trap, and reserves heavier scrutiny for genuinely
+longer team-gated. A solo, single-agent team can use the lenses and trap as
+reading aids, and reserves heavier scrutiny for genuinely
 contract-touching changes. What stays team-gated is staffing guidance
 (`dimensions/`): a team with two agent types, or multiple humans, installs
 the `dual-review` module for how to staff a read the Maintainer has called.

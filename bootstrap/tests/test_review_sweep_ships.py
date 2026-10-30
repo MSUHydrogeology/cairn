@@ -1,7 +1,6 @@
-"""Every install receives the review sweep, not only teams that install a module.
+"""Every install receives a nine-lens reading aid, not only module teams.
 
-The nine lenses a reviewer works through, the rule that a lens names what backs
-it, the two-part coverage line that ends a review, and the falsification ledger
+The nine lenses as a reading aid, evidence and coverage rules, and the falsification ledger
 a clean code review must show used to live only in the `dual-review` module,
 which installs for teams with two agent types. A solo team, and any team that did
 not select the module, was asked for a coverage line it had never been shown.
@@ -94,25 +93,27 @@ _SWEEP_OBLIGATIONS = {
     "a-clean-pass-is-treated-with-skepticism":
         r"A review that finds nothing on a complex change is treated with "
         r"skepticism, not relief",
-    "a-lens-is-where-the-evidence-for-the-three-answers-comes-from":
-        r"where the evidence for a review's three answers comes from",
-    "the-sweep-applies-to-the-reviews-the-lifecycle-calls-for":
-        r"The sweep applies to the reviews the lifecycle calls for.{0,80}"
-        r"A trivial change with no review owes none",
-    "a-lens-names-the-file-test-line-or-command-that-backs-it":
-        r"names the file path, test node, line or command output that backs it",
+    "the-roster-is-a-reading-aid-not-a-required-checklist":
+        r"reading aid, not a required checklist or reporting format",
+    "the-roster-does-not-require-lens-by-lens-reporting":
+        r"without reporting every lens",
+    "the-lenses-can-inform-review-stages":
+        r"lenses can inform proposal, plan and code review",
+    "cited-claims-name-evidence":
+        r"A cited claim is credible only if it names the file path, test node, "
+        r"line or command output",
     "a-bare-checked-is-an-incomplete-review":
-        r"A bare .#2: checked. is an incomplete review, not a pass",
+        r"A bare .checked. is an incomplete review, not a pass",
     "coverage-line-covered-half":
-        r"Covered — the lenses swept, each with its citation",
+        r"Covered — what the pass examined, with evidence for its answers",
     "coverage-line-not-covered-half":
         r"Not covered / low confidence — the negative space",
     "coverage-line-does-not-end-in-a-recommendation-for-more-review":
         r"does not end in a recommendation for more review",
-    "the-sweep-is-a-floor-never-a-downgrade-of-a-declared-tier":
-        r"a floor, never a downgrade of a declared tier",
-    "a-project-adds-its-own-probes-after-the-nine":
-        r"A project adds its own probes after the nine",
+    "the-reading-aid-does-not-downgrade-a-declared-tier":
+        r"reading aid does not change or downgrade a declared required review tier",
+    "a-project-adds-domain-probes":
+        r"Projects may add probes for their domain and high-risk surfaces",
     "a-clean-code-review-shows-a-falsification-ledger":
         r"A clean code review shows a falsification ledger",
     "ledger-surfaces-probed":
@@ -126,9 +127,9 @@ _SWEEP_OBLIGATIONS = {
         r"Residual risk — what remains unverified",
     "ledger-mutation-when-a-claim-names-a-set":
         r"Mutation, when a claim names a set",
-    "ledger-mutation-is-reported-against-an-unmutated-control":
-        r"killed, survived or equivalent beside an unmutated control run, "
-        r"never as a bare count",
+    "ledger-mutation-summary-names-control-counts-and-exceptions":
+        r"unmutated control, total mutants and killed count; name each survivor "
+        r"and each measured equivalent with its reason",
     "a-reviewer-who-tried-to-break-it-has-cleared-the-gate":
         r"A reviewer who tried to break the change and reports honestly that "
         r"they could not has cleared the gate; a reviewer who only read it "
@@ -139,8 +140,8 @@ _SWEEP_OBLIGATIONS = {
 _POINTER_OBLIGATIONS = {
     "pointer-names-the-sweep-in-the-loop-document":
         r"dev/agent_collaboration\.md > .The review sweep.",
-    "pointer-says-the-answers-rest-on-nine-standing-lenses":
-        r"rest on the nine standing lenses",
+    "pointer-says-nine-lenses-are-a-reading-aid":
+        r"nine-lens reading aid lives in dev/agent_collaboration\.md",
     "pointer-says-a-bare-checked-is-an-incomplete-review":
         r"[Aa] bare .checked. is an incomplete review",
     "pointer-says-the-coverage-line-names-what-was-not-covered":
@@ -400,8 +401,8 @@ def test_deleting_the_not_covered_half_is_reported(rel: str) -> None:
 def test_deleting_the_scope_sentence_is_reported(rel: str) -> None:
     sweep = _sweep(_text(rel))
     assert _missing(sweep, _SWEEP_OBLIGATIONS) == []
-    mutant = _delete_sentence(sweep, "calls for")
-    assert "the-sweep-applies-to-the-reviews-the-lifecycle-calls-for" in _missing(
+    mutant = _delete_sentence(sweep, "lenses can inform")
+    assert "the-lenses-can-inform-review-stages" in _missing(
         mutant, _SWEEP_OBLIGATIONS)
 
 
@@ -465,8 +466,7 @@ _MODULE_IDS = {SHIPPED_MODULE: "shipped-module", OWN_MODULE: "own-module"}
 _MODULE_ABSENT = {
     **{f"module-has-{label}": pattern for label, pattern in _LENSES.items()},
     "module-has-the-citation-rule":
-        r"Falsifiable coverage|names the file path, test node, line or command "
-        r"output|bare .#2: checked.",
+        r"Falsifiable evidence|A cited claim is credible|bare .checked.",
     "module-has-the-ledger-items":
         r"Surfaces probed|A negative or edge-case attempt|Residual risk — what "
         r"remains|Probed edge cases|Failure modes tested|Verification run "
@@ -503,7 +503,7 @@ def test_the_module_carries_no_lens_citation_rule_or_ledger(rel: str) -> None:
 @pytest.mark.parametrize("rel", _MODULE_FILES, ids=_MODULE_IDS.get)
 def test_restoring_the_roster_into_the_module_is_reported(rel: str) -> None:
     assert _module_carries(_text(rel)) == [], "control: the module is clean"
-    roster = _sweep_part(SHIPPED_LOOP, "1. Claims", "The sweep applies to")
+    roster = _sweep_part(SHIPPED_LOOP, "1. Claims", "The lenses can inform")
     found = _module_carries(f"{_text(rel)}\n\n> {roster}\n")
     assert "module-has-lens-4-silent-failure-fail-closed" in found
     assert "module-has-lens-1-claims" in found
@@ -512,7 +512,7 @@ def test_restoring_the_roster_into_the_module_is_reported(rel: str) -> None:
 @pytest.mark.parametrize("rel", _MODULE_FILES, ids=_MODULE_IDS.get)
 def test_restoring_the_citation_rule_into_the_module_is_reported(rel: str) -> None:
     assert _module_carries(_text(rel)) == [], "control: the module is clean"
-    rule = _sweep_part(SHIPPED_LOOP, "Falsifiable coverage", "End with a two-part")
+    rule = _sweep_part(SHIPPED_LOOP, "Falsifiable evidence", "End with a two-part")
     assert "module-has-the-citation-rule" in _module_carries(
         f"{_text(rel)}\n\n> {rule}\n")
 

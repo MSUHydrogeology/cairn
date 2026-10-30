@@ -157,7 +157,8 @@ A plan is one file by default: reviews, responses and records are appended to it
   the commit and adds only a decision, a finding, or a departure from the
   criteria.
 * **Cite evidence by path, not by quotation.** A falsification ledger has one
-  line per probe, with no output pasted.
+  line per probe, with no output pasted. For a set mutation, summarize the
+  control, total and killed count; name survivors and measured equivalents.
 * **Read by section.** Give each pass, log or record its own `##` heading,
   titled by what it holds and when it was written. Readers list them with
   `grep -n '^## ' <plan>` and read only the sections the job needs.

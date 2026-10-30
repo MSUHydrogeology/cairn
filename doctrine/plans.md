@@ -803,7 +803,7 @@ the author.
 
 **Coverage line** (see `doctrine/dual-review.md` > "The coverage line"):
 
-* **Covered** -- <review-sweep lenses swept, each with a falsifiable citation>
+* **Covered** -- <what the pass examined, with evidence for its answers>
 * **Not covered / low confidence** -- <the negative space>
 ```
 
@@ -994,13 +994,13 @@ ledger has five items, defined once, in that document:
 * **Negative / edge-case attempt** — at least one, when applicable.
 * **Verification** — the checks run (or consciously not run, with why).
 * **Residual risk** — what remains unverified.
-* **Mutation**, when a finding or claim names a set: each mutant (a deliberate
-  break) killed (some check fails on it), survived (every check still passes)
-  or equivalent (it changes no behaviour) beside an unmutated control, never a
-  bare count (`dual-review.md` > "Boundary C").
+* **Mutation**, when a finding or claim names a set: list the set from the tree
+  and mutate each member. Name the unmutated control, total mutants and killed
+  count; name each survivor and each measured equivalent with its reason. An
+  unmeasured equivalence is a survivor (`dual-review.md` > "Boundary C").
 
 **End with the coverage line** (`doctrine/dual-review.md` > "The coverage
-line"): **Covered** (the review-sweep lenses swept, with citations) / **Not
+line"): **Covered** (what the pass examined, with evidence) / **Not
 covered / low confidence** (the negative space). For a clean final pre-archive
 review this composes with the falsification ledger above — the ledger *is* the
 "Covered" evidence, and the negative space is the residual the Maintainer

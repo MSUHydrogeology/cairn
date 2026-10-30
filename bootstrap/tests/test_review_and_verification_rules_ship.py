@@ -95,15 +95,16 @@ _OBLIGATIONS = {
         r"separate copy of that commit",
     "figures-are-measured-on-the-commit":
         r"measured on its bytes",
-    # A set claim is settled by mutating every member, and reported in full.
+    # A set claim is settled by mutating every member; summary counts killed
+    # mutants but names each survivor and measured equivalent.
     "set-claims-are-listed-from-the-tree-and-mutated":
         r"listing the set from the tree and mutating each member",
-    "ledger-reports-each-mutant-against-a-control":
-        r"against an unmutated control as killed, survived or measured equivalent",
+    "mutation-summary-reports-killed-count-and-exceptions":
+        r"control, total, killed, each survivor and each measured equivalent",
     "ledger-never-reports-a-bare-count":
         r"control, total, killed, each survivor and each measured equivalent",
     "equivalence-is-measured-not-argued":
-        r"measured equivalent; an unmeasured equivalence is a survivor",
+        r"each measured equivalent with its reason. An unmeasured equivalence is a survivor",
     "a-set-claim-is-the-mutation-trigger":
         r"A claim that a value reaches every member of a set",
     "an-equivalent-mutant-passes-the-behaviour-test":

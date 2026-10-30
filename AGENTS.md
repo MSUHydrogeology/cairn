@@ -38,7 +38,10 @@ A fresh reviewer who did not write the work, on the work's side, reads a
 committed version. One review stance applies at every stage. The stage sets
 the questions; no agent picks another kind. Each reviewer
 answers the stage's three questions: should it happen as framed, what is the
-best alternative, and what would show it wrong? Understanding is a precondition of the Decision:
+best alternative, and what would show it wrong? The nine lenses in
+`dev/agent_collaboration.md` are a reading aid; cite evidence for the answers
+and name what the pass did not cover, without a required lens-by-lens report.
+Understanding is a precondition of the Decision:
 if it fails, pause. Lead plain, with precision beneath. A pass starts with three
 evidenced Foundations answers. It recommends improvements; the author decides.
 There is no finding quota. Keep each pass to 300 words: verdict, findings and
@@ -55,11 +58,10 @@ write `unknown` when unavailable. Mutation summaries name the unmutated
 control, total, killed, each survivor and each measured equivalent with its
 reason.
 
-**Every review shows its evidence.** The three answers rest on the nine
-standing lenses in `dev/agent_collaboration.md` > "The review sweep"; each
-cited lens names a path, test, line or command. A bare "checked" is an
-incomplete review. The coverage line that ends the review says what the pass
-did not cover. Code review includes a falsification ledger. Review records
+**Every review shows its evidence.** The nine-lens reading aid lives in
+`dev/agent_collaboration.md` > "The review sweep". A bare "checked" is an
+incomplete review. The coverage line that ends the review says what the pass did not
+cover. Code review includes a falsification ledger. Review records
 append to the artifact and are self-committed by their named author.
 
 The Maintainer alone calls an External read on one named artifact that exists
@@ -149,10 +151,11 @@ or `clean` there.
 Reviewers read a commit, never a shared working tree. All other writing checks
 run on a separate copy of that commit; figures count only when measured on its
 bytes. A claim that a value reaches every member of a set requires listing
-the set from the tree and mutating each member. Report each mutant against an
-unmutated control as killed, survived or measured equivalent; an unmeasured
-equivalence is a survivor. Equivalent means a behavior test through the real
-entry point passes under mutation. Otherwise mutation is the reviewer's choice. A
+the set from the tree and mutating each member. Summarize against an
+unmutated control with total and killed counts; name each survivor and each
+measured equivalent with its reason. An unmeasured equivalence is a survivor.
+Equivalent means a behavior test through the real entry point passes under
+mutation. Otherwise mutation is the reviewer's choice. A
 noncooperating writer can defeat shared-file inspection; coordinate that risk.
 
 Implement an accepted plan and commit your work; there is no per-commit

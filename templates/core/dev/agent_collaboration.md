@@ -95,11 +95,11 @@ a global optimum is required.
 
 A review that finds nothing on a *complex* change is treated with skepticism,
 not relief: a reviewer who reads to confirm that the change works will find that
-it does. Read as if a hidden bug exists, and probe for it. The standing form of
-that discipline is a **fixed, change-agnostic roster of nine lenses**. A lens is
-**where the evidence for a review's three answers comes from** (`AGENTS.md` >
-"Review"), not a second checklist: the most common first-pass miss is not a
-wrong judgment but an *unswept category*. The nine:
+it does. Read as if a hidden bug exists, and probe for it. The nine lenses are
+a **fixed, change-agnostic reading aid**, not a required checklist or reporting
+format. Use them to broaden judgment and probe for hidden failures; cite the
+evidence supporting the three answers and name uncovered areas without
+reporting every lens. The nine:
 
 1. **Claims** — probe every load-bearing claim against the *current* tree
    ("exists / works / is available / is atomic / fails closed"). A **forward**
@@ -137,18 +137,17 @@ wrong judgment but an *unswept category*. The nine:
    correction, and nothing else**; removing accepted work is a scope
    reduction, which only the Maintainer may concede (below).
 
-**The sweep applies to the reviews the lifecycle calls for** — proposal, plan
-and code review. A trivial change with no review owes none.
+The lenses can inform proposal, plan and code review. A trivial change with no
+review owes no review record.
 
-**Falsifiable coverage, not "checked."** A lens a review cites is credible only
-if it names the file path, test node, line or command output that backs it
-("#2: `tests/foo.py::test_bar` calls the public entry"). A bare "#2:
-checked" is an *incomplete* review, not a pass.
+**Falsifiable evidence, not "checked."** A cited claim is credible only if it
+names the file path, test node, line or command output that backs it. A bare
+"checked" is an *incomplete* review, not a pass.
 
 **End with a two-part coverage line** — not a verdict, a map of what the pass
 did and did not cover:
 
-* **Covered** — the lenses swept, each with its citation.
+* **Covered** — what the pass examined, with evidence for its answers.
 * **Not covered / low confidence** — the negative space: "did not exercise the
   scientific math", "could not run the sibling-repo test". A covered-only line
   manufactures false comfort.
@@ -157,11 +156,9 @@ The line does not end in a recommendation for more review. Report the risk and
 the gap; the Maintainer reads the negative space and may ask any reader for
 anything.
 
-**The sweep is a floor, never a downgrade of a declared tier.** It names the
-minimum breadth to cover and report; a review the lifecycle declared `required`
-still runs in full. A project adds its own probes after the nine — units,
-coordinate systems, numerical edges, resource limits — for the checks its
-high-risk surfaces demand.
+The reading aid does not change or downgrade a declared `required` review
+tier. Projects may add probes for their domain and high-risk surfaces, such as
+units, coordinate systems, numerical edges and resource limits.
 
 **A clean code review shows a falsification ledger.** Approving by assertion
 clears nothing. A pre-archive code review that approves carries a ledger of five
@@ -176,8 +173,9 @@ items:
 * **Residual risk** — what remains unverified.
 * **Mutation, when a claim names a set** (every call site, every rendering path)
   — the set is listed from the tree, not the diff, and each member is mutated in
-  a separate copy. Each mutant is reported killed, survived or equivalent beside
-  an unmutated control run, never as a bare count (`AGENTS.md` > "Verification
+  a separate copy. Report the unmutated control, total mutants and killed count;
+  name each survivor and each measured equivalent with its reason. An
+  unmeasured equivalence is a survivor (`AGENTS.md` > "Verification
   boundaries").
 
 A reviewer who tried to break the change and reports honestly that they could
