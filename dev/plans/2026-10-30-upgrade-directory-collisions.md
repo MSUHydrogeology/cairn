@@ -230,3 +230,21 @@ v0.6 board item; repinning and re-anchoring occur at a version cut or when
 the Maintainer asks. This amendment does not authorize a ceremony or waive
 other checks, reviews, or acceptance criteria. Earlier evidence remains a
 record of what was known and done at the time.
+
+## Interim ordinary code review follow-up -- Codex GPT-6.1 Sol -- 2026-10-30
+
+**Reviewed commit**: 4a76dc54 (correction 972386ba and plain-name fixture repair)
+**Tier**: Internal. **Finding**: blocking. **Bounding**: WIDER RUN REQUIRED.
+**Elapsed**: about 1 minute. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Does it do what it claims?** Ordinary destinations pass six focused public tests, but a renamed wrapper can advance after becoming a directory -- `bootstrap/_scaffold/upgrade.py:3204-3215`; ledger below.
+2. **Best alternative.** Also validate the resolved wrapper destination, preserving fresh staging for absence -- `bootstrap/_scaffold/upgrade.py:691-704`, `:1393`.
+3. **What would show it wrong?** Omit that wrapper's observation, make it a directory, and run public apply; ledger below.
+
+**P1 -- Renamed wrapper observation can be omitted.** The required set excludes `core/VENDOR.md`, whose planned destination may be `CLAUDE.md`. Editing project-controlled stage metadata to remove `CLAUDE.md` from `directory_observed`, then replacing the unchanged wrapper with a directory, permits `--apply --force --ack-review-only` to advance the lockfile. An unedited stage passes the controls below. This tampering case fails C1. Close it with an independent resolved-destination check and public regression; preserve absence after fresh staging.
+
+**Falsification ledger**: At 4a76dc54 in an isolated clone, collision, absence recovery and repaired plain-name controls passed (6 passed, Python 3.13.13). A scratch edit to `TestUpgradeModes::test_renamed_wrapper_apply_advances_to_resolved_dst` omitted `CLAUDE.md`, changed the no-op wrapper to a directory, and expected refusal. Public apply returned 0 and reported lockfile/base-cache advancement (1 failed). The restored wrapper control passed (1 passed); the scratch edit was discarded.
+
+**Covered**: claims, public path, edge and refusal (#1-4), ledger; reuse and drift (#5-6), `upgrade.py:691-704`, `bootstrap/UPGRADE.md:242-252`; lifecycle, scope and satisfier (#7-9), C1 and P1. **Not covered**: other wrapper names, all absence states, symlinks, full mapping, Security Review. Plan remains implementing.
