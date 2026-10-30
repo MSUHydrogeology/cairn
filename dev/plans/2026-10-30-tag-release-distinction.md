@@ -265,3 +265,45 @@ Elapsed implementation verification was about 2 minutes; token use unknown.
 **Falsification ledger**: Wrong commit, duplicate and unexpected refs are refused by parser branches; tests exercise each through `main`. The malicious Git configuration fixture demonstrates an effective rewrite control and inspects the isolated child environment, but substitutes the transport for the final read. API timeout falsified as above. Verification record names clean commit, interpreter, mapped checks and omissions; it does not resolve the deadline gap. **Bounding**: WIDER RUN REQUIRED for a slow-drip deadline check after repair.
 
 **Covered**: acceptance and failure direction (C1 and parser); trust inputs and reuse (Git isolation and hostile fixture); drift, consistency and scope (guide and plan); test satisfier and verification record (Boundary B). **Not covered**: live GitHub, archive bytes, signature verification, full suite or separate Security Review. No mutations run.
+
+## Response to code review -- Codex GPT-6.1 Sol -- 2026-10-30
+
+| Finding | Disposition |
+|---|---|
+| P1: API read lacks a total deadline | Fixed in `a6da3bed`: the checker uses a monotonic deadline and decreases the socket timeout before each bounded response chunk. A slow-drip socket-pair test through the public command passes; Boundary B was rerun on that commit. No clearing review was run. |
+
+## Implementation verification -- Codex GPT-6.1 Sol (timeout correction) -- 2026-10-30
+
+**Boundary B mode**: wide. Commit `a6da3bed` closes the timeout-bound gap by
+applying a monotonic deadline to each bounded response-body read. The new public
+command socket-pair test exercises the slow-drip refusal path; the full owning
+test file and all mapped prose and standing gates were rerun.
+
+**Certified by**: pending.
+**Tested commit**: `a6da3bed98d8277d9606b74bc9f5e8db00fd029c`.
+**Reviewed range**: `9d7f0cd20859eeceb01ba25606c1565a7d5fbe92` through `a6da3bed98d8277d9606b74bc9f5e8db00fd029c`.
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13, pytest 9.0.3, macOS.
+**Pre-run state**: clean detached checkout at the tested SHA.
+**Post-run state**: clean detached checkout at the same SHA; `git status --short` empty and `git rev-parse HEAD` unchanged.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python -m pytest bootstrap/tests/test_check_release_publication.py` | 0 | 31 passed; 0 failed, skipped, xfailed or xpassed; includes slow-drip public-command refusal | 0.96 s | unknown |
+| `python scripts/claim_check.py` on the plan and guide | 0 | both passed; no flags | under 1 s each | unknown |
+| `python scripts/link_check.py` on the plan and guide | 0 | both passed; 1 Markdown file each; plan reports 2 external links not probed | under 1 s each | unknown |
+| `python scripts/check_cairn.py` on the plan and guide | 0 | both passed; 1 Markdown file each; plan reports 2 external links not probed | under 1 s each | unknown |
+| `python scripts/quality_gate.py --sub neutrality` | 0 | fail=0, info=43 | 0.88 s | unknown |
+| Reader/pin search and known-positive `PROVENANCE.md` control | 0 | one owning test reference; 6 positive-control matches; no additional byte-pin reader found | under 1 s | unknown |
+| Snippet-marker search in the guide | 1 | no markers; synchronization was unnecessary | under 1 s | unknown |
+
+**Non-pass disposition**: none; the zero-match snippet search is expected.
+The ordinary review's P1 deadline finding is addressed by `a6da3bed` and the
+slow-drip test through `main`; no clearing review was run.
+**Plan-specific acceptance commands**: no live GitHub request, Release
+publication, tag-signature check, archive-byte check, full suite or re-anchor
+was run. Snippet synchronization was unnecessary because the guide contains no
+snippet markers.
+**Known omissions**: live GitHub state and cached archive contents remain
+unverified; Release notes and source links remain a human review. The separate
+Security Review is still owed. Elapsed verification was about 3 minutes; token
+use unknown.
