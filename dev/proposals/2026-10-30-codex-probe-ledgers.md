@@ -67,3 +67,16 @@ None.
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Proposal review -- Codex (model identifier unavailable) -- 2026-10-30
+
+**Verdict:** Support, with one non-blocking clarification. Security Review remains separate.
+
+**Foundations**
+1. **Should it happen as framed?** Yes. The Maintainer asks to remove ledgers while retaining reproducible evidence; the proposal preserves independent review, checks, findings and omissions. Existing ledger requirements appear in `AGENTS.md` and `dev/agent_collaboration.md`.
+2. **Best alternative:** Keep concise results and evidence references, with reproducible probes in tests or scripts, rather than replacing the ledger with another inventory; the proposal's operative section already takes that route.
+3. **What would show it wrong?** A surviving operative inventory, a weakened falsification check, or a decisive probe that cannot be reproduced would contradict the proposal. `bootstrap/tests/test_review_stance_in_shipped_files.py` and `test_review_sweep_ships.py` include positive ledger assertions to update and test.
+
+**Advice:** Make clear in the plan how mutation outcomes and omissions remain honest without recreating per-mutant inventories in records. `AGENTS.md` currently requires naming each survivor and equivalent, while the proposal removes mutation inventories and preserves outcome reporting.
+
+**Coverage:** Read the committed proposal, current template and named ledger assertions; searched the named governing and shipped surfaces for ledger and mutation wording. Did not run tests, inspect every consumer or assess security independently. Elapsed: approximately 2 minutes; tokens: unknown.
