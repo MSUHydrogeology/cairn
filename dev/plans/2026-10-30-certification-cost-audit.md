@@ -1,7 +1,7 @@
 # Plan: Reuse review-sweep installations
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-certification-cost-audit.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal)
 **Opened**: 2026-10-30
 **In brief**: Share each profile's real test installation across the session to avoid repeated setup.
