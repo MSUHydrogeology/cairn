@@ -212,7 +212,7 @@ check, as the archived plan records.
 
 ### 18. Publish and check the GitHub Release — awaiting Decision
 
-The [proposal](../proposals/2026-10-30-codex-tag-release-distinction.md)
+The [proposal](../proposals/archive/2026-10-30-codex-tag-release-distinction.md)
 responded at `a508dfcf`; both widened-scope reviews found no new issues and
 Security Review closed its findings. The cut prepares notes and pushes a tag
 without explicitly publishing the GitHub Release. The author recommends a
@@ -225,7 +225,7 @@ Release and push remain unauthorized.
 
 ### 19. Refuse ambiguous module discovery markers — awaiting Decision
 
-The [proposal](../proposals/2026-10-30-codex-module-marker-ambiguity.md)
+The [proposal](../proposals/archive/2026-10-30-codex-module-marker-ambiguity.md)
 responded to ordinary and Security Reviews at `0ac33887`. A public repeat
 install returned success after a checked task's marker was edited, leaving
 two `reflections` tasks. **Recommend accept as revised:** reuse the shared
