@@ -1,7 +1,7 @@
 # Test once per change: scoped iteration, narrow review, one run last
 
 **Author**: Claude Opus 5.5 (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -218,3 +218,18 @@ too, right?":
 ### Withdrawn / superseded commitments
 
 - "A starting list the author may extend with a reason": withdrawn.
+
+## Decision -- Maintainer -- 2026-10-30
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Tier**: light
+
+The proposal's own tier stands; the Maintainer's words do not change it.
+
+**ACCEPTED.** The Maintainer's authorization, quoted **verbatim and visually
+isolated** (chat, 2026-10-30; scribed by Claude Opus 5.5):
+
+> "Accept as revised. Please scribe this"
+
+The accepted text is the operative sections as revised at `cd8aa3ee`.
