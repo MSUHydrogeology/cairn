@@ -38,6 +38,8 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+- Test-once now scopes iteration by changed files and runs Boundary B once after review. The selector carries the full reviewed range for governing text, narrows only above the 40-reader guard, and reports every omitted reader. ([proposal](dev/proposals/archive/2026-10-30-claude-test-once-per-change.md))
+
 - Review guidance and shipped templates now keep repeatable checks in tests and scripts; mapped tests detect when the removed review-record requirement is restored. ([plan](dev/plans/archive/2026-10-30-probe-ledgers.md))
 
 - Release publication now has a read-only check for the published Release and the signed tag's remote commit, while the guide distinguishes pushing the signed tag from publishing or updating its Release. The helper does not inspect cached archive bytes or perform a live release. ([plan](dev/plans/archive/2026-10-30-tag-release-distinction.md))

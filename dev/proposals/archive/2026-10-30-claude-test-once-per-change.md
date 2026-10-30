@@ -1,7 +1,7 @@
 # Test once per change: scoped iteration, narrow review, one run last
 
 **Author**: Claude Opus 5.5 (Strategy)
-**Status**: accepted
+**Status**: archived
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -289,3 +289,8 @@ omission output. Focused Python 3.13.5 checks passed: 152 tests in 0.39s.
 - `claim_check` -- plan template and planning doctrine passed. Proposal reports 3 historical citation flags in its immutable review record (`:165` and `:173`); no new claim-check flags were introduced by this change.
 
 **Elapsed**: pytest 6.64s; standing gates and prose checks about 1.5s. **Tokens**: unknown. No full suite, Security Review, or re-anchor was run. The earlier 1,325-test Python 3.12.9 run predates this selector fix and is not counted as Boundary B evidence.
+
+**Dispositions**:
+
+- `defer` the frozen-file baseline update for `bootstrap/tests/test_review_and_verification_rules_ship.py` and `bootstrap/tests/test_verification_boundaries.py` to `dev/PLANNING.md` > **Establish the v0.6 forward baseline**. The receiving row names both files. The Maintainer authorized the baseline work board item: “They can each build the machinery, the new baseline does not need to be part of their plans. It can be a work board item for v0.6.” No per-plan re-anchor was performed.
+- `accept` all other accepted scope: delivered by the implementation and fix commits, with Boundary B passed. No other deferred follow-up or scope remainder remains; scope delta is preserved.
