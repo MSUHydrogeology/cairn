@@ -1,7 +1,7 @@
 # Plan: Detect and record same-file sweeps
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-same-file-sweeps.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30
@@ -57,3 +57,42 @@ Boundary A runs the mapping below during iteration; Boundary B repeats it on the
 * Exercise the prescribed inspection in a disposable repository with staged foreign content and an intervening change, and a legitimate separately authored integration; document observations and confirmation limits. Inspect local reconciliation for duplication and sensitive content without publishing it.
 * Run `python scripts/claim_check.py` on changed documents, `python scripts/check_cairn.py`, `python scripts/link_check.py`, applicable snippet checks and `python scripts/quality_gate.py --sub neutrality --sub redundancy`. Establish snippet check mode before use. Resolve any missing required coverage before handoff.
 * Record frozen-file changes for the Maintainer-run ceremony in `bootstrap/REANCHOR_RUNBOOK.md`. Boundary C is independent targeted falsification by the code reviewer.
+
+## Plan review -- Codex gpt-6.1-sol -- 2026-10-30
+
+```
+Reviewed commit: 4a8b89056f5d8bbba0db6c0b0e8a1266a51846c2
+Target: complete opening plan and accepted proposal
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Obligation**: ordinary plan review
+**Tier**: Internal
+**Findings**: raised
+
+**Foundations**:
+
+1. **Should this happen as framed?** The plan carries the accepted human confirmation, serialization, privacy and one-commit counting contract, but its verification mapping still delegates discovery to implementation -- Acceptance criteria C1 and Verification.
+2. **Best alternative.** Keep the existing tracker and gate, and finish the reader search and map its results before implementation rather than add an attribution detector -- Scope and `tools/evolution_infer.py::evaluate_tracker`.
+3. **What would show it wrong.** A required installed reader or public path omitted from the checks, or one commit producing a threshold finding, would show the plan cannot establish the accepted outcome -- Verification and `templates/modules/default-on/incident_log_template.md` > Incidents.
+
+**P1 -- Blocking: complete the verification mapping before implementation.**
+The plan says to search changed paths in tests and manifests and add readers
+found, but does not record that search or its results. It also lists test
+families without mapping each changed invariant and public path to the actual
+checks, and leaves the applicable snippet command unspecified. The template
+requires that mapping before implementation so review can assess whether the
+checks cover the change. Satisfier: perform the controlled search now, name
+readers and installed/public paths found, map each affected behavior to exact
+test files or nodes and standing gates, and identify the applicable snippet
+command or explain why none applies. Include how occurrence date reaches the
+gate's `Date` column, and how the single-commit and two-commit cases are
+exercised through the real entry point.
+
+Covered: accepted scope and its failure signals (proposal revised Proposal and
+Signals); privacy and human confirmation (C1); serialization and staged bytes
+(C1); recurrence and trigger (`tools/evolution_infer.py::parse_incidents` and
+`evaluate_tracker`); lifecycle and verification mapping (plan template >
+Verification). Not covered: execution of scenarios, independent authorship
+confirmation, Security Review, or test runs.
