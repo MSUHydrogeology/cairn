@@ -246,3 +246,26 @@ Windows; a POSIX skip is not accepted as evidence. C2 and the required Windows
 acceptance criterion remain open, so this record does not assert
 `Implementation verified at` and the plan remains `implementing`. No full-suite
 certification, code review, or push occurred.
+
+## Interim code review -- Codex GPT-6 -- 2026-10-30
+
+**Reviewed commit**: `dadb4e404559f12bb74bb2031d70737d5d908d46`  
+**Obligation**: Internal (interim)  
+**Findings**: raised  
+**Bounding**: WIDER RUN REQUIRED -- exercise malformed Git administration through the real resolver and demonstrate refusal before any sub-tool launch.
+
+**Foundations**
+
+1. **Does it do what it claims?** Not yet: malformed `.git` administration falls back despite C1 requiring discovery errors and unsafe state to refuse -- `tools/session.py::_git_binding_path` and the ledger below.
+2. **Best alternative.** Keep the per-worktree design, but distinguish an absent repository from a failed discovery when a `.git` entry exists, as the installer already does -- `bootstrap/_scaffold/install.py::write_local_env`.
+3. **What would show it wrong?** A malformed administration directory causes fallback and permits the caller to proceed; see the falsification ledger below.
+
+**CR1 -- blocking: failed discovery with an existing `.git` directory falls back.** In `_git_binding_path`, Git's “not a git repository” response returns `None` even when an existing directory named `.git` is invalid. `_resolve_interpreter` then selects the current interpreter. The installer checks whether `.git` exists before classifying the same error as absence. This violates C1's distinction between a non-repository and discovery errors or unsafe state, and can allow a sub-tool launch after damaged administration. **Satisfier:** refuse this state at the resolver and cover it through the real entry point with an assertion that no sub-tool launches; retain the true-absence and nested-target behavior.
+
+**Falsification ledger** (Python 3.13.13, isolated archive of the reviewed commit):
+
+* Created an empty `.git` directory in a temporary root and called `_resolve_interpreter(root)`: returned `(current interpreter, 'fallback')` and emitted missing-binding guidance; this reproduces CR1.
+* Ran `python -m pytest bootstrap/tests/test_git_interpreter_binding_portable.py -q`: 13 passed in 1.43s. The existing portable checks do not catch that invalid-directory case.
+* Read the committed installer and resolver path guards and legacy-marker test: installer checks the `.git` entry before no-repository fallback; pointer and binding components are checked for links; the legacy control and mutant are covered by the portable test. These observations do not establish Windows behavior.
+
+**Coverage:** reviewed the recorded wide verification and the committed discovery, fallback, pointer, binding write and legacy paths, with the targeted probe above. **Not covered:** native Windows discovery and junction/reparse behavior, independent execution of every mapped family, same-user races, executable provenance, or the separate Security Review. C2 remains open; this interim pass does not accept or complete implementation.
