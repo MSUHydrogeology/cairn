@@ -39,3 +39,29 @@ C1: The inventory lists all current consumers and confirms they read the install
 Boundary A: use canonical Python 3.13.x in an isolated copy. Inventory `installs` references and installed-tree writes with `rg`; compare the pre-edit and post-edit committed candidates using `python -m pytest bootstrap/tests/test_review_sweep_ships.py bootstrap/tests/test_content_scan.py --quality-gate-shuffle-seed=0 --durations=0 --durations-min=0`, repeated under stated conditions with phase totals. Run the same selection with at least one alternate shuffle seed for interleaving and reconcile collected nodes; run the three separate fault probes through real installed-content nodes beside an unmutated control. Check the installed roster and manifest classification and run `bootstrap/tests/test_gate_manifest.py` or its owning nodes for the frozen-file consequence. Run `python scripts/claim_check.py` on changed prose, `python scripts/check_cairn.py`, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py --check` if supported, and `python scripts/quality_gate.py --sub neutrality --sub redundancy`; record inapplicable checks with reasons.
 
 Boundary B: **wide**, because the changed test is still frozen in the installed manifest. After the final implementation commit, run the reviewed owning family, content-scan integration, shuffle/interleaving selections, fault controls and standing gates on a clean unchanged commit under canonical Python 3.13.x. Record SHA/range, touched surface, interpreter, clean pre/post state, commands and counts, elapsed time, tokens or unknown, non-pass disposition, omissions and `Certified by: pending`; preserve the owed frozen-file ceremony rather than treating a changed hash as a passing gate. Boundary C is independent code review, including fault falsification and a bounding verdict. Full-tree certification and re-anchor are separate ceremonies.
+
+## Plan review -- Codex GPT-6 Internal Reviewer -- 2026-10-30
+
+```
+Reviewed commit: 281e41d71562f0a956c13bae85d32de30119f3db
+Target: opening plan, against accepted proposal and current fixture
+Prior findings: none
+Assurance path: standard
+Elapsed: about 7 minutes
+Tokens: unknown
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The one-line scope change retains every node and real profile install, while the plan makes isolation, repeated timing and fault detection acceptance conditions. -- accepted proposal `## Current contract`; plan C1; `bootstrap/tests/test_review_sweep_ships.py:318-375`.
+2. **Best alternative.** Reuse the existing `installs` fixture with session lifetime; adding a cache helper or deleting nodes would increase machinery or lose behavior. -- `bootstrap/tests/test_review_sweep_ships.py:318-342`; plan Scope.
+3. **What would show it wrong.** A consumer that writes a shared tree, unstable same-command phase results, a surviving fault, or shuffled state dependence would invalidate the change. -- plan Acceptance criteria; `bootstrap/tests/test_review_sweep_ships.py:345-429`.
+
+The four fixture consumers read installed trees or alter local text copies, and the profiles are globbed through the real scaffold CLI. The plan still requires a fresh consumer inventory and shuffled evidence before accepting session sharing. The retained reports are single observations, so repeated scoped measurements are warranted; they should not trigger another full suite. During iteration, `bootstrap/tests/test_gate_manifest.py::test_verify_holds_on_frozen_file_modification` checks generic refusal more cheaply than the entire family; compare the actual changed file with its installed pin separately. The final wide map retains required owning coverage.
+
+**Covered:** current claims and drift (proposal evidence, plan Scope); real path and design (fixture and four consumers); fail-closed behavior (C1 fault controls and stop); cross-document fit (roster and installed manifest); lifecycle, domain scope and satisfier (one-file change, separate ceremony). **Not covered / low confidence:** no tests or timing rerun, no complete consumer inventory beyond the named module, and no measured stability or full-suite speedup. The frozen-file ceremony remains owed.
