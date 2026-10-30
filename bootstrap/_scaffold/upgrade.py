@@ -168,7 +168,8 @@ def _refuse_if_linked(target: Path, checked: str, named: str) -> int | None:
     except ScaffoldSecurityError:
         print(f"error: upgrade refused (containment): {named} is a link, or sits "
               "behind one; upgrade does not read or write through it.\n"
-              "  Replace it with a regular file, then re-run.", file=sys.stderr)
+              "  Replace the link in that path with an ordinary file or directory, "
+              "as appropriate, then re-run.", file=sys.stderr)
         return 2
     return None
 
@@ -1731,11 +1732,14 @@ def _cmd_init_lock(
     *unrecoverable-base* and handled review-only on later upgrades, never a
     pretended 3-way merge.  Verbatim scripts record their on-disk hash.
 
-    Reads no project data through a link: a linked ``dev/.cairn`` (or a link
-    above it) is refused before the lockfile is looked for, and a linked
-    ``profile.yml`` before it is read or written -- the refusal the other
-    actions make, at exit 2.  The lockfile's own name is left to the reader's
-    refusal below, which ends in a traceback; ``bootstrap/UPGRADE.md`` says so."""
+    Its lockfile and profile guards refuse links at ``dev/.cairn`` and
+    ``profile.yml`` before those paths are read or written. Each mapped
+    installed destination is also checked before its existence test or read.
+    These checks refuse links already present in a stable tree; the separate
+    check and read do not prevent concurrent path replacement. The fidelity
+    manifest reader ``_manifest_cairn_commit`` is separate and can still read
+    a linked manifest. The lockfile's own name is left to the reader's refusal
+    below, which ends in a traceback; ``bootstrap/UPGRADE.md`` says so."""
     refused = _refuse_if_linked(
         target, Path(_LOCKFILE_REL).parent.as_posix(), f"the lockfile {_LOCKFILE_REL}")
     if refused is not None:
@@ -1788,6 +1792,9 @@ def _cmd_init_lock(
     entries = _lock_file_list(list(_MODULE_MAPPINGS), [])
     mapped_dsts = {dst for _src, dst, _vb in entries}
     for src_rel, dst_rel, verbatim in entries:
+        refused = _refuse_if_linked(target, dst_rel, f"mapped path {dst_rel}")
+        if refused is not None:
+            return refused
         dst_abs = target / dst_rel
         if not dst_abs.exists():
             # The vendor wrapper installs as VENDOR.md but the adopter renames
