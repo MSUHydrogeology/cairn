@@ -1,7 +1,7 @@
 # Plan: Protect nested Git data during upgrades
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-nested-git-upgrade.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Refuse upgrade paths that name nested Git data or resolve into it, while preserving ordinary project links.
