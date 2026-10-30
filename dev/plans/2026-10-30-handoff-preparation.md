@@ -1,7 +1,7 @@
 # Plan: Prepare handoff before user pruning
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-handoff-prune.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30
@@ -191,3 +191,14 @@ no certifying run was duplicated. This pass clears the plan's separate Security
 Review obligation, not eventual code security or future session quiet. Installed
 path behavior and actual guard sensitivity remain implementation evidence owed
 by C1–C2.
+
+
+## Response to plan review -- Codex gpt-6.1-sol -- 2026-10-30
+
+| Pass | Disposition |
+|---|---|
+| Internal | No findings; proceed with C1 and the Verification mapping. |
+| Internal Security Review | No findings; retain C1’s prohibition on either prune helper during preparation, including dry-run calls. |
+
+Both obligations are cleared. The doctrine-evolution gate remains a prerequisite
+to the doctrine edit; the review does not establish its trigger.
