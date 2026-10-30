@@ -292,3 +292,16 @@ a local shared clone with its own Git metadata, detached at the tested commit.
 
 External URLs (88 in `check_cairn`, 89 in `link_check`) were not probed. No
 full-tree suite or re-anchor was run. The one-month C3 indicator remains open.
+
+## Correction code review -- Codex (model identifier unavailable) -- 2026-10-30
+
+**Verdict:** Accept. **Bounding:** ACCEPTED. No open findings.
+
+**Foundations**
+1. **Should it happen as framed?** Yes: C2 requires mutation summaries and C3 aligned consumers; `ff03af3e` aligns root and shipped guidance and property tests.
+2. **Best alternative:** Keep the existing independent falsification and evidence duties while dropping per-lens and per-killed-mutant reporting; `dev/agent_collaboration.md` and `AGENTS.md` do so without a new process.
+3. **What would show it wrong?** A live carrier still mandating those reports, weakened evidence, or unreliable verification would contradict C2/C3. The targeted search and provenance clarification at `84cb2325` address these probes.
+
+**Falsification ledger:** Inspected `ff03af3e` and the verification at `1e2364ca` and `84cb2325`; searched committed live guidance for per-mutant and per-lens language, using the changed guidance as a positive case. The first verification copy lacked Git metadata; the author clarified its provenance and reports a clean-clone rerun at the tested SHA. The tests retain control, counts, exceptions and evidence assertions. No set-reaching claim was made by this review, so mutation was not required; no tests were rerun. Residual risk: the recorded checks and clone state were not independently reproduced.
+
+**Coverage:** Root, shipped and doctrine wording, affected tests and verification provenance. Not covered: full suite, external links, re-anchor, independent Security Review, and the future one-month indicator. Elapsed: approximately 6 minutes; tokens: unknown.
