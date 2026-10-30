@@ -394,3 +394,18 @@ satisfier (no finding).
 **Not covered / low confidence:** native Windows behavior, hard-link identity
 aliases, concurrent filesystem changes, and independent mutation of nested
 `recovery_bases` and `ancestor_evidence` members. Security Review is separate.
+
+## Final Security Review -- Codex GPT-6 Security Reviewer -- 2026-10-30
+
+**Reviewed candidate**: `66b19e4bfc1fce5da14af4aae553ea2ade4e043d`; **verification record**: `88dad068a40a7029ae20df6553c91c3277823746`.
+**Obligation**: Security Review. **Tier**: Internal Security Review. **Verdict**: pass; no findings. **Bounding**: ACCEPTED for this plan's mapped wide checks. Elapsed time: approximately 3 minutes; token use: unknown.
+
+**Foundations**
+
+1. **Does it do what it claims?** The project guard checks both path representations before use, and the final record covers the mapped public paths and protected state (`bootstrap/_scaffold/upgrade.py`, `_contained_lockfile_path`; verification at `88dad068`).
+2. **Best alternative.** Keep the shared guard: filtering individual readers duplicates the security boundary (`bootstrap/_scaffold/upgrade.py`, `_check_lockfile_paths` and `_apply_upgrade`).
+3. **What would show it wrong?** A Git path reaching project reads or writes, or protected state changing on refusal, would defeat the boundary (falsification ledger below).
+
+**Falsification ledger.** In a detached worktree at the candidate, Python 3.13.13 ran `pytest -q bootstrap/tests/test_upgrade_refuses_hostile_project_data.py::test_apply_refuses_nested_metadata_paths_into_git_data`: the unmutated control passed 6/6. Removing `base_cache` from the `ancestor_evidence` validation list caused its corresponding public apply case to fail (exit 1 instead of the required security refusal); one mutant, one killed, no survivors or measured equivalents. The earlier independent public cache-alias control and mutant are recorded above. The author records 740 mapped passes, no non-passes and four killed guard mutants on the final candidate; the ordinary reviewer recorded eight killed outer-collection mutants. No full suite or re-anchor ran.
+
+**Covered:** nested metadata, supplied and resolved path boundary, protected-state and public-path evidence, and final verification record (guard, test and records above). **Not covered / low confidence:** native Windows behavior, hard-link identity aliases and concurrent changes; those are outside the stated protection. Other concurrent work on the engine has its own review records.
