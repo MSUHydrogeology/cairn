@@ -234,3 +234,35 @@ Dispositions:
 **Evidence deferred**: the one-month review-commit ratio, which cannot be measured on the implementation day. **Deferred evidence home**: `dev/PLANNING.md` > v0.6 release path, one-month apparatus indicator. Whole-tree certification is a separate release ceremony, already tracked in the v0.6 release path; external URL probing and an independent scientific check were not plan acceptance checks.
 
 **Fidelity sign-off**: implementation `3cceb2c0` and correction `3c9892a6` deliver the accepted `## Proposal` operative section of `dev/proposals/archive/2026-10-30-claude-cut-the-apparatus.md` as revised at `091494c1`, with the Q1 Decision addendum at `ebabc7f8`: bounded passes, default light with no plan, added/widened boundary protection, author advice closure, compressed governing text, complexity comparison, accountable deferral, and time/token observations. The one-month indicator remains open at the board home above.
+
+## Implementation verification -- Codex (model identifier unavailable) -- 2026-10-30
+
+This record covers the C2/C3 alignment correction at `ff03af3e`.
+**Boundary B mode**: wide. The change corrects governing review contracts and
+shipped reader guidance. The direct owners are the review-sweep and review /
+verification property families; the first exercises installed guidance across
+all shipped profiles. The artifact checks cover the changed prose and links.
+
+**Certified by**: pending
+**Tested commit**: `ff03af3e53f7d843e855c03757fec1e9d489eff1`
+**Reviewed range**: `00bf71b305d90e46e0840ca555ea477cb69736b5..ff03af3e53f7d843e855c03757fec1e9d489eff1`
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13)
+**Pre-run state**: clean archive copy of the tested commit in `/private/tmp/issue39-final`;
+`git status --porcelain` empty.
+**Post-run state**: same copy and commit; `git status --porcelain` empty.
+**Elapsed**: about 1.5 seconds for the parallel final check group. **Tokens**: unknown.
+
+| Command | Exit | Outcome | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python3.13 -m pytest -q bootstrap/tests/test_review_sweep_ships.py bootstrap/tests/test_review_and_verification_rules_ship.py` | 0 | 293 passed, 0 failed | 0.71 s | unknown |
+| `python3.13 scripts/claim_check.py` on the 10 changed Markdown files | 0 | 10 files, 0 flags | 0.41 s | unknown |
+| `python3.13 scripts/check_cairn.py` | 0 | 189 Markdown files, 0 issues | 1.22 s | unknown |
+| `python3.13 scripts/link_check.py` | 0 | 189 Markdown files, 0 issues | 0.15 s | unknown |
+| `python3.13 scripts/sync_doc_snippets.py` | 0 | 482 documents, 0 drift | 0.15 s | unknown |
+| `python3.13 scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | 0 failures; informational notes only | 1.22 s | unknown |
+
+The check commands ran against the clean tested commit. The prose gates reported
+one existing informational redundancy note. External URLs (88 in `check_cairn`,
+89 in `link_check`) were not probed. The full-tree certifying suite was not run;
+no re-anchor was required. The one-month C3 indicator remains open as recorded
+above. No scientific check was specified.
