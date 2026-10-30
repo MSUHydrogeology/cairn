@@ -44,3 +44,39 @@ Boundary A: under canonical Python 3.13, run `python -m pytest bootstrap/tests/t
 Exercise `python bootstrap/scaffold.py upgrade` with `--plan`, `--stage` and `--apply` in scratch installations, including refusal and recovery; check help for exact arguments. Run `python scripts/claim_check.py` on changed prose, `python scripts/check_cairn.py`, `python scripts/link_check.py`, and `python scripts/quality_gate.py --sub neutrality`; run `python scripts/sync_doc_snippets.py` if synced snippets change. Run four mutations and their unmutated controls in separate scratch copies.
 
 Boundary B is **wide** for the engine contract and security boundary: run the mapped owning families, public paths, mutations and standing gates on a clean, unchanged final implementation commit under the canonical interpreter. Record tested SHA and reviewed range, interpreter, clean pre/post state, commands, outcomes, timing, non-pass dispositions, omissions and **Certified by**: pending. Certification is separate. Boundary C is independent targeted falsification, including both path representations and stated limits; the reviewer records bounding and missing checks. The AST re-anchor follows its existing Maintainer-run ceremony, separately authorized.
+
+## Plan review -- Codex GPT-6 plan reviewer -- 2026-10-30
+
+```
+Reviewed commit: fb19301d29bac8fc134a793d688645768aa7ee21
+Target: scope, sequence, acceptance criteria and verification
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the plan carries the accepted name and resolved-target boundary, compatibility, recovery and limits into implementation and public-path checks -- `dev/proposals/archive/2026-10-29-codex-nested-git-upgrade.md` (Current contract); this plan, C1 and C2.
+2. **Best alternative.** Extend the shared containment guard and use its existing resolution; separate per-command filters would duplicate the boundary without improving the stated race limit -- `bootstrap/_scaffold/upgrade.py:171` and `bootstrap/_scaffold/upgrade.py:3034`.
+3. **What would show it wrong.** A public upgrade reading a stable alias to nested Git data, changing protected state on refusal, or rejecting an ordinary contained read link would defeat the planned criteria -- this plan, C1 and C2.
+
+The caller map matches the current guard: lockfile `src`, `dst`, and
+`base_cache` are checked centrally, and the staged metadata loop checks names
+from four lists and two mappings. The plan preserves the source distinction and
+requires another caller search, so newly discovered consumers must enter the
+verification map. Resolving relative to the project root avoids rejecting an
+external ancestor; returning the unresolved name retains existing write-link
+checks. The explicit race and hard-link limits are consistent with the accepted
+contract, and scratch public commands plus four focused mutations make the
+promised behavior observable without a tree-certifying run.
+
+**Covered:** accepted scope and satisfiers, caller reach, containment and link
+behavior, public entry points, compatibility, recovery, verification mapping,
+security obligation and separate re-anchor: the cited contract, plan and guard.
+**Not covered / low confidence:** no implementation or tests run; actual mutation
+effectiveness, platform-specific filesystem behavior and concurrent races remain
+unmeasured. This pass does not clear the Internal Security Review obligation.
