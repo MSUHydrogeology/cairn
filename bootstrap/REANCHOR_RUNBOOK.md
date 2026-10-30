@@ -251,7 +251,7 @@ mistaken for the stronger claim.
 | RA-09 | the launcher composes the review manifest from the packet; nothing is read from the candidate |
 | RA-10 | **the first candidate byte runs**, and only because its digest matched |
 | RA-11 | the effective configuration prints, while you can still stop |
-| RA-12 | the key channel is probed; if a passphrase prompt appears here, decline it |
+| RA-12 | the key channel is probed; if `ssh-keygen` shows a passphrase prompt, leave it empty (press Return) or decline with Ctrl-C. Entering the passphrase lets the probe sign and stops the ceremony. The probe waits 10 seconds; a timeout is unanswered and also stops the ceremony. |
 | RA-13 | the read-only checks run and the package is written; no key, no ref moves |
 | RA-14 | you read the page (`--show-report`) |
 | RA-15 | you hash the package yourself (`--hash-package`) |
