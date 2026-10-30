@@ -1,7 +1,7 @@
 # Plan: Deliver the outcome with less apparatus
 
 **Source proposal**: dev/proposals/archive/2026-10-30-claude-cut-the-apparatus.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal)
 **Opened**: 2026-10-30
 **In brief**: Reduce recurring review and instruction overhead while preserving agreed outcomes and required assurance.
