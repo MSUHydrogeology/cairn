@@ -1,7 +1,7 @@
 # Plan: Bind the interpreter in per-worktree Git administration
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-git-interpreter-binding.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30
@@ -17,8 +17,8 @@ trust assumption, and requires native Windows evidence.
 ## Scope
 
 Change the installer, session resolver and shipped copies, their consumers and
-owning tests; retain the legacy ignore rule. Inventory references before
-implementation. Update `AGENTS.md`, its shipped equivalent,
+owning tests; retain the legacy ignore rule. The reviewed reader, writer and
+shipped-copy inventory is in `dev/plans/2026-10-30-git-interpreter-binding/coverage.md`. Update `AGENTS.md`, its shipped equivalent,
 `bootstrap/UPGRADE.md` and `bootstrap/SAFETY.md`, including rebinding and the
 copied-administration and delivered-pointer residual. Same-user races and
 executable provenance remain outside the boundary. No scientific check applies.
@@ -26,9 +26,7 @@ executable provenance remain outside the boundary. No scientific check applies.
 **Reuse.** Searching `tools/session.py` and `bootstrap/_scaffold/install.py`
 for `local-env`, `local_env` and `interpreter` found `_resolve_interpreter`,
 `write_local_env`, existing path and tracked-executable checks; reuse or adapt
-them and the existing scrubbed Git invocation where applicable. Search
-`rg -n 'local-env|local_env|_resolve_interpreter|write_local_env' tools bootstrap templates AGENTS.md`
-for consumers and documentation before implementation; account for each hit.
+them and the existing scrubbed Git invocation where applicable. The inventory records the search and maps its hits to checks.
 
 ### Documentation / doctrine surface
 
@@ -86,21 +84,18 @@ trust boundary, with `Certified by: pending`. Split selections within the
 pytest guard's file limit and reconcile their union. No full certification run
 is authorized by this plan.
 
-* Exercise actual scaffold and session entry points for normal, linked,
-  separate-directory and submodule repositories; no-repository and nested
-  targets; hostile Git environment; legacy malicious binding; safe existing
-  destinations and unsafe destinations with and without force; valid,
-  malformed, stale and tracked executables. Assert ancestor isolation,
-  containment, no launch on refusal, and worktree independence. Add portable
-  tests that run on Windows; record native Windows discovery and
-  junction/reparse results separately.
+* Add and run `python -m pytest bootstrap/tests/test_git_interpreter_binding_portable.py`
+  (proposed), including the control and deliberate legacy-redirection mutant.
+  The inventory maps the entry points, layout, link, refusal, force and
+  containment cases and the same native Windows command and required cases.
 * Run owning families `bootstrap/tests/test_session_binding_untracked.py`,
   `bootstrap/tests/test_session_binding_gate_and_printing_hold.py`,
   `bootstrap/tests/test_session_kernel.py`, `bootstrap/tests/test_session_failsafe.py`,
   `bootstrap/tests/test_session_writes_contained.py`,
   `bootstrap/tests/test_install_module.py`, `bootstrap/tests/test_skills_install.py`,
   `bootstrap/tests/test_skills_security.py`, `bootstrap/tests/test_security_leaf.py`
-  and `bootstrap/tests/test_security_stack.py`, plus readers found by inventory.
+  and `bootstrap/tests/test_security_stack.py`, plus
+  `bootstrap/tests/test_claim_check_module.py` for the exclusion consumer.
 * Run `python scripts/claim_check.py` on changed documents,
   `python scripts/check_cairn.py`, `python scripts/link_check.py`,
   `python scripts/quality_gate.py --sub neutrality --sub redundancy`, and
@@ -191,3 +186,11 @@ satisfier: S1. **Not covered:** no implementation exists, and no tests or native
 Windows probes were run during active certification. Same-user races and
 executable provenance remain outside the accepted boundary. Existing P1 also
 remains for the author's response; this pass does not clear it.
+
+
+## Response to plan review -- Codex gpt-6.1-sol -- 2026-10-30
+
+| Finding | Disposition |
+|---|---|
+| P1 | Accepted. Scope and Verification point to the completed inventory and executable mapping in `dev/plans/2026-10-30-git-interpreter-binding/coverage.md`, including shipped copies, uncovered portable tests and control/mutant command. |
+| S1 | Accepted. The inventory specifies pointer versus filesystem-link cases, absence and refusal, hostile discovery, force containment and no-launch checks, worktree isolation and native Windows junction/reparse evidence. |
