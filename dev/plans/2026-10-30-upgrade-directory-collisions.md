@@ -1,7 +1,7 @@
 # Plan: Block tracked upgrade directory collisions
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-upgrade-directory-collisions.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Report folders occupying tracked upgrade files and protect their contents until the operator resolves them.
@@ -44,3 +44,25 @@ Boundary A: use canonical Python 3.13 and run `python -m pytest bootstrap/tests/
 Exercise `python bootstrap/scaffold.py upgrade` public `--plan`, `--stage`, and `--apply` paths in a scratch installation, including resolution and restaging; check command help for exact arguments. Run `python scripts/claim_check.py` on changed prose, `python scripts/check_cairn.py`, `python scripts/link_check.py`, and `python scripts/quality_gate.py --sub neutrality`; run `python scripts/sync_doc_snippets.py` if synced snippets change. Record the two mutation controls and failures in separate scratch copies.
 
 Boundary B is **wide** for the engine contract and security boundary: run the mapped owning families, public paths, mutations and standing gates on a clean, unchanged final implementation commit under the canonical interpreter. Record tested SHA and reviewed range, interpreter, clean pre/post state, commands, outcomes, timing, non-pass dispositions, omissions, and **Certified by**: pending. Certification is separate. Boundary C is independent targeted falsification by the code reviewer, including the observation points and stated race limit; the reviewer records bounding and any missing check. The AST re-anchor follows its existing Maintainer-run ceremony, separately authorized.
+
+
+## Plan review -- Codex GPT-6.1 Sol -- 2026-10-30
+
+Reviewed commit: 32fda3e7fe7859cdb93cf4f862c1ade89ba207c2
+Target: scope, sequence, acceptance criteria and verification
+Prior findings: none
+Assurance path: Internal + Internal Security Review
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+
+**Foundations**:
+
+1. **Should this happen as framed?** The plan carries the accepted block, recovery, observation points and race limit, but its verification mapping misses an existing consumer of the changed stage and apply boundary -- `dev/proposals/archive/2026-10-29-codex-upgrade-directory-collisions.md` and `bootstrap/tests/test_upgrade_refuses_hostile_project_data.py`.
+2. **Best alternative.** Extend the existing wide map with the relevant hostile-project-data family; reuse the planned public-path tests and existing hard-block machinery -- `bootstrap/_scaffold/upgrade.py:1100` and `bootstrap/tests/test_upgrade_refuses_hostile_project_data.py:784`.
+3. **What would show it wrong.** A directory transition raises instead of refusing, a blocked stage advances, or changed stage metadata admits hostile paths -- `bootstrap/_scaffold/upgrade.py:1137` and `bootstrap/tests/test_upgrade_refuses_hostile_project_data.py:789`.
+
+**P1 -- Map the hostile stage consumer before implementation.** The plan changes stage bookkeeping and apply's hard-block checks, yet its wide mapping omits `bootstrap/tests/test_upgrade_refuses_hostile_project_data.py`, which drives public apply against hostile stage metadata, including `module_blocked` and staged names. The instruction to search again before implementation does not establish the reviewed mapping required by `dev/plans/_template.md` for a trust-boundary change. Add this owning family to the mapped runs, or identify the exact relevant nodes and justify any exclusions; retain the other mapped checks.
+
+Coverage: checked the accepted current contract and Decision, plan cells, stage reads and apply ordering, existing containment and hostile-stage test ownership, and template verification requirements. No implementation or test run was performed; arbitrary concurrent changes after a check and the separate Security Review remain outside this pass.
