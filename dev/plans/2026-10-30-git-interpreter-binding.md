@@ -194,3 +194,55 @@ remains for the author's response; this pass does not clear it.
 |---|---|
 | P1 | Accepted. Scope and Verification point to the completed inventory and executable mapping in `dev/plans/2026-10-30-git-interpreter-binding/coverage.md`, including shipped copies, uncovered portable tests and control/mutant command. |
 | S1 | Accepted. The inventory specifies pointer versus filesystem-link cases, absence and refusal, hostile discovery, force containment and no-launch checks, worktree isolation and native Windows junction/reparse evidence. |
+
+## Implementation verification -- Codex GPT-6 -- 2026-10-30
+
+**Boundary B mode**: wide. This changes a trust boundary and user-facing
+installer/resolver paths. The clean run covered the portable real-entry-point
+control/mutant, Git layouts and worktree isolation, refusal and containment,
+binding consumers, tracked-executable checks, installed copies, security
+families, claim-check exclusions, and required prose gates.
+
+**Certified by**: pending
+
+**Tested commit**: `dadb4e404559f12bb74bb2031d70737d5d908d46`
+
+**Reviewed range**: `49e6a59123b88bf954d1b5ee4e7a6a6ba2b0fc05`..`dadb4e404559f12bb74bb2031d70737d5d908d46`
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13, pytest 9.0.3
+
+**Pre-run state**: clean detached worktree at the tested commit.
+
+**Post-run state**: clean detached worktree at the tested commit; only ignored test cache may have been created.
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---:|---|---:|
+| `python -m pytest bootstrap/tests/test_git_interpreter_binding_portable.py bootstrap/tests/test_install_module.py bootstrap/tests/test_session_binding_untracked.py bootstrap/tests/test_session_binding_gate_and_printing_hold.py bootstrap/tests/test_session_failsafe.py bootstrap/tests/test_session_kernel.py bootstrap/tests/test_skills_install.py bootstrap/tests/test_session_writes_contained.py bootstrap/tests/test_skills_security.py bootstrap/tests/test_security_leaf.py bootstrap/tests/test_security_stack.py bootstrap/tests/test_claim_check_module.py bootstrap/tests/test_security_lint.py` | 0 | 565 passed | 34.98s |
+| `python scripts/check_cairn.py` | 0 | 198 Markdown files; no issues | 1.10s |
+| `python scripts/link_check.py` | 0 | 198 Markdown files; no issues | 0.07s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | both fail=0; 43 neutrality and 1 redundancy informational notices | 1.03s |
+| `python scripts/claim_check.py <each changed document>` | 0 | all five documents OK; existing allowlisted paths reported | <1s |
+
+**Legacy assertion mapping**: tests that proved `dev/.cairn/local-env.json`
+could not be replaced or reinterpreted through Git tracking, spelling aliases,
+hard links, inode identity, or index flags enforced authority of the old
+checkout file. That authority is the accepted changed behavior: the file is
+never read or migrated. `test_legacy_checkout_file_is_never_read` and the
+real-entry-point control/mutant now prove that boundary. Binding path links,
+wrong types, dangling state, unreadable state, discovery failures and timeout
+refusal are exercised against Git administration. The distinct promise that a
+selected in-project executable tracked by Git is refused remains exercised by
+the retained tracked-executable and submodule-executable tests. Existing
+malformed/stale binding, terminal encoding, child framing, containment,
+scrubbed Git invocation and warning behavior tests remain in the mapped run.
+
+**Non-pass disposition**: none in the mapped run. The control passes without
+launching the legacy marker; its deliberate redirection mutant launches the
+marker and is detected by the same assertion.
+
+**Known omissions and open criterion**: native Windows was not available.
+Discovery and junction/reparse handling were therefore not demonstrated on
+Windows; a POSIX skip is not accepted as evidence. C2 and the required Windows
+acceptance criterion remain open, so this record does not assert
+`Implementation verified at` and the plan remains `implementing`. No full-suite
+certification, code review, or push occurred.
