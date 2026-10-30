@@ -1,7 +1,7 @@
 # Plan: Prepare handoff before user pruning
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-handoff-prune.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30
@@ -111,6 +111,88 @@ pending`, and do not run the full certification suite here.
 
 Boundary C is independent targeted falsification against the reviewed range and
 verification record; the reviewer challenges bounding and records its verdict.
+
+
+## Implementation verification -- Codex gpt-6.1-sol -- 2026-10-30
+
+**Boundary B mode**: wide
+**Certified by**: pending
+**Tested commit**: `986d2164ebaf1252267fceb81b991aaf7f5e2623`
+**Reviewed range**: `bf0a253d56441838c364bfccca2cffe02d1af69d` .. `986d2164ebaf1252267fceb81b991aaf7f5e2623`
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13; pytest 9.0.3; macOS.
+**Pre-run state**: clean detached worktree at the tested SHA; `git status --short` was empty.
+**Post-run state**: same `HEAD`; `git status --short`, `git diff --check` and `git diff HEAD --stat` were empty/clean.
+
+Wide was used because the changed CLI and installed procedure are contracts.
+The run covered both CLI copies, the real command path, intent and reflection
+pruning, containment and display, skill installation and upgrade consumers,
+and the next-session reader.
+
+**Boundary B test command**:
+
+```text
+/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests/test_session_routines.py bootstrap/tests/test_session_failsafe.py bootstrap/tests/test_session_writes_contained.py bootstrap/tests/test_intents_tool.py::TestIntentSurfacePruning bootstrap/tests/test_prune_tools.py bootstrap/tests/test_skill_contract.py bootstrap/tests/test_skills_install.py bootstrap/tests/test_skills_upgrade.py bootstrap/tests/test_skills_security.py bootstrap/tests/test_next_session_local_note.py
+```
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---:|---|---:|
+| Mapped pytest command above | 0 | 309 passed; 0 failed, skipped, xfailed or xpassed | 15.79 s |
+| `scripts/claim_check.py` on the plan, doctrine, both session-end skills, and both coordination-tier copies | 0 | All six passed; no hard flags | 0.00 s each (tool timer rounded) |
+| `scripts/check_cairn.py` | 0 | 199 Markdown files; no issues | 2.15 s |
+| `scripts/link_check.py` | 0 | 199 Markdown files; no issues | 0.11 s |
+| `scripts/sync_doc_snippets.py --check` on those six documents | 0 | Six documents; no drift | 0.00 s (tool timer rounded) |
+| `scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | Both sub-gates had 0 failures; informational findings only | 1.08 s |
+| `cmp -s` for both CLI, both session-end skill, and both coordination-tier copies | 0 | All three twin pairs were byte-identical | 0.00 s (tool timer rounded) |
+
+**Plan-specific acceptance commands**: the mapped suite includes
+`test_real_cli_preparation_preserves_targets_and_user_command_prunes`. It ran
+the real CLI in a disposable repository: preparation preserved an old
+reflection, a claim added after preparation appeared in the next listing, the
+intent log stayed unchanged during preparation, and the user-run `--handoff`
+command pruned the eligible reflection after the test released the claim. The
+test also confirmed the command does not report owner judgment as unfinished.
+No prune ran against Cairn's working repository.
+
+**Mutation ledger**: each mutation used its own fresh detached worktree at the
+tested commit. The unmutated control was
+`test_handoff_preparation_never_calls_either_pruner`,
+`test_handoff_without_marker_refuses_nonblocking`, and both parameter cases of
+`test_pruning_never_deletes_through_a_linked_reflections_folder`: 4 passed.
+
+| Mutant | Result | Evidence |
+|---|---|---|
+| Preparation calls `_prune_reflections(..., dry_run=True)` for the reflection preview | KILLED | `test_handoff_preparation_never_calls_either_pruner` failed at the forbidden helper call. |
+| Preparation calls `_prune_intents(..., dry_run=True)` | KILLED | The same test failed at the forbidden helper call. |
+| Bypass the `--handoff` designation-marker check | KILLED | `test_handoff_without_marker_refuses_nonblocking` returned 0 instead of refusing. |
+| Remove reflection-folder containment from `_reflection_prune_candidates` | KILLED | Both linked-folder dry-run and write cases failed to refuse. |
+| Remove lock-path containment from `HandoffLock.acquire` | KILLED | `test_the_handoff_lock_is_not_created_through_a_linked_folder` failed to refuse. |
+
+All mutation writes and any deletion attempts were confined to the disposable
+worktrees or pytest temporary fixtures. No mutant survived; none was classified
+equivalent.
+
+**Doctrine gate evidence**: I did not establish recurrence, a routine-boundary
+synthesis, or a recorded Maintainer high-risk classification under
+`doctrine/rationale.md` > “How the doctrine evolves under evidence”.
+`dev/PLANNING.md:122` records one measured 2026-10-27 pruning event. The
+Maintainer's allowance and exact answer are recorded above under
+“Documentation / doctrine surface”; the implementation does not claim a gate
+trigger was met.
+
+**Non-pass disposition**: Boundary B and its gates had no non-passes. During
+iteration, one obsolete completion-message assertion and a first version of
+the disposable CLI fixture failed; the assertion was updated to the new message,
+and the fixture now copies the intent tool/package into its disposable repo.
+That first fixture version created one `late.py` claim in Cairn's intent log;
+I released that exact claim immediately and confirmed it no longer appeared in
+the active-intent list. No prune ran. The final mapped runs passed after both
+corrections.
+
+**Known omissions**: no full certification suite was authorized or run. An
+intent listing cannot prove that no live appender exists or will start later;
+the skill preserves that condition for the user's guarded command.
+
+**Implementation verified at** `986d2164ebaf1252267fceb81b991aaf7f5e2623`.
 
 
 ## Plan review -- Codex gpt-6.1-sol -- 2026-10-30
