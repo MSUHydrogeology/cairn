@@ -347,3 +347,50 @@ Windows equivalence, hard-link identity aliases and filesystem races were not
 tested and are outside the stated protection. No full-tree certifying suite or
 re-anchor ran. Independent code and Security reviews remain required before
 archive; this verification does not clear either review.
+
+## Final code review -- Codex GPT-6.1 Sol -- 2026-10-30
+
+```
+Reviewed candidate: 66b19e4bfc1fce5da14af4aae553ea2ade4e043d
+Verification record: 88dad068a40a7029ae20df6553c91c3277823746
+Tier: Internal
+Elapsed time: approximately 5 minutes
+Token use: unknown
+```
+
+**Verdict:** pass; no findings. **Bounding:** mapped wide run sufficient.
+Security Review remains owed.
+
+**Foundations**
+
+1. **Does it do what it claims?** Yes on tested bytes: the shared guard refuses
+   supplied and resolved project components, preserving source handling and
+   ordinary links (`bootstrap/_scaffold/upgrade.py:177`; 81 focused tests).
+2. **Best alternative.** Keep the shared guard. Filtering individual readers
+   would duplicate it across lockfile and staged-name callers
+   (`bootstrap/_scaffold/upgrade.py:282`, `bootstrap/_scaffold/upgrade.py:3304`).
+3. **What would show it wrong?** A nested or aliased Git path succeeding through
+   `--plan`, `--stage` or `--apply`, altered protected state on refusal, or an
+   ordinary contained link being rejected (the owning tests below).
+
+**Falsification ledger.** In a clean detached clone under Python 3.13.13,
+`pytest -q` on `bootstrap/tests/test_upgrade_lockfile_path_containment.py` and
+`bootstrap/tests/test_upgrade_refuses_hostile_project_data.py` with
+`-k 'git or alias or contained_link or recovery'` passed 81 tests (207
+deselected); two direct source/link controls passed. The author-owned wide
+record reports 740 passes and four killed
+guard mutants. I independently listed
+the six staged lists and two maps from `_apply_upgrade` at line 3270, then
+removed each member's validation in its own detached worktree. Unmutated
+controls passed 24/24 list cases and 4/4 map cases; all eight mutants were
+killed (six yielded four failures each; both map mutants yielded one failure
+each). Survivors: none; measured equivalents: none. No full suite ran.
+
+**Covered:** claims, public paths, completeness and fail-closed behavior
+(`bootstrap/_scaffold/upgrade.py:177`, `bootstrap/_scaffold/upgrade.py:3268`,
+the two tests and eight mutants); consistency and drift
+(`bootstrap/UPGRADE.md:769`); lifecycle and scope (plan C1/C2 and verification);
+satisfier (no finding).
+**Not covered / low confidence:** native Windows behavior, hard-link identity
+aliases, concurrent filesystem changes, and independent mutation of nested
+`recovery_bases` and `ancestor_evidence` members. Security Review is separate.
