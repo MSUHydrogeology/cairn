@@ -4,6 +4,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -288,22 +289,39 @@ def test_regular_git_pointer_to_linked_administration_refuses(tmp_path):
         install.write_local_env(root, force=True)
 
 
-@pytest.mark.skipif(os.name == "nt", reason="Windows execution evidence is a separate C2 requirement")
-def test_legacy_marker_control_and_mutant(tmp_path):
+def test_legacy_marker_control_and_mutant(tmp_path, monkeypatch):
     """The real optional-tool entry point ignores legacy state; a redirect is caught."""
     root = _repo(tmp_path / "project")
     tools = root / "tools"
     tools.mkdir()
     intent = tools / "intent.py"
-    intent.write_text("raise SystemExit(1)\n", encoding="utf-8")
     source = SESSION_PATH.read_text(encoding="utf-8")
     original = tools / "session.py"
     original.write_text(source, encoding="utf-8")
 
     marker = tmp_path / "legacy-binding-ran"
-    fake = tmp_path / "fake-python"
-    fake.write_text(f'#!/bin/sh\nprintf ran > "{marker}"\nexit 0\n', encoding="utf-8")
-    fake.chmod(fake.stat().st_mode | 0o111)
+    if os.name == "nt":
+        # A copied interpreter makes the executable choice observable through
+        # the real subprocess, without requiring a compiler or shell script.
+        fake = tmp_path / "fake-python.exe"
+        shutil.copy2(sys.executable, fake)
+        for directory in {Path(sys.executable).parent, Path(sys.base_prefix)}:
+            for dll in directory.glob("python*.dll"):
+                shutil.copy2(dll, tmp_path / dll.name)
+        monkeypatch.setenv("PYTHONHOME", sys.base_prefix)
+        intent.write_text(
+            "import pathlib, sys\n"
+            f"expected = pathlib.Path({str(fake)!r})\n"
+            f"marker = pathlib.Path({str(marker)!r})\n"
+            "if pathlib.Path(sys.executable).resolve() == expected.resolve():\n"
+            "    marker.write_text('ran', encoding='utf-8')\n"
+            "raise SystemExit(1)\n", encoding="utf-8",
+        )
+    else:
+        intent.write_text("raise SystemExit(1)\n", encoding="utf-8")
+        fake = tmp_path / "fake-python"
+        fake.write_text(f'#!/bin/sh\nprintf ran > "{marker}"\nexit 0\n', encoding="utf-8")
+        fake.chmod(fake.stat().st_mode | 0o111)
     legacy = root / "dev" / ".cairn" / "local-env.json"
     legacy.parent.mkdir(parents=True)
     legacy.write_text(json.dumps({"interpreter": str(fake)}), encoding="utf-8")

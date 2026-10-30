@@ -28,6 +28,8 @@ def main() -> int:
         print("Tracked checkout is dirty; no evidence collected:\n" + status.stdout, file=sys.stderr)
         return 2
     print(f"Interpreter: {sys.executable} ({sys.version})", flush=True)
+    print("File symlink cases require Windows Developer Mode or symlink privileges; "
+          "creation failures leave evidence open.", flush=True)
     subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, check=True)
     with tempfile.TemporaryDirectory() as temp:
         report = Path(temp) / "pytest.xml"
