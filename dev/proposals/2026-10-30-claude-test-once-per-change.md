@@ -10,42 +10,36 @@
 
 ## Context
 
-Issue [#41](https://github.com/MSUHydrogeology/cairn/issues/41) reports an
-adopter plan that ran its test set about six times, at 5 to 6.6 minutes
-each: "We cannot be testing more than once per plan." The Maintainer asked
-for this change in chat (2026-10-30):
+Issue [#41](https://github.com/MSUHydrogeology/cairn/issues/41): one adopter
+plan ran its tests about six times, 5 to 6.6 minutes each. The Maintainer
+asked for this change (chat, 2026-10-30):
 
 > "1) Only iterate on tests of the files touched
 > 2) When reviewing, only the tightest possible scope
 > 3) Only one, narrowly-scoped integration suite after code review. Very
 > little reason to run a full code suite."
 
-Cairn's own rules force the repeat and contradict each other:
-
-- `AGENTS.md:196-197` runs Boundary B "after the final implementation commit
-  and before code review", and `AGENTS.md:215` says "Changed implementation
-  invalidates the record", so any review fix forces a second run.
-- `dev/plans/_template.md:308` already says Boundary B "runs once after the
-  final implementation commit", but its Boundary C (`:362`) has the reviewer
-  verify the Boundary B record, which must therefore exist before review.
+Cairn's rules force the repeat and contradict each other. `AGENTS.md:196-197`
+runs Boundary B "before code review" and `AGENTS.md:215` says "Changed
+implementation invalidates the record", so a review fix forces a second run.
+`dev/plans/_template.md:308` says Boundary B "runs once after the final
+implementation commit", yet its Boundary C (`:362`) verifies that record.
 
 Scope also leaks: iteration searches for "owning tests and readers"
-(`AGENTS.md:191`), and 64 test files read templates in general (measured
-2026-10-30). The certifying run took 24 minutes 55 seconds against a
-10-minute budget.
+(`AGENTS.md:191`), and 64 test files read templates in general. The
+certifying run took 24 minutes 55 seconds against its 10-minute budget.
 
 ## Proposal
 
 **1. Iteration (A): the tests that name a changed file.** A test names a
 file when it imports it or cites its path or file name. Run those, plus the
 standing prose gates for prose. `python tools/test_tiers.py for <paths>`
-lists them as the starting list; the author may add a test the change
-plainly affects and says why. For most changes the list is a few files.
-Governing text is the exception: `AGENTS.md` is cited by 50 of 132 test
-files, more than the broad-run guard's 40, so the author narrows to the tests
-that pin the changed passages and records the rest as an omission. Tests
-that sweep a whole folder without naming the file are caught at the release
-run.
+lists them, and the list is not widened by judgment. For most changes it is
+a few files.
+Governing text is the exception: 50 of 132 test files cite `AGENTS.md`,
+over the broad-run guard's 40, so the run narrows to tests pinning the
+changed passages and records the rest as omitted. Folder sweepers are caught
+at the release run.
 
 **2. Review (C): the tightest scope.** The reviewer reads the change and the
 author's iteration evidence, then runs targeted checks that try to break it.
@@ -75,6 +69,14 @@ since the last good run.
 the broad-run guard.
 
 **6. Open plans may switch** by one line in their record.
+
+**7. Timing targets for the suite, not scores for agents.** From the timing
+log (`dev/measurement/suite-runs.jsonl`, 188 runs): iteration run 30 seconds; any one test file 10 seconds; the one
+integration run 3 minutes; the certifying run 10 minutes, its existing
+budget. In the widest logged run (70 files, 710 seconds), the median file
+took 2.0 seconds and the 20 files over 10 seconds took 89% of the time. A
+missed target never blocks a change: the record notes it, and a file over
+10 seconds joins the consolidation list, slowest first.
 
 No new files: `for` is a subcommand of the existing `tools/test_tiers.py`.
 
@@ -108,17 +110,15 @@ forward-baseline ceremony already on the board.
 ### Tests required
 
 `bootstrap/tests/test_test_tiers.py`: `for` lists a test that imports a
-module and one that cites a template path, and omits one that only sweeps
-all templates. `bootstrap/tests/test_verification_boundaries.py` and
-`test_review_and_verification_rules_ship.py` pin the old phrases ("before
-code review", "invalidates the record", "owning tests and readers"); update
-them to pin the new rules: B once after review, naming as the scope, full
-suite at release and re-anchor.
+module and one that cites a template path, and omits a folder sweeper.
+`bootstrap/tests/test_verification_boundaries.py` and
+`test_review_and_verification_rules_ship.py` pin the old phrases; update
+them to pin the new rules.
 
 ### Examples / smoke checks
 
-Implement this change under its own rules: one iteration list, one
-Boundary B run. Prose gates as usual.
+Implement this change under its own rules: one iteration run, one
+Boundary B run.
 
 #### Security preflight
 
@@ -132,8 +132,8 @@ N/A: no scientific assumption or result touched.
 ## Signals the change is wrong
 
 Release runs keep finding breaks a per-change run would have caught; a
-reviewer misses a defect an earlier run would have shown; authors widen the
-starting list routinely.
+reviewer misses a defect an earlier run would have shown; timing targets
+stay missed for a release.
 
 ## Scope delta
 
@@ -202,3 +202,19 @@ moves to `awaiting-decision`.
 - "The list comes from the tool, not from judgment": replaced by a tool-made
   starting list the author may extend with a reason.
 - "Not per change or per push": the push case is restored.
+
+## Response addendum -- Claude Opus 5.5 -- 2026-10-30
+
+Two further in-place revisions at the Maintainer's request (chat,
+2026-10-30: "Please do"), after "There needs to be targets for timing
+too, right?":
+
+- **Item 1 returns to tool-only.** The `for` list is no longer extended by
+  judgment; anything it misses is caught at the release run.
+- **Item 7 added:** timing targets for the suite (iteration 30 seconds, any
+  test file 10 seconds, the integration run 3 minutes, the certifying run 10
+  minutes), read from the existing timing log; a miss never blocks a change.
+
+### Withdrawn / superseded commitments
+
+- "A starting list the author may extend with a reason": withdrawn.
