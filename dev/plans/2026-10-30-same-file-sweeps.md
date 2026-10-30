@@ -308,3 +308,29 @@ Prior findings: none
 * **Verification and residual risk.** Read the Boundary B mapping and its 65 + 147 + 120 passing-test record at `43391ddb`; did not repeat those suites. Authorship of `5094a977` remains unconfirmed, and a noncooperating writer can change shared bytes after inspection. No full certification, external-link probe, or Security Review was performed here.
 
 **Covered**: claims and production path (`tools/evolution_infer.py::main`, CLI probes); design and fail-closed boundaries (one/two/duplicate/prevented/late rows above); consistency and drift (`git diff 86223682..76b5dbcc` for governing, installed, tracker and gate copies; `git diff --check`); lifecycle and scope (plan C1/C2, accepted proposal > Proposal, Maintainer amendments); satisfier (none required). **Not covered / low confidence**: no live concurrent writers, private author confirmation, whole-tree certification, external links or independent security judgment; those limits do not convert the advisory gate into an attribution detector.
+
+## Code review -- Codex GPT-6 Security reviewer -- 2026-10-30
+
+```text
+Reviewed commit: 76b5dbccbd3231b992c5daddb403f87e8b6b3d0d
+Target: implementation commits 1631e59d, 566acce0 and 76b5dbcc; verification 43391ddb
+Prior findings: none for this code pass
+```
+
+**Obligation**: Internal Security Review. **Tier**: Internal Security Review. **Findings**: none.
+
+**Foundations**:
+
+1. **Does it do what it claims?** The guidance requires agreed serialization and inspection, while the gate discloses that it counts reported rows without authenticating evidence; the independent section-boundary probe behaved as claimed -- `doctrine/coordination.md`, `tools/evolution_infer.py::parse_incidents`, and ledger below.
+2. **Best alternative.** Retain human confirmation and a transparent advisory row counter; automatic attribution would claim evidence the gate does not have -- `templates/modules/default-on/incident_log_template.md` > Unconfirmed reports and `tools/evolution_infer.py::evaluate_tracker`.
+3. **What would show it wrong?** An unconfirmed report counted across the section boundary, a prevented incident producing recurrence, or a hidden reporting limitation would contradict the contract -- falsification ledger below.
+
+**Bounding**: ACCEPTED. The wide Boundary B record maps governing and installed copies, consumers, tests, and manual inspection; its results support the claimed change without asserting certification or provenance authentication.
+
+**Falsification ledger**:
+
+* In a fresh isolated clone checked out at `76b5dbcc`, Python 3.13.13 called `evaluate_tracker` on a synthetic tracker with an `occurred` row under Unconfirmed reports and one in Incidents. It returned no finding. Adding a second incident row produced a count of two; changing that second row to `prevented` removed the finding. The two-row run is the positive control for both negative results.
+* `cmp tools/evolution_infer.py templates/modules/default-on/evolution_infer.py` succeeded at the reviewed commit. Read the two output paths and the ordinary review's independent CLI and output mutation ledger; their stated limitations cover unreported rows and unverified confirmation.
+* Read the Boundary B record and the manual staged-byte, reinspection and integration evidence. These are human procedures: a noncooperating writer can still race inspection, and duplicate rows or false testimony can inflate counts. The tracker guidance requires checking for a prior row and confirmation; it does not promise machine enforcement.
+
+**Covered**: security boundary and privacy guidance (`incident_log_template.md` > Confirmation Reference); section separation and impact filtering (ledger); copy consistency (`cmp`); review lifecycle and scoped verification (plan amendments and Boundary B). **Not covered / low confidence**: no live adversarial concurrent writer, private confirmation or local tracker contents were independently inspected; no full certification or external links were checked. The historical incident remains unconfirmed.
