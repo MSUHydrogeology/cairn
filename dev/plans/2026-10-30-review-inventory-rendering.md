@@ -159,3 +159,29 @@ exercise only `git show`; no historical code was executed.
 is authorized by this plan. Boundary C remains for the independent code
 reviewer. External links reported as unprobed by the prose gates were not
 fetched.
+
+## Code review -- Codex (GPT-6) -- 2026-10-30
+
+```
+Reviewed commit: 9675ea1b68241a8f86904cc02f71f962b70232a6
+Verification record: 19360fb9
+Target: C1 implementation and Boundary B
+Elapsed: approximately 10 minutes
+Tokens: unknown
+```
+
+**Obligation**: Internal usual code review
+**Verdict**: REVISE
+**Bounding**: mapped wide run is sufficient; no wider run required.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. Stage renders selected upstream text and roster into `.theirs`; `.ours` reads installed bytes -- `upgrade.py::_write_stage`, `test_upgrade.py::TestInitLock::test_review_inventory_theirs_excludes_local_edit_when_roster_matches`.
+2. **Best alternative.** Keep the reconciler and compatibility guard; they preserve upstream entries and refuse differing renderers -- `install.py::_reconcile_generated_blocks`, `upgrade.py::_render_review_inventory`.
+3. **What would show it wrong?** A successful stage with a duplicate entry, a current renderer mismatch, or a missing installed inventory that produces `.ours` would violate C1 -- plan Acceptance criteria; `upgrade.py:1405-1423`.
+
+**Blocking finding -- accepted edge cases lack public-path tests.** C1 requires a missing installed inventory with no `.ours` and duplicate entry markers. `rg -n 'README.md.ours|duplicate.*module|missing.*inventory' bootstrap/tests` finds only present-inventory `.ours` assertions (`test_upgrade.py:1281,1301`). The malformed fixture duplicates generated-block starts, not entries (`test_upgrade.py:1310-1355`). Close with public `--stage` cases asserting absent `.ours` and refusal/cleanup for duplicate entries. These accepted checks remain unmet, although a helper probe refused duplication.
+
+**Falsification ledger.** Clean clone 9675ea1b: nine focused inventory tests passed (Python 3.13.13). Helper probes refused duplicate entries and mismatched current metadata, preserved a selected edited upstream entry, and refused an edited unselected one. Boundary B records 343 mapped passes and two killed mutations; I checked SHA, clean states, families and gates against the plan without rerunning them.
+
+Coverage: claims/path/edges/fail-closed (`upgrade.py:360-437,1265-1284,1405-1423`; probes), reuse/drift (`install.py:1336-1450`; proposal Current contract), lifecycle/scope/satisfier (plan C1; finding), scientific validity (no scientific claim). No full suite, apply run, concurrent-path replacement, or code Security Review; the latter remains owed.
