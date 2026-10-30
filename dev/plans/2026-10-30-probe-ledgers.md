@@ -1,7 +1,7 @@
 # Plan: Keep probe evidence in tests and scripts
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-probe-ledgers.md
-**Status**: ready-to-implement
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Remove duplicate probe inventories while keeping evidence reproducible and review independent.
@@ -180,3 +180,39 @@ No parser, executable-selection, credential or network boundary changed. Existin
 **Bounding**: WIDER RUN REQUIRED — close P1 through actual forbidden-return checks and fresh affected-consumer verification.
 
 **Coverage:** Independently inspected committed governing/shipped changes, retained authority assertions, negative-control logic and Boundary B provenance. Did not rerun implementation checks or perform additional executable mutation; the ordinary review owns its reported mutation result. No complete consumer enumeration, full suite or re-anchor was performed.
+
+
+## Response to code review -- Codex gpt-6-luna -- 2026-10-30
+
+P1: accepted. The existing operative-carrier absence node now applies the forbidden-return matcher to each real carrier; the existing positive control exercises the review's exact sentence. In an isolated copy, restoring that sentence in `AGENTS.md` caused the mapped governing readers to fail (35 failed, 37 passed); the negative control is killed. No survivors or measured equivalents. The clean committed Boundary B run below passed. Security Review found no additional defect. Elapsed: approximately 8 minutes; tokens: unknown.
+
+## Implementation verification -- Codex gpt-6-luna -- 2026-10-30
+
+**Boundary B mode**: wide. This repair strengthens the existing operative-carrier tests for governing and shipped review contracts; the mapped suite includes source, installed, and template readers.
+
+**Certified by**: pending
+
+**Tested commit**: `54784ece1c275eccc0bd07f37a99229c2d265159`
+
+**Reviewed range**: `d268d574c31434ec9a27329e9a5219cae5b1c4a7..54784ece1c275eccc0bd07f37a99229c2d265159`; includes implementation `bf5d566d`, the ordinary and Security Review records, and repair commits `b6c2eb73` and `54784ece`. Intervening commits `1b28f6bb` and `dcf57534` concern scoped test policy and roadmap; `2fc884de` records the separate metered-cost Decision.
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13.
+
+**Pre-run state**: clean clone at the tested SHA; `git status --porcelain=v1` empty after restoring the isolated mutation.
+
+**Post-run state**: clean clone at the same tested SHA; `git status --porcelain=v1` empty.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+| --- | ---: | --- | ---: | --- |
+| `python -m pytest bootstrap/tests/test_review_sweep_ships.py bootstrap/tests/test_review_stance_in_shipped_files.py bootstrap/tests/test_review_and_verification_rules_ship.py` | 0 | 774 passed; 0 failed, skipped, xfailed or xpassed | 2.88 s | unknown |
+| `python scripts/claim_check.py <each of 11 changed documents>` | 0 | 11 passed; no claim-check flags | 0.48 s combined | unknown |
+| `python scripts/check_cairn.py` | 0 | 190 Markdown files; no issues; 89 external links not probed | 1.34 s | unknown |
+| `python scripts/link_check.py` | 0 | 190 Markdown files; no issues; 90 external links not probed | 0.20 s | unknown |
+| `python scripts/sync_doc_snippets.py` | 0 | 486 documents; no drift | 0.20 s | unknown |
+| `python scripts/quality_gate.py --sub neutrality` | 0 | 0 failures; 43 informational messages | 0.92 s | unknown |
+
+**Mutation check**: unmutated control was clean commit `54784ece`; total 1 exact forbidden-return mutation; 1 killed by the mapped operative-carrier/governing nodes; no survivors; no measured equivalents. Restored the isolated copy before Boundary B.
+
+**Non-pass disposition**: none. Neutrality messages were informational; external URLs were not probed by the mapped local checks.
+
+**Known omissions**: no full-suite certification or re-anchor was run; both remain separate authorized ceremonies. External links were not probed.
