@@ -1,7 +1,7 @@
 # Find a safe test-family speed improvement
 
 **Author**: Codex (GPT-6, proposal author)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: usual
 **Plan review**: required(Internal)
 **Opened**: 2026-10-29
@@ -275,3 +275,66 @@ The prior sequence of a Decision before identifying the family followed by
 another Decision in this file is superseded by one Decision after the
 concrete choice and review. The original audit-only prohibition on ordinary
 test edits remains superseded by the conditional implementation path.
+
+
+## Concrete revision -- Codex (GPT-6, proposal author) -- 2026-10-30
+
+The selected change is to make the `installs` fixture in
+`bootstrap/tests/test_review_sweep_ships.py` session-scoped instead of
+module-scoped. It still runs the real `bootstrap/scaffold.py` CLI once per
+shipped profile into a separate temporary tree; all existing nodes remain.
+The tests read the resulting trees and mutate copies of their text, not the
+trees themselves. Review must challenge whether sharing these trees across
+shuffled tests changes isolation or loses a property.
+
+The authorized certification at `8b51bb2e` failed: 5,622 passed and six
+failed in 1,693.03 seconds on Python 3.13.13. It is not a certification. Its
+complete duration report is `/private/tmp/cairn-cert-20261030-pytest.log`
+(local and temporary); setup, call and teardown each have 5,628 entries.
+Summing pytest's rounded hundredths by file ranks repin ceremony 613.64 s,
+gate manifest 202.09 s, gate preflight 167.34 s, repin 118.72 s, reanchor
+62.11 s and review sweep 41.81 s, all of the last in setup. The top ceremony
+families are protected; the approved roster identifies review sweep as
+ordinary. That approval did not install the transition: the installed gate
+manifest still freezes this file, and its existing ceremony remains owed.
+This proposal changes neither classification nor the manifest.
+
+A scoped experiment on an archive of `8b51bb2e` used Python 3.13.13 and
+`python -m pytest bootstrap/tests/test_review_sweep_ships.py
+bootstrap/tests/test_content_scan.py --quality-gate-shuffle-seed=0
+--durations=0 --durations-min=0`. The original passed 391 in 18.55 s, with
+67 review-sweep setup entries at least 0.1 s and 18.15 s summed setup. Changing
+only fixture scope passed 391 in 0.65 s, one such entry and 0.30 s summed
+setup. These single observations, in sequence, are not a whole-suite gain or
+a stability estimate; repeat the scoped comparison in the plan. The full-run
+report and scoped logs are local temporary evidence, not durable artifacts.
+
+The properties are: the ordered nine lenses and obligations, coverage and
+ledger rules, pointers, absence of duplicate doctrine and unfilled tokens, and
+real installations for every profile. Against the experimental scope change,
+after installation, removing lens 4, removing the pointer phrase, or adding an
+unknown placeholder each caused three failures across the three profiles in
+the installed-content nodes; the unmodified scoped control passed. An initial
+pointer mutation survived because its search did not match line-wrapped text;
+the corrected mutation matched and failed. These probes cover examples, not
+every obligation or an independent review.
+
+If accepted, a reviewed plan must name exact nodes and real entry points,
+check consumers for mutations of the shared trees, repeat same-command phase
+timings under stated conditions, and demonstrate fault controls beside an
+unmutated control. Stop if the scoped result is unstable, protection cannot be
+shown, or the shared fixture changes required isolation. The frozen-file
+ceremony remains separate and is not waived; no extra full suite, dependency,
+protection change, baseline installation, or ten-minute promise is authorized.
+Evidence and plan belong in `dev/`; no governing rule or scientific result
+changes. Assurance remains standard and plan review Internal.
+
+**Scope delta**: preserved. The ranking, classification, inventory, scoped
+baseline, controls and no-candidate stop remain; the selected change is now
+concrete.
+
+### Withdrawn / superseded commitments
+
+The prior unidentified-family wording is superseded by the selected fixture and
+mechanism above. The prior prohibition on an unidentified protected change and
+the requirement for its separate proposal remain.
