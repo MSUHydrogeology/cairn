@@ -1,7 +1,7 @@
 # Pass local API credentials to the dispatched API check
 
 **Author**: Codex (GPT-6)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — credential environment crosses a subprocess boundary
 **Plan review**: required(Internal + Internal Security Review)
@@ -27,10 +27,12 @@ For the API local leg alone, derive the exact local principal credential names
 from the validated local API policy and pass only present values to that child.
 Do not pass credentials declared only in the deployed section, arbitrary matching
 prefixes, or credentials to other legs. Preserve refusal for invalid policy and
-missing credentials; do not print values or names in reports. Reuse the existing
-policy validation and ordinal derivation rather than inventing a second parser.
-Resolve how to do that without weakening the dispatcher's existing binding and
-isolation checks in the reviewed plan. If that cannot be done safely, stop for
+missing credentials; do not print values or names in reports. Reuse the existing validated `Policy.credential_names("local")` operation
+rather than inventing a second parser. The reviewed plan must specify a verified
+loading path that does not execute unchecked adopter code in the parent, preserve
+the runner's verified-engine-before-credential ordering, and test tampering
+negatively without weakening the dispatcher's existing binding and isolation
+checks. If that cannot be done safely, stop for
 reassessment rather than broaden the environment.
 
 ## Rationale
@@ -155,3 +157,17 @@ Assurance path: high-assurance
 **Non-blocking advice**: The plan should show exactly how existing validation is reused without importing unchecked adopter code into the parent. `_load_engine` executes sibling package initialization; blindly importing the facade or package adds authority beyond copying selected environment entries. Close this advice with a concrete verified loading path and a negative tamper test, without another parser or plugin framework.
 
 **Coverage**: Read committed proposal, dispatcher environment/launch/binding paths, API loader/credential ordering, and policy name derivation. Did not execute implementation checks, audit all policy schema cases, or concurrent host compromise; no implementation reviewed.
+
+
+## Response -- Codex GPT-6 -- 2026-10-30
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+The usual review raised no findings. Accept the Security Review's advice: the
+plan must specify the verified loading path and a negative tamper test. Reuse
+the existing local credential-name operation; add no registry or parser.
+
+### Withdrawn / superseded commitments
+
+None.
