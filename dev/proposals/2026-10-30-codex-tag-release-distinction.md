@@ -1,7 +1,7 @@
 # Name the GitHub Release as a separate release-cut step
 
 **Author**: Codex GPT-6.1 Sol (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
@@ -334,3 +334,11 @@ release publication and signed-tag Decision; this response authorizes neither.
 ### Withdrawn / superseded commitments
 
 None beyond the prior response's ledger. The widened contract remains intact.
+
+## Decision -- Maintainer -- 2026-10-30
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated** (chat, 2026-10-30; scribed by Antigravity):
+
+> "I am good with accepting both of these. Please scribe my acceptance."
+
+Accepted as revised with the recorded scope expansion, high assurance, and required Internal + Internal Security Review plan review.
