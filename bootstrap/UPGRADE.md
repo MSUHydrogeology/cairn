@@ -536,6 +536,11 @@ if the module is already recorded. (`init` would also record it, but its
 lockfile writer fail-closes on a customized tree — `--adopt-module` is the path
 for an existing adopter.)
 
+If install or `upgrade --adopt-module` refuses malformed or ambiguous generated
+module markers, save a copy of your planning task list and module inventory,
+manually reconcile the marked region while preserving your work, then retry. The refusal leaves those files and the lockfile
+unchanged; Cairn does not guess marker identities or repair damaged markers.
+
 ## Migrating a tree installed before upgrade support
 
 If you bootstrapped before this capability existed, or copied the kernel
