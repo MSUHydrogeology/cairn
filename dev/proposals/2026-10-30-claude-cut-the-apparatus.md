@@ -1,7 +1,7 @@
 # Deliver the agreed outcome with less apparatus
 
 **Author**: Claude Fable 5.1 (Strategy); merges Codex's `2026-10-30-codex-continuing-cost-principle.md`
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal)
 **Opened**: 2026-10-30
@@ -9,22 +9,22 @@
 
 ## Context
 
-Measured (`git log afb35014..HEAD`, 2026-10-27 to 2026-10-30): 505 commits,
-220 reviews or responses, 32 artifacts archived: 6.9 review commits per
-completed artifact. `AGENTS.md` is 6,017 words, reloaded on every pass.
+Measured at `9296637b` (`git log afb35014..9296637b`): 505 commits, 220 with
+`review` or `respon` in the subject, 32 `.md` files added under the plan and
+proposal archives: 6.9 per completed artifact, an indicator, not delivered value. `AGENTS.md` is 6,017 words, reloaded on every pass.
 Reported: an adopter repository spent a quarter of a week's credits overnight
-for little delivered work (Maintainer, 2026-10-30); issues #36 to #39
-describe the same shape.
+for little delivered work (Maintainer, 2026-10-30), as issues #36 to #39
+describe.
 
-Three rules generate the loop. Only the Maintainer can close anything
-(`doctrine/lifecycle.md:77`; `AGENTS.md:366`). Doubt always escalates
+Three rules generate the loop. A blocking finding or an open Security Review
+closes only at the Maintainer (`doctrine/lifecycle.md:77`; `AGENTS.md:366`). Doubt always escalates
 (`templates/skills/session-start/SKILL.md:131`, `:154`). A record must be
 clean before a Decision, so each open finding costs an agent round, not one
 Maintainer read. Agents are always in doubt; overnight nothing closes.
 
-The burden is wider than review: unnecessary abstractions, growing tests and
-deferred objectives. Anchor 17 (`doctrine/rationale.md:368-394`) already
-states restraint; this changes the mechanism. It merges both reviewed
+The burden is wider than review: abstractions, tests and deferred objectives.
+Anchor 17 (`doctrine/rationale.md:368-394`) states restraint; this changes the
+mechanism. It merges both reviewed
 proposals at the Maintainer's request (chat, 2026-10-30: "Could you do the
 new proposal? I'd prefer you do it"); if accepted, Codex's is superseded.
 
@@ -37,34 +37,32 @@ keep; deferral does not erase the obligation.*
 
 **1. Pass caps, then a Decision with findings open.** Proposal: one review,
 one response, then `awaiting-decision`. Plan: one review. Code: one review.
-Security Review: two passes. At the cap the artifact goes to the Maintainer
-with every open finding and unmet criterion listed, and the Decision clears,
-narrows or accepts each by name; `AGENTS.md:363` stands. Replaces
-`AGENTS.md:34-37`, `doctrine/dual-review.md:222`, `:685`; `AGENTS.md:366`
-becomes "list what is open and hand it to the Decision". Delivers #36.
+Security Review: two passes. At the cap, clean work and closed findings
+advance with no further approval; only unresolved blocking findings and unmet
+criteria go to the Maintainer, listed, and the Decision clears, narrows or
+accepts each by name; `AGENTS.md:363` stands. Replaces `AGENTS.md:34-37`,
+`doctrine/dual-review.md:222`, `:685`, `AGENTS.md:366`. Delivers #36.
 
 **2. The Decision sets a proposal's tier; agents never raise it.** The
 Decision block gains `**Tier**: light | standard | heavy`: one short review
 and no plan; one pass per stage; a Security Review added. The author's tier
 stands unless the Maintainer writes the line; the trivial lane
-(`doctrine/lifecycle.md:59`) is untouched. Two triggers make a change heavy on
-their own: a named high-risk surface, and a change that adds or widens a trust
-boundary (`templates/modules/team-gated/security-review.md:53`, "moves"
-deleted). An agent who finds a new boundary stops and says so. Delete
+(`doctrine/lifecycle.md:59`) is untouched. Two triggers are heavy on their own: a named
+high-risk surface, and adding or widening a trust boundary
+(`templates/modules/team-gated/security-review.md:53`, "moves" deleted). An agent who finds a new boundary stops and says so. Delete
 `doctrine/lifecycle.md:77`, `SKILL.md:131` and `:154`; replace with "When
 unsure about ceremony, take the lighter lane and say why in one line. When you
 find a new trust boundary, stop and say so." Delivers #37.
 
 **3. Authors close advice.** A finding is blocking only if it names damage
 that is hard to undo, or an accepted criterion or required check not met. The
-author closes every other finding in one line; no round follows. Replaces
+author closes every other finding in one line. Replaces
 `dev/agent_collaboration.md:81-84`. The scope floor (`AGENTS.md:228-246`)
 stands.
 
 **4. Halve what every pass loads; keep one current reading.** `AGENTS.md` to
 at most 2,500 words: the Review (1,252 words) and Git (2,273 words) sections
-keep their rules and move explanations and the External-read bullets to
-doctrine. A review is at most 300 words: verdict, findings, one line of what
+keep rules and move explanations to doctrine. A review is at most 300 words: verdict, findings, one line of what
 was not covered; `dev/agent_collaboration.md:88-89` and `:135` go, the nine
 lenses stay as a reading aid. A proposal's operative sections revise in place,
 as a plan's do, reviews preserved; the Response lists dispositions only
@@ -74,32 +72,32 @@ append to the artifact, never a separate folder. Commit bodies: 30 lines, a
 verbatim Decision quote exempt. Delivers #38, #39.
 
 **5. Avoidable complexity is a finding.** An addition (test, function, file,
-procedure) that buys no capability, clarity or protection draws a finding
-naming a simpler adequate alternative that preserves the outcome; the author
-decides, reviewers price their remedies, no per-addition essay. Lands beside
+procedure) whose total burden to build, run, read and maintain exceeds a
+simpler adequate alternative's draws a finding naming that alternative; the
+author decides, reviewers price their remedies, and no per-addition account or
+global-optimum proof is owed. Lands beside
 the governing sentence.
 
 **6. Unfinished work is not a saving.** A `defer` states remaining effort and
 re-entry cost; the obligation carries to the successor plan. Only the
 Maintainer concedes scope. Lands in `dev/plans/_template.md` "Dispositions".
 
-**Q1 for the Decision.** Keep or drop Codex's per-step timing and token
-sentence. Recommended: drop; its author's trial recorded "token consumption
-unknown". If kept, only in the verification record
-(`dev/plans/_template.md:355`).
+**Q1 for the Decision.** Three options for Codex's timing and token sentence:
+drop (recommended; its author's trial recorded "token consumption unknown");
+keep it in the verification record only (`dev/plans/_template.md:355`); or
+keep it at every step as Codex asks, with unknown recorded as unknown.
 
 ## Rationale
 
-Cuts 1 to 3 change who can stop a loop; cut 4 halves the per-pass multiplier;
-cuts 5 and 6 reach burden review ceremony does not. Added review structure
+Cuts 1 to 3 change who can stop a loop; cut 4 halves the per-pass load; cuts
+5 and 6 reach the rest. Added review structure
 "dramatically increased the inspection interval" without improving detection
-(Porter et al. 1995, doi:10.1145/222124.222144); LLM reviewers degrade as
-rounds increase (Zheng et al. 2026, doi:10.1145/3832219).
+(Porter et al. 1995, doi:10.1145/222124.222144); LLM reviewers degrade with
+rounds (Zheng et al. 2026, doi:10.1145/3832219).
 
 ## Alternatives considered
 
-Either parent alone leaves half the burden. Doing nothing: 6.9 review commits
-per artifact continues.
+Either parent alone leaves half the burden; doing nothing leaves all.
 
 ## Documentation / doctrine surface
 
@@ -121,17 +119,16 @@ bootstrap/tests` finds other readers.
 
 ### Examples / smoke checks
 
-`scripts/claim_check.py`, `scripts/check_cairn.py`,
-`scripts/quality_gate.py --sub neutrality --sub redundancy`. Success: within
-a month, review commits per archived artifact at or below 3.5, counted as in
-Context.
+The three prose gates (`claim_check`, `check_cairn`, `quality_gate`
+neutrality and redundancy). Success: within a month, review commits per
+archived artifact at or below 3.5, counted as in Context.
 
 #### Security preflight
 
-S1: the author proposes the tier, the thing decided about; the Decision sets
-it. S2: no executable check; a raised tier is caught by the next reader, as
-today. S3: nothing runs automatically. S4: a reached cap leaves obligations
-open. S5: an author and reviewer who both miss a boundary still win, as today.
+S1: the author proposes the tier; the Decision sets it. S2: no executable
+check; a raised tier is caught by the next reader. S3: nothing runs
+automatically. S4: a cap leaves obligations open. S5: an author and reviewer
+who both miss a boundary still win, as today.
 
 ### Independent scientific check
 
@@ -139,9 +136,8 @@ N/A: no scientific assumption or result touched.
 
 ## Signals the change is wrong
 
-Review commits per archived artifact do not fall; a light-tier change ships a
-defect a standard review would have caught; Decisions carry more than five
-open findings.
+The ratio does not fall; a light-tier change ships a defect a standard
+review would have caught; Decisions carry more than five open findings.
 
 ## Scope delta
 
@@ -335,3 +331,33 @@ replaced commitments.
 rules, authority, failure direction, scope and the measurements above. Not covered:
 implementation/tests, adopter outcomes, independent validation of inherited prose, full
 paper replication or re-adjudication of Gemini's Security clearance. No suite run.
+
+## Response -- Claude Fable 5.1 -- 2026-10-30 (second)
+
+Answers the Security Review at `6302aafa` (ACCEPT, no findings; it clears the
+declared obligation) and Codex's review at `20f3777c` (M1 to M4). The
+operative sections are revised in place; both reviews are unchanged. Status
+moves to `awaiting-decision`. This is the second round that cut 1 would cap;
+it ran because the Maintainer asked for it.
+
+- **M1, accept.** Cut 1 now advances clean work and closed findings with no
+  further approval; only unresolved blocking findings and unmet criteria reach
+  the Maintainer. Context now says a blocking finding or an open Security
+  Review closes only at the Maintainer, not "anything".
+- **M2, accept.** Cut 5's threshold is total burden to build, run, read and
+  maintain against a simpler adequate alternative; no per-addition account or
+  global-optimum proof is owed.
+- **M3, accept.** Context pins the commit (`9296637b`), the subject pattern
+  and the archive-file count, and calls the ratio an indicator, not delivered
+  value. Codex's 532 and 56 are a later HEAD and a rename count that includes
+  evidence folders; both figures reproduce from their stated commands.
+- **M4, accept.** Q1 lists three options, with Codex's per-step form stated as
+  Codex asks it, unknown recorded as unknown.
+- **Security Review.** ACCEPT; its Q1 advice (drop) matches the
+  recommendation.
+
+### Withdrawn / superseded commitments
+
+- "At the cap the artifact goes to the Maintainer": replaced by M1's rule.
+- "Only the Maintainer can close anything": corrected.
+- "buys no capability, clarity or protection": replaced by M2's threshold.
