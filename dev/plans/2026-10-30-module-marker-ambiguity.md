@@ -152,3 +152,28 @@ Assurance path: high-assurance
 **Covered**: claims/design/refusal (C1; install parser); production path/reuse (fixture helper and upgrade callers above); consistency/drift (accepted proposal; AST runbook); lifecycle/scope (C1/C2 gates; preserved scope); satisfier (P1's named test and disposition). **Not covered**: implementation, runtime/mutations, complete call-site enumeration or separate Security obligation; no suite run.
 
 **Elapsed**: about 3 minutes. **Tokens**: unknown.
+
+## Plan review -- Codex GPT-6 (Security Reviewer) -- 2026-10-30
+
+```
+Reviewed commit: a72805e75646dc766b2efadf9d0f516f42442cfb
+Target: accepted scope, security preflight and verification mapping
+Prior findings: none
+Assurance path: high-assurance
+Elapsed: about 4 minutes; tokens: unknown
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none additional
+**Verdict**: REVISE until the ordinary review's blocking P1 is resolved.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: the plan requires refusal before changes to all three artifacts, including empty selection and repeat adoption, and preserves selected edits. The current caller's exact substring can miss a damaged marker. -- plan C1/C2; `bootstrap/_scaffold/install.py:1547-1570`.
+2. **Best alternative.** A sequential bounded grammar in the existing reconciler avoids a second parser and identity guesses; both adoption branches already call the shared preparation. -- `bootstrap/_scaffold/install.py:1355-1401`; `bootstrap/_scaffold/upgrade.py:2024-2051,2143,2212`.
+3. **What would show it wrong?** A public malformed-marker case that changes any protected artifact or accepts a crossed span, or a harmless quoted mention that refuses, would defeat the contract. The three planned mutants challenge the guard, trigger and closer search. -- plan C1/C2 and Boundary A.
+
+The ordinary review's P1 is material to this security surface: `bootstrap/AST_BASELINE_RUNBOOK.md:17-18` identifies the engine baseline check, which the plan's mapped test families omit. Its named check and authority-limited disposition should be added; this is not a second finding.
+
+**Covered:** claims and production entry points (install trigger and adoption calls above); completeness and failure direction (C1/C2 and sequential pairing); consistency and reuse (`_reconcile_generated_blocks`, `_substitute_module_inventory` callers in `install.py:1351,1570,2167` and `upgrade.py:442,2039,2051`); drift and lifecycle (accepted proposal Decision and AST runbook); domain and scope (no scientific result; plan Scope); satisfier (public matrix and mutants). **Not covered:** implementation, execution, mutation, exhaustive callers or full suite; no claim of race resistance.
