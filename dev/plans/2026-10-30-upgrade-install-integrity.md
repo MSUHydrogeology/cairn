@@ -239,3 +239,58 @@ v0.6 board item; repinning and re-anchoring occur at a version cut or when
 the Maintainer asks. This amendment does not authorize a ceremony or waive
 other checks, reviews, or acceptance criteria. Earlier evidence remains a
 record of what was known and done at the time.
+
+## Implementation verification follow-up -- Codex GPT-6 -- 2026-10-30
+
+**Boundary B mode:** wide, on clean detached Git clones at
+`22c49ec2bb588d1d237db14f44650caea77f4b33`. The recovery repair is
+`3fd8dab395eb0cbb46953dada9297bdfbb9daf75`; the reviewed implementation
+range remains `85a9b6d2`..`3fd8dab3`. Later integrated changes are included in
+the tested commit. **Certified by:** pending. Interpreter:
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13).
+Both verification clones were clean before and after their commands; temporary
+logs were moved outside one clone before its final `git status --short`.
+
+| Command, with the absolute interpreter above | Result | Wall time |
+|---|---|---:|
+| `-m pytest -q --tb=short bootstrap/tests/test_upgrade.py bootstrap/tests/test_upgrade_lockfile_path_containment.py bootstrap/tests/test_upgrade_side_door_parity.py` | 219 passed, 6 failed | 49.09s |
+| `-m pytest -q --tb=short bootstrap/tests/test_upgrade_refuses_hostile_project_data.py bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_lockfile_provenance.py` | 254 passed | 48.01s |
+| `-m pytest -q --tb=short bootstrap/tests/test_install_report_slots.py bootstrap/tests/test_install_module.py bootstrap/tests/test_module_merge.py` | 36 passed | 1.42s |
+| `-m pytest -q --tb=short bootstrap/tests/test_scaffold.py bootstrap/tests/test_skills_upgrade.py bootstrap/tests/test_upgrade_added_slots.py bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py` | 193 passed | 47.60s |
+| `-m pytest -q --tb=short bootstrap/tests/test_security_lint.py` | 11 passed; no Bandit skip | 3.92s |
+| `scripts/claim_check.py bootstrap/UPGRADE.md` and `scripts/claim_check.py dev/plans/2026-10-30-upgrade-install-integrity.md` | both OK | 0.05s each |
+| `scripts/check_cairn.py`; `scripts/link_check.py`; `scripts/quality_gate.py --sub neutrality` | both link/prose checks OK on 195 Markdown files; neutrality fail=0, info=43 | 1.44s; 0.20s; 0.95s |
+
+**Non-pass disposition:** The six failures in the first group are open, not
+waived. `TestInitLock::test_review_pairs_leave_no_placeholder_the_install_filled`
+is the generated inventory mismatch addressed by the separate proposal awaiting
+Decision. Three `TestTemplateGatingSafety` nodes (`test_only_the_human_team_axis_is_gated`,
+`test_solo_keeps_all_brightlines_drops_human_contributors`,
+`test_multi_keeps_human_contributors`) and
+`TestInitLock::test_review_copy_is_sized_to_the_current_profile` assert a
+`human_team` gate, `## Human contributors`, or old headings removed by the
+accepted apparatus reduction at `3cceb2c0`. The removed section was
+informational; `templates/optional/CONTRIBUTING.md` still supplies the human
+entry point and links to shared rules. The sizing node needs a current
+profile-dependent assertion. The containment node
+`test_a_hand_built_review_area_cannot_make_apply_record_a_path_outside_the_project`
+builds a stage without the directory observations now required by
+`a6703b49`; apply correctly refuses it. Its fixture must supply valid
+observations before testing path containment. These causes identify stale
+test inputs or assertions, but the mapped command remains failed.
+
+**Mutation evidence:** On the unmodified commit, the public altered-ancestor
+recovery test and supplied-slot display test each passed (one test each).
+In separate copies, bypassing the ancestor digest comparison made the recovery
+test fail because no review-only pair was staged; bypassing `_display_name`
+escaping made the display test fail on U+202E. Total 2 mutants, both killed;
+no survivors or measured equivalents. The recovery test also exercises two
+successive corrupt ancestors and preserves both originals.
+
+This follow-up took approximately 4 minutes of measured test and gate wall
+time; token use is unknown. The mapped non-passes keep the plan in
+`revising-code`. An independent Security Review follow-up on the recovery
+repair and a passing final verification record remain outstanding. No full
+suite, re-anchor, Windows terminal rendering, or arbitrary concurrent-writer
+probe was run. Synced snippets were unchanged, so snippet synchronization was
+not triggered.
