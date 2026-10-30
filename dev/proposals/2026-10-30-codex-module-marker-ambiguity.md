@@ -84,3 +84,27 @@ A valid checked task is reset or duplicated, unrelated prose is removed, a malfo
 **Finding 1 — non-blocking.** Define “marker-like” as a line anchored to a Cairn module marker stem inside the generated region, and state how malformed openers, closers and duplicate region delimiters are classified. Otherwise an ordinary note quoting marker text could be refused, or a near-spelling could be missed. A short grammar statement and a public harmless-prose example would close this; `bootstrap/_scaffold/install.py::_reconcile_generated_blocks` is the implementation home.
 
 **Coverage**: Claims and public path: temporary repeat-install probe above; completeness and fail-closed: `install.py:1360-1450,1560-1590`; consistency and drift: archived discovery proposal and `bootstrap/tests/test_onboarding_seed_roster.py`; lifecycle and scope: this proposal's install/adoption and documentation sections; satisfier: Finding 1. No scientific claim applies. I did not run the suite, mutate code, or verify every malformed spelling; implementation and the separate Security Review remain open.
+
+## Review -- Codex (GPT-6) -- 2026-10-30
+
+**Reviewed commit**: ae80c5dec2a1a56b2817d3d26d31db727b7b0d2c  
+**Target**: proposal and installation/adoption reconciliation boundary  
+**Prior findings**: none  
+**Assurance path**: high-assurance  
+**Tier**: Security Review  
+**Findings**: raised  
+**Verdict**: REVISE  
+**Elapsed**: approximately 3 minutes  
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: edited owner state can be mistaken for missing generated work; refusing before writes protects that state, and the engine is a high-risk surface (`bootstrap/_scaffold/install.py:1375-1401`, `dev/proposals/archive/2026-10-29-codex-module-discovery-activation.md`).
+2. **Best alternative.** A bounded, line-anchored marker grammar at the shared reconciler is less costly and safer than fuzzy recovery; arbitrary prose cannot reliably identify a module (`bootstrap/_scaffold/upgrade.py:1908-1935`).
+3. **What would show it wrong?** A public install or adoption that accepts ambiguous markers and changes discovery bytes, or refuses ordinary unrelated prose, falsifies the intended boundary (`bootstrap/tests/test_onboarding_seed_roster.py`, `bootstrap/tests/test_upgrade_module_additions.py`).
+
+**Finding 1 — non-blocking.** In addition to defining marker-like syntax, specify that entry spans must be non-overlapping and properly paired, and test nested or crossed markers through a public path. The current parser independently searches for each matching closer (`bootstrap/_scaffold/install.py:1382-1401`), so a complete-looking opener can be inside another entry; the later deletion loop uses those spans independently. A sequential pairing rule and a refusal test that preserves all three artifact bytes close this gap.
+
+**Finding 2 — non-blocking.** Cover the repeat-install preflight when no modules are selected and an opener is malformed: the caller decides whether to reconcile using the exact substring (`bootstrap/_scaffold/install.py:1566-1571`), so a guard solely inside the reconciler may never run. Specify the intended trigger and test the public path, including unchanged bytes on refusal. The owner controls this local text; this is preservation of work, not a claim of protection against a malicious owner.
+
+**Coverage**: Claims and public path: proposal probe and `install.py:1566-1590`; completeness and fail-closed: `install.py:1375-1445` and `upgrade.py:1908-1935,2025-2035`; consistency and drift: archived discovery proposal and the two named test files; lifecycle and scope: high-assurance declaration and engine ownership in `dev/proposals/_template.md`; scientific scope: no scientific result; satisfiers: findings above. Not covered: execution, mutation, every malformed spelling, or filesystem race behavior; this is a proposal review, not implementation verification.
