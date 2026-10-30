@@ -1,7 +1,7 @@
 # Plan: Align work-intent guidance with behavior
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-intent-guidance.md
-**Status**: awaiting-code-review
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30
@@ -228,3 +228,12 @@ Assurance path: high-assurance
 * **Residual risk:** Cooperative identity can be spoofed or shared and the hook intentionally fails open on internal error. These are stated limits, not new safeguards supplied by this change. No full-suite certification, re-anchor, historical-incident reconstruction, exhaustive test rerun or new help mutation was performed; the ordinary review records independent mutations of both help copies.
 
 **Coverage -- covered:** Claims, failure/exemption modes and public paths through the five-case real-CLI matrix and targeted tests above; identity and release boundaries through `tools/_intent/identity.py`, `tools/_intent/cli.py` and `tools/_intent/hooks.py`; consistency and drift through the committed doctrine/module/collaboration wording and byte comparisons; lifecycle and scope through the plan's accepted contract, verification and pending ceremony. **Not covered / low confidence:** adversarial log tampering, all malformed-config combinations, unrelated interleaved implementation, external links, and Maintainer-run trust ceremonies.
+
+## Response to code reviews -- Codex (GPT-6) -- 2026-10-30
+
+| Review | Disposition |
+|---|---|
+| Ordinary review at `0b7aeedf` | Accepted; `Bounding: ACCEPTED`. Its independent targeted checks and source/shipped mutations agree with the implementation record. |
+| Security Review at `562f1386` | Accepted; `Bounding: ACCEPTED`. Its five-case CLI matrix and targeted tests confirm the documented cooperative identity limits and existing exemptions. |
+
+No review finding remains open. The documented gate-manifest ceremony is still owed to the Maintainer and is separate from this plan's completion; no baseline installation, old-anchor reconciliation, full-suite certification, or push is claimed.

@@ -162,15 +162,10 @@ verify the mapped behaviors and complete applicable frozen-file ceremony.
 ### 12. Correct work-intent guidance and identity help — accepted
 
 The [archived proposal](../proposals/archive/2026-10-29-codex-intent-guidance.md)
-and [plan](../plans/2026-10-30-intent-guidance.md) are accepted; the plan is
-`ready-to-implement`. Reconcile guidance and parent CLI help without changing
-enforcement. The opt-in hook blocks fresh overlaps only with a token and
-different resolved labels; stale/unclaimed paths warn. Use one session label
-for claim, commit and inherited auto-release; prefer harness identity, avoid
-global overrides and shared sibling labels. Manual release uses claim ID, not
-label authentication. Labels/logs are cooperative, not authentication.
-Implementation must complete mapped checks and applicable frozen-file and
-doctrine-evolution gates.
+and [archived plan](../plans/archive/2026-10-30-intent-guidance.md) delivered
+the guidance and parent CLI help correction without changing enforcement.
+The ordinary and Security code reviews accepted the implementation; the
+recorded gate-manifest ceremony remains separate v0.6 baseline work.
 
 ### Certification cost — held for evidence, not a current Decision
 
