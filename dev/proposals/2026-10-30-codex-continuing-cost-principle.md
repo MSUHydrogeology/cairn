@@ -1,134 +1,147 @@
-# Make cost a continuing design constraint
+# Deliver useful work without accumulating avoidable burden
 
-**Author**: Codex (runtime model identifier unavailable; Strategy / proposal author)
+**Author**: Codex (runtime model identifier unavailable; Strategy)
 **Status**: awaiting-review
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
-**In brief**: Make accumulated cost and human comprehension govern ongoing work, and close four concrete sources of review and evidence overhead.
+**In brief**: Make unnecessary complexity and unfinished commitments count against delivery, without adding machinery.
 
 ## Context
 
-The Maintainer reports growth during work, not merely poor initial choices:
-review rounds, documents, code, duplication, model use and tests.
-Issues #36–39, linked below, supply adopter reports, not independently
-reproduced measurements.
-`doctrine/rationale.md` already favors restraint, but `AGENTS.md` still demands
-per-mutant accounting and permits open Security Reviews to repeat.
-The hypothesis: local completeness wins while accumulated cost has no owner.
+The Maintainer reports ballooning work, with cases in issues
+[#36](https://github.com/MSUHydrogeology/cairn/issues/36),
+[#37](https://github.com/MSUHydrogeology/cairn/issues/37),
+[#38](https://github.com/MSUHydrogeology/cairn/issues/38) and
+[#39](https://github.com/MSUHydrogeology/cairn/issues/39).
+These are adopter reports, not independently reproduced measurements.
+
+[Consensus research](https://consensus.app/search/what-does-the-research-literature-say-about-balanc/PApQ_jgAQfKubGwIG5nnWw/)
+provided discovery; selected primary sources were checked.
+[SPACE](https://www.microsoft.com/en-us/research/publication/the-space-of-developer-productivity-theres-more-to-it-than-you-think/)
+rejects single-metric productivity;
+[multitask incentive theory](https://web.stanford.edu/~milgrom/publishedarticles/Multitask%20Principal%20Agent.pdf)
+explains distorted effort allocation;
+[debt research](https://doi.org/10.1016/j.jss.2019.06.004) documents reported maintenance burden;
+[comprehension research](https://sscalabrino.github.io/files/2019/TSE2019AutomaticallyAssessingCode.pdf)
+challenges simple proxies;
+[SWE-Effi](https://arxiv.org/abs/2509.09853), a benchmark preprint, examines outcomes
+alongside resources. These support the design, not validated policy thresholds.
 
 ## Proposal
 
-Replace the existing search/reuse paragraph in both `AGENTS.md` copies with
-this operating principle and the revised reuse sentence below:
+Replace fragmented cost/reuse advice with this governing rule in both
+`AGENTS.md` copies:
 
-> **Cost and complexity.** Deliver the agreed outcome with the least total
-> burden consistent with correctness, security, scientific validity and human
-> comprehension. Count delivery and continuing costs: time, tokens, compute,
-> attention and maintenance. Complexity includes concepts, indirection,
-> coupling, state, duplication and obligations in code, prose and process;
-> fewer lines or files need not mean less complexity.
+> **Deliver, with economy.** Finish the agreed useful outcome with the required
+> assurance and least total lifecycle burden. Cost includes time, tokens,
+> compute, delay, human attention and continuing maintenance. Complexity
+> includes opacity, concepts, indirection, coupling, state, duplication and
+> obligations in code, documentation and process. Every addition—including
+> tests (construction and repeated execution), functions, class growth, files, folders
+> and procedures—costs something. It must buy a current capability, clearer
+> understanding or worthwhile protection; fewer lines are not inherently better.
 >
-> Authors and reviewers own the work their choices induce. Added burden must
-> serve a present requirement or credible material risk better than a simpler
-> adequate alternative. Reconsider a growing approach; stop when the outcome
-> and required evidence are adequate. Do not trade readability for brevity.
-> Optional improvements need not become follow-ups. This grants no permission
-> to skip safeguards, weaken evidence, silently reduce agreed scope or refactor
-> unrelated work. Routine choices require judgment, not additional records.
->
-> **Reuse.** Search before building; reuse or adapt when it lowers total
-> burden. Generalize for current responsibilities, not hypothetical extensions.
-> Keep the existing requirement to name the search in the plan or commit.
+> Authors and reviewers own the costs their choices induce. Prefer simpler
+> adequate means, make ordinary decisions and continue independent authorized
+> work around blockers.
+> Reconsider ballooning approaches; stop optional polishing when the outcome
+> and required evidence are adequate. Do not substitute more planning for
+> authorized implementation. Cost constrains the means, not the agreed ambition.
 
-Apply that principle through these replacements, not additional cost fields:
+**Make this bite in existing review.** Avoidable burden is a defect, not merely
+a style preference: its finding names a concrete lower-burden adequate
+alternative and preserves the outcome. No global-optimum proof or per-addition
+essay. Reviewers price their remedies too.
+Reuse when it helps; do not demand a framework to remove harmless duplication.
+Keep existing reuse-search obligations.
+Honor model capability floors and escalation; higher tiers are not blanket insurance.
 
-- **Models and remedies:** retain task capability floors and required
-  escalation. Higher-tier use answers a specific uncertainty or failure, not
-  blanket insurance. In the existing review sweep, replace mandatory
-  generalization with the lower-burden adequate remedy; require reviewers to
-  distinguish defects from optional improvements. Clear explanatory code may
-  be longer. Test cases must protect distinct properties or consequential
-  faults, not exhaustively enumerate tokens.
-- **[#36](https://github.com/MSUHydrogeology/cairn/issues/36):** at most two
-  Security Review passes per obligation without further Maintainer authority.
-  The second reads the revision and affected interactions. If unresolved,
-  stop and give the Maintainer the remaining findings; the obligation remains
-  open until their recorded disposition. A third pass requires their word. Revisions and reviewer changes do not
-  reset the count. Lowering the security capability floor still requires a recorded Decision.
-- **[#37](https://github.com/MSUHydrogeology/cairn/issues/37):** trigger on a new
-  or widened trust exposure, including changed guards, authority, sources or
-  execution paths. Another file handled by unchanged reviewed readers/writers,
-  or a guarded relocation with unchanged exposure, is not automatically a new
-  boundary. Named high-risk triggers remain; identify the actual affected
-  boundary, not merely its containing file. Challenge necessity in existing
-  review reasoning, with no new skeleton field. Correct mistaken declarations
-  explicitly; uncertainty about a real exposure is not clearance. Ordinary
-  use of an unchanged boundary is not itself trust-ceremony work; apply
-  bounded/wide verification to the changed behavior.
-- **[#38](https://github.com/MSUHydrogeology/cairn/issues/38):** “A review record
-  lives in its artifact or beside it, never in a separate reviews folder.”
-  Keep append-only history and existing attribution requirements.
-- **[#39](https://github.com/MSUHydrogeology/cairn/issues/39):** replace exhaustive
-  narrative evidence with a readable result, reviewed commit and reproducing
-  test/script/command. Mutation summaries retain the control, total and killed
-  counts, and every survivor/equivalent with its reason; equivalence remains
-  measured. Reproducible methods live in versioned owning tests/scripts.
-  No per-killed-mutant table, probe ledger or pasted output in lifecycle prose.
-  Commit bodies have a 30-line ceiling, normally wrapped; summary values are
-  not raw logs. Preserve material failures, uncertainty and coverage gaps.
+**Unfinished work is not a saving.** Whittling proposed/accepted scope,
+transferring work or archiving a local plan does not deliver the original
+outcome or erase its cost. Only the Maintainer can concede scope.
+An existing deferral reason must explain why delay beats completion now:
+remaining effort, re-entry/re-review and delay consequences; unknown is not
+zero. Retain the obligation and cumulative cost under the original work's
+existing links, across successor plans; later budgets must not reset on transfer.
+This adds no tracker or new scope-remainder format.
+Unaccepted ideas may be declined outright.
+The Maintainer may retire obsolete objectives; sunk costs do not justify continuation.
+
+**Observe before budgeting.** At each existing authoring, review, revision,
+implementation, verification and archive step, sample start/end clock time or
+reuse host timing. Keep one cost sentence in its existing result record:
+elapsed time and reported or defensibly estimated tokens, with source and
+model when known. Separate operator waiting and parallel rollups; preserve
+failed work. Missing usage is unknown, not zero; artifact size is not consumption.
+Use existing session information, not transcript collection or new telemetry.
+Later budgets follow observations; no hard caps or new approvals now.
+
+**Resolve the four concrete pressures:**
+
+- **#36:** at most two Security Review passes per obligation without further
+  Maintainer authority; the second covers revisions and affected interactions.
+  Reviewer changes or new findings do not reset the count. Unresolved work
+  stays open for a recorded Maintainer disposition, never automatic clearance.
+  Existing security capability floors remain.
+- **#37:** distinguish changed trust exposure/guards/authority from ordinary use
+  of unchanged reviewed boundaries. Same format alone proves neither safety
+  nor widening. Keep named high-risk triggers; correct mistaken declarations
+  through existing review reasoning, with no new field. Use bounded/wide
+  verification for the actual change, not incidental file proximity.
+- **#38:** reviews live inside/beside their artifact, never a separate reviews tree.
+- **#39:** human-readable evidence summaries retain the tested commit,
+  reproduction method and material omissions. Mutation summaries retain
+  control, totals, killed count and every survivor/equivalent with reasons;
+  equivalence stays measured. Versioned owning tests/scripts hold reproducible
+  methods, not pasted logs or per-killed-mutant ledgers. Commit bodies have a
+  normally wrapped 30-line ceiling.
 
 ## Rationale
 
-Cost is continuing, not prepaid by approval. Human traceability is a
-correctness control. This does not equate brevity with simplicity or substitute
-a summary for doing the work.
+Judge economy against delivered value and retained obligations, not minimum
+activity. Necessary growth and justified deferral remain legitimate;
+bureaucracy and under-delivery do not.
 
 ## Alternatives considered
 
-Existing restraint alone leaves these explicit growth permissions intact.
-Scores, quotas, mandatory cost reports and periodic audits add maintenance and
-reward compressed prose/code. Removing review or verification loses assurance.
+“Do less” rewards omission; output quotas reward busywork; numerical complexity
+prices reward code golf. A cost platform recreates the problem; existing
+restraint leaves explicit growth permissions intact.
 
 ## Documentation / doctrine surface
 
-Governing: both `AGENTS.md` files and both agent-collaboration files.
-Reconcile the corresponding lifecycle/review/verification passages under
-`doctrine/`, the proposal/plan templates and their shipped copies, and
-`templates/modules/team-gated/security-review.md`; extend rationale anchor 17,
-not a new doctrine home. Preserve headings/fields consumed by tools.
-Prospective only: do not rewrite archives. No new runtime machinery.
-The existing doctrine-evolution gate remains applicable; issue reports do
-not establish its recurrence count or a high-risk exception.
+Reconcile both `AGENTS.md` and agent-collaboration copies, related lifecycle,
+review and verification doctrine, both proposal/plan template pairs, and
+`templates/modules/team-gated/security-review.md`. Extend rationale anchor 17.
+Replace conflicting prose; preserve consumed headings/fields. No new tools,
+stores, folders, forms or recurring audits. Preserve history and the existing
+doctrine-evolution gate; do not claim an incident-count exception.
 
 ## Evidence / verification plan
 
 ### Tests required
 
-The plan maps existing readers, especially `test_review_stance_in_shipped_files.py`,
-`test_review_sweep_ships.py`, `test_verification_boundaries.py` and
-`test_stewardship_rules_ship.py` under `bootstrap/tests/`.
-Reuse those families and installation coverage; test properties, not each word.
-Keep prescribed protected-file ceremonies and separate certification.
+Map existing readers under `bootstrap/tests/`: review-stance, review-sweep,
+verification-boundaries and stewardship families; reuse installation coverage.
+Assert concepts and preserved safeguards, not every word. Existing protected-file
+ceremonies remain.
 
 ### Examples / smoke checks
 
-Run `python scripts/claim_check.py`, scoped `python scripts/check_cairn.py`
-and neutrality/redundancy sub-gates of `scripts/quality_gate.py`.
-Reviews challenge the policy using an unnecessary abstraction,
-an unreadable shortcut, a harmless new-format-instance and an unresolved
-second security pass. No separate cost review or recurring measurement.
+Run scoped `scripts/claim_check.py`, `scripts/check_cairn.py` and
+`scripts/quality_gate.py` neutrality/redundancy checks. In ordinary review,
+challenge needless tests/hierarchy, unreadable compression, a real security
+defect, an unresolved second pass and a scope-cut disguised as economy.
+No extra cost review or full suite for authoring this proposal.
 
 #### Security preflight
 
-S1: authors classify exposure; reviewers challenge it; only the Maintainer
-disposes unresolved security risk. Candidate claims are not proof.
-S2: no new executable policy checker is claimed; prose tests cannot prove
-sound judgment. Implementation checks must catch removed safety qualifiers.
-S3: existing review stages apply these rules; no automatic enforcement promised.
-S4: stopping repetition leaves unresolved work open, never passed.
-S5: mistaken/colluding judgments remain possible; this is not authentication
-or containment.
+S1: author claims are challenged, not authenticated; the Maintainer owns residual risk.
+S2: no executable judgment checker is promised; prose presence cannot prove compliance.
+S3: existing author/reviewer stages apply the rule.
+S4: unresolved required work stays open; cost grants no waiver.
+S5: mistaken or colluding judgments remain possible.
 
 ### Independent scientific check
 
@@ -136,13 +149,13 @@ N/A: no scientific assumption or result changed.
 
 ## Signals the change is wrong
 
-More justification prose appears; unsafe exposure is called relocation;
-survivors disappear into counts; humans cannot reconstruct the work;
-or the Maintainer still routinely stops unjustified growth.
+More accounting appears; agreed work disappears; waste findings become taste
+disputes; safety is weakened; or costs are shifted into successor plans.
 
 ## Scope delta
 
-**Scope delta**: preserved.
+**Scope delta**: preserved; measurement, delivery and deferral accountability included
+under the Maintainer's in-place rewrite instruction.
 
 ## Assurance path
 
