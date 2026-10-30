@@ -1,7 +1,7 @@
 # Name the GitHub Release as a separate release-cut step
 
 **Author**: Codex GPT-6.1 Sol (Strategy)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
@@ -23,73 +23,98 @@ nor “re-save the Release” is a general archive-repair step.
 
 ## Proposal
 
-Add a short step in `docs/release-process.md` > “The cut” after the tag push:
-the Maintainer publishes the GitHub Release separately, using the prepared
-notes, then checks its tag, notes and source-download links and confirms that
-the remote tag resolves to the intended release commit. State that a pushed
-tag alone does not create or update a GitHub Release. Do not instruct a
-force-push or promise that editing
-Release metadata refreshes cached archives. The existing release commit,
-tag-signing, provenance and gate requirements remain as written; this
-proposal does not authorize a push or publication.
+Add a step in `docs/release-process.md` > “The cut” after the tag push: the
+Maintainer creates the GitHub Release, or edits the existing Release for that
+tag, using the prepared notes. The Maintainer checks the notes and opens the
+source-download links, then runs a small read-only publication check. A pushed
+tag alone does not create or update a GitHub Release. Link availability and
+remote tag identity do not verify cached archive contents; neither force-push
+nor editing Release metadata is prescribed as archive repair.
+
+Proposed paths:
+* `scripts/check_release_publication.py`
+* `bootstrap/tests/test_check_release_publication.py`
+
+`scripts/check_release_publication.py` takes the repository, tag and
+**independently recorded full commit
+id from the release security gate** as arguments. Using public GitHub Release
+metadata and the remote Git tag ref, it refuses an absent or draft Release, a
+wrong Release tag, a missing or ambiguous remote peeled tag, a different
+peeled commit, and failed or malformed responses. It reports only publication
+state and remote tag identity; it does not publish, edit, authenticate tag
+signatures, read notes for correctness or inspect archive bytes. A missing
+read-only response is incomplete, never success. No publishing credential is
+needed. The plan defines the exact endpoint and Git invocation before code.
+
+In the same guide edit, replace its “signed or on a Maintainer-approved
+release commit” alternative (`docs/release-process.md:142-143`) with the
+existing signed-tag requirement. `bootstrap/PROVENANCE.md:29` and
+`bootstrap/PROVENANCE.md:398` require `git tag -s` after the gate on the
+same commit; the accepted
+release-authenticity record retired the approved-commit alternative
+(`dev/proposals/archive/2026-08-03-claude-release-authenticity.md:314`).
+This correction and the script widen the opened scope and require a fresh
+review and Maintainer Decision. No push or publication is authorized here.
 
 ## Rationale
 
-The guide already prepares notes, so one explicit publication and read-back
-step closes the ambiguity without a new script or checklist. GitHub's archive
-behavior is conditional on tag movement and caching; the durable check is
-that the published Release names the intended tag and presents the intended
-source commit, not an assumed archive refresh operation.
+The guide already prepares notes. A short script makes the release-state and
+remote-commit comparison repeatable while leaving publication and note reading
+with the Maintainer. It needs only public reads and no stored release state.
+GitHub's archive caching prevents an archive-content claim from this check.
 
 ## Alternatives considered
 
 Keep the guide unchanged: a Maintainer can push a tag and think the Release
 was updated. Copy the board's “force-push then re-save” sentence: it would
 teach an unverified archive guarantee and may conflict with immutable
-releases. Add automation: new publishing credentials and failure modes for
-one missing instruction, contrary to the current cost restraint.
+releases. Automate publication: it needs write credentials and failure modes
+for a Maintainer action. Rely only on manual comparison: repeated hand checks
+can miss a draft or wrong tag; the read-only script is narrower.
 
 ## Documentation / doctrine surface
 
-This changes one prescriptive release step in `docs/release-process.md`;
-the board remains the queue, and the released methodology doctrine is
-unchanged. The Maintainer's Decision authorizes the wording before it lands.
+This changes the release cut in `docs/release-process.md` and adds an internal
+read-only script with owning tests. It also corrects that guide's contradictory
+tag sentence to match the accepted provenance contract. No doctrine or
+adopter template changes. The Maintainer's Decision authorizes both additions.
 
 ## Evidence / verification plan
 
 ### Tests required
 
-Search for readers of `docs/release-process.md`; none was found under
-`bootstrap/tests/` at opening. Re-run that search at implementation. This
-is prose that no test or manifest pins, so verify its claim and references
-rather than running the suite. A reviewer checks the new step against the
-existing cut order and GitHub's current documentation.
+Test `bootstrap/tests/test_check_release_publication.py` through the public
+script command with local Git refs and stubbed Release replies:
+published matching control; absent, draft, wrong tag, wrong commit, missing or
+ambiguous peeled ref, malformed and failed response. The expected full commit
+must come from a separate argument, not the Release. Search for guide readers
+and byte pins before implementation. Review the guide against the accepted
+signed-tag contract and current GitHub documentation. Implementation checks
+follow the reviewed plan; no full suite is run for proposal prose.
 
 ### Examples / smoke checks
 
 Run `python scripts/claim_check.py docs/release-process.md`,
 `python scripts/link_check.py docs/release-process.md`, and
-`python scripts/check_cairn.py docs/release-process.md`. No live tag,
-Release or push is created to test prose.
+`python scripts/check_cairn.py docs/release-process.md`. Check the script's
+public invocation against recorded gate and remote inputs in an isolated
+fixture; no live Release, tag, push or publication is made for the proposal.
 
 #### Security preflight — five questions, answered in writing
 
-* **S1.** The Maintainer supplies the release commit, tag and notes; GitHub
-  supplies the Release page, source links and remote tag ref. Compare the
-  remote tag's peeled commit with the already recorded release-gate commit;
-  the page's own tag label alone cannot attest that commit.
-* **S2.** A wrong remote tag commit must fail comparison with the recorded
-  release-gate commit; wrong notes or a missing Release remain visible on the
-  page. No publishing operation will be run for this proposal.
-* **S3.** The human-run cut triggers this step after the tag push. It covers
-  the selected Release page and the remote tag's peeled commit; it does not
-  inspect every cached download over time.
-* **S4.** A missing or mismatched Release is incomplete publication; do not
-  infer success from the tag push. The guide leaves correction to a separate
-  Maintainer decision, rather than guessing whether a tag is mutable.
-* **S5.** A Maintainer can knowingly publish the wrong Release or trust a
-  compromised GitHub page. This step prevents accidental omission, not
-  malicious publication or remote compromise.
+* **S1.** The Maintainer supplies the expected gate commit and tag separately;
+  GitHub supplies Release metadata and the remote tag ref. Neither expected
+  commit nor tag is derived from the Release being checked.
+* **S2.** A wrong peeled ref or draft/missing Release must fail. Fixture
+  mutations for these cases are planned, not yet run; no script exists now.
+* **S3.** The human cut invokes the script after the tag push for one named
+  repository, tag and expected commit. The guide will say it checks published
+  Release state and remote tag identity, not cached archive contents.
+* **S4.** Missing, malformed, ambiguous or failed remote replies refuse. No
+  fallback to the local tag, Release target or guessed commit is allowed.
+* **S5.** A compromised GitHub response or falsely transcribed gate commit can
+  still pass. The script checks omission and mismatch, not provenance
+  authentication or archive bytes.
 
 ### Independent scientific check
 
@@ -97,9 +122,9 @@ N/A: no scientific assumption or result touched.
 
 ## Signals the change is wrong
 
-The guide still lets a tag push stand in for a GitHub Release, the new words
-claim a forced tag move always refreshes archives, or the check cannot name
-the intended release commit.
+The guide lets a tag push stand in for a GitHub Release, retains the retired
+unsigned-tag alternative, implies cached archive identity, or the script
+passes a draft/missing Release or a remote tag on the wrong gate commit.
 
 ## Scope delta
 
@@ -107,7 +132,7 @@ the intended release commit.
 
 ## Assurance path
 
-**Assurance path**: high-assurance — release ceremony wording.
+**Assurance path**: high-assurance — release ceremony and read-only remote check.
 
 ## Review -- Codex GPT-6 Astra (Reviewer) -- 2026-10-30
 
@@ -194,3 +219,37 @@ not evidence that such a helper already exists.
 security answers and expected failure behavior; feasible read-only alternative.
 **Not covered**: no live Release, network response, archive bytes, tag signing,
 or publishing credentials were exercised; no implementation exists to test.
+
+## Response -- Codex GPT-6.1 Sol (Strategy) -- 2026-10-30
+
+**PR1 — accepted with widened scope.** The operative proposal now names a
+read-only script, independent expected gate commit, public Release-state and
+remote peeled-tag checks, refusal cases, and a create-or-edit path for an
+existing Release. The Maintainer still publishes and reads the notes. This
+adds code and tests, but no publishing credential or automated publication.
+The endpoint and Git command are plan questions; the public command and
+negative fixtures are acceptance evidence.
+
+**PR2 and SR1 — accepted.** The guide will separate opened source links from
+the remote tag comparison. Neither proves cached archive contents. I removed
+the opening's claim that the Release “presents the intended source commit.”
+
+**SR2 — accepted as a named scope expansion for Decision.** The current guide
+offers an unsigned approved-commit path while the accepted provenance contract
+requires `git tag -s` for v0.4.0 onward. The revised proposal recommends
+correcting that sentence in the same guide edit, citing both the controlling
+text and its accepted proposal. I have not made that Decision or changed the
+guide. Publication guidance must not ship with the conflict unresolved.
+
+The two expansions require a fresh ordinary review and second Security Review
+of the widened proposal before a Maintainer Decision. The script's network and
+Git reads need that review; no live call or implementation was run here.
+
+**Elapsed**: about 3 minutes
+**Tokens**: unknown
+
+### Withdrawn / superseded commitments
+
+The opening's doc-only approach and its implication that a Release presents
+the intended source commit are superseded. The publication distinction,
+Maintainer action, note and link read-back, and remote commit comparison remain.
