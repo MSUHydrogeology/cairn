@@ -302,3 +302,68 @@ def test_coordination_doctrine_guards_same_file_commits() -> None:
         "A noncooperating writer can still change a file after inspection",
     ):
         assert phrase in text
+
+
+_LIGHT_NO_PLAN_CARRIERS = {
+    "AGENTS.md": (
+        "light has no plan even for multi-area or wide implementation",
+        "plan triage applies only to standard/heavy",
+    ),
+    "templates/core/AGENTS.md": (
+        "light has no plan even for multi-area or wide implementation",
+        "plan triage applies only to standard/heavy",
+    ),
+    "doctrine/lifecycle.md": (
+        "`light` is one short review and no plan even when execution spans multiple areas or needs wide Boundary B",
+        "Plan triage applies only to standard/heavy proposals",
+    ),
+    "doctrine/proposals.md": (
+        "a light-tier proposal has no plan or code review, regardless of implementation size",
+        "A light proposal writes `not required(no plan: light tier)` without plan triage",
+    ),
+    "doctrine/plans.md": (
+        "Light has one short proposal review and no plan regardless of these conditions",
+        "For a standard/heavy accepted proposal, open a plan",
+    ),
+    "dev/proposals/_template.md": (
+        "for light, use `not required(no plan: light tier)` even for multi-area or wide work",
+        "standard/heavy use plan triage",
+    ),
+    "templates/core/dev/proposals/_template.md": (
+        "for light, use `not required(no plan: light tier)` even for multi-area or wide work",
+        "standard/heavy use plan triage",
+    ),
+    "dev/plans/_template.md": (
+        "Light has no plan, even for multi-area or wide work",
+        "non-trivial accepted standard/heavy proposal opens a plan",
+    ),
+    "templates/core/dev/plans/_template.md": (
+        "Light has no plan, even for multi-area or wide work",
+        "non-trivial accepted standard/heavy proposal opens a plan",
+    ),
+}
+
+
+@pytest.mark.parametrize("rel", sorted(_LIGHT_NO_PLAN_CARRIERS))
+def test_light_tier_can_ship_wide_work_without_a_plan(rel: str) -> None:
+    """A multi-area light proposal must not inherit standard/heavy plan triage."""
+    text = _collapse(_text(rel))
+    first, second = _LIGHT_NO_PLAN_CARRIERS[rel]
+    def has_both(value: str) -> bool:
+        return first in value and second in value
+
+    assert has_both(text)
+    assert not has_both(text.replace(first, "", 1))  # deletion control
+
+
+@pytest.mark.parametrize("rel", [
+    "dev/modules/security-review.md",
+    "templates/modules/team-gated/security-review.md",
+])
+def test_security_module_movement_alone_does_not_trigger_review(rel: str) -> None:
+    """The shipped and self-hosted modules retain added/widened protection."""
+    text = _collapse(_text(rel))
+    assert "adds or widens any of these boundaries" in text
+    assert "Movement alone is not a trigger" in text
+    assert "adds, moves, or widens" not in text
+    assert "adds or moves a trust boundary" not in text

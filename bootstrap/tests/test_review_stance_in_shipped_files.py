@@ -1168,7 +1168,8 @@ _DOCTRINE_OBLIGATIONS = {
         r"agent selects or substitutes for it"),
     "boundary-c-names-the-no-plan-accepted-proposal": (
         DOCTRINE_DUAL_REVIEW,
-        r"a plan's Implementation verification section, or, where the "
+        r"a plan's Implementation verification section, the accepted light "
+        r"proposal's post-implementation verification section, or, where the "
         r"Maintainer asks for a review of a trivial change, its commit body"),
     "the-stage-questions-are-in-the-doctrine": (
         DOCTRINE_DUAL_REVIEW,

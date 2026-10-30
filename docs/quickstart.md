@@ -502,16 +502,17 @@ Remove-Item -Recurse -Force cairn-try
 * **The other two lanes.**  A trivial change (a typo or one-line fix)
   takes no proposal and no code review.  A change whose shape is already settled takes one
   short change note, reviewed, then the change and its test.  When
-  unsure, take the heavier lane.  See
+  unsure about ceremony, take the lighter lane with a reason; stop on a newly
+  discovered trust boundary. See
   [`doctrine/lifecycle.md`](../doctrine/lifecycle.md).
 * **Extra distance in review.**  A fresh chat with the same agent is
   enough.  When you want more distance, you can ask for another model
   or a person to review a particular piece of work (see
   [`doctrine/dual-review.md`](../doctrine/dual-review.md)).
-* **Plans.**  A larger accepted proposal opens a plan
-  ([`dev/plans/_template.md`](../templates/core/dev/plans/_template.md))
-  that sequences the work and gets its own review.  This one did not
-  need it.
+* **Plans.** A non-trivial standard/heavy accepted proposal opens a
+  [plan](../templates/core/dev/plans/_template.md) that sequences the work and
+  gets its own review. Light has no plan even for multi-area work. This one
+  did not need a plan.
 * **The dimensional matrix.**  The minimal profile installed only the
   default modules.  A larger project picks more (see
   [`bootstrap/profiles/`](../bootstrap/profiles/) and

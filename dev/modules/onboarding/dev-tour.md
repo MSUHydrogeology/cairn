@@ -85,9 +85,11 @@ an issue on Cairn's own tracker. The template is
    code review.
 3. **Deliberate** -- a new feature, a contract change, or a
    high-risk surface. Proposal, review, the Maintainer's decision,
-   plan, plan review, change and test, code review, archive.
+   implementation and archive. Light has one short review and no plan;
+   standard/heavy non-trivial work adds a plan and code review.
 
-When you are unsure, take the heavier lane. Every step is its own
+For ordinary ceremony uncertainty, take the lighter lane with a reason; stop
+on a newly discovered trust boundary. Every step is its own
 commit.
 
 ## Worked example -- a typo, in the trivial lane

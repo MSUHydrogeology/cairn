@@ -18,7 +18,8 @@ ask.
 * **Human Maintainer** — holds product direction, priorities, and final
   Decision authority. The one role that is not interchangeable.
 * **Strategy** — surveys the landscape, frames problems, drafts proposals.
-* **Implementation** — carries an accepted proposal through its plan.
+* **Implementation** — carries an accepted proposal through its plan when
+  standard/heavy triage requires one; light has no plan.
 * **Reviewer** — a fresh reviewer who did not write the work, on the work's
   side: it questions the work's foundations and answers the stage's three
   questions in writing (`AGENTS.md` > "Review"). After the review it also gives

@@ -20,10 +20,13 @@ A proposal moves through:
 ```
 proposed  ->  reviewed  ->  revised  ->  accepted (stays in dev/proposals/)
                                             |
-                                            +->  trivial impl: implementing commit
-                                            |    ships + archives in one commit
+                                            +->  light: no plan; Boundary B
+                                            |    recorded in proposal, then archive
                                             |
-                                            +->  non-trivial impl: plan opened in
+                                            +->  standard/heavy trivial: ship +
+                                            |    archive in one commit
+                                            |
+                                            +->  standard/heavy non-trivial: plan in
                                                  dev/plans/; archive happens in
                                                  the plan-open commit, before
                                                  implementation begins
@@ -33,16 +36,15 @@ proposed  ->  reviewed  ->  revised  ->  accepted (stays in dev/proposals/)
 
 * **proposed** — the author opens the proposal.
 * **reviewed** — a reviewer appends a `## Review` section.
-* **revised** — the author appends a `## Response` **and one complete
-  current-contract revision** (`## Revised proposal`, or `## Revision <n>`).
-  The revision is mandatory with every Response, not conditional on how
-  much changed. One round: the revision carries the proposal to the
-  Decision, and back to review only if it widened scope.
+* **revised** — the author appends a `## Response` with dispositions and
+  revises the operative proposal text in place. One round carries it to the
+  Decision; only widened scope receives another proposal pass.
 * **accepted / rejected / superseded** — the Maintainer appends the
   `## Decision`. **The Decision commit does not archive an *accepted*
   proposal**: it stays in `dev/proposals/` and moves to `archive/`
-  later — at the plan-open commit (non-trivial work) or the
-  trivial-implementing commit. Only a *rejected* or *superseded*
+  later — after light-tier verification, at the plan-open commit
+  (non-trivial standard/heavy work), or at the standard/heavy trivial
+  implementing commit. Only a *rejected* or *superseded*
   proposal archives in the Decision commit itself. See "File moves"
   below for the full rule.
 
@@ -172,7 +174,11 @@ lane** — a change note, not a proposal (`doctrine/lifecycle.md` >
 failing-test reproduction, a self-contained helper, a docstring polish
 — is just made, with no proposal and no change note.
 
-Once accepted, the implementation is **trivial** (a single commit, a
+Once accepted, a light-tier proposal has no plan or code review, regardless of
+implementation size. The author appends Boundary B evidence to that proposal
+after its final implementation commit and archives it with that record.
+
+For standard/heavy proposals, the implementation is **trivial** (a single commit, a
 single area, no follow-ups, and a Boundary B that would run `bounded`,
 except that a defect repair meeting the lifecycle's three conditions stays
 trivial on a named surface — implemented and the proposal archived together, with no code review) or
@@ -193,11 +199,12 @@ rationales include "pure doc sync",
 "trivial layout only", "straightforward follow-up to a
 recently-reviewed sibling plan"; a reviewer treats an unjustified
 `not required` on a clearly-risky change as a finding. Bare `not
-required` describes a plan that skips its own review. A change that needs
-no plan at all writes `not required(no plan: <how each skip condition
-holds>)`, showing each of the plan triage conditions in turn (single
+required` describes a plan that skips its own review. A light proposal writes
+`not required(no plan: light tier)` without plan triage. A standard/heavy
+change that needs no plan writes `not required(no plan: <how each skip
+condition holds>)`, showing each plan triage condition in turn (single
 commit, single area, no follow-up, Boundary B would run `bounded`); a
-"no plan" claim without each condition shown is a review finding. A `required`
+standard/heavy "no plan" claim without each condition shown is a review finding. A `required`
 plan opens in `awaiting-plan-review` and does not start implementation
 until its plan-review section lands (the *review-before-implement*
 gate; see `doctrine/plans.md` > "The plan-review precondition").
@@ -324,7 +331,10 @@ for `rejected` / `superseded`.
 **Accepted proposals** stay in `dev/proposals/` after the Decision
 commit:
 
-* If the implementation will be **trivial** (single commit, single
+* A **light** proposal never opens a plan, even for multi-area or wide work.
+  After its final implementation commit, append the Boundary B record to the
+  proposal and archive it in that verification commit.
+* For **standard/heavy**, if the implementation will be **trivial** (single commit, single
   area, no multi-stage execution, no deferred follow-ups, and a
   Boundary B that would run `bounded`, except that a defect repair meeting
   the lifecycle's three conditions stays trivial on a named surface), the implementing commit ships the
@@ -333,7 +343,7 @@ commit:
   plan-skip condition against what it actually touched. If it touched more
   than one area, or its Boundary B would run `wide`, a plan opens then, and
   the plan-open commit archives the proposal.
-* If the implementation is **non-trivial** (lands across multiple
+* For **standard/heavy**, if the implementation is **non-trivial** (lands across multiple
   commits, OR touches multiple files / areas, OR has multi-stage
   sequencing, OR carries deferred follow-ups, OR needs Boundary B in
   `wide` mode — see the plan triage
@@ -547,7 +557,7 @@ revision receives a review of the new material only.
 ## Plan review — the derived plan's tier
 
 A proposal's `**Plan review**:` header field states the anticipated
-plan review for its non-trivial work's derived plan, and it is **always
+plan review for its non-trivial standard/heavy work's derived plan, and it is **always
 one of the ruled tokens** — `required(Internal)`, `required(Internal +
 Internal Security Review)` for a security-sensitive surface, or `not
 required(<rationale>)`. A plan review is a fresh-context pass; there is

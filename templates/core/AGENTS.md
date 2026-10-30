@@ -33,7 +33,8 @@ is one pass, with a second only for new defects. Security Review may take at
 most two passes. At a cap, only unresolved blocking findings or unmet accepted
 criteria/checks go to the Maintainer for named disposition. Clean work and
 closed findings advance without a clearing review. A non-trivial accepted
-proposal gets a plan; plan statuses are `awaiting-plan-review -> revising-plan
+standard/heavy proposal gets a plan; light has no plan even for multi-area or
+wide implementation. Plan statuses are `awaiting-plan-review -> revising-plan
 -> ready-to-implement -> implementing -> awaiting-code-review <->
 revising-code -> ready-to-archive -> archived`.
 
@@ -93,7 +94,7 @@ that evidence. See `doctrine/dual-review.md` for the complete procedure.
 
 The proposal Decision sets its tier: `light` (one short review, no plan),
 `standard` (one pass per stage), or `heavy` (adds Security Review). Light is
-the default; an author's higher proposed tier stands unless the Decision
+the default; plan triage applies only to standard/heavy. An author's higher proposed tier stands unless the Decision
 changes it. Named high-risk surfaces and added or widened trust boundaries
 trigger heavy. A newly discovered boundary stops the work for reassessment.
 Ordinary uncertainty takes the lighter lane with its reason. The trivial lane
@@ -210,7 +211,8 @@ known integration and public paths, and standing gates. Use `wide` for a contrac
 or trust-ceremony surface; trust ceremonies include named high-risk surfaces. Name
 touched surfaces and test files or nodes in the record. A known unmet check keeps work
 open; a future certification cannot close it. The author appends the record
-under `## Implementation verification -- <agent> -- YYYY-MM-DD`. Code review
+under `## Implementation verification -- <agent> -- YYYY-MM-DD` in the plan,
+or in the accepted proposal for light work with no plan. Planned code review
 independently falsifies named surfaces and verifies this record; it never runs
 the full suite. See the plan template for full Boundary A/B/C rules.
 

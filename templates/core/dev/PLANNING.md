@@ -45,9 +45,9 @@ preset.)
 ## Queued
 
 The forward-looking board: substantive work that is accepted or
-anticipated but not yet in flight. When a queued item grows into
-multi-step work, open a plan under `plans/` and replace the entry
-with the plan's filename stem.
+anticipated but not yet in flight. When a queued standard/heavy item grows
+into multi-step work, open a plan under `plans/` and replace the entry with
+the plan's filename stem. Light keeps its no-plan route for multi-step work.
 
 *(Empty at adoption — the first accepted proposals populate it.)*
 

@@ -137,7 +137,8 @@ Cairn sorts every change into one of three lanes before anything is
 written. A typo or one-line fix is trivial: make the change with its
 test, with no proposal and no code review. A change whose shape is
 already settled gets one short change note, reviewed. A new feature, a
-contract change or a high-risk surface gets a proposal. When you are
-unsure, take the heavier lane. This keeps process off bug fixes while
+contract change or a high-risk surface gets a proposal. For ordinary ceremony
+uncertainty, take the lighter lane with a reason; stop on a newly discovered
+trust boundary. This keeps process off bug fixes while
 the changes that matter stay on the record. The full rules are in
 [`doctrine/lifecycle.md`](../doctrine/lifecycle.md).

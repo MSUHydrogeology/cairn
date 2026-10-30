@@ -88,7 +88,7 @@ against that locked plan. This is the defense against metric
 p-hacking the proposal's Stage 1 named: judged against a prior
 commitment, not chosen after the fact.
 
-A non-trivial accepted proposal typically spans **5-10 commits**
+A non-trivial accepted standard/heavy proposal typically spans **5-10 commits**
 across the full lifecycle (`accepted` Decision, plan-open,
 implementation commits, code-review, sharpening, plan-archive); the
 **minimum is 4** (plan-open + first implementation combine, and code
@@ -116,7 +116,7 @@ makes it work on the deliberation side. Without this rule, fast
 implementations escape independent review because the archive commit
 closes the loop before any independent eye sees the code.
 
-Concretely, an accepted non-trivial proposal flows through:
+Concretely, an accepted non-trivial standard/heavy proposal flows through:
 
 ```
 plan-open (+ optional first implementation)   <- can be ONE commit
@@ -180,7 +180,7 @@ obligation a security-sensitive plan declares.
 
 ## Plan triage rule
 
-**Open a plan when an accepted proposal's implementation:**
+**For a standard/heavy accepted proposal, open a plan when its implementation:**
 
 * Will land across multiple commits.
 * Touches multiple files / areas (code + tests + docs).
@@ -191,7 +191,7 @@ obligation a security-sensitive plan declares.
 * Needs Boundary B in `wide` mode (a defect repair meeting the three
   conditions in `doctrine/lifecycle.md` is the one exception).
 
-**Skip the plan when:**
+**For standard/heavy, skip the plan when:**
 
 * The implementation is a single commit.
 * The change is single-file or single-area.
@@ -208,12 +208,13 @@ obligation a security-sensitive plan declares.
   named surface.
 
 The implementing commit re-reads these conditions against what it actually
-touched. If it touched more than one area, or its Boundary B would run
-`wide`, a plan opens then.
+touched. For standard/heavy, if it touched more than one area, or its Boundary
+B would run `wide`, a plan opens then. Light has one short proposal review and
+no plan regardless of these conditions; the accepted proposal records its
+Boundary B result after the final implementation commit.
 
-When in doubt, open the plan. The cost is low (one file in
-`dev/plans/`); the benefit is durable execution context for any agent
-who picks up the work mid-flight.
+For ordinary ceremony uncertainty, use the lighter lane with a stated reason;
+newly discovered trust boundaries still stop work for reassessment.
 
 ### Fast multi-stage (a sub-pattern of non-trivial)
 
@@ -377,8 +378,11 @@ otherwise clean tree or a separate copy holding only the change. Its commit
 body records the mode, `Certified by: pending`, search, commands, counts,
 interpreter, outcomes and omissions; the resulting commit identifies those
 bytes. Passing known checks and criteria permits `Implementation verified at
-<SHA>`. The author owns the record, and trivial work has no Boundary C. An accepted proposal implemented
-without a plan records its result the same way. The defect-repair exception
+<SHA>`. The author owns the record, and trivial work has no Boundary C. A
+standard/heavy trivial proposal records its result in that commit body. For an
+accepted light proposal without a plan, the author instead appends Boundary B
+evidence to the proposal after the final implementation commit, then archives
+it; no code review is added. The defect-repair exception
 remains governed by the lifecycle's three conditions.
 
 **An already-open plan keeps the verification contract written in it.** A new

@@ -155,7 +155,7 @@ placeholder in a finished artifact, because the board prints whatever the line h
 **Status**: awaiting-review
 **Review**: {{usual | usual + Security Review}}
 **Proposed tier**: {{light | standard | heavy}} — light is the default; the author may propose a higher tier, which stands unless the Decision changes it
-**Plan review**: {{required(Internal) | required(Internal + Internal Security Review)}} — the tier the derived plan will declare, decided here where the surface is still visible; or `not required(no plan: <how each plan-skip condition holds>)` when the change needs no plan (the skip conditions are in the plan triage rule)
+**Plan review**: {{required(Internal) | required(Internal + Internal Security Review)}} — for light, use `not required(no plan: light tier)` even for multi-area or wide work; standard/heavy use plan triage and may use `not required(no plan: <how each plan-skip condition holds>)`
 **Opened**: {{YYYY-MM-DD}}
 **In brief**: {{one plain sentence: what changes and why it matters}}
 
@@ -226,11 +226,11 @@ end-to-end exercisable surface`.)
 
 #### Security preflight — five questions, answered in writing
 
-*Gated to a **security-touching** change: one that adds, moves, or widens a
+*Gated to a **security-touching** change: one that adds or widens a
 trust boundary (deserialization, subprocess invocation, parsing, file and path
 handling, network I/O, credentials and environment), or one that touches a
 high-risk surface this project's `AGENTS.md` names. For every other change, one
-line — "N/A: no trust boundary added, moved, or widened" — is the correct
+line — "N/A: no trust boundary added or widened" — is the correct
 entry.*
 
 Answer all five, one or two sentences each. These are **design questions, asked
@@ -405,6 +405,9 @@ Record elapsed time and token use for this step; use `unknown` when unavailable.
 Record elapsed time and token use for this step; use `unknown` when unavailable.
 
 **Tier**: {{light | standard | heavy}}
+
+Light is the default and requires no plan regardless of implementation size;
+named high-risk or added/widened boundaries require heavy.
 
 **{{ACCEPTED | REJECTED | SUPERSEDED}}.** The Maintainer's authorization,
 quoted **verbatim and visually isolated** (no paraphrase):

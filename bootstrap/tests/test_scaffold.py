@@ -313,7 +313,7 @@ _SECURITY_PREFLIGHT_HEADINGS = (
     "S5 — Who still wins?",
 )
 _SECURITY_PREFLIGHT_GATE_PHRASE_HEAD = "no trust boundary"
-_SECURITY_PREFLIGHT_GATE_PHRASE_TAIL = "added, moved, or widened"
+_SECURITY_PREFLIGHT_GATE_PHRASE_TAIL = "added or widened"
 _SECURITY_PREFLIGHT_OPEN = "#### Security preflight — five questions, answered in writing"
 _SECURITY_PREFLIGHT_CLOSE = "**Prospective only.**"
 _PLAN_CLAUSE_MARKER = "security-preflight"
@@ -580,6 +580,9 @@ class TestInstallCore:
                     "dev/proposals/_template.md and "
                     "templates/core/dev/proposals/_template.md"
                 )
+            for stale in ("adds, moves, or widens", "added, moved, or widened"):
+                if stale in self_host_block or stale in shipped_block:
+                    failures.append(f"(c) movement-only trigger survived: {stale}")
 
         # (d) PLAN-PAIR PARITY -- the clause sentence, whitespace-collapsed.
         shipped_plan_template = (

@@ -13,7 +13,7 @@ opens — trivial (just commit), standard (a change note), or
 deliberate (today's two-stage) — by the closed procedure in "Three
 lanes, chosen by a closed triage procedure" below. The deliberate lane
 carries two artifacts: a **proposal** (the deliberation — what to do,
-and why) and, for non-trivial work, a **plan** (the execution — how it
+and why) and, for non-trivial standard/heavy work, a **plan** (the execution — how it
 was carried out, and that it was verified). They have separate
 lifecycles; the standard lane's change note reuses the plan's
 lifecycle below without a parent proposal.
@@ -68,13 +68,16 @@ order** — the first match assigns the lane:
    proposal. Its header fields, transitions, and warnings are the
    standard-note contract carried in the plan template.
 
-The **deliberate** lane remains proposal then plan. The proposal Decision sets
-its ceremony tier: `light` is one short review and no plan; `standard` is one
+The **deliberate** lane starts with a proposal; standard/heavy work opens a plan
+when triage requires one. The proposal Decision sets
+its ceremony tier: `light` is one short review and no plan even when execution
+spans multiple areas or needs wide Boundary B; `standard` is one
 pass per stage; `heavy` adds Security Review. Light is the default. The
 author's higher proposed tier stands unless the Decision changes it. Named
 high-risk surfaces and added or widened trust boundaries trigger heavy. If an
 agent discovers a new boundary, it stops and reports it for reassessment.
-Ordinary uncertainty takes the lighter lane with a one-line reason. No agent
+Plan triage applies only to standard/heavy proposals. Ordinary uncertainty
+takes the lighter lane with a one-line reason. No agent
 raises a tier on its own. See `dual-review.md` for review caps and obligations.
 
 ### Write once, restate never — the standard lane's contrast
@@ -168,9 +171,9 @@ print a warning and still list it.
   instruction to a particular contributor; implementation follows
   as separate, tracked work. **The Decision commit does not archive
   an *accepted* proposal**: it stays in `dev/proposals/` and moves
-  to `archive/` later — at the plan-open commit (non-trivial work;
-  see "The plan lifecycle" below) or the trivial-implementing commit
-  (see "Trivial vs. non-trivial"). Only a *rejected* or *superseded*
+  to `archive/` later — after light-tier Boundary B is recorded, at the
+  plan-open commit (non-trivial standard/heavy work), or at the
+  standard/heavy trivial implementing commit. Only a *rejected* or *superseded*
   proposal archives in the Decision commit itself.
 
 A proposal's operative text is revised in place while it is active. Reviews,
@@ -203,18 +206,20 @@ carve-out applies only to appended review-finding sections.
 
 ### Trivial vs. non-trivial
 
-Not every change needs the full apparatus. A **trivial** change —
+Not every change needs the full apparatus. A **trivial standard/heavy** change —
 a single commit, a single area, no deferred follow-ups, and a
 Boundary B that would run `bounded` (a defect repair meeting the three
 conditions in lane 1 stays trivial even on a named surface) — is implemented and has its
 proposal archived in one commit, with no code review. A
-**non-trivial** change — landing across multiple commits, touching
+**non-trivial standard/heavy** change — landing across multiple commits, touching
 multiple areas, carrying multi-stage sequencing, leaving deferred
-follow-ups, or needing Boundary B in `wide` mode — opens a plan.
+follow-ups, or needing Boundary B in `wide` mode — opens a plan. A light
+proposal never opens one; its accepted proposal carries the later Boundary B
+record and archives only after that record lands.
 
 ## The plan lifecycle
 
-A plan is the execution artifact for a non-trivial accepted
+A plan is the execution artifact for a non-trivial accepted standard/heavy
 proposal. Where the proposal records *what and why*, the plan
 records *how the work was carried out, and that it was verified*.
 
@@ -308,7 +313,7 @@ by a record merely titled `## Security review (...)`; see `dual-review.md` >
 
 ### Fast multi-stage
 
-When the implementation itself fits in one commit but the work
+For a standard/heavy plan, when the implementation itself fits in one commit but the work
 still touches multiple areas or carries follow-ups, the plan-open
 and first-implementation commits may **combine** — but only for a plan
 marked `Plan review: not required` (a review-required plan keeps them

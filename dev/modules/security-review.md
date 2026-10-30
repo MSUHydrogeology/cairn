@@ -25,7 +25,7 @@ The focused-mode role, merged into the roster:
 > **Security Review.** A focused-mode pass over the surfaces where
 > untrusted input meets the system. It is not a standing
 > implementation role; it is invoked on a cadence (below) and
-> whenever a change adds or moves a trust boundary.
+> whenever a change adds or widens a trust boundary.
 
 ### Trust-boundary checklist (tool-neutral)
 
@@ -50,8 +50,10 @@ boundary, not specific libraries:
   environment variables. Are they kept out of the repository, out
   of logs, and out of committed artifacts?
 
-A change that adds, moves, or widens any of these boundaries is a
+A change that adds or widens any of these boundaries is a
 trigger for a Security Review pass regardless of cadence.
+Movement alone is not a trigger; a move that adds or widens a boundary still
+triggers the pass.
 
 **Automate what a tool can check.** Where the language ecosystem
 offers a static-analysis scanner for these boundary classes, wire a

@@ -10,7 +10,9 @@
 
 # Plan template
 
-A non-trivial accepted proposal opens a plan. The plan says how the work
+A non-trivial accepted standard/heavy proposal opens a plan. Light has no plan,
+even for multi-area or wide work; its accepted proposal holds Boundary B
+evidence after implementation. The plan says how the work
 happens and how you will know it worked; it does not re-argue the decision.
 
 ## Lifecycle

@@ -17,7 +17,7 @@ project is doing, and why* from this tree alone.
 | `proposals/` | One file per substantive change; operative text revises in place and reviews/responses append. |
 | `proposals/_template.md` | The proposal structure and the full lifecycle doctrine. |
 | `proposals/archive/` | Closed proposals — read for rationale; do not edit. |
-| `plans/` | Execution plans for non-trivial accepted proposals. |
+| `plans/` | Execution plans for non-trivial accepted standard/heavy proposals; light has no plan. |
 | `plans/_template.md` | The plan structure and the plan-archive doctrine. |
 | `plans/archive/` | Closed plans — read for what shipped and why. |
 | `modules/` | Dimension-selected add-ons — one file per installed module (see `modules/<name>.md` for each). Read each module's `Adds to:` line to find where its content merges into the kernel. |
