@@ -1,7 +1,7 @@
 # Make work-intent guidance match enforcement and session identity
 
 **Author**: Codex (GPT-6)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -491,3 +491,9 @@ The earlier subcommand-help trigger and the implication that manual release
 requires the same label are replaced by parent help and release-by-ID above.
 The previously withdrawn doctrine exclusion and standard assurance remain
 superseded. The original practical documentation outcome is preserved.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-30
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated**:
+
+> "Accept all 7 proposals as revised."
