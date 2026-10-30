@@ -1,7 +1,7 @@
 # Require a decision on clean customized policy merges
 
 **Author**: Codex GPT-6.1 Sol (Strategy)
-**Status**: awaiting-decision
+**Status**: rejected
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
@@ -242,3 +242,11 @@ The opening Proposal, Rationale, Evidence / verification plan and Security
 preflight's implementation commitments are withdrawn for the reasons in
 R1–R2 and S1–S2. The observed failure and the board's desired outcome remain
 on record for the Maintainer.
+
+## Decision -- Maintainer -- 2026-10-30
+
+**REJECTED.** The Maintainer's authorization, quoted **verbatim and visually isolated** (chat, 2026-10-30; scribed by Antigravity):
+
+> "Please scribe my decisions as you recommend on those five."
+
+Rejected as recommended by the author and reviewer findings. Issue #35 is retained for a smaller, lower-burden future redesign.
