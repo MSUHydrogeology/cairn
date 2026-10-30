@@ -94,3 +94,30 @@ Coverage: assessed source and target trust, refusal ordering, failure state, rec
 ## Response to plan review -- Codex GPT-6.1 Sol (Strategy) -- 2026-10-30
 
 Both required reviews accepted the plan. R1 accepted: C1 now includes the existing shared-helper refusals, and Boundary A names the five assertions to update in the already-scoped public test file. The Security Review had no findings. The operative plan is ready to implement; no second plan-review pass is requested. Elapsed: approximately 2 minutes; tokens: unknown.
+
+## Implementation verification -- Codex GPT-6.1 Sol (Implementation) -- 2026-10-30
+
+**Boundary B**: wide
+**Certified by**: pending
+**SHA/range**: `89206da8ed76baff45ce404028e4fb55d8d31b88` (final tested candidate; implementation commits `e9adb1f9`, `7aa7417b`, `89206da8`)
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` -- Python 3.13.13
+**Tree state**: clean before and after in a separate clone of the candidate commit.
+**Elapsed**: approximately 40 seconds; **Tokens**: unknown.
+
+**Mapped checks**
+
+- `python -m pytest bootstrap/tests/test_upgrade_refuses_hostile_project_data.py` -- 195 passed. This public suite invokes `bootstrap/scaffold.py`; it includes outside, inside and dangling mapped leaves, the linked `docs/` parent, ordinary mapped digest, refusal snapshots, no lockfile, and prior shared-helper cases.
+- `python -m pytest bootstrap/tests/test_upgrade.py::TestInitLock bootstrap/tests/test_upgrade.py::TestInitLockFullProfile bootstrap/tests/test_lockfile_provenance.py` -- 44 passed.
+- `python -m pytest bootstrap/tests/test_upgrade_lockfile_path_containment.py bootstrap/tests/test_upgrade_module.py` -- 103 passed.
+- `python -m pytest bootstrap/tests/test_security_leaf.py` -- 15 passed.
+- `python scripts/quality_gate.py --sub neutrality --sub redundancy` -- pass; both subgates reported zero failures (neutrality: 43 informational notes; redundancy: one pre-existing R6 note).
+- `python scripts/claim_check.py bootstrap/UPGRADE.md`, `python scripts/claim_check.py bootstrap/_scaffold/SECURITY_MUTATIONS.md`, and `python scripts/claim_check.py dev/plans/2026-10-30-init-lock-linked-files.md` -- all passed.
+- `python scripts/check_cairn.py` -- passed, 199 Markdown files scanned; 94 external links not probed.
+- `python scripts/link_check.py` -- passed, 199 Markdown files scanned; 95 external links not probed.
+- `python scripts/sync_doc_snippets.py --check` -- passed, 476 documents scanned with no drift.
+
+**Mutation**: unmutated control was the final candidate and the mapped suites above passed. Total: 1 mutation; killed: 1. Removing the new mapped-path guard in an isolated mutant let `--init-lock` return 0 and produced an `AGENTS.md` lock digest equal to the outside target's measured SHA-256. The public outside-link node then failed because it expected exit 2 and received exit 0. Survivors: none. Measured equivalents: none.
+
+**Non-pass disposition**: an earlier run on `7aa7417b` had 194 passed and one failed assertion because the vendor-wrapper alias uses its own unchanged remedy rather than `_refuse_if_linked`'s shared remedy. The assertion was corrected in `89206da8`; all mapped checks above then passed. No known mapped check remains unmet.
+
+**Omissions**: no full-tree certification or Maintainer AST re-anchor; both remain separate ceremonies. No concurrent path replacement was exercised; the check/read race and separate fidelity-manifest reader remain outside this change. The canonical Python 3.13.13 interpreter was invoked explicitly in the separate clone.
