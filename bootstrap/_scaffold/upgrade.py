@@ -35,6 +35,7 @@ from .config import (
     _GITIGNORE_SEEDS,
     _KNOWN_VENDOR_WRAPPERS,
     _MODULE_MAPPINGS,
+    _MODULE_DISCOVERY,
     _MODULE_REQUIRED_TOKENS,
     _RETIRED_INSTALLS,
     _SKILLS_GITIGNORE,
@@ -82,6 +83,7 @@ from .install import (
     _reconcile_generated_blocks,
     fan_out_skills,
     ModuleDiscoveryConflict,
+    _substitute_module_inventory,
     model_selection_notice_lines,
     seed_gitignore,
     trusted_upstream,
@@ -349,6 +351,89 @@ def _theirs_bytes(
         return p.read_bytes() if p.exists() else None
     text = _theirs_text(cairn_root, templates_root, src_rel, to_ref)
     return text.encode("utf-8") if text is not None else None
+
+
+_INVENTORY_DST = "dev/modules/README.md"
+_INVENTORY_SRC = "core/dev/modules/README.md"
+
+
+def _render_review_inventory(
+    text: str, modules: list[str], cairn_root: Path, to_ref: str | None,
+) -> str:
+    """Render a review-only inventory only when its renderer is verified.
+
+    Historical sources are passive data: their metadata and renderer-bearing
+    files must match the running implementation before it is reused. The
+    selected template itself remains the input to reconciliation.
+    """
+    if (not isinstance(modules, list)
+            or any(not isinstance(name, str) or name not in _MODULE_DISCOVERY
+                   for name in modules)
+            or len(set(modules)) != len(modules)):
+        raise ModuleDiscoveryConflict(
+            "the lockfile module roster is invalid or names an unknown module")
+    if to_ref is None:
+        renderer_root = Path(__file__).resolve().parents[2]
+        for rel in ("bootstrap/_scaffold/config.py",
+                    "bootstrap/_scaffold/install.py"):
+            selected_path = cairn_root / rel
+            running_path = renderer_root / rel
+            if (not selected_path.is_file() or not running_path.is_file()
+                    or selected_path.read_bytes() != running_path.read_bytes()):
+                raise ModuleDiscoveryConflict(
+                    "the current inventory renderer cannot be verified for "
+                    f"this source at {rel}")
+    else:
+        import subprocess
+        renderer_root = Path(__file__).resolve().parents[2]
+        for rel in ("bootstrap/_scaffold/config.py",
+                    "bootstrap/_scaffold/install.py"):
+            try:
+                selected = subprocess.run(
+                    ["git", "-C", str(cairn_root), "show", f"{to_ref}:{rel}"],
+                    capture_output=True, timeout=30, check=False,
+                )
+            except (OSError, subprocess.SubprocessError) as exc:
+                raise ModuleDiscoveryConflict(
+                    f"cannot verify selected inventory renderer file {rel}") from exc
+            running_path = renderer_root / rel
+            if (selected.returncode != 0 or not running_path.is_file()
+                    or selected.stdout != running_path.read_bytes()):
+                raise ModuleDiscoveryConflict(
+                    f"selected inventory renderer or metadata differs at {rel}; "
+                    "refusing an unverified review copy")
+
+    start = "<!-- cairn:generated-modules:start -->"
+    end = "<!-- cairn:generated-modules:end -->"
+    if text.count(start) != 1 or text.count(end) != 1:
+        raise ModuleDiscoveryConflict(
+            "upstream inventory has duplicate or missing generated markers")
+    if text.index(start) > text.index(end):
+        raise ModuleDiscoveryConflict("upstream inventory markers are unmatched")
+    body = text[text.index(start) + len(start):text.index(end)]
+    marker_re = re.compile(
+        r"(?m)^<!-- cairn:(module(?:-end)?) id=([a-z0-9-]+) -->$")
+    stack: list[str] = []
+    matches = list(marker_re.finditer(body))
+    if (body.count("<!-- cairn:module id=") != sum(
+            match.group(1) == "module" for match in matches)
+            or body.count("<!-- cairn:module-end id=") != sum(
+                match.group(1) == "module-end" for match in matches)):
+        raise ModuleDiscoveryConflict("upstream inventory has malformed entry markers")
+    for match in matches:
+        closing, name = match.groups()
+        if closing == "module":
+            if stack:
+                raise ModuleDiscoveryConflict(
+                    f"upstream inventory has nested entry for {name!r}")
+            stack.append(name)
+        elif not stack or stack.pop() != name:
+            raise ModuleDiscoveryConflict(
+                f"upstream inventory has unmatched entry marker for {name!r}")
+    if stack:
+        raise ModuleDiscoveryConflict(
+            f"upstream inventory has unmatched entry marker for {stack[-1]!r}")
+    return _substitute_module_inventory(text, modules)
 
 
 #: Kinds that may be staged + applied (they advance the machine
@@ -1179,6 +1264,22 @@ def _write_stage(
     _assert_safe_write(stage, target)
     if stage.exists():
         shutil.rmtree(stage)
+    # Verify and prepare the selected-source inventory before creating any
+    # stage contents. A failed inventory check therefore leaves no usable
+    # partial stage (and removes a stale prior stage above).
+    review_inventory: str | None = None
+    inventory_bytes = _theirs_bytes(
+        cairn_root, cairn_root / "templates", _INVENTORY_SRC, to_ref)
+    if inventory_bytes is None:
+        raise ModuleDiscoveryConflict(
+            "selected upstream module inventory is missing; refusing stage")
+    try:
+        inventory_text = inventory_bytes.decode("utf-8")
+        review_inventory = _render_review_inventory(
+            inventory_text, lock.get("modules") or [], cairn_root, to_ref)
+    except (UnicodeError, ModuleDiscoveryConflict) as exc:
+        raise ModuleDiscoveryConflict(
+            f"selected upstream module inventory cannot be rendered: {exc}") from exc
     stage.mkdir(parents=True, exist_ok=True)
     # Validate EVERY planned destination is a
     # contained relative path BEFORE any stage / new-base / review-only write.
@@ -1263,11 +1364,11 @@ def _write_stage(
     # The pair exists to show what changed, so ``.theirs`` gets the tokens and
     # sizing an install of this profile applies -- the lockfile's tokens, the
     # reference-script defaults the install fills (setdefault, as there), and
-    # the current profile's axes.  A raw ``{{token}}`` would read as a change
-    # the adopter never made.  Slot bodies an install composes (module merges,
-    # onboarding tasks) are not reproduced: they sit inside slots, which are
-    # the adopter's side of a by-hand merge, and a migrated lockfile does not
-    # record the onboarding preset that chose them.
+    # the current profile's axes. A module inventory is reconciled from that
+    # selected upstream source and lock roster before sizing. Other composed
+    # slot bodies are not reproduced: they sit inside slots, which are the
+    # adopter's side of a by-hand merge, and a migrated lockfile does not record
+    # the onboarding preset that chose them.
     review_tokens = {str(k): str(v)
                      for k, v in (lock.get("tokens") or {}).items()}
     for token, value in reference_script_token_defaults(
@@ -1306,6 +1407,9 @@ def _write_stage(
         if fp.theirs_raw is not None:
             theirs_text = strip_conditional_regions(
                 substitute_tokens(fp.theirs_raw, review_tokens), review_axes)
+            if fp.dst == _INVENTORY_DST and review_inventory is not None:
+                theirs_text = strip_conditional_regions(
+                    substitute_tokens(review_inventory, review_tokens), review_axes)
             theirs_out = stage / "review-only" / (fp.dst + ".theirs")
             theirs_out.parent.mkdir(parents=True, exist_ok=True)
             theirs_out.write_text(theirs_text, encoding="utf-8")
@@ -4102,8 +4206,10 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
             stage, adopt_hints = _write_stage(
                 target, plans, lock, args.to, cairn_root,
                 new_profile=_new_profile)
-        except ScaffoldSecurityError as exc:
-            print(f"error: upgrade --stage refused (containment): {exc}",
+        except (ScaffoldSecurityError, ModuleDiscoveryConflict) as exc:
+            category = ("containment" if isinstance(exc, ScaffoldSecurityError)
+                        else "inventory")
+            print(f"error: upgrade --stage refused ({category}): {exc}",
                   file=sys.stderr)
             return 2
         _print_upgrade_report(plans, structural, citation, mode="stage",

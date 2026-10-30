@@ -101,6 +101,7 @@ class Scenario(NamedTuple):
         root = self.tmp / "release_b"
         shutil.copytree(self.cairn_root / "templates", root / "templates")
         copy_citation(root)
+        copy_renderer_compatibility(root)
         readme = root / "templates" / README_SRC
         readme.write_text(edit(readme.read_text(encoding="utf-8")), encoding="utf-8")
         return root
@@ -110,6 +111,15 @@ def copy_citation(root: Path) -> None:
     cff = CAIRN_ROOT / "CITATION.cff"
     if cff.exists():
         shutil.copy2(cff, root / "CITATION.cff")
+
+
+def copy_renderer_compatibility(root: Path) -> None:
+    """Give test releases the exact metadata and renderer they claim to run."""
+    destination = root / "bootstrap" / "_scaffold"
+    destination.mkdir(parents=True, exist_ok=True)
+    for name in ("config.py", "install.py"):
+        shutil.copy2(CAIRN_ROOT / "bootstrap" / "_scaffold" / name,
+                     destination / name)
 
 
 def run_scaffold(*args: str, cwd: Path) -> subprocess.CompletedProcess[str]:
@@ -128,6 +138,7 @@ def installed(tmp_path_factory) -> Install:
     release = root / "release_a"
     shutil.copytree(TEMPLATES_ROOT, release / "templates")
     copy_citation(release)
+    copy_renderer_compatibility(release)
     readme = release / "templates" / README_SRC
     readme.write_text(
         readme.read_text(encoding="utf-8") + "\n" + slot_block("existing-slot"),

@@ -148,6 +148,10 @@ class TestProfileSizedAssembly:
         template, so we inject one to exercise the strip end-to-end)."""
         croot = tmp_path / "cairn"
         shutil.copytree(TEMPLATES_ROOT, croot / "templates")
+        (croot / "bootstrap" / "_scaffold").mkdir(parents=True)
+        for name in ("config.py", "install.py"):
+            shutil.copy2(CAIRN_ROOT / "bootstrap" / "_scaffold" / name,
+                         croot / "bootstrap" / "_scaffold" / name)
         cff = CAIRN_ROOT / "CITATION.cff"
         if cff.exists():
             shutil.copy2(cff, croot / "CITATION.cff")
@@ -1211,16 +1215,25 @@ class TestInitLock:
                 - set(placeholder.findall(ours.read_text(encoding="utf-8"))))
         }
         assert unfilled == {}, unfilled
-        # Outside slot bodies (the adopter's side of a by-hand merge, and
-        # where an install composes module and onboarding text), the two
-        # sides are byte-equal: tokens, sizing and markers all match.
+        # Outside slot bodies and the independently rendered inventory block,
+        # the two sides are byte-equal: tokens, sizing and markers all match.
         slot_body = re.compile(
             r"(<!-- cairn:slot (\S+) -->).*?(<!-- cairn:end \2 -->)", re.S)
+        inventory_body = re.compile(
+            r"(<!-- cairn:generated-modules:start -->).*?"
+            r"(<!-- cairn:generated-modules:end -->)", re.S)
         def outside_slots(path: Path) -> str:
-            return slot_body.sub(r"\1\3", path.read_text(encoding="utf-8"))
+            text = slot_body.sub(r"\1\3", path.read_text(encoding="utf-8"))
+            return inventory_body.sub(r"\1\2", text)
         differing = [str(th.relative_to(review)) for th, ours in pairs
                      if outside_slots(th) != outside_slots(ours)]
         assert differing == [], differing
+        inventory_theirs = (review / "dev/modules/README.md.theirs").read_text()
+        installed_modules = s.read_lockfile(tmp_path)["modules"]
+        assert [line for line in inventory_theirs.splitlines()
+                if line.startswith("<!-- cairn:module id=")] == [
+                    f"<!-- cairn:module id={name} -->"
+                    for name in installed_modules]
 
     def _migrate(self, target: Path, *profile_lines: str) -> Path:
         """Install, drop the lockfile, and migrate with the given extra
@@ -1234,6 +1247,184 @@ class TestInitLock:
         assert s.main(["upgrade", "--target", str(target), "--init-lock",
                        "--cairn-root", str(CAIRN_ROOT)]) == 0
         return target / "dev" / ".cairn-upgrade" / "review-only"
+
+    def _inventory_review_case(self, target: Path, modules: list[str]) -> tuple[Path, bytes, dict[str, bytes]]:
+        review = self._migrate(target)
+        lock_path = target / "dev" / ".cairn" / "cairn-lock.yml"
+        lock = s.read_lockfile(target)
+        lock["modules"] = modules
+        lock_path.write_text(s._emit_lock_yaml(lock), encoding="utf-8")
+        inventory = target / "dev" / "modules" / "README.md"
+        inventory.write_text(inventory.read_text() + "\nlocal inventory note\n",
+                             encoding="utf-8")
+        rec = next(r for r in lock["files"]
+                   if r["dst"] == "dev/modules/README.md")
+        ancestor_bytes = {str(path.relative_to(target)): path.read_bytes()
+                          for path in (target / "dev/.cairn/base").rglob("*")
+                          if path.is_file()}
+        return review, inventory.read_bytes(), ancestor_bytes
+
+    @pytest.mark.parametrize("modules, expected", [
+        (["security-review", "coordination-tiers"],
+         ["<!-- cairn:module id=security-review -->",
+          "<!-- cairn:module id=coordination-tiers -->"]),
+        ([], []),
+    ])
+    def test_review_inventory_renders_selected_roster_from_current_source(
+        self, tmp_path: Path, modules: list[str], expected: list[str],
+    ) -> None:
+        review, installed_before, _ancestors_before = self._inventory_review_case(
+            tmp_path, modules)
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        theirs = (review / "dev/modules/README.md.theirs").read_text()
+        ours = (review / "dev/modules/README.md.ours").read_bytes()
+        assert [line for line in theirs.splitlines()
+                if line.startswith("<!-- cairn:module id=")] == expected
+        assert "local inventory note" not in theirs
+        assert "local inventory note" in ours.decode()
+        assert (tmp_path / "dev/modules/README.md").read_bytes() == installed_before
+        for rel, raw in _ancestors_before.items():
+            assert (tmp_path / rel).read_bytes() == raw
+
+    @pytest.mark.parametrize("malformation", [
+        "missing-template", "missing-generated", "duplicate-generated", "nested-entry",
+        "unmatched-entry",
+    ])
+    def test_malformed_upstream_inventory_refuses_without_partial_stage(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, malformation: str,
+    ) -> None:
+        review, installed_before, ancestors_before = self._inventory_review_case(
+            tmp_path, ["security-review"])
+        source = TEMPLATES_ROOT / "core/dev/modules/README.md"
+        original = source.read_text()
+        if malformation in ("missing-template", "missing-generated"):
+            malformed = original.replace(
+                "<!-- cairn:generated-modules:start -->\n", "")
+        elif malformation == "duplicate-generated":
+            malformed = original.replace(
+                "<!-- cairn:generated-modules:start -->",
+                "<!-- cairn:generated-modules:start -->\n<!-- cairn:generated-modules:start -->")
+        elif malformation == "nested-entry":
+            malformed = original.replace(
+                "<!-- cairn:generated-modules:end -->",
+                "<!-- cairn:module id=security-review -->\n"
+                "<!-- cairn:module id=coordination-tiers -->\n"
+                "<!-- cairn:module-end id=coordination-tiers -->\n"
+                "<!-- cairn:module-end id=security-review -->\n"
+                "<!-- cairn:generated-modules:end -->")
+        else:
+            malformed = original.replace(
+                "<!-- cairn:generated-modules:end -->",
+                "<!-- cairn:module id=security-review -->\n"
+                "<!-- cairn:generated-modules:end -->")
+        # The source tree is shared with the running test process; supply the
+        # malformed selected bytes at the renderer's real source-read boundary.
+        from bootstrap._scaffold import upgrade as _up
+        read_bytes = _up._theirs_bytes
+        monkeypatch.setattr(
+            _up, "_theirs_bytes",
+            lambda root, templates, rel, to_ref: (
+                (None if malformation == "missing-template" else malformed.encode())
+                if rel == "core/dev/modules/README.md"
+                else read_bytes(root, templates, rel, to_ref)),
+        )
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 2
+        assert not (tmp_path / "dev/.cairn-upgrade").exists()
+        assert (tmp_path / "dev/modules/README.md").read_bytes() == installed_before
+        for rel, raw in ancestors_before.items():
+            if (tmp_path / rel).exists():
+                assert (tmp_path / rel).read_bytes() == raw
+
+    def test_unknown_inventory_member_refuses_stage(self, tmp_path: Path) -> None:
+        review = self._migrate(tmp_path)
+        lock_path = tmp_path / "dev/.cairn/cairn-lock.yml"
+        lock = s.read_lockfile(tmp_path)
+        lock["modules"] = ["made-up-module"]
+        lock_path.write_text(s._emit_lock_yaml(lock), encoding="utf-8")
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 2
+        assert not (tmp_path / "dev/.cairn-upgrade").exists()
+
+    def test_matching_historical_renderer_stages_inventory(self, tmp_path: Path) -> None:
+        review, _installed, _ancestors = self._inventory_review_case(
+            tmp_path, ["security-review"])
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--to", "HEAD", "--cairn-root", str(CAIRN_ROOT)]) == 0
+        theirs = (review / "dev/modules/README.md.theirs").read_text()
+        assert "<!-- cairn:module id=security-review -->" in theirs
+        assert "**security-review**" in theirs
+
+    def test_historical_inventory_description_is_used_for_theirs(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        review, _installed, _ancestors = self._inventory_review_case(
+            tmp_path, ["security-review"])
+        import subprocess
+        real_run = subprocess.run
+        from bootstrap._scaffold.install import _render_module_inventory
+        entry = _render_module_inventory(["security-review"]).replace(
+            "Identify trust boundaries that may need review.",
+            "Historical description.")
+        historical = (
+            "# Modules\n\n<!-- cairn:generated-modules:start -->\n"
+            + entry + "\n<!-- cairn:generated-modules:end -->\n")
+
+        def historical_description(args, *positional, **kwargs):
+            if (isinstance(args, (list, tuple)) and len(args) >= 5
+                    and str(args[-1]) ==
+                    "HEAD:templates/core/dev/modules/README.md"):
+                return subprocess.CompletedProcess(args, 0, historical, "")
+            return real_run(args, *positional, **kwargs)
+
+        monkeypatch.setattr(subprocess, "run", historical_description)
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--to", "HEAD", "--cairn-root", str(CAIRN_ROOT)]) == 0
+        theirs = (review / "dev/modules/README.md.theirs").read_text()
+        assert "Historical description." in theirs
+
+    def test_changed_historical_renderer_refuses_and_cleans_stage(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        _review, installed_before, ancestors_before = self._inventory_review_case(
+            tmp_path, ["security-review"])
+        import subprocess
+        real_run = subprocess.run
+
+        def changed_renderer(args, *positional, **kwargs):
+            if (isinstance(args, (list, tuple)) and len(args) >= 5
+                    and str(args[-1]) == "HEAD:bootstrap/_scaffold/install.py"):
+                return subprocess.CompletedProcess(args, 0, b"changed renderer", b"")
+            return real_run(args, *positional, **kwargs)
+
+        monkeypatch.setattr(subprocess, "run", changed_renderer)
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--to", "HEAD", "--cairn-root", str(CAIRN_ROOT)]) == 2
+        assert not (tmp_path / "dev/.cairn-upgrade").exists()
+        assert (tmp_path / "dev/modules/README.md").read_bytes() == installed_before
+        for rel, raw in ancestors_before.items():
+            path = tmp_path / rel
+            if path.exists():
+                assert path.read_bytes() == raw
+
+    def test_changed_historical_metadata_refuses_and_cleans_stage(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        self._inventory_review_case(tmp_path, ["security-review"])
+        import subprocess
+        real_run = subprocess.run
+
+        def changed_metadata(args, *positional, **kwargs):
+            if (isinstance(args, (list, tuple)) and len(args) >= 5
+                    and str(args[-1]) == "HEAD:bootstrap/_scaffold/config.py"):
+                return subprocess.CompletedProcess(args, 0, b"changed metadata", b"")
+            return real_run(args, *positional, **kwargs)
+
+        monkeypatch.setattr(subprocess, "run", changed_metadata)
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--to", "HEAD", "--cairn-root", str(CAIRN_ROOT)]) == 2
+        assert not (tmp_path / "dev/.cairn-upgrade").exists()
 
     def test_review_copy_keeps_a_profile_supplied_command_token(
         self, tmp_path: Path,
