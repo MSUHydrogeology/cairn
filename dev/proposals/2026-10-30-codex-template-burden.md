@@ -86,3 +86,28 @@ Assurance path: high-assurance
 **R1 — Non-blocking:** The proposal names candidate topics but makes every cut optional and gives no before/after burden comparison. A correction alone could satisfy its explicit instructions without delivering meaningful reduction. For the plan, identify concrete repeated passages and compare final reading/authoring burden against the committed baseline, including added cross-reading and any retained duplication; explain if safe cuts prove immaterial. Preserve the independent adopter rules rather than moving them to inaccessible doctrine.
 
 Coverage: reviewed the proposal, accepted in-place decision, plan preambles and selected repetition at the named commit. Did not inventory all template consumers, test pins, or independently assess security controls; those remain for the plan and Security Review.
+
+## Review -- Codex (gpt-6.1-sol) -- 2026-10-30
+
+```
+Reviewed commit: 818933e26433968b1049d3deb39d6c13721d3f29
+Target: proposal security design and installed-rule preservation
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: ACCEPT
+**Elapsed**: 6 minutes (estimated)
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. Consolidating repeated guidance can remove drift without removing gates: the Proposal explicitly preserves security obligations, scientific checks, scope protection and independent installed usability. Both plan preambles contradict in-place proposal revision (`dev/plans/_template.md`, `templates/core/dev/plans/_template.md`, `dev/proposals/_template.md`).
+2. **Best alternative.** Correct only that contradiction if consolidation cannot preserve runnable guidance. It retains today's repetition; moving rules to doctrine loses adopter access because installed `AGENTS.md` explicitly says doctrine is unshipped (`templates/core/AGENTS.md`, Where doctrine/ references resolve).
+3. **What would show it wrong.** A missing gate, broken machine marker or adopter dependent on unshipped instructions. The proposal already requires obligation comparison, consumer inventory and concrete mutations; their results belong in implementation evidence, not an additional process.
+
+**S1 — Non-blocking:** The header attributes Strategy to gpt-6.1-terra, while `dev/.cairn/model-selection-mapping.yml` assigns Terra medium and Strategy high. The coordinating author reports this was ordinary proposal writing, whose floor is medium. Correct the inaccurate role label to match that assignment.
+
+Coverage: examined committed proposal, current template response/security instructions and installed doctrine boundary. Did not measure shortened templates, inventory all consumers, run implementation checks, or certify adopter behavior; no implementation exists in this review.
