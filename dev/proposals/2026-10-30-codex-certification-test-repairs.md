@@ -1,7 +1,7 @@
 # Repair certification test fixtures and isolation
 
 **Author**: Codex (GPT-6.1 Sol)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
@@ -218,3 +218,11 @@ retain their own usual and Security reviews.
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Maintainer -- 2026-10-30
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated** (chat, 2026-10-30; scribed by Antigravity):
+
+> "Please scribe my decisions as you recommend on those five."
+
+Accepted as revised with high-assurance and required Internal + Internal Security Review plan review.
