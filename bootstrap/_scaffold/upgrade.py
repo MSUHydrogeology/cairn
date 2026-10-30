@@ -791,6 +791,7 @@ def _compute_upgrade(
         if src_rel == "core/VENDOR.md" and not (target / dst).exists():
             resolved = _resolve_vendor_wrapper(
                 target, {r["dst"] for r in lock.get("files", [])},
+                include_directories=True,
             )
             if resolved is not None:
                 dst = resolved
@@ -1534,7 +1535,7 @@ def _write_stage(
 
 
 def _resolve_vendor_wrapper(
-    target: Path, mapped_dsts: set[str],
+    target: Path, mapped_dsts: set[str], *, include_directories: bool = False,
 ) -> str | None:
     """Resolve the adopter's renamed vendor wrapper (foldback #45).
 
@@ -1556,13 +1557,22 @@ def _resolve_vendor_wrapper(
     the digest of whatever file it leads to.
 
     Returns the repo-root-relative dst, or ``None`` (the caller warns rather
-    than silently skipping or recording a wrong file).  The not-already-mapped
-    guard (both tiers) is the false-positive backstop."""
+    than silently skipping or recording a wrong file).  ``include_directories``
+    is used only by upgrade classification and apply observation: a known
+    wrapper name occupied by a real directory must remain identifiable as the
+    tracked wrapper path when no known wrapper file resolves, so the collision
+    block can protect it without changing file-resolution precedence. The
+    not-already-mapped guard (both tiers) is the false-positive backstop."""
     # Tier 1: a known vendor filename at repo root.
     for name in _KNOWN_VENDOR_WRAPPERS:
         cand = target / name
         if name not in mapped_dsts and cand.is_file() and not cand.is_symlink():
             return name
+    if include_directories:
+        for name in _KNOWN_VENDOR_WRAPPERS:
+            cand = target / name
+            if name not in mapped_dsts and cand.is_dir() and not cand.is_symlink():
+                return name
     # Tier 2: a custom-named root .md importing @AGENTS.md near the top.
     for md in sorted(target.glob("*.md")):
         if md.name in mapped_dsts or md.is_symlink() or not md.is_file():
@@ -3315,10 +3325,10 @@ def _apply_upgrade(
         print("error: staged upgrade lacks directory observations; "
               "run `upgrade --stage` again before applying.", file=sys.stderr)
         return 1
-    # Derive ordinary tracked destinations from the lock, independently of
-    # the review area's editable observation list. Retired records are not
-    # upgrade destinations. A renamed vendor wrapper cannot be derived from
-    # its canonical lock destination here.
+    # Derive tracked destinations from the lock, independently of the review
+    # area's editable observation list. Retired records are not upgrade
+    # destinations. A known renamed vendor wrapper is resolved from the live
+    # project too, including a directory now occupying its resolved name.
     retired = {(src, dst) for src, dst, _verbatim, _digests in _RETIRED_INSTALLS
                if not (templates_root / src).exists()}
     required_observations = {
@@ -3326,6 +3336,16 @@ def _apply_upgrade(
         if (rec["src"], rec["dst"]) not in retired
         and rec["src"] != "core/VENDOR.md"
     }
+    wrapper_rec = next((rec for rec in lock.get("files", [])
+                        if rec["src"] == "core/VENDOR.md"), None)
+    if (wrapper_rec is not None
+            and not (target / wrapper_rec["dst"]).exists()):
+        resolved_wrapper = _resolve_vendor_wrapper(
+            target, {rec["dst"] for rec in lock.get("files", [])},
+            include_directories=True,
+        )
+        if resolved_wrapper is not None:
+            required_observations.add(resolved_wrapper)
     if not required_observations.issubset(meta["directory_observed"]):
         print("error: staged upgrade has incomplete directory observations; "
               "run `upgrade --stage` again before applying.", file=sys.stderr)

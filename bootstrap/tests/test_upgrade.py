@@ -2751,6 +2751,49 @@ class TestTrackedDirectoryCollisions:
         assert cache_path.read_bytes() == cache_before
         assert stage.exists()
 
+    def test_renamed_wrapper_observation_cannot_be_omitted(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """Apply independently resolves a known renamed wrapper destination.
+
+        A stage whose editable observation list drops CLAUDE.md must still
+        refuse when that no-op tracked wrapper becomes a directory.
+        """
+        assert _install(tmp_path) == 0
+        (tmp_path / "VENDOR.md").rename(tmp_path / "CLAUDE.md")
+        TestUpgradeModes()._diverge_base(tmp_path)
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        stage = tmp_path / "dev/.cairn-upgrade"
+        meta = json.loads((stage / s._STAGE_META).read_text())
+        assert "CLAUDE.md" in meta["directory_observed"]
+        meta["directory_observed"].remove("CLAUDE.md")
+        (stage / s._STAGE_META).write_text(json.dumps(meta))
+
+        dst = tmp_path / "CLAUDE.md"
+        dst.unlink()
+        dst.mkdir()
+        content = dst / "adopter-data"
+        content.write_bytes(b"preserve wrapper data")
+        before = content.stat()
+        lock_path = tmp_path / "dev/.cairn/cairn-lock.yml"
+        lock_before = lock_path.read_bytes()
+        cache_path = tmp_path / "dev/.cairn/base/VENDOR.md"
+        cache_before = cache_path.read_bytes()
+
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                     "--force", "--ack-review-only",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        err = capsys.readouterr().err
+        assert rc == 1
+        assert "incomplete directory observations" in err
+        assert content.read_bytes() == b"preserve wrapper data"
+        assert content.stat().st_mode == before.st_mode
+        assert content.stat().st_mtime_ns == before.st_mtime_ns
+        assert lock_path.read_bytes() == lock_before
+        assert cache_path.read_bytes() == cache_before
+        assert stage.exists()
+
     def test_restage_after_removing_directory_allows_absent_path(
         self, tmp_path: Path,
     ) -> None:
