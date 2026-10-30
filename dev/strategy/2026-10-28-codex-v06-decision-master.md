@@ -16,7 +16,7 @@ Decision. Push, publication, settings changes and issue closure remain
 unauthorized.
 
 v0.6 makes existing capabilities work; v0.7 adds capabilities and adopter
-research. This five-plan batch does not complete v0.6.
+research. The five-plan batch does not complete v0.6.
 
 ## Delivered work and current holds
 
@@ -45,47 +45,46 @@ remain separate, unauthorized baseline work.
 
 ### 1. Governing-text routing and two conflicting prescriptions
 
-**Chosen:** public methodology at `docs/methodology/`, duties in installed
-files and project rules in `dev/rules/` (`aa9fc08b`). Coordination claims intent,
-blocks provable live conflicts, warns on stale/tokenless cases and retains
-warn/confirm modes (`7013de1d`). Literal paths can recur only by exact declared
-provenance; checker logic is unchanged (`560a178c`).
+**Chosen:** public methodology at `docs/methodology/`, installed duties and
+project rules in `dev/rules/` (`aa9fc08b`). Coordination claims intent, blocks
+provable live conflicts, warns on stale/tokenless cases and retains warn/confirm
+(`7013de1d`). Literal paths recur only by declared provenance; checker logic is
+unchanged (`560a178c`).
 
 Proposed path: `docs/methodology/` (not yet created).
 
-Retain all 21 partial-reach obligation groups until installed homes and usable
-pointers are shown. No accepted duty is lost by consolidation. C3 must show an
-actual simpler edit against both baselines; frozen tests await trust-boundary
-work.
+Retain all 21 partial-reach groups until installed homes and usable pointers
+are shown; consolidation loses no accepted duty. C3 must show a simpler edit
+against both baselines; frozen tests await trust-boundary work.
 
 ### 2. Approved initial test-protection roster
 
-**Approved:** the [refreshed roster](../plans/archive/2026-10-28-test-trust-boundary/c1b-roster-6cc95fa7.json)
-at `884e6d53`; [evidence](../plans/archive/2026-10-28-test-trust-boundary/c1b-evidence-6cc95fa7.json)
-records its classification. It covers 78 test files and 12 controls, leaving
-51 ordinary tests; installation is not established. Approval at `3e9f8fc2`
-does not waive ceremony. Ordinary tests retain byte and node/marker HOLD
-protection; ordinary Python can still influence protected execution.
+**Approved:** [roster](../plans/archive/2026-10-28-test-trust-boundary/c1b-roster-6cc95fa7.json)
+`884e6d53`; [evidence](../plans/archive/2026-10-28-test-trust-boundary/c1b-evidence-6cc95fa7.json)
+classifies 78 test files and 12 controls, leaving 51 ordinary. Installation is
+not established; approval `3e9f8fc2` waives no ceremony. Ordinary tests retain
+byte and node/marker HOLD protection; ordinary Python can influence protected
+execution.
 
 ### 3. Allow a preparatory extraction for the maintenance pilot
 
 **Recommend:** separately authorize moving two named ordinary methods to
-`bootstrap/tests/test_board_json_values.py`; security helpers stay protected.
-New scope despite roster approval, it requires independent reviews and a
-protected-node transition. Otherwise wait or explicitly lose the pilot outcome.
-Keep the testing-module update; simulation guidance stays v0.7.
+`bootstrap/tests/test_board_json_values.py`; keep security helpers protected.
+This new scope needs independent reviews and a protected-node transition.
+Otherwise wait or explicitly lose the pilot; keep the testing-module update,
+while simulation guidance stays v0.7.
 
 Proposed path: `bootstrap/tests/test_board_json_values.py` (not yet created).
 
 ### 4. Establish a forward-trust baseline at v0.6
 
-The Maintainer directed re-anchoring at v0.6 without checking intervening
-changes against the old anchor. The [exploration](2026-10-29-sol-forward-baseline.md)
-proposes one reviewed, signed baseline with the approved roster. This gives up
+The Maintainer directed v0.6 re-anchoring without checking intervening changes
+against the old anchor. The [exploration](2026-10-29-sol-forward-baseline.md)
+proposes one reviewed, signed baseline with the approved roster. It gives up
 P443-to-release drift checks and certifies no earlier history; prior HOLDs are
-not prerequisites. Align the plans. Candidate, package and signer need
-Maintainer authorization; pushing is separate. Dormant bridge `6e3197f6` is
-approved but uninstalled and not certified. Account for frozen checker wording.
+not prerequisites. Align plans. Candidate, package and signer need Maintainer
+authorization; pushing is separate. Bridge `6e3197f6` is approved but not
+installed or certified. Account for frozen checker wording.
 
 ### 5. Session-start handoff marker — corrected
 
@@ -96,13 +95,12 @@ bounded check passed (26 tests, Python 3.13.13); certification remains pending.
 ### 6. Upgrade base and install-output integrity — accepted
 
 The [archived proposal](../proposals/archive/2026-10-29-codex-upgrade-install-integrity.md)
-and [plan](../plans/2026-10-30-upgrade-install-integrity.md) are accepted; the
-plan is `ready-to-implement`. Check saved ancestor bytes before merging; invalid
-evidence routes to manual review while preserving adopter files and cache.
-Reject Cc/Cf, U+034F and variation selectors in paths, retain ordinary
-combining marks and visible non-Latin names, and escape supplied output names.
-The digest is not authentication when cache and lockfile are jointly controlled.
-The separate Maintainer-run AST ceremony remains required. No baseline
+and [plan](../plans/2026-10-30-upgrade-install-integrity.md) are accepted;
+`ready-to-implement`. Check saved ancestors before merge; invalid evidence routes
+to manual review without overwriting adopter files/cache. Reject Cc/Cf, U+034F
+and variation selectors in paths; retain ordinary combining marks and visible
+non-Latin names; escape supplied output. A digest is not authentication when
+cache and lockfile are jointly controlled. AST ceremony remains; no baseline
 installation or old-anchor reconciliation is authorized.
 
 ### 7. Directories occupying tracked upgrade paths — accepted
@@ -137,27 +135,26 @@ verification and the doctrine-evolution gate before doctrine edits remain.
 ### 10. Bind the interpreter in Git's per-worktree administration — accepted
 
 The [archived proposal](../proposals/archive/2026-10-29-codex-git-interpreter-binding.md)
-and [plan](../plans/2026-10-30-git-interpreter-binding.md) are accepted; the
-plan is `ready-to-implement`. Store the binding in verified per-worktree Git
+and [plan](../plans/2026-10-30-git-interpreter-binding.md) are accepted;
+`ready-to-implement`. Store the binding in verified per-worktree Git
 administration and require exact-root discovery. Non-repository installs can
 proceed without it and rebind later; never read or migrate the legacy file.
 Copied `.git` administration or a delivered pointer can still supply the
-binding. Copied Git administration remains a residual source. Native Windows
-discovery and junction/reparse evidence remain required during implementation.
+binding. Native Windows and junction/reparse evidence remain required during
+implementation.
 
 ### 11. Detect and report same-file sweeps — accepted
 
 The [archived proposal](../proposals/archive/2026-10-29-codex-same-file-sweeps.md)
-and [plan](../plans/2026-10-30-same-file-sweeps.md) are accepted; the plan is
-`ready-to-implement`. Count confirmed misattributed commits only, one row each,
-with grouped paths and occurrence separate from discovery; uncertainty is
-excluded without author confirmation or provenance. Require writer agreement
-through commit, inspect staged/unstaged and new files, recheck changed bytes, or
-use separate worktrees. Claims are not consent; stop on foreign/uncertain
-content. Keep minimal local references and screen summaries; never copy private
-chats, secrets or unrelated text. The advisory gate is incomplete; omissions,
-noncooperation and dishonest reports remain possible. Implementation must
-verify the mapped behaviors and complete applicable frozen-file ceremony.
+and [plan](../plans/2026-10-30-same-file-sweeps.md) are accepted;
+`ready-to-implement`. Count confirmed misattributed commits only, one row each;
+separate occurrence from discovery, excluding uncertainty without confirmation
+or provenance. Agree with writers, inspect staged/unstaged/new files, reinspect
+changed bytes or use separate worktrees. Claims are not consent: stop on foreign
+or uncertain content. Keep minimal local references; screen summaries and never
+copy private chats, secrets or unrelated text. Advisory gate limits remain:
+omissions, noncooperation and dishonest reports are possible. Verify mapped
+behavior and complete the applicable frozen-file ceremony.
 
 ### 12. Correct work-intent guidance and identity help — accepted
 
@@ -167,17 +164,40 @@ the guidance and parent CLI help correction without changing enforcement.
 The ordinary and Security code reviews accepted the implementation; the
 recorded gate-manifest ceremony remains separate v0.6 baseline work.
 
-### Certification cost — held for evidence, not a current Decision
+### 13. Repair certification test failures — awaiting Decision
 
-The [proposal](../proposals/2026-10-29-codex-certification-cost-audit.md) remains
-`revising`. The run at `8b51bb2e` was not a certification: it had 5,622 passes
-and six failures; the run recorded timings, but the tree is not certified. The
-separate [test-repair proposal](../proposals/2026-10-30-codex-certification-test-repairs.md)
-is `awaiting-review`, not decision-ready. Do not treat this failed run as
-certification or authorize another full run here. Revisit the speed proposal
-after the repair proposal's review and a later authorized clean certification
-provides usable family timings; if no safe improvement exists, record that and
-stop.
+The [proposal](../proposals/2026-10-30-codex-certification-test-repairs.md),
+responded at `bfb996f8`, awaits Decision. The uncertified `8b51bb2e` run had
+5,622 passes and six failures. Five are test infrastructure: malformed lockfile
+fixtures, a stale plan path and module identity contamination; the sixth is
+unrelated upgrade behavior. Reproduce test ordering before choosing isolation;
+preserve leak, evidence-refusal and re-anchor assertions. Four affected files
+remain frozen by the installed manifest; the proposed ordinary classification
+is not installed and waives no ceremony.
+
+### 14. Render generated inventory in upgrade review copies — awaiting Decision
+
+The [proposal](../proposals/2026-10-30-codex-review-inventory-rendering.md),
+responded at `315f8506`, awaits Decision. Render upstream `.theirs` from the
+recorded lock roster with the existing renderer; keep `.ours` as adopter bytes
+so edits remain visible. Preserve the raw ancestor, installed inventory, apply
+and reconciliation behavior. The plan must handle historical `--to` and
+missing/malformed markers without presenting invalid comparisons as valid.
+
+### 15. Reduce repeated setup in review-sweep tests — awaiting Decision
+
+The [speed proposal](../proposals/2026-10-29-codex-certification-cost-audit.md),
+concretized at `a3f7e15b`, awaits Decision. Change `installs` from module to
+session scope, retaining every node and one install per profile. See [full-run
+durations](../proposals/2026-10-29-codex-certification-cost-audit/certification-durations.txt),
+[module-scope](../proposals/2026-10-29-codex-certification-cost-audit/scoped-baseline.txt)
+and [session-scope](../proposals/2026-10-29-codex-certification-cost-audit/scoped-session.txt)
+reports: both scoped runs passed 391 tests (18.55 and 0.65 seconds). These single
+measurements establish neither timing stability nor full-suite speedup. File
+is ordinary in the approved roster but frozen in the installed manifest; its
+ceremony remains owed. No extra suite, protection change or baseline installation
+is authorized. A plan must test shuffled shared-tree isolation, repeat timings
+and fault controls; stop if the gain is unstable or controls fail.
 
 ## Issue triage, staffing and close-out
 
@@ -196,4 +216,5 @@ Completed strategy explorations archive with their owned evidence once their
 purpose is discharged. This master stays current until its coordinating role is
 retired; active v0.7 explorations remain live. Plans and their records own the
 engineering evidence. Prose gates validate this briefing, not certification or
-suite-wide performance. No full suite or push was performed for this handoff.
+suite-wide performance. No full suite, certification or push was performed for
+this update.
