@@ -1,7 +1,7 @@
 # Plan: Repair certification test measurements
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-certification-test-repairs.md
-**Status**: revising-code
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Restore five certification test measurements while retaining their adversarial controls.
@@ -141,3 +141,52 @@ Elapsed: about 13 minutes; tokens: unknown
 **Falsification ledger:** unmutated control, 2 passed; hostile environment probe, 1 passed/1 failed. No source mutant. `scripts/repin.py:1993-2037` reads extracted committed bytes; the child retains both calls.
 
 **Coverage:** claims and drift—f26b903d diff and Boundary B SHA/range; production path and failure direction—`REPIN.boot`, `check_record`, dispatcher fixture and planted-leak node; completeness and satisfier—inherited-marker probe; consistency, lifecycle and scope—proposal Current contract, plan C1/C2, frozen-file ceremony; scientific domain—none changed. **Not covered:** full suite, re-anchor, historical comparison, all owning families, or renderer/record-reader mutation. Separate code Security Review remains owed.
+
+## Response to code review -- Codex (GPT-6) -- 2026-10-30
+
+I removed the environment-selected child branch. The record test now always invokes a direct child process for the real `REPIN.boot` and both committed-object checks around the rewrite. The new adversarial test sets the former marker and asserts that the parent retains its `_gate_manifest` module and package attribute while the child performs the same checks. On the final commit, the new node and all four ceremony/reanchor orderings passed with `CAIRN_REPIN_RECORD_CHECK_CHILD=1`. The separate code Security Review remains the next review obligation; I did not request a second ordinary clearing pass. Elapsed: about 23 minutes. Tokens: unknown.
+
+## Implementation verification -- Codex (GPT-6) -- 2026-10-30
+
+```
+Mode: wide
+Certified by: pending
+Implementation commit: 20b01625207d46171a95d42886936eeb2aa13378
+Code range: 35d03e868b16bdc98aa4553c05550641127ae228..20b01625207d46171a95d42886936eeb2aa13378
+Interpreter: /Users/kendal30/conda_envs/lhm/bin/python3.13 -- Python 3.13.13
+Verification copy: /private/tmp/cairn-cert-repair-final-reviewfix
+Verification branch: codex/verify-cert-repair-20b
+Pre-run state: clean tree at 20b01625
+Post-run state: clean tree at the same 20b01625
+Touched surface: bootstrap/tests/test_repin_ceremony.py
+Elapsed: about 23 minutes. Tokens: unknown.
+```
+
+The marker-on regression keeps the real boot and both record checks in the child while asserting that the parent package and `bootstrap.tests._gate_manifest` object are unchanged. All four two-node selections collected in the requested order without shuffling.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_security_finding_confidentiality.py::TestTheDispatcherAggregateReportIsANewSweptSink` | 0 | 2 passed: pristine and planted renderer | 0.25s | unknown |
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_repin.py::test_baseline_preparation_builds_exact_package_after_reader_binding bootstrap/tests/test_repin.py::test_baseline_preparation_requires_independent_inputs bootstrap/tests/test_repin.py::test_baseline_preparation_refuses_substituted_external_roster_before_collection` | 0 | 3 passed after using an attached local verification branch | 33.79s | unknown |
+| `CAIRN_REPIN_RECORD_CHECK_CHILD=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_repin_ceremony.py::test_inherited_child_marker_does_not_bypass_record_check_isolation` | 0 | 1 passed | 1.41s | unknown |
+| `CAIRN_REPIN_RECORD_CHECK_CHILD=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_repin_ceremony.py::test_record_check_uses_committed_objects_after_worktree_rewrite` | 0 | 1 passed | 1.51s | unknown |
+| `CAIRN_REPIN_RECORD_CHECK_CHILD=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_gate_reanchor.py::test_authority_pin_reads_v2_frozen_entry_digest` | 0 | 1 passed | 0.21s | unknown |
+| `CAIRN_REPIN_RECORD_CHECK_CHILD=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_gate_reanchor.py::test_rostered_stage_b_executes_only_preflight_bytes_pinned_by_p` | 0 | 1 passed | 15.92s | unknown |
+| (1) `CAIRN_REPIN_RECORD_CHECK_CHILD=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_repin_ceremony.py::test_record_check_uses_committed_objects_after_worktree_rewrite bootstrap/tests/test_gate_reanchor.py::test_authority_pin_reads_v2_frozen_entry_digest`<br>(2) Same prefix, ceremony node then `bootstrap/tests/test_gate_reanchor.py::test_rostered_stage_b_executes_only_preflight_bytes_pinned_by_p`<br>(3) Same prefix, authority node then ceremony node<br>(4) Same prefix, Stage B node then ceremony node | 0 | 8 passed | 1.59s, 16.12s, 1.54s, 16.74s | unknown |
+| Four corresponding `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest --collect-only -q` commands with marker and the same four explicit node pairs | 0 | 2 nodes each, collected in requested order | 0.04–0.05s each | unknown |
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_gate_manifest.py::test_verify_holds_on_frozen_file_modification` | 0 | 1 passed | 4.14s | unknown |
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_security_finding_confidentiality.py` (host access) | 0 | 40 passed | 20.02s | unknown |
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_security_verification.py` (host access) | 0 | 136 passed | 5.07s | unknown |
+| `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_gate_reanchor.py` | 0 | 17 passed | 29.12s | unknown |
+| `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_gate_manifest.py` | 0 | 37 passed | 11.26s | unknown |
+| `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_repin.py` | 0 | 114 passed | 151.11s | unknown |
+| `PYTHONDONTWRITEBYTECODE=1 /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_repin_ceremony.py` (host access) | 0 | 152 passed | 637.61s | unknown |
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 bootstrap/tests/_gate_manifest.py verify --target-repo . --no-collect` | 1 | Expected HOLD: 130 integrity violations, including FROZEN-MODIFIED and FROZEN-OID for the changed ceremony file; no anchor supplied | 0.2s | unknown |
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 scripts/check_cairn.py` | 0 | 196 Markdown files clean; 94 external links not probed | <1s | unknown |
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 scripts/link_check.py` | 0 | 196 Markdown files clean; 95 external links not probed | <1s | unknown |
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 scripts/sync_doc_snippets.py --check` | 0 | 477 docs, no drift | <1s | unknown |
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | Zero failures; neutrality info 43, redundancy info 1 | <1s | unknown |
+
+**Non-pass disposition.** The first baseline-family attempt used a detached temporary clone; its nested clone could not resolve `git symbolic-ref HEAD`. I attached a local branch at the same tested commit and reran the three baseline nodes successfully. The restricted attempts of the confidentiality and security-verification families were blocked by denied loopback binds (35 failed/5 passed and 1 failed/135 passed); both families passed in full with host access. The current-manifest refusal is the separate frozen-file/baseline consequence, not a passing test. `claim_check.py` passed on this updated plan before commit.
+
+**Omissions.** No full-tree suite, live ref update, re-anchor or historical-anchor comparison was run. The separate frozen-file ceremony remains at the Maintainer's version-cut/request point. No test failure remains open from this implementation correction. The next holder is the separate code Security Review.
