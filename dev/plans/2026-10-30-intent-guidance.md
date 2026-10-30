@@ -202,3 +202,29 @@ Implementation: 82b08e8e..be41b61e; verification: 394aaf3c
 **Falsification ledger.** In a fresh detached local clone at 394aaf3c, Python 3.13.13 ran targeted real-entry-point identity, release, exemption, stale-claim, auto-release and parent-help cases: 9 passed, 125 deselected. The unmutated parent-help case passed in that control. Replacing the corrected parent-help phrase with `warn-by-default` in `tools/_intent/cli.py` killed the source mutant (1 assertion failure); independently replacing it in `templates/modules/team-gated/_intent/cli.py` killed the shipped mutant (1 assertion failure). Each mutant was reset before the other. The tests and mutations ran only in the disposable copy. I compared the verification record with the range, the identity and conflict branches, and the manual and automatic release commands; the record names its interpreter, tested commit, coverage, omissions and pending ceremony.
 
 **Coverage:** Examined the changed guidance and help, acceptance criteria, implementation branches and verification record. Targeted checks did not exercise every enforce mode or independently reproduce the full mapped selection; the implementation record supplies those results. No full suite or re-anchor was run. This ordinary pass does not discharge the separate Security Review.
+
+## Code review -- Codex (GPT-6), Security -- 2026-10-30
+
+Reviewed commit: 0b7aeedf
+Target: intent-guidance implementation 82b08e8e..be41b61e and verification at 394aaf3c; unrelated interleaved changes excluded
+Prior findings: none
+Assurance path: high-assurance
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Bounding**: ACCEPTED
+
+**Foundations**
+
+1. **Does it do what it claims?** The guidance makes enforcement conditional, names both exemptions and warns that labels are cooperative; these match the actual token gate, label comparison and exemption branches -- `tools/_intent/conflict.py::_precommit_check_impl`, `other_session_overlaps`; `tools/_intent/identity.py::resolve_session_token`.
+2. **Best alternative.** Preserve the narrow guidance correction and explicit limitations; adding authentication would change the accepted contract, while the existing manual-release command intentionally accepts a claim ID without owner authentication -- `tools/_intent/cli.py::_cmd_release`, `_cmd_auto_release`.
+3. **What would show it wrong?** A token-bearing solo commit that blocks, a suppressed cross-label warning under bypass, or a shared label still being distinguished would contradict the guidance -- see the falsification ledger below.
+
+**Falsification ledger.** All execution used a fresh detached local clone of 0b7aeedf under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13). A detached worktree could not be created because Git administration writes were denied; the local clone supplied an independent checkout instead. The shared checkout was not used for probes.
+
+* **Surfaces and edge attempts:** An independent real-CLI matrix created five fresh temporary Git repositories, claimed the same path under one token/label, then staged it under a different token. The unmodified control refused with exit 1 and an overlap warning. Canonical `solo_mode: true` returned 0 and retained that warning. A nonempty `CAIRN_INTENT_ALLOW_UNCLAIMED=0` also returned 0 and retained the warning: this is presence-based, not a Boolean parser. Reusing the claimant's label with the different token returned 0 and suppressed the overlap warning, demonstrating the documented identity limitation. Headless `confirm` refused with exit 1 and retained the warning. Each result was asserted through `tools/intent.py _precommit_check` on the staged path; no engine mutation was needed.
+* **Verification:** Targeted pytest selection in `bootstrap/tests/test_intents_tool.py` covering `TestEnforceModeAndN1`, `test_solo_mode_suppresses_self_not_other`, `TestManualRelease`, `test_no_token_collision_records_no_incident`, and `test_confirm_ack_records_occurred`: 10 passed, 124 deselected, 1.63 s. Byte comparisons passed for source/shipped CLI and development/shipped coordination guidance. The independent matrix passed all five cases in 0.62 s.
+* **Record and trust boundary:** The implementation record identifies the committed bytes, wide mapping, interpreter, outcomes, omissions and pending certificate. The guidance accurately separates label override from token availability, manual release from authentication, and hook opt-in from installation. The source and shipped CLI changes affect help, not enforcement. The frozen-file ceremony remains owed; this pass does not authorize re-anchoring.
+* **Residual risk:** Cooperative identity can be spoofed or shared and the hook intentionally fails open on internal error. These are stated limits, not new safeguards supplied by this change. No full-suite certification, re-anchor, historical-incident reconstruction, exhaustive test rerun or new help mutation was performed; the ordinary review records independent mutations of both help copies.
+
+**Coverage -- covered:** Claims, failure/exemption modes and public paths through the five-case real-CLI matrix and targeted tests above; identity and release boundaries through `tools/_intent/identity.py`, `tools/_intent/cli.py` and `tools/_intent/hooks.py`; consistency and drift through the committed doctrine/module/collaboration wording and byte comparisons; lifecycle and scope through the plan's accepted contract, verification and pending ceremony. **Not covered / low confidence:** adversarial log tampering, all malformed-config combinations, unrelated interleaved implementation, external links, and Maintainer-run trust ceremonies.
