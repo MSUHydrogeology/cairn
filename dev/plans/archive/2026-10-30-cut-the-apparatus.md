@@ -266,3 +266,29 @@ one existing informational redundancy note. External URLs (88 in `check_cairn`,
 89 in `link_check`) were not probed. The full-tree certifying suite was not run;
 no re-anchor was required. The one-month C3 indicator remains open as recorded
 above. No scientific check was specified.
+
+## Verification provenance clarification -- Codex (model identifier unavailable) -- 2026-10-30
+
+The earlier `/private/tmp/issue39-final` directory came from `git archive` and
+had no `.git` directory. Its status query relied on external `GIT_DIR` and
+`GIT_WORK_TREE` settings. To make clean-state provenance directly reproducible,
+I repeated the focused verification in `/private/tmp/issue39-provenance-checkout`,
+a local shared clone with its own Git metadata, detached at the tested commit.
+
+**Tested commit**: `ff03af3e53f7d843e855c03757fec1e9d489eff1`
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13)
+**Pre-run state**: `git status --short` empty; detached HEAD at the tested commit.
+**Post-run state**: `git status --short` empty; HEAD unchanged.
+**Elapsed**: about 1.5 seconds for the parallel check group. **Tokens**: unknown.
+
+| Command | Exit | Outcome | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python3.13 -m pytest -q bootstrap/tests/test_review_sweep_ships.py bootstrap/tests/test_review_and_verification_rules_ship.py` | 0 | 293 passed, 0 failed | 0.68 s | unknown |
+| `python3.13 scripts/claim_check.py` on the 10 changed Markdown files | 0 | 10 files, 0 flags | 0.47 s | unknown |
+| `python3.13 scripts/check_cairn.py` | 0 | 189 Markdown files, 0 issues | 1.36 s | unknown |
+| `python3.13 scripts/link_check.py` | 0 | 189 Markdown files, 0 issues | 0.17 s | unknown |
+| `python3.13 scripts/sync_doc_snippets.py` | 0 | 482 documents, 0 drift | 0.17 s | unknown |
+| `python3.13 scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | 0 failures; informational notes only | 1.28 s | unknown |
+
+External URLs (88 in `check_cairn`, 89 in `link_check`) were not probed. No
+full-tree suite or re-anchor was run. The one-month C3 indicator remains open.
