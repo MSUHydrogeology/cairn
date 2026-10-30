@@ -1,7 +1,7 @@
 # Plan: Prepare handoff before user pruning
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-handoff-prune.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30
@@ -103,3 +103,39 @@ pending`, and do not run the full certification suite here.
 
 Boundary C is independent targeted falsification against the reviewed range and
 verification record; the reviewer challenges bounding and records its verdict.
+
+
+## Plan review -- Codex gpt-6.1-sol -- 2026-10-30
+
+```
+Reviewed commit: 4bf7bbcd5692a51a124542a32791e037b32cac62
+Target: Source proposal through Verification
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the plan carries preparation, owner judgment, conditional readiness and the user-run prune into one sequence, while retaining the doctrine gate -- `dev/plans/2026-10-30-handoff-preparation.md`, C1 and Documentation / doctrine surface.
+2. **Best alternative.** Reuse the existing survey, preview and prompt paths as planned; a prose-only change cannot expose the prompts before pruning because the current dry run returns first -- `tools/session.py::_do_full_handoff`.
+3. **What would show it wrong.** A real preparation invocation touching either prune target, a user command losing a guard, or a sequence presenting a ledger scan as proof of quiet would show the plan cannot deliver -- `dev/plans/2026-10-30-handoff-preparation.md`, C1 and Verification.
+
+The acceptance criteria preserve the accepted responsibility boundary: the agent
+prepares and commits the handoff, and the user receives the command with any
+unresolved quiet condition attached. The proposed CLI and disposable-repository
+checks cover the failure cases, including both prune boundaries and guard
+mutations. The mapping names owning test files and leaves discovery of additional
+readers explicit. The doctrine trigger must be evidenced before changing doctrine;
+acceptance of the proposal does not itself satisfy it.
+
+**Covered**: accepted scope and sequencing (source proposal Current contract;
+plan C1–C2); failure and security boundaries (`tools/session.py::_do_full_handoff`;
+plan C1); verification and consumers (plan Verification); doctrine placement
+(plan Documentation / doctrine surface).
+
+**Not covered / low confidence**: no implementation, tests or mutation runs were
+examined; this ordinary pass does not clear the separate Internal Security Review.
