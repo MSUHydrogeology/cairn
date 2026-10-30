@@ -139,3 +139,55 @@ plan C1); verification and consumers (plan Verification); doctrine placement
 
 **Not covered / low confidence**: no implementation, tests or mutation runs were
 examined; this ordinary pass does not clear the separate Internal Security Review.
+
+
+## Plan review -- Codex gpt-6.1-sol Security -- 2026-10-30
+
+```
+Reviewed commit: c5c574d360a4cdbf5455b78e6f4f59e256f9e457
+Target: Source proposal through Verification; accepted proposal Current contract
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: C1 separates preparation from user-run deletion, retains every existing refusal and attaches uncertain quiet to the command rather than persisting readiness -- `dev/plans/2026-10-30-handoff-preparation.md`, Scope and C1; source proposal Current contract.
+2. **Best alternative.** Reuse survey, prompt and preview behavior without adding a readiness token or another prune interface; the current dry-run returns before capture, so prose alone cannot deliver the accepted sequence -- `tools/session.py::_do_full_handoff`.
+3. **What would show it wrong.** Preparation reaching either pruner, a bypassed marker or containment guard escaping its tests, or wording treating an earlier ledger scan as future quiet would defeat the boundary -- plan C1, S2 and Verification; intent `record_io.py::prune_released_pairs`.
+
+The plan preserves the accepted security boundary without claiming a stronger
+one. The handoff lock serializes handoffs, not ordinary intent appenders; the
+intent rewrite checks the snapshot size before replacement, leaving a later
+append race. C1 requires recent-claim and changed-log coverage and makes the
+remaining quiet judgment explicit at the user's later run. Neither the owner
+marker nor a preparation result becomes permission to delete. The agent never
+runs pruning against this repository; disposable repositories contain the
+end-to-end and mutation checks.
+
+The mutation criterion is appropriately concrete: independently break each
+preparation-to-pruner boundary and the marker and containment guards, retain
+controls, and leave survivors open. Preserve the distinction between preview
+and mutation when reusing behavior: C1 forbids preparation invoking either prune
+helper, even though today's manifest obtains its reflection preview through
+that helper's dry-run path. Reusing preview behavior must respect that stated
+boundary. This is implementable without weakening accepted outcomes.
+
+**Covered**: claims, fail-closed boundaries and completeness (plan C1;
+`tools/session.py::cmd_session_end`, `_do_full_handoff`; intent
+`record_io.py::prune_released_pairs`); public-path tests (plan Verification;
+`bootstrap/tests/test_session_failsafe.py::test_handoff_without_marker_refuses_nonblocking`);
+reuse, drift and consistency (named helper search in committed CLI; existing
+handoff/default tests in `bootstrap/tests/test_session_routines.py`); lifecycle
+and scope (accepted Current contract and Decision; plan doctrine gate, C1–C2).
+No finding needs a satisfier.
+
+**Not covered / low confidence**: no implementation or test/mutation execution;
+no certifying run was duplicated. This pass clears the plan's separate Security
+Review obligation, not eventual code security or future session quiet. Installed
+path behavior and actual guard sensitivity remain implementation evidence owed
+by C1–C2.
