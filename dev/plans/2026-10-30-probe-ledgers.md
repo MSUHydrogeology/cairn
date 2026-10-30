@@ -155,3 +155,28 @@ Prior findings: none
 **Bounding**: WIDER RUN REQUIRED — the mapped checks do not detect the demonstrated forbidden return in governing instructions. Add the relevant control and verify its affected consumers.
 
 **Coverage:** Examined the committed implementation and Boundary B record, challenged the governing instructions and their mapped checks in an isolated copy. Did not rerun Boundary B, inspect every operative carrier independently, or perform Security Review; no full suite or re-anchor was run.
+
+## Code review -- Codex Sol -- 2026-10-30
+
+Reviewed commit: 2fc884de1b756add61e61816d48aa598590cbe2d
+Target: implementation bf5d566d and Boundary B record at 8d806843
+Prior findings: ordinary code-review P1 remains open
+
+**Obligation**: Security Review
+**Tier**: Security Review
+**Findings**: none additional
+**Verdict**: REVISE for existing P1; no additional security defect found
+**Elapsed**: approximately 4 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** The changed instruction authority preserves separate Security Review, independent reviewers and Maintainer-only scope decisions; forbidden-return assurance remains incomplete. -- governing-file diff; `test_review_stance_in_shipped_files.py` authority assertions; ordinary P1.
+2. **Best alternative.** Strengthen the existing absence checks and controls; retain concise records and existing installation tests. -- `test_review_sweep_ships.py`, installed-text assertions and `test_adding_a_sixth_ledger_item_is_reported`.
+3. **What would show it wrong?** A control that passes without testing the real detector cannot establish C1. The altered sixth-item control tests its own appended literal, so it does not challenge the source-file assertion. -- `test_review_sweep_ships.py::test_adding_a_sixth_ledger_item_is_reported`.
+
+No parser, executable-selection, credential or network boundary changed. Existing security-obligation assertions remain intact. Boundary B identifies a clean committed tree, Python 3.13.13, mapped outcomes and omissions; its tested commit contains the implementation, with only an unrelated Decision added afterward. Those passing results do not close P1's demonstrated coverage gap.
+
+**Bounding**: WIDER RUN REQUIRED — close P1 through actual forbidden-return checks and fresh affected-consumer verification.
+
+**Coverage:** Independently inspected committed governing/shipped changes, retained authority assertions, negative-control logic and Boundary B provenance. Did not rerun implementation checks or perform additional executable mutation; the ordinary review owns its reported mutation result. No complete consumer enumeration, full suite or re-anchor was performed.
