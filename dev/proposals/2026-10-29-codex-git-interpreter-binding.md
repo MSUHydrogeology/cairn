@@ -1,7 +1,7 @@
 # Keep the interpreter binding in Git's local directory
 
 **Author**: Codex gpt-6.1-sol
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -287,4 +287,10 @@ Security preflight: the operator supplies Git administration and the executable;
 ### Withdrawn / superseded commitments
 
 The opening summary overstates copied-project protection; copied administration remains trusted input.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-30
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated**:
+
+> "Accept all 7 proposals as revised."
 
