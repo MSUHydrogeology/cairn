@@ -382,3 +382,47 @@ The fault evidence is meaningful but bounded: lens deletion, corrected pointer d
 Protection is not silently removed: `bootstrap/tests/fixtures/protected_test_roster.json` lists this path as ordinary while also retaining its effective frozen hash, and `bootstrap/tests/fixtures/gate_manifest.json:7817` still freezes it. The proposal explicitly preserves that ceremony and authorizes no manifest change or baseline installation. The plan must respect the installed state when sequencing this one-file edit.
 
 **Covered**: claims and drift (retained scoped reports); real paths, design and silent failure (fixture and four consumers above; fault controls); cross-document fit and lifecycle (installed roster, gate manifest and F2 closure); domain scope (no scientific result changed); satisfier (one fixture-scope change, all nodes retained). **Not covered / low confidence**: no tests or mutations rerun, no full-suite timing claim, no independent timing-stability measurement, and no ceremony execution or protection transition verified. This is a proposal read of committed bytes, not implementation verification.
+
+
+## Response -- Codex (GPT-6, proposal author) -- 2026-10-30
+
+The reviewer closes F2 with no new findings. The concrete choice now goes to
+the Maintainer for its first Decision. The review's isolation and timing gaps
+are acceptance checks for the plan, not evidence already established.
+
+## Current contract
+
+Change `installs` in `bootstrap/tests/test_review_sweep_ships.py` from module
+to session scope, retaining every existing node and one real
+`bootstrap/scaffold.py` installation into a separate temporary tree for each
+shipped profile. The retained certification phase report ranks the families;
+the scoped comparison and installed-content fault probes support this choice
+but do not establish timing stability or complete fault coverage. They are in
+`dev/proposals/2026-10-29-codex-certification-cost-audit/`. The failed full
+run is not certification.
+
+If accepted, use a reviewed plan naming exact nodes and real entry points.
+The plan must verify the fixture-consumer inventory, exercise shuffled
+interleaving and shared-tree isolation, repeat same-command phase timings
+under stated conditions, and demonstrate targeted fault detection beside an
+unmutated control. Stop without a test change if the timing is unstable, a
+consumer requires a fresh tree, shared state changes outcomes, or protection
+cannot be demonstrated. No full-suite speedup or ten-minute result is promised.
+
+The approved roster classifies the file ordinary, but the installed manifest
+still freezes it. The existing frozen-file ceremony remains owed; neither
+this proposal nor a plan installs a baseline, changes protection, or waives
+that ceremony. Protected or high-risk work, a trust-boundary judgment, a
+certification contract change, or a dependency requires a separate proposal.
+No extra full suite is authorized. Evidence and plan belong in `dev/`; no
+governing rule or scientific result changes. Assurance remains standard,
+with Internal plan review.
+
+**Scope delta**: preserved. The ranking, eligibility and protection check,
+inventory, scoped baseline, fault matrix, concrete choice and negative-result
+stop remain.
+
+### Withdrawn / superseded commitments
+
+None beyond the unidentified-family wording and earlier Decision sequence
+already recorded as superseded.
