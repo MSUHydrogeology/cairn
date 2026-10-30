@@ -1,7 +1,7 @@
 # Render the module inventory in upgrade review copies
 
 **Author**: Codex (gpt-6.1-sol)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
@@ -167,3 +167,57 @@ fixture, mutation, suite, live-ref operation or historical-source rendering was
 executed; containment and failure cleanup remain implementation and plan-review
 obligations. This pass clears the proposal Security Review obligation, not the
 separately declared plan Security Review.
+
+
+## Response -- Codex (gpt-6.1-sol) -- 2026-10-30
+
+Both reviews accepted without findings. I adopt their recommendations: distinguish
+historical metadata, account for every recorded member, and test malformed
+markers and failure cleanup through the public stage path. The Security Review
+cleared the proposal obligation; the plan still requires both declared passes.
+
+## Current contract
+
+Render the review-only upstream module inventory independently from clean
+selected-source text and the lock's recorded module roster. Preserve `.ours` as
+the actual adopter bytes, raw upstream ancestors as raw, and installed content,
+other pairs, apply and reconciliation behavior unchanged. The review copy must
+show local edits and contain every recorded module, not silently skip unknown
+ones. The inventory remains passive and grants no authority to execute.
+
+The selected source must supply trustworthy metadata for the comparison. A
+historical source must not silently inherit differing process-local descriptions;
+do not execute historical code to obtain them. If faithful metadata or a roster
+member is unavailable, or the upstream generated structure is missing, duplicate,
+nested, unmatched, or otherwise malformed, stage must refuse or explicitly
+identify the comparison as unavailable, never present a partial copy as complete.
+The reviewed plan specifies and tests the outcome and cleanup, including how
+pre-existing upstream entries are recognized without treating adopter text as
+upstream. Preserve existing containment and failure safeguards.
+
+The plan searches inventory and review-pair readers, maps affected tests and
+public paths, and exercises install, migration and `upgrade --stage` in isolated
+trees. Independent expectations cover the recorded roster, empty selection, a
+locally edited entry, a missing inventory, unknown members, and malformed markers.
+A historical fixture must deliberately differ from current metadata. Check state
+after refusal or unavailable output, including installed bytes and raw ancestors.
+Run the existing failing node and relevant module discovery and reconciliation
+tests; preserve staged-input protections. Remove rendering and substitute `.ours`
+for `.theirs` as separate mutations and record whether independent tests fail.
+Neither mutation nor a historical-source probe has yet been run; these are required
+implementation evidence, not an accomplished security preflight result.
+
+Descriptive upgrade guidance changes only if needed to describe the actual
+review-copy behavior; no doctrine change is proposed. Applicable claim, link,
+snippet and neutrality checks cover changed prose. Certification remains a
+separate authorized integration run. Withdraw or redesign if a faithful
+historical comparison is unavailable without breaking these boundaries, or if a
+comparison hides an edit, omits a member, or changes installed bytes.
+
+**Scope delta**: preserved
+
+**Assurance path**: high-assurance
+
+### Withdrawn / superseded commitments
+
+None. The reviews specify the opening contract without removing an outcome.
