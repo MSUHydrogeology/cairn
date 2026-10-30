@@ -76,3 +76,23 @@ def test_the_first_matching_tier_owns_a_file(tmp_path):
     owner, unplaced, unused = tiers_tool.classify(sorted(folder.glob("test_*.py")), tiers)
     assert owner == {"test_upgrade": "workflow", "test_upgrade_refuses_links": "security"}
     assert unplaced == [] and unused == []
+
+
+def test_a_test_file_in_a_subfolder_or_named_the_other_way_is_checked(tmp_path):
+    config = _config(tmp_path, [{"name": "unit", "about": "", "patterns": ["test_known"]}])
+    folder = _tests(tmp_path, "test_known")
+    (folder / "deeper").mkdir()
+    (folder / "deeper" / "test_hidden.py").write_text("", encoding="utf-8")
+    (folder / "parser_test.py").write_text("", encoding="utf-8")
+    code, err = _check(config, folder)
+    assert code == 1
+    assert "UNPLACED test_hidden.py" in err and "UNPLACED parser_test.py" in err
+
+
+def test_a_tier_without_patterns_is_refused_plainly(tmp_path):
+    folder = _tests(tmp_path, "test_a")
+    for missing_or_empty in ({"name": "unit"}, {"name": "unit", "patterns": []}):
+        config = _config(tmp_path, [missing_or_empty])
+        code, err = _check(config, folder)
+        assert code == 2
+        assert "needs a name and a non-empty list of patterns" in err

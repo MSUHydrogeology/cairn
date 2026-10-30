@@ -34,16 +34,30 @@ TEST_DIR = ROOT / "bootstrap" / "tests"
 def load_tiers(config: Path = CONFIG) -> list[dict]:
     """Return the tiers in priority order, each with name, about and patterns."""
     data = json.loads(config.read_text(encoding="utf-8"))
-    tiers = data["tiers"]
+    tiers = data.get("tiers")
+    if not isinstance(tiers, list) or not tiers:
+        raise ValueError(f"{config.name}: 'tiers' must be a non-empty list")
+    for i, tier in enumerate(tiers):
+        patterns = tier.get("patterns") if isinstance(tier, dict) else None
+        if not isinstance(tier, dict) or not isinstance(tier.get("name"), str) \
+                or not isinstance(patterns, list) or not patterns \
+                or not all(isinstance(p, str) and p for p in patterns):
+            raise ValueError(f"{config.name}: tier {i + 1} needs a name and a "
+                             "non-empty list of patterns")
     names = [t["name"] for t in tiers]
     if len(set(names)) != len(names):
-        raise ValueError(f"duplicate tier name in {config}")
+        raise ValueError(f"{config.name}: duplicate tier name")
     return tiers
 
 
 def find_test_files(test_dir: Path = TEST_DIR) -> list[Path]:
-    """Every top-level ``test_*.py`` file, sorted."""
-    return sorted(test_dir.glob("test_*.py"))
+    """Every file pytest would collect as a test module, at any depth, sorted.
+
+    pytest collects ``test_*.py`` and ``*_test.py`` in subfolders too, so a
+    file the check skipped would be a test with no tier. A ``*_test.py`` name
+    matches no ``test_*`` pattern, so the check stops it until one is added."""
+    found = set(test_dir.rglob("test_*.py")) | set(test_dir.rglob("*_test.py"))
+    return sorted(p for p in found if "__pycache__" not in p.parts)
 
 
 def classify(files: list[Path], tiers: list[dict]):
@@ -80,7 +94,11 @@ def main(argv: list[str] | None = None, *, config: Path = CONFIG,
     fs.add_argument("tier")
     args = ap.parse_args(argv)
 
-    tiers = load_tiers(config)
+    try:
+        tiers = load_tiers(config)
+    except (ValueError, json.JSONDecodeError) as exc:
+        print(f"invalid tier configuration: {exc}", file=err)
+        return 2
     files = find_test_files(test_dir)
     owner, unplaced, unused = classify(files, tiers)
     known = [t["name"] for t in tiers]

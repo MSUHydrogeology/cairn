@@ -58,7 +58,9 @@ Merged into the project's `tests/` guide:
 > **Test promises, not wording or internals.** Test the public behavior a
 > change promises. Do not pin private function names, call counts or the
 > exact sentences of a document; those tests break on every edit and
-> protect nothing a user relies on.
+> protect nothing a user relies on. Where the wording is itself what you
+> ship, such as a rule others follow, pin its key terms and what it
+> requires, not whole sentences.
 >
 > **A new test must catch a fault no existing test catches.** Before
 > adding one, name the plausible fault it detects and check that the suite

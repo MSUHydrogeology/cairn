@@ -17,7 +17,8 @@
         "test_content_scan",
         "test_generated_output_scan",
         "test_hardening",
-        "test_verify_*",
+        "test_verify_integrity",
+        "test_verify_ref",
         "test_loader_identity",
         "test_facade_loader_cleanup",
         "test_broad_run_guard",
@@ -122,7 +123,9 @@
         "test_issue_capture_bootstrap",
         "test_notice_install",
         "test_onboarding_*",
-        "test_model_selection_stub"
+        "test_model_selection_stub",
+        "test_verify_counts",
+        "test_verify_stems"
       ]
     }
   ]
