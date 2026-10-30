@@ -243,3 +243,21 @@ implementation. The gate baseline update remains batched with the v0.6 cut.
 > "Keep light; waive the extra Security Review"
 
 Recorded by the implementation author in the commit carrying this authorization.
+
+## Code review -- Codex GPT-6.1 Terra -- 2026-10-30
+
+**Reviewed commit**: `d2ab8d87`. **Tier**: usual. **Verdict**: REVISE.
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes, after the selector meets the accepted scope: the proposal requires passage narrowing only above the runner limit and reporting omissions.
+2. **Best alternative.** Retain the existing tier map and make the changed range explicit to the selector; this preserves the accepted one-run sequence.
+3. **What would show it wrong?** A committed range spanning a review fix selects all tests pinning the earlier governing-text changes and reports every excluded reader.
+
+**Blocking findings**:
+
+1. `tools/test_tiers.py:112-130` uses the working diff or only `HEAD^..HEAD`, not the reviewed range. At a clean later commit, an earlier AGENTS change is lost; with no passages it falls back to every AGENTS reader. Today `for AGENTS.md` selects 47 files, above the 40-file guard, after the unrelated commit `11491b5e`. Add a targeted test covering a governing change followed by an unrelated or review-fix commit and select from the full reviewed range.
+2. `tools/test_tiers.py:137-153` narrows whenever passages exist, regardless of broad-list size, and does not report omitted readers. This misses the accepted conditional and omission record. Add a targeted test for lists below and above the guard, including omitted-reader reporting.
+
+**Coverage**: inspected the committed selector, accepted proposal, plan verification text and selector tests; ran the selector and counted direct AGENTS references. Did not run a suite, inspect every changed prose surface, or perform Security Review. Boundary B remains pending after fixes and review.
