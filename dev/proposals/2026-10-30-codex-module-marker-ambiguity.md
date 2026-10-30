@@ -1,7 +1,7 @@
 # Refuse ambiguous module task markers during repeat installation
 
 **Author**: Codex (gpt-6.1-sol)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -120,3 +120,11 @@ A valid checked task is reset or duplicated, unrelated prose is removed, a malfo
 **Security Finding 2**: Accepted. A marker-like line triggers preflight even with an empty roster. The mapped repeat-install probe changes the space before `id=`, specifically missing the former exact-substring trigger, and checks unchanged bytes on refusal.
 
 **Scope delta**: preserved. The response narrows “marker-like” to bounded, column-zero syntax and uses the existing reconciler. No implementation or mutation is claimed here. Security clearance of these findings remains for a focused follow-up review.
+
+## Decision -- Maintainer -- 2026-10-30
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated** (chat, 2026-10-30; scribed by Antigravity):
+
+> "I am good with accepting both of these. Please scribe my acceptance."
+
+**Tier**: heavy. Accepted as revised with high assurance and required Internal + Internal Security Review plan review.
