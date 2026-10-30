@@ -56,3 +56,27 @@ Boundary C: independent code review reads iteration evidence and runs the tighte
 **Blocking finding:** The accepted proposal requires explaining why a separate evidence artifact is necessary and citing it in the plan. C1 allows an exceptional artifact but does not carry those requirements, so implementation could satisfy the plan while missing accepted scope. Add both conditions to C1. Source proposal, Proposal; plan, C1.
 
 **Coverage:** Read the committed plan and accepted proposal, the local plan-template lifecycle and review guidance, and searched committed live template/doctrine wording. Did not exhaustively inspect consumers, run archive behavior or assess security controls; implementation and Security Review cover those gaps. No suite run.
+
+## Plan review -- Codex gpt-6.1-sol -- 2026-10-30
+
+Reviewed commit: 20bd9d3ac2c08dd019322a07b4fd2e9655900f0c
+Target: operative plan and security consequences
+Prior findings: none
+Assurance path: high-assurance
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: Accept security design; ordinary review's scope finding remains.
+**Elapsed**: approximately 3 minutes, including serialization wait
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes for security: C1 retains required verification, security ceremonies and existing evidence, while Scope forbids new enforcement machinery. Plan, Scope and Acceptance criteria.
+2. **Best alternative.** Use the existing concise lifecycle records and canonical tests/scripts, allowing exceptional evidence only when necessary; an absolute ban could obstruct existing ceremony obligations. Accepted proposal, Proposal; plan, C1.
+3. **What would show it wrong?** Lost evidence during archive, a consumer requiring folders, or a ceremony losing required records. Verification exercises both folder cases and preserves ceremonies, with independent targeted review before wide final integration. Plan, Verification.
+
+No additional security blocker found. Summaries do not waive required checks, and independent verification remains available. The ordinary pass separately identifies the accepted requirement to explain and cite exceptional artifacts; its correction remains owed before implementation.
+
+**Covered**: committed plan, accepted proposal, relevant template folder/review rules, and doctrine's archive and verification obligations. **Not covered**: implementation, exhaustive consumer discovery, archive execution or ceremony execution. No tests or suite run.
