@@ -263,21 +263,17 @@ class TestProfileSizedAssembly:
 
 
 # ---------------------------------------------------------------------------
-# Template gating safety: the real
-# templates/core/AGENTS.md gates ONLY the profile-optional `## Human
-# contributors` section -- never a bright-line (IR1-IR13). The most-restrictive
-# profile keeps every operative rule.
+# Template gating safety: core AGENTS.md carries every operative rule for
+# every profile. Human-contributor guidance is selected as an optional file.
 # ---------------------------------------------------------------------------
 
 class TestTemplateGatingSafety:
-    # Section headings carrying the IR1-IR13 bright-lines: NONE may sit inside a
-    # cairn:if region, and ALL must survive the most-restrictive (solo) strip.
+    # Operative sections must survive both solo and multi installs.
     _BRIGHTLINE_HEADINGS = [
-        "## The lifecycle",
+        "## Lifecycle and records",
         "## Review",
-        "## Git and commit workflow",
-        "## Verifying claims",
-        "## Session routines",
+        "## Working tree and commits",
+        "## Verification",
         "## Roles",
     ]
 
@@ -285,46 +281,39 @@ class TestTemplateGatingSafety:
         return (TEMPLATES_ROOT / "core" / "AGENTS.md").read_text(
             encoding="utf-8")
 
-    def test_only_the_human_team_axis_is_gated(self) -> None:
-        """Every cairn:if in the core template gates on `human_team` only -- the
-        single approved profile-optional axis -- and the parse is balanced +
-        deterministic over the real template for both solo and multi."""
-        import re
-        from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415,E501
+    def test_optional_contributor_file_is_selected_by_human_team(self) -> None:
+        """The human-team axis selects the optional file, not core rules."""
+        from bootstrap._scaffold.config import select_optional_templates  # noqa: PLC0415,E501
         text = self._template()
-        gates = re.findall(r"<!--\s*cairn:if\s+(\w+)\s+in\b", text)
-        assert gates, "expected at least one cairn:if region in the template"
-        assert set(gates) == {"human_team"}, gates
-        for axes in ({"human_team": "solo"}, {"human_team": "small-multi"}):
-            once = strip_conditional_regions(text, axes)
-            assert once == strip_conditional_regions(text, axes)  # idempotent
+        assert "cairn:if" not in text and "cairn:endif" not in text
+        assert select_optional_templates({"human_team": "solo"}) == []
+        expected = [("optional/CONTRIBUTING.md", "CONTRIBUTING.md")]
+        assert select_optional_templates({"human_team": "small-multi"}) == expected
+        assert select_optional_templates({"human_team": "large-multi"}) == expected
 
-    def test_no_brightline_section_is_inside_a_gated_region(self) -> None:
-        """The safety crux: no IR1-IR13 bright-line section heading sits within a
-        cairn:if region (gating one would drop an operative rule for solo)."""
-        import re
-        regions = re.findall(
-            r"<!--\s*cairn:if\b.*?-->(.*?)<!--\s*cairn:endif\s*-->",
-            self._template(), flags=re.DOTALL)
-        joined = "\n".join(regions)
+    def test_core_template_keeps_operational_sections(self) -> None:
+        """The shared template itself contains the rules each install needs."""
+        text = self._template()
         for heading in self._BRIGHTLINE_HEADINGS:
-            assert heading not in joined, f"{heading!r} must never be gated"
+            assert heading in text, f"core template lost {heading!r}"
 
-    def test_solo_keeps_all_brightlines_drops_human_contributors(
+    def test_solo_keeps_all_brightlines_without_contributor_file(
         self, tmp_path: Path
     ) -> None:
         assert _install(tmp_path, "solo-greenfield") == 0
         agents = (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
-        assert "## Human contributors" not in agents       # gated out for solo
+        assert not (tmp_path / "CONTRIBUTING.md").exists()
         for heading in self._BRIGHTLINE_HEADINGS:
             assert heading in agents, f"solo lost bright-line section {heading!r}"
         assert "cairn:if" not in agents and "cairn:endif" not in agents
         assert verify_integrity.verify(tmp_path) == 0
 
-    def test_multi_keeps_human_contributors(self, tmp_path: Path) -> None:
+    def test_multi_keeps_brightlines_and_installs_contributor_file(self, tmp_path: Path) -> None:
         assert _install(tmp_path, "collaborative-team") == 0
         agents = (tmp_path / "AGENTS.md").read_text(encoding="utf-8")
-        assert "## Human contributors" in agents
+        contributing = (tmp_path / "CONTRIBUTING.md").read_text(encoding="utf-8")
+        assert "# Contributing to Demo" in contributing
+        assert "{{project_name}}" not in contributing
         for heading in self._BRIGHTLINE_HEADINGS:
             assert heading in agents, heading
         assert "cairn:if" not in agents and "cairn:endif" not in agents
@@ -742,21 +731,23 @@ class TestUpgradeModes:
         assert s.read_lockfile(tmp_path) == lock_before
         assert stage.exists()
 
-    def test_apply_rejects_conflict_markers(self, tmp_path: Path) -> None:
+    def test_apply_rejects_conflict_markers(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    ) -> None:
         assert _install(tmp_path) == 0
+        self._diverge_base(tmp_path)
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
         stage = tmp_path / "dev" / ".cairn-upgrade"
-        (stage / "files").mkdir(parents=True)
         (stage / "files" / "AGENTS.md").write_text(
             "<<<<<<< ours\nx\n=======\ny\n>>>>>>> theirs\n")
-        lock = s.read_lockfile(tmp_path)
-        (stage / s._STAGE_META).write_text(json.dumps({
-            "lock_commit": lock["cairn_commit"], "tokens": lock["tokens"],
-            "modules": lock["modules"], "staged_files": ["AGENTS.md"],
-            "ours_hashes": {}, "has_conflicts": True, "directory_observed": [],
-        }))
+        meta = json.loads((stage / s._STAGE_META).read_text())
+        assert "AGENTS.md" in meta["staged_files"]
+        assert meta["directory_observed"]
         rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
                      "--cairn-root", str(CAIRN_ROOT)])
         assert rc == 1
+        assert "AGENTS.md still has conflict markers" in capsys.readouterr().err
 
     # ---- B-C-1: clean-vs-locally-modified split in the upgrade summary
     # `--plan` previously lumped every clean merge into one `clean` row,
@@ -1258,21 +1249,25 @@ class TestInitLock:
         assert "make claims" in theirs
         assert "{{claim_check_command}}" not in theirs
 
-    def test_review_copy_is_sized_to_the_current_profile(
+    def test_review_copy_uses_profile_neutral_core_template(
         self, tmp_path: Path,
     ) -> None:
-        """When the committed profile changes after migration, the review copy
-        shows the upstream text sized to the profile the adopter now has --
-        the same choice the 3-way path makes -- not the lockfile's older one."""
+        """A human-team profile change does not remove shared core rules from
+        a migrated install's upstream review copy."""
         review = self._migrate(tmp_path)
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        solo_theirs = (review / "AGENTS.md.theirs").read_text()
         prof = tmp_path / "dev" / ".cairn" / "profile.yml"
         prof.write_text(prof.read_text().replace(
             "human_team: solo", "human_team: small-multi"))
         assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
                        "--cairn-root", str(CAIRN_ROOT)]) == 0
         theirs = (review / "AGENTS.md.theirs").read_text()
-        assert "## Human contributors" in theirs  # selected by the new axis
-        assert "cairn:if" not in theirs  # markers stripped, as an install does
+        assert theirs == solo_theirs
+        for heading in TestTemplateGatingSafety._BRIGHTLINE_HEADINGS:
+            assert heading in theirs
+        assert "cairn:if" not in theirs and "cairn:endif" not in theirs
 
     def test_install_without_a_readable_lockfile_points_at_init_lock(
         self, tmp_path: Path, capsys
