@@ -1,7 +1,7 @@
 # Plan: Deliver the outcome with less apparatus
 
 **Source proposal**: dev/proposals/archive/2026-10-30-claude-cut-the-apparatus.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal)
 **Opened**: 2026-10-30
 **In brief**: Reduce recurring review and instruction overhead while preserving agreed outcomes and required assurance.
@@ -30,11 +30,11 @@ Cross-cutting prescription stays in `AGENTS.md`, detailed rationale in doctrine,
 
 ## Acceptance criteria
 
-**C1.** One proposal review and response, one plan and code review, and at most two Security passes; only unresolved blockers or unmet criteria at the cap go to the Maintainer by name. Clean work advances without clearing review. Light is the proposal default, proposed higher tiers stand unless the Decision changes them; named high-risk surfaces and added or widened trust boundaries trigger heavy, and newly discovered boundaries stop work. Ordinary uncertainty takes the lighter lane with a reason. Blocking means hard-to-undo damage or unmet accepted criteria/checks; authors dispose of other advice. Proposal operative text revises in place, reviews remain intact, and responses list dispositions. Trivial work and the scope floor remain intact.
+**C1.** One proposal review and response, one plan and code review, and at most two Security passes; only unresolved blockers or unmet criteria at the cap go to the Maintainer by name. Clean work advances without clearing review. Light is the proposal default (one short review, no plan); standard has one pass per stage, and heavy adds Security Review. Proposed higher tiers stand unless the Decision changes them; named high-risk surfaces and added or widened trust boundaries trigger heavy, and newly discovered boundaries stop work. Ordinary uncertainty takes the lighter lane with a reason. Blocking means hard-to-undo damage or unmet accepted criteria/checks; authors dispose of other advice. Proposal operative text revises in place, reviews remain intact, and responses list dispositions. Trivial work and the scope floor remain intact.
 
 **C2.** `AGENTS.md` is at most 2,500 words, preserving operative rules and moving explanation to doctrine. Reviews are at most 300 words and append to the artifact; preserve verdict, findings and coverage gap. Mutation summaries name control, total, killed, each survivor and equivalent with reason. Commit bodies are at most 30 lines, excluding verbatim Decision quotations. The governing sentence cites rationale anchor 17; avoidable burden against a simpler adequate alternative is a finding, without per-addition accounting. Deferral records remaining effort and re-entry cost and carries the obligation forward. Existing step records capture elapsed time and reported or defensibly estimated tokens, or unknown, without a new tool or approval.
 
-**C3.** Shipped copies and all affected readers agree with C1–C2; existing property tests are updated without discarding their protection. The one-month indicator is review commits per archived artifact against the proposal's stated 6.9 baseline, not proof of value. No independent scientific check was specified.
+**C3.** Shipped copies and all affected readers agree with C1–C2; existing property tests are updated without discarding their protection. Within one month, review commits per archived artifact are at or below 3.5, counted by the proposal's Context method (subjects containing `review` or `respon` divided by Markdown files added under the plan and proposal archives), against its stated 6.9 baseline; this is an indicator, not proof of value. No independent scientific check was specified.
 
 ## Scope delta
 
@@ -42,7 +42,7 @@ Cross-cutting prescription stays in `AGENTS.md`, detailed rationale in doctrine,
 
 ## Verification
 
-Boundary A and B use Python 3.13.x. This is a contract change: Boundary B is **wide**, on the final clean committed tree, with `Certified by: pending`; no full-suite run is implied. Search actual readers and pinned bytes before edits and include all affected owners and consumers, splitting guarded selections without overrides. The initial mapped families are `bootstrap/tests/test_review_and_verification_rules_ship.py`, `test_scope_reduction_trap.py`, `test_model_tier_rule_ships.py`, `test_writing_rules_ship.py`, `test_review_stance_in_shipped_files.py`, `test_review_sweep_ships.py`, `test_session_start_drain_rules.py`, `test_verification_boundaries.py`, and `test_scaffold.py`; add other owners discovered by the named searches. These check the rules, shipped text, lifecycle and adopter paths. Check the gate manifest before changing pinned files and follow its existing ceremony only if actually triggered; do not repin or re-anchor per plan.
+Boundary A and B use Python 3.13.x. This is a contract change: Boundary B is **wide**, on the final clean committed tree, with `Certified by: pending`; no full-suite run is implied. Search actual readers and pinned bytes before edits and include all affected owners and consumers, splitting guarded selections without overrides. The initial mapped families are `bootstrap/tests/test_review_and_verification_rules_ship.py`, `test_scope_reduction_trap.py`, `test_model_tier_rule_ships.py`, `test_writing_rules_ship.py`, `test_review_stance_in_shipped_files.py`, `test_review_sweep_ships.py`, `test_session_start_drain_rules.py`, `test_verification_boundaries.py`, `test_skills_install.py`, `test_skills_upgrade.py`, and `test_scaffold.py`; add other owners discovered by the named searches. These check the rules, shipped text, lifecycle, and adopter install and upgrade paths. If the security designation changes, also run `bootstrap/tests/test_security_verification.py`; the prose gates below apply to these surfaces. Check the gate manifest before changing pinned files and follow its existing ceremony only if actually triggered; do not repin or re-anchor per plan.
 
 Run `python scripts/claim_check.py` on changed documents, `python scripts/check_cairn.py` for internal links and claims, `python scripts/link_check.py` for cross references, and `python scripts/quality_gate.py --sub neutrality --sub redundancy` for prose gates. Run snippet sync if a synced source changes. Record exact commands, outcomes and non-passes, elapsed time, interpreter, pre/post state, reviewed range and omissions in the implementation verification record. Code review independently challenges the record and its bounds; no certifying full suite is required here.
 
@@ -75,3 +75,11 @@ Assurance path: high-assurance -- governing doctrine
 3. **P3 -- Non-blocking: spell out the three tier outcomes.** C1 protects the light default and heavy triggers but does not state that light has one short review and no plan, standard one pass per stage, and heavy adds Security Review. This is the central ceremony change and merits a falsifiable C1 criterion. Satisfier: C1 criterion. -- proposal cut 2; plan C1.
 
 **Coverage.** Compared accepted scope, Q1, sequence, criteria, alternative, burden, placement, shipped paths, and named test readers (review sweep lenses 1, 2, 5, 7–9; cited above). Did not run implementation, tests, scaffold, month-long measurement, or Security Review. Existing Security Review obligations remain separate.
+
+## Response to plan review -- Codex (GPT-6) -- 2026-10-30
+
+- **P1, accept:** C3 restores the one-month threshold and the proposal's counting method, with its indicator limitation.
+- **P2, accept:** Verification maps the installed-skill install and upgrade families and conditionally the security-designation owner, alongside standing prose gates and reader discovery.
+- **P3, accept:** C1 states each tier's review and plan outcome.
+
+The operative cells carry the corrections; the Internal plan review is complete.
