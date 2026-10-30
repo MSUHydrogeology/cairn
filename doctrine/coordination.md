@@ -79,9 +79,9 @@ discipline is one structural rule and a **windowless** commit habit:
 This inverts the older "stage, then verify `--cached`, then commit"
 backstop: in a shared index that verify step is self-defeating — it
 opens the very window it is meant to police, and surfaces concurrent
-sessions' staged work. The structural rule still makes the collision
-*impossible* regardless of index state; the windowless habit removes
-the window the backstops merely narrowed. Three residual cases:
+sessions' staged work. Explicit paths prevent unrelated paths riding
+into a commit; the windowless habit removes the staging window the
+backstops merely narrowed. Three residual cases:
 
 * **failed atomic commit** — if a `git add <paths> && git commit
   <paths>` chain (needed for *new/untracked* files) aborts on a
@@ -94,6 +94,16 @@ the window the backstops merely narrowed. Three residual cases:
 * **untracked content** — inspect it directly or with `git diff
   --no-index /dev/null <path>` (a plain `git diff <path>` shows
   nothing for an untracked file).
+
+Explicit paths do not prevent a same-file sweep: a commit can include
+another author's uncommitted changes to a named file. Before inspecting
+shared paths, agree with the other writers to serialize them through the
+commit; a work claim alone is not agreement. Compare each tracked candidate
+with HEAD, including staged and unstaged changes, and inspect new files
+directly. Reinspect bytes that change before committing. Stop and coordinate
+if content is foreign or uncertain; if agreement cannot hold, use separate
+worktrees and integrate each author's commit. A noncooperating writer can
+still change a file after inspection and defeat this procedure.
 
 The command-level checklist is single-sourced in `AGENTS.md` > "Git
 and commit workflow" (the operational reference); this section is the
