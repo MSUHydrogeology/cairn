@@ -1,7 +1,7 @@
 # Name the GitHub Release as a separate release-cut step
 
 **Author**: Codex GPT-6.1 Sol (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
@@ -108,3 +108,35 @@ the intended release commit.
 ## Assurance path
 
 **Assurance path**: high-assurance — release ceremony wording.
+
+## Review -- Codex GPT-6 Astra (Reviewer) -- 2026-10-30
+
+```
+Reviewed commit: cead97a6
+Target: the whole proposal, with release correctness, script reuse, staffing and cost in focus
+Prior findings: none
+Assurance path: high-assurance (as declared)
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes to separating publication from the tag push; no to leaving the independent check as an unspecified manual read. `docs/release-process.md:133-145` prepares notes and pushes a tag but never publishes a Release; GitHub's [release instructions](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository) make publication a separate action.
+2. **Best alternative.** Keep the Maintainer's publication decision and action in the cut, but provide a small read-only check of the selected published Release and the remote tag against the recorded release-gate commit. This needs no publishing credential or automatic publication; `docs/release-process.md:138-144` already supplies the expected commit, and `dev/PLANNING.md`'s “The ceremony as two commands” row records the Maintainer's preference for a script over hand comparisons.
+3. **What would show it wrong.** If the cut can publish the wrong or missing Release while the proposed read-back appears to pass, the check is insufficient. A pre-existing Release with stale notes, a draft, or a tag pointing to a different commit are concrete cases; the proposal's S1-S4 and GitHub's [create/edit distinction](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository) expose them.
+
+### Findings
+
+**PR1 (blocking) — Specify the executable check and existing-Release path.** The proposal says “publish,” then “check,” but neither names a command comparing the remote tag's peeled commit with an independently supplied expected commit, nor says what to do if the Release already exists. A tag label and source links can mistake availability for provenance. The automation alternative assigns a credential cost to *checking* that belongs to *publishing*. Recommend a read-only script or existing command that takes the expected commit as input, checks the published Release's tag and state plus the remote peeled tag, and fails on absence or mismatch. The guide can direct the Maintainer to create or edit the Release and inspect its notes. Close with an invocation, negative cases for missing, draft and wrong-commit Releases, and a manual notes check. Evidence: proposal S1-S4; `docs/release-process.md:138-144`; GitHub [release instructions](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository).
+
+**PR2 (non-blocking) — Bound the archive claim.** Checking that source-download links open does not establish that a cached tag archive contains the intended commit's files. GitHub says tag archives are cached and later downloads can differ after a tag moves. Recommend wording the read-back as link availability plus remote tag identity, without calling it archive-content verification; any content guarantee needs a separately specified check. Evidence: proposal Rationale/S3; GitHub [archive stability](https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives).
+
+### Cost and scope
+
+The current proposal's one-file wording still incurs a proposal decision, usual and Security reviews, a plan with Internal and Internal Security reviews, and code reviews under its declared path. A script adds code, tests and maintenance; it also removes repeated hand comparison at each cut. I would pay that one-time cost if the check is actually enforced, but keep publication itself Maintainer-operated. Doing nothing preserves the demonstrated omission (`dev/PLANNING.md`, release-process row). This recommendation expands the proposed implementation; the author and Maintainer decide whether to accept it. The usual pass does not clear the separate Security Review.
+
+**Covered**: claims and drift (`docs/release-process.md:133-145`, `dev/PLANNING.md` release row); test path and fail-closed design (proposal S1-S4 and the negative cases in PR1); cross-document consistency and reuse (`rg --files scripts tools | rg 'release|tag|publish|github'` found no release-publishing helper); lifecycle placement (`docs/release-process.md` > “The cut”); scope and cost (proposal Alternatives and `doctrine/plans.md` > “Plan triage rule”); satisfiers (PR1-PR2).
+**Not covered / low confidence**: no live GitHub Release, remote tag, cached download or authenticated GitHub command was exercised; this is a proposal read, not an implementation test.
