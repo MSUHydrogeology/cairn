@@ -149,15 +149,15 @@ implementation.
 ### 11. Detect and report same-file sweeps — accepted
 
 The [archived proposal](../proposals/archive/2026-10-29-codex-same-file-sweeps.md)
-and [plan](../plans/2026-10-30-same-file-sweeps.md) are accepted;
-`ready-to-implement`. Count confirmed misattributed commits only, one row each;
+and [plan](../plans/archive/2026-10-30-same-file-sweeps.md) are accepted and
+implemented. Count confirmed misattributed commits only, one row each;
 separate occurrence from discovery, excluding uncertainty without confirmation
 or provenance. Agree with writers, inspect staged/unstaged/new files, reinspect
 changed bytes or use separate worktrees. Claims are not consent: stop on foreign
 or uncertain content. Keep minimal local references; screen summaries and never
 copy private chats, secrets or unrelated text. Advisory gate limits remain:
-omissions, noncooperation and dishonest reports are possible. Verify mapped
-behavior and complete the applicable frozen-file ceremony.
+omissions, noncooperation and dishonest reports are possible. Mapped checks
+and both independent code reviews are recorded; certification remains pending.
 
 ### 12. Correct work-intent guidance and identity help — accepted
 

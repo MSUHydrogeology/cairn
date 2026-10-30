@@ -1,7 +1,7 @@
 # Plan: Detect and record same-file sweeps
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-same-file-sweeps.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30

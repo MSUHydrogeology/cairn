@@ -38,6 +38,8 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+- Shared-file commit guidance now requires agreed serialization and inspection, and the advisory recurrence gate explains its reporting limits. Confirmed sweeps are recorded once per commit; the historical incident remains unconfirmed. ([plan](dev/plans/archive/2026-10-30-same-file-sweeps.md))
+
 - Handoff preparation now captures the reflection, surveys threads and intents, and presents the preview before the user receives the guarded prune command; an intent listing still cannot prove future quiet. ([plan](dev/plans/archive/2026-10-30-handoff-preparation.md))
 
 - Work-intent guidance and both parent CLI help copies now describe the existing conditional blocking, exemptions, and cooperative identity limits; the ordinary and Security code reviews accepted the implementation. The gate-manifest ceremony remains separate v0.6 baseline work. ([plan](dev/plans/archive/2026-10-30-intent-guidance.md); [coordination](doctrine/coordination.md))
