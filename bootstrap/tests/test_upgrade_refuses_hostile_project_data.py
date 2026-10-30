@@ -781,7 +781,7 @@ def _plant(world: World, **changes: object) -> Path:
 
 
 @pytest.mark.parametrize("field", [
-    "review_only", "module_blocked", "directory_blocked", "expected_absent",
+    "review_only", "module_blocked", "directory_blocked", "directory_observed", "expected_absent",
     "staged_files",
 ])
 @pytest.mark.parametrize("name", [

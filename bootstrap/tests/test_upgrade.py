@@ -2436,6 +2436,41 @@ class TestTrackedDirectoryCollisions:
         assert not (tmp_path / "dev/.cairn-upgrade/review-only/AGENTS.md.ours").exists()
         assert (dst / "nested.txt").read_bytes() == b"preserve"
 
+    def test_noop_tracked_file_becoming_directory_blocks_apply(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        assert _install(tmp_path) == 0
+        TestUpgradeModes()._diverge_base(tmp_path)
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        stage = tmp_path / "dev/.cairn-upgrade"
+        meta = json.loads((stage / s._STAGE_META).read_text())
+        lock = s.read_lockfile(tmp_path)
+        rec = next(r for r in lock["files"]
+                   if r["dst"] in meta["directory_observed"]
+                   and r["dst"] not in meta["staged_files"]
+                   and (tmp_path / r["dst"]).is_file())
+        dst = tmp_path / rec["dst"]
+        dst.unlink()
+        dst.mkdir()
+        content = dst / "adopter-data"
+        content.write_bytes(b"preserve")
+        before = content.stat()
+        lock_path = tmp_path / "dev/.cairn/cairn-lock.yml"
+        lock_before = lock_path.read_bytes()
+        cache_path = tmp_path / "dev/.cairn/base/AGENTS.md"
+        cache_before = cache_path.read_bytes()
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                     "--force", "--ack-review-only",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 1 and "became directories" in capsys.readouterr().err
+        assert content.read_bytes() == b"preserve"
+        assert content.stat().st_mode == before.st_mode
+        assert content.stat().st_mtime_ns == before.st_mtime_ns
+        assert lock_path.read_bytes() == lock_before
+        assert cache_path.read_bytes() == cache_before
+        assert stage.exists()
+
     def test_plan_stage_and_recovery_preserve_mergeable_directory(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
     ) -> None:

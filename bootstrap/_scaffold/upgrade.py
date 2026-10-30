@@ -1390,6 +1390,8 @@ def _write_stage(
         "new_source_repository": _new_source_repository,
         "new_source_licenses": _new_source_licenses,
         "staged_files": sorted(staged_files),
+        "directory_observed": sorted(fp.dst for fp in plans
+                                     if not fp.kind.startswith("retired-")),
         "kinds": kinds,
         "ours_hashes": ours_hashes,
         "ancestor_evidence": ancestor_evidence,
@@ -3150,7 +3152,7 @@ def _apply_upgrade(
     names: list[object] = []
     if plain:
         for key in ("staged_files", "review_only", "module_blocked",
-                    "directory_blocked", "expected_absent"):
+                    "directory_blocked", "directory_observed", "expected_absent"):
             value = meta.get(key, [])
             plain = plain and isinstance(value, list)
             names += value if isinstance(value, list) else []
@@ -3419,7 +3421,7 @@ def _apply_upgrade(
     # change before snapshot reads, swaps or metadata/cache advancement,
     # regardless of --force and --ack-review-only.
     live_directory_collisions: list[str] = []
-    for staged in staged_meta:
+    for staged in sorted(set(staged_meta) | set(meta.get("directory_observed", []))):
         dst_abs = target / staged
         _assert_safe_write(dst_abs, target)
         if dst_abs.is_dir():
