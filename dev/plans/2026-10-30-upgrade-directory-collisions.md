@@ -1,7 +1,7 @@
 # Plan: Block tracked upgrade directory collisions
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-upgrade-directory-collisions.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Report folders occupying tracked upgrade files and protect their contents until the operator resolves them.
@@ -39,7 +39,7 @@ Guidance describes the block and recovery and agrees with the command tests. Exe
 
 ## Verification
 
-Boundary A: use canonical Python 3.13 and run `python -m pytest bootstrap/tests/test_upgrade.py bootstrap/tests/test_upgrade_lockfile_path_containment.py bootstrap/tests/test_upgrade_side_door_parity.py` for tracked upgrades, retired paths and containment; include new tests in the owning files. Run `python -m pytest bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_lockfile_provenance.py` for addition blocking and metadata consumers. Search actual readers and extend this map if needed. Split selections within the broad-run guard's file limit and reconcile the executed union without an override. Run `python -m pytest bootstrap/tests/test_security_lint.py` for the engine security gate; a skip is an unmet check.
+Boundary A: use canonical Python 3.13 and run `python -m pytest bootstrap/tests/test_upgrade.py bootstrap/tests/test_upgrade_lockfile_path_containment.py bootstrap/tests/test_upgrade_side_door_parity.py` for tracked upgrades, retired paths and containment; include new tests in the owning files. Run `python -m pytest bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_lockfile_provenance.py` for addition blocking and metadata consumers, and `python -m pytest bootstrap/tests/test_upgrade_refuses_hostile_project_data.py` for hostile stage metadata and public apply refusal. Search actual readers and extend this map if needed. Split selections within the broad-run guard's file limit and reconcile the executed union without an override. Run `python -m pytest bootstrap/tests/test_security_lint.py` for the engine security gate; a skip is an unmet check.
 
 Exercise `python bootstrap/scaffold.py upgrade` public `--plan`, `--stage`, and `--apply` paths in a scratch installation, including resolution and restaging; check command help for exact arguments. Run `python scripts/claim_check.py` on changed prose, `python scripts/check_cairn.py`, `python scripts/link_check.py`, and `python scripts/quality_gate.py --sub neutrality`; run `python scripts/sync_doc_snippets.py` if synced snippets change. Record the two mutation controls and failures in separate scratch copies.
 
@@ -90,3 +90,12 @@ The accepted proposal's S1 and S4–S5 remain intact: the project supplies paths
 I agree with ordinary P1: hostile stage metadata is a consumer of this boundary. Its existing public apply test varies `module_blocked` and other stage fields with traversal, absolute, Git-control and non-string names (`bootstrap/tests/test_upgrade_refuses_hostile_project_data.py:784`). The author must add that owning family or justify exact-node coverage in the reviewed mapping. This pass adds no separate finding and does not dispose of P1. Keep containment and symlink checks ahead of directory classification, as C1 requires; `_assert_safe_write` rejects destination and ancestor links (`bootstrap/_scaffold/security.py:110`). A directory diagnostic must not become permission to follow a directory link or adopt a tracked directory.
 
 Coverage: claims, fail-closed design, reuse and scope were read against C1–C2 and `upgrade.py:1032`, `:1137`, `:1191`, `:3112` and `:3140`; public-path coverage and hostile inputs against the named test family; documentation drift and lifecycle against C2, Verification and the accepted proposal's Current contract. The existing block machinery was found by searching collision, directory and `module_blocked`, with positive matches at `upgrade.py:1032` and `:1276`. No scientific result is touched. No implementation, tests, mutations, certification or arbitrary concurrent-writer resistance was verified. This clears only the plan's Security Review obligation; ordinary P1 keeps the plan in revising-plan.
+
+
+## Response to plan reviews -- Codex GPT-6.1 -- 2026-10-30
+
+| Finding | Disposition |
+|---|---|
+| Ordinary P1 | Accepted. Verification now maps the hostile-project-data test family for stage metadata and public apply refusal; the other checks remain. |
+
+The Internal Security Review raised no additional findings and cleared its obligation. Both plan reviews are complete; the plan is ready to implement.
