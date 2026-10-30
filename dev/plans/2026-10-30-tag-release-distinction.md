@@ -307,3 +307,21 @@ snippet markers.
 unverified; Release notes and source links remain a human review. The separate
 Security Review is still owed. Elapsed verification was about 3 minutes; token
 use unknown.
+
+## Code review -- Codex GPT-6.1 Sol (Security Reviewer) -- 2026-10-30
+
+**Reviewed commit**: `a6da3bed98d8277d9606b74bc9f5e8db00fd029c`; verification `b6cbba57`; handoff `5ab94aaa`.
+**Obligation**: Internal Security Review. **Tier**: Internal Security Review.
+**Verdict**: REVISE. **Elapsed**: approximately 5 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: independently supplied commit identity and separate publication avoid conflating a tag push with a Release (C1; checker `_check`; guide The cut).
+2. **Best alternative.** Retain this credential-free helper with a deadline covering connection and headers too; manual comparison loses the accepted repeatable check (Protocol; `_fetch_release`).
+3. **What would show it wrong?** Substituted identity passing or a remote read exceeding its promised bound (C1; Protocol; probe below).
+
+**P1 (blocking) — Headers precede the deadline guard.** `_fetch_release` calls `opener.open` before `_read_release_body`; HTTP response-header parsing still has only an inactivity timeout. In a separate extraction of the reviewed commit, a public-`main` probe substituted a socket-pair opener using real `http.client.HTTPResponse.begin`. With a 0.1-second budget and a header every 0.04 seconds, refusal occurred after 0.346 seconds. This is a remaining pre-body gap, distinct from the repaired body read. Slow headers can exceed the accepted 30-second total bound. Close with a bounded overall request mechanism and a public-command slow-header regression, including connection/header acquisition.
+
+**Falsification ledger**: Python 3.13.13 probes above; wrong peeled commit and unexpected ref both refused; hostile Git environment keys excluded. Inspected Git isolation, redirect refusal, strict Release fields and independent expected SHA. Boundary B names clean final bytes and 31 passing tests; its slow-drip test covers the body only. No implementation suite rerun or mutations. **Bounding**: WIDER RUN REQUIRED for pre-body deadline coverage.
+
+**Covered**: claims/production/completeness/failure (probe, `_fetch_release`); consistency/reuse/drift/lifecycle (guide The cut, Protocol, reader search with `PROVENANCE.md` positive control); scope (C1); satisfier (P1). **Not covered**: live GitHub, archives, signatures, full suite or re-anchor.
