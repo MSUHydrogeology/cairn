@@ -1,7 +1,7 @@
 # Test once per change: scoped iteration, narrow review, one run last
 
 **Author**: Claude Opus 5.5 (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -10,10 +10,9 @@
 
 ## Context
 
-Issue [#41](https://github.com/MSUHydrogeology/cairn/issues/41) reports one
-adopter plan that ran its directory test set about six times, at 5 to 6.6
-minutes each, mostly confirming unchanged code. The Maintainer's verdict
-there: "We cannot be testing more than once per plan." The Maintainer asked
+Issue [#41](https://github.com/MSUHydrogeology/cairn/issues/41) reports an
+adopter plan that ran its test set about six times, at 5 to 6.6 minutes
+each: "We cannot be testing more than once per plan." The Maintainer asked
 for this change in chat (2026-10-30):
 
 > "1) Only iterate on tests of the files touched
@@ -30,19 +29,23 @@ Cairn's own rules force the repeat and contradict each other:
   final implementation commit", but its Boundary C (`:362`) has the reviewer
   verify the Boundary B record, which must therefore exist before review.
 
-Scope also leaks. Iteration searches for "owning tests and readers"
-(`AGENTS.md:191`). Measured 2026-10-30, 64 test files read templates in
-general, so one template edit can pull in half the suite. The certifying run
-took 24 minutes 55 seconds against a 10-minute budget (`dev/PLANNING.md`,
-"Faster certifying runs").
+Scope also leaks: iteration searches for "owning tests and readers"
+(`AGENTS.md:191`), and 64 test files read templates in general (measured
+2026-10-30). The certifying run took 24 minutes 55 seconds against a
+10-minute budget.
 
 ## Proposal
 
 **1. Iteration (A): the tests that name a changed file.** A test names a
 file when it imports it or cites its path or file name. Run those, plus the
-standing prose gates for prose. A tool lists them:
-`python tools/test_tiers.py for <paths>`. The list comes from the tool, not
-from judgment, and a reader that only sweeps a whole folder is not included.
+standing prose gates for prose. `python tools/test_tiers.py for <paths>`
+lists them as the starting list; the author may add a test the change
+plainly affects and says why. For most changes the list is a few files.
+Governing text is the exception: `AGENTS.md` is cited by 50 of 132 test
+files, more than the broad-run guard's 40, so the author narrows to the tests
+that pin the changed passages and records the rest as an omission. Tests
+that sweep a whole folder without naming the file are caught at the release
+run.
 
 **2. Review (C): the tightest scope.** The reviewer reads the change and the
 author's iteration evidence, then runs targeted checks that try to break it.
@@ -54,48 +57,51 @@ fixes, run on a clean commit: the iteration list for every file changed in
 the range, plus the integration and workflow tests (by the tier map) that
 name those files. It records the mode and `Implementation verified at <SHA>`
 as now. Because it runs last, a review fix invalidates nothing; the clause
-saying it does is deleted. A wider run is owed only when no valid record
+saying it does is deleted. The record is read at archive, which requires a
+passing record. A fix made after a failed run that changes more than the
+failing test goes back to the same reviewer for a targeted look. A wider run is owed only when no valid record
 exists, a cross-surface dependency surfaces, a skip, xfail or xpass is
 undisposed, a trust ceremony prescribes one, or there is a concrete reason
 to distrust the evidence (as #41 lists). `WIDER RUN REQUIRED` becomes the
 reviewer naming one of those reasons.
 
-**4. The full suite: releases and re-anchors only.** A certifying run is
-made before a release cut, before a re-anchor ceremony, and when the
-Maintainer asks; not per change or per push. A break between distant parts
+**4. The full suite: rarely.** A certifying run is made before a release
+cut, before a re-anchor ceremony, before a push when the Maintainer requires
+one, and when the Maintainer asks; never per change. A break between distant parts
 of the code is then found at the release run and bisected over the range
 since the last good run.
 
-**5. Unchanged:** trust ceremonies keep every prescribed check; nobody sets
-`CAIRN_FULL_SUITE=1` outside a certifying run; the broad-run guard stays.
+**5. Unchanged:** trust-ceremony checks, the `CAIRN_FULL_SUITE=1` rule and
+the broad-run guard.
 
-**6. Open plans may switch.** An already-open plan keeps its written
-contract unless its author records one line adopting this one.
+**6. Open plans may switch** by one line in their record.
 
 No new files: `for` is a subcommand of the existing `tools/test_tiers.py`.
 
 ## Rationale
 
-One run on the final code replaces two or more. Mechanical scope stops
-caution from widening every run. Most changes are one revert away, so a late
-cross-surface break costs a bisect, while the present rules cost minutes on
-every plan.
+One run on the final code replaces two or more; a tool-made starting list
+stops caution from widening every run. A late cross-surface break costs a
+bisect and a revert; the present rules cost minutes on every plan.
 
 ## Alternatives considered
 
-Keep Boundary B before review: two runs per plan, as #41 measured. A parallel
-runner: faster, but still re-runs unchanged checks and adds a dev-only
-dependency. Issue #41 as written: fixes the order but keeps the "readers"
+Boundary B before review: two runs per plan, as #41 measured. A parallel
+runner still re-runs unchanged checks. Issue #41 alone keeps the "readers"
 search that widens scope.
 
 ## Documentation / doctrine surface
 
-`AGENTS.md` and `templates/core/AGENTS.md` (verification section);
-`dev/plans/_template.md` and `templates/core/dev/plans/_template.md`
-(Boundary A, B and C); `doctrine/plans.md:316` and `:348`;
+`AGENTS.md` and `templates/core/AGENTS.md` (verification section, including
+`AGENTS.md:185`); `dev/plans/_template.md` and its shipped copy (Boundary
+A, B and C); `doctrine/plans.md:316`, `:326` and `:348`;
 `doctrine/dual-review.md` where it describes Boundary C;
 `tools/test_tiers.py` (`for`). Edits replace wording in place and add none
-net to `AGENTS.md`.
+net to `AGENTS.md`. The doctrine edits clear the rate-limit gate
+(`doctrine/rationale.md:458`) by recurrence: issue #41, the Maintainer's
+request, and Cairn's own contradiction. The two pinned tests are frozen in
+the gate manifest, so editing them owes a re-anchor, batched with the
+forward-baseline ceremony already on the board.
 
 ## Evidence / verification plan
 
@@ -111,9 +117,8 @@ suite at release and re-anchor.
 
 ### Examples / smoke checks
 
-Implement this change under its own rules and record the runs: one
-iteration list, one Boundary B run. `claim_check`, `link_check` and the
-neutrality gate.
+Implement this change under its own rules: one iteration list, one
+Boundary B run. Prose gates as usual.
 
 #### Security preflight
 
@@ -126,9 +131,9 @@ N/A: no scientific assumption or result touched.
 
 ## Signals the change is wrong
 
-Release runs keep finding breaks that a per-change run would have caught;
-a reviewer misses a defect an earlier run would have shown; authors widen
-"names" to sweep many files.
+Release runs keep finding breaks a per-change run would have caught; a
+reviewer misses a defect an earlier run would have shown; authors widen the
+starting list routinely.
 
 ## Scope delta
 
@@ -169,3 +174,31 @@ Assurance path: high-assurance
 4. Missing: the doctrine rate-limit gate (`doctrine/rationale.md:466`) for `doctrine/` edits, and the re-anchor owed for frozen test edits (`_gate_manifest.py:12-16`). Satisfier: name the gate path and queue the row.
 
 **Coverage**: did not run `for` (absent), the tests, or the fidelity manifest; grep counts are file-level, not per-edit.
+
+## Response -- Claude Opus 5.5 -- 2026-10-30
+
+Answers the usual review at `d3adc1bf` (REVISE, four non-blocking). The
+operative sections are revised in place; the review is unchanged. Status
+moves to `awaiting-decision`.
+
+- **1, accept.** `for` gives a starting list the author may extend with a
+  reason. Most lists are a few files; governing text is the stated
+  exception (`AGENTS.md` is cited by 50 of 132 files), narrowed to the tests
+  that pin the changed passages with the rest recorded as an omission.
+  Folder-sweeping tests are caught at the release run.
+- **2, accept.** The record is read at archive, which requires a passing
+  record. A fix after a failed run that changes more than the failing test
+  returns to the same reviewer for a targeted look.
+- **3, accept.** The full suite also runs before a push when the Maintainer
+  requires one; `AGENTS.md:185` and `doctrine/plans.md:326` join the
+  surface list.
+- **4, accept.** The rate-limit gate is cleared by recurrence (#41, the
+  Maintainer's request, Cairn's own contradiction). The two pinned test
+  files are frozen, so their edit owes a re-anchor, batched with the
+  forward-baseline ceremony.
+
+### Withdrawn / superseded commitments
+
+- "The list comes from the tool, not from judgment": replaced by a tool-made
+  starting list the author may extend with a reason.
+- "Not per change or per push": the push case is restored.
