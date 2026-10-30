@@ -1,7 +1,7 @@
 # Plan: API dispatch credentials
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-api-dispatch-credentials.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Pass only the local API policy's credentials to its dispatched check so configured checks can run.
