@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-tag-release-distinction.md
 **Author**: Codex GPT-6.1 Sol (Implementation plan author)
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Add a read-only publication check and make the release guide distinguish publishing a Release from pushing its signed tag.
