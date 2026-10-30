@@ -1,7 +1,7 @@
 # Plan: Align work-intent guidance with behavior
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-intent-guidance.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30
@@ -121,3 +121,65 @@ choice, not a rule inferred from the incident. The C2 coordination choice in
 Maintainer's words: “Blocking for live-session conflicts, yes. Agents should
 claim intent prior to editing.” That choice predates the incident, and the
 accepted proposal identifies this correction as implementing it.
+
+## Implementation verification -- Codex (GPT-6) -- 2026-10-30
+
+**Boundary B mode**: wide
+**Certified by**: pending
+**Tested commit**: be41b61ed62168c5a0a034827c1d43457caf6cff
+**Reviewed range**: 82b08e8eb2ba215e846e1275436336691cf62a7d .. be41b61ed62168c5a0a034827c1d43457caf6cff
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` -- Python 3.13.13
+**Pre-run state**: clean at tested commit
+**Post-run state**: clean; same tested commit
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---:|---|---:|
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest` on the five mapped files below, `-q` | 0 | 860 passed | 28.80 s |
+| `scripts/claim_check.py` on the five changed Markdown files (five invocations) | 0 | All five clean | <0.01 s each |
+| `scripts/link_check.py` on the five changed Markdown files | 0 | No issues | <0.01 s |
+| `scripts/sync_doc_snippets.py --check` on the five changed Markdown files | 0 | No drift | <0.01 s |
+| `scripts/check_cairn.py` | 0 | 198 Markdown files clean; 83 external links not probed | 2.15 s |
+| `scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | 0 failures; 43 neutrality info, 1 redundancy info | 1.07 s |
+| Disposable parent-help controls and reverse mutations, source and shipped copies | 0 | Both controls passed; both restored `warn-by-default` mutants killed | 0.30 s |
+| Controlled `rg` searches for related descriptions and test/manifest readers | 0 | Positive controls matched; no further direct contradictions | 0.10 s |
+
+The pytest selection was `bootstrap/tests/test_intents_tool.py`,
+`bootstrap/tests/test_coordination_broad_intent.py`,
+`bootstrap/tests/test_upgrade_module_additions.py`,
+`bootstrap/tests/test_review_sweep_ships.py`, and
+`bootstrap/tests/test_review_stance_in_shipped_files.py`. It covers the real
+identity, claim, hook, mode, exemption, stale-claim, release-by-ID, installed
+module, and collaboration-reader paths. No full-suite certification was run
+for this commit.
+
+**Plan-specific acceptance commands and comparison.** `cmp -s` passed for the
+development/shipped coordination-tier pair and for the source/shipped CLI pair.
+The help search used `tools/_intent/cli.py` as its positive control before
+searching `doctrine`, `dev/modules`, `templates/modules`, and `tools`; the test
+search used `test_intents_tool.py` as its positive control before scanning the
+test tree and both gate fixtures. The protected roster lists
+`bootstrap/tests/test_intents_tool.py` and
+`templates/modules/team-gated/_intent/cli.py`; the existing Maintainer-run
+gate-manifest re-anchor ceremony remains owed under `bootstrap/REANCHOR_RUNBOOK.md`.
+
+The final wording was compared with `tools/_intent/identity.py` identity and
+token resolution; `tools/_intent/conflict.py` mode, freshness, overlap, and
+exemption decisions; `tools/_intent/hooks.py` inherited commit environment;
+and `tools/_intent/cli.py` claim, manual release, and auto-release paths. The
+comparison confirms that the per-session token gates blocking, resolved labels
+are compared only when a token exists, both exemptions retain overlap warnings,
+manual release is by claim ID, and post-commit release follows the committing
+session's resolved label. The searches caught the former warn-only/default
+claims, the missing opt-in condition, and the legacy-only config wording; these
+were corrected in the source and shipped guidance. The plan's bypass variable
+typo is recorded in the implementation note above. Remaining incident-tracker
+references describe impact logging, not alternate enforcement behavior.
+
+**Non-pass disposition**: An earlier `check_cairn.py` at provisional commit
+3b3738c4 reported a missing suite-log path in an unrelated strategy note. The
+reference was repaired in 85a9b6d2; the final clean run above passed. An
+initial Python 3.12.9 test attempt was interrupted and is excluded as evidence.
+
+**Known omissions**: The 83 external links are not fetched by the doc checker.
+No certifying full-suite run or gate-manifest re-anchor was performed; the
+certificate remains pending and the Maintainer owns the ceremony.
