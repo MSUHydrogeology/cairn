@@ -55,3 +55,13 @@ An existing independent test already proves the same files and behavior, or an o
 ## Assurance path
 
 **Assurance path**: standard. The change adds test expectations without changing the install contract, executable, or trust boundary.
+
+## Proposal review -- Codex (gpt-6.1-terra) -- 2026-10-30
+
+**Verdict: revise before Decision.** The proposed tests are useful, but their passing would not establish the board's consistent-discovery outcome across all four paths.
+
+**Foundations.** Should it happen as framed? Not yet: the test at `bootstrap/tests/test_reference_scripts.py:125-153` exercises fresh installation and bytes only; it does not compare upgrade or scan discovery. The board's VER-5 row asks for consistency across install, manifest, security scan and upgrade. Best alternative: retain the small test-only change, and first assess existing cross-path tests or add the smallest independent behavior check that can expose an actual disagreement; the shared `_MODULE_MAPPINGS` already supplies install, manifest and upgrade, and `security_check.py` selects Python sources from `install_manifest()`. A new traversal could reduce duplicated selection logic but changes protected surfaces without a demonstrated mismatch. What would show this wrong? Evidence that existing checks already cover the relevant cross-path selection differences, or a mismatch showing that a shared traversal is needed.
+
+**Finding (advice):** Make the loss and evidence for the Maintainer's choice concrete: identify which selection differences and paths are checked or remain unchecked, and whether a small behavior test covers them. The independent file list detects omissions in install mapping but cannot detect drift in upgrade selection or scanner filtering. The Maintainer alone can accept the loss of the original single traversal. No demonstrated mismatch makes this a blocking finding.
+
+**Coverage:** Read the proposal, VER-5 strategy and board row, install and manifest loops, upgrade mapping uses, scanner manifest selection, and the existing multi-script test at `5aac7f02`. Did not run tests or audit all existing cross-path coverage. Elapsed: about 2 minutes; tokens: unknown.
