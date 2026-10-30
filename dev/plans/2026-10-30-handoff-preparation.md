@@ -321,3 +321,48 @@ Prior findings: none
 **Bounding**: ACCEPTED -- challenged the installed CLI mode boundary and preparation-to-pruner tests; the wide record covers the named public paths and guards.
 
 **Covered**: preparation and prune separation, workflow order and quiet caveat, CLI modes, recorded mutation and installation evidence. **Not covered / low confidence**: no full suite or actual current-repository prune; no assertion that a future intent log is quiet. The separate Security Review remains its own obligation.
+
+## Code review -- Codex GPT-6 Security -- 2026-10-30
+
+```text
+Reviewed commit: 7ad4a37198a83f981e0e673bc23239582f86a3af
+Target: bf0a253d56441838c364bfccca2cffe02d1af69d..986d2164ebaf1252267fceb81b991aaf7f5e2623; verification at 7ad4a371
+Prior findings: none
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+
+**Foundations**
+
+1. **Does it do what it claims?** Yes: preparation calls the read-only candidate collector and existing read-only subprocess adapters; deletion remains in the guarded user path -- `tools/session.py::_do_handoff_preparation`, `_do_full_handoff`.
+2. **Best alternative.** Keep the shared candidate collector and explicit human quiet condition; a persisted readiness flag would become stale without protecting appenders -- `tools/session.py::_reflection_prune_candidates`; `.agents/skills/session-end/SKILL.md` section 3.
+3. **What would show it wrong.** Reaching a poison pruner during preparation, altering a held lock, following a linked reflection directory, or emitting a raw terminal control would defeat its safety claims -- falsification ledger below.
+
+**Falsification ledger**: all execution used a fresh detached worktree at
+`986d2164` and disposable fixture directories, Python 3.13.13. No live prune
+or full suite ran.
+
+* Independent scratch probe called `main` with `session-end --prepare-handoff --dry-run`, replacing both prune helpers with exceptions. Neither fired; a pre-existing lock stayed byte-identical, no scaffold appeared, and an old dated symlink and its external sentinel target survived unchanged.
+* The same probe put ESC and newline bytes in that dated filename. The preview emitted literal `\x1b` and `\x0a`, with no raw ESC. Replacing the reflection directory with a link made the public command refuse with exit 1. Initial scratch assertions incorrectly expected newline notation `\n` and refusal exit 2; correcting those expectations yielded a passing probe, without changing production bytes.
+* `python -m pytest bootstrap/tests/test_intents_tool.py::TestIntentSurfacePruning -q`: 15 passed in 0.39 s. Its recent-claim and changed-log cases supplement the independent preparation probe. The ledger rewrite still has the documented append-after-recheck race; neither the handoff lock nor an earlier listing claims to close it.
+* The implementation record's five separately killed mutants cover preparation boundaries, marker, reflection containment and lock containment. Reading the committed adapters confirmed captured child output still passes through the existing terminal encoder and subprocess argv stays explicit.
+
+**Bounding**: ACCEPTED -- challenged preparation under an occupied lock,
+linked paths and hostile filenames; the wide record covers the unchanged
+prune guards and installed consumers. No additional required path was found.
+
+The marker remains an accidental-run guard. The skill puts the owner judgment
+and handoff commit before the command, asks for current quiet, and requires any
+uncertainty beside that command. Preparation supplies evidence, not authority
+or a durable readiness state. This clears the code Security Review obligation.
+
+**Covered**: claims, production entry and failure boundaries (scratch probe;
+`tools/session.py::main`); completeness and late append risk (intent pruning
+family); reuse and drift (shared candidate collector and both CLI copies);
+workflow, consistency and scope (skill section 3, doctrine manual-only and
+single-owner invariants, plan C1). No finding needs a satisfier.
+**Not covered / low confidence**: hostile concurrent filesystem replacement,
+future appender quiet and executable provenance are not established here; the
+existing trust assumptions remain. No full suite or current-repository prune.
