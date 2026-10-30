@@ -158,3 +158,28 @@ Assurance path: Internal + Internal Security Review
 The plan names both remote inputs, refusal cases and public-command fixtures, and keeps the human publication and notes checks. It preserves the signed-tag contract without claiming that source links establish archive contents. The wide verification map names the new test family and prose gates; the live cut remains outside this work -- plan C1, Protocol and Boundary A/B; `bootstrap/PROVENANCE.md:398-407`.
 
 **Covered**: accepted outcomes and scope, trust inputs, failure cases, verification mapping, documentation placement and lifecycle sequencing -- source proposal Proposal and Tests required; plan Scope, Sequence and Verification. **Not covered**: no implementation, live GitHub response, tag signature, archive contents or Security Review.
+
+## Plan review -- Codex GPT-6 (Security Reviewer) -- 2026-10-30
+
+```
+Reviewed commit: af0fb7ba24e2d71af641dbcc89496daae0738ec9
+Target: protocol, trust inputs, refusal cases and verification mapping
+Prior findings: none
+Assurance path: high-assurance
+Elapsed: about 3 minutes; tokens: unknown
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes, once the remote read is bound to the intended host: the accepted check compares the independently supplied gate commit with the published tag and does not claim archive identity. -- source proposal Proposal; plan C1 and Protocol.
+2. **Best alternative.** Keep the read-only helper and human publication inspection, while isolating Git configuration for the remote query; manual comparison alone leaves the accepted repeatable check unmet. -- plan Protocol; `scripts/content_scan_runner.py:222-224`.
+3. **What would show it wrong?** A draft, malformed response, or a matching tag from a different repository passing the public command would defeat its publication or remote identity claim. -- plan C1 and Boundary A.
+
+**P1 (blocking) — Git can rewrite the fixed remote.** The Protocol fixes the URL and disables terminal prompts but does not isolate Git configuration. Git's `url.*.insteadOf` can redirect that URL: `git -c 'url.file:///private/tmp/nonexistent-cairn-review.insteadOf=https://github.com/example/repo.git' ls-remote --exit-code --tags https://github.com/example/repo.git refs/tags/v1 'refs/tags/v1^{}'` tried the local path. A matching substituted repository could falsely establish the remote tag identity at a release cut. Specify a configuration/environment boundary that prevents URL rewriting and other transport redirection, and add a public-command negative fixture that supplies a matching substituted ref and requires refusal or the intended GitHub read. Preserve bounded, credential-free reads.
+
+**Covered:** claims and production path (plan Protocol and command probe); completeness and failure direction (C1 and P1); consistency and reuse (`bootstrap/PROVENANCE.md:398-407`, `scripts/content_scan_runner.py:222-224`); drift and lifecycle (source Decision and plan Sequence); domain and scope (no scientific result, no live cut); satisfier (P1). **Not covered:** implementation, live GitHub, archive bytes, signature verification, or full suite.
