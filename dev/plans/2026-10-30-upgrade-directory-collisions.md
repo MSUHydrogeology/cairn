@@ -99,3 +99,39 @@ Coverage: claims, fail-closed design, reuse and scope were read against C1–C2 
 | Ordinary P1 | Accepted. Verification now maps the hostile-project-data test family for stage metadata and public apply refusal; the other checks remain. |
 
 The Internal Security Review raised no additional findings and cleared its obligation. Both plan reviews are complete; the plan is ready to implement.
+
+
+## Implementation verification -- Codex GPT-6 (Implementation) -- 2026-10-30
+
+**Boundary B mode**: wide. The change alters tracked-file classification, stage metadata and the apply gate, so the complete mapped upgrade owners, hostile stage consumers, public plan/stage/apply paths, and engine security gate were exercised.
+
+**Certified by**: pending
+
+**Tested commit**: b925187e798be7cd3a1c9ce2dec7d9f8398bce6a
+
+**Reviewed range**: c805d268cfe9720396b5ed6cb9e70877006c5a1f..b925187e798be7cd3a1c9ce2dec7d9f8398bce6a
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python`, Python 3.13.13.
+
+**Pre-run state**: clean detached worktree at b925187e; no staged or unstaged changes.
+
+**Post-run state**: clean detached worktree at the same b925187e; no staged or unstaged changes.
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---:|---|---:|
+| `python -m pytest -q bootstrap/tests/test_upgrade.py bootstrap/tests/test_upgrade_lockfile_path_containment.py bootstrap/tests/test_upgrade_side_door_parity.py --tb=short` | 1 | 208 passed, 1 failed; failure listed below | 33.38 s |
+| `python -m pytest -q bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_lockfile_provenance.py bootstrap/tests/test_upgrade_refuses_hostile_project_data.py --tb=short` | 1 | 214 passed, 1 failed; failure listed below | 33.21 s |
+| `python -m pytest -q bootstrap/tests/test_security_lint.py` | 0 | 11 passed, 0 failed, 0 skipped | 1.86 s |
+| `python -m pytest -q bootstrap/tests/test_upgrade.py -k TrackedDirectoryCollisions --tb=short` | 0 | 4 passed, 0 failed | 3.17 s |
+| `python scripts/claim_check.py bootstrap/UPGRADE.md` | 0 | No flags | — |
+| `python scripts/check_cairn.py` | 0 | 198 Markdown files scanned, no issues | — |
+| `python scripts/link_check.py` | 0 | 198 Markdown files scanned, no issues; 84 external links not probed | — |
+| `python scripts/quality_gate.py --sub neutrality` | 0 | 0 failures, 43 informational matches | — |
+
+**Mutation ledger**: the unmutated control `python -m pytest -q bootstrap/tests/test_upgrade.py -k TrackedDirectoryCollisions --tb=short` exited 0: 4 passed. In a separate copy of b925187e, removing real-directory classification made `python -m pytest -q bootstrap/tests/test_upgrade.py::TestTrackedDirectoryCollisions::test_plan_stage_and_recovery_preserve_mergeable_directory --tb=short` exit 1 with `IsADirectoryError` during `--plan` (killed). In another separate copy, disabling both apply directory blocks made the same recovery test accept the repaired live path and made `test_verbatim_directory_and_directory_after_stage_block_apply` raise `IsADirectoryError` after a directory appeared; the two-node pytest command exited 1 (both killed). No mutant survived; equivalence was not observed.
+
+**Non-pass disposition**: `TestInitLock::test_review_pairs_leave_no_placeholder_the_install_filled` fails because the generated upstream-side buffer for the modules README differs outside slots. `test_apply_still_applies_a_review_area_of_plain_names` fails because its hand-planted destination already exists despite the stage's expected-absent record. Both exact nodes failed with the same results on clean baseline c805d268, before this change. They remain required-check failures and keep this plan open; they were not repaired here because they are unrelated to directory collisions.
+
+**Plan-specific acceptance commands**: the focused tests exercise public `upgrade --plan`, `--stage` and `--apply`, including mergeable and verbatim paths, a folder appearing between plan classification and stage, a folder appearing after stage, override flags, preservation, blocked-stage recovery, and a fresh successful stage/apply after restoring the file. `sync_doc_snippets.py` was not run because no synced snippet changed.
+
+**Known omissions**: the full suite and tree certification were not run; certification is separate and not authorized at this change boundary. The Maintainer-run AST re-anchor remains owed and was not authorized here. Arbitrary concurrent filesystem changes after a check are outside the claim. Independent code and Security Reviews remain owed. Do not archive until the two known required-test failures are resolved through their owning work and the reviews clear.
