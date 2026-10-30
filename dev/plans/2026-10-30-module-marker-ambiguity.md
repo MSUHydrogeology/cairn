@@ -199,3 +199,95 @@ unrelated frozen-manifest modification control. This changes no marker
 acceptance outcome and does not waive functional failures. Both plan reviews
 are answered; the plan is ready to implement without a clearing review.
 Elapsed: about 3 minutes. Tokens: unknown.
+
+## Implementation verification -- Codex GPT-6 (Implementation) -- 2026-10-30
+
+**Boundary B mode**: wide checkpoint; incomplete pending the adoption
+public regression. The changed engine reconciles adopter-owned task and
+inventory regions through install, repeat install, upgrade inventory rendering,
+and both new and already-recorded module adoption. These paths cross the
+scaffold write/lock boundary, so the plan-mapped owning families, public paths,
+security lint, three specified mutations, and standing gates were used.
+
+**Certified by**: pending.
+
+**Tested commit**: `629400c1dfd419b6669a7299f41add6393f84a64`.
+
+**Reviewed range**: `c1326b45b8b52077db1c450c993e4e07268160c4` through
+`629400c1dfd419b6669a7299f41add6393f84a64`.
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` —
+Python 3.13.13.
+
+**Pre-run state**: clean isolated clone at the tested SHA; `git status --short`
+empty. **Post-run state**: clean, same clone and SHA.
+
+| Command or check | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `pytest bootstrap/tests/test_onboarding_seed_roster.py bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_install_time_onboarding.py bootstrap/tests/test_onboarding_slot_substitution.py bootstrap/tests/test_upgrade.py bootstrap/tests/test_lockfile_provenance.py bootstrap/tests/test_security_lint.py -q --tb=short` | 0 | 324 passed; 0 failed, skipped, xfailed or xpassed | 66.94 s | unknown |
+| `scripts/check_cairn.py`; `scripts/link_check.py`; `scripts/sync_doc_snippets.py --check`; `scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | All pass; 188 Markdown files checked, 481 snippets checked; neutrality fail=0, redundancy fail=0 | about 2 s | unknown |
+| Unmutated controls: `test_refuses_ambiguous_markers_without_writes` with `-k duplicate-region`, `-k malformed-opener`, and `-k crossed-entry` | 0 each | 1 passed per node | about 4 s parallel | unknown |
+| Mutation 1: allow duplicate region delimiter lines; rerun duplicate-region public node in scratch commit `2e5edcfc` | 1 | Killed: the damaged empty-roster install returned 0 instead of refusing | about 1 s | unknown |
+| Mutation 2: restore the narrow task-marker caller trigger; rerun malformed-opener public node in scratch commit `629400c1` | 1 | Killed: malformed opener was accepted and install returned 0 | about 1 s | unknown |
+| Mutation 3: restore independent closer searches; rerun crossed-entry public node in scratch commit `629400c1` | 1 | Killed: crossed pair was accepted and install returned 0 | about 1 s | unknown |
+| `pytest bootstrap/tests/test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package -q --tb=short` | 1 | 1 expected diagnostic failure; see AST disposition below | about 0.2 s | unknown |
+| AST runbook step 1 `_merge_current` / `_classify` diagnostic | 0 | CHANGED 15; MISSING 0; DUPLICATE 0; NEW 143 | about 0.2 s | unknown |
+
+**Mutation summary**: Unmutated control passed all three public nodes. Total 3;
+killed 3; survivors 0; measured equivalents 0. Each mutant failed its named
+real-entry-point regression as described above. Mutation 1 used an earlier
+scratch commit whose parser bytes and duplicate-region case match the tested
+commit; the later intervening change only refined the malformed-opener fixture.
+
+**Non-pass disposition**: The AST diagnostic is the plan-specified read-only
+version-cut check, not a functional acceptance check. It found 15 changed
+symbols, no missing or duplicate symbols, and 143 new symbols. This plan changes
+`FunctionDef:install_onboarding`; `FunctionDef:_reconcile_generated_blocks`
+is a known-new symbol whose digest changes under this accepted parser edit.
+The diagnostic also reports known-new drift in `_check_lockfile_paths`,
+`_contained_lockfile_path`, and `_refuse_if_linked`. Other changed symbols are
+not modified by this plan. No baseline, known-new
+manifest, protection manifest, or trust root was changed; the plan explicitly
+bars those repairs. This diagnostic remains for the version cut and is not a
+passing functional check. The full suite, release certification, and re-anchor
+were not run or authorized.
+
+**Plan-specific acceptance commands**: The seven owning families above passed.
+The public install tests cover empty selection, malformed opener/closer,
+missing/duplicate/nested/crossed entries, duplicate/reversed regions, byte
+preservation, removal of clean unselected entries, and inline/indented/quoted
+mentions. Existing adoption tests and the full upgrade module-additions family
+passed, but a new malformed-marker refusal is not yet directly regression-tested
+through `upgrade --adopt-module` for both newly adopted and already-recorded
+modules. This required public-path evidence is missing; implementation remains
+open and no code-review handoff is claimed. The error directs manual saving and
+reconciliation. No scientific check applies because no scientific result or
+assumption changed.
+
+**Verification-contract amendment (Maintainer direction, 2026-10-30)**: The
+recovery paragraph in `bootstrap/UPGRADE.md` was committed separately at
+`51bd8761e4683af19c548007f2e71fd320fc144d`. It changes descriptive prose only;
+the code and tests at `629400c1` are byte-identical. Following the Maintainer’s
+instruction below, the 324 code tests and three mutations remain evidence for
+`629400c1`; prose checks ran on clean descendant `147128ea9f0fe148cba2b7e5d63482b49375a18d`.
+On that descendant, `claim_check` on the guide, `check_cairn`, `link_check`,
+`sync_doc_snippets --check`, and neutrality/redundancy gates passed. The four
+guide-reading test files contributed 6 passed tests. `check_cairn` first found
+two stale proposed paths in the concurrent tag-release plan at `51bd8761`; its
+owner corrected them at `147128ea`, then the gate passed. Link check did not
+probe 91 external links. Quality gates reported informational lines only.
+
+Maintainer instruction, quoted verbatim: “Please review the remaining v0.6 work
+and make sure we're applying the cut-the-apparatus changes, removing any
+unnecessary process that has crept back in.”
+
+**Elapsed**: about 17 minutes. **Tokens**: unknown.
+
+**Handoff**: Maintainer assigned continuation to Luna. Keep status
+`implementing` until the missing adoption regression and its mapped evidence are
+complete. Do not archive or start code review from this checkpoint.
+
+**Known omissions**: malformed-marker adoption through both branches of
+`upgrade --adopt-module` still needs a public regression proving planning,
+inventory and lock bytes stay unchanged. Arbitrary concurrent filesystem
+replacement and arbitrary adopter prose rewriting were not tested, per C2.
