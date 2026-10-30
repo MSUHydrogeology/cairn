@@ -145,3 +145,30 @@ The proposal closes a real gap: `--init-lock` guards its profile, then hashes ma
 * **[R2] Non-blocking — make the parent test reach this check.** A linked `dev/` parent stops at the existing profile guard before the mapped-file loop. Name a parent such as `docs/`, which the install mapping includes and the earlier profile path does not cross, so the test pins the new behavior. This specifies the proposed case without removing coverage (`bootstrap/_scaffold/upgrade.py:1647-1650`; `bootstrap/_scaffold/upgrade.py:1684-1718`; `bootstrap/_scaffold/config.py:1090-1095`).
 
 **Covered**: claims and current behavior (`upgrade.py:154-174,1647-1718`; `UPGRADE.md:430-441`); public test path and fail-closed cases (`test_upgrade_refuses_hostile_project_data.py:270-349`); design and alternatives (`security.py:110-155`; proposal `Alternatives considered`); documentation and roadmap consistency (`UPGRADE.md:430-441`; `dev/PLANNING.md:91-98`); lifecycle, scope and satisfiers (proposal `Scope delta`, `Assurance path`; R1-R2 above). **Not covered / low confidence**: I did not run the migration on a linked project, measure the race between path check and read, or assess other project-data readers outside the mapped-file loop. The declared Security Review remains open.
+
+## Review -- Codex GPT-6.1 Sol (Security Reviewer) -- 2026-10-30
+
+```
+Reviewed commit: 6fec34476d851810f607c17c2d8acff9c2acee98
+Target: opening proposal, Context through Assurance path
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, for planted links in a stable project tree: a mapped destination can otherwise cause an outside read and be recorded as installed bytes; the existing guard checks leaf and ancestor links before the read -- `bootstrap/_scaffold/upgrade.py:1684-1718`; `bootstrap/_scaffold/security.py:110-155`.
+2. **Best alternative.** Keeping the behavior permits that outside read; hashing link text changes the lockfile contract. Reusing the guard is proportionate for a stable tree, provided the stated protection does not promise atomic resistance to concurrent replacement -- proposal `Alternatives considered`; `bootstrap/_scaffold/upgrade.py:154-174`.
+3. **What would show it wrong.** A public migration that hashes a planted linked destination, skips a dangling link, writes a lockfile on refusal, or fails for an ordinary file would contradict the intended behavior -- proposal `Tests required` and `Signals the change is wrong`; `bootstrap/_scaffold/upgrade.py:1684-1718`.
+
+The proposal protects a useful boundary: a project-supplied link should not silently supply the bytes recorded under a mapped installed name. It also preserves a usable path for intentionally linked installs by asking their owner to replace the link before migration.
+
+* **[SR1] Blocking — state the concurrent-change limit of the proposed guarantee.** `_refuse_if_linked` calls `_assert_safe_write`, which checks path components, and the proposed loop then separately calls `exists()` and `read_bytes()`. A process able to change the tree between those operations can replace a checked component with a link; the check does not establish the unconditional claim that a linked mapped file cannot reach `read_bytes()`. Specify whether the intended threat model assumes no concurrent path changes and qualify the claim and documentation accordingly, or propose an atomic approach and its tests. This finding does not assert that a race was measured (`bootstrap/_scaffold/upgrade.py:154-174` and `bootstrap/_scaffold/upgrade.py:1684-1718`; `bootstrap/_scaffold/security.py:110-155`; proposal `S5` and `Signals the change is wrong`).
+
+* **[SR2] Non-blocking — avoid an existing broader claim when documenting the fix.** `_cmd_init_lock` currently says it reads no project data through a link, but before the mapped loop `_manifest_cairn_commit` finds and reads a manifest through `dev/strategy/` or a linked manifest file without the mapped-file guard. The proposal addresses mapped destinations, not this separate reader. Correct the broader docstring to describe its actual scope, and record the adjacent reader as a coverage gap rather than implying the proposed check covers it (`bootstrap/_scaffold/upgrade.py:1490-1515`, `bootstrap/_scaffold/upgrade.py:1628-1634`, and `bootstrap/_scaffold/upgrade.py:1679-1680`; proposal `Proposal`).
+
+**Covered**: trust boundary, planted leaf and parent links, dangling links, lockfile output and recovery tradeoff (`security.py:110-155`; `upgrade.py:154-174,1647-1718`; proposal `Tests required` and `S1`-`S5`); alternatives and scope (`Alternatives considered`, `Scope delta`). **Not covered / low confidence**: no migration or concurrent replacement was run; alias resolution and other project-data readers were inspected only enough to identify the adjacent manifest gap. This pass does not establish protection against concurrent tree changes.
