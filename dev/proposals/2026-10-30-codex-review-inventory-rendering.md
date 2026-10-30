@@ -111,3 +111,59 @@ placement and scope stay within the existing upgrade lifecycle. No scientific
 claim is involved. This is a design review, not implementation verification: no
 suite or mutation was run, historical compatibility has not been demonstrated,
 and the separate Security Review obligation remains open.
+
+
+## Review -- Codex (gpt-6.1-sol, Security Review) -- 2026-10-30
+
+```
+Reviewed commit: 9ff42456
+Target: opening proposal and usual review
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: an independently generated upstream comparison can expose adopter edits without gaining write authority over installed content; retaining the present mismatch makes that comparison misleading -- `bootstrap/_scaffold/upgrade.py::_write_stage` and this proposal's Proposal.
+2. **Best alternative.** Reuse rendering on clean upstream text with explicit source and membership validation; copying adopter text hides edits, while executing a historical engine would introduce executable trust solely for a passive display -- `bootstrap/_scaffold/install.py::_substitute_module_inventory` and `_render_module_inventory`.
+3. **What would show it wrong.** A successful comparison that silently omits an unknown recorded module, uses current metadata for a different historical source, or carries an adopter edit into both sides defeats the stated boundary -- `bootstrap/_scaffold/install.py::_render_module_inventory`, `bootstrap/_scaffold/upgrade.py::_check_lockfile_paths`, and this proposal's Tests required.
+
+The proposal keeps the right separation: the lock supplies selection, the
+selected upstream source supplies the template, and the target supplies only
+`.ours`. The inventory authorizes no command. Existing containment checks precede
+staged destination writes, and review-only pairs remain outside applied files;
+this design expressly preserves both boundaries --
+`bootstrap/_scaffold/upgrade.py::_write_stage`.
+
+For the plan, make three details explicit. First, the existing lock validator
+accepts printable names rather than proving catalog membership, and the renderer
+silently skips unknown names. Account independently for every recorded member;
+never turn an unavailable member into an apparently complete empty catalog.
+Second, the shared reconciler preserves selected edited blocks by design. Feed it
+clean upstream bytes, never adopter text, and establish how upstream pre-existing
+entries, duplicate or nested markers, and unmatched closing markers are treated.
+A malformed block must reach the proposal's explicit unavailable/refusal outcome,
+not a plausible partial comparison. These are specifications of the proposed
+correctness condition -- `bootstrap/_scaffold/upgrade.py::_check_lockfile_paths`
+and `bootstrap/_scaffold/install.py::_reconcile_generated_blocks`.
+
+Third, distinguish historical metadata deliberately in the historical-source
+fixture. Choosing a past ref with unchanged descriptions cannot expose accidental
+use of process-local `_MODULE_DISCOVERY`. Test refusal/unavailable behavior
+through `upgrade --stage`, including the state left behind after failure, and
+prove installed content and raw ancestors unchanged. Record the proposed
+rendering-removal and `.ours` substitution mutations with independent expected
+rosters; they are future evidence, not evidence already supplied -- this
+proposal's S2, S4 and Tests required.
+
+Coverage: claims, production entry points, completeness, silent failure, reuse,
+drift, placement and scope were reasoned through against the named commit and
+cited functions. No scientific claim is touched. No implementation, malicious
+fixture, mutation, suite, live-ref operation or historical-source rendering was
+executed; containment and failure cleanup remain implementation and plan-review
+obligations. This pass clears the proposal Security Review obligation, not the
+separately declared plan Security Review.
