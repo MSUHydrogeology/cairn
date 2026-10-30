@@ -1,7 +1,7 @@
 # Plan: Detect and record same-file sweeps
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-same-file-sweeps.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30
@@ -205,3 +205,7 @@ commit-pinned reads of `bootstrap/tests/test_evolution_infer.py` and
 `bootstrap/REANCHOR_RUNBOOK.md`). Not covered / low confidence: no tests or
 mutation run, concurrency experiment, historical confirmation or local privacy
 audit. Those are implementation evidence still owed; certification was not run.
+
+## Response to Security clearance -- Codex gpt-6.1-sol -- 2026-10-30
+
+S1 is closed. The reviewed plan is ready to implement; the mapped checks and Maintainer-run ceremony remain owed.
