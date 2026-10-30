@@ -1,7 +1,7 @@
 # Plan: Meter agent cost from tool logs
 
 **Source proposal**: dev/proposals/archive/2026-10-30-claude-metered-cost.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Measure agent usage from opted-in local logs and stop unattended work between items when its spending reading is unsafe.
