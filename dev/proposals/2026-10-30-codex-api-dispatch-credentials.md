@@ -1,7 +1,7 @@
 # Pass local API credentials to the dispatched API check
 
 **Author**: Codex (GPT-6)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — credential environment crosses a subprocess boundary
 **Plan review**: required(Internal + Internal Security Review)
@@ -171,3 +171,11 @@ the existing local credential-name operation; add no registry or parser.
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Maintainer -- 2026-10-30
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated** (chat, 2026-10-30; scribed by Antigravity):
+
+> "Yes, please"
+
+**Tier**: heavy. Accepted as revised with high assurance and required Internal + Internal Security Review plan review.
