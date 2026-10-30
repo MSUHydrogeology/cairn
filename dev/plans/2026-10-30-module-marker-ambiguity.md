@@ -291,3 +291,57 @@ complete. Do not archive or start code review from this checkpoint.
 `upgrade --adopt-module` still needs a public regression proving planning,
 inventory and lock bytes stay unchanged. Arbitrary concurrent filesystem
 replacement and arbitrary adopter prose rewriting were not tested, per C2.
+
+## Implementation verification -- Codex Luna (Implementation) -- 2026-10-30
+
+**Boundary B mode**: wide. The only implementation delta after the prior
+checkpoint is a public regression in
+`bootstrap/tests/test_upgrade_module_additions.py`; production parser and
+caller bytes are unchanged from `629400c1`. The added cases cover task and
+inventory damage through newly adopted and already-recorded
+`upgrade --adopt-module` paths, and assert the refusal leaves planning,
+inventory and lock bytes unchanged. The previous 324-test owning-family run,
+three killed mutations and standing gates therefore remain evidence for the
+unchanged production surfaces; the complete module-additions family was rerun
+on this test delta. This follows the Maintainer direction above to avoid
+repeating checks where the tested implementation bytes have not changed.
+
+**Certified by**: pending.
+
+**Tested commit**: `66214ccc1ea72bbb77e0e75d1d15082a4526b5d9`.
+
+**Reviewed range**: `629400c1dfd419b6669a7299f41add6393f84a64` through
+`66214ccc1ea72bbb77e0e75d1d15082a4526b5d9`.
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` —
+Python 3.13.13.
+
+**Pre-run state**: clean detached clone at the tested SHA; `git status --short`
+empty. **Post-run state**: clean, same clone and SHA.
+
+| Command or check | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `pytest bootstrap/tests/test_upgrade_module_additions.py -q --tb=short` | 0 | 55 passed; 0 failed, skipped, xfailed or xpassed | 23.23 s | unknown |
+| Four new adoption cases within that family | 0 | New/recorded adoption × planning/inventory malformed marker: all refuse with manual-reconciliation guidance and preserve all three bytes | included above | unknown |
+| Prior mapped owning families at `629400c1` (recorded above) | 0 | 324 passed; 0 failed, skipped, xfailed or xpassed | 66.94 s | unknown |
+| Prior three C2 mutations at `629400c1` (recorded above) | 1 each | All three killed by their named public regressions; 0 survivors or measured equivalents | about 1 s each | unknown |
+| Prior standing gates at `147128ea` (recorded above) | 0 | `check_cairn`, `link_check`, `sync_doc_snippets --check`, neutrality and redundancy passed; 188 Markdown files and 481 snippets checked | about 2 s | unknown |
+
+**Non-pass disposition**: An initial `git archive` scratch run lacked Git
+metadata; the unrelated `--to HEAD` test could not resolve its explicit ref
+and 1 of 55 tests failed. The complete family then passed in a clean detached
+Git clone at the tested SHA, where `HEAD` resolves. This was a scratch harness
+limitation, not a product failure. The AST diagnostic disposition remains as
+recorded above: 15 changed symbols, no missing or duplicate symbols, and 143
+new symbols; no authority-bearing baseline or trust-root file was changed.
+
+**Plan-specific acceptance commands**: the malformed-marker adoption regression
+ran through the public command for both adoption branches and both generated
+surfaces, checking refusal and byte preservation for planning, inventory and
+lock. The full module-additions family passed. The prior install/parser family,
+three C2 mutations, and mapped consumers remain valid because production
+parser and caller bytes are unchanged since their tested commit.
+
+**Known omissions**: arbitrary concurrent filesystem replacement and
+arbitrary adopter prose rewriting remain outside the plan's accepted scope.
+No production source changed in this follow-up.
