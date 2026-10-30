@@ -83,3 +83,20 @@ Boundary C: independent ordinary code and Security Reviews read the committed im
 **Tokens**: unknown
 
 Ordinary review found no findings. Accepted Security Review advice: Scope and C1 now exclude unbound cached code and module substitution; Verification requires negative checks. These clarify the accepted no-unchecked-code criterion.
+
+## Code review -- Codex GPT-6 -- 2026-10-30
+
+**Reviewed commit**: 4d96b627
+**Verdict**: CHANGES REQUIRED
+**Elapsed**: approximately 3 minutes
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should it happen as framed?** Yes. The dispatcher binds the facade and selected engine members before validating policy; only names returned by `credential_names("local")` are added to its child environment.
+2. **Best alternative.** Reuse the bound policy engine, as implemented. A broad credential prefix would admit names outside the local policy, while direct execution would lose dispatcher coverage.
+3. **What would show it wrong?** A deployed-only credential reaching the child, a local credential omitted, or unbound engine bytes executing would falsify the design. The configured and tampering checks passed, but the required mutations are not recorded.
+
+**Blocking finding**: C1 and Boundary A require separate local-omission and deployed-only-admission mutations and their results. Neither the plan at 4d96b627 nor that commit's message records these outcomes; the commit also reports an initial scoped run with a failure followed by focused checks, rather than a passing final scoped selection. Close by recording the required mutation outcomes and a passing applicable scoped selection, or the disposition of each non-pass, on the implementation's committed bytes.
+
+**Evidence and coverage**: Read the committed plan, dispatcher diff and added tests. In a separate archive of 4d96b627, Python 3.12.9 ran the configured, engine-tamper, invalid-policy and missing-credential nodes: 5 passed in 1.40 seconds. Did not audit all policy schema cases or Windows behavior; the separate Security Review and final Boundary B remain owed.
