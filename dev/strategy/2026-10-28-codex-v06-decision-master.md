@@ -217,6 +217,19 @@ alternative to match `bootstrap/PROVENANCE.md`. Links and remote tag identity
 do not verify cached archive bytes. The Maintainer decides both additions;
 Release and push remain unauthorized.
 
+### 19. Refuse ambiguous module discovery markers — awaiting Decision
+
+The [proposal](../proposals/2026-10-30-codex-module-marker-ambiguity.md)
+responded to ordinary and Security Reviews at `0ac33887`. A public repeat
+install returned success after a checked task's marker was edited, leaving
+two `reflections` tasks. **Recommend accept as revised:** reuse the shared
+reconciler to refuse malformed, nested or crossed generated markers before
+planning, inventory or lock changes, including an empty module roster.
+Inline, indented and blockquoted marker mentions remain ordinary prose.
+The cost is manual reconciliation for edited markers; accepting loose syntax
+risks duplicating or deleting adopter work. Heavy-tier plan and Security
+Review remain required; no implementation or Decision is recorded.
+
 ## Issue triage, staffing and close-out
 
 Issues #31 and #32 await Maintainer closure; #33's scoped verification retains
