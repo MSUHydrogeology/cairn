@@ -64,3 +64,29 @@ Assurance path: high-assurance
 **Advice R1 — update existing remedy assertions with the shared wording.** Five assertions in `test_upgrade_refuses_hostile_project_data.py` require the old phrase “Replace it with a regular file”; the accepted file-or-directory remedy will make them fail even when the new refusal works. Update those existing assertions to check the actionable remedy alongside the new cases. This is within the named test file and Boundary A command; it does not widen scope (`bootstrap/tests/test_upgrade_refuses_hostile_project_data.py:291`, `:318`, `:387`, `:501`, `:941`).
 
 **Covered**: claims and fail-closed order (`upgrade.py:154-174,1679-1718`); public path and edge cases (`test_upgrade_refuses_hostile_project_data.py:270-349`); design and reuse (`security.py:110-155`; plan Scope); document drift (`UPGRADE.md:430-441`; `SECURITY_MUTATIONS.md:120`); lifecycle, scope and satisfier (proposal Decision; plan Sequence, Acceptance criteria, Verification; R1). **Not covered / low confidence**: no implementation, mutation, public run or concurrent replacement was exercised; the separate Internal Security Review remains owed.
+
+## Plan review -- Codex (gpt-6.1-sol, Security Review) -- 2026-10-30
+
+```
+Reviewed commit: 019d9620
+Target: Source proposal through Verification
+Prior findings: none
+Assurance path: high-assurance
+Elapsed time: approximately 2 minutes
+Token use: unknown
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: the mapped-path guard addresses planted links in a stable tree, with the concurrent replacement limit and separate manifest reader disclosed -- plan Scope and C1; `bootstrap/_scaffold/security.py::_assert_safe_write`.
+2. **Best alternative.** Reuse the existing component guard and correct its remedy; hashing link text changes the lockfile contract, while a new policy adds complexity -- accepted proposal Alternatives considered; `bootstrap/_scaffold/upgrade.py::_refuse_if_linked`.
+3. **What would show it wrong?** A stationary leaf, dangling or parent link reaching the mapped read, a refusal changing either tree, or an ordinary file failing migration defeats the contract -- plan C1; `bootstrap/_scaffold/upgrade.py::_cmd_init_lock`.
+
+The plan places the guard before both existence and read, including dangling links, and tests the `docs/` parent without being intercepted by the earlier profile guard. The outside-digest positive control and guard-removal mutation challenge whether the public test reaches the vulnerable read. The wide mapping covers the shared helper, migration consumers, descriptive guidance and security behavior table; its named families bound cost without claiming full-tree certification -- plan Scope, C1 and Verification; `bootstrap/_scaffold/security.py::_assert_safe_write`.
+
+Coverage: assessed source and target trust, refusal ordering, failure state, recovery wording, public entry point, consumers, verification and accepted scope against the named commit. No implementation, migration, mutation, concurrent replacement, full suite or re-anchor was run; the separate manifest reader and race remain outside this protection.
