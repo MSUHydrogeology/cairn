@@ -1,7 +1,7 @@
 # Plan: Repair certification test measurements
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-certification-test-repairs.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Restore five certification test measurements while retaining their adversarial controls.
@@ -97,3 +97,28 @@ The separate frozen-file consequence is accurately retained without making repin
 ## Response to plan review -- Codex (GPT-6.1 Sol) -- 2026-10-30
 
 Both required reviews accepted with no findings. I accepted the ordinary review's focused-manifest advice in Boundary A; its exact-order recording was already required there. I accepted the Security Review's advice to keep selections focused and reconcile their union, while leaving the isolation mechanism conditional on the ordered reproduction. The wide final mapping and all C1/C2 outcomes remain. Elapsed time: about 3 minutes. Token use: unknown.
+
+## Implementation verification -- Codex (GPT-6) -- 2026-10-30
+
+```
+Mode: wide
+Certified by: pending
+Implementation commit: f26b903d4308d6da7c9304ec2469e999cf984c4b
+Code range: 5cdd39afe36d7c512ab3633a5925d6e7d280f292..f26b903d4308d6da7c9304ec2469e999cf984c4b
+Interpreter: /Users/kendal30/conda_envs/lhm/bin/python3.13 -- Python 3.13.13
+Verification copy: /private/tmp/cairn-cert-repair-final
+Clean pre-state: `git status --short` empty at f26b903d
+Clean post-state: `git status --short` empty at f26b903d after all mapped checks
+Touched surfaces: the three test files named in Scope
+Elapsed: about 29 minutes. Tokens: unknown.
+```
+
+**Focused checks.** On the clean verification copy, the dispatcher aggregate-report selection passed both pristine and planted-renderer cases (2 passed); the three baseline evidence/refusal nodes passed (3 passed); each of the ceremony record node, authority-pin node and Stage B node passed alone (3 passed); and the four explicit ordered pairs passed (8 passed). `--collect-only` confirmed each pair stayed in the requested order without a shuffle. The frozen-file modification control passed (1 passed). The real ceremony and both committed-object checks remain in the child process.
+
+**Owning families.** `test_security_finding_confidentiality.py` passed 40; `test_security_verification.py` passed 136; `test_gate_reanchor.py` passed 17; `test_gate_manifest.py` passed 37; and `test_repin.py` passed 114. The complete `test_repin_ceremony.py` family passed 151 in 656.05 seconds with host access. Before that host run, its restricted-run attempt was interrupted at 47% after 432.91 seconds: 24 failed and 56 passed out of 151 collected; 71 nodes did not run. The first failure showed the scratch SSH signer rejecting the passphrase sent through the test pseudo-terminal. Under host access, `test_a_full_ceremony_signs_once_with_the_typed_passphrase` passed (1, 10.66 seconds) and `test_a_loaded_key_refuses_before_stage_one` passed (1, 11.64 seconds), followed by the full-family pass. This diagnoses the restricted-run non-pass as terminal delivery; the full required family is green under host access.
+
+**Manifest consequence.** `test_gate_manifest.py::test_verify_holds_on_frozen_file_modification` passed as the focused refusal control. Direct `bootstrap/tests/_gate_manifest.py verify --target-repo . --no-collect` exited 1 with `HOLD — 130 gate-integrity violations`, including `FROZEN-MODIFIED` and `FROZEN-OID` for all three changed test files among existing candidate drift. No anchor was supplied to this diagnostic. This is the expected separate frozen-file/baseline consequence, recorded as a refusal rather than a passing test; no manifest, live ref or historical anchor was changed or compared.
+
+**Standing gates.** `check_cairn.py` passed (199 Markdown files; 94 external links not probed); `link_check.py` passed (199 Markdown files; 95 external links not probed); `sync_doc_snippets.py --check` passed (476 documents, no drift); and `quality_gate.py --sub neutrality --sub redundancy` exited 0 with zero failures (43 neutrality information items and one redundancy information item). `claim_check.py` passed on this updated plan before commit.
+
+**Omissions and disposition.** No full-tree suite, live ref update, re-anchor or historical-anchor comparison was run. The separate frozen-file ceremony remains at the Maintainer's version-cut/request point. The restricted terminal attempt was fully rerun under host access and the required owning family passed; no test failure remains open from that attempt. Boundary C remains for independent code review.
