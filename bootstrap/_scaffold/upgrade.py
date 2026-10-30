@@ -1560,19 +1560,14 @@ def _resolve_vendor_wrapper(
     than silently skipping or recording a wrong file).  ``include_directories``
     is used only by upgrade classification and apply observation: a known
     wrapper name occupied by a real directory must remain identifiable as the
-    tracked wrapper path when no known wrapper file resolves, so the collision
-    block can protect it without changing file-resolution precedence. The
+    tracked wrapper path when no wrapper file resolves, so the collision block
+    can protect it without changing file-resolution precedence. The
     not-already-mapped guard (both tiers) is the false-positive backstop."""
     # Tier 1: a known vendor filename at repo root.
     for name in _KNOWN_VENDOR_WRAPPERS:
         cand = target / name
         if name not in mapped_dsts and cand.is_file() and not cand.is_symlink():
             return name
-    if include_directories:
-        for name in _KNOWN_VENDOR_WRAPPERS:
-            cand = target / name
-            if name not in mapped_dsts and cand.is_dir() and not cand.is_symlink():
-                return name
     # Tier 2: a custom-named root .md importing @AGENTS.md near the top.
     for md in sorted(target.glob("*.md")):
         if md.name in mapped_dsts or md.is_symlink() or not md.is_file():
@@ -1580,6 +1575,11 @@ def _resolve_vendor_wrapper(
         head = md.read_text(encoding="utf-8", errors="replace").splitlines()[:5]
         if any("@AGENTS.md" in line for line in head):
             return md.name
+    if include_directories:
+        for name in _KNOWN_VENDOR_WRAPPERS:
+            cand = target / name
+            if name not in mapped_dsts and cand.is_dir() and not cand.is_symlink():
+                return name
     return None
 
 

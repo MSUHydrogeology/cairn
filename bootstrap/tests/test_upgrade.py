@@ -2794,6 +2794,19 @@ class TestTrackedDirectoryCollisions:
         assert cache_path.read_bytes() == cache_before
         assert stage.exists()
 
+    def test_custom_wrapper_file_precedes_known_wrapper_directory(
+        self, tmp_path: Path,
+    ) -> None:
+        assert _install(tmp_path) == 0
+        (tmp_path / "VENDOR.md").rename(tmp_path / "CUSTOM.md")
+        (tmp_path / "CUSTOM.md").write_text("# Custom wrapper\n@AGENTS.md\n")
+        (tmp_path / "CLAUDE.md").mkdir()
+        lock = s.read_lockfile(tmp_path)
+        mapped = {rec["dst"] for rec in lock["files"]}
+        assert s._resolve_vendor_wrapper(
+            tmp_path, mapped, include_directories=True,
+        ) == "CUSTOM.md"
+
     def test_restage_after_removing_directory_allows_absent_path(
         self, tmp_path: Path,
     ) -> None:
