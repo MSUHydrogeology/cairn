@@ -1,7 +1,7 @@
 # Plan: Reuse review-sweep installations
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-certification-cost-audit.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal)
 **Opened**: 2026-10-30
 **In brief**: Share each profile's real test installation across the session to avoid repeated setup.
@@ -126,3 +126,15 @@ Reviewed `6fc4d9ea` (implementation `e270902d`) in an isolated copy. Elapsed: ab
 - **Mutation:** control 391 passed; lens 4 deletion, wrapped pointer deletion and unknown placeholder, once per profile: 9 total, 9 killed, no survivors or measured equivalents.
 
 **Covered:** claims/drift (`e270902d`, verification record); production path/design (`test_review_sweep_ships.py:318-440`); fail-closed (nine faults); cross-document/lifecycle (`protected_test_roster.json:493`, `gate_manifest.json:7817`); domain scope/satisfier (one-line diff). **Not covered / low confidence:** whole-suite speed, certification, repin, re-anchor and anchor comparison.
+
+## Dispositions -- archive preparation -- 2026-10-30
+
+Dispositions: none. The accepted implementation scope, mapped checks and review findings are closed. Full-tree certification and the frozen-file ceremony are separate authorized ceremonies, not per-plan archive prerequisites; the exact frozen test is carried in the v0.6 forward-baseline row in `dev/PLANNING.md`. No other follow-up remains open.
+
+**Evidence shipped**: session-scope fixture edit (`e270902d`); repeated scoped timing reports, consumer inventory and nine installed-copy fault outcomes in `dev/plans/archive/2026-10-30-certification-cost-audit/`; final 391-node selections, frozen-file refusal and standing-gate evidence in the implementation verification record; Internal plan review (`450dd0d1`) and accepted code review (`71290cf1`). The `test_review_sweep_ships.py` nodes remain intact.
+
+**Evidence deferred**: none of the plan-mapped evidence. Full-tree certification and the frozen-file ceremony were not run as part of this plan; they remain separate release/baseline ceremonies.
+
+**Deferred evidence home**: `dev/PLANNING.md` > “Establish the v0.6 forward baseline” and “Earlier frozen-test changes.” The changed test file is explicitly listed there for the shared baseline ceremony; this plan creates no per-plan repin or re-anchor prerequisite.
+
+**Fidelity sign-off**: implementation commit `e270902db03f54a5936269c198ccd706434dd5c4` matches the accepted proposal’s `## Current contract`, accepted as revised at Decision commit `3b675bb00ca15dadf6cd304e012a5bab7e9bef03`. It changes only `installs` to session scope, retains every existing node and the real separate profile installations, and meets the measured setup-reduction and fault criteria. No accepted outcome was removed.
