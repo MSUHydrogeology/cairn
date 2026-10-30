@@ -23,7 +23,9 @@ from pathlib import Path
 import pytest
 
 _PKG = Path(__file__).resolve().parents[1] / "_scaffold"
-_GUARD_CALLS = {"_assert_safe_write", "_assert_fanout_contained"}
+_GUARD_CALLS = {
+    "_assert_safe_write", "_assert_fanout_contained", "_assert_git_binding_path"
+}
 
 #: Class A of `bootstrap/_scaffold/SECURITY_MUTATIONS.md`: functions that
 #: perform GUARDED adopter-tree writes.

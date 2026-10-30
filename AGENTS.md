@@ -541,13 +541,17 @@ trustworthy is the signature on the commit it names.
   depend on; treat it as byte-level stable.
 * **The by-file license split** — code is MIT wherever it lives; prose and
   document templates are CC BY 4.0; the brand mark alone is CC BY-ND.
-* **The local interpreter binding** — `dev/.cairn/local-env.json`, its reader
+* **The local interpreter binding** — `git rev-parse --absolute-git-dir` and
+  the per-worktree `cairn/local-env.json` file, its reader
   `_resolve_interpreter` in `templates/skills/_lib/session.py` (self-hosted at
-  `tools/session.py`, kept byte-identical), and every call site that executes
-  the path it returns. This is an untracked, gitignored, lockfile-uncovered
-  **executable trust root**, and the reader is a strict *shape* validator, not
+  `tools/session.py`, kept byte-identical), the writer in
+  `bootstrap/_scaffold/install.py`, and every call site that executes the path
+  it returns. This is per-worktree Git administration, mutable and
+  lockfile-uncovered **executable trust**, and the reader is a strict *shape* validator, not
   an authenticator: it checks absoluteness, schema, symlink-freedom and the
-  executable bit, but neither Python identity nor provenance. Changes to its
+  executable bit, but neither Python identity nor provenance. A copied Git
+  administration directory or a delivered pointer file can carry a binding;
+  trust it only when its origin is trusted, and rebind it after copying. Changes to its
   schema, validation order, fallback disposition, warning visibility, or
   subprocess use take a Security Review. The same module owns `encode_display`,
   the single terminal encoder — there is no second escape table in this tree,

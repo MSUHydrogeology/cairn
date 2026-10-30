@@ -11,8 +11,8 @@ A real scaffold of a scratch adopter repo must:
   3-way-merge upgrade path) and ``tools/session.py`` verbatim (hash-only, no
   base cache);
 * write ``dev/.cairn/base/...`` cache entries for the non-verbatim skills;
-* write the untracked ``dev/.cairn/local-env.json`` interpreter binding and seed
-  it (plus the handoff lock) into ``.gitignore``;
+* write the per-worktree Git-administration interpreter binding and retain the
+  legacy ``dev/.cairn/local-env.json`` ignore entry;
 * leave an installed, runnable CLI: ``session-start`` runs read-only.
 
 Run from the cairn repo root:
@@ -47,6 +47,7 @@ CLI = "tools/session.py"
 @pytest.fixture()
 def scaffolded(tmp_path: Path) -> Path:
     target = tmp_path.resolve()
+    subprocess.run(["git", "init", "-q"], cwd=target, check=True)
     cfg = target / "profile.yml"
     cfg.write_text(
         "project_name: SkillsTest\ntest_command: pytest\nmodules: []\n",
@@ -85,8 +86,12 @@ def test_lockfile_records_skills_with_correct_cache_policy(scaffolded: Path):
         assert (scaffolded / rec["base_cache"]).is_file()
 
 
-def test_local_env_binding_written_and_gitignored(scaffolded: Path):
-    cfg = scaffolded / "dev" / ".cairn" / "local-env.json"
+def test_git_admin_binding_written_and_legacy_path_stays_ignored(scaffolded: Path):
+    git_dir = subprocess.run(
+        ["git", "rev-parse", "--absolute-git-dir"], cwd=scaffolded,
+        check=True, capture_output=True, text=True,
+    ).stdout.strip()
+    cfg = Path(git_dir) / "cairn" / "local-env.json"
     assert cfg.is_file()
     data = json.loads(cfg.read_text(encoding="utf-8"))
     assert set(data) == {"interpreter"}
@@ -97,13 +102,12 @@ def test_local_env_binding_written_and_gitignored(scaffolded: Path):
     assert "dev/.cairn/handoff.lock" in gitignore
 
 
-def test_failed_fanout_leaves_local_env_gitignored_and_exits_nonzero(tmp_path):
-    # A containment failure during fan-out (a symlinked vendor
-    # parent) must not leave an UNIGNORED local-env.json carrying a local
-    # absolute path -- the ignore entry is seeded before the file is written,
-    # and main() returns a crisp non-zero, not a traceback.
+def test_failed_fanout_keeps_binding_in_git_admin_and_exits_nonzero(tmp_path):
+    # A containment failure during fan-out must not put machine state in
+    # checkout content, and main() returns a crisp non-zero, not a traceback.
     import os
     target = tmp_path.resolve()
+    subprocess.run(["git", "init", "-q"], cwd=target, check=True)
     cfg = target / "profile.yml"
     cfg.write_text(
         "project_name: FailTest\ntest_command: pytest\nmodules: []\n",
@@ -119,11 +123,13 @@ def test_failed_fanout_leaves_local_env_gitignored_and_exits_nonzero(tmp_path):
     ])
 
     assert rc != 0  # crisp non-zero, not a traceback
-    env = target / "dev" / ".cairn" / "local-env.json"
+    git_dir = subprocess.run(
+        ["git", "rev-parse", "--absolute-git-dir"], cwd=target,
+        check=True, capture_output=True, text=True,
+    ).stdout.strip()
+    env = Path(git_dir) / "cairn" / "local-env.json"
     assert env.is_file()
-    assert "dev/.cairn/local-env.json" in (
-        target / ".gitignore"
-    ).read_text(encoding="utf-8")
+    assert not (target / "dev" / ".cairn" / "local-env.json").exists()
 
 
 def test_installed_cli_runs_read_only(scaffolded: Path):

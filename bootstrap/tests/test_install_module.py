@@ -24,7 +24,9 @@ import ast
 from pathlib import Path
 
 _PKG = Path(__file__).resolve().parents[1] / "_scaffold"
-_GUARD_CALLS = {"_assert_safe_write", "_assert_fanout_contained"}
+_GUARD_CALLS = {
+    "_assert_safe_write", "_assert_fanout_contained", "_assert_git_binding_path"
+}
 
 #: Class-A install-side writers (per `bootstrap/_scaffold/SECURITY_MUTATIONS.md`)
 #: that must each call a containment guard.

@@ -526,6 +526,12 @@ homes. Proposal and strategy files use
 rename existing archived records.
 <!-- cairn:end project-conventions -->
 
+The installed lifecycle routines resolve their optional project interpreter
+binding from the exact worktree's Git administration directory. A copied Git
+administration directory, or a delivered regular `.git` pointer that directs
+Git to that directory, can carry a binding; trust its origin or rerun the
+scaffold install after removing the binding to record this worktree's choice.
+
 <!-- cairn:if human_team in small-multi,large-multi -->
 ## Human contributors
 

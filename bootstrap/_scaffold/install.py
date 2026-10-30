@@ -441,36 +441,156 @@ def install_skills(
 def write_local_env(
     target: Path, *, dry_run: bool = False, force: bool = False,
 ) -> InstallResult:
-    """Write the untracked ``dev/.cairn/local-env.json`` interpreter binding.
+    """Write the interpreter binding inside this worktree's Git administration.
 
     Resolve-don't-bake: record the bootstrap interpreter's
     **fully-resolved** absolute path (``Path.resolve()`` dereferences every
-    symlink component, so the strict tamper-aware schema the lifecycle CLI
-    enforces is satisfied) so the wrapper invokes it directly instead of relying
-    on shell-level conda activation.  The file is **gitignored**, so an absolute
-    path here never enters a commit -- it is forbidden only in tracked
-    artifacts.  Non-clobber: an existing adopter binding is preserved unless
-    ``force``.
+    symlink component. A worktree-specific Git path keeps the machine choice
+    out of project content and separate between linked worktrees. Non-clobber:
+    an existing binding is preserved unless ``force``. A target that is not
+    exactly a Git worktree root has no binding written.
     """
     import json
 
-    dst = target / "dev" / ".cairn" / "local-env.json"
-    if dst.exists() and not force:
+    import subprocess
+
+    target = target.resolve()
+    dotgit = target / ".git"
+    pointer_admin = _read_git_pointer(target, dotgit)
+    env = {key: value for key, value in os.environ.items()
+           if not key.upper().startswith("GIT_")}
+    env.update({"GIT_PAGER": "cat", "GIT_TERMINAL_PROMPT": "0"})
+    try:
+        top_proc = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"], cwd=target,
+            capture_output=True, check=False, env=env, stdin=subprocess.DEVNULL,
+            timeout=30,
+        )
+        if top_proc.returncode:
+            detail = (top_proc.stderr or b"").decode("utf-8", "replace").lower()
+            if (("not a git repository" in detail or "not inside a work tree" in detail)
+                    and not (dotgit.exists() or dotgit.is_symlink())):
+                return (target / ".git" / "cairn" / "local-env.json", [], [],
+                        "skipped-no-worktree")
+            raise ScaffoldSecurityError("git could not resolve the worktree root")
+        git_proc = subprocess.run(
+            ["git", "rev-parse", "--absolute-git-dir"], cwd=target,
+            capture_output=True, check=False, env=env, stdin=subprocess.DEVNULL,
+            timeout=30,
+        )
+        if git_proc.returncode:
+            raise ScaffoldSecurityError("git could not resolve its worktree administration path")
+        top = top_proc.stdout.decode("utf-8", "strict").strip()
+        git_dir = git_proc.stdout.decode("utf-8", "strict").strip()
+    except (OSError, subprocess.SubprocessError, UnicodeError) as exc:
+        raise ScaffoldSecurityError("Git interpreter discovery failed") from exc
+    if Path(top).resolve() != target:
+        return (target / ".git" / "cairn" / "local-env.json", [], [],
+                "skipped-not-root")
+    dotgit = target / ".git"
+    if _is_link_or_reparse(dotgit):
+        raise ScaffoldSecurityError("refusing a linked or reparse-point .git entry")
+    # Keep Git's spelling so a linked/reparse component is not normalized away.
+    admin = Path(git_dir).absolute()
+    if pointer_admin is not None:
+        try:
+            if pointer_admin.resolve(strict=True) != admin.resolve(strict=True):
+                raise ScaffoldSecurityError(".git pointer and Git administration path disagree")
+        except OSError as exc:
+            raise ScaffoldSecurityError(".git pointer target could not be verified") from exc
+    dst = admin / "cairn" / "local-env.json"
+    _assert_git_binding_path(dst, admin)
+    try:
+        mode = os.lstat(dst).st_mode
+    except FileNotFoundError:
+        mode = None
+    if mode is not None and not stat.S_ISREG(mode):
+        raise ScaffoldSecurityError("refusing an existing non-regular Git binding")
+    if mode is not None and not force:
         return (dst, [], [], "skipped-exists")
     if dry_run:
         return (dst, [], [], "dry-run")
-    # Seed the ignore entries FIRST: otherwise a failure between
-    # this write and the later unconditional gitignore seed would leave an
-    # unignored local-env.json carrying a local absolute path, exposed to a
-    # broad `git add`. Seeding first makes it ignored the instant it exists.
-    seed_gitignore(target, _SKILLS_GITIGNORE)
     interpreter = str(Path(sys.executable).resolve())
-    _assert_safe_write(dst, target)
     dst.parent.mkdir(parents=True, exist_ok=True)
-    dst.write_text(
-        json.dumps({"interpreter": interpreter}) + "\n", encoding="utf-8"
-    )
+    _assert_git_binding_path(dst, admin)
+    tmp = dst.with_name(".local-env-" + os.urandom(8).hex())
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump({"interpreter": interpreter}, handle)
+            handle.write("\n")
+        os.replace(tmp, dst)
+    finally:
+        try:
+            tmp.unlink()
+        except FileNotFoundError:
+            pass
     return (dst, [], [], "installed")
+
+
+def _is_link_or_reparse(path: Path) -> bool:
+    """Recognize links and Windows junctions without following the name."""
+    if path.is_symlink():
+        return True
+    isjunction = getattr(os.path, "isjunction", None)
+    return bool(isjunction and isjunction(path))
+
+
+def _read_git_pointer(target: Path, dotgit: Path) -> Path | None:
+    """Validate a regular `.git` pointer without following linked target components."""
+    if _is_link_or_reparse(dotgit):
+        raise ScaffoldSecurityError("refusing a linked or reparse-point .git entry")
+    try:
+        mode = os.lstat(dotgit).st_mode
+    except FileNotFoundError:
+        return None
+    except OSError as exc:
+        raise ScaffoldSecurityError(".git entry could not be inspected") from exc
+    if stat.S_ISDIR(mode):
+        return None
+    if not stat.S_ISREG(mode):
+        raise ScaffoldSecurityError(".git is not a directory or regular Git pointer file")
+    try:
+        lines = dotgit.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError) as exc:
+        raise ScaffoldSecurityError(".git pointer could not be read") from exc
+    if len(lines) != 1 or not lines[0].startswith("gitdir: "):
+        raise ScaffoldSecurityError(".git is not a valid regular Git pointer file")
+    value = lines[0][len("gitdir: "):]
+    if not value:
+        raise ScaffoldSecurityError(".git pointer has no administration path")
+    pointer = Path(value)
+    if not pointer.is_absolute():
+        pointer = dotgit.parent / pointer
+    pointer = Path(os.path.abspath(pointer))
+    cur = Path(pointer.anchor)
+    for part in pointer.parts[1:]:
+        cur = cur / part
+        if _is_link_or_reparse(cur):
+            raise ScaffoldSecurityError(".git pointer target contains a link or reparse point")
+    try:
+        if not stat.S_ISDIR(os.stat(pointer).st_mode):
+            raise ScaffoldSecurityError(".git pointer target is not a directory")
+    except OSError as exc:
+        raise ScaffoldSecurityError(".git pointer target could not be inspected") from exc
+    return pointer
+
+
+def _assert_git_binding_path(dst: Path, git_dir: Path) -> None:
+    """Refuse linked/reparse components and escapes in Git's binding path."""
+    try:
+        rel = dst.relative_to(git_dir)
+    except ValueError as exc:
+        raise ScaffoldSecurityError(
+            "Git binding path escapes worktree administration"
+        ) from exc
+    cur = Path(dst.anchor)
+    for part in dst.parts[1:]:
+        cur = cur / part
+        if _is_link_or_reparse(cur):
+            raise ScaffoldSecurityError(
+                "refusing a linked or reparse-point Git binding component"
+            )
 
 
 def load_vendor_targets(templates_root: Path) -> list[dict[str, Any]]:

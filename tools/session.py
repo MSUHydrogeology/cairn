@@ -37,14 +37,14 @@ the file it opened with the one it checked, by device and inode, instead of
 relying on the flag; that platform has not been run.
 
 **This module is a trust root, and that is why it is separate.**
-`_resolve_interpreter` reads an untracked, gitignored, lockfile-uncovered
-binding and the caller then *executes* the path it returns.  It is a strict
+`_resolve_interpreter` reads a per-worktree Git-administration binding and the
+caller then *executes* the path it returns. It is a strict
 shape validator -- absoluteness, schema, symlink-freedom, the executable bit --
 and deliberately not an authenticator: it establishes nothing about Python
-identity or provenance.  One check on where the file came from comes after those:
-a binding that git tracks, or that sits behind a link or inside a submodule, or
-that git cannot be asked about, or that names a program inside the project which
-git tracks, is not used (see `_binding_untrusted`).  Changes to its schema,
+identity or provenance. Git supplies the binding location through a scrubbed
+environment, and linked or reparse-point paths are refused. The named
+interpreter is still refused when git tracks it (see `_binding_untrusted`).
+Changes to its schema,
 validation order, fallback disposition, warning visibility, or subprocess use
 take a Security Review.
 
@@ -699,12 +699,8 @@ def _has_symlink_component(path: Path) -> bool:
 
 
 _REBIND_REMEDY = (
-    "To refresh the binding: delete dev/.cairn/local-env.json, THEN re-run the "
-    "Cairn scaffold install against this repo.  Deletion is what makes the "
-    "install write a fresh binding -- re-running with the file still present "
-    "preserves the stale one, and --force is neither needed nor advised (it "
-    "overwrites your whole customized tree).  A bare delete alone leaves the "
-    "routines on the current-interpreter fallback."
+    "To refresh it, delete local-env.json under this worktree's Git "
+    "administration, then re-run the Cairn scaffold install."
 )
 
 
@@ -725,55 +721,20 @@ def _probe_interpreter(interp: Path) -> str:
     return "present"
 
 
-#: Why a binding that passed the shape checks is still not used.  Fixed words
-#: only: nothing from the project or from git is put in them, so there is no
-#: text here to encode.  The remedy deletes the file as well as untracking it,
-#: because an untracked copy of a hostile binding would be trusted next run.
-#: The one placeholder, ``{entry}``, is filled only by `_tracked_as`, with the
-#: index entry encoded.
-_BINDING_TRACKED_TEXT = (
-    "dev/.cairn/local-env.json is tracked by git, so it came with the repository "
-    "and was not written for this machine.  It was not used: this run uses the "
-    "current interpreter.  To fix it: git rm {entry} (this "
-    "deletes the file too), add it to .gitignore, commit, then re-run the Cairn "
-    "scaffold install to write a binding for this machine."
-)
-_BINDING_TRACKED = _BINDING_TRACKED_TEXT.format(entry="dev/.cairn/local-env.json")
-_BINDING_LINKED = (
-    "dev/.cairn/local-env.json is reached through a link, so it may not be the "
-    "file written for this machine.  It was not used: this run uses the current "
-    "interpreter.  To fix it: replace the link with a real folder and file "
-    "(delete dev/.cairn/local-env.json, then re-run the Cairn scaffold install)."
-)
-_BINDING_IN_SUBMODULE = (
-    "dev/.cairn/local-env.json is inside a submodule, which is another "
-    "repository's files, so it was not used: this run uses the current "
-    "interpreter.  To fix it: keep the binding outside the submodule (delete "
-    "dev/.cairn/local-env.json, then re-run the Cairn scaffold install)."
-)
 _INTERPRETER_TRACKED = (
-    "the interpreter named by dev/.cairn/local-env.json is inside the project and "
+    "the interpreter named by the Git administration binding is inside the project and "
     "tracked by git, so a checkout can replace it.  It was not used: this run uses "
     "the current interpreter.  To fix it: name an interpreter that git does not "
-    "track (delete dev/.cairn/local-env.json, then re-run the Cairn scaffold install "
+    "track (then re-run the Cairn scaffold install "
     "from the interpreter you want)."
 )
 _BINDING_UNVERIFIED = (
-    "could not ask git whether dev/.cairn/local-env.json is tracked, so it was "
-    "not used: this run uses the current interpreter.  Check that git works in "
-    "this folder, then run again."
-)
-_BINDING_DISK_UNANSWERED = (
-    "the disk would not answer about dev/.cairn/local-env.json or the folders it "
-    "sits in, so it was not used: this run uses the current interpreter.  Check "
-    "that you can open dev/.cairn in this folder, then run again."
+    "could not verify whether the project tracks the selected interpreter; "
+    "refusing to run a sub-tool. Check that git works in this folder."
 )
 
 #: How long the question to git may take before it counts as "could not ask".
 _BINDING_GIT_TIMEOUT_SECONDS = 30
-
-_BINDING_RELATIVE = "/".join(_CAIRN_STATE_DIR + ("local-env.json",))
-
 
 def _canonical_caseless(text: str) -> str:
     """Fold *text* the way a case- and normalization-insensitive volume does
@@ -808,47 +769,7 @@ def _binding_git_env() -> dict:
 
 def _binding_untrusted(root: Path, cfg: Path,
                        interpreter: Optional[Path] = None) -> Optional[str]:
-    """Why the binding file *cfg* must not be used although its shape is fine,
-    or ``None`` when it may be.
-
-    The binding is meant to be written on one machine and never committed, but
-    nothing enforced that: git checks a committed one out like any other file,
-    and a checkout of a branch that tracks it silently replaces the user's own
-    ignored one.  A project could then choose the program the kernel runs.  So
-    the file is refused when
-
-    * a folder on the way, or the file, is a link -- git lists nothing beyond a
-      link, so a tracked folder behind a tracked link would look untracked;
-    * git's index has an entry that a case- and normalization-insensitive
-      volume would open as the same file (`_canonical_caseless`).  Git's own
-      case-insensitive matching is ASCII-only, so the whole index is read and
-      compared here.  Volumes differ in which spellings they equate, so a
-      folded name is not the only test: an entry that is the same file on disk
-      (same device and inode) counts too, and the refusal then names the entry
-      git tracks, so that ``git rm`` can be given the right name;
-    * an entry of the index is a submodule that holds the binding's path -- the
-      files inside are another repository's, which this question cannot see;
-    * *interpreter* (the program the binding names) lies inside the project and
-      git tracks it, or a submodule holds it, both compared with the same fold:
-      a checkout replaces an ignored file in place, so the program could change
-      without the binding changing; or
-    * git cannot answer -- not installed, an error, no answer in time, output
-      it does not understand -- or the disk cannot answer about the binding or
-      its two folders.  An unanswered question is not an answer of "no".
-
-    The question is one fixed argument list (no shell), run in *root* with
-    `_binding_git_env()`, stdin closed, a time limit.
-    """
-    try:
-        _assert_not_linked(cfg, root)
-    except LifecycleError:
-        return _BINDING_LINKED
-    try:
-        cfg_id = _identity(os.stat(cfg))
-        dev_id = _identity(os.lstat(root / _CAIRN_STATE_DIR[0]))
-        state_id = _identity(os.lstat(_state_dir(root)))
-    except OSError:
-        return _BINDING_DISK_UNANSWERED
+    """Refuse a binding that names an executable tracked in the project."""
     interpreter_target: Optional[str] = None
     if interpreter is not None:
         try:
@@ -872,7 +793,6 @@ def _binding_untrusted(root: Path, cfg: Path,
         return _BINDING_UNVERIFIED
     if proc.returncode != 0:
         return _BINDING_UNVERIFIED
-    target = _canonical_caseless(_BINDING_RELATIVE)
     interpreter_hit = False
     for record in proc.stdout.split(b"\0"):
         if not record:
@@ -882,18 +802,7 @@ def _binding_untrusted(root: Path, cfg: Path,
             return _BINDING_UNVERIFIED
         entry = raw_path.decode("utf-8", "replace")
         folded = _canonical_caseless(entry)
-        parts = entry.split("/")
         gitlink = head.split(b" ", 1)[0] == b"160000"
-        if folded == target:
-            return _BINDING_TRACKED if entry == _BINDING_RELATIVE else _tracked_as(entry)
-        if gitlink and target.startswith(folded + "/"):
-            return _BINDING_IN_SUBMODULE if _BINDING_RELATIVE.startswith(
-                entry + "/") else _named(_BINDING_IN_SUBMODULE, entry)
-        if len(parts) == 3 and _has_identity(root / entry, cfg_id):
-            return _tracked_as(entry)
-        if gitlink and ((len(parts) == 1 and _has_identity(root / entry, dev_id))
-                        or (len(parts) == 2 and _has_identity(root / entry, state_id))):
-            return _named(_BINDING_IN_SUBMODULE, entry)
         if interpreter_target is not None and (
                 folded == interpreter_target
                 or (gitlink and interpreter_target.startswith(folded + "/"))):
@@ -919,19 +828,8 @@ def _has_identity(path: Path, identity: Tuple[int, int]) -> bool:
         return False
 
 
-def _named(reason: str, entry: str) -> str:
-    """*reason* with the index entry that matched, when it is not spelled as the
-    binding is: the entry is checkout data, so it is printed encoded."""
-    return f"{reason}  git tracks it as {encode_display(entry)}."
-
-
-def _tracked_as(entry: str) -> str:
-    """`_BINDING_TRACKED` for a binding that git lists as *entry*: the remedy
-    names *entry*, because ``git rm`` needs the name the index holds."""
-    return _named(_BINDING_TRACKED_TEXT.format(entry=encode_display(entry)), entry)
-
-
 _UNTRUSTED_WARNED = False
+_MISSING_BINDING_WARNED = False
 
 
 def _warn_untrusted_once(message: str) -> None:
@@ -944,18 +842,29 @@ def _warn_untrusted_once(message: str) -> None:
     _warn(message)
 
 
+def _warn_missing_binding_once() -> None:
+    """Surface missing worktree bindings once, with the install remedy."""
+    global _MISSING_BINDING_WARNED
+    if _MISSING_BINDING_WARNED:
+        return
+    _MISSING_BINDING_WARNED = True
+    _warn(
+        "no per-worktree Git interpreter binding -- using the current "
+        "interpreter; initialize Git at the project root and rerun the "
+        "scaffold install to record this environment."
+    )
+
+
 def _resolve_interpreter(root: Path) -> Tuple[str, str]:
     """Resolve the project interpreter the routines invoke sub-tools with.
 
-    Resolve-don't-bake: the interpreter binding lives in an
-    **untracked** ``dev/.cairn/local-env.json`` written at bootstrap, never
-    baked into a tracked file.
+    Resolve-don't-bake: the interpreter binding lives under this exact
+    worktree's Git administration directory, outside checkout content.
 
     **The trust-root contract, corrected on the record.**
-    ``dev/.cairn/local-env.json`` is an **operationally trusted executable
-    binding**.  It is untracked, gitignored, mutable, and not
-    lockfile-covered, so at read time it is user-controlled and carries no
-    provenance or integrity signal.  ``_resolve_interpreter`` is a strict
+    The per-worktree ``cairn/local-env.json`` is an **operationally trusted
+    executable binding**. It is mutable and not authenticated, so it carries no
+    provenance or integrity signal. ``_resolve_interpreter`` is a strict
     **shape validator, not an authenticator**: it enforces absoluteness, a
     single-key schema, control-char rejection, no parent-traversal (``..``)
     segment, symlink-freedom, existence, and the executable bit -- but it
@@ -963,19 +872,12 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
     present, non-symlinked, executable regular file is accepted and
     executed.
 
-    **Where the file came from is checked last.**  A binding that passed every
-    shape check is still not used if `_binding_untrusted` says so (git tracks it
-    or the in-project interpreter it names, it sits behind a link or inside a
-    submodule, or git cannot be asked): the
-    run goes on with the
-    current interpreter, source ``"fallback-untrusted"``, and a warning that
-    names the fix.  The shape checks, their order and their refusals are
-    unchanged, and nothing is run before this check.  The check proves only that
-    git's index does not list the file now, so a binding that arrives by a
-    downloaded archive followed by `git init`, by `git apply`, or after
-    `git reset` or `git rm --cached` is used; that is an accepted residual risk
-    (`bootstrap/SAFETY.md`), to be closed later by keeping the binding where no
-    checkout, archive or patch can put a file.
+    Git discovery uses a scrubbed environment and requires the supplied root
+    to match the exact worktree root. Links and reparse points in `.git` or the
+    binding path refuse. `_binding_untrusted` also refuses an executable inside
+    the project if git tracks it. A copied Git administration directory or a
+    delivered regular `.git` pointer can supply a binding; those origins remain
+    trusted inputs (`bootstrap/SAFETY.md`).
 
     A structurally-valid-but-absent path **degrades** with a warning
     (``"fallback-stale"``, below).  Every other violation **refuses before
@@ -985,16 +887,29 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
     tool is optional and repository-controlled).
 
     Returns ``(interpreter_path, source)`` where source is ``"local-env.json"``
-    or ``"fallback"``.  When the config is absent, the **runtime resolver
+    or ``"fallback"``. When the binding is absent or this is not the exact
+    worktree root, the **runtime resolver
     fallback** is the interpreter currently running this CLI -- safe because
     *this* tool is standard-library only, a rationale scoped to this tool's
     own execution and not to whatever sub-tool the resolved interpreter is
     later used to run -- and the caller surfaces install guidance so the
     hidden binding is never silently assumed.
     """
-    cfg = _state_dir(root) / "local-env.json"
-    if not cfg.is_file():
+    cfg = _git_binding_path(root)
+    if cfg is None:
+        _warn_missing_binding_once()
         return sys.executable, "fallback"
+    if _path_has_link_or_reparse(cfg):
+        raise LifecycleError("Git interpreter binding path contains a link or reparse point; refusing to run a sub-tool")
+    try:
+        cfg_stat = os.lstat(cfg)
+    except FileNotFoundError:
+        _warn_missing_binding_once()
+        return sys.executable, "fallback"
+    except OSError as exc:
+        raise LifecycleError(f"Git interpreter binding could not be inspected: {encode_display(str(exc))}") from exc
+    if not stat.S_ISREG(cfg_stat.st_mode):
+        raise LifecycleError("Git interpreter binding is not a regular file; refusing to run a sub-tool")
     shown_cfg = encode_display(str(cfg))   # a folder name may be someone else's choice
 
     try:
@@ -1063,10 +978,108 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
             f"{_REBIND_REMEDY}"
         )
     untrusted = _binding_untrusted(root, cfg, interp)
+    if untrusted == _BINDING_UNVERIFIED:
+        raise LifecycleError(untrusted)
     if untrusted is not None:
         _warn_untrusted_once(untrusted)
         return sys.executable, "fallback-untrusted"
     return str(interp), "local-env.json"
+
+
+def _path_has_link_or_reparse(path: Path) -> bool:
+    """Check each named component without following links or Windows junctions."""
+    cur = Path(path.anchor)
+    for part in path.parts[1:]:
+        cur = cur / part
+        try:
+            if cur.is_symlink():
+                return True
+            isjunction = getattr(os.path, "isjunction", None)
+            if isjunction and isjunction(cur):
+                return True
+        except OSError as exc:
+            raise LifecycleError("Git interpreter binding path could not be inspected") from exc
+    return False
+
+
+def _git_binding_path(root: Path) -> Optional[Path]:
+    """Return this exact worktree's Git-admin binding, or None outside its root."""
+    root = root.resolve()
+    dotgit = root / ".git"
+    pointer_admin: Optional[Path] = None
+    if dotgit.exists() or dotgit.is_symlink():
+        if dotgit.is_symlink() or (getattr(os.path, "isjunction", None)
+                                   and os.path.isjunction(dotgit)):
+            raise LifecycleError(".git is a link or reparse point; refusing interpreter discovery")
+        try:
+            mode = os.lstat(dotgit).st_mode
+        except OSError as exc:
+            raise LifecycleError(".git could not be inspected") from exc
+        if stat.S_ISREG(mode):
+            pointer_admin = _read_git_pointer(root, dotgit)
+        elif not stat.S_ISDIR(mode):
+            raise LifecycleError(".git is not a directory or regular Git pointer file")
+    env = {k: v for k, v in _git_env().items() if not k.upper().startswith("GIT_")}
+    env.update({"GIT_PAGER": "cat", "GIT_TERMINAL_PROMPT": "0"})
+    try:
+        top = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"], cwd=str(root),
+            capture_output=True, check=False, env=env, stdin=subprocess.DEVNULL,
+            timeout=_BINDING_GIT_TIMEOUT_SECONDS,
+        )
+        if top.returncode:
+            detail = (top.stderr or b"").decode("utf-8", "replace").lower()
+            if "not a git repository" in detail or "not inside a work tree" in detail:
+                return None
+            raise LifecycleError("git could not resolve the worktree root")
+        gitdir = subprocess.run(
+            ["git", "rev-parse", "--absolute-git-dir"], cwd=str(root),
+            capture_output=True, check=True, env=env, stdin=subprocess.DEVNULL,
+            timeout=_BINDING_GIT_TIMEOUT_SECONDS,
+        )
+    except LifecycleError:
+        raise
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise LifecycleError("git interpreter discovery failed") from exc
+    try:
+        top_path = Path(top.stdout.decode("utf-8", "strict").strip()).resolve()
+        admin = Path(gitdir.stdout.decode("utf-8", "strict").strip())
+    except (UnicodeError, OSError, ValueError) as exc:
+        raise LifecycleError("git returned an unreadable interpreter location") from exc
+    if top_path != root:
+        return None
+    if pointer_admin is not None:
+        try:
+            if pointer_admin.resolve(strict=True) != admin.resolve(strict=True):
+                raise LifecycleError(".git pointer and Git administration path disagree")
+        except OSError as exc:
+            raise LifecycleError(".git pointer target could not be verified") from exc
+    return admin / "cairn" / "local-env.json"
+
+
+def _read_git_pointer(root: Path, dotgit: Path) -> Path:
+    """Read a regular `.git` pointer and reject linked/reparse target components."""
+    try:
+        lines = dotgit.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError) as exc:
+        raise LifecycleError(".git pointer could not be read") from exc
+    if len(lines) != 1 or not lines[0].startswith("gitdir: "):
+        raise LifecycleError(".git is not a valid regular Git pointer file")
+    value = lines[0][len("gitdir: "):]
+    if not value:
+        raise LifecycleError(".git pointer has no administration path")
+    pointer = Path(value)
+    if not pointer.is_absolute():
+        pointer = dotgit.parent / pointer
+    pointer = Path(os.path.abspath(pointer))
+    if _path_has_link_or_reparse(pointer):
+        raise LifecycleError(".git pointer target contains a link or reparse point")
+    try:
+        if not stat.S_ISDIR(os.stat(pointer).st_mode):
+            raise LifecycleError(".git pointer target is not a directory")
+    except OSError as exc:
+        raise LifecycleError(".git pointer target could not be inspected") from exc
+    return pointer
 
 
 _LINE_ENDING_RE = re.compile(r"\r\n?|\n")
@@ -1574,7 +1587,7 @@ def cmd_session_start(args: argparse.Namespace) -> int:
         print(f"{_PREFIX} (no open proposals or plans)")
 
     # Resolve the project interpreter (resolve-don't-bake); a tampered
-    # local-env.json refuses here, before any sub-tool runs.
+    # Git administration binding refuses here, before any sub-tool runs.
     interpreter, interp_source = _resolve_interpreter(root)
 
     _surface_intents(root, interpreter)
@@ -1582,13 +1595,6 @@ def cmd_session_start(args: argparse.Namespace) -> int:
     # Make the (otherwise hidden) interpreter trust root visible.
     _emit_section("resolved project interpreter")
     _emit(f"interpreter: {encode_display(interpreter)}  (from {interp_source})")
-    if interp_source == "fallback":
-        _warn(
-            "no dev/.cairn/local-env.json -- using the current interpreter; "
-            "bootstrap normally writes this binding so the routine resolves it "
-            "directly instead of relying on shell activation."
-        )
-
     _emit("session-start gather complete.")
     return 0
 

@@ -486,7 +486,7 @@ def main(argv: list[str] | None = None) -> int:
         print(
             "[dry-run] Skills:          "
             "tools/session.py + .agents/skills/{session-start,session-end}/"
-            "SKILL.md (+ untracked dev/.cairn/local-env.json)"
+            "SKILL.md (+ per-worktree Git interpreter binding)"
         )
         for mod in modules:
             for entry in _GITIGNORE_SEEDS.get(mod, ()):  # dry-run
@@ -521,7 +521,7 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     # Install lifecycle-routine skills (unconditional, like core) + write the
-    # untracked interpreter binding (resolve-don't-bake).
+    # per-worktree Git administration binding (resolve-don't-bake).
     print("Installing lifecycle skills ...")
     skills_results = install_skills(
         templates_root, target, tokens, force=args.force
@@ -534,13 +534,23 @@ def main(argv: list[str] | None = None) -> int:
         f"(+ the tools/session.py CLI). Try "
         f"`python tools/session.py session-start`."
     )
-    env_result = write_local_env(target, force=args.force)
+    try:
+        env_result = write_local_env(target, force=args.force)
+    except ScaffoldSecurityError as exc:
+        print(f"error: interpreter binding refused (containment): {exc}",
+              file=sys.stderr)
+        return 2
     if env_result[3] == "installed":
-        print(f"  Wrote interpreter binding: {env_result[0]} (untracked)")
+        print(f"  Wrote interpreter binding: {env_result[0]} (Git administration)")
+    elif env_result[3] in {"skipped-no-worktree", "skipped-not-root"}:
+        print(
+            "  No interpreter binding was written: initialize Git at the install "
+            "root, then rerun the scaffold install."
+        )
     # Fan the canonical skills out to in-use vendor read-paths (symlink, or a
     # gitignored generated copy where symlinks are unavailable).  A containment
     # violation here is reported as a crisp non-zero exit, not a traceback
-    # local-env.json is already gitignored by this point.
+    # The binding lives in Git administration, outside checkout content.
     try:
         fanout = fan_out_skills(templates_root, target, force=args.force)
     except ScaffoldSecurityError as exc:
@@ -698,8 +708,8 @@ def main(argv: list[str] | None = None) -> int:
         print(line)
 
     # Seed the lifecycle skills' machine-state .gitignore entries
-    # (unconditional -- the skills always install): the untracked interpreter
-    # binding + the full-handoff lock.
+    # (unconditional -- the skills always install): the legacy interpreter path
+    # remains ignored for compatibility, alongside the full-handoff lock.
     skills_ignored = seed_gitignore(target, _SKILLS_GITIGNORE)
     if skills_ignored:
         print(f"\nSeeded .gitignore (skills): {', '.join(skills_ignored)}")

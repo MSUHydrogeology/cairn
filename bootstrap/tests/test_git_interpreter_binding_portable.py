@@ -1,0 +1,305 @@
+"""Portable checks for the per-worktree interpreter binding boundary."""
+from __future__ import annotations
+
+import importlib.util
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+from bootstrap._scaffold import install
+
+
+SESSION_PATH = Path(__file__).resolve().parents[2] / "tools" / "session.py"
+
+
+def _git(root: Path, *args: str, env=None) -> str:
+    proc = subprocess.run(
+        ["git", *args], cwd=root, env=env, check=True,
+        capture_output=True, text=True,
+    )
+    return proc.stdout.strip()
+
+
+def _repo(root: Path) -> Path:
+    root.mkdir(parents=True)
+    _git(root, "init", "-q")
+    _git(root, "config", "user.email", "test@example.invalid")
+    _git(root, "config", "user.name", "Test")
+    return root
+
+
+def _session_module(path: Path = SESSION_PATH):
+    spec = importlib.util.spec_from_file_location("cairn_binding_session", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _admin_binding(root: Path) -> Path:
+    git_dir = Path(_git(root, "rev-parse", "--absolute-git-dir"))
+    return git_dir / "cairn" / "local-env.json"
+
+
+def test_installer_writes_only_under_exact_worktree_git_admin(tmp_path):
+    root = _repo(tmp_path / "project")
+    result = install.write_local_env(root)
+    binding = _admin_binding(root)
+
+    assert result[3] == "installed"
+    assert result[0] == binding
+    assert json.loads(binding.read_text(encoding="utf-8")) == {
+        "interpreter": str(Path(sys.executable).resolve())
+    }
+    assert not (root / "dev" / ".cairn" / "local-env.json").exists()
+
+
+def test_linked_worktrees_get_distinct_bindings(tmp_path):
+    main = _repo(tmp_path / "main")
+    (main / "tracked.txt").write_text("x\n", encoding="utf-8")
+    _git(main, "add", "tracked.txt")
+    _git(main, "commit", "-m", "initial")
+    linked = tmp_path / "linked"
+    _git(main, "worktree", "add", "-q", "-b", "linked", str(linked))
+
+    first = install.write_local_env(main)
+    second = install.write_local_env(linked)
+
+    assert first[3] == second[3] == "installed"
+    assert first[0] == _admin_binding(main)
+    assert second[0] == _admin_binding(linked)
+    assert first[0] != second[0]
+    assert (linked / ".git").is_file()  # regular Git pointer is supported
+
+
+def test_separate_git_directory_and_submodule_install(tmp_path):
+    separated = tmp_path / "separated"
+    admin = tmp_path / "separated-admin"
+    separated.mkdir()
+    subprocess.run(
+        ["git", "init", "--separate-git-dir", str(admin), str(separated)],
+        check=True, capture_output=True,
+    )
+    assert (separated / ".git").is_file()
+    assert install.write_local_env(separated)[0] == _admin_binding(separated)
+
+    child = _repo(tmp_path / "child")
+    (child / "tracked.txt").write_text("child\n", encoding="utf-8")
+    _git(child, "add", "tracked.txt")
+    _git(child, "commit", "-m", "child")
+    parent = _repo(tmp_path / "parent")
+    _git(parent, "-c", "protocol.file.allow=always", "submodule", "add", "-q",
+         str(child), "nested")
+    submodule = parent / "nested"
+
+    assert install.write_local_env(submodule)[0] == _admin_binding(submodule)
+
+
+def test_nonrepository_and_nested_targets_install_without_binding(tmp_path):
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    assert install.write_local_env(outside)[3] == "skipped-no-worktree"
+
+    parent = _repo(tmp_path / "parent")
+    nested = parent / "nested"
+    nested.mkdir()
+    assert install.write_local_env(nested)[3] == "skipped-not-root"
+
+
+def test_discovery_ignores_hostile_git_environment(tmp_path, monkeypatch):
+    root = _repo(tmp_path / "project")
+    decoy = _repo(tmp_path / "decoy")
+    expected = _admin_binding(root)
+    monkeypatch.setenv("GIT_DIR", str(decoy / ".git"))
+    monkeypatch.setenv("GIT_WORK_TREE", str(decoy))
+    monkeypatch.setenv("GIT_INDEX_FILE", str(decoy / "missing-index"))
+
+    result = install.write_local_env(root)
+
+    assert result[0] == expected
+    assert result[3] == "installed"
+    assert not (decoy / ".git" / "cairn" / "local-env.json").exists()
+    assert _session_module()._resolve_interpreter(root) == (
+        str(Path(sys.executable).resolve()), "local-env.json"
+    )
+
+
+def test_index_question_uses_fixed_arguments_and_scrubbed_environment(tmp_path, monkeypatch):
+    root = _repo(tmp_path / "project")
+    binding = _admin_binding(root)
+    binding.parent.mkdir(parents=True)
+    binding.write_text(json.dumps({"interpreter": str(Path(sys.executable).resolve())}),
+                       encoding="utf-8")
+    session = _session_module()
+    monkeypatch.setenv("GIT_DIR", str(tmp_path / "decoy"))
+    seen = []
+    real_run = session.subprocess.run
+
+    def record(argv, *args, **kwargs):
+        if list(argv[:2]) == ["git", "ls-files"]:
+            seen.append((argv, kwargs))
+        return real_run(argv, *args, **kwargs)
+
+    monkeypatch.setattr(session.subprocess, "run", record)
+    session._resolve_interpreter(root)
+
+    assert len(seen) == 1
+    argv, kwargs = seen[0]
+    assert argv == ["git", "ls-files", "-z", "--cached", "--stage"]
+    assert kwargs["cwd"] == str(root)
+    assert not kwargs.get("shell")
+    assert kwargs["stdin"] == subprocess.DEVNULL
+    assert kwargs["timeout"] == session._BINDING_GIT_TIMEOUT_SECONDS
+    assert {key for key in kwargs["env"] if key.upper().startswith("GIT_")} == {
+        "GIT_PAGER", "GIT_TERMINAL_PROMPT"
+    }
+
+
+def test_legacy_checkout_file_is_never_read(tmp_path):
+    root = _repo(tmp_path / "project")
+    old = root / "dev" / ".cairn" / "local-env.json"
+    old.parent.mkdir(parents=True)
+    old.write_text("not valid JSON", encoding="utf-8")
+
+    session = _session_module()
+    interpreter, source = session._resolve_interpreter(root)
+
+    assert interpreter == sys.executable
+    assert source == "fallback"
+
+
+def test_binding_path_link_and_wrong_type_refuse(tmp_path):
+    root = _repo(tmp_path / "project")
+    session = _session_module()
+    binding = _admin_binding(root)
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    sentinel = outside / "sentinel"
+    sentinel.write_text("keep", encoding="utf-8")
+    binding.parent.parent.mkdir(exist_ok=True)
+    binding.parent.symlink_to(outside, target_is_directory=True)
+
+    with pytest.raises(session.LifecycleError, match="link or reparse point"):
+        session._resolve_interpreter(root)
+    with pytest.raises(install.ScaffoldSecurityError):
+        install.write_local_env(root, force=True)
+    assert sentinel.read_text(encoding="utf-8") == "keep"
+
+    binding.parent.unlink()
+    binding.parent.mkdir()
+    binding.mkdir()
+    with pytest.raises(session.LifecycleError, match="not a regular file"):
+        session._resolve_interpreter(root)
+    with pytest.raises(install.ScaffoldSecurityError):
+        install.write_local_env(root, force=True)
+
+
+def test_dangling_binding_link_and_unreadable_state_refuse(tmp_path, monkeypatch):
+    root = _repo(tmp_path / "project")
+    session = _session_module()
+    binding = _admin_binding(root)
+    binding.parent.mkdir(parents=True)
+    binding.symlink_to(tmp_path / "missing-binding")
+    with pytest.raises(session.LifecycleError, match="link or reparse point"):
+        session._resolve_interpreter(root)
+    with pytest.raises(install.ScaffoldSecurityError):
+        install.write_local_env(root, force=True)
+
+    binding.unlink()
+    binding.write_text('{"interpreter": "/usr/bin/true"}\n', encoding="utf-8")
+    real_lstat = os.lstat
+
+    def unreadable(path, *args, **kwargs):
+        if Path(path) == binding:
+            raise PermissionError("denied")
+        return real_lstat(path, *args, **kwargs)
+
+    monkeypatch.setattr(session.os, "lstat", unreadable)
+    with pytest.raises(session.LifecycleError, match="could not be inspected"):
+        session._resolve_interpreter(root)
+
+
+def test_safe_existing_binding_is_preserved_until_force(tmp_path):
+    root = _repo(tmp_path / "project")
+    binding = _admin_binding(root)
+    binding.parent.mkdir(parents=True)
+    original = '{"interpreter": "/usr/bin/true"}\n'
+    binding.write_text(original, encoding="utf-8")
+
+    assert install.write_local_env(root)[3] == "skipped-exists"
+    assert binding.read_text(encoding="utf-8") == original
+    assert install.write_local_env(root, force=True)[3] == "installed"
+    assert json.loads(binding.read_text(encoding="utf-8"))["interpreter"] == str(
+        Path(sys.executable).resolve()
+    )
+
+
+def test_dot_git_symlink_refuses_discovery(tmp_path):
+    root = _repo(tmp_path / "project")
+    real_admin = tmp_path / "admin"
+    (root / ".git").rename(real_admin)
+    (root / ".git").symlink_to(real_admin, target_is_directory=True)
+    session = _session_module()
+
+    with pytest.raises(session.LifecycleError, match=".git is a link"):
+        session._resolve_interpreter(root)
+    with pytest.raises(install.ScaffoldSecurityError, match=".git entry"):
+        install.write_local_env(root, force=True)
+
+
+def test_regular_git_pointer_to_linked_administration_refuses(tmp_path):
+    root = _repo(tmp_path / "project")
+    real_admin = tmp_path / "real-admin"
+    (root / ".git").rename(real_admin)
+    alias = tmp_path / "admin-link"
+    alias.symlink_to(real_admin, target_is_directory=True)
+    (root / ".git").write_text("gitdir: ../admin-link\n", encoding="utf-8")
+    binding = _admin_binding(root)
+    binding.parent.mkdir(parents=True, exist_ok=True)
+    binding.write_text('{"interpreter": "/usr/bin/true"}\n', encoding="utf-8")
+    session = _session_module()
+
+    with pytest.raises(session.LifecycleError, match="link or reparse point"):
+        session._resolve_interpreter(root)
+    with pytest.raises(install.ScaffoldSecurityError, match="link or reparse point"):
+        install.write_local_env(root, force=True)
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Windows execution evidence is a separate C2 requirement")
+def test_legacy_marker_control_and_mutant(tmp_path):
+    """The real optional-tool entry point ignores legacy state; a redirect is caught."""
+    root = _repo(tmp_path / "project")
+    tools = root / "tools"
+    tools.mkdir()
+    intent = tools / "intent.py"
+    intent.write_text("raise SystemExit(1)\n", encoding="utf-8")
+    source = SESSION_PATH.read_text(encoding="utf-8")
+    original = tools / "session.py"
+    original.write_text(source, encoding="utf-8")
+
+    marker = tmp_path / "legacy-binding-ran"
+    fake = tmp_path / "fake-python"
+    fake.write_text(f'#!/bin/sh\nprintf ran > "{marker}"\nexit 0\n', encoding="utf-8")
+    fake.chmod(fake.stat().st_mode | 0o111)
+    legacy = root / "dev" / ".cairn" / "local-env.json"
+    legacy.parent.mkdir(parents=True)
+    legacy.write_text(json.dumps({"interpreter": str(fake)}), encoding="utf-8")
+
+    control = _session_module(original)
+    assert control._intent_whoami(root) is None
+    assert not marker.exists()
+
+    needle = "cfg = _git_binding_path(root)"
+    assert needle in source
+    mutant_source = source.replace(
+        needle, 'cfg = _state_dir(root) / "local-env.json"', 1
+    )
+    mutant_path = tools / "session-mutant.py"
+    mutant_path.write_text(mutant_source, encoding="utf-8")
+    mutant = _session_module(mutant_path)
+    assert mutant._intent_whoami(root) is None
+    assert marker.read_text(encoding="utf-8") == "ran"

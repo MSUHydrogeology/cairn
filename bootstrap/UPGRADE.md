@@ -443,15 +443,17 @@ you what changed.
   check of a row is looser (any relative path without `..`), so a row the
   installer accepts can still be skipped here; that mismatch is known and the
   installer is unchanged.
-* **A committed interpreter binding is not used.** `dev/.cairn/local-env.json`
-  belongs to one machine and is meant to be ignored by git. If git tracks it, or
-  it sits behind a link, or git cannot be asked, `session-start` and
-  `session-end` do not run the program it names: they use the current
-  interpreter, say so on stderr, and name the fix. The fix is `git rm
-  dev/.cairn/local-env.json` (which deletes the file too), add it to
-  `.gitignore`, commit, then re-run the install to write a binding for this
-  machine. Checking out a branch that tracks the file replaces your own ignored
-  binding without a word; this check is what notices.
+* **The interpreter binding lives in per-worktree Git administration.** The
+  scaffold writes `cairn/local-env.json` under the path reported by
+  `git rev-parse --absolute-git-dir`; linked worktrees therefore keep separate
+  bindings, and the path does not travel with ordinary checkout content.
+  Session routines validate the binding before using it, and refuse links,
+  reparse points, unreadable state, or a tracked interpreter. The legacy
+  `.gitignore` entry for `dev/.cairn/local-env.json` remains for compatibility;
+  that file is never read or migrated. Git administration can itself be copied,
+  and a delivered regular `.git` pointer can direct Git to administration that
+  contains a binding. Treat that origin as trusted, or remove the local binding
+  and rerun the scaffold install to rebind it.
 * **The lifecycle skills participate exactly like `core/`.** The canonical
   `.agents/skills/*/SKILL.md` files ride the token-/slot-aware 3-way merge
   (base cache + provenance), and `tools/session.py` follows the verbatim

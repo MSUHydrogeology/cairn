@@ -14,7 +14,7 @@ Covers the load-bearing safety properties:
   on an ordinary exception; a hard-killed (provably-dead) holder with an
   expired lease is reclaimable -- but an age-only-stale lock is **not** stolen.
 * **Resolve-don't-bake: absent degrades, present-but-wrong refuses.**
-  The interpreter is resolved from `dev/.cairn/local-env.json` and reported;
+  The interpreter is resolved from per-worktree Git administration and reported;
   a structurally-valid-but-absent path degrades to the current interpreter
   with a warning naming the stale path and the substitute, exactly once per
   process; every other tampered shape (relative, parent-traversal, wrong
@@ -68,13 +68,22 @@ def _reset_stale_warned_sentinel():
     Reset before AND after, so a test's own leftover state never leaks either
     direction."""
     lifecycle._STALE_WARNED = False
+    lifecycle._MISSING_BINDING_WARNED = False
     yield
     lifecycle._STALE_WARNED = False
+    lifecycle._MISSING_BINDING_WARNED = False
 
 
 def _git(root: Path, *args: str) -> None:
     subprocess.run(["git", *args], cwd=str(root), check=True,
                    capture_output=True, text=True)
+
+
+def _binding_path(root: Path) -> Path:
+    path = lifecycle._git_binding_path(root)
+    assert path is not None
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path
 
 
 @pytest.fixture()
@@ -239,7 +248,7 @@ def test_interpreter_resolved_from_local_env_and_reported(repo, capsys):
     # A real, absolute, non-symlinked executable: the running interpreter,
     # resolved to defeat any /var -> /private/var symlink on the leaf path.
     interp = str(Path(sys.executable).resolve())
-    (sd / "local-env.json").write_text(
+    _binding_path(repo).write_text(
         json.dumps({"interpreter": interp}), encoding="utf-8")
 
     rc = lifecycle.main(["session-start"])
@@ -254,7 +263,7 @@ def test_absent_local_env_uses_fallback_with_guidance(repo, capsys):
     captured = capsys.readouterr()
     assert rc == 0
     assert "(from fallback)" in captured.out
-    assert "no dev/.cairn/local-env.json" in captured.err
+    assert "no per-worktree Git interpreter binding" in captured.err
 
 
 def _make_exe(path: Path, body: str = "#!/bin/sh\nexit 0\n") -> Path:
@@ -293,7 +302,7 @@ def test_tampered_local_env_refuses(repo, bad):
         adir = repo / "adir"
         adir.mkdir()
         bad = {"interpreter": str(adir)}
-    (sd / "local-env.json").write_text(json.dumps(bad), encoding="utf-8")
+    _binding_path(repo).write_text(json.dumps(bad), encoding="utf-8")
     # Refuses before running anything: session-start resolves eagerly.
     rc = lifecycle.main(["session-start"])
     assert rc == 1
@@ -313,7 +322,7 @@ def test_stale_interpreter_path_degrades_with_guidance(repo, stale_kind, capsys)
         stale = str(repo / "no" / "such" / "python")
     else:
         stale = f"{repo / 'python'} --foo"
-    (sd / "local-env.json").write_text(
+    _binding_path(repo).write_text(
         json.dumps({"interpreter": stale}), encoding="utf-8")
 
     rc = lifecycle.main(["session-start"])
@@ -351,7 +360,7 @@ def test_stale_warning_fires_once_per_process(repo, tmp_path, monkeypatch, capsy
     sd = lifecycle._state_dir(repo)
     sd.mkdir(parents=True)
     stale = str(repo / "no" / "such" / "python")
-    (sd / "local-env.json").write_text(
+    _binding_path(repo).write_text(
         json.dumps({"interpreter": stale}), encoding="utf-8")
 
     lifecycle.main(["session-end", "--handoff"])
@@ -367,7 +376,7 @@ def test_stale_binding_is_not_rewritten(repo):
     presently exists."""
     sd = lifecycle._state_dir(repo)
     sd.mkdir(parents=True)
-    cfg = sd / "local-env.json"
+    cfg = _binding_path(repo)
     stale = str(repo / "no" / "such" / "python")
     payload = json.dumps({"interpreter": stale})
     cfg.write_text(payload, encoding="utf-8")
@@ -386,7 +395,7 @@ def test_uninspectable_interpreter_path_refuses(repo):
     blocked = repo / "blocked"
     blocked.mkdir()
     inner = blocked / "python"
-    (sd / "local-env.json").write_text(
+    _binding_path(repo).write_text(
         json.dumps({"interpreter": str(inner)}), encoding="utf-8")
     os.chmod(blocked, 0o000)
     try:
@@ -403,7 +412,7 @@ def test_parent_traversal_segment_refuses(repo):
     sd = lifecycle._state_dir(repo)
     sd.mkdir(parents=True)
     dotdot = str(repo / "a" / ".." / "python")
-    (sd / "local-env.json").write_text(
+    _binding_path(repo).write_text(
         json.dumps({"interpreter": dotdot}), encoding="utf-8")
     with pytest.raises(lifecycle.LifecycleError) as exc:
         lifecycle._resolve_interpreter(repo)
@@ -425,7 +434,7 @@ def test_symlinked_parent_with_absent_leaf_still_refuses(repo):
         pytest.skip("host refused to create a symlink")
     sd = lifecycle._state_dir(repo)
     sd.mkdir(parents=True)
-    (sd / "local-env.json").write_text(
+    _binding_path(repo).write_text(
         json.dumps({"interpreter": str(link_dir / "python")}), encoding="utf-8")
     with pytest.raises(lifecycle.LifecycleError) as exc:
         lifecycle._resolve_interpreter(repo)
@@ -443,7 +452,7 @@ def test_symlinked_leaf_refuses(repo):
         pytest.skip("host refused to create a symlink")
     sd = lifecycle._state_dir(repo)
     sd.mkdir(parents=True)
-    (sd / "local-env.json").write_text(
+    _binding_path(repo).write_text(
         json.dumps({"interpreter": str(link)}), encoding="utf-8")
     with pytest.raises(lifecycle.LifecycleError) as exc:
         lifecycle._resolve_interpreter(repo)
@@ -456,7 +465,7 @@ def test_space_in_interpreter_path_accepted(repo):
     exe = _make_exe(repo / "env with space" / "python")
     sd = lifecycle._state_dir(repo)
     sd.mkdir(parents=True)
-    (sd / "local-env.json").write_text(
+    _binding_path(repo).write_text(
         json.dumps({"interpreter": str(exe)}), encoding="utf-8")
 
     interp, source = lifecycle._resolve_interpreter(repo)
@@ -470,7 +479,7 @@ def test_extra_key_in_local_env_refused(repo):
     exe = _make_exe(repo / "bin" / "python")
     sd = lifecycle._state_dir(repo)
     sd.mkdir(parents=True)
-    (sd / "local-env.json").write_text(
+    _binding_path(repo).write_text(
         json.dumps({"interpreter": str(exe), "evil": "x"}), encoding="utf-8")
 
     with pytest.raises(lifecycle.LifecycleError):
@@ -515,7 +524,7 @@ def test_tampered_binding_warns_in_intent_whoami(repo, monkeypatch, capsys):
     sd.mkdir(parents=True)
     nonexec = repo / "nonexec"
     nonexec.write_text("not executable", encoding="utf-8")
-    (sd / "local-env.json").write_text(
+    _binding_path(repo).write_text(
         json.dumps({"interpreter": str(nonexec)}), encoding="utf-8")
 
     result = lifecycle._intent_whoami(repo)

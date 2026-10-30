@@ -272,41 +272,22 @@ environment, lazy fetch off), never runs `git status`, and reads each file
 itself through `_assert_safe_write` and `_read_regular_bytes`; when git cannot be
 relied on to answer, it stops and names `--force` instead of guessing.
 
-**Documented residual risk: the interpreter binding proves only "git does not
-list it now".** The session kernel (`tools/session.py`) runs the program named
-in `dev/.cairn/local-env.json`. It does so at `session-start`; at
-`session-end --handoff`; and whenever it asks the intent tool for the agent or
-session name, which `session-end` also does when `CAIRN_AGENT` or
-`CAIRN_SESSION` is not set. Before it runs the program, it refuses a binding
-that git's index lists (and one behind a link, inside a submodule, or that git
-cannot be asked about). That check stands in for the real question, "was this
-file written on this machine?", so a binding that came with the project by
-another route is used and its program is run. Five routes are known: a
-downloaded archive of a repository that tracked the binding, followed by
-`git init`; `git apply` of a patch that creates the file; `git reset` after the
-commit that added it; `git rm --cached`, the common "untrack but keep" idiom;
-and a copy of the whole working folder (a zip, a synced or shared drive, a
-lab-mate's copy), because git ignores the binding, so it travels with the
-folder. The copy route also needs the named program to exist at the same
-absolute path on the new machine; that is read from the code, not run.
-Consequence: a project can choose which program the kernel runs, on a machine
-where the operator took the project that way. The binding needs only an
-executable file, so the arguments the kernel passes do not limit what runs: it
-can be any program, and it runs with the operator's own permissions. The gate
-has never been run on Windows or on an HFS+ volume (its tests skip on Windows,
-and a run on each is still owed), so what it does when a disk treats two
-spellings of one name as the same file is shown only for the disks tried. On a
-disk that reports the same inode number (0) for every file, the identity checks
-are skipped and only the checks by folded name run; I do not know which real
-disks do this. The Maintainer accepted this on 2026-10-19, in writing here and in
-the `_resolve_interpreter` docstring, as the interim position, and accepted the
-wider description above on 2026-10-26. The full fix is a
-separate later proposal and Security Review: keep the binding inside git's own
-folder (`git rev-parse --git-common-dir`), where no checkout, archive, patch
-or download can carry a file, and read the old path only to say it is no longer
-used. Until then the operator's protection is to run `session-start` only in
-projects obtained by `git clone` or `git checkout`, and to read a project's
-`dev/.cairn/` before trusting it.
+**Residual risk: Git administration and the pointer to it are trusted inputs.**
+The scaffold stores `cairn/local-env.json` under the per-worktree path reported
+by `git rev-parse --absolute-git-dir`. Session routines use the selected
+program at `session-start`, `session-end --handoff`, and when resolving an
+optional intent tool. They reject links and reparse points in the `.git` entry
+or binding path, malformed or unreadable state, and an interpreter tracked by
+the project. The binding remains an operational choice, not an authenticated
+Python identity or provenance check: any absolute, present, executable regular
+file that passes the shape checks can run with the operator's permissions.
+Copying the Git administration directory can carry its binding, and a regular
+`.git` pointer delivered with project files can direct Git to administration
+that contains one. Treat either origin as trusted; after copying, remove the
+per-worktree `cairn/local-env.json` and rerun the scaffold install to rebind.
+The legacy `dev/.cairn/local-env.json` ignore rule is retained, but that file is
+never read or migrated. Native Windows junction/reparse handling remains an
+acceptance check and is not claimed by this document until measured there.
 
 ### The default-on security-verification dispatcher — a shipped file that runs a child
 

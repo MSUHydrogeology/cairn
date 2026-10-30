@@ -1,17 +1,9 @@
-"""The session kernel does not run an interpreter binding that git tracks.
+"""The session kernel resolves its interpreter from per-worktree Git administration.
 
-`dev/.cairn/local-env.json` names the program the kernel runs its sub-tools
-with.  It is meant to be written on one machine and never committed.  Nothing
-stops a project committing one, though: git checks it out like any other file,
-and it can also replace a user's own ignored binding when a branch that tracks
-it is checked out.  A checkout is data a reviewer reads as harmless, and a
-binding that names `/usr/bin/make` next to a `Makefile` turns the unmodified
-kernel into a launcher for the project's own command.
-
-So a binding that git tracks is not trusted: the run goes on with the current
-interpreter, says so on stderr, and names the fix.  The same goes for a binding
-reached through a link, and for a binding git cannot be asked about.  A
-malformed or missing binding behaves exactly as before.
+The tests distinguish the new authority from the legacy checkout file, which
+is never read or migrated. They retain real session-start/session-end launches,
+schema and encoding checks, and executable-selection controls. Path-link and
+Git-layout cases live in ``test_git_interpreter_binding_portable.py``.
 
 These tests drive the real command (`tools/session.py`, as a subprocess) from a
 fresh `git clone` of a repository built to be hostile, and use a stand-in
@@ -59,8 +51,12 @@ BINDING = "dev/.cairn/local-env.json"
 # --- builders -----------------------------------------------------------------
 
 
-def _git(cwd: Path, *args: str, env=None) -> None:
-    subprocess.run(["git", *args], cwd=str(cwd), check=True, capture_output=True, env=env)
+def _git(cwd: Path, *args: str, env=None) -> str:
+    proc = subprocess.run(
+        ["git", *args], cwd=str(cwd), check=True, capture_output=True,
+        text=True, env=env,
+    )
+    return proc.stdout.strip()
 
 
 def _git_identity(root: Path) -> None:
@@ -105,7 +101,14 @@ def _commit(src: Path, message: str = "project", force=()) -> None:
 
 
 def _write_binding(root: Path, text: str) -> Path:
-    path = root / "dev" / ".cairn" / "local-env.json"
+    path = Path(_git(root, "rev-parse", "--absolute-git-dir")) / "cairn" / "local-env.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def _write_legacy_binding(root: Path, text: str) -> Path:
+    path = root / BINDING
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
     return path
@@ -122,7 +125,7 @@ def _hostile_clone(tmp_path: Path):
     """A clone whose repository *tracks* a binding that names the stand-in."""
     program, marker = _stand_in(tmp_path)
     src = _source_repo(tmp_path)
-    _write_binding(src, _binding_text(program))
+    _write_legacy_binding(src, _binding_text(program))
     _commit(src, force=[BINDING])
     return _clone(src, tmp_path), marker, program
 
@@ -142,31 +145,31 @@ def _run(clone: Path, command: str, *extra, path_dir=None):
 def _fresh_warning_state(monkeypatch):
     """The warnings are printed once per process; each in-process test starts fresh."""
     monkeypatch.setattr(lifecycle, "_UNTRUSTED_WARNED", False, raising=False)
+    monkeypatch.setattr(lifecycle, "_MISSING_BINDING_WARNED", False, raising=False)
     monkeypatch.setattr(lifecycle, "_STALE_WARNED", False)
 
 
 # --- the real command, from a hostile clone ------------------------------------
 
 
-def test_session_start_does_not_run_a_binding_the_repository_tracks(tmp_path):
+def test_session_start_ignores_a_legacy_binding_in_checkout_content(tmp_path):
     clone, marker, _program = _hostile_clone(tmp_path)
     assert (clone / BINDING).is_file()
     done = _run(clone, "session-start")
-    assert not marker.exists(), "the tracked binding's program was run"
+    assert not marker.exists(), "the legacy checkout binding's program was run"
     assert done.returncode == 0
-    assert "tracked by git" in done.stderr
-    assert "git rm" in done.stderr  # the fix is named
-    assert "(from fallback-untrusted)" in done.stdout
+    assert "no per-worktree Git interpreter binding" in done.stderr
+    assert "(from fallback)" in done.stdout
 
 
-def test_a_plain_session_end_does_not_run_a_binding_the_repository_tracks(tmp_path):
+def test_a_plain_session_end_ignores_a_legacy_binding_in_checkout_content(tmp_path):
     """The reflection-only goodnight is the path the kernel promises can at worst
     leave a stray reflection file."""
     clone, marker, _program = _hostile_clone(tmp_path)
     done = _run(clone, "session-end")
-    assert not marker.exists(), "the tracked binding's program was run"
+    assert not marker.exists(), "the legacy checkout binding's program was run"
     assert done.returncode == 0
-    assert "tracked by git" in done.stderr
+    assert "no per-worktree Git interpreter binding" in done.stderr
 
 
 def test_a_binding_written_on_this_machine_is_still_used(tmp_path):
@@ -183,15 +186,14 @@ def test_a_binding_written_on_this_machine_is_still_used(tmp_path):
     assert "tracked by git" not in done.stderr
 
 
-def test_a_branch_that_tracks_a_binding_cannot_replace_the_users_own(tmp_path):
-    """Git treats an ignored file as expendable: checking out a branch that tracks
-    the binding overwrites the user's own without a word."""
+def test_a_branch_with_a_legacy_binding_cannot_replace_git_admin_choice(tmp_path):
+    """A checkout can replace legacy content without changing Git administration."""
     program, marker = _stand_in(tmp_path)
     own = Path(sys.executable).resolve()
     src = _source_repo(tmp_path)
     _commit(src)
     _git(src, "checkout", "-q", "-b", "tracks-a-binding")
-    _write_binding(src, _binding_text(program))
+    _write_legacy_binding(src, _binding_text(program))
     _commit(src, "a binding nobody should commit", force=[BINDING])
     _git(src, "checkout", "-q", "-")
     clone = _clone(src, tmp_path)
@@ -201,19 +203,21 @@ def test_a_branch_that_tracks_a_binding_cannot_replace_the_users_own(tmp_path):
     assert "(from local-env.json)" in before.stdout and not marker.exists()
 
     _git(clone, "checkout", "-q", "tracks-a-binding")
-    assert json.loads(mine.read_text(encoding="utf-8"))["interpreter"] == str(program), (
-        "the checkout was expected to overwrite the ignored binding")
+    assert json.loads(mine.read_text(encoding="utf-8"))["interpreter"] == str(own), (
+        "the project checkout changed the per-worktree Git binding")
     after = _run(clone, "session-start")
     assert not marker.exists(), "the overwritten binding's program was run"
-    assert "tracked by git" in after.stderr
-    assert "(from fallback-untrusted)" in after.stdout
+    assert "tracked by git" not in after.stderr
+    assert "(from local-env.json)" in after.stdout
 
 
 def test_a_binding_git_cannot_be_asked_about_is_not_trusted(tmp_path):
-    """When `git ls-files` fails, the kernel cannot tell, so it does not trust."""
-    clone, marker, _program = _hostile_clone(tmp_path)
-    # an untracked copy of the same binding: only git's answer separates the cases
-    _git(clone, "rm", "-q", "--cached", BINDING)
+    """When Git cannot verify the in-project executable, resolution refuses."""
+    marker_program, marker = _stand_in(tmp_path)
+    src = _source_repo(tmp_path)
+    _commit(src)
+    clone = _clone(src, tmp_path)
+    _write_binding(clone, _binding_text(marker_program))
     wrapper_dir = tmp_path.resolve() / "wrapper"
     wrapper_dir.mkdir()
     real_git = shutil.which("git")
@@ -224,9 +228,8 @@ def test_a_binding_git_cannot_be_asked_about_is_not_trusted(tmp_path):
     wrapper.chmod(0o755)
     done = _run(clone, "session-start", path_dir=wrapper_dir)
     assert not marker.exists(), "a binding git could not vouch for was run"
-    assert done.returncode == 0
-    assert "could not ask git" in done.stderr
-    assert "(from fallback-untrusted)" in done.stdout
+    assert done.returncode == 1
+    assert "could not verify whether the project tracks" in done.stderr
 
 
 def test_without_git_the_command_refuses_before_running_anything(tmp_path):
@@ -241,25 +244,24 @@ def test_without_git_the_command_refuses_before_running_anything(tmp_path):
 
 
 def test_a_binding_reached_through_a_link_is_not_trusted(tmp_path):
-    """Git lists nothing beyond a link, so a tracked folder behind a tracked link
-    would otherwise look untracked."""
+    """A linked per-worktree binding folder refuses before a named tool runs."""
     program, marker = _stand_in(tmp_path)
     src = _source_repo(tmp_path)
-    (src / "payload").mkdir()
-    (src / "payload" / "local-env.json").write_text(_binding_text(program), encoding="utf-8")
-    (src / "dev").mkdir()
-    os.symlink("../payload", src / "dev" / ".cairn")
     _commit(src)
     clone = _clone(src, tmp_path)
-    assert (clone / BINDING).is_file() and (clone / "dev" / ".cairn").is_symlink()
+    git_dir = Path(_git(clone, "rev-parse", "--absolute-git-dir"))
+    payload = tmp_path / "payload"
+    payload.mkdir()
+    (payload / "local-env.json").write_text(_binding_text(program), encoding="utf-8")
+    (git_dir / "cairn").symlink_to(payload, target_is_directory=True)
     done = _run(clone, "session-start")
     assert not marker.exists(), "a binding behind a link was run"
-    assert "link" in done.stderr
-    assert "(from fallback-untrusted)" in done.stdout
+    assert done.returncode == 1
+    assert "link or reparse point" in done.stderr
 
 
-def test_a_binding_tracked_under_another_letter_case_is_not_trusted(tmp_path):
-    """On a volume that ignores case the same file has several spellings in git."""
+def test_legacy_binding_spelling_never_controls_interpreter_selection(tmp_path):
+    """Legacy path case-folding is irrelevant because that path is never read."""
     probe = tmp_path.resolve() / "CaseProbe"
     probe.write_text("x", encoding="utf-8")
     if not (tmp_path.resolve() / "caseprobe").exists():
@@ -273,7 +275,8 @@ def test_a_binding_tracked_under_another_letter_case_is_not_trusted(tmp_path):
     clone = _clone(src, tmp_path)
     done = _run(clone, "session-start")
     assert not marker.exists(), "a binding tracked under another spelling was run"
-    assert "tracked by git" in done.stderr
+    assert "no per-worktree Git interpreter binding" in done.stderr
+    assert "(from fallback)" in done.stdout
 
 
 # --- the resolver on its own ---------------------------------------------------
@@ -288,13 +291,14 @@ def _clone_with_untracked_binding(tmp_path: Path, monkeypatch=None):
     return clone, program
 
 
-def test_an_untracked_binding_resolves_and_a_tracked_one_falls_back(tmp_path, capsys):
+def test_a_tracked_legacy_file_does_not_replace_the_git_admin_binding(tmp_path, capsys):
     clone, program = _clone_with_untracked_binding(tmp_path)
     assert lifecycle._resolve_interpreter(clone) == (str(program), "local-env.json")
+    _write_legacy_binding(clone, _binding_text(_stand_in(tmp_path)[0]))
     _git(clone, "add", "-f", BINDING)
     interpreter, source = lifecycle._resolve_interpreter(clone)
-    assert (interpreter, source) == (sys.executable, "fallback-untrusted")
-    assert "tracked by git" in capsys.readouterr().err
+    assert (interpreter, source) == (str(program), "local-env.json")
+    assert "tracked by git" not in capsys.readouterr().err
     _git(clone, "rm", "-q", "--cached", BINDING)
     assert lifecycle._resolve_interpreter(clone) == (str(program), "local-env.json")
 
@@ -316,8 +320,9 @@ def test_when_git_cannot_answer_the_binding_is_not_trusted(tmp_path, monkeypatch
         return real_run(argv, *args, **kwargs)
 
     monkeypatch.setattr(lifecycle.subprocess, "run", broken)
-    assert lifecycle._resolve_interpreter(clone) == (sys.executable, "fallback-untrusted")
-    assert "could not ask git" in capsys.readouterr().err
+    with pytest.raises(lifecycle.LifecycleError, match="could not verify"):
+        lifecycle._resolve_interpreter(clone)
+    assert "could not ask git" not in capsys.readouterr().err
 
 
 def test_the_question_put_to_git_is_a_fixed_argument_list_with_no_shell(tmp_path, monkeypatch):
@@ -349,30 +354,26 @@ def test_the_question_put_to_git_is_a_fixed_argument_list_with_no_shell(tmp_path
     assert kwargs.get("timeout")  # it cannot hang the session
 
 
-def test_the_warning_is_printed_once_per_process(tmp_path, capsys):
-    clone, _program = _clone_with_untracked_binding(tmp_path)
-    _git(clone, "add", "-f", BINDING)
-    lifecycle._resolve_interpreter(clone)
-    lifecycle._resolve_interpreter(clone)
-    assert capsys.readouterr().err.count("tracked by git") == 1
+def test_the_missing_binding_warning_is_printed_once_per_process(tmp_path, capsys):
+    clone = _plain_repo(tmp_path, "missing")
+    assert lifecycle._resolve_interpreter(clone) == (sys.executable, "fallback")
+    assert lifecycle._resolve_interpreter(clone) == (sys.executable, "fallback")
+    assert capsys.readouterr().err.count("no per-worktree Git interpreter binding") == 1
 
 
-def test_a_malformed_binding_still_refuses_even_when_tracked(tmp_path):
-    """The shape checks run first and are unchanged: a bad binding is an error,
-    not a quiet fallback."""
+def test_a_malformed_binding_still_refuses(tmp_path):
+    """The shape checks remain strict for a binding in Git administration."""
     clone, _program = _clone_with_untracked_binding(tmp_path)
     _write_binding(clone, json.dumps({"interpreter": "python3"}))
-    _git(clone, "add", "-f", BINDING)
     with pytest.raises(lifecycle.LifecycleError):
         lifecycle._resolve_interpreter(clone)
 
 
-def test_a_tracked_binding_to_a_vanished_interpreter_keeps_the_stale_message(tmp_path, capsys):
+def test_a_vanished_interpreter_keeps_the_stale_message(tmp_path, capsys):
     """Nothing is run in either case, and the stale-binding message is the older,
     more specific one."""
     clone, _program = _clone_with_untracked_binding(tmp_path)
     _write_binding(clone, json.dumps({"interpreter": "/nonexistent/python3"}))
-    _git(clone, "add", "-f", BINDING)
     assert lifecycle._resolve_interpreter(clone) == (sys.executable, "fallback-stale")
     assert "no longer exists" in capsys.readouterr().err
 
@@ -394,7 +395,9 @@ def _plain_repo(tmp_path: Path, name: str) -> Path:
 
 
 def _binding_at(root: Path, relative: str, program) -> Path:
-    path = root / relative
+    """Write the current per-worktree binding; *relative* is legacy call syntax."""
+    path = lifecycle._git_binding_path(root)
+    assert path is not None
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(_binding_text(program), encoding="utf-8")
     return path
@@ -405,150 +408,17 @@ def _commit_paths(root: Path, *paths: str, message: str = "project") -> None:
     _git(root, "commit", "-q", "-m", message)
 
 
-def _assert_untrusted(root: Path, program, capsys=None) -> None:
-    interpreter, source = lifecycle._resolve_interpreter(root)
-    assert source == "fallback-untrusted", source
-    assert interpreter == sys.executable and str(program) not in interpreter
-
-
 def _assert_trusted(root: Path, program) -> None:
     assert lifecycle._resolve_interpreter(root) == (str(program), "local-env.json")
 
 
-def test_the_binding_committed_under_another_letter_case_is_tracked(tmp_path):
-    probe = tmp_path.resolve() / "CaseProbe"
-    probe.write_text("x", encoding="utf-8")
-    if not (tmp_path.resolve() / "caseprobe").exists():
-        pytest.skip("this volume is case-sensitive")
-    program, _marker = _stand_in(tmp_path)
-    root = _plain_repo(tmp_path, "case")
-    _binding_at(root, "DEV/.CAIRN/Local-Env.json", program)
-    _commit_paths(root, "f.txt", "DEV/.CAIRN/Local-Env.json")
-    assert (root / BINDING).is_file()
-    _assert_untrusted(root, program)
-
-
-def test_the_binding_committed_under_a_spelling_the_volume_treats_as_the_same_name_is_tracked(tmp_path):
-    """U+017F (long s) is a different character to git and the same letter to a
-    volume that folds Unicode case.  The intended rule: any spelling the volume
-    resolves to the binding counts as tracked; one it does not resolve to is a
-    different file and is not the binding at all."""
-    program, _marker = _stand_in(tmp_path)
-    root = _plain_repo(tmp_path, "lookalike")
-    spelled = "dev/.cairn/local-env.jſon"
-    _binding_at(root, spelled, program)
-    _commit_paths(root, "f.txt", spelled)
-    if (root / BINDING).is_file():          # this volume folds the character
-        _assert_untrusted(root, program)
-    else:                                   # it does not: no binding exists here
-        assert lifecycle._resolve_interpreter(root) == (sys.executable, "fallback")
-
-
-def test_a_compatibility_look_alike_is_a_different_file_and_not_second_guessed(tmp_path):
-    """A full-width letter is not the same name on any volume, so an untracked
-    binding of the right name next to it is still the user's own."""
-    program, _marker = _stand_in(tmp_path)
-    root = _plain_repo(tmp_path, "fullwidth")
-    decoy = "dev/.cairn/local-env.ｊson"      # full-width j
-    _binding_at(root, decoy, program)
-    _commit_paths(root, "f.txt", decoy)
-    _binding_at(root, BINDING, program)           # the user's own, untracked
-    assert (root / BINDING).read_text(encoding="utf-8") == _binding_text(program)
-    _assert_trusted(root, program)
-
-
-def test_a_binding_under_a_linked_folder_is_untrusted(tmp_path):
-    program, _marker = _stand_in(tmp_path)
-    root = _plain_repo(tmp_path, "linked")
-    _binding_at(root, "payload/local-env.json", program)
-    (root / "dev").mkdir()
-    os.symlink("../payload", root / "dev" / ".cairn")
-    _commit_paths(root, "f.txt", "payload/local-env.json", "dev/.cairn")
-    assert (root / BINDING).is_file()
-    _assert_untrusted(root, program)
-
-
-@pytest.mark.parametrize("flag", ["--assume-unchanged", "--skip-worktree"])
-def test_a_tracked_binding_still_counts_as_tracked_when_git_is_told_to_ignore_changes(tmp_path, flag):
-    program, _marker = _stand_in(tmp_path)
-    root = _plain_repo(tmp_path, "flagged")
-    _binding_at(root, BINDING, program)
-    _commit_paths(root, "f.txt", BINDING)
-    _git(root, "update-index", flag, BINDING)
-    _assert_untrusted(root, program)
-
-
-def test_a_binding_inside_a_submodule_of_the_project_is_untrusted(tmp_path):
-    program, _marker = _stand_in(tmp_path)
-    inner = _plain_repo(tmp_path, "inner")
-    _binding_at(inner, ".cairn/local-env.json", program)
-    _commit_paths(inner, "f.txt", ".cairn/local-env.json")
-    root = _plain_repo(tmp_path, "outer")
-    _git(root, "-c", "protocol.file.allow=always", "submodule", "add", "-q", str(inner), "dev")
-    _git(root, "commit", "-q", "-m", "a submodule named dev")
-    assert (root / BINDING).is_file()
-    _assert_untrusted(root, program)
-
-
-def test_a_tracked_binding_is_found_when_the_project_is_a_linked_worktree(tmp_path):
-    program, _marker = _stand_in(tmp_path)
-    main = _plain_repo(tmp_path, "main")
-    _binding_at(main, BINDING, program)
-    _commit_paths(main, "f.txt", BINDING)
-    linked = tmp_path.resolve() / "linked-worktree"
-    _git(main, "worktree", "add", "-q", "-b", "other", str(linked))
-    assert (linked / ".git").is_file()
-    _assert_untrusted(linked, program)
-
-
-def test_an_untracked_binding_is_still_used_in_a_linked_worktree(tmp_path):
-    program, _marker = _stand_in(tmp_path)
-    main = _plain_repo(tmp_path, "main")
-    _commit_paths(main, "f.txt")
-    linked = tmp_path.resolve() / "linked-worktree"
-    _git(main, "worktree", "add", "-q", "-b", "other", str(linked))
-    _binding_at(linked, BINDING, program)
-    _assert_trusted(linked, program)
-
-
-def _submodule_project(tmp_path: Path, tracked: bool):
-    program, _marker = _stand_in(tmp_path)
-    inner = _plain_repo(tmp_path, "inner")
-    if tracked:
-        _binding_at(inner, BINDING, program)
-        _commit_paths(inner, "f.txt", BINDING)
-    else:
-        _commit_paths(inner, "f.txt")
-    outer = _plain_repo(tmp_path, "outer")
-    _git(outer, "-c", "protocol.file.allow=always", "submodule", "add", "-q", str(inner), "proj")
-    _git(outer, "commit", "-q", "-m", "the project is a submodule")
-    project = outer / "proj"
-    assert (project / ".git").is_file()
-    if not tracked:
-        _binding_at(project, BINDING, program)
-    return project, program
-
-
-def test_a_tracked_binding_is_found_when_the_project_is_itself_a_submodule(tmp_path):
-    project, program = _submodule_project(tmp_path, tracked=True)
-    _assert_untrusted(project, program)
-
-
-def test_an_untracked_binding_is_still_used_when_the_project_is_itself_a_submodule(tmp_path):
-    project, program = _submodule_project(tmp_path, tracked=False)
-    _assert_trusted(project, program)
-
-
 @pytest.mark.parametrize("variable", ["GIT_DIR", "GIT_DIR+GIT_WORK_TREE", "GIT_INDEX_FILE",
                                       "GIT_LITERAL_PATHSPECS", "GIT_CEILING_DIRECTORIES"])
-def test_the_callers_git_environment_cannot_point_the_question_elsewhere(tmp_path, monkeypatch, variable):
-    """The question is about the project folder.  A caller's GIT_* variables may
-    point git at a different repository or index, or change how paths match; none
-    of them reaches the query."""
+def test_the_callers_git_environment_cannot_redirect_binding_discovery(tmp_path, monkeypatch, variable):
+    """Both root discovery and index checks ignore caller Git overrides."""
     program, _marker = _stand_in(tmp_path)
     root = _plain_repo(tmp_path, "project")
     _binding_at(root, BINDING, program)
-    _commit_paths(root, "f.txt", BINDING)
     elsewhere = _plain_repo(tmp_path, "elsewhere")
     _commit_paths(elsewhere, "f.txt")
     empty_index = tmp_path.resolve() / "empty-index"
@@ -563,71 +433,55 @@ def test_the_callers_git_environment_cannot_point_the_question_elsewhere(tmp_pat
             monkeypatch.setenv("GIT_LITERAL_PATHSPECS", "1")
         else:
             monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(root.parent))
-    _assert_untrusted(root, program)
+    _assert_trusted(root, program)
 
 
-def _stub_git(tmp_path: Path, monkeypatch, body: str) -> None:
-    stub_dir = tmp_path.resolve() / "stub-bin"
-    stub_dir.mkdir(exist_ok=True)
-    stub = stub_dir / "git"
-    stub.write_text("#!/bin/sh\n" + body, encoding="utf-8")
-    stub.chmod(0o755)
-    monkeypatch.setenv("PATH", str(stub_dir) + os.pathsep + os.environ.get("PATH", ""))
-
-
-@pytest.mark.parametrize(
-    "body",
-    ["exit 128\n", "echo 'fatal: stub' >&2\nexit 1\n", "exit 0\n", "printf 'nonsense\\0'\nexit 0\n"],
-    ids=["exit-128", "exit-1", "silent-success", "output-not-understood"],
-)
-def test_a_git_that_fails_leaves_the_binding_untrusted(tmp_path, monkeypatch, capsys, body):
-    """A non-zero exit is no answer.  (A success that prints nothing is an answer:
-    nothing is tracked, so that case is the one that must *not* be refused.)"""
+@pytest.mark.parametrize("failure", ["non-zero", "timeout", "os-error"])
+def test_git_cannot_verify_a_selected_interpreter_so_resolution_refuses(tmp_path, monkeypatch, failure):
     program, _marker = _stand_in(tmp_path)
     root = _plain_repo(tmp_path, "project")
     _binding_at(root, BINDING, program)
-    _stub_git(tmp_path, monkeypatch, body)
+    real_run = lifecycle.subprocess.run
+
+    def broken(argv, *args, **kwargs):
+        if argv[:2] == ["git", "ls-files"]:
+            if failure == "timeout":
+                raise subprocess.TimeoutExpired(argv, 1)
+            if failure == "os-error":
+                raise PermissionError("denied")
+            return subprocess.CompletedProcess(argv, 128, b"", b"fatal: simulated failure")
+        return real_run(argv, *args, **kwargs)
+
+    monkeypatch.setattr(lifecycle.subprocess, "run", broken)
+    with pytest.raises(lifecycle.LifecycleError, match="could not verify"):
+        lifecycle._resolve_interpreter(root)
+
+
+@pytest.mark.parametrize("body", ["exit 128\n", "echo 'fatal: stub' >&2\nexit 1\n",
+                                  "exit 0\n", "printf 'nonsense\\0'\nexit 0\n"],
+                         ids=["exit-128", "exit-1", "silent-success", "bad-output"])
+def test_git_index_answer_is_parsed_or_refused(tmp_path, monkeypatch, body):
+    """Malformed or failed index answers refuse; a valid empty answer permits use."""
+    program, _marker = _stand_in(tmp_path)
+    root = _plain_repo(tmp_path, "project")
+    _binding_at(root, BINDING, program)
+    real_run = lifecycle.subprocess.run
+
+    def broken(argv, *args, **kwargs):
+        if argv[:2] == ["git", "ls-files"]:
+            if body == "exit 0\n":
+                return subprocess.CompletedProcess(argv, 0, b"", b"")
+            if body.startswith("printf"):
+                return subprocess.CompletedProcess(argv, 0, b"nonsense\0", b"")
+            return subprocess.CompletedProcess(argv, 128, b"", b"fatal: stub")
+        return real_run(argv, *args, **kwargs)
+
+    monkeypatch.setattr(lifecycle.subprocess, "run", broken)
     if body == "exit 0\n":
         _assert_trusted(root, program)
     else:
-        _assert_untrusted(root, program)
-        assert "could not ask git" in capsys.readouterr().err
-
-
-def test_a_submodule_whose_name_only_starts_like_the_folder_does_not_count(tmp_path):
-    """The submodule rule is about a submodule that *holds* the binding's path, not
-    one whose name begins the same way (`de` is not `dev`)."""
-    program, _marker = _stand_in(tmp_path)
-    inner = _plain_repo(tmp_path, "inner")
-    _commit_paths(inner, "f.txt")
-    root = _plain_repo(tmp_path, "outer")
-    _git(root, "-c", "protocol.file.allow=always", "submodule", "add", "-q", str(inner), "de")
-    _git(root, "commit", "-q", "-m", "a submodule named de")
-    _binding_at(root, BINDING, program)
-    _assert_trusted(root, program)
-
-
-def test_a_tracked_file_named_like_the_folder_is_not_taken_for_a_submodule(tmp_path):
-    """Only a submodule entry (mode 160000) makes the files below it another
-    repository's.  A plain entry called `dev` is not one."""
-    program, _marker = _stand_in(tmp_path)
-    root = _plain_repo(tmp_path, "project")
-    _commit_paths(root, "f.txt")
-    blob = subprocess.run(["git", "hash-object", "-w", "f.txt"], cwd=str(root), check=True,
-                          capture_output=True, text=True).stdout.strip()
-    _git(root, "update-index", "--add", "--cacheinfo", f"100644,{blob},dev")
-    _binding_at(root, BINDING, program)
-    _assert_trusted(root, program)
-
-
-def test_a_git_that_hangs_leaves_the_binding_untrusted(tmp_path, monkeypatch, capsys):
-    program, _marker = _stand_in(tmp_path)
-    root = _plain_repo(tmp_path, "project")
-    _binding_at(root, BINDING, program)
-    _stub_git(tmp_path, monkeypatch, "exec sleep 60\n")
-    monkeypatch.setattr(lifecycle, "_BINDING_GIT_TIMEOUT_SECONDS", 1)
-    _assert_untrusted(root, program)
-    assert "could not ask git" in capsys.readouterr().err
+        with pytest.raises(lifecycle.LifecycleError, match="could not verify"):
+            lifecycle._resolve_interpreter(root)
 
 
 # --- binding text reaches the screen only encoded -----------------------------------

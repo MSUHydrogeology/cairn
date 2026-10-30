@@ -1,7 +1,7 @@
 # Plan: Bind the interpreter in per-worktree Git administration
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-git-interpreter-binding.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30

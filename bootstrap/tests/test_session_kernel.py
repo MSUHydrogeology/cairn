@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -23,6 +24,17 @@ CAIRN_ROOT = Path(__file__).resolve().parents[2]
 KERNEL = CAIRN_ROOT / "tools" / "session.py"
 _CONTENT_SCAN = CAIRN_ROOT / "scripts" / "content_scan.py"
 TWIN = CAIRN_ROOT / "templates" / "skills" / "_lib" / "session.py"
+
+
+def _binding_path(root: Path) -> Path:
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True, capture_output=True)
+    git_dir = subprocess.run(
+        ["git", "rev-parse", "--absolute-git-dir"], cwd=root, check=True,
+        capture_output=True, text=True,
+    ).stdout.strip()
+    path = Path(git_dir) / "cairn" / "local-env.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path
 
 
 def _load(path: Path, name: str):
@@ -101,8 +113,7 @@ class TestTheInterpreterBindingIsAShapeValidator:
     def test_a_malformed_binding_refuses(self, binding) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            (root / "dev" / ".cairn").mkdir(parents=True)
-            (root / "dev" / ".cairn" / "local-env.json").write_text(
+            _binding_path(root).write_text(
                 json.dumps(binding), encoding="utf-8")
             with pytest.raises(kernel.LifecycleError):
                 kernel._resolve_interpreter(root)
@@ -112,8 +123,7 @@ class TestTheInterpreterBindingIsAShapeValidator:
         interpreter nobody chose, with no signal that the binding is stale."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
-            (root / "dev" / ".cairn").mkdir(parents=True)
-            (root / "dev" / ".cairn" / "local-env.json").write_text(
+            _binding_path(root).write_text(
                 json.dumps({"interpreter": "/nonexistent/python3"}), encoding="utf-8")
             interpreter, _source = kernel._resolve_interpreter(root)
             assert interpreter
