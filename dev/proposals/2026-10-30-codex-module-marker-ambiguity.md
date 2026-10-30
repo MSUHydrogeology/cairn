@@ -1,7 +1,7 @@
 # Refuse ambiguous module task markers during repeat installation
 
 **Author**: Codex (gpt-6.1-sol)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -65,3 +65,22 @@ A valid checked task is reset or duplicated, unrelated prose is removed, a malfo
 ## Assurance path
 
 **Assurance path**: high-assurance — the scaffold engine and install contract are touched.
+
+## Review -- Codex (gpt-6.1-sol) -- 2026-10-30
+
+**Reviewed commit**: ae80c5de
+
+**Tier**: usual
+
+**Verdict**: SUPPORT, with one non-blocking clarification.
+**Elapsed**: about 6 minutes; **tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. On a temporary target, a public `bootstrap.scaffold.main` repeat install returned 0 after I added a space to a checked reflections task opener; the board then had two reflections tasks, one checked and one unchecked. This violates the accepted no-duplicates promise in `dev/proposals/archive/2026-10-29-codex-module-discovery-activation.md`.
+2. **Best alternative.** A single preflight grammar check within `_reconcile_generated_blocks` is simpler than adding tolerant spelling or identity inference in both install and adoption. The exact opener parser and broader caller trigger currently disagree at `bootstrap/_scaffold/install.py` lines 1375 and 1569.
+3. **What would show it wrong?** If preflight rejects unrelated prose or permits a malformed identity to duplicate work, the rule misses its purpose. Public tests should assert both outcomes through `bootstrap/tests/test_onboarding_seed_roster.py` and `bootstrap/tests/test_upgrade_module_additions.py`.
+
+**Finding 1 — non-blocking.** Define “marker-like” as a line anchored to a Cairn module marker stem inside the generated region, and state how malformed openers, closers and duplicate region delimiters are classified. Otherwise an ordinary note quoting marker text could be refused, or a near-spelling could be missed. A short grammar statement and a public harmless-prose example would close this; `bootstrap/_scaffold/install.py::_reconcile_generated_blocks` is the implementation home.
+
+**Coverage**: Claims and public path: temporary repeat-install probe above; completeness and fail-closed: `install.py:1360-1450,1560-1590`; consistency and drift: archived discovery proposal and `bootstrap/tests/test_onboarding_seed_roster.py`; lifecycle and scope: this proposal's install/adoption and documentation sections; satisfier: Finding 1. No scientific claim applies. I did not run the suite, mutate code, or verify every malformed spelling; implementation and the separate Security Review remain open.
