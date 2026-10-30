@@ -37,3 +37,25 @@ C1: The selected upstream inventory is rendered for every recorded module, inclu
 Boundary A: run `python -m pytest bootstrap/tests/test_upgrade.py` for migration, staging and review pairs; `python -m pytest bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_module_merge_lockfile.py` for reconciliation and adoption; and `python -m pytest bootstrap/tests/test_upgrade_added_slots.py bootstrap/tests/test_upgrade_side_door_parity.py bootstrap/tests/test_skills_upgrade.py` for other review pairs and staged-input consumers. Run `python -m pytest bootstrap/tests/test_upgrade_lockfile_path_containment.py` for containment. Split invocations if the guard's selection limit requires it, preserving and reconciling the union. Run `python scripts/quality_gate.py --sub neutrality --sub redundancy` as standing gates. For changed prose run `python scripts/claim_check.py <changed-file>`, `python scripts/check_cairn.py`, `python scripts/link_check.py`, and `python scripts/sync_doc_snippets.py --check` after confirming the latter's supported interface; record any correction to the command. Search for changed-file readers and byte pins and run their owning checks. Exercise the two specified mutations on separate copies of the committed candidate, against an unmutated control, and record each result.
 
 Boundary B: wide, because this changes an engine review contract. After the final implementation commit run the same mapping on a clean unchanged commit under canonical Python 3.13.x; record the full SHA, range, pre/post state, commands, counts, elapsed time, tokens or unknown, non-pass dispositions, omissions and `Certified by: pending`. Boundary C is independent targeted falsification by the code reviewer, who challenges the mapping and records its bounding verdict. Full-tree certification and re-anchor are separate ceremonies and are not authorized by this plan.
+
+## Plan review -- Codex (gpt-6.1-sol) -- 2026-10-30
+
+```
+Reviewed commit: 3012471d
+Target: opening plan
+Elapsed: about 5 minutes
+Tokens: unknown
+```
+
+**Obligation**: Internal
+**Verdict**: REVISE
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes, with the historical-source check repaired. The selected lock roster and clean upstream text can make local edits visible without changing installed content -- plan C1; `bootstrap/_scaffold/upgrade.py::_write_stage`.
+2. **Best alternative.** Reuse `_substitute_module_inventory` after validating structure and source compatibility; the existing reconciler already handles generated entries. Keep the change in the review-only branch -- `bootstrap/_scaffold/install.py::_reconcile_generated_blocks`; `bootstrap/_scaffold/upgrade.py:1303`.
+3. **What would show it wrong?** A `--to` ref with identical config metadata but a different inventory renderer could yield a successful, inaccurate `.theirs` -- `_MODULE_DISCOVERY` in `bootstrap/_scaffold/config.py`; `_render_module_inventory` in `bootstrap/_scaffold/install.py`; plan Scope.
+
+**Blocking finding 1 -- historical rendering compatibility.** The Scope checks metadata-bearing config bytes, but the selected source's rendering code can change while those bytes stay equal. Matching config alone therefore does not establish the accepted faithful comparison. Close by conservatively proving renderer compatibility too (for example, compare the selected source's renderer-bearing file bytes with the running source and refuse when unavailable or different), or by another check that proves the selected source would render the same bytes. Add a public `--to --stage` fixture that changes renderer behavior while keeping config metadata equal and asserts refusal without a usable partial stage. This is an unmet accepted criterion, not a request to execute historical code.
+
+Coverage: claims and fail-closed behavior (`Scope`, `_render_module_inventory`), public path and edge fixtures (`test_upgrade.py::TestInitLock`), reuse (`_reconcile_generated_blocks`), drift and placement (`docs/DOCUMENTATION_PLAN.md`, `_write_stage`), and scope/satisfier (accepted proposal's Current contract) were inspected. No implementation, historical fixture, test suite, mutation, or Security Review was run; failure cleanup and stage ordering remain implementation evidence.
