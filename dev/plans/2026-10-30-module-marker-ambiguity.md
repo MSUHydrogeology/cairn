@@ -327,6 +327,14 @@ empty. **Post-run state**: clean, same clone and SHA.
 | Prior three C2 mutations at `629400c1` (recorded above) | 1 each | All three killed by their named public regressions; 0 survivors or measured equivalents | about 1 s each | unknown |
 | Prior standing gates at `147128ea` (recorded above) | 0 | `check_cairn`, `link_check`, `sync_doc_snippets --check`, neutrality and redundancy passed; 188 Markdown files and 481 snippets checked | about 2 s | unknown |
 
+The plan-record commit `dc8f8944799bdfafb14180ba728cbe0a9e65c816` was
+also checked in a clean detached clone with the canonical interpreter. Its
+`claim_check`, `check_cairn`, `link_check`, snippet check, and neutrality /
+redundancy gates all exited 0. Cairn and link checks each scanned 189 Markdown
+files (90 and 91 external links were not probed, respectively); snippet check
+scanned 482 documents; quality gates reported fail=0 (43 neutrality info and
+1 redundancy info). Combined elapsed time was about 1.3 seconds; tokens unknown.
+
 **Non-pass disposition**: An initial `git archive` scratch run lacked Git
 metadata; the unrelated `--to HEAD` test could not resolve its explicit ref
 and 1 of 55 tests failed. The complete family then passed in a clean detached
