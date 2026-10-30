@@ -1,7 +1,7 @@
 # Plan: Deliver the outcome with less apparatus
 
 **Source proposal**: dev/proposals/archive/2026-10-30-claude-cut-the-apparatus.md
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(Internal)
 **Opened**: 2026-10-30
 **In brief**: Reduce recurring review and instruction overhead while preserving agreed outcomes and required assurance.
@@ -204,3 +204,21 @@ This record covers the code-review correction at `3c9892a6`. **Boundary B mode**
 | Python 3.13.13 `scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | 0 failures; informational notes only | 1.11 s | unknown |
 
 Every Python command used the absolute interpreter above; Group A and B expand to the exact `bootstrap/tests/` selections in the preceding record. **Non-pass disposition**: none. **Plan-specific acceptance commands**: all mapped/discovered readers and standing gates above passed; root/shipped AGENTS word counts were 2,487/2,410. Security designation did not change, so the conditional security-verification family was not triggered. **Known omissions**: the C3 one-month ratio remains open; external URLs were not probed; no independent scientific check was specified; the certifying full suite was not run under this plan.
+
+## Code review follow-up -- Codex (GPT-6.1 SOL) -- 2026-10-30
+
+```
+Reviewed commit: 3c9892a655b9bdc4ccae2722498ecc74d3794ccf
+Target: P1/P2 corrections after 88d6ff31; Boundary B record at 4c57a032
+Prior findings: P1, P2
+```
+
+**Verdict**: ACCEPT; P1 and P2 closed. **Bounding**: ACCEPTED. **Elapsed**: about 3 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Light skips plan triage even for multi-area/wide work, while standard/heavy retain it; root and shipped rules agree. -- `AGENTS.md:24,84-87`, `doctrine/plans.md:181-214`.
+2. **Best alternative.** Keep the corrected existing carriers and tests; another process layer adds no protection. -- `dev/proposals/_template.md:176`, `bootstrap/tests/test_review_and_verification_rules_ship.py:307-369`.
+3. **What would show it wrong?** A live “moves” trigger or an installed template lacking the light route would refute closure; neither appeared. -- `templates/modules/team-gated/security-review.md:25-56`, focused checks below.
+
+**Falsification ledger.** Isolated archive of `3c9892a6`: 12 focused rule tests and 3 scaffold installation tests passed under Python 3.13.13. Direct `install_core`/`install_modules` probe confirmed the installed light/no-plan template and added/widened-only security module. An old moved-boundary phrase is present in archived history, confirming the negative search can find it; no such trigger remains in live root/shipped modules or proposal templates. Checked the author's wide Boundary B record at `4c57a032` for commit, interpreter, clean pre/post state, mapped groups and prose gates; it reports 1,519 passes and zero failures. No mutation claim; no full suite. **Coverage:** lenses 1-3, 5-9 through cited carriers, installer nodes, and negative control; did not independently run all Boundary B groups, probe external links, conduct Security Review, or measure the future one-month ratio.
