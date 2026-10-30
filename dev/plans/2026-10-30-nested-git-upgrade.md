@@ -141,3 +141,45 @@ implementation evidence and code review.
 ## Response to plan reviews -- Codex GPT-6.1 Sol -- 2026-10-30
 
 Both the Internal and Internal Security Review passes found no defects. I accept their assessments; the operative plan remains unchanged. Both review obligations are cleared, and implementation may begin.
+
+
+## Implementation verification -- Codex GPT-6.1 -- 2026-10-30
+
+**Implementation commit**: `f8f96cdb`
+**Interpreter**: Python 3.13.13 (`/Users/kendal30/conda_envs/lhm/bin/python3.13`)
+**Boundary B mode**: wide, pending
+**Certified by**: pending
+
+**Boundary A checks** ran against the implementation bytes before commit. The
+shared worktree was not clean: an unrelated proposal was modified, and
+`.claude/` and `dev/measurement/collision_log.md` were untracked. The two mapped
+test selections collected 456 tests: 454 passed, with these non-passes:
+
+* `test_review_pairs_leave_no_placeholder_the_install_filled` failed because
+  the generated review-pair file for the modules README differed outside its
+  slots.
+* `test_apply_still_applies_a_review_area_of_plain_names` failed because its
+  manually planted stage says the notes file was absent at stage time, then the
+  test creates it before apply.
+
+These failures do not exercise the nested Git boundary. The targeted boundary
+and metadata nodes passed 61/61. The security lint passed 11/11. `claim_check.py`
+on `bootstrap/UPGRADE.md`, `check_cairn.py`, `link_check.py` (197 Markdown files),
+and `quality_gate.py --sub neutrality` all passed. `git diff --check` passed.
+
+**C2 mutation probes** ran after commit in separate fresh detached worktrees at
+`f8f96cdb`, under the same interpreter. Each unmutated control passed, and each
+single mutation was killed by its named test:
+
+| Mutation | Control | Mutation result |
+|---|---|---|
+| Remove supplied-name filtering | `test_the_guard_refuses_a_supplied_git_name_even_when_its_link_target_is_ordinary`: 1 passed | Same test failed to raise: killed |
+| Remove resolved-target filtering | `test_the_guard_refuses_a_contained_link_whose_resolved_target_is_git_data`: 1 passed | Same test failed to raise: killed |
+| Remove case folding | `test_project_paths_refuse_git_components_after_conservative_normalization`: 7 passed | 3 case variants survived: killed |
+| Remove trailing-dot/space normalization | Same normalization test: 7 passed | 4 trailing variants survived: killed |
+
+The temporary worktrees were removed after each probe. Boundary B has not been
+run on a clean, unchanged commit; the two mapped non-passes remain unresolved.
+The public recovery rehearsal and the four mutants are measured, but C2 and the
+implementation remain open pending a clean wide Boundary B record and
+independent code and Security reviews. No full suite or certifying run was run.
