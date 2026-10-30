@@ -1,7 +1,7 @@
 # Plan: Align work-intent guidance with behavior
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-intent-guidance.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30
@@ -32,7 +32,7 @@ The coordination doctrine and module prescribe cooperation; collaboration guidan
 
 ### C1
 
-Explain opt-in hooks, default block only for fresh overlapping claims with a session token and differing resolved label, warnings for unclaimed and stale paths, tokenless withholding of cross-claim blocking, and existing warn and confirm modes. Use the same session-specific label for claim, commit and inherited auto-release; manual release uses claim ID and does not authenticate ownership. Prefer harness identity and compare `whoami` in relevant environments for diagnosis. A synthetic example sets a distinct override separately in each fresh shell that needs it, including the commit; an override alone supplies no token. Warn that shared labels can hide conflicts and that labels and logs are cooperative, not authentication. Keep copies aligned and change no hook or identity behavior.
+Explain opt-in hooks, default block only for fresh overlapping claims with a session token and differing resolved label, warnings for unclaimed and stale paths, tokenless withholding of cross-claim blocking, and existing warn and confirm modes. `CAIRN_ALLOW_UNCLAIMED` and `solo_mode` also prevent blocking while retaining the other-session warning. Use the same session-specific label for claim, commit and inherited auto-release; manual release uses claim ID and does not authenticate ownership. Prefer harness identity and compare `whoami` in relevant environments for diagnosis. A synthetic example sets a distinct override separately in each fresh shell that needs it, including the commit; an override alone supplies no token. Warn that shared labels can hide conflicts and that labels and logs are cooperative, not authentication. Keep copies aligned and change no hook or identity behavior.
 
 S2: assert corrected parent help in both copies under Python 3.13.x; in disposable copies restore `warn-by-default` independently in each and show the assertion fails, with unmutated controls. S3: the mapped tests and gates below are human-run during C1 and C2. No automatic prose-accuracy control is claimed.
 
@@ -48,8 +48,9 @@ Record the clean tested SHA and range, interpreter, pre/post state, commands, co
 
 Boundary A runs the mapped checks during iteration; Boundary B repeats them on the final clean commit in **wide** mode because this changes governing and installed contracts. Use canonical Python 3.13.x and record `Certified by: pending`. No full certification is implied.
 
-* `bootstrap/tests/test_intents_tool.py`: real `whoami`, claim, pre-commit and post-commit paths, default modes, no-token, same-label, stale and unclaimed cases; add real parent-help assertions for both copies and the reverse mutation above. Exercise manual release by ID separately. Check source/twin parity and the installed entry point.
+* `bootstrap/tests/test_intents_tool.py`: real `whoami`, claim, pre-commit and post-commit paths, default modes, no-token, same-label, stale and unclaimed cases, and `CAIRN_ALLOW_UNCLAIMED` and `solo_mode` warning-without-block exemptions; add real parent-help assertions for both copies and the reverse mutation above. Exercise manual release by ID separately. Check source/twin parity and the installed entry point.
 * `bootstrap/tests/test_coordination_broad_intent.py`, `bootstrap/tests/test_upgrade_module_additions.py`, `bootstrap/tests/test_review_sweep_ships.py`, and `bootstrap/tests/test_review_stance_in_shipped_files.py`: installed module and collaboration readers. Search all changed paths in tests and manifests again, with a known match as control, and add actual owners and public paths found. Split pytest selections within the guard limit and reconcile the union.
+* Compare final guidance by hand with `tools/_intent/identity.py`, `tools/_intent/conflict.py`, `tools/_intent/hooks.py` and release commands in `tools/_intent/cli.py`, including both exemptions and inherited environments; record each comparison and discrepancies corrected. Search current related descriptions with `rg -n -i 'warn.by.default|block.by.default|work.intent|CAIRN_ALLOW_UNCLAIMED|solo_mode' doctrine dev/modules templates/modules tools`, first confirming a known match in `tools/_intent/cli.py`; inspect matches and record corrections and omissions.
 * Run `python scripts/claim_check.py` on changed documents, `python scripts/check_cairn.py`, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py` in check mode if supported, and `python scripts/quality_gate.py --sub neutrality --sub redundancy`; establish the snippet command's actual mode before running it. Record any omissions and resolve missing required coverage before handoff.
 * Record frozen-file changes for the existing Maintainer-run gate-manifest re-anchor ceremony under `bootstrap/REANCHOR_RUNBOOK.md`; do not treat a green suite as re-anchoring. Boundary C belongs to the independent code reviewer, who challenges the verification record and runs targeted falsification.
 
@@ -98,3 +99,10 @@ Assurance path: high-assurance
 The remaining security treatment is adequate as planned: identity resolution keeps overrides separate from token availability, same-label suppression is acknowledged as cooperative, manual release is by ID, and auto-release inherits the committing environment. Evidence: `tools/_intent/identity.py::resolve_agent_identity`, `resolve_session_token`; `tools/_intent/conflict.py::other_session_overlaps`; `tools/_intent/cli.py::_cmd_release`, `_cmd_auto_release`; `tools/_intent/hooks.py::_build_hook_block`. C1 maps independent reverse help mutations in both intentional CLI twins; Verification retains installed paths and the owed frozen-file ceremony, matching `bootstrap/tests/fixtures/protected_test_roster.json`. The doctrine gate is a stop condition rather than assumed authority. IGP1 must also be folded: behavior tests alone cannot establish that final prose describes these paths accurately.
 
 **Coverage:** Read committed plan, accepted revised proposal and Decision, current plan template and review rules, identity/conflict/release/hook paths, existing test descriptions and protected roster. Covered claims, public paths, failure/exemption behavior, drift, scope and lifecycle placement through those sources. No tests, mutations, hook installation, certification, original-incident reproduction or exhaustive reader search performed. Implementation evidence and final prose remain future author obligations; this pass supplies no re-anchor or doctrine authorization.
+
+## Response to plan reviews -- Codex (GPT-6) -- 2026-10-30
+
+| Finding | Disposition |
+|---|---|
+| IGP1 | Accepted; Verification maps the human comparison and controlled related-description search, including recorded corrections. |
+| IGPS1 | Accepted; C1 and Verification name both exemptions and their warning-without-block behavior. |
