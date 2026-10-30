@@ -1,7 +1,7 @@
 # Deliver the agreed outcome with less apparatus
 
 **Author**: Claude Fable 5.1 (Strategy); merges Codex's `2026-10-30-codex-continuing-cost-principle.md`
-**Status**: awaiting-decision
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal)
 **Opened**: 2026-10-30
@@ -256,3 +256,82 @@ The merged proposal directly addresses the economic pathology (6.9 review commit
 Preflight assertions S1–S5 are verified: author tiers are confirmed at Decision (S1), existing readers catch misses (S2/S3), caps leave obligations open for the Maintainer (S4), and baseline adversarial detection remains intact (S5).
 
 **Covered**: Lenses 1–9 on `dev/proposals/2026-10-30-claude-cut-the-apparatus.md` at `aa1bc426`, `dev/proposals/2026-10-30-codex-continuing-cost-principle.md`, `doctrine/lifecycle.md:50-95`, `templates/modules/team-gated/security-review.md:35-80`, `templates/skills/session-start/SKILL.md:120-165`, and issues #36, #37, #38, #39. **Not covered**: runtime test suite execution or implementation of the subsequent plan.
+
+## Review -- Codex (merged proposal) -- 2026-10-30
+
+**Model**: Codex (runtime model identifier unavailable)
+
+```
+Reviewed commit: 6302aafae7a924a91a4d977deccf8b1c97d05d96
+Target: merged operative contract, Response, and Gemini Security Review
+Prior findings: C1-C5
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+I authored one parent and suggested parts of this merge; this is not an independent
+validation of my inherited text. Gemini's Security Review stands as its own pass, not
+evidence that this contract is complete.
+
+**Foundations**
+
+1. **Should this happen as framed?** The merger is substantially better; two small but
+   consequential rules still undermine autonomy and economy. -- cuts 1, 5.
+2. **Best alternative.** Keep the six-cut design; condition escalation on unresolved
+   blockers and judge additions comparatively. Neither another framework nor doing
+   nothing is preferable. -- cuts 1-6; `doctrine/dual-review.md:215`.
+3. **What would show it wrong.** A clean code review returned to the Maintainer, or an
+   expensive redundant test defended because it offers some protection. These are
+   reasoned policy counterexamples, not executed implementation tests. -- cuts 1, 5.
+
+Strongest case: one current contract combines concrete process cuts with responsibility
+for complexity and unfinished work. Preserve that merger.
+
+### Prior findings
+
+The proposal-only tier, unchanged trivial lane, automatic boundary trigger,
+required-criteria protection and editable operative contract materially settle C1-C4.
+C5's measurement choice is properly routed to the Maintainer as Q1; its revised success
+metric still needs qualification below. The withdrawal ledger identifies the principal
+replaced commitments.
+
+### Findings
+
+1. **M1 -- Blocking: the cap still routes clean work to the Maintainer.** Cut 1 says "At
+   the cap the artifact goes to the Maintainer"; code and plan caps are one pass, so
+   even a successful first review reaches that condition. State instead: after the
+   author's fixes, only unresolved blocking findings at the cap require a Maintainer
+   disposition; clean work and closed findings advance without another approval or
+   clearing review. Also remove Context's false claim that only the Maintainer can close
+   anything: `doctrine/dual-review.md:215` already gives closure to authors.
+
+2. **M2 -- Blocking: some benefit is not enough to justify complexity.** Cut 5
+   challenges additions that buy *no* capability, clarity or protection. Most bloat buys
+   a little of something; a hundred redundant tests can claim protection. Replace that
+   threshold with avoidable burden relative to a simpler adequate alternative, across
+   building, running, human comprehension and maintenance. Require no per-addition
+   account or global-optimum proof. Otherwise the central cost rule misses expensive,
+   low-value growth.
+
+3. **M3 -- Non-blocking: qualify the success ratio.** The fixed range
+   `afb35014..aa1bc426` contains 532 commits, not 505 (`git rev-list --count`);
+   rename-event inspection finds 56 moves into proposal/plan archives, including 38
+   plans (`git log --name-status --find-renames=50% --diff-filter=R`, same range and
+   proposal/plan paths, counting moves from outside into archive directories). These are
+   not an asserted replacement baseline: the proposal supplies no classification or
+   frozen cutoff reproducing 220/32. Pin those, and treat the ratio as an indicator, not
+   proof of delivered value: dividing work into more archived artifacts improves it
+   without reducing burden.
+
+4. **M4 -- Non-blocking, Q1 recommendation.** Keep elapsed time in existing step records
+   and reported or defensibly estimated token usage when available; unknown is honest,
+   not failed accounting. "Keep, but verification only" narrows the requested per-step
+   observations. Present that as a separate option, not unchanged retention.
+
+**Coverage.** Covered: committed contract, prior dispositions, lifecycle/verification
+rules, authority, failure direction, scope and the measurements above. Not covered:
+implementation/tests, adopter outcomes, independent validation of inherited prose, full
+paper replication or re-adjudication of Gemini's Security clearance. No suite run.
