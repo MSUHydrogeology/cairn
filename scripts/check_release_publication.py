@@ -18,6 +18,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -122,6 +123,32 @@ def _release_api_url(owner: str, repository: str, tag: str) -> str:
     return f"{_API_ROOT}/{owner}/{repository}/releases/tags/{tag_component}"
 
 
+def _read_release_body(response, deadline: float) -> bytes:
+    """Read one chunk at a time, shrinking socket timeouts to the deadline."""
+    response_file = getattr(response, "fp", None)
+    body_file = getattr(response_file, "fp", response_file)
+    raw = getattr(body_file, "raw", None)
+    sock = getattr(raw, "_sock", None)
+    read_chunk = getattr(response, "read1", None)
+    if sock is None or not callable(read_chunk):
+        raise CheckError("GitHub Release API response cannot be read with a total deadline")
+
+    body = bytearray()
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("GitHub Release API response exceeded its total deadline")
+        sock.settimeout(remaining)
+        chunk = read_chunk(min(64 * 1024, _MAX_RELEASE_BYTES + 1 - len(body)))
+        if time.monotonic() > deadline:
+            raise TimeoutError("GitHub Release API response exceeded its total deadline")
+        if not chunk:
+            return bytes(body)
+        body.extend(chunk)
+        if len(body) > _MAX_RELEASE_BYTES:
+            raise CheckError("GitHub Release API response exceeded 1 MiB")
+
+
 def _fetch_release(owner: str, repository: str, tag: str) -> None:
     """Require the fixed-host Release API to report a published matching tag."""
     url = _release_api_url(owner, repository, tag)
@@ -136,12 +163,13 @@ def _fetch_release(owner: str, repository: str, tag: str) -> None:
     )
     opener = urllib.request.build_opener(
         urllib.request.ProxyHandler({}), _NoRedirect())
+    deadline = time.monotonic() + _HTTP_TIMEOUT_SECONDS
     try:
         with opener.open(request, timeout=_HTTP_TIMEOUT_SECONDS) as response:
             status = response.getcode()
             if status != 200:
                 raise CheckError(f"GitHub Release API returned HTTP {status}")
-            body = response.read(_MAX_RELEASE_BYTES + 1)
+            body = _read_release_body(response, deadline)
     except urllib.error.HTTPError as exc:
         exc.close()
         raise CheckError(
@@ -153,8 +181,6 @@ def _fetch_release(owner: str, repository: str, tag: str) -> None:
     except (OSError, TimeoutError) as exc:
         raise CheckError(
             f"GitHub Release API read failed: {_safe_detail(exc)}") from exc
-    if len(body) > _MAX_RELEASE_BYTES:
-        raise CheckError("GitHub Release API response exceeded 1 MiB")
     try:
         release = json.loads(body.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:

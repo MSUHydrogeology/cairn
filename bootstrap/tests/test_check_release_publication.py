@@ -2,10 +2,15 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import json
 import os
+import socket
 import subprocess
 import sys
+import threading
+import time
+from types import SimpleNamespace
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -32,20 +37,49 @@ REMOTE_URL = "https://github.com/example/repo.git"
 
 class FakeResponse:
     def __init__(self, body: bytes, status: int = 200) -> None:
-        self.body = body
+        self._body = io.BytesIO(body)
         self.status = status
+        self.fp = SimpleNamespace(fp=SimpleNamespace(
+            raw=SimpleNamespace(_sock=FakeSocket())))
 
     def getcode(self) -> int:
         return self.status
 
-    def read(self, limit: int = -1) -> bytes:
-        return self.body if limit < 0 else self.body[:limit]
+    def read1(self, limit: int = -1) -> bytes:
+        return self._body.read1(limit)
 
     def __enter__(self):
         return self
 
     def __exit__(self, *_exc) -> None:
         return None
+
+
+class FakeSocket:
+    def settimeout(self, _timeout: float) -> None:
+        return None
+
+
+class SocketResponse:
+    """Response adapter backed by a real socket for slow-drip deadline tests."""
+
+    def __init__(self, sock: socket.socket) -> None:
+        self._socket = sock
+        self._stream = sock.makefile("rb")
+        self.fp = SimpleNamespace(fp=self._stream)
+
+    def getcode(self) -> int:
+        return 200
+
+    def read1(self, limit: int = -1) -> bytes:
+        return self._stream.read1(limit)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_exc) -> None:
+        self._stream.close()
+        self._socket.close()
 
 
 class FakeOpener:
@@ -380,6 +414,41 @@ def test_release_api_timeout_fails_closed(
     with pytest.raises(checker.CheckError, match="read failed"):
         checker._fetch_release(OWNER, REPOSITORY, TAG)
     assert opener.calls[0][1] == 30
+
+
+def test_public_command_refuses_slow_drip_api_response_by_total_deadline(
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str]) -> None:
+    _stub_public_reads(monkeypatch)
+    monkeypatch.setattr(checker, "_HTTP_TIMEOUT_SECONDS", 0.25)
+    receiver, sender = socket.socketpair()
+    opener = FakeOpener(SocketResponse(receiver))
+    monkeypatch.setattr(
+        checker.urllib.request, "build_opener", lambda *_handlers: opener)
+
+    def send_slowly() -> None:
+        try:
+            for byte in json.dumps(_release()).encode("utf-8"):
+                time.sleep(0.04)
+                sender.sendall(bytes([byte]))
+        except OSError:
+            pass
+        finally:
+            sender.close()
+
+    sender_thread = threading.Thread(target=send_slowly, daemon=True)
+    sender_thread.start()
+    started = time.monotonic()
+    result = checker.main([
+        "--repository", f"{OWNER}/{REPOSITORY}", "--tag", TAG,
+        "--expected-commit", GATE_COMMIT,
+    ])
+    elapsed = time.monotonic() - started
+    sender_thread.join(timeout=1)
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "read failed" in captured.err
+    assert elapsed < 1.0
 
 
 def test_git_timeout_is_bounded_and_fails_closed(
