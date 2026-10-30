@@ -14,6 +14,7 @@ from bootstrap._scaffold import install
 
 
 SESSION_PATH = Path(__file__).resolve().parents[2] / "tools" / "session.py"
+SHIPPED_SESSION_PATH = Path(__file__).resolve().parents[2] / "templates" / "skills" / "_lib" / "session.py"
 
 
 def _git(root: Path, *args: str, env=None) -> str:
@@ -110,11 +111,12 @@ def test_nonrepository_and_nested_targets_install_without_binding(tmp_path):
     assert install.write_local_env(nested)[3] == "skipped-not-root"
 
 
-def test_invalid_git_directory_refuses_handoff_before_subtool(tmp_path, monkeypatch, capsys):
+@pytest.mark.parametrize("session_path", [SESSION_PATH, SHIPPED_SESSION_PATH], ids=["source", "shipped"])
+def test_invalid_git_directory_refuses_handoff_before_subtool(tmp_path, monkeypatch, capsys, session_path):
     root = tmp_path / "project"
     root.mkdir()
     (root / ".git").mkdir()
-    session = _session_module()
+    session = _session_module(session_path)
     monkeypatch.setattr(session, "_repo_root", lambda: root)
     monkeypatch.setattr(session, "_do_reflection", lambda *args: None)
     monkeypatch.setattr(session, "_do_thread_survey", lambda *args: None)
