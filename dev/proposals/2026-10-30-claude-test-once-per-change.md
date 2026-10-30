@@ -261,3 +261,31 @@ Recorded by the implementation author in the commit carrying this authorization.
 2. `tools/test_tiers.py:137-153` narrows whenever passages exist, regardless of broad-list size, and does not report omitted readers. This misses the accepted conditional and omission record. Add a targeted test for lists below and above the guard, including omitted-reader reporting.
 
 **Coverage**: inspected the committed selector, accepted proposal, plan verification text and selector tests; ran the selector and counted direct AGENTS references. Did not run a suite, inspect every changed prose surface, or perform Security Review. Boundary B remains pending after fixes and review.
+
+**Author response -- fix commit `61e0353d`**: Both blocking findings were
+addressed. The selector now requires and consumes the complete reviewed commit
+range for `AGENTS.md`, retains matching tests when the range is followed by an
+unrelated commit, narrows only above 40 broad readers, and reports every
+omitted reader. Regression coverage checks below and above the guard and CLI
+omission output. Focused Python 3.13.5 checks passed: 152 tests in 0.39s.
+
+## Implementation verification -- Codex GPT-6 Sol -- 2026-10-30
+
+**Boundary B mode**: wide. **Certified by**: pending.
+**Tested SHA**: `61e0353d171130cad2ea927bf63f5a14bd608488`.
+**Reviewed range**: `f7245a8271b7784316601284cee62a4d26fe17c6..61e0353d171130cad2ea927bf63f5a14bd608488` (test-once implementation `d2ab8d87` and selector fix `61e0353d`; the range also contains unrelated committed work).
+**Interpreter**: Python 3.13.5 at `/Users/kendal30/conda_envs/general/bin/python3.13`.
+**Tree**: separate checkout; clean before and after (`git status --porcelain` empty).
+
+**Surfaces**: governing instructions and shipped copy, plan template and shipped copy, planning and review doctrine, selector, selector tests, verification-boundary tests, and shipped-rule tests. Mapped tests: `test_incident_trackers_module.py`, `test_install_module.py`, `test_onboarding_seed_roster.py`, `test_presets.py`, `test_replacement_tools.py`, `test_review_and_verification_rules_ship.py`, `test_scientific_check_guidance_ships.py`, `test_session_routines.py`, `test_status_vocabulary_advisory.py`, `test_test_tiers.py`, and `test_verification_boundaries.py`.
+
+**Commands and outcomes**:
+
+- `python3.13 tools/test_tiers.py for --range d2ab8d87^..61e0353d <changed paths>` -- 11 test files selected; 44 broad `AGENTS.md` readers reported omitted because the list exceeded 40.
+- `python3.13 -m pytest -q <the 11 mapped files>` -- 323 passed in 6.64s.
+- `python scripts/quality_gate.py --sub neutrality` -- fail=0, info=43.
+- `python scripts/quality_gate.py --sub redundancy` -- fail=0, info=1.
+- `python scripts/link_check.py <proposal> <plan template> <planning doctrine>` -- 3 Markdown files, no issues; 1 external link not probed.
+- `claim_check` -- plan template and planning doctrine passed. Proposal reports 3 historical citation flags in its immutable review record (`:165` and `:173`); no new claim-check flags were introduced by this change.
+
+**Elapsed**: pytest 6.64s; standing gates and prose checks about 1.5s. **Tokens**: unknown. No full suite, Security Review, or re-anchor was run. The earlier 1,325-test Python 3.12.9 run predates this selector fix and is not counted as Boundary B evidence.
