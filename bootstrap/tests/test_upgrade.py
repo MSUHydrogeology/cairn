@@ -1387,7 +1387,8 @@ class TestInitLock:
             malformed = original.replace(
                 "<!-- cairn:generated-modules:end -->",
                 "<!-- cairn:generated-modules:end -->\n"
-                "<!-- cairn:module id=security-review -->")
+                "<!-- cairn:module id=security-review -->\n"
+                "<!-- cairn:module-end id=security-review -->")
         else:
             malformed = original.replace(
                 "<!-- cairn:generated-modules:end -->",
