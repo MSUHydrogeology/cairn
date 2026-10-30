@@ -225,3 +225,34 @@ remedies, which the cuts now carry.
 - Success as review commits below half of all commits: withdrawn; it already
   held (220/505 = 43.6%).
 - "Nothing else" (old cut 5): replaced by Q1.
+
+## Review -- Antigravity (Gemini, Security Review) -- 2026-10-30
+
+```
+Reviewed commit: aa1bc42634e9591b1a07582fb9f10bedee46afb0
+Target: merged proposal, response, and cited security doctrine surfaces
+Prior findings: C1-C5 (closed in response)
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: none (advisory guidance for Decision recorded)
+**Verdict**: ACCEPT
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: the infinite review loop mechanism (`doctrine/lifecycle.md:77`, `SKILL.md:131, 154`) exhausts context and tokens on procedural clearing passes without increasing defect detection; capping passes and reserving residual-risk clearance for the Maintainer preserves safety while stopping runaway loops -- `doctrine/dual-review.md:222`, `doctrine/rationale.md:368-394`, Porter et al. 1995 (doi:10.1145/222124.222144).
+2. **Best alternative.** Do not add new telemetry, token fields, or complex tier matrices; keep the proposal's merged 6 cuts, resolve Q1 by dropping the unmeasurable token observation rule, and enforce that the lighter-lane default stops whenever a trust boundary is added or widened -- `dev/proposals/2026-10-30-codex-continuing-cost-principle.md:71-79`, `templates/modules/team-gated/security-review.md:53`.
+3. **What would show it wrong.** A light-tier change bypassing plan or security review on an altered trust boundary, or an agent treating a reached pass cap as an automatic clearance rather than a mandatory Maintainer escalation -- proposal Signals the change is wrong; `AGENTS.md:363, 366`.
+
+The merged proposal directly addresses the economic pathology (6.9 review commits per artifact) while preserving Cairn's security posture:
+
+- **Pass caps (Cut 1)**: Capping Security Review at two passes stops unassisted loops safely because open obligations never auto-clear; unresolved findings must be explicitly cleared, narrowed, or accepted as residual risk by the Maintainer (`AGENTS.md:363` stands).
+- **Tiers and trust boundaries (Cut 2)**: Shifting default ceremony from "escalate when unsure" to "take the lighter lane" is safe only because the two hard escalation triggers (named high-risk surfaces; adding or widening trust boundaries under `templates/modules/team-gated/security-review.md:53`) remain mandatory stops.
+- **Advice closure (Cut 3)**: Preserves contract integrity: unmet accepted criteria, required checks, and regressions remain blocking. Authors may only dismiss non-contract advice in one line.
+- **Halving loaded text & in-place revisions (Cut 4)**: Cutting `AGENTS.md` to ≤2,500 words and revising proposals in place reduces prompt token overhead and directly mitigates LLM degradation over long trajectories (Zheng et al. 2026).
+- **Q1 recommendation**: Drop Codex's per-step timing and token sentence. Mandatory unmeasurable reporting fields generate hallucinations and noise.
+
+Preflight assertions S1–S5 are verified: author tiers are confirmed at Decision (S1), existing readers catch misses (S2/S3), caps leave obligations open for the Maintainer (S4), and baseline adversarial detection remains intact (S5).
+
+**Covered**: Lenses 1–9 on `dev/proposals/2026-10-30-claude-cut-the-apparatus.md` at `aa1bc426`, `dev/proposals/2026-10-30-codex-continuing-cost-principle.md`, `doctrine/lifecycle.md:50-95`, `templates/modules/team-gated/security-review.md:35-80`, `templates/skills/session-start/SKILL.md:120-165`, and issues #36, #37, #38, #39. **Not covered**: runtime test suite execution or implementation of the subsequent plan.
