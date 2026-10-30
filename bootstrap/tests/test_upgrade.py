@@ -1307,6 +1307,56 @@ class TestInitLock:
                     f"<!-- cairn:module id={name} -->" for name in modules]
         assert inventory.read_bytes() == installed_before
 
+    def test_missing_installed_inventory_has_no_ours_pair(
+        self, tmp_path: Path,
+    ) -> None:
+        review, _installed, _ancestors = self._inventory_review_case(
+            tmp_path, ["security-review"])
+        inventory = tmp_path / "dev/modules/README.md"
+        inventory.unlink()
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        theirs = review / "dev/modules/README.md.theirs"
+        ours = review / "dev/modules/README.md.ours"
+        assert theirs.is_file()
+        assert "<!-- cairn:module id=security-review -->" in theirs.read_text()
+        assert not ours.exists()
+        assert not inventory.exists()
+
+    def test_duplicate_upstream_inventory_entries_refuse_and_clean_stage(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys,
+    ) -> None:
+        review, installed_before, ancestors_before = self._inventory_review_case(
+            tmp_path, ["security-review"])
+        source = TEMPLATES_ROOT / "core/dev/modules/README.md"
+        original = source.read_text(encoding="utf-8")
+        from bootstrap._scaffold.install import _render_module_inventory
+        duplicate = _render_module_inventory(["security-review"])
+        malformed = original.replace(
+            "<!-- cairn:generated-modules:end -->",
+            duplicate + "\n" + duplicate + "\n"
+            "<!-- cairn:generated-modules:end -->")
+        from bootstrap._scaffold import upgrade as _up
+        read_bytes = _up._theirs_bytes
+        monkeypatch.setattr(
+            _up, "_theirs_bytes",
+            lambda root, templates, rel, to_ref: (
+                malformed.encode("utf-8")
+                if rel == "core/dev/modules/README.md"
+                else read_bytes(root, templates, rel, to_ref)),
+        )
+        stage = tmp_path / "dev/.cairn-upgrade"
+        stage.mkdir(parents=True)
+        (stage / "stale-marker").write_text("previous stage")
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 2
+        assert "duplicate" in capsys.readouterr().err.lower()
+        assert not stage.exists()
+        assert (tmp_path / "dev/modules/README.md").read_bytes() == installed_before
+        for rel, raw in ancestors_before.items():
+            assert (tmp_path / rel).read_bytes() == raw
+        assert not (review / "dev/modules/README.md.theirs").exists()
+
     @pytest.mark.parametrize("malformation", [
         "missing-template", "missing-generated", "duplicate-generated", "nested-entry",
         "unmatched-entry",
