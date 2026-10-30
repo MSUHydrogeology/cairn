@@ -1,7 +1,7 @@
 # Deliver useful work without accumulating avoidable burden
 
 **Author**: Codex (runtime model identifier unavailable; Strategy)
-**Status**: revising
+**Status**: superseded
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
@@ -197,3 +197,12 @@ Strongest reading: end review loops and unread evidence without letting economy 
 * **N8. Plain Language.** Fourteen slash-compounds ("inside/beside"), "whittling", 998 of 1,000 words: the "unreadable compression" its own smoke check names. Rules 5 and 7.
 
 **Coverage.** Covered: lens 1 (the commands cited), 3 (B3, B4), 5 (`security-review.md`, `dual-review.md`, the pinning test, v0.5.0), 7 (gate, who strikes), 8 (bundling). Not covered: S1-S5, which answer assertions, not the template's five questions (the Security Review's pass); the research sources; any test run; whether a two-pass cap would have ended the #36 chains.
+
+## Decision -- Maintainer -- 2026-10-30
+
+**SUPERSEDED** by `2026-10-30-claude-cut-the-apparatus.md`, accepted at
+`b60494c4`, whose accepted text reads "if accepted, Codex's is superseded". The
+Maintainer's authorization, quoted verbatim and visually isolated (chat,
+2026-10-30; scribed by Claude Fable 5.1):
+
+> "Please append my decision as accept as revised and provisioned."
