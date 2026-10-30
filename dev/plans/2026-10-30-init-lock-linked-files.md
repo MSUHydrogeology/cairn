@@ -1,7 +1,7 @@
 # Plan: Refuse linked installed files during lockfile migration
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-init-lock-linked-files.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Lockfile migration will refuse linked installed files before hashing them, so a link cannot supply another file's digest in a stable project tree.
@@ -178,3 +178,15 @@ Ran the eight owning guide-reader nodes named or implied by review `16031339` wi
 **Falsification ledger.** In an isolated copy of `89206da8`, Python 3.13.13, the five public mapped-link and ordinary-digest cases passed. Removing the mapped guard produced four failures: outside leaf, inside leaf, dangling leaf and linked parent all escaped refusal. Mutation total 1, killed 1, survivors 0, measured equivalents 0; unmutated control 5 passed. The test exercises the public command and snapshots (`test_upgrade_refuses_hostile_project_data.py:357-418`). Boundary B's mapped families and guide-reader addendum are recorded at `46a5a191` and `d2e805c6`; the ordinary reviewer closed the reader gap at `ddcbb32f`.
 
 **Covered**: trust boundary and failure order (`upgrade.py:156-175,1793-1823`; `security.py:110-155`); public entry, target secrecy, snapshots and recovery (`test_upgrade_refuses_hostile_project_data.py:357-418`); alias behavior and documentation limits (`upgrade.py:1531-1580,1732-1742`; `bootstrap/UPGRADE.md`); accepted scope and verification evidence (C1, Boundary B). **Not covered / low confidence**: concurrent replacement, each destination independently mutated, unrelated upgrade operations, full-tree certification and re-anchor; the separately disclosed manifest reader remains outside this guard.
+
+## Dispositions
+
+Dispositions: none. All accepted C1 outcomes and review findings are resolved. The stable-tree race and separate fidelity-manifest reader are disclosed limits outside the accepted scope; full-tree certification and the Maintainer's AST re-anchor are separate ceremonies, not deferred plan checks.
+
+**Evidence shipped**: mapped-path guard and shared remedy (`7aa7417b`); public leaf, dangling, parent-link and ordinary-digest tests plus guide and security-table updates (`e9adb1f9`); retained vendor-wrapper-specific assertion (`89206da8`); wide Boundary B, mutation evidence and guide-reader addendum (`46a5a191`, `d2e805c6`); ordinary code review and R1 disposition (`16031339`, `ddcbb32f`); Internal Security Review (`a71af82c`). The tests and reusable fixtures remain in their canonical homes.
+
+**Evidence deferred**: none among the plan-mapped checks. The full-tree suite and AST re-anchor are separate ceremonies; concurrent replacement and per-destination mutation were not part of the accepted verification contract.
+
+**Deferred evidence home**: N/A.
+
+**Fidelity sign-off**: `7aa7417b`, `e9adb1f9`, and `89206da8` implement the accepted proposal's `Current proposal` section (`dev/proposals/archive/2026-10-30-codex-init-lock-linked-files.md`): mapped destinations are checked before existence/read; leaf, dangling and parent links refuse; ordinary migration and vendor-wrapper alias behavior remain; remedy and stable-tree/manifest limits are stated. No accepted outcome was removed.
