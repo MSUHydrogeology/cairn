@@ -1,7 +1,7 @@
 # Plan: Protect upgrade bases and install output
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-upgrade-install-integrity.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Check upgrade ancestors before merging and make supplied names recognizable in paths and output.
@@ -49,3 +49,27 @@ Boundary A uses the canonical Python 3.13 interpreter and scoped tests. For ance
 Exercise `python bootstrap/scaffold.py upgrade --target <repo>` with `--plan`, `--stage`, `--apply` and `--apply --ack-review-only` in a scratch project, and `bootstrap/scaffold.py` install with normal, absent and unknown module cases. Check command help and actual entry points before using them. The new behavior tests must cover all C1/C2 cases, not just the smoke. Run `python scripts/claim_check.py` on changed documentation, `python scripts/check_cairn.py`, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py` where synced snippets change, and `python scripts/quality_gate.py --sub neutrality` for prose. Run `python -m pytest bootstrap/tests/test_security_lint.py` for the engine Bandit gate, treating a skip as an unmet check; do not run the full suite here.
 
 Boundary B is **wide** for the engine contract and security boundary: repeat the mapped owning families, public paths, mutation and standing gates on a clean, unchanged final implementation commit under the canonical interpreter. Record tested SHA and reviewed range, interpreter, clean pre/post state, commands, outcomes, timing, non-pass dispositions, omissions, and **Certified by**: pending. Certification is separate. Boundary C is independent targeted falsification by the code reviewer, including the set of output routes and staged-evidence changes; the reviewer records bounding and any missing check. An AST re-anchor follows its existing Maintainer-run ceremony, separately authorized.
+
+
+## Plan review -- Codex GPT-6 -- 2026-10-30
+
+```
+Reviewed commit: 353fb15cde122dcd4489dea77075269e96acb48b
+Target: operative plan, accepted proposal and named production paths
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+
+**Foundations**
+
+1. **Should this happen as framed?** The recovery and character-policy criteria carry the accepted outcomes, but the entry-point mapping is incomplete before implementation -- `dev/plans/2026-10-30-upgrade-install-integrity.md`, Verification.
+2. **Best alternative.** Keep the existing review-only recovery and shared admission path, and complete the route-to-test mapping in the plan rather than adding another recovery mechanism -- `bootstrap/_scaffold/upgrade.py`, `_apply_upgrade`; `bootstrap/_scaffold/install.py`, `print_report`.
+3. **What would show it wrong.** A supported recovery cannot preserve the bad ancestor and reach a later upgrade, or a named output route lacks a public test that checks the displayed value -- `dev/proposals/archive/2026-10-29-codex-upgrade-install-integrity.md`, Current contract.
+
+**PR1: Complete the reviewed entry-point and wording mapping before implementation.** The accepted security preflight requires the plan to enumerate entry points and reconcile the exact adopter-facing wording with the selected tests before implementation. The plan instead says to check help and entry points and search for consumers before implementation, and groups output paths under broad test families. For example, `install.py` emits unpaired-marker warnings while `cli.py` emits merge and fidelity results; their distinct routes are not mapped to commands and tests. This leaves the author to decide coverage after the one plan review. Enumerate each public entry point and selected input, map each named output and recovery route to its owning test file or node, and reconcile the planned adopter-facing wording with those assertions in the operative cells. Retain all accepted routes and the scoped guard-respecting runs.
+
+**Coverage:** Compared accepted current contract, recovery, character policy, stage binding, public paths and verification with the plan; inspected the named production output routes and template requirements. No implementation, command execution, timing or Windows rendering was tested. This pass clears only the ordinary Internal obligation.
