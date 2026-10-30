@@ -80,3 +80,26 @@ None.
 **Advice:** Make clear in the plan how mutation outcomes and omissions remain honest without recreating per-mutant inventories in records. `AGENTS.md` currently requires naming each survivor and equivalent, while the proposal removes mutation inventories and preserves outcome reporting.
 
 **Coverage:** Read the committed proposal, current template and named ledger assertions; searched the named governing and shipped surfaces for ledger and mutation wording. Did not run tests, inspect every consumer or assess security independently. Elapsed: approximately 2 minutes; tokens: unknown.
+
+## Review -- Codex Sol -- 2026-10-30
+
+Reviewed commit: 96029ff8
+Target: proposal, including security preflight and verification scope
+Prior findings: none
+Assurance path: high-assurance
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately 4 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Keep repeatable evidence while removing duplicate inventories. The Proposal explicitly retains independent review, verification and mutation checks; `AGENTS.md` currently duplicates ledger and mutation-reporting requirements.
+2. **Best alternative.** Concise results linked to reproducible tests or scripts, already proposed, avoid a replacement ceremony. `bootstrap/tests/test_review_sweep_ships.py` exercises installed review instructions through the scaffold CLI, so alignment can be checked where adopters receive it.
+3. **What would show it wrong.** Removing a required security check, accepting self-approval, or leaving decisive evidence unreproducible would defeat the stated safeguards. The proposal's Evidence / verification plan preserves Boundary B and independent Boundary C; `bootstrap/tests/test_review_stance_in_shipped_files.py` separately asserts review independence and the security obligation.
+
+The security-sensitive boundary is authority carried by installed instructions. Removing an inventory must not remove the act of trying to falsify a claim. The operative proposal preserves that act and its checks while moving repeatable detail to tests/scripts. Its high-assurance path and separate plan Security Review remain explicit. No added parser, subprocess, path, network or credential boundary is proposed; the named tests' scaffold invocation is an existing consumer, not a proposed execution change.
+
+**Covered**: committed proposal, source/shipped ledger provisions, named test readers and the security-review trust-boundary checklist. **Not covered / low confidence**: implementation bytes, complete consumer mapping and executable results; no suite, mutation run or re-anchor performed at proposal stage.
