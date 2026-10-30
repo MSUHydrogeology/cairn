@@ -247,3 +247,29 @@ bytes. Both passed in the mapped upgrade family.
 **Known omissions**: no full-tree certifying suite or re-anchor was run; neither
 is authorized here. Boundary C and the code Security Review remain with
 independent reviewers. External links reported as unprobed were not fetched.
+
+## Code review -- Codex (GPT-6, Security Review) -- 2026-10-30
+
+```
+Reviewed commit: b8ab602ece9ce6102e08c726d4a77da257c46721
+Verification record: 9267a559
+Target: C1 implementation and Boundary B
+Elapsed: approximately 5 minutes
+Tokens: unknown
+```
+
+**Obligation**: Internal Security Review
+**Verdict**: REVISE
+**Bounding**: WIDER RUN REQUIRED for the malformed-marker boundary identified below.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes, once malformed upstream structure is refused: the selected source and lock roster must yield a trustworthy independent review copy -- proposal Security preflight S1/S4; `upgrade.py::_render_review_inventory`.
+2. **Best alternative.** Reuse the reconciler with complete structural validation and conservative source-byte checks; executing historical code would grant passive source content unnecessary authority -- `upgrade.py::_render_review_inventory`; `install.py::_reconcile_generated_blocks`.
+3. **What would show it wrong?** An unmatched entry marker accepted into `.theirs`, or differing selected renderer bytes accepted, would defeat the comparison -- plan C1; `upgrade.py:383-437`.
+
+**Blocking finding -- entry markers outside the generated block are not validated.** The validator scans entry markers only in `body` (`upgrade.py:408-431`), but returns the full upstream text. On an isolated copy of `b8ab602e`, `_render_review_inventory` accepted an empty generated block followed by `<!-- cairn:module id=broken -->` and returned that unmatched marker. C1 requires refusal of unmatched markers and invalid upstream structure. Close by validating entry markers across the whole inventory, including their placement, and add a public `--stage` refusal and cleanup test for an outside-block marker.
+
+**Falsification ledger.** Isolated committed copy, Python 3.13.13: the outside-block unmatched-marker probe succeeded when refusal was expected. Source inspection checked both current and historical byte comparisons, roster validation, stage cleanup ordering, and reconciler handling. Boundary B records 345 mapped passes and two killed mutations; I checked its SHA, clean states and mapping without rerunning implementation checks.
+
+Coverage: claims, edges and fail-closed behavior (`upgrade.py:360-437,1265-1284`); reuse, drift and compatibility (`install.py:1336-1450`, plan Scope); lifecycle, scope and satisfier (accepted proposal and C1); scientific validity (no scientific claim). No full suite, re-anchor, public-path reproduction of this probe, concurrent replacement test, or apply run was performed.
