@@ -1,7 +1,7 @@
 # Plan: Protect upgrade bases and install output
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-upgrade-install-integrity.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Check upgrade ancestors before merging and make supplied names recognizable in paths and output.
@@ -115,3 +115,40 @@ The character policy correctly separates admission from display and retains deco
 | SRP1 | Accepted. C1 defines stage snapshot, pre-write comparison, observable concurrency boundary, partial-write and retry handling, and distinct recovery evidence; the mapping records deterministic race and failure tests. C2 retains existing path restrictions. |
 
 Both plan-review obligations are complete. Scope remains preserved; implementation remains subject to the Maintainer-run AST ceremony already applicable.
+
+## Implementation verification -- Codex GPT-6 -- 2026-10-30
+
+**Boundary B mode**: wide. The scaffold upgrade engine is a contract and security boundary. This clean detached checkout exercised the mapped ancestor/recovery and path-admission family, install/module and lockfile consumers, scaffold and merge integration, public command paths, engine security lint, and prose/link/neutrality gates. The plan's reviewed tests cover plan, stage, apply, review-only acknowledgment/recovery, normal and absent module reporting, unknown module and slot display, merge/fidelity output, and added-module paths.
+
+**Certified by**: pending
+
+**Tested commit**: `38e3a2758d39f6a9920713cdf9fcdb87703f3e95`
+
+**Reviewed range**: `85a9b6d2baa8a1167ee2c05a45519d59905f92e6`..`38e3a2758d39f6a9920713cdf9fcdb87703f3e95`
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13, pytest 9.0.3
+
+**Pre-run state**: clean detached worktree at the tested commit.
+
+**Post-run state**: clean detached worktree at the same tested commit.
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---:|---|---:|
+| `python -m pytest bootstrap/tests/test_upgrade.py bootstrap/tests/test_upgrade_lockfile_path_containment.py bootstrap/tests/test_upgrade_side_door_parity.py` | 1 | 204 passed, 1 failed | 24.25s |
+| `python -m pytest bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_lockfile_provenance.py bootstrap/tests/test_install_report_slots.py bootstrap/tests/test_install_module.py` | 0 | 84 passed | 21.14s |
+| `python -m pytest bootstrap/tests/test_scaffold.py bootstrap/tests/test_module_merge.py bootstrap/tests/test_skills_upgrade.py bootstrap/tests/test_upgrade_added_slots.py bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py` | 0 | 209 passed | 34.40s |
+| `python -m pytest bootstrap/tests/test_security_lint.py` | 0 | 11 passed | 1.90s |
+| `python scripts/claim_check.py bootstrap/UPGRADE.md` and `python scripts/claim_check.py dev/plans/2026-10-30-upgrade-install-integrity.md` | 0 | both OK | <1s |
+| `python scripts/check_cairn.py` | 0 | 198 Markdown files scanned; no issues | <1s |
+| `python scripts/link_check.py` | 0 | 198 Markdown files scanned; no issues | <1s |
+| `python scripts/quality_gate.py --sub neutrality` | 0 | fail=0, info=43 | <1s |
+| Digest mutation: bypass `checked_base_hash != expected_base`; `pytest bootstrap/tests/test_upgrade.py -k 'bad_ancestor_uses_review_recovery_and_preserves_evidence and altered-cache'` in a fresh mutation copy | 1 | expected behavior assertion failed: altered ancestor was merged instead of staged review-only | <1s |
+| Unmutated control: same selected ancestor test on the clean tested commit | 0 | 1 passed | 0.51s |
+| Display mutation: bypass `_display_name` ASCII escaping; `pytest bootstrap/tests/test_install_report_slots.py -k 'report_escapes_supplied_slot_names_and_distinguishes_backslashes'` in a separate fresh mutation copy | 1 | expected display assertion failed on bidi character | <1s |
+| Unmutated control: same selected display test on the clean tested commit | 0 | 1 passed | 0.03s |
+
+**Non-pass disposition**: `bootstrap/tests/test_upgrade.py::TestInitLock::test_review_pairs_leave_no_placeholder_the_install_filled` fails because the generated module inventory differs outside slots between the upstream review copy and the adopter copy. This is the pre-existing discrepancy identified during Boundary A and is unrelated to the accepted upgrade-integrity changes. The other 204 tests in that mapped group passed. No skip, xfail or xpass occurred.
+
+**Plan-specific acceptance commands**: the mapped public-command tests above exercise `upgrade --plan`, `--stage`, `--apply`, `--apply --ack-review-only`, recovery followed by a later stage, install with normal/absent/unknown modules, and the listed output paths. The two scoped mutations were each made in a fresh detached copy; each relevant behavior test failed under mutation and passed on the unchanged commit.
+
+**Known omissions**: no full-suite certification was run; it remains pending at the authorized integration point. The Maintainer-run AST re-anchor was not performed. No Windows terminal rendering run was performed. The checks cover the named behavior and public paths, not arbitrary concurrent writes between revalidation and replacement, which the plan expressly bounds out.
