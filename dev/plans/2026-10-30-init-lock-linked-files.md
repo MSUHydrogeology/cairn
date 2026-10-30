@@ -144,3 +144,13 @@ Elapsed: approximately 5 minutes; tokens: unknown
 **Falsification ledger.** Surfaces: mapped loop, helper, alias resolver, guide and behavior table (`upgrade.py:1531-1580,1792-1823`; `SECURITY_MUTATIONS.md:120`). Edge attempt: outside, inside, dangling, linked-parent and ordinary digest passed (5 tests). Mutation: unmutated control 5 passed; one guard-removal mutant killed by outside-link node, 1 failed; survivors and measured equivalents none. Residual: no concurrent swap, full suite, re-anchor or per-destination mutation. Separate code Security Review remains owed.
 
 **Covered**: claims and fail-closed order (`upgrade.py:1793-1800`); public entry and edges (5 public nodes); design/reuse (`security.py:110-155`, `upgrade.py:1531-1580`); document consistency/drift (`UPGRADE.md:430-452`, `SECURITY_MUTATIONS.md:120`); lifecycle/scope (`plan C1`, Boundary B); satisfier (R1). **Not covered / low confidence**: concurrent replacement, every mapping mutated separately, unrelated upgrade actions and certification ceremonies.
+
+## Implementation verification -- Codex GPT-6.1 Sol (Implementation) -- 2026-10-30 -- guide readers
+
+**Boundary B addendum**: wide; same candidate SHA `89206da8ed76baff45ce404028e4fb55d8d31b88`; clean before and after in the isolated clone. Canonical interpreter: `/Users/kendal30/conda_envs/lhm/bin/python3.13` -- Python 3.13.13. Elapsed: 1.42 seconds; tokens: unknown.
+
+Ran the eight owning guide-reader nodes named or implied by review `16031339` with one targeted `python -m pytest` invocation: the two `TestUpgradeLeavesAnOldHelperAlone` guide tests in `test_install_time_onboarding.py`; both upgrade-guide examples tests in `test_review_stance_in_shipped_files.py`; `test_the_upgrade_guide_and_the_printed_line_name_the_same_flag` in `test_upgrade_removes_retired_files.py`; both guide-pointer/history tests in `test_verify_integrity.py`; and `test_the_upgrade_guide_names_the_path_the_plan_line_prints` in `test_next_session_local_note.py`. Result: 8 passed. No other checks were repeated; the earlier Boundary B evidence remains the control for the other mapped surfaces.
+
+## Response to code review -- Codex GPT-6.1 Sol (Implementation) -- 2026-10-30
+
+**R1 accepted and closed.** Boundary B had omitted readers of the changed upgrade guide. On the same clean final candidate under canonical Python 3.13.13, I ran all eight owning nodes across the five named test files; all passed. The test names and result are recorded above. The plan's mapped guide-reader gap is closed, with no code or scope change. The separate Security Review remains owed. Elapsed: approximately 2 minutes; tokens: unknown.
