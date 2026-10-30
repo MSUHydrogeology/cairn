@@ -1,7 +1,7 @@
 # Meter agent cost from the tools' own logs
 
 **Author**: Claude Opus 5.5 (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the meter reads files outside the repository, a new trust boundary
 **Plan review**: required(Internal + Internal Security Review)
@@ -143,3 +143,57 @@ to justify cuts; the suite slows; nobody reads the pulse.
 
 **Assurance path**: high-assurance — new trust boundary and an
 unattended-run control.
+
+## Review -- Codex -- 2026-10-30
+
+**Model**: Codex (runtime identifier unavailable)
+
+```
+Reviewed commit: e741f1dbdec2a6ac2d3fec81b24649b1965fe933
+Target: proposal and Maintainer's item/daily/handoff clarification
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Premise:** Yes: automate observation, not bookkeeping; observation and permission
+   to continue differ. -- sections 1, 3.
+2. **Alternative:** Keep stdlib runtime; study [ccusage](https://ccusage.com/guide/)
+   readers/fixtures before duplicating their accounting. -- Alternatives.
+3. **Falsifier:** Credential-bearing metadata exposed, inherited usage counted twice, or
+   stale usage permitting another item. -- sections 1, 3; proposed fixtures.
+
+Strongest case: make expenditure visible without another agent reporting task.
+
+### Findings
+
+1. **MC1 -- Blocking: content-blind is not secret-free.** Section 1 retains
+   remotes/folders across projects; credentials can occur in remotes, not just message
+   bodies. Specify opted-in source/project scope, credential removal, private ledger
+   placement and safe diagnostics; test secrets in metadata too. A message-only secret
+   fixture is insufficient.
+
+2. **MC2 -- Blocking: define the ceiling's units and authority.** Section 3 switches
+   between percentage and weighted tokens without unit-specific limits; S1 incorrectly
+   says figures never authorize. Bind source/account, unit, reset window and freshness
+   to the configured limit; stale/unknown stops. Describe a cooperative between-item
+   stop, not a hard spending guarantee: one item or concurrent sessions can overshoot.
+
+3. **MC3 -- Gathering contract.** The Maintainer requests per-item attribution when
+   reliable; otherwise daily totals and refresh at `--handoff`. Advice: session digests
+   cannot select claim intervals, and claims are pruned
+   (`tools/_intent/record_io.py:288`). Preserve mappings, expose ambiguous coverage, and
+   test incremental/rebuild equality, inherited counters and rotation. Retain
+   verification timing until equivalence is demonstrated.
+
+**Elapsed**: 6m35s (18:52:23-18:58:58 UTC; finalization excluded)
+**Tokens**: unknown
+
+**Coverage:** Read identity, claim retention, drain/handoff and existing measurement
+tools. No private transcript scan, provider-count reproduction or implementation
+execution; separate Security Review remains open.
