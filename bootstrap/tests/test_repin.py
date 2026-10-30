@@ -249,7 +249,8 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
     ast_engine = "bootstrap/_scaffold/install.py"
     (repo / signer_roster_rel).write_text(f"scratch@example.invalid {public_key[0]} {public_key[1]}\n")
     candidate_paths = ("scripts/repin.py", "bootstrap/tests/test_repin.py",
-                       "dev/plans/2026-10-29-forward-trust-baseline.md", signer_roster_rel, ast_engine)
+                       "dev/plans/archive/2026-10-29-forward-trust-baseline.md",
+                       signer_roster_rel, ast_engine)
     for relative in candidate_paths:
         if relative != signer_roster_rel:
             (repo / relative).write_bytes((REAL / relative).read_bytes())

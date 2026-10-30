@@ -1489,9 +1489,11 @@ def install_dispatcher(root: Path, *, capability_dst: str, policy_dst: str,
     lock = {
         "modules": modules,
         "files": [
-            {"dst": capability_dst,
+            {"src": f"team-gated/{Path(capability_dst).name}",
+             "dst": capability_dst, "verbatim": True,
              "hash": _sha256_file(root / capability_dst)},
-            {"dst": policy_dst,
+            {"src": f"team-gated/{Path(policy_dst).name}",
+             "dst": policy_dst, "verbatim": True,
              "hash": _sha256_file(root / policy_dst), "living_state": True},
         ],
     }

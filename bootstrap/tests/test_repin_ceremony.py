@@ -1839,6 +1839,19 @@ def test_runbook_describes_the_generated_packet_and_launcher():
 
 
 def test_record_check_uses_committed_objects_after_worktree_rewrite(cbed, tmp_path):
+    # boot() installs checked copies of gate modules into sys.modules. Keep
+    # that real import behavior, but give it a process whose test identities
+    # cannot be consumed by later reanchor nodes in the outer pytest run.
+    child_env = dict(os.environ)
+    child_env["CAIRN_REPIN_RECORD_CHECK_CHILD"] = "1"
+    if os.environ.get("CAIRN_REPIN_RECORD_CHECK_CHILD") != "1":
+        node = f"{Path(__file__).resolve()}::test_record_check_uses_committed_objects_after_worktree_rewrite"
+        child = subprocess.run(
+            [sys.executable, "-m", "pytest", "-q", node], cwd=REAL,
+            env=child_env, capture_output=True, text=True, timeout=240,
+        )
+        assert child.returncode == 0, child.stdout + child.stderr
+        return
     cbed.add_record()
     ctx = REPIN.boot(cbed.repo, tmp_path)
     packet, launcher = cbed.packet_and_launcher()
