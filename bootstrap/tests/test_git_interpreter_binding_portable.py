@@ -110,6 +110,22 @@ def test_nonrepository_and_nested_targets_install_without_binding(tmp_path):
     assert install.write_local_env(nested)[3] == "skipped-not-root"
 
 
+def test_invalid_git_directory_refuses_handoff_before_subtool(tmp_path, monkeypatch, capsys):
+    root = tmp_path / "project"
+    root.mkdir()
+    (root / ".git").mkdir()
+    session = _session_module()
+    monkeypatch.setattr(session, "_repo_root", lambda: root)
+    monkeypatch.setattr(session, "_do_reflection", lambda *args: None)
+    monkeypatch.setattr(session, "_do_thread_survey", lambda *args: None)
+    launched = []
+    monkeypatch.setattr(session, "_surface_intents", lambda *args: launched.append(True))
+
+    assert session.main(["session-end", "--prepare-handoff", "--dry-run"]) == 1
+    assert "git could not resolve the worktree root" in capsys.readouterr().err
+    assert not launched
+
+
 def test_discovery_ignores_hostile_git_environment(tmp_path, monkeypatch):
     root = _repo(tmp_path / "project")
     decoy = _repo(tmp_path / "decoy")

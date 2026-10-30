@@ -1031,7 +1031,8 @@ def _git_binding_path(root: Path) -> Optional[Path]:
         )
         if top.returncode:
             detail = (top.stderr or b"").decode("utf-8", "replace").lower()
-            if "not a git repository" in detail or "not inside a work tree" in detail:
+            if (("not a git repository" in detail or "not inside a work tree" in detail)
+                    and not (dotgit.exists() or dotgit.is_symlink())):
                 return None
             raise LifecycleError("git could not resolve the worktree root")
         gitdir = subprocess.run(
