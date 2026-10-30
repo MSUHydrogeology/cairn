@@ -43,3 +43,27 @@ Boundary A: Search operative text and consumers for ledger, probe and mutation i
 Boundary B: wide, because governing and shipped review contracts change. After the final implementation commit, run the mapped checks on a clean unchanged commit under canonical Python 3.13.x and append the required verification record, including the tested range, state, outcomes, elapsed time, tokens, non-pass dispositions and omissions; certification remains pending. Include affected owning families, installed paths and standing gates. Full-tree certification and re-anchor are separate ceremonies, not per-plan checks.
 
 Boundary C: a fresh code reviewer independently challenges the changed authority and evidence, verifies the Boundary B record and decides whether its bounds suffice. Ordinary and Security Reviews remain separate.
+
+## Plan review -- Codex gpt-6 -- 2026-10-30
+
+Reviewed commit: 38e3bfaae94f4be913e4cfb79185e9db75c73c36
+Target: scope, acceptance criteria and verification mapping against the accepted proposal
+Prior findings: none
+Assurance path: high-assurance
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: approximately 3 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, provided the implementation preserves repeatable evidence and the existing independent checks; the plan's C1 and Boundaries B/C aim to do so. -- accepted proposal, Proposal and Signals; plan, C1 and Verification.
+2. **Best alternative.** Keep the single implementation chunk and existing test families; map the checks already needed rather than add a reporting ceremony. -- plan, Sequence and Boundary A.
+3. **What would show it wrong?** An installed instruction still requiring an inventory, or a changed assertion that no longer detects a missing retained obligation, would defeat C1. -- plan, C1; `bootstrap/tests/test_review_sweep_ships.py` installed and negative-control tests.
+
+**P1 — Required verification mapping is deferred.** The accepted proposal's S3 requires mapping exact nodes and installed-file inputs in the plan, and its verification plan requires identifying the actual gate triggers and consumers. Boundary A names whole files and commands but defers discovering readers and inspecting command triggers until implementation. For example, `test_installed_loop_document_carries_the_obligation` and `test_an_install_without_the_sweep_is_reported` exercise installed text, while `test_plan_pass_skeletons_ask_the_plan_and_code_questions` checks template content; the plan does not map these or their inputs to changed obligations. Close by mapping the affected nodes, installed inputs, and gate triggers/runners before implementation, including any additional readers found. This is blocking because an accepted preflight requirement is unmet.
+
+**Coverage:** Read the committed plan, accepted proposal and plan review template; inspected named test node locations and ledger assertions. Did not run checks, enumerate every reader, or perform Security Review.
