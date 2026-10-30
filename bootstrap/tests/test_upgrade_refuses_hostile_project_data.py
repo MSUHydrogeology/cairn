@@ -1008,7 +1008,7 @@ def test_finalize_over_a_linked_vendor_wrapper_names_the_link(world):
     assert proc.returncode == 1, said
     assert "missing on disk" in proc.stderr
     assert "CLAUDE.md is a link" in proc.stderr
-    assert_link_remedy(proc)
+    assert "Replace it with a regular file" in proc.stderr
     assert world.marker not in said
     assert "Traceback" not in said
     assert_nothing_left_the_tree(world, outside_before)
