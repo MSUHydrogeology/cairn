@@ -1991,8 +1991,8 @@ class TestFinishedPlansRecipe:
             ("plan-alpha", "2026-01-10"),
         ]
 
-        # Run on Cairn's own repository (count committed archived files at HEAD
-        # so an uncommitted working-tree move does not skew the comparison):
+        # Run on Cairn's own repository (count committed plan files directly
+        # under the archive at HEAD; nested evidence is not a plan row):
         live_result = finished_plans(CAIRN_ROOT)
         ls_tree = subprocess.run(
             ["git", "ls-tree", "-r", "--name-only", "HEAD", "--", "dev/plans/archive"],
@@ -2004,9 +2004,13 @@ class TestFinishedPlansRecipe:
         archived_files = [
             Path(line).stem
             for line in ls_tree.stdout.splitlines()
-            if line.endswith(".md") and not Path(line).name.startswith("_")
+            if (
+                Path(line).parent == Path("dev/plans/archive")
+                and line.endswith(".md")
+                and not Path(line).name.startswith("_")
+            )
         ]
-        assert len(live_result) == len(archived_files)
+        assert {plan_id for plan_id, _ in live_result} == set(archived_files)
 
 
 class TestIntentJoinRecipe:

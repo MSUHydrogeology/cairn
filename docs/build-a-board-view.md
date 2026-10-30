@@ -231,7 +231,7 @@ entries, caveats = waiting_on_maintainer(doc)
 
 ### Plans finished by date
 
-This recipe lists archived plans from git history, reporting the **author date** (`%ad`) of the commit that added each file under `dev/plans/archive/`, newest first, one entry per plan. It covers plans only, because a proposal archives when its plan opens or at a Decision, which is a different lifecycle event.
+This recipe lists archived plans from git history, reporting the **author date** (`%ad`) of the commit that added each plan file directly under `dev/plans/archive/`, newest first, one entry per plan. Supporting evidence in subdirectories is not a plan row. It covers plans only, because a proposal archives when its plan opens or at a Decision, which is a different lifecycle event.
 
 ```python finished-recipe
 from pathlib import Path
@@ -264,7 +264,10 @@ def finished_plans(repo_root: Path = Path(".")) -> list[tuple[str, str]]:
             continue
         if line.startswith("__DATE__"):
             cur_date = line.removeprefix("__DATE__")
-        elif line.startswith("dev/plans/archive/") and line.endswith(".md"):
+        elif (
+            Path(line).parent == Path("dev/plans/archive")
+            and line.endswith(".md")
+        ):
             stem = Path(line).stem
             if not stem.startswith("_") and stem not in seen:
                 seen[stem] = cur_date
