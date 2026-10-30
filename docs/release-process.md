@@ -139,8 +139,27 @@ produces the confidence the cut rests on.
   the page against the tree: the repository URL, the profile names and every
   command it shows. Record the commit id the security gate checked, with the
   gate output (`bootstrap/PROVENANCE.md`).
-* An **annotated tag**, signed or on a Maintainer-approved release commit on
-  the protected branch, then push.
+* A **signed annotated tag** naming the exact full commit id reported by the
+  security gate. That commit must be on the protected branch; then push the
+  tag.
+* **Publish the GitHub Release separately from pushing the tag.** Create the
+  Release, or edit the existing Release for that tag, using the prepared notes.
+  Check that the notes match the tree, including the repository URL, profile
+  names and commands; open each source-download link. A tag push alone does not
+  publish or update a GitHub Release. Then run the read-only check with the
+  independently recorded gate commit:
+
+  ```bash
+  python scripts/check_release_publication.py \
+    --repository OWNER/REPO \
+    --tag <tag> \
+    --expected-commit <full-gate-commit>
+  ```
+
+  Success means GitHub reports a published Release for the tag and the remote
+  annotated tag peels to the supplied gate commit. This checks publication
+  state and remote tag identity; opening source links checks availability.
+  Neither verifies the contents of GitHub's cached source archives.
 * **After Zenodo mints the version DOI** for the new release, record it in the
   version-DOI comment at the foot of `CITATION.cff`. The `doi:` field and the
   README badge hold the concept DOI, which covers all versions and does not
