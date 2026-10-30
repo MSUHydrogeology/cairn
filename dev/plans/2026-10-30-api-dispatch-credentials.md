@@ -145,3 +145,5 @@ Ordinary review found no findings. Accepted Security Review advice: Scope and C1
 **Non-blocking advice**: Strengthen the committed cache-poison fixture with valid unchecked-hash bytecode. Its current timestamp cache comes from another source and may be rejected by an ordinary loader without testing cache exclusion. The stronger parent-loader probe passed.
 
 **Coverage**: Examined credential derivation, binding/engine ordering, isolated child environment and confidentiality assertions. The two Bandit skips concern scanner availability and scanner shadow isolation; neither exercises this handoff. Did not run Bandit, Windows, full certification or Boundary B. A later modified loopback attempt hit socket permission denial before dispatch. Boundary B remains due after review.
+
+**Author response**: Not adopted: the committed source-only loader already passed the Security Review's valid unchecked-hash bytecode probe, so a fixture-only change would duplicate this evidence without changing runtime behavior.
