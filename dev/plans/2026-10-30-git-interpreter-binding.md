@@ -443,3 +443,25 @@ full certification run occurred.
 * Read the new test's three `location` branches and the plan inventory's required path list. None constructs a binding-leaf reparse point or invokes the real session/install entry points in the junction case.
 
 **Coverage:** claims and fail-closed behavior: runner probe and `scripts/run_windows_interpreter_binding.py:17-28`; production path and design completeness: test `:326-356` against the coverage inventory's final paragraph; consistency and lifecycle: plan C2 remains open and the runner's stated clean-checkout requirement is not enforced; scope and satisfiers: WR1-WR2 retain the accepted Windows criterion. **Not covered:** native Windows execution, junction creation on Windows, every mapped family, same-user races, executable provenance, or the separate Security Review. The plan stays `implementing`.
+
+## Interim code review follow-up -- Codex gpt-6.1-sol -- 2026-10-30
+
+**Reviewed commit**: `69ba2df3` (follow-up changes in `1c57bea4` and `69ba2df3`)  
+**Obligation**: Internal (WR1/WR2 follow-up)  
+**Findings**: no new defects found in this revision  
+**Bounding**: ACCEPTED for WR1/WR2's evidence preparation; native Windows C2 and final-commit Boundary B remain open.
+
+**Foundations**
+
+1. **Does it do what it claims?** The runner now checks Python 3.13, rejects dirty tracked status and any JUnit skip; the portable test includes a binding-leaf link and drives session and installer entry points -- `scripts/run_windows_interpreter_binding.py:17-54`; `bootstrap/tests/test_git_interpreter_binding_portable.py::test_windows_reparse_points_refuse_binding_access`; ledger below.
+2. **Best alternative.** The amended runner and shared parameterized test reuse the existing test file and cover WR1/WR2 without a second Windows harness -- `git show 1c57bea4 69ba2df3 -- scripts/run_windows_interpreter_binding.py bootstrap/tests/test_git_interpreter_binding_portable.py`.
+3. **What would show it wrong?** A dirty status or skipped testcase yielding runner success, or a leaf link reaching the session sub-tool or altering the external sentinel, would defeat this preparation; see the targeted probes below.
+
+**Falsification ledger** (isolated `git archive` extraction of `69ba2df3`; `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13, macOS):
+
+* Unmodified portable control: `python -m pytest bootstrap/tests/test_git_interpreter_binding_portable.py -q` returned **15 passed, 8 skipped** in 1.20s. The eight Windows parameters were collected but not executed here.
+* Imported the committed runner with a stubbed Windows `os.name` and subprocess results, supplying a dirty tracked status, a clean status plus JUnit `<skipped/>`, and a clean status plus an unskipped testcase. Its exits were **2, 2, 0**, respectively. This proves those control-flow branches, not native Windows behavior.
+* In a separate extracted copy, enabled only the new binding-leaf parameter on macOS, leaving its public-path assertions unchanged. Both source and shipped session parameters returned **2 passed** in 0.19s; each refused before `_surface_intents`, and the installer reported `interpreter binding refused (containment)` while the external sentinel stayed `keep`. This is a POSIX file-link analogue, not a Windows reparse run.
+* Read the Windows-specific construction: `cmd /c mklink /J` supplies three directory-junction locations; `Path.symlink_to` supplies the leaf file link. A Windows privilege failure is a test failure, not a skip or success. The runner reports the privilege prerequisite and rejects test failures and skips.
+
+**Coverage:** claims and fail-closed behavior: runner branch probe and `scripts/run_windows_interpreter_binding.py:17-54`; production paths, design and scope: leaf analogue through `test_windows_reparse_points_refuse_binding_access` and the three junction branches; consistency and lifecycle: WR1/WR2 satisfiers are present while plan C2 stays open. **Not covered:** native Windows junction or file-reparse behavior, Windows executable-copy marker behavior, the final wide Boundary B run, every mapped family, same-user races, executable provenance, or the separate Security Review. No full suite or certification ran.
