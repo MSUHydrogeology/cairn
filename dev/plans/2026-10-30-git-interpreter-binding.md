@@ -396,3 +396,24 @@ remain unverified; no Windows runtime is available here and the portable file
 does not explicitly create junctions. The plan remains `implementing`; this
 record does not claim implementation verification or handoff readiness. No
 full certification run occurred.
+
+## Interim code review follow-up -- Codex GPT-6 -- 2026-10-30
+
+**Reviewed commit**: `e063ae4e257ff566184185ae4c14a1886834cea5` (test at `13fae5bbd9a0e2aad6722f9cf21ef9ee2da9202a`)
+**Obligation**: Internal (CR2 follow-up)
+**Findings**: no new defects found in this revision
+**Bounding**: ACCEPTED for CR2's source and shipped malformed-administration coverage; native Windows C2 remains open.
+
+**Foundations**
+
+1. **Does it do what it claims?** The new parameter runs the handoff-entry refusal against both session files, and each case detects an independent restoration of the old fallback -- `bootstrap/tests/test_git_interpreter_binding_portable.py::test_invalid_git_directory_refuses_handoff_before_subtool`; ledger below.
+2. **Best alternative.** The shared parameterized test is the smallest way to cover the two committed copies while retaining the same no-launch assertion -- `git show 13fae5bb -- bootstrap/tests/test_git_interpreter_binding_portable.py`.
+3. **What would show it wrong?** If changing either copy back to fallback left both tests green, the mapped coverage claim would fail -- separate source and shipped mutation results below.
+
+**Falsification ledger** (three separate detached worktrees at `e063ae4e`; `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13):
+
+* Unmodified control: `python -m pytest bootstrap/tests/test_git_interpreter_binding_portable.py::test_invalid_git_directory_refuses_handoff_before_subtool -q` returned **2 passed** in 0.10s; its source and shipped parameters both refused before `_surface_intents`.
+* Source mutant: in a separate copy, replaced the source resolver's `and not (dotgit.exists() or dotgit.is_symlink())` guard with `and True`. The same command returned **1 failed (source), 1 passed (shipped)** in 0.15s; source `main()` returned 0 and continued into handoff preparation. **Killed.**
+* Shipped mutant: made the same single change only in `templates/skills/_lib/session.py`, in another copy. The command returned **1 passed (source), 1 failed (shipped)** in 0.14s; shipped `main()` returned 0 and continued into handoff preparation. **Killed.** The two production members were enumerated from the plan's coverage inventory and `bootstrap/_scaffold/config.py` installation map, not only from the diff.
+
+**Coverage:** claims, production path, design edge and fail-closed behavior: parameterized entry-point test and control/mutant ledger; consistency and reuse: the plan's two-copy mapping and the shared test parameter; drift and lifecycle: `e063ae4e` records the final mapped run as 569 passed and keeps C2 open; scope and satisfier: CR2's required shipped case is added without changing accepted behavior. **Not covered:** native Windows discovery and junction/reparse handling, independent repetition of all mapped families, same-user races, executable provenance, or the separate Security Review. The plan stays `implementing`.
