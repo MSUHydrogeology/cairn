@@ -194,15 +194,16 @@ trigger, durable decisions, byte binding and old profile context across partial
 upgrades. This **loses** the board's required incorporation-or-disposition
 outcome; only the Maintainer can allow that loss or keep #35 for redesign.
 
-### 17. Refuse linked files during lockfile migration — accepted
+### 17. Refuse linked files during lockfile migration — delivered
 
 The [proposal](../proposals/archive/2026-10-30-codex-init-lock-linked-files.md)
 was accepted at `06af4aeb` after Security Review clearance at `52a7feb3`.
-`--init-lock` currently hashes a linked installed file's target,
-even outside the project. Reuse its link guard before mapped-file reads in a
-stable tree. Legitimate linked installs must replace the linked file or folder
-with an ordinary copy before migration. A separate fidelity-manifest reader
-can still follow a link; this scope discloses but does not fix that gap.
+Implementation is complete in the [archived plan](../plans/archive/2026-10-30-init-lock-linked-files.md).
+`--init-lock` refuses links at mapped installed paths before existence checks
+or reads in a stable tree. Legitimate linked installs must replace the linked
+file or folder with an ordinary copy before migration. The separate
+fidelity-manifest reader and concurrent path replacement remain outside this
+check, as the archived plan records.
 
 ### 18. Publish and check the GitHub Release — awaiting Decision
 

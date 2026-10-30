@@ -88,18 +88,6 @@ row may close earlier through its own lifecycle.
 
   > "Yes, queue all three"
 
-* **`upgrade --init-lock` records the digest of the file behind a linked
-  tracked file.** A linked `AGENTS.md` puts the digest of its target into the
-  new lockfile. Nothing is written outside the project, and `bootstrap/UPGRADE.md`
-  and `SECURITY_MUTATIONS.md` state the limit. Not a simple fix: what a tracked
-  link should record (the link, its target, or a refusal) is a design choice in
-  the engine, so it needs a proposal and a Security Review. Found by the repair
-  of `--init-lock` over links (commits `18511e42`, `091ec219`, `41bcd166`).
-  Authorization to queue it: the Maintainer, 2026-10-26, "Queue them if it's not
-  simple to fix them now. No need to generate more work for us later." (given for
-  this finding and the `--plan`/`--stage` one, which is simple and is being
-  fixed now).
-
 * **Close GitHub #2 and #8 now that their fixes are pushed (0.5.0).** The local
   neutrality/slot-note work and #8's engine half (`dev/plans/archive/engine-batch-f8-slots.md`)
   are archived and pushed; this is tracker follow-through, and closing an issue is
