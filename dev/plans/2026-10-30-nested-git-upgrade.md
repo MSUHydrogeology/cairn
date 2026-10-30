@@ -80,3 +80,59 @@ security obligation and separate re-anchor: the cited contract, plan and guard.
 **Not covered / low confidence:** no implementation or tests run; actual mutation
 effectiveness, platform-specific filesystem behavior and concurrent races remain
 unmeasured. This pass does not clear the Internal Security Review obligation.
+
+
+## Plan review -- Codex GPT-6 Security plan reviewer -- 2026-10-30
+
+```
+Reviewed commit: 418098c3eed8945dd0263f03e79fb48ee226ac98
+Target: accepted security contract, path boundary and verification
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: C1 preserves the accepted supplied-name and resolved-target protection, ordinary read-link compatibility and source distinction; C2 preserves the explicit hard-link and race limits -- source proposal, Current contract and Decision; this plan, C1 and C2.
+2. **Best alternative.** Extend the existing guard using its contained resolved target; a second resolver or banning all read links adds complexity or loses accepted compatibility -- `bootstrap/_scaffold/upgrade.py:171`, `bootstrap/_scaffold/upgrade.py:228`.
+3. **What would show it wrong.** A stable contained alias reaching Git data, refusal changing protected state, or a normal contained read link failing would defeat the security boundary or its compatibility promise -- this plan, C1 and C2; `bootstrap/tests/test_upgrade_lockfile_path_containment.py:343`.
+
+The plan separates supplied names from resolved targets instead of assuming
+write-link refusal protects reads. Inspection of the current guard and its
+readers confirms the distinction: the guard returns the unresolved path,
+while destination and cache reads follow links. Checking the resolved path
+relative to the resolved project root protects stable aliases without treating
+an ancestor outside that root as project data. Preserving the unresolved return
+also retains the stricter existing write checks rather than silently granting
+write authority through links (`bootstrap/_scaffold/upgrade.py:228`,
+`bootstrap/_scaffold/upgrade.py:668`, `bootstrap/_scaffold/upgrade.py:708`).
+
+The accepted limits are meaningful: neither component inspection nor symlink
+resolution establishes file identity or prevents later filesystem changes.
+C2 requires those hard-link and race limits in guidance; it does not present
+them as covered. Normalization conservatively refuses distinct POSIX names,
+and C2 carries that compatibility cost. C1 requires escaped diagnostics and
+recovery without deleting Git data.
+
+The verification mapping includes both project fields and all six staged-name
+collections, public plan/stage/apply paths, protected bytes and metadata on
+refusal, and four independently removed protections. The named Bandit test
+actually invokes the scanner through its owning module; the plan explicitly
+makes its possible missing-tool skip unmet, preserving the gate's meaning
+(`bootstrap/tests/test_security_lint.py`). No new security-preflight answer is
+needed beyond C2's specified mutation placement and named public commands.
+
+**Covered:** claims, completeness and fail-closed boundary: guard and read sites
+above; production paths and mutation design: C1, C2 and Verification; consistency
+and drift: accepted Current contract and planned `bootstrap/UPGRADE.md` update;
+lifecycle: separate Security obligation and Maintainer-run AST ceremony; scope
+and satisfiers: preserved accepted outcomes and falsifiable C1/C2 criteria. No
+scientific method changes.
+**Not covered / low confidence:** source inspection only; no tests or mutations
+run, implementation reviewed, Windows filesystem behavior measured, or hard-link
+and race protection established. Actual test effectiveness remains for
+implementation evidence and code review.
