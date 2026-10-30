@@ -117,7 +117,7 @@ the separate Maintainer-run AST ceremony remain.
 
 The [archived proposal](../proposals/archive/2026-10-29-codex-nested-git-upgrade.md)
 and [plan](../plans/2026-10-30-nested-git-upgrade.md) are accepted; the plan is
-`ready-to-implement`. Refuse `.git` components in supplied and resolved project
+`implementing`. Refuse `.git` components in supplied and resolved project
 paths, including lockfile destinations, caches and staged names. Keep ordinary
 contained links and lookalikes. Trailing-dot/space compatibility costs remain;
 hard links under other names and post-check races are not covered. Implementation
