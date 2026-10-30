@@ -321,3 +321,36 @@ def test_legacy_marker_control_and_mutant(tmp_path):
     mutant = _session_module(mutant_path)
     assert mutant._intent_whoami(root) is None
     assert marker.read_text(encoding="utf-8") == "ran"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="requires native Windows junctions")
+@pytest.mark.parametrize("location", ["dot-git", "admin", "binding-directory"])
+@pytest.mark.parametrize("session_path", [SESSION_PATH, SHIPPED_SESSION_PATH], ids=["source", "shipped"])
+def test_windows_junctions_refuse_binding_access(tmp_path, location, session_path):
+    root = _repo(tmp_path / "project")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    sentinel = outside / "sentinel"
+    sentinel.write_text("keep", encoding="utf-8")
+    admin = root / ".git"
+    if location == "dot-git":
+        target = tmp_path / "real-admin"
+        admin.rename(target)
+        junction = admin
+    elif location == "admin":
+        target = tmp_path / "real-admin"
+        admin.rename(target)
+        junction = tmp_path / "admin-junction"
+        admin.write_text("gitdir: ../admin-junction\n", encoding="utf-8")
+    else:
+        target = outside
+        junction = admin / "cairn"
+    # mklink /J creates a junction without requiring symlink privileges.
+    subprocess.run(["cmd", "/c", "mklink", "/J", str(junction), str(target)],
+                   check=True, capture_output=True, text=True)
+    session = _session_module(session_path)
+    with pytest.raises(session.LifecycleError):
+        session._resolve_interpreter(root)
+    with pytest.raises(install.ScaffoldSecurityError):
+        install.write_local_env(root, force=True)
+    assert sentinel.read_text(encoding="utf-8") == "keep"
