@@ -59,3 +59,15 @@ Reviewers cannot find required evidence, or necessary evidence is routinely excl
 ## Assurance path
 
 **Assurance path**: high-assurance — governing doctrine and authoring templates.
+
+## Proposal review -- Codex gpt-6.1-terra -- 2026-10-30
+
+**Verdict: proceed as framed, subject to the role-floor finding.**
+
+1. **Should it happen?** Yes. At `7a76dd32`, both plan templates and `doctrine/plans.md` require a same-stem folder even when no separate evidence is needed; the proposal removes that requirement while retaining required verification and existing evidence.
+2. **Best alternative.** Keep the folder optional without adding a new enforcement mechanism. That is the proposed approach; banning all separate artifacts could lose necessary evidence, while retaining the mandate preserves the burden the Maintainer identified.
+3. **What would show it wrong?** A live archive consumer losing an existing folder, a plan without one becoming undiscoverable, or a required ceremony losing evidence would falsify the proposal. Its verification calls for both folder cases and preservation of ceremonies.
+
+**Finding:** The author names the Strategy role while the model mapping assigns Terra to medium and Strategy to high (`dev/.cairn/model-selection-mapping.yml`). No quoted Maintainer exception appears in the proposal. Clarify the role and applicable floor, or obtain the Maintainer’s explicit disposition.
+
+**Coverage:** Read the proposal and committed template, checked the matching requirements in both templates and doctrine, and searched for archive references. Did not exhaustively inspect consumers, execute archive behavior, or assess security controls; implementation and the separate Security Review cover those gaps. No suite run. Elapsed time and tokens: unknown.
