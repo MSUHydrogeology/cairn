@@ -1,7 +1,7 @@
 # Prepare the handoff before the user runs pruning
 
 **Author**: Codex gpt-6.1-sol
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -275,3 +275,9 @@ complete, and the plan requires Internal and Internal Security Reviews.
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-30
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated**:
+
+> "Accept all 7 proposals as revised."
