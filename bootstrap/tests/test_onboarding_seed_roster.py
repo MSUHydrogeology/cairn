@@ -160,6 +160,112 @@ def test_reinstall_preserves_completion_and_refuses_loss(tmp_path: Path) -> None
     assert (tmp_path / "dev/.cairn/cairn-lock.yml").read_bytes() == before_lock
 
 
+@pytest.mark.parametrize("surface,damage", [
+    ("task", "malformed-opener"),
+    ("task", "missing-closer"),
+    ("task", "duplicate-entry"),
+    ("task", "nested-entry"),
+    ("task", "duplicate-region"),
+    ("task", "reversed-region"),
+    ("inventory", "malformed-closer"),
+])
+def test_empty_roster_refuses_ambiguous_markers_without_writes(
+    tmp_path: Path, surface: str, damage: str, capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Empty selection still validates marked state before changing any artifact."""
+    cfg = tmp_path / "profile.yml"
+    cfg.write_text(
+        "project_name: MarkerAmbiguity\ntest_command: pytest\nmodules:\n"
+        "  - reflections\n  - dual-review\n", encoding="utf-8")
+    args = ["--config", str(cfg), "--target", str(tmp_path),
+            "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]
+    assert main(args) == 0
+    planning = tmp_path / "dev/PLANNING.md"
+    inventory = tmp_path / "dev/modules/README.md"
+    lock = tmp_path / "dev/.cairn/cairn-lock.yml"
+    path = planning if surface == "task" else inventory
+    text = path.read_text(encoding="utf-8")
+    if surface == "task":
+        opener = "<!-- cairn:module-task id=reflections -->"
+        closer = "<!-- cairn:module-task-end id=reflections -->"
+        region_open = "<!-- cairn:slot onboarding-tasks -->"
+        region_close = "<!-- cairn:end onboarding-tasks -->"
+    else:
+        opener = "<!-- cairn:module id=reflections -->"
+        closer = "<!-- cairn:module-end id=reflections -->"
+        region_open = "<!-- cairn:generated-modules:start -->"
+        region_close = "<!-- cairn:generated-modules:end -->"
+    if damage == "malformed-opener":
+        text = text.replace(opener, opener.replace(" id=", "  id="), 1)
+    elif damage == "malformed-closer":
+        text = text.replace(closer, closer + " ", 1)
+    elif damage == "missing-closer":
+        text = text.replace(closer + "\n", "", 1)
+    elif damage == "duplicate-entry":
+        start = text.index(opener)
+        end = text.index(closer, start) + len(closer)
+        block = text[start:end]
+        text = text[:end] + "\n" + block + text[end:]
+    elif damage == "nested-entry":
+        text = text.replace(opener, opener + "\n" + opener, 1)
+    elif damage == "duplicate-region":
+        text = text.replace(region_close, region_close + "\n" + region_close, 1)
+    elif damage == "reversed-region":
+        text = text.replace(region_open, "__CAIRN_REGION_OPEN__", 1)
+        text = text.replace(region_close, region_open, 1)
+        text = text.replace("__CAIRN_REGION_OPEN__", region_close, 1)
+    path.write_text(text, encoding="utf-8")
+    before = tuple(p.read_bytes() for p in (planning, inventory, lock))
+
+    cfg.write_text("project_name: MarkerAmbiguity\ntest_command: pytest\nmodules: []\n",
+                   encoding="utf-8")
+    assert main(args) == 2
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+    assert "manually" in output or "malformed" in output
+    assert tuple(p.read_bytes() for p in (planning, inventory, lock)) == before
+
+
+def test_marker_mentions_outside_column_zero_entries_survive_empty_roster(
+    tmp_path: Path,
+) -> None:
+    """Inline, indented, and blockquoted mentions remain ordinary prose."""
+    cfg = tmp_path / "profile.yml"
+    cfg.write_text(
+        "project_name: MarkerMentions\ntest_command: pytest\nmodules:\n"
+        "  - reflections\n", encoding="utf-8")
+    args = ["--config", str(cfg), "--target", str(tmp_path),
+            "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]
+    assert main(args) == 0
+    planning = tmp_path / "dev/PLANNING.md"
+    inventory = tmp_path / "dev/modules/README.md"
+    mentions = (
+        "Inline mention <!-- cairn:module-task id=example -->\n"
+        "  <!-- cairn:module-task id=indented -->\n"
+        "> <!-- cairn:module-task id=quoted -->\n"
+    )
+    text = planning.read_text(encoding="utf-8")
+    text = text.replace("<!-- cairn:end onboarding-tasks -->",
+                        mentions + "<!-- cairn:end onboarding-tasks -->")
+    planning.write_text(text, encoding="utf-8")
+    inventory_mentions = (
+        "Inline <!-- cairn:module id=example -->\n"
+        "  <!-- cairn:module id=indented -->\n"
+        "> <!-- cairn:module id=quoted -->\n"
+    )
+    text = inventory.read_text(encoding="utf-8")
+    text = text.replace("<!-- cairn:generated-modules:end -->",
+                        inventory_mentions + "<!-- cairn:generated-modules:end -->")
+    inventory.write_text(text, encoding="utf-8")
+    cfg.write_text("project_name: MarkerMentions\ntest_command: pytest\nmodules: []\n",
+                   encoding="utf-8")
+    assert main(args) == 0
+    assert mentions in planning.read_text(encoding="utf-8")
+    assert inventory_mentions in inventory.read_text(encoding="utf-8")
+    assert "module-task id=reflections" not in planning.read_text(encoding="utf-8")
+    assert "module id=reflections" not in inventory.read_text(encoding="utf-8")
+
+
 def test_reinstall_preserves_work_beside_empty_placeholder(tmp_path: Path) -> None:
     """A populated placeholder slot retains unrelated completed work."""
     cfg = tmp_path / "profile.yml"

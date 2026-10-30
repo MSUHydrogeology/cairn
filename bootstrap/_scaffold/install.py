@@ -1372,30 +1372,107 @@ def _reconcile_generated_blocks(
         item_start = "<!-- cairn:module id="
         item_end = "<!-- cairn:module-end id="
         renderer = lambda name: _render_module_inventory([name])
-    start = text.find(start_marker)
-    end = text.find(end_marker, start + len(start_marker)) if start >= 0 else -1
-    if start < 0 or end < 0:
+    # Delimiters are interpreted only as complete column-zero lines. This
+    # leaves inline, indented, and quoted mentions as ordinary adopter prose.
+    if kind == "task":
+        region_open_prefix = "<!-- cairn:slot onboarding-tasks"
+        region_close_prefix = "<!-- cairn:end onboarding-tasks"
+        entry_open_prefix = "<!-- cairn:module-task"
+        entry_close_prefix = "<!-- cairn:module-task-end"
+    else:
+        region_open_prefix = "<!-- cairn:generated-modules:start"
+        region_close_prefix = "<!-- cairn:generated-modules:end"
+        entry_open_prefix = "<!-- cairn:module"
+        entry_close_prefix = "<!-- cairn:module-end"
+
+    region_opens: list[tuple[int, str]] = []
+    region_closes: list[tuple[int, str]] = []
+    line_records: list[tuple[int, str, int]] = []
+    offset = 0
+    for raw_line in text.splitlines(keepends=True):
+        line = raw_line.rstrip("\r\n")
+        line_records.append((offset, line, len(raw_line)))
+        if line.startswith(region_open_prefix):
+            region_opens.append((offset, line))
+        if line.startswith(region_close_prefix):
+            region_closes.append((offset, line))
+        offset += len(raw_line)
+    if len(region_opens) != 1 or len(region_closes) != 1:
+        raise ModuleDiscoveryConflict(
+            f"missing, malformed, or duplicate {kind} region markers")
+    open_offset, open_line = region_opens[0]
+    close_offset, close_line = region_closes[0]
+    if (open_line != start_marker or close_line != end_marker
+            or close_offset <= open_offset):
         raise ModuleDiscoveryConflict(f"missing or malformed {kind} markers")
-    body_start = start + len(start_marker)
+    body_start = open_offset + len(start_marker)
+    end = close_offset
     body = text[body_start:end]
-    matches = list(re.finditer(r"(?m)^" + re.escape(item_start) + r"([a-z0-9-]+) -->\n", body))
+
+    # Pair entry boundaries in encounter order. Searching independently for
+    # each closer can let a missing close consume the next entry's close.
+    opener_pattern = re.compile(
+        r"^" + re.escape(item_start) + r"([a-z0-9-]+) -->$")
+    body_opener_pattern = re.compile(
+        r"(?m)^" + re.escape(item_start) + r"([a-z0-9-]+) -->")
+    closer_pattern = re.compile(
+        r"^" + re.escape(item_end) + r"([a-z0-9-]+) -->$")
     entries: dict[str, tuple[str, str]] = {}
-    spans: list[tuple[int, int]] = []
-    for match in matches:
-        name = match.group(1)
-        close = re.search(r"(?m)^" + re.escape(item_end + name + " -->") + r"\s*$", body[match.end():])
-        if close is None or name in entries:
-            raise ModuleDiscoveryConflict(f"malformed or duplicate {kind} entry for {name}")
-        block_end = match.end() + close.end()
-        block = body[match.start():block_end].rstrip("\n")
-        if name not in _MODULE_DISCOVERY:
-            raise ModuleDiscoveryConflict(
-                f"unknown {kind} entry for {name!r}; save its contents and "
-                "remove the marked entry manually, then retry")
-        canonical = renderer(name)
-        normalized = re.sub(r"\[x\]", "[ ]", block, flags=re.IGNORECASE)
-        entries[name] = (block, canonical)
-        spans.append((match.start(), block_end))
+    close_ends: dict[str, int] = {}
+    matches: list[re.Match[str]] = []
+    active: tuple[str, int, re.Match[str]] | None = None
+    for absolute_line_start, line, _raw_length in line_records:
+        line_end = absolute_line_start + len(line)
+        if absolute_line_start < body_start or absolute_line_start >= close_offset:
+            continue
+        if line.startswith(entry_close_prefix):
+            close_match = closer_pattern.fullmatch(line)
+            if close_match is None:
+                raise ModuleDiscoveryConflict(
+                    f"malformed {kind} closer; save the files and reconcile manually")
+            if active is None or close_match.group(1) != active[0]:
+                raise ModuleDiscoveryConflict(
+                    f"unpaired or crossed {kind} closer for "
+                    f"{close_match.group(1)}; save the files and reconcile manually")
+            name, opener_start, opener_match = active
+            block_end = line_end - body_start
+            block = body[opener_start:block_end].rstrip("\n")
+            if name in entries:
+                raise ModuleDiscoveryConflict(
+                    f"duplicate {kind} entry for {name}; save the files and reconcile manually")
+            if name not in _MODULE_DISCOVERY:
+                raise ModuleDiscoveryConflict(
+                    f"unknown {kind} entry for {name!r}; save its contents and "
+                    "remove the marked entry manually, then retry")
+            canonical = renderer(name)
+            entries[name] = (block, canonical)
+            close_ends[name] = block_end
+            matches.append(opener_match)
+            active = None
+        elif line.startswith(entry_open_prefix):
+            open_match = opener_pattern.fullmatch(line)
+            if open_match is None:
+                raise ModuleDiscoveryConflict(
+                    f"malformed {kind} opener; save the files and reconcile manually")
+            name = open_match.group(1)
+            if active is not None:
+                raise ModuleDiscoveryConflict(
+                    f"nested {kind} entry for {name}; save the files and reconcile manually")
+            if name in entries:
+                raise ModuleDiscoveryConflict(
+                    f"duplicate {kind} entry for {name}; save the files and reconcile manually")
+            opener_start = absolute_line_start - body_start
+            # Provide the same body-relative match shape used by the
+            # reconciliation loop below, anchored to the exact opener line.
+            body_match = body_opener_pattern.match(body, opener_start)
+            if body_match is None:
+                raise ModuleDiscoveryConflict(
+                    f"malformed {kind} opener; save the files and reconcile manually")
+            active = (name, opener_start, body_match)
+    if active is not None:
+        raise ModuleDiscoveryConflict(
+            f"missing {kind} closer for {active[0]}; save the files and reconcile manually")
+    matches.sort(key=lambda match: match.start())
     selected = set(modules)
     represented: set[str] = set()
     if kind == "task" and legacy_seeds:
@@ -1435,8 +1512,7 @@ def _reconcile_generated_blocks(
     cursor = 0
     for match in matches:
         name = match.group(1)
-        close = re.search(r"(?m)^" + re.escape(item_end + name + " -->") + r"\s*$", body[match.end():])
-        block_end = match.end() + close.end()  # validated above
+        block_end = close_ends[name]
         chunks.append(body[cursor:match.start()])
         if name in selected:
             chunks.append(body[match.start():block_end])
@@ -1546,11 +1622,13 @@ def install_onboarding(
     planning_probe = (planning_dst.read_text(encoding="utf-8")
                       if planning_dst.is_file() else "")
     reconcile_tasks = (valid_preset or bool(modules)
-                       or "<!-- cairn:module-task id=" in planning_probe)
+                       or any(line.startswith("<!-- cairn:module-task")
+                              for line in planning_probe.splitlines()))
     if inventory_dst.is_file():
         current_inventory = inventory_dst.read_text(encoding="utf-8")
         reconcile_inventory = (valid_preset or bool(modules)
-                               or "<!-- cairn:module id=" in current_inventory)
+                               or any(line.startswith("<!-- cairn:module")
+                                      for line in current_inventory.splitlines()))
         if reconcile_inventory:
             updated_inventory = _substitute_module_inventory(
                 current_inventory, modules or [])
@@ -1566,7 +1644,8 @@ def install_onboarding(
         )
     elif reconcile_tasks:
         planning_text = planning_dst.read_text(encoding="utf-8")
-        if "<!-- cairn:module-task id=" in planning_text:
+        if any(line.startswith("<!-- cairn:module-task")
+               for line in planning_text.splitlines()):
             new_text = _reconcile_generated_blocks(
                 planning_text, modules or [], kind="task",
                 legacy_seeds=_legacy_module_seed_ids(templates_root))
