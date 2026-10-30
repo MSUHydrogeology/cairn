@@ -508,6 +508,7 @@ def test_team_roster_has_its_own_section_without_adding_roles() -> None:
 def test_carrier_omits_the_old_vocabulary(rel: str) -> None:
     found = _present(_text(rel), _FORBIDDEN)
     assert not found, f"{rel} {_FORBIDDEN_REASON} Found: {found}"
+    assert not _has_probe_inventory_requirement(_text(rel)), rel
 
 
 def test_carrier_forbidden_patterns_recognize_their_examples() -> None:
