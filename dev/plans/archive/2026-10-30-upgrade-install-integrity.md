@@ -1,7 +1,7 @@
 # Plan: Protect upgrade bases and install output
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-upgrade-install-integrity.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Check upgrade ancestors before merging and make supplied names recognizable in paths and output.
@@ -47,7 +47,7 @@ Run the mapped checks and scratch install/upgrade, including the recovery sequen
 
 ## Verification
 
-The reviewed command, input, test and wording mapping is `dev/plans/2026-10-30-upgrade-install-integrity/public-paths.md`.
+The reviewed command, input, test and wording mapping is `dev/plans/archive/2026-10-30-upgrade-install-integrity/public-paths.md`.
 
 Boundary A uses the canonical Python 3.13 interpreter and scoped tests. For ancestor and recovery behavior run `python -m pytest bootstrap/tests/test_upgrade.py bootstrap/tests/test_upgrade_lockfile_path_containment.py bootstrap/tests/test_upgrade_side_door_parity.py`; for module addition and provenance consumers run `python -m pytest bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_lockfile_provenance.py`; for display and install paths run `python -m pytest bootstrap/tests/test_install_report_slots.py bootstrap/tests/test_install_module.py bootstrap/tests/test_module_merge.py bootstrap/tests/test_scaffold.py`. Add public-command tests in the owning files and include their files in these commands. Split selections within the broad-run guard's file limit and reconcile the union; do not override the guard. Search actual readers and extend this mapping if affected consumers are missing.
 
@@ -383,3 +383,31 @@ findings without a clearing review. No scope loss, fence crossing, waiver or
 Maintainer Decision is claimed. The plan is ready to archive; certification
 remains a separate authorized integration ceremony. This handoff took about
 3 minutes of inspection and recording; token use is unknown.
+
+## Archive record -- Codex GPT-6 -- 2026-10-30
+
+**Dispositions:** CR1 closed by `3fd8dab3` and the second Security read
+`8ad9fb5c`; CR2 closed by the accepted inventory fix and exact-commit mapped
+verification at `66b19e4b`. No other blocking finding or accepted check remains.
+The Security cap required no third clearing review under the current rule.
+
+**Evidence shipped:** the ancestor digest and stage-bound recovery, path
+admission and display escaping in the scaffold; public tests in their owning
+files; the [public-path map](2026-10-30-upgrade-install-integrity/public-paths.md);
+ordinary and Security review records; final 740-pass shared wide verification
+at `88dad068` and two additional integrity mutants, both killed, recorded
+above. The bad cache and adopter content remain recoverable after refusal.
+
+**Evidence deferred:** none among the plan-mapped criteria and checks. Full-tree
+certification and the new v0.6 baseline are separate authorized ceremonies;
+no repin or re-anchor was performed or required for this archive. Native
+Windows terminal rendering and arbitrary concurrent project writes were not
+accepted proof obligations.
+
+**Fidelity sign-off:** `38e3a275` delivered the initial C1/C2 implementation;
+`3fd8dab3` closed repeated recovery; `84cb6948` restored a synthetic-stage
+fixture after the directory-observation guard; the inventory renderer was
+accepted and archived at `66b19e4b`. The accepted proposal's raw-byte check,
+manual recovery, specified path refusal and escaped display outcomes remain
+delivered. No accepted scope was removed. This archive preparation took about
+4 minutes; token use is unknown.

@@ -86,16 +86,17 @@ Commit `6f425b64` changed the session-start default from `Goodnight` to
 `Handoff` in the CLI and shipped kernel, with the owning test updated. Its
 bounded check passed (26 tests, Python 3.13.13); certification remains pending.
 
-### 6. Upgrade base and install-output integrity — accepted
+### 6. Upgrade base and install-output integrity — delivered
 
 The [archived proposal](../proposals/archive/2026-10-29-codex-upgrade-install-integrity.md)
-and [plan](../plans/2026-10-30-upgrade-install-integrity.md) are accepted;
-`ready-to-implement`. Check saved ancestors before merge; invalid evidence routes
-to manual review without overwriting adopter files/cache. Reject Cc/Cf, U+034F
-and variation selectors in paths; retain ordinary combining marks and visible
-non-Latin names; escape supplied output. A digest is not authentication when
-cache and lockfile are jointly controlled. AST ceremony remains; no baseline
-installation or old-anchor reconciliation is authorized.
+and [archived plan](../plans/archive/2026-10-30-upgrade-install-integrity.md)
+deliver checked saved ancestors, review-only recovery that preserves bad evidence,
+path admission for specified invisible characters, and escaped supplied names
+in install and upgrade output. The final mapped verification on `66b19e4b`
+passed 740 tests and the standing gates; both integrity mutants were killed.
+The digest is consistency evidence, not authentication of jointly controlled
+cache and lockfile. Full-tree certification and the new v0.6 baseline remain
+separate authorized work; no repin or re-anchor was part of this plan.
 
 ### 7. Directories occupying tracked upgrade paths — accepted
 
