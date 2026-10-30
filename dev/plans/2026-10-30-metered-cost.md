@@ -79,3 +79,44 @@ on supported platforms. Preserve the accepted scope and its security obligations
 **Coverage:** Read the committed plan, accepted proposal, plan template, drain,
 handoff and installer mapping. Did not inspect private logs, run the meter or
 exercise Windows; separate Security Review remains open.
+
+## Plan review -- Codex gpt-6.1-sol (Security Review) -- 2026-10-30
+
+**Reviewed commit**: ad7b9c3f
+**Tier**: Internal Security Review
+**Obligation**: local usage-log ingestion and unattended-run control
+**Verdict**: APPROVE with advice; the ordinary review's delivery finding remains open.
+
+**Foundations**
+
+1. **Delivery:** C1 preserves scoped ingestion, private storage and safe reporting;
+   C2 binds each admission to fresh Maintainer policy. These deliver the accepted
+   cooperative boundary without claiming authenticated enforcement -- accepted
+   proposal sections 1 and 3; plan C1/C2.
+2. **Alternative:** Extend existing file-safety and drain paths, with focused
+   fixtures, rather than add a separate authorization system --
+   `tools/session.py:657-678`; `templates/skills/session-start/SKILL.md:139-147`.
+3. **Falsifier:** A link escapes opted-in roots, secret metadata reaches output,
+   or a refresh failure permits another unattended item -- C1/C2 and the plan's
+   public-entry and broken-behavior verification requirements.
+
+**Advice:** Make the existing C1 fixtures distinguish helper reuse from a complete
+boundary. `_read_regular_bytes` checks the leaf and opened identity but ends in
+unbounded `handle.read()`; it neither caps bytes nor checks ancestor links.
+Implement bounded ingestion and exercise ancestor redirection, Windows junctions
+and private ledger placement as well as leaf links. A pathname-only Windows case
+is insufficient evidence for these properties. Close this advice with the mapped
+input/write fixtures and an explicit platform-coverage record; no new subsystem
+is needed.
+
+For C2, include refresh exceptions and malformed/partial logs through the actual
+admission entry point, confirming attended work remains available. Declared
+mutable-log tampering and concurrent/in-flight overshoot remain accepted
+residuals, not defects this plan promises to eliminate.
+
+**Elapsed**: approximately 5 minutes. **Tokens**: unknown.
+
+**Coverage:** Read committed proposal/plan, file-safety helpers and drain, plus
+Terra's committed delivery finding. No implementation, private-log inspection,
+Windows execution, suite or re-anchor; this clears only the named plan Security
+Review obligation, not implementation security or the ordinary review finding.
