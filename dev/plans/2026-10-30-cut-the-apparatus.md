@@ -173,3 +173,34 @@ Prior findings: none
 2. **P2 -- Blocking: moved boundaries still trigger Security Review.** Accepted cut 2 expressly deletes “moves” as a trigger, retaining added/widened boundaries. `templates/modules/team-gated/security-review.md:53` and both proposal templates' security preflight still trigger on movement, while `AGENTS.md:86-87` does not. Reconcile the shipped rule and templates to the accepted trigger, preserving added/widened protection.
 
 **Falsification ledger.** Isolated `git archive 3cceb2c0` control: 699 mapped property tests passed (Python 3.13.13); the light/multi-area conflict survives. Inspected root/shipped rules, triage, templates, and session skill; copies and word limits match Boundary B. No mutation or full suite. **Coverage:** lenses 1, 3, 5-9: cited paths and control; did not run adopter installation, external links, Security Review, or the one-month measure.
+
+## Response to code review -- Codex (GPT-6.1 SOL) -- 2026-10-30
+
+- **P1, accept:** `3c9892a6` makes light's no-plan route unconditional on the old standard/heavy plan triage, including multi-area and wide work. It records light Boundary B evidence in the accepted proposal. Root/shipped rules, doctrine, templates, readers, and a nine-carrier property test now agree.
+- **P2, accept:** Both security modules and proposal preflight templates trigger for added or widened boundaries; movement alone does not trigger. Existing high-risk triggers remain. Scaffold and module property tests cover the shipped and self-hosted copies.
+
+The focused follow-up should falsify these two corrections against the clean-commit record below. The plan remains `revising-code` until that follow-up confirms the findings are closed.
+
+## Implementation verification -- Codex (GPT-6.1 SOL) -- 2026-10-30
+
+This record covers the code-review correction at `3c9892a6`. **Boundary B mode**: wide. The correction changes governing lifecycle, review, security-trigger, template, and shipped-reader contracts. The mapping covers owning property families, scaffold/install/upgrade and documentation consumers, and the standing prose gates; narrower bounds would miss a public reader.
+
+**Certified by**: pending
+**Tested commit**: `3c9892a655b9bdc4ccae2722498ecc74d3794ccf`
+**Reviewed range**: `88d6ff31b0d1b93adca1329088803ab9d86dbe20..3c9892a655b9bdc4ccae2722498ecc74d3794ccf`
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13)
+**Pre-run state**: fresh detached worktree `/tmp/cairn-apparatus-b-3c9892a6`, clean `git status --porcelain`, HEAD at tested commit.
+**Post-run state**: clean `git status --porcelain`, identical HEAD.
+**Elapsed**: about 17 seconds for concurrent groups and gates. **Tokens**: unknown.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| Python 3.13.13 `-m pytest -q --tb=no` on Group A in the preceding record | 0 | 1,263 passed; 0 failed/skipped/xfail/xpass | 16.07 s | unknown |
+| Python 3.13.13 `-m pytest -q --tb=no` on Group B in the preceding record | 0 | 256 passed; 0 failed/skipped/xfail/xpass | 8.03 s | unknown |
+| Python 3.13.13 `scripts/check_cairn.py` | 0 | 199 Markdown files; 0 issues | 1.26 s | unknown |
+| Python 3.13.13 `scripts/link_check.py` | 0 | 199 Markdown files; 0 issues | 0.11 s | unknown |
+| Python 3.13.13 `scripts/sync_doc_snippets.py` | 0 | 468 documents; 0 drift | 0.04 s | unknown |
+| Python 3.13.13 `scripts/claim_check.py` separately on every Markdown path in `git diff HEAD^ HEAD --name-only -- '*.md'` | 0 | 21 files; 0 flags | 0.72 s | unknown |
+| Python 3.13.13 `scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | 0 failures; informational notes only | 1.11 s | unknown |
+
+Every Python command used the absolute interpreter above; Group A and B expand to the exact `bootstrap/tests/` selections in the preceding record. **Non-pass disposition**: none. **Plan-specific acceptance commands**: all mapped/discovered readers and standing gates above passed; root/shipped AGENTS word counts were 2,487/2,410. Security designation did not change, so the conditional security-verification family was not triggered. **Known omissions**: the C3 one-month ratio remains open; external URLs were not probed; no independent scientific check was specified; the certifying full suite was not run under this plan.
