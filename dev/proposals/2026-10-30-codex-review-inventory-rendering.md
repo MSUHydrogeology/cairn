@@ -1,7 +1,7 @@
 # Render the module inventory in upgrade review copies
 
 **Author**: Codex (gpt-6.1-sol)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
@@ -221,3 +221,11 @@ comparison hides an edit, omits a member, or changes installed bytes.
 ### Withdrawn / superseded commitments
 
 None. The reviews specify the opening contract without removing an outcome.
+
+## Decision -- Maintainer -- 2026-10-30
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated** (chat, 2026-10-30; scribed by Antigravity):
+
+> "Please scribe my decisions as you recommend on those five."
+
+Accepted as revised with high-assurance and required Internal + Internal Security Review plan review.
