@@ -125,6 +125,7 @@ def _git(args: list[str], *, cwd: Path, env: dict[str, str] | None = None,
 
 def _local_repo(tmp_path: Path, *, annotated: bool = True,
                 local_instead_of: str | None = None) -> tuple[Path, str, str]:
+    tmp_path.mkdir(parents=True, exist_ok=True)
     repo = tmp_path / "remote"
     env = {
         "PATH": os.environ.get("PATH", ""),
@@ -216,9 +217,10 @@ def test_public_command_refuses_unpublished_or_wrong_release(
 @pytest.mark.parametrize("stdout, diagnostic", [
     (_remote_output(peeled="c" * 40), "does not peel to the expected commit"),
     (f"{TAG_OBJECT}\trefs/tags/{TAG}\n", "exactly one annotated tag ref"),
-    (_remote_output() + _remote_output(), "exactly one annotated tag ref"),
-    (_remote_output() + "d" * 40 + "\trefs/tags/other\n",
-     "exactly one annotated tag ref"),
+    (f"{TAG_OBJECT}\trefs/tags/{TAG}\n"
+     f"{'d' * 40}\trefs/tags/{TAG}\n", "duplicate tag ref"),
+    (f"{TAG_OBJECT}\trefs/tags/{TAG}\n"
+     f"{GATE_COMMIT}\trefs/tags/other\n", "unexpected tag ref"),
     (f"not-an-object\trefs/tags/{TAG}\n{GATE_COMMIT}\trefs/tags/{TAG}^{{}}\n",
      "malformed object id"),
     (f"{GATE_COMMIT}\trefs/tags/{TAG}\n{GATE_COMMIT}\trefs/tags/{TAG}^{{}}\n",
@@ -264,6 +266,38 @@ def test_public_command_refuses_invalid_inputs_before_remote_reads(
     assert "safe GitHub path component" in capsys.readouterr().err
 
 
+def test_public_command_refuses_invalid_gate_sha_before_git_or_api(
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str]) -> None:
+    monkeypatch.setattr(
+        checker, "_resolve_git",
+        lambda: pytest.fail("Git must not be resolved for invalid input"))
+    monkeypatch.setattr(
+        checker, "_fetch_release",
+        lambda *a: pytest.fail("API must not be read for invalid input"))
+    result = checker.main([
+        "--repository", f"{OWNER}/{REPOSITORY}", "--tag", TAG,
+        "--expected-commit", "not-a-full-sha",
+    ])
+    assert result == 1
+    assert "full 40-hex object id" in capsys.readouterr().err
+
+
+def test_public_help_and_missing_arguments_are_available_without_reads() -> None:
+    help_result = subprocess.run(
+        [sys.executable, str(SCRIPT), "--help"],
+        capture_output=True, text=True, check=False,
+    )
+    assert help_result.returncode == 0
+    assert "--expected-commit FULL_SHA" in help_result.stdout
+    usage_result = subprocess.run(
+        [sys.executable, str(SCRIPT)], capture_output=True, text=True,
+        check=False,
+    )
+    assert usage_result.returncode == 2
+    assert "usage:" in usage_result.stderr
+
+
 def test_invalid_git_tag_is_refused_before_release_api_read(
         monkeypatch: pytest.MonkeyPatch,
         capsys: pytest.CaptureFixture[str]) -> None:
@@ -289,7 +323,8 @@ def shutil_which_git() -> str:
 
 def test_release_request_encodes_tag_disables_proxy_and_has_no_credentials(
         monkeypatch: pytest.MonkeyPatch) -> None:
-    opener = _install_api(monkeypatch)
+    opener = _install_api(monkeypatch, body=json.dumps(
+        _release("release/2.0+hot%")).encode("utf-8"))
     checker._fetch_release(OWNER, REPOSITORY, "release/2.0+hot%")
     assert opener.handlers
     proxy = next(h for h in opener.handlers
@@ -339,6 +374,28 @@ def test_release_api_refuses_oversized_reply_and_transport_failure(
         checker._fetch_release(OWNER, REPOSITORY, TAG)
 
 
+def test_release_api_timeout_fails_closed(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    opener = _install_api(monkeypatch, error=TimeoutError("timed out"))
+    with pytest.raises(checker.CheckError, match="read failed"):
+        checker._fetch_release(OWNER, REPOSITORY, TAG)
+    assert opener.calls[0][1] == 30
+
+
+def test_git_timeout_is_bounded_and_fails_closed(
+        monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def timed_out(argv, **kwargs):
+        assert kwargs["shell"] is False
+        assert kwargs["stdin"] is subprocess.DEVNULL
+        assert kwargs["timeout"] == checker._GIT_TIMEOUT_SECONDS == 30
+        raise subprocess.TimeoutExpired(argv, kwargs["timeout"])
+
+    monkeypatch.setattr(checker.subprocess, "run", timed_out)
+    with pytest.raises(checker.CheckError, match="Git command timed out after 30"):
+        checker._run_git(Path("/host/git"), ["check-ref-format", "refs/tags/x"],
+                         cwd=tmp_path, env=checker._git_child_env(tmp_path.parent))
+
+
 def test_remote_parser_rejects_malformed_and_duplicate_records() -> None:
     with pytest.raises(checker.CheckError, match="malformed ls-remote"):
         checker._parse_remote_refs("bad output\n", TAG, GATE_COMMIT)
@@ -381,7 +438,9 @@ def test_public_command_ignores_hostile_git_configuration_and_proxy(
     global_config = tmp_path / "global.gitconfig"
     system_config = tmp_path / "system.gitconfig"
     config_text = (f'[url "{uri}"]\n'
-                   f'\tinsteadOf = {REMOTE_URL}\n')
+                   f'\tinsteadOf = {REMOTE_URL}\n'
+                   '[http]\n\tfollowRedirects = true\n'
+                   '[credential]\n\thelper = !echo unexpected-helper\n')
     global_config.write_text(config_text, encoding="utf-8")
     system_config.write_text(config_text, encoding="utf-8")
     home = tmp_path / "home"
@@ -390,7 +449,7 @@ def test_public_command_ignores_hostile_git_configuration_and_proxy(
     monkeypatch.setenv("GIT_DIR", str(repo / ".git"))
     monkeypatch.setenv("GIT_CONFIG_SYSTEM", str(system_config))
     monkeypatch.setenv("GIT_CONFIG_GLOBAL", str(global_config))
-    monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "0")
+    monkeypatch.delenv("GIT_CONFIG_NOSYSTEM", raising=False)
     monkeypatch.setenv("GIT_CONFIG_COUNT", "1")
     monkeypatch.setenv("GIT_CONFIG_KEY_0", f"url.{uri}.insteadOf")
     monkeypatch.setenv("GIT_CONFIG_VALUE_0", REMOTE_URL)
@@ -408,7 +467,6 @@ def test_public_command_ignores_hostile_git_configuration_and_proxy(
     poisoned.update({
         "GIT_CONFIG_SYSTEM": str(system_config),
         "GIT_CONFIG_GLOBAL": str(global_config),
-        "GIT_CONFIG_NOSYSTEM": "0",
         "GIT_DIR": str(repo / ".git"),
         "GIT_CONFIG_COUNT": "1",
         "GIT_CONFIG_KEY_0": f"url.{uri}.insteadOf",
@@ -452,9 +510,10 @@ def test_public_command_ignores_hostile_git_configuration_and_proxy(
             for setting in checker._git_config_args():
                 assert setting in normalized
             mapped = list(normalized)
-            index = mapped.index(REMOTE_URL)
-            mapped[index:index] = ["-c", "protocol.file.allow=always"]
-            mapped[index + 2] = str(repo)
+            command_index = mapped.index("ls-remote")
+            mapped[command_index:command_index] = [
+                "-c", "protocol.file.allow=always"]
+            mapped[mapped.index(REMOTE_URL)] = str(repo)
             return real_run(mapped, **kwargs)
         return real_run(normalized, **kwargs)
 

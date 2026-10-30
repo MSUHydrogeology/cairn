@@ -185,6 +185,8 @@ def _parse_remote_refs(stdout: str, tag: str, expected_commit: str) -> None:
     expected_refs = {plain_ref, peeled_ref}
     found: dict[str, str] = {}
     lines = stdout.splitlines()
+    if any(line.count("\t") != 1 for line in lines):
+        raise CheckError("remote returned a malformed ls-remote record")
     if len(lines) != 2:
         raise CheckError(
             "remote must return exactly one annotated tag ref and one peeled ref")
