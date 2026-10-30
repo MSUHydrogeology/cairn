@@ -167,12 +167,14 @@ failures: five in test infrastructure, one in unrelated upgrade behavior.
 Reproduce ordering before choosing isolation; retain the safety assertions.
 Four affected files remain frozen, with ceremony owed.
 
-### 14. Render generated inventory in upgrade review copies — accepted
+### 14. Render generated inventory in upgrade review copies — delivered
 
 The [proposal](../proposals/archive/2026-10-30-codex-review-inventory-rendering.md)
-was accepted at `9db57ec6`. Render upstream `.theirs` from the recorded roster; keep
-`.ours` as adopter bytes. Preserve ancestor and apply behavior; handle
-historical `--to` and invalid markers without a false comparison.
+was accepted at `9db57ec6`. Implementation is complete in the
+[archived plan](../plans/archive/2026-10-30-review-inventory-rendering.md).
+Review copies render upstream `.theirs` from the recorded roster and keep
+`.ours` as adopter bytes. Ancestors and apply behavior are preserved; historical
+renderers must match before reuse, and invalid markers refuse staging.
 
 ### 15. Reduce repeated setup in review-sweep tests — accepted
 
