@@ -1,7 +1,7 @@
 # Test once per change: scoped iteration, narrow review, one run last
 
 **Author**: Claude Opus 5.5 (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -138,3 +138,34 @@ a reviewer misses a defect an earlier run would have shown; authors widen
 
 **Assurance path**: high-assurance — governing doctrine and lifecycle
 verification rules.
+
+## Review -- Claude Sonnet 5.5 -- 2026-10-30
+
+```
+Reviewed commit: 1b28f6bbb48240da05bde3d1ccdf40e7e3e04b66
+Target: whole proposal
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes, with repairs. The cited rules are accurate (`AGENTS.md:191,197,215`, `dev/plans/_template.md:308,362`, `doctrine/plans.md:316,348`, and the pinned phrases in the two tests). Light tier with no plan fits `dev/proposals/_template.md:462`.
+2. **Best alternative.** Reorder Boundary B only (issue #41) and let `for` print an advisory starting list, not a rule -- `tools/test_tiers.py` has no `for` today.
+3. **What would show it wrong.** The scope rule pulling in most of the suite for this very change (finding 1).
+
+**Findings (all non-blocking)**
+
+1. The scope rule is not tight. `grep -l "AGENTS.md"` over `bootstrap/tests` matches 50 of 132 test files; `_template.md` matches 18. This change edits `AGENTS.md`, so it pulls about 50. It also misses sweepers: `test_cairn_prefix_links.py` globs `templates/**/*.md` and names neither file. Satisfier: state the expected list size for this change, name the gate that covers sweepers, and let the author extend the list, recording omissions.
+2. With B after review, no reviewer reads the final record (`dev/plans/_template.md:362`), and a fix made after a failed B is unreviewed. Satisfier: say who reads it and that a non-trivial post-B fix returns to review.
+3. Item 4 says "not per push", but `AGENTS.md:185` and `doctrine/plans.md:326,333` keep a push rule; the latter are not on the surface list. Satisfier: keep "when the Maintainer requires" and list them.
+4. Missing: the doctrine rate-limit gate (`doctrine/rationale.md:466`) for `doctrine/` edits, and the re-anchor owed for frozen test edits (`_gate_manifest.py:12-16`). Satisfier: name the gate path and queue the row.
+
+**Coverage**: did not run `for` (absent), the tests, or the fidelity manifest; grep counts are file-level, not per-edit.
