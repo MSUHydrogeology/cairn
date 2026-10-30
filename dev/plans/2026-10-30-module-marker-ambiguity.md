@@ -1,7 +1,7 @@
 # Plan: Refuse ambiguous module discovery markers
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-module-marker-ambiguity.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Refuse damaged generated module markers before repeat installation or adoption can duplicate or remove adopter work.
@@ -93,10 +93,16 @@ slot consumers; `bootstrap/tests/test_upgrade.py` and
 output records; and `bootstrap/tests/test_security_lint.py` for the engine gate.
 Split selections within the guard limit without overrides and reconcile their
 union. Search all parser callers, readers and byte pins again; add any newly
-identified owning checks before claiming completeness. Run the existing
-`bootstrap/tests/test_gate_manifest.py::test_verify_holds_on_frozen_file_modification`
-control and record the changed frozen-test consequence without changing the
-manifest or live authority.
+identified owning functional checks before claiming completeness. Also run
+`bootstrap/tests/test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package`
+as a read-only baseline diagnostic in A/B. Derive its symbol delta using
+`bootstrap/AST_BASELINE_RUNBOOK.md` step 1; identify intended changes and
+unexplained missing, duplicate or changed symbols. Record expected baseline
+drift for the version cut; it is not a passing functional check or a plan
+completion prerequisite. Unexplained defects keep implementation open. Do not
+update baseline fixtures, known-new manifests, protection manifests or refs,
+or enter the runbook correction steps. No per-plan trust-root maintenance
+or ceremony is required; stop any attempted authority write and report it.
 
 For C2, use separate scratch copies for the three named mutations; report the
 unmutated control, total, killed, each survivor and each measured equivalent
@@ -117,7 +123,8 @@ repeat the mapped owning families, public-path matrix, mutations and standing
 gates under canonical Python 3.13.x. Append the template's tested SHA/range,
 interpreter, clean pre/post states, command/count/timing/token table,
 non-pass disposition, acceptance commands and omissions; record
-`Certified by: pending`. Missing checks keep the work open. Full-tree
+`Certified by: pending`. Missing functional checks keep the work open;
+dispose of the read-only baseline diagnostic as specified above. Full-tree
 certification, repinning and re-anchoring are separate version-cut or
 Maintainer-requested ceremonies, not prerequisites here.
 
@@ -177,3 +184,18 @@ Elapsed: about 4 minutes; tokens: unknown
 The ordinary review's P1 is material to this security surface: `bootstrap/AST_BASELINE_RUNBOOK.md:17-18` identifies the engine baseline check, which the plan's mapped test families omit. Its named check and authority-limited disposition should be added; this is not a second finding.
 
 **Covered:** claims and production entry points (install trigger and adoption calls above); completeness and failure direction (C1/C2 and sequential pairing); consistency and reuse (`_reconcile_generated_blocks`, `_substitute_module_inventory` callers in `install.py:1351,1570,2167` and `upgrade.py:442,2039,2051`); drift and lifecycle (accepted proposal Decision and AST runbook); domain and scope (no scientific result; plan Scope); satisfier (public matrix and mutants). **Not covered:** implementation, execution, mutation, exhaustive callers or full suite; no claim of race resistance.
+
+
+## Response to plan reviews -- Codex GPT-6.1 (Strategy) -- 2026-10-30
+
+| Finding | Disposition |
+|---|---|
+| Ordinary P1; Security's shared P1 | Accepted the omitted named AST check and read-only delta diagnosis in A/B. Expected baseline drift is recorded for the version cut, while unexplained defects remain blocking. No baseline repair, known-new regeneration or trust-root write is authorized here. |
+
+The coordinating agent relayed the Maintainer's instruction that there is no
+per-plan re-anchor or trust-root maintenance. Verification now separates
+functional marker checks from the baseline diagnostic and removes the
+unrelated frozen-manifest modification control. This changes no marker
+acceptance outcome and does not waive functional failures. Both plan reviews
+are answered; the plan is ready to implement without a clearing review.
+Elapsed: about 3 minutes. Tokens: unknown.
