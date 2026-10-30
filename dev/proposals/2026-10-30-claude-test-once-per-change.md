@@ -70,13 +70,13 @@ the broad-run guard.
 
 **6. Open plans may switch** by one line in their record.
 
-**7. Timing targets for the suite, not scores for agents.** From the timing
-log (`dev/measurement/suite-runs.jsonl`, 188 runs): iteration run 30 seconds; any one test file 10 seconds; the one
-integration run 3 minutes; the certifying run 10 minutes, its existing
-budget. In the widest logged run (70 files, 710 seconds), the median file
-took 2.0 seconds and the 20 files over 10 seconds took 89% of the time. A
-missed target never blocks a change: the record notes it, and a file over
-10 seconds joins the consolidation list, slowest first.
+**7. Timing targets for the suite, not scores for agents.** Cairn's timing log
+of 188 suite runs sets these targets: iteration run 30 seconds; any one test
+file 10 seconds; integration run 3 minutes; certifying run 10 minutes, its
+existing budget. In the widest logged run (70 files, 710 seconds), the median
+file took 2.0 seconds and the 20 files over 10 seconds took 89% of the time. A
+missed target never blocks a change: the record notes it, and a file over 10
+seconds joins the consolidation list, slowest first.
 
 No new files: `for` is a subcommand of the existing `tools/test_tiers.py`.
 
