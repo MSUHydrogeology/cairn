@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+import unicodedata
 from pathlib import Path
 from collections.abc import Iterable
 from typing import Any, NamedTuple
@@ -75,6 +76,7 @@ from .lockfile import (
     read_lockfile,
 )
 from .install import (
+    _display_name,
     _lock_file_list,
     _reconcile_generated_blocks,
     fan_out_skills,
@@ -212,7 +214,7 @@ def _contained_lockfile_path(
     shape = f"is not a plain relative file name inside {tree}"
     if not isinstance(value, str) or not value:
         raise refuse(shape)
-    if not value.isprintable():
+    if not value.isprintable() or _has_forbidden_path_character(value):
         raise refuse(shape)
     rel = Path(value)
     if (value.startswith("/") or "\\" in value or ":" in value.split("/", 1)[0]
@@ -254,7 +256,8 @@ def _check_lockfile_paths(
     modules = lock.get("modules")
     if modules is not None and not (
         isinstance(modules, list)
-        and all(isinstance(m, str) and m and m.isprintable() for m in modules)
+        and all(isinstance(m, str) and m and m.isprintable()
+                and not _has_forbidden_path_character(m) for m in modules)
     ):
         # The report prints each module name, so one that is not plain text
         # would be typed at the operator's terminal.
@@ -387,6 +390,37 @@ class FilePlan(NamedTuple):
     base_cache: str | None    # lockfile base_cache rel path (mergeable) to refresh
     src: str | None = None    # new-core: source template rel-to-templates/ (to build the lockfile entry)
     verbatim: bool = False    # new-core: verbatim flag for the new lockfile entry
+    ancestor_evidence: dict[str, Any] | None = None
+
+
+_SHA256_RECORD = re.compile(r"sha256:[0-9a-f]{64}\Z")
+
+
+def _well_formed_sha256(value: object) -> bool:
+    return isinstance(value, str) and _SHA256_RECORD.fullmatch(value) is not None
+
+
+def _lock_record_identity(record: dict[str, Any]) -> str:
+    import json
+
+    encoded = json.dumps(
+        record, sort_keys=True, separators=(",", ":"), ensure_ascii=True,
+    ).encode("ascii")
+    return "sha256:" + _sha256_hex(encoded)
+
+
+def _recovered_base_cache_path(dst: str) -> str:
+    return f"{_BASE_CACHE_REL}/recovered/{_sha256_hex(dst.encode('utf-8'))}.md"
+
+
+def _has_forbidden_path_character(value: str) -> bool:
+    return any(
+        unicodedata.category(char) in {"Cc", "Cf"}
+        or ord(char) == 0x034F
+        or 0xFE00 <= ord(char) <= 0xFE0F
+        or 0xE0100 <= ord(char) <= 0xE01EF
+        for char in value
+    )
 
 
 def _embedded_axes(profile: dict[str, Any] | None) -> dict[str, str]:
@@ -684,29 +718,60 @@ def _compute_upgrade(
                 "", None, None))
             continue
         # Mergeable .md.
-        if ours_bytes is None:
-            # File missing on disk (e.g. a default-on module slot that never
-            # installed).  Carry theirs_raw so --stage can write the upstream
-            # version into the review-only surface (there is no .ours to pair
-            # it with -- nothing is on disk).
-            plans.append(FilePlan(dst, "review-only", None,
-                                  "file missing on disk",
-                                  theirs_b.decode("utf-8"), None))
-            continue
-        ours = ours_bytes.decode("utf-8")
         theirs_raw = theirs_b.decode("utf-8")
         cache_rel = rec.get("base_cache")
-        base_path = (target / cache_rel) if cache_rel else None
-        if base_path is None or not base_path.exists():
-            # No recoverable base (e.g. a --init-lock migrated tree) ->
-            # review-only diff, never a pretended 3-way merge.  Carry
-            # theirs_raw so --stage can write the upstream version alongside
-            # the on-disk copy for a by-hand merge.
-            plans.append(FilePlan(dst, "review-only", None,
-                                  "no recoverable base (review-only diff)",
-                                  theirs_raw, None))
+        expected_base = rec.get("base_hash")
+        base_path = (target / cache_rel) if isinstance(cache_rel, str) else None
+        base_bytes: bytes | None = None
+        try:
+            if base_path is None:
+                raise ValueError("missing ancestor path")
+            _assert_safe_write(base_path, target)
+            base_bytes = _read_regular_bytes(base_path)
+            if base_bytes is None:
+                raise ValueError("saved ancestor is missing")
+            checked_base_hash = "sha256:" + _sha256_hex(base_bytes)
+            if not _well_formed_sha256(expected_base):
+                raise ValueError("missing or malformed ancestor digest")
+            if checked_base_hash != expected_base:
+                raise ValueError("saved ancestor digest does not match")
+            # Decode only after the raw-byte digest has been checked. The merge
+            # consumes this same read, so a second read cannot substitute bytes.
+            base_raw = base_bytes.decode("utf-8")
+        except (OSError, UnicodeError, ValueError, ScaffoldSecurityError):
+            # A missing, legacy, malformed, changed, unreadable or undecodable
+            # ancestor is not a merge base. Keep the adopter file and cache in
+            # place; stage the current upstream beside it for manual recovery.
+            plans.append(FilePlan(
+                dst, "review-only", None,
+                ("file missing on disk; saved ancestor is missing or invalid "
+                 "(review-only diff)" if ours_bytes is None else
+                 "saved ancestor is missing or invalid (review-only diff)"),
+                theirs_raw, cache_rel if isinstance(cache_rel, str) else None,
+                ancestor_evidence={
+                    "src": src_rel, "dst": dst, "record_dst": rec.get("dst", ""),
+                    "record_identity": _lock_record_identity(rec),
+                    "base_cache": cache_rel,
+                    "expected_base_hash": expected_base,
+                    "checked_base_hash": ("sha256:" + _sha256_hex(base_bytes)
+                                          if base_bytes is not None else ""),
+                }))
             continue
-        base_raw = base_path.read_text(encoding="utf-8")
+        evidence = {
+            "src": src_rel, "dst": dst, "record_dst": rec.get("dst", ""),
+            "record_identity": _lock_record_identity(rec),
+            "base_cache": cache_rel,
+            "expected_base_hash": expected_base,
+            "checked_base_hash": "sha256:" + _sha256_hex(base_bytes),
+        }
+        if ours_bytes is None:
+            # A missing destination still owes manual reconciliation. Carry
+            # the checked ancestor identity so apply can bind recovery to it.
+            plans.append(FilePlan(
+                dst, "review-only", None, "file missing on disk",
+                theirs_raw, cache_rel, ancestor_evidence=evidence))
+            continue
+        ours = ours_bytes.decode("utf-8")
         # Size the ancestor sides for the merge view only: base under the OLD
         # profile, theirs under the NEW profile.  The cached `base_raw` and the
         # FilePlan's `theirs_raw` (the next ancestor) stay FULL/unsized -- the
@@ -743,7 +808,8 @@ def _compute_upgrade(
             dst, kind,
             res.merged if advancing else None, res.detail,
             theirs_raw if advancing else None,
-            cache_rel if advancing else None))
+            cache_rel if advancing else None,
+            ancestor_evidence=evidence))
 
     # New core-like files (#47): core + skills install unconditionally, so a
     # core/skills file present upstream but absent from the lockfile (an
@@ -982,10 +1048,10 @@ def _print_upgrade_report(
                   f"{'...' if len(by_kind[kind]) > 6 else ''}")
     if structural["new_modules"]:
         print(f"\n  new modules available (opt-in): "
-              f"{', '.join(structural['new_modules'])}")
+              f"{', '.join(_display_name(n) for n in structural['new_modules'])}")
     if structural["removed_modules"]:
         print(f"  modules removed upstream (flagged): "
-              f"{', '.join(structural['removed_modules'])}")
+              f"{', '.join(_display_name(n) for n in structural['removed_modules'])}")
     if citation is False:
         print("\n  [warn] the fidelity manifest does NOT cite the current "
               "lockfile version/commit (R10) -- update its citation.")
@@ -1109,6 +1175,8 @@ def _write_stage(
     ours_hashes: dict[str, str] = {}
     expected_absent: set[str] = set()
     kinds: dict[str, str] = {}
+    ancestor_evidence: dict[str, dict[str, Any]] = {}
+    recovery_bases: dict[str, dict[str, Any]] = {}
     # #47: per-file provenance for files NOT already in the lockfile (new-core),
     # so --apply can append correct lockfile records (refs only -- no file
     # bodies -- keeping stage-metadata.json lightweight, plan-review rec 4b).
@@ -1172,6 +1240,27 @@ def _write_stage(
         new_profile if new_profile is not None else lock.get("profile"))
     review_only_dsts: list[str] = []
     for fp in plans:
+        if fp.ancestor_evidence is not None:
+            ancestor_evidence[fp.dst] = dict(fp.ancestor_evidence)
+            if fp.kind == "review-only" and fp.theirs_raw is not None:
+                # Recovery never replaces the evidence at its original path.
+                # The valid upstream ancestor gets a distinct, stable path;
+                # the original bad cache remains available for inspection.
+                recovered_rel = _recovered_base_cache_path(fp.dst)
+                recovery_bases[fp.dst] = {
+                    "src": fp.ancestor_evidence.get("src", ""),
+                    "dst": fp.dst,
+                    "record_dst": fp.ancestor_evidence.get("record_dst", ""),
+                    "old_base_cache": fp.ancestor_evidence.get("base_cache", ""),
+                    "new_base_cache": recovered_rel,
+                    "expected_base_hash": fp.ancestor_evidence.get("expected_base_hash", ""),
+                    "checked_base_hash": fp.ancestor_evidence.get("checked_base_hash", ""),
+                    "new_upstream_hash": "sha256:" + _sha256_hex(
+                        fp.theirs_raw.encode("utf-8")),
+                }
+                recovery_out = stage / "recovery-base" / fp.dst
+                recovery_out.parent.mkdir(parents=True, exist_ok=True)
+                recovery_out.write_text(fp.theirs_raw, encoding="utf-8")
         if fp.kind != "review-only":
             continue
         review_only_dsts.append(fp.dst)
@@ -1251,6 +1340,7 @@ def _write_stage(
     _new_source_repository, _new_source_licenses = _cairn_provenance(cairn_root)
     meta = {
         "lock_commit": lock.get("cairn_commit"),
+        "lock_identity": _lock_record_identity(lock),
         "lock_version": lock.get("cairn_version"),
         "to_ref": to_ref,
         "tokens": lock.get("tokens"),
@@ -1263,6 +1353,8 @@ def _write_stage(
         "staged_files": sorted(staged_files),
         "kinds": kinds,
         "ours_hashes": ours_hashes,
+        "ancestor_evidence": ancestor_evidence,
+        "recovery_bases": recovery_bases,
         # New-add destinations that were ABSENT at --stage; --apply fails closed
         # if any reappeared since (data-loss guard for new-core / new-module).
         "expected_absent": sorted(expected_absent),
@@ -1884,8 +1976,9 @@ def _cmd_adopt_module(
               file=sys.stderr)
         return 1
     if name not in _MODULE_MAPPINGS:
-        print(f"error: unknown module {name!r}. Known modules: "
-              f"{', '.join(sorted(_MODULE_MAPPINGS))}.", file=sys.stderr)
+        print(f"error: unknown module '{_display_name(name)}'. Known modules: "
+              f"{', '.join(_display_name(n) for n in sorted(_MODULE_MAPPINGS))}.",
+              file=sys.stderr)
         return 1
     if name in lock.get("modules", []):
         try:
@@ -3024,6 +3117,24 @@ def _apply_upgrade(
             value = meta.get(key, {})
             plain = plain and isinstance(value, dict)
             names += list(value) if isinstance(value, dict) else []
+        recovery = meta.get("recovery_bases", {})
+        plain = plain and isinstance(recovery, dict)
+        names += list(recovery) if isinstance(recovery, dict) else []
+        for item in recovery.values() if isinstance(recovery, dict) else ():
+            if not isinstance(item, dict):
+                plain = False
+                continue
+            names.extend(item.get(key) for key in ("old_base_cache", "new_base_cache")
+                         if item.get(key))
+        evidence = meta.get("ancestor_evidence", {})
+        plain = plain and isinstance(evidence, dict)
+        names += list(evidence) if isinstance(evidence, dict) else []
+        for item in evidence.values() if isinstance(evidence, dict) else ():
+            if not isinstance(item, dict):
+                plain = False
+                continue
+            names.extend(item.get(key) for key in ("src", "dst", "record_dst", "base_cache")
+                         if item.get(key))
         for key in ("new_commit", "new_version"):
             plain = plain and (
                 key not in meta
@@ -3051,6 +3162,99 @@ def _apply_upgrade(
         print("error: staged upgrade is stale (lockfile/tokens/roster changed "
               "since --stage); re-run `upgrade --stage`.", file=sys.stderr)
         return 1
+    evidence_map = meta.get("ancestor_evidence", {})
+    recovery_map = meta.get("recovery_bases", {})
+    kinds = meta.get("kinds", {})
+    if not isinstance(evidence_map, dict) or not isinstance(recovery_map, dict):
+        print("error: staged ancestor evidence is missing or malformed; "
+              "re-run `upgrade --stage`.", file=sys.stderr)
+        return 1
+
+    def current_ancestor_hash(evidence: dict[str, Any]) -> str:
+        cache_rel = evidence.get("base_cache")
+        if not isinstance(cache_rel, str) or not cache_rel:
+            return ""
+        cache_abs = _contained_lockfile_path(
+            target, cache_rel, "base_cache", "the project")
+        _assert_safe_write(cache_abs, target)
+        raw = _read_regular_bytes(cache_abs)
+        return "sha256:" + _sha256_hex(raw) if raw is not None else ""
+
+    def current_lock_matches_stage() -> dict[str, Any] | None:
+        try:
+            current = read_lockfile(target)
+        except OSError:
+            return None
+        if (current is None or
+                _lock_record_identity(current) != meta.get("lock_identity")):
+            return None
+        return current
+
+    def ancestor_is_still_staged(dst: str) -> bool:
+        evidence = evidence_map.get(dst)
+        if not isinstance(evidence, dict):
+            # A staged mergeable result must always carry this binding.
+            return (dst not in staged_meta or kinds.get(dst) in
+                    ("verbatim-update", "new-core", "new-module"))
+        try:
+            current_lock = current_lock_matches_stage()
+        except (OSError, TypeError, ValueError):
+            return False
+        if current_lock is None or not isinstance(current_lock.get("files"), list):
+            return False
+        matches = [rec for rec in current_lock["files"]
+                   if isinstance(rec, dict)
+                   and rec.get("src") == evidence.get("src")
+                   and rec.get("dst") == evidence.get("record_dst")]
+        if len(matches) != 1:
+            return False
+        rec = matches[0]
+        if (rec.get("base_cache") != evidence.get("base_cache")
+                or rec.get("base_hash") != evidence.get("expected_base_hash")
+                or _lock_record_identity(rec) != evidence.get("record_identity")):
+            return False
+        try:
+            return current_ancestor_hash(evidence) == evidence.get("checked_base_hash")
+        except (OSError, ScaffoldSecurityError, ValueError):
+            return False
+
+    # Compare the complete stage-bound evidence before any project write. This
+    # catches coordinated lock/cache edits too: the result remains bound to the
+    # exact record identity and bytes consumed during stage.
+    for dst in sorted(evidence_map):
+        if not isinstance(dst, str) or not ancestor_is_still_staged(dst):
+            print(f"error: saved ancestor for {dst!r} changed or became unreadable "
+                  "since --stage; re-run `upgrade --stage`.", file=sys.stderr)
+            return 1
+    if current_lock_matches_stage() is None:
+        print("error: lockfile changed or became unreadable since --stage; "
+              "re-run `upgrade --stage`.", file=sys.stderr)
+        return 1
+    # Recovery carries the raw upstream ancestor separately from the display
+    # pair. Verify the stage copy before any writes, and require explicit
+    # acknowledgement before it can become the new merge base.
+    recovery_raw: dict[str, bytes] = {}
+    for dst, item in recovery_map.items():
+        if not isinstance(dst, str) or not isinstance(item, dict):
+            print("error: staged recovery evidence is malformed; re-run "
+                  "`upgrade --stage`.", file=sys.stderr)
+            return 1
+        expected_cache = _recovered_base_cache_path(dst)
+        if item.get("new_base_cache") != expected_cache:
+            print(f"error: recovery cache path for {dst} is stale or malformed; "
+                  "re-run `upgrade --stage`.", file=sys.stderr)
+            return 1
+        try:
+            path = stage / "recovery-base" / dst
+            _assert_safe_write(path, target)
+            raw = _read_regular_bytes(path)
+        except (OSError, ScaffoldSecurityError):
+            raw = None
+        if raw is None or "sha256:" + _sha256_hex(raw) != item.get("new_upstream_hash"):
+            print(f"error: recovery ancestor for {dst} changed or is unreadable; "
+                  "re-run `upgrade --stage`.", file=sys.stderr)
+            return 1
+        recovery_raw[dst] = raw
     discovery_inputs = meta.get("discovery_inputs")
     expected_discovery_paths = {"dev/PLANNING.md", "dev/modules/README.md"}
     if not isinstance(discovery_inputs, dict) or \
@@ -3082,7 +3286,6 @@ def _apply_upgrade(
         return 1
     # (c) every staged file is an advancing kind (defense-in-depth;
     #     non-advancing kinds were never staged).
-    kinds = meta.get("kinds", {})
     non_adv = [d for d in staged_meta if kinds.get(d) not in _ADVANCING_KINDS]
     if non_adv:
         print(f"error: staged non-advancing file(s) {non_adv} cannot be "
@@ -3108,6 +3311,39 @@ def _apply_upgrade(
               f"\n  review the .theirs/.ours pair under {_STAGING_REL}/"
               "review-only/, merge by hand into the original, then re-run "
               "`--apply --ack-review-only` to acknowledge.", file=sys.stderr)
+        return 1
+    for dst, item in recovery_map.items():
+        if dst not in review_only:
+            print(f"error: recovery evidence for {dst} is not review-only; "
+                  "re-run `upgrade --stage`.", file=sys.stderr)
+            return 1
+        try:
+            recovered_file = target / dst
+            _assert_safe_write(recovered_file, target)
+            recovered_bytes = _read_regular_bytes(recovered_file)
+            new_cache = _contained_lockfile_path(
+                target, _recovered_base_cache_path(dst), "base_cache", "the project")
+            _assert_safe_write(new_cache, target)
+        except (KeyError, OSError, ScaffoldSecurityError):
+            recovered_bytes = None
+        if recovered_bytes is None:
+            print(f"error: {dst} must be manually reconciled into a regular file "
+                  "before `--apply --ack-review-only`; no recovery was applied.",
+                  file=sys.stderr)
+            return 1
+        if new_cache.exists():
+            try:
+                prior = _read_regular_bytes(new_cache)
+            except OSError:
+                prior = None
+            if prior != recovery_raw[dst]:
+                print(f"error: recovery cache for {dst} already holds different "
+                      "content; it was left untouched.", file=sys.stderr)
+                return 1
+    if (set(review_only) != set(recovery_map)
+            or any(dst not in evidence_map for dst in review_only)):
+        print("error: staged review-only files lack bound recovery evidence; "
+              "re-run `upgrade --stage`.", file=sys.stderr)
         return 1
     # (d3) Blocked-addition HARD block: an
     #      occupied-destination collision or a lock-ownership conflict -- in EITHER
@@ -3176,12 +3412,24 @@ def _apply_upgrade(
             return 1
 
     # Swap staged files into place.
+    applied_before_late_failure: list[str] = []
     for staged in staged_meta:
+        if not ancestor_is_still_staged(staged):
+            print(f"error: saved ancestor for {staged} changed or became unreadable "
+                  "during apply; refusing this write and lockfile advancement. "
+                  "Re-run `upgrade --stage`.", file=sys.stderr)
+            if applied_before_late_failure:
+                print("Earlier files already applied: "
+                      + ", ".join(applied_before_late_failure), file=sys.stderr)
+            print(f"The staged data and original ancestor evidence remain under "
+                  f"{_STAGING_REL}/ and the base cache.", file=sys.stderr)
+            return 1
         dst_abs = target / staged
         _assert_safe_write(dst_abs, target)
         dst_abs.parent.mkdir(parents=True, exist_ok=True)
         dst_abs.write_text(
             (files_dir / staged).read_text(encoding="utf-8"), encoding="utf-8")
+        applied_before_late_failure.append(staged)
     # Advance the base cache to the new upstream raw templates (the next
     # upgrade's ancestor).
     new_base = stage / "new-base"
@@ -3193,6 +3441,43 @@ def _apply_upgrade(
             _assert_safe_write(cache_abs, target)
             cache_abs.parent.mkdir(parents=True, exist_ok=True)
             cache_abs.write_text(nb.read_text(encoding="utf-8"), encoding="utf-8")
+
+    # Acknowledged review-only files establish a valid next ancestor from the
+    # upstream bytes shown in the review pair. Keep the old cache untouched as
+    # evidence and point provenance at a distinct recovered cache path.
+    for dst, raw in recovery_raw.items():
+        item = recovery_map[dst]
+        if not ancestor_is_still_staged(dst):
+            print(f"error: saved ancestor for {dst} changed during recovery; "
+                  "the lockfile was not advanced. Re-run `upgrade --stage`.",
+                  file=sys.stderr)
+            if applied_before_late_failure:
+                print("Earlier files already applied: "
+                      + ", ".join(applied_before_late_failure), file=sys.stderr)
+            return 1
+        cache_abs = _contained_lockfile_path(
+            target, _recovered_base_cache_path(dst), "base_cache", "the project")
+        _assert_safe_write(cache_abs, target)
+        try:
+            cache_abs.parent.mkdir(parents=True, exist_ok=True)
+            _write_by_replacing(cache_abs, raw, target)
+        except OSError:
+            print(f"error: could not establish the recovered ancestor for {dst}; "
+                  "the original cache and lockfile remain, and the stage was kept.",
+                  file=sys.stderr)
+            if applied_before_late_failure:
+                print("Earlier files already applied: "
+                      + ", ".join(applied_before_late_failure), file=sys.stderr)
+            return 1
+
+    if current_lock_matches_stage() is None:
+        print("error: lockfile changed or became unreadable during apply; "
+              "the lockfile was not advanced. Re-run `upgrade --stage`.",
+              file=sys.stderr)
+        if applied_before_late_failure:
+            print("Earlier files already applied: "
+                  + ", ".join(applied_before_late_failure), file=sys.stderr)
+        return 1
 
     # Advance the lockfile: bump version/commit;
     # recompute each applied file's hash from the NOW-on-disk content (so a
@@ -3224,6 +3509,16 @@ def _apply_upgrade(
     rehash_set = set(meta.get("verbatim_rehash", []))
     for rec in lock.get("files", []):
         rec = dict(rec)
+        recovery_item = next((item for item in recovery_map.values()
+                              if isinstance(item, dict)
+                              and item.get("src") == rec.get("src")
+                              and item.get("record_dst") == rec.get("dst")), None)
+        if recovery_item is not None:
+            recovered_dst = recovery_item["dst"]
+            rec["dst"] = recovered_dst
+            rec["base_cache"] = _recovered_base_cache_path(recovery_item["dst"])
+            rec["base_hash"] = recovery_item["new_upstream_hash"]
+            rec["hash"] = "sha256:" + _sha256_hex((target / recovered_dst).read_bytes())
         # Renamed vendor wrapper (#45): _compute_upgrade staged the *resolved*
         # wrapper (e.g. CLAUDE.md), but this record still names the canonical
         # VENDOR.md. Rewrite the dst to the on-disk wrapper so the advanced

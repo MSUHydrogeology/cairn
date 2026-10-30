@@ -245,6 +245,11 @@ def _diverge_agents(project: Path) -> None:
     agents = project / "AGENTS.md"
     agents.write_text(
         agents.read_text().replace("# AGENTS.md", "# OLD", 1) + "\n<!-- keep me -->\n")
+    lock = s.read_lockfile(project)
+    rec = next(r for r in lock["files"] if r["dst"] == "AGENTS.md")
+    rec["base_hash"] = "sha256:" + s._sha256_hex(base.read_bytes())
+    (project / "dev" / ".cairn" / "cairn-lock.yml").write_text(
+        s._emit_lock_yaml(lock), encoding="utf-8")
 
 
 def _stage(capsys: pytest.CaptureFixture[str], project: Path) -> None:

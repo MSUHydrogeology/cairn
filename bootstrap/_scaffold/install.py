@@ -36,6 +36,11 @@ from .config import (
     duplicate_destinations,
     strip_conditional_regions,
 )
+
+
+def _display_name(value: str) -> str:
+    """Render supplied names with ASCII escapes while keeping ordinary text readable."""
+    return ascii(value)[1:-1]
 from .security import (
     ScaffoldSecurityError,
     _assert_fanout_contained,
@@ -340,8 +345,9 @@ def _install_one(
         unpaired = find_unpaired_slots(text)
         if unpaired:
             print(
-                f"  [warn] {src.name}: unpaired slot marker(s): "
-                f"{', '.join(unpaired)} (each open `cairn:slot NAME` needs "
+                f"  [warn] {_display_name(src.name)}: unpaired slot marker(s): "
+                f"{', '.join(_display_name(name) for name in unpaired)} "
+                f"(each open `cairn:slot NAME` needs "
                 f"a matching `cairn:end NAME`)",
                 file=sys.stderr,
             )
@@ -1544,7 +1550,7 @@ def install_modules(
     for name in module_names:
         if name not in known:
             print(
-                f"  [warn] unknown module '{name}' — skipped. "
+                f"  [warn] unknown module '{_display_name(name)}' — skipped. "
                 f"Known modules: {', '.join(sorted(known))}",
                 file=sys.stderr,
             )
@@ -1724,7 +1730,7 @@ def print_report(
     if live_slots:
         print(f"\nBlock slots requiring agent attention ({len(live_slots)}):")
         for path, slot in live_slots:
-            print(f"  {path}  [cairn:slot {slot}]")
+            print(f"  {path}  [cairn:slot {_display_name(slot)}]")
         print("  -> See BOOTSTRAP.md Act II-4 for guidance.")
     elif not absent_slots:
         print("\n[OK] No block slots detected.")
@@ -1735,8 +1741,8 @@ def print_report(
         )
         for path, slot in absent_slots:
             print(
-                f"  {path}  [cairn:slot {slot}]  supplied by: "
-                f"{', '.join(suppliers[slot])}"
+                f"  {path}  [cairn:slot {_display_name(slot)}]  supplied by: "
+                f"{', '.join(_display_name(name) for name in suppliers[slot])}"
             )
         print(
             "  -> Mark each `N/A: <reason>` (for example `N/A: "

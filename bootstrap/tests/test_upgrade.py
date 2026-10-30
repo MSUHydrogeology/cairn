@@ -494,6 +494,11 @@ class TestUpgradeModes:
         a = target / "AGENTS.md"
         a.write_text(
             a.read_text().replace("# AGENTS.md", "# OLD", 1) + "\n<!-- keep me -->\n")
+        lock = s.read_lockfile(target)
+        rec = next(r for r in lock["files"] if r["dst"] == "AGENTS.md")
+        rec["base_hash"] = "sha256:" + s._sha256_hex(base.read_bytes())
+        (target / "dev" / ".cairn" / "cairn-lock.yml").write_text(
+            s._emit_lock_yaml(lock), encoding="utf-8")
 
     def test_plan_writes_nothing(self, tmp_path: Path) -> None:
         assert _install(tmp_path) == 0
@@ -531,6 +536,91 @@ class TestUpgradeModes:
         sd = tmp_path / "dev" / ".cairn-upgrade" / "files"
         assert not (sd.exists() and any(sd.rglob("*")))  # nothing to re-stage
 
+    @pytest.mark.parametrize("bad_evidence", [
+        "altered-cache", "missing-cache", "missing-digest", "malformed-digest",
+        "unreadable-cache", "invalid-utf8", "legacy-record",
+    ])
+    def test_bad_ancestor_uses_review_recovery_and_preserves_evidence(
+        self, tmp_path: Path, bad_evidence: str, monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        assert _install(tmp_path) == 0
+        lock = s.read_lockfile(tmp_path)
+        rec = next(r for r in lock["files"] if r["dst"] == "AGENTS.md")
+        cache = tmp_path / rec["base_cache"]
+        original_bad = cache.read_bytes()
+        if bad_evidence == "altered-cache":
+            cache.write_bytes(original_bad + b"altered\n")
+        elif bad_evidence == "missing-cache":
+            cache.unlink()
+        elif bad_evidence == "missing-digest":
+            rec.pop("base_hash", None)
+        elif bad_evidence == "malformed-digest":
+            rec["base_hash"] = "sha256:1234"
+        elif bad_evidence == "unreadable-cache":
+            pass
+        elif bad_evidence == "invalid-utf8":
+            cache.write_bytes(b"\xff\xfe invalid utf8")
+            rec["base_hash"] = "sha256:" + s._sha256_hex(cache.read_bytes())
+        elif bad_evidence == "legacy-record":
+            rec.pop("base_hash", None)
+        lockfile = tmp_path / "dev" / ".cairn" / "cairn-lock.yml"
+        lockfile.write_text(s._emit_lock_yaml(lock), encoding="utf-8")
+        lock_before_apply = s.read_lockfile(tmp_path)
+        bad_cache_before_apply = cache.read_bytes() if cache.exists() else None
+        adopter_before = (tmp_path / "AGENTS.md").read_bytes()
+
+        if bad_evidence == "unreadable-cache":
+            from bootstrap._scaffold import upgrade as upgrade_module
+            read_regular = upgrade_module._read_regular_bytes
+
+            def read_with_unreadable_ancestor(path: Path):
+                if path == cache:
+                    raise PermissionError("synthetic unreadable cache")
+                return read_regular(path)
+
+            with monkeypatch.context() as patcher:
+                patcher.setattr(upgrade_module, "_read_regular_bytes",
+                                read_with_unreadable_ancestor)
+                assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                               "--cairn-root", str(CAIRN_ROOT)]) == 0
+        else:
+            assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                           "--cairn-root", str(CAIRN_ROOT)]) == 0
+        stage = tmp_path / "dev" / ".cairn-upgrade"
+        review = stage / "review-only" / "AGENTS.md.theirs"
+        assert review.is_file()
+        assert (tmp_path / "AGENTS.md").read_bytes() == adopter_before
+        assert "AGENTS.md" in json.loads((stage / s._STAGE_META).read_text())["review_only"]
+
+        if bad_evidence == "unreadable-cache":
+            rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                         "--ack-review-only", "--cairn-root", str(CAIRN_ROOT)])
+            assert rc == 1  # the cache became readable after this stage snapshot
+            assert (tmp_path / "AGENTS.md").read_bytes() == adopter_before
+            assert s.read_lockfile(tmp_path) == lock_before_apply
+            assert stage.exists()
+            return
+
+        # Manual reconciliation selects the displayed upstream text. Apply
+        # records that result and establishes its raw upstream source as the
+        # next ancestor, while the original cache remains untouched evidence.
+        (tmp_path / "AGENTS.md").write_text(review.read_text(), encoding="utf-8")
+        assert s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                       "--ack-review-only", "--cairn-root", str(CAIRN_ROOT)]) == 0
+        lock_after = s.read_lockfile(tmp_path)
+        rec_after = next(r for r in lock_after["files"] if r["dst"] == "AGENTS.md")
+        assert rec_after["base_cache"] != rec["base_cache"]
+        if bad_cache_before_apply is None:
+            assert not cache.exists()
+        else:
+            assert cache.read_bytes() == bad_cache_before_apply
+        new_base = tmp_path / rec_after["base_cache"]
+        assert rec_after["base_hash"] == "sha256:" + s._sha256_hex(new_base.read_bytes())
+        assert new_base.read_bytes() == (TEMPLATES_ROOT / rec_after["src"]).read_bytes()
+
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+
     def test_apply_rejects_stale_stage(self, tmp_path: Path) -> None:
         assert _install(tmp_path) == 0
         self._diverge_base(tmp_path)
@@ -542,6 +632,100 @@ class TestUpgradeModes:
         rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
                      "--cairn-root", str(CAIRN_ROOT)])
         assert rc == 1  # stale -> refused
+
+    def test_apply_rejects_changed_ancestor_since_stage(self, tmp_path: Path) -> None:
+        assert _install(tmp_path) == 0
+        self._diverge_base(tmp_path)
+        lock_before = s.read_lockfile(tmp_path)
+        original_file = (tmp_path / "AGENTS.md").read_bytes()
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        rec = next(r for r in lock_before["files"] if r["dst"] == "AGENTS.md")
+        cache = tmp_path / rec["base_cache"]
+        cache.write_bytes(cache.read_bytes() + b"changed after stage\n")
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 1
+        assert (tmp_path / "AGENTS.md").read_bytes() == original_file
+        assert s.read_lockfile(tmp_path) == lock_before
+        assert (tmp_path / "dev" / ".cairn-upgrade").exists()
+
+    def test_apply_rejects_changed_digest_since_stage(self, tmp_path: Path) -> None:
+        assert _install(tmp_path) == 0
+        self._diverge_base(tmp_path)
+        lock_before = s.read_lockfile(tmp_path)
+        original_file = (tmp_path / "AGENTS.md").read_bytes()
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        changed = s.read_lockfile(tmp_path)
+        rec = next(r for r in changed["files"] if r["dst"] == "AGENTS.md")
+        rec["base_hash"] = "sha256:" + "0" * 64
+        lockfile = tmp_path / "dev" / ".cairn" / "cairn-lock.yml"
+        lockfile.write_text(s._emit_lock_yaml(changed), encoding="utf-8")
+
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        assert rc == 1
+        assert (tmp_path / "AGENTS.md").read_bytes() == original_file
+        assert (tmp_path / "dev" / ".cairn-upgrade").exists()
+        assert s.read_lockfile(tmp_path) == changed
+
+    def test_apply_rechecks_ancestor_before_each_destination_write(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        assert _install(tmp_path) == 0
+        self._diverge_base(tmp_path)
+        lock = s.read_lockfile(tmp_path)
+        second_dst = "VENDOR.md"
+        second_base = tmp_path / "dev" / ".cairn" / "base" / second_dst
+        second_file = tmp_path / second_dst
+        second_old = "# Vendor wrapper"
+        second_base.write_text(
+            second_base.read_text().replace(second_old, "# OLD VENDOR", 1),
+            encoding="utf-8")
+        second_file.write_text(
+            second_file.read_text().replace(second_old, "# OLD VENDOR", 1),
+            encoding="utf-8")
+        second_rec = next(r for r in lock["files"] if r["dst"] == second_dst)
+        second_rec["base_hash"] = "sha256:" + s._sha256_hex(second_base.read_bytes())
+        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").write_text(
+            s._emit_lock_yaml(lock), encoding="utf-8")
+        lock_before = s.read_lockfile(tmp_path)
+        original_first = (tmp_path / "AGENTS.md").read_bytes()
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        stage = tmp_path / "dev" / ".cairn-upgrade"
+        meta = json.loads((stage / s._STAGE_META).read_text())
+        evidenced = [dst for dst in meta["staged_files"]
+                     if dst in meta["ancestor_evidence"]]
+        assert "AGENTS.md" in evidenced and second_dst in evidenced
+
+        first_path = tmp_path / evidenced[0]
+        second_evidence_dst = next(dst for dst in evidenced if dst != evidenced[0])
+        second_original = (tmp_path / second_evidence_dst).read_bytes()
+        second_cache = tmp_path / meta["ancestor_evidence"][second_evidence_dst]["base_cache"]
+        real_write_text = Path.write_text
+        changed = False
+
+        def change_later_ancestor_after_first_write(path: Path, *args, **kwargs):
+            nonlocal changed
+            result = real_write_text(path, *args, **kwargs)
+            if path == first_path and not changed:
+                second_cache.write_bytes(second_cache.read_bytes() + b"late change\n")
+                changed = True
+            return result
+
+        monkeypatch.setattr(Path, "write_text", change_later_ancestor_after_first_write)
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        output = capsys.readouterr().err
+        assert rc == 1 and changed
+        assert "during apply" in output and "Earlier files already applied" in output
+        assert first_path.read_bytes() != original_first
+        assert (tmp_path / second_evidence_dst).read_bytes() == second_original
+        assert s.read_lockfile(tmp_path) == lock_before
+        assert stage.exists()
 
     def test_apply_rejects_conflict_markers(self, tmp_path: Path) -> None:
         assert _install(tmp_path) == 0
@@ -633,6 +817,8 @@ class TestUpgradeModes:
         # carries the new header.  A pure upstream advance with no
         # adopter customization.
         lock = s.read_lockfile(tmp_path)
+        rec = next(r for r in lock["files"] if r["dst"] == "VENDOR.md")
+        rec["base_hash"] = "sha256:" + s._sha256_hex(base.read_bytes())
         plans, _structural = s._compute_upgrade(
             tmp_path, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None,
         )
@@ -877,6 +1063,11 @@ class TestUpgradeModes:
         base = tmp_path / "dev" / ".cairn" / "base" / "AGENTS.md"
         base.write_text(base.read_text()
                         + "\n<!-- cairn:slot zzz -->\nB\n<!-- cairn:end zzz -->\n")
+        lock = s.read_lockfile(tmp_path)
+        rec = next(r for r in lock["files"] if r["dst"] == "AGENTS.md")
+        rec["base_hash"] = "sha256:" + s._sha256_hex(base.read_bytes())
+        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").write_text(
+            s._emit_lock_yaml(lock), encoding="utf-8")
         a = tmp_path / "AGENTS.md"
         a.write_text(a.read_text()
                      + "\n<!-- cairn:slot zzz -->\nMINE\n<!-- cairn:end zzz -->\n")

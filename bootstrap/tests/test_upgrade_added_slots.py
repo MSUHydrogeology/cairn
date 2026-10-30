@@ -37,6 +37,7 @@ Run from the cairn repo root:
 """
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import os
@@ -188,6 +189,14 @@ def write_lock(project: Path, lock: dict) -> None:
 
 def readme_record(project: Path) -> dict:
     return next(r for r in read_lock(project)["files"] if r["dst"] == README_DST)
+
+
+def refresh_readme_base_digest(project: Path) -> None:
+    lock = read_lock(project)
+    rec = next(r for r in lock["files"] if r["dst"] == README_DST)
+    base = project / rec["base_cache"]
+    rec["base_hash"] = "sha256:" + hashlib.sha256(base.read_bytes()).hexdigest()
+    write_lock(project, lock)
 
 
 # --- reading the report --------------------------------------------------------
@@ -434,6 +443,7 @@ def test_lockfile_token_value_in_the_old_template_hides_no_name(scenario):
     base = scenario.project / readme_record(scenario.project)["base_cache"]
     base.write_text(base.read_text(encoding="utf-8") + "\n{{inj_tok}}\n",
                     encoding="utf-8")
+    refresh_readme_base_digest(scenario.project)
     release = scenario.new_release(lambda t: with_slot_after_heading(t, "fresh-slot"))
     proc = upgrade(scenario, release)
     assert proc.returncode == 0, proc.stderr
@@ -583,6 +593,7 @@ def test_malformed_old_base_keeps_its_status_and_prints_no_name(scenario):
     text = base.read_text(encoding="utf-8")
     assert closing in text
     base.write_text(text.replace(closing, ""), encoding="utf-8")
+    refresh_readme_base_digest(scenario.project)
     # The new slot sits next to the broken one, where the two versions meet.
     release = scenario.new_release(lambda t: t.replace(
         slot_block("existing-slot"),

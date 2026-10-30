@@ -24,6 +24,7 @@ Run from the cairn repo root:
 from __future__ import annotations
 
 import sys
+from types import SimpleNamespace
 from pathlib import Path
 
 import pytest
@@ -53,6 +54,35 @@ def _make_target_with_slot(tmp_path: Path, body: str = "") -> Path:
         encoding="utf-8",
     )
     return dst
+
+
+def test_public_install_escapes_merge_and_fidelity_slot_names(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch,
+) -> None:
+    from bootstrap import scaffold
+    from bootstrap._scaffold import cli
+
+    target = tmp_path / "target"
+    target.mkdir()
+    config = tmp_path / "profile.yml"
+    config.write_text(
+        "project_name: Demo\ntest_command: pytest\npreset: solo-greenfield\n",
+        encoding="utf-8",
+    )
+    merge_slot = "merge-\u202e-name"
+    fidelity_slot = r"literal\u202e-name"
+    monkeypatch.setattr(cli, "run_module_merge_pass", lambda *a, **k: (
+        [SimpleNamespace(status="merged", target_path="AGENTS.md",
+                         slot_name=merge_slot, side_file=None)],
+        [("AGENTS.md", fidelity_slot, "changed")],
+    ))
+
+    assert scaffold.main(["--config", str(config), "--target", str(target)]) == 0
+    captured = capsys.readouterr()
+    output = captured.out + captured.err
+    assert "\u202e" not in output
+    assert "merge-\\u202e-name" in output
+    assert r"literal\\u202e-name" in output
 
 
 # ---------------------------------------------------------------------------

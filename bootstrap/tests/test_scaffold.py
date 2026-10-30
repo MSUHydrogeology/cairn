@@ -836,6 +836,55 @@ class TestModelSelectionWired:
         captured = capsys.readouterr()
         assert "unknown module" not in (captured.err + captured.out).lower()
 
+    def test_unknown_module_warning_escapes_invisible_and_backslash_names(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        supplied = "unknown-" + "\u202e" + r"-literal\u202e"
+        install_modules(cairn_root / "templates", tmp_path, {}, [supplied])
+        output = capsys.readouterr().err
+        assert "unknown module" in output
+        assert "\u202e" not in output
+        assert "\\u202e" in output
+        assert r"literal\\u202e" in output
+
+    def test_install_command_escapes_supplied_module_name(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        from bootstrap import scaffold
+
+        target = tmp_path / "target"
+        target.mkdir()
+        config = tmp_path / "profile.yml"
+        config.write_text(
+            "project_name: Demo\ntest_command: pytest\nmodules:\n"
+            "  - 'unknown-\u202e'\n", encoding="utf-8")
+        assert scaffold.main(["--config", str(config), "--target", str(target)]) == 0
+        captured = capsys.readouterr()
+        output = captured.out + captured.err
+        assert "unknown-\u202e" not in output
+        assert "unknown-\\u202e" in output
+
+    def test_unpaired_slot_warning_escapes_supplied_source_and_slot(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch,
+    ) -> None:
+        from bootstrap._scaffold import install as install_module
+
+        target = tmp_path / "target"
+        target.mkdir()
+        source = tmp_path / "template-\u202e.md"
+        source.write_text("<!-- cairn:slot visible -->\n", encoding="utf-8")
+        monkeypatch.setattr(
+            install_module, "find_unpaired_slots",
+            lambda _text: ["hidden-\u202e", r"literal\u202e"],
+        )
+        install_module._install_one(
+            source, target / "out.md", {}, target, dry_run=False)
+        output = capsys.readouterr().err
+        assert "\u202e" not in output
+        assert "\\u202e" in output
+        assert "literal\\\\u202e" in output
+
 
 # ---------------------------------------------------------------------------
 # Optional templates — human-team-gated CONTRIBUTING.md (foldback #10)

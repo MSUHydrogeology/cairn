@@ -75,6 +75,7 @@ from .config import (
 )
 from .lockfile import _BASE_CACHE_REL, _LOCKFILE_REL
 from .install import (
+    _display_name,
     InstallResult,
     ModuleDiscoveryConflict,
     _FORGE_REFERENCE_DIRS,
@@ -357,7 +358,7 @@ def main(argv: list[str] | None = None) -> int:
         resolved_axes = dict(_preset_summary["axes"])  # type: ignore[arg-type]
         print(
             f"  [info] preset `{_preset_summary['preset']}` -> modules: "
-            f"{', '.join(modules) or '(none)'}.",
+            f"{', '.join(_display_name(name) for name in modules) or '(none)'}.",
             file=sys.stderr,
         )
         for warn in _preset_summary["staffability_warnings"]:  # type: ignore[union-attr]
@@ -588,7 +589,8 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     # Install module templates
-    print(f"Installing modules: {', '.join(modules) or '(none)'} ...")
+    print(f"Installing modules: "
+          f"{', '.join(_display_name(name) for name in modules) or '(none)'} ...")
     module_results = install_modules(
         templates_root, target, tokens, modules, force=args.force
     )
@@ -656,10 +658,10 @@ def main(argv: list[str] | None = None) -> int:
             extra = (
                 f" -> {r.side_file}" if r.side_file else ""
             )
-            print(f"{tag} {r.target_path} > {r.slot_name}{extra}")
+            print(f"{tag} {r.target_path} > {_display_name(r.slot_name)}{extra}")
         for target_rel, slot_name, reason in fidelity_warnings:
             print(
-                f"  [slot-content-{reason}] {target_rel} > {slot_name} "
+                f"  [slot-content-{reason}] {target_rel} > {_display_name(slot_name)} "
                 f"(fidelity check)"
             )
 

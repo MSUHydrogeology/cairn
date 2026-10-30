@@ -189,6 +189,17 @@ def test_report_without_modules_argument_lists_every_slot_in_main_list(tmp_path)
     assert "did not install" not in out
 
 
+def test_report_escapes_supplied_slot_names_and_distinguishes_backslashes(tmp_path):
+    names = ["visible-slot", "slot\u202e-hidden", r"literal\u202e"]
+    results = [(tmp_path / "AGENTS.md", [], names, "installed")]
+    out = _print_report_output(tmp_path, results, modules=[])
+
+    assert "visible-slot" in out
+    assert "\u202e" not in out
+    assert "\\u202e" in out
+    assert r"literal\\u202e" in out
+
+
 def test_removing_a_module_moves_every_slot_it_fills(tmp_path):
     proc = _install(
         tmp_path,

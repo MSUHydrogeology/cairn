@@ -339,6 +339,24 @@ def test_a_control_character_in_a_record_never_reaches_the_terminal(world, hosti
         assert "\r" not in said and "\x00" not in said
 
 
+@pytest.mark.parametrize(("field", "value"), [
+    ("src", "core/name\u200d.md"),
+    ("dst", "docs/name\u202e.md"),
+    ("base_cache", "dev/.cairn/base/name\ufe0f.md"),
+    ("dst", "docs/name\u034f.md"),
+])
+def test_invisible_path_characters_are_refused_and_escaped(world, field, value):
+    lock = read_lock(world.project)
+    lock["files"][0][field] = value
+    write_lock(world.project, lock)
+
+    proc = upgrade(world.project, "--plan")
+    assert proc.returncode == 2
+    output = proc.stdout + proc.stderr
+    assert value not in output
+    assert "\\u" in output
+
+
 @needs_links
 def test_a_pristine_lockfile_and_a_link_that_stays_inside_the_project_are_not_refused(world):
     """The rule rules out leaving the tree, not links: an install that is untouched
@@ -373,6 +391,7 @@ def _plant_stage(world: World) -> Path:
     (stage / "files" / "docs" / "notes.md").write_text("staged notes\n", encoding="utf-8")
     meta = {
         "lock_commit": lock.get("cairn_commit"), "lock_version": lock.get("cairn_version"),
+        "lock_identity": UP._lock_record_identity(lock),
         "to_ref": None, "tokens": lock.get("tokens"), "modules": lock.get("modules"),
         "discovery_inputs": {
             rel: ("sha256:" + hashlib.sha256((world.project / rel).read_bytes()).hexdigest()
@@ -380,9 +399,13 @@ def _plant_stage(world: World) -> Path:
             for rel in ("dev/PLANNING.md", "dev/modules/README.md")
         },
         "new_version": "9.9.9", "new_commit": "0" * 40, "staged_files": ["docs/notes.md"],
-        "kinds": {"docs/notes.md": "clean"}, "ours_hashes": {}, "expected_absent": [],
-        "review_only": [], "module_blocked": [], "new_entries": {}, "verbatim_rehash": [],
-        "new_profile": None,
+        "kinds": {"docs/notes.md": "new-core"}, "ours_hashes": {},
+        "expected_absent": ["docs/notes.md"],
+        "review_only": [], "module_blocked": [], "verbatim_rehash": [],
+        "new_profile": None, "ancestor_evidence": {}, "recovery_bases": {},
+        "new_entries": {"docs/notes.md": {
+            "src": "core/NOTICE.md", "verbatim": True, "base_cache": None,
+        }},
     }
     (stage / "stage-metadata.json").write_text(json.dumps(meta), encoding="utf-8")
     return stage
@@ -465,6 +488,7 @@ def test_apply_refuses_a_review_area_that_is_itself_a_link(world):
     "../x.md", "a/../../x.md", "a/../x.md", "/etc/hosts", "./", ".", "", "a\\b.md",
     "C:/x.md", "C:x.md", "dir:name/x.md", "a/b\x00c", "a/b\nc", "a/b\x1bc", "a/b\x7fc",
     "a/b\rc", "a/b\x9bc", "a/b\x85c", "a/b\u2028c", "a/b\u202ec", "a/b\u00a0c",
+    "a/b\u034fc", "a/b\ufe0fc", "a/b\U000e0100c", "a/b\u200dc",
     None, 7, ["a"], {"a": 1},
 ])
 def test_the_guard_rules_out_every_shape_that_is_not_a_plain_relative_name(tmp_path, value):
@@ -475,6 +499,7 @@ def test_the_guard_rules_out_every_shape_that_is_not_a_plain_relative_name(tmp_p
 @pytest.mark.parametrize("value", [
     "AGENTS.md", "a/b/c.md", ".agents/skills/x/SKILL.md", "dev/.cairn/base/AGENTS.md",
     "a b/c d.md", "a/./b.md", "a//b.md", "a..b/c.md", "..a/b.md", "a/b..",
+    "cafe\u0301/说明.md", "δοκιμή/名前.md",
 ])
 def test_the_guard_lets_a_plain_relative_name_through_and_returns_the_joined_path(tmp_path, value):
     assert UP._contained_lockfile_path(tmp_path, value, "dst", "the project") == tmp_path / value

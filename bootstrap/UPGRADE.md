@@ -162,6 +162,28 @@ target's `dev/`:
   use a hash policy, below), which keeps the cache to just the mergeable
   set.
 
+Lockfile paths keep the existing containment and relative-name rules. Cairn
+also refuses control and format characters, U+034F, and variation selectors
+in source, destination and cache paths; the same rule applies to recorded
+module names. This keeps invisible and terminal-active characters out of file
+operations. It also refuses some names used in legitimate writing systems,
+including contextual joiners and variation selectors, while allowing
+decomposed accents and visible non-Latin names. A refusal prints the value as
+an escape. If an older lockfile contains a newly refused name, do not edit the
+tool-owned lockfile by hand. Back up the project, move the affected installed
+file to its ordinary supported path when one exists, move
+`dev/.cairn/cairn-lock.yml` to a backup name, then run:
+
+```
+python bootstrap/scaffold.py upgrade --target <repo> --init-lock
+```
+
+This makes a migrated lockfile from Cairn's current install map; it cannot
+reconstruct token-substituted merge ancestors, so those files become
+review-only on later upgrades. Keep the old lockfile as evidence and check
+custom destinations separately, since `--init-lock` only recognizes paths in
+the install map.
+
 ## The workflow
 
 ```
@@ -203,6 +225,10 @@ python bootstrap/verify_integrity.py --target <repo>            # 4. verify
     still owe.
   * `new-base/` — the upstream templates that will become the **next
     base-cache** after `--apply`. Reference only; do **not** edit these.
+  * `recovery-base/` — raw upstream templates for review-only files whose
+    saved ancestor is missing or invalid. These are installed at a separate
+    cache path only after manual reconciliation and `--apply --ack-review-only`;
+    the original cache stays in place as evidence.
   * `stage-metadata.json` — the stage record `--apply` checks against the
     safety contract. Machine-owned; do not edit.
 * **`--apply`** swaps the resolved staged files into place and cleans the
@@ -251,6 +277,26 @@ python bootstrap/verify_integrity.py --target <repo>            # 4. verify
   its original by hand, re-run `--apply --ack-review-only` to acknowledge them
   and apply. (Without that flag the gate holds — there is no way to advance
   the version past an unreconciled customized file by accident.)
+
+  Before a three-way merge, Cairn hashes the raw saved ancestor and checks it
+  against the lockfile's `base_hash`; it then decodes and merges those same
+  bytes. Missing, malformed, changed, unreadable or invalid-UTF-8 ancestors
+  become review-only. Stage records the ancestor identity, expected digest and
+  digest of the exact checked bytes. Apply checks them before writing and again
+  immediately before each automatic destination write. If evidence changes
+  during apply, that write and lockfile advancement stop; earlier unaffected
+  writes may already have landed, and the stage plus original cache remain for
+  inspection and a safe restage. Stop other writers to the project while
+  applying; arbitrary
+  concurrent writes between a check and a write are outside this boundary.
+
+  For an invalid ancestor, keep the original cache untouched. Compare the
+  `.ours` and `.theirs` pair, reconcile the original file by hand, then use
+  `--apply --ack-review-only`. Cairn records the current file and sets the next
+  ancestor to the upstream template in `recovery-base/`, at a distinct cache
+  path. The bad cache remains at its old path as evidence. A matching digest is
+  consistency evidence only: someone who can change both the lockfile and
+  cache can change them together.
 
   After applying, re-run a clean install (or `--stage`) to refresh the
   lockfile + base cache to the new version.

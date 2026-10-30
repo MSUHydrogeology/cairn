@@ -65,6 +65,8 @@ def test_skill_md_rides_3way_merge(tmp_path: Path):
     )
 
     lock = s.read_lockfile(target)
+    rec = next(r for r in lock["files"] if r["dst"] == SKILL_START)
+    rec["base_hash"] = "sha256:" + s._sha256_hex(base.read_bytes())
     plans, _structural = s._compute_upgrade(
         target, CAIRN_ROOT, TEMPLATES_ROOT, lock, to_ref=None,
     )
