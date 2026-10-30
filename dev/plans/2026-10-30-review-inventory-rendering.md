@@ -59,3 +59,31 @@ Tokens: unknown
 **Blocking finding 1 -- historical rendering compatibility.** The Scope checks metadata-bearing config bytes, but the selected source's rendering code can change while those bytes stay equal. Matching config alone therefore does not establish the accepted faithful comparison. Close by conservatively proving renderer compatibility too (for example, compare the selected source's renderer-bearing file bytes with the running source and refuse when unavailable or different), or by another check that proves the selected source would render the same bytes. Add a public `--to --stage` fixture that changes renderer behavior while keeping config metadata equal and asserts refusal without a usable partial stage. This is an unmet accepted criterion, not a request to execute historical code.
 
 Coverage: claims and fail-closed behavior (`Scope`, `_render_module_inventory`), public path and edge fixtures (`test_upgrade.py::TestInitLock`), reuse (`_reconcile_generated_blocks`), drift and placement (`docs/DOCUMENTATION_PLAN.md`, `_write_stage`), and scope/satisfier (accepted proposal's Current contract) were inspected. No implementation, historical fixture, test suite, mutation, or Security Review was run; failure cleanup and stage ordering remain implementation evidence.
+
+## Plan review -- Codex (gpt-6.1-sol, Security Review) -- 2026-10-30
+
+```
+Reviewed commit: 3012471d589113cd9c95e6766b7846fd919accb8
+Target: scope, acceptance criteria and verification mapping
+Prior findings: none
+Assurance path: high-assurance
+Elapsed time: approximately 3 minutes
+Token use: unknown
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**:
+
+1. **Should this happen as framed?** Not yet: metadata equality does not establish that the selected source renders those values the same way -- plan Scope and C1; `bootstrap/_scaffold/upgrade.py::_write_stage`.
+2. **Best alternative.** Reuse the existing reconciler after validation; a second renderer adds drift, and executing historical code adds authority to a passive review -- `bootstrap/_scaffold/install.py::_substitute_module_inventory` and `_reconcile_generated_blocks`.
+3. **What would show it wrong?** A successful partial stage after malformed input, a historical description silently replaced with current metadata, or an adopter edit appearing in both sides would defeat the contract -- plan C1 and Verification; `bootstrap/_scaffold/install.py::_render_module_inventory`.
+
+**Blocking finding 1 -- renderer compatibility.** The selected source can change rendering behavior while retaining identical config bytes. Require proof of renderer compatibility or refuse, and test a historical source with changed rendering and unchanged metadata through `--to --stage`, including cleanup. This closes the accepted faithful-comparison criterion -- plan Scope and C1; `bootstrap/_scaffold/install.py::_render_module_inventory`.
+
+The other producer and consumer boundaries are mapped: the current renderer silently skips unknown members, and the reconciler retains selected pre-existing blocks; the plan requires membership and marker validation plus faithful handling before reuse. Its public-path tests and separate mutations challenge both omission and copied local content. The wide mapping includes containment and staged-input consumers; its cost is bounded to named families rather than full-tree certification -- `bootstrap/_scaffold/install.py::_render_module_inventory`, `_reconcile_generated_blocks`, and plan Verification.
+
+Coverage: reviewed the accepted contract, source selection, roster, marker handling, staged review and mapped checks against the named commit. No implementation, test, mutation, historical-source probe, full suite or re-anchor was run; failure cleanup and actual check cost remain to be measured during implementation.
