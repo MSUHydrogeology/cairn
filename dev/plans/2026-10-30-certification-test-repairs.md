@@ -42,3 +42,29 @@ C2: The ceremony test still accepts committed records before and after a worktre
 Boundary A: use canonical Python 3.13.x on an isolated copy. Run `python -m pytest bootstrap/tests/test_security_finding_confidentiality.py::TestTheDispatcherAggregateReportIsANewSweptSink` for both dispatcher legs; `python -m pytest bootstrap/tests/test_repin.py::test_baseline_preparation_builds_exact_package_after_reader_binding bootstrap/tests/test_repin.py::test_baseline_preparation_requires_independent_inputs bootstrap/tests/test_repin.py::test_baseline_preparation_refuses_substituted_external_roster_before_collection` for bound evidence and refusals; and the three named ceremony/reanchor nodes alone and in both ordered selections using `--quality-gate-shuffle-seed=0` only where it preserves the requested order. If the shuffle changes order, use explicit node invocations with the shuffle plugin disabled and record collected order. Search for other consumers and byte pins of all three changed files; include owning manifest and security tests, especially `bootstrap/tests/test_gate_manifest.py`, in the final map. Run `python scripts/claim_check.py` on changed prose, `python scripts/check_cairn.py`, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py --check` if its interface supports that flag, and `python scripts/quality_gate.py --sub neutrality --sub redundancy` as applicable standing gates; record any inapplicable gate and why. Preserve the current manifest's expected refusal as evidence of the separate ceremony, not as a passing test.
 
 Boundary B: **wide**, because pinned security tests are a trust-ceremony surface. On the final clean unchanged implementation commit under canonical Python 3.13.x, run the reviewed owning families, ordered sequences, adversarial controls, manifest/security checks and standing gates, splitting selections at guard limits and reconciling the union. Record SHA/range, touched surfaces, interpreter, clean pre/post state, exact commands and counts, elapsed time, tokens or unknown, non-pass dispositions, omissions, and `Certified by: pending`. A known unmet check keeps work open. Boundary C is an independent code review with targeted falsification and a bounding verdict. Full-tree certification and re-anchor remain separately authorized ceremonies.
+
+## Plan review -- Codex GPT-6 Internal Reviewer -- 2026-10-30
+
+```
+Reviewed commit: 172a1c6f1e73135aa34a65ff3d9e81100602cb2d
+Target: opening plan, against accepted proposal and current test paths
+Prior findings: none
+Assurance path: high-assurance
+Elapsed: about 8 minutes
+Tokens: unknown
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The plan preserves all four accepted repair outcomes and the real dispatcher, record, digest and Stage B controls; it orders reproduction before choosing isolation. -- accepted proposal `## Current contract`; plan C1/C2; `bootstrap/tests/test_repin_ceremony.py:1841`.
+2. **Best alternative.** Keep the repair within the three named test files, using the existing boot and dispatcher apparatus; a production or manifest edit would add authority the Decision did not grant. -- plan Scope; `bootstrap/tests/test_security_finding_confidentiality.py:1469`; `bootstrap/tests/fixtures/gate_manifest.json`.
+3. **What would show it wrong.** An ordered failure after isolation, a leak that passes, bad digest accepted, candidate preflight executed, or a record check lost after the rewrite would defeat C1/C2. -- plan Acceptance criteria; `bootstrap/tests/test_gate_reanchor.py:246`; `bootstrap/tests/test_gate_reanchor.py:280`.
+
+The mapping names the confidentiality class, three baseline nodes, ceremony node and two reanchor nodes, including both orders and standalone controls. The author should record the exact collected order when shuffle is disabled and use the smallest owning manifest selection during iteration; the planned wide final check still owes the frozen-file consequence. This is a speed recommendation, not a removed criterion.
+
+**Covered:** claims and accepted scope (proposal contract, plan Scope); real entry points and design (dispatcher and `REPIN.boot` above); failure controls (C1/C2 and reanchor nodes); cross-document fit and drift (archived-plan path, manifest); lifecycle and satisfier (separate ceremony, Boundary A/B/C). **Not covered / low confidence:** no tests, mutation or full certification run; the suspected import interaction and effective isolation remain to be measured. This pass does not clear Internal Security Review.
