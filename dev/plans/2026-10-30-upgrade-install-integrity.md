@@ -312,3 +312,53 @@ not triggered.
 **Bounding:** WIDER RUN REQUIRED: resolve the mapped non-passes and record passing final-commit verification.
 
 **Coverage:** Claims and satisfier: C1 and the regression; production path and completeness: `_write_stage` and `_apply_upgrade`; fail-closed and reuse: path validation and containment; consistency and drift: recorded verification and plan C3; lifecycle and scope: unresolved CR2 and separate Decision. Did not rerun wide checks, mutate output routes, probe concurrent writers or assess platform rendering. No full suite or re-anchor was run.
+
+## Final implementation verification -- Codex GPT-6 -- 2026-10-30
+
+**Boundary B mode:** wide, complete for the reviewed mapping. **Certified by:**
+pending. **Tested candidate:** `66b19e4bfc1fce5da14af4aae553ea2ade4e043d`;
+implementation and corrections since `85a9b6d2`, with the repeated-recovery
+repair at `3fd8dab3`. This candidate includes the later directory-observation
+fixture repair and accepted inventory review-copy implementation. The detached
+local Git clone was clean before and after verification. Interpreter:
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13).
+
+The exact-commit wide result committed in `88dad068` and preserved in
+`dev/plans/archive/2026-10-30-nested-git-upgrade.md` covers every test file
+in this plan's reviewed mapping. Its guard-respecting selections report 241
+passed in `test_upgrade.py`, `test_upgrade_lockfile_path_containment.py` and
+`test_upgrade_side_door_parity.py`; 259 passed in hostile-project,
+module-addition and provenance tests; 36 passed in install report, install
+module and module merge; 70 passed in scaffold; 123 passed in skills upgrade,
+added slots and upgrade edit check; and 11 passed in security lint. Total:
+740 passed, zero failed, skipped or xfailed. Public entry tests exercise
+`--plan`, `--stage`, `--apply`, `--ack-review-only`, later recovery and install
+report paths. The former inventory, template and synthetic-stage failures
+are absent on these bytes. The source record reports about 140 seconds of
+measured test time; token use is unknown.
+
+The same exact-commit record reports `claim_check.py bootstrap/UPGRADE.md`,
+`check_cairn.py`, `link_check.py` and the neutrality gate passing; the latter
+two documentation scans covered 196 Markdown files, with neutrality fail=0,
+info=43. `claim_check.py` on this plan also passed in the unmodified clone.
+No synced snippet changed. The independent inventory plan's accepted result
+and the shared test map were inspected; no additional wide run was made.
+
+**Integrity mutations:** On an unmodified clone of `66b19e4b`, the
+altered-ancestor public recovery control passed (1), and the supplied-slot
+display control passed (1). In separate one-line mutant clones, bypassing the
+ancestor digest comparison made the recovery control fail because no
+review-only pair was staged (1 failed); bypassing `_display_name` escaping
+made the display control fail on U+202E (1 failed). Each mutant diff was
+limited to its named expression and passed `git diff --check`. Total 2
+mutants, 2 killed, 0 survivors, 0 measured equivalents. These supplement
+the four separate nested-Git guard mutants recorded at `88dad068`.
+The focused control/mutation commands took about 3.3 seconds wall; token use
+is unknown.
+
+**Non-pass disposition:** none in the final mapped verification. **Known
+omissions:** no full-tree certification, repin, re-anchor, native Windows
+terminal rendering or arbitrary concurrent-writer race probe. The accepted
+concurrency boundary excludes such an arbitrary race. Earlier failed records
+remain historical evidence; this passing record does not itself clear the
+ordinary code review or separate Security Review obligation.
