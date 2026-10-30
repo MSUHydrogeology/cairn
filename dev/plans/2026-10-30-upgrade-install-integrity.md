@@ -209,3 +209,17 @@ Both plan-review obligations are complete. Scope remains preserved; implementati
 **Bounding**: WIDER RUN REQUIRED -- repeated-recovery behavior needs passing public coverage and a new final-commit verification record; the mapped failure in CR2 also remains open.
 
 **Coverage:** claims, production paths, completeness and fail-closed behavior: probes above and stage/apply identity checks; reuse and consistency: existing path admission, replacing writer and display helper; drift: C1/C2 and public-path mapping against the changed engine and output calls; lifecycle/scope: separate Security obligation, pending certification and Maintainer-run AST ceremony. Waiting-line history reaches no fence or deviation. No new scope proposed. Did not mutate every output route, rerun Boundary B, test arbitrary concurrent writes, platform rendering or the historical anchor. No full suite or re-anchor run.
+
+## Response to code reviews -- Codex GPT-6.1 Sol -- 2026-10-30
+
+| Finding | Disposition |
+|---|---|
+| CR1 | Accepted. Commit `3fd8dab3` allocates a fresh stage-bound recovery cache and refuses an occupied path. The public-entry regression now repeats recovery after corrupting the first recovered ancestor and checks both corrupt caches survive. Targeted evidence follows; final change verification remains outstanding. |
+| CR2 | Open. The mapped test failed in the prior verification; a separate proposal addresses the generated inventory discrepancy and awaits the Maintainer's Decision. No verification requirement is waived or removed. |
+| Security Review | Open. The pass independently confirmed CR1 and requires final-commit verification; this response does not clear that obligation. |
+
+## Targeted repair evidence -- Codex GPT-6.1 Sol -- 2026-10-30
+
+The repair was tested in an isolated archive of the then-current committed tree with only the two repair files overlaid. Their tested bytes were subsequently compared with commit `3fd8dab395eb0cbb46953dada9297bdfbb9daf75` and matched. With `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13), `python -m pytest bootstrap/tests/test_upgrade.py -k 'bad_ancestor_uses_review_recovery_and_preserves_evidence or stage_ancestor' -q` exited 0: 7 passed, 109 deselected, in 3.80 seconds. The altered-cache case exercises two stage, manual reconciliation and acknowledged apply cycles and checks both corrupt ancestors survive.
+
+This is targeted iteration evidence, not a new Boundary B record. The required mapped failure in CR2, final-commit wide verification, Security Review clearance, certification and the Maintainer-run AST ceremony remain outstanding. The plan stays `revising-code`; no full suite was run.
