@@ -61,3 +61,28 @@ Readers cannot author a valid artifact from the installed guidance, a required o
 **Assurance path**: high-assurance
 
 Authoring templates are a named high-assurance surface; the heavy tier and separate Security Review apply.
+
+## Review -- Codex (gpt-6.1-terra) -- 2026-10-30
+
+```
+Reviewed commit: 818933e26433968b1049d3deb39d6c13721d3f29
+Target: proposal, four template preambles and selected repetition
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: ACCEPT
+**Elapsed**: 3 minutes (estimated)
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: correct a real contradiction while keeping adopter guidance usable; both plan preambles prescribe appended proposal contracts, while the accepted apparatus proposal chose in-place revision (`dev/plans/_template.md:33`, `templates/core/dev/plans/_template.md:35`, `dev/proposals/archive/2026-10-30-claude-cut-the-apparatus.md:66`).
+2. **Best alternative.** Fix only the contradiction if evidence shows no meaningful safe consolidation; it costs less but leaves repeated guidance, including External-read instructions in the plan templates (`dev/plans/_template.md:98`, `:417`).
+3. **What would show it wrong.** A final adopter template that needs unshipped doctrine, loses a required obligation or increases cross-reading would defeat its purpose (proposal, Evidence / verification plan and Signals).
+
+**R1 — Non-blocking:** The proposal names candidate topics but makes every cut optional and gives no before/after burden comparison. A correction alone could satisfy its explicit instructions without delivering meaningful reduction. For the plan, identify concrete repeated passages and compare final reading/authoring burden against the committed baseline, including added cross-reading and any retained duplication; explain if safe cuts prove immaterial. Preserve the independent adopter rules rather than moving them to inaccessible doctrine.
+
+Coverage: reviewed the proposal, accepted in-place decision, plan preambles and selected repetition at the named commit. Did not inventory all template consumers, test pins, or independently assess security controls; those remain for the plan and Security Review.
