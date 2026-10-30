@@ -65,6 +65,10 @@ decision. An accepted proposal stays in `dev/proposals/` until the work
 starts: it moves to `dev/proposals/archive/` in the commit that opens its plan,
 or, for a small change, in the commit that implements it.
 
+So far, Cairn's own archive has no proposals with `rejected` status. That
+describes this project's record, not a target for yours: many ideas end in
+conversation before anyone opens a proposal, and a proposal can be rejected.
+
 A small accepted proposal can be implemented and archived in one commit.
 A larger one opens a **plan** under `dev/plans/` first, which sequences
 the implementation and gets its own review before the work archives.
