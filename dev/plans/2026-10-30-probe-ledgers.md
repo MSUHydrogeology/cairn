@@ -67,3 +67,27 @@ Assurance path: high-assurance
 **P1 — Required verification mapping is deferred.** The accepted proposal's S3 requires mapping exact nodes and installed-file inputs in the plan, and its verification plan requires identifying the actual gate triggers and consumers. Boundary A names whole files and commands but defers discovering readers and inspecting command triggers until implementation. For example, `test_installed_loop_document_carries_the_obligation` and `test_an_install_without_the_sweep_is_reported` exercise installed text, while `test_plan_pass_skeletons_ask_the_plan_and_code_questions` checks template content; the plan does not map these or their inputs to changed obligations. Close by mapping the affected nodes, installed inputs, and gate triggers/runners before implementation, including any additional readers found. This is blocking because an accepted preflight requirement is unmet.
 
 **Coverage:** Read the committed plan, accepted proposal and plan review template; inspected named test node locations and ledger assertions. Did not run checks, enumerate every reader, or perform Security Review.
+
+## Plan review -- Codex Sol -- 2026-10-30
+
+Reviewed commit: 38e3bfaae94f4be913e4cfb79185e9db75c73c36
+Target: security preflight, instruction authority and verification boundaries
+Prior findings: none
+Assurance path: high-assurance
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none additional
+**Verdict**: Support security scope; ordinary finding P1 remains open
+**Elapsed**: approximately 4 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The plan retains independent review, mutation checks and unresolved outcomes while removing duplicate inventories; these are the accepted security safeguards. -- accepted proposal, Proposal; plan, Scope and C1.
+2. **Best alternative.** Use existing test families and their installation path, with concise evidence references; no replacement ceremony is needed. -- `bootstrap/tests/test_review_sweep_ships.py`, `installs` fixture invokes the scaffold CLI for shipped profiles.
+3. **What would show it wrong?** Installed instructions permitting self-approval, dropping an owed check, or leaving decisive evidence unreproducible would contradict C1. -- plan, C1 and Boundaries B/C; `bootstrap/tests/test_review_stance_in_shipped_files.py`, security-obligation and independence assertions.
+
+The changed authority is the instruction text delivered to adopters. The plan explicitly challenges that installed authority and retains separate ordinary and Security Reviews. It proposes no new parser, execution, credential or network boundary. Wide Boundary B is appropriate for this contract surface. P1's missing mapping must be resolved before implementation; naming a test family alone does not establish that its controls cover the retained safeguards.
+
+**Coverage:** Read the committed plan and accepted proposal, plan-review template and named test consumers, including scaffold installation and independent security-obligation assertions. Did not run implementation checks, enumerate all consumers or assess implementation bytes; full-suite certification and re-anchor were not run.
