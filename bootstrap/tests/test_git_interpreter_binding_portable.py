@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from bootstrap._scaffold import install
+from bootstrap._scaffold.cli import main as scaffold_main
 
 
 SESSION_PATH = Path(__file__).resolve().parents[2] / "tools" / "session.py"
@@ -324,9 +325,9 @@ def test_legacy_marker_control_and_mutant(tmp_path):
 
 
 @pytest.mark.skipif(os.name != "nt", reason="requires native Windows junctions")
-@pytest.mark.parametrize("location", ["dot-git", "admin", "binding-directory"])
+@pytest.mark.parametrize("location", ["dot-git", "admin", "binding-directory", "binding-leaf"])
 @pytest.mark.parametrize("session_path", [SESSION_PATH, SHIPPED_SESSION_PATH], ids=["source", "shipped"])
-def test_windows_junctions_refuse_binding_access(tmp_path, location, session_path):
+def test_windows_reparse_points_refuse_binding_access(tmp_path, location, session_path, monkeypatch):
     root = _repo(tmp_path / "project")
     outside = tmp_path / "outside"
     outside.mkdir()
@@ -342,15 +343,28 @@ def test_windows_junctions_refuse_binding_access(tmp_path, location, session_pat
         admin.rename(target)
         junction = tmp_path / "admin-junction"
         admin.write_text("gitdir: ../admin-junction\n", encoding="utf-8")
-    else:
+    elif location == "binding-directory":
         target = outside
         junction = admin / "cairn"
-    # mklink /J creates a junction without requiring symlink privileges.
-    subprocess.run(["cmd", "/c", "mklink", "/J", str(junction), str(target)],
-                   check=True, capture_output=True, text=True)
+    else:
+        junction = admin / "cairn" / "local-env.json"
+        junction.parent.mkdir()
+        junction.symlink_to(sentinel)  # A privilege failure leaves this case open.
+    if location != "binding-leaf":
+        # mklink /J creates a junction without requiring symlink privileges.
+        subprocess.run(["cmd", "/c", "mklink", "/J", str(junction), str(target)],
+                       check=True, capture_output=True, text=True)
     session = _session_module(session_path)
-    with pytest.raises(session.LifecycleError):
-        session._resolve_interpreter(root)
-    with pytest.raises(install.ScaffoldSecurityError):
-        install.write_local_env(root, force=True)
+    monkeypatch.setattr(session, "_repo_root", lambda: root)
+    monkeypatch.setattr(session, "_do_reflection", lambda *args: None)
+    monkeypatch.setattr(session, "_do_thread_survey", lambda *args: None)
+    launched = []
+    monkeypatch.setattr(session, "_surface_intents", lambda *args: launched.append(True))
+    assert session.main(["session-end", "--prepare-handoff", "--dry-run"]) == 1
+    assert not launched
+    config = tmp_path / "profile.yml"
+    config.write_text("project_name: Test\ntest_command: pytest\nmodules: []\n", encoding="utf-8")
+    assert scaffold_main(["--config", str(config), "--target", str(root),
+                          "--cairn-root", str(SESSION_PATH.parents[1]),
+                          "--allow-dev", "--force"]) != 0
     assert sentinel.read_text(encoding="utf-8") == "keep"

@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Run the interpreter-binding Windows evidence checks on native Windows.
+"""Run Windows interpreter-binding checks on a clean committed checkout.
 
-Run from a clean committed checkout using Python 3.13 with pytest and Git
-installed: python scripts/run_windows_interpreter_binding.py. Preserve the
-output and commit ID in the plan's verification record. Any failed or skipped
-required case remains open; this runner does not certify the whole tree.
+Use native Windows, Python 3.13, pytest and Git. Preserve the output in the
+plan's verification record. A failed or skipped case leaves evidence open;
+this runner does not certify the whole tree.
 """
 from __future__ import annotations
 
@@ -12,20 +11,41 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
+import xml.etree.ElementTree as ET
 
 
 def main() -> int:
-    if os.name != "nt":
-        print("Native Windows is required; no Windows evidence was collected.", file=sys.stderr)
+    if os.name != "nt" or sys.version_info[:2] != (3, 13):
+        print("Native Windows and Python 3.13 are required.", file=sys.stderr)
         return 2
     root = Path(__file__).resolve().parents[1]
+    status = subprocess.run(
+        ["git", "status", "--porcelain", "--untracked-files=no"],
+        cwd=root, check=True, capture_output=True, text=True,
+    )
+    if status.stdout:
+        print("Tracked checkout is dirty; no evidence collected:\n" + status.stdout, file=sys.stderr)
+        return 2
     print(f"Interpreter: {sys.executable} ({sys.version})", flush=True)
     subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, check=True)
-    subprocess.run(["git", "status", "--short"], cwd=root, check=True)
-    return subprocess.run(
-        [sys.executable, "-m", "pytest", "-ra", "bootstrap/tests/test_git_interpreter_binding_portable.py"],
-        cwd=root,
-    ).returncode
+    with tempfile.TemporaryDirectory() as temp:
+        report = Path(temp) / "pytest.xml"
+        result = subprocess.run(
+            [sys.executable, "-m", "pytest", "-ra", f"--junitxml={report}",
+             "bootstrap/tests/test_git_interpreter_binding_portable.py"], cwd=root,
+        )
+        if result.returncode:
+            return result.returncode
+        try:
+            skipped = ET.parse(report).findall(".//testcase/skipped")
+        except (OSError, ET.ParseError) as exc:
+            print(f"Could not read test report: {exc}", file=sys.stderr)
+            return 2
+        if skipped:
+            print(f"{len(skipped)} skipped case(s); Windows evidence remains open.", file=sys.stderr)
+            return 2
+    return 0
 
 
 if __name__ == "__main__":
