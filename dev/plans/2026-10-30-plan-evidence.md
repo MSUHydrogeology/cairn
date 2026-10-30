@@ -1,7 +1,7 @@
 # Plan: Keep plan evidence necessary and concise
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-plan-evidence.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Remove mandatory plan evidence folders and prevent unnecessary extra documentation while preserving required checks.
@@ -28,7 +28,7 @@ Plan authoring prescription lands in both plan templates; published methodology 
 
 ## Acceptance criteria
 
-**C1.** Plans need no folder by default; extra plan documents or sidecars are prohibited unless genuinely necessary for implementation or an existing required safety or security ceremony, never to evade length limits or for reviewer convenience. Required records remain concise; reviews accept summaries or verify when necessary. Tests and scripts remain in canonical homes. Existing evidence and links are preserved; required verification and ceremonies remain intact. Live consumers discover and archive plans without folders and preserve existing folders. No new enforcement mechanism or evidence artifact is introduced.
+**C1.** Plans need no folder by default; extra plan documents or sidecars are prohibited unless genuinely necessary for implementation or an existing required safety or security ceremony, never to evade length limits or for reviewer convenience. For an exceptional evidence artifact, explain why it is necessary and cite it in the plan. Required records remain concise; reviews accept summaries or verify when necessary. Tests and scripts remain in canonical homes. Existing evidence and links are preserved; required verification and ceremonies remain intact. Live consumers discover and archive plans without folders and preserve existing folders. No new enforcement mechanism or evidence artifact is introduced.
 
 ## Scope delta
 
@@ -80,3 +80,11 @@ Assurance path: high-assurance
 No additional security blocker found. Summaries do not waive required checks, and independent verification remains available. The ordinary pass separately identifies the accepted requirement to explain and cite exceptional artifacts; its correction remains owed before implementation.
 
 **Covered**: committed plan, accepted proposal, relevant template folder/review rules, and doctrine's archive and verification obligations. **Not covered**: implementation, exhaustive consumer discovery, archive execution or ceremony execution. No tests or suite run.
+
+## Response to plan review -- Codex gpt-6.1-terra -- 2026-10-30
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+- Ordinary review: Added the accepted necessity explanation and citation conditions to C1.
+- Security Review: No additional findings; implementation coverage remains outstanding.
