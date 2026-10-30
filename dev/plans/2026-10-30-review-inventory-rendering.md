@@ -95,3 +95,67 @@ Both blocking findings accepted. Scope and C1 now refuse a review-only inventory
 ## Plan correction -- Codex (gpt-6.1-sol) -- 2026-10-30
 
 The prior response refused all explicit historical sources, including sources where fidelity is verifiable. Scope and C1 now preserve the accepted selected-source outcome by comparing renderer and metadata files and refusing only when compatibility is unverified. The changed-renderer and changed-metadata fixtures remain, with a matching-source control. Elapsed time: approximately 2 minutes; tokens: unknown.
+
+## Implementation verification -- Codex GPT-6 -- 2026-10-30
+
+**Boundary B mode**: wide. The change alters the review-copy contract in
+`bootstrap/_scaffold/upgrade.py`; the mapping covers upgrade, reconciliation,
+other review-pair consumers, containment, public install/`--init-lock`/`--stage`
+paths, and neutrality/redundancy gates.
+
+**Certified by**: pending
+
+**Tested commit**: `9675ea1b68241a8f86904cc02f71f962b70232a6`
+
+**Reviewed range**: `eeec9646fbac4b1f32b4d58c80812864bd6a92e0..9675ea1b68241a8f86904cc02f71f962b70232a6`
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python`, CPython
+3.13.13. This is the repository-documented 3.13 runtime named in
+`bootstrap/tests/_ast_attest.py`. Session-start reported no per-worktree Git
+interpreter binding; this check used the documented runtime directly and did
+not change the binding.
+
+**Pre-run state**: clean clone at the tested SHA; `git status --short` empty.
+
+**Post-run state**: clean clone at the identical tested SHA; `git status --short`
+empty.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python -m pytest -q bootstrap/tests/test_upgrade.py` | 0 | 138 passed | 31.61 s | unknown |
+| `python -m pytest -q bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_module_merge_lockfile.py` | 0 | 64 passed | 23.84 s | unknown |
+| `python -m pytest -q bootstrap/tests/test_upgrade_added_slots.py bootstrap/tests/test_upgrade_side_door_parity.py bootstrap/tests/test_skills_upgrade.py` | 0 | 48 passed | 16.52 s | unknown |
+| `python -m pytest -q bootstrap/tests/test_upgrade_lockfile_path_containment.py` | 0 | 93 passed | 8.76 s | unknown |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | 0 failures; neutrality 43 info, redundancy 1 info | 1.14 s | unknown |
+| `python scripts/claim_check.py` on the changed engine, both owning tests, and this plan | 0 | All four files passed | <0.01 s each | unknown |
+| `python scripts/check_cairn.py` | 0 | 199 Markdown files; no issues; 94 external links not probed | 1.31 s | unknown |
+| `python scripts/link_check.py` | 0 | 199 Markdown files; no issues; 95 external links not probed | 0.18 s | unknown |
+| `python scripts/sync_doc_snippets.py --check` | 0 | 476 documents; no drift | 0.17 s | unknown |
+
+**Mutation summary**: unmutated control was the clean tested commit above; its
+three focused review-inventory cases passed. Total 2; killed 2; survivors 0;
+measured equivalents 0. Removing `_render_review_inventory` was killed by the
+independent expected-entry assertion
+(`test_review_inventory_renders_selected_roster_from_current_source`); the mutation run had 1 failing selected-roster
+case and 1 passing empty-roster case. Replacing the rendered `.theirs` with the
+installed `.ours` was killed by the local-note exclusion assertion
+(`test_review_inventory_theirs_excludes_local_edit_when_roster_matches`). Each
+mutation ran in its own clone of the committed candidate; both controls passed.
+Mutation runs took under one second each; token use unknown.
+
+**Non-pass disposition**: no mapped test or required gate failed. The quality
+gate's informational lines include an existing R6 note for
+`_apply_module_discovery`; it is unrelated to this change. Mutation test exits
+of 1 are expected kills, not candidate failures.
+
+**Plan-specific acceptance commands**: current and historical public staging,
+including matching renderer, historical description, changed renderer,
+changed metadata, malformed and missing markers, unknown module, cleanup,
+empty roster, and `.ours`/`.theirs` separation, passed in `test_upgrade.py`.
+The historical compatibility tests keep selected template bytes passive and
+exercise only `git show`; no historical code was executed.
+
+**Known omissions**: no full-tree certifying suite or re-anchor was run; neither
+is authorized by this plan. Boundary C remains for the independent code
+reviewer. External links reported as unprobed by the prose gates were not
+fetched.
