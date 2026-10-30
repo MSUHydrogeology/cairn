@@ -465,3 +465,20 @@ full certification run occurred.
 * Read the Windows-specific construction: `cmd /c mklink /J` supplies three directory-junction locations; `Path.symlink_to` supplies the leaf file link. A Windows privilege failure is a test failure, not a skip or success. The runner reports the privilege prerequisite and rejects test failures and skips.
 
 **Coverage:** claims and fail-closed behavior: runner branch probe and `scripts/run_windows_interpreter_binding.py:17-54`; production paths, design and scope: leaf analogue through `test_windows_reparse_points_refuse_binding_access` and the three junction branches; consistency and lifecycle: WR1/WR2 satisfiers are present while plan C2 stays open. **Not covered:** native Windows junction or file-reparse behavior, Windows executable-copy marker behavior, the final wide Boundary B run, every mapped family, same-user races, executable provenance, or the separate Security Review. No full suite or certification ran.
+
+## Maintainer allowance -- 2026-10-30
+
+After being told that native Windows execution is missing but the tests and
+runner are prepared and reviewed, the Maintainer said in chat, relayed by the
+coordinating agent:
+
+> Just put that as a plan follow-up if it's otherwise done. If the tests are built and you think they're correct, that's got to be good enough.
+
+**Scope delta**: native Windows execution is deferred as a follow-up, with the
+loss of measured Windows discovery and junction/reparse evidence explicitly
+accepted. Run `python scripts/run_windows_interpreter_binding.py` on native
+Windows with Python 3.13 and record the result, including unsupported or
+privilege-blocked cases. This allowance does not claim those tests passed or
+remove the remaining verification and review obligations.
+
+**Elapsed / tokens**: unknown / unknown.
