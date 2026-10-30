@@ -20,10 +20,6 @@ publication checker `scripts/check_release_publication.py` and owning tests
 `bootstrap/tests/test_check_release_publication.py`. No stored state or
 publishing credentials.
 
-Proposed paths:
-* `scripts/check_release_publication.py`
-* `bootstrap/tests/test_check_release_publication.py`
-
 **Reuse.** Search `rg --files scripts tools | rg 'release|tag|publish|github'`
 found `scripts/bootstrap_github_labels.py`, which mutates labels, not Release
 state. No existing publication checker was found. Search
@@ -215,3 +211,39 @@ is made. Implementation must measure the isolation and regression, which this
 plan response has not run.
 
 **Elapsed**: about 3 minutes. **Tokens**: unknown.
+
+## Implementation verification -- Codex GPT-6.1 Sol (Implementation) -- 2026-10-30
+
+**Boundary B mode**: wide. The checker binds the GitHub Release API result and
+GitHub's annotated-tag ref to an independently recorded gate commit. The
+public-command fixture family, user guide, and prose gates were covered; a
+narrower run would not cover the remote trust inputs and public path.
+
+**Certified by**: pending.
+**Tested commit**: `85a8af1cfdd1de273fe2e00242efe360c44b8e5a`.
+**Reviewed range**: `9d7f0cd20859eeceb01ba25606c1565a7d5fbe92` through `85a8af1cfdd1de273fe2e00242efe360c44b8e5a`.
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13, pytest 9.0.3, macOS.
+**Pre-run state**: clean detached checkout at the tested SHA.
+**Post-run state**: clean detached checkout at the same SHA; `git status --short` empty and `git rev-parse HEAD` unchanged.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python -m pytest bootstrap/tests/test_check_release_publication.py` | 0 | 30 passed; 0 failed, skipped, xfailed or xpassed | 0.70 s | unknown |
+| `python scripts/claim_check.py dev/plans/2026-10-30-tag-release-distinction.md` | 0 | no flags after removing the resolved `Proposed paths` declaration | under 1 s | unknown |
+| `python scripts/claim_check.py docs/release-process.md` | 0 | no flags | under 1 s | unknown |
+| `python scripts/link_check.py` on the plan and guide | 0 | both passed; one Markdown file each; plan reports 2 external links not probed | under 1 s each | unknown |
+| `python scripts/check_cairn.py` on the plan and guide | 0 | both passed; one Markdown file each; plan reports 2 external links not probed | under 1 s each | unknown |
+| `python scripts/quality_gate.py --sub neutrality` | 0 | fail=0, info=43 | 0.85 s | unknown |
+| Reader and snippet search; positive-control `PROVENANCE.md` search | 0 | one owning test reference; 6 positive-control matches; no snippet markers in the guide | under 1 s | unknown |
+
+**Non-pass disposition**: none in the final candidate. The first plan prose-gate
+run found two stale forward-reference declarations; those resolved paths were
+removed and all plan prose gates passed on the corrected candidate.
+**Plan-specific acceptance commands**: no live GitHub request, Release
+publication, tag-signature check, archive-byte check, full suite, or re-anchor
+was run; these remain outside this implementation check or explicitly
+unauthorized. The snippet-sync command was not needed because the guide has no
+snippet markers.
+**Known omissions**: live GitHub state and cached archive contents are not
+verified by this helper; Release notes and source links remain a human review.
+Elapsed implementation verification was about 2 minutes; token use unknown.
