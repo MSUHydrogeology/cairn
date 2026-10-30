@@ -24,9 +24,8 @@ Maintainer read. Agents are always in doubt; overnight nothing closes.
 
 The burden is wider than review: abstractions, tests and deferred objectives.
 Anchor 17 (`doctrine/rationale.md:368-394`) states restraint; this changes the
-mechanism. It merges both reviewed
-proposals at the Maintainer's request (chat, 2026-10-30: "Could you do the
-new proposal? I'd prefer you do it"); if accepted, Codex's is superseded.
+mechanism. It merges both reviewed proposals at the Maintainer's request; if accepted,
+Codex's is superseded.
 
 ## Proposal
 
@@ -45,9 +44,9 @@ accepts each by name; `AGENTS.md:363` stands. Replaces `AGENTS.md:34-37`,
 
 **2. The Decision sets a proposal's tier; agents never raise it.** The
 Decision block gains `**Tier**: light | standard | heavy`: one short review
-and no plan; one pass per stage; a Security Review added. The author's tier
-stands unless the Maintainer writes the line; the trivial lane
-(`doctrine/lifecycle.md:59`) is untouched. Two triggers are heavy on their own: a named
+and no plan; one pass per stage; a Security Review added. The default is light; an author
+may propose higher; either stands unless the Maintainer writes the line; the
+trivial lane (`doctrine/lifecycle.md:59`) is untouched. Two triggers are heavy on their own: a named
 high-risk surface, and adding or widening a trust boundary
 (`templates/modules/team-gated/security-review.md:53`, "moves" deleted). An agent who finds a new boundary stops and says so. Delete
 `doctrine/lifecycle.md:77`, `SKILL.md:131` and `:154`; replace with "When
@@ -89,8 +88,8 @@ keep it at every step as Codex asks, with unknown recorded as unknown.
 
 ## Rationale
 
-Cuts 1 to 3 change who can stop a loop; cut 4 halves the per-pass load; cuts
-5 and 6 reach the rest. Added review structure
+Cuts 1 to 3 change who can stop a loop; cut 4 halves the load; 5 and 6 reach
+the rest. Added review structure
 "dramatically increased the inspection interval" without improving detection
 (Porter et al. 1995, doi:10.1145/222124.222144); LLM reviewers degrade with
 rounds (Zheng et al. 2026, doi:10.1145/3832219).
@@ -125,7 +124,7 @@ archived artifact at or below 3.5, counted as in Context.
 
 #### Security preflight
 
-S1: the author proposes the tier; the Decision sets it. S2: no executable
+S1: the tier defaults light; the Decision sets it. S2: no executable
 check; a raised tier is caught by the next reader. S3: nothing runs
 automatically. S4: a cap leaves obligations open. S5: an author and reviewer
 who both miss a boundary still win, as today.
