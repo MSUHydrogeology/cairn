@@ -1,7 +1,7 @@
 # Plan: Keep probe evidence in tests and scripts
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-probe-ledgers.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Remove duplicate probe inventories while keeping evidence reproducible and review independent.
@@ -39,6 +39,12 @@ Preserved.
 ## Verification
 
 Boundary A: Search operative text and consumers for ledger, probe and mutation inventory wording and byte pins; inspect each hit and test negative searches against a known positive. Run `python -m pytest bootstrap/tests/test_review_sweep_ships.py bootstrap/tests/test_review_stance_in_shipped_files.py bootstrap/tests/test_review_and_verification_rules_ship.py` for source, installed and governing rule assertions, including their negative controls. Search for additional readers of changed files and run affected owning tests discovered; inspect `bootstrap/tests/fixtures/gate_manifest.json` and any other pins without changing protected controls absent the required authority. Run `python scripts/claim_check.py` on changed documents, `python scripts/check_cairn.py`, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py`, and `python scripts/quality_gate.py --sub neutrality` for claim, link, snippet and neutrality checks. Inspect each command's trigger and actual runner before relying on it.
+
+Reader mapping: `test_review_sweep_ships.py::test_source_sweep_carries_the_obligation` and `::test_the_ledger_is_defined_once_with_five_items` read both loop copies; `::test_agents_md_pointer_carries_the_obligation` reads both governing copies. Its `installs` fixture runs `bootstrap/scaffold.py --config <profile> --target <temporary tree>` for every `bootstrap/profiles/*.yml`; `::test_installed_loop_document_carries_the_obligation`, `::test_installed_agents_md_carries_the_pointer`, and `::test_an_install_without_the_sweep_is_reported` read installed `dev/agent_collaboration.md` and `AGENTS.md`. Adapt the ledger shape and mutation controls (`::test_adding_a_sixth_ledger_item_is_reported`) to the retained outcomes.
+
+`test_review_stance_in_shipped_files.py::test_review_section_carries_the_obligation` and `::test_loop_document_roster_carries_the_obligation` read both governing and loop copies; `::test_template_review_section_carries_the_obligation` and `::test_plan_pass_skeletons_ask_the_plan_and_code_questions` read both plan and proposal templates as applicable; `::test_doctrine_carries_the_statement` reads doctrine. `test_review_and_verification_rules_ship.py::test_agents_md_carries_the_obligation` reads both governing copies and pins set mutation and summaries. Run the complete three files above to include their negative controls and other retained authority assertions. A text search found these three direct ledger readers; the open upgrade plan contains historical work records, not an operative ledger rule. The manifest lists test files, so inspect its pin implications before altering tests.
+
+Gate triggers and runners: `claim_check.py` takes one named document and calls `check_file`; `check_cairn.py` walks filtered tracked Markdown and delegates claims and links to shipped `templates/modules/default-on/claim_check.py` and `templates/modules/team-gated/link_check.py`. `link_check.py` walks filtered tracked Markdown; `sync_doc_snippets.py` checks tracked Markdown by default; `quality_gate.py --sub neutrality` walks its configured roots and scans their files. These commands themselves run the checks, rather than recording claims for a later runner.
 
 Boundary B: wide, because governing and shipped review contracts change. After the final implementation commit, run the mapped checks on a clean unchanged commit under canonical Python 3.13.x and append the required verification record, including the tested range, state, outcomes, elapsed time, tokens, non-pass dispositions and omissions; certification remains pending. Include affected owning families, installed paths and standing gates. Full-tree certification and re-anchor are separate ceremonies, not per-plan checks.
 
@@ -91,3 +97,7 @@ Assurance path: high-assurance
 The changed authority is the instruction text delivered to adopters. The plan explicitly challenges that installed authority and retains separate ordinary and Security Reviews. It proposes no new parser, execution, credential or network boundary. Wide Boundary B is appropriate for this contract surface. P1's missing mapping must be resolved before implementation; naming a test family alone does not establish that its controls cover the retained safeguards.
 
 **Coverage:** Read the committed plan and accepted proposal, plan-review template and named test consumers, including scaffold installation and independent security-obligation assertions. Did not run implementation checks, enumerate all consumers or assess implementation bytes; full-suite certification and re-anchor were not run.
+
+## Response to plan review -- Codex gpt-6.1-terra -- 2026-10-30
+
+P1: accepted; Verification now maps affected nodes, installed inputs and gate runners. Security Review raised no additional finding. Elapsed: approximately 3 minutes; tokens: unknown.
