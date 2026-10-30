@@ -306,3 +306,41 @@ v0.6 board item; repinning and re-anchoring occur at a version cut or when
 the Maintainer asks. This amendment does not authorize a ceremony or waive
 other checks, reviews, or acceptance criteria. Earlier evidence remains a
 record of what was known and done at the time.
+
+## Implementation verification -- Codex GPT-6 -- 2026-10-30
+
+**Boundary B mode**: wide. The mapped owning families and gates cover the
+trust boundary, installed copies and consumers described in the earlier
+record; unknown dependencies are not claimed covered.
+
+**Certified by**: pending
+
+**Tested commit**: `1acf7eccf6fa7abd6f666228655faf944bbd6031`
+
+**Reviewed range**: `49e6a59123b88bf954d1b5ee4e7a6a6ba2b0fc05`..`1acf7eccf6fa7abd6f666228655faf944bbd6031`
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13, pytest 9.0.3, macOS.
+
+**Pre/post state**: clean detached worktree at the tested commit; test caches are ignored.
+
+The 13 pytest files named in Verification, including the portable file and
+security lint, ran together: **568 passed in 38.98s**, with no skips or other
+non-pass results. The legacy control and deliberate mutant both behaved as
+expected within that portable run. `scripts/check_cairn.py` and
+`scripts/link_check.py` passed on 197 Markdown files; the latter did not probe
+103 external links. `scripts/quality_gate.py --sub neutrality --sub redundancy`
+passed with zero failures (43 and 1 informational notices). `scripts/claim_check.py`
+passed separately on `AGENTS.md`, `templates/core/AGENTS.md`, `bootstrap/UPGRADE.md`,
+`bootstrap/SAFETY.md`, this plan and its coverage inventory; existing allowlisted
+paths were reported. All commands used the interpreter above.
+
+An earlier run on `367d1176` found one failure (567 passed): the shipped session
+copy lacked the malformed-administration fix. `1acf7ecc` synchronized it and
+the mapped rerun above passed. A first claim-check invocation incorrectly passed
+multiple paths and exited 2; the separate invocations above replaced it.
+
+**Open criterion**: native Windows discovery and junction/reparse handling remain
+unverified. No Windows runtime was available on this host, and the portable file
+does not explicitly create junctions. The plan remains `implementing`; this
+record does not claim implementation verification or handoff readiness. No full
+certification run occurred.
