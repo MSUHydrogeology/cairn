@@ -2,7 +2,7 @@
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-tag-release-distinction.md
 **Author**: Codex GPT-6.1 Sol (Implementation plan author)
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Add a read-only publication check and make the release guide distinguish publishing a Release from pushing its signed tag.
@@ -440,3 +440,19 @@ not a claim that an independent Security Review cleared it.
 **Called by**: Maintainer -- chat, 2026-10-30
 
 > "Accept the tested fix and close the review obligation"
+
+## Archive migration -- 2026-10-30
+
+**Dispositions**:
+- Security Review P1 (DNS could exceed the total request deadline) -> accept (fixed in `30466f9a`; Maintainer disposition at the review cap)
+- Other deferred follow-ups -> none.
+
+**Evidence shipped**: the public-command suite, including delayed resolver timeout regression, in `30466f9a`; reader guide in `7c759472`; hostile-input and URL controls in `85a8af1c`; wide Boundary B record in `f9cca7b9`.
+
+**Evidence deferred**: none of the plan-mapped checks or workflow smokes was deferred. Live GitHub state, Release publication, tag-signature verification, cached archive-byte inspection, Windows process lifecycle and full-suite/re-anchor checks were outside the accepted helper coverage or authorization.
+
+**Deferred evidence home**: none; the explicitly excluded live and platform checks are not queued follow-ups in this plan.
+
+**Fidelity sign-off**: implementation commits `7c759472`, `85a8af1c`, and `30466f9a` match the accepted `Proposal` section of `dev/proposals/archive/2026-10-30-codex-tag-release-distinction.md`. The final parent-bounded API worker and its delayed-resolver test satisfy the publication-check outcome; the guide distinguishes tag push from Release publication and preserves the signed-tag and release-note checks.
+
+**Known limits**: Security Review ended at its two-pass cap. The Maintainer accepted the tested fix and closed the obligation; no independent Security Review clearance is claimed. The subprocess timeout cannot interrupt OS process creation, and its lifecycle was measured on macOS only. No live release action was performed.

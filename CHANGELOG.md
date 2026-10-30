@@ -38,6 +38,8 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+- Release publication now has a read-only check for the published Release and the signed tag's remote commit, while the guide distinguishes pushing the signed tag from publishing or updating its Release. The helper does not inspect cached archive bytes or perform a live release. ([plan](dev/plans/archive/2026-10-30-tag-release-distinction.md))
+
 - Certification tests now repair dispatcher record fixtures and the archived baseline path, and isolate the real ceremony boot while retaining adversarial controls. The frozen-file ceremony remains part of the separate v0.6 baseline. ([plan](dev/plans/archive/2026-10-30-certification-test-repairs.md))
 
 - Upgrade now checks saved ancestor bytes before merge, preserves corrupt evidence through repeated manual recovery, refuses specified invisible path characters, and escapes supplied install names in reports. The digest detects inconsistent local records; it does not authenticate a jointly edited cache and lockfile. ([plan](dev/plans/archive/2026-10-30-upgrade-install-integrity.md))
