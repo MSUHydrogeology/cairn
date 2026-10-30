@@ -1,7 +1,7 @@
 # Plan: Keep plan evidence necessary and concise
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-plan-evidence.md
-**Status**: ready-to-implement
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Remove mandatory plan evidence folders and prevent unnecessary extra documentation while preserving required checks.
@@ -142,3 +142,15 @@ No additional security blocker found. Summaries do not waive required checks, an
 **SHA / range**: implementation `dfb096b4`; verification and review records through `ca092511`. The clean copy was detached at `ca0925118ec43571508447de46c382591e74d7ce`; a later unrelated API-plan record commit was outside this plan's path set. **Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13. **Tree**: clean before and after in the isolated copy; the shared worktree was not used.
 
 **Selection**: `tools/test_tiers.py for` the four changed guidance files plus this plan selected 19 files: 10 contract, 2 unit, 2 workflow, and 5 integration. The pytest command ran that complete selection once with `--durations=10`: 1,038 collected, 1,038 passed in 13.62 seconds; no failures, skips, or deselections. The slowest reported test call was 0.40 seconds. Per-file elapsed times were not captured. The iteration and integration/workflow selection ran together once after ordinary and Security Review; no full suite or re-anchor ran. **Omissions**: per-file timing was not measured; folderless/existing-folder discovery and the manual archive move are recorded in the preceding author response. **Elapsed**: 13.62 seconds. **Tokens**: unknown.
+
+## Dispositions -- archive preparation -- 2026-10-30
+
+Dispositions: none.
+
+**Evidence shipped**: local and shipped plan-template rules, doctrine and architecture-review guidance (`dfb096b4`); mapped tests and prose gates (Implementation verification); folderless and existing-folder discovery and archive scenarios (Response to code review); clean wide Boundary B (`3766b51e`).
+
+**Evidence deferred**: none. Whole-tree certification and re-anchor were outside this plan's required verification and remain separate ceremonies.
+
+**Deferred evidence home**: none.
+
+**Fidelity sign-off**: implementation commit `dfb096b4` delivers the accepted `## Proposal` in `dev/proposals/archive/2026-10-30-codex-plan-evidence.md`: both plan templates and `doctrine/plans.md` remove the automatic folder and constrain separate artifacts to necessary implementation or existing ceremony evidence, while the architecture-review template removes its assumed plan folder. The commit adds no enforcement mechanism. The scenario response at `9a5065bb` verifies folderless discovery and existing-folder preservation through the consumers named in the plan.
