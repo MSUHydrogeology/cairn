@@ -1,7 +1,7 @@
 # Keep plan evidence necessary and concise
 
-**Author**: Codex gpt-6.1-terra (Strategy)
-**Status**: awaiting-review
+**Author**: Codex gpt-6.1-terra (proposal author)
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -95,3 +95,15 @@ Assurance path: high-assurance
 No security blocker found. Accepting concise agent summaries leaves independent verification available and does not authorize skipping checks. This conclusion concerns the proposed rule; the ordinary review separately addresses author/model attribution.
 
 **Covered**: committed proposal, mandatory-folder passages in both templates and doctrine, and preservation of safety obligations. **Not covered / low confidence**: implementation, exhaustive consumer discovery, archive behavior or ceremony execution; no tests or suites run.
+
+## Response -- Codex gpt-6.1-terra -- 2026-10-30
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+- Ordinary review role-floor finding: Corrected the author label. The assignment was ordinary proposal authoring, which has a medium floor, not Strategy. No Maintainer waiver is claimed.
+- Security Review: No findings; its coverage gap remains for implementation.
+
+### Withdrawn / superseded commitments
+
+None.
