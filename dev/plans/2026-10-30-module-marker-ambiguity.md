@@ -354,6 +354,76 @@ parser and caller bytes are unchanged since their tested commit.
 arbitrary adopter prose rewriting remain outside the plan's accepted scope.
 No production source changed in this follow-up.
 
+## Response to code review -- Codex Luna (Implementation) -- 2026-10-30
+
+| Finding | Disposition | Evidence |
+|---|---|---|
+| F1: complete task and inventory damage matrix | Accepted; fixed | `test_refuses_ambiguous_markers_without_writes` now crosses both surfaces with malformed opener/closer, missing closer, duplicate identity, nested/crossed entries, and duplicate/reversed/missing region delimiters. Every public refusal checks planning, inventory and lock bytes. |
+| F2: region conflicts need recovery direction | Accepted; fixed | Both missing/malformed/duplicate and malformed/reversed region diagnostics direct the adopter to save the files and reconcile manually before retrying. Public region-conflict cases assert the direction. |
+
+Scope delta remains preserved. The existing shared reconciler and adoption
+preflight remain in use; no second parser, new dependency, or automatic repair
+was introduced. This response closes the findings without a clearing ordinary
+review. The separate Internal Security Review remains owed.
+
+## Implementation verification -- Codex Luna (F1/F2 response) -- 2026-10-30
+
+**Boundary B mode**: wide. The change touches the shared marker reconciler and
+the public install/adoption matrix; all mapped owning families and their
+install, repeat-install, adoption and upgrade consumers were rerun because the
+engine bytes changed. No full-tree suite or re-anchor was run.
+
+**Certified by**: pending.
+
+**Tested commit**: `022f6abe7824b961e9b1ae383f5a956cc65fe4ba`.
+
+**Reviewed range**: `629400c1dfd419b6669a7299f41add6393f84a64` through
+`022f6abe7824b961e9b1ae383f5a956cc65fe4ba`.
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` —
+Python 3.13.13.
+
+**Pre-run state**: clean detached clone at the tested SHA; `git status --short`
+empty. **Post-run state**: clean, same clone and SHA.
+
+| Command or check | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `pytest bootstrap/tests/test_onboarding_seed_roster.py bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_install_time_onboarding.py bootstrap/tests/test_onboarding_slot_substitution.py bootstrap/tests/test_upgrade.py bootstrap/tests/test_lockfile_provenance.py bootstrap/tests/test_security_lint.py -q --tb=short` | 0 | 340 passed; 0 failed, skipped, xfailed or xpassed | 77.40 s | unknown |
+| New public matrix: both surfaces × 10 damage forms, in the mapped command above | 0 | 20 passed; each refusal preserved planning, inventory and lock bytes | included above; focused pre-run 1.19 s | unknown |
+| Mutation 1: permit duplicate region delimiters; rerun public `-k duplicate-region` nodes in isolated clone | 1 | Killed: both task and inventory cases returned success instead of refusing; unmutated matrix passed in the control | under 1 s | unknown |
+| Mutation 2: restore the narrow task opener substring trigger; rerun public `-k malformed-opener` nodes in isolated clone | 1 | Killed: task case returned success instead of refusing; inventory control passed | under 1 s | unknown |
+| Mutation 3: restore the pre-sequential independent-closer parser from `43af2e12^`; rerun public `-k crossed-entry` nodes in isolated clone | 1 | Killed: both task and inventory cases returned success instead of refusing | under 1 s | unknown |
+| `test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package` | 1 | 1 expected read-only diagnostic failure; see disposition below | 0.14 s | unknown |
+| AST runbook step 1 `_merge_current` / `_classify` | 0 | CHANGED 15; MISSING 0; DUPLICATE 0; NEW 143 | 0.2 s | unknown |
+| `claim_check`, `check_cairn`, `link_check`, `sync_doc_snippets.py --check`, neutrality/redundancy gates | 0 | Claim check no flags; Cairn/link 189 Markdown files; snippet check 482 docs; quality fail=0 (43 neutrality info, 1 redundancy info) | about 1.3 s in parallel | unknown |
+
+**Mutation summary**: The unmutated mapped control passed 340 tests. Total 3;
+killed 3; survivors 0; measured equivalents 0. Mutation 1 failed both public
+region cases, Mutation 2 failed the malformed-task public case while its
+inventory control passed, and Mutation 3 failed both crossed-entry public
+cases. Each mutant ran in its own detached scratch clone.
+
+**Non-pass disposition**: The AST diagnostic remains a version-cut diagnostic,
+not a functional failure. The existing 15 changed symbols, 0 missing, 0
+duplicate and 143 new are recorded from the required read-only derivation. This
+patch intentionally changes the known-new digest for
+`FunctionDef:_reconcile_generated_blocks` by adding the recovery direction;
+the prior `_check_lockfile_paths`, `_contained_lockfile_path` and
+`_refuse_if_linked` known-new drift is unchanged. No baseline, known-new
+manifest, protection manifest, or trust root was modified. A pre-commit shared
+worktree run had 93 passes and one source-fidelity refusal because its edited
+engine differed from `HEAD`; the clean detached candidate run above passed.
+
+**Plan-specific acceptance commands**: the seven mapped test families above
+pass, including the public install matrix and previously added public adoption
+cases for both adoption branches. The three C2 mutations are killed through
+public install regressions. No schema, snippets, doctrine or shipped template
+changed; no scientific result or assumption changed.
+
+**Known omissions**: arbitrary concurrent filesystem replacement and
+arbitrary adopter prose rewriting remain outside the accepted scope. The
+separate Internal Security Review is outstanding.
+
 ## Code review -- Codex GPT-6.1 (Reviewer) -- 2026-10-30
 
 **Reviewed commit**: `4a097b18` (implementation `629400c1`, adoption tests `66214ccc`). **Obligation**: Internal. **Verdict**: REVISE. **Findings**: two blocking.
