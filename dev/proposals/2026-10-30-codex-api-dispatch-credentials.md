@@ -113,3 +113,27 @@ for their execution context.
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Review -- Codex GPT-6 -- 2026-10-30
+
+```
+Reviewed commit: 169c8806
+Target: whole proposal
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: PROCEED
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The dispatcher's `_build_child_env` filters the parent environment before `_run_child` launches the runner; the runner's `_read_credentials` instead derives credential names from policy principal IDs. The real dispatcher test in `TestRealFacadesDrivenByTheRealDispatcher` exercises the unconfigured stub, so it does not establish configured credential delivery.
+2. **Best alternative.** Leave the dispatcher unchanged and run the API runner directly. That avoids a new credential handoff but loses the requested automated dispatcher path. Forwarding a whole prefix is simpler code but gives the child credentials beyond its declared local principals. Reusing the existing validation and derivation is the smaller useful change if the dispatcher's isolation holds.
+3. **What would show it wrong?** A configured direct and dispatched run disagree, an undeclared credential reaches the API child, or another leg receives one. The proposal calls for real entry-point tests and two mutations to distinguish delivery from isolation; these are commitments, not results yet.
+
+**Coverage**: Read the committed proposal and the dispatcher, runner, and integration-test paths cited above. Did not execute the matrix, inspect every policy validation edge, or assess the security boundary in depth; the separate Security Review remains owed.
