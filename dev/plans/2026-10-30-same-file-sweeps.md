@@ -21,6 +21,12 @@ Update `AGENTS.md`, `doctrine/coordination.md`, `dev/modules/coordination-tiers.
 
 Coordination prescription belongs in governing doctrine and installed coordination guidance; tracker and output describe reporting. Apply `docs/DOCUMENTATION_PLAN.md`. Before doctrine edits establish the trigger under `doctrine/rationale.md` > How the doctrine evolves under evidence; if not established, stop for Maintainer resolution. The shipped gate and its tests are listed in `bootstrap/tests/fixtures/protected_test_roster.json`; record the applicable gate-manifest ceremony and do not self-authorize re-anchoring.
 
+**Maintainer resolution, 2026-10-30:** After being shown that recurrence and synthesis evidence was not established, the Maintainer authorized proceeding past this doctrine gate:
+
+> Go ahead
+
+This allowance does not assert that recurrence or synthesis occurred.
+
 ## Sequence
 
 | # | Chunk | Gate | Ships |
