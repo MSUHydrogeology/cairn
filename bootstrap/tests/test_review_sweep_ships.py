@@ -1,6 +1,6 @@
 """Every install receives a nine-lens reading aid, not only module teams.
 
-The nine lenses as a reading aid, evidence and coverage rules, and the falsification ledger
+The nine lenses as a reading aid, evidence and coverage rules, and concise falsification evidence
 a clean code review must show used to live only in the `dual-review` module,
 which installs for teams with two agent types. A solo team, and any team that did
 not select the module, was asked for a coverage line it had never been shown.
@@ -19,8 +19,8 @@ What is pinned, and why:
   own copy must agree, so Cairn is bound by what it ships.
 * **Nine lenses, in the doctrine's order, and no tenth.** A follower adds a
   sentence to one lens by its label, so the label and the count are an interface.
-* **The ledger is defined once.** One definition, five items. A second, shorter
-  list with a different item is how two versions of a rule drift apart.
+* **Evidence belongs in the review loop, not a second module.** The module
+  supplies staffing guidance; repeatable probes stay in tests or scripts.
 * **No reasoning from the doctrine leaks in.** The staged evidence bar, the
   going-through-the-motions signal and the do-not-telegraph rule are doctrine's
   reasoning; installed text states the rule, not the argument for it.
@@ -115,21 +115,20 @@ _SWEEP_OBLIGATIONS = {
     "a-project-adds-domain-probes":
         r"Projects may add probes for their domain and high-risk surfaces",
     "a-clean-code-review-shows-a-falsification-ledger":
-        r"A clean code review shows a falsification ledger",
+        r"Code review tries to falsify the change",
     "ledger-surfaces-probed":
-        r"Surfaces probed — what was actively examined or tried to break",
+        r"Keep repeatable probes and mutation checks in tests or scripts",
     "ledger-negative-or-edge-case-attempt":
-        r"A negative or edge-case attempt — at least one",
+        r"When a claim says a value reaches every member of a set",
     "ledger-verification-run-or-consciously-not":
-        r"Verification — the commands run, with results; or an explicit "
-        r"statement of what was not run and why",
+        r"Keep repeatable probes and mutation checks in tests or scripts",
     "ledger-residual-risk":
-        r"Residual risk — what remains unverified",
+        r"names what remains uncertain",
     "ledger-mutation-when-a-claim-names-a-set":
-        r"Mutation, when a claim names a set",
+        r"When a claim says a value reaches every member of a set",
     "ledger-mutation-summary-names-control-counts-and-exceptions":
-        r"unmutated control, total mutants and killed count; name each survivor "
-        r"and each measured equivalent with its reason",
+        r"Report briefly whether the checks caught the breaks and whether any "
+        r"mutation remains unresolved or unmeasured",
     "a-reviewer-who-tried-to-break-it-has-cleared-the-gate":
         r"A reviewer who tried to break the change and reports honestly that "
         r"they could not has cleared the gate; a reviewer who only read it "
@@ -262,11 +261,12 @@ def test_the_anchors_a_follower_writes_against_are_present(rel: str) -> None:
 
 @pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
 def test_the_ledger_is_defined_once_with_five_items(rel: str) -> None:
-    text = _normalize(_text(rel))
-    assert len(re.findall(r"ledger of five items", text)) == 1, (
-        f"{rel} must define the ledger exactly once, with five items.")
-    assert not re.search(r"failure modes tested", text, re.I), (
-        f"{rel} carries a sixth ledger item; there is one ledger.")
+    sweep = _normalize(_sweep(_text(rel)))
+    assert "code review tries to falsify the change" in sweep.lower()
+    assert "keep repeatable probes and mutation checks in tests or scripts" in sweep.lower()
+    assert "falsification ledger" not in sweep.lower()
+    assert "one line per probe" not in sweep.lower()
+    assert "name each survivor" not in sweep.lower()
 
 
 @pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
@@ -408,11 +408,10 @@ def test_deleting_the_scope_sentence_is_reported(rel: str) -> None:
 
 @pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
 def test_adding_a_sixth_ledger_item_is_reported(rel: str) -> None:
-    """A second shape of the ledger is what the single definition guards against."""
-    text = _text(rel)
-    assert len(re.findall(r"ledger of five items", _normalize(text))) == 1
-    mutant = text + "\n\nA ledger of five items, in a shorter form.\n"
-    assert len(re.findall(r"ledger of five items", _normalize(mutant))) == 2
+    sweep = _sweep(_text(rel))
+    assert "falsification ledger" not in sweep.lower()
+    mutant = sweep + "\n\nA falsification ledger lists every probe.\n"
+    assert "falsification ledger" in mutant.lower()
 
 
 # --------------------------------------------------------------------------
@@ -450,9 +449,8 @@ def test_an_install_leaves_no_placeholder_the_engine_cannot_fill(
 
 
 # --------------------------------------------------------------------------
-# The lens text exists once. The dual-review module used to hold the roster,
-# the citation rule and the ledger; it is thinned to how a team staffs a read
-# the Maintainer has called, and carries none of them. A second copy of the
+# The lens text exists once. The dual-review module supplies staffing guidance
+# for a called read and does not duplicate review-loop instructions. A second copy of the
 # roster in the module is how two definitions drift apart, and a team that
 # selected the module would merge both into its loop document.
 # --------------------------------------------------------------------------
@@ -467,12 +465,8 @@ _MODULE_ABSENT = {
     **{f"module-has-{label}": pattern for label, pattern in _LENSES.items()},
     "module-has-the-citation-rule":
         r"Falsifiable evidence|A cited claim is credible|bare .checked.",
-    "module-has-the-ledger-items":
-        r"Surfaces probed|A negative or edge-case attempt|Residual risk — what "
-        r"remains|Probed edge cases|Failure modes tested|Verification run "
-        r"\(or consciously not\)",
-    "module-has-a-second-ledger-definition":
-        r"ledger of five items|lightweight four-part record|falsification ledger",
+    "module-has-review-evidence-guidance":
+        r"Code review tries to falsify the change|Keep repeatable probes and mutation checks",
     "module-has-a-duplicate-scope-reduction-trap":
         r"scope-cut means claim correction|The scope-reduction trap — the "
         r"mirror of the clean pass|The outcome test\. Judge a narrowing",
@@ -520,8 +514,7 @@ def test_restoring_the_citation_rule_into_the_module_is_reported(rel: str) -> No
 @pytest.mark.parametrize("rel", _MODULE_FILES, ids=_MODULE_IDS.get)
 def test_restoring_the_ledger_into_the_module_is_reported(rel: str) -> None:
     assert _module_carries(_text(rel)) == [], "control: the module is clean"
-    ledger = _sweep_part(SHIPPED_LOOP, "A clean code review shows a falsification "
-                                       "ledger", "A reviewer who tried to break")
-    found = _module_carries(f"{_text(rel)}\n\n> {ledger}\n")
-    assert "module-has-the-ledger-items" in found
-    assert "module-has-a-second-ledger-definition" in found
+    guidance = _sweep_part(SHIPPED_LOOP, "Code review tries to falsify the change",
+                           "A reviewer who tried to break")
+    found = _module_carries(f"{_text(rel)}\n\n> {guidance}\n")
+    assert "module-has-review-evidence-guidance" in found

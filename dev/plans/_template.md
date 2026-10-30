@@ -79,8 +79,8 @@ code review each ask three questions:
 * **Code review.** *Should this happen as framed?* Does it really do what it
   claims? Try to break it, in order to fix it. *Best alternative:* a simpler or
   safer build, if any. *What would show it wrong:* the input or run that breaks
-  it, and what was tried; Answer 3 points at the falsification ledger rather
-  than restating it.
+  it, and what was tried; Answer 3 points to evidence briefly and names any
+  remaining uncertainty.
 
 Each pass opens with a **Foundations** block of three lines, one answer per
 question, each ending in the file, test, line or command that backs it.
@@ -91,8 +91,8 @@ evidenced and the gaps named.
 
 Code review's job is falsification, and its floor is **not the implementing
 agent**. It never reopens the Decision (what to build is settled; how it was
-built, and what breaks it, is the question). A clean code review shows a
-falsification ledger (`dev/agent_collaboration.md` > "The review sweep").
+built, and what breaks it, is the question). A clean code review reports concise evidence and remaining uncertainty
+(`dev/agent_collaboration.md` > "The review sweep").
 
 **More distance is the Maintainer's call, and only theirs.**
 
@@ -156,9 +156,9 @@ A plan is one file by default: reviews, responses and records are appended to it
 * **A log entry is a pointer.** Commit bodies hold the facts. The entry names
   the commit and adds only a decision, a finding, or a departure from the
   criteria.
-* **Cite evidence by path, not by quotation.** A falsification ledger has one
-  line per probe, with no output pasted. For a set mutation, summarize the
-  control, total and killed count; name survivors and measured equivalents.
+* **Cite evidence concisely.** Point to reproducible tests or scripts and state
+  their outcome; do not copy probe inventories or mutation-by-mutation results
+  into lifecycle records.
 * **Read by section.** Give each pass, log or record its own `##` heading,
   titled by what it holds and when it was written. Readers list them with
   `grep -n '^## ' <plan>` and read only the sections the job needs.
@@ -429,8 +429,9 @@ the left margin is what the checker reads.
 
 Keep this pass to 300 words, preserving its verdict, findings and coverage gap.
 Record elapsed time and reported or defensibly estimated token use; write
-`unknown` when unavailable. Mutation summaries name the unmutated control,
-total, killed, each survivor, and each equivalent with its measured reason.
+`unknown` when unavailable. Report verification and mutation outcomes and any
+unresolved or unmeasured cases concisely; keep repeatable evidence in tests or
+scripts.
 
 Code review's floor is not the implementing agent; a fresh session clears it. It
 never reopens the Decision. Self-committed by its author; blocking findings move
@@ -450,7 +451,7 @@ test, line or command that backs it):
 
 1. **Should this happen as framed?** <does it really do what it claims; try to break it, in order to fix it> -- <evidence>
 2. **Best alternative.** <a simpler or safer build, if any> -- <evidence>
-3. **What would show it wrong.** <the input or run that breaks it, and what was tried> -- see the falsification ledger (`dev/agent_collaboration.md` > "The review sweep")
+3. **What would show it wrong.** <the input or run that breaks it, and what was tried> -- see the review evidence (`dev/agent_collaboration.md` > "The review sweep")
 
 **Bounding**: ACCEPTED | WIDER RUN REQUIRED — recorded only after challenging a
 named surface, mapped test, or stated omission. The second verdict names the

@@ -159,23 +159,15 @@ The reading aid does not change or downgrade a declared `required` review
 tier. Projects may add probes for their domain and high-risk surfaces, such as
 units, coordinate systems, numerical edges and resource limits.
 
-**A clean code review shows a falsification ledger.** Approving by assertion
-clears nothing. A pre-archive code review that approves carries a ledger of five
-items:
-
-* **Surfaces probed** — what was actively examined or tried to break.
-* **A negative or edge-case attempt** — at least one, where one applies: the
-  boundary, empty or out-of-range input actually tried, and what was checked to
-  fail closed.
-* **Verification** — the commands run, with results; or an explicit statement of
-  what was not run and why.
-* **Residual risk** — what remains unverified.
-* **Mutation, when a claim names a set** (every call site, every rendering path)
-  — the set is listed from the tree, not the diff, and each member is mutated in
-  a separate copy. Report the unmutated control, total mutants and killed count;
-  name each survivor and each measured equivalent with its reason. An
-  unmeasured equivalence is a survivor (`AGENTS.md` > "Verification
-  boundaries").
+**Code review tries to falsify the change.** A clean pass gives concise,
+evidence-backed results and names what remains uncertain. Keep repeatable probes
+and mutation checks in tests or scripts, where another reviewer can run them; do
+not reproduce a probe inventory in the review record. When a claim says a value
+reaches every member of a set, derive the set from the tree and mutate each
+member in a separate copy with existing checks. Report briefly whether the
+checks caught the breaks and whether any mutation remains unresolved or
+unmeasured. A measured equivalence is one where a behavior test through the real
+entry point passes under the mutation.
 
 A reviewer who tried to break the change and reports honestly that they could
 not has cleared the gate; a reviewer who only read it has not.

@@ -18,8 +18,8 @@ The rules pinned here:
   reinspected, and foreign or uncertain content stops the commit.
 * **A claim that a value reaches every member of a set is settled by
   mutation.** The missing member is a line that is not there, so reading a
-  diff cannot see it. The ledger reports every mutant against an unmutated
-  control, and an equivalence nobody measured counts as a survivor. Two
+  diff cannot see it. Repeatable mutation checks live in tests or scripts,
+  while records report outcomes and unresolved cases concisely. Two
   clauses carry that meaning and are pinned for what they say, not only that
   they exist: the trigger is a claim about a set (not any defect), and an
   equivalent mutant is one a behaviour test *passes* under (a test that fails
@@ -95,22 +95,23 @@ _OBLIGATIONS = {
         r"separate copy of that commit",
     "figures-are-measured-on-the-commit":
         r"measured on its bytes",
-    # A set claim is settled by mutating every member; summary counts killed
-    # mutants but names each survivor and measured equivalent.
+    # A set claim is settled by mutating every member; repeatable details live
+    # in checks, with concise outcome reporting in records.
     "set-claims-are-listed-from-the-tree-and-mutated":
         r"listing the set from the tree and mutating each member",
-    "mutation-summary-reports-killed-count-and-exceptions":
-        r"control, total, killed, each survivor and each measured equivalent",
+    "ledger-reports-each-mutant-against-a-control":
+        r"Keep repeatable mutation checks in tests or scripts",
     "ledger-never-reports-a-bare-count":
-        r"control, total, killed, each survivor and each measured equivalent",
+        r"summarize their outcome and any unresolved or unmeasured mutations concisely",
     "equivalence-is-measured-not-argued":
-        r"each measured equivalent with its reason. An unmeasured equivalence is a survivor",
+        r"Equivalent means a behavior test through the real entry point passes under mutation",
+    "unmeasured-equivalence-is-a-survivor":
+        r"unmeasured mutations concisely",
     "a-set-claim-is-the-mutation-trigger":
         r"A claim that a value reaches every member of a set",
     "an-equivalent-mutant-passes-the-behaviour-test":
         r"behavior test through the real entry point passes under mutation",
-    "unmeasured-equivalence-is-a-survivor":
-        r"unmeasured equivalence is a survivor",
+
     "mutation-is-otherwise-the-reviewers-choice":
         r"Otherwise mutation is the reviewer's choice",
     # Boundary B reaches a trivial change, and its fence is defined in place.

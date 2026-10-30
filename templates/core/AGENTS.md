@@ -65,14 +65,12 @@ narrower scope names what would be lost and why the rest still reaches the
 cause; only the Maintainer concedes a loss.
 
 Every existing step record captures elapsed time and reported or defensibly estimated token use;
-write `unknown` when unavailable. Mutation summaries name the unmutated
-control, total, killed, each survivor and each measured equivalent with its
-reason.
+write `unknown` when unavailable.
 
 **Every review shows its evidence.** The nine-lens reading aid lives in
 `dev/agent_collaboration.md` > "The review sweep". A bare "checked" is an
 incomplete review. The coverage line that ends the review says what the pass did not
-cover. Code review includes a falsification ledger. Review records
+cover. Code review reports its evidence and conclusion concisely. Review records
 append to the artifact and are self-committed by their named author.
 
 The Maintainer alone calls an External read on one named artifact that exists
@@ -163,11 +161,10 @@ or `clean` there.
 Reviewers read a commit, never a shared working tree. All other writing checks
 run on a separate copy of that commit; figures count only when measured on its
 bytes. A claim that a value reaches every member of a set requires listing
-the set from the tree and mutating each member. Summarize against an
-unmutated control with total and killed counts; name each survivor and each
-measured equivalent with its reason. An unmeasured equivalence is a survivor.
-Equivalent means a behavior test through the real entry point passes under
-mutation. Otherwise mutation is the reviewer's choice. A
+the set from the tree and mutating each member in a separate copy. Keep
+repeatable mutation checks in tests or scripts; summarize their outcome and any
+unresolved or unmeasured mutations concisely. Equivalent means a behavior test
+through the real entry point passes under mutation. Otherwise mutation is the reviewer's choice. A
 noncooperating writer can defeat shared-file inspection; coordinate that risk.
 
 Implement an accepted plan and commit your work; there is no per-commit

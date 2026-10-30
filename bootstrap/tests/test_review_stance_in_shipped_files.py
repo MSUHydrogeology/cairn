@@ -23,7 +23,7 @@ What is pinned, and why:
 * **The old vocabulary stays out.** A rule that makes an agent choose, require or
   recommend a more distant reviewer is the failure this guards against. The two
   copies of the dual-review module may keep their remaining wording, but not the
-  clause that lets a more distant pass stand in for a falsification ledger.
+  clause that requires duplicated probe inventories in review records.
 
 The phrase pins below cannot detect every possible new sentence that grants
 review authority. The broader Search B classification in the plan is a human
@@ -120,7 +120,7 @@ _STANCE_OBLIGATIONS = {
     "code-review-never-reopens-the-decision":
         r"never reopens the Decision",
     "a-clean-code-review-shows-a-falsification-ledger":
-        r"A clean code review shows a falsification ledger",
+        r"A clean code review reports concise evidence",
     "plan-review-is-fresh-context":
         r"A plan review is fresh-context",
     # A narrowing is a scope change, whoever recommends it.
@@ -206,7 +206,7 @@ _AGENTS_STANCE_OBLIGATIONS = {
     "a-clean-pass-needs-evidenced-answers-and-named-gaps": r"three evidenced Foundations answers.*?what the pass did not cover",
     "code-review-floor-is-not-the-implementing-agent": r"code review is by someone other than the implementer",
     "code-review-never-reopens-the-decision": r"does not reopen the Decision",
-    "a-clean-code-review-shows-a-falsification-ledger": r"Code review includes a falsification ledger",
+    "a-clean-code-review-shows-a-falsification-ledger": r"Code review reports its evidence and conclusion concisely",
     "plan-review-is-fresh-context": r"Plan review is fresh-context",
     "a-narrowing-is-a-scope-change-only-the-maintainer-concedes": r"narrower scope names what would be lost and why the rest still reaches the cause; only the Maintainer concedes a loss",
     "a-high-risk-surface-takes-a-security-review": r"High-risk work keeps its separate Security Review obligation",
@@ -324,11 +324,11 @@ _FORBIDDEN_REASON = (
 
 #: The two module copies are under every phrasing pattern the carriers are, and
 #: also may not bring back the clause that let a more distant pass stand in for
-#: a falsification ledger, the "make it prove itself" stance, or a description
+#: reproducible evidence, the "make it prove itself" stance, or a description
 #: of the module as a second, structurally independent tier.
 _MODULE_FORBIDDEN = {
     **_FORBIDDEN,
-    "a-confirming-pass-never-stands-in-for-a-falsification-ledger":
+    "a-confirming-pass-never-stands-in-for-review-evidence":
         r"confirmed by a second independent different-agent-type pass",
     "make-it-prove-itself":
         r"make it prove itself",
@@ -337,8 +337,8 @@ _MODULE_FORBIDDEN = {
 }
 _MODULE_FORBIDDEN_EXAMPLES = {
     **_FORBIDDEN_EXAMPLES,
-    "a-confirming-pass-never-stands-in-for-a-falsification-ledger":
-        "It either carries a falsification ledger or is confirmed by a "
+    "a-confirming-pass-never-stands-in-for-review-evidence":
+        "It either cites reproducible evidence or is confirmed by a "
         "second independent different-agent-type pass.",
     "make-it-prove-itself":
         "The reviewer's stance is make it prove itself.",
@@ -529,7 +529,7 @@ def test_module_omits_the_old_vocabulary(rel: str) -> None:
     assert not found, (
         f"{rel} {_FORBIDDEN_REASON} Found: {found}. The module is for staffing "
         f"a read the Maintainer has called; it selects no reviewer, and a "
-        f"more distant pass never stands in for a falsification ledger.")
+        f"more distant pass never stands in for a reproducible evidence.")
 
 
 def test_module_forbidden_patterns_recognize_their_examples() -> None:
@@ -802,7 +802,8 @@ def test_plan_pass_skeletons_ask_the_plan_and_code_questions(rel: str) -> None:
     code = _normalize(_section_from(text, "Code review --"))
     assert re.search(r"Should this happen as framed\? <does it really do what "
                      r"it claims; try to break it, in order to fix it>", code)
-    assert "see the falsification ledger" in code
+    assert "unresolved or unmeasured cases concisely" in code
+    assert "repeatable evidence in tests or scripts" in code
     assert re.search(r"floor is not the implementing agent", code), (
         f"{rel}: the Code review skeleton lost the floor.")
 
@@ -1183,7 +1184,7 @@ _DOCTRINE_OBLIGATIONS = {
         r"answers are evidenced and whose gaps are named does not"),
     "the-sweep-and-the-trap-are-no-longer-team-gated": (
         DOCTRINE_DUAL_REVIEW,
-        r"Every install receives the review sweep and the scope-reduction trap"
+        r"Every install receives the nine-lens reading aid and the scope-reduction trap"
         r".{0,200}no longer team-gated"),
     "a-brief-may-state-the-stage-questions": (
         DOCTRINE_DUAL_REVIEW,
@@ -1220,7 +1221,7 @@ _DOCTRINE_OBLIGATIONS = {
 _DOCTRINE_FORBIDDEN = {
     "a-confirming-second-different-agent-type-pass-clears-a-gate": (
         DOCTRINE_PLANS, r"confirming second different-agent-type pass",
-        "Clears the gate with a falsification ledger or a confirming second "
+        "Clears the gate with concise evidence or a confirming second "
         "different-agent-type pass."),
     "tier-ordering-lets-external-satisfy-a-required-internal": (
         DOCTRINE_PLANS, r"Tier ordering",

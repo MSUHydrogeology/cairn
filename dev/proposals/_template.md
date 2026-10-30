@@ -146,8 +146,8 @@ The proposal stays one file: reviews, responses and decisions are appended to it
   file, not in the plan. A task brief for a sub-agent is a short note or file,
   cited by path and commit.
   The proposal carries the criterion and the result, not the code behind them.
-* **Cite evidence by path, not by quotation.** A falsification ledger has one
-  line per probe, with no output pasted.
+* **Cite evidence concisely.** Point to reproducible tests or scripts and state
+  their outcome; do not copy probe inventories into lifecycle records.
 * **Read by section.** Give each review, response or decision its own `##`
   heading, titled by what it holds and when it was written. Readers list them
   with `grep -n '^## ' <proposal>` and read only the sections the job needs.

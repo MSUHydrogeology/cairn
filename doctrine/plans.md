@@ -984,27 +984,18 @@ Sharpening fixes land as follow-up commits before the plan archives.
 A finding that is cheap to fix is fixed that way, whatever its label;
 a reviewer's suggested home is advice, not the Maintainer's authorization.
 
-**A clean code review carries a falsification ledger.** Per
-`dev/agent_collaboration.md` > "The review sweep", a **final
-pre-archive** code review with **no P1/P2 findings** clears the
-plan-archive precondition only with a falsification ledger. The
-ledger has five items, defined once, in that document:
-
-* **Surfaces probed** — what was actively examined / tried-to-break.
-* **Negative / edge-case attempt** — at least one, when applicable.
-* **Verification** — the checks run (or consciously not run, with why).
-* **Residual risk** — what remains unverified.
-* **Mutation**, when a finding or claim names a set: list the set from the tree
-  and mutate each member. Name the unmutated control, total mutants and killed
-  count; name each survivor and each measured equivalent with its reason. An
-  unmeasured equivalence is a survivor (`dual-review.md` > "Boundary C").
+**A clean code review is concise and evidence-backed.** The reviewer points to
+reproducible tests or scripts and states their outcomes and remaining uncertainty;
+plans and review records do not carry probe or mutation inventories. For a claim
+about every member of a set, derive the set from the tree and mutate each member
+in a separate copy using repeatable checks. Report briefly whether checks caught the breaks and
+whether any mutation remains unresolved or unmeasured. Equivalence is measured
+when a behavior test through the real entry point passes under mutation.
 
 **End with the coverage line** (`doctrine/dual-review.md` > "The coverage
 line"): **Covered** (what the pass examined, with evidence) / **Not
-covered / low confidence** (the negative space). For a clean final pre-archive
-review this composes with the falsification ledger above — the ledger *is* the
-"Covered" evidence, and the negative space is the residual the Maintainer
-reads at archive.
+covered / low confidence** (the negative space). Keep this honest and concise;
+coverage is not an inventory of probes.
 
 **Reviewer identity**: the "not the implementing agent" default is
 the FLOOR for code review — stricter than the plan review's

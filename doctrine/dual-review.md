@@ -19,7 +19,7 @@ polishing something that should not exist.
 |---|---|---|---|
 | Proposal | Should this exist as framed? Is there a better design, doing nothing included? | The strongest, doing nothing included | What would make the author withdraw |
 | Plan | The Decision settled the premise. Does the plan deliver it? | A simpler path to the same outcomes | The result showing it cannot deliver |
-| Code | Does it really do what it claims? Try to break it, in order to fix it. | A simpler or safer build, if any | The input or run that breaks it, and what was tried; for code review this points at the falsification ledger rather than restating it |
+| Code | Does it really do what it claims? Try to break it, in order to fix it. | A simpler or safer build, if any | The input or run that breaks it, and what was tried; for code review this cites reproducible evidence and states its outcome concisely |
 
 **What "outside the frame" means depends on the artifact.** For a
 proposal it is the design and the problem statement. For an
@@ -328,23 +328,21 @@ from the change), the reviewer first checks
 that the tested revision and reviewed range cover the implementation, that the
 named paths and interpreter/runtime are credible, and that clean pre/post
 state and all outcomes are dispositioned. The reviewer then chooses tests and
-probes for the review's own falsification ledger: changed public paths,
-negative or edge cases, cross-surface assumptions, and claims whose evidence
-is doubtful. Copying the implementation's command does not satisfy that ledger.
+probes for changed public paths, negative or edge cases, cross-surface
+assumptions, and claims whose evidence is doubtful. Point to repeatable checks
+and state outcomes concisely; copying the implementation's command alone does
+not show independent falsification.
 
 **When a finding or claim says a value must reach every member of a set**
 (every call site, every rendering path), list the set from the tree, not the
-diff, and mutate each member, in a separate copy; reading the diff does not
-settle it. A mutation summary names the unmutated control, total mutants and
-killed count; it names each survivor and each measured equivalent with its
-reason, never as a bare "N of M killed". An unmeasured equivalence is a survivor.
-A mutant is one deliberate break, made to see whether any check notices: it is
-killed if some check fails on it, survived if every check still passes, and
-equivalent if the break changes no behaviour. Equivalence is measured, not
-argued: a behaviour test through the real entry point passes under the
-mutation, and where another site is said to recover the value, mutating that
-site fails. Any equivalence that was not measured is reported as a survivor.
-Outside that trigger, mutation stays the reviewer's choice.
+diff, and mutate each member in a separate copy; reading the diff does not
+settle it. Keep repeatable checks in tests or scripts. Where another site is
+said to recover the value, exercise that site too. Lifecycle records state
+briefly whether checks caught breaks and whether unresolved or unmeasured
+mutations remain. Equivalence is measured when a behavior test through the real
+entry point passes under mutation. Any unmeasured equivalence remains
+unresolved. Outside that trigger, mutation stays the reviewer's choice.
+
 
 **The reviewer never runs the full suite.** The full suite runs only as a
 certifying run at the authorized integration points (`doctrine/plans.md`). A
