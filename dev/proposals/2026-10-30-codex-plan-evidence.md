@@ -71,3 +71,27 @@ Reviewers cannot find required evidence, or necessary evidence is routinely excl
 **Finding:** The author names the Strategy role while the model mapping assigns Terra to medium and Strategy to high (`dev/.cairn/model-selection-mapping.yml`). No quoted Maintainer exception appears in the proposal. Clarify the role and applicable floor, or obtain the Maintainer’s explicit disposition.
 
 **Coverage:** Read the proposal and committed template, checked the matching requirements in both templates and doctrine, and searched for archive references. Did not exhaustively inspect consumers, execute archive behavior, or assess security controls; implementation and the separate Security Review cover those gaps. No suite run. Elapsed time and tokens: unknown.
+
+
+## Security Review -- Codex gpt-6.1-sol -- 2026-10-30
+
+Reviewed commit: 7a76dd323890150eb4db8a89049a4b89e8235d19
+Target: operative proposal and security consequences
+Prior findings: none
+Assurance path: high-assurance
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT (security design)
+**Elapsed**: approximately 4 minutes, including serialization wait
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Removing an automatic folder does not remove required checks: the proposal explicitly preserves verification, review, security ceremonies and existing evidence; the current folder mandate appears in `dev/plans/_template.md`, `templates/core/dev/plans/_template.md` and `doctrine/plans.md`.
+2. **Best alternative.** Keep concise implementation records with canonical tests/scripts and allow separate artifacts only when necessary. An absolute ban could obstruct required ceremony evidence; the proposal's explicit ceremony exception and preservation rule avoid that loss -- Proposal and Alternatives considered.
+3. **What would show it wrong?** A consumer still requiring a folder, evidence lost during archive, or a required security record treated as optional. The verification plan names folderless discovery/archive and preservation checks, while the operative text retains required ceremonies -- Tests required and Proposal.
+
+No security blocker found. Accepting concise agent summaries leaves independent verification available and does not authorize skipping checks. This conclusion concerns the proposed rule; the ordinary review separately addresses author/model attribution.
+
+**Covered**: committed proposal, mandatory-folder passages in both templates and doctrine, and preservation of safety obligations. **Not covered / low confidence**: implementation, exhaustive consumer discovery, archive behavior or ceremony execution; no tests or suites run.
