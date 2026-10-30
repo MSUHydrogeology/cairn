@@ -16,17 +16,16 @@ capabilities; v0.7 adds capabilities and adopter research.
 
 ## Delivered work and current holds
 
-| Plan | Result |
-|---|---|
-| [Model floors](../plans/archive/2026-10-28-model-floor-alignment.md) | Implemented, reviewed and archived; shipped generic task floors align with vendor assignments. Certification/re-anchor remain on the roadmap. |
-| [Scoped verification](../plans/archive/2026-10-28-scoped-change-verification.md) | Implemented and scoped-verified; frozen-file ceremony remains. |
-| [Governing text](../plans/archive/2026-10-28-governing-text-single-source.md) | Archived after inventory and consolidation; forward-baseline installation remains separate v0.6 work. |
-| [Test trust boundary](../plans/archive/2026-10-28-test-trust-boundary.md) | Roster and dormant setting approved; active protection and certification remain. |
-| [Ordinary test maintenance](../plans/archive/2026-10-28-ordinary-test-maintenance.md) | Reviewed plan; implementation waits because the chosen board file contains security defenses and remains protected. |
-| [Release evidence environment](../plans/archive/2026-10-29-release-evidence-environment.md) | C1 implemented and reviewed; deferred packet, verifier, pinning and signing belong to the forward-baseline item. |
-
-The source Decisions are `63e315fa`, `f110d263`, `cca436a9`, `cea1299d` and
-`439c7b34`. All five plans were authorized; their later explicit fences remain.
+The archived plans for [model floors](../plans/archive/2026-10-28-model-floor-alignment.md),
+[scoped verification](../plans/archive/2026-10-28-scoped-change-verification.md),
+[governing text](../plans/archive/2026-10-28-governing-text-single-source.md),
+[test trust](../plans/archive/2026-10-28-test-trust-boundary.md),
+[ordinary test maintenance](../plans/archive/2026-10-28-ordinary-test-maintenance.md)
+and [release evidence](../plans/archive/2026-10-29-release-evidence-environment.md)
+record delivered work and outstanding fences. Certification, protection and
+forward-baseline work remain separate. The ordinary-test pilot remains held
+because its board file contains security defenses. The source Decisions are
+`63e315fa`, `f110d263`, `cca436a9`, `cea1299d` and `439c7b34`.
 Use `python tools/board.py --maintainer` for declared next moves.
 
 ## Ceremony-command plan
@@ -89,14 +88,10 @@ bounded check passed (26 tests, Python 3.13.13); certification remains pending.
 ### 6. Upgrade base and install-output integrity — delivered
 
 The [archived proposal](../proposals/archive/2026-10-29-codex-upgrade-install-integrity.md)
-and [archived plan](../plans/archive/2026-10-30-upgrade-install-integrity.md)
-deliver checked saved ancestors, review-only recovery that preserves bad evidence,
-path admission for specified invisible characters, and escaped supplied names
-in install and upgrade output. The final mapped verification on `66b19e4b`
-passed 740 tests and the standing gates; both integrity mutants were killed.
-The digest is consistency evidence, not authentication of jointly controlled
-cache and lockfile. Full-tree certification and the new v0.6 baseline remain
-separate authorized work; no repin or re-anchor was part of this plan.
+and [plan](../plans/archive/2026-10-30-upgrade-install-integrity.md) record the
+implementation, 740 passing mapped tests and standing gates, and two killed
+mutants. The digest does not authenticate jointly controlled cache and lockfile.
+Certification and baseline remain separate.
 
 ### 7. Directories occupying tracked upgrade paths — accepted
 
@@ -112,7 +107,8 @@ map adds machinery. Post-check races remain.
 **Recovery choice:** accepted text permits absence after moving a folder, but
 `verify_integrity` rejects a missing tracked file. Keep upgrade-only recovery
 with failed integrity, or require restoration, which loses accepted scope and
-needs a Scope delta. Reviews and mapped verification remain open.
+needs a Scope delta. The latest interim review found a blocking renamed-wrapper
+omission; mapped verification and both final reviews remain open.
 
 ### 8. Nested Git paths during upgrade — delivered
 
@@ -189,15 +185,13 @@ The file remains frozen, so its ceremony is owed. A plan must test shuffled
 isolation, repeat timing and fault controls. No extra suite or baseline is
 authorized.
 
-### 16. Clean customized upgrade merges — awaiting Decision
+### 16. Clean customized upgrade merges — rejected
 
-The [proposal](../proposals/2026-10-30-codex-upgrade-semantic-adoption.md),
-responded at `4cc00bec`, awaits Decision. A clean text merge can retain
-incompatible local and upstream policy. The author recommends rejecting the
-proposed per-file enforcement: both reviews found it needs a true two-sided
-trigger, durable decisions, byte binding and old profile context across partial
-upgrades. This **loses** the board's required incorporation-or-disposition
-outcome; only the Maintainer can allow that loss or keep #35 for redesign.
+The [proposal](../proposals/2026-10-30-codex-upgrade-semantic-adoption.md) was
+rejected as framed. The Maintainer retained #35 for a smaller, lower-burden
+redesign; no engine implementation is authorized. A clean merge may still
+retain conflicting policy, and the requested incorporation-or-disposition
+outcome remains undelivered.
 
 ### 17. Refuse linked files during lockfile migration — delivered
 
@@ -210,36 +204,38 @@ file or folder with an ordinary copy before migration. The separate
 fidelity-manifest reader and concurrent path replacement remain outside this
 check, as the archived plan records.
 
-### 18. Publish and check the GitHub Release — awaiting Decision
+### 18. Publish and check the GitHub Release — delivered
 
-The [proposal](../proposals/archive/2026-10-30-codex-tag-release-distinction.md)
-responded at `a508dfcf`; both widened-scope reviews found no new issues and
-Security Review closed its findings. The cut prepares notes and pushes a tag
-without explicitly publishing the GitHub Release. The author recommends a
-Maintainer create-or-edit step, manual notes/link read-back, and a read-only
-script comparing the published Release and remote peeled tag with the
-independently recorded gate commit. Correct the guide's retired unsigned-tag
-alternative to match `bootstrap/PROVENANCE.md`. Links and remote tag identity
-do not verify cached archive bytes. The Maintainer decides both additions;
-Release and push remain unauthorized.
+The [accepted proposal](../proposals/archive/2026-10-30-codex-tag-release-distinction.md)
+and [archived plan](../plans/archive/2026-10-30-tag-release-distinction.md)
+delivered a publication step, manual notes and link review, a read-only check
+against the independently recorded gate commit, and signed-tag guidance.
+The check does not verify cached archive bytes. Push and publication remain
+separate Maintainer actions.
 
-### 19. Refuse ambiguous module discovery markers — awaiting Decision
+### 19. Refuse ambiguous module discovery markers — delivered
 
-The [proposal](../proposals/archive/2026-10-30-codex-module-marker-ambiguity.md)
-responded to ordinary and Security Reviews at `0ac33887`. A public repeat
-install returned success after a checked task's marker was edited, leaving
-two `reflections` tasks. **Recommend accept as revised:** reuse the shared
-reconciler to refuse malformed, nested or crossed generated markers before
-planning, inventory or lock changes, including an empty module roster.
-Inline, indented and blockquoted marker mentions remain ordinary prose.
-The cost is manual reconciliation for edited markers; accepting loose syntax
-risks duplicating or deleting adopter work. Heavy-tier plan and Security
-Review remain required; no implementation or Decision is recorded.
+The [accepted proposal](../proposals/archive/2026-10-30-codex-module-marker-ambiguity.md)
+and [archived plan](../plans/archive/2026-10-30-module-marker-ambiguity.md)
+delivered refusal of malformed, nested or crossed generated markers before
+planning, inventory or lock changes, including an empty roster. Inline, indented
+and blockquoted mentions remain prose. Edited markers require reconciliation.
+
+### 20. Pass local API credentials to the dispatcher — awaiting Decision
+
+**Recommend accept as revised:** the [reviewed proposal](../proposals/2026-10-30-codex-api-dispatch-credentials.md)
+passes only policy-declared local credentials to the local API child. Both
+reviews recommended proceeding; the plan must define a verified policy-loading
+path and negative tamper test, preserving engine verification before credential
+use. A heavy plan and ordinary and Security plan reviews are required if
+accepted. Delivery and isolation mutations are proposed, not yet measured.
 
 ## Issue triage, staffing and close-out
 
-Issues #31 and #32 await Maintainer closure; #33's scoped verification retains
-its ceremony hold; #19 remains deferred to v0.7.
+Issue #33 needs Maintainer disposition of whether scoped change verification
+satisfies its certification request; #35 remains for redesign. Issue #19 is
+deferred to v0.7. The roadmap no longer lists a closure follow-up for #2 or #8;
+this briefing does not assert current hosted issue status.
 
 Staffing: **Terra coordinates and reviews; Luna implements reviewed plans; Sol
 handles strategy and Security judgment.** Model tiers remain vendor-neutral in
