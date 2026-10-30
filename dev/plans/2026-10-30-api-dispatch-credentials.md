@@ -127,7 +127,7 @@ Ordinary review found no findings. Accepted Security Review advice: Scope and C1
 | Configured dispatch test in local-omission mutation copy | 1 | Mutant killed: dispatched result became exit 20 instead of CLEAN exit 0 | 0.98 s | unknown |
 | Configured dispatch test in deployed-admission mutation copy | 1 | Mutant killed: exact local credential-name assertion rejected added P3 | 0.76 s | unknown |
 
-**Boundary B**: Pending the separate Security Review. Run once after both reviews on a clean, unchanged final commit under canonical Python 3.13.x; mode remains **wide** for this credential trust boundary. Full-tree certification and re-anchor were not run.
+**Boundary B**: Complete after both ordinary and Security Reviews; mode **wide** for this credential trust boundary. The final mapped run passed on a clean, unchanged commit. Full-tree certification and re-anchor were not run.
 
 ## Security code review -- Codex GPT-6.1 Sol -- 2026-10-30
 
@@ -174,3 +174,29 @@ Ordinary review found no findings. Accepted Security Review advice: Scope and C1
 3. **What would show it wrong?** A configured dispatch failing or missing credentials being mishandled after the change. On a separate archive of `1e849d4a`, these two targeted tests passed under Python 3.12.9 in 1.14 seconds.
 
 **Coverage**: Inspected both loader diffs and exercised configured and missing-credential dispatch. Did not repeat the Security review's cache probes, scanner or Windows checks; Boundary B remains the author's responsibility.
+
+## Implementation verification -- Codex GPT-6.1 Luna -- 2026-10-30 (post-review Boundary B)
+
+**Boundary B mode**: wide. **Certified by**: pending. This is change verification, not tree certification.
+
+**Tested commit**: `c4bceebd6f9d52d539c6960cb93dde938fc5a83a`.
+
+**Reviewed range**: `ea16abda64ba54c25eb1a43251225f8708576761..c4bceebd6f9d52d539c6960cb93dde938fc5a83a` (accepted plan through final reviewed implementation; the range also contains the independent Windows runner clarification commit `31443bca`).
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python`, Python 3.13.13; pytest 9.0.3. Loopback tests ran with host socket access enabled.
+
+**Pre-run state**: clean detached worktree at the tested commit. **Post-run state**: clean at the same commit; no staged, unstaged or untracked files.
+
+**Scoped selection**: the nine files selected by `python tools/test_tiers.py for templates/modules/default-on/run_security_verification.py bootstrap/tests/test_security_verification.py dev/plans/2026-10-30-api-dispatch-credentials.md`, plus the mapped API, dispatcher engine and install families: `bootstrap/tests/test_api_access_security.py`, `bootstrap/tests/test_security_net.py`, and `bootstrap/tests/test_security_capability_install.py`. The one wide pytest run reported **703 passed, 0 skipped** in **163.51 seconds**. This exceeds the 3-minute integration timing target by 0.51 seconds; it is diagnostic only. Per-file timings were not collected.
+
+**Standing gates**: plan-scoped `claim_check.py`, `link_check.py`, `sync_doc_snippets.py --check`, and `check_cairn.py` all passed. `quality_gate.py --sub neutrality` reported 0 failures and 43 informational findings. No external links were probed.
+
+**Prior non-pass disposition**: an earlier pre-fix wide attempt found the explicit `exec` scanner finding and loopback permission denials. The source-only bound loader commits `2ccfc076` and `1e849d4a` resolved the scanner issue and passed targeted checks; this final run used host socket access and all mapped tests passed. No known required check remains unmet.
+
+**Omissions**: no per-file timing breakdown, Windows execution, full-tree certification or re-anchor. These are not required for this plan's Boundary B.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `/Users/kendal30/conda_envs/lhm/bin/python -m pytest -q -rs --tb=short bootstrap/tests/test_default_security_stance.py bootstrap/tests/test_module_merge_lockfile.py bootstrap/tests/test_notice_install.py bootstrap/tests/test_security_finding_confidentiality.py bootstrap/tests/test_security_lint.py bootstrap/tests/test_security_marker.py bootstrap/tests/test_security_stack.py bootstrap/tests/test_security_verification.py bootstrap/tests/test_upgrade.py bootstrap/tests/test_api_access_security.py bootstrap/tests/test_security_net.py bootstrap/tests/test_security_capability_install.py` | 0 | 703 passed, 0 skipped | 163.51 s | unknown |
+| Plan-scoped claim, link, snippet, and `check_cairn` gates | 0 | All passed | unknown | unknown |
+| `quality_gate.py --sub neutrality` | 0 | 0 failures, 43 informational findings | unknown | unknown |
