@@ -191,6 +191,22 @@ def _collapse(text: str) -> str:
     return " ".join(text.split())
 
 
+_LEGACY_INVENTORY_REQUIREMENT = re.compile(
+    r"\b(?:code review (?:includes|carries|shows|requires) a "
+    r"falsification ledger|clean code review (?:shows|carries) a "
+    r"falsification ledger|ledger of five items|falsification ledger.{0,60}five items|"
+    r"falsification ledger in code review|falsification ledger has "
+    r"one line per probe|one line per probe|points? (?:at|to) the "
+    r"falsification ledger|mutation summaries? name the unmutated control|"
+    r"unmutated control.{0,120}each survivor)\b",
+    re.IGNORECASE,
+)
+
+
+def _has_legacy_inventory_requirement(text: str) -> bool:
+    return bool(_LEGACY_INVENTORY_REQUIREMENT.search(_collapse(text)))
+
+
 def _text(rel: str) -> str:
     return (CAIRN_ROOT / rel).read_text(encoding="utf-8")
 
@@ -205,7 +221,9 @@ def _missing(text: str) -> list[str]:
 @pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
 @pytest.mark.parametrize("label", sorted(_OBLIGATIONS))
 def test_agents_md_carries_the_obligation(label: str, rel: str) -> None:
-    assert label not in _missing(_text(rel)), (
+    text = _text(rel)
+    assert not _has_legacy_inventory_requirement(text), rel
+    assert label not in _missing(text), (
         f"{rel} no longer carries the obligation {label!r}. The doctrine holds "
         f"the same rule, but adopters never receive doctrine/; removing it here "
         f"removes it for them."
@@ -233,6 +251,11 @@ def test_forbidden_patterns_recognize_their_examples() -> None:
     assert _present_forbidden(intact) == []
     for label, example in _FORBIDDEN_EXAMPLES.items():
         assert label in _present_forbidden(f"{intact} {example}"), label
+    forbidden = "Code review includes a falsification ledger."
+    for rel in _AGENTS_FILES:
+        text = _text(rel)
+        assert not _has_legacy_inventory_requirement(text), rel
+        assert _has_legacy_inventory_requirement(f"{text}\n\n{forbidden}\n"), rel
 
 
 @pytest.mark.parametrize("variant", [

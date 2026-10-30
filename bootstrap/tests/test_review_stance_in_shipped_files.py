@@ -396,6 +396,29 @@ def _present(text: str, forbidden: dict[str, str]) -> list[str]:
     return [label for label, pattern in forbidden.items()
             if re.search(pattern, normalized, re.IGNORECASE)]
 
+_PROBE_INVENTORY_CARRIERS = (
+    SHIPPED_AGENTS, OWN_AGENTS, SHIPPED_LOOP, OWN_LOOP,
+    SHIPPED_PROPOSAL, OWN_PROPOSAL, SHIPPED_PLAN, OWN_PLAN,
+    "doctrine/plans.md", "doctrine/dual-review.md",
+    "dev/strategy/2026-10-27-antigravity-plain-language-and-scientific-writing.md",
+    SHIPPED_MODULE, OWN_MODULE,
+)
+_PROBE_INVENTORY_REQUIREMENT = re.compile(
+    r"\b(?:code review (?:includes|carries|shows|requires) a "
+    r"falsification ledger|clean code review (?:shows|carries) a "
+    r"falsification ledger|ledger of five items|falsification ledger.{0,60}five items|"
+    r"falsification ledger in code review|falsification ledger has "
+    r"one line per probe|one line per probe|points? (?:at|to) the "
+    r"falsification ledger|mutation summaries? name the unmutated control|"
+    r"unmutated control.{0,120}each survivor)\b",
+    re.IGNORECASE,
+)
+
+
+def _has_probe_inventory_requirement(text: str) -> bool:
+    """Detect a former review-record inventory mandate in operative prose."""
+    return bool(_PROBE_INVENTORY_REQUIREMENT.search(_normalize(text)))
+
 
 def _delete_sentence(text: str, anchor: str) -> str:
     """Delete the sentence of *text* that contains the literal *anchor*.
@@ -424,6 +447,8 @@ def _review_section(rel: str) -> str:
 @pytest.mark.parametrize("rel", _AGENTS_FILES, ids=_FILE_IDS.get)
 @pytest.mark.parametrize("label", sorted(_AGENTS_STANCE_OBLIGATIONS))
 def test_review_section_carries_the_obligation(label: str, rel: str) -> None:
+    text = _text(rel)
+    assert not _has_probe_inventory_requirement(text), rel
     assert label not in _missing(_review_section(rel), _AGENTS_STANCE_OBLIGATIONS), (
         f"{rel} no longer carries {label!r} inside '## Review'. The doctrine "
         f"holds the same rule, but adopters never receive doctrine/; placement "
@@ -452,7 +477,9 @@ def test_the_stance_sits_in_the_review_section_only_once(rel: str) -> None:
 @pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
 @pytest.mark.parametrize("label", sorted(_ROSTER_OBLIGATIONS))
 def test_loop_document_roster_carries_the_obligation(label: str, rel: str) -> None:
-    roster = _section(_text(rel), "Team roles")
+    text = _text(rel)
+    assert not _has_probe_inventory_requirement(text), rel
+    roster = _section(text, "Team roles")
     assert label not in _missing(roster, _ROSTER_OBLIGATIONS), (
         f"{rel} no longer carries {label!r} in its roster. There is one "
         f"Reviewer role; a reviewer tier or an Internal/External split is the "
@@ -488,6 +515,12 @@ def test_carrier_forbidden_patterns_recognize_their_examples() -> None:
     assert _present(intact, _FORBIDDEN) == []
     for label, example in _FORBIDDEN_EXAMPLES.items():
         assert label in _present(f"{intact}\n\n{example}\n", _FORBIDDEN), label
+
+    forbidden = "Code review includes a falsification ledger."
+    for rel in _PROBE_INVENTORY_CARRIERS:
+        text = _text(rel)
+        assert not _has_probe_inventory_requirement(text), rel
+        assert _has_probe_inventory_requirement(f"{text}\n\n{forbidden}\n"), rel
 
 
 @pytest.mark.parametrize("variant", [
@@ -709,7 +742,9 @@ def _lines_starting(text: str, prefix: str) -> list[str]:
 @pytest.mark.parametrize("rel,label", _TEMPLATE_CASES, ids=_TEMPLATE_CASE_IDS)
 def test_template_review_section_carries_the_obligation(rel: str, label: str) -> None:
     obligations = _template_obligations(rel)
-    review = _section(_text(rel), "Review")
+    text = _text(rel)
+    assert not _has_probe_inventory_requirement(text), rel
+    review = _section(text, "Review")
     assert label not in _missing(review, obligations), (
         f"{rel} no longer carries {label!r} in its Review section. An author "
         f"reads this template while writing, and a reviewer while reviewing; "
@@ -1299,6 +1334,7 @@ def _doctrine_text(rel: str) -> str:
 @pytest.mark.parametrize("label", sorted(_DOCTRINE_OBLIGATIONS))
 def test_doctrine_carries_the_statement(label: str) -> None:
     rel, pattern = _DOCTRINE_OBLIGATIONS[label]
+    assert not _has_probe_inventory_requirement(_text(rel)), rel
     assert re.search(pattern, _doctrine_text(rel)), (
         f"{rel} no longer carries {label!r}.")
 
@@ -1306,6 +1342,7 @@ def test_doctrine_carries_the_statement(label: str) -> None:
 @pytest.mark.parametrize("label", sorted(_DOCTRINE_FORBIDDEN))
 def test_doctrine_omits_the_retired_privilege(label: str) -> None:
     rel, pattern, _example = _DOCTRINE_FORBIDDEN[label]
+    assert not _has_probe_inventory_requirement(_text(rel)), rel
     assert not re.search(pattern, _doctrine_text(rel), re.IGNORECASE), (
         f"{rel} carries {label!r}. A more distant pass may inform a decision; "
         f"it may not stand in for evidence or satisfy a required review.")

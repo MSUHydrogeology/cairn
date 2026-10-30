@@ -157,6 +157,21 @@ def _normalize(text: str) -> str:
     text = text.replace("*", "").replace("`", "")
     return " ".join(text.split())
 
+_LEGACY_INVENTORY_REQUIREMENT = re.compile(
+    r"\b(?:code review (?:includes|carries|shows|requires) a "
+    r"falsification ledger|clean code review (?:shows|carries) a "
+    r"falsification ledger|ledger of five items|falsification ledger.{0,60}five items|"
+    r"falsification ledger in code review|falsification ledger has "
+    r"one line per probe|one line per probe|points? (?:at|to) the "
+    r"falsification ledger|mutation summaries? name the unmutated control|"
+    r"unmutated control.{0,120}each survivor)\b",
+    re.IGNORECASE,
+)
+
+
+def _has_legacy_inventory_requirement(text: str) -> bool:
+    return bool(_LEGACY_INVENTORY_REQUIREMENT.search(_normalize(text)))
+
 
 def _text(rel: str) -> str:
     return (CAIRN_ROOT / rel).read_text(encoding="utf-8")
@@ -261,12 +276,11 @@ def test_the_anchors_a_follower_writes_against_are_present(rel: str) -> None:
 
 @pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
 def test_the_ledger_is_defined_once_with_five_items(rel: str) -> None:
-    sweep = _normalize(_sweep(_text(rel)))
+    text = _text(rel)
+    sweep = _normalize(_sweep(text))
     assert "code review tries to falsify the change" in sweep.lower()
     assert "keep repeatable probes and mutation checks in tests or scripts" in sweep.lower()
-    assert "falsification ledger" not in sweep.lower()
-    assert "one line per probe" not in sweep.lower()
-    assert "name each survivor" not in sweep.lower()
+    assert not _has_legacy_inventory_requirement(text), rel
 
 
 @pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
@@ -348,6 +362,7 @@ def test_installed_loop_document_carries_the_obligation(
         installs: dict[str, Path], profile: Path, label: str) -> None:
     text = (installs[profile.stem] / "dev" / "agent_collaboration.md").read_text(
         encoding="utf-8")
+    assert not _has_legacy_inventory_requirement(text), profile.stem
     assert label not in _missing(_sweep(text), _SWEEP_OBLIGATIONS), (
         f"a {profile.stem} install lacks {label!r}. Everyone should get the "
         f"review sweep, whatever modules they selected.")
@@ -358,6 +373,7 @@ def test_installed_loop_document_carries_the_obligation(
 def test_installed_agents_md_carries_the_pointer(
         installs: dict[str, Path], profile: Path, label: str) -> None:
     text = (installs[profile.stem] / "AGENTS.md").read_text(encoding="utf-8")
+    assert not _has_legacy_inventory_requirement(text), profile.stem
     assert label not in _missing(_pointer(text), _POINTER_OBLIGATIONS), (
         f"a {profile.stem} install's AGENTS.md lost {label!r} from its pointer.")
 
@@ -408,10 +424,10 @@ def test_deleting_the_scope_sentence_is_reported(rel: str) -> None:
 
 @pytest.mark.parametrize("rel", _LOOP_FILES, ids=_FILE_IDS.get)
 def test_adding_a_sixth_ledger_item_is_reported(rel: str) -> None:
-    sweep = _sweep(_text(rel))
-    assert "falsification ledger" not in sweep.lower()
-    mutant = sweep + "\n\nA falsification ledger lists every probe.\n"
-    assert "falsification ledger" in mutant.lower()
+    text = _text(rel)
+    assert not _has_legacy_inventory_requirement(text), "control: source is clear"
+    mutant = f"{text}\n\nCode review includes a falsification ledger.\n"
+    assert _has_legacy_inventory_requirement(mutant)
 
 
 # --------------------------------------------------------------------------
@@ -466,7 +482,8 @@ _MODULE_ABSENT = {
     "module-has-the-citation-rule":
         r"Falsifiable evidence|A cited claim is credible|bare .checked.",
     "module-has-review-evidence-guidance":
-        r"Code review tries to falsify the change|Keep repeatable probes and mutation checks",
+        r"Code review tries to falsify the change|Keep repeatable probes and mutation checks|"
+        r"Code review includes a falsification ledger",
     "module-has-a-duplicate-scope-reduction-trap":
         r"scope-cut means claim correction|The scope-reduction trap — the "
         r"mirror of the clean pass|The outcome test\. Judge a narrowing",
@@ -518,3 +535,6 @@ def test_restoring_the_ledger_into_the_module_is_reported(rel: str) -> None:
                            "A reviewer who tried to break")
     found = _module_carries(f"{_text(rel)}\n\n> {guidance}\n")
     assert "module-has-review-evidence-guidance" in found
+    restored = _module_carries(
+        f"{_text(rel)}\n\n> Code review includes a falsification ledger.\n")
+    assert "module-has-review-evidence-guidance" in restored
