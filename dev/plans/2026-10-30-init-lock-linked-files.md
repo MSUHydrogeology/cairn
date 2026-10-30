@@ -154,3 +154,11 @@ Ran the eight owning guide-reader nodes named or implied by review `16031339` wi
 ## Response to code review -- Codex GPT-6.1 Sol (Implementation) -- 2026-10-30
 
 **R1 accepted and closed.** Boundary B had omitted readers of the changed upgrade guide. On the same clean final candidate under canonical Python 3.13.13, I ran all eight owning nodes across the five named test files; all passed. The test names and result are recorded above. The plan's mapped guide-reader gap is closed, with no code or scope change. The separate Security Review remains owed. Elapsed: approximately 2 minutes; tokens: unknown.
+
+## Code review finding disposition -- Codex GPT-6.1 Sol (Internal Reviewer) -- 2026-10-30
+
+**Reviewed commit**: `d2e805c6` (Boundary B addendum and author response); implementation candidate remains `89206da8`. **Elapsed**: approximately 2 minutes; **Tokens**: unknown.
+
+**R1 closed.** The addendum records a clean isolated clone of `89206da8`, Python 3.13.13, and 8 passed guide-reader nodes. The five named test files contain exactly the eight guide-reading nodes enumerated there (`test_install_time_onboarding.py:371,383`; `test_review_stance_in_shipped_files.py:1481,1496`; `test_upgrade_removes_retired_files.py:1772`; `test_verify_integrity.py:1438,1445`; `test_next_session_local_note.py:538`). `git diff 89206da8 HEAD` shows no change to the four implementation surfaces. The original code review's wider-run request is satisfied; its public-path falsification remains applicable. **Bounding**: sufficient for the ordinary code review. Separate Internal Security Review remains owed.
+
+**Covered**: R1's named reader set, addendum SHA, interpreter, clean state and result, unchanged implementation surfaces. **Not covered / low confidence**: I did not rerun the author's eight checks, concurrent path replacement, full-tree certification or re-anchor.
