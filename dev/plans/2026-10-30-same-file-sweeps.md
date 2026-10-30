@@ -1,7 +1,7 @@
 # Plan: Detect and record same-file sweeps
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-same-file-sweeps.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30
@@ -334,3 +334,15 @@ Prior findings: none for this code pass
 * Read the Boundary B record and the manual staged-byte, reinspection and integration evidence. These are human procedures: a noncooperating writer can still race inspection, and duplicate rows or false testimony can inflate counts. The tracker guidance requires checking for a prior row and confirmation; it does not promise machine enforcement.
 
 **Covered**: security boundary and privacy guidance (`incident_log_template.md` > Confirmation Reference); section separation and impact filtering (ledger); copy consistency (`cmp`); review lifecycle and scoped verification (plan amendments and Boundary B). **Not covered / low confidence**: no live adversarial concurrent writer, private confirmation or local tracker contents were independently inspected; no full certification or external links were checked. The historical incident remains unconfirmed.
+
+## Response to code reviews -- Codex GPT-6 -- 2026-10-30
+
+The ordinary review at `9294dd82` and Internal Security Review at `82f441a5` both found no defects and accepted the verification bounding. Both obligations are clear; no revision or further review round is required. The gate counts reported rows rather than authenticating authorship or deduplicating them, and shared-tree serialization depends on cooperation. The historical occurrence remains unconfirmed.
+
+## Dispositions
+
+Dispositions: none. No deferred follow-up remains homed solely in this plan.
+
+**Evidence shipped**: governing and installed guidance, tracker schema and advisory gate copies, scoped tests and the inspection probes recorded above. **Evidence deferred**: none. **Deferred evidence home**: not applicable. Whole-tree certification remains pending and is separate from this plan's known checks; baseline work is on the v0.6 board under the Maintainer's sequencing amendment.
+
+**Fidelity sign-off**: implementation commits `1631e59d`, `566acce0` and `76b5dbcc` deliver the governing revised Proposal in the accepted `dev/proposals/archive/2026-10-29-codex-same-file-sweeps.md` Response, including conditional historical reconciliation, one row per confirmed commit, inspection and advisory reporting. The Maintainer's recorded plan amendments resolve the doctrine gate and technical-check ownership without asserting an unconfirmed incident.
