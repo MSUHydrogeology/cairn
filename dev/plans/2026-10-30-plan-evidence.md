@@ -88,3 +88,13 @@ No additional security blocker found. Summaries do not waive required checks, an
 
 - Ordinary review: Added the accepted necessity explanation and citation conditions to C1.
 - Security Review: No additional findings; implementation coverage remains outstanding.
+
+## Implementation verification -- Codex gpt-6.1-luna -- 2026-10-30
+
+**Elapsed**: approximately 15 seconds for mapped tests; prose gates under 2 seconds. **Tokens**: unknown.
+
+**Boundary A**: `python tools/test_tiers.py for` the four changed guidance files and this plan selected 19 test files. `python -m pytest` on that list: 1,038 passed in 12.12 seconds. Python 3.12.9. This was measured once in the shared dirty tree before commit `dfb096b4`; unrelated API-dispatch edits and local untracked files were present. It is preliminary evidence, not a clean committed-copy result. Per the accepted test-once workflow, do not repeat iteration; the clean canonical run is owed at Boundary B after code review.
+
+**Prose gates**: `claim_check.py` on this plan passed; `link_check.py` and `sync_doc_snippets.py --check` on all four changed prose files passed; `quality_gate.py --sub neutrality` reported 0 failures and 43 informational findings. These also ran in the shared dirty tree. `git diff --check` passed for the four implementation paths.
+
+**Coverage and limits**: Changed surfaces are the local and shipped plan templates, plan doctrine, and architecture-review artifact guidance. The mapped board tests include archived-plan Markdown fixtures and verify they are listed; they do not create or preserve a corresponding evidence folder. The session discovery fixture is a proposal, not a plan. I did not explicitly exercise a folderless plan or preservation of an existing folder. Source inspection found `tools/board.py` reads direct Markdown entries in live and archive directories, while `tools/session.py` reads direct live Markdown entries; neither writes or archives plans. Archiving is a Git move, so no executable archive consumer was found to exercise. The test output did not capture per-file durations. No clean-tree or canonical Python 3.13 result is claimed here. Boundary B is `wide` because this changes governing lifecycle rules; run the mapped iteration and integration/workflow selection once on the clean final commit after review, and record its SHA/range, interpreter, state, commands, counts, timing and omissions below. **Certified by**: pending.
