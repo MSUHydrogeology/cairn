@@ -1,0 +1,129 @@
+{
+  "about": "Cairn's test tiers. Each bootstrap/tests/test_*.py file belongs to the first tier whose patterns match its file name. python tools/test_tiers.py check fails on a file no tier matches or a pattern that places no file.",
+  "tiers": [
+    {
+      "name": "security",
+      "about": "Trust anchor, gate, ceremony, security stack and hostile-input refusals. Changes keep their Security Review and ceremony gates.",
+      "patterns": [
+        "test_gate_*",
+        "test_oracle*",
+        "test_reanchor*",
+        "test_repin*",
+        "test_ceremony_*",
+        "test_ast_attest",
+        "test_security_*",
+        "test_*_security",
+        "test_skills_security",
+        "test_content_scan",
+        "test_generated_output_scan",
+        "test_hardening",
+        "test_verify_*",
+        "test_loader_identity",
+        "test_facade_loader_cleanup",
+        "test_broad_run_guard",
+        "test_loop_fidelity_gate",
+        "test_portable_security_sweeps",
+        "test_default_security_stance",
+        "test_upgrade_refuses_hostile_project_data",
+        "test_upgrade_lockfile_path_containment",
+        "test_upgrade_edit_check_runs_no_project_programs",
+        "test_engine_copy_fallback_contained",
+        "test_session_writes_contained",
+        "test_session_binding_*",
+        "test_git_interpreter_binding_portable",
+        "test_session_failsafe",
+        "test_check_release_publication"
+      ]
+    },
+    {
+      "name": "contract",
+      "about": "Stable promises pinned against silent drift: shipped rules and wording, schemas, output formats and command contracts.",
+      "patterns": [
+        "test_*_ships",
+        "test_*_ship",
+        "test_*_rule",
+        "test_*_rules",
+        "test_*_contract",
+        "test_review_stance_in_shipped_files",
+        "test_scope_reduction_trap",
+        "test_comprehension_floor",
+        "test_status_vocabulary_advisory",
+        "test_agreement_retired",
+        "test_verification_boundaries",
+        "test_profile_grammar",
+        "test_manifest",
+        "test_python_floor",
+        "test_doc_governance",
+        "test_cairn_prefix_links",
+        "test_core_dev_folders",
+        "test_next_session_local_note",
+        "test_lockfile_provenance",
+        "test_test_tiers"
+      ]
+    },
+    {
+      "name": "unit",
+      "about": "One engine module or leaf, exercised with synthetic inputs.",
+      "patterns": [
+        "test_claim_check_module",
+        "test_cli_module",
+        "test_config_module",
+        "test_install_module",
+        "test_lockfile_module",
+        "test_merge_module",
+        "test_module_merge",
+        "test_module_merge_lockfile",
+        "test_slotmerge_leaf",
+        "test_upgrade_module"
+      ]
+    },
+    {
+      "name": "workflow",
+      "about": "End to end through a public command against a small installed fixture: install, upgrade, profiles and first-use flows.",
+      "patterns": [
+        "test_scaffold",
+        "test_scaffold_substrate",
+        "test_upgrade",
+        "test_upgrade_*",
+        "test_profiles_smoke",
+        "test_presets",
+        "test_install_time_onboarding",
+        "test_quickstart_sequence",
+        "test_first_session_report",
+        "test_skills_upgrade",
+        "test_finalize_retired_living_state"
+      ]
+    },
+    {
+      "name": "integration",
+      "about": "Several components together: installed modules and skills, the session and coordination tools, and the repository checkers.",
+      "patterns": [
+        "test_install_*",
+        "test_module_*",
+        "test_skills_*",
+        "test_session_*",
+        "test_intents_tool",
+        "test_coordination_*",
+        "test_quality_gate_*",
+        "test_check_cairn_*",
+        "test_claim_check_*",
+        "test_link_check_*",
+        "test_doc_drift_tools",
+        "test_drift_surfacing",
+        "test_prune_tools",
+        "test_replacement_tools",
+        "test_reference_scripts",
+        "test_fork_advisory",
+        "test_evolution_infer",
+        "test_deleted_tracked_markdown",
+        "test_practice_modules",
+        "test_incident_trackers_module",
+        "test_documentation_plan_module",
+        "test_issue_capture_bootstrap",
+        "test_notice_install",
+        "test_onboarding_*",
+        "test_model_selection_stub"
+      ]
+    }
+  ]
+}

@@ -5,21 +5,23 @@ and wants a coherent **test-tier scheme** rather than an undifferentiated
 `tests/` pile. Broadly applicable; team-gated so a preset
 (`governance presets`) turns it on for the profiles that warrant it
 rather than every adoption paying for it by default.
+
 **Adds to:** a test-doctrine note in the adopting repo's `tests/` guide
 (and a cross-reference from `dev/agent_collaboration.md`).
 
 Cairn requires a change to **absorb its tests** (the lifecycle's
 implement-with-tests step), but does not, on its own, say *how the test
-suite is organized*. Without a scheme, "add a test" lands wherever, tiers
-blur, and a reviewer cannot tell a focused unit check from a broader
-integration run. This module gives the suite a shape and a small practice
-for maintaining tests without losing the behavior they protect.
+suite is organized* or *how large it should grow*. Without a scheme, "add
+a test" lands wherever, tiers blur, and every change adds tests while none
+are removed. AI agents make this worse: writing a test costs them little,
+and a reviewer more often asks for a missing test than questions an extra
+one. This module gives the suite a shape, a way to choose tests, and a
+budget.
 
-Cairn **embodies** this discipline (its own `bootstrap/tests/` are
-tiered) and points to deeper testing craft in its
-[cairn/docs/further-reading.md] software-quality entry. The guidance
-below covers behavior and fault preservation during maintenance; it is
-not a complete testing curriculum.
+Cairn **embodies** this discipline: every file in its own
+`bootstrap/tests/` is assigned to one tier by a per-tier configuration,
+and a test fails when a file has no tier. The guidance below is a
+practical summary, not a complete testing curriculum.
 
 ## Template content
 
@@ -29,14 +31,39 @@ Merged into the project's `tests/` guide:
 > -- e.g. **unit** (pure logic, synthetic inputs), **contract** (a stable
 > schema / API boundary pinned against drift), **integration**
 > (multi-component dataflow), **workflow** (end-to-end against a small
-> fixture), and any project-specific tiers (notebook, benchmark, ...). A
-> tier communicates broad scope and expected cost; the test name and
-> assertions show its specific behavior, and runtime is measured separately.
+> fixture), and any project-specific tiers (security, notebook,
+> benchmark, ...). A tier communicates broad scope; the test name and
+> assertions show its specific behavior.
 >
 > **The tier is a property of location, not a hand-applied label.** A
-> test's tier is determined by where it lives (its directory / a per-tier
-> config), applied automatically -- authors do not hand-tag each test, so
-> the scheme cannot rot through forgotten labels.
+> test's tier is determined by where it lives (its directory, or a
+> per-tier configuration that maps file names to tiers), applied
+> automatically -- authors do not hand-tag each test, and a check fails
+> when a test has no tier, so the scheme cannot rot.
+>
+> **Choose tests by regime and boundary.** Divide the input space into
+> regimes that should behave alike (valid and malformed input; dry and
+> saturated cell; laminar and turbulent flow) and test each regime once,
+> plus the transitions between them (zero, empty, one, the threshold, a
+> sign change). More examples inside a regime rarely find new faults.
+> This is a selection heuristic, not a guarantee: keep extra cases where a
+> regime is poorly understood.
+>
+> **Prefer properties to snapshots.** Assert what must always hold --
+> conservation, symmetry, a round trip (`load(save(x)) == x`), a known
+> limit -- rather than freezing whatever the code printed today. A golden
+> output is a change detector: it fails on every harmless change and
+> says nothing about whether the result is right.
+>
+> **Test promises, not wording or internals.** Test the public behavior a
+> change promises. Do not pin private function names, call counts or the
+> exact sentences of a document; those tests break on every edit and
+> protect nothing a user relies on.
+>
+> **A new test must catch a fault no existing test catches.** Before
+> adding one, name the plausible fault it detects and check that the suite
+> would miss it. Extend an existing table of cases before creating a file;
+> never add a test file per plan, per bug or per review finding.
 >
 > **Contract tests pin stable schemas.** A boundary the project promises
 > not to break silently (a config schema, a public API shape, a
@@ -48,25 +75,41 @@ Merged into the project's `tests/` guide:
 > (raises / rejects), not only by confirming the happy path. A guard with
 > no negative test is an unproven guard.
 >
-> **A change records which tier(s) it touched.** The implement-with-tests
-> step names the tier a new test lands in, so the suite's shape stays
-> legible as it grows.
+> **The suite has a time budget.** The project sets how long its ordinary
+> test run may take and measures it. Scope and cost are separate: choose a
+> tier by what a test covers, and record its runtime on its own. A slow
+> test must earn its place; a run that exceeds the budget prompts
+> consolidation before anyone adds more.
 >
-> **Start with behavior and plausible faults.** When changing a contract,
-> name the behavior it promises and the likely ways it could break; keep a
-> direct assertion or probe for each important fault.
->
-> **Consolidate without losing detection.** Before combining cases or setup,
-> map each removed assertion and plausible fault to a retained check. Keep a
-> direct check when the remaining cases would not notice that fault.
+> **Consolidate without losing detection.** Before combining or deleting
+> tests, map each removed assertion and plausible fault to a retained
+> check. A size ratio is a diagnostic, never a deletion quota.
 >
 > **Use public entry points and fresh state.** Exercise the public command or
 > API when practical. Reuse immutable descriptions or builders, and create
 > fresh paths and mutable repositories for each case.
 >
-> **Keep scope and runtime separate.** Choose a tier by the integration
-> boundary. Record slow runtime separately; a long test may still check a
-> narrow behavior.
+> **Simulation models verify at three timescales.** Where one model run
+> takes minutes or hours:
+> 1. **Fast checks** shrink the domain rather than mocking the physics: a
+>    few cells and a few time steps exercise the real equations in
+>    milliseconds. Many sign, flux and mass-balance errors show up here,
+>    though not ones that need scale, long accumulation or parallel runs.
+> 2. **Benchmarks** compare against analytical solutions, manufactured
+>    solutions or a convergence study, within stated tolerances rather
+>    than bit-exact arrays. Run them when the solver or physics changes.
+> 3. **Full runs** stay outside the ordinary test run. Record a short
+>    summary (commit, runtime, mass-balance closure, key error norms) as
+>    milestone evidence, not the raw output.
+>
+> **Verification is not validation.** Passing conservation and convergence
+> checks shows the code solves its equations correctly. Whether those
+> equations suit a scientific use needs evidence against observations,
+> which no test in this guide supplies.
+>
+> **A change records which tier(s) it touched.** The implement-with-tests
+> step names the tier a new test lands in, so the suite's shape stays
+> legible as it grows.
 
 ## Relationship to `dual-language-tests`
 
@@ -81,7 +124,9 @@ vs. cross-language seams -- so a multi-language project selects **both**:
 
 ## Learn it deeply
 
-The tiering *scheme* is Cairn's; the craft of writing good tests is not.
-See Cairn's own [cairn/docs/further-reading.md] >
-"Software quality for scientists" for the pointer Cairn relies on rather
-than re-teaching.
+The tier scheme and the selection rules above are Cairn's summary of
+established testing practice: equivalence partitioning and boundary
+values, property-based and metamorphic testing, and verification and
+validation for scientific computing. See Cairn's own
+[cairn/docs/further-reading.md] > "Software quality for scientists" for
+the pointer Cairn relies on rather than re-teaching.
