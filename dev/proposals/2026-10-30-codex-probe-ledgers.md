@@ -114,3 +114,14 @@ Ordinary review advice: accepted; the proposal now makes honest mutation outcome
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Maintainer -- 2026-10-30
+
+**Elapsed**: under 1 minute
+**Tokens**: unknown
+
+**Tier**: heavy
+
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim and visually isolated:
+
+> "Accept and scribe the decision"
