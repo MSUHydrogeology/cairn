@@ -292,3 +292,32 @@ by C1–C2.
 
 Both obligations are cleared. The doctrine-evolution gate remains a prerequisite
 to the doctrine edit; the review does not establish its trigger.
+
+## Code review -- Codex GPT-6 -- 2026-10-30
+
+```text
+Reviewed commit: 7ad4a37198a83f981e0e673bc23239582f86a3af
+Target: bf0a253d56441838c364bfccca2cffe02d1af69d..986d2164ebaf1252267fceb81b991aaf7f5e2623 and implementation verification at 7ad4a371
+Prior findings: none
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+
+**Foundations**
+
+1. **Does it do what it claims?** Yes: preparation gathers the preview and prompts without either prune helper; the skill puts the user command after owner judgment and calls out uncertain quiet -- `tools/session.py::_do_handoff_preparation`; `.agents/skills/session-end/SKILL.md` section 3.
+2. **Best alternative.** The shared read-only candidate listing is simpler than a second preview implementation and preserves the existing guarded prune -- `tools/session.py::_reflection_prune_candidates`, `_prune_reflections`.
+3. **What would show it wrong.** A preparation call reaching a pruner, an unguarded command, or contradictory mode flags reaching the CLI would break the separation -- see falsification ledger below.
+
+**Falsification ledger** (fresh detached local clone of `986d2164`, Python 3.13.13; no current-repository prune):
+
+* Preparation-to-pruner boundary and marker refusal: targeted `test_handoff_preparation_never_calls_either_pruner` and `test_handoff_without_marker_refuses_nonblocking` passed; the former fails if either helper is invoked. The skill argument plumbing test also passed: 3 passed in 0.23 s.
+* Installed source CLI: `python templates/skills/_lib/session.py session-end --prepare-handoff --handoff` refused incompatible modes with exit 2. The recorded parity and install/upgrade tests cover propagation to the installed copy.
+* Quiet and sequencing: the skill requires recent-claim checking and confirmation of no appender after the handoff commit, states a ledger scan cannot prove quiet, and attaches uncertainty to the command; the code's snapshot message agrees. The actual future quiet state cannot be established by this review.
+* Evidence: the implementation record identifies the committed bytes, wide mapped consumers, guards, separate mutant results, canonical interpreter and clean state; the plan has no reached fence or deviation request requiring a Waiting line in the reviewed range.
+
+**Bounding**: ACCEPTED -- challenged the installed CLI mode boundary and preparation-to-pruner tests; the wide record covers the named public paths and guards.
+
+**Covered**: preparation and prune separation, workflow order and quiet caveat, CLI modes, recorded mutation and installation evidence. **Not covered / low confidence**: no full suite or actual current-repository prune; no assertion that a future intent log is quiet. The separate Security Review remains its own obligation.
