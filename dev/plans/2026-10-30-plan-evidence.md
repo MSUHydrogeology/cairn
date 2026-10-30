@@ -39,3 +39,20 @@ Plan authoring prescription lands in both plan templates; published methodology 
 Boundary A: search live guidance, consumers, readers and byte pins; run `python tools/test_tiers.py for <changed paths>` and the listed tests, plus claim, link, snippet and neutrality gates for changed prose. Exercise actual affected discovery and archive consumers with a folderless plan and with an existing folder; report outcomes and omissions concisely. A consumer still requiring a folder, lost evidence, or a length-limit loophole fails C1. Do not run the full suite or re-anchor.
 
 Boundary C: independent code review reads iteration evidence and runs the tightest targeted checks. Boundary B: after review, run the mapped iteration and integration/workflow selection once on the clean final commit with canonical Python 3.13, in wide mode for governing lifecycle rules; record commands, counts, interpreter, state, timing, omissions and disposition in this plan. Preserve all existing ceremony requirements.
+
+## Plan review -- Codex gpt-6.1-terra -- 2026-10-30
+
+**Obligation**: Internal
+**Verdict**: Revise before implementation.
+**Elapsed**: approximately 2 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should it happen as framed?** Nearly: C1 preserves checks, existing evidence and folderless archive behavior, but omits one accepted condition on exceptional artifacts. Source proposal, Proposal; plan, C1.
+2. **Best alternative.** Keep the single chunk and concise records, adding the accepted explanation and citation condition rather than a new enforcement mechanism. Source proposal, Proposal; plan, Scope and C1.
+3. **What would show it wrong?** An archive consumer that loses existing evidence, a folderless plan it cannot discover, or a sidecar used to bypass the length limit would fail C1. Plan, Verification.
+
+**Blocking finding:** The accepted proposal requires explaining why a separate evidence artifact is necessary and citing it in the plan. C1 allows an exceptional artifact but does not carry those requirements, so implementation could satisfy the plan while missing accepted scope. Add both conditions to C1. Source proposal, Proposal; plan, C1.
+
+**Coverage:** Read the committed plan and accepted proposal, the local plan-template lifecycle and review guidance, and searched committed live template/doctrine wording. Did not exhaustively inspect consumers, run archive behavior or assess security controls; implementation and Security Review cover those gaps. No suite run.
