@@ -344,3 +344,26 @@ unverified. No Windows runtime was available on this host, and the portable file
 does not explicitly create junctions. The plan remains `implementing`; this
 record does not claim implementation verification or handoff readiness. No full
 certification run occurred.
+
+## Interim code review follow-up -- Codex GPT-6 -- 2026-10-30
+
+**Reviewed commit**: `534e731ec29950bbc536d8f311fcec1314b36732` (implementation at `1acf7eccf6fa7abd6f666228655faf944bbd6031`)
+**Obligation**: Internal
+**Findings**: raised
+**Bounding**: WIDER RUN REQUIRED -- the mapped portable test must exercise the shipped session copy's malformed-administration refusal through its entry point, followed by a new final-commit Boundary B record.
+
+**Foundations**
+
+1. **Does it do what it claims?** The shipped resolver now has the same refusal branch as the source resolver, and my direct shipped-copy probe refused before the sub-tool. The recorded mapped test does not exercise that branch in the shipped copy -- `cmp tools/session.py templates/skills/_lib/session.py`; `bootstrap/tests/test_git_interpreter_binding_portable.py::test_invalid_git_directory_refuses_handoff_before_subtool`; ledger below.
+2. **Best alternative.** Extend the existing portable test to run the same malformed-administration case against both session paths, then repeat the mapped verification; this follows the plan's named coverage without a new mechanism -- `dev/plans/2026-10-30-git-interpreter-binding/coverage.md` (resolver row and final paragraph).
+3. **What would show it wrong?** A shipped copy that still falls back, reaches `_surface_intents`, or diverges from the source would defeat the fix; see the direct challenge and the missing mapped check in the ledger below.
+
+**CR2 -- blocking: shipped resolver branch lacks its mapped test.** The coverage inventory requires the portable file to exercise both session copies through the session entry point. Its `_session_module()` calls use only `SESSION_PATH`, which points to `tools/session.py`; `test_skills_install.py` runs the installed CLI only for an ordinary repository. The clean wide result therefore does not establish the shipped malformed-administration branch through the mapped test. **Satisfier:** add a shipped-copy case to `test_git_interpreter_binding_portable.py` that drives `main()` with an invalid `.git` entry and asserts no sub-tool launch, then record fresh final-commit Boundary B results. Keep the native Windows criterion open until demonstrated there.
+
+**Falsification ledger** (isolated detached worktree at `534e731e`; `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13):
+
+* `cmp -s tools/session.py templates/skills/_lib/session.py` returned 0. `python -m pytest bootstrap/tests/test_git_interpreter_binding_portable.py bootstrap/tests/test_skills_install.py -q` returned 19 passed in 1.83s. These controls establish current byte parity and ordinary installed execution, not a mapped shipped malformed-administration assertion.
+* Imported `templates/skills/_lib/session.py`, supplied a temporary root containing an empty `.git` directory, and drove `main(["session-end", "--prepare-handoff", "--dry-run"])` with `_repo_root` set to that root. It returned 1 with `git could not resolve the worktree root`, and `_surface_intents` was not called. This direct challenge found no shipped behavior defect.
+* Ran the shipped file as a CLI subprocess in the same temporary project. It returned 1 earlier at `_repo_root` with `not inside a git repository`; this route cannot prove the changed resolver branch. Inspection of the mapped portable file showed all `_session_module()` calls use the source default and no shipped path argument.
+
+**Coverage:** claims, production path, design edges and fail-closed behavior: shipped `main()` probe and ledger; consistency and reuse: source/template byte comparison, `bootstrap/_scaffold/config.py` installation map, coverage inventory and CR2 satisfier; drift and lifecycle: `534e731e` verification record against its named tests and the still-open C2 criterion; scope: CR2 adds only the accepted shipped-copy test coverage. **Not covered:** native Windows discovery or junction/reparse behavior, every mapped test family independently, same-user races, executable provenance, or the separate Security Review. The plan stays `implementing`.
