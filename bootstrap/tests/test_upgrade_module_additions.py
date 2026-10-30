@@ -433,6 +433,47 @@ def test_adoption_refuses_unknown_marked_task_without_losing_work(
     assert "retired-module" in output and "manually" in output and "retry" in output
     assert tuple(path.read_bytes() for path in (planning, inventory, lock)) == before
 
+
+@pytest.mark.parametrize("already_recorded", [False, True], ids=["new", "recorded"])
+@pytest.mark.parametrize("surface", ["planning", "inventory"])
+def test_adoption_refuses_ambiguous_markers_without_writes(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    already_recorded: bool, surface: str,
+) -> None:
+    """Malformed discovery markers refuse both adoption branches before writes."""
+    target = tmp_path.resolve()
+    cfg = target / "profile.yml"
+    cfg.write_text(
+        "project_name: AdoptionDiscovery\ntest_command: pytest\n"
+        "preset: solo-greenfield\n", encoding="utf-8")
+    assert s.main(["--config", str(cfg), "--target", str(target),
+                   "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]) == 0
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+    if already_recorded:
+        assert s.main(base + ["--adopt-module", "dual-review"]) == 0
+
+    planning = target / "dev/PLANNING.md"
+    inventory = target / "dev/modules/README.md"
+    lock = target / s._LOCKFILE_REL
+    path = planning if surface == "planning" else inventory
+    contents = path.read_text(encoding="utf-8")
+    region = ("<!-- cairn:slot onboarding-tasks -->"
+              if surface == "planning"
+              else "<!-- cairn:generated-modules:start -->")
+    malformed = ("<!-- cairn:module-task id=dual-review"
+                 if surface == "planning"
+                 else "<!-- cairn:module id=dual-review")
+    assert region in contents
+    path.write_text(contents.replace(region, region + "\n" + malformed, 1),
+                     encoding="utf-8")
+    before = tuple(item.read_bytes() for item in (planning, inventory, lock))
+
+    assert s.main(base + ["--adopt-module", "dual-review"]) == 2
+    output = capsys.readouterr()
+    assert "manually" in output.out + output.err
+    assert tuple(item.read_bytes() for item in (planning, inventory, lock)) == before
+
+
 def test_already_recorded_adoption_repairs_missing_discovery(tmp_path: Path) -> None:
     """Repeat adoption repairs missing marked entries without losing selection."""
     target = tmp_path.resolve()
