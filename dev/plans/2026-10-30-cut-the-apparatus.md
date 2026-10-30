@@ -1,7 +1,7 @@
 # Plan: Deliver the outcome with less apparatus
 
 **Source proposal**: dev/proposals/archive/2026-10-30-claude-cut-the-apparatus.md
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal)
 **Opened**: 2026-10-30
 **In brief**: Reduce recurring review and instruction overhead while preserving agreed outcomes and required assurance.
@@ -150,3 +150,26 @@ indicator and cannot yet be measured; it remains open. No independent
 scientific check was specified. External URLs (98 in `check_cairn`, 99 in
 `link_check`) were not probed by these offline gates. The full-tree certifying
 suite was not run, as this plan does not authorize it.
+
+## Code review -- Codex (GPT-6.1 SOL) -- 2026-10-30
+
+```
+Reviewed commit: 3cceb2c06f9d894adb1ec2dcb2d3ce72f999ff07
+Target: 2e8cb0fea7158d83645b1ad473c34dba322da957..3cceb2c06f9d894adb1ec2dcb2d3ce72f999ff07; Boundary B record at 4bfba7dd
+Prior findings: none
+```
+
+**Verdict**: REVISE. **Bounding**: ACCEPTED. **Elapsed**: about 4 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, but two shipped rules disagree with the accepted cuts. -- `AGENTS.md:83`, `doctrine/lifecycle.md:213`, `templates/modules/team-gated/security-review.md:53`.
+2. **Best alternative.** Reconcile plan triage with the light tier and remove the extra boundary trigger in its existing carrier. -- `doctrine/proposals.md:180`, accepted proposal cuts 2 and 4.
+3. **What would show it wrong?** A light proposal touching two areas must both skip and open a plan; the committed text produces that case. -- `AGENTS.md:16,83`; `doctrine/lifecycle.md:205-213`.
+
+### Findings
+
+1. **P1 -- Blocking: light-tier plan rule conflicts with mandatory triage.** Root and shipped `AGENTS.md` say light means no plan, while the same root file says every non-trivial accepted proposal gets a plan; `doctrine/lifecycle.md:205-213` requires one for multi-area or wide work. A light, multi-area proposal has no valid route. C1/C3 require coherent shipped rules. Align both carriers, doctrine, templates, and tests while delivering the accepted no-plan outcome.
+2. **P2 -- Blocking: moved boundaries still trigger Security Review.** Accepted cut 2 expressly deletes “moves” as a trigger, retaining added/widened boundaries. `templates/modules/team-gated/security-review.md:53` and both proposal templates' security preflight still trigger on movement, while `AGENTS.md:86-87` does not. Reconcile the shipped rule and templates to the accepted trigger, preserving added/widened protection.
+
+**Falsification ledger.** Isolated `git archive 3cceb2c0` control: 699 mapped property tests passed (Python 3.13.13); the light/multi-area conflict survives. Inspected root/shipped rules, triage, templates, and session skill; copies and word limits match Boundary B. No mutation or full suite. **Coverage:** lenses 1, 3, 5-9: cited paths and control; did not run adopter installation, external links, Security Review, or the one-month measure.
