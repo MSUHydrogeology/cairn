@@ -170,10 +170,10 @@ def test_reinstall_preserves_completion_and_refuses_loss(tmp_path: Path) -> None
     ("task", "reversed-region"),
     ("inventory", "malformed-closer"),
 ])
-def test_empty_roster_refuses_ambiguous_markers_without_writes(
+def test_refuses_ambiguous_markers_without_writes(
     tmp_path: Path, surface: str, damage: str, capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Empty selection still validates marked state before changing any artifact."""
+    """Ambiguous boundaries refuse before planning, inventory or lock writes."""
     cfg = tmp_path / "profile.yml"
     cfg.write_text(
         "project_name: MarkerAmbiguity\ntest_command: pytest\nmodules:\n"
@@ -232,8 +232,13 @@ def test_empty_roster_refuses_ambiguous_markers_without_writes(
     path.write_text(text, encoding="utf-8")
     before = tuple(p.read_bytes() for p in (planning, inventory, lock))
 
-    cfg.write_text("project_name: MarkerAmbiguity\ntest_command: pytest\nmodules: []\n",
-                   encoding="utf-8")
+    if damage != "crossed-entry":
+        cfg.write_text(
+            "project_name: MarkerAmbiguity\ntest_command: pytest\nmodules: []\n",
+            encoding="utf-8")
+    # The crossed identity case keeps both entries selected: independent
+    # closer searches can then accept the damaged pair instead of rejecting
+    # it merely because removing the edited block would lose work.
     assert main(args) == 2
     captured = capsys.readouterr()
     output = captured.out + captured.err
