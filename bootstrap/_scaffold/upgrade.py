@@ -193,10 +193,11 @@ def _contained_lockfile_path(
        where a read ends up, not whether a link is present.  (Writes are
        stricter and go through :func:`_assert_safe_write`: no link at all.)
 
-    For the project (not the Cairn source tree) a third check refuses a name
-    whose first part is ``.git``, in any letter case: Git's folder is not a
-    project file.  Judged on *tree*, not on the field, so that every caller of
-    the guard over the project gets it.
+    For the project (not the Cairn source tree), a third check refuses a name
+    with a component that Git treats as its data folder. It checks both the
+    supplied name and the contained resolved target: case folding and trimming
+    trailing ASCII dots and spaces conservatively catch filesystem aliases.
+    Judged on *tree*, not on the field, so every project caller gets it.
 
     Returns the joined path, unresolved, for the caller to read.  The refusal
     carries fixed words and the escaped, cut-short name -- never where a link
@@ -221,14 +222,14 @@ def _contained_lockfile_path(
     if (value.startswith("/") or "\\" in value or ":" in value.split("/", 1)[0]
             or rel.is_absolute() or ".." in rel.parts or not rel.parts):
         raise refuse(shape)
-    if tree == "the project" and rel.parts[0].lower() == ".git":
-        # Git's own folder is inside the project folder but is not a project
-        # file: a record naming it would have upgrade read, hash and replace
-        # hooks and config.  Judged on the first part, in any letter case.
+    def names_git_data(parts: tuple[str, ...]) -> bool:
+        return any(part.rstrip(". ").casefold() == ".git" for part in parts)
+
+    if tree == "the project" and names_git_data(rel.parts):
         raise refuse("is inside the .git folder, which holds Git's own data")
     joined = root / rel
     try:
-        joined.resolve().relative_to(root.resolve())
+        resolved_rel = joined.resolve().relative_to(root.resolve())
     except (OSError, RuntimeError, ValueError):
         raise refuse(f"leads outside {tree}", (
             f"A folder or file on the way is a link that leads out of {tree}; "
@@ -236,6 +237,8 @@ def _contained_lockfile_path(
             f"real folder or file inside {tree}. If the record itself was "
             "changed, restore dev/.cairn/cairn-lock.yml from a copy you trust. "
             "Then re-run.")) from None
+    if tree == "the project" and names_git_data(resolved_rel.parts):
+        raise refuse("resolves inside the .git folder, which holds Git's own data")
     return joined
 
 

@@ -505,6 +505,21 @@ def test_the_guard_lets_a_plain_relative_name_through_and_returns_the_joined_pat
     assert UP._contained_lockfile_path(tmp_path, value, "dst", "the project") == tmp_path / value
 
 
+@pytest.mark.parametrize("component", [
+    ".git", ".GIT", ".git.", ".git ", ".GiT..  ", "docs/.git", "docs/.GIT. ",
+])
+def test_project_paths_refuse_git_components_after_conservative_normalization(tmp_path, component):
+    with pytest.raises(ScaffoldSecurityError):
+        UP._contained_lockfile_path(tmp_path, component, "dst", "the project")
+
+
+def test_source_tree_names_keep_their_existing_boundary(tmp_path):
+    # The project-data rule must not change how Cairn's own source paths are judged.
+    assert UP._contained_lockfile_path(
+        tmp_path, ".GiT. /template.md", "src", "the Cairn source tree") == (
+            tmp_path / ".GiT. " / "template.md")
+
+
 @needs_links
 def test_the_guard_follows_a_link_to_judge_where_the_name_really_leads(tmp_path):
     root = tmp_path / "root"
@@ -520,6 +535,31 @@ def test_the_guard_follows_a_link_to_judge_where_the_name_really_leads(tmp_path)
         UP._contained_lockfile_path(root, "dangling-out", "dst", "the project")
     assert UP._contained_lockfile_path(root, "to-real/x.md", "dst", "the project") == (
         root / "to-real" / "x.md")
+
+
+@needs_links
+def test_the_guard_refuses_a_contained_link_whose_resolved_target_is_git_data(tmp_path):
+    root = tmp_path / "root"
+    (root / ".git" / "objects").mkdir(parents=True)
+    (root / "docs").mkdir()
+    try:
+        os.symlink(root / ".git", root / "docs" / "history")
+    except OSError:
+        pytest.skip("symlinks are not available here")
+    with pytest.raises(ScaffoldSecurityError):
+        UP._contained_lockfile_path(root, "docs/history/objects", "dst", "the project")
+
+
+@needs_links
+def test_the_guard_refuses_a_supplied_git_name_even_when_its_link_target_is_ordinary(tmp_path):
+    root = tmp_path / "root"
+    (root / "ordinary").mkdir(parents=True)
+    try:
+        os.symlink(root / "ordinary", root / ".GIT")
+    except OSError:
+        pytest.skip("symlinks are not available here")
+    with pytest.raises(ScaffoldSecurityError):
+        UP._contained_lockfile_path(root, ".GIT/file.md", "dst", "the project")
 
 
 def test_a_refusal_is_fixed_words_the_escaped_name_and_a_remedy(tmp_path):

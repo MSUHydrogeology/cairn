@@ -781,10 +781,12 @@ def _plant(world: World, **changes: object) -> Path:
 
 
 @pytest.mark.parametrize("field", [
-    "review_only", "module_blocked", "expected_absent", "staged_files",
+    "review_only", "module_blocked", "directory_blocked", "expected_absent",
+    "staged_files",
 ])
 @pytest.mark.parametrize("name", [
-    _HOSTILE_NAME, "../escape.md", "/etc/hosts", 7, ".git/description", ".GIT/hooks/post-merge",
+    _HOSTILE_NAME, "../escape.md", "/etc/hosts", 7, ".git/description",
+    ".GIT/hooks/post-merge", ".gIt./description", "docs/.git /description",
 ])
 def test_apply_refuses_a_review_area_that_names_an_unplain_file(world, field, name):
     """The review area is project data: a repository can carry one whose
@@ -799,10 +801,31 @@ def test_apply_refuses_a_review_area_that_names_an_unplain_file(world, field, na
     assert snapshot(world.project) == before
 
 
-@pytest.mark.parametrize("field", ["kinds", "new_entries"])
+@pytest.mark.parametrize("field", [
+    "kinds", "new_entries", "recovery_bases", "ancestor_evidence",
+])
 def test_apply_refuses_a_review_area_whose_keys_are_not_plain_names(world, field):
     _project_with_a_profile(world)
     _plant(world, **{field: {_HOSTILE_NAME: {"src": "core/NOTICE.md"}}})
+    before = snapshot(world.project)
+    proc = upgrade(world.project, "--apply")
+    assert_plain_refusal(proc)
+    _assert_nothing_forged(proc)
+    assert snapshot(world.project) == before
+
+
+@pytest.mark.parametrize(("field", "member"), [
+    ("recovery_bases", "old_base_cache"),
+    ("recovery_bases", "new_base_cache"),
+    ("ancestor_evidence", "src"),
+    ("ancestor_evidence", "dst"),
+    ("ancestor_evidence", "record_dst"),
+    ("ancestor_evidence", "base_cache"),
+])
+def test_apply_refuses_nested_metadata_paths_into_git_data(world, field, member):
+    _project_with_a_profile(world)
+    item = {member: "docs/.GiT. /description"}
+    _plant(world, **{field: {"docs/notes.md": item}})
     before = snapshot(world.project)
     proc = upgrade(world.project, "--apply")
     assert_plain_refusal(proc)
@@ -954,7 +977,7 @@ def test_a_wrapper_that_is_a_regular_file_is_still_resolved(tmp_path, name):
 
 @pytest.mark.parametrize("value", [
     ".git/config", ".GIT/hooks/pre-commit", ".Git/description", ".git", ".git/",
-    "./.git/config",
+    "./.git/config", ".gIt./config", ".git /config", "docs/.GiT..  /description",
 ])
 @pytest.mark.parametrize("field", ["dst", "base_cache"])
 def test_the_guard_refuses_a_name_inside_gits_own_folder(tmp_path, value, field):
@@ -990,4 +1013,25 @@ def test_a_record_that_names_a_file_inside_git_is_refused_on_every_action(world,
     for action in _ACTIONS:
         assert_refused(upgrade(world.project, *action), world, field)
     assert description.read_bytes() == before
+    assert not (world.project / STAGE_REL).exists()
+
+
+@needs_git
+@needs_links
+def test_a_contained_alias_into_git_data_is_refused_without_changing_it(world):
+    git(world.project, "init", "-q")
+    description = world.project / ".git" / "description"
+    docs = world.project / "docs"
+    docs.mkdir(exist_ok=True)
+    try:
+        os.symlink(world.project / ".git", docs / "history")
+    except OSError:
+        pytest.skip("symlinks are not available here")
+    digest = "sha256:" + hashlib.sha256(description.read_bytes()).hexdigest()
+    add_record(world.project, src="core/NOTICE.md", dst="docs/history/description",
+               digest=digest)
+    before = description.read_bytes()
+    for action in _ACTIONS:
+        assert_refused(upgrade(world.project, *action), world, "dst")
+        assert description.read_bytes() == before
     assert not (world.project / STAGE_REL).exists()

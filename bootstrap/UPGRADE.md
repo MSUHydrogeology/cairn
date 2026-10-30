@@ -757,3 +757,23 @@ Cairn templates must **not** introduce secret-bearing substitution tokens
 leak. The lockfile writer refuses obvious secret-like token names
 (`password`, `secret`, `token`, `key`, …) unless explicitly allow-listed.
 See `SAFETY.md`.
+
+## Nested Git data
+
+Upgrade refuses a lockfile or staged record that names a path inside Git data
+under the project. The check covers every path component, regardless of letter
+case, and trims trailing ASCII dots and spaces before comparing it with
+`.git`. It also follows a contained link to check its stable target. This
+conservative rule can refuse a distinct POSIX name such as `.git ` that another
+filesystem may treat as `.git`.
+
+If upgrade refuses, inspect the lockfile and staged record. Correct or remove
+the offending record, or discard the untrusted stage and create a fresh one
+with `python bootstrap/scaffold.py upgrade --stage`. Re-run `--plan` before
+staging and review the result before `--apply`. Recovery never requires
+removing `.git` or other Git data.
+
+This check protects names and targets observed during the check. It cannot
+identify hard links reached under another name, or prevent the filesystem from
+changing after the check. It does not prove authenticity and cannot eliminate
+races with another process.
