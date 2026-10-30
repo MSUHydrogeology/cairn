@@ -173,3 +173,24 @@ Coverage: inspected the recorded Boundary B and the implementation's classificat
 **Falsification ledger**: A separate local clone at a584f84d was used because the shared repository's Git metadata did not permit a detached worktree. The unmodified focused regression and hostile stage-name selection passed: `/Users/kendal30/conda_envs/lhm/bin/python -m pytest -q bootstrap/tests/test_upgrade.py::TestTrackedDirectoryCollisions::test_noop_tracked_file_becoming_directory_blocks_apply bootstrap/tests/test_upgrade_refuses_hostile_project_data.py -k 'directory_observed or noop_tracked_file_becoming_directory_blocks_apply' --tb=short` (9 passed, 182 deselected; Python 3.13.13). In that clone, a scratch public-command test changed a different, nested *verbatim* no-op destination into a directory after staging, then applied with both overrides. Apply returned 1, named the directory, preserved its nested bytes, left the lockfile unchanged, and retained the stage. Its invocation passed; importing an existing test class also collected 27 unrelated tests, for 28 passed total. The scratch test was not added to the implementation.
 
 **Covered**: claims and public entry (#1-2), no-op and nested-path edge cases (#3), unconditional refusal (#4), reuse (#5), agreement with C1 and `bootstrap/UPGRADE.md` (#6), plan status and required evidence (#7), accepted scope (#8), and the earlier P1 satisfier (#9), at the code and commands cited above. **Not covered / low confidence**: no independent check of every original observation point, symlink precedence, arbitrary concurrent changes, or the full mapped run. The two recorded mapped failures, final-commit Boundary B, and separate Security Review are unresolved; the plan stays implementing.
+
+## Interim code Security Review -- Codex GPT-6 -- 2026-10-30
+
+**Reviewed commit**: a584f84d3f749b947a71e2399aa0578502208ff1
+**Reviewed range**: c805d268cfe9720396b5ed6cb9e70877006c5a1f..a584f84d3f749b947a71e2399aa0578502208ff1
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised; interim, not a completed review
+**Bounding**: WIDER RUN REQUIRED -- verify refusal of incomplete or older stages and the complete applicable tracked destination set.
+
+**Foundations**:
+
+1. **Does it do what it claims?** No: a stage missing the new destination list can advance while an unchanged tracked destination is a directory -- `bootstrap/_scaffold/upgrade.py:3155`, `:3424`, and the ledger below.
+2. **Best alternative.** Fail closed on incompatible or incomplete stages, or independently establish the complete applicable tracked destination set before apply; preserve containment checks -- `bootstrap/_scaffold/upgrade.py:3153` and `:3425`.
+3. **What would show it wrong?** The missing-field public-apply probe and outcome are in the falsification ledger below.
+
+**P1 -- A stage without the new observation list bypasses the post-stage block.** Apply accepts missing `directory_observed` as an empty list and checks only that list and staged writes. A stage created by the preceding implementation naturally lacks this field; removing it from project-controlled stage metadata has the same effect. An unchanged tracked file omitted from `staged_files` can then become a directory and apply advances the lock and base cache. Require a fresh stage when the needed observation data is absent or otherwise ensure the checked set is complete. Include incomplete and pre-change stage cases in the public-path verification.
+
+**Falsification ledger**: In an isolated archive of a584f84d, modified the existing `TestTrackedDirectoryCollisions::test_noop_tracked_file_becoming_directory_blocks_apply` to remove `directory_observed` from the freshly written stage metadata before replacing the selected unchanged tracked file with a directory. `/Users/kendal30/conda_envs/lhm/bin/python -m pytest -q bootstrap/tests/test_upgrade.py::TestTrackedDirectoryCollisions::test_noop_tracked_file_becoming_directory_blocks_apply --tb=short` on Python 3.13.13 failed (1 failed): public apply with both override flags returned 0 and reported lockfile and base-cache advancement. This models the missing field in an older stage; it does not measure arbitrary concurrent changes.
+
+Coverage: inspected the final change's metadata validation and directory gate and challenged an omitted observation list. This is an interim pass: final-commit Boundary B is absent, two mapped required test failures remain open, and other stage metadata changes, containment, symlinks, recovery and corrected implementation were not independently tested here. No Security Review clearance or implementation verification is claimed.
