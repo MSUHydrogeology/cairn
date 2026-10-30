@@ -1,7 +1,7 @@
 # Plan: Refuse linked installed files during lockfile migration
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-init-lock-linked-files.md
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Lockfile migration will refuse linked installed files before hashing them, so a link cannot supply another file's digest in a stable project tree.
