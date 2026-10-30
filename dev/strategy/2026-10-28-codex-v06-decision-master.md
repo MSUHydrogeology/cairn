@@ -170,37 +170,27 @@ recorded gate-manifest ceremony remains separate v0.6 baseline work.
 ### 13. Repair certification test failures — awaiting Decision
 
 The [proposal](../proposals/2026-10-30-codex-certification-test-repairs.md),
-responded at `bfb996f8`, awaits Decision. The uncertified `8b51bb2e` run had
-5,622 passes and six failures. Five are test infrastructure: malformed lockfile
-fixtures, a stale plan path and module identity contamination; the sixth is
-unrelated upgrade behavior. Reproduce test ordering before choosing isolation;
-preserve leak, evidence-refusal and re-anchor assertions. Four affected files
-remain frozen by the installed manifest; the proposed ordinary classification
-is not installed and waives no ceremony.
+awaits Decision. The uncertified `8b51bb2e` run had 5,622 passes and six
+failures: five in test infrastructure, one in unrelated upgrade behavior.
+Reproduce ordering before choosing isolation; retain the safety assertions.
+Four affected files remain frozen, with ceremony owed.
 
 ### 14. Render generated inventory in upgrade review copies — awaiting Decision
 
 The [proposal](../proposals/2026-10-30-codex-review-inventory-rendering.md),
-responded at `315f8506`, awaits Decision. Render upstream `.theirs` from the
-recorded lock roster with the existing renderer; keep `.ours` as adopter bytes
-so edits remain visible. Preserve the raw ancestor, installed inventory, apply
-and reconciliation behavior. The plan must handle historical `--to` and
-missing/malformed markers without presenting invalid comparisons as valid.
+awaits Decision. Render upstream `.theirs` from the recorded roster; keep
+`.ours` as adopter bytes. Preserve ancestor and apply behavior; handle
+historical `--to` and invalid markers without a false comparison.
 
 ### 15. Reduce repeated setup in review-sweep tests — awaiting Decision
 
 The [speed proposal](../proposals/2026-10-29-codex-certification-cost-audit.md),
-concretized at `a3f7e15b`, awaits Decision. Change `installs` from module to
-session scope, retaining every node and one install per profile. See [full-run
-durations](../proposals/2026-10-29-codex-certification-cost-audit/certification-durations.txt),
-[module-scope](../proposals/2026-10-29-codex-certification-cost-audit/scoped-baseline.txt)
-and [session-scope](../proposals/2026-10-29-codex-certification-cost-audit/scoped-session.txt)
-reports: both scoped runs passed 391 tests (18.55 and 0.65 seconds). These single
-measurements establish neither timing stability nor full-suite speedup. File
-is ordinary in the approved roster but frozen in the installed manifest; its
-ceremony remains owed. No extra suite, protection change or baseline installation
-is authorized. A plan must test shuffled shared-tree isolation, repeat timings
-and fault controls; stop if the gain is unstable or controls fail.
+awaits Decision. Change `installs` from module to session scope, retaining
+every node. One scoped run per variant passed 391 tests (18.55 versus 0.65
+seconds); neither timing stability nor full-suite speedup is established.
+The file remains frozen, so its ceremony is owed. A plan must test shuffled
+isolation, repeat timing and fault controls. No extra suite or baseline is
+authorized.
 
 ### 16. Clean customized upgrade merges — awaiting Decision
 
@@ -211,6 +201,16 @@ proposed per-file enforcement: both reviews found it needs a true two-sided
 trigger, durable decisions, byte binding and old profile context across partial
 upgrades. This **loses** the board's required incorporation-or-disposition
 outcome; only the Maintainer can allow that loss or keep #35 for redesign.
+
+### 17. Refuse linked files during lockfile migration — awaiting Decision
+
+The [proposal](../proposals/2026-10-30-codex-init-lock-linked-files.md),
+responded at `e6c69148`, cleared Security Review at `52a7feb3` and awaits
+Decision. `--init-lock` currently hashes a linked installed file's target,
+even outside the project. Reuse its link guard before mapped-file reads in a
+stable tree. Legitimate linked installs must replace the linked file or folder
+with an ordinary copy before migration. A separate fidelity-manifest reader
+can still follow a link; this scope discloses but does not fix that gap.
 
 ## Issue triage, staffing and close-out
 
