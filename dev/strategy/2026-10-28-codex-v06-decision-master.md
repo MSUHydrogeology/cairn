@@ -96,19 +96,14 @@ Certification and baseline remain separate.
 ### 7. Directories occupying tracked upgrade paths — accepted
 
 The [proposal](../proposals/archive/2026-10-29-codex-upgrade-directory-collisions.md)
-and [plan](../plans/2026-10-30-upgrade-directory-collisions.md) are accepted;
-the plan is `implementing`. Six public controls passed at `4a76dc54`.
-[Review `9b40d4d4`](../plans/2026-10-30-upgrade-directory-collisions.md)
-found that a staged rename can omit `CLAUDE.md`; replacing it with a directory
-then lets apply advance lock and cache. Refusing directories at known wrapper
-names and root `*.md` paths may also block unrelated folders. A trusted name
-map adds machinery. Post-check races remain.
+and [plan](../plans/2026-10-30-upgrade-directory-collisions.md) remain in
+implementation. Fixes `a5940f31` and `3796e277` address the wrapper finding
+and preserve precedence; final reviews and verification remain open.
 
 **Recovery choice:** accepted text permits absence after moving a folder, but
-`verify_integrity` rejects a missing tracked file. Keep upgrade-only recovery
-with failed integrity, or require restoration, which loses accepted scope and
-needs a Scope delta. The latest interim review found a blocking renamed-wrapper
-omission; mapped verification and both final reviews remain open.
+`verify_integrity` rejects a missing tracked file. Should upgrade-only recovery
+remain allowed with failed integrity, or should restoration be required? The
+latter loses accepted scope and needs a Maintainer-approved Scope delta.
 
 ### 8. Nested Git paths during upgrade — delivered
 
@@ -221,14 +216,31 @@ delivered refusal of malformed, nested or crossed generated markers before
 planning, inventory or lock changes, including an empty roster. Inline, indented
 and blockquoted mentions remain prose. Edited markers require reconciliation.
 
-### 20. Pass local API credentials to the dispatcher — awaiting Decision
+### 20. Pass local API credentials to the dispatcher — delivered
 
-**Recommend accept as revised:** the [reviewed proposal](../proposals/2026-10-30-codex-api-dispatch-credentials.md)
-passes only policy-declared local credentials to the local API child. Both
-reviews recommended proceeding; the plan must define a verified policy-loading
-path and negative tamper test, preserving engine verification before credential
-use. A heavy plan and ordinary and Security plan reviews are required if
-accepted. Delivery and isolation mutations are proposed, not yet measured.
+The [accepted proposal](../proposals/archive/2026-10-30-codex-api-dispatch-credentials.md)
+and [plan](../plans/archive/2026-10-30-api-dispatch-credentials.md) record
+delivery.
+
+### 21. Plan evidence and sidecar rules — delivered
+
+The [accepted proposal](../proposals/archive/2026-10-30-codex-plan-evidence.md)
+and [plan](../plans/archive/2026-10-30-plan-evidence.md) record the
+single-plan default and evidence rules.
+
+### 22. VER-5 installation coverage — awaiting Decision
+
+The [reviewed proposal](../proposals/2026-10-30-codex-ver-5-coverage.md)
+adds six multi-script modules to the install test. The original single traversal
+remains undelivered; upgrade selection is not compared. **Decide** whether this
+smaller outcome suffices, retain original scope, or seek further comparison.
+
+### 23. Reduce template burden — awaiting Decision
+
+**Recommend accept as revised:** the [reviewed proposal](../proposals/2026-10-30-codex-template-burden.md)
+trims four existing templates and corrects a contradiction. Installed guidance
+must remain usable; the plan compares burden before and after, preserving
+obligations and machine consumers. Heavy plan and Security reviews are required.
 
 ## Issue triage, staffing and close-out
 
