@@ -344,7 +344,7 @@ the requirement for its separate proposal remain.
 
 The complete phase-duration output and final summary from the failed
 certification, and both scoped phase reports, are retained under
-`dev/proposals/2026-10-29-codex-certification-cost-audit/` as
+`dev/proposals/archive/2026-10-29-codex-certification-cost-audit/` as
 `certification-durations.txt`, `scoped-baseline.txt`, and
 `scoped-session.txt`. These are extracts: session headers and the complete
 duration sections through the final summary, omitting progress and unrelated
@@ -369,9 +369,9 @@ Assurance path: standard (declared)
 
 **Foundations**
 
-1. **Should this happen as framed?** Yes: reusing one real installation per profile removes repeated setup without deleting a behavioral node, and the recorded scoped observations justify a bounded implementation rather than another audit. -- `bootstrap/tests/test_review_sweep_ships.py:318-342`; `dev/proposals/2026-10-29-codex-certification-cost-audit/scoped-baseline.txt`; `dev/proposals/2026-10-29-codex-certification-cost-audit/scoped-session.txt`.
+1. **Should this happen as framed?** Yes: reusing one real installation per profile removes repeated setup without deleting a behavioral node, and the recorded scoped observations justify a bounded implementation rather than another audit. -- `bootstrap/tests/test_review_sweep_ships.py:318-342`; `dev/proposals/archive/2026-10-29-codex-certification-cost-audit/scoped-baseline.txt`; `dev/proposals/archive/2026-10-29-codex-certification-cost-audit/scoped-session.txt`.
 2. **Best alternative.** Keep module scope and accept the repeated installations. That retains isolation but pays for recreating read-only trees whenever shuffled items return to this module; session scope is the smaller change than removing checks or changing the shuffle. -- `bootstrap/tests/conftest.py:239-252`; `bootstrap/tests/test_review_sweep_ships.py:345-375`.
-3. **What would show it wrong.** Withdraw this mechanism if any fixture consumer needs a fresh tree, shared state changes outcomes, repeated scoped comparisons lose the gain, or targeted installed-content faults stop failing beside a green control. -- proposal `## Concrete revision`; `dev/proposals/2026-10-29-codex-certification-cost-audit/fault-controls.txt`.
+3. **What would show it wrong.** Withdraw this mechanism if any fixture consumer needs a fresh tree, shared state changes outcomes, repeated scoped comparisons lose the gain, or targeted installed-content faults stop failing beside a green control. -- proposal `## Concrete revision`; `dev/proposals/archive/2026-10-29-codex-certification-cost-audit/fault-controls.txt`.
 
 F2 is closed: the family and mechanism are now concrete before the first Decision. The withdrawal ledger replaces only the unidentified-family wording; the ranking, real installs, controls, protection obligations and negative-result stop remain.
 
@@ -398,7 +398,7 @@ to session scope, retaining every existing node and one real
 shipped profile. The retained certification phase report ranks the families;
 the scoped comparison and installed-content fault probes support this choice
 but do not establish timing stability or complete fault coverage. They are in
-`dev/proposals/2026-10-29-codex-certification-cost-audit/`. The failed full
+`dev/proposals/archive/2026-10-29-codex-certification-cost-audit/`. The failed full
 run is not certification.
 
 If accepted, use a reviewed plan naming exact nodes and real entry points.
