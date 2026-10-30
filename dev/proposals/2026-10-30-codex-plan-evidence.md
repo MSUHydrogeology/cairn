@@ -1,7 +1,7 @@
 # Keep plan evidence necessary and concise
 
 **Author**: Codex gpt-6.1-terra (proposal author)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -107,3 +107,14 @@ No security blocker found. Accepting concise agent summaries leaves independent 
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Maintainer -- 2026-10-30
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Tier**: heavy
+
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim:
+
+> "Accept and scribe"
