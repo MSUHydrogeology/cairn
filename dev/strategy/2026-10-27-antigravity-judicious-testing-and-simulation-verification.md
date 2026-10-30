@@ -149,3 +149,36 @@ not read.
 - Kurtz et al. (2014), mutant subsumption, doi:10.1109/ICSTW.2014.20
 - Chen et al. (2018), metamorphic testing, doi:10.1145/3143561
 - Oberkampf & Roy (2010), *Verification and Validation in Scientific Computing*, doi:10.1017/CBO9780511760396
+
+## Code review -- Claude Sonnet 5.5 -- 2026-10-30
+
+**Temporary**: the author folds accepted findings into the note and removes this section.
+
+Reviewed commit: 8f514e05...
+
+**Foundations**
+1. Does it do what it claims? Yes today: `python tools/test_tiers.py check` places 132 of 132 top-level files; the module and its self-hosted copy are byte-identical (ledger 1, 8).
+2. Simpler or safer build: the same tool with `rglob` and a stricter config loader (findings 1, 3).
+3. What breaks it: a test in a subfolder (ledger 2).
+
+**Findings**
+1. Non-blocking: the check only globs the top level, but pytest collects subfolders. A `bootstrap/tests/sub/test_x.py` is collected and passes `check`. The queued v0.7 move into tier folders makes this real. Satisfier: `rglob`, plus one test.
+2. Non-blocking: `test_verify_*` puts `test_verify_counts` and `test_verify_stems` (a count verifier and a hygiene script) in `security`. Satisfier: name `test_verify_integrity` and `test_verify_ref` instead.
+3. Non-blocking: an empty tier passes `check`; a tier without `patterns` ends in a KeyError. Satisfier: reject both in `load_tiers`.
+4. Non-blocking: the module says not to pin document wording, while Cairn's contract tier pins shipped wording. Satisfier: one sentence saying shipped prose is a product.
+
+**Falsification ledger**
+1. `check` on commit: ok.
+2. Subfolder test: escapes.
+3. `*_test.py` file: escapes; pytest's defaults collect it.
+4. Empty tier: passes.
+5. Missing `patterns` key: traceback.
+6. Catch-all `test_*` pattern: passes by design.
+7. `test_Zed.py`: unplaced, caught.
+8. `grep` of `templates/` for conflicting test guidance, and for vendor names: none.
+9. Spot-check of 19 docstrings: two misplaced (finding 2).
+10. 14 pytest files, 347 passed, Python 3.13.13, detached worktree, since removed.
+
+**Bounding**: ACCEPTED
+
+Not covered: the other 64 template-reading files, the full suite, and mutation of `classify`.
