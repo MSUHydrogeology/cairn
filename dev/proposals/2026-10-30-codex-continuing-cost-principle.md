@@ -1,7 +1,7 @@
 # Deliver useful work without accumulating avoidable burden
 
 **Author**: Codex (runtime model identifier unavailable; Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
@@ -160,3 +160,40 @@ under the Maintainer's in-place rewrite instruction.
 ## Assurance path
 
 **Assurance path**: high-assurance — governing doctrine and security-review rules.
+
+## Review -- Claude Fable 5.1 -- 2026-10-30
+
+```
+Reviewed commit: b0de548cfa1cf976aa7151cffb8211ff4c0e4def
+Target: whole proposal; the Security Review is a separate pass
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised (4 blocking, 4 non-blocking)
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** The four issue remedies, yes. The governing block and the cost record, no: the block restates anchor 17 and the scope floor, and the cost record is the accounting the proposal's own Signals section names as the sign it is wrong. -- `doctrine/rationale.md:368-394`, `AGENTS.md:228-246`.
+2. **Best alternative.** Split. One proposal carries the four remedies, each with the sentence it replaces (the issues hold the wording); the principle and the observation go to a second artifact. Nothing is lost; the cost is one more Decision. -- `dev/proposals/_template.md:183-185`.
+3. **What would show it wrong.** A cost line reading "tokens unknown", which the author's own commit already records; or a gap on a second Security Review pass that never reaches the Maintainer. -- `git show b0de548c`; issue #36.
+
+Strongest reading: end review loops and unread evidence without letting economy become a scope cut. "Unfinished work is not a saving" does that well.
+
+**Blocking**
+
+* **B1. The evolution gate is not cleared.** `doctrine/rationale.md:461-485` requires high-risk classification, recurrence or synthesis; the proposal names none. Four same-shape reports in one month probably meet recurrence. Satisfier: the Response says so, or the Maintainer classifies at Decision.
+* **B2. The Observe paragraph contradicts the proposal.** "No new machinery" against a cost sentence at six steps; "later budgets" names budgets the proposal does not create; Signals lists "more accounting appears" as the sign it is wrong. Measured: the author's commit records 20m19s "including in-turn clarifications" and "total token consumption unknown". Satisfier: drop the paragraph, or confine the sentence to the verification record that already carries timing (`dev/plans/_template.md:355`). The Maintainer instructed this content; dropping it is their call.
+* **B3. The replaced text is unnamed.** "Replace fragmented cost/reuse advice" reaches eleven files, with no sentence named. A reviewer cannot disagree with an edit not shown; the block adds about 170 words to a 6,017-word file every agent loads. Satisfier: per file, the sentences replaced and the net word change.
+* **B4. #37 has no text.** No replacement for `templates/modules/team-gated/security-review.md:53` ("adds, moves, or widens"). "Existing review reasoning" names no rule that lets anyone strike a declared Security Review, and S4 says cost grants no waiver. Satisfier: the trigger sentence, and who strikes.
+
+**Non-blocking**
+
+* **N5. #36.** List the Maintainer's options after pass two (clear, narrow, accept named residual risk), the lines replaced (`AGENTS.md:34-37`, `doctrine/dual-review.md:222`, `:685`), and that the issue's lower-tier second pass is declined.
+* **N6. #38.** "Beside" loosens Cairn: `templates/core/AGENTS.md:133` already says appended, and `git ls-files dev/reviews` is empty. Satisfier: "appended to the artifact it reviews; never a separate reviews folder."
+* **N7. #39.** The summary must name the set and its source (tree, not diff), or "12 of 12" stands when the tree has 14; `bootstrap/tests/test_review_and_verification_rules_ship.py:102-109` pins the old wording. The 30-line ceiling changes nothing today (0 of the last 150 bodies exceed it); say whether a verbatim Decision quote yields to it.
+* **N8. Plain Language.** Fourteen slash-compounds ("inside/beside"), "whittling", 998 of 1,000 words: the "unreadable compression" its own smoke check names. Rules 5 and 7.
+
+**Coverage.** Covered: lens 1 (the commands cited), 3 (B3, B4), 5 (`security-review.md`, `dual-review.md`, the pinning test, v0.5.0), 7 (gate, who strikes), 8 (bundling). Not covered: S1-S5, which answer assertions, not the template's five questions (the Security Review's pass); the research sources; any test run; whether a two-pass cap would have ended the #36 chains.
