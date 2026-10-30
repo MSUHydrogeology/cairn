@@ -126,11 +126,14 @@ verification and the separate Maintainer-run AST ceremony remain.
 ### 9. Prepare the handoff before pruning — accepted
 
 The [archived proposal](../proposals/archive/2026-10-29-codex-handoff-prune.md)
-and [plan](../plans/2026-10-30-handoff-preparation.md) are accepted; the plan
-is `ready-to-implement`. Add non-pruning preparation with capture prompts and
-preview; retain `--handoff` as guarded user-run deletion. Preparation cannot
-prove sessions are quiet; the user establishes quiet before pruning. Implementation
-verification and the doctrine-evolution gate before doctrine edits remain.
+and [archived plan](../plans/archive/2026-10-30-handoff-preparation.md) are
+accepted; implementation is complete. It adds non-pruning preparation with
+capture prompts and preview, retaining `--handoff` as guarded user-run
+deletion. Preparation cannot prove sessions are quiet; the user establishes
+quiet before pruning. The
+implementation verification and reviews are complete. The doctrine-evolution
+trigger was not established; the Maintainer allowed the approved scope to
+proceed, as recorded in the plan.
 
 ### 10. Bind the interpreter in Git's per-worktree administration — accepted
 

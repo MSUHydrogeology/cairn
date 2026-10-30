@@ -1,7 +1,7 @@
 # Plan: Prepare handoff before user pruning
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-handoff-prune.md
-**Status**: awaiting-code-review
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30
@@ -366,3 +366,25 @@ single-owner invariants, plan C1). No finding needs a satisfier.
 **Not covered / low confidence**: hostile concurrent filesystem replacement,
 future appender quiet and executable provenance are not established here; the
 existing trust assumptions remain. No full suite or current-repository prune.
+
+
+## Response to code reviews -- Codex gpt-6.1-sol -- 2026-10-30
+
+| Review | Disposition |
+|---|---|
+| Ordinary code review at `8aed53f7` | Accepted; no findings; `Bounding: ACCEPTED`. No revision was required. |
+| Internal Security Review at `ac3716da` | Accepted; no findings; `Bounding: ACCEPTED`. No revision was required. |
+
+Both reviews clear their obligations. The implementation record and the
+reviews agree on the bounded evidence: preparation does not prune, deletion
+remains behind the user's guarded command, and a ledger listing cannot prove
+that a later appender will stay quiet. No new code-review pass was triggered.
+
+
+## Dispositions
+
+Dispositions: none
+
+No deferred follow-up remains homeless. Full-suite certification and any
+current-repository prune were outside this plan's authorized work and are not
+claimed as completed outcomes.
