@@ -68,3 +68,28 @@ Tokens: unknown
 The mapping names the confidentiality class, three baseline nodes, ceremony node and two reanchor nodes, including both orders and standalone controls. The author should record the exact collected order when shuffle is disabled and use the smallest owning manifest selection during iteration; the planned wide final check still owes the frozen-file consequence. This is a speed recommendation, not a removed criterion.
 
 **Covered:** claims and accepted scope (proposal contract, plan Scope); real entry points and design (dispatcher and `REPIN.boot` above); failure controls (C1/C2 and reanchor nodes); cross-document fit and drift (archived-plan path, manifest); lifecycle and satisfier (separate ceremony, Boundary A/B/C). **Not covered / low confidence:** no tests, mutation or full certification run; the suspected import interaction and effective isolation remain to be measured. This pass does not clear Internal Security Review.
+
+## Plan review -- Codex Security (GPT-6) -- 2026-10-30
+
+```
+Reviewed commit: c71a586c
+Target: plan and usual plan review against accepted proposal
+Prior findings: none
+Elapsed: about 2 minutes
+Tokens: unknown
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The plan restores reachability of the real dispatcher and preserves the leak, independent evidence, bad-pin and candidate-execution controls. The real fixture omits the required record fields (`bootstrap/tests/test_security_finding_confidentiality.py::install_dispatcher`); the plan's C1/C2 require the security outcomes.
+2. **Best alternative.** A child process for the real boot gives checked imports a contained lifetime while retaining both committed-object checks (`bootstrap/tests/test_repin_ceremony.py::test_record_check_uses_committed_objects_after_worktree_rewrite`). The plan correctly permits another complete isolation after reproducing the failure.
+3. **What would show it wrong?** An undetected planted leak, accepted bad authority digest, executed candidate preflight, lost post-rewrite check, or order dependence after repair would falsify it (`bootstrap/tests/test_gate_reanchor.py::test_authority_pin_reads_v2_frozen_entry_digest` and `::test_rostered_stage_b_executes_only_preflight_bytes_pinned_by_p`; plan C1/C2).
+
+The separate frozen-file consequence is accurately retained without making repinning or re-anchoring a prerequisite. The mapped wide verification includes owning security and manifest checks, with expected refusal recorded rather than misrepresented as a pass. Use focused selections and reconcile their union to respect guard limits and avoid unnecessary runtime.
+
+**Covered:** input and failure direction (dispatcher fixture and C1); real entry points and trust boundaries (ceremony and reanchor nodes above); alternatives and completeness (Scope and C2); drift and lifecycle (accepted proposal Current contract and plan Verification); domain and satisfiers (no scientific change, C1/C2). **Not covered / low confidence:** no tests, mutation, independent reproduction, historical-anchor comparison, or full certification run; implementation isolation remains to be measured. This clears only the plan's Internal Security Review obligation.
