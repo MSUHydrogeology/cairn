@@ -132,3 +132,26 @@ The changed authority is the instruction text delivered to adopters. The plan ex
 ## Response to plan review -- Codex gpt-6.1-terra -- 2026-10-30
 
 P1: accepted; Verification now maps affected nodes, installed inputs and gate runners. Security Review raised no additional finding. Elapsed: approximately 3 minutes; tokens: unknown.
+
+## Code review -- Codex gpt-6 -- 2026-10-30
+
+Reviewed commit: 2fc884de1b756add61e61816d48aa598590cbe2d
+Target: implementation bf5d566d and Boundary B record at 8d806843
+Prior findings: none
+
+**Findings**: raised
+**Verdict**: REVISE
+**Elapsed**: approximately 3 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** The text removes duplicate inventories while retaining independent falsification, but the tests do not reliably detect their return. -- `dev/agent_collaboration.md` review sweep; C1; finding below.
+2. **Best alternative.** Reuse the existing governing-text checks and add a meaningful forbidden-return control, rather than create a reporting procedure. -- `bootstrap/tests/test_review_stance_in_shipped_files.py`.
+3. **What would show it wrong?** Reintroducing the old governing requirement without a failing check shows C1's forbidden-return assurance is unmet. -- isolated mutation and mapped governing nodes below.
+
+**P1 — Forbidden return survives the mapped checks.** In an isolated copy of 2fc884de, appending `Code review includes a falsification ledger.` to `AGENTS.md` left both mapped governing nodes in `test_review_stance_in_shipped_files.py` and `test_review_and_verification_rules_ship.py` passing: 136 passed under Python 3.13.13. The existing negative control in `test_review_sweep_ships.py::test_adding_a_sixth_ledger_item_is_reported` checks the injected string directly, not the assertion that guards the governing file. C1 requires updated tests to detect forbidden return. Close by exercising the actual absence check against a known-positive forbidden requirement across the affected operative carriers, and record fresh verification.
+
+**Bounding**: WIDER RUN REQUIRED — the mapped checks do not detect the demonstrated forbidden return in governing instructions. Add the relevant control and verify its affected consumers.
+
+**Coverage:** Examined the committed implementation and Boundary B record, challenged the governing instructions and their mapped checks in an isolated copy. Did not rerun Boundary B, inspect every operative carrier independently, or perform Security Review; no full suite or re-anchor was run.
