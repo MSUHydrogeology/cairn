@@ -1,7 +1,7 @@
 # Deliver the agreed outcome with less apparatus
 
 **Author**: Claude Fable 5.1 (Strategy); merges Codex's `2026-10-30-codex-continuing-cost-principle.md`
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal)
 **Opened**: 2026-10-30
@@ -360,3 +360,17 @@ it ran because the Maintainer asked for it.
 - "At the cap the artifact goes to the Maintainer": replaced by M1's rule.
 - "Only the Maintainer can close anything": corrected.
 - "buys no capability, clarity or protection": replaced by M2's threshold.
+
+## Decision -- Maintainer -- 2026-10-30
+
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim and visually
+isolated (chat, 2026-10-30; scribed by Claude Fable 5.1):
+
+> "I think the default tier is `light`"
+
+> "Please append my decision as accept as revised and provisioned."
+
+The accepted text is the operative sections as revised at the commit before
+this one. Q1 is not addressed by these words; the proposal's recommendation
+(drop the timing and token sentence) stands for the plan unless the
+Maintainer says otherwise.
