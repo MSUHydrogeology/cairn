@@ -3195,6 +3195,10 @@ def _apply_upgrade(
             "applied.\n"
             f"  `upgrade --stage` writes plain names only. Remove {_STAGING_REL}/ "
             "(it is rebuilt by `upgrade --stage`), then re-run.")
+    if "directory_observed" not in meta:
+        print("error: staged upgrade lacks directory observations; "
+              "run `upgrade --stage` again before applying.", file=sys.stderr)
+        return 1
     files_dir = stage / "files"
     staged_meta = sorted(meta.get("staged_files", []))
 

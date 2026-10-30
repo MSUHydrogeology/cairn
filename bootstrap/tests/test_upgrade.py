@@ -752,7 +752,7 @@ class TestUpgradeModes:
         (stage / s._STAGE_META).write_text(json.dumps({
             "lock_commit": lock["cairn_commit"], "tokens": lock["tokens"],
             "modules": lock["modules"], "staged_files": ["AGENTS.md"],
-            "ours_hashes": {}, "has_conflicts": True,
+            "ours_hashes": {}, "has_conflicts": True, "directory_observed": [],
         }))
         rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
                      "--cairn-root", str(CAIRN_ROOT)])
@@ -2436,8 +2436,9 @@ class TestTrackedDirectoryCollisions:
         assert not (tmp_path / "dev/.cairn-upgrade/review-only/AGENTS.md.ours").exists()
         assert (dst / "nested.txt").read_bytes() == b"preserve"
 
+    @pytest.mark.parametrize("old_stage", [False, True])
     def test_noop_tracked_file_becoming_directory_blocks_apply(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], old_stage: bool,
     ) -> None:
         assert _install(tmp_path) == 0
         TestUpgradeModes()._diverge_base(tmp_path)
@@ -2450,6 +2451,9 @@ class TestTrackedDirectoryCollisions:
                    if r["dst"] in meta["directory_observed"]
                    and r["dst"] not in meta["staged_files"]
                    and (tmp_path / r["dst"]).is_file())
+        if old_stage:
+            del meta["directory_observed"]
+            (stage / s._STAGE_META).write_text(json.dumps(meta))
         dst = tmp_path / rec["dst"]
         dst.unlink()
         dst.mkdir()
@@ -2463,7 +2467,10 @@ class TestTrackedDirectoryCollisions:
         rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
                      "--force", "--ack-review-only",
                      "--cairn-root", str(CAIRN_ROOT)])
-        assert rc == 1 and "became directories" in capsys.readouterr().err
+        err = capsys.readouterr().err
+        assert rc == 1
+        assert ("lacks directory observations" if old_stage else
+                "became directories") in err
         assert content.read_bytes() == b"preserve"
         assert content.stat().st_mode == before.st_mode
         assert content.stat().st_mtime_ns == before.st_mtime_ns
