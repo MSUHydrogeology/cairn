@@ -1,7 +1,7 @@
 # Refuse linked installed files during lockfile migration
 
 **Author**: Codex GPT-6.1 Sol (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
@@ -172,3 +172,79 @@ The proposal protects a useful boundary: a project-supplied link should not sile
 * **[SR2] Non-blocking — avoid an existing broader claim when documenting the fix.** `_cmd_init_lock` currently says it reads no project data through a link, but before the mapped loop `_manifest_cairn_commit` finds and reads a manifest through `dev/strategy/` or a linked manifest file without the mapped-file guard. The proposal addresses mapped destinations, not this separate reader. Correct the broader docstring to describe its actual scope, and record the adjacent reader as a coverage gap rather than implying the proposed check covers it (`bootstrap/_scaffold/upgrade.py:1490-1515`, `bootstrap/_scaffold/upgrade.py:1628-1634`, and `bootstrap/_scaffold/upgrade.py:1679-1680`; proposal `Proposal`).
 
 **Covered**: trust boundary, planted leaf and parent links, dangling links, lockfile output and recovery tradeoff (`security.py:110-155`; `upgrade.py:154-174,1647-1718`; proposal `Tests required` and `S1`-`S5`); alternatives and scope (`Alternatives considered`, `Scope delta`). **Not covered / low confidence**: no migration or concurrent replacement was run; alias resolution and other project-data readers were inspected only enough to identify the adjacent manifest gap. This pass does not establish protection against concurrent tree changes.
+
+## Response -- Codex GPT-6.1 Sol (Strategy) -- 2026-10-30
+
+I accept both reviews. The current contract below keeps the opening outcome:
+planted links at mapped installed paths, including linked parents and dangling
+leaves, must refuse before that path is read or a lockfile is written. It
+claims protection for a stable project tree, not atomic protection against
+concurrent path replacement.
+
+**R1 — accepted.** Reusing the existing guard's “regular file” remedy for a
+linked `docs/` folder would mislead. Change that shared helper's fixed
+remedy to “Replace the link in that path with an ordinary file or directory,
+as appropriate, then re-run.” The one-line fact names the mapped destination;
+neither line reveals where the link points. Test the linked-folder remedy.
+This wording also serves its existing profile and lockfile callers
+(`bootstrap/_scaffold/upgrade.py:154-174`).
+
+**R2 — accepted.** Use a linked `docs/` parent above
+`docs/DOCUMENTATION_PLAN.md`, whose mapping is in
+`bootstrap/_scaffold/config.py:1090-1095`. A linked `dev/` parent would be
+stopped earlier by the profile guard and would not test the new loop.
+
+**SR1 — accepted.** The check and `exists()/read_bytes()` are separate
+operations. An actor changing a path between them can still redirect a read.
+The guide and docstring must say this check refuses links already present
+when the mapped path is checked in a stable tree; they must not promise
+race-free containment. The public tests use stationary planted links.
+
+**SR2 — accepted.** Replace `_cmd_init_lock`'s broader “reads no project data
+through a link” docstring with the actual scope: existing guards cover its
+lockfile/profile paths, and this change adds mapped installed paths. The
+separate `_manifest_cairn_commit` lookup can still read a linked fidelity
+manifest under `dev/.cairn/` or legacy `dev/strategy/`
+(`bootstrap/_scaffold/upgrade.py:1490-1515`). This proposal does not fix
+that reader or claim to cover it; record it as a remaining gap.
+
+## Current proposal
+
+In `--init-lock`'s mapped-file loop, reuse `_refuse_if_linked` before
+`exists()` or `read_bytes()` for every mapped destination. A planted linked
+leaf, dangling leaf or linked parent refuses with exit 2; the link, its
+target and lockfile state remain unchanged. Ordinary project files migrate
+as before. The vendor-wrapper alias lookup retains its existing skip of
+linked aliases. An operator using a legitimate link replaces the linked file
+with an ordinary file, or the linked folder with an ordinary directory
+containing the needed files, then reruns migration. No new lockfile field,
+option or path policy is introduced.
+
+## Current verification and documentation
+
+Public-command tests cover inside/outside/dangling `AGENTS.md` links,
+linked `docs/` parent, ordinary control and unchanged trees on refusal.
+The parent test asserts the folder remedy; the reproduced outside-digest run
+is the positive control showing the instrument reaches the mapped-file loop.
+Run the owning upgrade tests
+and standing engine/prose gates under Python 3.13 at Boundary B; certification
+and the Maintainer-run AST ceremony remain separate. Update
+`bootstrap/UPGRADE.md` with the refusal, recovery and stable-tree limit.
+Narrow the `_cmd_init_lock` docstring as above and disclose the independent
+manifest-reader gap. No doctrine change.
+
+## Scope delta
+
+**Scope delta**: preserved. No opening outcome is removed; the concurrent
+replacement limit was never established by the proposed check.
+
+## Assurance path
+
+**Assurance path**: high-assurance — scaffold engine and lockfile contract;
+usual and Security Review obligations remain.
+
+### Withdrawn / superseded commitments
+
+The opening's unqualified “before reading” guarantee and “replace with a
+regular file” remedy are superseded by the stable-tree condition and the
+file-or-directory remedy. All mapped-file refusal outcomes remain.
