@@ -1,7 +1,7 @@
 # Plan: Bind the interpreter in per-worktree Git administration
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-git-interpreter-binding.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30
@@ -112,3 +112,27 @@ is authorized by this plan.
 Boundary C independently falsifies the reviewed change and verification record;
 its reviewer records bounding and a targeted ledger, without running the full
 suite.
+
+
+## Plan review -- Codex gpt-6.1-sol -- 2026-10-30
+
+```
+Reviewed commit: 49e6a59123b88bf954d1b5ee4e7a6a6ba2b0fc05
+Target: opening plan and accepted proposal contract
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+
+**Foundations**
+
+1. **Should this happen as framed?** The outcomes follow the Decision, but the test and consumer mapping must be finished before implementation so this review can assess its coverage -- plan Scope and Verification; `dev/plans/_template.md` > Verification.
+2. **Best alternative.** Keep the two chunks, but complete the reference inventory and map affected consumers to checks now; this preserves all accepted outcomes without another implementation chunk -- plan Sequence and Verification.
+3. **What would show it wrong.** A no-repository install changes an ancestor binding, an unsafe path launches or escapes containment, or a required native Windows case cannot be demonstrated -- plan Acceptance criteria C1–C2.
+
+**P1 -- blocking: finish the reviewed verification mapping.** Scope defers the reference inventory until implementation, and Verification adds unspecified “readers found by inventory.” The template requires the mapping before implementation, and the accepted proposal requires readers, writers and consumers mapped in the plan. The named families and behavioral list do not establish which existing consumers or shipped copies are covered, nor the commands that exercise the new entry-point and mutation checks. **Satisfier:** run the stated inventory against the committed tree, account for affected readers and shipped copies, and name their test files or nodes and executable commands (including the control and mutant check); identify any uncovered surface and its required check. This retains the accepted scope and lets the author respond without another plan review.
+
+**Coverage:** accepted contract and Decision, repository-less and nested targets, supported Git layouts, refusal and native Windows acceptance: plan C1–C2 and proposal Current contract; verification and lifecycle: plan Verification and `dev/plans/_template.md`. **Not covered:** no implementation or native Windows evidence exists; no tests were run. The separate Internal Security Review remains open.
