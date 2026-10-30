@@ -27,10 +27,14 @@ Read `AGENTS.md`, the current strategy and proposal templates,
 `dev/plans/archive/corpus-tier-cost.md`, and the existing judicious-testing
 strategy at `dev/strategy/2026-10-27-antigravity-judicious-testing-and-simulation-verification.md`.
 Inspect `bootstrap/tests/conftest.py` and search existing timing evidence before
-building instrumentation. A standard-library JSON read of
-`dev/measurement/suite-runs.jsonl` found 188 records; its last record ends
-2026-08-26. Those records include per-file timing but cannot identify today's
-slowest family. The local canonical interpreter reports Python 3.13.13.
+building instrumentation. An optional, ignored local timing log named
+`suite-runs.jsonl`, observed in the local measurement directory on 2026-10-29,
+contained 188 records; its last record ended 2026-08-26. This log is not tracked
+and is absent from a clean clone. Its per-file timings are local observations,
+not reproducible evidence supplied by this repository, and cannot identify
+today's slowest family. The recommendation instead rests on the committed
+roadmap timing and corpus-cost record cited above. The local canonical
+interpreter reports Python 3.13.13.
 
 No suite was run for this exploration. The findings would change if current
 per-family timing showed that cost is broadly distributed or dominated by work
