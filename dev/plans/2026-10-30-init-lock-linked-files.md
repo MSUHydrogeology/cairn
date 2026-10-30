@@ -162,3 +162,19 @@ Ran the eight owning guide-reader nodes named or implied by review `16031339` wi
 **R1 closed.** The addendum records a clean isolated clone of `89206da8`, Python 3.13.13, and 8 passed guide-reader nodes. The five named test files contain exactly the eight guide-reading nodes enumerated there (`test_install_time_onboarding.py:371,383`; `test_review_stance_in_shipped_files.py:1481,1496`; `test_upgrade_removes_retired_files.py:1772`; `test_verify_integrity.py:1438,1445`; `test_next_session_local_note.py:538`). `git diff 89206da8 HEAD` shows no change to the four implementation surfaces. The original code review's wider-run request is satisfied; its public-path falsification remains applicable. **Bounding**: sufficient for the ordinary code review. Separate Internal Security Review remains owed.
 
 **Covered**: R1's named reader set, addendum SHA, interpreter, clean state and result, unchanged implementation surfaces. **Not covered / low confidence**: I did not rerun the author's eight checks, concurrent path replacement, full-tree certification or re-anchor.
+
+## Code review -- Codex GPT-6.1 (Internal Security Review) -- 2026-10-30
+
+**Reviewed**: implementation `89206da8`, Boundary B `46a5a191` and `d2e805c6`, ordinary review `16031339` and disposition `ddcbb32f`. **Elapsed**: approximately 4 minutes; **Tokens**: unknown.
+
+**Obligation**: Internal Security Review. **Tier**: Internal Security Review. **Verdict**: ACCEPT. **Bounding**: sufficient for the accepted stable-tree scope. **Findings**: none.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The mapped-path check precedes both existence and byte reads (`bootstrap/_scaffold/upgrade.py:1793-1800`); public refusal and ordinary-file controls passed.
+2. **Best alternative.** Reuse the component and containment checks (`bootstrap/_scaffold/security.py:110-155`) rather than introduce a separate policy; atomic reads would address the explicitly excluded concurrent-replacement threat.
+3. **What would show it wrong?** A planted leaf or parent link reaching the read, a refusal changing either tree, target disclosure, or a regular file failing its digest check would defeat C1 (`bootstrap/tests/test_upgrade_refuses_hostile_project_data.py:357-418`).
+
+**Falsification ledger.** In an isolated copy of `89206da8`, Python 3.13.13, the five public mapped-link and ordinary-digest cases passed. Removing the mapped guard produced four failures: outside leaf, inside leaf, dangling leaf and linked parent all escaped refusal. Mutation total 1, killed 1, survivors 0, measured equivalents 0; unmutated control 5 passed. The test exercises the public command and snapshots (`test_upgrade_refuses_hostile_project_data.py:357-418`). Boundary B's mapped families and guide-reader addendum are recorded at `46a5a191` and `d2e805c6`; the ordinary reviewer closed the reader gap at `ddcbb32f`.
+
+**Covered**: trust boundary and failure order (`upgrade.py:156-175,1793-1823`; `security.py:110-155`); public entry, target secrecy, snapshots and recovery (`test_upgrade_refuses_hostile_project_data.py:357-418`); alias behavior and documentation limits (`upgrade.py:1531-1580,1732-1742`; `bootstrap/UPGRADE.md`); accepted scope and verification evidence (C1, Boundary B). **Not covered / low confidence**: concurrent replacement, each destination independently mutated, unrelated upgrade operations, full-tree certification and re-anchor; the separately disclosed manifest reader remains outside this guard.
