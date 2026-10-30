@@ -162,3 +162,15 @@ Ordinary review found no findings. Accepted Security Review advice: Scope and C1
 3. **What would show it wrong?** A valid poisoned cache executing, substituted modules being accepted, or completeness failing because module metadata changed. In a separate archive of `1e849d4a`, Python 3.12.9 ran the engine-tamper and invalid-policy selection: **3 passed in 0.46 seconds**. A targeted loader probe placed valid unchecked-hash poison caches beside all four engine sources: local-name derivation and completeness still succeeded. Four private module substitutions, wrong loader name/path, and namespace cleanup also behaved as required.
 
 **Coverage**: Inspected the two loader diffs and falsified cache, substitution and metadata failure paths. Prior credential/environment review stands. Did not repeat the owning families, run Bandit, exercise Windows or conduct Boundary B; post-fix integration remains the author's obligation.
+
+## Targeted code review -- Codex GPT-6 -- 2026-10-30
+
+**Reviewed commits**: `2ccfc076` and `1e849d4a`. **Verdict**: PROCEED; no new findings. **Elapsed**: approximately 1 minute. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should it happen as framed?** Yes. The replacement compiles source directly and restores the `__file__` metadata the engine needs for completeness checks.
+2. **Best alternative.** Keep the source loader: the normal loader may use cached bytecode, and the previous explicit execution triggered the required scanner.
+3. **What would show it wrong?** A configured dispatch failing or missing credentials being mishandled after the change. On a separate archive of `1e849d4a`, these two targeted tests passed under Python 3.12.9 in 1.14 seconds.
+
+**Coverage**: Inspected both loader diffs and exercised configured and missing-credential dispatch. Did not repeat the Security review's cache probes, scanner or Windows checks; Boundary B remains the author's responsibility.
