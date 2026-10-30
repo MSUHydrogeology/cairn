@@ -65,11 +65,8 @@ The detailed evidence and authorizations below are retained from the queue.
 Overlapping summary rows above are one scope, not additional work. A
 row may close earlier through its own lifecycle.
 
-* **Close GitHub #2 and #8 now that their fixes are pushed (0.5.0).** The local
-  neutrality/slot-note work and #8's engine half (`dev/plans/archive/engine-batch-f8-slots.md`)
-  are archived and pushed; this is tracker follow-through, and closing an issue is
-  the Maintainer's. #16 was already closed before its paragraph landed; changing its
-  closure reason is the Maintainer's choice.
+Issue #16 was already closed before its paragraph landed; any change to its
+closure reason remains the Maintainer's choice.
 * **Cold bootstrap acceptance run against the pushed release tag (`v0.5.0`).** Run the
   bootstrap block cold against the pushed tag using a machine and roster not
   supplied by this repository (`dev/plans/archive/release-authenticity.md`,
