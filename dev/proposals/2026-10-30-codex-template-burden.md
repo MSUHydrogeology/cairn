@@ -1,7 +1,7 @@
 # Reduce template reading and authoring burden
 
 **Author**: Codex (gpt-6.1-terra), proposal author
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
