@@ -39,3 +39,28 @@ C1: With a complete profile and no lockfile, stationary inside and outside `AGEN
 Boundary A: run `python -m pytest bootstrap/tests/test_upgrade_refuses_hostile_project_data.py` for public refusal and ordinary controls; `python -m pytest bootstrap/tests/test_upgrade.py::TestInitLock bootstrap/tests/test_upgrade.py::TestInitLockFullProfile bootstrap/tests/test_lockfile_provenance.py` for migration, vendor alias and lockfile consumers; `python -m pytest bootstrap/tests/test_upgrade_lockfile_path_containment.py bootstrap/tests/test_upgrade_module.py` for the shared refusal and engine surface. Search changed files for other readers and byte pins, then run their owning checks. For the behavior-table change, include `python -m pytest bootstrap/tests/test_security_leaf.py`. Run `python scripts/quality_gate.py --sub neutrality --sub redundancy`, `python scripts/claim_check.py` on each changed Markdown file, `python scripts/check_cairn.py`, and `python scripts/link_check.py`. Run `python scripts/sync_doc_snippets.py --check` if its trigger shows the guide contains a synced block. On an isolated copy, compare the unmutated public test with a mutation removing the mapped-file guard; report control, killed/survived result and any equivalence with evidence. Exercise the public `bootstrap/scaffold.py upgrade --target <scratch-repo> --init-lock` refusal and regular control.
 
 Boundary B: **wide**, because the scaffold engine and lockfile migration are protected contract surfaces. After the last implementation commit, repeat the mapped owning families, public command cases and standing engine/prose gates on one unchanged clean commit under canonical Python 3.13.x. Record SHA and range, clean pre/post state, interpreter, commands and counts, elapsed time, tokens or `unknown`, non-pass disposition, omissions and `Certified by: pending`. Boundary C is independent targeted falsification by a different code reviewer, with a bounding verdict; a separate Security Review remains owed. Full-tree certification and the Maintainer's AST re-anchor are separate ceremonies, not per-plan checks.
+
+## Plan review -- Codex GPT-6 (Internal Reviewer) -- 2026-10-30
+
+```
+Reviewed commit: 45cd0c2f7b7249c3e982363079b1d19383041a1a
+Target: Source proposal through Verification
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: ACCEPT WITH ADVICE
+**Elapsed**: 8 minutes; **Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The plan preserves the accepted stable-tree refusal and names the independent manifest-reader limit; the mapped loop currently reaches `exists()` and `read_bytes()` without a link check -- proposal Decision at `06af4aeb`; `bootstrap/_scaffold/upgrade.py:1679-1718`.
+2. **Best alternative.** One guard in the mapped loop and a corrected shared remedy is simpler than a new path policy and delivers the same outcomes -- `bootstrap/_scaffold/upgrade.py:154-174`; `bootstrap/_scaffold/security.py:110-155`; plan Scope.
+3. **What would show it wrong.** A public outside-link run still hashing the target, a dangling or `docs/` link passing, a changed snapshot, or an ordinary migration failing would defeat the plan -- plan Acceptance criteria; `bootstrap/tests/test_upgrade_refuses_hostile_project_data.py:270-349`.
+
+**Advice R1 — update existing remedy assertions with the shared wording.** Five assertions in `test_upgrade_refuses_hostile_project_data.py` require the old phrase “Replace it with a regular file”; the accepted file-or-directory remedy will make them fail even when the new refusal works. Update those existing assertions to check the actionable remedy alongside the new cases. This is within the named test file and Boundary A command; it does not widen scope (`bootstrap/tests/test_upgrade_refuses_hostile_project_data.py:291`, `:318`, `:387`, `:501`, `:941`).
+
+**Covered**: claims and fail-closed order (`upgrade.py:154-174,1679-1718`); public path and edge cases (`test_upgrade_refuses_hostile_project_data.py:270-349`); design and reuse (`security.py:110-155`; plan Scope); document drift (`UPGRADE.md:430-441`; `SECURITY_MUTATIONS.md:120`); lifecycle, scope and satisfier (proposal Decision; plan Sequence, Acceptance criteria, Verification; R1). **Not covered / low confidence**: no implementation, mutation, public run or concurrent replacement was exercised; the separate Internal Security Review remains owed.
