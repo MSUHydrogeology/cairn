@@ -1,7 +1,7 @@
 # Find a safe test-family speed improvement
 
 **Author**: Codex (GPT-6, proposal author)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual
 **Plan review**: required(Internal)
 **Opened**: 2026-10-29
@@ -352,3 +352,33 @@ failure tracebacks. `fault-controls.txt` retains counts and failing nodes,
 including the initial surviving pointer probe; traceback details are omitted.
 The complete original report remains temporarily at the path above; the
 retained report contains every reported phase, not its failure tracebacks.
+
+
+## Review -- Codex (GPT-6.1 Sol), Proposal reviewer -- 2026-10-30
+
+```
+Reviewed commit: eb8567aa83d4c48ebf5cf3db4efdd765f297a9e8
+Target: Concrete revision and Evidence retention
+Prior findings: F2 (concrete choice before first Decision)
+Assurance path: standard (declared)
+```
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: reusing one real installation per profile removes repeated setup without deleting a behavioral node, and the recorded scoped observations justify a bounded implementation rather than another audit. -- `bootstrap/tests/test_review_sweep_ships.py:318-342`; `dev/proposals/2026-10-29-codex-certification-cost-audit/scoped-baseline.txt`; `dev/proposals/2026-10-29-codex-certification-cost-audit/scoped-session.txt`.
+2. **Best alternative.** Keep module scope and accept the repeated installations. That retains isolation but pays for recreating read-only trees whenever shuffled items return to this module; session scope is the smaller change than removing checks or changing the shuffle. -- `bootstrap/tests/conftest.py:239-252`; `bootstrap/tests/test_review_sweep_ships.py:345-375`.
+3. **What would show it wrong.** Withdraw this mechanism if any fixture consumer needs a fresh tree, shared state changes outcomes, repeated scoped comparisons lose the gain, or targeted installed-content faults stop failing beside a green control. -- proposal `## Concrete revision`; `dev/proposals/2026-10-29-codex-certification-cost-audit/fault-controls.txt`.
+
+F2 is closed: the family and mechanism are now concrete before the first Decision. The withdrawal ledger replaces only the unidentified-family wording; the ranking, real installs, controls, protection obligations and negative-result stop remain.
+
+The source supports the isolation premise. The fixture creates separate temporary trees for all globbed profiles through the actual CLI. Its four consuming tests read files; the deletion probe changes a string, and placeholder scanning reads the tree. A repository search for the module name, imports of `installs`, and fixture definitions found no additional consumer of this fixture. Session scope changes lifetime, so the plan must still check that inventory and exercise shuffled interleaving; these are implementation acceptance checks, not reasons for another proposal.
+
+The fault evidence is meaningful but bounded: lens deletion, corrected pointer deletion and an unknown placeholder each fail installed-content nodes across the three profiles. The initial surviving pointer probe is disclosed rather than counted as protection. The retained green scoped control and failing-node extracts support choosing this mechanism; they do not establish repeated timing stability or complete fault coverage.
+
+Protection is not silently removed: `bootstrap/tests/fixtures/protected_test_roster.json` lists this path as ordinary while also retaining its effective frozen hash, and `bootstrap/tests/fixtures/gate_manifest.json:7817` still freezes it. The proposal explicitly preserves that ceremony and authorizes no manifest change or baseline installation. The plan must respect the installed state when sequencing this one-file edit.
+
+**Covered**: claims and drift (retained scoped reports); real paths, design and silent failure (fixture and four consumers above; fault controls); cross-document fit and lifecycle (installed roster, gate manifest and F2 closure); domain scope (no scientific result changed); satisfier (one fixture-scope change, all nodes retained). **Not covered / low confidence**: no tests or mutations rerun, no full-suite timing claim, no independent timing-stability measurement, and no ceremony execution or protection transition verified. This is a proposal read of committed bytes, not implementation verification.
