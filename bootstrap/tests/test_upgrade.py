@@ -1287,6 +1287,26 @@ class TestInitLock:
         for rel, raw in _ancestors_before.items():
             assert (tmp_path / rel).read_bytes() == raw
 
+    def test_review_inventory_theirs_excludes_local_edit_when_roster_matches(
+        self, tmp_path: Path,
+    ) -> None:
+        review = self._migrate(tmp_path)
+        modules = s.read_lockfile(tmp_path)["modules"]
+        inventory = tmp_path / "dev/modules/README.md"
+        inventory.write_text(inventory.read_text() + "\nprivate local note\n",
+                             encoding="utf-8")
+        installed_before = inventory.read_bytes()
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        ours = (review / "dev/modules/README.md.ours").read_text()
+        theirs = (review / "dev/modules/README.md.theirs").read_text()
+        assert "private local note" in ours
+        assert "private local note" not in theirs
+        assert [line for line in theirs.splitlines()
+                if line.startswith("<!-- cairn:module id=")] == [
+                    f"<!-- cairn:module id={name} -->" for name in modules]
+        assert inventory.read_bytes() == installed_before
+
     @pytest.mark.parametrize("malformation", [
         "missing-template", "missing-generated", "duplicate-generated", "nested-entry",
         "unmatched-entry",
