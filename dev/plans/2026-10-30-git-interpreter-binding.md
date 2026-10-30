@@ -136,3 +136,58 @@ Assurance path: high-assurance
 **P1 -- blocking: finish the reviewed verification mapping.** Scope defers the reference inventory until implementation, and Verification adds unspecified “readers found by inventory.” The template requires the mapping before implementation, and the accepted proposal requires readers, writers and consumers mapped in the plan. The named families and behavioral list do not establish which existing consumers or shipped copies are covered, nor the commands that exercise the new entry-point and mutation checks. **Satisfier:** run the stated inventory against the committed tree, account for affected readers and shipped copies, and name their test files or nodes and executable commands (including the control and mutant check); identify any uncovered surface and its required check. This retains the accepted scope and lets the author respond without another plan review.
 
 **Coverage:** accepted contract and Decision, repository-less and nested targets, supported Git layouts, refusal and native Windows acceptance: plan C1–C2 and proposal Current contract; verification and lifecycle: plan Verification and `dev/plans/_template.md`. **Not covered:** no implementation or native Windows evidence exists; no tests were run. The separate Internal Security Review remains open.
+
+
+## Plan review -- Codex gpt-6.1-sol Security -- 2026-10-30
+
+```
+Reviewed commit: 0399dc783d47fa1ee8c372c16da66f15a40e6684
+Target: operative plan and accepted Current contract
+Prior findings: none for this obligation
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+
+**Foundations**
+
+1. **Should this happen as framed?** The plan preserves the accepted authority boundary and Windows acceptance fence, but its security cases need a reviewed executable mapping before implementation -- plan C1–C2 and Verification; source proposal Current contract.
+2. **Best alternative.** Retain the two chunks and dedicated administration guard; finish the security mapping rather than weaken the existing target-tree guard or omit supported layouts -- plan Sequence and C1; `bootstrap/_scaffold/install.py::write_local_env`.
+3. **What would show it wrong.** An ordinary Git pointer is rejected, a filesystem link redirects binding access, an unsafe forced write escapes administration, or an untested required Windows case is accepted -- source proposal Current contract; plan C1–C2.
+
+The strongest feature is separation of delivered content from a local executable
+choice without silently migrating the old authority. The plan correctly keeps
+copied administration and delivered Git pointers as explicit trust assumptions;
+this relocation does not authenticate either administration or the executable.
+
+**S1 -- blocking: map the security boundary to discriminating checks.** The
+Verification list names broad families and “unsafe destinations,” but does not
+map the accepted distinction between a regular Git pointer and a filesystem
+link or reparse point in that pointer or its binding path. A final-file-only
+check would miss an unsafe ancestor; a blanket external-path refusal would
+break linked, separate-directory and submodule support. The accepted Current
+contract explicitly requires both sides. Existing security helpers are not
+proof of the future path: `tools/session.py::_binding_git_env` scrubs overrides,
+while `bootstrap/_scaffold/install.py::write_local_env` currently writes under
+the checkout guard. **Satisfier:** extend P1's reviewed mapping with exact test
+files/nodes and commands through both real entry points, distinguishing valid
+regular pointers from linked/reparse pointer and binding-path components,
+true absence from dangling/unreadable/wrong-type state, and hostile discovery
+from non-repository/nested targets. Map force and non-force containment and
+no-launch assertions, independent worktree bindings, and the legacy marker
+control/mutant command. Name the native Windows command and required
+junction/reparse cases; an unavailable required case stays open as C2 already
+requires. Proposed tests may be identified as such. This specifies the accepted
+checks and removes no outcome.
+
+**Coverage:** claims/design/fail-closed behavior: C1 and S1; production paths
+and reuse: the two reader/writer helpers cited above and the plan's named
+entry points; consistency/drift: source proposal Current contract against plan
+Scope and C1–C2; lifecycle: separate Security obligation and C2's Windows fence;
+scope/scientific validity: accepted residuals preserved, no scientific surface;
+satisfier: S1. **Not covered:** no implementation exists, and no tests or native
+Windows probes were run during active certification. Same-user races and
+executable provenance remain outside the accepted boundary. Existing P1 also
+remains for the author's response; this pass does not clear it.
