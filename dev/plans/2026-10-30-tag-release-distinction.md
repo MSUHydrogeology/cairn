@@ -2,7 +2,8 @@
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-tag-release-distinction.md
 **Author**: Codex GPT-6.1 Sol (Implementation plan author)
-**Status**: ready-to-archive
+**Status**: revising-code
+**Waiting on Maintainer**: disposition of Security P1
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Add a read-only publication check and make the release guide distinguish publishing a Release from pushing its signed tag.
@@ -428,3 +429,12 @@ by that timeout. One Python child startup is added per API check. The timeout
 behavior was measured on macOS only; Windows process lifecycle was not measured.
 Live GitHub state and cached archive contents remain unverified. Elapsed
 verification was about 2 minutes; token use unknown.
+
+## Maintainer disposition required -- 2026-10-30
+
+Security Review `7fc6854b` is pass 2 of 2 and retains the blocking P1 at the
+review cap. The author implemented a parent-bounded API worker in `30466f9a`
+and recorded Boundary B evidence in `f9cca7b9`; this implementation response
+does not clear the Security Review finding. The Maintainer must disposition
+the P1 before the plan advances to `ready-to-archive`. No third Security pass
+or archive step was run.
