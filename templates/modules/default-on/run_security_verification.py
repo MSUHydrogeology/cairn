@@ -627,6 +627,7 @@ def _load_api_local_credential_names(
     if package_spec is None:
         raise _Degraded("API policy engine module load failed")
     package = importlib.util.module_from_spec(package_spec)
+    package.__file__ = str(paths["__init__.py"])
     package.__path__ = [str(paths["__init__.py"].parent)]
     sys.modules[package_name] = package
     try:
@@ -638,6 +639,7 @@ def _load_api_local_credential_names(
             if spec is None:
                 raise _Degraded("API policy engine module load failed")
             module = importlib.util.module_from_spec(spec)
+            module.__file__ = str(paths[member])
             sys.modules[name] = module
             setattr(package, member[:-3], module)
             loader.exec_module(module)
