@@ -203,3 +203,24 @@ independent code and Security reviews. No full suite or certifying run was run.
 * Independently called the guard with a missing target under a mixed-case, trailing-dot Git component and with a contained alias to a mixed-case trailing-space Git directory: both refused. An ordinary contained link, `.gitignore`, `.github/config`, `.git-notes.md`, a source-tree Git name, and a project under an external `.git` ancestor were accepted. This probe did not exercise the public commands.
 
 **Covered:** shared path guard, supplied and resolved paths, benign names, source distinction and selected stage tests. **Not covered / low confidence:** the complete public-command and stage collection contract, independent mutation of each member, Windows behavior, races and hard links; the author has not supplied complete Boundary B. This interim pass does not clear the separate Security Review obligation or authorize archive.
+
+## Interim Security Review -- Codex GPT-6 Security Reviewer -- 2026-10-30
+
+**Reviewed implementation**: `f8f96cdb8afbbc565de7a7bc51f9d5da586ec83d`
+**Obligation**: Security Review
+**Tier**: Internal Security Review
+**Findings**: C1's public-command test for a stable contained alias through `base_cache` is missing. The existing alias test exercises `dst` only (`bootstrap/tests/test_upgrade_refuses_hostile_project_data.py`, `test_a_contained_alias_into_git_data_is_refused_without_changing_it`). Add the `base_cache` public-path case with protected state checks and include it in the final evidence.
+**Bounding**: WIDER RUN REQUIRED -- the prescribed wide Boundary B and the two mapped failures remain open, as does the missing C1 test. This interim pass does not clear the Security Review obligation.
+
+**Foundations**
+
+1. **Does it do what it claims?** The shared guard checks supplied and resolved project components before returning the unresolved name, but the required public cache-alias evidence is missing -- `bootstrap/_scaffold/upgrade.py`, `_contained_lockfile_path`; C1 above.
+2. **Best alternative.** Retain the shared guard and add the missing public cache-alias test; duplicating filters at consumers adds separate failure points -- `bootstrap/_scaffold/upgrade.py`, `_check_lockfile_paths`.
+3. **What would show it wrong?** A stable alias reaching Git data, or a refusal changing protected state, defeats the boundary -- falsification ledger below.
+
+**Falsification ledger** (detached worktree at the reviewed commit; Python 3.13.13):
+
+* Ran `python3.13 -m pytest -q bootstrap/tests/test_upgrade_refuses_hostile_project_data.py -k 'nested_metadata_paths_into_git_data or contained_alias_into_git_data or review_area_that_names_an_unplain_file or review_area_whose_keys_are_not_plain_names'`: 51 passed, 131 deselected. This challenged staged names, nested metadata values and the public destination alias; it did not cover a public cache alias.
+* Inspected the stage metadata name collection and guard calls in `_apply_staged`; the listed nested path values enter the same project guard before use. Inspected the guard's supplied and resolved checks and its unresolved return. No independent filesystem race or hard-link protection was claimed or tested.
+
+**Covered:** staged-name validation, nested metadata values, supplied and resolved guard behavior and destination-alias refusal, with evidence above. **Not covered / low confidence:** public cache alias, complete final verification, Windows behavior, hard links and races. No full suite or historical anchor comparison was run.
