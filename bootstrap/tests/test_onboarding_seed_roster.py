@@ -165,6 +165,7 @@ def test_reinstall_preserves_completion_and_refuses_loss(tmp_path: Path) -> None
     ("task", "missing-closer"),
     ("task", "duplicate-entry"),
     ("task", "nested-entry"),
+    ("task", "crossed-entry"),
     ("task", "duplicate-region"),
     ("task", "reversed-region"),
     ("inventory", "malformed-closer"),
@@ -208,6 +209,20 @@ def test_empty_roster_refuses_ambiguous_markers_without_writes(
         text = text[:end] + "\n" + block + text[end:]
     elif damage == "nested-entry":
         text = text.replace(opener, opener + "\n" + opener, 1)
+    elif damage == "crossed-entry":
+        second_opener = "<!-- cairn:module-task id=dual-review -->"
+        second_closer = "<!-- cairn:module-task-end id=dual-review -->"
+        first_start = text.index(opener)
+        first_end = text.index(closer, first_start) + len(closer)
+        second_start = text.index(second_opener, first_end)
+        second_end = text.index(second_closer, second_start) + len(second_closer)
+        first_body = text[first_start + len(opener):
+                           text.index(closer, first_start)].strip("\n")
+        second_body = text[second_start + len(second_opener):
+                            text.index(second_closer, second_start)].strip("\n")
+        crossed = "\n".join((opener, first_body, second_opener, second_body,
+                               closer, second_closer))
+        text = text[:first_start] + crossed + text[second_end:]
     elif damage == "duplicate-region":
         text = text.replace(region_close, region_close + "\n" + region_close, 1)
     elif damage == "reversed-region":
