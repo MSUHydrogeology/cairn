@@ -9,14 +9,10 @@
 
 ## Purpose and authority
 
-This living packet coordinates v0.6 decisions. The Maintainer authorized
-continuous reviews and handoffs; the [roadmap](../PLANNING.md) holds scope and
-linked plans their contracts and status. It grants no approval and replaces no
-Decision. Push, publication, settings changes and issue closure remain
-unauthorized.
-
-v0.6 makes existing capabilities work; v0.7 adds capabilities and adopter
-research. The five-plan batch does not complete v0.6.
+This packet coordinates v0.6 decisions. The [roadmap](../PLANNING.md) owns
+scope and plans own contracts; this file grants no approval. Push, publication,
+settings changes and issue closure remain unauthorized. v0.6 repairs existing
+capabilities; v0.7 adds capabilities and adopter research.
 
 ## Delivered work and current holds
 
@@ -53,9 +49,8 @@ unchanged (`560a178c`).
 
 Proposed path: `docs/methodology/` (not yet created).
 
-Retain all 21 partial-reach groups until installed homes and usable pointers
-are shown; consolidation loses no accepted duty. C3 must show a simpler edit
-against both baselines; frozen tests await trust-boundary work.
+Retain all 21 partial-reach groups until installed homes and pointers exist.
+C3 must show simpler edits against both baselines; frozen tests still wait.
 
 ### 2. Approved initial test-protection roster
 
@@ -78,13 +73,12 @@ Proposed path: `bootstrap/tests/test_board_json_values.py` (not yet created).
 
 ### 4. Establish a forward-trust baseline at v0.6
 
-The Maintainer directed v0.6 re-anchoring without checking intervening changes
-against the old anchor. The [exploration](2026-10-29-sol-forward-baseline.md)
-proposes one reviewed, signed baseline with the approved roster. It gives up
-P443-to-release drift checks and certifies no earlier history; prior HOLDs are
-not prerequisites. Align plans. Candidate, package and signer need Maintainer
-authorization; pushing is separate. Bridge `6e3197f6` is approved but not
-installed or certified. Account for frozen checker wording.
+The Maintainer directed v0.6 re-anchoring without old-anchor drift checks. The
+[exploration](2026-10-29-sol-forward-baseline.md) proposes a reviewed, signed
+baseline with the approved roster; earlier history is not certified. Prior
+HOLDs are not prerequisites. Candidate, package, signer and push need separate
+authorization. Bridge `6e3197f6` is approved, not installed or certified;
+frozen checker wording remains.
 
 ### 5. Session-start handoff marker — corrected
 
@@ -105,24 +99,19 @@ installation or old-anchor reconciliation is authorized.
 
 ### 7. Directories occupying tracked upgrade paths — accepted
 
-The [archived proposal](../proposals/archive/2026-10-29-codex-upgrade-directory-collisions.md)
+The [proposal](../proposals/archive/2026-10-29-codex-upgrade-directory-collisions.md)
 and [plan](../plans/2026-10-30-upgrade-directory-collisions.md) are accepted;
-the plan is `implementing`. Six focused public controls passed at `4a76dc54`.
+the plan is `implementing`. Six public controls passed at `4a76dc54`.
 [Review `9b40d4d4`](../plans/2026-10-30-upgrade-directory-collisions.md)
-found a block: editing the stage to omit a renamed wrapper such as `CLAUDE.md`,
-then replacing that file with a directory, lets apply advance the lockfile and
-cache. The independent check excludes it because the lock names `VENDOR.md`.
-A small fail-closed remedy could refuse directories at unmapped known wrapper
-names and root `*.md` paths when `VENDOR.md` is absent; unrelated folders may
-also block. A separately trusted name mapping adds machinery. Neither guards
-arbitrary changes after a check.
+found that a staged rename can omit `CLAUDE.md`; replacing it with a directory
+then lets apply advance lock and cache. Refusing directories at known wrapper
+names and root `*.md` paths may also block unrelated folders. A trusted name
+map adds machinery. Post-check races remain.
 
-**Maintainer choice on recovery:** the accepted text permits absence after
-moving a folder, but `verify_integrity` rejects a missing tracked file. Keep
-absence as upgrade-only recovery and disclose failed integrity, or require a
-restored file for successful recovery. The latter loses accepted scope and
-needs an explicit Scope delta. No Decision is recorded; reviews and final
-mapped verification remain open.
+**Recovery choice:** accepted text permits absence after moving a folder, but
+`verify_integrity` rejects a missing tracked file. Keep upgrade-only recovery
+with failed integrity, or require restoration, which loses accepted scope and
+needs a Scope delta. Reviews and mapped verification remain open.
 
 ### 8. Nested Git paths during upgrade — accepted
 
@@ -136,39 +125,31 @@ verification and the separate Maintainer-run AST ceremony remain.
 
 ### 9. Prepare the handoff before pruning — accepted
 
-The [archived proposal](../proposals/archive/2026-10-29-codex-handoff-prune.md)
-and [archived plan](../plans/archive/2026-10-30-handoff-preparation.md) are
-accepted; implementation is complete. It adds non-pruning preparation with
-capture prompts and preview, retaining `--handoff` as guarded user-run
-deletion. Preparation cannot prove sessions are quiet; the user establishes
-quiet before pruning. The
-implementation verification and reviews are complete. The doctrine-evolution
-trigger was not established; the Maintainer allowed the approved scope to
-proceed, as recorded in the plan.
+The [proposal](../proposals/archive/2026-10-29-codex-handoff-prune.md)
+and [plan](../plans/archive/2026-10-30-handoff-preparation.md) are implemented
+and reviewed. Preparation adds capture prompts and preview; `--handoff` remains
+guarded user-run deletion. The user establishes quiet sessions before pruning.
+The Maintainer allowed the approved scope despite an unestablished doctrine
+trigger, as recorded in the plan.
 
 ### 10. Bind the interpreter in Git's per-worktree administration — accepted
 
-The [archived proposal](../proposals/archive/2026-10-29-codex-git-interpreter-binding.md)
-and [plan](../plans/archive/2026-10-30-git-interpreter-binding.md) are accepted
-and implemented. Store the binding in verified per-worktree Git
-administration and require exact-root discovery. Non-repository installs can
-proceed without it and rebind later; never read or migrate the legacy file.
-Copied `.git` administration or a delivered pointer can still supply the
-binding. Native Windows discovery and junction/reparse execution remain a
-Maintainer-authorized follow-up in `dev/PLANNING.md`, not a passing result.
+The [proposal](../proposals/archive/2026-10-29-codex-git-interpreter-binding.md)
+and [plan](../plans/archive/2026-10-30-git-interpreter-binding.md) are
+implemented. Bind in verified per-worktree Git administration, discover the
+exact root, and never migrate legacy files. Non-repository installs rebind
+later. Copied `.git` administration remains a risk. Windows junction/reparse
+work is a separate roadmap follow-up.
 
 ### 11. Detect and report same-file sweeps — accepted
 
-The [archived proposal](../proposals/archive/2026-10-29-codex-same-file-sweeps.md)
-and [plan](../plans/archive/2026-10-30-same-file-sweeps.md) are accepted and
-implemented. Count confirmed misattributed commits only, one row each;
-separate occurrence from discovery, excluding uncertainty without confirmation
-or provenance. Agree with writers, inspect staged/unstaged/new files, reinspect
-changed bytes or use separate worktrees. Claims are not consent: stop on foreign
-or uncertain content. Keep minimal local references; screen summaries and never
-copy private chats, secrets or unrelated text. Advisory gate limits remain:
-omissions, noncooperation and dishonest reports are possible. Mapped checks
-and both independent code reviews are recorded; certification remains pending.
+The [proposal](../proposals/archive/2026-10-29-codex-same-file-sweeps.md)
+and [plan](../plans/archive/2026-10-30-same-file-sweeps.md) are implemented.
+Count only confirmed misattributed commits. Agree with writers, inspect all
+candidate bytes and stop on foreign or uncertain content; claims are not
+consent. Keep minimal screened records. The advisory gate can miss
+noncooperation or dishonest reports. Mapped checks and both code reviews are
+recorded; certification remains pending.
 
 ### 12. Correct work-intent guidance and identity help — accepted
 
@@ -223,16 +204,27 @@ stable tree. Legitimate linked installs must replace the linked file or folder
 with an ordinary copy before migration. A separate fidelity-manifest reader
 can still follow a link; this scope discloses but does not fix that gap.
 
+### 18. Publish and check the GitHub Release — awaiting Decision
+
+The [proposal](../proposals/2026-10-30-codex-tag-release-distinction.md)
+responded at `a508dfcf`; both widened-scope reviews found no new issues and
+Security Review closed its findings. The cut prepares notes and pushes a tag
+without explicitly publishing the GitHub Release. The author recommends a
+Maintainer create-or-edit step, manual notes/link read-back, and a read-only
+script comparing the published Release and remote peeled tag with the
+independently recorded gate commit. Correct the guide's retired unsigned-tag
+alternative to match `bootstrap/PROVENANCE.md`. Links and remote tag identity
+do not verify cached archive bytes. The Maintainer decides both additions;
+Release and push remain unauthorized.
+
 ## Issue triage, staffing and close-out
 
 Issues #31 and #32 await Maintainer closure; #33's scoped verification retains
 its ceremony hold; #19 remains deferred to v0.7.
 
-Staffing follows the Maintainer: **Terra coordinates and handles ordinary reviews;
-Luna implements reviewed plans; Sol handles strategy, premise/novel-design and
-Security judgment.** Cairn-local high/medium/low assignments are Sol/Terra/Luna,
-Opus/Sonnet/Haiku and Argon/Pro/Flash. Shipped tiers remain vendor-neutral.
-Decision scribing requires unambiguous disposition and commit authorization.
+Staffing: **Terra coordinates and reviews; Luna implements reviewed plans; Sol
+handles strategy and Security judgment.** Model tiers remain vendor-neutral in
+shipped text. Decision scribing needs explicit authorization.
 
 This master stays current until its coordinating role retires. Plans own
 engineering evidence; this briefing certifies no implementation or release.
