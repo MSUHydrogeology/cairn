@@ -367,3 +367,32 @@ certification run occurred.
 * Ran the shipped file as a CLI subprocess in the same temporary project. It returned 1 earlier at `_repo_root` with `not inside a git repository`; this route cannot prove the changed resolver branch. Inspection of the mapped portable file showed all `_session_module()` calls use the source default and no shipped path argument.
 
 **Coverage:** claims, production path, design edges and fail-closed behavior: shipped `main()` probe and ledger; consistency and reuse: source/template byte comparison, `bootstrap/_scaffold/config.py` installation map, coverage inventory and CR2 satisfier; drift and lifecycle: `534e731e` verification record against its named tests and the still-open C2 criterion; scope: CR2 adds only the accepted shipped-copy test coverage. **Not covered:** native Windows discovery or junction/reparse behavior, every mapped test family independently, same-user races, executable provenance, or the separate Security Review. The plan stays `implementing`.
+
+## Implementation verification -- Codex GPT-6 -- 2026-10-30
+
+**Boundary B mode**: wide; the trust-boundary mapping and known consumer
+coverage are as described in the earlier records. Unknown dependencies are not
+claimed covered. **Certified by**: pending.
+
+**Tested commit**: `13fae5bbd9a0e2aad6722f9cf21ef9ee2da9202a`.
+**Reviewed range**: `49e6a59123b88bf954d1b5ee4e7a6a6ba2b0fc05`..`13fae5bbd9a0e2aad6722f9cf21ef9ee2da9202a`.
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13, pytest 9.0.3, macOS.
+**Pre/post state**: clean detached worktree at the tested commit; test caches are ignored.
+
+The 13 pytest files listed in Verification ran together: **569 passed in
+37.99s**, with no skips or other non-pass results. The portable test now drives
+the malformed-administration handoff through `main()` for both source and
+shipped copies and asserts no sub-tool launches. The legacy control and mutant
+also passed their assertions. `scripts/check_cairn.py` and `scripts/link_check.py`
+passed on 197 Markdown files; link-check did not probe 103 external links.
+`scripts/quality_gate.py --sub neutrality --sub redundancy` passed with zero
+failures (43 and 1 informational notices). `scripts/claim_check.py` passed
+separately on `AGENTS.md`, `templates/core/AGENTS.md`, `bootstrap/UPGRADE.md`,
+`bootstrap/SAFETY.md`, this plan and its coverage inventory, with existing
+allowlisted paths reported. All commands used the interpreter above.
+
+**Open criterion**: native Windows discovery and junction/reparse handling
+remain unverified; no Windows runtime is available here and the portable file
+does not explicitly create junctions. The plan remains `implementing`; this
+record does not claim implementation verification or handoff readiness. No
+full certification run occurred.
