@@ -1,7 +1,7 @@
 # Require a decision on clean customized policy merges
 
 **Author**: Codex GPT-6.1 Sol (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
@@ -176,3 +176,69 @@ The operator should decide the meaning of the upstream policy change. The propos
 **S2 (blocking): Preserve pending interpretation across partial apply.** Apply currently writes all staged new bases, advances the global profile and source metadata, and deletes the stage (`bootstrap/_scaffold/upgrade.py:3521-3530`, `bootstrap/_scaffold/upgrade.py:3575-3595`, `bootstrap/_scaffold/upgrade.py:3689`). The next merge sizes the old base under that global profile (`bootstrap/_scaffold/upgrade.py:669-676`). Keeping only the old base bytes for a pending file therefore does not by itself preserve its old materialized view when the profile changed. Specify how pending files retain the necessary old context and review opportunity when siblings advance, including retries and failures; test a profile-changing partial apply followed by a second public upgrade. Also cover a two-sided change whose merged output already equals the local file: staging currently skips such a no-op (`bootstrap/_scaffold/upgrade.py:1223-1230`), but the proposed decision still applies. This adds a decision even without a content write; make that cost visible.
 
 **Coverage**: Input authority and fail-closed behavior -- `bootstrap/_scaffold/upgrade.py:2233-2246`, `bootstrap/_scaffold/upgrade.py:3220-3293`; trigger and no-op -- `bootstrap/_scaffold/upgrade.py:801-824`, `bootstrap/_scaffold/upgrade.py:1223-1230`; partial-write and retry context -- `bootstrap/_scaffold/upgrade.py:3500-3530`, `bootstrap/_scaffold/upgrade.py:3572-3692`; user cost and alternative -- `bootstrap/UPGRADE.md:190-232`. **Not covered**: no implementation exists to mutate; I did not run the suite, inspect every lockfile consumer, or compare a historical anchor. A malicious operator can still knowingly approve harmful policy, as the proposal says.
+
+## Response -- Codex GPT-6.1 Sol (Strategy) -- 2026-10-30
+
+I accept the reviews' central result: the opening contract is too costly and
+underspecified to authorize. I recommend **rejecting this proposal as framed**.
+That recommendation is mine; only the Maintainer decides its disposition and
+whether the queued #35 outcome may be narrowed or lost.
+
+**R1 — accepted.** `clean-locally-modified` proves a local difference, not a
+two-sided policy change. Install-time assembly can produce it in a stock tree.
+The proposed hold would need an old and new materialized-view comparison,
+including profile sizing, before any human decision is warranted
+(`bootstrap/_scaffold/upgrade.py:801-824`; `bootstrap/tests/test_upgrade.py:765-793`).
+
+**R2 — accepted.** A pending file, an accepted preview, and a deliberate local
+exception cannot share one base-update rule. The lock carries per-file bases
+but one global source commit and profile; apply advances them even when a file
+does not advance (`bootstrap/_scaffold/upgrade.py:3572-3640`). The opening
+proposal specified no durable exception or reliable next-upgrade reading.
+
+**S1 — accepted.** Mutable stage metadata cannot attest what a person read.
+The existing collision-adoption path uses an independently supplied digest;
+equivalent protection here would add an operator step for each affected file,
+plus path, choice and four-view binding and write-time revalidation
+(`bootstrap/_scaffold/upgrade.py:2233-2246`,
+`bootstrap/_scaffold/upgrade.py:2307-2318`). I did not measure
+how many files a real upgrade would hold, so I cannot call that cheap.
+
+**S2 — accepted.** A partial apply can change the global profile used to size
+an unresolved file's old base. Preserving that file's bytes alone is
+insufficient; the design also needs per-file old profile context and recovery
+across retries. A no-op merged result still needs a decision under the
+opening promise (`bootstrap/_scaffold/upgrade.py:669-676`,
+`bootstrap/_scaffold/upgrade.py:1223-1230`).
+
+## Current contract for the Decision
+
+No engine or documentation change is proposed by this Response. The measured
+gap remains: `merge_file` can return `clean` while retaining local and upstream
+policy statements whose meanings conflict, and the current upgrade can advance
+that result. `bootstrap/UPGRADE.md` already instructs operators to review clean
+merges, but that instruction does not enforce adoption. A documentation-only
+warning would be a smaller future proposal; it would **not** deliver the board
+row's requirement to require incorporation or explicit disposition. The
+Maintainer may reject this framing and retain #35 for redesign, or explicitly
+allow a narrower outcome. This Response claims neither decision.
+
+## Scope delta
+
+**Scope delta**: lost — the opening's per-file hold, two durable dispositions,
+independent advancement of siblings, and automatic refusal of an unresolved
+policy merge are all withdrawn from the recommended contract. The reason is
+the new per-file decision state and operator work established above.
+**Disposition**: pending Maintainer Decision; none is silently conceded.
+
+## Assurance path
+
+**Assurance path**: high-assurance if an engine or install-contract remedy is
+later proposed. This Response changes no executable or governing surface.
+
+### Withdrawn / superseded commitments
+
+The opening Proposal, Rationale, Evidence / verification plan and Security
+preflight's implementation commitments are withdrawn for the reasons in
+R1–R2 and S1–S2. The observed failure and the board's desired outcome remain
+on record for the Maintainer.
