@@ -374,3 +374,17 @@ The accepted text is the operative sections as revised at the commit before
 this one. Q1 is not addressed by these words; the proposal's recommendation
 (drop the timing and token sentence) stands for the plan unless the
 Maintainer says otherwise.
+
+## Decision addendum -- Maintainer -- 2026-10-30
+
+**Q1 resolved: keep.** The Maintainer's words, quoted verbatim and visually
+isolated (chat, 2026-10-30; scribed by Claude Fable 5.1):
+
+> "I think we want a timing/token consumption. We want to be able to build a
+> project budget eventually"
+
+Scribe's reading, not the Maintainer's words: this is Q1's third option,
+elapsed time and reported or defensibly estimated tokens in each existing
+step record, unknown recorded as unknown, no new tool or approval, because a
+project budget needs observations at each step. The plan follows this
+reading unless the Maintainer corrects it.
