@@ -269,3 +269,24 @@ certification, code review, or push occurred.
 * Read the committed installer and resolver path guards and legacy-marker test: installer checks the `.git` entry before no-repository fallback; pointer and binding components are checked for links; the legacy control and mutant are covered by the portable test. These observations do not establish Windows behavior.
 
 **Coverage:** reviewed the recorded wide verification and the committed discovery, fallback, pointer, binding write and legacy paths, with the targeted probe above. **Not covered:** native Windows discovery and junction/reparse behavior, independent execution of every mapped family, same-user races, executable provenance, or the separate Security Review. C2 remains open; this interim pass does not accept or complete implementation.
+
+## Interim code review follow-up -- Codex GPT-6 -- 2026-10-30
+
+**Reviewed commit**: `a41787a766a395e19eb17f69272bc0b396bb5fe1`  
+**Obligation**: Internal (interim follow-up to CR1)  
+**Findings**: no new defects found in this revision  
+**Bounding**: ACCEPTED for CR1's malformed-administration case; C2 and final Boundary B remain open.
+
+**Foundations**
+
+1. **Does it do what it claims?** The changed guard refuses failed discovery with a present `.git` entry, while true absence and a nested root still fall back -- `tools/session.py::_git_binding_path`; falsification ledger below.
+2. **Best alternative.** The small condition matching the installer's existing classification is sufficient; no additional path or abstraction improves this fix -- `bootstrap/_scaffold/install.py::write_local_env` and `git show a41787a7 -- tools/session.py`.
+3. **What would show it wrong?** A malformed `.git` directory or regular pointer reaching a sub-tool, or an absent/nested root refusing, would break this result -- falsification ledger below.
+
+**Falsification ledger** (isolated detached worktree at the reviewed commit; `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13):
+
+* Ran `python -m pytest bootstrap/tests/test_git_interpreter_binding_portable.py -q`: 14 passed in 1.40s, including the new handoff-entry test. This is a control run, not the independent challenge.
+* Through `_resolve_interpreter`, an empty `.git` directory raised `LifecycleError("git could not resolve the worktree root")`; a regular pointer to a missing administration directory raised `LifecycleError(".git pointer target could not be inspected")`. Neither fell back. The new test drives `session-end --prepare-handoff --dry-run` and asserts `_surface_intents` was not reached.
+* In the same probe, a directory with no repository returned `fallback`, and a nested directory inside an initialized repository returned `fallback`. These challenge the changed condition's other branch. The worktree's tracked files remained clean after the probes.
+
+**Coverage:** claims, production path, edge cases and fail-closed behavior: the guard, new test and ledger above; consistency and reuse: the installer's analogous branch at `bootstrap/_scaffold/install.py::write_local_env` and the plan's C1 contract; drift and lifecycle: the commit's stated CR1 fix and the still-open C2 criterion; scope and satisfier: this revision changes only `tools/session.py` and its owning portable test, satisfying CR1 without reducing accepted work (`git show --stat a41787a7`). **Not covered:** native Windows discovery or junction/reparse behavior, full mapped Boundary B checks on the final commit, same-user races, executable provenance, or the separate Security Review. The plan stays `implementing`.
