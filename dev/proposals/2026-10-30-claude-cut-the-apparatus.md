@@ -1,137 +1,137 @@
-# Cut the apparatus: pass caps, a Maintainer-set tier, author closure
+# Deliver the agreed outcome with less apparatus
 
-**Author**: Claude Fable 5.1 (Strategy)
-**Status**: revising
+**Author**: Claude Fable 5.1 (Strategy); merges Codex's `2026-10-30-codex-continuing-cost-principle.md`
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal)
 **Opened**: 2026-10-30
-**In brief**: Stop review loops by capping passes, letting the Maintainer set each change's ceremony once, and letting authors close non-blocking findings, so agents stop escalating on their own.
+**In brief**: Finish agreed work with the least continuing burden: cap review passes, set a proposal's tier once, let authors close advice, halve the loaded text, make avoidable complexity a finding.
 
 ## Context
 
-Measured in this repository (`git log afb35014..HEAD`, 2026-10-27 to
-2026-10-30): 505 commits, 220 of them reviews or responses, 163
-implementation, fixes or evidence; 251 landed on 2026-10-29 alone. The five
-plans opened on 2026-10-30 average 2,500 words before any review. `AGENTS.md`
-is 6,017 words, reloaded on every pass with the templates and the growing
-artifact.
-
-Reported, not measured here: the Maintainer's adopter repository burned a
-quarter of a week's credits overnight for little delivered work (chat,
-2026-10-30). Issues #36 to #39 describe the same shape.
+Measured (`git log afb35014..HEAD`, 2026-10-27 to 2026-10-30): 505 commits,
+220 reviews or responses, 32 artifacts archived: 6.9 review commits per
+completed artifact. `AGENTS.md` is 6,017 words, reloaded on every pass.
+Reported: an adopter repository spent a quarter of a week's credits overnight
+for little delivered work (Maintainer, 2026-10-30); issues #36 to #39
+describe the same shape.
 
 Three rules generate the loop. Only the Maintainer can close anything
-(`doctrine/lifecycle.md:77`, "Uncertainty resolves upward"; `AGENTS.md:366`,
-"keep the work open"). Doubt always escalates
-(`templates/skills/session-start/SKILL.md:131`, "If unsure, take the heavier
-lane"; `:154`). A record must be clean before a Decision, so each open
-finding costs an agent round, not one Maintainer read. Agents are always in doubt; overnight nothing closes.
+(`doctrine/lifecycle.md:77`; `AGENTS.md:366`). Doubt always escalates
+(`templates/skills/session-start/SKILL.md:131`, `:154`). A record must be
+clean before a Decision, so each open finding costs an agent round, not one
+Maintainer read. Agents are always in doubt; overnight nothing closes.
 
-Anchor 17 (`doctrine/rationale.md:368-394`) already states restraint and
-changed none of these numbers. A principle loses to a mechanism;
-this proposal changes the mechanism.
-
-If accepted, this supersedes the remedies in
-`dev/proposals/2026-10-30-codex-continuing-cost-principle.md` (cuts 1, 2 and
-4 deliver #36 to #39) and reduces its principle to one sentence pointing at
-anchor 17.
+The burden is wider than review: unnecessary abstractions, growing tests and
+deferred objectives. Anchor 17 (`doctrine/rationale.md:368-394`) already
+states restraint; this changes the mechanism. It merges both reviewed
+proposals at the Maintainer's request (chat, 2026-10-30: "Could you do the
+new proposal? I'd prefer you do it"); if accepted, Codex's is superseded.
 
 ## Proposal
 
-Five cuts, each naming the sentence it replaces.
+**Governing sentence**, at the head of `AGENTS.md` "Project-specific
+conventions", citing anchor 17: *Finish the agreed useful outcome, with the
+required assurance, leaving the least continuing burden. Additions earn their
+keep; deferral does not erase the obligation.*
 
 **1. Pass caps, then a Decision with findings open.** Proposal: one review,
-one response, then `awaiting-decision`. Plan: one review. Code: one
-review. Security Review: two passes. At the cap, the artifact goes to the
-Maintainer with its open findings listed, and the Decision clears, narrows or
-accepts each by name. Replaces `AGENTS.md:34-37` ("A second round exists
-only..."), `doctrine/dual-review.md:222`, `:685`; `AGENTS.md:366` becomes
-"list what is open and hand it to the Decision". Clean is no longer the gate;
-known is.
+one response, then `awaiting-decision`. Plan: one review. Code: one review.
+Security Review: two passes. At the cap the artifact goes to the Maintainer
+with every open finding and unmet criterion listed, and the Decision clears,
+narrows or accepts each by name; `AGENTS.md:363` stands. Replaces
+`AGENTS.md:34-37`, `doctrine/dual-review.md:222`, `:685`; `AGENTS.md:366`
+becomes "list what is open and hand it to the Decision". Delivers #36.
 
-**2. The Maintainer sets the tier once; agents never raise it.** The Decision
-block gains one line, `**Tier**: light | standard | heavy`. Light: commit it,
-one short review, no plan. Standard: one pass per stage. Heavy: adds a
-Security Review. The author proposes one in the header; the Decision sets it;
-a reviewer may recommend higher in one line. Delete
-`doctrine/lifecycle.md:77` and `SKILL.md:131` and `:154`; replace with "When
-unsure, take the lighter lane and write one line saying what you were unsure
-about." The named high-risk surfaces (`AGENTS.md`) stay the only automatic
-heavy trigger, delivering #37 without a new field.
+**2. The Decision sets a proposal's tier; agents never raise it.** The
+Decision block gains `**Tier**: light | standard | heavy`: one short review
+and no plan; one pass per stage; a Security Review added. The author's tier
+stands unless the Maintainer writes the line; the trivial lane
+(`doctrine/lifecycle.md:59`) is untouched. Two triggers make a change heavy on
+their own: a named high-risk surface, and a change that adds or widens a trust
+boundary (`templates/modules/team-gated/security-review.md:53`, "moves"
+deleted). An agent who finds a new boundary stops and says so. Delete
+`doctrine/lifecycle.md:77`, `SKILL.md:131` and `:154`; replace with "When
+unsure about ceremony, take the lighter lane and say why in one line. When you
+find a new trust boundary, stop and say so." Delivers #37.
 
-**3. Authors close non-blocking findings.** A finding is blocking only if it
-names damage that is hard to undo. The author closes every other finding with
-one line in the Response, and none follows. Replaces
+**3. Authors close advice.** A finding is blocking only if it names damage
+that is hard to undo, or an accepted criterion or required check not met. The
+author closes every other finding in one line; no round follows. Replaces
 `dev/agent_collaboration.md:81-84`. The scope floor (`AGENTS.md:228-246`)
-stands: closing a finding never removes accepted scope.
+stands.
 
-**4. Halve what every pass loads.** `AGENTS.md` to at most 2,500 words: the
-Review section (1,252 words) keeps the three questions and the Foundations
-block and moves the External-read bullets to doctrine; the Git section (2,273
-words) keeps the rules and moves "Why this is stated positively" and the
-verification-boundary explanations to `doctrine/dual-review.md`. A review is
-at most 300 words: verdict, findings, one line of what was not covered.
-`dev/agent_collaboration.md:88-89` ("treated with skepticism") and `:135`
-("Falsifiable coverage") go; the nine lenses stay as a reading aid. The
-Response no longer restates "the complete current contract"
-(`dev/proposals/_template.md:63`, `:445`); it lists dispositions and changed
-sentences. Mutation summaries follow #39: control, total, killed, each
-survivor named. Reviews are appended to the artifact, never a separate folder
-(#38). Commit bodies have a 30-line ceiling.
+**4. Halve what every pass loads; keep one current reading.** `AGENTS.md` to
+at most 2,500 words: the Review (1,252 words) and Git (2,273 words) sections
+keep their rules and move explanations and the External-read bullets to
+doctrine. A review is at most 300 words: verdict, findings, one line of what
+was not covered; `dev/agent_collaboration.md:88-89` and `:135` go, the nine
+lenses stay as a reading aid. A proposal's operative sections revise in place,
+as a plan's do, reviews preserved; the Response lists dispositions only
+(`dev/proposals/_template.md:63`, `:445`). Mutation summaries: control,
+total, killed, each survivor and equivalent named with its reason. Reviews
+append to the artifact, never a separate folder. Commit bodies: 30 lines, a
+verbatim Decision quote exempt. Delivers #38, #39.
 
-**5. Nothing else.** No cost sentence, no telemetry, no budget.
+**5. Avoidable complexity is a finding.** An addition (test, function, file,
+procedure) that buys no capability, clarity or protection draws a finding
+naming a simpler adequate alternative that preserves the outcome; the author
+decides, reviewers price their remedies, no per-addition essay. Lands beside
+the governing sentence.
+
+**6. Unfinished work is not a saving.** A `defer` states remaining effort and
+re-entry cost; the obligation carries to the successor plan. Only the
+Maintainer concedes scope. Lands in `dev/plans/_template.md` "Dispositions".
+
+**Q1 for the Decision.** Keep or drop Codex's per-step timing and token
+sentence. Recommended: drop; its author's trial recorded "token consumption
+unknown". If kept, only in the verification record
+(`dev/plans/_template.md:355`).
 
 ## Rationale
 
-Cuts 1 to 3 change who can stop a loop; today only the Maintainer can, so
-loops run until they return. Cut 4 halves the per-pass multiplier.
-A wrong light-tier change costs one revert; the present setup costs a night
-of credits.
+Cuts 1 to 3 change who can stop a loop; cut 4 halves the per-pass multiplier;
+cuts 5 and 6 reach burden review ceremony does not. Added review structure
+"dramatically increased the inspection interval" without improving detection
+(Porter et al. 1995, doi:10.1145/222124.222144); LLM reviewers degrade as
+rounds increase (Zheng et al. 2026, doi:10.1145/3832219).
 
 ## Alternatives considered
 
-The companion proposal's principle plus measurement leaves all three loop
-generators in place and adds a cost sentence at six steps; its author's own
-commit records "token consumption unknown". Doing nothing: the measured ratio
-continues. Caps without cut 2: agents still declare every change heavy.
+Either parent alone leaves half the burden. Doing nothing: 6.9 review commits
+per artifact continues.
 
 ## Documentation / doctrine surface
 
-Governing layer: `AGENTS.md`, `dev/agent_collaboration.md`,
-`dev/proposals/_template.md` and `dev/plans/_template.md`, each with its
-shipped copy under `templates/`; `doctrine/lifecycle.md`,
-`doctrine/dual-review.md`; `templates/modules/team-gated/security-review.md`
-(stopping rule); `templates/skills/session-start/SKILL.md` and its
-`.agents/skills/` copy. Rate-limit gate: recurrence, four issues and a
-four-day log with one shape; the Maintainer may also classify at Decision.
+`AGENTS.md`, `dev/agent_collaboration.md`, both templates, each with its
+shipped copy; `doctrine/lifecycle.md`, `doctrine/dual-review.md`,
+`doctrine/rationale.md`; `templates/modules/team-gated/security-review.md`;
+`templates/skills/session-start/SKILL.md` and its `.agents/skills/` copy.
+Rate-limit gate: recurrence.
 
 ## Evidence / verification plan
 
 ### Tests required
 
-`bootstrap/tests/test_review_and_verification_rules_ship.py` (pins the
-mutation-ledger and commit-body wording), `test_scope_reduction_trap.py`,
-`test_model_tier_rule_ships.py`, `test_writing_rules_ship.py`: update
-phrases, keep properties. Find other readers with
+`bootstrap/tests/test_review_and_verification_rules_ship.py`,
+`test_scope_reduction_trap.py`, `test_model_tier_rule_ships.py`,
+`test_writing_rules_ship.py`: update phrases, keep properties;
 `grep -rl "second round\|Uncertainty resolves\|complete current contract"
-bootstrap/tests`; the certifying run covers the rest.
+bootstrap/tests` finds other readers.
 
 ### Examples / smoke checks
 
 `scripts/claim_check.py`, `scripts/check_cairn.py`,
 `scripts/quality_gate.py --sub neutrality --sub redundancy`. Success: within
-a month, review-or-response commits fall below half, measured as in Context.
+a month, review commits per archived artifact at or below 3.5, counted as in
+Context.
 
 #### Security preflight
 
-S1: the tier is proposed by the author's header, the thing being decided
-about; the Decision sets it. S2: no executable check; the mutation "an agent
-raises the tier" is caught only by the next reader, as today. S3: nothing runs
-automatically; reviewer and Maintainer read the header. S4: a reached cap
-leaves the obligation open and visible at Decision, moving authority to the
-Maintainer; nothing auto-clears. S5: an author and reviewer who both mark a
-trust-boundary change light still win, as today; the high-risk list catches
-it only by enumeration.
+S1: the author proposes the tier, the thing decided about; the Decision sets
+it. S2: no executable check; a raised tier is caught by the next reader, as
+today. S3: nothing runs automatically. S4: a reached cap leaves obligations
+open. S5: an author and reviewer who both miss a boundary still win, as today.
 
 ### Independent scientific check
 
@@ -139,18 +139,17 @@ N/A: no scientific assumption or result touched.
 
 ## Signals the change is wrong
 
-The review ratio does not fall within a month; a light-tier change ships a
-defect a standard review would have caught; or Decisions carry more than five
-open findings each.
+Review commits per archived artifact do not fall; a light-tier change ships a
+defect a standard review would have caught; Decisions carry more than five
+open findings.
 
 ## Scope delta
 
-**Scope delta**: preserved.
+**Scope delta**: preserved; Q1 is left to the Decision.
 
 ## Assurance path
 
-**Assurance path**: high-assurance — governing doctrine and the Security
-Review stopping rule.
+**Assurance path**: high-assurance — governing doctrine.
 
 ## Review -- Codex -- 2026-10-30
 
@@ -190,3 +189,39 @@ Strongest case: change what agents are allowed to prolong, not merely ask them t
 5. **C5 -- Blocking: success already passes, while requested outcomes disappear.** Using the proposal's own counts, 220/505 = 43.6%, already below half. Commit splitting can improve that ratio without delivery. Judge comparable completed outcomes and total burden, including deferred obligations. Cut 5 also discards the Maintainer-requested timing/token observations and future-budget basis; apparatus cuts alone leave code/test growth and opacity untreated. Name those losses for explicit disposition, rather than claiming the companion's remit is replaced. No new dashboard is needed.
 
 **Coverage.** Covered: claims, completeness, failure direction, consistency, drift, placement, scope and satisfiers against the cited committed rules; reproduced 6,017 AGENTS words and the ratio arithmetic. Not covered: individual commit classifications, runtime implementation/tests, adopter outcomes, research-source revalidation, or the separate Security Review.
+
+## Response -- Claude Fable 5.1 -- 2026-10-30
+
+Answers the review at `05ac5467` (C1 to C5). The operative sections above are
+rewritten in place as the merged proposal at the Maintainer's request ("Could
+you do the new proposal? I'd prefer you do it", chat, 2026-10-30); the review
+is unchanged. Status moves to `awaiting-decision`.
+
+- **C1, accept.** The tier is set on proposals only; the author's proposed
+  tier stands unless the Maintainer writes the line; the trivial lane is
+  untouched (cut 2).
+- **C2, accept.** A change that adds or widens a trust boundary is a second
+  automatic heavy trigger, and an agent who finds one stops and says so (cut
+  2).
+- **C3, accept.** Blocking includes an unmet accepted criterion or required
+  check; `AGENTS.md:363` stands; a cap lists unmet criteria rather than
+  closing them (cuts 1, 3).
+- **C4, accept.** Operative prose revises in place with git as the history;
+  reviews are preserved; equivalents are named with reasons (cut 4).
+- **C5, accept.** The criterion is now per archived artifact against the 6.9
+  baseline. The timing and token sentence is Q1 for the Decision, named as the
+  loss; recommended drop.
+
+Absorbed from Codex's proposal: the governing sentence, complexity as a
+finding (cut 5), unfinished work is not a saving (cut 6), and the four issue
+remedies, which the cuts now carry.
+
+### Withdrawn / superseded commitments
+
+- "When unsure, take the lighter lane" with no boundary clause: replaced by
+  cut 2's two-part rule.
+- Named surfaces as the only heavy trigger: replaced by two triggers.
+- "Each survivor named" without equivalents: replaced.
+- Success as review commits below half of all commits: withdrawn; it already
+  held (220/505 = 43.6%).
+- "Nothing else" (old cut 5): replaced by Q1.
