@@ -278,3 +278,38 @@ The revision addresses PR1-PR2 and SR1-SR2 in its wording: it names the command 
 **Covered**: claims and drift (`docs/release-process.md:133-145`); public path, design and fail-closed cases (proposal Tests required, S1-S4); reuse search above; cross-document signing (`bootstrap/PROVENANCE.md:29`); lifecycle and scope (proposal Proposal, Alternatives); satisfier (plan and tests). **Not covered**: no live GitHub response, remote tag, archive, signature or implementation was exercised. Security Review remains open.
 
 **Elapsed**: about 7 minutes. **Tokens**: estimated 5,000.
+
+## Review -- Codex GPT-6 (Security Reviewer) -- 2026-10-30
+
+```
+Reviewed commit: fbcd6ab0
+Target: widened release publication proposal and prior Security findings
+Prior findings: SR1, SR2
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately 2 minutes
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: the revised check compares independent gate evidence to the remote tag and refuses missing or ambiguous responses, without asserting archive integrity. -- proposal Proposal and S1-S5
+2. **Best alternative.** Keep the Maintainer's publication and notes inspection, with a read-only check; manual comparison alone leaves repeatable omission and mismatch checks to memory. -- proposal Alternatives and Tests required
+3. **What would show it wrong?** A published-state check passing a draft, missing Release or mismatched tag, or identifying the expected commit from the response itself, would defeat the stated boundary. -- proposal S1-S4 and Tests required
+
+SR1 is closed: the revision explicitly limits the link check and disclaims
+cached archive verification. SR2 is closed in the proposed contract: the cut
+will require a signed tag on the gate-checked commit, consistent with
+`bootstrap/PROVENANCE.md:398-407`. The withdrawal ledger accounts for the
+superseded doc-only approach and archive implication while retaining the
+original publication outcome. The exact endpoint, Git invocation and executable
+negative tests remain for the plan and implementation; their results are not
+claimed here.
+
+**Covered**: prior findings, trust inputs and refusal paths, release cut and
+signing consistency (`docs/release-process.md:133-143`,
+`bootstrap/PROVENANCE.md:398-415`), and withdrawal ledger. **Not covered**: no
+live GitHub, network, tag, archive or implementation test was performed.
