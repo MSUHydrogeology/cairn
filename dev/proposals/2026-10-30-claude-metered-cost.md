@@ -38,7 +38,8 @@ Cairn measures size, not spend (`tools/gauge.py`, `scripts/token_budget.py`);
   aggregates, in its gitignored `dev/measurement/` slot.
 - **No message content kept or shown:** parsing may read whole lines, but
   only usage numbers, timestamps and ids are kept. Git remotes are stored
-  with credentials removed; errors name a file and line, never its text.
+  with credentials removed; errors name a file and line, never its text;
+  displayed names pass through `encode_display` (`tools/session.py`).
 - **Bounded inputs:** regular files only, no links, a per-line size cap,
   finite non-negative numbers (`NaN` is invalid), reusing
   `_read_regular_bytes` (`tools/session.py:657`). Ledger writes are atomic
