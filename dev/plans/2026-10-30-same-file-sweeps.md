@@ -96,3 +96,57 @@ Signals); privacy and human confirmation (C1); serialization and staged bytes
 `evaluate_tracker`); lifecycle and verification mapping (plan template >
 Verification). Not covered: execution of scenarios, independent authorship
 confirmation, Security Review, or test runs.
+
+## Plan review -- Codex GPT-6 Security reviewer -- 2026-10-30
+
+```
+Reviewed commit: 35515e8c208f35d0dadac418a07c436ef9c461af
+Target: complete plan and accepted proposal's revised contract
+Prior findings: ordinary P1 considered, not closed
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+
+**Foundations**:
+
+1. **Should this happen as framed?** The plan preserves the accepted confirmation, serialization, privacy and event-counting boundaries, but its security checks need the completed mapping requested in ordinary P1 -- Acceptance criteria C1 and Verification.
+2. **Best alternative.** Retain human confirmation and the existing advisory gate, completing the check map before implementation; neither claims nor a new detector can establish line authorship -- accepted proposal, revised Proposal and Security preflight; `tools/evolution_infer.py::evaluate_tracker`.
+3. **What would show it wrong.** A legitimate integration counted as a sweep, staged foreign content missed, changed bytes signed without reinspection, or one multipath commit meeting recurrence would falsify the intended protection -- C1; `tools/evolution_infer.py::parse_incidents` and `evaluate_tracker`.
+
+**S1 -- Blocking: concur with ordinary P1's incomplete verification map.**
+The security contract is explicit, but Verification still postpones discovery
+of installed readers and public paths and leaves the snippet check unresolved.
+Before implementation, map the confirmation/uncertainty controls, inspection
+interval scenarios, grouped event and occurrence-date cases, and both advisory
+output formats to exact tests or documented human probes. In particular, name
+how uncertain reports stay outside the gate's `occurred` rows and how occurrence
+date populates its `Date` column: the current parser consumes those fields,
+not confirmation references or discovery dates. Complete ordinary P1's
+controlled reader search and standing-gate mapping, including applicable
+protected-file ceremony obligations. This is the same missing evidence, not a
+request for a second mechanism or reduced scope. The Security obligation stays
+open until the author supplies that mapping.
+
+The substantive boundaries are sound. C1 requires author confirmation or
+recorded provenance rather than inferred identity; the historical event remains
+conditional. Agreement starts before inspection and continues through commit;
+claims alone do not suffice, changed bytes are reinspected, and failed agreement
+routes work to separate worktrees. Noncooperation remains an explicit limitation.
+One row groups all paths per commit, existing rows are checked, occurrence and
+discovery dates differ, and uncertain or prevented cases do not count. Minimal
+confirmation references stay local; committed summaries exclude sensitive or
+unrelated working content. These controls preserve the accepted outcome without
+pretending the advisory gate authenticates testimony.
+
+Covered: claims, design and failure limits (C1, accepted preflight S1–S5);
+production readers and reuse (commit-pinned search for `evolution_infer` in
+`tools`, `templates/modules/default-on` and `bootstrap/tests`, including
+`tools/session.py::_run_evolution_infer`); consistency and drift (Scope and
+installed gate counterpart); lifecycle and scope (Sequence, doctrine-trigger
+fence, Scope delta); satisfier (S1). Not covered / low confidence: no tests,
+mutation, concurrency experiment, historical authorship confirmation or local
+tracker privacy audit; no scientific result is involved. This is a plan read,
+not implementation verification or certification.
