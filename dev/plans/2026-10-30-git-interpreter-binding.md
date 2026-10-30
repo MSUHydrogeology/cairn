@@ -417,3 +417,29 @@ full certification run occurred.
 * Shipped mutant: made the same single change only in `templates/skills/_lib/session.py`, in another copy. The command returned **1 passed (source), 1 failed (shipped)** in 0.14s; shipped `main()` returned 0 and continued into handoff preparation. **Killed.** The two production members were enumerated from the plan's coverage inventory and `bootstrap/_scaffold/config.py` installation map, not only from the diff.
 
 **Coverage:** claims, production path, design edge and fail-closed behavior: parameterized entry-point test and control/mutant ledger; consistency and reuse: the plan's two-copy mapping and the shared test parameter; drift and lifecycle: `e063ae4e` records the final mapped run as 569 passed and keeps C2 open; scope and satisfier: CR2's required shipped case is added without changing accepted behavior. **Not covered:** native Windows discovery and junction/reparse handling, independent repetition of all mapped families, same-user races, executable provenance, or the separate Security Review. The plan stays `implementing`.
+
+## Interim code review -- Codex gpt-6.1-sol -- 2026-10-30
+
+**Reviewed commit**: `9bc82798e84258079aeceb52a7c40d1b9ee714e1` (Windows evidence preparation)  
+**Obligation**: Internal  
+**Findings**: raised  
+**Bounding**: WIDER RUN REQUIRED -- native Windows entry-point and binding-leaf reparse cases are still unmapped; the runner cannot by itself establish clean, canonical, no-required-skip evidence. C2 remains open.
+
+**Foundations**
+
+1. **Does it do what it claims?** The six junction parameters are collected and the runner refuses a non-Windows host, but its success exit does not prove the stated clean checkout or absence of required skips -- `bootstrap/tests/test_git_interpreter_binding_portable.py:326-356`; `scripts/run_windows_interpreter_binding.py:17-28`; ledger below.
+2. **Best alternative.** Keep the small runner and existing portable file, but make the runner reject dirty or off-canonical runs and report required skips as open; add the missing entry-point and leaf-reparse probes in that file -- plan C2 and `dev/plans/2026-10-30-git-interpreter-binding/coverage.md` final paragraph.
+3. **What would show it wrong?** A runner success with changed tracked bytes or a required skip, or a binding-leaf reparse point accepted by either public path, would defeat the proposed Windows evidence; see the falsification ledger below.
+
+**WR1 -- runner can return success without its stated preconditions.** The docstring requires a clean committed checkout and Python 3.13, and says skipped required cases remain open. `git status --short` only prints its result; `check=True` checks Git's exit code, not cleanliness. `main()` does not check the interpreter version or parse pytest's skip outcome. A probe supplied a dirty status line and `1 skipped` with all subprocess exits zero; the runner returned zero. This is not a native Windows run, but it demonstrates the control-flow gap. **Satisfier:** refuse a nonempty tracked status and non-3.13 interpreter, and either make required skips fail the runner or require an explicit case-by-case disposition in the recorded Windows evidence.
+
+**WR2 -- required Windows path coverage is incomplete.** The new test makes directory junctions at `.git`, a regular pointer's administration target, and the `cairn` binding directory. It never makes a reparse point at the `local-env.json` leaf, and checks `_resolve_interpreter` and `write_local_env` directly rather than exercising the session and installer entry points that the coverage inventory requires. Its sentinel assertion proves only that a separate file in the outside directory was unchanged. **Satisfier:** add a native Windows binding-leaf reparse case with refusal and no-launch/no-outside-write assertions through both public paths; exercise the existing junction locations through those paths as mapped, or record any genuinely unsupported link type as an open C2 case.
+
+**Falsification ledger** (isolated `git archive` extraction of `9bc82798`; `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13, macOS):
+
+* Unmodified control: `python -m pytest bootstrap/tests/test_git_interpreter_binding_portable.py -q` returned **15 passed, 6 skipped** in 1.38s. The six new Windows parameters were skipped here; this measures collection, not their behavior on Windows.
+* `python scripts/run_windows_interpreter_binding.py` returned **2** with “Native Windows is required”; no Windows evidence was collected.
+* Imported the committed runner from the isolated extraction, supplied `os.name='nt'` and stubbed subprocess results that printed ` M tools/session.py` for Git status and `1 skipped` for pytest, all with exit zero. `main()` returned **0**. This is a control-flow probe, not simulated Windows filesystem evidence.
+* Read the new test's three `location` branches and the plan inventory's required path list. None constructs a binding-leaf reparse point or invokes the real session/install entry points in the junction case.
+
+**Coverage:** claims and fail-closed behavior: runner probe and `scripts/run_windows_interpreter_binding.py:17-28`; production path and design completeness: test `:326-356` against the coverage inventory's final paragraph; consistency and lifecycle: plan C2 remains open and the runner's stated clean-checkout requirement is not enforced; scope and satisfiers: WR1-WR2 retain the accepted Windows criterion. **Not covered:** native Windows execution, junction creation on Windows, every mapped family, same-user races, executable provenance, or the separate Security Review. The plan stays `implementing`.
