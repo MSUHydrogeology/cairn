@@ -1,7 +1,7 @@
 # Plan: Protect upgrade bases and install output
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-upgrade-install-integrity.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Check upgrade ancestors before merging and make supplied names recognizable in paths and output.
@@ -13,6 +13,8 @@ The Maintainer accepted the revised proposal: check saved merge ancestors and bi
 ## Scope
 
 Change `bootstrap/_scaffold/upgrade.py`, `install.py`, and `cli.py`, shared helpers where appropriate, their tests, `bootstrap/UPGRADE.md` and relevant descriptive install/lockfile guidance. No doctrine surface. The existing Maintainer-run AST re-anchor remains required; this plan does not authorize baseline installation or old-anchor reconciliation.
+
+**Stage and apply.** Stage records each automatic result’s source, destination and cache identity, expected digest and digest of the exact checked bytes. Apply compares the current record and bytes to that snapshot, then revalidates immediately before each automatic destination write; a changed or unreadable record or cache stops that write and lockfile advancement. Earlier unaffected writes may already have occurred: report them, retain staged data and original bad cache, and allow a safe restage and retry without overwriting adopter edits. This bounds changes observable at the checks, not arbitrary concurrent writes between a check and write; tell operators to stop concurrent writers. Recovery stores the preserved bad cache separately and establishes the new upstream ancestor at a distinct safe cache path before advancing provenance; failures leave the old evidence and adopter content recoverable. 
 
 **Reuse.** Searching `bootstrap/_scaffold` for `base_hash`, `_contained_lockfile_path`, `print_report`, and `fidelity_warnings` found existing digest production, shared path admission, report rendering and merge output. Extend the review-only and stage/apply mechanisms, and existing display escaping, rather than duplicate them. Search test consumers with `rg` for those symbols and command flags before implementation; update the mapping below if further consumers are found.
 
@@ -28,15 +30,16 @@ Change `bootstrap/_scaffold/upgrade.py`, `install.py`, and `cli.py`, shared help
 
 ### C1
 
-Hash raw saved bytes against a well-formed `sha256` base digest before decoding; merge that same read. Missing, malformed, mismatched, unreadable or invalid UTF-8 evidence, including legacy records without a valid base digest, produces review-only, preserving the adopter file and original bad cache. A staged automatic result binds the checked bytes and expected digest; changing either before apply invalidates that result, including race/error paths. Public plan, stage and apply tests cover matching control and a crafted loss case. Recovery tests reconcile the affected file, acknowledge review-only, advance unaffected files, preserve the bad cache as evidence, and complete a subsequent upgrade with a valid new ancestor derived from the applicable upstream template, never silently from the adopter file. Document exact operator steps and digest limitations.
+Hash raw saved bytes against a well-formed `sha256` base digest before decoding; merge that same read. Missing, malformed, mismatched, unreadable or invalid UTF-8 evidence, including legacy records without a valid base digest, produces review-only, preserving the adopter file and original bad cache. Public plan, stage and apply tests cover matching control and a crafted loss case. Recovery tests reconcile the affected file, acknowledge review-only, advance unaffected files, preserve the bad cache as evidence, and complete a subsequent upgrade with a valid new ancestor derived from the applicable upstream template, never silently from the adopter file. Document exact operator steps and digest limitations.
 
 ### C2
 
-At shared admission reject Unicode categories Cc and Cf, U+034F and variation selectors in source, destination and cache paths; escape rejected values in diagnostics. Permit decomposed accents and visible non-Latin names; test zero-width, bidi, terminal controls, contextual joiners and selectors. Explain the compatibility cost and a supported recovery for existing refused names without hand-editing tool-owned provenance. Escape supplied module and slot names for display, preserving ASCII readability and distinguishing literal backslashes from escapes; lookup uses unchanged names. Public commands cover unknown modules, unpaired-marker warnings, normal and absent-module slot reports, and merge and fidelity output. No claim of complete protection against visual deception.
+Retain existing containment and path-shape restrictions. At shared admission reject Unicode categories Cc and Cf, U+034F and variation selectors in source, destination and cache paths; escape rejected values in diagnostics. Permit decomposed accents and visible non-Latin names; test zero-width, bidi, terminal controls, contextual joiners and selectors. Explain the compatibility cost and a supported recovery for existing refused names without hand-editing tool-owned provenance. Escape supplied module and slot names for display, preserving ASCII readability and distinguishing literal backslashes from escapes; lookup uses unchanged names. Public commands cover unknown modules, unpaired-marker warnings, normal and absent-module slot reports, and merge and fidelity output. No claim of complete protection against visual deception.
 
 ### C3
 
 Run the mapped checks and scratch install/upgrade, including the recovery sequence; record results and omissions against the exact clean implementation commit. In separate scratch copies, remove the digest check and display escaping respectively: relevant behavior tests must fail, with controls passing. Record each mutation and outcome. Security preflight S2 is exercised here; S3 is the public commands and gates below. Unmet checks keep the work open. The existing AST ceremony is not performed by this plan's implementation agent.
+
 
 ## Scope delta
 
@@ -44,9 +47,11 @@ Run the mapped checks and scratch install/upgrade, including the recovery sequen
 
 ## Verification
 
-Boundary A uses the canonical Python 3.13 interpreter and scoped tests. For ancestor and recovery behavior run `python -m pytest bootstrap/tests/test_upgrade.py bootstrap/tests/test_upgrade_lockfile_path_containment.py bootstrap/tests/test_upgrade_side_door_parity.py`; for module addition and provenance consumers run `python -m pytest bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_lockfile_provenance.py`; for display and install paths run `python -m pytest bootstrap/tests/test_install_report_slots.py bootstrap/tests/test_install_module.py bootstrap/tests/test_module_merge.py bootstrap/tests/test_scaffold.py`. Add public-command tests in the owning files and include their files in these commands. Split selections within the broad-run guard's file limit and reconcile the union; do not override the guard. Search actual readers and extend this mapping before execution if affected consumers are missing.
+The reviewed command, input, test and wording mapping is `dev/plans/2026-10-30-upgrade-install-integrity/public-paths.md`.
 
-Exercise `python bootstrap/scaffold.py upgrade --target <repo>` with `--plan`, `--stage`, `--apply` and `--apply --ack-review-only` in a scratch project, and `bootstrap/scaffold.py` install with normal, absent and unknown module cases. Check command help and actual entry points before using them. The new behavior tests must cover all C1/C2 cases, not just the smoke. Run `python scripts/claim_check.py` on changed documentation, `python scripts/check_cairn.py`, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py` where synced snippets change, and `python scripts/quality_gate.py --sub neutrality` for prose. Run `python -m pytest bootstrap/tests/test_security_lint.py` for the engine Bandit gate, treating a skip as an unmet check; do not run the full suite here.
+Boundary A uses the canonical Python 3.13 interpreter and scoped tests. For ancestor and recovery behavior run `python -m pytest bootstrap/tests/test_upgrade.py bootstrap/tests/test_upgrade_lockfile_path_containment.py bootstrap/tests/test_upgrade_side_door_parity.py`; for module addition and provenance consumers run `python -m pytest bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_lockfile_provenance.py`; for display and install paths run `python -m pytest bootstrap/tests/test_install_report_slots.py bootstrap/tests/test_install_module.py bootstrap/tests/test_module_merge.py bootstrap/tests/test_scaffold.py`. Add public-command tests in the owning files and include their files in these commands. Split selections within the broad-run guard's file limit and reconcile the union; do not override the guard. Search actual readers and extend this mapping if affected consumers are missing.
+
+Exercise `python bootstrap/scaffold.py upgrade --target <repo>` with `--plan`, `--stage`, `--apply` and `--apply --ack-review-only` in a scratch project, and `bootstrap/scaffold.py` install with normal, absent and unknown module cases. The new behavior tests must cover all C1/C2 cases, not just the smoke. Run `python scripts/claim_check.py` on changed documentation, `python scripts/check_cairn.py`, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py` where synced snippets change, and `python scripts/quality_gate.py --sub neutrality` for prose. Run `python -m pytest bootstrap/tests/test_security_lint.py` for the engine Bandit gate, treating a skip as an unmet check; do not run the full suite here.
 
 Boundary B is **wide** for the engine contract and security boundary: repeat the mapped owning families, public paths, mutation and standing gates on a clean, unchanged final implementation commit under the canonical interpreter. Record tested SHA and reviewed range, interpreter, clean pre/post state, commands, outcomes, timing, non-pass dispositions, omissions, and **Certified by**: pending. Certification is separate. Boundary C is independent targeted falsification by the code reviewer, including the set of output routes and staged-evidence changes; the reviewer records bounding and any missing check. An AST re-anchor follows its existing Maintainer-run ceremony, separately authorized.
 
@@ -101,3 +106,12 @@ In the operative cells, name the stage-bound evidence (including expected digest
 The character policy correctly separates admission from display and retains decomposed accents and visible non-Latin names. Keep existing containment and path-shape restrictions when extending admission; do not substitute a smaller forbidden-character set for them. The named display routes and compatibility recovery still need the command/input/assertion mapping requested by ordinary PR1; this pass does not duplicate that finding.
 
 **Coverage:** claims, completeness and fail-closed behavior: C1 and `_compute_upgrade`/`_apply_upgrade`; production paths and drift: `_write_stage`, install `print_report`, CLI merge/fidelity output and ordinary PR1; reuse and consistency: searches for `base_hash`, `_contained_lockfile_path`, `print_report` and `fidelity_warnings`; lifecycle: declared obligations and Maintainer-only AST ceremony; domain/scope: consistency rather than authentication, no scientific result; satisfier: explicit operative contract and mapped race/failure tests above. **Not covered / low confidence:** no implementation, mutation, runtime, command execution or platform rendering tests; no suite run. This is the Security plan pass, not implementation assurance.
+
+## Response to plan review -- Codex GPT-6 -- 2026-10-30
+
+| Finding | Disposition |
+|---|---|
+| PR1 | Accepted. The public paths mapping records each selected input, test home and operator-facing assertion; verification retains scoped runs. |
+| SRP1 | Accepted. C1 defines stage snapshot, pre-write comparison, observable concurrency boundary, partial-write and retry handling, and distinct recovery evidence; the mapping records deterministic race and failure tests. C2 retains existing path restrictions. |
+
+Both plan-review obligations are complete. Scope remains preserved; implementation remains subject to the Maintainer-run AST ceremony already applicable.
