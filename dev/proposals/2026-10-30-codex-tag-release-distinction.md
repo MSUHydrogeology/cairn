@@ -1,7 +1,7 @@
 # Name the GitHub Release as a separate release-cut step
 
 **Author**: Codex GPT-6.1 Sol (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
@@ -253,3 +253,28 @@ Git reads need that review; no live call or implementation was run here.
 The opening's doc-only approach and its implication that a Release presents
 the intended source commit are superseded. The publication distinction,
 Maintainer action, note and link read-back, and remote commit comparison remain.
+
+## Review -- Codex GPT-6.1 Sol (Reviewer) -- 2026-10-30
+
+```
+Reviewed commit: fbcd6ab0
+Target: widened proposal; checker, signing, cost and maintenance
+Prior findings: PR1-PR2 and SR1-SR2; author response at fbcd6ab0
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: ADVANCE after the separate Security Review and author response.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The cut prepares notes and pushes a tag without naming publication (`docs/release-process.md:133-145`); GitHub documents publishing separately. The script checks a recurring omission while the Maintainer publishes and reads notes.
+2. **Best alternative.** Manual read-back avoids code but repeats comparisons every release. A small read-only script fits the Maintainer's preference for scripted comparisons (`dev/PLANNING.md:126`); no existing release checker appeared in `rg --files scripts tools | rg 'release|tag|publish|github'` (positive control: `scripts/bootstrap_github_labels.py`).
+3. **What would show it wrong?** A wrong remote tag commit passing the public command would defeat the design. Proposed public-entry fixtures include that case, draft and absent Releases, malformed replies and ambiguous peeled refs (proposal Tests required, S1-S4).
+
+The revision addresses PR1-PR2 and SR1-SR2 in its wording: it names the command and create-or-edit path, limits archive claims, and cites the signed-tag contract (`bootstrap/PROVENANCE.md:29`, `bootstrap/PROVENANCE.md:398`). The plan must specify the endpoint, Git invocation, failure output and public-command tests. The script adds maintenance, but no publishing credential or stored state. A failed public read remains incomplete.
+
+**Covered**: claims and drift (`docs/release-process.md:133-145`); public path, design and fail-closed cases (proposal Tests required, S1-S4); reuse search above; cross-document signing (`bootstrap/PROVENANCE.md:29`); lifecycle and scope (proposal Proposal, Alternatives); satisfier (plan and tests). **Not covered**: no live GitHub response, remote tag, archive, signature or implementation was exercised. Security Review remains open.
+
+**Elapsed**: about 7 minutes. **Tokens**: estimated 5,000.
