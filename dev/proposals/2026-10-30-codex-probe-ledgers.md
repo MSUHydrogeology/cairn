@@ -1,7 +1,7 @@
 # Keep probe evidence in tests and scripts
 
 **Author**: Codex gpt-6
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — governing doctrine and vendor-neutral authoring templates are named high-risk surfaces.
 **Plan review**: required(Internal + Internal Security Review)
@@ -14,7 +14,7 @@ The Maintainer directed: “Let's address the rest of issue #39 too. We don't ne
 
 ## Proposal
 
-Remove requirements to maintain probe or falsification ledgers in plans, reviews and commit messages, including per-probe and mutation inventories there. Keep reproducible evidence in tests and scripts, and cite relevant evidence and results concisely in the existing records. Preserve independent review, the three evidenced Foundations answers, findings and coverage gaps, applicable verification and mutation checks, and reporting of outcomes and omissions. Do not retrofit historical records. Align operative self-hosted and shipped text and its actual readers with this change; do not add a replacement reporting process.
+Remove requirements to maintain probe or falsification ledgers in plans, reviews and commit messages, including per-probe and mutation inventories there. Keep reproducible evidence in tests and scripts, and cite relevant evidence and results concisely in the existing records. Preserve independent review, the three evidenced Foundations answers, findings and coverage gaps, applicable verification and mutation checks, and honest summaries of outcomes and omissions, including surviving or unmeasured mutations, without per-mutant inventories in records. Do not retrofit historical records. Align operative self-hosted and shipped text and its actual readers with this change; do not add a replacement reporting process.
 
 ## Rationale
 
@@ -103,3 +103,14 @@ Assurance path: high-assurance
 The security-sensitive boundary is authority carried by installed instructions. Removing an inventory must not remove the act of trying to falsify a claim. The operative proposal preserves that act and its checks while moving repeatable detail to tests/scripts. Its high-assurance path and separate plan Security Review remain explicit. No added parser, subprocess, path, network or credential boundary is proposed; the named tests' scaffold invocation is an existing consumer, not a proposed execution change.
 
 **Covered**: committed proposal, source/shipped ledger provisions, named test readers and the security-review trust-boundary checklist. **Not covered / low confidence**: implementation bytes, complete consumer mapping and executable results; no suite, mutation run or re-anchor performed at proposal stage.
+
+## Response -- Codex gpt-6 -- 2026-10-30
+
+**Elapsed**: under 1 minute
+**Tokens**: unknown
+
+Ordinary review advice: accepted; the proposal now makes honest mutation outcomes and omissions explicit without reinstating inventories. Security Review: no findings.
+
+### Withdrawn / superseded commitments
+
+None.
