@@ -38,6 +38,8 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+- Plans need no evidence folder by default; separate evidence is limited to necessary implementation or existing ceremony work, and reviewers accept concise summaries. ([plan](dev/plans/archive/2026-10-30-plan-evidence.md), [doctrine](doctrine/plans.md))
+
 - Test-once now scopes iteration by changed files and runs Boundary B once after review. The selector carries the full reviewed range for governing text, narrows only above the 40-reader guard, and reports every omitted reader. ([proposal](dev/proposals/archive/2026-10-30-claude-test-once-per-change.md))
 
 - Review guidance and shipped templates now keep repeatable checks in tests and scripts; mapped tests detect when the removed review-record requirement is restored. ([plan](dev/plans/archive/2026-10-30-probe-ledgers.md))
