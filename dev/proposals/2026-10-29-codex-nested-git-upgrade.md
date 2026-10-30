@@ -1,7 +1,7 @@
 # Protect nested Git data during upgrade
 
 **Author**: Codex GPT-6
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -430,4 +430,10 @@ The derived plan requires Internal and Internal Security Review.
 The opening's lexical-only mechanism is superseded by checks of both supplied
 and resolved path components, to deliver its stated read protection for stable
 symlink aliases.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-30
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated**:
+
+> "Accept all 7 proposals as revised."
 
