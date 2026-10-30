@@ -132,3 +132,29 @@ Plan authoring: about 6 minutes; tokens unknown. Python 3.12.9 ran claim,
 link and prose checks successfully; neutrality reported zero failures and 43
 informational entries. External links were read through official documentation;
 no implementation, live publication check or suite was run.
+
+
+## Plan review -- Codex GPT-6.1 Sol (Reviewer) -- 2026-10-30
+
+```
+Reviewed commit: af0fb7ba24e2d71af641dbcc89496daae0738ec9
+Target: opening plan and accepted proposal
+Prior findings: none
+Assurance path: Internal + Internal Security Review
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: none
+**Verdict**: advance after the separate Security Review and author response.
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: the plan retains the independent gate commit, publication and signed-tag requirements, and bounds the archive claim -- source proposal Proposal; plan C1.
+2. **Best alternative.** Manual comparison avoids a helper but repeats checks at every cut; the read-only command preserves the accepted outcomes without publication credentials -- source proposal Alternatives; plan Protocol.
+3. **What would show it wrong?** A draft Release or wrong peeled commit passing the public command would defeat the accepted check -- source proposal Tests required; plan Boundary A mapping.
+
+The plan names both remote inputs, refusal cases and public-command fixtures, and keeps the human publication and notes checks. It preserves the signed-tag contract without claiming that source links establish archive contents. The wide verification map names the new test family and prose gates; the live cut remains outside this work -- plan C1, Protocol and Boundary A/B; `bootstrap/PROVENANCE.md:398-407`.
+
+**Covered**: accepted outcomes and scope, trust inputs, failure cases, verification mapping, documentation placement and lifecycle sequencing -- source proposal Proposal and Tests required; plan Scope, Sequence and Verification. **Not covered**: no implementation, live GitHub response, tag signature, archive contents or Security Review.
