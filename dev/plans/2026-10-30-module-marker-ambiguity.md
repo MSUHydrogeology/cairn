@@ -125,3 +125,30 @@ Maintainer-requested ceremonies, not prerequisites here.
 Reviewer read committed work and challenge the named marker grammar, caller
 coverage and preservation contract. Record independent falsification and
 bounding; do not rerun implementation checks or the full suite.
+
+
+## Plan review -- Codex GPT-6.1 Sol (Reviewer) -- 2026-10-30
+
+```
+Reviewed commit: a72805e75646dc766b2efadf9d0f516f42442cfb
+Target: complete plan and accepted proposal; non-author ordinary review
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: C1 preserves the accepted bounded grammar, empty-selection preflight and three-artifact refusal contract. The checked current parser independently searches closers and its caller uses the narrower substring. -- `bootstrap/_scaffold/install.py:1355-1448`, `:1569`; source proposal Proposal.
+2. **Best alternative.** Keep the shared reconciler and existing command fixtures; a second parser would duplicate the rule. Both repeat adoption and ordinary adoption already reach discovery preparation. -- `bootstrap/_scaffold/upgrade.py:2024-2051`, `:2143`, `:2212`; `bootstrap/tests/test_onboarding_seed_roster.py:38-60`.
+3. **What would show it wrong?** A malformed marker passing empty-selection install, or a refusal changing lock bytes, defeats C1. The mapped public tests and three mutations directly challenge these outcomes. -- plan Acceptance criteria and Verification.
+
+**P1 (blocking): add the omitted AST-baseline check.** Engine edits trigger `bootstrap/AST_BASELINE_RUNBOOK.md` > “When this fires”; the mapped security-lint family does not run that check. Add `bootstrap/tests/test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package` to A/B, derive any delta using the runbook, and explicitly stop for Maintainer disposition when its authority limits apply. Do not infer that deferring re-anchor waives this required check. This mapping and failure disposition close P1.
+
+**Covered**: claims/design/refusal (C1; install parser); production path/reuse (fixture helper and upgrade callers above); consistency/drift (accepted proposal; AST runbook); lifecycle/scope (C1/C2 gates; preserved scope); satisfier (P1's named test and disposition). **Not covered**: implementation, runtime/mutations, complete call-site enumeration or separate Security obligation; no suite run.
+
+**Elapsed**: about 3 minutes. **Tokens**: unknown.
