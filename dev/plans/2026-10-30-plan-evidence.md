@@ -134,3 +134,11 @@ No additional security blocker found. Summaries do not waive required checks, an
 **Findings**: none. The preliminary dirty-tree Python 3.12 test figures do not close Boundary B; the plan explicitly owes a clean committed Python 3.13 wide selection after review.
 
 **Covered**: committed implementation and scenario-response records, accepted proposal, both template verification/security controls, doctrine and architecture-review artifact restriction. **Not covered**: independent scenario rerun, security-ceremony execution, exhaustive consumer discovery or final Boundary B. No suite, review sidecar or new enforcement mechanism.
+
+## Boundary B verification -- Codex gpt-6.1-luna -- 2026-10-30
+
+**Mode**: wide (governing lifecycle rules). **Certified by**: pending.
+
+**SHA / range**: implementation `dfb096b4`; verification and review records through `ca092511`. The clean copy was detached at `ca0925118ec43571508447de46c382591e74d7ce`; a later unrelated API-plan record commit was outside this plan's path set. **Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13. **Tree**: clean before and after in the isolated copy; the shared worktree was not used.
+
+**Selection**: `tools/test_tiers.py for` the four changed guidance files plus this plan selected 19 files: 10 contract, 2 unit, 2 workflow, and 5 integration. The pytest command ran that complete selection once with `--durations=10`: 1,038 collected, 1,038 passed in 13.62 seconds; no failures, skips, or deselections. The slowest reported test call was 0.40 seconds. Per-file elapsed times were not captured. The iteration and integration/workflow selection ran together once after ordinary and Security Review; no full suite or re-anchor ran. **Omissions**: per-file timing was not measured; folderless/existing-folder discovery and the manual archive move are recorded in the preceding author response. **Elapsed**: 13.62 seconds. **Tokens**: unknown.
