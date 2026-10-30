@@ -2,17 +2,16 @@
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-tag-release-distinction.md
 **Author**: Codex GPT-6.1 Sol (Implementation plan author)
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Add a read-only publication check and make the release guide distinguish publishing a Release from pushing its signed tag.
 
 ## Source proposal
 
-The accepted proposal requires explicit create-or-edit publication, manual notes
-and source-link inspection, an independent gate-commit comparison, and the
-existing signed-tag requirement. Its Decision authorizes implementation, not a
-live release, push or publication.
+The accepted proposal requires create-or-edit publication, notes and source-link
+inspection, an independent gate-commit comparison, and signed tags. Its Decision
+authorizes implementation, not a live release.
 
 ## Scope
 
@@ -95,7 +94,23 @@ ref names; reject extra or duplicate records, absent peeled ref or commit
 mismatch. Do not use --refs, which suppresses peeling. Bound the subprocess to
 30 seconds, disable terminal prompts, and never fall back to local refs or
 Release target_commitish. The public interface accepts no alternate remote or
-API host. Tests may isolate transports through child-process fixtures without
+API host.
+
+**Git isolation.** Reuse the closed-environment approach in
+`scripts/content_scan_runner.py`, not its audit-specific interface. Resolve the
+host Git executable once; run it from a fresh non-repository temporary directory.
+Construct a new child environment admitting only PATH and Windows SYSTEMROOT
+where needed, plus explicit controls: GIT_CONFIG_NOSYSTEM=1,
+GIT_CONFIG_SYSTEM and GIT_CONFIG_GLOBAL set to the null device,
+GIT_TERMINAL_PROMPT=0 and GIT_CEILING_DIRECTORIES at the temporary directory's
+parent. Inherit no other GIT_*, HOME/XDG, proxy or transport environment.
+Prefix the command with `-c protocol.allow=never -c protocol.https.allow=always
+-c http.followRedirects=false -c credential.helper=`. No ambient repository,
+global, system or injected command configuration may rewrite the URL, select
+another transport or supply credentials. Host Git and system TLS trust remain
+trusted inputs; this is not executable authentication.
+
+Tests may isolate transports through child-process fixtures without
 adding a production bypass. Protocol sources: [GitHub Release API](https://docs.github.com/en/rest/releases/releases#get-a-release-by-tag-name)
 and [Git ls-remote](https://git-scm.com/docs/git-ls-remote).
 
@@ -104,8 +119,12 @@ and [Git ls-remote](https://git-scm.com/docs/git-ls-remote).
 invariants and public-command fixtures, using local annotated Git refs and
 stubbed Release replies. Cover malformed fields, missing publication date,
 lightweight tags, duplicate refs, timeouts, unsafe inputs, encoded tag names,
-redirect refusal and help/usage as well as accepted negative cases. Confirm the
-real ls-remote invocation against local refs; no live network required.
+redirect refusal and help/usage as well as accepted negative cases. Add a
+public-command fixture with a matching substituted repository and hostile
+insteadOf in repository/global/system and GIT_CONFIG_* inputs: it must refuse
+or reach the intended HTTPS URL, never accept the substitute. Cover ambient
+proxy, helper and redirect settings; inspect the child environment. Confirm real
+ls-remote against local refs; no live network required.
 
 For the guide and this plan run `python scripts/claim_check.py PATH`,
 `python scripts/link_check.py PATH`, and `python scripts/check_cairn.py PATH`.
@@ -128,10 +147,8 @@ B. Any mutation report names its unmutated control, total, killed, survivors
 and measured equivalents. Live GitHub, archive contents and tag-signature
 verification remain outside this helper's coverage.
 
-Plan authoring: about 6 minutes; tokens unknown. Python 3.12.9 ran claim,
-link and prose checks successfully; neutrality reported zero failures and 43
-informational entries. External links were read through official documentation;
-no implementation, live publication check or suite was run.
+Plan authoring: about 6 minutes; tokens unknown. Verification is recorded in
+opening commit af0fb7ba.
 
 
 ## Plan review -- Codex GPT-6.1 Sol (Reviewer) -- 2026-10-30
@@ -183,3 +200,18 @@ Elapsed: about 3 minutes; tokens: unknown
 **P1 (blocking) — Git can rewrite the fixed remote.** The Protocol fixes the URL and disables terminal prompts but does not isolate Git configuration. Git's `url.*.insteadOf` can redirect that URL: `git -c 'url.file:///private/tmp/nonexistent-cairn-review.insteadOf=https://github.com/example/repo.git' ls-remote --exit-code --tags https://github.com/example/repo.git refs/tags/v1 'refs/tags/v1^{}'` tried the local path. A matching substituted repository could falsely establish the remote tag identity at a release cut. Specify a configuration/environment boundary that prevents URL rewriting and other transport redirection, and add a public-command negative fixture that supplies a matching substituted ref and requires refusal or the intended GitHub read. Preserve bounded, credential-free reads.
 
 **Covered:** claims and production path (plan Protocol and command probe); completeness and failure direction (C1 and P1); consistency and reuse (`bootstrap/PROVENANCE.md:398-407`, `scripts/content_scan_runner.py:222-224`); drift and lifecycle (source Decision and plan Sequence); domain and scope (no scientific result, no live cut); satisfier (P1). **Not covered:** implementation, live GitHub, archive bytes, signature verification, or full suite.
+
+
+## Response to plan review -- Codex GPT-6.1 Sol -- 2026-10-30
+
+| Finding | Disposition |
+|---|---|
+| Internal review, no findings | Retained the accepted protocol and mapped outcomes. |
+| Security P1 at 32008d9b | Accepted. Verification > Git isolation now excludes ambient repository/global/system and environment configuration, disables redirects and credentials, and limits transport to HTTPS. Boundary A adds the matching-substitute public-command regression and hostile configuration inputs. |
+
+The one-pass review fold is complete; status is ready-to-implement. Scope is
+preserved. Host Git and system TLS remain trusted; no new authentication claim
+is made. Implementation must measure the isolation and regression, which this
+plan response has not run.
+
+**Elapsed**: about 3 minutes. **Tokens**: unknown.
