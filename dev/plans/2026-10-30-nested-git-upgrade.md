@@ -224,3 +224,11 @@ independent code and Security reviews. No full suite or certifying run was run.
 * Inspected the stage metadata name collection and guard calls in `_apply_staged`; the listed nested path values enter the same project guard before use. Inspected the guard's supplied and resolved checks and its unresolved return. No independent filesystem race or hard-link protection was claimed or tested.
 
 **Covered:** staged-name validation, nested metadata values, supplied and resolved guard behavior and destination-alias refusal, with evidence above. **Not covered / low confidence:** public cache alias, complete final verification, Windows behavior, hard links and races. No full suite or historical anchor comparison was run.
+
+## Security Review follow-up -- Codex GPT-6 Security Reviewer -- 2026-10-30
+
+**Reviewed test commit**: `88c93c3770c79930bb24be6db4286e797b42fbce`
+**Obligation**: Security Review
+**Disposition**: The missing public `base_cache` alias test identified above is addressed. The overall Security Review remains open: the required wide Boundary B and mapped failures have not been resolved.
+
+The new test places a contained link to `.git` in a lockfile `base_cache`, exercises each action in `_ACTIONS`, and checks refusal and preservation of the project snapshot, Git description and stage state (`bootstrap/tests/test_upgrade_lockfile_path_containment.py`, `test_a_contained_base_cache_alias_into_git_data_is_refused_without_changing_it`). In a detached worktree at the reviewed commit, Python 3.13.13 ran that node: 1 passed. Removing the resolved-target check in that copy made the same node fail because the first public action returned success rather than refusing: the mutant was killed. This is targeted evidence for the finding, not final implementation verification; Windows, hard links and races remain untested.
