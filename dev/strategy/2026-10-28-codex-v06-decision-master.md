@@ -87,97 +87,102 @@ not prerequisites. Align the plans. Candidate, package and signer need
 Maintainer authorization; pushing is separate. Dormant bridge `6e3197f6` is
 approved but uninstalled and not certified. Account for frozen checker wording.
 
-### 5. Queued convention choice: session handoff marker
+### 5. Session-start handoff marker — corrected
 
-A scratch history reproduced `Goodnight` missing `Handoff:`. **Recommend:** use
-`--handoff-marker` in Cairn; settle a convention before changing adopters' default.
-This remains queued, not a prerequisite to the open decisions.
+Commit `6f425b64` changed the session-start default from `Goodnight` to
+`Handoff` in the CLI and shipped kernel, with the owning test updated. Its
+bounded check passed (26 tests, Python 3.13.13); certification remains pending.
 
-### 6. Upgrade base and install-output integrity
+### 6. Upgrade base and install-output integrity — accepted
 
-**Awaiting the Maintainer's Decision.** The [proposal](../proposals/2026-10-29-codex-upgrade-install-integrity.md)
-checks saved ancestor bytes before merging; invalid evidence routes to manual
-review while preserving adopter files and cache. It rejects Cc/Cf, U+034F and
-variation selectors in paths, retains ordinary combining marks and visible
-non-Latin names, and escapes supplied output names. Reviews accepted. The digest
-is not authentication when cache and lockfile are jointly controlled. No
-implementation; Internal/Security plan reviews and AST ceremony remain. No
-baseline installation or old-anchor reconciliation is authorized.
+The [archived proposal](../proposals/archive/2026-10-29-codex-upgrade-install-integrity.md)
+and [plan](../plans/2026-10-30-upgrade-install-integrity.md) are accepted; the
+plan is `ready-to-implement`. Check saved ancestor bytes before merging; invalid
+evidence routes to manual review while preserving adopter files and cache.
+Reject Cc/Cf, U+034F and variation selectors in paths, retain ordinary
+combining marks and visible non-Latin names, and escape supplied output names.
+The digest is not authentication when cache and lockfile are jointly controlled.
+The separate Maintainer-run AST ceremony remains required. No baseline
+installation or old-anchor reconciliation is authorized.
 
-### 7. Directories occupying tracked upgrade paths
+### 7. Directories occupying tracked upgrade paths — accepted
 
-**Awaiting the Maintainer's Decision.** The [proposal](../proposals/2026-10-29-codex-upgrade-directory-collisions.md)
-hard-blocks a tracked destination occupied by a directory, preserving contents
-until resolution and a fresh stage. It retains unaffected-file reporting but
-allows no partial apply, adoption or review pair. Both reviews accepted; the
-response covers stage/apply observation points and containment. Arbitrary races
-after checks remain possible. Implementation, plan reviews and AST ceremony
-remain pending.
+The [archived proposal](../proposals/archive/2026-10-29-codex-upgrade-directory-collisions.md)
+and [plan](../plans/2026-10-30-upgrade-directory-collisions.md) are accepted;
+the plan is `ready-to-implement`. Hard-block a tracked destination occupied by
+a directory, preserving contents until resolution and a fresh stage. Keep
+unaffected-file reporting, but allow no partial apply, adoption or review pair.
+Arbitrary races after checks remain possible. Implementation verification and
+the separate Maintainer-run AST ceremony remain.
 
-### 8. Nested Git paths during upgrade
+### 8. Nested Git paths during upgrade — accepted
 
-**Awaiting the Maintainer's Decision.** The [proposal](../proposals/2026-10-29-codex-nested-git-upgrade.md)
-refuses `.git` components in supplied and resolved project paths, including
-lockfile destinations, caches and staged names. This closes the demonstrated
-nested-hook write and stable symlink read while retaining ordinary contained
-links and lookalikes. Trailing-dot/space compatibility costs remain; hard links
-under other names and post-check races are not covered. Resolved-target reviews
-accepted; implementation, Internal/Security plan reviews and AST ceremony
-remain pending.
+The [archived proposal](../proposals/archive/2026-10-29-codex-nested-git-upgrade.md)
+and [plan](../plans/2026-10-30-nested-git-upgrade.md) are accepted; the plan is
+`ready-to-implement`. Refuse `.git` components in supplied and resolved project
+paths, including lockfile destinations, caches and staged names. Keep ordinary
+contained links and lookalikes. Trailing-dot/space compatibility costs remain;
+hard links under other names and post-check races are not covered. Implementation
+verification and the separate Maintainer-run AST ceremony remain.
 
-### 9. Prepare the handoff before pruning
+### 9. Prepare the handoff before pruning — accepted
 
-**Awaiting the Maintainer's Decision.** The [proposal](../proposals/2026-10-29-codex-handoff-prune.md),
-handed off at `c6c6bbea`, adds non-pruning preparation with capture prompts and
-preview, preserving `--handoff` as the guarded user-run deletion. Both reviews
-accepted. Preparation cannot prove sessions are quiet; the user must establish
-quiet when pruning. Plan reviews and the doctrine-evolution gate remain.
+The [archived proposal](../proposals/archive/2026-10-29-codex-handoff-prune.md)
+and [plan](../plans/2026-10-30-handoff-preparation.md) are accepted; the plan
+is `ready-to-implement`. Add non-pruning preparation with capture prompts and
+preview; retain `--handoff` as guarded user-run deletion. Preparation cannot
+prove sessions are quiet; the user establishes quiet before pruning. Implementation
+verification and the doctrine-evolution gate before doctrine edits remain.
 
-### 10. Bind the interpreter in Git's per-worktree administration
+### 10. Bind the interpreter in Git's per-worktree administration — accepted
 
-**Awaiting the Maintainer's Decision.** The [proposal](../proposals/2026-10-29-codex-git-interpreter-binding.md),
-handed off at `74b5917f`, stores the binding in verified per-worktree Git
-administration and requires exact-root discovery. Non-repository installs can
-proceed without it and rebind later; the legacy file is never read or migrated.
-Revised ordinary findings were answered and Security accepted. Copied `.git`
-administration or a delivered pointer can still supply the binding, a residual
-for Maintainer judgment. Native Windows discovery and junction/reparse evidence
-remain required; Internal/Security plan reviews remain.
+The [archived proposal](../proposals/archive/2026-10-29-codex-git-interpreter-binding.md)
+and [plan](../plans/2026-10-30-git-interpreter-binding.md) are accepted; the
+plan is `ready-to-implement`. Store the binding in verified per-worktree Git
+administration and require exact-root discovery. Non-repository installs can
+proceed without it and rebind later; never read or migrate the legacy file.
+Copied `.git` administration or a delivered pointer can still supply the
+binding. Copied Git administration remains a residual source. Native Windows
+discovery and junction/reparse evidence remain required during implementation.
 
-### 11. Detect and report same-file sweeps
+### 11. Detect and report same-file sweeps — accepted
 
-**Awaiting the Maintainer's Decision.** The [proposal](../proposals/2026-10-29-codex-same-file-sweeps.md)
-clears its Security obligation at `7211bca4`. It counts only confirmed
-misattributed commits (another author's uncommitted work committed without
-attribution), one row each with grouped paths and occurrence separate from
-discovery date; uncertainty is excluded without author confirmation or
-provenance. Require writer agreement through commit, inspect staged/unstaged and
-new files, recheck changed bytes, or use separate worktrees. Claims are not
-consent; stop on foreign/uncertain content. Keep minimal local references and
-screen summaries; never copy private chats, secrets or unrelated text. The
-advisory gate is incomplete; noncooperation, omissions and dishonest reports
-remain possible. Plan/code Security reviews remain owed.
+The [archived proposal](../proposals/archive/2026-10-29-codex-same-file-sweeps.md)
+and [plan](../plans/2026-10-30-same-file-sweeps.md) are accepted; the plan is
+`ready-to-implement`. Count confirmed misattributed commits only, one row each,
+with grouped paths and occurrence separate from discovery; uncertainty is
+excluded without author confirmation or provenance. Require writer agreement
+through commit, inspect staged/unstaged and new files, recheck changed bytes, or
+use separate worktrees. Claims are not consent; stop on foreign/uncertain
+content. Keep minimal local references and screen summaries; never copy private
+chats, secrets or unrelated text. The advisory gate is incomplete; omissions,
+noncooperation and dishonest reports remain possible. Implementation must
+verify the mapped behaviors and complete applicable frozen-file ceremony.
 
-### 12. Correct work-intent guidance and identity help
+### 12. Correct work-intent guidance and identity help — accepted
 
-**Awaiting the Maintainer's Decision.** The [proposal](../proposals/2026-10-29-codex-intent-guidance.md),
-handed off at `f2a5b459`, reconciles guidance and parent CLI help without changing
+The [archived proposal](../proposals/archive/2026-10-29-codex-intent-guidance.md)
+and [plan](../plans/2026-10-30-intent-guidance.md) are accepted; the plan is
+`ready-to-implement`. Reconcile guidance and parent CLI help without changing
 enforcement. The opt-in hook blocks fresh overlaps only with a token and
-different resolved labels; stale/unclaimed paths warn. Use one session label for
-claim, commit and inherited auto-release; prefer harness identity, avoid global
-overrides and shared sibling labels. Manual release uses claim ID, not label
-authentication. Labels/logs are cooperative, not authentication. Security
-accepted after ordinary findings were answered; Internal/Security plan reviews
-remain owed.
+different resolved labels; stale/unclaimed paths warn. Use one session label
+for claim, commit and inherited auto-release; prefer harness identity, avoid
+global overrides and shared sibling labels. Manual release uses claim ID, not
+label authentication. Labels/logs are cooperative, not authentication.
+Implementation must complete mapped checks and applicable frozen-file and
+doctrine-evolution gates.
 
 ### Certification cost — held for evidence, not a current Decision
 
 The [proposal](../proposals/2026-10-29-codex-certification-cost-audit.md) remains
-`revising`, held by its author until the next independently authorized clean
-certification supplies family timings. It will then append a concrete candidate
-and fault evidence for review before a Decision. The historical 24:55 run is
-not a current measurement; no extra full suite is authorized. If no ordinary
-family has a safe, useful improvement, record that and stop.
+`revising`. The run at `8b51bb2e` was not a certification: it had 5,622 passes
+and six failures; the run recorded timings, but the tree is not certified. The
+separate [test-repair proposal](../proposals/2026-10-30-codex-certification-test-repairs.md)
+is `awaiting-review`, not decision-ready. Do not treat this failed run as
+certification or authorize another full run here. Revisit the speed proposal
+after the repair proposal's review and a later authorized clean certification
+provides usable family timings; if no safe improvement exists, record that and
+stop.
 
 ## Issue triage, staffing and close-out
 
