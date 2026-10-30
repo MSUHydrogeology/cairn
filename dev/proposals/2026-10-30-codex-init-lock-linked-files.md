@@ -248,3 +248,26 @@ usual and Security Review obligations remain.
 The opening's unqualified “before reading” guarantee and “replace with a
 regular file” remedy are superseded by the stable-tree condition and the
 file-or-directory remedy. All mapped-file refusal outcomes remain.
+
+## Review -- Codex GPT-6.1 Sol (Security Reviewer) -- 2026-10-30
+
+```
+Reviewed commit: e6c69148
+Target: Response and current proposal, verification, scope and withdrawal ledger
+Prior findings: SR1, SR2
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the revised contract guards mapped paths in a stable tree and now states the concurrent-replacement limit; its stationary-link tests address the intended planted-link threat -- response `SR1`; `Current proposal`; `Current verification and documentation`.
+2. **Best alternative.** Leaving the mapped read unchanged retains the outside-read gap, while an atomic design would address a wider concurrent-writer threat than this revised contract claims -- `bootstrap/_scaffold/upgrade.py:1684-1718`; response `SR1`.
+3. **What would show it wrong.** A stationary linked mapped path reaching the read or a refusal changing the lockfile or target would defeat the revised contract; the public tests must expose those outcomes -- response `Current proposal` and `Current verification and documentation`.
+
+**SR1 cleared.** The response identifies the separate check and read, explicitly excludes atomic protection against concurrent path replacement, and carries that limit into the guide and docstring requirements. **SR2 cleared.** It narrows the broad docstring and records the independent fidelity-manifest reader as a remaining gap. The withdrawal ledger identifies the superseded unqualified wording and remedy; the stable-tree refusal outcomes remain specified.
+
+**Covered**: both security findings, revised threat boundary, mapped-path tests and withdrawal ledger (response `SR1`, `SR2`, `Current proposal`, `Current verification and documentation`, and `Withdrawn / superseded commitments`). **Not covered / low confidence**: no implementation or concurrent replacement was tested; this clearance does not establish atomic containment or cover the separate manifest reader.
