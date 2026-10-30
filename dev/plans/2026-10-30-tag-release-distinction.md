@@ -385,3 +385,46 @@ verification was about 2 minutes; token use unknown.
 **Falsification ledger**: Python 3.13.13 DNS probe above; subprocess timeout control stopped a 0.35-second sleeper after 0.107 seconds with budget 0.1. Inspected new header reader and Boundary B's 32-test record. Subprocess control measured macOS only; Windows startup/termination and a complete worker design remain unverified. No suite rerun or mutations. **Bounding**: WIDER RUN REQUIRED for connection acquisition.
 
 **Covered**: claims/production/completeness/failure (DNS probe, `connect`); consistency/drift/lifecycle/scope (Protocol, correction record, C1); reuse/satisfier (subprocess alternative and P1). **Not covered**: live GitHub, chunk framing, archives, signatures, full suite or re-anchor.
+
+## Response to Security Review -- Codex GPT-6.1 Sol -- 2026-10-30
+
+| Finding | Disposition |
+|---|---|
+| P1: DNS resolution can exceed the socket timeout | Fixed in `30466f9a`: the API fetch now runs in a fixed-command Python child and the parent enforces a 30-second `subprocess.run` timeout. This covers DNS, connection, headers and body; a delayed-`getaddrinfo` public-command test verifies fail-closed termination. The two-pass Security Review cap is reached; no third or clearing pass was run. |
+
+## Implementation verification -- Codex GPT-6.1 Sol (bounded API worker) -- 2026-10-30
+
+**Boundary B mode**: wide. The final API path bounds the entire worker process,
+including hostname resolution, connection, response headers and body. The
+owning test family, public command, guide, plan and standing gates were checked.
+
+**Certified by**: pending.
+**Tested commit**: `30466f9a4cf34667f4c3210d4a28ccacd3d4e5fb`.
+**Reviewed range**: `9d7f0cd20859eeceb01ba25606c1565a7d5fbe92` through `30466f9a4cf34667f4c3210d4a28ccacd3d4e5fb`.
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13, pytest 9.0.3, macOS.
+**Pre-run state**: clean detached checkout at the tested SHA.
+**Post-run state**: clean detached checkout at the same SHA; `git status --short` empty and `git rev-parse HEAD` unchanged.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python -m pytest bootstrap/tests/test_check_release_publication.py` | 0 | 32 passed; 0 failed, skipped, xfailed or xpassed; includes blocked-resolver worker timeout | 0.83 s | unknown |
+| `python scripts/claim_check.py` on the plan and guide | 0 | both passed; no flags | under 1 s each | unknown |
+| `python scripts/link_check.py` on the plan and guide | 0 | both passed; 1 Markdown file each; plan reports 2 external links not probed | under 1 s each | unknown |
+| `python scripts/check_cairn.py` on the plan and guide | 0 | both passed; 1 Markdown file each; plan reports 2 external links not probed | under 1 s each | unknown |
+| `python scripts/quality_gate.py --sub neutrality` | 0 | fail=0, info=43 | 0.93 s | unknown |
+| Reader/pin search and known-positive `PROVENANCE.md` control | 0 | one owning test reference; 6 positive-control matches; no additional byte-pin reader found | under 1 s | unknown |
+| Snippet-marker search in the guide | 1 | no markers; synchronization was unnecessary | under 1 s | unknown |
+
+**Non-pass disposition**: none; the zero-match snippet search is expected.
+Security Review pass 2 of 2 is the final pass; no additional or clearing pass
+was run. The P1 is answered by `30466f9a` and the delayed-resolver regression.
+**Plan-specific acceptance commands**: no live GitHub request, Release
+publication, tag-signature check, archive-byte check, full suite or re-anchor
+was run. Snippet synchronization was unnecessary because the guide has no
+snippet markers.
+**Known omissions and tradeoffs**: `subprocess.run(timeout=...)` starts timing
+after OS process creation returns; process creation itself cannot be interrupted
+by that timeout. One Python child startup is added per API check. The timeout
+behavior was measured on macOS only; Windows process lifecycle was not measured.
+Live GitHub state and cached archive contents remain unverified. Elapsed
+verification was about 2 minutes; token use unknown.
