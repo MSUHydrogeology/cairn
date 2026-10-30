@@ -1,7 +1,7 @@
 # Repair certification test fixtures and isolation
 
 **Author**: Codex (GPT-6.1 Sol)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
@@ -64,3 +64,54 @@ Withdraw or redesign if the ordered failures have a different cause, if isolatio
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+
+## Review -- Codex (GPT-6.1 Sol) -- 2026-10-30
+
+```
+Reviewed commit: 82b08e8eb2ba215e846e1275436336691cf62a7d
+Target: opening proposal
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: repair the measurement inputs and test-process isolation while retaining the existing security assertions. The certification log shows dispatcher exit 20 instead of 5, the moved-plan read failure, and two trusted-import identity refusals -- `/private/tmp/cairn-cert-20261030-pytest.log`, failures section.
+2. **Best alternative.** Keep the repairs local to the existing fixtures and test, using a child process for the committed-object scenario if that is simpler than completely restoring imported module and package identities; do not relax the production loader. Its replacement of parent packages and loaded modules makes incomplete cleanup hazardous -- `scripts/repin.py::load_listed`.
+3. **What would show it wrong.** A repaired dispatcher that no longer detects the intentional renderer leak, a baseline preparation that accepts substituted evidence, or continued order dependence defeats the proposal's purpose -- `bootstrap/tests/test_security_finding_confidentiality.py::TestTheDispatcherAggregateReportIsANewSweptSink`, `bootstrap/tests/test_repin.py::test_baseline_preparation_builds_exact_package_after_reader_binding`, and the opening Evidence / verification plan.
+
+The strongest version of this work restores the tests' ability to distinguish
+safe behavior from deliberate violations. The proposal preserves those outcomes
+explicitly, keeps the real dispatcher subprocess chain, and separates changing
+protected test bytes from authorizing a new trust anchor. Doing nothing leaves
+these five observed failures unresolved; changing production guards would answer
+a different question and is correctly excluded.
+
+The current evidence supports the isolation hypothesis, but does not establish
+it completely: the log proves the `_gate_manifest` conflict, while the checked
+loader explains a plausible mechanism. The parent agent relayed a focused
+ceremony-then-authority run with one pass and one failure and an authority-alone
+pass; I did not independently measure that run or inspect a saved transcript.
+The proposal appropriately requires reproduction before selecting the repair.
+Record that reproduction, then both orders and the existing refusal controls in
+the implementation evidence. A subprocess is a recommendation, not a new
+mechanism requirement; complete in-process restoration may also satisfy the
+same isolation promise. No opened outcome is removed.
+
+**Covered**: claims and drift -- the certification failures section and the
+committed fixture/path reads; production path and fail-closed behavior --
+`install_dispatcher` and both aggregate-report nodes in
+`bootstrap/tests/test_security_finding_confidentiality.py`; design completeness
+and scope -- the opening Proposal and Signals sections; cross-document and
+lifecycle placement -- `AGENTS.md` protected-test policy and the proposal's
+separate baseline/re-anchor boundary; domain applicability -- Independent
+scientific check; satisfiers -- the exact controls above and ordered-run
+criterion. **Not covered / low confidence**: no tests or mutations run in this
+proposal pass, no independent ordered reproduction, no implementation yet, and
+no full-suite or historic-anchor comparison. This usual review does not clear
+the separate Security Review obligation.
