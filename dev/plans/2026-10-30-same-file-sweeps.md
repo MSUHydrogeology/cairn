@@ -281,3 +281,30 @@ Boundary B and independent review remain required.
 | `python scripts/check_cairn.py`; `python scripts/link_check.py`; `python scripts/sync_doc_snippets.py --check`; `python scripts/quality_gate.py --sub neutrality --sub redundancy` | all passed; neutrality and redundancy each had zero failures | timing not captured |
 
 **Non-pass disposition**: no test failures, skips, xfails or xpasses reported. Quality gates reported informational items only. **Plan-specific acceptance commands**: the real gate's control and S2 prevented-impact mutation run in `test_evolution_infer.py`; the installed tool and coordination module, human inspection scenarios, tracker and reader checks are recorded in the preceding notes. **Known omissions**: the proposed historical incident lacks confirmation and was not recorded as occurred; external links were not probed. No full certification was run. `Implementation verified at 76b5dbccbd3231b992c5daddb403f87e8b6b3d0d`; handed to independent code review.
+
+## Code review -- Codex gpt-6.1-sol -- 2026-10-30
+
+```
+Reviewed commit: 76b5dbccbd3231b992c5daddb403f87e8b6b3d0d
+Target: implementation commits 1631e59d, 566acce0 and 76b5dbcc, and verification record 43391ddb
+Prior findings: none
+```
+
+**Obligation**: ordinary code review. **Findings**: none. This pass does not clear a separate Security Review obligation.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The committed rules require serialization and inspection of staged and unstaged candidate bytes; the gate reports its limits. Independent real-entry probes produced the expected one-commit, two-commit, prevented and late-discovery results -- `AGENTS.md` > Shared-file commit inspection; `doctrine/coordination.md`; `tools/evolution_infer.py::main`; falsification ledger below.
+2. **Best alternative.** Keep one row per confirmed commit as the human reporting contract and the gate as an advisory row counter; automatic authorship or duplicate detection would add a claim the existing evidence cannot support -- accepted proposal > Proposal; `templates/modules/default-on/incident_log_template.md` > Commit; `tools/evolution_infer.py::evaluate_tracker`.
+3. **What would show it wrong.** One multipath row reaching recurrence, an uncertain or prevented report entering the count, a late discovery changing the window, or a missing output limitation would falsify the claim -- falsification ledger below.
+
+**Bounding**: ACCEPTED. The independent probe challenged the gate's real entry point and both reporting formats; its behavior matches the reviewed human reporting contract and the Boundary B record. The duplicate-row case remains a reporter error the gate does not authenticate.
+
+**Falsification ledger**:
+
+* **Surfaces and edge cases.** In an isolated `git archive` of `76b5dbcc`, invoked `tools/evolution_infer.py --root <archive> --trackers dev/measurement/collision_log.md --json` on a synthetic tracker. One confirmed row with two paths plus an `occurred` row outside `## Incidents` gave no finding and one counted row; two distinct confirmed commits gave a count of two; changing the second to `prevented` or dating its occurrence 20 days earlier gave no finding and one counted row. JSON reported `complete: false` in each case. The two-commit case is the positive control for the absent findings.
+* **Known boundary.** Two identical `occurred` rows naming one commit gave a count of two. This confirms the gate counts rows, not distinct commit values. The accepted contract assigns duplicate prevention to the reporter and explicitly disclaims automatic confirmation; `incident_log_template.md` says to check for an existing commit row before adding one.
+* **Output-path mutations.** Listed both copies from the tree: `tools/evolution_infer.py` and `templates/modules/default-on/evolution_infer.py`. In four fresh archives, changed each copy's human `REPORTING LIMIT` label or JSON `complete` value separately. Direct CLI checks killed all four mutants; the unmutated control above passed. These checks target output visibility, not all parser behavior.
+* **Verification and residual risk.** Read the Boundary B mapping and its 65 + 147 + 120 passing-test record at `43391ddb`; did not repeat those suites. Authorship of `5094a977` remains unconfirmed, and a noncooperating writer can change shared bytes after inspection. No full certification, external-link probe, or Security Review was performed here.
+
+**Covered**: claims and production path (`tools/evolution_infer.py::main`, CLI probes); design and fail-closed boundaries (one/two/duplicate/prevented/late rows above); consistency and drift (`git diff 86223682..76b5dbcc` for governing, installed, tracker and gate copies; `git diff --check`); lifecycle and scope (plan C1/C2, accepted proposal > Proposal, Maintainer amendments); satisfier (none required). **Not covered / low confidence**: no live concurrent writers, private author confirmation, whole-tree certification, external links or independent security judgment; those limits do not convert the advisory gate into an attribution detector.
