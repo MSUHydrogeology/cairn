@@ -57,3 +57,22 @@ Boundary C: independent ordinary code and Security Reviews read the committed im
 **Findings**: None. The plan maps the accepted delivery, refusal, isolation and tamper outcomes to one implementation chunk and requires exact test nodes in the implementation record.
 
 **Coverage**: Read the committed plan, accepted proposal and dispatcher binding and child launch paths, and inspected the runner's policy and credential ordering. Did not execute implementation tests, audit every policy validation edge, or assess the boundary in depth; the separate Security Review remains owed.
+
+
+## Plan review -- Codex GPT-6.1 Sol -- 2026-10-30
+
+**Foundations**:
+
+1. **Should it happen as framed?** Yes. C1 preserves the accepted exact-local handoff and binds every engine member before parent execution. Existing `_bind_runner` checks each additional immutable path; `_security_net/__init__.py` imports policy, net and report during completeness verification, so binding all members first is necessary.
+2. **Best alternative.** Keep loading confined to the bound sibling engine and reuse `Policy.credential_names("local")`. Direct execution loses the accepted dispatcher path; a new parser duplicates validation. The plan's stop-for-reassessment rule prevents a convenience fallback from widening authority.
+3. **What would show it wrong?** Tampered initialization or policy executes in the parent, invalid policy broadens delivery, or either handoff mutation survives. C1 requires negative tamper checks and installed two-principal execution; implementation outcomes remain unmeasured.
+
+**Reviewed commit**: 38b19294
+**Obligation**: Internal Security Review (plan)
+**Verdict**: PROCEED
+**Elapsed**: approximately 4 minutes
+**Tokens**: unknown
+
+**Non-blocking advice**: Make the verified loading path exclude unbound cached executable bytes and pre-existing module substitution. The current facade's `_load_engine` uses `spec_from_file_location`; binding source files alone does not establish which cached bytes a standard loader executes. Close this advice with source-only loading or equivalent cache exclusion, plus a negative cache-tamper test. This implements the existing no-unchecked-code criterion without widening scope.
+
+**Coverage**: Read committed plan and accepted proposal, dispatcher binding/environment paths, facade loader and verification ordering, and engine completeness imports. Did not execute implementation checks, audit every policy schema case, or measure Windows subprocess behavior; no implementation reviewed.
