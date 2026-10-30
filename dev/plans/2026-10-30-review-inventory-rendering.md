@@ -336,3 +336,29 @@ failures.
 is authorized here. The mapped check did not run `--apply`; independent review
 follow-up remains needed to confirm this finding is closed. External links were
 not probed.
+
+## Code review -- Codex (GPT-6, Security Review, second pass) -- 2026-10-30
+
+```
+Reviewed commit: fbf5bd131ca6d605d68620a6733ac87a55d001a6
+Verification record: 28fd2563
+Target: correction of Security Review finding at fabde037
+Elapsed: approximately 3 minutes
+Tokens: unknown
+```
+
+**Obligation**: Internal Security Review
+**Verdict**: ACCEPT
+**Bounding**: mapped wide run is sufficient for the corrected boundary.
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: the whole-file scan refuses entry markers outside the generated block before reconciliation, closing the identified misleading-copy path -- `upgrade.py::_render_review_inventory`; `test_upgrade.py::TestInitLock::test_stage_refuses_malformed_upstream_inventory`.
+2. **Best alternative.** Keep the existing reconciler and validate placement before reuse; a second renderer would duplicate metadata and drift -- `install.py::_reconcile_generated_blocks`; plan Scope.
+3. **What would show it wrong?** Acceptance of an outside marker, or rejection of a valid empty block, would falsify the correction -- plan C1; independent probes below.
+
+The earlier blocking finding is closed. The public stage fixture uses a balanced outside pair and checks stale-stage removal and unchanged installed and ancestor bytes; the verification record reports that disabling placement validation killed this case.
+
+**Falsification ledger.** On an isolated copy of `fbf5bd13`, Python 3.13.13 refused the original unmatched marker after the block, a balanced pair before it, and a malformed marker after it; a valid empty block succeeded. I inspected the correction, fixture and Boundary B record; the latter reports 346 mapped passes and one killed placement mutant. Implementation checks were not rerun.
+
+Coverage: claim and edge (`upgrade.py:411-438`, probes); fail-closed and path (`test_upgrade.py` malformed-stage fixture); reuse and drift (`install.py::_reconcile_generated_blocks`); scope and satisfier (plan C1 and response); scientific validity (no scientific claim). No full suite, re-anchor, apply run, or concurrent replacement test was performed.
