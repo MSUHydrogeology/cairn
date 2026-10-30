@@ -98,3 +98,17 @@ No additional security blocker found. Summaries do not waive required checks, an
 **Prose gates**: `claim_check.py` on this plan passed; `link_check.py` and `sync_doc_snippets.py --check` on all four changed prose files passed; `quality_gate.py --sub neutrality` reported 0 failures and 43 informational findings. These also ran in the shared dirty tree. `git diff --check` passed for the four implementation paths.
 
 **Coverage and limits**: Changed surfaces are the local and shipped plan templates, plan doctrine, and architecture-review artifact guidance. The mapped board tests include archived-plan Markdown fixtures and verify they are listed; they do not create or preserve a corresponding evidence folder. The session discovery fixture is a proposal, not a plan. I did not explicitly exercise a folderless plan or preservation of an existing folder. Source inspection found `tools/board.py` reads direct Markdown entries in live and archive directories, while `tools/session.py` reads direct live Markdown entries; neither writes or archives plans. Archiving is a Git move, so no executable archive consumer was found to exercise. The test output did not capture per-file durations. No clean-tree or canonical Python 3.13 result is claimed here. Boundary B is `wide` because this changes governing lifecycle rules; run the mapped iteration and integration/workflow selection once on the clean final commit after review, and record its SHA/range, interpreter, state, commands, counts, timing and omissions below. **Certified by**: pending.
+
+## Code review -- Codex gpt-6.1-terra -- 2026-10-30
+
+**Reviewed**: implementation `dfb096b4`; verification record `5e2b0f9e`. **Verdict**: Revise verification. **Bounding**: WIDER RUN REQUIRED for the named scenarios below. **Elapsed**: approximately 4 minutes; **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes: both plan templates and `doctrine/plans.md` remove the automatic folder and restrict separate artifacts, while the architecture-review frame removes its folder assumption (`dfb096b4`).
+2. **Best alternative.** Keep concise records and canonical tests, with the stated exception for necessary implementation or ceremony evidence; an absolute ban could obstruct a required ceremony (accepted proposal, Alternatives).
+3. **What would show it wrong?** A folderless plan missed by discovery, existing evidence lost on archive, or an allowed length-limit workaround would fail C1 (plan, Verification).
+
+**Blocking finding:** Boundary A explicitly requires exercising actual affected discovery and archive consumers with a folderless plan and an existing folder. The implementation record reports no explicit folderless plan or folder-preservation scenario, and its mapped run was in a shared dirty tree rather than a copy of the commit. Source inspection says discovery is read-only and no executable archive consumer was found; exercise applicable discovery with both cases on committed bytes, and substantiate the archive omission or exercise the actual path. Record outcomes and limitations. The clean canonical Boundary B remains due after review.
+
+**Coverage:** Read the accepted proposal, committed implementation diff, plan and verification record; searched committed live guidance for the original folder terms and checked the strategy-template matches. No suite run; did not independently exercise discovery, archive, or security ceremonies. Separate Security Review remains due.
