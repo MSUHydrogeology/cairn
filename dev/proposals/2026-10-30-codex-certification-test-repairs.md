@@ -115,3 +115,60 @@ criterion. **Not covered / low confidence**: no tests or mutations run in this
 proposal pass, no independent ordered reproduction, no implementation yet, and
 no full-suite or historic-anchor comparison. This usual review does not clear
 the separate Security Review obligation.
+
+
+## Review -- Codex Security (GPT-6.1 Sol) -- 2026-10-30
+
+```
+Reviewed commit: e44555471a23bce0d55f0e8f5aa61b035375ef0c
+Target: opening proposal and usual review
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes: restore the intended security measurements without relaxing their guards; incomplete runner records cannot reach the intended dispatcher leg -- `templates/modules/default-on/run_security_verification.py:539` and `bootstrap/tests/test_security_finding_confidentiality.py::install_dispatcher`.
+2. **Best alternative.** Put the real boot-and-record scenario in a child process, retaining both successful record checks around the worktree rewrite; this gives imports a natural lifetime without changing the checked loader -- `bootstrap/tests/test_repin_ceremony.py:1841` and `scripts/repin.py:643`.
+3. **What would show it wrong.** Loss of the deliberate renderer leak, acceptance of an incorrect preflight digest, execution of candidate preflight bytes, or a remaining order interaction defeats the repair -- `bootstrap/tests/test_security_finding_confidentiality.py::TestTheDispatcherAggregateReportIsANewSweptSink`, `bootstrap/tests/test_gate_reanchor.py:272`, and `bootstrap/tests/test_gate_reanchor.py:331`.
+
+The security value is restored reachability of existing adversarial tests.
+The confidentiality fixture currently omits runner provenance fields required
+by the real dispatcher; fixing the record must retain exact runner hashes and
+reach the child-launch assertions. The leaking-renderer case deliberately
+expects a leak as proof that its sink sweep can observe one. It must continue
+to pass by detecting the planted marker, while the pristine case passes by
+finding none. Converting either into a mocked renderer or a mere successful
+exit would lose that distinction.
+
+The authority tests independently construct scratch authority and require a
+bad digest to refuse. Stage B also plants executable candidate bytes after
+committing its candidate, then proves those bytes were not executed. Preserve
+these controls rather than changing module-identity or source-authentication
+guards to tolerate polluted imports. The loader overwrites parent packages
+and checked modules in `sys.modules`; a child process is my recommendation,
+not a required implementation choice. The proposed reproduction must still
+establish causation before implementation settles on isolation.
+
+The moved-plan repair must retain the baseline command's credential sentinel
+and evidence-refusal branches, not replace the scenario with a path-existence
+assertion (`bootstrap/tests/test_repin.py:260` and `:282`). The proposal correctly
+keeps current manifest pins authoritative and separates test repairs from
+installation of a new trust boundary. This acceptance grants no live-ref
+update, historic-anchor comparison, or ceremony waiver.
+
+**Covered**: claims and drift -- committed dispatcher record validation and
+test fixtures; production path and fail-closed -- the real dispatcher chain,
+bad-pin refusal and Stage B candidate marker; completeness and alternatives
+-- loader package replacement and retained committed-object checks; consistency
+and lifecycle -- `AGENTS.md` protected-test policy and the opening Proposal;
+domain and scope -- no scientific change and no production change proposed;
+satisfiers -- existing adversarial controls and both ordered sequences in the
+opening verification plan. **Not covered / low confidence**: no implementation
+exists, no independent order reproduction or mutation performed in this pass,
+no full suite, and no historic-anchor comparison. This clears the proposal's
+Security Review obligation only; the plan and code retain their own reviews.
