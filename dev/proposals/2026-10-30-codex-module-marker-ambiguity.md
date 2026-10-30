@@ -1,0 +1,67 @@
+# Refuse ambiguous module task markers during repeat installation
+
+**Author**: Codex (gpt-6.1-sol)
+**Status**: awaiting-review
+**Review**: usual + Security Review
+**Proposed tier**: heavy
+**Plan review**: required(Internal + Internal Security Review)
+**Opened**: 2026-10-30
+**In brief**: Prevent repeat installation from duplicating a completed module task when its generated marker has been edited.
+
+## Context
+
+The accepted module-discovery proposal promises no duplicate tasks and conservative refusal for ambiguous adopter edits (`dev/proposals/archive/2026-10-29-codex-module-discovery-activation.md`). The reconciler searches only for an exact opening marker (`bootstrap/_scaffold/install.py:1375`) but the installer enters reconciliation when the broader marker substring occurs (`bootstrap/_scaffold/install.py:1569`). A public-path probe installed `reflections`, added one space before its task marker's closing `-->`, checked its task, then repeated the same install. Both calls returned 0; `dev/PLANNING.md` contained two reflections tasks, one checked and one unchecked. This was measured on 2026-10-30 using `bootstrap.scaffold.main` and an isolated temporary target. The original task was retained, but the duplicate makes first use ambiguous.
+
+## Proposal
+
+Treat any marker-like task or inventory entry inside the generated regions that cannot be parsed as a complete, unique entry as an ambiguity conflict. Refuse before changing the planning board, module inventory, or lockfile, and tell the adopter to save and reconcile the edited entry manually. Preserve exact valid markers, selected edited/completed entries and unrelated prose. Apply the same rule in repeat install and later adoption, including the already-adopted path. Do not attempt to repair marker spelling automatically or infer identity from task prose. This restores the existing discovery contract without adding a module or an onboarding obligation.
+
+## Rationale
+
+The current parser can confuse an edited generated marker for unmarked prose and append a second task. A refusal protects the adopter's completed work and gives one clear recovery action. The same ambiguity rule belongs at the shared reconciliation point so install and adoption agree.
+
+## Alternatives considered
+
+Accept loose marker spacing and normalize it: this fixes the measured example but keeps an open-ended grammar for malformed or conflicting identities. Delete malformed blocks and regenerate: that can erase completed or edited adopter work. Leave the behavior: duplicate first-use tasks break the accepted promise and can mislead an agent reading the board.
+
+## Documentation / doctrine surface
+
+The behavior belongs in `bootstrap/_scaffold/install.py`, with tests in `bootstrap/tests/`. If the existing manual recovery text does not cover this case, update the installed module guidance or error message. No doctrine rule or new module is proposed.
+
+## Evidence / verification plan
+
+### Tests required
+
+Extend `bootstrap/tests/test_onboarding_seed_roster.py` with the public repeat-install probe above. Exercise the public `upgrade --adopt-module` path, including repeat adoption, in `bootstrap/tests/test_upgrade_module_additions.py`. For both tasks and inventory, vary an edited opener, edited closer, duplicate identity and harmless unrelated prose; check refusal leaves planning, inventory and lock bytes unchanged. Check a valid selected completed task remains single and checked, and an unchanged entry for a removed module still disappears. Search readers/callers of the changed parser and run their owning tests. Use a mutation that restores the current permissive behavior and confirm the new public probe fails against a passing unmutated control.
+
+### Examples / smoke checks
+
+Run the scaffold's real temporary install and later-adoption paths; run `scripts/check_cairn.py`, `scripts/claim_check.py` on changed prose, `scripts/link_check.py`, `scripts/sync_doc_snippets.py --check`, and the neutrality gate. Boundary B is wide on a clean committed candidate under Python 3.13 because this changes installation reconciliation. Whole-tree certification remains a separate release ceremony.
+
+#### Security preflight — five questions, answered in writing
+
+**S1 — Who supplied it?** The project owner can edit installed Markdown markers and the profile selects modules; the reconciler must treat that project text as untrusted state, not as authority to delete or duplicate work.
+
+**S2 — Can it fail?** The new public probe must fail if the ambiguity guard is removed or relaxed to the current exact-only search. This mutation is proposed, not yet run.
+
+**S3 — What fires it, over what?** `bootstrap/scaffold.py` install and `upgrade --adopt-module` invoke reconciliation over the installed planning slot and generated inventory block. The adopter-facing promise is “no duplicate tasks, no tasks for absent modules, and no silent deletion of adopter edits” in the accepted discovery proposal; a duplicate violates it.
+
+**S4 — Which way does it break?** Unknown, malformed or conflicting markers must cause a reported refusal. A permissive fallback adds a duplicate task, granting generated content more authority than the edited adopter state.
+
+**S5 — Who still wins?** The proposed guard handles ambiguous generated markers, not an owner who deliberately rewrites unmarked planning prose to resemble a separate task. This class is narrowed by syntax checks, not closed for arbitrary prose.
+
+### Independent scientific check
+
+N/A: no scientific assumption or result touched.
+
+## Signals the change is wrong
+
+A valid checked task is reset or duplicated, unrelated prose is removed, a malformed entry still appends a new task, or refusal changes any of the three generated artifacts.
+
+## Scope delta
+
+**Scope delta**: preserved
+
+## Assurance path
+
+**Assurance path**: high-assurance — the scaffold engine and install contract are touched.
