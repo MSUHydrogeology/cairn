@@ -1,7 +1,7 @@
 # Refuse linked installed files during lockfile migration
 
 **Author**: Codex GPT-6.1 Sol (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
@@ -118,3 +118,30 @@ ordinary pre-lockfile install cannot migrate.
 ## Assurance path
 
 **Assurance path**: high-assurance — scaffold engine and lockfile contract.
+
+## Review -- Codex GPT-6.1 Sol (Reviewer) -- 2026-10-30
+
+```
+Reviewed commit: 6fec34476d851810f607c17c2d8acff9c2acee98
+Target: opening proposal, Context through Assurance path
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the current loop can hash a linked file as installed content, and the existing path guard covers both leaf and parent links. The operator cost for intentionally linked installs is explicit and acceptable for a migration that claims to record project files -- `bootstrap/_scaffold/upgrade.py:154-174`; `bootstrap/_scaffold/upgrade.py:1684-1718`; `bootstrap/UPGRADE.md:437-441`; proposal `Context` and `Proposal`.
+2. **Best alternative.** Doing nothing preserves the outside-read defect. Recording link text changes the hash contract; allowing only inside links still permits a later retarget. Reusing the guard is the smallest policy change, but its remedy must name the kind of link the operator must replace -- `bootstrap/_scaffold/upgrade.py:154-174`; `bootstrap/_scaffold/security.py:110-155`; proposal `Alternatives considered`.
+3. **What would show it wrong.** A public run that reads a linked destination before refusal, treats a dangling link as absent, changes either tree on refusal, or blocks an ordinary file would defeat the design -- `bootstrap/_scaffold/upgrade.py:1684-1718`; `bootstrap/tests/test_upgrade_refuses_hostile_project_data.py:270-349`; proposal `Signals the change is wrong`.
+
+The proposal closes a real gap: `--init-lock` guards its profile, then hashes mapped destinations without a link check. The guide already discloses the limit (`bootstrap/_scaffold/upgrade.py:1647-1718`; `bootstrap/UPGRADE.md:430-441`).
+
+* **[R1] Blocking — recovery advice is wrong for a linked parent folder.** The proposal requires refusal when any path component is linked, but reuses `_refuse_if_linked`'s fixed advice, “Replace it with a regular file.” If `docs/` is the link above mapped `docs/DOCUMENTATION_PLAN.md`, replacing the folder with a file cannot restore migration. The existing helper already uses that wording for profile parents; repeating it on every mapped path makes this case more likely. State how the diagnostic identifies or accurately remedies a linked folder while retaining the one-line, no-target-disclosure refusal. A public test with a linked `docs/` parent should assert that actionable remedy (`bootstrap/_scaffold/config.py:1090-1095`; `bootstrap/_scaffold/upgrade.py:154-174`; proposal `Proposal`, `Tests required`).
+
+* **[R2] Non-blocking — make the parent test reach this check.** A linked `dev/` parent stops at the existing profile guard before the mapped-file loop. Name a parent such as `docs/`, which the install mapping includes and the earlier profile path does not cross, so the test pins the new behavior. This specifies the proposed case without removing coverage (`bootstrap/_scaffold/upgrade.py:1647-1650`; `bootstrap/_scaffold/upgrade.py:1684-1718`; `bootstrap/_scaffold/config.py:1090-1095`).
+
+**Covered**: claims and current behavior (`upgrade.py:154-174,1647-1718`; `UPGRADE.md:430-441`); public test path and fail-closed cases (`test_upgrade_refuses_hostile_project_data.py:270-349`); design and alternatives (`security.py:110-155`; proposal `Alternatives considered`); documentation and roadmap consistency (`UPGRADE.md:430-441`; `dev/PLANNING.md:91-98`); lifecycle, scope and satisfiers (proposal `Scope delta`, `Assurance path`; R1-R2 above). **Not covered / low confidence**: I did not run the migration on a linked project, measure the race between path check and read, or assess other project-data readers outside the mapped-file loop. The declared Security Review remains open.
