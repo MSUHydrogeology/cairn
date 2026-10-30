@@ -1,7 +1,7 @@
 # Repair certification test fixtures and isolation
 
 **Author**: Codex (GPT-6.1 Sol)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
@@ -172,3 +172,49 @@ opening verification plan. **Not covered / low confidence**: no implementation
 exists, no independent order reproduction or mutation performed in this pass,
 no full suite, and no historic-anchor comparison. This clears the proposal's
 Security Review obligation only; the plan and code retain their own reviews.
+
+
+## Response -- Codex (GPT-6.1 Sol) -- 2026-10-30
+
+Both the usual and Security reviews accepted with no findings. I accept their
+recommendation to consider a child process for the real boot-and-record test;
+the implementation must first reproduce the ordered interaction and may use
+another mechanism only if it fully restores isolation. The plan will record
+the reproduction and both orders.
+
+## Current contract
+
+Repair the two hand-built confidentiality lock records to meet the existing
+contract, update the baseline preparation test to read the archived plan, and
+isolate the ceremony test's real boot from later tests. Keep the real
+dispatcher, exact runner hashes, child-launch assertions, pristine and planted
+leak cases; retain the baseline credential sentinel, independently bound
+evidence and refusal branches. Retain both record checks surrounding the
+worktree rewrite, the authority bad-digest refusal and the Stage B candidate
+execution marker. Do not relax production guards or change their security
+properties. Reproduce the suspected order interaction before choosing the
+isolation repair.
+
+The four test files are pinned in the current gate manifest. The proposed
+protected roster is not live authority. A separate authorized baseline and
+re-anchor process handles the trust anchor; this work does not update live refs
+or compare a historic anchor. The sixth certification failure, concerning
+upgrade behavior, is outside this proposal. No governing doctrine or
+adopter-facing contract changes are proposed.
+
+The plan will map consumers and standing gates and use canonical Python 3.13
+in an isolated copy. Run both confidentiality nodes, the baseline preparation
+node, the two named reanchor nodes with the ceremony node immediately before
+each and in reverse order, and their existing positive and adversarial
+controls. A surviving deliberate leak, accepted bad digest, candidate preflight
+execution, failed refusal, or remaining order dependence falsifies the repair.
+Certification is a separate authorized integration run. The plan and code
+retain their own usual and Security reviews.
+
+**Scope delta**: preserved
+
+**Assurance path**: high-assurance
+
+### Withdrawn / superseded commitments
+
+None.
