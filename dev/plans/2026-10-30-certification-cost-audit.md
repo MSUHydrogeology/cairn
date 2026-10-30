@@ -1,7 +1,7 @@
 # Plan: Reuse review-sweep installations
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-certification-cost-audit.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal)
 **Opened**: 2026-10-30
 **In brief**: Share each profile's real test installation across the session to avoid repeated setup.
@@ -36,7 +36,7 @@ C1: The inventory lists all current consumers and confirms they read the install
 
 ## Verification
 
-Boundary A: use canonical Python 3.13.x in an isolated copy. Inventory `installs` references and installed-tree writes with `rg`; compare the pre-edit and post-edit committed candidates using `python -m pytest bootstrap/tests/test_review_sweep_ships.py bootstrap/tests/test_content_scan.py --quality-gate-shuffle-seed=0 --durations=0 --durations-min=0`, repeated under stated conditions with phase totals. Run the same selection with at least one alternate shuffle seed for interleaving and reconcile collected nodes; run the three separate fault probes through real installed-content nodes beside an unmutated control. Check the installed roster and manifest classification and run `bootstrap/tests/test_gate_manifest.py` or its owning nodes for the frozen-file consequence. Run `python scripts/claim_check.py` on changed prose, `python scripts/check_cairn.py`, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py --check` if supported, and `python scripts/quality_gate.py --sub neutrality --sub redundancy`; record inapplicable checks with reasons.
+Boundary A: use canonical Python 3.13.x in an isolated copy. Inventory `installs` references and installed-tree writes with `rg`; compare the pre-edit and post-edit committed candidates using `python -m pytest bootstrap/tests/test_review_sweep_ships.py bootstrap/tests/test_content_scan.py --quality-gate-shuffle-seed=0 --durations=0 --durations-min=0`, repeated under stated conditions with phase totals. Run the same selection with at least one alternate shuffle seed for interleaving and reconcile collected nodes; run the three separate fault probes through real installed-content nodes beside an unmutated control. Check the installed roster and manifest classification, compare the changed file with its installed pin, and run `bootstrap/tests/test_gate_manifest.py::test_verify_holds_on_frozen_file_modification` during iteration for the frozen-file consequence. Run `python scripts/claim_check.py` on changed prose, `python scripts/check_cairn.py`, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py --check` if supported, and `python scripts/quality_gate.py --sub neutrality --sub redundancy`; record inapplicable checks with reasons.
 
 Boundary B: **wide**, because the changed test is still frozen in the installed manifest. After the final implementation commit, run the reviewed owning family, content-scan integration, shuffle/interleaving selections, fault controls and standing gates on a clean unchanged commit under canonical Python 3.13.x. Record SHA/range, touched surface, interpreter, clean pre/post state, commands and counts, elapsed time, tokens or unknown, non-pass disposition, omissions and `Certified by: pending`; preserve the owed frozen-file ceremony rather than treating a changed hash as a passing gate. Boundary C is independent code review, including fault falsification and a bounding verdict. Full-tree certification and re-anchor are separate ceremonies.
 
@@ -65,3 +65,7 @@ Tokens: unknown
 The four fixture consumers read installed trees or alter local text copies, and the profiles are globbed through the real scaffold CLI. The plan still requires a fresh consumer inventory and shuffled evidence before accepting session sharing. The retained reports are single observations, so repeated scoped measurements are warranted; they should not trigger another full suite. During iteration, `bootstrap/tests/test_gate_manifest.py::test_verify_holds_on_frozen_file_modification` checks generic refusal more cheaply than the entire family; compare the actual changed file with its installed pin separately. The final wide map retains required owning coverage.
 
 **Covered:** current claims and drift (proposal evidence, plan Scope); real path and design (fixture and four consumers); fail-closed behavior (C1 fault controls and stop); cross-document fit (roster and installed manifest); lifecycle, domain scope and satisfier (one-file change, separate ceremony). **Not covered / low confidence:** no tests or timing rerun, no complete consumer inventory beyond the named module, and no measured stability or full-suite speedup. The frozen-file ceremony remains owed.
+
+## Response to plan review -- Codex (GPT-6.1 Sol) -- 2026-10-30
+
+The Internal review accepted with no findings. I accepted its focused-manifest advice in Boundary A and retained the wide final mapping. The consumer inventory, repeated timings, shuffled runs and fault controls remain implementation acceptance checks; the review did not claim they were already measured. Elapsed time: about 2 minutes. Token use: unknown.
