@@ -1,7 +1,7 @@
 # Require a decision on clean customized policy merges
 
 **Author**: Codex GPT-6.1 Sol (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
@@ -122,3 +122,30 @@ behind a clean status.
 ## Assurance path
 
 **Assurance path**: high-assurance — scaffold engine and install contract.
+
+## Review -- Codex GPT-6.1 Sol (Reviewer) -- 2026-10-30
+
+```
+Reviewed commit: 6a40450b2c0d0bf0a8c1db7d3beb357f625bac63
+Target: opening proposal, Context through Assurance path
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: usual
+**Findings**: raised
+**Verdict**: REVISE
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes to a decision on clean merges of policy changed on both sides: the merge can settle placement without settling meaning. The framing needs a precise trigger and a defined result for the deliberate-local choice -- proposal lines 15-33; `bootstrap/_scaffold/upgrade.py:801-824`; `bootstrap/_scaffold/upgrade.py:3572-3640`.
+2. **Best alternative.** Do nothing plus the existing instruction to review merged files costs no engine change, but leaves the known omission silent. The simpler viable build is a per-path, stage-bound decision using the existing classification and report, with only the state needed to make both decisions durable -- `bootstrap/UPGRADE.md:190-232`; `bootstrap/_scaffold/upgrade.py:1381-1410`; `bootstrap/_scaffold/upgrade.py:3804-3807`.
+3. **What would show it wrong.** Withdraw this design if the public-command test cannot distinguish a stock install with no upstream change from a true two-sided policy change, or if either decision loses its meaning on the next upgrade -- `bootstrap/tests/test_upgrade.py:765-793`; `bootstrap/_scaffold/upgrade.py:3572-3640`.
+
+The strongest case is that the operator, rather than a text merger, must decide whether a policy change is acceptable. The existing stage is already a place to see the merged text; the new cost is justified only for files where upstream actually brought a change to consider.
+
+**R1 (blocking): Make the two-sided trigger an explicit invariant.** `clean-locally-modified` means the adopter's file differs from the substituted old base; the classifier does not also require the new upstream template to differ from that base (`bootstrap/_scaffold/upgrade.py:806-824`). The existing test finds even a stock installed `AGENTS.md` in that class because install-time module assembly is absent from its cached base (`bootstrap/tests/test_upgrade.py:765-793`). Holding every file with this label would impose decisions with no new policy, contrary to proposal lines 25-26 and 46-49. Specify how the old and new *materialized* policy views are compared, while keeping the existing class for reporting. Close with public-command tests for an actual two-sided edit, an adopter-only edit, a stock assembled file, and a profile-only sizing change.
+
+**R2 (blocking): Define what each disposition records and what a later upgrade sees.** The proposal promises both an accepted preview and a deliberate local exception, while a pending file keeps its old base (lines 25-33). Today `--apply` advances the global Cairn commit and changes a file's base only when its staged content is applied; other records carry over unchanged (`bootstrap/_scaffold/upgrade.py:3572-3640`). If a local exception retains that old base, the same upstream change is offered again; if it advances the base, the next run may no longer show the rejected upstream rule. State which bytes and decision evidence are recorded for each outcome, whether the exception remains visible later, and how pending differs from deliberately retained after a sibling advances. Close with a two-upgrade test for each outcome and a retry after a sibling applied.
+
+**Coverage**: Claims and design (#1, #3) -- classifier and lock update cited in R1/R2; public path (#2) -- `bootstrap/tests/test_upgrade.py:765-793` currently probes classification, and proposal lines 70-78 call for public commands; silent failure (#4) -- `bootstrap/_scaffold/upgrade.py:3372-3380` shows the current blanket review-only override; cross-document and drift (#5, #6) -- `dev/PLANNING.md:115`, `bootstrap/UPGRADE.md:190-232`, and `bootstrap/UPGRADE.md:283-315`; lifecycle (#7) -- proposal lines 25-38 place the decision at upgrade; domain and scope (#8) -- stock assembled file in R1; satisfiers (#9) -- the tests and contract wording named in R1/R2. **Not covered / low confidence**: I did not run an installed-project reproduction or inspect every lockfile consumer; this is a read of the committed proposal and current production paths, not implementation verification.
