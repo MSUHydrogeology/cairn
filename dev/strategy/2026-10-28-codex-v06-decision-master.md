@@ -23,11 +23,11 @@ research. The five-plan batch does not complete v0.6.
 | Plan | Result |
 |---|---|
 | [Model floors](../plans/archive/2026-10-28-model-floor-alignment.md) | Implemented, reviewed and archived; shipped generic task floors align with vendor assignments. Certification/re-anchor remain on the roadmap. |
-| [Scoped verification](../plans/archive/2026-10-28-scoped-change-verification.md) | Implemented; scoped checks passed and independent reviews hold archive for the frozen-file ceremony. Naming examples later corrected (656 passes, Python 3.13.13). |
+| [Scoped verification](../plans/archive/2026-10-28-scoped-change-verification.md) | Implemented and scoped-verified; frozen-file ceremony remains. |
 | [Governing text](../plans/archive/2026-10-28-governing-text-single-source.md) | Archived after inventory and consolidation; forward-baseline installation remains separate v0.6 work. |
-| [Test trust boundary](../plans/archive/2026-10-28-test-trust-boundary.md) | Roster and dormant setting approved; active protection remains. Final verification and reviews await the reusable verifier. |
+| [Test trust boundary](../plans/archive/2026-10-28-test-trust-boundary.md) | Roster and dormant setting approved; active protection and certification remain. |
 | [Ordinary test maintenance](../plans/archive/2026-10-28-ordinary-test-maintenance.md) | Reviewed plan; implementation waits because the chosen board file contains security defenses and remains protected. |
-| [Release evidence environment](../plans/archive/2026-10-29-release-evidence-environment.md) | C1 implemented at `0c07eb37`, wide-verified and code-reviewed (`Certified by: pending`). Archived at `81072be0` after authorized deferral of C2 packet/reader and C3 verifier, pinning and signing to the forward-baseline item; its Maintainer-only fence remains. No ceremony or full certification ran. |
+| [Release evidence environment](../plans/archive/2026-10-29-release-evidence-environment.md) | C1 implemented and reviewed; deferred packet, verifier, pinning and signing belong to the forward-baseline item. |
 
 The source Decisions are `63e315fa`, `f110d263`, `cca436a9`, `cea1299d` and
 `439c7b34`. All five plans were authorized; their later explicit fences remain.
@@ -202,12 +202,20 @@ ceremony remains owed. No extra suite, protection change or baseline installatio
 is authorized. A plan must test shuffled shared-tree isolation, repeat timings
 and fault controls; stop if the gain is unstable or controls fail.
 
+### 16. Clean customized upgrade merges — awaiting Decision
+
+The [proposal](../proposals/2026-10-30-codex-upgrade-semantic-adoption.md),
+responded at `4cc00bec`, awaits Decision. A clean text merge can retain
+incompatible local and upstream policy. The author recommends rejecting the
+proposed per-file enforcement: both reviews found it needs a true two-sided
+trigger, durable decisions, byte binding and old profile context across partial
+upgrades. This **loses** the board's required incorporation-or-disposition
+outcome; only the Maintainer can allow that loss or keep #35 for redesign.
+
 ## Issue triage, staffing and close-out
 
-Read-only issue triage found #31 and #32 already implemented and reviewed;
-closure remains the Maintainer's action. #33 is addressed by scoped verification,
-with its ceremony hold still open. #19 is new scientific-governance capability
-outside this batch and remains deferred/v0.7.
+Issues #31 and #32 await Maintainer closure; #33's scoped verification retains
+its ceremony hold; #19 remains deferred to v0.7.
 
 Staffing follows the Maintainer: **Terra coordinates and handles ordinary reviews;
 Luna implements reviewed plans; Sol handles strategy, premise/novel-design and
@@ -215,9 +223,5 @@ Security judgment.** Cairn-local high/medium/low assignments are Sol/Terra/Luna,
 Opus/Sonnet/Haiku and Argon/Pro/Flash. Shipped tiers remain vendor-neutral.
 Decision scribing requires unambiguous disposition and commit authorization.
 
-Completed strategy explorations archive with their owned evidence once their
-purpose is discharged. This master stays current until its coordinating role is
-retired; active v0.7 explorations remain live. Plans and their records own the
-engineering evidence. Prose gates validate this briefing, not certification or
-suite-wide performance. No full suite, certification or push was performed for
-this update.
+This master stays current until its coordinating role retires. Plans own
+engineering evidence; this briefing certifies no implementation or release.
