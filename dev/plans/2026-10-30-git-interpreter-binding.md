@@ -515,3 +515,21 @@ not a passing result. No full certification run occurred.
 **Implementation verified at**: `a2f7bbf9a31bf55b6b90841805c0823585a406f3`, subject to the Maintainer's recorded Windows follow-up allowance. Handed to independent usual and Security code reviews.
 
 **Elapsed / tokens**: 36.70s for pytest; other checks and token use unknown.
+
+## Code review -- Codex gpt-6.1-sol -- 2026-10-30
+
+**Reviewed commit**: `a57baaa0` (implementation through `a2f7bbf9`)
+**Obligation**: Internal usual code review
+**Verdict**: no blocking findings; **Bounding**: ACCEPTED under the recorded Maintainer Windows follow-up allowance.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. The installer and both resolver copies refuse malformed administration and linked binding paths. A portable entry-point mutant detects legacy-file redirection (`bootstrap/tests/test_git_interpreter_binding_portable.py`; `tools/session.py`; `bootstrap/_scaffold/install.py`).
+2. **Best alternative.** Keep the shared portable test and Windows runner. They cover the contract without another authority store (`coverage.md`; `scripts/run_windows_interpreter_binding.py`).
+3. **What would show it wrong?** A malformed `.git` reaching a sub-tool, an escaped force write, or a Windows skip passing the runner (portable tests; runner JUnit guard).
+
+**Falsification ledger.** In an isolated archive of `a2f7bbf9`, Python 3.13.13 ran the portable file: **15 passed, 8 Windows skips**. Security lint: **11 passed**. The runner on macOS refused with exit 2. `cmp` showed source/shipped session parity. Earlier CR2 review separately killed source and shipped fallback mutants (`e063ae4e`). The legacy marker test runs an unmodified control and redirection mutant through `_intent_whoami`.
+
+**Coverage:** claims and production path: portable file and ledger; design/fail-closed: resolver and installer guards and Windows cases at portable test lines 344–391; consistency/drift: `AGENTS.md`, `bootstrap/SAFETY.md`, `bootstrap/UPGRADE.md`; lifecycle/scope: C1–C2, coverage inventory and Maintainer allowance; satisfiers: CR1/CR2/WR1/WR2 follow-ups above. **Not covered:** native Windows execution, same-user races, executable provenance, full suite, re-anchor or the separate Security Review. Native Windows remains a follow-up, not a passing result.
+
+**Elapsed / tokens**: approximately 8 minutes / unknown.
