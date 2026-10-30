@@ -190,3 +190,21 @@ The marker-on regression keeps the real boot and both record checks in the child
 **Non-pass disposition.** The first baseline-family attempt used a detached temporary clone; its nested clone could not resolve `git symbolic-ref HEAD`. I attached a local branch at the same tested commit and reran the three baseline nodes successfully. The restricted attempts of the confidentiality and security-verification families were blocked by denied loopback binds (35 failed/5 passed and 1 failed/135 passed); both families passed in full with host access. The current-manifest refusal is the separate frozen-file/baseline consequence, not a passing test. `claim_check.py` passed on this updated plan before commit.
 
 **Omissions.** No full-tree suite, live ref update, re-anchor or historical-anchor comparison was run. The separate frozen-file ceremony remains at the Maintainer's version-cut/request point. No test failure remains open from this implementation correction. The next holder is the separate code Security Review.
+
+## Code Security Review -- Codex (GPT-6) -- 2026-10-30
+
+```
+Reviewed implementation: 20b01625207d46171a95d42886936eeb2aa13378
+Earlier implementation: f26b903d4308d6da7c9304ec2469e999cf984c4b
+Boundary B record: e1b604ab
+Tier: Internal Security Review
+Elapsed: about 5 minutes; tokens: unknown
+```
+
+**Verdict: ACCEPT. Bounding: bounded mapping sufficient. Findings: none.** The wide Boundary B mapping covers the changed trust-ceremony tests and their consumers; its recorded manifest HOLD remains a separate ceremony obligation, not a pass.
+
+**Foundations.** (1) The repair should ship as framed: the dispatcher records now provide `src` and `verbatim`, and the real record checks run on either side of the rewrite (`test_security_finding_confidentiality.py:1492`, `test_repin_ceremony.py:1856-1860`). (2) A dedicated child contains checked imports without changing production guards; always launching it avoids the prior inherited-marker bypass (`test_repin_ceremony.py:1862-1887`). (3) A leak missed by the dispatcher, an accepted bad pin, or a post-rewrite check that is not reached would disprove the outcome (C1/C2 and `test_gate_reanchor.py::test_authority_pin_reads_v2_frozen_entry_digest`).
+
+**Falsification ledger.** On an isolated copy of e1b604ab, Python 3.13.13: unmutated record-check node 1 passed. Total mutants: 1; killed: 1; survivors: 0; measured equivalents: 0. Replacing the second child `check_record` call with a deliberate exception made that node fail with the exception, demonstrating the post-rewrite position is reached and child failure propagates. This probe does not establish the semantics of `check_record` itself.
+
+**Coverage:** claims and production path: implementation diff and `scripts/repin.py:1993`; completeness and fail-closed behavior: child return-code assertion and marker regression at `test_repin_ceremony.py:1868-1887`; cross-document consistency and reuse: plan Scope and searches for `install_dispatcher`, `REPIN.boot`, and `check_record`; drift and lifecycle: Boundary B at e1b604ab and separate manifest HOLD; domain and scope: three test files in the implementation diff, no scientific method changed; satisfier: C1/C2 and Boundary B mapped checks. **Not covered:** full suite, re-anchor, historic anchor comparison, independent renderer mutation, or rerunning the author's implementation checks.
