@@ -1,7 +1,7 @@
 # Plan: Bind the interpreter in per-worktree Git administration
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-git-interpreter-binding.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30
@@ -548,3 +548,11 @@ not a passing result. No full certification run occurred.
 **Falsification ledger.** On an isolated archive of `a2f7bbf9`, Python 3.13.13, `python -m pytest bootstrap/tests/test_git_interpreter_binding_portable.py -q` produced **15 passed, 8 skipped** in 1.35s. The existing entry-point legacy-redirection control and mutant both met their assertions; the mutant was killed. The eight native Windows cases were skipped, not passed. Prior independent source and shipped malformed-administration mutants were each killed in the `e063ae4e` review above. Inspected `scripts/run_windows_interpreter_binding.py:34-45`: its XML parser reads a pytest-generated report in a temporary directory; the narrow `nosec B314` rationale is proportionate to that local trusted-process boundary, not a claim that arbitrary XML is safe.
 
 **Coverage:** claims and scope: plan C1/C2 and Maintainer allowance; production path, adversarial inputs and failure behavior: reader/writer guards and portable ledger; consistency and reuse: coverage inventory and prior two-copy mutation; lifecycle and evidence: `a57baaa0` wide record and deferred Windows cases. **Not covered:** native Windows execution, same-user races, executable provenance, arbitrary hostile pytest plugins, or full certification. Elapsed: unknown; tokens: unknown.
+
+## Dispositions
+
+**Dispositions**: defer native Windows discovery and junction/reparse execution to `dev/PLANNING.md`; it belongs to in-motion Windows environment work. The Maintainer authorized this in chat:
+
+> Just put that as a plan follow-up if it's otherwise done. If the tests are built and you think they're correct, that's got to be good enough.
+
+Both final code reviews accepted the mapped implementation under that allowance; no other blocking finding remains. Elapsed: unknown; tokens: unknown.
