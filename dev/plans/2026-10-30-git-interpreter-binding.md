@@ -1,7 +1,7 @@
 # Plan: Bind the interpreter in per-worktree Git administration
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-git-interpreter-binding.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance
 **Opened**: 2026-10-30
@@ -482,3 +482,36 @@ privilege-blocked cases. This allowance does not claim those tests passed or
 remove the remaining verification and review obligations.
 
 **Elapsed / tokens**: unknown / unknown.
+
+## Implementation verification -- Codex GPT-6 -- 2026-10-30
+
+**Boundary B mode**: wide; the earlier mapping covers the installer, source and
+shipped resolver, their consumers and security boundary. Windows test and
+runner preparation are included. Unknown dependencies are not claimed covered.
+**Certified by**: pending.
+
+**Tested commit**: `a2f7bbf9a31bf55b6b90841805c0823585a406f3`.
+**Reviewed range**: `49e6a59123b88bf954d1b5ee4e7a6a6ba2b0fc05`..`a2f7bbf9a31bf55b6b90841805c0823585a406f3`.
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13, pytest 9.0.3, macOS.
+**Pre/post state**: clean detached worktree at the tested commit; test caches are ignored.
+
+The 13 pytest files named in Verification ran together: **569 passed, 8
+skipped in 36.70s**. The eight skips are native Windows cases, deferred by the
+Maintainer allowance above; they are not Windows evidence. The legacy control
+and mutant passed their assertions. `scripts/check_cairn.py` and
+`scripts/link_check.py` passed on 199 Markdown files; link-check did not probe
+99 external links. `scripts/quality_gate.py --sub neutrality --sub redundancy`
+passed with zero failures (43 and 1 informational notices). `scripts/claim_check.py`
+passed separately on `AGENTS.md`, `templates/core/AGENTS.md`, `bootstrap/UPGRADE.md`,
+`bootstrap/SAFETY.md`, this plan and its coverage inventory; existing allowlisted
+paths were reported. All commands used the interpreter above.
+
+The preceding run at `9cdf9dcf` had 568 passed, 8 Windows skips and one
+security-lint failure: Bandit flagged parsing the pytest XML report. The
+runner now marks that call with its private, locally generated report rationale;
+the mapped rerun passed the security lint. Native Windows remains a follow-up,
+not a passing result. No full certification run occurred.
+
+**Implementation verified at**: `a2f7bbf9a31bf55b6b90841805c0823585a406f3`, subject to the Maintainer's recorded Windows follow-up allowance. Handed to independent usual and Security code reviews.
+
+**Elapsed / tokens**: 36.70s for pytest; other checks and token use unknown.
