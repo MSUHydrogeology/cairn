@@ -1,7 +1,7 @@
 # Plan: Deliver the outcome with less apparatus
 
 **Source proposal**: dev/proposals/archive/2026-10-30-claude-cut-the-apparatus.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal)
 **Opened**: 2026-10-30
 **In brief**: Reduce recurring review and instruction overhead while preserving agreed outcomes and required assurance.
@@ -222,3 +222,15 @@ Prior findings: P1, P2
 3. **What would show it wrong?** A live “moves” trigger or an installed template lacking the light route would refute closure; neither appeared. -- `templates/modules/team-gated/security-review.md:25-56`, focused checks below.
 
 **Falsification ledger.** Isolated archive of `3c9892a6`: 12 focused rule tests and 3 scaffold installation tests passed under Python 3.13.13. Direct `install_core`/`install_modules` probe confirmed the installed light/no-plan template and added/widened-only security module. An old moved-boundary phrase is present in archived history, confirming the negative search can find it; no such trigger remains in live root/shipped modules or proposal templates. Checked the author's wide Boundary B record at `4c57a032` for commit, interpreter, clean pre/post state, mapped groups and prose gates; it reports 1,519 passes and zero failures. No mutation claim; no full suite. **Coverage:** lenses 1-3, 5-9 through cited carriers, installer nodes, and negative control; did not independently run all Boundary B groups, probe external links, conduct Security Review, or measure the future one-month ratio.
+
+## Dispositions -- archive preparation -- 2026-10-30
+
+Dispositions:
+
+* One-month review-commit indicator -> defer (the accepted observation window has not elapsed) -> `dev/PLANNING.md` > v0.6 release path, one-month apparatus indicator. Maintainer authorization: "Please append my decision as accept as revised and provisioned." (`dev/proposals/archive/2026-10-30-claude-cut-the-apparatus.md` > Decision). The criterion remains ≤3.5 against the 6.9 baseline, using the accepted Context count; this archive does not assert a result.
+
+**Evidence shipped**: the governing and shipped guidance, templates, session-start copies, mapped property tests, installer/upgrade readers, and wide clean-commit Boundary B records at `4bfba7dd` and `4c57a032`. The focused code-review follow-up at `9cdf9dcf` closed P1/P2.
+
+**Evidence deferred**: the one-month review-commit ratio, which cannot be measured on the implementation day. **Deferred evidence home**: `dev/PLANNING.md` > v0.6 release path, one-month apparatus indicator. Whole-tree certification is a separate release ceremony, already tracked in the v0.6 release path; external URL probing and an independent scientific check were not plan acceptance checks.
+
+**Fidelity sign-off**: implementation `3cceb2c0` and correction `3c9892a6` deliver the accepted `## Proposal` operative section of `dev/proposals/archive/2026-10-30-claude-cut-the-apparatus.md` as revised at `091494c1`, with the Q1 Decision addendum at `ebabc7f8`: bounded passes, default light with no plan, added/widened boundary protection, author advice closure, compressed governing text, complexity comparison, accountable deferral, and time/token observations. The one-month indicator remains open at the board home above.

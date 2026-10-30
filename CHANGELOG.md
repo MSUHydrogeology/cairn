@@ -38,6 +38,8 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+- Review now has one bounded pass per stage, with light as the default proposal tier and added or widened trust boundaries retaining Security Review. Governing instructions are shorter; authors close non-blocking advice and carry deferred obligations forward. The one-month review-commit indicator remains on the board, and whole-tree certification remains a separate release check. ([plan](dev/plans/archive/2026-10-30-cut-the-apparatus.md))
+
 - Shared-file commit guidance now requires agreed serialization and inspection, and the advisory recurrence gate explains its reporting limits. Confirmed sweeps are recorded once per commit; the historical incident remains unconfirmed. ([plan](dev/plans/archive/2026-10-30-same-file-sweeps.md))
 
 - Handoff preparation now captures the reflection, surveys threads and intents, and presents the preview before the user receives the guarded prune command; an intent listing still cannot prove future quiet. ([plan](dev/plans/archive/2026-10-30-handoff-preparation.md))
