@@ -1,7 +1,7 @@
 # Refuse ambiguous module task markers during repeat installation
 
 **Author**: Codex (gpt-6.1-sol)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -14,7 +14,9 @@ The accepted module-discovery proposal promises no duplicate tasks and conservat
 
 ## Proposal
 
-Treat any marker-like task or inventory entry inside the generated regions that cannot be parsed as a complete, unique entry as an ambiguity conflict. Refuse before changing the planning board, module inventory, or lockfile, and tell the adopter to save and reconcile the edited entry manually. Preserve exact valid markers, selected edited/completed entries and unrelated prose. Apply the same rule in repeat install and later adoption, including the already-adopted path. Do not attempt to repair marker spelling automatically or infer identity from task prose. This restores the existing discovery contract without adding a module or an onboarding obligation.
+Within each generated region, classify a line as marker-like only when it begins at column zero with that region's existing marker family stem: `<!-- cairn:module-task` for the planning slot or `<!-- cairn:module` for the inventory. These include their closing markers and catch spacing edits before `id=`. Ordinary prose that mentions a marker inline, indented, or in a blockquote is not a marker. Require marker-like lines to match the existing exact entry syntax, pair in sequence by identity, and have non-overlapping spans; refuse malformed, nested, crossed or duplicate entries. Require exactly one opening and closing delimiter for each generated region, in that order. This bounded grammar is not a fuzzy search for arbitrary Cairn comments.
+
+Run the ambiguity preflight when a generated region contains a marker-like line even if the selected roster is empty; do not use the current narrower exact-substring trigger as the sole gate. Keep reconciliation on the existing shared parser path. On conflict, refuse before changing the planning board, module inventory or lockfile, and tell the adopter to save and reconcile the edited entry manually. Preserve valid selected edited/completed entries and unrelated prose. Apply the same rule in repeat install and later adoption, including the already-adopted path. Do not repair marker spelling automatically or infer identity from task prose. This restores the existing discovery contract without adding a module or onboarding obligation.
 
 ## Rationale
 
@@ -32,7 +34,7 @@ The behavior belongs in `bootstrap/_scaffold/install.py`, with tests in `bootstr
 
 ### Tests required
 
-Extend `bootstrap/tests/test_onboarding_seed_roster.py` with the public repeat-install probe above. Exercise the public `upgrade --adopt-module` path, including repeat adoption, in `bootstrap/tests/test_upgrade_module_additions.py`. For both tasks and inventory, vary an edited opener, edited closer, duplicate identity and harmless unrelated prose; check refusal leaves planning, inventory and lock bytes unchanged. Check a valid selected completed task remains single and checked, and an unchanged entry for a removed module still disappears. Search readers/callers of the changed parser and run their owning tests. Use a mutation that restores the current permissive behavior and confirm the new public probe fails against a passing unmutated control.
+Extend `bootstrap/tests/test_onboarding_seed_roster.py` with the public repeat-install probe above and an empty-roster repeat where `module-task  id=` (two spaces) no longer matches the old caller trigger. Exercise the public `upgrade --adopt-module` path, including repeat adoption, in `bootstrap/tests/test_upgrade_module_additions.py`. For tasks and inventory, vary an edited opener, edited closer, duplicate identity, nested/crossed markers and duplicate region delimiters. Each refusal must leave planning, inventory and lock bytes unchanged. Check harmless inline, indented and blockquoted marker text survives without refusal, a valid selected completed task remains single and checked, and an unchanged entry for a removed module still disappears. Search readers/callers of the changed parser and run their owning tests. Use a mutation that restores current permissive behavior and confirm the new public probe fails against a passing unmutated control.
 
 ### Examples / smoke checks
 
@@ -42,11 +44,11 @@ Run the scaffold's real temporary install and later-adoption paths; run `scripts
 
 **S1 — Who supplied it?** The project owner can edit installed Markdown markers and the profile selects modules; the reconciler must treat that project text as untrusted state, not as authority to delete or duplicate work.
 
-**S2 — Can it fail?** The new public probe must fail if the ambiguity guard is removed or relaxed to the current exact-only search. This mutation is proposed, not yet run.
+**S2 — Can it fail?** The new public probes must fail if the ambiguity guard or broad trigger is removed, or if sequential pairing is replaced by the current independent closer search. These mutations are proposed, not yet run.
 
 **S3 — What fires it, over what?** `bootstrap/scaffold.py` install and `upgrade --adopt-module` invoke reconciliation over the installed planning slot and generated inventory block. The adopter-facing promise is “no duplicate tasks, no tasks for absent modules, and no silent deletion of adopter edits” in the accepted discovery proposal; a duplicate violates it.
 
-**S4 — Which way does it break?** Unknown, malformed or conflicting markers must cause a reported refusal. A permissive fallback adds a duplicate task, granting generated content more authority than the edited adopter state.
+**S4 — Which way does it break?** Unknown, malformed, nested or conflicting anchored markers and duplicate region delimiters must cause a reported refusal. Empty selection does not skip that check. A permissive fallback adds a duplicate task or deletes the wrong span, granting generated content more authority than edited adopter state.
 
 **S5 — Who still wins?** The proposed guard handles ambiguous generated markers, not an owner who deliberately rewrites unmarked planning prose to resemble a separate task. This class is narrowed by syntax checks, not closed for arbitrary prose.
 
@@ -108,3 +110,13 @@ A valid checked task is reset or duplicated, unrelated prose is removed, a malfo
 **Finding 2 — non-blocking.** Cover the repeat-install preflight when no modules are selected and an opener is malformed: the caller decides whether to reconcile using the exact substring (`bootstrap/_scaffold/install.py:1566-1571`), so a guard solely inside the reconciler may never run. Specify the intended trigger and test the public path, including unchanged bytes on refusal. The owner controls this local text; this is preservation of work, not a claim of protection against a malicious owner.
 
 **Coverage**: Claims and public path: proposal probe and `install.py:1566-1590`; completeness and fail-closed: `install.py:1375-1445` and `upgrade.py:1908-1935,2025-2035`; consistency and drift: archived discovery proposal and the two named test files; lifecycle and scope: high-assurance declaration and engine ownership in `dev/proposals/_template.md`; scientific scope: no scientific result; satisfiers: findings above. Not covered: execution, mutation, every malformed spelling, or filesystem race behavior; this is a proposal review, not implementation verification.
+
+## Response to proposal reviews -- Codex (gpt-6.1-sol) -- 2026-10-30
+
+**Ordinary Finding 1**: Accepted. The proposal now defines the two column-zero marker family stems and exact, paired entries. Inline, indented and blockquoted mentions are harmless prose, with public tests named. Duplicate region delimiters refuse.
+
+**Security Finding 1**: Accepted. Entries must pair sequentially by identity with non-overlapping spans; nested and crossed markers refuse. Public refusal tests preserve planning, inventory and lock bytes.
+
+**Security Finding 2**: Accepted. A marker-like line triggers preflight even with an empty roster. The mapped repeat-install probe changes the space before `id=`, specifically missing the former exact-substring trigger, and checks unchanged bytes on refusal.
+
+**Scope delta**: preserved. The response narrows “marker-like” to bounded, column-zero syntax and uses the existing reconciler. No implementation or mutation is claimed here. Security clearance of these findings remains for a focused follow-up review.
