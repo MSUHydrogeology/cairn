@@ -1,7 +1,7 @@
 # Protect upgrade bases and install output
 
 **Author**: Codex GPT-6
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-29
@@ -148,3 +148,9 @@ Security preflight remains as opened: project data supplies the cache, digest an
 ### Withdrawn / superseded commitments
 
 None. These criteria specify the opening commitments.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-30
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated**:
+
+> "Accept all 7 proposals as revised."
