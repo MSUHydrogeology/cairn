@@ -1,7 +1,7 @@
 # Plan: Repair certification test measurements
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-certification-test-repairs.md
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Restore five certification test measurements while retaining their adversarial controls.
