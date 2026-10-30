@@ -376,6 +376,7 @@ _KIND_DISPLAY_LABEL = {
     "new-module-lockconflict": "new module file (BLOCKED — destination owned by another source; resolve by hand)",
     "new-core-blocked": "new core/skills file (BLOCKED — adopt-as-fork or reconcile, then re-stage)",
     "new-core-lockconflict": "new core/skills file (BLOCKED — destination owned by another source; resolve by hand)",
+    "directory-blocked": "tracked file path is a directory (BLOCKED — preserve its contents, resolve, then re-stage)",
     "retired-untouched": "retired, untouched",
     "retired-gone": "retired, already deleted",
     "retired-kept": "retired, kept",
@@ -700,6 +701,15 @@ def _compute_upgrade(
             if resolved is not None:
                 dst = resolved
         dst_abs = target / dst
+        # Do not treat a real folder occupying a tracked file path as a missing
+        # or mergeable file. A link is handled by the existing containment and
+        # read/write rules below; it is never classified as a directory.
+        if dst_abs.is_dir() and not dst_abs.is_symlink():
+            plans.append(FilePlan(
+                dst, "directory-blocked", None,
+                "a directory occupies this tracked file path; preserve its "
+                "contents, resolve the path, then re-stage", None, None))
+            continue
         ours_bytes = dst_abs.read_bytes() if dst_abs.exists() else None
         theirs_b = _theirs_bytes(cairn_root, templates_root, src_rel, to_ref)
         if theirs_b is None:
@@ -1030,7 +1040,7 @@ def _print_upgrade_report(
     print(f"\nCairn upgrade -- {mode}\n" + "=" * 40)
     if drift:
         print(f"  {drift}")
-    order = ["clean", "clean-locally-modified", "new-core",
+    order = ["clean", "clean-locally-modified", "directory-blocked", "new-core",
              "new-core-blocked", "new-core-lockconflict",
              "new-module", "new-module-blocked", "new-module-lockconflict",
              "conflict", "slot-removed", "review-only",
@@ -1057,11 +1067,16 @@ def _print_upgrade_report(
         print("\n  [warn] the fidelity manifest does NOT cite the current "
               "lockfile version/commit (R10) -- update its citation.")
     conflicts = [fp.dst for fp in plans if fp.kind == "conflict"]
+    directory_blocked = [fp.dst for fp in plans
+                         if fp.kind == "directory-blocked"]
     flags = [fp for fp in plans if fp.kind in
              ("slot-removed", "verbatim-locally-modified", "retired-kept", "error")]
     if conflicts:
         print(f"\n  {len(conflicts)} file(s) need conflict resolution before "
               "--apply.")
+    if directory_blocked:
+        print("\n  The directory collision blocks the entire apply. Preserve its "
+              "contents, resolve the path, then run --stage again.")
     # ``detail`` can carry text from a project file or a template (a slot
     # name, a git error), so it prints as ``ascii()`` escapes: a name holding an
     # ESC byte or a right-to-left override must not reach the terminal as such.
@@ -1178,6 +1193,14 @@ def _write_stage(
     kinds: dict[str, str] = {}
     ancestor_evidence: dict[str, dict[str, Any]] = {}
     recovery_bases: dict[str, dict[str, Any]] = {}
+    directory_blocked: set[str] = {
+        fp.dst for fp in plans if fp.kind == "directory-blocked"
+    }
+    for fp in plans:
+        dst_abs = target / fp.dst
+        _assert_safe_write(dst_abs, target)
+        if dst_abs.is_dir():
+            directory_blocked.add(fp.dst)
     # #47: per-file provenance for files NOT already in the lockfile (new-core),
     # so --apply can append correct lockfile records (refs only -- no file
     # bodies -- keeping stage-metadata.json lightweight, plan-review rec 4b).
@@ -1186,10 +1209,20 @@ def _write_stage(
         if fp.kind not in _ADVANCING_KINDS or fp.applied is None:
             continue
         dst_abs = target / fp.dst
-        # Skip a genuine no-op (the applied content already on disk).
-        if dst_abs.exists() and \
-                dst_abs.read_text(encoding="utf-8") == fp.applied:
+        _assert_safe_write(dst_abs, target)
+        if fp.dst in directory_blocked or dst_abs.is_dir():
+            directory_blocked.add(fp.dst)
             continue
+        # A file can become a directory between --plan and --stage. Keep
+        # unaffected staged files, but bind this stage to the hard block.
+        ours_bytes = _read_regular_bytes(dst_abs)
+        # Skip a genuine no-op (the applied content already on disk).
+        if ours_bytes is not None:
+            ours_text = ours_bytes.decode("utf-8")
+            # Match Path.read_text's universal-newline behavior while keeping
+            # the exact raw bytes for the stage-time apply snapshot.
+            if ours_text.replace("\r\n", "\n").replace("\r", "\n") == fp.applied:
+                continue
         out = stage / "files" / fp.dst
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(fp.applied, encoding="utf-8")
@@ -1202,8 +1235,8 @@ def _write_stage(
             }
         # Snapshot the on-disk *ours* hash at stage time (to detect an
         # adopter edit made between --stage and --apply).
-        if dst_abs.exists():
-            ours_hashes[fp.dst] = "sha256:" + _sha256_hex(dst_abs.read_bytes())
+        if ours_bytes is not None:
+            ours_hashes[fp.dst] = "sha256:" + _sha256_hex(ours_bytes)
         else:
             # A new add (new-core / new-module): its destination was absent at
             # --stage, so it carries no ours_hashes snapshot. Record it so
@@ -1241,6 +1274,8 @@ def _write_stage(
         new_profile if new_profile is not None else lock.get("profile"))
     review_only_dsts: list[str] = []
     for fp in plans:
+        if fp.dst in directory_blocked:
+            continue
         if fp.ancestor_evidence is not None:
             ancestor_evidence[fp.dst] = dict(fp.ancestor_evidence)
             if fp.kind == "review-only" and fp.theirs_raw is not None:
@@ -1367,6 +1402,7 @@ def _write_stage(
         # --apply fails closed UNCONDITIONALLY (no --ack-review-only / --force
         # bypass). Key name kept ``module_blocked`` for stage/apply compatibility.
         "module_blocked": sorted(blocked_dsts),
+        "directory_blocked": sorted(directory_blocked),
         # #47 new core-like files to record in the lockfile on apply (refs only).
         "new_entries": new_entries,
         # #48 verbatim files whose stale lock hash --apply should heal.
@@ -3110,7 +3146,8 @@ def _apply_upgrade(
     plain = isinstance(meta, dict)
     names: list[object] = []
     if plain:
-        for key in ("staged_files", "review_only", "module_blocked", "expected_absent"):
+        for key in ("staged_files", "review_only", "module_blocked",
+                    "directory_blocked", "expected_absent"):
             value = meta.get(key, [])
             plain = plain and isinstance(value, list)
             names += value if isinstance(value, list) else []
@@ -3365,6 +3402,32 @@ def _apply_upgrade(
               "remove/merge the on-disk file (or re-run from the target tree "
               "without --to), then re-run `upgrade --stage`.", file=sys.stderr)
         return 1
+    directory_blocked = meta.get("directory_blocked", [])
+    if directory_blocked:
+        print("error: the upgrade cannot complete -- "
+              f"{len(directory_blocked)} tracked file path(s) are directories "
+              "and their contents must be preserved:\n  "
+              + "\n  ".join(directory_blocked)
+              + "\n  move the contents aside, restore the tracked file or "
+              "choose its absence, then run upgrade --stage again.",
+              file=sys.stderr)
+        return 1
+    # A tracked file can become a directory after --stage. Detect every such
+    # change before snapshot reads, swaps or metadata/cache advancement,
+    # regardless of --force and --ack-review-only.
+    live_directory_collisions: list[str] = []
+    for staged in staged_meta:
+        dst_abs = target / staged
+        _assert_safe_write(dst_abs, target)
+        if dst_abs.is_dir():
+            live_directory_collisions.append(staged)
+    if live_directory_collisions:
+        print("error: tracked file path(s) became directories since --stage; "
+              "no files or metadata were changed:\n  "
+              + "\n  ".join(live_directory_collisions)
+              + "\n  preserve the contents, resolve the path, then re-stage.",
+              file=sys.stderr)
+        return 1
     # (e) the on-disk originals are unchanged *since --stage*,
     #     compared to the stage-time snapshot (NOT the clean-install hash --
     #     a customized file differs from that by design).
@@ -3390,6 +3453,7 @@ def _apply_upgrade(
                   "--apply (it would overwrite content created since --stage). "
                   "Re-run `upgrade --stage`.", file=sys.stderr)
             return 1
+
 
     # (f) Layer-3 dirty-tree guard (#56): refuse to overwrite a tracked path
     #     the adopter has uncommitted edits in -- applying would clobber a
@@ -3857,6 +3921,21 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     except ScaffoldSecurityError as exc:
         print(f"error: upgrade refused (containment): {exc}", file=sys.stderr)
         return 2
+
+    # A dangling link or a link to a directory must be refused before the
+    # ordinary directory classifier. Internal file links retain their existing
+    # read behavior; retired records keep their own documented link handling.
+    retired_dsts = {item["dst"] for item in _classify_retired_records(
+        target, lock, templates_root, git_gate=False)}
+    for rec in lock.get("files", []):
+        dst = rec.get("dst")
+        if not isinstance(dst, str) or dst in retired_dsts:
+            continue
+        path = target / dst
+        if path.is_symlink() and (not path.exists() or path.is_dir()):
+            refused = _refuse_if_linked(target, dst, f"tracked path {dst}")
+            if refused is not None:
+                return refused
 
     if args.finalize:
         only = set(args.finalize_paths) if args.finalize_paths else None

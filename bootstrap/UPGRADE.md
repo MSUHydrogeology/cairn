@@ -239,6 +239,18 @@ python bootstrap/verify_integrity.py --target <repo>            # 4. verify
   with markers, or with outstanding review-only files, is never applied —
   only a resolved tree advances the lockfile.
 
+  **A folder where a tracked file belongs.** If `--plan` or `--stage` reports
+  a directory at a tracked file path, Cairn preserves it and blocks the whole
+  apply. This includes folders with nested adopter files; the folder is not a
+  missing file, an addition to adopt, or a review-only file. Move its contents
+  to a safe location, restore the tracked file or choose its absence, then run
+  `--stage` again. Apply also checks for a folder that appeared after staging;
+  `--force` and `--ack-review-only` do not bypass either block. A stage that
+  recorded a directory stays blocked even if the live path is later repaired:
+  resolve it and make a fresh stage. Symlink and containment refusals remain in
+  force before directory handling. These checks cover changes observed at each
+  command boundary, not arbitrary concurrent filesystem changes after a check.
+
   **The edit check.** Before it swaps anything, `--apply` asks whether any file
   it would overwrite has changes you have not committed, staged or not, and if
   one does it stops and names the files (exit 1). Commit or set those edits

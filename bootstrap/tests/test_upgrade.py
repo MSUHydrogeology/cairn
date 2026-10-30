@@ -2392,3 +2392,153 @@ class TestFinalizeDirtyTreeGuard:
         wrapper = next(r for r in lock["files"] if r["src"] == "core/VENDOR.md")
         assert wrapper["dst"] == "CLAUDE.md"
         assert wrapper["hash"] == "sha256:" + s._sha256_hex(claude.read_bytes())
+
+
+class TestTrackedDirectoryCollisions:
+    @pytest.mark.parametrize("review_only", [False, True])
+    def test_stage_catches_directory_that_appears_after_classification(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+        review_only: bool,
+    ) -> None:
+        assert _install(tmp_path) == 0
+        TestUpgradeModes()._diverge_base(tmp_path)
+        if review_only:
+            (tmp_path / "dev/.cairn/base/AGENTS.md").unlink()
+        dst = tmp_path / "AGENTS.md"
+        assert s.main(["upgrade", "--target", str(tmp_path), "--plan",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+
+        real_compute = s._compute_upgrade
+        changed = False
+
+        def classify_then_replace_with_directory(*args, **kwargs):
+            nonlocal changed
+            plans, structural = real_compute(*args, **kwargs)
+            planned = next(fp for fp in plans if fp.dst == "AGENTS.md")
+            assert planned.kind == ("review-only" if review_only else
+                                    "clean-locally-modified")
+            dst.unlink()
+            dst.mkdir()
+            (dst / "nested.txt").write_bytes(b"preserve")
+            changed = True
+            return plans, structural
+
+        upgrade_module = sys.modules[s._compute_upgrade.__module__]
+        monkeypatch.setattr(upgrade_module, "_compute_upgrade",
+                            classify_then_replace_with_directory)
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        assert changed
+        meta = json.loads((tmp_path / "dev/.cairn-upgrade" / s._STAGE_META).read_text())
+        assert "AGENTS.md" in meta["directory_blocked"]
+        assert "AGENTS.md" not in meta["staged_files"]
+        assert "AGENTS.md" not in meta["review_only"]
+        assert not (tmp_path / "dev/.cairn-upgrade/review-only/AGENTS.md.ours").exists()
+        assert (dst / "nested.txt").read_bytes() == b"preserve"
+
+    def test_plan_stage_and_recovery_preserve_mergeable_directory(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        assert _install(tmp_path) == 0
+        TestUpgradeModes()._diverge_base(tmp_path)
+        dst = tmp_path / "AGENTS.md"
+        original_file = dst.read_bytes()
+        assert s.main(["upgrade", "--target", str(tmp_path), "--plan",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        dst.unlink()
+        dst.mkdir()
+        nested = dst / "adopter" / "notes.txt"
+        nested.parent.mkdir()
+        nested.write_bytes(b"keep these bytes\x00\n")
+        nested.chmod(0o640)
+        before_stat = nested.stat()
+        expected_lock = (tmp_path / "dev/.cairn/cairn-lock.yml").read_bytes()
+        expected_cache = (tmp_path / "dev/.cairn/base/AGENTS.md").read_bytes()
+
+        assert s.main(["upgrade", "--target", str(tmp_path), "--plan",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        assert "BLOCKED" in capsys.readouterr().out
+
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert "BLOCKED" in out
+        assert "clean (untouched)" in out
+        stage = tmp_path / "dev/.cairn-upgrade"
+        meta = json.loads((stage / s._STAGE_META).read_text())
+        assert "AGENTS.md" in meta["directory_blocked"]
+        assert "AGENTS.md" not in meta["staged_files"]
+        assert nested.read_bytes() == b"keep these bytes\x00\n"
+        assert nested.stat().st_mode == before_stat.st_mode
+        assert nested.stat().st_mtime_ns == before_stat.st_mtime_ns
+        assert (tmp_path / "dev/.cairn/cairn-lock.yml").read_bytes() == expected_lock
+        assert (tmp_path / "dev/.cairn/base/AGENTS.md").read_bytes() == expected_cache
+
+        # Repairing the live path cannot unlock a stage that recorded a block.
+        saved_dir = tmp_path / "AGENTS.md.saved"
+        saved_nested = saved_dir / nested.relative_to(dst)
+        dst.rename(saved_dir)
+        dst.write_bytes(original_file)
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                     "--ack-review-only", "--force",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        err = capsys.readouterr().err
+        assert rc == 1 and "directories" in err and "upgrade --stage" in err
+        assert dst.read_bytes() == original_file
+        assert saved_nested.read_bytes() == b"keep these bytes\x00\n"
+        assert saved_nested.stat().st_mode == before_stat.st_mode
+        assert saved_nested.stat().st_mtime_ns == before_stat.st_mtime_ns
+        assert (tmp_path / "dev/.cairn/cairn-lock.yml").read_bytes() == expected_lock
+        assert stage.exists()
+
+        # Restore the tracked file and create a fresh stage; normal apply works.
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        assert s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+
+    def test_verbatim_directory_and_directory_after_stage_block_apply(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        assert _install(tmp_path) == 0
+        lock = s.read_lockfile(tmp_path)
+        rec = next(r for r in lock["files"]
+                   if r.get("verbatim") and (tmp_path / r["dst"]).is_file())
+        dst = tmp_path / rec["dst"]
+        dst.unlink()
+        dst.mkdir(parents=True)
+        content = dst / "nested.txt"
+        content.write_text("adopter data")
+        assert s.main(["upgrade", "--target", str(tmp_path), "--plan",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        assert "BLOCKED" in capsys.readouterr().out
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        meta = json.loads((tmp_path / "dev/.cairn-upgrade" / s._STAGE_META).read_text())
+        assert rec["dst"] in meta["directory_blocked"]
+        assert content.read_text() == "adopter data"
+
+        # A separate staged file becoming a directory is caught before any
+        # destination, lockfile or base-cache write.
+        second = tmp_path / "second"
+        second.mkdir()
+        assert _install(second) == 0
+        TestUpgradeModes()._diverge_base(second)
+        assert s.main(["upgrade", "--target", str(second), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        second_agents = second / "AGENTS.md"
+        second_agents.unlink()
+        second_agents.mkdir()
+        nested = second_agents / "nested.txt"
+        nested.write_bytes(b"preserve")
+        lock_before = (second / "dev/.cairn/cairn-lock.yml").read_bytes()
+        cache_before = (second / "dev/.cairn/base/AGENTS.md").read_bytes()
+        rc = s.main(["upgrade", "--target", str(second), "--apply",
+                     "--force", "--cairn-root", str(CAIRN_ROOT)])
+        err = capsys.readouterr().err
+        assert rc == 1 and "became directories" in err
+        assert nested.read_bytes() == b"preserve"
+        assert (second / "dev/.cairn/cairn-lock.yml").read_bytes() == lock_before
+        assert (second / "dev/.cairn/base/AGENTS.md").read_bytes() == cache_before
+        assert (second / "dev/.cairn-upgrade").exists()
