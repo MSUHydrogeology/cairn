@@ -1,7 +1,7 @@
 # Plan: Render the review inventory
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-review-inventory-rendering.md
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Show the selected modules in the upstream review copy so local edits remain visible.
