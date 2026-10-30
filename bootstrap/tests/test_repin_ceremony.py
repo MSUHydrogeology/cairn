@@ -1838,28 +1838,53 @@ def test_runbook_describes_the_generated_packet_and_launcher():
     assert "no candidate id" in section and "must carry NO candidate" in template
 
 
-def test_record_check_uses_committed_objects_after_worktree_rewrite(cbed, tmp_path):
-    # boot() installs checked copies of gate modules into sys.modules. Keep
-    # that real import behavior, but give it a process whose test identities
-    # cannot be consumed by later reanchor nodes in the outer pytest run.
-    child_env = dict(os.environ)
-    child_env["CAIRN_REPIN_RECORD_CHECK_CHILD"] = "1"
-    if os.environ.get("CAIRN_REPIN_RECORD_CHECK_CHILD") != "1":
-        node = f"{Path(__file__).resolve()}::test_record_check_uses_committed_objects_after_worktree_rewrite"
-        child = subprocess.run(
-            [sys.executable, "-m", "pytest", "-q", node], cwd=REAL,
-            env=child_env, capture_output=True, text=True, timeout=240,
-        )
-        assert child.returncode == 0, child.stdout + child.stderr
-        return
+def _run_record_check_in_child(cbed, tmp_path):
+    """Keep the real checked imports and record checks in a dedicated process."""
     cbed.add_record()
-    ctx = REPIN.boot(cbed.repo, tmp_path)
-    packet, launcher = cbed.packet_and_launcher()
-    REPIN.check_record(ctx, packet, launcher)
-    cbed.write(RECORD, "# changed after extraction\n")
-    template = "bootstrap/reanchor-launcher.template.sh"
-    cbed.write(template, cbed.read(template) + "# changed after extraction\n")
-    REPIN.check_record(ctx, packet, launcher)
+    packet_digest, launcher_digest = cbed.packet_and_launcher()
+    template = cbed.repo / "bootstrap/reanchor-launcher.template.sh"
+    record = cbed.repo / RECORD
+    code = (
+        "import importlib.util, sys\n"
+        "from pathlib import Path\n"
+        "repo, scratch, source, packet, launcher, record, template = sys.argv[1:]\n"
+        "spec = importlib.util.spec_from_file_location('repin', source)\n"
+        "R = importlib.util.module_from_spec(spec)\n"
+        "sys.modules['repin'] = R\n"
+        "spec.loader.exec_module(R)\n"
+        "ctx = R.boot(Path(repo), Path(scratch))\n"
+        "R.check_record(ctx, packet, launcher)\n"
+        "Path(record).write_text('# changed after extraction\\n', encoding='utf-8')\n"
+        "target = Path(template)\n"
+        "target.write_bytes(target.read_bytes() + b'# changed after extraction\\n')\n"
+        "R.check_record(ctx, packet, launcher)\n"
+    )
+    child = subprocess.run(
+        [sys.executable, "-I", "-c", code, str(cbed.repo), str(tmp_path),
+         str(REAL / "scripts/repin.py"), packet_digest, launcher_digest,
+         str(record), str(template)],
+        cwd=REAL, env=dict(os.environ), capture_output=True, text=True, timeout=240,
+    )
+    assert child.returncode == 0, child.stdout + child.stderr
+
+
+def test_record_check_uses_committed_objects_after_worktree_rewrite(cbed, tmp_path):
+    _run_record_check_in_child(cbed, tmp_path)
+
+
+def test_inherited_child_marker_does_not_bypass_record_check_isolation(
+    cbed, tmp_path, monkeypatch
+):
+    monkeypatch.setenv("CAIRN_REPIN_RECORD_CHECK_CHILD", "1")
+    package = sys.modules["bootstrap.tests"]
+    manifest_module = sys.modules["bootstrap.tests._gate_manifest"]
+    assert manifest_module is GM
+    assert getattr(package, "_gate_manifest") is manifest_module
+
+    _run_record_check_in_child(cbed, tmp_path)
+
+    assert sys.modules["bootstrap.tests._gate_manifest"] is manifest_module
+    assert getattr(package, "_gate_manifest") is manifest_module
 
 
 def test_prepare_and_run_verifier_binds_signed_prior_to_raw_candidate(cbed, tmp_path):
