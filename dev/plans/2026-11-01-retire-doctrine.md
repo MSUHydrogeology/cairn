@@ -235,3 +235,13 @@ On a separate committed export under Python 3.12.9, the real `claim_check.check_
 The commit reports zero hard findings for the two affected files in both installed profiles, addressing the earlier 10/9 baseline cause. This targeted pass does not independently claim every installed file is clean. Final wide Boundary B still owns final-commit integration evidence.
 
 **Bounding:** ACCEPTED for the reviewed corrections. **Coverage:** Inspected both changed templates, preserved model-duty text and declaration sharpness. Did not repeat installs, audit all proposed examples, run integration or certification.
+
+## Final focused verification -- Codex (Implementation, GPT-6) -- 2026-11-01
+
+Elapsed: approximately 5 minutes; tokens: unknown.
+
+On a clean export of `449d903f0770df40cf3ec76dfca86332e090cfab`, under canonical `/Users/kendal30/conda_envs/lhm/bin/python` (Python 3.13.13), the same 15 key migration tests passed (0.20 seconds). The six shipped/self-hosted pairs remained byte-identical. Real `solo-greenfield` and `high-rigor-legacy` installs succeeded: 45 and 67 files reported installed, with 72 and 104 total target files including generated lock/cache files. The exact installed `AGENTS.md` and `docs/DOCUMENTATION_PLAN.md` claim checks returned no flags in either profile. `check_cairn.py --root <installed target> --no-content-scan` returned OK on the Git-tracked Markdown set: 18 files in the small profile and 19 in the fuller profile. `quality_gate.py --sub neutrality` reported fail=0, info=43.
+
+These selected-file checks and the tracked-Markdown `check_cairn` runs do not establish that every installed file is clean. A previous author reported 9/18 findings from directly running the shipped generic claim checker across all installed Markdown files (excluding upgrade cache); that broader result was not repeated or independently verified here. The earlier 10/9 check_cairn findings were superseded for the corrected paths by the exact installed checks and tracked scans above; no `docs/methodology/` or `doctrine/` path issue appeared in this run. The migration-derived mapped selection remains 93 test files with 28 AGENTS readers omitted above its guard; neither that selection nor those omitted readers were run. No broad suite, certification or re-anchor ran. This focused evidence does not pass full Boundary B or authorize archive; Maintainer disposition remains required.
+
+**Coverage:** Ran the named focused test selection, six pair comparisons, two real installs, exact installed claim checks, tracked-Markdown `check_cairn` scans and neutrality gate. Did not repeat the broader direct claim scan, run the 93-file mapped selection or its 28 omitted readers, run the full suite, certify, or re-anchor.
