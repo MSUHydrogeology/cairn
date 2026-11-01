@@ -143,3 +143,23 @@ The ordinary review's accessibility recommendation applies: lookup must reach sh
 - The implementation commit reports mapped tests and gates but does not report the required actual guard refusal, passing-control rule mutations, or representative lookup for each record type (or a documented gap). These are named C1 checks, not discretionary review reruns. Supply their evidence and dispositions before advancing.
 
 **Evidence and coverage:** Compared the implementation diff with C1, inspected the shipped rules and focused tests, and ran both focused rule files against an archived copy of 46a0c967: 58 passed under the local Python 3.12 interpreter. The tests check doctrine wording but do not assert the record instructions on shipped surfaces. Did not run the full suite, repeat the mapped iteration, verify every reader or pin, or perform Security Review.
+
+## Code review -- Codex GPT-6.1 -- 2026-11-01 (Security)
+
+**Tier**: Internal Security Review  
+**Obligation**: Internal Security Review  
+**Reviewed commit**: 46a0c967  
+**Verdict**: REVISE; ordinary review blockers remain, no additional security defect  
+**Bounding**: WIDER RUN REQUIRED  
+**Elapsed**: approximately 3 minutes  
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. The committed diff removes the marker without changing the guard predicate: an AST comparison against its parent found every preceding statement identical when excluding the final diagnostic. Governing rules retain the certification pair, conditional push/release/re-anchor/Maintainer triggers, failed-run bisect and missing-check blockers (`AGENTS.md`, `doctrine/plans.md`).
+2. **Best alternative.** Existing ceremony evidence plus useful commit messages is sufficient. The revised doctrine includes failures, tested SHA, commands/results and fetched-ref limits; another ledger or approval step adds no security assurance. The ordinary review correctly identifies that adopters still need these instructions on shipped surfaces.
+3. **What would show it wrong?** Lost refusal behavior, optional required checks, or undiscoverable actual-run evidence. The ordinary review's two blockers identify unmet accepted outcomes and named checks; close them with shipped instructions and the already-required implementation evidence.
+
+The author's four Python 3.12 Bandit skips do not establish scanner success. Their triggers are three real-scanner checks in `test_security_check.py` (severity ranking, missing-target refusal, clean scan) and the local `test_security_lint.py` gate. Local absence is explicitly skippable; the release command independently fails closed. Complete the planned canonical Python 3.13 wide Boundary B with these checks available, reporting any remaining non-pass outcome. No full certification or re-anchor is needed for this change.
+
+**Coverage:** Inspected committed changed rules/tests, guard AST equivalence and scanner skip/fail-closed triggers. Did not rerun implementation tests, perform actual record lookup, enumerate every pin, run canonical Boundary B or the full suite. The ordinary review blockers and pending Boundary B keep the work open.
