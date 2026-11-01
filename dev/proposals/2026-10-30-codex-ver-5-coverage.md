@@ -1,7 +1,7 @@
 # Proposal: compare multi-script module discovery paths
 
 **Author**: Codex (gpt-6.1-terra), Strategy
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -38,7 +38,7 @@ No shipped documentation, doctrine or install contract changes proposed. This pr
 
 ### Tests required
 
-In `bootstrap/tests/test_reference_scripts.py`, extend the existing installation node and add focused behavior nodes for lock records, upgrade stage/apply and scan inclusion using the independent pairs. Run the iteration selection from `python tools/test_tiers.py for` the changed test files. In separate copies of the final commit, remove or alter each expected file's selection in each applicable path and show the corresponding behavior test fails; report each mutation and any omissions. A removed scan source must defeat both scanner input routes, since either can legitimately include it. Missing records, wrong destinations or changed installed bytes must fail. Record the clean-final-commit Boundary B selection after code review here, including its mode and required evidence. If the tests expose a real mismatch, stop for reassessment rather than silently change protected production surfaces.
+In `bootstrap/tests/test_reference_scripts.py`, extend the existing installation node and add focused behavior nodes for lock records, upgrade stage/apply and scan inclusion using the independent pairs. Run the iteration selection from `python tools/test_tiers.py for` the changed test files. In separate copies of the final commit, falsify a representative omission in each distinct selection path, including both scanner input routes together, and exercise wrong destination, bytes and record cases as needed. Report the measured mutations and their limits; do not claim every listed member was mutation-tested or that a value reaches every member. The normal behavior assertions still compare every independently listed pair. Missing records, wrong destinations or changed installed bytes must fail. Record the clean-final-commit Boundary B selection after code review here, including its mode and required evidence. If the tests expose a real mismatch, stop for reassessment rather than silently change protected production surfaces.
 
 ### Examples / smoke checks
 
@@ -95,3 +95,11 @@ Reviewed commit: 38d3c85c. **Tier**: usual. **Verdict: revise before Decision.**
 **Advice:** Reconsider the exhaustive mutation matrix. Test a representative omission in each distinct selection path, including both scan routes together, and wrong destination/bytes/record cases as needed; report only measured results and do not claim every member was mutation-tested. Preserve the explicit comparisons for every enumerated file. If the author retains a claim that a value reaches every member, the repository's per-member mutation rule applies. This closes when the verification plan distinguishes the assertions from measured mutation coverage.
 
 **Coverage:** Read the committed proposal, template, existing install test, manifest, upgrade addition loop and scan selection. Did not run tests, enumerate every source/destination pair, establish fixture feasibility, or audit all existing tests. Elapsed: approximately 4 minutes; tokens: unknown.
+
+## Author response -- Codex (gpt-6.1) -- 2026-11-01
+
+Accepted the advice: representative falsifications reduce the matrix while retaining the comparisons for all listed files; their results cannot establish an all-member mutation claim. Elapsed: about 1 minute; tokens: unknown.
+
+### Withdrawn / superseded commitments
+
+The per-file, per-path mutation matrix is replaced by representative falsifications; no behavior comparison is dropped.
