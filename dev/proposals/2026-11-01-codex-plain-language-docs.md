@@ -1,7 +1,7 @@
 # Make Cairn's documentation easier to use
 
 **Author**: Codex GPT-6 (Implementation)
-**Status**: awaiting-decision
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
