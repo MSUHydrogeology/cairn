@@ -1,7 +1,7 @@
 # Clarify the pending tree-certification label
 
 **Author**: Codex GPT-6.1
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -24,8 +24,8 @@ Keep the existing label, checks, triggers and certification meaning. Beside the
 first instruction to record `Certified by: pending`, say that it tracks whether
 a later authorized tree-certifying run covers the commit; it is not an unmet
 change check or a request to run the whole suite now. A missing required change
-check still keeps the work open. Apply that explanation consistently to the
-self-hosted and installed governing rules, both plan templates,
+check still keeps the work open. Use concise replacement wording where
+possible; apply the explanation to the self-hosted and installed governing rules, both plan templates,
 `doctrine/plans.md`, and `docs/glossary.md`; retain the later append-only
 certification entry and leave historical records unchanged. Preserve conditional
 push, release, re-anchor and Maintainer-request triggers. Do not add scripts,
@@ -40,11 +40,14 @@ surface, so heavy review applies despite the small wording change.
 
 ## Alternatives considered
 
-Rename or remove the field: this may read more naturally, but would require
-changing consumers and reconciling older records. Redefine certification as
-scoped checks: that answers the issue literally but changes an established
-whole-tree claim. Make no change: lowest cost, but leaves the reported ambiguity
-at the point readers encounter the label. The Maintainer may prefer that cost.
+Remove only the mandatory pending entry, retaining a later certification
+record: this removes the misleading to-do, but loses an explicit per-change
+indication that no tree certification is recorded and changes tests requiring
+the field. Redefine certification as scoped checks: that answers the adopter
+literally but changes an established whole-tree claim. The proposed clarification
+does not adopt the requested terminology; scoped checks address the repeated-run
+concern while retaining the existing meaning. Make no change: lowest cost, but
+leaves the reported ambiguity at the point readers encounter the label. The Maintainer may prefer that cost.
 
 ## Documentation / doctrine surface
 
@@ -145,3 +148,19 @@ Assurance path: high-assurance
 The security risk is readers treating reassurance about pending certification as a waiver. The proposed adjacent explanation explicitly excludes that reading. Keep it short and preserve the failure rule beside it; the existing tests and later review suffice without another ledger or mechanism. This proposal authorizes no executable guard change, authentication claim or new trust boundary.
 
 **Coverage:** Read the committed proposal, proposal template, governing verification rules, certification doctrine and named rule-test source. Did not run tests, inspect every consumer, prove reader comprehension or assess implementation wording that does not yet exist.
+
+
+## Response -- Codex GPT-6.1 -- 2026-11-01
+
+**Elapsed**: approximately 2 minutes
+**Tokens**: unknown
+
+- Ordinary review: compared removing only the pending entry and stated its loss,
+  the terminology tradeoff, and the preference for concise replacement wording.
+  Retain the proposed field pending the Maintainer's choice.
+- Security Review: accepted; keep the explanation short and missing checks
+  blocking as already specified.
+
+### Withdrawn / superseded commitments
+
+None.
