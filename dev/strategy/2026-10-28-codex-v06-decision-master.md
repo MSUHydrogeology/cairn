@@ -244,6 +244,24 @@ on 2026-11-01. The [plan](../plans/archive/2026-11-01-template-burden.md) trims 
 existing templates and corrects a contradiction while preserving installed
 guidance, obligations and machine consumers. Reviews and focused verification passed.
 
+### 24. Narrow incidental test-selector matches — awaiting Decision
+
+The [reviewed proposal](../proposals/2026-11-01-codex-selector-matching.md)
+would exclude demonstrated incidental matches while retaining identified real
+consumers and required checks. One collision verification selected 51 files and
+3,130 tests; the proposal does not claim that the entire excess was unnecessary.
+Both reviewers found no mandatory heavy trigger and suggest light with the same
+safeguards. **Decide** whether to accept and select a tier.
+
+### 25. Clarify pending certification — awaiting Decision
+
+The [reviewed proposal](../proposals/2026-11-01-codex-certification-label.md)
+retains the existing pending label but explains that it does not require a
+whole-tree run for each completed change. An alternative removes the mandatory
+pending entry, reducing ceremony while losing an explicit per-change indication
+that tree certification is not yet recorded. **Decide** which approach, if any,
+is worth pursuing.
+
 ## Issue triage, staffing and close-out
 
 Issue #33 remains open. Its adopter asks that certification mean scoped
