@@ -73,7 +73,7 @@ Proposed path: `bootstrap/tests/test_board_json_values.py` (not yet created).
 ### 4. Establish a forward-trust baseline at v0.6
 
 The Maintainer directed v0.6 re-anchoring without old-anchor drift checks. The
-[exploration](2026-10-29-sol-forward-baseline.md) proposes a reviewed, signed
+[exploration](archive/2026-10-29-sol-forward-baseline.md) proposes a reviewed, signed
 baseline with the approved roster; earlier history is not certified. Prior
 HOLDs are not prerequisites. Candidate, package, signer and push need separate
 authorization. Bridge `6e3197f6` is approved, not installed or certified;

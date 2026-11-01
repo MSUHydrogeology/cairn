@@ -5,11 +5,11 @@
 **Date**: 2026-10-27
 **Status**: draft
 **Type**: product-strategy
-**Surfaces this would feed**: [`dev/PLANNING.md`](../PLANNING.md) v0.6 candidate "Outside-adopter interview & testimonial (Stid)"; [`dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md`](2026-07-08-claude-broad-look-skeptical-review.md); GitHub Issue #19; eventual adopter case study.
+**Surfaces this would feed**: [`dev/PLANNING.md`](../PLANNING.md) v0.6 candidate "Outside-adopter interview & testimonial (Stid)"; [`dev/strategy/archive/2026-07-08-claude-broad-look-skeptical-review.md`](archive/2026-07-08-claude-broad-look-skeptical-review.md); GitHub Issue #19; eventual adopter case study.
 
 ## The question / felt gap
 
-Every deployment of Cairn to date (`Cairn`, `modflow_tools`, `LHM`, `Assai`) has shared one Maintainer. As established in the adopter audit ([`dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md`](2026-07-08-claude-broad-look-skeptical-review.md)), completing `scaffold.py install` proves the Python scripts run; it does not prove an outside scientist understood the obligations they agreed to, or that the deliberation lifecycle repaid its token and cognitive cost on their project.
+Every deployment of Cairn to date (`Cairn`, `modflow_tools`, `LHM`, `Assai`) has shared one Maintainer. As established in the adopter audit ([`dev/strategy/archive/2026-07-08-claude-broad-look-skeptical-review.md`](archive/2026-07-08-claude-broad-look-skeptical-review.md)), completing `scaffold.py install` proves the Python scripts run; it does not prove an outside scientist understood the obligations they agreed to, or that the deliberation lifecycle repaid its token and cognitive cost on their project.
 
 The Maintainer has identified an active outside adopter (Stid). Rather than conducting an unscripted conversation that risks yielding vague impressions, this note designs a structured **survey instrument and interview protocol**. It is intentionally staged here first—not sent immediately—so the Maintainer can refine the questions, calibrate the burden, and choose the right timing for outreach.
 
