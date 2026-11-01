@@ -1,4 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/coordination.md doctrine/lifecycle.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-internal-ref-allow: docs/methodology/coordination.md docs/methodology/lifecycle.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 # {{project_name}} — development roadmap
 
 `PLANNING.md` is the **roadmap board**: a current-state index of
@@ -6,7 +6,7 @@ what is queued and in flight. It is **not** a historical log —
 completed items are *removed* from the board, not crossed off or
 struck through, once their lasting truth has migrated to the
 durable record (archived proposals and plans, implementing
-commits, the changelog). See `doctrine/lifecycle.md` > "The
+commits, the changelog). See `docs/methodology/lifecycle.md` > "The
 roadmap is a current-state index, not a historical log" for the
 load-bearing reasoning.
 
@@ -16,7 +16,7 @@ routine, or explicit maintainer instruction — and referring to
 proposals and plans by **filename stem**, not path link, so an
 archive-move needs no edit here. The required-signal-read
 discipline on shared communication files applies
-(`doctrine/coordination.md` > "Required signal+read for
+(`docs/methodology/coordination.md` > "Required signal+read for
 coordination-surface files").
 
 ## Where the project stands
@@ -69,7 +69,7 @@ board by design.
 
 A board item carries one status. These are the inline reference
 for any agent editing the board (the full *why* is in
-`doctrine/lifecycle.md`):
+`docs/methodology/lifecycle.md`):
 
 * `queued` — accepted or anticipated, not yet in flight.
 * `active` — in flight: an open plan, an executing sub-track.
@@ -111,7 +111,7 @@ The vocabulary, restated here so the board can be read on its own. **This
 copy is not the source — cite the governing statement instead**:
 `dev/plans/_template.md` > *Dispositions* (and *Scope delta*, for the
 scope-reduction rule in the `accept` entry), with the *why* in
-`doctrine/lifecycle.md` > "Archive precondition".
+`docs/methodology/lifecycle.md` > "Archive precondition".
 
 * `accept` — fixed in scope. Includes writing the doc, and narrowing
   the artifact's own claim so the finding no longer applies (a
@@ -173,4 +173,4 @@ gates. Before deleting a board entry, confirm all three:
    archives + commit log **without** this board entry.
 
 If a gate is unmet, finish that migration first, then delete. See
-`doctrine/lifecycle.md` > "Removal preconditions for a roadmap item".
+`docs/methodology/lifecycle.md` > "Removal preconditions for a roadmap item".

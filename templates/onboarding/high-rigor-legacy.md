@@ -1,4 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-internal-ref-allow: docs/methodology/session-routines.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 <!-- ^ Profile-conditional module files: present only in an adopter that installs them (this preset does); Cairn's own profile does not, so they don't resolve here. -->
 
 <!-- Cairn onboarding task list: high-rigor-legacy preset. -->
@@ -26,7 +26,7 @@ goes live.
   Try the `session-start` skill (`/session-start`): run
   `python tools/session.py session-start` to orient at the top of a
   session. The lifecycle routines are now invokable skills installed under
-  `.agents/skills/`; the canonical doctrine is `doctrine/session-routines.md`.
+  `.agents/skills/`; the canonical doctrine is `docs/methodology/session-routines.md`.
 
 * [seed; id: fill-readiness-report]
   Fill `templates/codebase-readiness-report.md` for your legacy

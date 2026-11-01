@@ -1,4 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/dual-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-internal-ref-allow: docs/methodology/dual-review.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 # Module: dual-language-tests
 
 **Selected when:** the codebase is **multi-language** (the
@@ -44,7 +44,7 @@ reviewer cannot run a language, review of that language's code is
 weaker in practice than its tier suggests.
 
 The general discipline is not language-specific and lives in
-`doctrine/dual-review.md` > "Restricted verification surfaces":
+`docs/methodology/dual-review.md` > "Restricted verification surfaces":
 record a **`verification command`** (the exact command that checks
 a change) and a human-gated **`verification owner`** (who can
 actually run it) per surface, and apply the pre-framework rule that

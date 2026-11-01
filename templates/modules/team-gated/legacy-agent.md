@@ -1,4 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/coordination.md doctrine/dual-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-internal-ref-allow: docs/methodology/coordination.md docs/methodology/dual-review.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 # Module: legacy-agent
 
 **Selected when:** the codebase is **legacy** (the Age axis) — it
@@ -85,7 +85,7 @@ silently alter.
 The map is read before every change to a legacy surface and
 rewritten whenever characterization work lands — which makes it the
 most collision-prone surface the legacy apparatus adds. Treat it as
-a **shared-communication surface** (`doctrine/coordination.md`), not
+a **shared-communication surface** (`docs/methodology/coordination.md`), not
 a casually-edited doc:
 
 * **The tier column is single-writer.** The Legacy Agent owns it;
@@ -119,7 +119,7 @@ the legacy-surface instance of a general discipline: when a reviewer
 **cannot execute** a surface, review is weaker in practice than on
 paper. The general rule — and its pre-framework fallback
 (`verification owner = the Maintainer` until an executable path
-exists) — lives in `doctrine/dual-review.md` > "Restricted
+exists) — lives in `docs/methodology/dual-review.md` > "Restricted
 verification surfaces". A legacy surface in a language or
 environment the reviewer cannot run is one such case; the readiness
 record is where that gap is made explicit, per surface.

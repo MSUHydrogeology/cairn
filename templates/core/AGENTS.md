@@ -1,4 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/ reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-internal-ref-allow: docs/methodology/ reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 # AGENTS.md — {{project_name}}
 
 > **The operational reference for AI agents working on this repository.**
@@ -18,10 +18,10 @@ the maintainer confirms it. An unfilled slot at first release is a
 review finding.)
 <!-- cairn:end project-overview -->
 
-**Where `doctrine/` references resolve.** A reference to `doctrine/<name>.md`
+**Where `docs/methodology/` references resolve.** A reference to `docs/methodology/<name>.md`
 points to **Cairn's published methodology doctrine** — the repository you
 adopted from — **not** a file in your own tree. The bootstrap installs your
-`AGENTS.md` and `dev/` tree, not Cairn's `doctrine/` directory, so such a
+`AGENTS.md` and `dev/` tree, not Cairn's `docs/methodology/` directory, so such a
 reference is a citation, never a broken local link.
 
 ## The changelog
@@ -95,7 +95,7 @@ cleared only by an appended plan review with a matching `Obligation` line;
 readers, not a tool, check that line. Plan review is fresh-context; code review
 is by someone other than the implementer and does not reopen the Decision. A
 reviewer does not re-run implementation checks; the implementation record owns
-that evidence. See `doctrine/dual-review.md` for the complete procedure.
+that evidence. See `docs/methodology/dual-review.md` for the complete procedure.
 
 The proposal Decision sets its tier: `light` (one short review, no plan),
 `standard` (one pass per stage), or `heavy` (adds Security Review). Light is
@@ -103,7 +103,7 @@ the default; plan triage applies only to standard/heavy. An author's higher prop
 changes it. Named high-risk surfaces and added or widened trust boundaries
 trigger heavy. A newly discovered boundary stops the work for reassessment.
 Ordinary uncertainty takes the lighter lane with its reason. The trivial lane
-is unchanged. See `doctrine/lifecycle.md` for lane details.
+is unchanged. See `docs/methodology/lifecycle.md` for lane details.
 
 ## Roles
 
@@ -130,7 +130,7 @@ terms, distinguish measured facts from assumptions, and state checks not run.
 If you do not understand a change, pause and say so. Cairn Plain Language, in
 `dev/agent_collaboration.md`, gives the rules for writing plainly; in chat as
 everywhere, separate what you measured from what you assumed, give numbers
-with their sources, and say what you did not check. See `doctrine/rationale.md`
+with their sources, and say what you did not check. See `docs/methodology/rationale.md`
 anchor 17.
 
 At session start or after context loss, read any `RULES.md` first, orient on

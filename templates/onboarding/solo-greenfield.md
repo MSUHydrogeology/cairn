@@ -1,4 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/coordination.md doctrine/lifecycle.md doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-internal-ref-allow: docs/methodology/coordination.md docs/methodology/lifecycle.md docs/methodology/session-routines.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 <!-- Cairn onboarding task list: solo-greenfield preset. -->
 
 # Onboarding tasks -- solo-greenfield
@@ -19,15 +19,15 @@ no multi-agent coordination, no legacy-tree pre-pass.
   Try the `session-start` skill (`/session-start`): run
   `python tools/session.py session-start` to orient at the top of a
   session. The lifecycle routines are now invokable skills installed under
-  `.agents/skills/`; the canonical doctrine is `doctrine/session-routines.md`.
+  `.agents/skills/`; the canonical doctrine is `docs/methodology/session-routines.md`.
 
 * [seed; id: read-lifecycle-doctrine]
-  Read `doctrine/lifecycle.md`. It is the single load-bearing
+  Read `docs/methodology/lifecycle.md`. It is the single load-bearing
   read for every Cairn deployment; the rest of the apparatus
   makes more sense after.
 
 * [seed; id: skim-coordination-doctrine]
-  Skim `doctrine/coordination.md`. The work-intent mechanism
+  Skim `docs/methodology/coordination.md`. The work-intent mechanism
   earns its keep when you add a second agent; for solo-greenfield
   you can defer the deeper read until that day comes. When you add a
   second agent type, walk

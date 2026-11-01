@@ -1,4 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/coordination.md doctrine/lifecycle.md doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-internal-ref-allow: docs/methodology/coordination.md docs/methodology/lifecycle.md docs/methodology/session-routines.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 <!-- Cairn onboarding task list: collaborative-team preset. -->
 
 # Onboarding tasks -- collaborative-team
@@ -22,16 +22,16 @@ candidates upstream early, rather than letting the practice lapse.
   Try the `session-start` skill (`/session-start`): run
   `python tools/session.py session-start` to orient at the top of a
   session. The lifecycle routines are now invokable skills installed under
-  `.agents/skills/`; the canonical doctrine is `doctrine/session-routines.md`.
+  `.agents/skills/`; the canonical doctrine is `docs/methodology/session-routines.md`.
 
 * [seed; id: read-lifecycle-doctrine]
-  Read `doctrine/lifecycle.md` together as a team -- the
+  Read `docs/methodology/lifecycle.md` together as a team -- the
   proposal -> review -> decision -> archive shape is the load-
   bearing convention every later coordination behavior assumes.
 
 <!-- cairn:if agent_team in concurrent-multi-type,concurrent-single-type -->
 * [seed; id: read-coordination-doctrine]
-  Read `doctrine/coordination.md`. The work-intent mechanism is
+  Read `docs/methodology/coordination.md`. The work-intent mechanism is
   what prevents collision between concurrent agents in the same
   tree; multi-agent teams need this from day one, not as a
   later upgrade.

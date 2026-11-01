@@ -1,8 +1,8 @@
-<!-- cairn-internal-ref-allow: doctrine/ reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-internal-ref-allow: docs/methodology/ reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 # Templates
 
 `templates/` holds the **forkable files** that put the Cairn
-methodology into a repository. Where `doctrine/` *explains* the
+methodology into a repository. Where `docs/methodology/` *explains* the
 method and `dimensions/` describes how an adoption is *adapted*,
 `templates/` is what an adopter actually copies.
 

@@ -1,4 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/dual-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-internal-ref-allow: docs/methodology/dual-review.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 # Module: security-review
 
 **Selected when:** the project has a non-trivial **trust boundary**
@@ -63,7 +63,7 @@ offers a static-analysis scanner for these boundary classes, wire a
 **tool-neutral linter command into the surface's `verification
 command`** (the field the readiness schema and restricted-
 verification doctrine already define — `templates/modules/team-gated/legacy-agent.md`,
-`doctrine/dual-review.md`), so the boundary is checked
+`docs/methodology/dual-review.md`), so the boundary is checked
 automatically on every change and the focused-mode pass spends its
 attention on what a scanner cannot judge. The module names no
 specific tool; the adopter supplies the scanner their stack offers.
