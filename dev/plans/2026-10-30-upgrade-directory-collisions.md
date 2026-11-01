@@ -41,6 +41,20 @@ moved aside, and the tracked path restored as a regular file before restaging;
 permanently leaving it absent is excluded.
 No new lockfile machinery is in scope.
 
+**Scope delta**: Maintainer authorized a one-time registration step for an
+arbitrary custom vendor wrapper on 2026-11-01, after this tradeoff was
+explained: when stage discovers a root Markdown wrapper by its `@AGENTS.md`
+content but the existing lock still records `VENDOR.md`, the adopter must
+review the wrapper's current contents and run scoped `upgrade --finalize
+VENDOR.md` before staging. Finalization records the resolved destination and
+accepts the reviewed current contents in the existing lock entry. This adds an
+explicit review and lock update before stage; the accepted destination then
+comes from the existing lock record rather than editable stage observations.
+All other lock entries remain untouched; no new trust store is added.
+
+**Maintainer's words**: “Oh, that seems like a good solution. Yes!” — chat,
+2026-11-01.
+
 ## Verification
 
 Boundary A: use canonical Python 3.13 and run `python -m pytest bootstrap/tests/test_upgrade.py bootstrap/tests/test_upgrade_lockfile_path_containment.py bootstrap/tests/test_upgrade_side_door_parity.py` for tracked upgrades, retired paths and containment; include new tests in the owning files. Run `python -m pytest bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_lockfile_provenance.py` for addition blocking and metadata consumers, and `python -m pytest bootstrap/tests/test_upgrade_refuses_hostile_project_data.py` for hostile stage metadata and public apply refusal. Search actual readers and extend this map if needed. Split selections within the broad-run guard's file limit and reconcile the executed union without an override. Run `python -m pytest bootstrap/tests/test_security_lint.py` for the engine security gate; a skip is an unmet check.
