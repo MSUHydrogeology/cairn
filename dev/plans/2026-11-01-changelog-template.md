@@ -190,3 +190,39 @@ independently probed preservation, authorization and base integrity. No new
 machinery or trust boundary found. Did not establish race resistance, exhaust
 all filesystem types, rerun implementation checks or run a suite. Final wide
 Boundary B under Python 3.13.x remains owed before closure.
+
+## Implementation verification -- Codex GPT-6 -- 2026-11-01
+
+**Boundary B:** wide. Reviewed implementation range `f3b31530..89e39034`;
+clean final reviewed commit `75e6091b` (ordinary and Security review records
+included). Checks ran in a separate Git clone of that commit; clean before and
+after. Interpreter: `/Users/kendal30/conda_envs/lhm/bin/python`, Python
+3.13.13. Elapsed: 8 minutes 25 seconds for the interrupted mapped selection;
+remaining gate and focused checks completed in about 10 seconds; total about
+8 minutes 35 seconds. Tokens: unknown.
+
+The mapped selector command included `--range f3b31530..89e39034` and the
+changed files `bootstrap/UPGRADE.md`, `bootstrap/_scaffold/config.py`,
+`bootstrap/tests/test_scaffold.py`,
+`bootstrap/tests/test_upgrade_module_additions.py`, `templates/core/AGENTS.md`,
+`templates/core/CHANGELOG.md`, and this plan. It selected 40 test files and
+omitted 45 listed AGENTS.md readers under the selector guard. The corresponding
+40-file `pytest -q` run was stopped after **1,028 passed and 8 skipped**; it
+was executing `bootstrap/tests/test_repin.py:1001` at interruption. No failures
+were reported before interruption. The test did not finish, so the mapped
+selection is incomplete; whether that node was waiting externally or simply
+slow was not established. No test was restarted. Per-file durations were not
+captured; `test_repin.py` was the active file at the 8:25 stop.
+
+Standing prose gates passed: `claim_check.py` on each changed guidance/template
+file; `link_check.py` on the same three; `sync_doc_snippets.py --check`
+(515 docs, no drift); and `quality_gate.py --sub neutrality` (`fail=0`,
+`info=75`). Focused changelog entry-point checks passed: **4 passed in 2.28
+seconds**, covering install preservation, manifest/template install, collision
+fork adoption, and edit/re-stage/adoption authorization. Earlier implementation
+evidence records the two independent mutation checks; they were not repeated
+here. No full-tree certification or re-anchor was run.
+
+**Disposition:** implementation behavior and prose gates pass, but the wide
+mapped integration selection remains incomplete because the authorized run was
+stopped for duration. Maintainer disposition is required before archiving.
