@@ -252,21 +252,21 @@ consumers and required checks. On the collision plan's inputs, selection fell
 from 51 files to 41; time saved has not been measured. Review and focused
 verification passed.
 
-### 25. Remove the pending certification marker — accepted
+### 25. Remove the pending certification marker — delivered
 
 The Maintainer accepted the [proposal](../proposals/archive/2026-11-01-codex-certification-label.md)
-at `8d1c6bde`. The [plan](../plans/2026-11-01-certification-marker.md) prepares
-removal while retaining the checks, triggers and actual-run evidence.
+at `8d1c6bde`. The [completed plan](../plans/archive/2026-11-01-certification-marker.md)
+removed the marker while retaining the checks, triggers and actual-run evidence.
 
-### 26. Make proposals easier to decide — accepted
+### 26. Make proposals easier to decide — delivered
 
 The [reviewed proposal](../proposals/archive/2026-11-01-codex-proposal-decision-summary.md)
 puts the problem, proposed change and meaningful tradeoffs together at the
 start of a proposal, before implementation detail. The existing Plain Language
 standard already calls for clear conclusions, definitions and examples, so no
 new general rule or review stage is proposed. The Maintainer accepted it at
-`c25427ce`; the [plan](../plans/2026-11-01-proposal-decision-summary.md) awaits
-review.
+`c25427ce`; the [completed plan](../plans/archive/2026-11-01-proposal-decision-summary.md)
+updated both proposal templates and passed review and focused verification.
 
 ## Issue triage, staffing and close-out
 
