@@ -1,7 +1,7 @@
 # Plan: Ship a changelog template
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-changelog-template.md
-**Status**: implementing
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Give adopters a usable changelog while preserving their existing history during installation and upgrades.
