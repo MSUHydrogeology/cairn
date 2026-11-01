@@ -172,3 +172,15 @@ Elapsed: unknown; tokens: unknown.
 **ACCEPTED.** The Maintainer's authorization, quoted verbatim:
 
 > "Accept light and implement"
+
+## Code review -- Codex GPT-6.1 -- 2026-11-01
+
+Reviewed commit: d714596d82d9da0c3ce933fb6bde21d3b3ff7c8b.
+
+1. **Should it happen as framed?** Yes, provided imports remain selected: the accepted criteria require retaining genuine imports while reducing incidental stem matches.
+2. **Best alternative.** Keep the previous conservative matcher until a small rule handles valid imports; the committed selection still retains `test_upgrade.py` and `test_upgrade_refuses_hostile_project_data.py`, and the added regression distinguishes incidental words.
+3. **What would show it wrong?** A valid import omitted by the real entry point. A committed-copy probe containing `from bootstrap._scaffold import (\n    upgrade,\n)` was omitted when selecting `bootstrap/_scaffold/upgrade.py`; the expression limits imported names to the first line.
+
+**Verdict: REVISE. Blocking:** The omitted multiline import violates the accepted import-preservation criterion and can leave required verification unrun. Handle valid multiline and multiple-name imports conservatively, and exercise them through the real selector. The committed selector regression only covers a single-line import.
+
+**Coverage:** Read the implementation and selector regressions, including changed-test and AGENTS reviewed-range logic; checked the public upgrade consumers and probed the real command in a separate copy of the reviewed commit. An AST scan found no such currently omitted direct imports in the committed top-level test files. Did not exhaust indirect consumers, rerun implementation checks, or perform Security Review. Elapsed: approximately 4 minutes; tokens: unknown.
