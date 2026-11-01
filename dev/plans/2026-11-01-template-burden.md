@@ -92,3 +92,27 @@ Coverage: read the committed plan, accepted proposal and Decision, current plan-
 **Tokens**: unknown
 
 R1: Accepted; Scope now names concrete repeated passages in all four templates at the baseline. Security Review: no findings.
+
+## C1 implementation evidence -- Codex (gpt-6.1-sol) -- 2026-11-01
+
+**Elapsed**: 4 minutes (estimated)
+**Tokens**: unknown
+
+**Commits**: `6965d3ba` implements the cuts; `bf60c2ab` corrects both plan preambles to say proposal operative text is revised in place, its review history remains appended, and plan cells revise in place until implementation.
+
+**Obligation comparison**:
+
+| File | Preserved obligations and locations; readers / consumers |
+|---|---|
+| `dev/proposals/_template.md` | Lifecycle; Review (three questions, External, Security Review); Evidence / verification (tests, smoke checks, S1–S5, scientific checks); Scope delta; Assurance path; Review / Response / Decision skeletons. Read directly by `test_review_stance_in_shipped_files.py`, `test_scope_reduction_trap.py`, `test_scaffold.py`'s security-preflight check, and board / verification readers. |
+| `templates/core/dev/proposals/_template.md` | Same author obligations and fields, with project prompts in the five existing slots. Its slot and install consumers include `test_install_report_slots.py`, `test_documentation_plan_module.py`, and `bootstrap/scaffold.py`; shipped readers also use the review and scope checks above. |
+| `dev/plans/_template.md` | Lifecycle and Review (External and Security Review); Scope / Sequence / Acceptance criteria; Scope delta; Verification (A/B/C and record fields); sidecar rules; Dispositions and Plan / Code review skeletons. Read by the review, scope, verification-boundary, board, scaffold and security-preflight checks. |
+| `templates/core/dev/plans/_template.md` | Same plan obligations, with project prompts in its three existing slots. Installed slot and scaffold consumers include `test_install_report_slots.py`, `test_documentation_plan_module.py`, and `bootstrap/scaffold.py`; shipped readers also use the review, scope and verification checks above. |
+
+Across all four files, heading sets and markers match baseline: 19 headings and the same five proposal slots per copy (`triage-extra-triggers`, `documentation-tier-home`, `tests-tier-home`, `examples-smoke-home`, `assurance-path-triggers`); 14 headings and the same three plan slots per copy (`documentation-tier-home`, `acceptance-doc-tooling`, `verification-commands`). Installed guidance remains usable from shipped `AGENTS.md` and `dev/` without doctrine.
+
+**Candidate disposition and burden**: opening copy instructions state the operative range; the later Keep Short bullets retain detailed exclusions. The shorter Boundary B reminder follows its full contract and record fields. External-read rules and review skeletons remain because each template serves a separate lifecycle stage and their obligations are pinned. Scope delta remains distinct: a proposal may narrow its as-opened baseline before Decision, while a plan may not silently reduce accepted scope. Against baseline `2c24fec4`, the final templates are 24 lines and 274 whitespace-counted words shorter combined (a rough burden measure, not a target).
+
+**Iteration and controls**: the exact 18-file selector passed 1,037 tests in 12.53 seconds on Python 3.12.9 at `6965d3ba`; after the preamble correction, the two directly relevant review / verification files passed 577 tests in 1.58 seconds at `bf60c2ab`. The matching deletion controls detected removed slot, review / security, and scope obligations across separate copies of the four files: installed slot losses were detected through the scaffold install test; self-hosted slot losses were detected by comparing the baseline marker with each known-deletion mutant. Readers named in the plan include `test_review_stance_in_shipped_files.py`, `test_install_report_slots.py` (whose `_install` runs `bootstrap/scaffold.py`), `test_scope_reduction_trap.py`, and `test_verification_boundaries.py`. Claim, link, snippet-sync, and neutrality gates passed; `claim_check.py` passed on all four templates.
+
+**Omissions**: the self-hosted slot comparison is a human control because no runtime installer consumes those source copies. Boundary B remains due after code review; no full-tree certification or re-anchor was run.
