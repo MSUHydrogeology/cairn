@@ -212,3 +212,42 @@ The author reports the real guard refusal, passing mutation controls and represe
 Read the correction diffs and committed response; corroborated the release evidence pointer and explicit historical re-anchor waiver. The response supplies the previously missing named-check evidence. Historical gaps are disclosed as the plan permits. Complete canonical wide Boundary B, including disposition of the previously skipped real-Bandit checks; this acceptance does not substitute for that run.
 
 **Coverage:** Targeted look at the correction and prior findings only. Did not rerun implementation checks, run broad tests, verify every historical record, or perform certification/re-anchor. No additional security pass is owed for these closed findings.
+
+## Implementation verification -- Codex GPT-6.1 Luna -- 2026-11-01
+
+**Boundary B: wide**; final tested commit `0d15f164`; implementation commits
+`46a0c967`, `6772ff55`, `79418af6`; changed paths: `AGENTS.md`,
+`bootstrap/tests/conftest.py`, `bootstrap/tests/test_certifying_run_rule.py`,
+`bootstrap/tests/test_verification_boundaries.py`, `dev/plans/_template.md`,
+`docs/glossary.md`, `doctrine/dual-review.md`, `doctrine/plans.md`,
+`templates/core/AGENTS.md`, `templates/core/dev/plans/_template.md`.
+Canonical `/Users/kendal30/conda_envs/lhm/bin/python`: 3.13.13. A fresh
+`git archive 0d15f164` copy was used; `PYTHONDONTWRITEBYTECODE=1` for all
+Python runs. Clean pre/post: its 836-file SHA-256 inventory matched a fresh
+archive after removing only pytest's temporary `.pytest_cache` (no source
+changes). Elapsed: pytest selections 8.66s reported by pytest; prose gates and
+snapshot comparison completed, exact combined wall time not captured.
+
+- Mapped iteration and integration/workflow selection: `python -m pytest
+  bootstrap/tests/test_replacement_tools.py
+  bootstrap/tests/test_scientific_check_guidance_ships.py
+  bootstrap/tests/test_session_routines.py
+  bootstrap/tests/test_status_vocabulary_advisory.py
+  bootstrap/tests/test_verification_boundaries.py -q` — 123 passed, 4.55s.
+  The selector reports 46 other AGENTS.md readers omitted by its guard; no
+  additional suite was run.
+- Bandit controls (Bandit 1.9.4 present): fail-closed when absent, scanner
+  error, real missing-target refusal, clean real scan, Bandit's severity
+  ranking, and local `test_no_blocking_security_findings` — 6 passed, 3
+  warnings, 4.11s; zero skipped.
+- Standing prose gates on both changed adopter surfaces: claim checks, links,
+  snippet sync — all passed. Quality neutrality: 0 failures, 43 informational
+  findings.
+- The real broad-run refusal, mutation controls and representative run-record
+  lookup were exercised and documented in the preceding implementation
+  response. Historical records remain incomplete as described there; no
+  archived record was changed. No full suite or re-anchor was run.
+
+**Non-pass disposition:** none. The 46 selector-omitted AGENTS.md readers
+remain outside this mapped selection; the standing release certification is
+not part of this implementation Boundary B.
