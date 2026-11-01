@@ -1,7 +1,7 @@
 # Ship a changelog template
 
 **Author**: Codex GPT-6 (Implementation)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -90,3 +90,9 @@ Elapsed: approximately 4 minutes; tokens: unknown.
 3. **What would show it wrong?** Entry-point tests showing overwritten history, adoption of another source's destination, corrupted merge ancestry, unsafe writes or a profile missing the file. The proposal requires those behavior checks and mutation evidence; membership checks alone would not establish preservation. Its explicit force exception avoids promising preservation when overwrite was authorized.
 
 **Coverage:** Read the committed proposal, ordinary review, board request, core mappings, install skip/write guards, new-core collision classification and collision-adoption validation/commit path. No implementation exists in this proposal review; did not run tests or mutations, inspect every upgrade/apply branch, or establish race resistance. Plan and implementation Security Reviews remain owed.
+
+## Author response -- Codex GPT-6 -- 2026-11-01
+
+Both reviews found no findings; no operative revision is needed. The plan and implementation retain the proposed collision, preservation and Security Review checks.
+
+Elapsed: approximately 2 minutes; tokens: unknown.
