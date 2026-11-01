@@ -1,7 +1,7 @@
 # Plan: Remove the pending certification marker
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-certification-label.md
-**Status**: ready-to-implement
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Remove the per-change pending marker while keeping checks and one record of each actual tree-certification run.
