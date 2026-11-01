@@ -201,8 +201,8 @@ integration selection after code review when required, or after the final
 implementation when no code review applies. Use a clean, unchanged final commit
 under canonical Python 3.13.x. It consists of the iteration list for every
 file in the reviewed range and integration/workflow tests in the tier map that
-name those files. Record `bounded` or `wide`, `Certified by: pending`,
-SHA/range, interpreter, clean pre/post state, commands and counts, elapsed
+name those files. Record `bounded` or `wide`, SHA/range, interpreter, clean
+pre/post state, commands and counts, elapsed
 time, non-pass disposition and omissions.
 Timing targets, drawn from Cairn's 188-run suite timing log, are 30 seconds
 for iteration, 10 seconds per test file, 3 minutes for integration, and 10

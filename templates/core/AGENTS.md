@@ -210,7 +210,7 @@ implementation when no code review applies. Use a clean, unchanged final commit
 under the configured interpreter/runtime. It consists of the iteration list
 for every file in the reviewed range and integration/workflow tests in the tier
 map that name those files. Record `bounded` or `wide`,
-`Certified by: pending`, SHA/range, interpreter, clean pre/post state,
+SHA/range, interpreter, clean pre/post state,
 commands and counts, elapsed time, non-pass disposition and omissions.
 Timing targets are 30 seconds for iteration, 10 seconds per test file, 3
 minutes for integration, and 10 minutes for certification. They are

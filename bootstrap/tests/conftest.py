@@ -412,8 +412,9 @@ def _refuse_broad_run_if_warranted(session) -> None:
         f"only at an authorized integration point: before a push, when required "
         f"(pushing may require certification; ask the Maintainer), before the "
         f"Maintainer's re-anchor ceremony, before a release cut, or when the "
-        f"Maintainer asks (AGENTS.md > Verification boundaries). Record "
-        f"'Certified by: pending' until then.\n"
+        f"Maintainer asks (AGENTS.md > Verification boundaries). "
+        f"Record each actual run in its existing ceremony evidence, or in a "
+        f"useful commit message for other authorized runs.\n"
         f"If you are verifying someone else's work, never run it -- report "
         f"back instead."
     )

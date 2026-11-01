@@ -341,9 +341,8 @@ unresolved. Outside that trigger, mutation stays the reviewer's choice.
 
 **The reviewer never runs the full suite.** The full suite runs only as a
 certifying run at the authorized integration points (`doctrine/plans.md`). A
-change-verification record cites the certifying SHA as `**Certified by**`, or
-`pending`; later certification is appended separately. It does not supply a
-missing change check.
+change-verification record remains separate from the evidence for any actual
+tree-certification run. That run does not supply a missing change check.
 
 After challenging a named surface, mapped test, or stated omission, the
 reviewer records `**Bounding**: ACCEPTED | WIDER RUN REQUIRED`. The second

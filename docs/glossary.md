@@ -168,9 +168,9 @@ third job.
 only before a push when required (pushing may require a certifying run; ask the
 Maintainer), before the Maintainer's re-anchor ceremony, before a release cut,
 or when the Maintainer asks. One green run certifies every change at or before
-it. A change-verification record says `Certified by: pending` until then; the
-later certification is appended separately by its commit SHA and does not
-rewrite the change record.
+it. Each actual run is recorded once in the applicable release or re-anchor
+evidence, or in a useful commit message for other authorized runs. The
+change-verification record remains separate.
 
 **Independent scientific check** — for a change that touches a scientific
 assumption: one named check whose expected answer does not come from the code

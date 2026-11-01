@@ -141,8 +141,10 @@ def _record_violations(text: str) -> list[str]:
         "## Implementation verification -- <agent> -- YYYY-MM-DD",
         "**Boundary B mode**",
         "**Boundary B mode**: bounded | wide",
-        "Certified by",
-        "Tree certification -- <SHA>",
+        "Tree certification -- <tested SHA>",
+        "existing evidence home",
+        "shared project history",
+        "git log --all --grep='Tree certification --'",
         "**Tested commit**",
         "**Reviewed range**",
         "**Interpreter/runtime**",
@@ -160,6 +162,22 @@ def _record_violations(text: str) -> list[str]:
 
 def test_plan_doctrine_binds_record_to_tested_range() -> None:
     assert _record_violations(_read(PLANS_DOCTRINE)) == []
+
+
+def test_actual_certification_has_one_discoverable_shared_record() -> None:
+    text = " ".join(_read(PLANS_DOCTRINE).split())
+    for token in (
+        "Record each actual tree-certification run once",
+        "release cut or re-anchor",
+        "useful commit message in shared project history",
+        "including failures",
+        "Do not backfill archived plans",
+        "An absent record does not prove a run passed",
+    ):
+        assert token in text, token
+    for path in (SELF_AGENTS, ADOPTER_AGENTS, SELF_PLAN_TEMPLATE,
+                 ADOPTER_PLAN_TEMPLATE, PLANS_DOCTRINE, REVIEW_DOCTRINE):
+        assert "Certified by: pending" not in _read(path), path
 
 
 def test_record_schema_guard_detects_removed_reviewed_range() -> None:
@@ -341,7 +359,7 @@ def _plan_template_violations(text: str) -> list[str]:
         "after code review",
         "Boundary B mode",
         "bounded | wide",
-        "Certified by",
+        "change record is separate from tree-certification evidence",
         *RECORD_FIELDS,
     )
     review_required = (

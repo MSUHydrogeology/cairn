@@ -327,10 +327,8 @@ the change open.
 on a clean committed tree only before a push when required (pushing may require
 a certifying run; ask the Maintainer), before a ceremony that re-pins the
 gates, before a release cut, or when the Maintainer asks. A green run at commit
-`T` certifies every change at or before `T`. A change-verification record
-carries `**Certified by**: pending` until a certifying run covers it. Append a
-separate certification entry keyed by the certifying SHA; never rewrite the
-change-verification record or an archive. A certifying run that fails is
+`T` certifies every change at or before `T`. Record each actual run once in its
+existing evidence home. A certifying run that fails is
 bisected from the last certified commit, and the change that broke it returns
 to its owner. Nothing is pushed when a required certifying run has not passed.
 
@@ -402,7 +400,6 @@ the run completes:
 ## Implementation verification -- <agent> -- YYYY-MM-DD
 
 **Boundary B mode**: <bounded | wide>
-**Certified by**: <pending | certifying commit>
 **Tested commit**: <full revision ID>
 **Reviewed range**: <base revision>..<tested endpoint>
 **Interpreter/runtime**: <path and version>
@@ -423,9 +420,16 @@ plan: an empty section looks like landed evidence. The record is committed in a
 later plan-only commit, so live `HEAD` may advance without changing the tested
 implementation bytes.
 
-When certification later covers the tested commit, append a separate entry
-headed `## Tree certification -- <SHA>` with the run evidence. Do not change
-the earlier `Certified by: pending` record or any archived plan.
+Record each actual tree-certification run once in its existing evidence home.
+For a release cut or re-anchor, use that ceremony's existing evidence record.
+For a required push or Maintainer-requested run outside those ceremonies,
+include a `Tree certification -- <tested SHA>` section in a useful commit
+message in shared project history; do not create a commit solely for the
+record. Include the tested SHA, commands, results, and the evidence required
+for that run, including failures. Readers can search fetched shared history
+with `git log --all --grep='Tree certification --'`; this searches only refs
+available locally. The evidence record is separate from change verification.
+Do not backfill archived plans. An absent record does not prove a run passed.
 
 A plan's record is valid only when the tested commit contains the entire
 reviewed range, pre/post `HEAD` both equal the full tested revision, and the

@@ -1,10 +1,10 @@
 """Tree certification stays separate, and the guard preserves conditional push wording.
 
 A full run is evidence about a tree, not about one change, so the governing
-text in every surface that defines verification says it is paid for once per
-integration point (before a push when required, a gate-re-pinning ceremony, a
-release cut, or when the Maintainer asks), and that a change record cites it as
-``Certified by``. These tests keep that rule present in each surface, and keep
+text in every surface that defines verification preserves its triggers
+(before a push when required, a gate-re-pinning ceremony, a release cut, or
+when the Maintainer asks), without requiring a marker in each change record.
+These tests keep that rule present in each surface, and keep
 the broad-run guard from making a conditional push certification sound
 automatic or handing out the full-suite override as a remedy.
 """
@@ -38,7 +38,7 @@ def _flat(path: Path) -> str:
 def test_every_verification_surface_says_the_full_suite_is_a_certifying_run(path):
     text = _flat(path)
     assert "tree certification" in text or "certifying run" in text, path
-    assert "Certified by" in text, path
+    assert "Certified by: pending" not in text, path
 
 
 @pytest.mark.parametrize("path", GOVERNING, ids=lambda p: str(p.relative_to(ROOT)))
@@ -77,6 +77,7 @@ def test_the_broad_run_refusal_no_longer_offers_the_override():
         "before a push",
     )
     assert not _push_certification_is_conditional(unconditional)
+    assert "Record each actual run" in message
 
 
 def _push_certification_is_conditional(message: str) -> bool:

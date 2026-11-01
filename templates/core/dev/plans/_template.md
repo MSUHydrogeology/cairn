@@ -299,9 +299,9 @@ trust-ceremony surface. A contract change includes its producers, consumers,
 and public paths; a trust ceremony retains every prescribed security and
 ceremony check. `bounded` covers mapped affected behavior and consumers;
 `wide` covers owning test families, known integration and public paths, and
-standing gates when effects cannot be confidently bounded. The change record carries
-`**Certified by**: pending` until a separate authorized tree-certifying run
-covers the commit. A certifying run uses the project's configured full suite
+standing gates when effects cannot be confidently bounded. The change record
+is separate from tree-certification evidence. A certifying run uses the
+project's configured full suite
 and standing gates only at the integration points in `AGENTS.md` > Verification
 boundaries; it is not a per-change command and does not replace missing change
 evidence.
@@ -326,8 +326,6 @@ empty heading in a new plan. The record uses these exact fields:
   how affected consumers are covered. On `wide`, name the owning families,
   known integration/public paths, and gates run, and explain why narrower
   bounds were not confident.
-* **Certified by** — `pending` or the certifying commit; certification is
-  appended separately and never rewrites the change-verification record.
 * **Tested commit** — full revision ID.
 * **Reviewed range** — base and tested endpoint.
 * **Interpreter/runtime** — canonical path and version.
