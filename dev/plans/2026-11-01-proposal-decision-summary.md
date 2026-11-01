@@ -1,7 +1,7 @@
 # Plan: Make proposals easier to decide
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-proposal-decision-summary.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Bring the problem, change and tradeoffs together at the start of proposals so the Maintainer can understand the choice.
@@ -38,14 +38,18 @@ methodology. No governing instruction or software description is planned.
 C1: Both templates ask for the observed problem, proposed change and meaningful
 costs together before supporting detail, in ordinary language; define terms when
 needed, use concrete examples to clarify abstractions, and avoid repetition.
-The existing review considers whether the Maintainer can explain the choice.
+A short proposal may do most of its work in the summary and rationale.
+The existing review considers whether the Maintainer can explain the choice;
+this is a reading judgment, not a mandatory checklist.
 The one-line board field, required evidence, lifecycle records, slot behavior,
 security and scientific preflights remain intact. Common text agrees across the
 shipped and self-hosted templates. No new review stage, score or general rule is
 added. Inspect the guidance against a short and a technically involved existing
 proposal; record what the examples show and do not claim a reader was tested.
 
-S2–S3: C1 identifies readers and byte pins, runs the scoped checks and traces
+Security preflight S2 asks whether a check can fail; S3 asks what runs it
+and over which inputs. C1 identifies readers and byte pins, runs the scoped
+checks and traces
 any changed machine check from trigger to runner; demonstrate a failing case
 for each changed check. No machine-check change is proposed. The other security
 preflight answers remain as accepted. Independent scientific check: N/A; no
@@ -57,17 +61,20 @@ scientific assumption or result touched.
 
 ## Verification
 
-Boundary A: Before implementation search for readers and byte pins, including
+Boundary A (scoped checks during implementation): Before implementation search
+for readers and byte pins, including
 known-positive controls for negative searches. Run `python tools/test_tiers.py
 for <changed paths>` and its selected tests, plus applicable claim, link,
 snippet and neutrality gates. Follow the high-risk surface checks; trace each
 named check to its trigger and runner. Record commands, outcomes and omissions.
 
-Boundary C: An independent code reviewer reads committed changes and iteration
+Boundary C (independent falsification): An independent code reviewer reads
+committed changes and iteration
 evidence and runs the tightest targeted falsification checks, without a suite.
 The separate Security Review remains required.
 
-Boundary B: After review, run the wide integration selection on the clean,
+Boundary B (final integration checks): After review, run the wide integration
+selection on the clean,
 unchanged final commit under canonical Python 3.13.x. Include the iteration
 list for the reviewed range, mapped integration/workflow tests, owning families,
 known public paths, applicable prose and high-risk checks, and the qualitative
@@ -135,3 +142,12 @@ scope. The planned reading judgment adds no authorization mechanism or stage.
 preflight and Decision sections, and `AGENTS.md` role boundaries.
 **Not covered / low confidence**: implementation bytes, scanner outcomes,
 reader comprehension and every downstream reader; no tests or suite run.
+
+## Plan review response -- Codex GPT-6 -- 2026-11-01
+
+**Elapsed**: unknown; **Tokens**: unknown
+
+- Ordinary review: Accepted both recommendations; C1 preserves short-proposal
+  flexibility and excludes a mandatory checklist, and Verification defines its
+  terms in place.
+- Security Review: No findings.
