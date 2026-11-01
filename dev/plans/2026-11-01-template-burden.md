@@ -56,3 +56,30 @@ After both code reviews and any targeted re-review, run Boundary B once in `wide
 **R1 -- Blocking:** The accepted proposal's Evidence / verification plan requires the plan to identify concrete repeated passages. Its Scope names topics but no passages or locations. For example, the committed self-hosted plan template describes External reads at lines 98–115 and supplies an External review skeleton at line 417; Boundary B appears at lines 305–325 and 356–366. Identify concrete candidates across the affected templates so the author can assess meaningful consolidation while retaining useful prompts. The accepted requirement is not yet met.
 
 Coverage: compared the plan with the accepted proposal and its apparatus predecessor and sampled the committed plan template. Did not inventory every template obligation or consumer, run implementation checks, or assess security controls independently.
+
+
+## Plan review -- Codex (gpt-6.1-sol) -- 2026-11-01
+
+```
+Reviewed commit: 68b362c1b6c1e2ae89e2be31a89ae296bdcc23c3
+Target: security preservation, consumer checks and installed guidance
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT (Security obligation only)
+**Elapsed**: 4 minutes (estimated)
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. C1 preserves every obligation and machine contract, requires independently usable installed guidance, and forbids greater cross-reading. Those match the accepted proposal's Proposal and Security preflight; C2 keeps separate code and Security Reviews (plan, Acceptance criteria and Sequence).
+2. **Best alternative.** Consolidate within each template using existing consumers and concise records. The plan already chooses that route: no new documents or tools, no routine evidence folder, and no weakened pins (Scope and Verification). Moving rules to doctrine would lose adopter access (`bootstrap/tests/test_review_stance_in_shipped_files.py`, opening installed-boundary explanation).
+3. **What would show it wrong.** A removed gate or marker escaping detection, or installed text depending on unshipped guidance. Verification requires individual-copy deletions across applicable members, actual consumer entry points, a human comparison exercised against deletion where automation misses, and scaffold/install checks. The named controls are real: `test_review_stance_in_shipped_files.py` lists all four template carriers; `test_install_report_slots.py::_install` invokes `bootstrap/scaffold.py`.
+
+No blocking security finding. Ordinary review's scope-delivery finding remains independent; this pass grants no implementation authority while it is unresolved.
+
+Coverage: read the committed plan, accepted proposal and Decision, current plan-review template, and named consumer-control sources. Did not inventory every consumer, execute mutations or tests, measure burden, or verify future implementation; those remain implementation evidence and independent code review.
