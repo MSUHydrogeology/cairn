@@ -104,3 +104,19 @@ Elapsed: approximately 2 minutes; tokens: unknown.
 The Maintainer asked for clear choices for adopters with an existing changelog. The proposal now adds upgrade and template guidance for keeping, optionally adapting, or safely saving a history before starting fresh. This widens the guidance scope and returns it for review.
 
 Elapsed: approximately 3 minutes; tokens: unknown.
+
+## Focused review -- Codex GPT-6 -- 2026-11-01
+
+Reviewed commit: `0d952125`; target: widened collision guidance; prior ordinary findings: none.
+Tier: usual; verdict: **PROCEED**; one non-blocking recommendation.
+Elapsed: approximately 2 minutes; tokens: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The revision explains the choices in terms of the history the adopter keeps: leave it unchanged, adapt it voluntarily, or save it before installing the new template. The upgrade code presents a staged review pair and a byte-bound adoption command for eligible collisions; another source's ownership is a separate conflict.
+2. **Best alternative.** Document only the general collision mechanism in the upgrade guide. That saves template space but leaves someone reading the staged template without the specific choice they need to make.
+3. **What would show it wrong?** A real staged collision that lacks the promised review copies or usable command, an adoption changing the original history, or a fresh-start workflow that loses the saved copy. The revised verification plan calls for exercising these paths.
+
+**Recommendation (non-blocking):** In the upgrade guide, say that collision adoption runs from the target Cairn tree without `--to`; the upgrade entry point refuses that option for adoption. This will help readers who staged an explicit version reach a usable command.
+
+**Coverage:** Read the widened proposal, upgrade action dispatch, collision classification and staged-command output. Did not run tests or inspect all upgrade branches; the plan and implementation must verify the described paths.
