@@ -226,3 +226,17 @@ complete Python 3.13 final integration; no full suite or mutation run.
 The iteration selection and its mapped workflow/integration consumers were run with `python -m pytest` on all 16 selected files; the consumer overlap is `test_documentation_plan_module.py`, `test_install_report_slots.py`, `test_quickstart_sequence.py`, `test_replacement_tools.py`, `test_scaffold.py`, and `test_session_routines.py`. Result: 1,018 passed in 11.13 seconds. Per-file timing reruns also passed; slowest was `test_session_routines.py` at 2.71 seconds, and zero files exceeded the 10-second diagnostic target.
 
 Applicable prose gates passed on both templates: `scripts/check_cairn.py` and `scripts/link_check.py` found no issues; `scripts/sync_doc_snippets.py --check` found no drift; `scripts/quality_gate.py --sub neutrality --report` returned 0 failures and 43 informational exceptions. No changed machine check or trigger required a mutation; no additional high-risk engine check applied. Qualitative examples were checked at Boundary A and remain applicable: a short proposal can stay short, and the technical proposal leaves detail below the summary. This does not establish reader comprehension. No check was omitted from the mapped scope. Full-tree certification and re-anchor were not run.
+
+## Dispositions -- archive preparation -- 2026-11-01
+
+**Dispositions**: none.
+
+## Lasting-truth migration -- 2026-11-01
+
+**Evidence shipped**: Commit `dc83fbc55ee3be850274fb8a50911ef620d67dbd` updates both self-hosted and shipped proposal templates. The archive record retains the acceptance criteria, review records, iteration and wide Boundary B evidence. The release-facing summary will link to this archived plan.
+
+**Evidence deferred**: None.
+
+**Deferred evidence home**: N/A; no follow-up remains open.
+
+**Fidelity sign-off**: Both templates now prompt for the noticed issue, proposed change and meaningful cost before supporting detail. The board's one-line field, existing evidence and preflights, and lifecycle records remain intact. Short proposals can stay short. No doctrine or general rule changed.
