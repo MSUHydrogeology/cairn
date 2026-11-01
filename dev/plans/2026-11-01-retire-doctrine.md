@@ -181,3 +181,13 @@ Elapsed: approximately 2 minutes; tokens: unknown.
 Accepted S1. Added one focused guard to the existing documentation-plan install test. It invokes the real scaffold path, reads the generated `AGENTS.md`, and checks the installed duty that the Human Maintainer alone sets direction and makes Decisions. The same guard is exercised against an intact file, a deleted sentence, and an inverted sentence.
 
 On clean commit `a5fd43ea`, under Python 3.12.9, `python -m pytest bootstrap/tests/test_documentation_plan_module.py::TestInstallPath::test_scaffolded_duty_guard_rejects_deletion_and_inversion` passed (1 test). The intact output passed; both mutations caused the guard to fail as expected. This is one representative installed-duty probe, not a per-file mutation matrix; it does not independently establish deletion/inversion sensitivity for every moved duty. The small/full installed-path findings remain the pre-move 10/9 baseline recorded above. Boundary B remains due.
+
+## Targeted code review -- Codex (Internal Reviewer, GPT-6) -- 2026-11-01
+
+Reviewed commits: `a5fd43ea` and `3beb3b82`. Verdict: No new blocking finding. Elapsed: approximately 1 minute; tokens: unknown.
+
+**Foundations:** The focused correction is appropriate: it reads actual scaffold output and exercises the same duty guard against an intact sentence and deletion and inversion mutations. A separate checker or broad mutation matrix would add machinery without improving this representative check's stated scope. A guard accepting either mutant, or an intact install lacking the sentence, would show this correction wrong.
+
+On a clean export of `3beb3b82`, the named `test_scaffolded_duty_guard_rejects_deletion_and_inversion` node passed under Python 3.12.9 (1 test). The response accurately limits this evidence to one duty; final wide integration and Security Review disposition remain due.
+
+**Coverage:** Inspected the added test and response and ran that node. Did not repeat other install profiles or assess every installed duty.
