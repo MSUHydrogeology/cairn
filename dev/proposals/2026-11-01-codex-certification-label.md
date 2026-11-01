@@ -201,3 +201,21 @@ and is submitted for review of the widened scope, not presented as accepted.
 **Non-blocking recommendation.** During planning, identify a discoverable existing home for each authorized run type, including a Maintainer-requested run outside a release or re-anchor. `doctrine/plans.md` requires a SHA-keyed entry but does not name a universal home; the proposal's “other existing project record” leaves that choice open. Keep the solution to one record per actual run, without retroactive plan updates.
 
 **Coverage:** Read the committed proposal, governing verification rule, certification doctrine, release-process checks, rule-test source and guard message. Did not run tests, enumerate every consumer, verify run-record retrieval, assess reader comprehension or perform Security Review.
+
+## Security Review -- Codex GPT-6.1 -- 2026-11-01 (round 2)
+
+**Tier**: Security Review
+**Reviewed commit**: b256cc62
+**Verdict**: ACCEPT; no security findings
+**Elapsed**: approximately 4 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Removing the pending instruction changes record placement, while the proposal explicitly retains missing-check blockers, conditional push certification, release and re-anchor triggers, and failure/bisect handling. Evidence: Proposal and Signals; current `AGENTS.md` Verification and `doctrine/plans.md` tree-certification rule.
+2. **Best alternative.** Keep the pending field and its separate certification entry. That preserves the per-change indication but retains the misleading instruction. One actual-run record is sufficient evidence without adding authority, provided readers can find it; absence of the marker proves nothing. Evidence: Proposal, Rationale and current certification-record guidance in `doctrine/plans.md`.
+3. **What would show it wrong?** A skipped required check, a changed refusal condition or an undiscoverable required-run result would defeat the proposal. The actual guard separates its refusal condition from the pending message; the certification rule test guards conditional push wording, and verification-boundary tests guard missing-check blockers. Evidence: `bootstrap/tests/conftest.py`, `bootstrap/tests/test_certifying_run_rule.py` and `bootstrap/tests/test_verification_boundaries.py`.
+
+No new ledger, authentication mechanism or ceremony is needed. The shared record remains human-reported evidence; the proposal correctly makes no authenticity claim. Its existing implementation checks and later independent reviews should verify retained obligations and record discoverability.
+
+**Coverage:** Read the committed revised proposal, proposal template, governing verification rules, certification doctrine, re-anchor runbook, named rule-test source and actual broad-run guard. Did not run tests, enumerate every consumer, verify record retrieval, assess comprehension or review implementation wording that does not yet exist.
