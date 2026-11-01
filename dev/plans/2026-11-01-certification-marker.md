@@ -175,3 +175,21 @@ The author's four Python 3.12 Bandit skips do not establish scanner success. The
 - **Checks:** On Python 3.13.13, the four focused nodes passed in 0.98 seconds; the selected five test files passed 123 tests in 4.18 seconds. Claim, link, snippet, and neutrality checks passed for the two changed adopter documents (neutrality: 0 failures). No full suite or re-anchor ran. The two changed rule-test files are gate-manifest-pinned; baseline refresh remains for the Maintainer's v0.6 cut, as the accepted plan directs.
 
 **Coverage:** Both review findings are addressed with shipped text and targeted evidence. The record search found no complete historical example for re-anchor or ad-hoc runs; this gap is stated rather than filled with a fabricated record. Boundary B and independent review remain due.
+
+## Targeted code review -- Codex GPT-6.1 -- 2026-11-01
+
+**Tier**: Internal  
+**Reviewed commits**: 6772ff55, 79418af6, 0914d80c  
+**Verdict**: Both ordinary review findings closed  
+**Elapsed**: approximately 2 minutes  
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. Both shipped surfaces now name the record homes, contents, search and local-ref limitation; the focused test checks both.
+2. **Best alternative.** Put the guidance only in one shipped surface and reference it from the other. The present wording makes the instruction available in both contexts without adding a ceremony.
+3. **What would show it wrong?** Missing or misleading run evidence would defeat discoverability. The author's lookup reports the incomplete historical examples and absence of an ad-hoc example rather than presenting them as complete.
+
+The author reports the real guard refusal, passing mutation controls and representative lookups with their gaps in 0914d80c. These close the missing-evidence finding; wide Boundary B remains due. **Bounding**: WIDER RUN REQUIRED for the planned final integration, not a new review check.
+
+**Coverage:** Read the correction diffs and author response against both findings. Did not rerun implementation checks, perform Security Review, or assess the remaining Boundary B results.
