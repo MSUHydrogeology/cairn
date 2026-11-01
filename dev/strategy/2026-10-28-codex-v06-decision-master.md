@@ -235,12 +235,12 @@ adds six multi-script modules to the install test. The original single traversal
 remains undelivered; upgrade selection is not compared. **Decide** whether this
 smaller outcome suffices, retain original scope, or seek further comparison.
 
-### 23. Reduce template burden — awaiting Decision
+### 23. Reduce template burden — accepted
 
-**Recommend accept as revised:** the [reviewed proposal](../proposals/2026-10-30-codex-template-burden.md)
-trims four existing templates and corrects a contradiction. Installed guidance
-must remain usable; the plan compares burden before and after, preserving
-obligations and machine consumers. Heavy plan and Security reviews are required.
+The Maintainer accepted the [proposal](../proposals/archive/2026-10-30-codex-template-burden.md)
+on 2026-11-01. The [plan](../plans/2026-11-01-template-burden.md) trims four
+existing templates and corrects a contradiction while preserving installed
+guidance, obligations and machine consumers. Plan reviews precede implementation.
 
 ## Issue triage, staffing and close-out
 
