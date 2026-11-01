@@ -1,7 +1,7 @@
 # Ship a changelog template
 
 **Author**: Codex GPT-6 (Implementation)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -22,7 +22,7 @@ Add `templates/core/CHANGELOG.md`, mapped to `CHANGELOG.md` for every profile. D
 
 Point the existing changelog reference in shipped `AGENTS.md` to the installed file and its in-file instructions; do not add a separate process or duplicate those instructions. A normal install into an empty destination supplies the template. An existing file is preserved by normal install; explicit `--force` retains its existing overwrite meaning. On upgrade, a new core mapping at an occupied, unlocked regular file is blocked for explicit collision adoption or manual reconciliation; a destination tracked under another source is a provenance conflict, not auto-adopted. Existing history must survive these normal paths byte-for-byte. Unsafe or non-regular paths remain subject to existing refusals. Do not weaken collision handling or change upgrade semantics to make this file install silently.
 
-Add concise collision guidance where an upgrading adopter can find it in `bootstrap/UPGRADE.md` and in the template's header, which also appears in the staged upstream review copy. For an eligible unlocked regular file, explain that no history rewrite is required: stage, review the `.ours` and `.theirs` copies, use the displayed `--adopt-collisions` command to keep the existing file unchanged as a tracked fork, then re-stage. The adopter may instead edit their history to the new format if they want, and re-stage and review the resulting bytes before adopting. To start fresh, first save the old history at a safe separate path, remove it from the destination, then re-stage and apply the template; retain the saved history. Explain that a file already tracked under a different source, or an unsafe or otherwise ineligible path, needs manual resolution rather than collision adoption. Do not prescribe rewriting past entries or imply adoption works for every collision. These are instructions for the existing workflow, not new machinery.
+Add concise collision guidance where an upgrading adopter can find it in `bootstrap/UPGRADE.md` and in the template's header, which also appears in the staged upstream review copy. For an eligible unlocked regular file, explain that no history rewrite is required: stage, review the `.ours` and `.theirs` copies, run the displayed `--adopt-collisions` command from the target Cairn tree without `--to` to keep the existing file unchanged as a tracked fork, then re-stage. The adopter may instead edit their history to the new format if they want, and re-stage and review the resulting bytes before adopting. To start fresh, first save the old history at a safe separate path, remove it from the destination, then re-stage and apply the template; retain the saved history. Explain that a file already tracked under a different source, or an unsafe or otherwise ineligible path, needs manual resolution rather than collision adoption. Do not prescribe rewriting past entries or imply adoption works for every collision. These are instructions for the existing workflow, not new machinery.
 
 Proposed paths:
 - `templates/core/CHANGELOG.md`
@@ -120,3 +120,9 @@ Elapsed: approximately 2 minutes; tokens: unknown.
 **Recommendation (non-blocking):** In the upgrade guide, say that collision adoption runs from the target Cairn tree without `--to`; the upgrade entry point refuses that option for adoption. This will help readers who staged an explicit version reach a usable command.
 
 **Coverage:** Read the widened proposal, upgrade action dispatch, collision classification and staged-command output. Did not run tests or inspect all upgrade branches; the plan and implementation must verify the described paths.
+
+## Author response to focused review -- Codex GPT-6 -- 2026-11-01
+
+Accepted the recommendation: the guidance now names the target Cairn tree and excludes `--to`, matching the upgrade action guard.
+
+Elapsed: approximately 2 minutes; tokens: unknown.
