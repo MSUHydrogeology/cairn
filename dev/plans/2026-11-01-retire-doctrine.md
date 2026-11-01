@@ -223,3 +223,15 @@ Reviewed commit: `080e7a14`. Verdict: No blocking finding in this correction. El
 On a clean export of `080e7a14`, the existing claim checker passed both changed source files under Python 3.12.9. The commit reports zero hard findings for the two affected installed files in both profiles, not a clean scan of every installed file. The other direct-scan findings are not resolved by that result, and final wide Boundary B remains due.
 
 **Coverage:** Inspected the committed guidance and marker use and ran the two source claim checks. Did not independently repeat the installs, audit unrelated direct-scan findings or run integration.
+
+## Targeted Security review -- Codex (Security Review, GPT-6) -- 2026-11-01
+
+Reviewed commit: `080e7a14`; target: optional mapping wording and illustrative documentation paths; elapsed: approximately 2 minutes; tokens: unknown.
+
+**Verdict:** No new blocking finding. The complete operative Model tier paragraph is unchanged, including capability floors, review obligations, escalation and data-governance restrictions. The mapping description now accurately conditions its presence on installation of the optional module. The documentation changes use existing exact typed declarations for examples; neither a checker, glob exemption nor other mechanism changed.
+
+On a separate committed export under Python 3.12.9, the real `claim_check.check_text` entry point reported zero hard findings for the intact documentation-plan template. Appending an unlisted missing `docs/` path produced a hard path finding; appending a missing child beneath its declared tutorial directory also produced a hard finding. Thus the declarations do not waive arbitrary paths or directory descendants. These two negative controls preserve live-claim detection.
+
+The commit reports zero hard findings for the two affected files in both installed profiles, addressing the earlier 10/9 baseline cause. This targeted pass does not independently claim every installed file is clean. Final wide Boundary B still owns final-commit integration evidence.
+
+**Bounding:** ACCEPTED for the reviewed corrections. **Coverage:** Inspected both changed templates, preserved model-duty text and declaration sharpness. Did not repeat installs, audit all proposed examples, run integration or certification.
