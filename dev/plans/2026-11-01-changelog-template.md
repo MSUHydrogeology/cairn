@@ -45,3 +45,17 @@ Boundary A: run `python tools/test_tiers.py for <changed paths>` and its selecte
 Boundary C: an independent reviewer reads the committed implementation and iteration evidence and runs targeted falsification checks, not a suite; a separate Security Review is also required. Return substantive review fixes to the same reviewer for a targeted look.
 
 Boundary B: after reviews, use a clean unchanged final commit under canonical Python 3.13.x. Run the mapped iteration list for the reviewed range, named integration/workflow tests, standing prose gates, and plan-specific behavior and mutation checks. Use **wide** for the install contract, covering its owning test families, public install and upgrade paths and their consumers. Record SHA and range, interpreter, clean pre/post state, commands, counts, elapsed time, tokens or unknown, non-pass dispositions and omissions in the required dated implementation verification section. Record timing misses and list test files over 10 seconds as required. Neither full-tree certification nor re-anchor is authorized here.
+
+## Plan review -- Codex GPT-6 -- 2026-11-01
+
+Reviewed commit: `844cd4e1`; target: whole plan; prior findings: none.
+Tier: Internal; Obligation: ordinary plan review; verdict: **PROCEED**; findings: none.
+Elapsed: approximately 3 minutes; tokens: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The accepted proposal requires an installed template and preservation of existing history; C1 covers install, upgrade collision, eligible adoption and the three practical choices. It also requires the linked marker, headings and entry-type order from the Decision. The plan reuses existing workflows rather than adding a ledger.
+2. **Best alternative.** A separate example avoids a root collision but loses the requested ready-to-use root file and adds a copying step; the proposal's collision workflow preserves the existing upgrade contract.
+3. **What would show it wrong?** An entry-point test showing lost history, unusable staged adoption, incorrect fork/base records, a missing profile or misleading guidance. C1 and Boundary A require those cases and independent-byte mutations; the named upgrade tests already exercise adoption, ownership and the `--to` refusal.
+
+**Coverage:** Read the committed plan and accepted proposal, current changelog format, upgrade guidance and named test locations. Did not execute tests or mutations, inspect every upgrade branch or assess security in depth; a separate Security Review remains required.
