@@ -87,3 +87,23 @@ None.
 **Findings:** The decision summary states the work and scope but leaves the main cost and tradeoff in Rationale. Add a plain sentence there about the effort of reading the full set and why it is worth retaining. The board says to fix what fails, while S4 correctly leaves uncertain meaning unchanged until established. Clarify how unresolved failures are recorded and kept open, without creating a per-file ledger or treating ambiguity as completion. The plan should coordinate the active board rewrite and proposal-summary plan, then read their final committed text; the Context identifies both but does not establish their completion.
 
 **Coverage:** Read the proposal at `bf63dd0e`, the board audit row, the active proposal-summary plan's scope and checks, and the Plain Language and review guidance. Did not inventory every installed template, inspect the other writer's uncommitted board work, run implementation tests, or assess security controls in depth; the separate Security Review remains owed.
+
+## Proposal Security Review -- Codex GPT-6 -- 2026-11-01
+
+**Foundations**
+
+- **Should it happen as framed?** Yes. The committed board audit asks for the full prose set and template-only marker. The proposal preserves commands, conditions and permissions, forbids policy changes, and retains protected-template assurance (Proposal; Documentation / doctrine surface).
+- **Best alternative:** Prioritize entry points within the full inventory, as proposed. Restricting the audit to those pages would lose the board's requested module and template coverage; automated readability scores cannot establish preserved meaning (Rationale; Cairn Plain Language, Checking).
+- **What would show it wrong?** A simplified refusal granting authority, a removed prerequisite, or a marker corrupting a runnable template would defeat the stated preservation contract (Security preflight; Evidence / verification plan).
+
+**Reviewed**: `86a7e58c`; committed board and proposal-summary plan at `01856bc6`.
+**Obligation**: Internal Security Review (proposal)
+**Tier**: Internal Security Review
+**Verdict**: Proceed with one non-blocking improvement.
+**Elapsed**: approximately 4 minutes; **Tokens**: unknown
+
+**Finding:** Distinguish editable explanation from versioned rule text in the plan's group boundaries. The shipped collaboration document contains Plain Language 1.0 itself; its introduction requires a new version and changelog line for reworded rules. The proposal already forbids changed policy, but an apparently equivalent rewrite could still violate that publication contract. Close by explicitly retaining versioned rules unless separately authorized; this needs no new review stage or ledger.
+
+The proposal-summary plan already records final verification. Read that committed result when auditing its shipped template, rather than duplicating its implementation or assuming it completes the broader audit.
+
+**Coverage:** Committed proposal, board request, proposal-summary scope and verification, review doctrine, and self-hosted/shipped Plain Language rules. Did not inventory every install mapping, inspect uncommitted board work, test code behavior, run mutations or implementation checks, or certify the tree.
