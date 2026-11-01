@@ -534,7 +534,10 @@ fresh. To keep it unchanged, run `upgrade --stage`, review the `.ours` and
 `.theirs` copies, and use the displayed `--adopt-collisions` command from the
 target Cairn tree, without `--to`. This records your existing file as a tracked
 fork and does not replace it. Re-stage and review the result before applying.
-If you adapt the history, review the resulting bytes before adopting them.
+If you adapt the history, run `upgrade --stage` again after editing. Review the
+new `.ours` and `.theirs` copies, then use the newly displayed
+`--adopt-collisions` command. Its digest is bound to the staged bytes, so the
+earlier command is refused after an edit.
 
 To start fresh, first save the existing file at a safe, separate path, remove
 it from the project root, then run `upgrade --stage` and review the template

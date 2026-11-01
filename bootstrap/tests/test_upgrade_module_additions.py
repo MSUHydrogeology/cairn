@@ -783,6 +783,12 @@ def _prepare_changelog_upgrade(target: Path) -> None:
     (target / "CHANGELOG.md").unlink()
 
 
+def _printed_changelog_adoption_triple(output: str) -> str:
+    match = re.search(r"CHANGELOG\.md@[0-9a-f]{64}@[0-9a-f]{64}", output)
+    assert match, "stage did not print the ready-to-use changelog adoption command"
+    return match.group(0)
+
+
 def test_new_core_changelog_collision_can_be_kept_as_a_fork(tmp_path: Path, capsys):
     target = tmp_path.resolve()
     _prepare_changelog_upgrade(target)
@@ -797,10 +803,8 @@ def test_new_core_changelog_collision_can_be_kept_as_a_fork(tmp_path: Path, caps
     staged = target / s._STAGING_REL / "review-only"
     assert (staged / "CHANGELOG.md.ours").read_bytes() == history
     assert (staged / "CHANGELOG.md.theirs").is_file()
-    match = re.search(
-        r"(?ms)^\s+upgrade --adopt-collisions \\\n+\s+(CHANGELOG\.md@[0-9a-f]{64}@[0-9a-f]{64})$", output)
-    assert match, "stage did not print the ready-to-use changelog adoption command"
-    assert s.main(base + ["--adopt-collisions", match.group(1)]) == 0
+    triple = _printed_changelog_adoption_triple(output)
+    assert s.main(base + ["--adopt-collisions", triple]) == 0
     assert (target / "CHANGELOG.md").read_bytes() == history
 
     rec = next(r for r in s.read_lockfile(target)["files"]
@@ -829,6 +833,47 @@ def test_new_core_changelog_fresh_start_preserves_separate_history(tmp_path: Pat
     rec = next(r for r in s.read_lockfile(target)["files"]
                if r["dst"] == "CHANGELOG.md")
     assert rec["src"] == "core/CHANGELOG.md"
+
+
+def test_adapted_changelog_is_restaged_before_collision_adoption(
+    tmp_path: Path, capsys
+):
+    target = tmp_path.resolve()
+    _prepare_changelog_upgrade(target)
+    changelog = target / "CHANGELOG.md"
+    original = b"# Existing history\n\nOld format.\n"
+    changelog.write_bytes(original)
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+
+    assert s.main(base + ["--stage"]) == 0
+    first_command = _printed_changelog_adoption_triple(capsys.readouterr().out)
+    adapted = (
+        "# Changelog\n\n### Major changes\n\n"
+        "- **Changed** — Adapted history.\n"
+    ).encode("utf-8")
+    changelog.write_bytes(adapted)
+
+    # The digest from before the edit cannot authorize the new bytes.
+    assert s.main(base + ["--adopt-collisions", first_command]) != 0
+    assert changelog.read_bytes() == adapted
+    assert not any(r["dst"] == "CHANGELOG.md"
+                   for r in s.read_lockfile(target)["files"])
+    capsys.readouterr()
+
+    # Re-stage binds a new command to the edited bytes the adopter reviews.
+    assert s.main(base + ["--stage"]) == 0
+    second_command = _printed_changelog_adoption_triple(capsys.readouterr().out)
+    assert second_command != first_command
+    staged = target / s._STAGING_REL / "review-only"
+    assert (staged / "CHANGELOG.md.ours").read_bytes() == adapted
+    assert (staged / "CHANGELOG.md.theirs").is_file()
+    assert s.main(base + ["--adopt-collisions", second_command]) == 0
+    assert changelog.read_bytes() == adapted
+
+    rec = next(r for r in s.read_lockfile(target)["files"]
+               if r["dst"] == "CHANGELOG.md")
+    assert rec["hash"] == "sha256:" + s._sha256_hex(adapted)
+    assert rec.get("base_hash") != rec["hash"]
 
 
 def test_new_core_changelog_refuses_another_source_owner(tmp_path: Path):

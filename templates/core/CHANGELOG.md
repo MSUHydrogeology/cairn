@@ -23,10 +23,13 @@ the new template. Run `upgrade --stage`, review the `.ours` and `.theirs`
 copies, then use the displayed `--adopt-collisions` command from the target
 Cairn tree, without `--to`, to keep your existing file unchanged as a tracked
 fork. Re-stage and review before applying. If you chose to adapt your history,
-review the changed bytes before adopting them. To start fresh, first save the
-old file separately, remove it from the root, then re-stage and review the new
-template. A file tracked under another source, a link, a folder or another
-ineligible path needs manual resolution; collision adoption does not apply.
+edit it, then run `upgrade --stage` again. Review the new `.ours` and `.theirs`
+copies and use the newly displayed `--adopt-collisions` command. Its digest is
+bound to the staged bytes, so the earlier command is refused after an edit. To
+start fresh, first save the old file separately, remove it from the root, then
+re-stage and review the new template. A file tracked under another source, a
+link, a folder or another ineligible path needs manual resolution; collision
+adoption does not apply.
 
 ## Unreleased
 
