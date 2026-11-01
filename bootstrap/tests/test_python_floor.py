@@ -50,7 +50,7 @@ ENGINE_DIR = CAIRN_ROOT / "bootstrap" / "_scaffold"
 
 # The declared supported minimum floor — >=3.11: the earliest non-EOL Python
 # with meaningful runway (3.8 EOL 2024-10, 3.9 EOL 2025-10, 3.10 EOL ~2026-10).
-# The single source of this number is doctrine/runtime-contract.md; keep them
+# The single source of this number is docs/methodology/runtime-contract.md; keep them
 # in lockstep. This is the assertion bound: the detected minimum must be <= this.
 DECLARED_FLOOR = (3, 11)
 
@@ -171,7 +171,7 @@ class TestPythonFloor:
 
         This is a regression guard: if a future change raises the engine's
         minimum requirement above the declared >=3.11 floor, this test fails
-        and the floor declaration in ``doctrine/runtime-contract.md`` must
+        and the floor declaration in ``docs/methodology/runtime-contract.md`` must
         be updated intentionally.
 
         Pass condition: detected_floor <= DECLARED_FLOOR (i.e., <=3.11).
@@ -191,7 +191,7 @@ class TestPythonFloor:
             f"Engine floor detected by vermin is {detected_major}.{detected_minor}, "
             f"which EXCEEDS the declared supported minimum "
             f"{declared_major}.{declared_minor}. "
-            "Update doctrine/runtime-contract.md if the floor increase is "
+            "Update docs/methodology/runtime-contract.md if the floor increase is "
             "intentional, or lower the engine's minimum Python requirement."
         )
 

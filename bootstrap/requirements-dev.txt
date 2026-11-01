@@ -14,7 +14,7 @@
 # skips, right here.
 #
 # See bootstrap/DEPENDENCY_BUDGET.md for the dependency-budget ledger.
-# See doctrine/runtime-contract.md for the runtime contract and floor
+# See docs/methodology/runtime-contract.md for the runtime contract and floor
 # check details.
 
 # vermin: Python minimum-version detector used by the floor check

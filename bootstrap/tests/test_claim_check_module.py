@@ -409,7 +409,7 @@ class TestCountSoftFlagRetired:
 
 # --- `path::node` node citations -------------------------------------------
 #
-# `doctrine/lifecycle.md` > "Archive precondition" mandates `path::node` as the
+# `docs/methodology/lifecycle.md` > "Archive precondition" mandates `path::node` as the
 # citation form for a `guard` disposition. Before this fix the checker resolved
 # the whole token and hard-flagged every such citation, so the token's mandated
 # form was unwritable in any claim-checked file.

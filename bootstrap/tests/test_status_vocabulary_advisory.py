@@ -477,13 +477,13 @@ class TestTheVocabularyMatchesTheDoctrineDiagrams:
         accepted) until someone noticed."""
         table = (set(session._STATUS_VOCABULARY["proposal"])
                  | set(session._STATUS_VOCABULARY["plan"]))
-        drawn = _diagram_words("doctrine/lifecycle.md")
+        drawn = _diagram_words("docs/methodology/lifecycle.md")
 
         assert len(drawn) >= 14, drawn
         assert drawn == table
 
     def test_the_plan_page_draws_exactly_the_plan_words(self) -> None:
-        drawn = _diagram_words("doctrine/plans.md")
+        drawn = _diagram_words("docs/methodology/plans.md")
 
         assert drawn == set(session._STATUS_VOCABULARY["plan"])
 

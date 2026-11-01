@@ -1113,7 +1113,7 @@ def _status_of(path: Path) -> str:
 
 
 #: The published status words, by artifact kind (AGENTS.md > The lifecycle;
-#: doctrine/lifecycle.md for proposals, doctrine/plans.md for plans and change
+#: docs/methodology/lifecycle.md for proposals, docs/methodology/plans.md for plans and change
 #: notes). The board loads this table from here rather than keeping its own.
 _STATUS_VOCABULARY = {
     "proposal": ("awaiting-review", "revising", "awaiting-decision",
@@ -1125,7 +1125,7 @@ _STATUS_VOCABULARY = {
 
 #: Old words that stay readable on archived records and are named "retired"
 #: on an active one. `proposed`, `reviewed` and `revised` are the three the
-#: lifecycle doctrine names (doctrine/lifecycle.md, the paragraph on the
+#: lifecycle doctrine names (docs/methodology/lifecycle.md, the paragraph on the
 #: earlier flat tokens). `open`, `executing` and `review` were the plan states
 #: retired with them (commit 3defdb78, "retire the legacy status vocabulary").
 _RETIRED_STATUSES = ("proposed", "reviewed", "revised",
@@ -1904,9 +1904,9 @@ def _run_evolution_infer(root: Path, interpreter: str) -> None:
 _REFLECTION_SKELETON = """\
 # Session reflection -- {agent} -- {date} (session {session})
 
-<!-- Per-agent, ephemeral, pruned.  Migrate durable observations out into
-     doctrine or the roadmap before they are pruned.  See
-     doctrine/session-routines.md > "The reflections channel". -->
+<!-- Per-agent, ephemeral, pruned. Migrate durable observations into the
+     project's governing files or roadmap before pruning. See AGENTS.md for
+     the local session-start and goodnight duties. -->
 
 ## What shipped
 

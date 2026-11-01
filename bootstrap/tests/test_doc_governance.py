@@ -1,8 +1,8 @@
 """
-Tests pinning the doctrine sections in ``cairn/doctrine/doc-governance.md``.
+Tests pinning the doctrine sections in ``cairn/docs/methodology/doc-governance.md``.
 
 The 2026-05-28 docs-architecture-cleanup adds three to four new
-sections to ``doctrine/doc-governance.md`` (tier-recognition,
+sections to ``docs/methodology/doc-governance.md`` (tier-recognition,
 common-homes-for-vision, format-neutrality, style-conventions-
 location), plus a coherence-pass rewrite of the opening taxonomy.
 These tests pin the section headings against silent regression so
@@ -23,12 +23,12 @@ from pathlib import Path
 import pytest
 
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
-DOC_GOVERNANCE = CAIRN_ROOT / "doctrine" / "doc-governance.md"
+DOC_GOVERNANCE = CAIRN_ROOT / "docs" / "methodology" / "doc-governance.md"
 
 
 @pytest.fixture(scope="module")
 def doc_text() -> str:
-    """The full text of ``doctrine/doc-governance.md``."""
+    """The full text of ``docs/methodology/doc-governance.md``."""
     if not DOC_GOVERNANCE.is_file():
         pytest.fail(f"missing: {DOC_GOVERNANCE}")
     return DOC_GOVERNANCE.read_text(encoding="utf-8")
@@ -156,7 +156,7 @@ class TestDevReadmeTemplate:
         text = path.read_text(encoding="utf-8")
         assert "doc-governance.md" in text, (
             "templates/core/dev/README.md must point at "
-            "doctrine/doc-governance.md for the vision-home decision"
+            "docs/methodology/doc-governance.md for the vision-home decision"
         )
 
 

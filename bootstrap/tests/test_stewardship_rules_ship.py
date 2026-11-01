@@ -30,7 +30,7 @@ def test_small_fix_rule_and_capture_pointer_reach_install(tmp_path: Path) -> Non
         (target / "dev/modules/issue-capture.md").read_text(encoding="utf-8").split()
     )
     lifecycle = " ".join(
-        (ROOT / "doctrine/lifecycle.md").read_text(encoding="utf-8").split()
+        (ROOT / "docs/methodology/lifecycle.md").read_text(encoding="utf-8").split()
     )
     assert "needs a Maintainer decision" in lifecycle
     assert "belongs to work already in motion" in lifecycle
@@ -39,4 +39,4 @@ def test_small_fix_rule_and_capture_pointer_reach_install(tmp_path: Path) -> Non
     assert "Count person-steps, not machine time" in agents
     assert "Fixing an easy problem you meet" in capture
     assert "`AGENTS.md`" in capture
-    assert "defer-OK" not in (ROOT / "doctrine/plans.md").read_text(encoding="utf-8")
+    assert "defer-OK" not in (ROOT / "docs/methodology/plans.md").read_text(encoding="utf-8")

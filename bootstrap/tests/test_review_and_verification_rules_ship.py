@@ -1,6 +1,6 @@
 """The review and verification rules must reach the adopter, not only the doctrine.
 
-`doctrine/` is **not installed into an adopter tree**, so a rule that lives
+`docs/methodology/` is **not installed into an adopter tree**, so a rule that lives
 only there binds nobody who adopts Cairn. These rules therefore sit in
 `templates/core/AGENTS.md`, the file every adopter receives and every agent
 loads each session, and in Cairn's own root `AGENTS.md`, so that Cairn is bound
@@ -219,7 +219,7 @@ def test_agents_md_carries_the_obligation(label: str, rel: str) -> None:
     assert not _has_legacy_inventory_requirement(text), rel
     assert label not in _missing(text), (
         f"{rel} no longer carries the obligation {label!r}. The doctrine holds "
-        f"the same rule, but adopters never receive doctrine/; removing it here "
+        f"the same rule, but adopters never receive docs/methodology/; removing it here "
         f"removes it for them."
     )
 
@@ -310,7 +310,7 @@ def test_cairns_own_copy_claims_unconditionally() -> None:
 
 def test_coordination_doctrine_guards_same_file_commits() -> None:
     """Named paths still need agreement and inspection of all candidate bytes."""
-    text = _collapse(_text("doctrine/coordination.md"))
+    text = _collapse(_text("docs/methodology/coordination.md"))
     for phrase in (
         "agree with the other writers to serialize them through the commit",
         "including staged and unstaged changes",
@@ -332,15 +332,15 @@ _LIGHT_NO_PLAN_CARRIERS = {
         "light has no plan even for multi-area or wide implementation",
         "plan triage applies only to standard/heavy",
     ),
-    "doctrine/lifecycle.md": (
+    "docs/methodology/lifecycle.md": (
         "`light` is one short review and no plan even when execution spans multiple areas or needs wide Boundary B",
         "Plan triage applies only to standard/heavy proposals",
     ),
-    "doctrine/proposals.md": (
+    "docs/methodology/proposals.md": (
         "a light-tier proposal has no plan or code review, regardless of implementation size",
         "A light proposal writes `not required(no plan: light tier)` without plan triage",
     ),
-    "doctrine/plans.md": (
+    "docs/methodology/plans.md": (
         "Light has one short proposal review and no plan regardless of these conditions",
         "For a standard/heavy accepted proposal, open a plan",
     ),

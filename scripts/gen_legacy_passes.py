@@ -4,7 +4,7 @@
 
 """Generate the legacy review-pass manifest, and report the pass corpus.
 
-The review gate (`doctrine/plans.md` > "The record schema") exempts passes
+The review gate (`docs/methodology/plans.md` > "The record schema") exempts passes
 that predate the schema by **membership in a fixed enumeration**, not by
 comparing a heading date to a cutoff.  A date in a heading is author-written
 text *inside the artifact the gate judges*, so a dated cutoff lets the gated

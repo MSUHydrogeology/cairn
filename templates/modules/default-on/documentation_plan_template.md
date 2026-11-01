@@ -72,6 +72,13 @@ how something is built or organized**.  The layer has two ranges:
     placement in `docs/` is therefore *derived* from the vision,
     not an unexplained exception to it.
 
+When a project publishes a general methodology explanation, keep it
+with descriptive documentation (for example, `docs/methodology/`).
+The installed root guidance or domain-local rule must still carry the
+complete operative instruction a contributor needs to follow. A
+citation to public methodology can add context, but cannot replace
+that instruction.
+
 ### 3. Deliberation layer -- "What should the project become, and how do we decide?"  (`dev/`)
 
 The project **charter** (e.g., `dev/vision.md` or a `vision.md`
@@ -89,7 +96,9 @@ exists today.
 
 Documentation of the project *as it exists today*.  Its
 defining property: it **describes current reality** -- it
-neither prescribes how to build nor deliberates what to build.
+neither prescribes how to build nor deliberates what to build. A project's public methodology and rationale also belong with
+this descriptive documentation; for example, a project may use
+`docs/methodology/`.
 
 Most descriptive content lives under `docs/`.  Whether `docs/`
 is tiered (e.g., quickstart / user-guide / theory / reference /

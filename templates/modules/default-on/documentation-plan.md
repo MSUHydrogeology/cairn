@@ -156,10 +156,10 @@ to point at a different placement-doc filename) should add the
 customized marker so the merge helper preserves the
 customization on re-install.
 
-## Cross-reference to `cairn/doctrine/doc-governance.md`
+## Cross-reference to `cairn/docs/methodology/doc-governance.md`
 
 The placement-decision procedure is the **concrete how** of
-Cairn's doc-governance rule (`cairn/doctrine/doc-governance.md`
+Cairn's doc-governance rule (`cairn/docs/methodology/doc-governance.md`
 in the Cairn methodology repo). The doc-governance rule names
 the principle (build-the-software and operate-safely rules live
 in `AGENTS.md`; the deliberation and decision process lives in

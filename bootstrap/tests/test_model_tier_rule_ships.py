@@ -27,7 +27,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 SHIPPED_AGENTS = "templates/core/AGENTS.md"
 OWN_AGENTS = "AGENTS.md"
-ROLES = "doctrine/roles.md"
+ROLES = "docs/methodology/roles.md"
 SHIPPED_MODULE = "templates/modules/team-gated/model-selection.md"
 OWN_MODULE = "dev/modules/model-selection.md"
 AGENTS_COPIES = [SHIPPED_AGENTS, OWN_AGENTS]
@@ -93,7 +93,7 @@ def _roles_section(text: str) -> str:
     return text[heading.start():] if end == -1 else text[heading.start():end]
 
 
-#: What the fan-out paragraph of `doctrine/roles.md` must say about the check.
+#: What the fan-out paragraph of `docs/methodology/roles.md` must say about the check.
 _FAN_OUT_CLAUSES = (
     "a stronger model from the same maker counts",
     "a model at the same tier does not",

@@ -1230,7 +1230,7 @@ def _extract_seed_tasks(preset_text: str) -> list[str]:
     Each seed task is a multi-line markdown list item:
 
         * [seed; id: read-lifecycle-doctrine]
-          Read `doctrine/lifecycle.md` ...
+          Read `docs/methodology/lifecycle.md` ...
 
     Returns the rendered list-item blocks (each block preserving the
     `[seed; ...]` header line + any indented continuation lines until
@@ -1903,7 +1903,7 @@ def print_report(
     # <module>" placeholders in templates/core/ and BOOTSTRAP.md Act II-4.
     # They disagree on one name: BOOTSTRAP.md lists model-selection as a
     # role-roster-additions supplier, but model-selection.md says it adds to
-    # doctrine/roles.md and local configuration.  The table follows
+    # docs/methodology/roles.md and local configuration.  The table follows
     # BOOTSTRAP.md; the error shows more work, never less.  A supplier whose
     # placeholder lacks the "Filled from the" phrase (coordination-additions,
     # role-roster-additions) is hand-listed here.

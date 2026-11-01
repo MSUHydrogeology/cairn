@@ -63,7 +63,7 @@ _RULES: Tuple[Tuple[str, str], ...] = (
     ("scripts/",                          "other-machinery"),
     ("templates/skills/_lib/",            "other-machinery"),
     ("templates/modules/",                "other-machinery"),
-    ("doctrine/",                         "product"),
+    ("docs/methodology/",               "product"),
     ("docs/",                             "product"),
     ("templates/",                        "product"),
     ("on-ramp/",                          "product"),

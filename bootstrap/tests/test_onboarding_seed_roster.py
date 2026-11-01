@@ -358,7 +358,7 @@ def test_agent_team_single_drops_both_module_surfaces(tmp_path: Path) -> None:
     slot = _seed_slot(tmp_path)
     for surface in (
         "tools/intent.py",
-        "doctrine/coordination.md",
+        "docs/methodology/coordination.md",
         "dev/modules/dual-review.md",
         "agent-team-onboarding.md",
     ):
@@ -382,7 +382,7 @@ def test_agent_team_concurrent_single_type_keeps_coordination_drops_dual_review(
     # over-eager strip that also dropped these would be just as wrong as
     # under-stripping.
     assert "tools/intent.py" in slot
-    assert "doctrine/coordination.md" in slot
+    assert "docs/methodology/coordination.md" in slot
 
 
 # --- (c) the unconditional case -- proves the gate is a real filter, not a

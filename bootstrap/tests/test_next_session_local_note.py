@@ -36,7 +36,7 @@ VERIFY_STEMS_TWINS = (
 
 
 NOTE = "dev/reflections/next-session.md"
-DOCTRINE = ROOT / "doctrine" / "session-routines.md"
+DOCTRINE = ROOT / "docs" / "methodology" / "session-routines.md"
 
 
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -452,7 +452,7 @@ RETIRED_PATH_EXEMPT = frozenset({
 def _shipped_sources() -> dict[str, str]:
     paths = _tracked(
         "AGENTS.md", "CLAUDE.md", "templates", "dev/modules", "docs",
-        "scripts", "doctrine", "tools", "bootstrap",
+        "scripts", "tools", "bootstrap",
     )
     suffixes = {".md", ".py", ".yml", ".yaml", ".json", ".toml", ".txt", ".sh"}
     sources: dict[str, str] = {}

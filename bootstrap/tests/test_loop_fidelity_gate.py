@@ -2,14 +2,14 @@
 The #58 loop-fidelity gate in check_cairn (cairn-loop-fidelity-verification).
 
 An adopter-facing ``templates/`` surface that references a Cairn-internal-only
-path (``doctrine/*``) dangles once installed in an adopter tree -- the
+path (``docs/methodology/*``) dangles once installed in an adopter tree -- the
 implementation->adoption failure (#57, the 9-lens roster). The gate fails
 closed on such a reference unless it is transplanted or marked a deliberate
 citation.
 
 Pins: (1) a planted dangling ref in a templates/ surface flags; (2) BOTH a
 backticked token and a raw Markdown link target flag (a relative
-``[x](doctrine/..)`` link that link_check passes in-source but breaks on
+``[x](docs/methodology/..)`` link that link_check passes in-source but breaks on
 adoption); (3) the ``cairn-internal-ref-allow`` / ``cairn-internal-ref``
 markers exempt; (4) the scan-allowlist -- a non-``templates/`` file is not
 scanned; (5) sharpness -- a marker for one doctrine path does not exempt a
@@ -44,22 +44,32 @@ def _tmpl(tmp_path: Path, body: str, rel: str = "templates/core/AGENTS.md") -> P
 
 class TestDanglingRefGate:
     def test_backticked_doctrine_ref_flags(self, tmp_path: Path) -> None:
-        md = _tmpl(tmp_path, "See the roster in `doctrine/dual-review.md`.\n")
-        assert _loop_flags(check_cairn.check_tree(tmp_path, [md])), \
-            "a backticked doctrine/ reference in a template must flag"
+        md = _tmpl(
+            tmp_path,
+            "See the roster in `docs/methodology/dual-review.md` and "
+            "the retired `doctrine/dual-review.md` path.\n",
+        )
+        flags = _loop_flags(check_cairn.check_tree(tmp_path, [md]))
+        assert any("docs/methodology/dual-review.md" in f.message for f in flags)
+        assert any("doctrine/dual-review.md" in f.message for f in flags)
 
     def test_markdown_link_target_flags(self, tmp_path: Path) -> None:
-        """A raw Markdown relative link target to doctrine/ flags --
+        """A raw Markdown relative link target to docs/methodology/ flags --
         link_check passes it in-source but it breaks on adoption."""
-        md = _tmpl(tmp_path, "See [the sweep](../../doctrine/dual-review.md).\n")
+        md = _tmpl(
+            tmp_path,
+            "See [the sweep](../../docs/methodology/dual-review.md) and "
+            "the retired [path](../../doctrine/dual-review.md).\n",
+        )
         flags = _loop_flags(check_cairn.check_tree(tmp_path, [md]))
-        assert flags, "a Markdown link target to doctrine/ must flag (N1)"
+        assert any("docs/methodology/dual-review.md" in f.message for f in flags)
+        assert any("doctrine/dual-review.md" in f.message for f in flags)
 
     def test_file_level_allow_marker_exempts(self, tmp_path: Path) -> None:
         body = (
-            "<!-- cairn-internal-ref-allow: doctrine/dual-review.md "
+            "<!-- cairn-internal-ref-allow: docs/methodology/dual-review.md "
             "reason=citation convention -->\n"
-            "See the roster in `doctrine/dual-review.md`.\n"
+            "See the roster in `docs/methodology/dual-review.md`.\n"
         )
         md = _tmpl(tmp_path, body)
         assert not _loop_flags(check_cairn.check_tree(tmp_path, [md])), \
@@ -69,19 +79,19 @@ class TestDanglingRefGate:
         """The inline marker is collected file-wide, so it exempts even when
         it does not sit on the same wrapped line as the reference."""
         body = (
-            "See the roster in `doctrine/dual-review.md` >\n"
+            "See the roster in `docs/methodology/dual-review.md` >\n"
             '"the clean-pass trap".'
-            " <!-- cairn-internal-ref: doctrine/dual-review.md reason=why -->\n"
+            " <!-- cairn-internal-ref: docs/methodology/dual-review.md reason=why -->\n"
         )
         md = _tmpl(tmp_path, body)
         assert not _loop_flags(check_cairn.check_tree(tmp_path, [md]))
 
     def test_non_template_file_not_scanned(self, tmp_path: Path) -> None:
         """Scan-allowlist: only adopter-facing templates/ surfaces are
-        scanned; a doctrine/ file referencing its siblings is not."""
-        md = tmp_path / "doctrine" / "x.md"
+        scanned; a docs/methodology/ file referencing its siblings is not."""
+        md = tmp_path / "docs" / "methodology" / "x.md"
         md.parent.mkdir(parents=True)
-        md.write_text("See `doctrine/dual-review.md`.\n", encoding="utf-8")
+        md.write_text("See `docs/methodology/dual-review.md`.\n", encoding="utf-8")
         assert not _loop_flags(check_cairn.check_tree(tmp_path, [md]))
 
     def test_marker_is_path_specific(self, tmp_path: Path) -> None:
@@ -89,22 +99,22 @@ class TestDanglingRefGate:
         reference to a *different* doctrine path (a new dangling ref still
         fails closed)."""
         body = (
-            "<!-- cairn-internal-ref-allow: doctrine/dual-review.md "
+            "<!-- cairn-internal-ref-allow: docs/methodology/dual-review.md "
             "reason=citation -->\n"
-            "See `doctrine/dual-review.md` and `doctrine/lifecycle.md`.\n"
+            "See `docs/methodology/dual-review.md` and `docs/methodology/lifecycle.md`.\n"
         )
         md = _tmpl(tmp_path, body)
         flags = _loop_flags(check_cairn.check_tree(tmp_path, [md]))
-        assert len(flags) == 1, "only the unlisted doctrine/lifecycle.md flags"
-        assert "doctrine/lifecycle.md" in flags[0].message
+        assert len(flags) == 1, "only the unlisted docs/methodology/lifecycle.md flags"
+        assert "docs/methodology/lifecycle.md" in flags[0].message
 
     def test_bare_prefix_marker_normalizes(self, tmp_path: Path) -> None:
         """A bare directory token matching a known internal prefix
-        (``doctrine``, no trailing slash) is normalized to ``doctrine/`` and
+        (``docs/methodology``, no trailing slash) is normalized to ``docs/methodology/`` and
         exempts, rather than being silently dropped."""
         body = (
-            "<!-- cairn-internal-ref-allow: doctrine reason=blanket -->\n"
-            "See `doctrine/dual-review.md` and `doctrine/lifecycle.md`.\n"
+            "<!-- cairn-internal-ref-allow: docs/methodology reason=blanket -->\n"
+            "See `docs/methodology/dual-review.md` and `docs/methodology/lifecycle.md`.\n"
         )
         md = _tmpl(tmp_path, body)
         assert not _loop_flags(check_cairn.check_tree(tmp_path, [md]))
@@ -112,6 +122,6 @@ class TestDanglingRefGate:
     def test_check_cairn_exits_nonzero_on_dangling_ref(self, tmp_path: Path) -> None:
         """End-to-end fail-closed: the CLI returns non-zero (1) when an
         adopter-facing surface carries an un-exempted dangling reference."""
-        md = _tmpl(tmp_path, "See `doctrine/dual-review.md`.\n")
+        md = _tmpl(tmp_path, "See `docs/methodology/dual-review.md`.\n")
         rc = check_cairn.main([str(md), "--root", str(tmp_path)])
         assert rc != 0, "check_cairn must fail closed on a dangling ref"

@@ -27,7 +27,7 @@ subset (broken repo paths, out-of-bounds line citations).
   by listing the repo root, so root landmark files are first-class
   and the set never goes stale.
 * **Node citations.**  A backticked ``path::node`` token -- the form
-  ``doctrine/lifecycle.md`` > "Archive precondition" mandates for a
+  ``docs/methodology/lifecycle.md`` > "Archive precondition" mandates for a
   ``guard`` disposition -- is resolved on its **path half only**.  The
   node half is **never verified**: this module does not collect tests,
   so a ``guard`` may name a node that does not exist and nothing here
@@ -889,7 +889,7 @@ def _is_default_exempt(token: str) -> bool:
 def _node_citation_path(token: str) -> str | None:
     """The path half of a ``path::node`` citation, or ``None``.
 
-    ``path::node`` is the citation form ``doctrine/lifecycle.md`` >
+    ``path::node`` is the citation form ``docs/methodology/lifecycle.md`` >
     "Archive precondition" mandates for a ``guard`` disposition -- the
     follow-up is homed in something that *executes*, and the entry names
     the node.  Only the **path** half is resolvable here: a static

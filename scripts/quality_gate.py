@@ -17,7 +17,7 @@ Three sub-gates, dispatched via ``--sub <name>`` (default: all):
   ``conftest.py`` hook (stdlib ``random.Random``), so the sub-gate
   has zero external-dependency surface.
 
-* **neutrality** (E-4) -- scan ``cairn/{doctrine,dimensions,bootstrap,
+* **neutrality** (E-4) -- scan ``cairn/{dimensions,bootstrap,
   scripts,on-ramp,docs,examples}/`` for vendor/project tokens (Claude,
   Codex, modflow_tools, ...) that don't belong in vendor-neutral
   framework prose.  Three sanctioned-exception directives keep the
@@ -32,7 +32,7 @@ Three sub-gates, dispatched via ``--sub <name>`` (default: all):
   n-gram overlap (R1 shingle / Jaccard) and Python defs that no
   static reference exercises (R6 stdlib AST walk).  Both surface
   candidates for human disposition in
-  ``doctrine/consolidation-review.md``.  R7 (capability necessity)
+  ``docs/methodology/consolidation-review.md``.  R7 (capability necessity)
   and R1's layer-contract filter stay manual -- they need judgment
   the gate cannot honestly mechanize.
 
@@ -194,7 +194,7 @@ def _run_order_independence(
 # Sub-gate 2: neutrality (E-4)
 # ===========================================================================
 #
-# Scan ``cairn/{doctrine,dimensions,bootstrap,scripts,on-ramp,docs,
+# Scan ``cairn/{dimensions,bootstrap,scripts,on-ramp,docs,
 # examples}/`` for vendor / project tokens.  Templates/ is scanned for
 # tokens too, comment lines included (nothing there is exempt), and for
 # the directive-forbidden gate (any directive there is a leak risk).
@@ -220,8 +220,7 @@ _PROJECT_DENYLIST: frozenset[str] = frozenset({
 _ALL_NEUTRALITY_TOKENS = _VENDOR_DENYLIST | _PROJECT_DENYLIST
 
 _NEUTRALITY_SCAN_ROOTS = (
-    "doctrine", "dimensions", "bootstrap", "scripts",
-    "on-ramp", "docs", "examples",
+    "dimensions", "bootstrap", "scripts", "on-ramp", "docs", "examples",
 )
 
 _VENDOR_OK_BEGIN_RE = re.compile(
@@ -435,7 +434,7 @@ def _scan_neutrality_file(
     return findings
 
 
-#: Per-root file-suffix scope for the neutrality lint.  Doctrine
+#: Per-root file-suffix scope for the neutrality lint.  Markdown
 #: prose and config templates carry vendor / project tokens that
 #: would be real leaks; code legitimately names the reference
 #: deployment in test fixtures, docstrings, and comments and is NOT
@@ -445,7 +444,6 @@ def _scan_neutrality_file(
 #: comment lines included, and for the directive-forbidden rule, since
 #: those files ship to adopter trees and a leak would propagate.
 _NEUTRALITY_FILE_SUFFIXES: dict[str, tuple[str, ...]] = {
-    "doctrine": (".md",),
     "dimensions": (".md",),
     "on-ramp": (".md",),
     "docs": (".md",),
@@ -459,7 +457,7 @@ _NEUTRALITY_FILE_SUFFIXES: dict[str, tuple[str, ...]] = {
 def _walk_neutrality_files(repo_root: Path) -> list[Path]:
     """Yield the file paths the neutrality sub-gate scans.
 
-    Doctrine + config files in the seven roots are scanned for
+    Markdown and config files in the selected roots are scanned for
     vendor / project tokens; every file of a listed type under
     ``templates/`` is scanned for tokens (comment lines included) and
     for the directive-forbidden rule (templates ship to adopters).
@@ -495,7 +493,7 @@ def _run_neutrality(repo_root: Path) -> list[Finding]:
 # R1 -- n-gram overlap detector across the .md corpus.  Two
 # passages with shingle-Jaccard above the threshold surface as a
 # candidate pair for human disposition (see
-# doctrine/consolidation-review.md).
+# docs/methodology/consolidation-review.md).
 #
 # R6 -- stdlib AST walk: for each .py file under cairn/scripts,
 # cairn/bootstrap, and cairn/templates/modules/, collect top-level
@@ -504,7 +502,7 @@ def _run_neutrality(repo_root: Path) -> list[Finding]:
 
 _DEFAULT_SHINGLE_SIZE = 5
 _DEFAULT_JACCARD_THRESHOLD = 0.75
-_R1_SCAN_ROOTS = ("doctrine", "dimensions", "on-ramp", "docs")
+_R1_SCAN_ROOTS = ("dimensions", "on-ramp", "docs")
 #: R6 scans production code under these roots only.  ``bootstrap/tests/``
 #: is excluded because pytest discovers test classes / functions by
 #: name pattern (``Test*`` / ``test_*``), not by static reference --
@@ -546,7 +544,7 @@ def _run_r1_redundancy(
 
     Returns one **info** finding per surfaced pair (severity info,
     not fail: R1 surfaces candidates for human disposition per the
-    consolidation-review doctrine; it does not adjudicate).
+    consolidation-review guidance; it does not adjudicate).
     """
     findings: list[Finding] = []
     files: list[tuple[str, set]] = []

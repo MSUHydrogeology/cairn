@@ -1049,7 +1049,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "scripts/verify_stems.py", verbatim=True),
     ],
     # The deployment-side measurement substrate the adaptive-doctrine
-    # rate-limit gate (doctrine/rationale.md) evaluates against.
+    # rate-limit gate (docs/methodology/rationale.md) evaluates against.
     # Ships the module doctrine + a forkable tracker template; adopters
     # fork the template to one or many live trackers (e.g.,
     # dev/incident_log.md or class-specific files), then the goodnight

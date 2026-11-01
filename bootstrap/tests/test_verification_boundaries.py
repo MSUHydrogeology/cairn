@@ -18,8 +18,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 SELF_AGENTS = ROOT / "AGENTS.md"
 ADOPTER_AGENTS = ROOT / "templates" / "core" / "AGENTS.md"
-PLANS_DOCTRINE = ROOT / "doctrine" / "plans.md"
-REVIEW_DOCTRINE = ROOT / "doctrine" / "dual-review.md"
+PLANS_DOCTRINE = ROOT / "docs" / "methodology" / "plans.md"
+REVIEW_DOCTRINE = ROOT / "docs" / "methodology" / "dual-review.md"
 QUALITY_GATE = ROOT / "scripts" / "quality_gate.py"
 SELF_PLAN_TEMPLATE = ROOT / "dev" / "plans" / "_template.md"
 ADOPTER_PLAN_TEMPLATE = ROOT / "templates" / "core" / "dev" / "plans" / "_template.md"

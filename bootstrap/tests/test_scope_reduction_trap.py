@@ -1,6 +1,6 @@
 """The scope-reduction trap must reach the adopter, not only the doctrine.
 
-`doctrine/dual-review.md` holds the canonical rule, but `doctrine/` is **not
+`docs/methodology/dual-review.md` holds the canonical rule, but `docs/methodology/` is **not
 installed into an adopter tree** -- a rule that lives only there binds nobody
 who adopts Cairn. The operational form therefore has to sit on the surfaces an
 adopter actually receives: the governing `AGENTS.md`, the review-loop doc, the
@@ -56,7 +56,7 @@ _REVIEW_LOOP = {
     # A review deleted the reviewer-duty and specify-default
     # sentences from BOTH copies and saw 105 green, because neither obligation
     # was named here. `names the trap` was additionally satisfied by the
-    # trailing `doctrine/dual-review.md` citation alone, so the paragraph could
+    # trailing `docs/methodology/dual-review.md` citation alone, so the paragraph could
     # go while the pointer to it stayed.
     "names the trap in its own prose, not only in a citation":
         r"mirror: the scope-reduction trap|scope-reduction trap\.\*\*",
@@ -135,7 +135,7 @@ _BOARD_TAXONOMY = {
 #: carry FOUR things -- source section, reason, **a disposition**, and a revival
 #: or closure condition. All four templates and both emitted scaffolds asked for
 #: three, plus a group-level `Disposition/home` naming only a location. A home
-#: is not a disposition, and `doctrine/lifecycle.md` blocks archive on each
+#: is not a disposition, and `docs/methodology/lifecycle.md` blocks archive on each
 #: entry independently, so the distributed record could not satisfy the gate it
 #: was written to feed.
 _PER_ENTRY_DISPOSITION_SURFACES = (
@@ -203,7 +203,7 @@ _DOCTRINE_PROPOSALS = {
 
 _DOCTRINE_PLANS = {
     # NOT r"accepted scope is a floor" -- that is the section HEADING at
-    # doctrine/plans.md:342, so the obligation was satisfied by its own title
+    # docs/methodology/plans.md:342, so the obligation was satisfied by its own title
     # while the body could be emptied. Pin body prose instead.
     "accepted scope is a floor, stated in the body":
         r"proposal's scope is the authority the plan drains|deviated from "
@@ -228,7 +228,7 @@ _DOCTRINE_LIFECYCLE = {
 }
 
 #: surface -> obligations. Every path here is one an adopter receives, except
-#: the `doctrine/` entries, which are the canonical home the others point at
+#: the `docs/methodology/` entries, which are the canonical home the others point at
 #: and were previously pinned only by their section heading.
 _SURFACES = {
     "AGENTS.md": _GOVERNING,
@@ -241,10 +241,10 @@ _SURFACES = {
     "templates/core/dev/plans/_template.md": _PLAN_TEMPLATE,
     "dev/PLANNING.md": _BOARD_TAXONOMY,
     "templates/core/dev/PLANNING.md": _BOARD_TAXONOMY,
-    "doctrine/dual-review.md": _DOCTRINE_CANONICAL,
-    "doctrine/proposals.md": _DOCTRINE_PROPOSALS,
-    "doctrine/plans.md": _DOCTRINE_PLANS,
-    "doctrine/lifecycle.md": _DOCTRINE_LIFECYCLE,
+    "docs/methodology/dual-review.md": _DOCTRINE_CANONICAL,
+    "docs/methodology/proposals.md": _DOCTRINE_PROPOSALS,
+    "docs/methodology/plans.md": _DOCTRINE_PLANS,
+    "docs/methodology/lifecycle.md": _DOCTRINE_LIFECYCLE,
 }
 
 _CASES = [
@@ -377,7 +377,7 @@ def test_scope_reduction_obligation_present(rel: str, label: str,
                                             tmp_path: Path) -> None:
     assert re.search(pattern, _normalized(rel)), (
         f"{rel} no longer expresses the scope-reduction obligation {label!r}. "
-        f"The canonical rule is in doctrine/dual-review.md, which adopters "
+        f"The canonical rule is in docs/methodology/dual-review.md, which adopters "
         f"never receive; removing it here removes it for them."
     )
     if rel == "dev/plans/_template.md" and label == "accepted scope is a floor":
@@ -391,13 +391,13 @@ def test_the_canonical_section_exists_and_sits_beside_its_mirror() -> None:
     failure modes that feel like diligence. A reader who finds one must find
     the other without already knowing it exists.
     """
-    raw = (CAIRN_ROOT / "doctrine/dual-review.md").read_text(encoding="utf-8")
+    raw = (CAIRN_ROOT / "docs/methodology/dual-review.md").read_text(encoding="utf-8")
     headings = re.findall(r"^## (.+)$", raw, re.M)
     clean = [i for i, h in enumerate(headings) if "clean-pass trap" in h]
     scope = [i for i, h in enumerate(headings) if "scope-reduction trap" in h]
-    assert clean, "doctrine/dual-review.md lost its clean-pass trap section"
+    assert clean, "docs/methodology/dual-review.md lost its clean-pass trap section"
     assert scope, (
-        "doctrine/dual-review.md has no '## Review expectations -- the "
+        "docs/methodology/dual-review.md has no '## Review expectations -- the "
         "scope-reduction trap' section; it is the canonical home every other "
         "surface points at."
     )
@@ -455,7 +455,7 @@ _GRAMMAR_TEMPLATES = (
     # The canonical statement FIRST -- it is the surface the other six were
     # unified onto, and it was the one the first version of this guard left
     # unpinned. Reverting it alone stayed green.
-    "doctrine/proposals.md",
+    "docs/methodology/proposals.md",
     "dev/proposals/_template.md",
     "templates/core/dev/proposals/_template.md",
     "dev/plans/_template.md",

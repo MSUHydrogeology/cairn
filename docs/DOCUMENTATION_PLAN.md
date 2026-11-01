@@ -63,22 +63,11 @@ make a correct change.  Two properties define the layer: it is
 **prescriptive** ("do X", "build it this way") and it **governs
 how something is built or organized**.  The layer has two ranges:
 
-* **Cross-cutting governing doctrine** -- prescription that applies
-  to every Cairn contributor regardless of task.  In Cairn:
-  * `cairn/doctrine/` -- Cairn's **published methodology doctrine**
-    (rationale, which also holds the rate-limit gate; lifecycle and
-    its contract; proposals; plans; dual-review; roles; collaboration-stance;
-    coordination; session-routines; onboarding; doc-governance; runtime-contract;
-    consolidation-review).
-    These files are the doctrine Cairn ships *as content* to every
-    adopter -- not installed into the adopter's tree, but cited
-    from `cairn/templates/core/AGENTS.md` references and read in
-    the Cairn repo (the methodology authority).
-  * `cairn/templates/core/AGENTS.md` -- the **template-shipped**
-    operational reference that lands in every adopter's tree as
-    `AGENTS.md`.  This is the adopter-facing surface of Cairn's
-    governing doctrine.
-  * `cairn/templates/core/VENDOR.md` -- the thin vendor-addendum
+* **Cross-cutting governing doctrine** -- operative instructions that
+  apply to every Cairn contributor regardless of task. In Cairn:
+  * `cairn/AGENTS.md` and `cairn/templates/core/AGENTS.md` carry
+    the complete working duties for Cairn contributors and adopters.
+  * `cairn/templates/core/VENDOR.md` is the thin vendor-addendum
     wrapper that lands in every adopter's tree (renamed to the
     tool's auto-loaded file: `CLAUDE.md`, `GEMINI.md`, ...).
 * **Domain-local governance** -- prescription that governs the
@@ -96,6 +85,8 @@ how something is built or organized**.  The layer has two ranges:
     `BOOTSTRAP.md` is for the install sequence.  This file's own
     placement in `docs/` is therefore *derived* from the vision,
     not an unexplained exception to it.
+  * `cairn/dev/rules/` carries Cairn-specific operating rules that
+    do not belong in shared methodology.
 
 ### 3. Deliberation layer -- "What should the project become, and how do we decide?"  (`dev/`)
 
@@ -126,7 +117,10 @@ Documentation of Cairn *as it exists today*, by audience
 `solo-legacy-recipe`, `workflow-role`, `further-reading`,
 `release-process`, `related-practices`, `glossary`). Its defining property: it
 **describes current reality** -- it neither prescribes how to build
-nor deliberates what to build.
+nor deliberates what to build. Cairn's public methodology essays live in
+`cairn/docs/methodology/`; they explain the method and its rationale.
+Operative duties remain in `cairn/AGENTS.md`, `cairn/dev/` guidance,
+or the relevant domain-local rule.
 
 Cairn's `docs/` is tier-light (not stratified into quickstart /
 user-guide / theory / reference / developer the way a domain
@@ -141,13 +135,10 @@ For any documentation or doctrine artifact, route it by one
 question -- *what is it doing?*
 
 * **Prescribing how to build or organize, cross-cutting and always
-  relevant to a Cairn contributor** -> the **governing layer**, at
-  Cairn's `doctrine/` (the published methodology) or at
-  `cairn/templates/core/AGENTS.md` (the adopter-facing operational
-  surface).  The doc-governance routing rule
-  (`cairn/doctrine/doc-governance.md`) distinguishes the two
-  ranges: methodology doctrine vs. adopter-facing operational
-  doctrine.
+  relevant to a Cairn contributor** -> the **governing layer**, in
+  `cairn/AGENTS.md` and `cairn/templates/core/AGENTS.md`. Complete
+  duties live in those operative files; published methodology may
+  explain their rationale but does not replace them.
 * **Prescribing how *one domain* is organized** -> the governing
   layer's domain-local range, **in that domain** (e.g.,
   `cairn/bootstrap/BOOTSTRAP.md`, `cairn/bootstrap/fidelity-
@@ -156,11 +147,11 @@ question -- *what is it doing?*
   **deliberation layer**, `cairn/dev/` (Goal 1 substrate; the
   fold-back proposal behind this file is in the reference
   deployment).
-* **Describing the methodology as it exists today** -> the
-  **descriptive layer**, `cairn/docs/` -- including local how-to
-  for extending or maintaining a specific surface, which stays in
-  `cairn/docs/` (Cairn does not separately tier developer docs
-  from user docs at present).
+* **Describing Cairn's public methodology or the software as it
+  exists today** -> the descriptive layer, `cairn/docs/`, including
+  the published essays in `cairn/docs/methodology/` and local how-to
+  for extending or maintaining a specific surface. Complete
+  operating duties stay in their installed governing home.
 * **Front door / release record / security surface** -> the **entry
   layer**, at root -- a fixed, convention-inherited exception.
 
@@ -181,7 +172,7 @@ prescription does.
 This map routes **documentation and doctrine artifacts** -- the
 files telling a contributor what Cairn is, how to build it, what
 it should become, and how the methodology works.  "Whole-repo"
-means it spans every documentation home (root, `cairn/doctrine/`,
+means it spans every documentation home (root, `cairn/docs/methodology/`,
 `cairn/dev/` (Goal 1 substrate), `cairn/docs/`, `cairn/case-
 studies/`, and the `cairn/templates/` surface that ships
 adopter-facing doctrine), **not** every directory.
@@ -215,7 +206,7 @@ navigate *to* as a starting point.  The UPPERCASE set, repo-wide:
   `cairn/dev/PLANNING.md`.
 
 Everything else is lowercase: the methodology doctrine essays
-(`cairn/doctrine/rationale.md`, `cairn/doctrine/session-
+(`cairn/docs/methodology/rationale.md`, `cairn/docs/methodology/session-
 routines.md`, ...), the descriptive content
 (`cairn/docs/getting-started.md`, ...), and specialized files
 (`_template.md`).  The casing is a navigational signal -- an
@@ -368,10 +359,10 @@ This operationalizes the Layer-2 / Layer-3 split for the two
 adopter-facing files; it does not change the four-layer vision.
 
 For the *Cairn-internal* equivalent boundary -- between Cairn's
-published methodology doctrine (`cairn/doctrine/`) and Cairn's
+published methodology doctrine (`cairn/docs/methodology/`) and Cairn's
 own deliberation tree (`cairn/dev/`, Goal 1) -- the same
 routing test applies: methodology doctrine stays in
-`cairn/doctrine/`; in-flight deliberation stays in `cairn/dev/`.
+`cairn/docs/methodology/`; in-flight deliberation stays in `cairn/dev/`.
 
 ## The `AGENTS.md` ↔ doctrine paired-update rule
 
@@ -432,6 +423,6 @@ do not auto-propagate.
   fill `cairn:slot documentation-discipline` in
   `cairn/templates/core/AGENTS.md` and `cairn:slot
   documentation-tier-home` in the proposal + plan templates.
-* **Doc-governance rule**: `cairn/doctrine/doc-governance.md`
+* **Doc-governance rule**: `cairn/docs/methodology/doc-governance.md`
   carries the layer-2 / layer-3 split's *methodology rationale*
   (this file carries its *concrete placement procedure*).

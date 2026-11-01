@@ -72,8 +72,8 @@ class TestExitCodes:
 
     def test_clean_neutrality_subset_exits_0(self, qg, tmp_path, capsys):
         # An empty repo under the seven scan roots: zero findings -> 0.
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "ok.md").write_text(
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "ok.md").write_text(
             "# Clean prose with no vendor or project tokens.\n"
         )
         rc = qg.main([
@@ -82,8 +82,8 @@ class TestExitCodes:
         assert rc == 0
 
     def test_neutrality_failure_exits_1(self, qg, tmp_path, capsys):
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "leak.md").write_text(
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "leak.md").write_text(
             "# Some text mentioning Claude without exemption.\n"
         )
         rc = qg.main([
@@ -94,8 +94,8 @@ class TestExitCodes:
 
 class TestReport:
     def test_machine_report_is_tab_separated(self, qg, tmp_path, capsys):
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "leak.md").write_text(
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "leak.md").write_text(
             "Mention of Claude here.\n"
         )
         qg.main([
@@ -112,8 +112,8 @@ class TestReport:
         pytest.fail("no neutrality fail finding in --report output")
 
     def test_default_report_groups_by_subgate(self, qg, tmp_path, capsys):
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "ok.md").write_text("clean prose\n")
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "ok.md").write_text("clean prose\n")
         qg.main([
             "--root", str(tmp_path), "--sub", "neutrality",
         ])
@@ -175,8 +175,8 @@ class TestReportFlattenNewlines:
 
 class TestSubSelection:
     def test_sub_neutrality_only_runs_neutrality(self, qg, tmp_path, capsys):
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "ok.md").write_text("clean prose\n")
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "ok.md").write_text("clean prose\n")
         qg.main([
             "--root", str(tmp_path), "--sub", "neutrality",
         ])
@@ -186,8 +186,8 @@ class TestSubSelection:
         assert "[order-independence]" not in out
 
     def test_sub_repeatable(self, qg, tmp_path, capsys):
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "ok.md").write_text("clean prose\n")
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "ok.md").write_text("clean prose\n")
         qg.main([
             "--root", str(tmp_path),
             "--sub", "neutrality", "--sub", "redundancy",

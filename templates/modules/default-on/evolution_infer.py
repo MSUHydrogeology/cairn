@@ -6,7 +6,7 @@
 
 Reads the **incident trackers** and machine-evaluates the
 **adaptive-doctrine rate-limit gate**
-(``doctrine/rationale.md`` > "Adaptive-doctrine rate-limit gate"), emitting
+(``docs/methodology/rationale.md`` > "Adaptive-doctrine rate-limit gate"), emitting
 text decision-support:
 
 * **rate-limit suggestions** -- when an incident event-class accumulates

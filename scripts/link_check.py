@@ -528,7 +528,7 @@ def filter_sources(files: list[Path], root: Path, *,
     * ``dev/**/archive/`` -- historical records; links rot by design
       (``--include-archives``).
     * ``dev/modules/`` -- **vendored** Cairn module docs whose internal links
-      target the *Cairn-install layout* (``doctrine/…``, the module's own
+      target the *Cairn-install layout* (``docs/methodology/…``, the module's own
       tooling), so they always false-positive in an adopter tree
       (``--include-modules``).
     * ``dev/.cairn/`` -- **tool-owned** machinery, including the ``base/``

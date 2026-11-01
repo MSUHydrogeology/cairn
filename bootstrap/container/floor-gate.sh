@@ -7,7 +7,7 @@
 # stdlib APIs / filesystem / subprocess behaviour actually work at the floor:
 #
 #   1. `vermin` over the engine — the detected minimum Python must NOT exceed the
-#      declared floor (3.11, doctrine/runtime-contract.md). vermin runs in the
+#      declared floor (3.11, docs/methodology/runtime-contract.md). vermin runs in the
 #      floor/compat image's separate dev stage, so the shipped `engine` image
 #      stays pip-clean. vermin UNRESOLVABLE => explicit FAILURE, never a silent
 #      skip-as-pass (Antigravity R2): this is the release gate, not the unit suite.

@@ -57,24 +57,24 @@ def _infos(findings):
 
 class TestNeutralityScanScope:
     def test_unsanctioned_vendor_token_fails(self, qg, tmp_path):
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "leak.md").write_text(
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "leak.md").write_text(
             "We talked about Claude during the review.\n"
         )
         fs = _failures(_run(qg, tmp_path))
         assert any("Claude" in f.message for f in fs), fs
 
     def test_unsanctioned_project_token_fails(self, qg, tmp_path):
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "leak.md").write_text(
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "leak.md").write_text(
             "Built first in modflow_tools, then ported.\n"
         )
         fs = _failures(_run(qg, tmp_path))
         assert any("modflow_tools" in f.message for f in fs), fs
 
     def test_clean_prose_no_findings(self, qg, tmp_path):
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "ok.md").write_text(
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "ok.md").write_text(
             "# Clean doctrine\n\nNothing vendor-flavoured here.\n"
         )
         assert _failures(_run(qg, tmp_path)) == []
@@ -93,8 +93,8 @@ class TestNeutralityScanScope:
 
 class TestLineExemption:
     def test_vendor_ok_on_same_line_exempts(self, qg, tmp_path):
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "ok.md").write_text(
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "ok.md").write_text(
             "The Claude assistant <!-- vendor-ok: case study sentence -->\n"
         )
         fs = _failures(_run(qg, tmp_path))
@@ -103,8 +103,8 @@ class TestLineExemption:
         assert any("case study sentence" in i.message for i in infos)
 
     def test_vendor_ok_directive_only_above_exempts_next_line(self, qg, tmp_path):
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "ok.md").write_text(
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "ok.md").write_text(
             "<!-- vendor-ok: documented reason -->\n"
             "The Claude reference here is exempt.\n"
         )
@@ -114,8 +114,8 @@ class TestLineExemption:
     def test_line_exempt_does_NOT_bleed_past_one_line(self, qg, tmp_path):
         # An exemption on line N does NOT exempt line N+2 (only the
         # *same* line or the *immediately next* line).
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "leak.md").write_text(
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "leak.md").write_text(
             "<!-- vendor-ok: only the next line -->\n"
             "Claude exempted by directive above.\n"
             "Claude on this line is NOT exempted.\n"
@@ -125,8 +125,8 @@ class TestLineExemption:
         assert fs[0].line == 3
 
     def test_empty_rationale_fails(self, qg, tmp_path):
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "bad.md").write_text(
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "bad.md").write_text(
             "<!-- vendor-ok: -->\n"
             "Claude here.\n"
         )
@@ -138,8 +138,8 @@ class TestLineExemption:
 
 class TestBlockExemption:
     def test_block_exempts_tokens_inside(self, qg, tmp_path):
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "ok.md").write_text(
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "ok.md").write_text(
             "<!-- vendor-ok-begin: section quotes a vendor doc -->\n"
             "Claude said X.  Codex said Y.\n"
             "<!-- vendor-ok-end -->\n"
@@ -150,8 +150,8 @@ class TestBlockExemption:
         assert fs[0].line == 4
 
     def test_orphan_block_begin_fails(self, qg, tmp_path):
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "orphan.md").write_text(
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "orphan.md").write_text(
             "<!-- vendor-ok-begin: forgot to close -->\n"
             "Claude here.\n"
             "End of file with no vendor-ok-end.\n"
@@ -162,8 +162,8 @@ class TestBlockExemption:
         ), [f.message for f in fs]
 
     def test_orphan_block_end_fails(self, qg, tmp_path):
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "orphan.md").write_text(
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "orphan.md").write_text(
             "Some prose.\n"
             "<!-- vendor-ok-end -->\n"
             "More prose.\n"
@@ -175,8 +175,8 @@ class TestBlockExemption:
         ), [f.message for f in fs]
 
     def test_block_empty_rationale_fails(self, qg, tmp_path):
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "bad.md").write_text(
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "bad.md").write_text(
             "<!-- vendor-ok-begin: -->\n"
             "Claude.\n"
             "<!-- vendor-ok-end -->\n"
@@ -199,8 +199,8 @@ class TestCaseStudyMarker:
         assert fs == [], [f.message for f in fs]
 
     def test_case_study_outside_case_studies_dir_fails(self, qg, tmp_path):
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "leak.md").write_text(
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "leak.md").write_text(
             "<!-- case-study -->\n"
             "Claude here would be exempt if this marker were valid.\n"
         )
@@ -284,8 +284,8 @@ class TestDirectiveShownInProseNotParsed:
     """
 
     def test_block_marker_in_backticks_not_parsed(self, qg, tmp_path):
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "howto.md").write_text(
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "howto.md").write_text(
             "# Documenting the syntax\n\n"
             "Wrap a block in `<!-- vendor-ok-begin: ... -->` and "
             "`<!-- vendor-ok-end -->` -- shown here in backticks\n"
@@ -307,8 +307,8 @@ class TestDirectiveShownInProseNotParsed:
 
 class TestExemptionReporting:
     def test_exemption_rationale_appears_in_report(self, qg, tmp_path):
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "ok.md").write_text(
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "ok.md").write_text(
             "<!-- vendor-ok: cite of a real review -->\n"
             "Codex's pre-cut review was sharp.\n"
         )

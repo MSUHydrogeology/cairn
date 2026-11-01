@@ -263,7 +263,7 @@ class TestTheGaugeNeverBucketsWhatItCannotClassify:
         ("dev/plans/x.md", "dev"),
         ("bootstrap/security_check.py", "security-machinery"),
         ("bootstrap/_scaffold/install.py", "other-machinery"),
-        ("doctrine/rationale.md", "product"),
+        ("docs/methodology/rationale.md", "product"),
     ])
     def test_representative_paths_land_in_their_class(self, path, expected) -> None:
         assert gauge.classify(path) == expected

@@ -294,7 +294,7 @@ def test_the_sweep_leaves_the_doctrines_reasoning_out(rel: str) -> None:
 
 def test_the_leak_pattern_matches_the_doctrine_it_guards_against() -> None:
     """Confirm the instrument: it reads above zero where the reasoning lives."""
-    doctrine = _text("doctrine/dual-review.md")
+    doctrine = _text("docs/methodology/dual-review.md")
     assert re.findall(r"telegraph|ritual|evidence bar is staged", doctrine, re.I)
     assert not re.findall(r"telegraph|ritual|evidence bar is staged",
                           _sweep(_text(SHIPPED_LOOP)), re.I)

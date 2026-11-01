@@ -1229,7 +1229,7 @@ class TestRoadmapWaitsAndSkippedSymlinksInJson:
 import re
 
 GUIDE_PATH = CAIRN_ROOT / "docs" / "build-a-board-view.md"
-LIFECYCLE_PATH = CAIRN_ROOT / "doctrine" / "lifecycle.md"
+LIFECYCLE_PATH = CAIRN_ROOT / "docs" / "methodology" / "lifecycle.md"
 
 
 def _guide_section(text: str, heading: str) -> str:
@@ -1369,7 +1369,7 @@ class TestGuideAndOutputAgree:
 
 
 def _lifecycle_diagram_holders() -> tuple[dict[str, str], list[str]]:
-    """Parse `doctrine/lifecycle.md` node labels per D11."""
+    """Parse `docs/methodology/lifecycle.md` node labels per D11."""
     text = LIFECYCLE_PATH.read_text(encoding="utf-8")
     raw_labels = re.findall(r'\["([^"]+)"\]', text)
     mapping: dict[str, str] = {}
@@ -1390,10 +1390,10 @@ def _lifecycle_diagram_holders() -> tuple[dict[str, str], list[str]]:
 
 class TestGuideLookupMatchesLifecycle:
     """The lookup table in `docs/build-a-board-view.md` agrees with the two
-    lifecycle diagrams in `doctrine/lifecycle.md`."""
+    lifecycle diagrams in `docs/methodology/lifecycle.md`."""
 
     def test_guide_lookup_table_matches_lifecycle_diagrams(self) -> None:
-        """Every status word in `doctrine/lifecycle.md`'s diagrams appears in
+        """Every status word in `docs/methodology/lifecycle.md`'s diagrams appears in
         `### The lookup` with the holder its label gives; the catch-all row names
         the retired words `proposed`, `reviewed` and `revised` and maps to
         `none named`; and no extra status word is listed."""
@@ -1429,7 +1429,7 @@ class TestGuideLookupMatchesLifecycle:
 
     def test_view_example_lookup_matches_guide_table_and_lifecycle(self) -> None:
         """`HOLDER_BY_STATUS` inside the `view-example` block equals both the
-        guide's lookup table and `doctrine/lifecycle.md`'s diagram labels."""
+        guide's lookup table and `docs/methodology/lifecycle.md`'s diagram labels."""
         diagram_map, raw_labels = _lifecycle_diagram_holders()
         guide_text = GUIDE_PATH.read_text(encoding="utf-8")
         rows = _parse_markdown_table(_guide_section(guide_text, "### The lookup"))

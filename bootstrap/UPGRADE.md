@@ -599,7 +599,7 @@ The plan-review gate used to clear on the **presence** of a section whose
 heading began `Plan review`. It now reads the **record**: a bare
 `## Plan review` container, an `### Plan review` at H3, an undated pass and a
 `## Plan reviewers` heading all cleared before and none of them clears now.
-The rules are in `doctrine/plans.md` > *The record schema*; this section is
+The rules are in `docs/methodology/plans.md` > *The record schema*; this section is
 what you have to do about it.
 
 **Behaviour and policy ship together.** A verbatim manifest source — the

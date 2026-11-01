@@ -1,6 +1,6 @@
 """The comprehension floor must reach the adopter, not only the doctrine.
 
-`doctrine/rationale.md` states the floor and its grounding, but `doctrine/` is
+`docs/methodology/rationale.md` states the floor and its grounding, but `docs/methodology/` is
 **not installed into an adopter tree** -- so a rule that lives only there binds
 nobody who adopts Cairn. The operational form therefore has to sit in
 `templates/core/AGENTS.md`, the file every adopter receives and every agent
@@ -39,7 +39,7 @@ _REQUIRED = {
     "an unmet understanding halts the Decision":
         r"if it fails, pause|mandatory pause|not decidable",
     "points at the rationale rather than restating it":
-        r"doctrine/rationale\.md",
+        r"docs/methodology/rationale\.md",
 }
 
 
@@ -53,7 +53,7 @@ def test_comprehension_floor_obligation_present(rel: str, label: str,
                                                 pattern: str) -> None:
     assert re.search(pattern, _text(rel)), (
         f"{rel} does not express the comprehension-floor obligation "
-        f"{label!r}. The floor is stated in doctrine/rationale.md, which "
+        f"{label!r}. The floor is stated in docs/methodology/rationale.md, which "
         f"adopters never receive; removing it here removes it for them."
     )
 

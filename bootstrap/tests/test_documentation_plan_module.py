@@ -151,6 +151,7 @@ class TestForkableContent:
         assert "Cross-cutting prescription" in text
         assert "Deliberating what to build" in text
         assert "Describing the software as it exists today" in text
+        assert "it cannot replace that instruction" in text
 
     def test_forkable_uses_adopter_relative_paths(
         self, tmp_path: Path,
@@ -164,9 +165,9 @@ class TestForkableContent:
         # No `cairn/` prefix anywhere in the forkable's content.
         # (The string `cairn` may appear in "Cairn module" prose;
         # the specific failure mode is path-prefix leakage like
-        # `cairn/doctrine/`, `cairn/templates/`, `cairn/docs/`.)
+        # `cairn/docs/methodology/`, `cairn/templates/`, `cairn/docs/`.)
         for leaked in (
-            "cairn/doctrine/",
+            "cairn/docs/methodology/",
             "cairn/templates/",
             "cairn/docs/",
             "cairn/dev/",
@@ -214,14 +215,15 @@ class TestCairnSelfHosted:
         text = self_hosted.read_text(encoding="utf-8")
         # The self-hosted instance uses cairn-prefixed paths in its
         # worked examples (the inverse of the forkable's check).
-        assert "cairn/doctrine/" in text, (
+        assert "cairn/docs/methodology/" in text, (
             "Cairn self-hosted instance should discuss "
-            "cairn/doctrine/ in worked examples"
+            "cairn/docs/methodology/ in worked examples"
         )
         assert "cairn/templates/core/" in text, (
             "Cairn self-hosted instance should discuss "
             "cairn/templates/core/ in worked examples"
         )
+        assert "it cannot replace that instruction" in text
 
 
 # ---------------------------------------------------------------------------

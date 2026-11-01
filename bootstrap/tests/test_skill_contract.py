@@ -6,7 +6,7 @@ Every lifecycle SKILL.md must:
 * carry the agentskills.io frontmatter floor -- ``name`` + ``description`` --
   with ``name`` matching its directory;
 * carry ``disable-model-invocation: true`` (Layer-1 best-effort manual-only);
-* carry a canonical pointer to ``doctrine/session-routines.md`` (the body
+* carry a canonical pointer to ``docs/methodology/session-routines.md`` (the body
   orchestrates the doctrine, it does not restate it -- the VENDOR.md drift-guard
   applied to procedures);
 * keep its body under the 200-line threshold (II4a) -- a body that restated the
@@ -81,7 +81,7 @@ def test_skill_contract(skill: Path):
     assert meta.get("disable-model-invocation", "").lower() == "true"
 
     # Canonical doctrine pointer (orchestrates, does not restate).
-    assert "doctrine/session-routines.md" in body
+    assert "docs/methodology/session-routines.md" in body
 
     # Project-owned routine-customization pointer (the custom_session_routines.md
     # convention). A literal-string well-formedness contract for THIS pointer:

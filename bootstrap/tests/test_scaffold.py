@@ -997,7 +997,7 @@ class TestOptionalContributing:
 class TestRulesMdNeverTemplated:
     """``RULES.md`` is the project-owned rules file Cairn never templates.
 
-    The structural guarantee (``doctrine/doc-governance.md`` >
+    The structural guarantee (``docs/methodology/doc-governance.md`` >
     "Project-owned rules — the ``RULES.md`` convention"): because Cairn
     ships no mapping for ``RULES.md``, it never enters ``_lock_file_list``
     and ``scaffold.py upgrade`` can never merge or clobber it.

@@ -1,6 +1,6 @@
 """The review stance and the Maintainer-called read must reach the adopter.
 
-`doctrine/` is **not installed into an adopter tree**, so a rule that lives only
+`docs/methodology/` is **not installed into an adopter tree**, so a rule that lives only
 there binds nobody who adopts Cairn. The stance sits in `templates/core/AGENTS.md`
 (the file every adopter receives and every agent loads each session) and in
 Cairn's own root `AGENTS.md`; the roster sits in the review-loop document and
@@ -399,7 +399,7 @@ def _present(text: str, forbidden: dict[str, str]) -> list[str]:
 _PROBE_INVENTORY_CARRIERS = (
     SHIPPED_AGENTS, OWN_AGENTS, SHIPPED_LOOP, OWN_LOOP,
     SHIPPED_PROPOSAL, OWN_PROPOSAL, SHIPPED_PLAN, OWN_PLAN,
-    "doctrine/plans.md", "doctrine/dual-review.md",
+    "docs/methodology/plans.md", "docs/methodology/dual-review.md",
     "dev/strategy/2026-10-27-antigravity-plain-language-and-scientific-writing.md",
     SHIPPED_MODULE, OWN_MODULE,
 )
@@ -451,7 +451,7 @@ def test_review_section_carries_the_obligation(label: str, rel: str) -> None:
     assert not _has_probe_inventory_requirement(text), rel
     assert label not in _missing(_review_section(rel), _AGENTS_STANCE_OBLIGATIONS), (
         f"{rel} no longer carries {label!r} inside '## Review'. The doctrine "
-        f"holds the same rule, but adopters never receive doctrine/; placement "
+        f"holds the same rule, but adopters never receive docs/methodology/; placement "
         f"in Review is part of the rule, because a reviewer looks there first."
     )
 
@@ -1051,7 +1051,7 @@ _MODEL_OBLIGATIONS = {
         r"The one exception is the docstring-and-comment cleanup row above, "
         r"and only for its writing step",
     "diversity-within-tier-is-distance-on-request-not-a-default":
-        r"Diversity within a tier \(doctrine/roles\.md\) is useful distance on "
+        r"Diversity within a tier \(docs/methodology/roles\.md\) is useful distance on "
         r"request, never a default an agent applies",
 }
 
@@ -1078,7 +1078,7 @@ def test_shipped_text_carries_the_obligation(rel: str, label: str) -> None:
     obligations = _rest_obligations(rel)
     assert label not in _missing(_text(rel), obligations), (
         f"{rel} no longer carries {label!r}. This is text an adopter receives; "
-        f"the doctrine holds the same rule but adopters never see doctrine/.")
+        f"the doctrine holds the same rule but adopters never see docs/methodology/.")
 
 
 @pytest.mark.parametrize("rel", _REST_FILES, ids=_REST_IDS.get)
@@ -1164,16 +1164,16 @@ def test_a_sample_roster_with_an_old_role_is_reported() -> None:
 
 
 # --------------------------------------------------------------------------
-# The doctrine. Adopters never receive `doctrine/`, but the anchor, the
+# The doctrine. Adopters never receive `docs/methodology/`, but the anchor, the
 # standing call, the capability floors and the two privileges the old model
 # carried are held here so the reasoning cannot drift from the shipped text.
 # --------------------------------------------------------------------------
 
-DOCTRINE_DUAL_REVIEW = "doctrine/dual-review.md"
-DOCTRINE_PLANS = "doctrine/plans.md"
-DOCTRINE_ROLES = "doctrine/roles.md"
-DOCTRINE_RATIONALE = "doctrine/rationale.md"
-DOCTRINE_LIFECYCLE = "doctrine/lifecycle.md"
+DOCTRINE_DUAL_REVIEW = "docs/methodology/dual-review.md"
+DOCTRINE_PLANS = "docs/methodology/plans.md"
+DOCTRINE_ROLES = "docs/methodology/roles.md"
+DOCTRINE_RATIONALE = "docs/methodology/rationale.md"
+DOCTRINE_LIFECYCLE = "docs/methodology/lifecycle.md"
 
 #: The framework anchor's wording, as the Maintainer accepted it.
 _ANCHOR_4 = (
@@ -1308,7 +1308,7 @@ _DOCTRINE_FORBIDDEN = {
 #: Files whose text a reader meets as live guidance, for the two repo-wide
 #: greps below. Archives, records and the changelog are history.
 _LIVE_ROOT_FILES = (SHIPPED_AGENTS, OWN_AGENTS, SHIPPED_LOOP, OWN_LOOP)
-_LIVE_ROOT_DIRS = ("doctrine", "templates", "dev/modules", "docs", "dimensions")
+_LIVE_ROOT_DIRS = ("docs", "templates", "dev/modules", "dimensions")
 
 
 def _live_files() -> list[str]:
@@ -1964,7 +1964,7 @@ _SEARCH_A_ROOT_FILES = (
     "bootstrap/fidelity-check.md",
     "bootstrap/UPGRADE.md", "bootstrap/REANCHOR_RUNBOOK.md",
 )
-_SEARCH_A_ROOT_DIRS = ("doctrine", "templates", "dev/modules", "docs",
+_SEARCH_A_ROOT_DIRS = ("docs", "templates", "dev/modules",
                        "dimensions", "on-ramp")
 _SEARCH_A_SUFFIXES = {".md", ".yml", ".svg"}
 #: The phrasing search the stance proposal pinned, as one pattern. It is checked
@@ -1980,7 +1980,7 @@ _SEARCH_A = re.compile(
 #: must still carry a hit (a stale entry is reported), and none may be a file an
 #: adopter receives.
 _COMPLETENESS_EXEMPT = {
-    "doctrine/lifecycle-contract.md":
+    "docs/methodology/lifecycle-contract.md":
         "history reference: one sentence, introduced by 'History:', about a "
         "plan-review tier that was retired",
 }
@@ -2047,8 +2047,8 @@ def test_removing_an_exemption_is_reported() -> None:
     hits = _search_a_files(CAIRN_ROOT)
     assert _unaccounted(hits, _COMPLETENESS_EXEMPT) == [], "control: all accounted"
     smaller = {k: v for k, v in _COMPLETENESS_EXEMPT.items()
-               if k != "doctrine/lifecycle-contract.md"}
-    assert _unaccounted(hits, smaller) == ["doctrine/lifecycle-contract.md"]
+               if k != "docs/methodology/lifecycle-contract.md"}
+    assert _unaccounted(hits, smaller) == ["docs/methodology/lifecycle-contract.md"]
 
 
 def test_a_phrase_inserted_into_a_scanned_copy_is_reported(tmp_path: Path) -> None:
@@ -2073,4 +2073,4 @@ def test_exempting_an_installed_file_is_reported() -> None:
 def test_the_walk_reaches_the_roots_it_claims() -> None:
     """Confirm the instrument: it finds a known hit and walks a known file."""
     assert _SEARCH_A.search("A human fills the External tier.")
-    assert _search_a_files(CAIRN_ROOT).get("doctrine/lifecycle-contract.md", 0) >= 1
+    assert _search_a_files(CAIRN_ROOT).get("docs/methodology/lifecycle-contract.md", 0) >= 1

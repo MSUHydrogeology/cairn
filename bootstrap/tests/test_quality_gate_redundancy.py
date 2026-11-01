@@ -65,21 +65,21 @@ class TestR1Shingles:
             "The quick brown fox jumps over the lazy dog and "
             "the rain in Spain stays mainly on the plain.\n"
         )
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "a.md").write_text(passage)
-        (tmp_path / "doctrine" / "b.md").write_text(passage)
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "a.md").write_text(passage)
+        (tmp_path / "docs" / "methodology" / "b.md").write_text(passage)
         findings = qg._run_r1_redundancy(
             tmp_path, shingle_size=5, jaccard_threshold=0.75,
         )
         assert any("R1 overlap" in f.message for f in findings), findings
 
     def test_low_overlap_pair_silent(self, qg, tmp_path):
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "a.md").write_text(
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "a.md").write_text(
             "Apple bread carrots dance elephant frogs green house ink "
             "jellyfish kindness ladybug mountain nighttime octopus pizza.\n"
         )
-        (tmp_path / "doctrine" / "b.md").write_text(
+        (tmp_path / "docs" / "methodology" / "b.md").write_text(
             "Yesterday tomorrow zenith xylophone wreath vacuum unique "
             "treasure soldier rainbow quiet panther onyx neutral mystic.\n"
         )
@@ -101,9 +101,9 @@ class TestR1Shingles:
         )
         diff_a = "Xa Xb Xc"
         diff_b = "Yp Yq Yr"
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "a.md").write_text(common + " " + diff_a)
-        (tmp_path / "doctrine" / "b.md").write_text(common + " " + diff_b)
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "a.md").write_text(common + " " + diff_a)
+        (tmp_path / "docs" / "methodology" / "b.md").write_text(common + " " + diff_b)
         low_t = qg._run_r1_redundancy(
             tmp_path, shingle_size=5, jaccard_threshold=0.40,
         )
@@ -115,11 +115,11 @@ class TestR1Shingles:
     def test_shingle_size_change_alters_set(self, qg, tmp_path):
         # Two passages sharing one 5-shingle (visible at size=5) but
         # nothing at size=10.
-        (tmp_path / "doctrine").mkdir()
-        (tmp_path / "doctrine" / "a.md").write_text(
+        (tmp_path / "docs" / "methodology").mkdir(parents=True)
+        (tmp_path / "docs" / "methodology" / "a.md").write_text(
             "alpha beta gamma delta epsilon\n"
         )
-        (tmp_path / "doctrine" / "b.md").write_text(
+        (tmp_path / "docs" / "methodology" / "b.md").write_text(
             "alpha beta gamma delta epsilon other words different stuff\n"
         )
         size5 = qg._run_r1_redundancy(

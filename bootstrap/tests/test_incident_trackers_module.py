@@ -185,7 +185,7 @@ class TestSchemaContract:
 
 class TestDoctrineCrossReferences:
     def test_rationale_md_names_trackers_module(self) -> None:
-        rationale = (CAIRN_ROOT / "doctrine" / "rationale.md").read_text(
+        rationale = (CAIRN_ROOT / "docs" / "methodology" / "rationale.md").read_text(
             encoding="utf-8",
         )
         assert "incident-trackers" in rationale, (
@@ -194,7 +194,7 @@ class TestDoctrineCrossReferences:
         )
 
     def test_session_routines_carries_migration_substep(self) -> None:
-        sr = (CAIRN_ROOT / "doctrine" / "session-routines.md").read_text(
+        sr = (CAIRN_ROOT / "docs" / "methodology" / "session-routines.md").read_text(
             encoding="utf-8",
         )
         assert "incident-trackers module is installed" in sr, (

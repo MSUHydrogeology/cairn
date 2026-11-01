@@ -154,11 +154,12 @@ _EXTERNAL_ALLOW: list[str] = ['case-studies/*.md']
 #: shipped in the Cairn source tree but NOT copied into an adopter's install
 #: set, so an adopter-facing surface that references them dangles once
 #: installed (the implementation->adoption failure: #57's session-routine
-#: doctrine, the 9-lens review roster). ``doctrine/`` is the flagship and only
-#: v1 member -- every observed failure referenced un-transplanted doctrine;
-#: the set is intentionally narrow to hold down false positives. Extend only
-#: with a verified not-installed prefix.
-_CAIRN_INTERNAL_PREFIXES: tuple[str, ...] = ('doctrine/',)
+#: doctrine, the 9-lens review roster). Public methodology is in
+#: ``docs/methodology/`` and is not copied into adopter installs. Keep the
+#: retired ``doctrine/`` spelling too so stale links still fail closed.
+_CAIRN_INTERNAL_PREFIXES: tuple[str, ...] = (
+    'docs/methodology/', 'doctrine/',
+)
 
 # --------------------------------------------------------------------------
 # Repo + file discovery
@@ -404,19 +405,21 @@ _MD_LINK_TARGET_RE = re.compile(r'\]\(([^)\s]+)\)')
 def _parse_allow_spec(spec: str) -> set[str]:
     """Path tokens listed before an optional ``reason=`` in a
     ``cairn-internal-ref`` marker. A token needs a path separator
-    (``doctrine/dual-review.md``, or the bare prefix ``doctrine/``); a stray
-    prose word is ignored. A bare directory name that *matches a known
-    internal prefix* (e.g. ``doctrine``) is normalized to ``doctrine/`` so an
-    operator who omits the trailing slash is not silently dropped."""
+    (``docs/methodology/dual-review.md``, or the prefix
+    ``docs/methodology/``); a stray prose word is ignored. A bare
+    directory name that matches a known internal prefix is normalized
+    to its trailing-slash form."""
     out: set[str] = set()
     for raw in re.split(r'[\s,]+', spec.split('reason=')[0]):
         tok = raw.strip().rstrip('.,;:')
         if not tok:
             continue
-        if '/' in tok:
+        bare = tok.rstrip('/')
+        if any(prefix.rstrip('/') == bare
+               for prefix in _CAIRN_INTERNAL_PREFIXES):
+            out.add(bare + '/')
+        elif '/' in tok:
             out.add(tok)
-        elif any(prefix == tok + '/' for prefix in _CAIRN_INTERNAL_PREFIXES):
-            out.add(tok + '/')
     return out
 
 
@@ -432,17 +435,18 @@ def _ref_is_internal(tok: str) -> str | None:
 
 def _check_dangling_internal_refs(md: Path, root: Path, result: Result) -> None:
     """#58 loop-fidelity gate. In an adopter-facing template surface, flag a
-    reference to a Cairn-internal-only path (``doctrine/*``) that would dangle
-    once installed in an adopter tree (the path is not in the install set).
+    reference to a Cairn-internal-only path (``docs/methodology/*``) or
+    a retired ``doctrine/*`` path that would dangle once installed in an
+    adopter tree (neither path is in the install set).
 
     Scans BOTH backticked path tokens and raw Markdown link targets (a
-    relative ``[x](doctrine/..)`` link resolves in the Cairn source so
+    relative ``[x](docs/methodology/..)`` link resolves in the Cairn source so
     ``link_check`` passes it, then breaks on adoption). Fail-closed. Exempt a
     deliberate deeper-why citation with a ``cairn-internal-ref-allow:
     <paths…> reason=…`` directive (parallel to ``claim-check-allow``) or a
     ``cairn-internal-ref: <paths…> reason=…`` marker. Both forms are collected
     **file-wide** and exempt the *named* paths anywhere in the file (robust to
-    wrapped prose). Listing the **specific** paths (not a bare ``doctrine/``
+    wrapped prose). Listing the **specific** paths (not a bare methodology
     prefix) keeps the gate sharp -- a new reference to an unlisted internal
     path still fails closed."""
     text = md.read_text(encoding='utf-8', errors='replace')

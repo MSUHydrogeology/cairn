@@ -6,21 +6,21 @@ Cairn's `templates/modules/*.md` files (which scaffold into an
 adopter's `dev/modules/`) are deliberately short "kernel-merge stub"
 surfaces: each one's `Adds to:` declares what merges into the adopter's
 kernel docs (typically `dev/agent_collaboration.md`). The full upstream
-doctrine for that subject lives in a *separate* `doctrine/<stem>.md`
+doctrine for that subject lives in a *separate* `docs/methodology/<stem>.md`
 file in the Cairn repo, and that body is several times larger than the
 stub.
 
 `bootstrap/fidelity-check.md` step 6a's **body-coverage dimension**
-asks: for a module whose stem matches an upstream `doctrine/<stem>.md`,
+asks: for a module whose stem matches an upstream `docs/methodology/<stem>.md`,
 do the doctrine body's load-bearing topics reach the adopter's live
 surfaces — not just the short `Adds to:` stub? A stub that silently
 dropped a doctrine-body topic otherwise passes 6a unnoticed. This
 script mechanizes that check.
 
 It runs from an **adopter's** tree (`--target`, default the current
-directory) and compares against a **Cairn checkout's** `doctrine/`
+directory) and compares against a **Cairn checkout's** `docs/methodology/`
 bodies (`--cairn-root`, default the Cairn repo this script ships in).
-For each `dev/modules/<stem>.md` with a same-stem `doctrine/<stem>.md`,
+For each `dev/modules/<stem>.md` with a same-stem `docs/methodology/<stem>.md`,
 it extracts the doctrine body's top-level (`## `) headings and flags
 any whose text appears nowhere in the module file or the adopter's
 kernel-fold target (`dev/agent_collaboration.md`).
@@ -48,7 +48,7 @@ Limitations
 -----------
 
 * **Same-stem name matching.** Only modules whose stem matches a Cairn
-  `doctrine/<stem>.md` file get checked. Modules without a same-stem
+  `docs/methodology/<stem>.md` file get checked. Modules without a same-stem
   upstream doctrine (e.g. `claim-check`, `lifecycle-metrics`) report as
   `skipped`. A future enhancement could read a mapping from the
   module's front-matter.
@@ -79,7 +79,7 @@ from pathlib import Path
 # ----------------------------------------------------------------------
 
 #: The Cairn checkout this script ships in (bootstrap/ -> repo root).
-#: Its doctrine/ holds the upstream bodies to compare against.
+#: Its docs/methodology/ holds the upstream bodies to compare against.
 DEFAULT_CAIRN_ROOT = Path(__file__).resolve().parent.parent
 
 # ----------------------------------------------------------------------
@@ -133,7 +133,7 @@ def contains_normalized(haystack: str, needle: str) -> bool:
 
 def find_upstream_doctrine(cairn_root: Path, module_stem: str) -> Path | None:
     """Return the same-stem doctrine file in cairn_root, or None."""
-    candidate = cairn_root / "doctrine" / f"{module_stem}.md"
+    candidate = cairn_root / "docs" / "methodology" / f"{module_stem}.md"
     return candidate if candidate.is_file() else None
 
 
@@ -199,7 +199,7 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         default=DEFAULT_CAIRN_ROOT,
         help=(
-            f"Path to the Cairn checkout holding doctrine/*.md "
+            f"Path to the Cairn checkout holding docs/methodology/*.md "
             f"(default: the repo this script ships in, {DEFAULT_CAIRN_ROOT})."
         ),
     )
@@ -235,7 +235,7 @@ def main(argv: list[str] | None = None) -> int:
         args.target / "dev" / "agent_collaboration.md"
     )
 
-    # Graceful-failure gate: cairn-root must exist and contain doctrine/.
+    # Graceful-failure gate: cairn-root must exist and contain docs/methodology/.
     if not args.cairn_root.is_dir():
         warn(
             f"--cairn-root not found at {args.cairn_root}; cannot run "
@@ -243,11 +243,11 @@ def main(argv: list[str] | None = None) -> int:
             f"Cairn checkout."
         )
         return 2
-    doctrine_dir = args.cairn_root / "doctrine"
-    if not doctrine_dir.is_dir():
+    methodology_dir = args.cairn_root / "docs" / "methodology"
+    if not methodology_dir.is_dir():
         warn(
-            f"--cairn-root exists but has no doctrine/ subdir at "
-            f"{doctrine_dir}; cannot run body-coverage check."
+            f"--cairn-root exists but has no docs/methodology/ subdir at "
+            f"{methodology_dir}; cannot run body-coverage check."
         )
         return 2
     if not modules_dir.is_dir():
@@ -277,7 +277,7 @@ def main(argv: list[str] | None = None) -> int:
         stem = module_path.stem
         upstream = find_upstream_doctrine(args.cairn_root, stem)
         if upstream is None:
-            print(f"  {stem}: skipped (no upstream doctrine/{stem}.md)")
+            print(f"  {stem}: skipped (no upstream docs/methodology/{stem}.md)")
             skipped += 1
             continue
 

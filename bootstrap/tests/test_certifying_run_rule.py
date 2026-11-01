@@ -20,8 +20,8 @@ ROOT = Path(__file__).resolve().parents[2]
 SURFACES = (
     ROOT / "AGENTS.md",
     ROOT / "templates" / "core" / "AGENTS.md",
-    ROOT / "doctrine" / "plans.md",
-    ROOT / "doctrine" / "dual-review.md",
+    ROOT / "docs" / "methodology" / "plans.md",
+    ROOT / "docs" / "methodology" / "dual-review.md",
     ROOT / "dev" / "plans" / "_template.md",
     ROOT / "templates" / "core" / "dev" / "plans" / "_template.md",
 )

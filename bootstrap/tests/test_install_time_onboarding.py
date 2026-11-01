@@ -113,7 +113,7 @@ class TestAdoptionAndSessionPointersShip:
 
 class TestDoctrineStatesTheInstallTimeModel:
     def test_the_doctrine_opens_with_the_model_and_names_no_helper(self) -> None:
-        text = (ROOT / "doctrine/onboarding.md").read_text(encoding="utf-8")
+        text = (ROOT / "docs/methodology/onboarding.md").read_text(encoding="utf-8")
         flat = _flat(text)
         assert "Cairn onboards once, at install." in flat
         assert "Nothing activates later." in flat
