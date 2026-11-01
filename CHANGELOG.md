@@ -4,7 +4,8 @@
 # Changelog
 
 Notable changes to Cairn, newest first. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the language
+follows [Cairn Plain Language](docs/plain-language.md).
 
 **Adding an entry.** Each change adds one entry under `## Unreleased`, in the
 same commit or the next.
@@ -19,7 +20,7 @@ same commit or the next.
   each group in that order, as Keep a Changelog does.
 - **Write it plainly.** Use one or two short sentences, one idea each, saying
   what changed for the reader, and define any Cairn term they may not know.
-  Follow Cairn Plain Language (`dev/agent_collaboration.md`).
+  The 17 rules are in `dev/agent_collaboration.md`.
 - **Link the record.** End with a link to the plan or proposal. Review,
   certification and ceremony status stay there.
 
