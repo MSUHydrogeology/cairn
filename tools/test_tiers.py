@@ -159,8 +159,9 @@ def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT, *,
             re.search(
                 rf"(?:\bimport\s+(?:[\w.]+\.)?{re.escape(stem)}\b"
                 rf"|\bfrom\s+{re.escape(stem)}\s+import\b"
-                rf"|\bfrom\s+[\w.]+\s+import\s+(?:\([^)]*\)|[^\n#]*)"
-                rf"\b{re.escape(stem)}\b"
+                rf"|\bfrom\s+[\w.]+\s+import\s+(?:"
+                rf"\([^)]*\b{re.escape(stem)}\b[^)]*\)"
+                rf"|[^\n#]*\b{re.escape(stem)}\b)"
                 rf"|(?<![\w-]){re.escape(stem)}\s*\("
                 rf"|['\"]{re.escape(stem)}['\"]"
                 rf"|['\"][\w]*_{re.escape(stem)}['\"]"
