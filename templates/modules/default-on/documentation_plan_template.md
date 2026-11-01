@@ -3,8 +3,6 @@
      this tree — so they are exempted from claim_check path resolution (they
      never resolve in Cairn's own tree; this keeps `check_cairn` clean). -->
 
-<!-- cairn-internal-ref-allow: docs/methodology/ reason=published-method location examples; the installed plan still requires complete operative duties in local guidance -->
-
 # Documentation Plan
 
 **Status**: living document.
@@ -75,7 +73,7 @@ how something is built or organized**.  The layer has two ranges:
     not an unexplained exception to it.
 
 When a project publishes a general methodology explanation, keep it
-with descriptive documentation (for example, `docs/methodology/`).
+with the project's descriptive documentation.
 The installed root guidance or domain-local rule must still carry the
 complete operative instruction a contributor needs to follow. A
 citation to public methodology can add context, but cannot replace
@@ -99,8 +97,7 @@ exists today.
 Documentation of the project *as it exists today*.  Its
 defining property: it **describes current reality** -- it
 neither prescribes how to build nor deliberates what to build. A project's public methodology and rationale also belong with
-this descriptive documentation; for example, a project may use
-`docs/methodology/`.
+this descriptive documentation.
 
 Most descriptive content lives under `docs/`.  Whether `docs/`
 is tiered (e.g., quickstart / user-guide / theory / reference /

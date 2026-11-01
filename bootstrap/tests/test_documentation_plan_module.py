@@ -151,7 +151,7 @@ class TestForkableContent:
         assert "Cross-cutting prescription" in text
         assert "Deliberating what to build" in text
         assert "Describing the software as it exists today" in text
-        assert "it cannot replace that instruction" in text
+        assert "citation to public methodology can add context, but cannot replace" in text
 
     def test_forkable_uses_adopter_relative_paths(
         self, tmp_path: Path,
@@ -223,7 +223,7 @@ class TestCairnSelfHosted:
             "Cairn self-hosted instance should discuss "
             "cairn/templates/core/ in worked examples"
         )
-        assert "it cannot replace that instruction" in text
+        assert "published methodology may explain their rationale but does not replace them" in text
 
 
 # ---------------------------------------------------------------------------
