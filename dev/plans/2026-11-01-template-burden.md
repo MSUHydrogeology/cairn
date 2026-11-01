@@ -173,3 +173,33 @@ Prior findings: none
 **Bounding**: ACCEPTED — challenged the removed Boundary B paragraph against both retained full contracts and the slot consumers. No unresolved security finding. The initial contradictory preamble was corrected at `bf60c2ab` during this pass. Required final wide checks remain open until passed; this review does not clear them.
 
 Coverage: read committed diffs, governing and shipped guidance, C1 evidence, and install/review consumer sources; independently compared marker and heading lists. Did not rerun implementation tests or mutations, inventory every unchanged obligation, or certify the tree.
+
+## Implementation verification -- Codex (gpt-6.1-sol) -- 2026-11-01
+
+**Elapsed**: 4 minutes (estimated)
+**Tokens**: unknown
+
+**Boundary B mode**: wide. The changed surfaces are high-risk authoring templates used as lifecycle and review contracts; the run covers their contract readers, owning review/scope families, integration and workflow paths, and installed scaffold entry points.
+
+**Certified by**: pending
+**Tested commit**: `f33d95dbfeed591610532a4eb9668c5687c6e296`
+**Reviewed range**: `2c24fec4d547b7b80da00de87237b44f834eb672..f33d95dbfeed591610532a4eb9668c5687c6e296`
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/general/bin/python3.13` (Python 3.13.5); pytest 9.0.3.
+**Pre-run state**: clean at the tested commit.
+**Post-run state**: clean; `HEAD` remained the tested commit.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python3.13 tools/test_tiers.py for dev/proposals/_template.md dev/plans/_template.md templates/core/dev/proposals/_template.md templates/core/dev/plans/_template.md dev/plans/2026-11-01-template-burden.md` | 0 | 18 mapped files: 9 contract, 2 unit, 5 integration, 2 workflow | unknown | unknown |
+| `python3.13 -m pytest` on the 18 files listed under Verification | 0 | 1,037 passed; 0 failed, skipped, xfailed or xpassed | 9.53 s | unknown |
+| `python3.13 scripts/check_cairn.py` | 0 | 190 Markdown files; no issues | unknown | unknown |
+| `python3.13 scripts/link_check.py` | 0 | 190 Markdown files; no issues | unknown | unknown |
+| `python3.13 scripts/sync_doc_snippets.py --check` | 0 | 489 documents; no drift | unknown | unknown |
+| `python3.13 scripts/quality_gate.py --sub neutrality` | 0 | 0 failures; 43 informational findings | unknown | unknown |
+| Four `python3.13 scripts/claim_check.py <template path>` invocations | 0 | All four templates passed | unknown | unknown |
+
+**Non-pass disposition**: none. The neutrality gate's 43 informational findings did not fail the gate. The full test selection took less than the 30-second iteration target; no test file could exceed the 10-second per-file target within that run.
+
+**Plan-specific acceptance commands**: the 12 S2/S3 deletion controls and four-template obligation comparison are recorded above; they were not repeated. Independent scientific check: N/A, no scientific assumption or result changed. Integration tests exercised `bootstrap/scaffold.py` through the scaffold, install-report and documentation-module test paths.
+
+**Known omissions**: link gates do not probe external URLs (88 external links reported by `check_cairn.py`, 89 by `link_check.py`). No full-tree certification or re-anchor was run, as excluded by the plan.
