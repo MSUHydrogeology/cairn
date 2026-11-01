@@ -103,3 +103,13 @@ Accepted the advice: representative falsifications reduce the matrix while retai
 ### Withdrawn / superseded commitments
 
 The per-file, per-path mutation matrix is replaced by representative falsifications; no behavior comparison is dropped.
+
+## Decision -- Maintainer -- 2026-11-01
+
+Elapsed: unknown; tokens: unknown.
+
+**Tier**: light
+
+**ACCEPTED.** The Maintainer accepts this test-only scope as the v0.6 response to VER-5.
+
+> "Accept and implement. Please don't use coordinate references."
