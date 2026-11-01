@@ -1,7 +1,7 @@
 # Plan: Retire the doctrine folder
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-governing-text-single-source.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Move public methodology to its chosen home and remove the old folder while preserving installed duties and working checks.
@@ -99,3 +99,41 @@ No additional gate is needed. C1 includes pins and installation mappings; C2 pre
 - Security Review: no additional finding or gate; retain the existing live-dependency controls, wide Boundary B and deferred v0.6 ceremony.
 
 No operative plan change is needed; both required reviews found no blockers.
+
+## Implementation verification -- Codex (Implementation, GPT-6) -- 2026-11-01
+
+Elapsed: approximately 13 minutes for this verification pass; tokens: unknown.
+
+### C1 reconciliation
+
+All 15 tracked files now live at `docs/methodology/` under these names; all 15 old `doctrine/` paths are absent. The current meaning-to-duty map is:
+
+| Methodology file | Installed duty or consumer |
+|---|---|
+| `README.md` | Public index only; no installed duty. |
+| `collaboration-stance.md` | `dev/agent_collaboration.md` collaboration and reviewer guidance. |
+| `consolidation-review.md` | Cairn-internal `scripts/quality_gate.py` disposition guidance; no adopter duty. |
+| `coordination.md` | Root `AGENTS.md` shared-file discipline, `dev/PLANNING.md`, and the optional coordination-tiers module. |
+| `doc-governance.md` | Root governing placement rule and the installed documentation-plan module plus `docs/DOCUMENTATION_PLAN.md`. |
+| `dual-review.md` | Root `AGENTS.md` Review/Security Review rules, `dev/agent_collaboration.md`, and optional review modules. |
+| `lifecycle-contract.md` | Root lifecycle duties and `tools/session.py` lifecycle-state readers. |
+| `lifecycle.md` | Root lifecycle duties, proposal/plan templates, `dev/PLANNING.md`, session skills, `tools/session.py`, and `tools/board.py`. |
+| `onboarding.md` | `bootstrap/BOOTSTRAP.md`, installed onboarding modules, and `dev/PLANNING.md` onboarding tasks. |
+| `plans.md` | Root plan lifecycle/verification duties and the installed plan template/session reader. |
+| `proposals.md` | Root proposal lifecycle duties and the installed proposal template. |
+| `rationale.md` | Root Plain Language guidance, `dev/agent_collaboration.md`, and incident-tracker module rationale. |
+| `roles.md` | Root Roles/Model tier rules and the optional model-selection module/mapping. |
+| `runtime-contract.md` | Cairn bootstrap/runtime checks and `bootstrap/DEPENDENCY_BUDGET.md`; no adopter duty. |
+| `session-routines.md` | `tools/session.py`, installed session-start/session-end skills, and root session lifecycle guidance. |
+
+The active path consumers reviewed were `scripts/check_cairn.py`, `scripts/claim_check.py`, `scripts/link_check.py`, `scripts/quality_gate.py`, `bootstrap/_scaffold/config.py`, `bootstrap/_scaffold/install.py`, the bootstrap path-reading tests, and the templates that emit installed guidance. Historical citations remain history; the three narrow history exemptions remain exact-document entries. No `doctrine/` directory, redirect, ledger, or new checker remains.
+
+The following required source/shipped pairs compare byte-identically: `tools/session.py` / `templates/skills/_lib/session.py`; `scripts/claim_check.py` / `templates/modules/default-on/claim_check.py`; `scripts/link_check.py` / `templates/modules/team-gated/link_check.py`; `tools/evolution_infer.py` / `templates/modules/default-on/evolution_infer.py`; and each shipped session skill / its tracked `.agents/skills/` counterpart.
+
+### C2 implementation evidence
+
+On clean committed source copies, the source claim checks passed for changed guidance, `scripts/check_cairn.py --no-content-scan` passed the seven affected shipped files, and `scripts/link_check.py` passed those seven files. Earlier focused path-classifier/gauge checks on `0460998f` passed 92 loop-fidelity/quality-gate tests and 24 check-cairn/gauge tests; the synthetic real-module-body path probe also passed. A later 497-item targeted selection had 495 passes and two failures: a line-wrap-sensitive meaning assertion and session-start byte parity. The two failing nodes then passed individually on clean commit `467aacbf` under Python 3.12.9; the session-end mirror was also synchronized and manually compared byte-identically at `663dfadc`. The 497-item selection was not repeated.
+
+Real scaffold installs on clean commit `7f9a0710` covered `solo-greenfield` (45 installed files) and `high-rigor-legacy` (67 installed files). After initializing Git in each target, `check_cairn.py --no-content-scan` found no installed `docs/methodology/` path failures. It still reported the same pre-existing optional/illustrative paths measured on the clean pre-move comparison (`eaf4144a`): 10 findings in the small profile (one optional model-mapping path plus nine illustrative documentation-tier paths) and nine in the fuller profile (the nine illustrative paths). The newly introduced methodology-path findings are gone; those pre-existing findings remain unresolved and are not claimed as migration successes.
+
+An earlier 40-file mapped run was interrupted after 52.37 seconds at 634 passed, one failed, and `KeyboardInterrupt`. Its observed failure was an unrelated portable-sweep test denied permission while binding `127.0.0.1`; the run is incomplete and is not counted as a pass. The focused runs above used Python 3.12.9, not the canonical 3.13.x. No broad selection, re-anchor, or release certification was run. Boundary B remains due after independent code and Security Reviews on the final clean commit; the existing installed-checker baseline findings also need disposition before archive.
