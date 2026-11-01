@@ -134,3 +134,12 @@ Across all four files, heading sets and markers match baseline: 19 headings and 
 **R1 -- Blocking:** The plan requires the exact iteration selection for all changed paths. The C1 record reports all 18 files on `6965d3ba`, but after `bf60c2ab` changed both plan templates reports only two files. Run the full mapped iteration selection against the corrected committed bytes and record the result; the later Boundary B cannot close this missing iteration check.
 
 Coverage: inspected both implementation diffs, the proposal revision rule, both retained Boundary B contracts, and the C1 evidence. Did not independently inventory every original obligation, rerun implementation tests, or assess security controls; separate Security Review and final wide Boundary B remain due.
+
+## C1 control-selector update -- Codex (gpt-6.1-sol) -- 2026-11-01
+
+**Elapsed**: 1 minute (estimated)
+**Tokens**: unknown
+
+Mutation controls: in 12 separate `bf60c2ab` copies, each of the four templates listed above received a separate slot-marker, review/security-instruction, or scope-authority deletion; `test_install_report_slots.py::test_minimal_profile_lists_absent_module_slots_separately`, `test_review_stance_in_shipped_files.py::test_template_review_section_carries_the_obligation`, and `test_scope_reduction_trap.py::test_scope_reduction_obligation_present` detected all 10 automated losses, while baseline-positive/mutant-negative marker comparisons detected both self-hosted slot losses (12/12 detected; no misses).
+
+The full 18-file iteration selection on corrected plan bytes remains outstanding under ordinary-review R1. The reviewer agrees the planned post-review wide Boundary B may satisfy both checks if the included selection passes; no result is yet claimed.
