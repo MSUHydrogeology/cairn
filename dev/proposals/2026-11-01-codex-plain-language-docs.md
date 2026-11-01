@@ -69,3 +69,21 @@ None.
 ## Assurance path
 
 **Assurance path**: high-assurance. The requested shipped authoring templates are protected lifecycle surfaces. The plan will distinguish them from other documentation and retain the applicable ordinary and Security Reviews and checks.
+
+## Proposal review -- Codex GPT-6 (ordinary reviewer) -- 2026-11-01
+
+**Tier**: Internal  
+**Reviewed**: `bf63dd0e`  
+**Elapsed**: unknown; **Tokens**: unknown
+
+**Foundations**
+
+- **Should it happen as framed?** Yes. The board's audit row asks for the README, docs, shipped templates and module documents, and board; the Proposal includes those, preserves technical meaning, and limits the new marker to shipped templates as the Maintainer instructed.
+- **Best alternative:** Review only entry points first and defer the rest. That would give earlier visible improvements, but the board asks for the whole set; prioritizing within the proposed inventory delivers those improvements without silently dropping the remaining materials (Proposal; board audit row).
+- **What would show it wrong?** A rewrite that removes a condition or changes a command would make guidance less reliable; a marker applied outside a shipped template would exceed the requested branding (Evidence / verification plan; board audit row).
+
+**Verdict:** Proceed with non-blocking improvements.
+
+**Findings:** The decision summary states the work and scope but leaves the main cost and tradeoff in Rationale. Add a plain sentence there about the effort of reading the full set and why it is worth retaining. The board says to fix what fails, while S4 correctly leaves uncertain meaning unchanged until established. Clarify how unresolved failures are recorded and kept open, without creating a per-file ledger or treating ambiguity as completion. The plan should coordinate the active board rewrite and proposal-summary plan, then read their final committed text; the Context identifies both but does not establish their completion.
+
+**Coverage:** Read the proposal at `bf63dd0e`, the board audit row, the active proposal-summary plan's scope and checks, and the Plain Language and review guidance. Did not inventory every installed template, inspect the other writer's uncommitted board work, run implementation tests, or assess security controls in depth; the separate Security Review remains owed.
