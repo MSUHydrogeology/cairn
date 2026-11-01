@@ -32,10 +32,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from bootstrap.scaffold import (  # noqa: E402
     _MODULE_MAPPINGS,
+    _emit_lock_yaml,
     install_modules,
     main,
+    read_lockfile,
     reference_script_token_defaults,
 )
+from bootstrap.security_check import scan_targets  # noqa: E402
 
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
@@ -60,6 +63,43 @@ _SCRIPT_MODULES = {
 #: still reads green.  It was empty for exactly that reason once, after the
 #: module it named was retired and nothing took its place.
 _MULTI_SCRIPT_MODULES: dict[str, list[tuple[str, str]]] = {
+    "claim-check": [
+        ("default-on/claim_check.py", "scripts/claim_check.py"),
+        ("default-on/verify_stems.py", "scripts/verify_stems.py"),
+    ],
+    "coordination-tiers": [
+        ("team-gated/intent.py", "tools/intent.py"),
+        ("team-gated/_intent/__init__.py", "tools/_intent/__init__.py"),
+        ("team-gated/_intent/shared.py", "tools/_intent/shared.py"),
+        ("team-gated/_intent/record_io.py", "tools/_intent/record_io.py"),
+        ("team-gated/_intent/identity.py", "tools/_intent/identity.py"),
+        ("team-gated/_intent/conflict.py", "tools/_intent/conflict.py"),
+        ("team-gated/_intent/hooks.py", "tools/_intent/hooks.py"),
+        ("team-gated/_intent/cli.py", "tools/_intent/cli.py"),
+        ("team-gated/prune_intents.py", "tools/prune_intents.py"),
+    ],
+    "doc-drift-prevention": [
+        ("team-gated/link_check.py", "scripts/link_check.py"),
+        ("team-gated/sync_doc_snippets.py", "scripts/sync_doc_snippets.py"),
+    ],
+    "content-security": [
+        ("team-gated/content_scan.py", "scripts/content_scan.py"),
+        ("team-gated/content_scan_runner.py", "scripts/content_scan_runner.py"),
+    ],
+    "api-access-security": [
+        ("team-gated/api_access_security.py", "scripts/api_access_security.py"),
+        ("team-gated/_security_net/__init__.py", "scripts/_api_access_security/__init__.py"),
+        ("team-gated/_security_net/policy.py", "scripts/_api_access_security/policy.py"),
+        ("team-gated/_security_net/net.py", "scripts/_api_access_security/net.py"),
+        ("team-gated/_security_net/report.py", "scripts/_api_access_security/report.py"),
+    ],
+    "web-hosting-security": [
+        ("team-gated/web_hosting_security.py", "scripts/web_hosting_security.py"),
+        ("team-gated/_security_net/__init__.py", "scripts/_web_hosting_security/__init__.py"),
+        ("team-gated/_security_net/policy.py", "scripts/_web_hosting_security/policy.py"),
+        ("team-gated/_security_net/net.py", "scripts/_web_hosting_security/net.py"),
+        ("team-gated/_security_net/report.py", "scripts/_web_hosting_security/report.py"),
+    ],
     "issue-capture": [
         ("team-gated/issue-capture/bootstrap_gitlab_labels.py",
          "scripts/bootstrap_gitlab_labels.py"),
@@ -131,13 +171,14 @@ class TestMultiScriptModules:
     second script silently failed to install would pass it.
     """
 
-    @pytest.mark.parametrize(
-        "module_name", sorted(_MULTI_SCRIPT_MODULES)
-    )
+    @pytest.mark.parametrize("module_name", sorted(_MULTI_SCRIPT_MODULES))
     def test_multi_script_module_installs_all_scripts(
         self, tmp_path: Path, module_name: str,
     ) -> None:
         assert _scaffold(tmp_path, [module_name]) == 0
+        lock = read_lockfile(tmp_path)
+        assert lock is not None
+        records = {record["dst"]: record for record in lock["files"]}
         for src_rel, dst_rel in _MULTI_SCRIPT_MODULES[module_name]:
             installed = tmp_path / dst_rel
             source = TEMPLATES_ROOT / "modules" / src_rel
@@ -147,6 +188,57 @@ class TestMultiScriptModules:
             assert installed.read_bytes() == source.read_bytes(), (
                 f"{dst_rel} differs from template source -- not verbatim"
             )
+            assert dst_rel in records, f"{dst_rel} missing from lockfile"
+            assert records[dst_rel]["src"] == f"modules/{src_rel}"
+            assert records[dst_rel]["dst"] == dst_rel
+
+    @pytest.mark.parametrize("module_name", sorted(_MULTI_SCRIPT_MODULES))
+    def test_upgrade_adds_missing_files_for_selected_module(
+        self, tmp_path: Path, module_name: str,
+    ) -> None:
+        """A prior lock for this selected module can gain current files."""
+        assert _scaffold(tmp_path, [module_name]) == 0
+        lock = read_lockfile(tmp_path)
+        assert lock is not None
+        assert module_name in lock["modules"]
+        expected = _MULTI_SCRIPT_MODULES[module_name]
+        expected_dsts = {dst for _src, dst in expected}
+        original_records = lock["files"]
+        assert expected_dsts <= {record["dst"] for record in original_records}
+
+        # Model an older selected-module install whose entries are not yet in
+        # the lock or adopter tree; profile and module selection stay intact.
+        lock["files"] = [
+            record for record in original_records
+            if record["dst"] not in expected_dsts
+        ]
+        lock_path = tmp_path / "dev" / ".cairn" / "cairn-lock.yml"
+        lock_path.write_text(_emit_lock_yaml(lock), encoding="utf-8")
+        for dst in expected_dsts:
+            (tmp_path / dst).unlink()
+
+        upgrade = ["upgrade", "--target", str(tmp_path),
+                   "--cairn-root", str(CAIRN_ROOT)]
+        assert main(upgrade + ["--stage"]) == 0
+        assert main(upgrade + ["--apply"]) == 0
+
+        updated = read_lockfile(tmp_path)
+        assert updated is not None
+        assert module_name in updated["modules"]
+        records = {record["dst"]: record for record in updated["files"]}
+        for src_rel, dst_rel in expected:
+            source = TEMPLATES_ROOT / "modules" / src_rel
+            installed = tmp_path / dst_rel
+            assert installed.is_file(), f"upgrade omitted {dst_rel}"
+            assert installed.read_bytes() == source.read_bytes()
+            assert records[dst_rel]["src"] == f"modules/{src_rel}"
+            assert records[dst_rel]["dst"] == dst_rel
+
+    def test_all_expected_sources_are_scan_targets(self) -> None:
+        targets = set(scan_targets())
+        for pairs in _MULTI_SCRIPT_MODULES.values():
+            for src_rel, _dst_rel in pairs:
+                assert f"templates/modules/{src_rel}" in targets
 
 
 # ---------------------------------------------------------------------------
