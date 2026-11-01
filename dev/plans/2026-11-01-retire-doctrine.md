@@ -1,7 +1,7 @@
 # Plan: Retire the doctrine folder
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-governing-text-single-source.md
-**Status**: revising-code
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Move public methodology to its chosen home and remove the old folder while preserving installed duties and working checks.
