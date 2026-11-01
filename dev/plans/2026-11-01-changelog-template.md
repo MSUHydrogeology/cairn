@@ -107,3 +107,17 @@ owed before Boundary B.
 Both the ordinary plan review and Security Review recommend proceeding with no findings. The accepted scope and verification remain unchanged.
 
 Elapsed: approximately 1 minute; tokens: unknown.
+
+## Code review -- Codex GPT-6 -- 2026-11-01
+
+Reviewed: implementation `d45ea20e` and evidence `eaf4144a`; Tier: Internal; verdict: **REVISE**. Elapsed: approximately 5 minutes; tokens: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The core mapping supplies the template, while existing install and collision mechanisms preserve history; the two targeted keep and fresh-start entry-point tests passed on a separate committed copy (Python 3.12.9, 2 passed in 1.49 seconds).
+2. **Best alternative.** Reuse the existing collision workflow, as implemented. A separate example avoids a collision but loses the accepted ready-to-use root file.
+3. **What would show it wrong?** A user losing history, a displayed command refusing reviewed adapted bytes, incorrect fork ancestry, or a missing profile or manifest entry. The implementation tests cover several of these; the guidance gap below leaves the adapted path unclear.
+
+**Blocking finding — adaptation must be re-staged before adoption.** C1 requires guidance for optionally adapting and re-staging history. Both `templates/core/CHANGELOG.md` and `bootstrap/UPGRADE.md` say to review changed bytes before adopting but do not say to run `upgrade --stage` again after editing and before using the new displayed command. The printed authorization binds the staged bytes (`bootstrap/_scaffold/upgrade.py` `_print_adopt_command` and `_cmd_adopt_collisions`), so a command obtained before editing refuses the changed file. Close by making the order explicit in both guides and exercising adaptation, re-staging, and adoption through the entry point.
+
+**Coverage:** Read the committed diff, accepted plan and iteration evidence, mapping, template, upgrade guidance, tests and adoption authorization code; ran the two named focused tests above. Did not run the mapped selection, mutation checks or security review; separate Security Review and final wide integration remain owed.
