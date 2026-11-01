@@ -121,3 +121,25 @@ The ordinary review's accessibility recommendation applies: lookup must reach sh
   useful commit and distinguish shared history from locally fetched refs. Verification
   retains the representative lookup check.
 - Internal Security Review: accepted; the same guidance covers failed results.
+
+## Code review -- Codex GPT-6.1 -- 2026-11-01
+
+**Tier**: Internal  
+**Reviewed commit**: 46a0c967  
+**Verdict**: REVISE; two blocking findings  
+**Bounding**: WIDER RUN REQUIRED  
+**Elapsed**: approximately 4 minutes  
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes, once the accepted record and verification requirements are met. The diff removes the marker while retaining the guard predicate, certification pair, trigger and bisect wording.
+2. **Best alternative.** Retain the old marker and separate certification entry; that preserves a per-change field the Decision removed. Existing ceremony evidence and useful commit messages keep one record per run without a new ledger (`doctrine/plans.md`).
+3. **What would show it wrong?** An adopter unable to locate run evidence or a required check without evidence defeats the accepted criteria and verification plan. Both gaps remain below.
+
+**Blocking findings**
+
+- The record instructions appear only in `doctrine/plans.md` and the local glossary; adopters receive neither. The shipped `templates/core/AGENTS.md` and plan template mention certification but do not say where actual runs are recorded or found. This misses the criteria that each actual run has one shared record and readers are told where to find each kind. Put the applicable instructions on shipped operative surfaces and verify them there.
+- The implementation commit reports mapped tests and gates but does not report the required actual guard refusal, passing-control rule mutations, or representative lookup for each record type (or a documented gap). These are named C1 checks, not discretionary review reruns. Supply their evidence and dispositions before advancing.
+
+**Evidence and coverage:** Compared the implementation diff with C1, inspected the shipped rules and focused tests, and ran both focused rule files against an archived copy of 46a0c967: 58 passed under the local Python 3.12 interpreter. The tests check doctrine wording but do not assert the record instructions on shipped surfaces. Did not run the full suite, repeat the mapped iteration, verify every reader or pin, or perform Security Review.
