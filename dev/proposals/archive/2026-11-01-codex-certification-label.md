@@ -1,7 +1,7 @@
 # Remove the pending tree-certification marker
 
 **Author**: Codex GPT-6.1
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)

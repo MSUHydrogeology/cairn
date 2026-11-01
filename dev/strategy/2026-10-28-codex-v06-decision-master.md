@@ -253,24 +253,17 @@ consumers and required checks. One collision verification selected 51 files and
 Both reviewers found no mandatory heavy trigger and suggest light with the same
 safeguards. **Decide** whether to accept and select a tier.
 
-### 25. Clarify pending certification — awaiting Decision
+### 25. Remove the pending certification marker — accepted
 
-The [reviewed proposal](../proposals/2026-11-01-codex-certification-label.md)
-retains the existing pending label but explains that it does not require a
-whole-tree run for each completed change. An alternative removes the mandatory
-pending entry, reducing ceremony while losing an explicit per-change indication
-that tree certification is not yet recorded. **Decide** which approach, if any,
-is worth pursuing.
+The Maintainer accepted the [proposal](../proposals/archive/2026-11-01-codex-certification-label.md)
+at `8d1c6bde`. The [plan](../plans/2026-11-01-certification-marker.md) prepares
+removal while retaining the checks, triggers and actual-run evidence.
 
 ## Issue triage, staffing and close-out
 
-Issue #33 remains open. Its adopter asks that certification mean scoped
-checks and that the whole suite be a separate pre-push check, because the
-`Certified by: pending` label can imply a full run is owed for each change.
-Cairn now has scoped change verification and keeps full-tree certification
-separate, but retains that label for the whole-tree run. **Decide** whether
-the current distinction is sufficient or to prepare a proposal changing the
-terminology; neither option calls for re-running the implementation. Issue #35
+Issue #33 asks that certification mean scoped checks. The accepted proposal
+instead removes the misleading pending marker while retaining whole-tree
+certification. Issue #35
 remains for redesign. Issue #19 is
 deferred to v0.7. The roadmap no longer lists a closure follow-up for #2 or #8;
 this briefing does not assert current hosted issue status.
