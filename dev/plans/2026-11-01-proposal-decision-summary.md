@@ -75,3 +75,21 @@ examples. Record the tested SHA and range, interpreter, clean pre/post state,
 commands, counts, elapsed time, tokens or unknown, non-pass dispositions,
 acceptance checks and omissions. A known unmet check keeps work open. Full-tree
 certification and any re-anchor remain separate authorized ceremonies.
+
+## Plan review -- Codex GPT-6 (ordinary reviewer) -- 2026-11-01
+
+**Tier**: Internal
+**Reviewed**: `62e668da`
+**Elapsed**: unknown; **Tokens**: unknown
+
+**Foundations**
+
+- **Should it happen as framed?** Yes. C1 puts the problem, change and costs together and retains the board field and preflights, matching the accepted proposal's Proposal and Decision.
+- **Best alternative:** Apply the existing Plain Language rules without changing the templates. That avoids template work, but leaves the choice spread across their Context, Proposal and Rationale prompts (`dev/proposals/_template.md`; `dev/agent_collaboration.md`, rules 2–3, 5–6 and 9).
+- **What would show it wrong?** A revised template that hides material costs, repeats the proposal or loses required evidence would fail its purpose; C1 calls for examples and preservation checks (accepted proposal, Signals the change is wrong; plan, Acceptance criteria).
+
+**Verdict:** Proceed with non-blocking improvements.
+
+**Findings:** The accepted proposal explicitly allows short proposals to do most of their work in the summary and rationale and forbids a mandatory checklist. C1 says to avoid repetition and adds no stage, score or general rule, but does not state those two points. Name both in C1 so the implementation does not inadvertently require filler or a checklist. For the Maintainer, explain “S2–S3” and “Boundary A/B/C” where they matter or point to their definitions; the plan otherwise asks its reader to decode its verification terms (Plain Language rule 5: “Define a specialist term where it first matters”).
+
+**Coverage:** Compared the committed plan with the accepted proposal, both template openings, plan review guidance and Plain Language rules. Did not inspect every reader or byte pin, test implementation, or perform the separate Security Review.
