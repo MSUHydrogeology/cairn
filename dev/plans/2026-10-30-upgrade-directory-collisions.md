@@ -36,8 +36,9 @@ Guidance describes the block and recovery and agrees with the command tests. Exe
 ## Scope delta
 
 **Scope delta**: Maintainer authorized the recovery concession below on
-2026-11-01. A mergeable tracked file occupying a directory must be restored as
-a regular file before restaging; permanently leaving it absent is excluded.
+2026-11-01. A directory occupying a mergeable tracked file's path must be
+moved aside, and the tracked path restored as a regular file before restaging;
+permanently leaving it absent is excluded.
 No new lockfile machinery is in scope.
 
 ## Verification
