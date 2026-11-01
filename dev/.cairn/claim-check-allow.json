@@ -93,14 +93,12 @@
         "templates/modules/default-on/lifecycle_metrics.py"
       ]
     },
-    "doctrine/consolidation-review.md": {
-      "paths": [
-        "templates/modules/default-on/_onboarding/"
-      ]
-    },
     "docs/methodology/consolidation-review.md": {
       "paths": [
-        "templates/modules/default-on/_onboarding/"
+        "templates/modules/default-on/_onboarding/",
+        "doctrine/consolidation-review.md",
+        "doctrine/lifecycle-contract.md",
+        "doctrine/rationale.md"
       ]
     },
     "dev/measurement/tag-pass-dispositions.md": {
@@ -208,16 +206,6 @@
         "docs/assumptions.md"
       ]
     },
-    "doctrine/doc-governance.md": {
-      "paths": [
-        "docs/developer/",
-        "docs/developer/vision.md",
-        "docs/vision.md",
-        "docs/developer/style.md",
-        "docs/style.md",
-        "STYLE_GUIDE.md"
-      ]
-    },
     "docs/methodology/doc-governance.md": {
       "paths": [
         "docs/developer/",
@@ -226,14 +214,6 @@
         "docs/developer/style.md",
         "docs/style.md",
         "STYLE_GUIDE.md"
-      ]
-    },
-    "doctrine/session-routines.md": {
-      "paths": [
-        "dev/rules/custom_session_start.md",
-        "dev/rules/custom_session_end.md",
-        "dev/incident_log.md",
-        "dev/coordination_log.md"
       ]
     },
     "docs/methodology/session-routines.md": {
