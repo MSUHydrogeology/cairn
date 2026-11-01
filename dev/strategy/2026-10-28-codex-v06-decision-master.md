@@ -246,8 +246,14 @@ guidance, obligations and machine consumers. Reviews and focused verification pa
 
 ## Issue triage, staffing and close-out
 
-Issue #33 needs Maintainer disposition of whether scoped change verification
-satisfies its certification request; #35 remains for redesign. Issue #19 is
+Issue #33 remains open. Its adopter asks that certification mean scoped
+checks and that the whole suite be a separate pre-push check, because the
+`Certified by: pending` label can imply a full run is owed for each change.
+Cairn now has scoped change verification and keeps full-tree certification
+separate, but retains that label for the whole-tree run. **Decide** whether
+the current distinction is sufficient or to prepare a proposal changing the
+terminology; neither option calls for re-running the implementation. Issue #35
+remains for redesign. Issue #19 is
 deferred to v0.7. The roadmap no longer lists a closure follow-up for #2 or #8;
 this briefing does not assert current hosted issue status.
 
