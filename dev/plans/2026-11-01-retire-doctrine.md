@@ -137,3 +137,18 @@ On clean committed source copies, the source claim checks passed for changed gui
 Real scaffold installs on clean commit `7f9a0710` covered `solo-greenfield` (45 installed files) and `high-rigor-legacy` (67 installed files). After initializing Git in each target, `check_cairn.py --no-content-scan` found no installed `docs/methodology/` path failures. It still reported the same pre-existing optional/illustrative paths measured on the clean pre-move comparison (`eaf4144a`): 10 findings in the small profile (one optional model-mapping path plus nine illustrative documentation-tier paths) and nine in the fuller profile (the nine illustrative paths). The newly introduced methodology-path findings are gone; those pre-existing findings remain unresolved and are not claimed as migration successes.
 
 An earlier 40-file mapped run was interrupted after 52.37 seconds at 634 passed, one failed, and `KeyboardInterrupt`. Its observed failure was an unrelated portable-sweep test denied permission while binding `127.0.0.1`; the run is incomplete and is not counted as a pass. The focused runs above used Python 3.12.9, not the canonical 3.13.x. No broad selection, re-anchor, or release certification was run. Boundary B remains due after independent code and Security Reviews on the final clean commit; the existing installed-checker baseline findings also need disposition before archive.
+
+## Code review -- Codex (Internal Reviewer, GPT-6) -- 2026-11-01
+
+Reviewed commit: `3ddcc7bc`  
+Verdict: No blocking findings in this pass. Elapsed: approximately 4 minutes; tokens: unknown.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. The plan's C1 maps the 15 moved files to their installed homes or identifies public-only material; the diff retains the old spelling in `scripts/check_cairn.py` while adding the new non-installed prefix. The implementation record separates actual install results from source checks and reports the 10/9 baseline findings without calling them successful checks.
+2. **Best alternative.** Retain the old folder while incrementally migrating consumers. That avoids a single move but does not accomplish the Maintainer's requested retirement. The implementation adapts the existing detector and preserves the documented installed-versus-published distinction without a new checker or ledger.
+3. **What would show it wrong?** A missing operative installed duty, a broken live citation, a detector that accepts an unapproved non-installed reference, or a changed meaning in a historical record. Those remain the substantive criteria for final integration and the separate Security Review.
+
+On a clean export of `3ddcc7bc`, `python -m pytest bootstrap/tests/test_loop_fidelity_gate.py -q` passed 8 tests under Python 3.12.9. The six stated source/shipped pairs compared byte-identically. Inspected the path-detector change, relocated semantic guard targets and representative installed guidance changes. The 497-item iteration selection was not repeated after its two individual fixes, and the earlier broader run was interrupted; the record accurately leaves wide Boundary B due. The baseline installed-checker findings also remain open for disposition.
+
+**Coverage:** Reviewed the committed diff and implementation record, with the targeted detector check and pair comparisons above. Did not independently repeat installs, mutate all installed duties, verify every historical record or run a suite; the separate Security Review and final wide integration remain due.
