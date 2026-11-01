@@ -134,6 +134,36 @@ def test_for_selects_imports_and_cited_paths_but_not_folder_sweepers(tmp_path):
     assert "3 test files" in err.getvalue()
 
 
+def test_for_matches_python_references_as_tokens_and_keeps_indirect_consumers(tmp_path):
+    target = tmp_path / "bootstrap" / "_scaffold" / "upgrade.py"
+    target.parent.mkdir(parents=True)
+    target.write_text("VALUE = 1\n", encoding="utf-8")
+    tests = _tests(tmp_path, "test_imports_upgrade", "test_cites_upgrade",
+                   "test_runs_upgrade", "test_cites_upgrade_helper",
+                   "test_incidental_upgrade_words")
+    (tests / "test_imports_upgrade.py").write_text(
+        "from bootstrap._scaffold import upgrade as UP\n", encoding="utf-8")
+    (tests / "test_cites_upgrade.py").write_text(
+        'SOURCE = "bootstrap/_scaffold/upgrade.py"\n', encoding="utf-8")
+    (tests / "test_runs_upgrade.py").write_text(
+        'def test_public_command(project):\n    upgrade(project, "--apply")\n'
+        'COMMAND = "scaffold.py upgrade --apply"\n',
+        encoding="utf-8")
+    (tests / "test_cites_upgrade_helper.py").write_text(
+        'PROTECTED = "_apply_upgrade"\n', encoding="utf-8")
+    (tests / "test_incidental_upgrade_words.py").write_text(
+        'NOTE = "the upgraded upgradeable upgrade_directory behavior"\n',
+        encoding="utf-8")
+
+    selected = tiers_tool.tests_for_paths(
+        ["bootstrap/_scaffold/upgrade.py"],
+        sorted(tests.glob("test_*.py")), root=tmp_path)
+    assert selected == [tests / "test_cites_upgrade.py",
+                        tests / "test_cites_upgrade_helper.py",
+                        tests / "test_imports_upgrade.py",
+                        tests / "test_runs_upgrade.py"]
+
+
 def test_for_includes_a_changed_test_module_itself(tmp_path):
     tests = _tests(tmp_path, "test_changed")
     changed_test = tests / "test_changed.py"

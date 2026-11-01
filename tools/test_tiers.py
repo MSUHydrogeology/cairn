@@ -99,6 +99,7 @@ def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT, *,
     the runner limit; excluded readers are returned through ``omitted``.
     """
     needles: set[str] = set()
+    python_stems: set[str] = set()
     governing_passages: list[str] = []
     governing_path_requested = False
     changed_test_files: set[Path] = set()
@@ -134,7 +135,7 @@ def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT, *,
             needles.add(path.as_posix())
             needles.add(path.name)
             if path.suffix == ".py":
-                needles.add(path.stem)
+                python_stems.add(path.stem)
                 needles.add(path.with_suffix("").as_posix().replace("/", "."))
     candidates = []
     governing_readers = []
@@ -148,8 +149,27 @@ def tests_for_paths(paths: list[str], files: list[Path], root: Path = ROOT, *,
                    for i in range(max(0, len(words) - 4))):
                 pins_changed_passage = True
                 break
-        names_requested_files = any(needle in source for needle in needles)
+        names_requested_files = any(
+            re.search(rf"(?<![\w-]){re.escape(needle)}(?![\w-])", source,
+                      flags=re.IGNORECASE)
+            for needle in needles)
+        # A bare stem can be prose. Keep it when it is used as an import,
+        # called symbol, exact CLI argument, or quoted helper name.
+        names_requested_python_module = any(
+            re.search(
+                rf"(?:\bimport\s+(?:[\w.]+\.)?{re.escape(stem)}\b"
+                rf"|\bfrom\s+{re.escape(stem)}\s+import\b"
+                rf"|\bfrom\s+[\w.]+\s+import\s+[^\n#]*\b{re.escape(stem)}\b"
+                rf"|(?<![\w-]){re.escape(stem)}\s*\("
+                rf"|['\"]{re.escape(stem)}['\"]"
+                rf"|['\"][\w]*_{re.escape(stem)}['\"]"
+                rf"|\bscaffold\.py\s+{re.escape(stem)}\b"
+                rf"|(?<![\w-])(?:scaffold\.py\s+)?{re.escape(stem)}"
+                rf"\s+(?:--(?:plan|stage|apply)|stage|apply)\b)",
+                source, flags=re.IGNORECASE)
+            for stem in python_stems)
         if (test in changed_test_files or pins_changed_passage or names_requested_files
+                or names_requested_python_module
                 or (governing_path_requested and "AGENTS.md" in source)):
             candidates.append(test)
         if governing_path_requested and "AGENTS.md" in source:
