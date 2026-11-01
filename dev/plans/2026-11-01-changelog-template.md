@@ -16,9 +16,6 @@ Add `templates/core/CHANGELOG.md` and its core mapping in `bootstrap/_scaffold/c
 
 **Reuse.** Searched `_CORE_MAPPINGS`, `bootstrap/tests/test_scaffold.py` and `bootstrap/tests/test_upgrade_module_additions.py`: core mappings already deliver across profiles, while existing install skip, collision staging and adoption handle history. Extend their behavior tests rather than introduce a second workflow or new machinery.
 
-Proposed paths:
-- `templates/core/CHANGELOG.md`
-
 ## Sequence
 
 | # | Chunk | Gate | Ships |
@@ -73,6 +70,30 @@ Elapsed: approximately 3 minutes; tokens: unknown.
 3. **What would show it wrong?** Actual entry-point tests permitting silent replacement, adoption of another source's destination, unsafe writes, incorrect ancestry or unusable staged commands. C1 and Boundary A require these behaviors, independent history bytes and collision-bypass/replacement mutations; C2 retains separate implementation Security Review. Wide mapped integration covers the install contract while explicitly excluding certification and re-anchor.
 
 **Coverage:** Read the committed plan and accepted proposal, current install skip/force interface, new-core collision classification, adoption authorization/preflight, named preservation and ownership tests, and protected-surface guidance. No new process or ledger is proposed. Did not run tests or mutations, inspect every apply branch, or establish race resistance; implementation evidence and separate code Security Review remain owed.
+
+## Implementation iteration -- Codex GPT-6 -- 2026-11-01
+
+**Commit checked:** `d45ea20ee6f32a541af618e0701a41762236da51`, in a clean copy.
+**Interpreter:** `/Users/kendal30/conda_envs/miniforge3/bin/python`, Python 3.12.9.
+**Targeted command:** six changelog install and upgrade nodes in
+`test_scaffold.py` and `test_upgrade_module_additions.py`; **6 passed** in
+2.44 seconds. This covers template and manifest membership, normal install
+byte preservation, explicit `--force`, staged `.ours`/`.theirs` review, the
+printed adoption digest, fork and base records, fresh start with saved history,
+another-source ownership, and linked-path refusal.
+**Prose gates:** `claim_check.py` passed for the template, shipped AGENTS and
+upgrade guide; `link_check.py` passed on those three files; `sync_doc_snippets.py
+--check` reported no drift; `quality_gate.py --sub neutrality` reported
+`fail=0`, `info=43`.
+**Mapped selection:** `test_tiers.py for` selected 40 test files and omitted
+45 AGENTS readers under its guard. An initial run yielded after partial
+progress and has no final result; no pass is claimed. Per Maintainer direction,
+the complete mapped selection is deferred to final Boundary B on Python 3.13.x.
+**Earlier targeted disposition:** the first six-node run had four passes and
+two assertion failures in the new tests. The test wording and conflict selection
+were corrected in `d45ea20e`; the six-node rerun above passed. Tokens: unknown.
+This is iteration evidence only; ordinary code review and Security Review remain
+owed before Boundary B.
 
 ## Author response -- Codex GPT-6 -- 2026-11-01
 
