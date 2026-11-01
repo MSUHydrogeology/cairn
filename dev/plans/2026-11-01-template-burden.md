@@ -149,3 +149,27 @@ The full 18-file iteration selection on corrected plan bytes remains outstanding
 **Elapsed**: 1 minute (estimated); **Tokens**: unknown.
 
 R1 corrected: the plan does not require a second execution of the exact iteration selection after the correction. The prescribed post-review wide Boundary B includes that selection on the clean final commit and may satisfy both requirements in one run. The selection and Boundary B remain due; no check is waived. `WIDER RUN REQUIRED` remains until that run passes.
+
+## Code review -- Codex (gpt-6.1-sol) -- 2026-11-01
+
+```
+Reviewed commit: 0da779720b586dcdbb9742237a5cc2fd0b606177
+Target: 6965d3ba through bf60c2ab; C1 evidence through 965d11eb
+Prior findings: none
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Security Review
+**Verdict**: ACCEPT (Security obligation only)
+**Elapsed**: 8 minutes (estimated active time)
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. Both corrected plan preambles prescribe in-place proposal revision. The shortened Boundary B reminder leaves its complete clean-commit, wide-mode, security-check and record contract in each Verification slot; copy exclusions remain in each Keep Short section (`bf60c2ab`, four templates).
+2. **Best alternative.** Keep the fuller review and scope instructions beside their users. C1 does this; moving them outside the installed templates would risk unshipped dependencies (`test_review_stance_in_shipped_files.py`, installed-boundary explanation).
+3. **What would show it wrong?** A lost gate or parser marker, or an undetected deletion. Independent comparison of ordered headings and slot/end markers found no change across all four committed templates. C1 reports 12 separate-copy controls: ten automated detections through the named install, review-stance and scope selectors, plus two explicit self-hosted slot comparisons (`965d11eb`). Those are author-reported outcomes, not reviewer reruns.
+
+**Bounding**: ACCEPTED — challenged the removed Boundary B paragraph against both retained full contracts and the slot consumers. No unresolved security finding. The initial contradictory preamble was corrected at `bf60c2ab` during this pass. Required final wide checks remain open until passed; this review does not clear them.
+
+Coverage: read committed diffs, governing and shipped guidance, C1 evidence, and install/review consumer sources; independently compared marker and heading lists. Did not rerun implementation tests or mutations, inventory every unchanged obligation, or certify the tree.
