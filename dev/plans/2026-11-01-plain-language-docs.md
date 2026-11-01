@@ -58,3 +58,19 @@ Independent ordinary and Security Reviews inspect the committed implementation a
 **Boundary C:** A reviewer other than the implementer reads committed changes and iteration evidence and runs only targeted falsification checks, not a suite. The separate Security Review remains required. A fix beyond a failing test returns for the required targeted look.
 
 **Boundary B:** After review, run the mapped iteration and integration/workflow selections and applicable standing gates in wide mode on a clean, unchanged final commit under canonical Python 3.13. Record tested SHA and range, interpreter, pre/post state, commands and counts, elapsed time, tokens or `unknown`, non-pass dispositions, omissions, timing misses and slow-test reporting. Keep missing checks open.
+
+## Plan review -- Codex (Internal Reviewer, gpt-6.1-sol) -- 2026-11-01
+
+Reviewed commit: `7e12719f`  
+Obligation: Internal  
+Verdict: No blocking findings. Elapsed time: approximately 2 minutes; tokens: unknown.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. The accepted proposal calls for the full prose set, preserved meaning and a marker only on shipped templates. Scope and C1–C3 cover those outcomes, identify installed templates from actual mappings, and retain versioned rules.
+2. **Best alternative.** Wait until the doctrine move is complete before reading methodology. This avoids a possible repeat, but risks indefinite delay; Scope instead permits reading now and carrying improvements forward, or reading all final homes and splits if the move happens first. The separate retirement plan leaves the reading review here.
+3. **What would show it wrong?** An unread relocated duty, a lost condition or a marker that breaks a template would falsify the result. C2–C3 require source comparison, all methodology content, and format-safe placement; Verification maps checks to actual consumers.
+
+The group-based sequence gives useful priorities without a per-file ledger or new audit machinery. Its plain language makes the sequence and stopping conditions clear. Coordination and reading the final board, changelog and proposal-summary work prevent assuming those changes complete the broader audit.
+
+**Coverage:** Compared the committed plan with the accepted proposal and doctrine retirement plan, including scope, sequencing and verification. Did not inventory every template or reader, run implementation checks, or assess future edits; separate Security Review remains due.
