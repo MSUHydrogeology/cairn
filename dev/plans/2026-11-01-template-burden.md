@@ -116,3 +116,21 @@ Across all four files, heading sets and markers match baseline: 19 headings and 
 **Iteration and controls**: the exact 18-file selector passed 1,037 tests in 12.53 seconds on Python 3.12.9 at `6965d3ba`; after the preamble correction, the two directly relevant review / verification files passed 577 tests in 1.58 seconds at `bf60c2ab`. The matching deletion controls detected removed slot, review / security, and scope obligations across separate copies of the four files: installed slot losses were detected through the scaffold install test; self-hosted slot losses were detected by comparing the baseline marker with each known-deletion mutant. Readers named in the plan include `test_review_stance_in_shipped_files.py`, `test_install_report_slots.py` (whose `_install` runs `bootstrap/scaffold.py`), `test_scope_reduction_trap.py`, and `test_verification_boundaries.py`. Claim, link, snippet-sync, and neutrality gates passed; `claim_check.py` passed on all four templates.
 
 **Omissions**: the self-hosted slot comparison is a human control because no runtime installer consumes those source copies. Boundary B remains due after code review; no full-tree certification or re-anchor was run.
+
+## Code review -- Codex (GPT-6) -- 2026-11-01
+
+**Reviewed commits**: `6965d3ba`, `bf60c2ab`; evidence at `81f933c8`
+**Obligation**: Internal
+**Verdict**: Revise; one blocking finding.
+**Bounding**: WIDER RUN REQUIRED
+**Elapsed**: 6 minutes (estimated, excluding waiting)
+**Tokens**: unknown
+
+**Foundations**:
+1. **Should this happen as framed?** Yes. Both plan preambles now match the in-place proposal rule in `dev/proposals/_template.md`; the full Boundary B contract remains in each plan's Verification section. The 274-word reduction is modest and avoids moving instructions outside the templates.
+2. **Best alternative.** Retain the External-read and scope-delta repetition: the C1 record explains its separate purposes, and removing it risks usability. Larger cuts would need the same obligation comparison and no increase in cross-reading.
+3. **What would show it wrong?** A missing instruction or marker, a broken installed consumer, greater cross-reading, or a failing mapped check would defeat the accepted criteria.
+
+**R1 -- Blocking:** The plan requires the exact iteration selection for all changed paths. The C1 record reports all 18 files on `6965d3ba`, but after `bf60c2ab` changed both plan templates reports only two files. Run the full mapped iteration selection against the corrected committed bytes and record the result; the later Boundary B cannot close this missing iteration check.
+
+Coverage: inspected both implementation diffs, the proposal revision rule, both retained Boundary B contracts, and the C1 evidence. Did not independently inventory every original obligation, rerun implementation tests, or assess security controls; separate Security Review and final wide Boundary B remain due.
