@@ -258,13 +258,15 @@ The Maintainer accepted the [proposal](../proposals/archive/2026-11-01-codex-cer
 at `8d1c6bde`. The [plan](../plans/2026-11-01-certification-marker.md) prepares
 removal while retaining the checks, triggers and actual-run evidence.
 
-### 26. Make proposals easier to decide — awaiting Decision
+### 26. Make proposals easier to decide — accepted
 
-The [reviewed proposal](../proposals/2026-11-01-codex-proposal-decision-summary.md)
+The [reviewed proposal](../proposals/archive/2026-11-01-codex-proposal-decision-summary.md)
 puts the problem, proposed change and meaningful tradeoffs together at the
 start of a proposal, before implementation detail. The existing Plain Language
 standard already calls for clear conclusions, definitions and examples, so no
-new general rule or review stage is proposed. **Decide** whether to accept it.
+new general rule or review stage is proposed. The Maintainer accepted it at
+`c25427ce`; the [plan](../plans/2026-11-01-proposal-decision-summary.md) awaits
+review.
 
 ## Issue triage, staffing and close-out
 

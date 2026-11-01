@@ -1,0 +1,77 @@
+# Plan: Make proposals easier to decide
+
+**Source proposal**: dev/proposals/archive/2026-11-01-codex-proposal-decision-summary.md
+**Status**: awaiting-plan-review
+**Plan review**: required(Internal + Internal Security Review)
+**Opened**: 2026-11-01
+**In brief**: Bring the problem, change and tradeoffs together at the start of proposals so the Maintainer can understand the choice.
+
+## Source proposal
+
+The Maintainer accepted a short decision summary after the board's one-line
+`In brief` field, with supporting detail below and existing safeguards retained.
+The existing proposal review considers whether the Maintainer can explain the
+choice; this adds no review stage or score.
+
+## Scope
+
+Revise the common opening and review guidance in `dev/proposals/_template.md`
+and `templates/core/dev/proposals/_template.md`. Preserve their intentional
+slot differences. Update `doctrine/proposals.md` only if needed to describe the
+revised shape. Reuse Cairn Plain Language instead of adding a general rule.
+
+**Reuse**: N/A: no code added.
+
+### Documentation / doctrine surface
+
+The templates are deliberation guidance; `doctrine/proposals.md` is published
+methodology. No governing instruction or software description is planned.
+
+## Sequence
+
+| # | Chunk | Gate | Ships |
+|---|---|---|---|
+| C1 | Revise both templates and, if needed, proposal doctrine; verify and record iteration evidence. | Plan review and Security Review resolved. | Opening prompts and existing review guidance. |
+
+## Acceptance criteria
+
+C1: Both templates ask for the observed problem, proposed change and meaningful
+costs together before supporting detail, in ordinary language; define terms when
+needed, use concrete examples to clarify abstractions, and avoid repetition.
+The existing review considers whether the Maintainer can explain the choice.
+The one-line board field, required evidence, lifecycle records, slot behavior,
+security and scientific preflights remain intact. Common text agrees across the
+shipped and self-hosted templates. No new review stage, score or general rule is
+added. Inspect the guidance against a short and a technically involved existing
+proposal; record what the examples show and do not claim a reader was tested.
+
+S2–S3: C1 identifies readers and byte pins, runs the scoped checks and traces
+any changed machine check from trigger to runner; demonstrate a failing case
+for each changed check. No machine-check change is proposed. The other security
+preflight answers remain as accepted. Independent scientific check: N/A; no
+scientific assumption or result touched.
+
+## Scope delta
+
+**Scope delta**: preserved.
+
+## Verification
+
+Boundary A: Before implementation search for readers and byte pins, including
+known-positive controls for negative searches. Run `python tools/test_tiers.py
+for <changed paths>` and its selected tests, plus applicable claim, link,
+snippet and neutrality gates. Follow the high-risk surface checks; trace each
+named check to its trigger and runner. Record commands, outcomes and omissions.
+
+Boundary C: An independent code reviewer reads committed changes and iteration
+evidence and runs the tightest targeted falsification checks, without a suite.
+The separate Security Review remains required.
+
+Boundary B: After review, run the wide integration selection on the clean,
+unchanged final commit under canonical Python 3.13.x. Include the iteration
+list for the reviewed range, mapped integration/workflow tests, owning families,
+known public paths, applicable prose and high-risk checks, and the qualitative
+examples. Record the tested SHA and range, interpreter, clean pre/post state,
+commands, counts, elapsed time, tokens or unknown, non-pass dispositions,
+acceptance checks and omissions. A known unmet check keeps work open. Full-tree
+certification and any re-anchor remain separate authorized ceremonies.
