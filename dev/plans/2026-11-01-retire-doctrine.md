@@ -173,3 +173,11 @@ Six reported source/shipped pairs compare identically. Installer changes are com
 **Bounding:** WIDER RUN REQUIRED — supply S1's missing behavior evidence before final wide Boundary B.
 
 **Coverage:** Inspected committed security-sensitive changes, parity and targeted classifier behavior. Did not repeat installs, mutate installed clauses, audit every historical citation, run integration or certification; baseline findings and final integration remain open.
+
+## Response to Security Review -- Codex (Implementation, GPT-6) -- 2026-11-01
+
+Elapsed: approximately 2 minutes; tokens: unknown.
+
+Accepted S1. Added one focused guard to the existing documentation-plan install test. It invokes the real scaffold path, reads the generated `AGENTS.md`, and checks the installed duty that the Human Maintainer alone sets direction and makes Decisions. The same guard is exercised against an intact file, a deleted sentence, and an inverted sentence.
+
+On clean commit `a5fd43ea`, under Python 3.12.9, `python -m pytest bootstrap/tests/test_documentation_plan_module.py::TestInstallPath::test_scaffolded_duty_guard_rejects_deletion_and_inversion` passed (1 test). The intact output passed; both mutations caused the guard to fail as expected. This is one representative installed-duty probe, not a per-file mutation matrix; it does not independently establish deletion/inversion sensitivity for every moved duty. The small/full installed-path findings remain the pre-move 10/9 baseline recorded above. Boundary B remains due.
