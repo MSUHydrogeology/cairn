@@ -127,14 +127,13 @@ question -- *what is it doing?*
   root -- a fixed, convention-inherited exception.
 
 The one qualifier that does the most work is **cross-cutting**.
-"Prescribes how to build" alone is too broad: a section of
-`docs/developer/extending.md` saying "to add a new plugin, do X"
-prescribes steps, but it is *local* how-to for one surface as
-it exists today, not cross-cutting doctrine.  It is descriptive-
-layer content -- description of current reality plus the
-procedure to extend it.  Local procedure does not promote a
-file to root governing doctrine; only cross-cutting,
+"Prescribes how to build" alone is too broad. A local how-to for
+one surface, describing current reality and the procedure to extend
+it, is descriptive-layer content. Local procedure does not promote
+a file to root governing doctrine; only cross-cutting,
 always-relevant prescription does.
+
+Proposed path: `docs/developer/extending.md` (an example local how-to file).
 
 ## The descriptive-layer tiers
 
@@ -143,6 +142,7 @@ descriptive layer is itself tiered by audience and intent; pick
 the tier that matches what you need.  A typical structure (the
 Diátaxis-style split) might be:
 
+Proposed paths:
 | Tier | Audience | Intent | Voice |
 |---|---|---|---|
 | **Quickstart** (`docs/quickstart/`) | First-time visitors | Get to a successful first run in minutes | Imperative, narrow |
@@ -334,13 +334,14 @@ may want to add (or strip) sections that are domain-specific:
   licensing.  If the project publishes figures, record the answers
   here or in a section of your own.  The legibility check above is
   the portable part; this is not.
+Proposed path: `docs/tutorials/` (one example teaching tier location).
+
 * **Teaching tier** -- pedagogical content (notebooks +
   exercises wrapped around runnable artifacts) is a
   *descriptive-layer satellite* the Diátaxis framework calls
   "tutorials"; if the deployment publishes tutorials, name
   their location here (a common pattern is `teaching/` at the
-  top level next to `examples/`; another is
-  `docs/tutorials/`).
+  top level next to `examples/`).
 
 ## Updating this plan
 

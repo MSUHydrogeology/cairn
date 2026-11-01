@@ -113,7 +113,8 @@ is unchanged. See Cairn's published lifecycle method for lane details.
 Roles are frames, not people: Human Maintainer, Strategy, Implementation,
 Reviewer, Security Review and User Agent. Name your role before substantive
 work; ask if it is not clear. The Human Maintainer alone sets direction and
-makes Decisions. Model capability floors are in `dev/.cairn/model-selection-mapping.yml`.
+makes Decisions. When the optional model-selection module is installed, its
+mapping records the model capability floors.
 
 **Model tier.** The task sets the capability floor; the lane governs the
 process, not the tier. High covers strategy, premise-checking, novel design,
