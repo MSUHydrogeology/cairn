@@ -2,15 +2,15 @@
 
 > Operational rules for agents working here. Read this file and the relevant
 > artifact/evidence before acting. The deliberation record lives in `dev/`;
-> deeper rationale and review procedure live in `doctrine/`.
+> deeper rationale and review procedure live in `docs/methodology/`.
 
 Cairn is a vendor-neutral, Open Science methodology for research teams using AI
 coding agents. It coordinates through committed files, not a particular model
 or tool. Cairn builds itself using Cairn.
 
-**Doctrine references.** `doctrine/<name>.md` cites Cairn's published
-methodology, not a local file. The adopter receives the operative `AGENTS.md`
-and `dev/` tree, not Cairn's doctrine directory.
+**Published methodology references.** `docs/methodology/<name>.md` cites Cairn's
+published methodology. Adopters do not receive that directory; they receive the
+operative `AGENTS.md` and `dev/` tree.
 
 ## Lifecycle and records
 
@@ -79,7 +79,7 @@ cleared only by an appended plan review with a matching `Obligation` line;
 readers, not a tool, check that line. Plan review is fresh-context; code review
 is by someone other than the implementer and does not reopen the Decision. A
 reviewer does not re-run implementation checks; the implementation record owns
-that evidence. See `doctrine/dual-review.md` for the complete procedure.
+that evidence. See `docs/methodology/dual-review.md` for the complete procedure.
 
 The proposal Decision sets its tier: `light` (one short review, no plan),
 `standard` (one pass per stage), or `heavy` (adds Security Review). Light is
@@ -87,7 +87,7 @@ the default; plan triage applies only to standard/heavy. An author's higher prop
 changes it. Named high-risk surfaces and added or widened trust boundaries
 trigger heavy. A newly discovered boundary stops the work for reassessment.
 Ordinary uncertainty takes the lighter lane with its reason. The trivial lane
-is unchanged. See `doctrine/lifecycle.md` for lane details.
+is unchanged. See `docs/methodology/lifecycle.md` for lane details.
 
 ## Roles
 
@@ -114,7 +114,7 @@ terms, distinguish measured facts from assumptions, and state checks not run.
 If you do not understand a change, pause and say so. Cairn Plain Language, in
 `dev/agent_collaboration.md`, gives the rules for writing plainly; in chat as
 everywhere, separate what you measured from what you assumed, give numbers
-with their sources, and say what you did not check. See `doctrine/rationale.md`
+with their sources, and say what you did not check. See `docs/methodology/rationale.md`
 anchor 17.
 
 At session start or after context loss, read any `RULES.md` first, orient on
@@ -257,7 +257,7 @@ repair. High-risk surfaces include `bootstrap/scaffold.py` and
 `bootstrap/_scaffold/`; protected tests/control machinery (`conftest.py`,
 `security_manifest.py`, `_ast_attest.py`, `_loader_proto.py`, `_gate_*`,
 `_oracle*`, and gate/AST fixtures); install/fidelity/gate manifests, lockfile
-schema and published install manifest; vendor-neutral doctrine/templates;
+schema and published install manifest; vendor-neutral methodology and templates;
 the per-worktree interpreter binding and its shipped/self-hosted readers and
 writer; and `run_portable_security_sweeps.py` plus its policy and shipped
 copy. Their required checks and security details are in `bootstrap/SAFETY.md`,

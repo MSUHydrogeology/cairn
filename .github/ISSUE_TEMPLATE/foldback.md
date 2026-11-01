@@ -54,7 +54,7 @@ assignees: []
 <!-- Where this candidate should land in Cairn.  Check one: -->
 
 - [ ] **Cairn proposal** -- this candidate warrants a full Cairn proposal-lifecycle pass
-- [ ] **Cairn doctrine sharpening** -- a `cairn/doctrine/` edit captures it
+- [ ] **Cairn methodology sharpening** -- a `cairn/docs/methodology/` edit captures it
 - [ ] **Cairn templates / module update** -- a `cairn/templates/modules/` change carries it
 - [ ] **Other (described below)**
 

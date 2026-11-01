@@ -24,7 +24,7 @@
      the surface + the substantive change.  Keep this skimmable -- a
      Cairn maintainer reads it cold. -->
 
-* `cairn/doctrine/<file>.md`:
+* `cairn/docs/methodology/<file>.md`:
 * `cairn/templates/modules/<file>`:
 * `cairn/scripts/<file>.py`:
 

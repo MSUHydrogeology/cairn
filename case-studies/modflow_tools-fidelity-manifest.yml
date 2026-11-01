@@ -88,7 +88,7 @@ deferred_default_on: []
 #   External tier).
 #
 # - The `User Agent` and `Security Review` roles are part of the
-#   canonical Cairn role roster (see `cairn/doctrine/roles.md`) and
+#   canonical Cairn role roster (see `cairn/docs/methodology/roles.md`) and
 #   operate in `modflow_tools` via `dev/agent_collaboration.md >
 #   User Agent` and `dev/agent_collaboration.md > Security Review
 #   (focused mode)`.  Security Review is a focused application of

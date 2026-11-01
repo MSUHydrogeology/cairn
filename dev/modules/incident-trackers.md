@@ -1,4 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/rationale.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-internal-ref-allow: docs/methodology/rationale.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 # Module: incident-trackers
 
 **Selected when:** default-on — kept by every deployment that may want
@@ -13,7 +13,7 @@ location like `dev/measurement/incident_log.md`), plus a goodnight **incident-
 tracker migration** step in the session-routines / goodnight doctrine.
 
 The incident-trackers module is the **deployment-side measurement
-substrate** the rate-limit gate doctrine (`doctrine/rationale.md` >
+substrate** the rate-limit gate doctrine (`docs/methodology/rationale.md` >
 "Adaptive-doctrine rate-limit gate") evaluates against. Cairn's
 doctrine names the structural commitment ("no doctrine change from a
 single incident; recurrence ≥2 in a rolling window triggers
@@ -93,9 +93,9 @@ and for **curating** auto-rows (filling `Resolved By`, reconciling
 ## Adds to
 
 The goodnight routine, through `dev/agent_collaboration.md` > "Session
-reflections and handoff". The step itself is `doctrine/session-routines.md` >
+reflections and handoff". The step itself is `docs/methodology/session-routines.md` >
 "Goodnight incident-tracker migration — when the incident-trackers module is
-installed". <!-- cairn-internal-ref: doctrine/session-routines.md reason=citation of the doctrine step this module adds to; the step itself runs from the installed goodnight routine -->
+installed". <!-- cairn-internal-ref: docs/methodology/session-routines.md reason=citation of the doctrine step this module adds to; the step itself runs from the installed goodnight routine -->
 
 ## Merged into
 
@@ -118,7 +118,7 @@ installed". <!-- cairn-internal-ref: doctrine/session-routines.md reason=citatio
 
 ## Cross-reference to the rate-limit gate
 
-`doctrine/rationale.md` > "Adaptive-doctrine rate-limit gate" is
+`docs/methodology/rationale.md` > "Adaptive-doctrine rate-limit gate" is
 the doctrine the trackers are the substrate for. The gate's
 "recurrence" count operates on `Impact = occurred` rows within the
 rolling-window boundary the adopter chose (typically 14 days; the

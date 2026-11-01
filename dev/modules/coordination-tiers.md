@@ -1,4 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/coordination.md doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-internal-ref-allow: docs/methodology/coordination.md docs/methodology/session-routines.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 # Module: coordination-tiers
 
 **Selected when:** the agent team is **concurrent** — more than
@@ -106,7 +106,7 @@ because the committer cannot prove whether the claim is its own. The
 `{"solo_mode": true}` setting both prevent blocking while preserving the
 other-session-overlap warning; they also suppress the self-directed warnings
 for unclaimed paths and unknown identity. (Doctrine: Cairn's
-`doctrine/coordination.md` > "Enforcing the coordination check".)
+`docs/methodology/coordination.md` > "Enforcing the coordination check".)
 
 Use the same session-specific label for the claim, commit, and inherited
 post-commit auto-release. Prefer the harness-derived identity and compare
@@ -132,7 +132,7 @@ touching a collision-prone surface, run `python tools/intent.py claim`; the
 immediate conflict-check tells you on the spot whether another session
 already holds it. The post-commit hook then closes your claim when the work
 lands, so the steady-state ceremony is a single `claim` per piece of
-work. The session-start routine (`doctrine/session-routines.md`) carries
+work. The session-start routine (`docs/methodology/session-routines.md`) carries
 the *read* half — `python tools/intent.py list` before the first edit.
 
 **The opt-in work-intent pre-commit check** is the structural *opening*
@@ -145,7 +145,7 @@ and (in the shipped enforce-mode default) **blocks** only when a fresh
 staged-path overlap is provably held by a different live session and the
 committer has a per-session token (see *Enforce mode* below). Without a token,
 the overlap still warns but blocking is withheld. This closes the asymmetric-reward gap
-`doctrine/coordination.md` names: releasing is automatic, so claiming must
+`docs/methodology/coordination.md` names: releasing is automatic, so claiming must
 be the one deliberate act, and the pre-commit check is what makes
 forgetting it visible — and, for a genuine cross-session collision,
 blocking — rather than silent.
@@ -198,7 +198,7 @@ adds a `[tool_tag, env_var]` pair under `harness_session_vars` in that
 JSON config — **no edit to the tool**. The per-session derivation (and
 why a global `$CAIRN_AGENT` export is an escape hatch, not a setting) is
 the doctrine in
-`cairn/doctrine/coordination.md` >
+`cairn/docs/methodology/coordination.md` >
 "Coordination identity — per-session, not per-agent".
 
 **Atomicity is best-effort + filesystem-dependent.** The append uses a
@@ -211,7 +211,7 @@ tree on a local checkout and treat the append as advisory.
 ## Extensions
 
 Two structural extensions ship with this module. Both
-instrument the firewall claim `doctrine/coordination.md`
+instrument the firewall claim `docs/methodology/coordination.md`
 makes — that the work-intent protocol catches collisions
 before commit, and that an empty intent set never means
 "nobody is working" — by giving the team a durable
@@ -267,7 +267,7 @@ never reach the durable log unless someone migrates them
 
 Merged into the coordination section (and operationally
 sequenced alongside the goodnight routine in
-`doctrine/session-routines.md`):
+`docs/methodology/session-routines.md`):
 
 > **Goodnight intent-hygiene steps (concurrent teams).**
 > The full-handoff routine has two steps on the coordination
@@ -303,7 +303,7 @@ agent-type: every session resolves to one identity, so one
 session's auto-release closes another's claims, and the
 pre-edit read cannot tell a sibling session's claim from its
 own. The fix — doctrine in
-`cairn/doctrine/coordination.md`
+`cairn/docs/methodology/coordination.md`
 > "Coordination identity — per-session, not per-agent" — is to
 derive a **per-session** identity from the harness's
 session-scoped identifier.

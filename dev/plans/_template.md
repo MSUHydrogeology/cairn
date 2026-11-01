@@ -367,8 +367,8 @@ separate authorized integration run; a ceremony keeps its own required checks.
 
 ## Dispositions
 
-*Appended at archive-preparation (`doctrine/lifecycle.md` > "Archive
-precondition" and `doctrine/plans.md` > "Lasting-truth migration
+*Appended at archive-preparation (`docs/methodology/lifecycle.md` > "Archive
+precondition" and `docs/methodology/plans.md` > "Lasting-truth migration
 doctrine").* Record one `Dispositions: ...` line per deferred follow-up:
 `accept` (fixed in scope), `guard (<path>::<node>)` (homed in an executing
 test/check, never a comment), `wontfix` (with rationale; ineligible if it

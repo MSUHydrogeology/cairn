@@ -1,4 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/roles.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-internal-ref-allow: docs/methodology/roles.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 # Module: model-selection
 
 **Selected when:** the project sits at **moderate or complex** on
@@ -8,7 +8,7 @@ have real cost. A greenfield experimental project at low
 complexity does not install this module; if its complexity
 placement moves up later the bootstrap re-evaluates.
 **Adds to:** the role-and-capability discipline in
-`doctrine/roles.md` (the "Capability floors" section), plus
+`docs/methodology/roles.md` (the "Capability floors" section), plus
 adopter-local configuration mapping the tier labels to specific
 models.
 
@@ -35,7 +35,7 @@ Merged into the adopter's role/configuration documentation:
 > sets the model floor; the lifecycle lane governs the process, not
 > the tier. Where several families fill a tier, add a mapping row
 > for each family using the existing schema. Diversity within a tier
-> (`doctrine/roles.md`) is useful distance on request, never a
+> (`docs/methodology/roles.md`) is useful distance on request, never a
 > default an agent applies.
 >
 > **Default tier-by-task mapping:**

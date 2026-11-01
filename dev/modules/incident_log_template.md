@@ -1,4 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/rationale.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-internal-ref-allow: docs/methodology/rationale.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 # <tracker_name> -- incident log
 
 **Purpose**: <describe what event class(es) this tracker records, e.g.,
@@ -7,7 +7,7 @@ coordination + commit-discipline incidents.">
 
 **Rate-limit gate connection**: this tracker is the parse target for
 the **adaptive-doctrine rate-limit gate** specified at
-`doctrine/rationale.md` > "Adaptive-doctrine rate-limit gate." The
+`docs/methodology/rationale.md` > "Adaptive-doctrine rate-limit gate." The
 gate's "≥2 incidents of the same shape in a rolling window" trigger
 operates on this table's `Impact = occurred` rows.
 

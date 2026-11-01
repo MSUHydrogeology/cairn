@@ -1,4 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/doc-governance.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-internal-ref-allow: docs/methodology/doc-governance.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 # dev/ — the development coordination space
 
 `dev/` is Cairn's **deliberation layer**: where the
@@ -27,11 +27,11 @@ project is doing, and why* from this tree alone.
 
 The project's **vision** / charter belongs in the descriptive
 layer rather than the deliberation tree — see Cairn's own
-`doctrine/doc-governance.md` > "Common homes for project vision /
+`docs/methodology/doc-governance.md` > "Common homes for project vision /
 charter material" for the choices. (The doctrine reference is
 intentionally path-less: it points to Cairn's own doctrine, not a
 file in the adopter's tree; adopters with a local Cairn checkout
-find it at `<cairn-checkout>/doctrine/doc-governance.md`, and
+find it at `<cairn-checkout>/docs/methodology/doc-governance.md`, and
 adopters reading the published doctrine find it on the Cairn
 repository.)
 
@@ -53,7 +53,7 @@ contributor reaches the other layers in one hop:
   [`docs/getting-started.md`](../docs/getting-started.md) orient a
   newcomer.
 * **The methodology product Cairn builds** — the descriptive/published
-  layer that `dev/` exists to evolve: [`doctrine/`](../doctrine/) (the
+  layer that `dev/` exists to evolve: [`docs/methodology/`](../docs/methodology/) (the
   invariant core), [`dimensions/`](../dimensions/) (the adaptation
   axes), [`templates/`](../templates/) (the forkable files),
   [`bootstrap/`](../bootstrap/) (the scaffold + procedure),

@@ -15,7 +15,7 @@ with the proposal lifecycle, run by hand.
 ## The change, traced through the lifecycle
 
 Cairn first sorts a change into one of three lanes
-([`../../doctrine/lifecycle.md`](../../doctrine/lifecycle.md)): a typo or
+([`../../docs/methodology/lifecycle.md`](../../docs/methodology/lifecycle.md)): a typo or
 one-line fix is just a commit with its test and no code review; a change
 with a settled shape gets a short note and a review; a new capability gets
 the full path. The change here -- *add an optional name argument to

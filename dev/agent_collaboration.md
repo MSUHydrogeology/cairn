@@ -30,7 +30,7 @@ A fresh session is every review's floor, and no review requires a different
 agent type. How far a reviewer stood from the author is read from its
 attribution, and the Maintainer may ask for more distance (`AGENTS.md` >
 "Review"). Full definitions, and what each review owes, in
-`doctrine/dual-review.md`.
+`docs/methodology/dual-review.md`.
 
 **The AI surface is bimodal.** These roles are filled by **agent-side AI** — a
 model acting as a named participant, with a role, a record, and accountability
@@ -192,7 +192,7 @@ scope-remainder record per source artifact, and the **Maintainer's**
 explicit allowance — neither author nor reviewer may concede a baseline
 outcome. A stronger outcome proposed *only during review* was never in
 the baseline, so declining it is not a reduction and owes no record
-(see `doctrine/dual-review.md` > "Review expectations — the
+(see `docs/methodology/dual-review.md` > "Review expectations — the
 scope-reduction trap").
 
 ## Cairn Plain Language
@@ -285,7 +285,7 @@ applied to a review, and a question to the Maintainer in plain language is
 rules 1 and 2 applied to a question.
 
 Sources: ISO 24495-1:2023; the US Federal Plain Language Guidelines;
-ASD-STE100 (instruction rules); the studies cited in `doctrine/rationale.md`,
+ASD-STE100 (instruction rules); the studies cited in `docs/methodology/rationale.md`,
 anchor 16.
 
 ## Surfacing judgment calls to the Maintainer

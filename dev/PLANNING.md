@@ -1,4 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/coordination.md doctrine/lifecycle.md reason=published methodology citations -->
+<!-- cairn-internal-ref-allow: docs/methodology/coordination.md docs/methodology/lifecycle.md reason=published methodology citations -->
 # Cairn — development board
 
 This board lists the work left and its next step. The Maintainer reads the
@@ -257,9 +257,9 @@ extra ceremony.
 * [seed; id: try-session-start-skill]
   Try the session-start skill; its implementation is `tools/session.py`.
 * [seed; id: read-lifecycle-doctrine]
-  Read `doctrine/lifecycle.md` for the proposal/plan lifecycle.
+  Read `docs/methodology/lifecycle.md` for the proposal/plan lifecycle.
 * [seed; id: read-coordination-doctrine]
-  Read `doctrine/coordination.md` for shared-tree coordination.
+  Read `docs/methodology/coordination.md` for shared-tree coordination.
 * [seed; id: read-dual-review-module]
   Read `dev/modules/dual-review.md`; fresh independent review is the standing
   procedure, and an outside read is the Maintainer's call.
@@ -279,7 +279,7 @@ Add a board row when a trigger fires, rather than copying the register here.
 ## Archive preconditions (proposals and plans)
 
 Board housekeeping follows `dev/plans/_template.md` > Dispositions and
-`doctrine/lifecycle.md` > Archive precondition. Completed rows leave once their
+`docs/methodology/lifecycle.md` > Archive precondition. Completed rows leave once their
 record is durable; unresolved tasks keep a real live home. An archived plan
 is evidence, not a place to hide work still owed. Deferrals retain the
 Maintainer's quoted authorization and a named live home.
@@ -301,5 +301,5 @@ Maintainer-only next move on its own bulleted line starting
 ## Removal preconditions
 
 Confirm completion and its durable record before removing a task. For the
-full lifecycle rule, see `doctrine/lifecycle.md` > Removal preconditions for a
+full lifecycle rule, see `docs/methodology/lifecycle.md` > Removal preconditions for a
 roadmap item. Keep current tasks here and evidence in the source records.

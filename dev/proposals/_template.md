@@ -17,11 +17,11 @@ Cairn guards several protected contracts — a change touching any of
 these opens a proposal regardless of size:
 
 * **Invariant-kernel or doctrine change** — anything under
-  `doctrine/`, the dimension matrix / module gate-table (`dimensions/`,
+  `docs/methodology/`, the dimension matrix / module gate-table (`dimensions/`,
   `bootstrap/BOOTSTRAP.md`), or the framework anchors in
-  `doctrine/rationale.md`. The kernel is what makes a thing Cairn at
+  `docs/methodology/rationale.md`. The kernel is what makes a thing Cairn at
   all; it does not move silently, and a doctrine change additionally
-  clears the doctrine-evolution rate-limit gate (`doctrine/rationale.md`
+  clears the doctrine-evolution rate-limit gate (`docs/methodology/rationale.md`
   > "How the doctrine evolves under evidence").
 * **Bootstrap fidelity / install contract** — the scaffold's install
   set, the fidelity manifest (`bootstrap/fidelity-check.md`), the gate
@@ -411,7 +411,7 @@ Cairn's own mandatory high-assurance surfaces, each named in `AGENTS.md` >
   `run_portable_security_sweeps.py`, its resolve/revalidate pair, and
   `portable_security_policy.json`;
 * **governing doctrine and lifecycle enforcement** — anything under
-  `doctrine/`, the lifecycle planner's gate predicates, or the authoring
+  `docs/methodology/`, the lifecycle planner's gate predicates, or the authoring
   templates themselves.
 
 Plus the two non-surface triggers: the **by-file license split**, and the
