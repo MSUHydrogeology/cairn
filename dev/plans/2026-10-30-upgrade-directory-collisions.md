@@ -289,3 +289,15 @@ is unchanged.
 3. **What would show it wrong?** The reported omission and post-stage directory transition would apply or lose data; alternatively the existing wrapper control or custom-file precedence would regress. In a separate archive of cb2ecb88, Python 3.13.13 ran the renamed-wrapper omission, custom-wrapper precedence and renamed-wrapper apply control nodes: 3 passed.
 
 **Coverage**: The reported ordinary finding, its two corrections and these focused checks. Other wrapper names, custom wrapper directories, other stage-metadata cases, full mapped verification and Security Review were not assessed. This does not close other findings or final Boundary B.
+
+## Ordinary code review follow-up -- Codex GPT-6.1 Terra -- 2026-11-01
+
+**Reviewed commit**: 4fdf5a38, retired-folder race fixture correction. **Tier**: Internal. **Findings**: none. **Bounding**: ACCEPTED for this correction only. **Elapsed**: about 1 minute. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Does it do what it claims?** Yes: the fixture calls the real classifier first, skips the non-gated preflight, and swaps once after the `git_gate=True` removal classification (`bootstrap/tests/test_upgrade_removes_retired_files.py:1507`; `bootstrap/_scaffold/upgrade.py:2492`).
+2. **Best alternative.** Keep the existing controlled swap and select the gated call, without changing production behavior.
+3. **What would show it wrong?** A preflight swap, repeated swap, or a failure of the three existing race cases would contradict the correction. In a separate clean clone of 4fdf5a38, Python 3.13.13 ran `python -m pytest -q bootstrap/tests/test_upgrade_removes_retired_files.py::test_a_folder_swapped_for_a_link_after_the_decision_leaves_the_outside_copy --tb=short`: 3 passed. An initial archive lacked the Git objects required by the fixture, so its three setup failures were not evidence about the correction.
+
+**Coverage**: Changed fixture, its callers and the gated removal call, plus the three parametrizations. Other retired-removal behavior, broader integration and Security Review were not assessed; final Boundary B remains required.
