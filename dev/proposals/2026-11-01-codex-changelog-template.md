@@ -62,3 +62,17 @@ N/A: no scientific assumption or published scientific result changes.
 ## Assurance path
 
 **Assurance path**: high-assurance. The mapping touches the scaffold engine and install contract, both high-risk surfaces; ordinary and Security Reviews are required. A plan defines the exact checks and collision evidence.
+
+## Review -- Codex GPT-6 -- 2026-11-01
+
+Reviewed commit: `818b6758`; target: whole proposal; prior findings: none.
+Tier: usual; verdict: **PROCEED**; findings: none.
+Elapsed: approximately 2 minutes; tokens: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The board asks for a short root template with Major and Minor groups, typed entries and header instructions (`dev/PLANNING.md`, changelog row at `1e525b12`). The proposal supplies those, places the Plain Language marker on the template, and avoids repeating the instructions in the governing file. The existing changelog supplies the stated format.
+2. **Best alternative.** An example beside the installed files avoids a root collision, but leaves the requested ready-to-use root changelog absent and adds a copying step. The proposed collision handling preserves the existing upgrade contract.
+3. **What would show it wrong?** An actual install or upgrade replacing an existing history, a collision adoption corrupting its bytes or base record, or instructions that cannot produce the stated format. The proposal calls for entry-point tests of these cases.
+
+**Coverage:** Read the committed proposal, board request, current changelog, core mapping and install and new-core upgrade paths. The install path skips existing files unless forced; the upgrade path distinguishes an unlocked collision from another source's ownership. Did not run implementation tests, inspect every installer path or conduct Security Review; those remain for the plan and separate review.
