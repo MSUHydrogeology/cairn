@@ -1,7 +1,7 @@
 # Plan: Make proposals easier to decide
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-proposal-decision-summary.md
-**Status**: implementing
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Bring the problem, change and tradeoffs together at the start of proposals so the Maintainer can understand the choice.
@@ -216,3 +216,13 @@ The reading judgment explicitly excludes a checklist or score.
 and Decision sections, and recorded iteration evidence. Did not rerun the
 implementation checks, test reader comprehension, perform installation, or
 complete Python 3.13 final integration; no full suite or mutation run.
+
+## Boundary B verification -- Codex GPT-6 -- 2026-11-01
+
+**Elapsed**: approximately 3 minutes; **Tokens**: unknown
+
+**Mode**: wide. Tested clean commit `970b82bd33fd3d682b3ecf38c65ace08e23bcb08`; reviewed implementation range `dc83fbc55ee3be850274fb8a50911ef620d67dbd..970b82bd33fd3d682b3ecf38c65ace08e23bcb08`. Detached clone was clean before and after. Interpreter: `/Users/kendal30/conda_envs/lhm/bin/python` 3.13.13.
+
+The iteration selection and its mapped workflow/integration consumers were run with `python -m pytest` on all 16 selected files; the consumer overlap is `test_documentation_plan_module.py`, `test_install_report_slots.py`, `test_quickstart_sequence.py`, `test_replacement_tools.py`, `test_scaffold.py`, and `test_session_routines.py`. Result: 1,018 passed in 11.13 seconds. Per-file timing reruns also passed; slowest was `test_session_routines.py` at 2.71 seconds, and zero files exceeded the 10-second diagnostic target.
+
+Applicable prose gates passed on both templates: `scripts/check_cairn.py` and `scripts/link_check.py` found no issues; `scripts/sync_doc_snippets.py --check` found no drift; `scripts/quality_gate.py --sub neutrality --report` returned 0 failures and 43 informational exceptions. No changed machine check or trigger required a mutation; no additional high-risk engine check applied. Qualitative examples were checked at Boundary A and remain applicable: a short proposal can stay short, and the technical proposal leaves detail below the summary. This does not establish reader comprehension. No check was omitted from the mapped scope. Full-tree certification and re-anchor were not run.
