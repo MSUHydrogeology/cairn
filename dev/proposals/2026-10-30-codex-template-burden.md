@@ -1,7 +1,7 @@
 # Reduce template reading and authoring burden
 
 **Author**: Codex (gpt-6.1-terra), proposal author
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -123,3 +123,14 @@ Coverage: examined committed proposal, current template response/security instru
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Maintainer -- 2026-11-01
+
+**Elapsed**: unknown
+**Tokens**: unknown
+
+**Tier**: heavy
+
+**ACCEPTED.** The Maintainer’s authorization, quoted verbatim, in chat on 2026-11-01:
+
+> Accept and implement
