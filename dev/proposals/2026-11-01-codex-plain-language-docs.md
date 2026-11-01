@@ -1,7 +1,7 @@
 # Make Cairn's documentation easier to use
 
 **Author**: Codex GPT-6 (Implementation)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -10,7 +10,7 @@
 
 ## Decision summary
 
-Review the README, documentation, shipped templates and module documents, and the board against Cairn Plain Language 1.0. Improve passages that make readers work unnecessarily, while preserving instructions and technical meaning. Put the requested Plain Language line under the title of shipped templates only. This is a broad reading task: staging the work makes it manageable, but does not reduce the set to be read.
+Review the README, documentation, shipped templates and module documents, and the board against Cairn Plain Language 1.0. Improve passages that make readers work unnecessarily, while preserving instructions and technical meaning. Put the requested Plain Language line under the title of shipped templates only. Reading the full set will take sustained effort across many documents, but protects readers who rely on less-visible guidance; staging makes the work manageable without dropping any of the set.
 
 ## Context
 
@@ -18,9 +18,9 @@ The board requests this audit and specifies the template-only marker (`dev/PLANN
 
 ## Proposal
 
-Inventory the requested prose from the committed tree, including `README.md`, `docs/`, shipped templates and module documents, and the board. Identify installed templates through the actual install and module mappings, not the directory name alone. Read all applicable prose against the 17 rules, prioritizing entry points and frequently followed instructions first, then the remaining materials. Make changes in manageable groups. A document that already communicates clearly needs no edit. Keep commands, examples, conditions, warnings, links, claims, and permissions accurate; resolve uncertain meaning from its source before changing it. Do not introduce new process requirements or change policy under the guise of editing prose.
+Inventory the requested prose from the committed tree, including `README.md`, `docs/`, shipped templates and module documents, and the board. Identify installed templates through the actual install and module mappings, not the directory name alone. Read all applicable prose against the 17 rules, prioritizing entry points and frequently followed instructions first, then the remaining materials. Make changes in manageable groups. A document that already communicates clearly needs no edit. Keep commands, examples, conditions, warnings, links, claims, and permissions accurate; resolve uncertain meaning from its source before changing it. Do not introduce new process requirements or change policy under the guise of editing prose. Preserve the versioned Plain Language rules themselves unless separately authorized to change them. Record unresolved failures by group and keep them open until resolved; do not create a per-file ledger.
 
-Place `Written in Cairn Plain Language 1.0` directly below each shipped template's title. Identify how to handle templates without a conventional title in the plan without changing their usable format. Do not add the marker to other documents. Preserve existing non-template markers unless separately authorized to change them. Account for work already completed or underway, including the board and changelog, without claiming their coverage before reading the committed result.
+Place `Written in Cairn Plain Language 1.0` directly below each shipped template's title. Identify how to handle templates without a conventional title in the plan without changing their usable format. Do not add the marker to other documents. Preserve existing non-template markers unless separately authorized to change them. Coordinate overlapping work, including the board, changelog and proposal-summary plan. Read their final committed results as part of this audit without repeating their implementation or assuming it covers the broader audit.
 
 ## Rationale
 
@@ -107,3 +107,16 @@ None.
 The proposal-summary plan already records final verification. Read that committed result when auditing its shipped template, rather than duplicating its implementation or assuming it completes the broader audit.
 
 **Coverage:** Committed proposal, board request, proposal-summary scope and verification, review doctrine, and self-hosted/shipped Plain Language rules. Did not inventory every install mapping, inspect uncommitted board work, test code behavior, run mutations or implementation checks, or certify the tree.
+
+## Response -- Codex GPT-6 (author) -- 2026-11-01
+
+**Elapsed**: approximately 2 minutes; **Tokens**: unknown.
+
+- Added the effort and reason for full coverage to the decision summary.
+- Unresolved failures stay open and are recorded by group, without a per-file ledger.
+- Clarified coordination and reading of final committed overlapping work without repeating implementation or assuming broader coverage.
+- Preserved versioned Plain Language rules unless separately authorized, as the Security Review advised.
+
+### Withdrawn / superseded commitments
+
+None.
