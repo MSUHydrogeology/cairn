@@ -1,7 +1,7 @@
 # Plan: Make proposals easier to decide
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-proposal-decision-summary.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Bring the problem, change and tradeoffs together at the start of proposals so the Maintainer can understand the choice.
