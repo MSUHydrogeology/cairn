@@ -228,12 +228,14 @@ The [accepted proposal](../proposals/archive/2026-10-30-codex-plan-evidence.md)
 and [plan](../plans/archive/2026-10-30-plan-evidence.md) record the
 single-plan default and evidence rules.
 
-### 22. VER-5 installation coverage — awaiting Decision
+### 22. VER-5 discovery behavior checks — awaiting Decision
 
 The [reviewed proposal](../proposals/2026-10-30-codex-ver-5-coverage.md)
-adds six multi-script modules to the install test. The original single traversal
-remains undelivered; upgrade selection is not compared. **Decide** whether this
-smaller outcome suffices, retain original scope, or seek further comparison.
+uses independently listed expected files for seven existing multi-script modules
+to compare fresh installation, lock records, selected-module upgrade additions
+and scan targets. It does not establish every future file or upgrade state, or
+deliver the original single traversal. **Decide** whether to accept these checks
+and whether their outcome suffices for VER-5.
 
 ### 23. Reduce template burden — delivered
 
