@@ -74,3 +74,25 @@ Verdict: No blocking findings. Elapsed time: approximately 2 minutes; tokens: un
 The group-based sequence gives useful priorities without a per-file ledger or new audit machinery. Its plain language makes the sequence and stopping conditions clear. Coordination and reading the final board, changelog and proposal-summary work prevent assuming those changes complete the broader audit.
 
 **Coverage:** Compared the committed plan with the accepted proposal and doctrine retirement plan, including scope, sequencing and verification. Did not inventory every template or reader, run implementation checks, or assess future edits; separate Security Review remains due.
+
+## Plan review -- Codex (Security Review, gpt-6.1-sol) -- 2026-11-01
+
+Reviewed commit: `d02d0f51e9d7d0a513f285bcb618c7bfbb270575`  
+Target: Scope, C1–C4 and Verification  
+Prior findings: none  
+Assurance path: high-assurance (accepted proposal)
+
+**Obligation**: Internal Security Review  
+**Tier**: Internal Security Review  
+**Findings**: none  
+**Verdict**: No blocking findings. **Elapsed**: approximately 4 minutes; **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1–C3 preserve the accepted full reading scope, source meaning and template-only marker. Scope protects permissions and versioned rules; the shipped collaboration document requires versioning for reworded rules (`templates/core/dev/agent_collaboration.md`, Cairn Plain Language).
+2. **Best alternative.** Use existing install mappings and checks, and record results by group. C1 uses `bootstrap/_scaffold/config.py`, and Scope excludes new machinery. Both plans coordinate final public and installed homes.
+3. **What would show it wrong?** An omitted installed duty, softened prerequisite or marker that corrupts a consumer would defeat the preservation contract. C2–C3 require source comparison and installed-output inspection; Verification requires real entry points and meaningful deletion/inversion checks where needed. The retirement plan separately retains installed reach and path-dependent guards.
+
+Titleless templates remain open unless format-safe placement preserves their consumers. Wide final integration follows both reviews; certification and re-anchor remain unauthorized.
+
+**Coverage:** Compared the committed plan, accepted proposal, retirement coordination, installer mappings, shipped versioned-rule contract and snippet check mode. Did not inventory all readers, perform installs or mutations, run implementation checks or establish future prose equivalence.
