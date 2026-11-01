@@ -1,7 +1,7 @@
 # Plan: Reduce template burden
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-template-burden.md
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Shorten the proposal and plan templates while retaining the instructions and safeguards authors need.
