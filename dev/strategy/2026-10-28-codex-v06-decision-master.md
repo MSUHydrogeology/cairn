@@ -244,14 +244,13 @@ on 2026-11-01. The [plan](../plans/archive/2026-11-01-template-burden.md) trims 
 existing templates and corrects a contradiction while preserving installed
 guidance, obligations and machine consumers. Reviews and focused verification passed.
 
-### 24. Narrow incidental test-selector matches — awaiting Decision
+### 24. Narrow incidental test-selector matches — delivered
 
-The [reviewed proposal](../proposals/2026-11-01-codex-selector-matching.md)
-would exclude demonstrated incidental matches while retaining identified real
-consumers and required checks. One collision verification selected 51 files and
-3,130 tests; the proposal does not claim that the entire excess was unnecessary.
-Both reviewers found no mandatory heavy trigger and suggest light with the same
-safeguards. **Decide** whether to accept and select a tier.
+The [accepted proposal](../proposals/archive/2026-11-01-codex-selector-matching.md)
+excludes demonstrated incidental matches while retaining identified real
+consumers and required checks. On the collision plan's inputs, selection fell
+from 51 files to 41; time saved has not been measured. Review and focused
+verification passed.
 
 ### 25. Remove the pending certification marker — accepted
 
