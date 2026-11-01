@@ -127,3 +127,21 @@ Assurance path: high-assurance
 **Non-blocking recommendation.** Compare removing only the mandatory *pending* entry with retaining the later certification record; renaming or removing the entire field is a broader alternative than necessary. State the loss explicitly: the adopter asked for scoped certification, and this proposal preserves whole-tree certification instead. The existing scoped checks address the repeated-run concern, but do not adopt the requested terminology. A short replacement for redundant wording may serve the reader better than adding the explanation everywhere. Close by making that tradeoff clear for the Maintainer's Decision; no additional process is needed.
 
 **Coverage:** Read the committed proposal, current proposal template, decision master, accepted scoped-verification proposal and certification rule test. Did not verify every consumer, test behavior, reader comprehension or the Security Review.
+
+## Security Review -- Codex GPT-6.1 -- 2026-11-01
+
+**Tier**: Security Review  
+**Reviewed commit**: 024e7e65a660a7df85e06d94cfc5f8112c76a114  
+**Verdict**: ACCEPT; no security findings  
+**Elapsed**: approximately 4 minutes  
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Clarifying a record label adds no authority to skip checks: the proposal explicitly keeps missing required checks blocking and preserves conditional certification triggers. Evidence: proposal, Tests required and Security preflight; current `AGENTS.md` Verification.
+2. **Best alternative.** Omit the mandatory pending entry while retaining the later certification record. This reduces text and the misleading to-do, but loses an explicit per-change indication that no certification is recorded. It is a Maintainer terminology choice, not a security improvement: `doctrine/plans.md` already separates certification and blocks a push when required certification has not passed.
+3. **What would show it wrong?** Wording that permits completion with an unmet change check or weakens an authorized certification trigger would defeat the stated scope. Evidence: proposal Signals; `bootstrap/tests/test_certifying_run_rule.py` tests trigger language and conditional refusal wording; `bootstrap/tests/test_verification_boundaries.py` guards the change-verification obligations.
+
+The security risk is readers treating reassurance about pending certification as a waiver. The proposed adjacent explanation explicitly excludes that reading. Keep it short and preserve the failure rule beside it; the existing tests and later review suffice without another ledger or mechanism. This proposal authorizes no executable guard change, authentication claim or new trust boundary.
+
+**Coverage:** Read the committed proposal, proposal template, governing verification rules, certification doctrine and named rule-test source. Did not run tests, inspect every consumer, prove reader comprehension or assess implementation wording that does not yet exist.
