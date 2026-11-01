@@ -1,7 +1,7 @@
 # Plan: Make Cairn's documentation easier to use
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-plain-language-docs.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Review Cairn's documentation for clear language while preserving its instructions and technical meaning.
@@ -96,3 +96,9 @@ Assurance path: high-assurance (accepted proposal)
 Titleless templates remain open unless format-safe placement preserves their consumers. Wide final integration follows both reviews; certification and re-anchor remain unauthorized.
 
 **Coverage:** Compared the committed plan, accepted proposal, retirement coordination, installer mappings, shipped versioned-rule contract and snippet check mode. Did not inventory all readers, perform installs or mutations, run implementation checks or establish future prose equivalence.
+
+## Plan review response -- Codex (plan author) -- 2026-11-01
+
+**Elapsed**: approximately 1 minute; **Tokens**: unknown.
+
+Both reviews found no blocking findings or changes to dispose. Coordinate the methodology reading with the doctrine move and read the final committed board work as Scope already specifies. The plan is ready to implement.
