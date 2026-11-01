@@ -1,7 +1,7 @@
 # Make Cairn's documentation easier to use
 
 **Author**: Codex GPT-6 (Implementation)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -20,7 +20,7 @@ The board requests this audit and specifies the template-only marker (`dev/PLANN
 
 Inventory the requested prose from the committed tree, including `README.md`, `docs/`, current `doctrine/` material, shipped templates and module documents, and the board. Identify installed templates through the actual install and module mappings, not the directory name alone. Read all applicable prose against the 17 rules, prioritizing entry points and frequently followed instructions first, then the remaining materials. Make changes in manageable groups. A document that already communicates clearly needs no edit. Keep commands, examples, conditions, warnings, links, claims, and permissions accurate; resolve uncertain meaning from its source before changing it. Do not introduce new process requirements or change policy under the guise of editing prose. Preserve the versioned Plain Language rules themselves unless separately authorized to change them. Record unresolved failures by group and keep them open until resolved; do not create a per-file ledger.
 
-The physical relocation of the entire `doctrine/` folder is separate work requiring its own scoped proposal and review. That work must preserve public methodology in the chosen home and complete operating duties in usable installed homes, reconcile cross-repository references and path-based checks and pins, and remove the old folder only when its contents and dependencies are accounted for. The routing choice alone did not authorize or complete these changes. Coordinate timing with that work: review the current material if relocation is not ready; if it is moved first, review the final committed destination. Carry forward any completed prose improvements so the same pages are not polished twice. Do not defer the methodology review indefinitely or claim it complete merely because a move is planned. No content or obligation is silently dropped.
+The physical relocation of `doctrine/` is separate implementation work under the accepted governing-text proposal and routing choice, with a follow-up plan being prepared. Coordinate timing with that plan: review the current material if relocation is not ready; if it moves first, account for and review all relocated material in its final committed homes, including public methodology and any operating guidance split into installed homes. Carry forward completed prose improvements so the same pages are not polished twice. Do not defer the methodology review indefinitely or claim it complete merely because a move is planned. No content or obligation is silently dropped. The relocation plan must account for references and path-based checks and pins, and preserve the public material and complete installed duties before removing the old home.
 
 Place `Written in Cairn Plain Language 1.0` directly below each shipped template's title. Identify how to handle templates without a conventional title in the plan without changing their usable format. Do not add the marker to other documents. Preserve existing non-template markers unless separately authorized to change them. Coordinate overlapping work, including the board, changelog and proposal-summary plan. Read their final committed results as part of this audit without repeating their implementation or assuming it covers the broader audit.
 
@@ -149,3 +149,14 @@ The Maintainer confirmed the intent to remove `doctrine/` and identified its omi
 **Finding:** If relocation happens first, “review the final committed destination” could be read as only `docs/methodology/`, although the C2 choice also puts complete operating duties in installed homes. Say the plan will account for and review all relocated material at its final homes, including any split between public and installed guidance. This preserves the full requested reading without requiring a per-file ledger or polishing a page twice.
 
 **Coverage:** Compared the expanded proposal with the committed doctrine file list and the archived C2 routing choice, including the separate installed homes. Did not audit individual doctrine contents, relocation dependencies, or security controls; the separate Security Review remains owed.
+
+## Response to widened review -- Codex GPT-6 (author) -- 2026-11-01
+
+**Elapsed**: approximately 2 minutes; **Tokens**: unknown.
+
+- Accepted: the audit accounts for and reads all relocated material in its final public and installed homes, without a per-file ledger or duplicate polishing.
+- Corrected the relocation route: the accepted governing-text proposal and routing choice already exist; a follow-up plan is being prepared. A new proposal or Decision is not asserted as a prerequisite.
+
+### Withdrawn / superseded commitments
+
+- Replaced the asserted need for a separate relocation proposal with coordination against the existing accepted record and follow-up plan; the preservation and review outcomes remain.
