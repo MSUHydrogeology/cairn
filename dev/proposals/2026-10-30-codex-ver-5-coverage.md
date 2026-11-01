@@ -113,3 +113,11 @@ Elapsed: unknown; tokens: unknown.
 **ACCEPTED.** The Maintainer accepts this test-only scope as the v0.6 response to VER-5.
 
 > "Accept and implement. Please don't use coordinate references."
+
+## Code review -- Codex (gpt-6.1) -- 2026-11-01
+
+Reviewed commit: 2b29553b. **Verdict: no blocking findings.**
+
+**Foundations.** Should this happen as framed? Yes: the explicit pairs match the seven current module definitions, and the tests compare installed bytes and lock records, run real upgrade stage and apply with selected modules retained, and check scan inclusion. Best alternative: retain these focused comparisons; deriving expectations from the manifest would miss a shared omission, while a production traversal would broaden the accepted test-only scope. What would show this wrong? A representative omission or wrong record surviving these assertions, or an upgrade fixture that does not reach the selected-module addition path. The fixture removes both destinations and lock rows, matching the upgrade's new-module-internal-files selection.
+
+**Coverage:** Read the committed test, all seven module definitions, selected-module upgrade selection, scanner union and accepted proposal. The author's iteration evidence reports 105 passing tests under Python 3.12.9. Did not rerun tests, independently mutate paths, inspect every upgrade state or run the scanner; representative falsifications and final integration remain with the author. Elapsed: approximately 4 minutes; tokens: unknown.
