@@ -188,3 +188,38 @@ Reviewed commit: d714596d82d9da0c3ce933fb6bde21d3b3ff7c8b.
 ## Code review re-look -- Codex GPT-6.1 -- 2026-11-01
 
 Reviewed commit: d3bc1e529b7c672d92b0a594ba838ba7920f84b0. **Finding closed.** The revised expression matches the stem inside the parentheses; a separate copy of the commit selected a probe containing a parenthesized multiline import with multiple names via `tools/test_tiers.py for bootstrap/_scaffold/upgrade.py`. The committed regression covers the reported form and a near-match exclusion. Covered the correction to the import finding only; did not rerun implementation checks or revisit other consumer coverage. Elapsed: approximately 2 minutes; tokens: unknown.
+
+## Implementation verification -- Codex GPT-6 -- 2026-11-01
+
+Elapsed: approximately 5 seconds for the selector-scoped checks; tokens: unknown.
+
+**Boundary A -- iteration**: On a clean copy, `tools/test_tiers.py for tools/test_tiers.py bootstrap/tests/test_test_tiers.py dev/proposals/2026-11-01-codex-selector-matching.md` selected only `bootstrap/tests/test_test_tiers.py`. Python 3.13.13 ran that file: 13 passed, 0 failed, 0 skipped in 0.23 seconds. This covers direct, dotted and parenthesized multiline imports, path and filename citations, the indirect CLI forms, changed-test inclusion, and AGENTS reviewed-range and omission behavior.
+
+**Boundary B mode**: wide. The selector changes the scoped-verification contract. The owner test family passed, the real `for` entry point was exercised on the recorded collision inputs, and the standing prose gates passed.
+
+**Selector change set**: implementation commits `d714596d`, `c3b604c0`, `d3bc1e52`; review records `0b0a7877` and `a4fd9bcc`. The continuous history also contains unrelated collision-plan and certification-marker work; those changes are excluded from this task's reviewed scope.
+
+**Tested commit**: `71ac7ae176177ac67a2e0e75b8c8565ed7eaafa9`.
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python`, Python 3.13.13.
+
+**Pre-run state**: clean Git-backed copy at the tested commit.
+
+**Post-run state**: clean copy at the same commit.
+
+| Command | Exit | Result | Elapsed |
+|---|---:|---|---:|
+| `python -m pytest -q bootstrap/tests/test_test_tiers.py --tb=short` | 0 | 13 passed, 0 failed, 0 skipped | 0.23 s |
+| `python tools/test_tiers.py for bootstrap/_scaffold/upgrade.py bootstrap/tests/test_upgrade.py bootstrap/tests/test_upgrade_removes_retired_files.py bootstrap/UPGRADE.md` on baseline `cc6bd2ff`, then tested commit | 0 | 51 files before; 41 after | about 1 s each |
+| `python scripts/claim_check.py dev/proposals/2026-11-01-codex-selector-matching.md` | 0 | No flags | <1 s |
+| `python scripts/check_cairn.py` | 0 | 190 Markdown files scanned; no issues | about 1 s |
+| `python scripts/link_check.py` | 0 | 190 Markdown files scanned; no issues; 90 external links not probed | <1 s |
+| `python scripts/quality_gate.py --sub neutrality` | 0 | 0 failures, 43 informational matches | <1 s |
+
+The committed comparison retained the known indirect consumers `test_default_security_stance.py`, `test_drift_surfacing.py`, `test_oracle.py`, `test_scaffold.py`, `test_security_leaf.py`, `test_upgrade.py`, and `test_upgrade_refuses_hostile_project_data.py`. Representative exclusions were `test_claim_check_module.py` (only a `.cairn-upgrade-bak` path), `test_link_check_exclusions.py` (`upgrade-ancestor`), and layer-boundary tests that discuss upgrade as another subsystem. This comparison does not establish that every omitted test is irrelevant.
+
+**Non-pass disposition outside this selector scope**: An earlier run used the continuous shared range, which included unrelated collision-plan changes and mapped 22 files. It produced 1,102 passes and one failure: `test_a_hand_built_review_area_cannot_make_apply_record_a_path_outside_the_project` in `bootstrap/tests/test_upgrade_lockfile_path_containment.py` expected exit 0 but the current engine refused with incomplete directory observations. The failure is reported to the collision-plan author; it was not part of the selector-only mapping or Boundary B above.
+
+**Known omissions**: No exhaustive consumer discovery, full suite, tree certification, re-anchor, or repin was performed. External links were not probed.
+
+**Certified by**: pending
