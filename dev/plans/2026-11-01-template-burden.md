@@ -143,3 +143,9 @@ Coverage: inspected both implementation diffs, the proposal revision rule, both 
 Mutation controls: in 12 separate `bf60c2ab` copies, each of the four templates listed above received a separate slot-marker, review/security-instruction, or scope-authority deletion; `test_install_report_slots.py::test_minimal_profile_lists_absent_module_slots_separately`, `test_review_stance_in_shipped_files.py::test_template_review_section_carries_the_obligation`, and `test_scope_reduction_trap.py::test_scope_reduction_obligation_present` detected all 10 automated losses, while baseline-positive/mutant-negative marker comparisons detected both self-hosted slot losses (12/12 detected; no misses).
 
 The full 18-file iteration selection on corrected plan bytes remains outstanding under ordinary-review R1. The reviewer agrees the planned post-review wide Boundary B may satisfy both checks if the included selection passes; no result is yet claimed.
+
+## Code review correction -- Codex (GPT-6) -- 2026-11-01
+
+**Elapsed**: 1 minute (estimated); **Tokens**: unknown.
+
+R1 corrected: the plan does not require a second execution of the exact iteration selection after the correction. The prescribed post-review wide Boundary B includes that selection on the clean final commit and may satisfy both requirements in one run. The selection and Boundary B remain due; no check is waived. `WIDER RUN REQUIRED` remains until that run passes.
