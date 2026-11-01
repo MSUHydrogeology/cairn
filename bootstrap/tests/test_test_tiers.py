@@ -140,6 +140,7 @@ def test_for_matches_python_references_as_tokens_and_keeps_indirect_consumers(tm
     target.write_text("VALUE = 1\n", encoding="utf-8")
     tests = _tests(tmp_path, "test_imports_upgrade", "test_cites_upgrade",
                    "test_runs_upgrade", "test_cites_upgrade_helper",
+                   "test_parenthesized_import_upgrade",
                    "test_incidental_upgrade_words")
     (tests / "test_imports_upgrade.py").write_text(
         "from bootstrap._scaffold import upgrade as UP\n", encoding="utf-8")
@@ -151,17 +152,30 @@ def test_for_matches_python_references_as_tokens_and_keeps_indirect_consumers(tm
         encoding="utf-8")
     (tests / "test_cites_upgrade_helper.py").write_text(
         'PROTECTED = "_apply_upgrade"\n', encoding="utf-8")
+    (tests / "test_parenthesized_import_upgrade.py").write_text(
+        "from bootstrap._scaffold import (\n"
+        "    install,\n"
+        "    upgrade as UP,\n"
+        "    lockfile,\n"
+        ")\n", encoding="utf-8")
     (tests / "test_incidental_upgrade_words.py").write_text(
-        'NOTE = "the upgraded upgradeable upgrade_directory behavior"\n',
+        'NOTE = "the upgraded upgradeable upgrade_directory behavior"\n'
+        "from package import (\n    upgradeable,\n)\n",
         encoding="utf-8")
 
-    selected = tiers_tool.tests_for_paths(
-        ["bootstrap/_scaffold/upgrade.py"],
-        sorted(tests.glob("test_*.py")), root=tmp_path)
-    assert selected == [tests / "test_cites_upgrade.py",
-                        tests / "test_cites_upgrade_helper.py",
-                        tests / "test_imports_upgrade.py",
-                        tests / "test_runs_upgrade.py"]
+    out, err = io.StringIO(), io.StringIO()
+    code = tiers_tool.main(
+        ["for", "bootstrap/_scaffold/upgrade.py"],
+        config=_config(tmp_path, [{"name": "unit", "about": "", "patterns": ["test_*"]}]),
+        test_dir=tests, root=tmp_path, out=out, err=err)
+    assert code == 0
+    assert out.getvalue().splitlines() == [
+        "tests/test_cites_upgrade.py",
+        "tests/test_cites_upgrade_helper.py",
+        "tests/test_imports_upgrade.py",
+        "tests/test_parenthesized_import_upgrade.py",
+        "tests/test_runs_upgrade.py",
+    ]
 
 
 def test_for_includes_a_changed_test_module_itself(tmp_path):
