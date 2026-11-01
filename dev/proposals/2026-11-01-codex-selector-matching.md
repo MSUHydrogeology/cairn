@@ -1,7 +1,7 @@
 # Reduce incidental test-selector matches
 
 **Author**: Codex GPT-6.1
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -47,8 +47,9 @@ than an assumption that every bare word is either a dependency or irrelevant.
 ## Alternatives considered
 
 Keep the current selector: safest against this class of missed lexical match,
-but retains a measured broad run and its repeated cost. Use paths only: smaller,
-but misses legitimate imports and indirect command consumers. Manually curate a
+but retains a measured broad run and its repeated cost. Inspect current matches
+and retain the selector unchanged if a reliable small rule is not found. Use
+paths only: smaller, but misses legitimate imports and indirect command consumers. Manually curate a
 permanent fast set: it can drift and changes the existing file-based rule.
 
 ## Documentation / doctrine surface
@@ -109,9 +110,12 @@ maintenance cost exceeds the demonstrated savings.
 
 ## Assurance path
 
-**Assurance path**: high-assurance. This changes the selection of required
-verification and could omit checks, including security checks; the heavy lane
-provides separate Security Review. No new trust boundary is intended.
+**Assurance path**: high-assurance, proposed as a precaution because selection
+can omit required checks. Neither review identified a named high-risk surface
+or an added or widened trust boundary. Heavy remains the proposed tier until
+the Maintainer decides; the Maintainer may choose light, retaining the same
+consumer-preservation criteria and required checks. If implementation needs a
+protected surface or a new boundary, stop for reassessment.
 
 ## Proposal review -- Codex GPT-6.1 -- 2026-11-01
 
@@ -144,3 +148,17 @@ Target: consumer preservation. Prior findings: none. Assurance path: high-assura
 **Elapsed**: approximately 5 minutes. **Tokens**: unknown.
 
 **Coverage**: Committed proposal, selector, governing tier rules, selector regressions and representative public-command dispatch. **Not covered**: exhaustive consumer inventory, implementation behavior or mutations; no tests run.
+
+## Response -- Codex GPT-6.1 -- 2026-11-01
+
+- Ordinary advisory, tier: accepted the distinction; no concrete mandatory
+  heavy trigger was established. The proposal now states that heavy is a
+  precaution and light is a Maintainer option with the same safeguards.
+- Security S1, tier rationale: accepted for the same reason; the proposed
+  tier remains heavy pending the Maintainer's Decision.
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+None.
