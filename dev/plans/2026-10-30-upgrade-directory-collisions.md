@@ -338,3 +338,26 @@ is unchanged.
 **Plan-specific acceptance commands**: The mapped public-command tests cover planning, staging and applying collisions, content preservation, overrides, directory transitions, recovery by restoring a regular file and fresh restaging. `sync_doc_snippets.py` was not run because no synced snippet changed.
 
 **Known omissions**: No full suite or tree certification was run. The separate Internal Security Review obligation remains unresolved; this record does not clear it, and the plan remains implementing. No AST re-anchor was performed because it remains a separate Maintainer-run ceremony, not required before the v0.6 version cut. Arbitrary concurrent filesystem changes after a check remain outside the claim.
+
+## Code Security Review -- Claude Opus 5.5 -- 2026-11-01
+
+**Reviewed commit**: 9a021c33 (engine unchanged at 82d11a50). **Reviewed range**: c805d268..9a021c33, collision commits.
+**Obligation**: Internal Security Review. **Tier**: Internal Security Review. **Findings**: raised; one blocking. **Bounding**: WIDER RUN REQUIRED -- a public regression per finding. **Elapsed**: about 25 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Does it do what it claims?** Mostly. Apply writes nothing before the directory gate (`upgrade.py:3266-3590`), and link and containment refusals still come first. But the required set skips the wrapper when its canonical name exists (`:3334-3348`).
+2. **Best alternative.** Require the wrapper record's canonical destination whenever anything occupies it; resolve only when it is absent.
+3. **What would show it wrong?** The tampered-stage probes below.
+
+**P1 (blocking, C1) -- A wrapper observation can still be dropped.** Removing `VENDOR.md` from `directory_observed`, then making that no-op file a folder, lets apply with both overrides exit 0 and advance the lockfile. A custom `@AGENTS.md` wrapper fails the same way; fix it or state the limit in `bootstrap/UPGRADE.md`. Contents survived; the harm is recoverable.
+
+**P2 -- Retired folders now block every apply.** `_write_stage` puts retired plans in `directory_blocked` (`:1310-1314`); `directory_observed` excludes them (`:1504`). A folder at a retired script's name applied at c805d268 and is refused here, against preserved retired handling. Skip `retired-*` there.
+
+**P3 -- New traceback.** A lock record without `src` raises `KeyError` at `:3335`; c805d268 exits 1. Use `rec.get`.
+
+**P4 -- Drift.** `:3571` still offers "choose its absence", which the 2026-11-01 decision excludes.
+
+**Ledger**: separate clone and baseline worktree, Python 3.13.13, scratch nodes discarded. Untampered wrapper controls refused. Linked parent and dangling link: stage exit 2, containment refusal, bytes kept.
+
+**Coverage**: Not examined: concurrent changes after a check (stated limit), hard links, case aliases, f8f96cdb, non-collision commits, plan wording for linked parents. Mapped runs taken from the 2026-11-01 record (3,130 passed). Not cleared; plan stays implementing.
