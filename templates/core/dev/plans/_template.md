@@ -1,5 +1,6 @@
 <!-- cairn-internal-ref-allow: docs/methodology/plans.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 <!-- cairn-internal-ref-allow: docs/methodology/lifecycle.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
+External-repo paths: `docs/methodology/plans.md`, `docs/methodology/lifecycle.md`
 <!-- The plan template. Copy only the opening header and operative section
      headings (`Source proposal` through `Verification`) below the rule into
      `dev/plans/<YYYY-MM-DD>-<slug>.md`, replace every prompt with your answer
@@ -372,8 +373,8 @@ separate authorized integration run; a ceremony keeps its own required checks.
 
 ## Dispositions
 
-*Appended at archive-preparation (`docs/methodology/lifecycle.md` > "Archive
-precondition" and `docs/methodology/plans.md` > "Lasting-truth migration
+*Appended at archive-preparation (see Cairn's published lifecycle method > "Archive
+precondition" and published plan method > "Lasting-truth migration
 doctrine").* Record one `Dispositions: ...` line per deferred follow-up:
 `accept` (fixed in scope), `guard (<path>::<node>)` (homed in an executing
 test/check, never a comment), `wontfix` (with rationale; ineligible if it

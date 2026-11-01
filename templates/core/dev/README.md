@@ -1,4 +1,5 @@
 <!-- cairn-internal-ref-allow: docs/methodology/doc-governance.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
+External-repo paths: `docs/methodology/doc-governance.md`
 # dev/ — the development coordination space
 
 `dev/` is {{project_name}}'s **deliberation layer**: where the
@@ -26,14 +27,10 @@ project is doing, and why* from this tree alone.
 | `strategy/` | Stage-0 exploration notes — comparative research, tool analysis, product strategy — written before a commitment is ready to propose. See `strategy/README.md`. |
 
 The project's **vision** / charter belongs in the descriptive
-layer rather than the deliberation tree — see Cairn's own
-`docs/methodology/doc-governance.md` > "Common homes for project vision /
-charter material" for the choices. (The doctrine reference is
-intentionally path-less: it points to Cairn's own doctrine, not a
-file in the adopter's tree; adopters with a local Cairn checkout
-find it at `<cairn-checkout>/docs/methodology/doc-governance.md`, and
-adopters reading the published doctrine find it on the Cairn
-repository.)
+layer rather than the deliberation tree — see Cairn's published
+doc-governance method > "Common homes for project vision / charter
+material" for the choices. The reference points to Cairn's published
+methodology, not a file in the adopter's tree.
 
 ## How this relates to other docs
 

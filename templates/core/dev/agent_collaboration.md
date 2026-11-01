@@ -1,4 +1,5 @@
 <!-- cairn-internal-ref-allow: docs/methodology/ reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
+External-repo paths: `docs/methodology/dual-review.md`, `docs/methodology/rationale.md`
 # Agent collaboration — {{project_name}}
 
 > **The deliberation and decision process.** `AGENTS.md` carries the
@@ -34,7 +35,7 @@ A fresh session is every review's floor, and no review requires a different
 agent type. How far a reviewer stood from the author is read from its
 attribution, and the Maintainer may ask for more distance (`AGENTS.md` >
 "Review"). Full definitions, and what each review owes, in
-`docs/methodology/dual-review.md`.
+Cairn's published dual-review method.
 
 <!-- cairn:slot role-roster-additions -->
 (Dimension-selected roles — a User Agent, a Security reviewer,
@@ -193,7 +194,7 @@ scope-remainder record per source artifact, and the **Maintainer's**
 explicit allowance — neither author nor reviewer may concede a baseline
 outcome. A stronger outcome proposed *only during review* was never in
 the baseline, so declining it is not a reduction and owes no record
-(see `docs/methodology/dual-review.md` > "Review expectations — the
+(see Cairn's published dual-review method > "Review expectations — the
 scope-reduction trap").
 
 ## Cairn Plain Language
@@ -286,7 +287,7 @@ applied to a review, and a question to the Maintainer in plain language is
 rules 1 and 2 applied to a question.
 
 Sources: ISO 24495-1:2023; the US Federal Plain Language Guidelines;
-ASD-STE100 (instruction rules); the studies cited in `docs/methodology/rationale.md`,
+ASD-STE100 (instruction rules); the studies cited in Cairn's published rationale,
 anchor 16.
 
 ## Surfacing judgment calls to the Maintainer

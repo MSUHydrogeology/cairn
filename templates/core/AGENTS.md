@@ -20,7 +20,7 @@ review finding.)
 
 External-repo paths: `docs/methodology/`, `docs/methodology/dual-review.md`, `docs/methodology/lifecycle.md`, `docs/methodology/rationale.md`
 
-**Where published methodology references resolve.** References to the paths
+**Where `docs/methodology/` references resolve.** References to the paths
 listed above point to **Cairn's published methodology** — the repository you
 adopted from — **not** files in your own tree. The bootstrap installs your
 `AGENTS.md` and `dev/` tree, not Cairn's methodology directory, so these are

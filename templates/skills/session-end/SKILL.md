@@ -1,8 +1,10 @@
 ---
 name: session-end
-description: Manual lifecycle routine -- session-end (goodnight). Invoke only on an explicit operator request to wrap up; reflection-only by default. Not a conversational helper and not a response to chatter such as "goodnight". Mechanics live in tools/session.py; the canonical doctrine is docs/methodology/session-routines.md.
+description: Manual lifecycle routine -- session-end (goodnight). Invoke only on an explicit operator request to wrap up; reflection-only by default. Not a conversational helper and not a response to chatter such as "goodnight". Mechanics live in tools/session.py; the canonical doctrine is Cairn's published session-routines method.
 disable-model-invocation: true
 ---
+External-repo paths: `docs/methodology/session-routines.md`
+
 <!-- cairn-internal-ref-allow: docs/methodology/session-routines.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 
 # Session-end (goodnight)
@@ -11,7 +13,7 @@ disable-model-invocation: true
 explicitly asks to "wrap up" or "call it a night" -- never from ordinary
 conversation ("goodnight, talk tomorrow" is not an instruction to scrub a
 roadmap). The canonical doctrine for *what* this routine is and *why* lives in
-**`docs/methodology/session-routines.md`**; this skill only orchestrates it.
+**Cairn's published session-routines method**; this skill only orchestrates it.
 
 ## 1. Run the mechanizable step
 
