@@ -281,15 +281,15 @@ python bootstrap/verify_integrity.py --target <repo>            # 4. verify
   bare `--finalize` then stop, print the reason and name `--force`; `--stage`
   completes and prints the advisory.
 
-  **The completion gate.** An upgrade is **not complete** until every
-  review-only / customized file has been reconciled against the new upstream.
-  `--apply` enforces this: it **fail-closes** (mirroring the conflict-marker
-  gate) when review-only files remain, so a `--stage` → `--apply` cannot
-  silently advance the lockfile to the new version while your customized
-  doctrine never landed. Once you have merged each `review-only/` pair into
-  its original by hand, re-run `--apply --ack-review-only` to acknowledge them
-  and apply. (Without that flag the gate holds — there is no way to advance
-  the version past an unreconciled customized file by accident.)
+  **The review-only gate.** `--apply` **fail-closes** (mirroring the
+  conflict-marker gate) when review-only files remain, so a `--stage` →
+  `--apply` cannot silently advance the lockfile while those files still owe
+  manual reconciliation. Clean customized merges can apply automatically.
+  After you have reconciled each `review-only/` pair into its original by
+  hand, re-run `--apply --ack-review-only` to acknowledge the work and apply.
+  That flag also lets you proceed while review-only work remains; those files
+  are not merged or applied by Cairn, so reconcile them by hand before
+  treating the upgrade as complete.
 
   Before a three-way merge, Cairn hashes the raw saved ancestor and checks it
   against the lockfile's `base_hash`; it then decodes and merges those same
