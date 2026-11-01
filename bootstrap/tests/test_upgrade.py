@@ -2760,14 +2760,32 @@ class TestTrackedDirectoryCollisions:
         assert _install(tmp_path) == 0
         if wrapper_name != "VENDOR.md":
             (tmp_path / "VENDOR.md").rename(tmp_path / wrapper_name)
-            lock_path = tmp_path / "dev/.cairn/cairn-lock.yml"
-            lock = s.read_lockfile(tmp_path)
-            wrapper = next(r for r in lock["files"]
+            if wrapper_name == "CUSTOM.md":
+                (tmp_path / wrapper_name).write_text(
+                    "# Custom vendor wrapper\n@AGENTS.md\n", encoding="utf-8")
+            lock_before = s.read_lockfile(tmp_path)
+            other_records_before = [r for r in lock_before["files"]
+                                    if r["src"] != "core/VENDOR.md"]
+            stage = tmp_path / "dev/.cairn-upgrade"
+            capsys.readouterr()
+            rc = s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                         "--cairn-root", str(CAIRN_ROOT)])
+            err = capsys.readouterr().err
+            assert rc == 1
+            assert "Review the full contents" in err
+            assert "--finalize VENDOR.md" in err
+            assert not stage.exists()
+
+            assert s.main(["upgrade", "--target", str(tmp_path), "--finalize",
+                           "VENDOR.md", "--cairn-root", str(CAIRN_ROOT)]) == 0
+            lock_after = s.read_lockfile(tmp_path)
+            wrapper = next(r for r in lock_after["files"]
                            if r["src"] == "core/VENDOR.md")
-            wrapper["dst"] = wrapper_name
-            wrapper["hash"] = "sha256:" + s._sha256_hex(
+            assert wrapper["dst"] == wrapper_name
+            assert wrapper["hash"] == "sha256:" + s._sha256_hex(
                 (tmp_path / wrapper_name).read_bytes())
-            lock_path.write_text(s._emit_lock_yaml(lock), encoding="utf-8")
+            assert [r for r in lock_after["files"]
+                    if r["src"] != "core/VENDOR.md"] == other_records_before
         TestUpgradeModes()._diverge_base(tmp_path)
         assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
                        "--cairn-root", str(CAIRN_ROOT)]) == 0

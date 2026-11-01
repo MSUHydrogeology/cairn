@@ -515,6 +515,13 @@ installed under a renamed destination (the vendor wrapper `VENDOR.md` →
 unconditional core/skills tier auto-adds; **new modules stay opt-in** (listed
 under "new modules available (opt-in)", adopted deliberately — see below).
 
+An arbitrary root-level `*.md` wrapper discovered from its `@AGENTS.md`
+import must be recorded by name before it can be staged. Review the wrapper's
+full contents, then run `python bootstrap/scaffold.py upgrade --target <repo>
+--finalize VENDOR.md`. This scoped operation updates the existing wrapper
+record with its actual name and current contents. Review that lockfile change,
+then run `upgrade --stage` again.
+
 ## Adopting a hand-placed module
 
 A module is **opt-in**, so it is never auto-added on upgrade. If you hand-placed

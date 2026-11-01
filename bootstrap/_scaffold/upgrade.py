@@ -4253,6 +4253,30 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
         args.to or _cairn_commit(cairn_root))
 
     if args.stage:
+        wrapper_rec = next((rec for rec in lock.get("files", [])
+                            if isinstance(rec, dict)
+                            and rec.get("src") == "core/VENDOR.md"), None)
+        if wrapper_rec is not None:
+            recorded_dst = wrapper_rec.get("dst")
+            mapped_dsts = {rec.get("dst") for rec in lock.get("files", [])
+                           if isinstance(rec, dict)
+                           and isinstance(rec.get("dst"), str)}
+            if (isinstance(recorded_dst, str)
+                    and not (target / recorded_dst).exists()):
+                resolved_wrapper = _resolve_vendor_wrapper(target, mapped_dsts)
+                if (resolved_wrapper is not None
+                        and resolved_wrapper not in _KNOWN_VENDOR_WRAPPERS
+                        and resolved_wrapper != recorded_dst):
+                    print(
+                        "error: cannot stage an unrecorded custom vendor wrapper.\n"
+                        f"  Review the full contents of "
+                        f"{_display_name(resolved_wrapper)}, then run "
+                        "`upgrade --finalize VENDOR.md` to record its current "
+                        "contents and actual name. Review the lock change, then "
+                        "re-run `upgrade --stage`.",
+                        file=sys.stderr,
+                    )
+                    return 1
         _new_profile, _new_axes, _new_tokens = _resolve_current_profile(target, lock)
         try:
             stage, adopt_hints = _write_stage(
