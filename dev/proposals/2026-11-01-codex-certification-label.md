@@ -104,3 +104,26 @@ or the clarification costs more than the ambiguity warrants.
 
 **Assurance path**: high-assurance. The proposed changes touch governing
 doctrine and shipped authoring templates; no new trust boundary is intended.
+
+## Review -- Codex GPT-6.1 -- 2026-11-01
+
+Reviewed commit: 024e7e65a660a7df85e06d94cfc5f8112c76a114  
+Target: proposal and verification approach  
+Prior findings: none  
+Assurance path: high-assurance
+
+**Tier**: usual  
+**Findings**: raised  
+**Verdict**: ACCEPT  
+**Elapsed**: approximately 3 minutes  
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** The adjacent explanation could make the existing label less misleading, but adds text across six surfaces without evidence of how often readers stumble; the issue remains a terminology decision, not proof that this wording solves it. Evidence: proposal context and proposal; decision master, issue triage.
+2. **Best alternative.** Drop the mandatory pending entry and record the certifying SHA only when a run exists, while retaining the separate tree-certification triggers. This removes the misleading to-do and some apparatus; it loses the explicit per-change indication that no later run is recorded. The accepted scoped-verification proposal originally called for this, while the current certification rule test requires `Certified by` on each surface.
+3. **What would show it wrong?** An actual consumer or wording that makes a missing change check seem optional, or a concrete assessment that the explanation costs more than the ambiguity, should prompt revision or withdrawal. Evidence: proposal signals and tests required.
+
+**Non-blocking recommendation.** Compare removing only the mandatory *pending* entry with retaining the later certification record; renaming or removing the entire field is a broader alternative than necessary. State the loss explicitly: the adopter asked for scoped certification, and this proposal preserves whole-tree certification instead. The existing scoped checks address the repeated-run concern, but do not adopt the requested terminology. A short replacement for redundant wording may serve the reader better than adding the explanation everywhere. Close by making that tradeoff clear for the Maintainer's Decision; no additional process is needed.
+
+**Coverage:** Read the committed proposal, current proposal template, decision master, accepted scoped-verification proposal and certification rule test. Did not verify every consumer, test behavior, reader comprehension or the Security Review.
