@@ -17,7 +17,7 @@ Explore a visual, evidence-linked **codebase review**, comparing a chosen releas
 
 Surveyed research through 2026-10-28 using [Consensus](https://consensus.app/search/we-are-designing-a-stage-0-strategy-for-a-vendor-n/_nAR66dJQ26RyG3grawJlA/), arXiv and primary engineering accounts. Opened the sources below; this was a targeted survey, not a systematic review. Consensus supplied discovery leads, not independent verification.
 
-Read Cairn's [review doctrine](../../doctrine/dual-review.md), [review sweep](../agent_collaboration.md#the-review-sweep), architecture/testing modules, adjacent strategies and [gauge](../../tools/gauge.py).
+Read Cairn's [review doctrine](../../docs/methodology/dual-review.md), [review sweep](../agent_collaboration.md#the-review-sweep), architecture/testing modules, adjacent strategies and [gauge](../../tools/gauge.py).
 
 External-repo paths: inspected LHM's `tools/scope_map.py`, `tools/scope_map.html` and `tests/test_scope_map.py` at LHM commit `8d0460e8` (those paths were clean). This was source/documentation inspection, not an execution audit, benchmark or adopter trial.
 

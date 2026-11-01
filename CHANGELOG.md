@@ -41,8 +41,8 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 - **Changed** — Upgrade review copies now show your recorded module list in the upstream `.theirs` copy and keep your own bytes in `.ours`. Install, module adoption and staging refuse an ambiguous or malformed module-list marker before changing anything. ([rendering plan](dev/plans/archive/2026-10-30-review-inventory-rendering.md), [marker plan](dev/plans/archive/2026-10-30-module-marker-ambiguity.md))
 - **Changed** — Review is one bounded pass per stage, light is the default proposal tier, added or widened trust boundaries still get a Security Review, and governing instructions are shorter. ([plan](dev/plans/archive/2026-10-30-cut-the-apparatus.md))
 - **Changed** — `session-end --prepare-handoff` writes your reflection, lists open threads and work claims, and shows a preview before giving you the guarded prune command. ([plan](dev/plans/archive/2026-10-30-handoff-preparation.md))
-- **Changed** — Each change is verified by the tests mapped to it, and certifying the whole tree is a separate release step. Plan, proposal and strategy file names now start with their opening date. ([plan](dev/plans/archive/2026-10-28-scoped-change-verification.md); [verification doctrine](doctrine/plans.md))
-- **Changed** — The lowest model tier allowed for a job now depends on the task: medium for ordinary writing and reviews, low for carrying out an accepted, reviewed plan. Cairn's own model mapping lists three model families per tier. ([plan](dev/plans/archive/2026-10-28-model-floor-alignment.md); [roles](doctrine/roles.md))
+- **Changed** — Each change is verified by the tests mapped to it, and certifying the whole tree is a separate release step. Plan, proposal and strategy file names now start with their opening date. ([plan](dev/plans/archive/2026-10-28-scoped-change-verification.md); [verification doctrine](docs/methodology/plans.md))
+- **Changed** — The lowest model tier allowed for a job now depends on the task: medium for ordinary writing and reviews, low for carrying out an accepted, reviewed plan. Cairn's own model mapping lists three model families per tier. ([plan](dev/plans/archive/2026-10-28-model-floor-alignment.md); [roles](docs/methodology/roles.md))
 - **Security** — The local security dispatcher, which runs your installed security checks, now includes the content-security scan and gives API checks only the credentials its validated local policy names. It refuses substituted code and reports unreliable or flagged results instead of claiming clean. ([scan plan](dev/plans/archive/2026-10-29-dispatcher-content-scan.md), [credentials plan](dev/plans/archive/2026-10-30-api-dispatch-credentials.md))
 - **Security** — Upgrade checks the saved earlier version of each file before merging, keeps damaged copies through repeated manual recovery, refuses specified invisible characters in paths, and escapes install names in reports. The check catches local records that disagree, but cannot detect a cache and lockfile edited together. ([plan](dev/plans/archive/2026-10-30-upgrade-install-integrity.md))
 - **Security** — Upgrade refuses project paths that lead into nested Git data, and `upgrade --init-lock` refuses a planted link at any mapped installed path before reading it. Hard-link aliases and changes made after a check are not covered. ([nested Git plan](dev/plans/archive/2026-10-30-nested-git-upgrade.md), [init-lock plan](dev/plans/archive/2026-10-30-init-lock-linked-files.md))
@@ -65,7 +65,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Major changes
 
-- **Added** — Cairn Plain Language 1.0 is a 17-rule writing standard for everything agents write for people. Every install carries it in `dev/agent_collaboration.md`, and `docs/plain-language.md` is a full adoption page with the copyable rules, an evidence table and a 30-source bibliography. ([proposal](dev/proposals/archive/2026-10-27-antigravity-plain-language-adoption-docs.md), [rationale](doctrine/rationale.md))
+- **Added** — Cairn Plain Language 1.0 is a 17-rule writing standard for everything agents write for people. Every install carries it in `dev/agent_collaboration.md`, and `docs/plain-language.md` is a full adoption page with the copyable rules, an evidence table and a 30-source bibliography. ([proposal](dev/proposals/archive/2026-10-27-antigravity-plain-language-adoption-docs.md), [rationale](docs/methodology/rationale.md))
 - **Added** — `upgrade --remove-retired` removes a project's untouched copies of files Cairn stopped shipping, and keeps and names any copy that differs, is untracked or sits behind a link. ([plan](dev/plans/archive/upgrade-removes-retired-files.md))
 - **Added** — Drain mode: `/session-start --drain [board | issues | <item>]` works the queue. It sorts open items by lifecycle lane, fixes trivial ones with a failing test, has a fresh session review each fix, and commits locally without posting to GitHub. ([plan](dev/plans/archive/drain-mode.md))
 - **Changed** — The next-session handoff is a local, untracked note at `dev/reflections/next-session.md` instead of a shipped `dev/NEXT_SESSION.md`. It is read as a hint, never as instructions, and counts as absent after 14 days. ([plan](dev/plans/archive/next-session-local-note.md))
@@ -219,7 +219,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 ### Major changes
 
 - **Added** — A new `content-security` module lets adopters scan files and PRs for prompt injection, and `verify_integrity.py` detects post-install file modification against the lockfile.
-- **Added** — New doc-governance doctrine, reviewer decision-support, a Decision-scribing guard-rail, and a default-on `fold-back-ledger` module for sending improvements back to Cairn. ([doc-governance](doctrine/doc-governance.md))
+- **Added** — New doc-governance doctrine, reviewer decision-support, a Decision-scribing guard-rail, and a default-on `fold-back-ledger` module for sending improvements back to Cairn. ([doc-governance](docs/methodology/doc-governance.md))
 - **Added** — `scaffold.py upgrade` merges new Cairn doctrine into a customized install without clobbering local edits, using a new `dev/cairn-lock.yml` lockfile. ([UPGRADE](bootstrap/UPGRADE.md))
 - **Added** — Three governance presets (`solo-greenfield`, `collaborative-team`, `high-rigor-legacy`) set a baseline module roster, and `scaffold.py --summary` previews the result before installing.
 - **Added** — The `coordination-tiers` module installs `tools/intent.py`, a work-intent CLI with `claim`, `list` and `release`, plus opt-in hooks that warn when a commit touches an unclaimed path or one another session holds. ([coordination-tiers](templates/modules/team-gated/coordination-tiers.md), [intent.py](templates/modules/team-gated/intent.py))
@@ -227,24 +227,24 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 - **Added** — The default-on `claim-check` and `lifecycle-metrics` modules now install runnable standard-library scripts instead of pointing adopters at code to copy. ([claim_check.py](templates/modules/default-on/claim_check.py))
 - **Added** — New adopter-orientation docs and a minimal worked example trace one change through the lifecycle. ([getting-started](docs/getting-started.md), [examples/minimal](examples/minimal/))
 - **Added** — Eleven practices from an adopter join the doctrine, including new `security-review` and `issue-capture` modules and a rate limit on doctrine changes. ([security-review](templates/modules/team-gated/security-review.md), [issue-capture](templates/modules/team-gated/issue-capture.md))
-- **Added** — Coordination identity is now derived per session rather than per tool, so concurrent sessions of the same tool no longer release each other's claims. ([coordination](doctrine/coordination.md))
-- **Changed** — Every plan now carries a mandatory `Plan review: required(<tier>) | not required(<rationale>)` line, and a required plan is reviewed before implementation begins. ([lifecycle](doctrine/lifecycle.md))
-- **Changed** — A work-intent `claim` is now required before every nontrivial edit when a team works concurrently, though it stays a courtesy signal and not a lock. ([coordination](doctrine/coordination.md))
-- **Changed** — The goodnight routine gains a staleness sweep, and archiving a plan or removing a roadmap item now has stated preconditions. ([lifecycle](doctrine/lifecycle.md))
+- **Added** — Coordination identity is now derived per session rather than per tool, so concurrent sessions of the same tool no longer release each other's claims. ([coordination](docs/methodology/coordination.md))
+- **Changed** — Every plan now carries a mandatory `Plan review: required(<tier>) | not required(<rationale>)` line, and a required plan is reviewed before implementation begins. ([lifecycle](docs/methodology/lifecycle.md))
+- **Changed** — A work-intent `claim` is now required before every nontrivial edit when a team works concurrently, though it stays a courtesy signal and not a lock. ([coordination](docs/methodology/coordination.md))
+- **Changed** — The goodnight routine gains a staleness sweep, and archiving a plan or removing a roadmap item now has stated preconditions. ([lifecycle](docs/methodology/lifecycle.md))
 - **Security** — The external link check now refuses private, loopback and other internal addresses, and the security lint covers every shipped script. ([SECURITY.md](SECURITY.md))
 - **Security** — Templates are now treated as instructions agents will run, and defended that way: scaffolding refuses to write through symlinks or outside the target, releases carry a derived install manifest, and a content scanner flags suspicious text for human review. ([PROVENANCE.md](bootstrap/PROVENANCE.md))
 
 ### Minor changes
 
-- **Added** — Doctrine gains the signal-now, benefit-later principle for coordination and a note that the claim checker cannot verify runtime-behavior claims. ([coordination](doctrine/coordination.md))
+- **Added** — Doctrine gains the signal-now, benefit-later principle for coordination and a note that the claim checker cannot verify runtime-behavior claims. ([coordination](docs/methodology/coordination.md))
 - **Added** — Cairn now checks links and claimed paths across its own Markdown with `scripts/check_cairn.py`. ([check_cairn.py](scripts/check_cairn.py))
-- **Changed** — Inserting a claim-check marker next to a path is now allowed as mechanical maintenance, even in another agent's review section. ([lifecycle](doctrine/lifecycle.md))
+- **Changed** — Inserting a claim-check marker next to a path is now allowed as mechanical maintenance, even in another agent's review section. ([lifecycle](docs/methodology/lifecycle.md))
 
 ## 0.1.1 — 2026-05-21
 
 ### Major changes
 
-- **Added** — Nine practices from an adopter join the doctrine: a required-signal-read mode and collision log for coordination, a rewrite-from-scratch next-session plan, a capability-floor rule for roles, and a new `model-selection` module. ([coordination](doctrine/coordination.md), [model-selection](templates/modules/team-gated/model-selection.md))
+- **Added** — Nine practices from an adopter join the doctrine: a required-signal-read mode and collision log for coordination, a rewrite-from-scratch next-session plan, a capability-floor rule for roles, and a new `model-selection` module. ([coordination](docs/methodology/coordination.md), [model-selection](templates/modules/team-gated/model-selection.md))
 
 ## 0.1.0 — 2026-05-20
 
