@@ -1,7 +1,7 @@
 # Ship a changelog template
 
 **Author**: Codex GPT-6 (Implementation)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -10,7 +10,7 @@
 
 ## Decision summary
 
-Ship a short changelog at the project root, with instructions in its header and an empty Unreleased section. It follows Cairn's current Major and Minor groups and starts each entry with its Keep a Changelog type. Existing project histories must be preserved; adding an installed file also means an existing history can require a deliberate upgrade collision resolution.
+Ship a short changelog at the project root, with instructions in its header and an empty Unreleased section. It follows Cairn's current Major and Minor groups and starts each entry with its Keep a Changelog type. An adopter with an existing history can keep it as it is, optionally adapt it, or save it elsewhere and start fresh. An upgrade collision needs a deliberate choice, with the old history preserved.
 
 ## Context
 
@@ -21,6 +21,8 @@ The committed board asks for this template and assigns Codex the proposal and im
 Add `templates/core/CHANGELOG.md`, mapped to `CHANGELOG.md` for every profile. Directly under its title put `Written in Cairn Plain Language 1.0`, linked to the installed `dev/agent_collaboration.md` rules. In the header explain briefly how to choose Major or Minor, start entries with Added, Changed, Deprecated, Removed, Fixed or Security in that order, write plainly, and open a new Unreleased section at release. Provide empty Major and Minor headings under Unreleased. Avoid Cairn-project-specific record-link requirements.
 
 Point the existing changelog reference in shipped `AGENTS.md` to the installed file and its in-file instructions; do not add a separate process or duplicate those instructions. A normal install into an empty destination supplies the template. An existing file is preserved by normal install; explicit `--force` retains its existing overwrite meaning. On upgrade, a new core mapping at an occupied, unlocked regular file is blocked for explicit collision adoption or manual reconciliation; a destination tracked under another source is a provenance conflict, not auto-adopted. Existing history must survive these normal paths byte-for-byte. Unsafe or non-regular paths remain subject to existing refusals. Do not weaken collision handling or change upgrade semantics to make this file install silently.
+
+Add concise collision guidance where an upgrading adopter can find it in `bootstrap/UPGRADE.md` and in the template's header, which also appears in the staged upstream review copy. For an eligible unlocked regular file, explain that no history rewrite is required: stage, review the `.ours` and `.theirs` copies, use the displayed `--adopt-collisions` command to keep the existing file unchanged as a tracked fork, then re-stage. The adopter may instead edit their history to the new format if they want, and re-stage and review the resulting bytes before adopting. To start fresh, first save the old history at a safe separate path, remove it from the destination, then re-stage and apply the template; retain the saved history. Explain that a file already tracked under a different source, or an unsafe or otherwise ineligible path, needs manual resolution rather than collision adoption. Do not prescribe rewriting past entries or imply adoption works for every collision. These are instructions for the existing workflow, not new machinery.
 
 Proposed paths:
 - `templates/core/CHANGELOG.md`
@@ -41,7 +43,7 @@ The template is adopter-facing guidance; the reference belongs in the shipped go
 
 ### Tests required
 
-In `bootstrap/tests/`, exercise actual scaffold install and upgrade entry points for an empty target, an existing history on normal install, a new-core collision and its adoption, a provenance conflict, and unsafe paths; assert the history's bytes and the lock/base records where applicable. Check profile coverage, manifest membership and the template's headings, marker, type order and usable instructions. Identify exact nodes and mapped file readers in the plan after inspecting existing tests; add focused tests where absent. A silent replacement of history, missing file, broken link or misleading manifest falsifies the proposal.
+In `bootstrap/tests/`, exercise actual scaffold install and upgrade entry points for an empty target, an existing history on normal install, a new-core collision and its adoption, a provenance conflict, and unsafe paths; assert the history's bytes and the lock/base records where applicable. Check profile coverage, manifest membership and the template's headings, marker, type order and usable instructions. Exercise the described keep and start-fresh paths and verify the guidance matches the staged command, preserves history and distinguishes ineligible collisions. Identify exact nodes and mapped file readers in the plan after inspecting existing tests; add focused tests where absent. A silent replacement of history, missing file, broken link or misleading manifest falsifies the proposal.
 
 ### Examples / smoke checks
 
@@ -96,3 +98,9 @@ Elapsed: approximately 4 minutes; tokens: unknown.
 Both reviews found no findings; no operative revision is needed. The plan and implementation retain the proposed collision, preservation and Security Review checks.
 
 Elapsed: approximately 2 minutes; tokens: unknown.
+
+## Revision -- Codex GPT-6 -- 2026-11-01
+
+The Maintainer asked for clear choices for adopters with an existing changelog. The proposal now adds upgrade and template guidance for keeping, optionally adapting, or safely saving a history before starting fresh. This widens the guidance scope and returns it for review.
+
+Elapsed: approximately 3 minutes; tokens: unknown.
