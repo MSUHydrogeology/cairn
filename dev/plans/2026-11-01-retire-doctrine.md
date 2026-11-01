@@ -61,3 +61,19 @@ Ordinary and Security Reviews inspect committed implementation and iteration evi
 **Boundary C:** A reviewer other than the implementer independently falsifies the committed result with tight targeted checks, not a suite. The separate Security Review remains required. A review fix beyond a failing test returns for the required targeted look.
 
 **Boundary B:** After reviews, run the mapped iteration and integration/workflow selections plus relevant standing gates in wide mode on an unchanged clean commit under canonical Python 3.13. Record full SHA and range, interpreter, clean pre/post state, commands, counts, time, token use or `unknown`, non-pass dispositions and omissions; retain timing diagnostics and slow-test reporting. Certification is separate and is not authorized by this plan. Do not re-anchor per plan; the deferred v0.6 cut ceremony retains its existing authority and checks.
+
+## Plan review -- Codex (Internal Reviewer, gpt-6.1-sol) -- 2026-11-01
+
+Reviewed commit: `adc83d02`  
+Obligation: Internal  
+Verdict: No blocking findings. Elapsed time: approximately 3 minutes; tokens: unknown.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. The archived plan's C2 records the Maintainer's choice of `docs/methodology/`, complete installed duties and `dev/rules/`; this plan executes that choice and preserves the separate completed simplification. C1 refreshes the existing inventory before moving anything.
+2. **Best alternative.** Keep the current folder while updating pointers incrementally; that avoids a single migration but leaves the requested retirement unfinished and the non-installed distinction in place. The plan instead reuses existing checks and avoids a permanent ledger.
+3. **What would show it wrong?** An actual install missing an operative duty or usable pointer, a live consumer broken by the move, or a guard passing after its protected clause is removed or inverted. C1–C2 and Verification explicitly require these cases and preserve historical records without weakening live-path detection.
+
+**Advice:** Keep the C1 mapping as concise as the move permits; the plan already calls for a concise implementation record and no new general-purpose tool. Coordinate the overlapping Plain Language work as Scope specifies so its completed improvements survive and its full reading review remains with that work.
+
+**Coverage:** Compared the committed plan with the accepted proposal and archived C2 choice, the install mappings and the named verification approach. Did not perform installs, run tests, audit every doctrine section or review future changes; the separate Security Review remains due.
