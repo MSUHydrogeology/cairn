@@ -1509,9 +1509,14 @@ def _swap_for_link_after_the_decision(
 ) -> None:
     """After the step has decided what to remove, put a link where *folder* was."""
     real = U._classify_retired_records
+    swapped = False
 
     def decide_then_swap(*args: object, **kwargs: object) -> list:
+        nonlocal swapped
         decided = real(*args, **kwargs)
+        if not kwargs.get("git_gate") or swapped:
+            return decided
+        swapped = True
         moved = project / (folder + "-moved")
         os.rename(project / folder, moved)
         (project / folder).symlink_to(outside, target_is_directory=True)
