@@ -1,7 +1,7 @@
 # Proposal: compare multi-script module discovery paths
 
 **Author**: Codex (gpt-6.1-terra), Strategy
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -81,3 +81,17 @@ The Maintainer directed broader checks, so the prior advice on cross-path eviden
 ### Withdrawn / superseded commitments
 
 The prior install-only scope is superseded by the broader checks; its seven-module install assertion remains.
+
+## Proposal review -- Codex (gpt-6.1) -- 2026-11-01
+
+Reviewed commit: 38d3c85c. **Tier**: usual. **Verdict: revise before Decision.**
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, the independent pairs and real stage/apply checks can expose omissions across paths that the current single-module install test does not cover; absent files and lock entries match the selected-module addition branch. Evidence: `bootstrap/tests/test_reference_scripts.py::TestMultiScriptModules`, `bootstrap/_scaffold/upgrade.py::_compute_upgrade`.
+2. **Best alternative.** Keep the seven-module behavior comparisons, but use a small set of representative falsifications and state their limits; per-file, per-path mutations add execution and record burden without a demonstrated need for a universal mutation claim. Evidence: proposal Tests required; `bootstrap/security_check.py::scan_targets`.
+3. **What would show it wrong?** A faithful older-install fixture cannot reach real stage/apply, or an existing independent comparison already checks these same paths and files. Evidence: `bootstrap/_scaffold/upgrade.py::_compute_upgrade`, `bootstrap/tests/test_security_lint.py::test_every_manifest_verbatim_py_is_scanned_by_some_path`.
+
+**Advice:** Reconsider the exhaustive mutation matrix. Test a representative omission in each distinct selection path, including both scan routes together, and wrong destination/bytes/record cases as needed; report only measured results and do not claim every member was mutation-tested. Preserve the explicit comparisons for every enumerated file. If the author retains a claim that a value reaches every member, the repository's per-member mutation rule applies. This closes when the verification plan distinguishes the assertions from measured mutation coverage.
+
+**Coverage:** Read the committed proposal, template, existing install test, manifest, upgrade addition loop and scan selection. Did not run tests, enumerate every source/destination pair, establish fixture feasibility, or audit all existing tests. Elapsed: approximately 4 minutes; tokens: unknown.
