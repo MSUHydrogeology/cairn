@@ -184,3 +184,7 @@ Reviewed commit: d714596d82d9da0c3ce933fb6bde21d3b3ff7c8b.
 **Verdict: REVISE. Blocking:** The omitted multiline import violates the accepted import-preservation criterion and can leave required verification unrun. Handle valid multiline and multiple-name imports conservatively, and exercise them through the real selector. The committed selector regression only covers a single-line import.
 
 **Coverage:** Read the implementation and selector regressions, including changed-test and AGENTS reviewed-range logic; checked the public upgrade consumers and probed the real command in a separate copy of the reviewed commit. An AST scan found no such currently omitted direct imports in the committed top-level test files. Did not exhaust indirect consumers, rerun implementation checks, or perform Security Review. Elapsed: approximately 4 minutes; tokens: unknown.
+
+## Code review re-look -- Codex GPT-6.1 -- 2026-11-01
+
+Reviewed commit: d3bc1e529b7c672d92b0a594ba838ba7920f84b0. **Finding closed.** The revised expression matches the stem inside the parentheses; a separate copy of the commit selected a probe containing a parenthesized multiline import with multiple names via `tools/test_tiers.py for bootstrap/_scaffold/upgrade.py`. The committed regression covers the reported form and a near-match exclusion. Covered the correction to the import finding only; did not rerun implementation checks or revisit other consumer coverage. Elapsed: approximately 2 minutes; tokens: unknown.
