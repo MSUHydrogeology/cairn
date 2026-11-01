@@ -179,3 +179,40 @@ Boundary B remains required after independent review: wide integration selection
 **Verdict:** Accept; no findings. The prompts request definitions and examples where useful, and the existing review's reading judgment is expressly not a checklist or score. The author's qualitative comparisons support fit for short and technical proposals, but do not establish reader comprehension.
 
 **Bounding:** Sufficient for independent review; wide Boundary B remains required. `git diff dc83fbc5^ dc83fbc5 --check` passed; searches of both committed templates located the board field, summary, preflights and lifecycle records. Read the committed diff and iteration evidence; did not rerun its test selection, test reader comprehension, inspect every downstream reader, or perform the separate Security Review.
+
+
+## Code review -- Codex gpt-6.1-sol (Security Review) -- 2026-11-01
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The summary asks for the noticed
+   problem, proposed change and meaningful cost, while retaining supporting
+   evidence below -- committed diff `dc83fbc5`, both proposal templates.
+2. **Best alternative.** Apply existing Plain Language guidance alone; that
+   avoids a prompt but leaves the choice distributed. The implemented common
+   opening adds no authority or review stage -- accepted proposal, Rationale;
+   template Lifecycle and Decision summary.
+3. **What would show it wrong?** A weakened preflight or transferred Decision
+   authority would break C1. Direct comparisons of both templates at `dc83fbc5`
+   against its parent found Security preflight, Independent scientific check
+   and Decision sections byte-identical -- Git-object section comparison.
+
+**Reviewed**: `dc83fbc55ee3be850274fb8a50911ef620d67dbd` against its parent;
+iteration evidence at `9a445185`.
+**Obligation**: Internal Security Review (code)
+**Tier**: Internal Security Review
+**Verdict**: ACCEPT; **Findings**: none
+**Bounding**: ACCEPTED for this security read; final wide Boundary B remains owed.
+**Elapsed**: approximately 4 minutes; **Tokens**: unknown
+
+The summary remains author-controlled evidence, with the Maintainer retaining
+Decision authority. Both new common passages match across the shipped and
+self-hosted templates. The diff preserves slot blocks, assurance declarations,
+review obligations and required evidence. It changes no machine check, parser,
+trust boundary or scientific claim, so changed-check mutation is inapplicable.
+The reading judgment explicitly excludes a checklist or score.
+
+**Coverage**: committed template diff, accepted safeguards, unchanged preflight
+and Decision sections, and recorded iteration evidence. Did not rerun the
+implementation checks, test reader comprehension, perform installation, or
+complete Python 3.13 final integration; no full suite or mutation run.
