@@ -1,7 +1,7 @@
 # Plan: Ship a changelog template
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-changelog-template.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Give adopters a usable changelog while preserving their existing history during installation and upgrades.
@@ -241,3 +241,39 @@ pass, or change the actual release check.
 **Called by**: Maintainer -- chat, 2026-11-01
 
 > "Accept focused results"
+
+## Archive note -- Codex -- 2026-11-01
+
+The accepted install and upgrade behavior is implemented and reviewed. The
+Maintainer accepted the focused results and waived the unfinished wide mapped
+selection for this plan in `f7f2d3ff`; the verification record remains explicit
+that Boundary B did not pass. This archive commit removes the completed work
+from the board and records the adopter-visible template in the changelog.
+
+## Archive migration -- 2026-11-01
+
+**Dispositions**: none outstanding. The incomplete broad selection was waived
+for this plan by the Maintainer's disposition in `f7f2d3ff`; it is neither
+claimed as passed nor left as a follow-up. The actual release check remains
+under the existing release process.
+
+**Evidence shipped**: install mapping, template and upgrade guidance in
+`89e39034`; entry-point tests and restage guidance correction in `89e39034`;
+ordinary review, Security Review and the targeted re-look in `7cf2c51d` and
+`75e6091b`; implementation verification and Maintainer disposition in
+`4f802e71` and `f7f2d3ff`.
+
+**Evidence deferred**: none. The wide mapped selection remains incomplete as
+recorded above and is waived for this plan only. The 1,028 passed, 8 unexplained
+skips, active `test_repin.py`, unrun selected tests and 45 selector omissions
+remain visible; no full Boundary B pass is claimed.
+
+**Deferred evidence home**: none. The actual release check is governed by the
+release process and is not a deferred follow-up from this plan.
+
+**Fidelity sign-off**: `89e39034` delivers the accepted root template,
+per-profile mapping, preservation and collision guidance, and focused entry-
+point coverage. The shipped template offers unchanged history, optional
+adaptation with re-staging, or a separately saved history before starting
+fresh. The plan-specific assurance limit is the incomplete wide run recorded
+above; the Maintainer's waiver does not change the preserved release check.
