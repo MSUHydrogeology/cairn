@@ -41,7 +41,8 @@ ls dev/strategy/README.md dev/strategy/_template.md dev/strategy/archive/
 A second, *pre-ship* fidelity check guards the **implementation→adoption**
 checkpoint of the fold-back loop: the `check_cairn` self-check fails closed when
 an **adopter-facing surface** (a `templates/` file the bootstrap install set
-copies) references a **Cairn-internal-only path** (`doctrine/*`) that is neither
+copies) references a **Cairn-internal-only path** (`docs/methodology/*`, or the
+retired `doctrine/*` spelling) that is neither
 transplanted into the install set nor marked a deliberate citation. When run:
 `python scripts/check_cairn.py` — at review time, and in the **maintainer-run**
 release checklist (`bootstrap/security_check.py` invokes it, when a maintainer
@@ -53,8 +54,8 @@ deliberate deeper-why citation is exempted with a
 `cairn-internal-ref-allow: <paths…>` (or `cairn-internal-ref: <paths…>`) marker
 that names the specific path, so a *new* unlisted reference still fails closed.
 This is the automatable flagship of the loop-fidelity discipline whose doctrine
-home is [`doctrine/lifecycle.md`](../doctrine/lifecycle.md) > "Loop-fidelity
-verification". <!-- cairn-internal-ref: doctrine/lifecycle.md reason=deeper-why pointer; fidelity-check.md is bootstrap-internal, not an installed adopter surface -->
+home is [`docs/methodology/lifecycle.md`](../docs/methodology/lifecycle.md) > "Loop-fidelity
+verification". <!-- cairn-internal-ref: docs/methodology/lifecycle.md reason=deeper-why pointer; fidelity-check.md is bootstrap-internal, not an installed adopter surface -->
 
 
 
@@ -97,7 +98,7 @@ the lockfile hash-tracks every verbatim script, and `upgrade` flags a
 drifted/forked one and does **not** clobber it (see
 [`UPGRADE.md`](UPGRADE.md) > "Verbatim scripts use a hash check"). What was
 missing is the **cadence**: run `upgrade` on a recurring schedule —
-paralleling the doctrine-harvest cadence (`doctrine/rationale.md`) — so
+paralleling the doctrine-harvest cadence (`docs/methodology/rationale.md`) — so
 script drift surfaces before it compounds. A natural moment is a periodic
 goodnight or a release-prep pass; a pre-lockfile tree runs
 `upgrade --init-lock` once first.
@@ -379,7 +380,7 @@ finding. (This is faithfulness, not completeness — it strengthens the
 gate; 6b is the novel axis.)
 
 **Body-coverage dimension (the stub-subsets-the-body trap).** When a
-module's stem matches an upstream `doctrine/<stem>.md`, the module file
+module's stem matches an upstream `docs/methodology/<stem>.md`, the module file
 is a kernel-merge *subset* of that doctrine body — so the "distinctive
 content" to confirm is the **doctrine body's** load-bearing topics
 reaching the adopter's live surfaces, **not** merely the module's own
@@ -387,7 +388,7 @@ short `Adds to:` stub. A stub that silently dropped a doctrine-body
 topic (as happened with `dual-review`'s clean-pass-trap,
 briefs-don't-telegraph, and restricted-verification content) otherwise
 passes 6a unnoticed — the check is blind to body content the stub
-never carried. For a module with **no** same-stem `doctrine/` file,
+never carried. For a module with **no** same-stem `docs/methodology/` file,
 this dimension is skipped with an informational note. This sharpens
 *what* "distinctive content" means; it is **not** a third step — the
 two-check hard constraint holds.
@@ -399,7 +400,7 @@ missing source). Run it from the adopter tree against a Cairn checkout:
 
     python <cairn>/bootstrap/check_module_body_coverage.py --target .
 
-It flags, per installed module with a same-stem `doctrine/<stem>.md`,
+It flags, per installed module with a same-stem `docs/methodology/<stem>.md`,
 the doctrine-body headings absent from the module file and the
 kernel-fold target — the 6a body-coverage check, automated. It is a
 **heading-name proxy, not semantic coverage** (it catches "topic named
@@ -421,7 +422,7 @@ and if it generalizes, to carry it upstream as a fold-back.
 
 Record the result (`pass` / findings). This adopter-side probe pairs
 with the framework-side **doctrine harvest**
-(`../doctrine/rationale.md` > "The reference-instance doctrine
+(`../docs/methodology/rationale.md` > "The reference-instance doctrine
 harvest"): the harvest keeps *core* from lagging its best adopter;
 this probe keeps an *install* from silently shipping incomplete.
 

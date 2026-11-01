@@ -1,4 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/runtime-contract.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-internal-ref-allow: docs/methodology/runtime-contract.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 
 # The contained-kernel recipe — run Cairn with no host-installed Python
 
@@ -192,5 +192,5 @@ port would have to special-case:
   running it from a host Python install produce the **same** install/upgrade
   result, so adopting the container does not entrench Python.
 
-See `doctrine/runtime-contract.md` for the floor/runtime contract this recipe
+See `docs/methodology/runtime-contract.md` for the floor/runtime contract this recipe
 serves, and the Move 5 follow-up proposal for the conformance-fixture work.

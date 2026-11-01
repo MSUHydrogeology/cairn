@@ -147,11 +147,11 @@ filter is not a formality: `main` wraps the tracked list in
 each re-includable by flag.  **249 tracked, 195 scanned, 54 skipped**
 (`as_of 2026-08-04`); the run's own "N Markdown file(s) scanned" banner
 is the honest number.  Everything skipped is under `dev/`, so
-`doctrine/`, `docs/`, `case-studies/`, `bootstrap/` and `templates/`
-are all reached — but `dev/modules/` is **vendored, agent-loaded
+`docs/` (including `docs/methodology/`), `case-studies/`, `bootstrap/`
+and `templates/` are all reached — but `dev/modules/` is **vendored, agent-loaded
 content that a default run does not scan**.  Source prose that no
-scaffolded profile emits — **including** `doctrine/`, `docs/`,
-`case-studies/` and this document — is reached **only** by that manual
+scaffolded profile emits — **including** `docs/methodology/`, other
+`docs/`, `case-studies/` and this document — is reached **only** by that manual
 run.  **Running it, and resolving what it flags to a clean scan, is the
 reviewer's obligation, not a mechanism's guarantee.**  The review threshold
 scales **by file class**:
@@ -159,7 +159,7 @@ scales **by file class**:
 * **Source template → instruction file** (the core `AGENTS.md`
   template, the `dev/` templates) — strictest: full scanner +
   injection-review on every change.
-* **Doctrine** (`doctrine/*.md`, the module templates) — scanned;
+* **Published methodology** (`docs/methodology/*.md`, the module templates) — scanned;
   injection-review on change.
 * **Docs / case-study prose** (`docs/*.md`, `case-studies/*.md`) —
   scanned, lighter threshold.

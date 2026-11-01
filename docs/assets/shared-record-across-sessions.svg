@@ -8,7 +8,7 @@
   (AGENTS.md), the proposals that record what was decided and why
   (dev/proposals/), the plans that record how it was built and checked
   (dev/plans/), and the code with its tests. Checkable against
-  doctrine/session-routines.md and doctrine/lifecycle.md ("Commit-mediated").
+  docs/methodology/session-routines.md and docs/methodology/lifecycle.md ("Commit-mediated").
 
   Provenance: hand-authored SVG, no external tool; produced for the README
   and project-site visuals on the Maintainer's direction, 2026-10-23.

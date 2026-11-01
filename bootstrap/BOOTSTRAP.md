@@ -43,8 +43,8 @@ it after installation is far costlier than before.
 
 Before assessing the target project, read:
 
-* `../doctrine/README.md` — the four-layer map of what Cairn is
-* `../doctrine/lifecycle.md` — the proposal and plan lifecycles
+* `../docs/methodology/README.md` — the four-layer map of what Cairn is
+* `../docs/methodology/lifecycle.md` — the proposal and plan lifecycles
 * `../dimensions/README.md` — the six adaptation axes and the
   three module layers
 
@@ -158,7 +158,7 @@ From the six-axis profile, select the module set:
    | `coordination-tiers` | Agent team is concurrent-multi-type and asynchronous or real-time coordination is needed |
    | `security-review` | The project has a non-trivial trust boundary (untrusted input meets the system: deserialization, subprocess, file/network I/O, path handling). Trust-boundary-first — complexity tunes the review cadence, not whether it installs |
    | `issue-capture` | The team uses an issue tracker for gap / friction capture (the User Agent surface) |
-   | `model-selection` | Complexity is moderate or complex — instruments the capability-floor-by-role-and-risk discipline (`doctrine/roles.md`) with a tier rubric and a per-role mapping template |
+   | `model-selection` | Complexity is moderate or complex — instruments the capability-floor-by-role-and-risk discipline (`docs/methodology/roles.md`) with a tier rubric and a per-role mapping template |
    | `testing-discipline` | Complexity is moderate or complex — the project is substantial enough that the test-tier scheme earns out over ad-hoc tests |
    | `doc-drift-prevention` | Size is medium or large, **or** Language is multi — docs proliferate and drift from code / examples at scale or across languages |
    | `examples-gallery` | The project publishes a user-facing example gallery / is adopted by others (a non-axis condition — judged from the project profile, not a single axis) |

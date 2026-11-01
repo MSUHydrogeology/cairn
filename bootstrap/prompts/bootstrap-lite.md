@@ -51,8 +51,8 @@ do anything, read:
     agent-team.md) — the six axes you will score
   * cairn/on-ramp/README.md — the two ways in, and the profile table
 
-You may also read cairn/doctrine/README.md and
-cairn/doctrine/lifecycle.md if you want grounding before scoring,
+You may also read cairn/docs/methodology/README.md and
+cairn/docs/methodology/lifecycle.md if you want grounding before scoring,
 but it is not strictly required at this step.
 
 Then walk through the assessment loop below as a single turn.

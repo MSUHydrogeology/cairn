@@ -11,7 +11,7 @@
   Maintainer's decision, a plan, the plan's review, the change with its
   test, and a code review). Footer: the deliberate test is checked first,
   uncertainty resolves upward, and every step is a commit. Checkable
-  against doctrine/lifecycle.md > "Three lanes, chosen by a closed triage
+  against docs/methodology/lifecycle.md > "Three lanes, chosen by a closed triage
   procedure".
 
   Provenance: hand-authored SVG, no external tool; produced for the README
