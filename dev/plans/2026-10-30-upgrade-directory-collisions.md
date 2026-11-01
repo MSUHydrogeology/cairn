@@ -301,3 +301,40 @@ is unchanged.
 3. **What would show it wrong?** A preflight swap, repeated swap, or a failure of the three existing race cases would contradict the correction. In a separate clean clone of 4fdf5a38, Python 3.13.13 ran `python -m pytest -q bootstrap/tests/test_upgrade_removes_retired_files.py::test_a_folder_swapped_for_a_link_after_the_decision_leaves_the_outside_copy --tb=short`: 3 passed. An initial archive lacked the Git objects required by the fixture, so its three setup failures were not evidence about the correction.
 
 **Coverage**: Changed fixture, its callers and the gated removal call, plus the three parametrizations. Other retired-removal behavior, broader integration and Security Review were not assessed; final Boundary B remains required.
+
+## Implementation verification -- Codex GPT-6 (Implementation) -- 2026-11-01
+
+**Boundary B mode**: wide. The change affects upgrade classification, stage metadata and the apply gate. I ran the mapped upgrade, hostile-metadata and security-lint families; all 51 files returned by `test_tiers.py for` the changed engine, public tests and guidance were covered, with overlaps run once. Public plan, stage, apply and recovery paths were exercised. Two controlled source mutations, each in a separate clone, were killed by the mapped public regressions; no mutant survived.
+
+**Certified by**: pending
+
+**Tested commit**: 9a021c3392328218e90d0a922b8842896a9cedac
+
+**Reviewed range**: c805d268fce9720396b5ed6cb9e70877006c5a1f..9a021c3392328218e90d0a922b8842896a9cedac
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python`, Python 3.13.13.
+
+**Pre-run state**: clean Git-backed clone at tested commit; no staged or unstaged changes.
+
+**Post-run state**: clean clone at the same tested commit; no staged or unstaged changes.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python -m pytest -q bootstrap/tests/test_upgrade.py bootstrap/tests/test_upgrade_lockfile_path_containment.py bootstrap/tests/test_upgrade_side_door_parity.py --tb=short` | 0 | 243 passed, 0 failed, 0 skipped | 40.81 s | unknown |
+| `python -m pytest -q bootstrap/tests/test_upgrade_module_additions.py bootstrap/tests/test_lockfile_provenance.py bootstrap/tests/test_upgrade_refuses_hostile_project_data.py --tb=short` | 0 | 263 passed, 0 failed, 0 skipped | 43.10 s | unknown |
+| `python -m pytest -q bootstrap/tests/test_security_lint.py` | 0 | 11 passed, 0 failed, 0 skipped | 1.89 s | unknown |
+| Remaining 44 unique files from `python tools/test_tiers.py for bootstrap/_scaffold/upgrade.py bootstrap/tests/test_upgrade.py bootstrap/tests/test_upgrade_removes_retired_files.py bootstrap/UPGRADE.md`, split into two selections below the runner's 40-file cap | 0 | 778 + 1,835 passed; 0 failed or skipped; together with mapped groups, all 51 selector files were covered | 77.72 s + 181.10 s | unknown |
+| `python scripts/claim_check.py bootstrap/UPGRADE.md` | 0 | No flags | <1 s (estimated) | unknown |
+| `python scripts/check_cairn.py` | 0 | 188 Markdown files scanned; no issues | about 1 s (estimated) | unknown |
+| `python scripts/link_check.py` | 0 | 188 Markdown files scanned; no issues; 89 external links not probed | <1 s | unknown |
+| `python scripts/quality_gate.py --sub neutrality` | 0 | 0 failures, 43 informational matches | <1 s | unknown |
+
+**Test-consolidation list (slowest first)**: `bootstrap/tests/test_gate_reanchor.py` (13.46 s); `bootstrap/tests/test_reanchor.py` (12.33 s). Each includes a test over the 10 s per-file target.
+
+**Mutation outcomes**: With planner directory classification disabled in a separate clone, `TestTrackedDirectoryCollisions::test_plan_stage_and_recovery_preserve_mergeable_directory` failed on the expected directory refusal (1 failed). With the apply collision gate disabled in another clone, the complete-observation no-op regression failed because apply returned 0 instead of 1 (1 failed). The unmutated controls passed in the clean mapped run.
+
+**Non-pass disposition**: None in the completed verification commands. A preliminary attempt to run 44 selector files together was refused by the runner's 40-file cap before tests began; splitting the same remaining selector union completed it without overrides.
+
+**Plan-specific acceptance commands**: The mapped public-command tests cover planning, staging and applying collisions, content preservation, overrides, directory transitions, recovery by restoring a regular file and fresh restaging. `sync_doc_snippets.py` was not run because no synced snippet changed.
+
+**Known omissions**: No full suite or tree certification was run. The separate Internal Security Review obligation remains unresolved; this record does not clear it, and the plan remains implementing. No AST re-anchor was performed because it remains a separate Maintainer-run ceremony, not required before the v0.6 version cut. Arbitrary concurrent filesystem changes after a check remain outside the claim.
