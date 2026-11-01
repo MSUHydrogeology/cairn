@@ -1,7 +1,7 @@
 # Make proposals easier to decide
 
 **Author**: Codex GPT-6 (Proposal author)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the shipped proposal template is a named high-risk surface
 **Plan review**: required(Internal + Internal Security Review)
@@ -195,3 +195,11 @@ future template bytes, automated checks or reader comprehension.
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Maintainer -- 2026-11-01
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated** (chat, 2026-11-01; scribed by Antigravity):
+
+> "Accept as revised"
+
+**Tier**: heavy. Accepted as revised with high assurance and required Internal + Internal Security Review plan review.
