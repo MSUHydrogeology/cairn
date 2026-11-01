@@ -201,7 +201,7 @@ def test_shipped_guidance_records_and_finds_actual_runs() -> None:
         text = _read(path)
         assert _shipped_record_guidance_violations(text) == [], path
 
-    control = _read(ADOPTER_AGENTS)
+    control = " ".join(_read(ADOPTER_AGENTS).split())
     assert "After fetching the relevant shared refs" in control
     mutant = control.replace(
         "After fetching the relevant shared refs",
