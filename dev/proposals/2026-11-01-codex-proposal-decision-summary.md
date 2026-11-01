@@ -1,7 +1,7 @@
 # Make proposals easier to decide
 
 **Author**: Codex GPT-6 (Proposal author)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the shipped proposal template is a named high-risk surface
 **Plan review**: required(Internal + Internal Security Review)
