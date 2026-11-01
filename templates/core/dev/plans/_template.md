@@ -305,6 +305,15 @@ project's configured full suite
 and standing gates only at the integration points in `AGENTS.md` > Verification
 boundaries; it is not a per-change command and does not replace missing change
 evidence.
+
+Record each actual tree-certification run once: use the existing release or
+re-anchor evidence for those ceremonies. For another authorized run, put a
+`Tree certification -- <tested SHA>` section with the SHA, commands, results,
+and any failures in a useful commit message in shared project history. After
+fetching the relevant shared refs, readers can search
+`git log --all --grep='Tree certification --'`; it searches only refs available
+locally. Do not create a commit just for this record or backfill archived plans.
+An absent record does not show that a run passed.
 Timing targets are 30 seconds for iteration, 10 seconds per test file, 3
 minutes for integration, and 10 minutes for certification. These are
 diagnostics, not agent scores; a miss does not block work. Record misses and

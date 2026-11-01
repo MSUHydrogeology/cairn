@@ -180,6 +180,36 @@ def test_actual_certification_has_one_discoverable_shared_record() -> None:
         assert "Certified by: pending" not in _read(path), path
 
 
+def _shipped_record_guidance_violations(text: str) -> list[str]:
+    text = " ".join(text.split())
+    required = (
+        "Record each actual tree-certification run once",
+        "existing release or re-anchor evidence",
+        "Tree certification -- <tested SHA>",
+        "useful commit message in shared project history",
+        "After fetching the relevant shared refs",
+        "git log --all --grep='Tree certification --'",
+        "any failures",
+        "Do not create a commit just for this record",
+        "An absent record does not show that a run passed",
+    )
+    return [phrase for phrase in required if phrase not in text]
+
+
+def test_shipped_guidance_records_and_finds_actual_runs() -> None:
+    for path in (ADOPTER_AGENTS, ADOPTER_PLAN_TEMPLATE):
+        text = _read(path)
+        assert _shipped_record_guidance_violations(text) == [], path
+
+    control = _read(ADOPTER_AGENTS)
+    assert "After fetching the relevant shared refs" in control
+    mutant = control.replace(
+        "After fetching the relevant shared refs",
+        "Search without fetching shared refs", 1)
+    assert "After fetching the relevant shared refs" in (
+        _shipped_record_guidance_violations(mutant))
+
+
 def test_record_schema_guard_detects_removed_reviewed_range() -> None:
     text = _read(PLANS_DOCTRINE)
     mutated = text.replace("**Reviewed range**", "**Change description**", 1)

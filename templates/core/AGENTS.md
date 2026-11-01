@@ -196,6 +196,15 @@ configured interpreter/runtime only before a push when required, before
 re-anchor, before a release cut, or when the Maintainer asks. It certifies every
 change at or before that commit for bisect. The reviewer never runs the full suite.
 
+Record each actual tree-certification run once: use the existing release or
+re-anchor evidence for those ceremonies. For another authorized run, put a
+`Tree certification -- <tested SHA>` section with the SHA, commands, results,
+and any failures in a useful commit message in shared project history. After
+fetching the relevant shared refs, readers can search
+`git log --all --grep='Tree certification --'`; it searches only refs available
+locally. Do not create a commit just for this record or backfill archived plans.
+An absent record does not show that a run passed.
+
 During implementation, run only the tests that name a changed file, plus
 standing prose gates for prose. A test names a file when it imports it or cites
 its path or file name. The project's test-tier tool's `for <paths>` subcommand
