@@ -1,7 +1,7 @@
 # Proposal: cover multi-script module installs
 
 **Author**: Codex (gpt-6.1-terra), Strategy
-**Status**: awaiting-decision
+**Status**: revising
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
