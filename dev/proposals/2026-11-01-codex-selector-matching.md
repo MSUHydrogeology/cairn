@@ -112,3 +112,15 @@ maintenance cost exceeds the demonstrated savings.
 **Assurance path**: high-assurance. This changes the selection of required
 verification and could omit checks, including security checks; the heavy lane
 provides separate Security Review. No new trust boundary is intended.
+
+## Proposal review -- Codex GPT-6.1 -- 2026-11-01
+
+**Verdict**: Revise the assurance rationale; the narrowing itself is worth pursuing.
+
+1. **Should it happen as framed?** Yes: the selector treats every occurrence of a Python stem as a match, and the collision record shows 51 selected files without claiming all are incidental. The proposal preserves ambiguous consumers and stops if a small rule cannot distinguish them. That is a useful, testable limit, not a claim of complete dependency discovery.
+2. **Best alternative.** Keep the existing selector and inspect its real selections before changing only matching. The actual upgrade tests include both `from bootstrap._scaffold import upgrade` and dotted imports, while the collision plan names public-command and hostile-data tests; these examples make a path-only rule inadequate. Avoid a permanent mapping or new reporting machinery.
+3. **What would show it wrong?** A real import or identified public-command consumer disappears, a representative incidental match remains, or the rule needs enough exceptions to erase its savings. Compare the real entry point on the recorded inputs and preserve the named consumers with regressions.
+
+**Finding, advisory -- tier**: The heavy rationale cites potential omission of security checks, but `tools/test_tiers.py` is not among the named high-risk surfaces in `AGENTS.md`, and the proposal says no new trust boundary is intended. Potential error alone does not establish a named high-risk surface or widened boundary. Recommend light, the default, with the same targeted consumer checks; identify a concrete trigger if one exists. The Maintainer sets the tier.
+
+**Coverage**: Read the committed proposal, selector, governing verification and high-risk rules, selector test and representative upgrade import and public-command test references, and the collision plan's mapping and run record. Did not inspect every selected consumer, run tests, or perform Security Review. Elapsed: approximately 5 minutes; tokens: unknown.
