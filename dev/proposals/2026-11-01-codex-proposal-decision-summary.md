@@ -118,3 +118,21 @@ None; this is the opening scope.
 
 **Assurance path**: high-assurance — the shipped vendor-neutral template is a
 named high-risk surface.
+
+## Proposal review -- Codex GPT-6 -- 2026-11-01
+
+**Tier**: Internal (ordinary proposal review)
+**Reviewed**: `a0567908`
+**Elapsed**: unknown; **Tokens**: unknown
+
+**Foundations**
+
+- **Should it happen as framed?** Yes: the current template separates the problem, change and cost across Context, Proposal and Rationale; a short opening can bring the choice together (`dev/proposals/_template.md`, those headings).
+- **Best alternative:** Leave the template alone and rely on the existing standard. Its rules already require a conclusion first, decision information, definitions and examples, so a new general rule is not needed (`dev/agent_collaboration.md`, Cairn Plain Language rules 2–3, 5–6 and 9).
+- **What would show it wrong?** If summaries obscure costs or add repetition and work without making the choice easier to find, the extra prompt has failed (proposal, Signals the change is wrong).
+
+**Verdict:** Proceed with one non-blocking improvement.
+
+**Finding:** The proposal does not quite model its own requested opening: `In brief` gives the change, but its problem is in Context and its cost is in Rationale. Bring those together in a few ordinary sentences at the start, including an example if needed. This gives the Maintainer the choice before the supporting detail and demonstrates what the template should elicit.
+
+**Coverage:** Read the committed proposal, current template, Plain Language rules and cited meter proposal. Did not test implementation, check every template reader or assess the separate security obligation.
