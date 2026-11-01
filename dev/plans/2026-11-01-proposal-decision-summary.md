@@ -93,3 +93,45 @@ certification and any re-anchor remain separate authorized ceremonies.
 **Findings:** The accepted proposal explicitly allows short proposals to do most of their work in the summary and rationale and forbids a mandatory checklist. C1 says to avoid repetition and adds no stage, score or general rule, but does not state those two points. Name both in C1 so the implementation does not inadvertently require filler or a checklist. For the Maintainer, explain “S2–S3” and “Boundary A/B/C” where they matter or point to their definitions; the plan otherwise asks its reader to decode its verification terms (Plain Language rule 5: “Define a specialist term where it first matters”).
 
 **Coverage:** Compared the committed plan with the accepted proposal, both template openings, plan review guidance and Plain Language rules. Did not inspect every reader or byte pin, test implementation, or perform the separate Security Review.
+
+## Plan review -- Codex gpt-6.1-sol (Security Review) -- 2026-11-01
+
+```
+Reviewed commit: 62e668da
+Target: accepted scope, safeguards and verification
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately 5 minutes; **Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1 retains required evidence,
+   lifecycle records, security and scientific preflights while improving the
+   opening; it implements the accepted Proposal without granting authors
+   Decision authority -- source proposal, Proposal, S1 and Decision; plan, C1.
+2. **Best alternative.** Change only the common opening and review prompts,
+   using existing Plain Language guidance. The plan already takes that path,
+   making doctrine edits conditional and adding no general rule -- plan, Scope;
+   source proposal, Rationale.
+3. **What would show it wrong?** A summary that hides costs or replaces evidence,
+   or guidance that weakens a preflight, would violate C1. Compare both revised
+   templates and the two qualitative examples with the preserved sections --
+   plan, Acceptance criteria and Verification; source proposal, S5.
+
+The author-controlled summary cannot establish its own truth. The accepted
+S1, S4 and S5 answers retain the Maintainer's authority, the pause for unclear
+information and the risk of misleading authors. The plan preserves those
+answers, separately requires Security Review, and retains high-risk surface
+checks and wide final verification. Scientific N/A matches the unchanged
+scope. The planned reading judgment adds no authorization mechanism or stage.
+
+**Covered**: committed plan against accepted safeguards, current template
+preflight and Decision sections, and `AGENTS.md` role boundaries.
+**Not covered / low confidence**: implementation bytes, scanner outcomes,
+reader comprehension and every downstream reader; no tests or suite run.
