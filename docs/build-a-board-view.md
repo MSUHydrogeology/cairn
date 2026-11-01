@@ -55,7 +55,7 @@ A **view** is any web page, table, or summary panel built from the board's outpu
 
 ## Grouping by who acts next
 
-The board reports header facts and does not emit a holder key. A view that groups live proposals and plans by whose move it is applies the lifecycle lookup from [`doctrine/lifecycle.md`](../doctrine/lifecycle.md) on the consumer side.
+The board reports header facts and does not emit a holder key. A view that groups live proposals and plans by whose move it is applies the lifecycle lookup from [`methodology/lifecycle.md`](methodology/lifecycle.md) on the consumer side.
 
 ### The lookup
 

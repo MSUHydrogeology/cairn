@@ -29,7 +29,7 @@ first, and the steps below are the deliberate lane, the heaviest one:
 ![Three lanes: most changes take a light path. A typo or one-line fix is the change with its test and needs no review. A change whose shape is settled gets a short change note and a review first. Only a new feature, a contract change or a high-risk surface gets a proposal, a review, the Maintainer's decision and a plan. Ordinary ceremony uncertainty takes the lighter lane with a reason; stop on a newly discovered trust boundary. Every lifecycle step is a commit.](assets/three-lanes-of-change.svg)
 
 A substantive change moves through
-[propose → review → decide → implement → record](../doctrine/lifecycle.md).
+[propose → review → decide → implement → record](methodology/lifecycle.md).
 Here is one example: add an optional name argument to a `greet` command-line
 program. Because this adds a capability, it belongs in the deliberate lane.
 
@@ -48,7 +48,7 @@ edited. The file and its history are the audit trail.
 ### 2. Review
 
 A reviewer who did not write it — a fresh session of an agent counts, and the
-file names who they were (see [Dual-Review](../doctrine/dual-review.md)) —
+file names who they were (see [Dual-Review](methodology/dual-review.md)) —
 appends a `## Review` section. They check the reasoning, not just the proposed
 code: should this happen as framed, what is the best alternative, and what
 evidence would show the idea is wrong? One fresh reviewer is enough. If the
@@ -88,7 +88,7 @@ Together, these files and the commit history show what changed and why.
 
 ## What to do next
 
-* **Just exploring?** Read [`doctrine/`](../doctrine/) as a handbook
+* **Just exploring?** Read [`docs/methodology/`](methodology/) as a handbook
   and let it inform how your team already works.
 * **Ready to adopt?** Install it with the scaffold and a profile — see the
   [on-ramp](../on-ramp/README.md) for how to choose one, and

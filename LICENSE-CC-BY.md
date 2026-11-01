@@ -3,7 +3,7 @@
 Copyright (c) 2026 Anthony Kendall and the Cairn contributors.
 
 The **prose, templates, and explanatory visuals** in this repository —
-the doctrine (`doctrine/`), the dimensions (`dimensions/`), the case
+the methodology (`docs/methodology/`), the dimensions (`dimensions/`), the case
 studies (`case-studies/`), the bootstrap narrative (`bootstrap/*.md`),
 the forkable **document templates** — the Markdown (`.md`) files under
 `templates/` — the on-ramp (`on-ramp/`), this repository's documentation

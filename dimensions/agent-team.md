@@ -22,7 +22,7 @@ simply a multi-agent team.
 ### Single agent
 
 One agent wears every role across sessions
-(`../doctrine/roles.md`). The one review still holds, filled by
+(`../docs/methodology/roles.md`). The one review still holds, filled by
 *time* rather than by *agent*: the reviewer is the same agent in a
 fresh session. The Maintainer can ask for more distance — a read
 from a second agent type when one is available, or their own. The
@@ -40,7 +40,7 @@ Coordination module runs at its baseline tier only.
 * **Coordination tiers activate.** Concurrent agents in one
   working tree enable the asynchronous tier (work intents); a
   high-concurrency, domain-agent team additionally enables the
-  real-time typed-event tier (`../doctrine/coordination.md`).
+  real-time typed-event tier (`../docs/methodology/coordination.md`).
 * On a large domain-agent team, **the one reviewer can come from
   domain rotation** — an agent reviews a domain it does not own.
 

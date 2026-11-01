@@ -43,6 +43,6 @@ pull request so the reasoning stays with the work.
 ## Project structure
 
 The [README](README.md) introduces Cairn, and [`docs/README.md`](docs/README.md)
-maps its user documentation. The `doctrine/` directory contains the published
-methodology; `templates/` and `bootstrap/` contain the materials and tools that
-adopters use. Development records live under `dev/`.
+maps its user documentation. The `docs/methodology/` directory contains the
+published methodology; `templates/` and `bootstrap/` contain the materials and
+tools that adopters use. Development records live under `dev/`.

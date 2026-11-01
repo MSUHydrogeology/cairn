@@ -27,7 +27,7 @@ honest:
   *Why it matters:* Cairn's lifecycle records *that* a change was
   reviewed and reproducible, but does not teach reproducible-research
   practice itself — the Turing Way does, and is the model for
-  adopting Cairn by reading the doctrine alone.
+  adopting Cairn by reading the methodology alone.
 
 ## Foundational computing skills
 

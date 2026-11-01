@@ -217,7 +217,7 @@ the tree changes.
 
 ## See also
 
-* The role-dispatch heuristics — `doctrine/roles.md` > "When to dispatch which
+* The role-dispatch heuristics — `docs/methodology/roles.md` > "When to dispatch which
   role".
 * The verify-before-asserting discipline these tools serve —
-  `doctrine/rationale.md` and the `claim-check` module.
+  `docs/methodology/rationale.md` and the `claim-check` module.

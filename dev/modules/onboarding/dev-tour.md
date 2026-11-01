@@ -5,7 +5,7 @@ and why. Every change goes into one of three lanes, chosen before any
 file is written. Most changes take a light lane; only a few take the
 full one. This tour says what each part of `dev/` holds, then shows the
 light lane on a typo and points to the full lane in Cairn's README.
-Best read after *doctrine/lifecycle.md*, which carries the *why*; this
+Best read after *docs/methodology/lifecycle.md*, which carries the *why*; this
 is the *where*.
 
 ## What lives in `dev/`
@@ -114,7 +114,7 @@ code review.
 ## Where to next
 
 * Try the typo fix above on a real change in your tree.
-* When you coordinate two or more agents, read *doctrine/coordination.md*;
+* When you coordinate two or more agents, read *docs/methodology/coordination.md*;
   it covers the work-intent mechanism that prevents collisions.
 * When you have an improvement for Cairn itself, the template
   `.github/ISSUE_TEMPLATE/foldback.md` in the Cairn repository walks

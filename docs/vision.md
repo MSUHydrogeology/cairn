@@ -2,7 +2,7 @@
 
 > Cairn's **purpose, design centers, and anti-scope** — what the project is
 > for and what it refuses to become. [`README.md`](../README.md) is the front door;
-> [`doctrine/rationale.md`](../doctrine/rationale.md) is the research grounding. This page is distilled
+> [`methodology/rationale.md`](methodology/rationale.md) is the research grounding. This page is distilled
 > from longer strategy notes under [`dev/strategy/`](../dev/strategy/).
 
 ## Purpose
@@ -17,7 +17,7 @@ team: a human Maintainer and AI collaborators of more than one type. Each
 piece was added in answer to a concrete failure: agents drifting silently,
 reasoning lost when a chat closed, and reviews that shared the author's blind
 spot. Every mechanism is tied to the failure it answers; the grounding is in
-`doctrine/rationale.md`. That history is where the method came from. Today it
+`docs/methodology/rationale.md`. That history is where the method came from. Today it
 needs only a human and one AI tool.
 
 Cairn is **repo-first.** A forkable, DOI-bearing repository gets *adopted*
@@ -34,12 +34,12 @@ Two differentiators, both genuinely uncommon, define the method:
   change note and a review. A new feature, a contract change or a high-risk
   surface gets a recorded proposal, the Maintainer's decision and a plan. The
   arc of a decision can be rebuilt from `git log`, not lost when a session
-  ends (`doctrine/lifecycle.md`).
+  ends (`docs/methodology/lifecycle.md`).
 * **The Dual-Review model** — one review at every stage: a fresh reviewer
   who did not write the work questions its foundations and answers in
   writing, and a different model or a person adds more distance whenever
   the Maintainer asks. Asynchronous, commit-mediated, attributed — a faithful
-  instantiation of scientific peer review (`doctrine/dual-review.md`).
+  instantiation of scientific peer review (`docs/methodology/dual-review.md`).
 
 Around these, Cairn ships what a living standard needs and a static document
 does not: security checks; an updater that brings in new Cairn guidance while
@@ -87,7 +87,7 @@ trust through how it is built. Five areas, each with a concrete commitment:
   network when you run them; `bootstrap/SAFETY.md` says which.
 
 The fuller treatment — and where Cairn deliberately *diverges* from the
-literature it draws on — is `doctrine/rationale.md`; the contract for what
+literature it draws on — is `docs/methodology/rationale.md`; the contract for what
 the agent reads and the scanners check is `SECURITY.md`.
 
 ## Restraint is the other design center
@@ -108,7 +108,7 @@ The practical test is whether the method still helps the Maintainer
 understand and judge the work. When the ceremony repeatedly outweighs the
 change, hides it, or makes bypass attractive, simplify the mechanism or move
 the work to a lighter lane. The research grounding is Anchor 17 in
-`doctrine/rationale.md`.
+`docs/methodology/rationale.md`.
 
 ## Anti-scope — what Cairn refuses to become
 
@@ -127,7 +127,7 @@ go through the normal proposal, review, and Maintainer Decision lifecycle.
 
 This charter is deliberately compact. The fuller record:
 
-* **Rationale and research grounding** — [`doctrine/rationale.md`](../doctrine/rationale.md) and [`docs/further-reading.md`](further-reading.md).
+* **Rationale and research grounding** — [`methodology/rationale.md`](methodology/rationale.md) and [`docs/further-reading.md`](further-reading.md).
 * **Front door** (what it is, how to adopt) — [`README.md`](../README.md).
 * **Direction** (the live roadmap and release path) — [`dev/PLANNING.md`](../dev/PLANNING.md).
 * **The strategy notes** this page was distilled from — [`dev/strategy/`](../dev/strategy/).

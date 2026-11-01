@@ -1,6 +1,6 @@
 # Dimensions — adapting Cairn to a project
 
-The `doctrine/` tree describes the **invariant core** — what every
+The `docs/methodology/` tree describes the **invariant core** — what every
 Cairn adoption keeps. This tree describes the **adaptation**: how a
 specific project, with its specific codebase and team, selects
 *how much apparatus* it runs on top of that core.
@@ -34,7 +34,7 @@ very different points, and they should.
 | Axis | Range | What it drives |
 |------|-------|----------------|
 | **Human team** (`human-team.md`) | solo ↔ multi-human | Decision-authority handling and human-review patterns. |
-| **Agent team** (`agent-team.md`) | single agent ↔ multiple agents / types | The role roster, who is available to be the one reviewer, and the coordination tiers (`../doctrine/coordination.md`). |
+| **Agent team** (`agent-team.md`) | single agent ↔ multiple agents / types | The role roster, who is available to be the one reviewer, and the coordination tiers (`../docs/methodology/coordination.md`). |
 
 Each axis has its own document in this directory, and each carries
 a **scoring rubric**: the observable signals — module count,

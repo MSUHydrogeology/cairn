@@ -9,7 +9,7 @@ Every step also shows the commands, if you would rather type them
 yourself in a terminal, with macOS / Linux and Windows side by side.
 This page will not teach you the method in one sitting;
 [`getting-started.md`](getting-started.md) and
-[`doctrine/`](../doctrine/) do that.
+[`docs/methodology/`](methodology/) do that.
 
 > **A note on the example.**  The change here is a one-line README
 > tagline.  In real work that is a *trivial* change: you would make it
@@ -504,11 +504,11 @@ Remove-Item -Recurse -Force cairn-try
   short change note, reviewed, then the change and its test.  When
   unsure about ceremony, take the lighter lane with a reason; stop on a newly
   discovered trust boundary. See
-  [`doctrine/lifecycle.md`](../doctrine/lifecycle.md).
+  [`docs/methodology/lifecycle.md`](methodology/lifecycle.md).
 * **Extra distance in review.**  A fresh chat with the same agent is
   enough.  When you want more distance, you can ask for another model
   or a person to review a particular piece of work (see
-  [`doctrine/dual-review.md`](../doctrine/dual-review.md)).
+  [`docs/methodology/dual-review.md`](methodology/dual-review.md)).
 * **Plans.** A non-trivial standard/heavy accepted proposal opens a
   [plan](../templates/core/dev/plans/_template.md) that sequences the work and
   gets its own review. Light has no plan even for multi-area work. This one
@@ -546,10 +546,10 @@ In order:
   for a real adoption (`bootstrap/BOOTSTRAP.md` Act II-3 to II-6).
   The [on-ramp](../on-ramp/README.md) has the profile table, and what
   to do if you copied the kernel in by hand.
-* **Read the doctrine** -- [`doctrine/`](../doctrine/) explains
+* **Read the methodology** -- [`docs/methodology/`](methodology/) explains
   *why* the lifecycle works as it does.  Start with
-  [`lifecycle`](../doctrine/lifecycle.md) and
-  [`dual-review`](../doctrine/dual-review.md).
+  [`lifecycle`](methodology/lifecycle.md) and
+  [`dual-review`](methodology/dual-review.md).
 
 ## Honest framing
 

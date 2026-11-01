@@ -48,7 +48,7 @@ New to Cairn? Start with the [quickstart](quickstart.md).
 
 ## The rules
 
-* [The doctrine](../doctrine/README.md) -- the methodology itself; its front
+* [The methodology](methodology/README.md) -- the method itself; its front
   page explains how to read it.
 
 ## Maintaining Cairn itself

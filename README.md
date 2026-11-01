@@ -1,4 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/rationale.md doctrine/lifecycle.md doctrine/dual-review.md reason=doctrine/ citation convention — a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-internal-ref-allow: docs/methodology/rationale.md docs/methodology/lifecycle.md docs/methodology/dual-review.md reason=methodology reference — a reference to Cairn's published methodology, not an installed local file -->
 
 # Cairn
 
@@ -21,7 +21,7 @@ the repository, so work can continue across sessions, tools, and collaborators.
 
 ![Chats end; the repository keeps the record. An agent session today, a different AI tool next week and a new colleague next year all read and write the same files: the project's rules for agents, the proposals recording what was decided and why, the plans recording how it was checked, and the code with its tests.](docs/assets/shared-record-across-sessions.svg)
 
-[Try a small example](docs/quickstart.md) · [See a toy example](#a-toy-example-asking-for-a-new-feature) · [Read the workflow](docs/getting-started.md) · [Contribute](CONTRIBUTING.md) · [Browse the methodology](doctrine/) · [Project site](https://msuhydrogeology.github.io/cairn/)
+[Try a small example](docs/quickstart.md) · [See a toy example](#a-toy-example-asking-for-a-new-feature) · [Read the workflow](docs/getting-started.md) · [Contribute](CONTRIBUTING.md) · [Browse the methodology](docs/methodology/) · [Project site](https://msuhydrogeology.github.io/cairn/)
 
 ## What it provides
 
@@ -62,13 +62,13 @@ For a substantial change, the deliberate lane:
 5. Keep the proposal, reviews, responses, and decision in git with the code.
 
 Security-sensitive work has additional requirements. The
-[lifecycle](doctrine/lifecycle.md) describes how a change is sorted and where
+[lifecycle](docs/methodology/lifecycle.md) describes how a change is sorted and where
 those boundaries sit.
 
 Review is by a fresh reviewer who did not write the work. A fresh session of
 the same AI tool is sufficient. The Maintainer can request another model or a
 person for a particular review. Each review records who wrote it and the
-evidence it considered. The [review guidance](doctrine/dual-review.md) gives
+evidence it considered. The [review guidance](docs/methodology/dual-review.md) gives
 the questions to ask at each stage.
 
 ![One review at every stage, by a reviewer who did not write the work and who questions its foundations in writing. A different model or a person adds more distance only when the Maintainer asks, and every review names its reviewer, so that distance is on the record.](docs/assets/dual-review-independence.svg)
@@ -127,7 +127,7 @@ the check must state.
 ![A test written from the same understanding as the code can share its mistake: with an outflow sign reversed in both, they agree and the test passes. One check whose expected answer comes from elsewhere, such as an analytical solution, a conservation law aimed at the risk, a trusted observation, an independent implementation or an expert's expectation written down first, disagrees with the code and shows the mistake.](docs/assets/independent-scientific-check.svg)
 
 The [scientific example](examples/scientific-minimal/) shows the workflow around
-a mass-balance test. [The rationale](doctrine/rationale.md) explains the research
+a mass-balance test. [The rationale](docs/methodology/rationale.md) explains the research
 and experience behind the method, including its limitations.
 
 ## Adapt it to your project
@@ -174,7 +174,7 @@ read.
 
 Then choose how much to adopt:
 
-- **Read the guidance.** Use [the doctrine](doctrine/) as a handbook without
+- **Read the guidance.** Use [the methodology](docs/methodology/) as a handbook without
   installing anything.
 - **Install it into a project.** Copy a starter profile from
   [`bootstrap/profiles/`](bootstrap/profiles/), preview what it will write, and
@@ -223,7 +223,7 @@ before installing third-party instructions or running agents on sensitive work.
 
 | Directory | Contents |
 | --- | --- |
-| [doctrine/](doctrine/) | The methodology: decisions, review, roles, session continuity, and rationale. |
+| [docs/methodology/](docs/methodology/) | The methodology: decisions, review, roles, session continuity, and rationale. |
 | [templates/](templates/) | Instructions, document templates, and optional modules installed into a project. |
 | [dimensions/](dimensions/) | How the configuration varies with the codebase and team. |
 | [bootstrap/](bootstrap/) | Installation, upgrades, integrity checks, and their tests. |

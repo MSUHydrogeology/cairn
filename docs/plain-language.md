@@ -390,6 +390,6 @@ the full-text read and were not found on any open web page.
 
 * The accepted proposal, with the full evidence and the review record:
   [`dev/proposals/archive/2026-10-26-claude-writing-for-the-reader.md`](../dev/proposals/archive/2026-10-26-claude-writing-for-the-reader.md).
-* The reasoning behind it, in [the rationale](../doctrine/rationale.md), under
+* The reasoning behind it, in [the rationale](methodology/rationale.md), under
   "The comprehension floor".
 * The [glossary](glossary.md) for any Cairn term used above.

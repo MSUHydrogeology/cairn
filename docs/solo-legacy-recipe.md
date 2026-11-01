@@ -141,4 +141,4 @@ contract change or a high-risk surface gets a proposal. For ordinary ceremony
 uncertainty, take the lighter lane with a reason; stop on a newly discovered
 trust boundary. This keeps process off bug fixes while
 the changes that matter stay on the record. The full rules are in
-[`doctrine/lifecycle.md`](../doctrine/lifecycle.md).
+[`methodology/lifecycle.md`](methodology/lifecycle.md).

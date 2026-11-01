@@ -136,6 +136,6 @@ Cairn is.
 
 **And the honest caveat**: none of this is validated by a controlled study.
 Cairn is grounded in the research on human-AI development and explicit about
-where it diverges — see [`doctrine/rationale.md`](../doctrine/rationale.md) —
+where it diverges — see [`methodology/rationale.md`](methodology/rationale.md) —
 but "grounded in" is not "proven by." If you want the evidence status of a
 particular claim, that file is where it is stated.

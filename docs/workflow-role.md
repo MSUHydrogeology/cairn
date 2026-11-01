@@ -15,18 +15,18 @@ reviewed decision-making *upstream* of the code:
   gets a short change note first. Only a new feature, a contract change or a
   high-risk surface moves through propose → review → decide → implement →
   record, as append-only, git-committed artifacts (see
-  [`../doctrine/lifecycle.md`](../doctrine/lifecycle.md)). Cairn sets how
+  [`methodology/lifecycle.md`](methodology/lifecycle.md)). Cairn sets how
   each change is argued and reviewed, and keeps the trail.
 * **Dual-Review.** One review at every stage
-  (see [`../doctrine/dual-review.md`](../doctrine/dual-review.md)):
+  (see [`methodology/dual-review.md`](methodology/dual-review.md)):
   who looks at a change before it lands: a fresh reviewer who did not
   write it, plus more distance whenever the Maintainer asks.
 * **Coordination.** How a human maintainer and one or more AI agents
   share the tree without colliding (see
-  [`../doctrine/coordination.md`](../doctrine/coordination.md)),
-  the role roster ([`../doctrine/roles.md`](../doctrine/roles.md)),
+  [`methodology/coordination.md`](methodology/coordination.md)),
+  the role roster ([`methodology/roles.md`](methodology/roles.md)),
   and the session routines
-  ([`../doctrine/session-routines.md`](../doctrine/session-routines.md)).
+  ([`methodology/session-routines.md`](methodology/session-routines.md)).
 * **Adaptation.** Which of the above scales up or down with the
   project's dimensions (see [`../dimensions/README.md`](../dimensions/README.md)).
 

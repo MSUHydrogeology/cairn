@@ -16,7 +16,7 @@ small and grow.
 
 ## Read it
 
-Adopt nothing mechanically. Read `doctrine/` as a handbook and let it inform
+Adopt nothing mechanically. Read `docs/methodology/` as a handbook and let it inform
 how the team already works — no `dev/` tree, no templates. The project takes
 the *ideas* (recorded deliberation, the Dual-Review model) without the
 apparatus. The Turing Way is the model for this mode.
@@ -49,7 +49,7 @@ real install with the smallest profile.
 
 | The project is... | Start with |
 |-------------------|------------|
-| exploring the ideas, not yet committed | reading the doctrine |
+| exploring the ideas, not yet committed | reading the methodology |
 | a new project, one Maintainer | the `solo-greenfield` profile |
 | an existing codebase, one Maintainer | the composed profile in [`../docs/solo-legacy-recipe.md`](../docs/solo-legacy-recipe.md) |
 | a team, or a large codebase with several contributors | `collaborative-team` or `high-rigor-legacy`, or have an agent score your project |
@@ -68,7 +68,7 @@ first.** Its eleven sections surface hidden state, scientific assumptions, and
 security boundaries, and its G/M/P scores tell you how small to start: mostly
 Good, install the profile your axes give; mostly Mixed with one or two Poor,
 start with the smallest profile that fits and fix the Poor sections first;
-three or more Poor, read the doctrine while you fix the gaps.
+three or more Poor, read the methodology while you fix the gaps.
 
 The choice is always yours; the profile and the report inform it.
 
