@@ -59,3 +59,17 @@ Elapsed: approximately 3 minutes; tokens: unknown.
 3. **What would show it wrong?** An entry-point test showing lost history, unusable staged adoption, incorrect fork/base records, a missing profile or misleading guidance. C1 and Boundary A require those cases and independent-byte mutations; the named upgrade tests already exercise adoption, ownership and the `--to` refusal.
 
 **Coverage:** Read the committed plan and accepted proposal, current changelog format, upgrade guidance and named test locations. Did not execute tests or mutations, inspect every upgrade branch or assess security in depth; a separate Security Review remains required.
+
+## Plan review -- Codex GPT-6 Security Review -- 2026-11-01
+
+Reviewed commit: `ba63765b`; target: whole plan; prior Security findings: none.
+Tier: Internal Security Review; Obligation: Internal Security Review; verdict: **PROCEED**; findings: none.
+Elapsed: approximately 3 minutes; tokens: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1 preserves normal-install bytes, distinguishes eligible collisions from another source's ownership, and requires correct fork/base records. This delivers the accepted heavy proposal without widening overwrite authority. The committed upgrade new-core loop blocks occupied destinations; collision adoption revalidates eligibility and both authorized hashes before recording a fork (`bootstrap/_scaffold/upgrade.py`).
+2. **Best alternative.** Reuse those controls and add focused changelog cases, as Boundary A proposes. A separate example avoids collision but loses the accepted root file. New adoption machinery adds burden without improving this outcome; existing tests already exercise preservation, ownership refusal and adoption without `--to` (`bootstrap/tests/test_upgrade_module_additions.py`).
+3. **What would show it wrong?** Actual entry-point tests permitting silent replacement, adoption of another source's destination, unsafe writes, incorrect ancestry or unusable staged commands. C1 and Boundary A require these behaviors, independent history bytes and collision-bypass/replacement mutations; C2 retains separate implementation Security Review. Wide mapped integration covers the install contract while explicitly excluding certification and re-anchor.
+
+**Coverage:** Read the committed plan and accepted proposal, current install skip/force interface, new-core collision classification, adoption authorization/preflight, named preservation and ownership tests, and protected-surface guidance. No new process or ledger is proposed. Did not run tests or mutations, inspect every apply branch, or establish race resistance; implementation evidence and separate code Security Review remain owed.
