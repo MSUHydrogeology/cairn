@@ -258,6 +258,14 @@ The Maintainer accepted the [proposal](../proposals/archive/2026-11-01-codex-cer
 at `8d1c6bde`. The [plan](../plans/2026-11-01-certification-marker.md) prepares
 removal while retaining the checks, triggers and actual-run evidence.
 
+### 26. Make proposals easier to decide — awaiting Decision
+
+The [reviewed proposal](../proposals/2026-11-01-codex-proposal-decision-summary.md)
+puts the problem, proposed change and meaningful tradeoffs together at the
+start of a proposal, before implementation detail. The existing Plain Language
+standard already calls for clear conclusions, definitions and examples, so no
+new general rule or review stage is proposed. **Decide** whether to accept it.
+
 ## Issue triage, staffing and close-out
 
 Issue #33 asks that certification mean scoped checks. The accepted proposal
