@@ -89,3 +89,23 @@ After independent code and Security Reviews, Boundary B is **wide** for governin
 **Non-blocking recommendation.** Make clear how an ad hoc run's record becomes reachable in shared Git history and avoid requiring an otherwise unnecessary separate commit solely to create the record. The proposed `git log --all` search only finds commits present in the reader's local refs; demonstrate the intended lookup rather than treating the command alone as proof of accessibility.
 
 **Coverage:** Read the committed plan, accepted proposal and Decision, current certification and bisect rules, and the actual guard message. Did not enumerate all readers or pins, run tests, verify record lookup, assess implementation wording, or perform Security Review.
+
+
+## Plan review -- Codex GPT-6.1 -- 2026-11-01 (Security)
+
+**Tier**: Internal Security Review  
+**Obligation**: Internal Security Review  
+**Reviewed commit**: ed5181da  
+**Verdict**: ACCEPT; no security findings  
+**Elapsed**: approximately 4 minutes  
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. C1 explicitly retains missing-check blockers, conditional push certification, release/re-anchor triggers, the refusal condition and failure/bisect handling. Removing the pending message grants no bypass: the actual guard decides from override, release mode, collection mode and file span, independently of that message (`bootstrap/tests/conftest.py`). 
+2. **Best alternative.** Use the existing release or re-anchor evidence record, with the proposed searchable commit message only for other authorized runs. This is the plan's approach: one actual-run record, no ledger or archived-plan edits. Another record would add burden without authenticating results. Evidence: Acceptance criteria; `docs/release-process.md` evidence home and pre-cut commands; `bootstrap/REANCHOR_RUNBOOK.md` ceremony evidence.
+3. **What would show it wrong?** A missing check becoming optional, altered guard behavior, or an authorized run whose outcome readers cannot find. C1 requires retained-obligation tests, actual-refusal coverage, mutation checks and representative lookup. Current rule tests pin wording; implementation must retain obligation coverage (`bootstrap/tests/test_certifying_run_rule.py`).
+
+The ordinary review's accessibility recommendation applies: lookup must reach shared history, including failed results. Existing evidence requirements suffice; no additional ledger, review stage or approval is needed.
+
+**Coverage:** Read the committed plan, accepted proposal/Decision, plan template, governing certification/bisect rules, actual guard, rule-test source, release evidence guidance and re-anchor runbook. Did not run tests, enumerate every reader/pin, demonstrate lookup or review implementation bytes.
