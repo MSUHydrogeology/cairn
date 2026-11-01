@@ -76,3 +76,17 @@ Elapsed: approximately 2 minutes; tokens: unknown.
 3. **What would show it wrong?** An actual install or upgrade replacing an existing history, a collision adoption corrupting its bytes or base record, or instructions that cannot produce the stated format. The proposal calls for entry-point tests of these cases.
 
 **Coverage:** Read the committed proposal, board request, current changelog, core mapping and install and new-core upgrade paths. The install path skips existing files unless forced; the upgrade path distinguishes an unlocked collision from another source's ownership. Did not run implementation tests, inspect every installer path or conduct Security Review; those remain for the plan and separate review.
+
+## Security Review -- Codex GPT-6 -- 2026-11-01
+
+Reviewed commit: `842b0065`; target: whole proposal; prior Security findings: none.
+Tier: Internal; Obligation: Security Review; verdict: **PROCEED**; findings: none.
+Elapsed: approximately 4 minutes; tokens: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The board requests an installed root changelog, and the proposal explicitly preserves normal-install history and existing upgrade collision controls. At the reviewed commit, `_install_one` skips occupied files without force; new-core upgrade planning distinguishes unlocked collisions from another source's ownership (`bootstrap/_scaffold/install.py`, `_install_one`; `bootstrap/_scaffold/upgrade.py`, new-core loop). Adding a mapping therefore deserves the proposed heavy lane and separate Security Reviews, without adding a new adopter ceremony.
+2. **Best alternative.** A separate example avoids occupying the history path but loses the requested ready-to-use root file and adds copying. Reusing `_CORE_MAPPINGS` and the existing adoption path is smaller while retaining explicit overwrite authority. Adoption checks the observed and upstream digests, revalidates a regular contained destination, and writes lock/cache records without replacing the history (`adopt_collisions`).
+3. **What would show it wrong?** Entry-point tests showing overwritten history, adoption of another source's destination, corrupted merge ancestry, unsafe writes or a profile missing the file. The proposal requires those behavior checks and mutation evidence; membership checks alone would not establish preservation. Its explicit force exception avoids promising preservation when overwrite was authorized.
+
+**Coverage:** Read the committed proposal, ordinary review, board request, core mappings, install skip/write guards, new-core collision classification and collision-adoption validation/commit path. No implementation exists in this proposal review; did not run tests or mutations, inspect every upgrade/apply branch, or establish race resistance. Plan and implementation Security Reviews remain owed.
