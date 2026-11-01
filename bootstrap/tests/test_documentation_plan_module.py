@@ -223,7 +223,11 @@ class TestCairnSelfHosted:
             "Cairn self-hosted instance should discuss "
             "cairn/templates/core/ in worked examples"
         )
-        assert "published methodology may explain their rationale but does not replace them" in text
+        normalized = " ".join(text.split())
+        assert (
+            "published methodology may explain their rationale but does not replace them"
+            in normalized
+        )
 
 
 # ---------------------------------------------------------------------------
