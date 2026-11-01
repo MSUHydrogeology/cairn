@@ -102,6 +102,32 @@ six-node run; both mutants were killed. Tokens: unknown.
 This is iteration evidence only; ordinary code review and Security Review remain
 owed before Boundary B.
 
+## Implementation recheck -- Codex GPT-6 -- 2026-11-01
+
+**Review fix:** ordinary code review `7a2de064` found that adapting history
+must be followed by a fresh stage because the adoption digest is bound to the
+bytes staged earlier. Both guides now state the order. The new entry-point
+test proves that the earlier authorization is refused after editing, a new
+stage exposes the changed bytes, and the newly printed authorization adopts
+them.
+**Commit checked:** `89e390341e24e5d5770e538a720ca68da9958657`, clean copy.
+**Interpreter:** `/Users/kendal30/conda_envs/miniforge3/bin/python`, Python 3.12.9.
+**Targeted tests:** seven changelog install/upgrade nodes passed in 3.78 seconds,
+including the new edit, re-stage and adopt sequence. The first run on the
+corrected code passed all seven.
+**Prose gates:** `claim_check.py` passed on the template, shipped AGENTS and
+upgrade guide; `link_check.py` scanned all three without issues;
+`sync_doc_snippets.py --check` found no drift; `quality_gate.py --sub neutrality`
+reported `fail=0`, `info=75`.
+**Mutation checks:** in separate clean copies of this commit, bypassing the
+normal-install skip made `test_normal_install_preserves_existing_changelog_bytes`
+fail (0.47 seconds), and bypassing new-core collision detection made
+`test_new_core_changelog_collision_can_be_kept_as_a_fork` fail (0.76 seconds).
+Both mutants were killed; the unmutated seven-node controls passed. Tokens:
+unknown. The initial mapped selection still has no final result; complete mapped
+tests remain for wide Boundary B. A targeted ordinary review re-look and
+Security Review remain owed before Boundary B.
+
 ## Author response -- Codex GPT-6 -- 2026-11-01
 
 Both the ordinary plan review and Security Review recommend proceeding with no findings. The accepted scope and verification remain unchanged.
