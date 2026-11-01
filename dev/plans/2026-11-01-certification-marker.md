@@ -70,3 +70,22 @@ record type with representative existing evidence; record any gap rather than cl
 nonexistent example.
 
 After independent code and Security Reviews, Boundary B is **wide** for governing and protected surfaces. On one clean unchanged final commit under canonical Python 3.13.x, run the reviewed-range iteration selection plus mapped integration/workflow tests, owning families, installed public paths and standing gates; record SHA/range, clean pre/post state, interpreter, commands, counts, timing, non-pass dispositions and omissions. Boundary C independently falsifies the implementation and mapping. No full certification or re-anchor is authorized by this plan.
+
+## Plan review -- Codex GPT-6.1 -- 2026-11-01
+
+**Tier**: Internal  
+**Obligation**: Internal  
+**Reviewed commit**: 71ac7ae1  
+**Verdict**: ACCEPT; no blocking findings  
+**Elapsed**: approximately 3 minutes  
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. The accepted Decision removes the per-change marker while retaining checks and one discoverable record per run. C1 preserves triggers, guard, failure and bisect rules; its wide verification covers the governing and protected surfaces. The guard's current refusal condition is separate from its pending-message text (`bootstrap/tests/conftest.py`).
+2. **Best alternative.** Keep the pending field and the SHA-keyed run entry described in `doctrine/plans.md`. That retains a per-change indication, but also the misleading instruction the Maintainer chose to remove. The plan uses existing ceremony records or a searchable commit message, without a new ledger.
+3. **What would show it wrong?** A weakened trigger or refusal, a required check becoming optional, or an actual run whose evidence cannot be located would defeat the Decision. The plan calls for mutation checks and representative lookup; their outcomes remain to be established during implementation.
+
+**Non-blocking recommendation.** Make clear how an ad hoc run's record becomes reachable in shared Git history and avoid requiring an otherwise unnecessary separate commit solely to create the record. The proposed `git log --all` search only finds commits present in the reader's local refs; demonstrate the intended lookup rather than treating the command alone as proof of accessibility.
+
+**Coverage:** Read the committed plan, accepted proposal and Decision, current certification and bisect rules, and the actual guard message. Did not enumerate all readers or pins, run tests, verify record lookup, assess implementation wording, or perform Security Review.
