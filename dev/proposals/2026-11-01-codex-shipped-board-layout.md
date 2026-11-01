@@ -67,3 +67,17 @@ Adopters cannot find a next action, a Maintainer wait disappears from the reader
 ## Assurance path
 
 **Assurance path**: high-assurance — shipped methodology template and installed guidance; ordinary and Security Reviews remain separate.
+
+## Proposal review -- Codex (gpt-6.1-sol) -- 2026-11-01
+
+**Verdict:** Support as framed; no blocking findings.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. The v0.6 board requests decisions first, release tables, short terms and agent rules; the proposal carries each, preserves both installer slots and existing duties, and coordinates the accepted Plain Language audit.
+2. **Best alternative.** Retain the present board: it avoids rewriting protected guidance but leaves new adopters with its queued/active layout. The proposed layout addresses the requested usability problem without changing the parser or adding a process.
+3. **What would show it wrong?** A lost duty, altered onboarding seed, overwritten customized board or missed wait would defeat the proposal. Its verification plan calls for real installs and upgrade, parser exercises, reader mapping and comparison; `tools/board.py` confirms that a marker in a table cell is not a standalone wait.
+
+**Coverage:** Read the proposal at 75b4bb0b against the v0.6 board item, shipped board, board reader and accepted Plain Language plan. Did not run installs, tests or mutations, inventory all readers, or assess future wording. Separate Security Review remains due.
+
+**Elapsed:** approximately 2 minutes; **Tokens:** unknown.
