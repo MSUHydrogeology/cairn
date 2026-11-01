@@ -1,40 +1,44 @@
-# Proposal: cover multi-script module installs
+# Proposal: compare multi-script module discovery paths
 
 **Author**: Codex (gpt-6.1-terra), Strategy
-**Status**: revising
+**Status**: awaiting-review
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
 **Opened**: 2026-10-30
-**In brief**: Check that each existing multi-script module installs all its expected Python files.
+**In brief**: Compare expected module scripts across installation, lock records, upgrade additions and scan targets.
 
 ## Context
 
-The VER-5 board row in `dev/PLANNING.md` asks the Maintainer to decide the remaining scope. `bootstrap/_scaffold/install.py` derives `install_manifest()` from the core, skills, and module mappings; `bootstrap/security_check.py` uses that manifest and the lockfile derives from it. Install and upgrade also use the module mappings, with different selection and processing paths. This is shared data, not the single traversal originally requested in `dev/strategy/2026-08-05-codex-security-strategy.md` [VER-5]. No discovery mismatch has been demonstrated here. The scanner additionally retains a registry loop by design. `bootstrap/tests/test_security_lint.py::test_every_manifest_verbatim_py_is_scanned_by_some_path` checks manifest-to-scan inclusion, while `test_every_templates_py_on_disk_is_release_scanned` independently checks on-disk Python scan coverage subject to named exclusions. These do not prove upgrade selection agrees with fresh installation for every module; that cross-path comparison was not found or tested in this limited inspection.
+The VER-5 row in `dev/PLANNING.md` asks for consistent discovery across installation, manifest, security scan and upgrade. `bootstrap/_scaffold/install.py::install_manifest` uses shared core, skills and module mappings; the lock writer uses that manifest. Upgrade has a separate new-module-file selection loop in `bootstrap/_scaffold/upgrade.py`; `bootstrap/security_check.py::scan_targets` unions registry and manifest results. No mismatch is known. The Maintainer directed on 2026-11-01: “Prepare broader behavior checks” for v0.6, without a new traversal; this is direction to prepare a proposal, not a Decision.
 
-`bootstrap/tests/test_reference_scripts.py` exercises the real installer and compares installed bytes with the source, but its independent multi-script expectations name only `issue-capture`. The current mapping has six other modules with multiple verbatim Python files: `claim-check`, `coordination-tiers`, `doc-drift-prevention`, `content-security`, `api-access-security`, and `web-hosting-security`.
+`bootstrap/tests/test_reference_scripts.py::TestMultiScriptModules::test_multi_script_module_installs_all_scripts` checks real installation and source bytes, but independently names only `issue-capture`. Six other modules currently have multiple verbatim Python files: `claim-check`, `coordination-tiers`, `doc-drift-prevention`, `content-security`, `api-access-security`, and `web-hosting-security`. `bootstrap/tests/test_security_lint.py::test_every_manifest_verbatim_py_is_scanned_by_some_path` uses the manifest as its expectation; `test_every_templates_py_on_disk_is_release_scanned` uses an independent disk inventory with named exclusions. Neither establishes upgrade additions against the independent install expectations.
 
 ## Proposal
 
-Recommend adding independent expected source/destination pairs for those six modules to the existing multi-script test, including package files, so the existing real-entry-point test checks each file. Keep `issue-capture`. Do not change discovery or install behavior. The Maintainer's Decision must explicitly decide whether this narrower outcome is sufficient for VER-5; the original single traversal remains undelivered by this proposal.
+For all seven named modules, maintain explicit source/destination pairs for every currently shipped verbatim Python file, including package files. Establish the list by inspecting the shipped templates and intended destinations, not by deriving expected values from the mapping, manifest, lockfile, upgrade result or scanner result. Reuse the existing list and test home where practical. Exercise each module separately through the scaffold entry point and compare each expected file's installed bytes and its lock record's source and destination. Check each expected source is in `scan_targets()`; it is an inclusion check because that set intentionally contains other executables.
+
+For upgrade, construct an older-install fixture for each selected module with the expected files and corresponding lock records absent, while preserving the selected module in the profile and lock. Run the real upgrade stage and apply entry points against current templates; compare every expected destination and bytes, and resulting lock source/destination records, with the independent list and fresh install. This tests additions to an already selected module, not opt-in of a newly available module. Use temporary projects and preserve normal collision and review safeguards.
+
+Do not change discovery or production behavior. This is an enumerated check of seven current modules and their listed files, not proof for all modules, future files, non-Python templates, every upgrade state or scanner execution. The disk scanner test provides separate broader scan evidence, with its exclusions. The original single-traversal objective remains undelivered; only the Maintainer can decide whether this outcome is sufficient for VER-5.
 
 ## Rationale
 
-Explicit expectations can detect a file accidentally omitted from the mapping; generating expectations solely from that mapping cannot. The shared mapping already reduces drift, while replacing distinct traversals without a demonstrated defect adds machinery and changes protected engine or scanner surfaces.
+Independent expectations expose a shared omission that a comparison derived solely from the mapping cannot. Separate behavior checks can reveal selection drift in the four paths while leaving protected engine and scanner behavior unchanged. The list needs maintenance as shipped files change.
 
 ## Alternatives considered
 
-Implement one traversal across install, manifest, scanner and upgrade: this meets the original design objective but requires a protected-surface proposal and security review, and its benefit over the existing shared mapping is unproven. Leave the test as is: cheaper, but six currently known modules lack this independent all-files assertion.
+One traversal would meet the original design objective but changes protected engine or scanner surfaces without a demonstrated mismatch. The previous install-only expansion costs less but leaves upgrade selection and lock records untested against the independent list. Doing nothing leaves those gaps.
 
 ## Documentation / doctrine surface
 
-No shipped documentation or doctrine changes proposed. The board is updated at its defined serialization point after disposition; this proposal is deliberation in `dev/`.
+No shipped documentation, doctrine or install contract changes proposed. This proposal is deliberation in `dev/`; update the board only at its defined serialization point.
 
 ## Evidence / verification plan
 
 ### Tests required
 
-Run the scoped iteration selection for `bootstrap/tests/test_reference_scripts.py` from `tools/test_tiers.py`; its `TestMultiScriptModules::test_multi_script_module_installs_all_scripts` must exercise all seven modules through the scaffold entry point and verify each independently listed destination and bytes. A missing or altered installed file must fail the corresponding assertion. Apply Boundary B after review on the clean final commit, with the required evidence recorded here.
+In `bootstrap/tests/test_reference_scripts.py`, extend the existing installation node and add focused behavior nodes for lock records, upgrade stage/apply and scan inclusion using the independent pairs. Run the iteration selection from `python tools/test_tiers.py for` the changed test files. In separate copies of the final commit, remove or alter each expected file's selection in each applicable path and show the corresponding behavior test fails; report each mutation and any omissions. A removed scan source must defeat both scanner input routes, since either can legitimately include it. Missing records, wrong destinations or changed installed bytes must fail. Record the clean-final-commit Boundary B selection after code review here, including its mode and required evidence. If the tests expose a real mismatch, stop for reassessment rather than silently change protected production surfaces.
 
 ### Examples / smoke checks
 
@@ -42,19 +46,19 @@ Run the applicable prose gates on this proposal. No full-tree certification is r
 
 #### Security preflight — five questions, answered in writing
 
-N/A: no trust boundary added or widened.
+N/A: no trust boundary added or widened; no high-risk surface changes proposed.
 
 ## Signals the change is wrong
 
-An existing independent test already proves the same files and behavior, or an observed discovery mismatch makes the test-only scope insufficient.
+An existing independent check already proves the same paths and files, the fixture cannot represent upgrade additions faithfully, or an observed mismatch requires a different scope.
 
 ## Scope delta
 
-**Scope delta**: preserved for this proposal. The separate original VER-5 single-traversal objective is not delivered; its disposition belongs to the Maintainer.
+**Scope delta**: preserved. The original seven-module install assertion remains; the separate original VER-5 traversal remains for the Maintainer to disposition.
 
 ## Assurance path
 
-**Assurance path**: standard. The change adds test expectations without changing the install contract, executable, or trust boundary.
+**Assurance path**: standard. The proposal adds behavior tests without changing the install contract, executable, or trust boundary.
 
 ## Proposal review -- Codex (gpt-6.1-terra) -- 2026-10-30
 
@@ -69,3 +73,11 @@ An existing independent test already proves the same files and behavior, or an o
 ## Author response -- Codex (gpt-6.1-terra) -- 2026-10-30
 
 Accepted the advice to make coverage and its limits explicit. The existing scanner checks provide meaningful cross-path and independent disk evidence; the proposed independent install expectations address a different gap. An all-module upgrade comparison would add a new test without evidence of a mismatch, so it is not proposed. The Maintainer can instead choose the original traversal or request further comparison; the single-traversal outcome remains explicitly unfulfilled. Elapsed: about 2 minutes; tokens: unknown.
+
+## Author response -- Codex (gpt-6.1) -- 2026-11-01
+
+The Maintainer directed broader checks, so the prior advice on cross-path evidence is accepted in the revised scope. This widens the proposal and returns it for a second usual review. Elapsed: approximately 7 minutes; tokens: unknown.
+
+### Withdrawn / superseded commitments
+
+The prior install-only scope is superseded by the broader checks; its seven-module install assertion remains.
