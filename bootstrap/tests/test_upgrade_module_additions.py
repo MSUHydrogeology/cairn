@@ -842,8 +842,9 @@ def test_new_core_changelog_refuses_another_source_owner(tmp_path: Path):
     agent_rec["dst"] = "CHANGELOG.md"
     _write_lock(target, lock)
     plans, _ = s._compute_upgrade(target, CAIRN_ROOT, TEMPLATES_ROOT, lock, None)
-    fp = next(p for p in plans if p.dst == "CHANGELOG.md")
-    assert fp.kind == "new-core-lockconflict"
+    conflicts = [p for p in plans if p.dst == "CHANGELOG.md"
+                 and p.kind == "new-core-lockconflict"]
+    assert conflicts, "another lockfile source must block the new changelog"
     assert (target / "CHANGELOG.md").read_bytes() == history
 
 

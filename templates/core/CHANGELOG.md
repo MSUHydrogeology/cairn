@@ -14,9 +14,9 @@ by ` — ` and a short description. Use plain language and link to useful detail
 when it helps.
 
 If this project already has a changelog, you can keep its history unchanged.
-You may adapt it to this format if you choose. To start fresh, first save the
-old file at a safe, separate path, then remove it from the project root before
-installing this one. Keep the saved history.
+You may optionally adapt it to this format if you choose. To start fresh,
+first save the old file at a safe, separate path, then remove it from the
+project root before installing this one. Keep the saved history.
 
 On an upgrade, a root `CHANGELOG.md` that is not yet tracked by Cairn blocks
 the new template. Run `upgrade --stage`, review the `.ours` and `.theirs`
