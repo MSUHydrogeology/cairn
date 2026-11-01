@@ -223,6 +223,21 @@ fork adoption, and edit/re-stage/adoption authorization. Earlier implementation
 evidence records the two independent mutation checks; they were not repeated
 here. No full-tree certification or re-anchor was run.
 
-**Disposition:** implementation behavior and prose gates pass, but the wide
-mapped integration selection remains incomplete because the authorized run was
-stopped for duration. Maintainer disposition is required before archiving.
+**Disposition:** the wide mapped integration selection remains incomplete; this
+record does not claim Boundary B passed. The Maintainer's plan-specific
+disposition below waives the remaining broad selection for this plan.
+
+## Maintainer disposition -- 2026-11-01
+
+The 40-file mapped run on `75e6091b` was interrupted after 1,028 passed and 8
+skipped; the skip reasons were not recorded. `test_repin.py` was active at
+interruption, and the remaining selected tests were not run. The independent
+Security Review, focused changelog entry-point checks, and prose gates passed as
+recorded above. The Maintainer accepts those focused results for this plan and
+waives the outstanding broad Boundary B selection before archiving. This
+disposition does not clear or explain the eight skips, claim a full Boundary B
+pass, or change the actual release check.
+
+**Called by**: Maintainer -- chat, 2026-11-01
+
+> "Accept focused results"
