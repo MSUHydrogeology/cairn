@@ -1,7 +1,7 @@
 # Plan: Remove the pending certification marker
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-certification-label.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Remove the per-change pending marker while keeping checks and one record of each actual tree-certification run.
@@ -251,3 +251,32 @@ snapshot comparison completed, exact combined wall time not captured.
 **Non-pass disposition:** none. The 46 selector-omitted AGENTS.md readers
 remain outside this mapped selection; the standing release certification is
 not part of this implementation Boundary B.
+
+## Dispositions -- archive preparation -- 2026-11-01
+
+**Dispositions:** The proposal's lost per-change indication is accepted by the
+Maintainer's Decision at `8d1c6bde`, which directs removal while retaining
+actual-run evidence. No other deferred follow-up remains.
+
+## Lasting-truth migration -- 2026-11-01
+
+**Evidence shipped:** Implementation commits `46a0c967779bf1270a67c16b2d72eaee58c6d282`,
+`6772ff5542769da253cb9213b464427822b8ca03`, and
+`79418af62e6454625b67755e2d28ff5be6b9086b` remove the per-change requirement,
+retain the guard and required obligations, add adopter run-record guidance, and
+test both shipped surfaces. The implementation response records the real guard
+refusal, mutation controls and historical lookup; Boundary B is recorded above.
+
+**Evidence deferred:** None. The lookup found no actual re-anchor or ad-hoc
+certification record in available refs; that is a documented historical gap,
+not an unrun required check. No certification or re-anchor was authorized for
+this plan, and archived records are not backfilled.
+
+**Deferred evidence home:** N/A; no check remains deferred. The existing
+historical lookup gap is described above and is not future work.
+
+**Fidelity sign-off:** The three implementation commits named above deliver
+the accepted proposal's `## Proposal` section, revised for widened-scope review
+and accepted at `8d1c6bde`. They remove the pending marker while retaining
+checks and triggers, and ship discoverable one-record-per-run guidance. The
+code review, Security Review, and final wide Boundary B are recorded above.
