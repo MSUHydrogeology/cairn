@@ -183,3 +183,21 @@ The Maintainer directed removal of the pending marker. The operative proposal
 now presents that alternative and a single shared record for each actual run;
 prior reviews and response remain unchanged. The change retains required checks
 and is submitted for review of the widened scope, not presented as accepted.
+
+## Widened-scope review -- Codex GPT-6.1 -- 2026-11-01
+
+**Tier**: usual  
+**Reviewed commit**: b256cc62  
+**Verdict**: ACCEPT; no blocking findings  
+**Elapsed**: approximately 4 minutes  
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The guard currently tells every reader to record pending (`bootstrap/tests/conftest.py`), and governing rules require it in each change record (`AGENTS.md` Verification). Removing that instruction addresses the reported ambiguity while the proposal explicitly retains missing-check blockers and certification triggers. A single actual-run record is less repetitive; its practical retrieval has not been demonstrated.
+2. **Best alternative.** Retain the existing pending field and append a separate SHA-keyed run record, as `doctrine/plans.md` currently directs. This preserves a visible per-change indication, but retains the confusing pending instruction. The proposed loss is stated for the Maintainer's Decision.
+3. **What would show it wrong?** An actual consumer depending on the marker, a weakened trigger, or inability to find the run record would challenge it. The rule test reads the phrase rather than consuming a status; the real broad-run guard uses it in a message, while its refusal condition is separate. I did not establish that every consumer behaves likewise.
+
+**Non-blocking recommendation.** During planning, identify a discoverable existing home for each authorized run type, including a Maintainer-requested run outside a release or re-anchor. `doctrine/plans.md` requires a SHA-keyed entry but does not name a universal home; the proposal's “other existing project record” leaves that choice open. Keep the solution to one record per actual run, without retroactive plan updates.
+
+**Coverage:** Read the committed proposal, governing verification rule, certification doctrine, release-process checks, rule-test source and guard message. Did not run tests, enumerate every consumer, verify run-record retrieval, assess reader comprehension or perform Security Review.
