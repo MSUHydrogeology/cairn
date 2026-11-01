@@ -3,9 +3,10 @@
 
 # Changelog
 
+**Written in [Cairn Plain Language 1.0](docs/plain-language.md).**
+
 Notable changes to Cairn, newest first. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the language
-follows [Cairn Plain Language](docs/plain-language.md).
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 **Adding an entry.** Each change adds one entry under `## Unreleased`, in the
 same commit or the next.
