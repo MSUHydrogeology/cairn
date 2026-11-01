@@ -147,3 +147,11 @@ Reviewed: implementation `d45ea20e` and evidence `eaf4144a`; Tier: Internal; ver
 **Blocking finding — adaptation must be re-staged before adoption.** C1 requires guidance for optionally adapting and re-staging history. Both `templates/core/CHANGELOG.md` and `bootstrap/UPGRADE.md` say to review changed bytes before adopting but do not say to run `upgrade --stage` again after editing and before using the new displayed command. The printed authorization binds the staged bytes (`bootstrap/_scaffold/upgrade.py` `_print_adopt_command` and `_cmd_adopt_collisions`), so a command obtained before editing refuses the changed file. Close by making the order explicit in both guides and exercising adaptation, re-staging, and adoption through the entry point.
 
 **Coverage:** Read the committed diff, accepted plan and iteration evidence, mapping, template, upgrade guidance, tests and adoption authorization code; ran the two named focused tests above. Did not run the mapped selection, mutation checks or security review; separate Security Review and final wide integration remain owed.
+
+## Targeted code review re-look -- Codex GPT-6 -- 2026-11-01
+
+Reviewed fix `89e39034` and evidence `7a6897f8`; Tier: Internal; verdict: **finding closed**. Elapsed: approximately 2 minutes; tokens: unknown.
+
+Both guides now direct the adopter to re-stage after editing, review the new copies, and use the new command. The new entry-point test verifies that the old authorization refuses edited bytes and that the new one adopts the reviewed bytes. I ran that test on a separate copy of `89e39034`: Python 3.12.9, **1 passed in 1.28 seconds**.
+
+**Coverage:** Checked the ordinary review finding and its correction, including the test and implementation evidence. Did not repeat the broader review, mutation checks or Security Review; final wide integration remains owed.
