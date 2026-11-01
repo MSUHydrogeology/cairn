@@ -30,10 +30,11 @@ default; shared tests, scripts, and assets stay in their canonical homes.
 cells — Scope, Sequence, Acceptance criteria, Verification — revise in place
 until implementation begins.**
 
-**Revise plan cells in place.** Unlike a proposal Response, which appends a
-current contract and withdrawal ledger, a plan response disposes of findings
-and points to the corrected operative cells. Do not copy a cell into the
-response. After a chunk begins, changes append instead.
+**Revise operative text in place.** A proposal Response revises the proposal's
+current text; reviews, earlier responses and decisions remain appended. A plan
+response disposes of findings and points to corrected plan cells. Revise those
+cells in place until implementation begins; after a chunk begins, changes
+append instead.
 
 **Deviating from an accepted plan takes the Maintainer's word** — new scope, a
 contract review never saw, an acceptance criterion you cannot meet, **or
