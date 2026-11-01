@@ -772,6 +772,99 @@ def _adopt_args(target: Path, *collides: str) -> list[str]:
     return out
 
 
+def _prepare_changelog_upgrade(target: Path) -> None:
+    """Make a freshly installed target look like one from before the root
+    changelog mapping existed, optionally leaving CHANGELOG.md for collision
+    scenarios."""
+    _install(target)
+    lock = s.read_lockfile(target)
+    lock["files"] = [r for r in lock["files"] if r["dst"] != "CHANGELOG.md"]
+    _write_lock(target, lock)
+    (target / "CHANGELOG.md").unlink()
+
+
+def test_new_core_changelog_collision_can_be_kept_as_a_fork(tmp_path: Path, capsys):
+    target = tmp_path.resolve()
+    _prepare_changelog_upgrade(target)
+    history = b"# Existing history\r\n\r\nKeep these bytes.\r\n"
+    (target / "CHANGELOG.md").write_bytes(history)
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+
+    assert s.main(base + ["--stage"]) == 0
+    output = capsys.readouterr().out
+    assert "CHANGELOG.md" in output and "--adopt-collisions" in output
+    assert "--to" not in output
+    staged = target / s._STAGING_REL / "review-only"
+    assert (staged / "CHANGELOG.md.ours").read_bytes() == history
+    assert (staged / "CHANGELOG.md.theirs").is_file()
+    match = re.search(
+        r"(?ms)^\s+upgrade --adopt-collisions \\\n+\s+(CHANGELOG\.md@[0-9a-f]{64}@[0-9a-f]{64})$", output)
+    assert match, "stage did not print the ready-to-use changelog adoption command"
+    assert s.main(base + ["--adopt-collisions", match.group(1)]) == 0
+    assert (target / "CHANGELOG.md").read_bytes() == history
+
+    rec = next(r for r in s.read_lockfile(target)["files"]
+               if r["dst"] == "CHANGELOG.md")
+    assert rec["src"] == "core/CHANGELOG.md"
+    assert rec["hash"] == "sha256:" + s._sha256_hex(history)
+    assert rec.get("base_hash") != rec["hash"]
+    assert s.main(base + ["--stage"]) == 0
+    assert s.main(base + ["--apply"]) == 0
+    assert (target / "CHANGELOG.md").read_bytes() == history
+
+
+def test_new_core_changelog_fresh_start_preserves_separate_history(tmp_path: Path):
+    target = tmp_path.resolve()
+    _prepare_changelog_upgrade(target)
+    history = b"# Existing history\n\nSaved before starting fresh.\n"
+    (target / "CHANGELOG.md").write_bytes(history)
+    saved = tmp_path.parent / f"{tmp_path.name}-saved-CHANGELOG.md"
+    (target / "CHANGELOG.md").replace(saved)
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+
+    assert s.main(base + ["--stage"]) == 0
+    assert s.main(base + ["--apply"]) == 0
+    assert saved.read_bytes() == history
+    assert "Cairn Plain Language 1.0" in (target / "CHANGELOG.md").read_text()
+    rec = next(r for r in s.read_lockfile(target)["files"]
+               if r["dst"] == "CHANGELOG.md")
+    assert rec["src"] == "core/CHANGELOG.md"
+
+
+def test_new_core_changelog_refuses_another_source_owner(tmp_path: Path):
+    target = tmp_path.resolve()
+    _prepare_changelog_upgrade(target)
+    history = b"# Existing history\n"
+    (target / "CHANGELOG.md").write_bytes(history)
+    lock = s.read_lockfile(target)
+    # Make the existing file appear owned under a different core source.
+    agent_rec = next(r for r in lock["files"] if r["dst"] == "AGENTS.md")
+    agent_rec["dst"] = "CHANGELOG.md"
+    _write_lock(target, lock)
+    plans, _ = s._compute_upgrade(target, CAIRN_ROOT, TEMPLATES_ROOT, lock, None)
+    fp = next(p for p in plans if p.dst == "CHANGELOG.md")
+    assert fp.kind == "new-core-lockconflict"
+    assert (target / "CHANGELOG.md").read_bytes() == history
+
+
+def test_new_core_changelog_link_collision_cannot_be_adopted(tmp_path: Path):
+    target = tmp_path.resolve()
+    _prepare_changelog_upgrade(target)
+    victim = tmp_path.parent / f"{tmp_path.name}-outside-history.md"
+    history = b"# External history\n"
+    victim.write_bytes(history)
+    (target / "CHANGELOG.md").symlink_to(victim)
+    base = ["upgrade", "--target", str(target), "--cairn-root", str(CAIRN_ROOT)]
+
+    assert s.main(base + ["--stage"]) != 0
+    assert s.main(base + ["--adopt-collisions",
+                          "CHANGELOG.md@" + "0" * 64 + "@" + "0" * 64]) != 0
+    assert (target / "CHANGELOG.md").is_symlink()
+    assert victim.read_bytes() == history
+    assert not any(r["dst"] == "CHANGELOG.md"
+                   for r in s.read_lockfile(target)["files"])
+
+
 _DUMMY_AUTH = "x.py@" + "0" * 64 + "@" + "0" * 64
 
 

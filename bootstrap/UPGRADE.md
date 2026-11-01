@@ -522,6 +522,26 @@ full contents, then run `python bootstrap/scaffold.py upgrade --target <repo>
 record with its actual name and current contents. Review that lockfile change,
 then run `upgrade --stage` again.
 
+### If a new `CHANGELOG.md` meets your existing history
+
+The new core template is added to empty trees. Normal install leaves an
+existing `CHANGELOG.md` byte for byte unchanged; `--force` still opts into
+overwriting existing files.
+
+On upgrade, an unlocked regular `CHANGELOG.md` is shown as a collision. You can
+keep its history unchanged, optionally adapt it to the new format, or start
+fresh. To keep it unchanged, run `upgrade --stage`, review the `.ours` and
+`.theirs` copies, and use the displayed `--adopt-collisions` command from the
+target Cairn tree, without `--to`. This records your existing file as a tracked
+fork and does not replace it. Re-stage and review the result before applying.
+If you adapt the history, review the resulting bytes before adopting them.
+
+To start fresh, first save the existing file at a safe, separate path, remove
+it from the project root, then run `upgrade --stage` and review the template
+before applying. Keep the saved history. A destination already tracked under a
+different source, a link, a folder or another ineligible path needs manual
+resolution; collision adoption does not cover those cases.
+
 ## Adopting a hand-placed module
 
 A module is **opt-in**, so it is never auto-added on upgrade. If you hand-placed

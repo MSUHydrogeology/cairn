@@ -24,6 +24,11 @@ adopted from — **not** a file in your own tree. The bootstrap installs your
 `AGENTS.md` and `dev/` tree, not Cairn's `doctrine/` directory, so such a
 reference is a citation, never a broken local link.
 
+## The changelog
+
+Use [`CHANGELOG.md`](CHANGELOG.md) to record releases. Its header explains the
+format and how to handle an existing history.
+
 ## Lifecycle and records
 
 Proposals move `awaiting-review -> revising -> awaiting-decision -> accepted |

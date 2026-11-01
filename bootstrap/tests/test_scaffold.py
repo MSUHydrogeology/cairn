@@ -375,6 +375,44 @@ class TestInstallCore:
         assert "TestProject" in content
         assert "{{project_name}}" not in content
 
+    def test_installs_changelog_and_publishes_its_mapping(self, tmp_path: Path) -> None:
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        templates_root = cairn_root / "templates"
+        create_dev_tree(tmp_path)
+        import bootstrap.scaffold as scaffold
+
+        install_core(templates_root, tmp_path, {"project_name": "TestProject"})
+        installed = tmp_path / "CHANGELOG.md"
+        content = installed.read_text(encoding="utf-8")
+        assert content.startswith("# Changelog — TestProject\n")
+        assert "Written in [Cairn Plain Language 1.0](dev/agent_collaboration.md)." in content
+        assert "## Unreleased\n\n### Major changes\n\n### Minor changes" in content
+        ordered_types = ["Added", "Changed", "Deprecated", "Removed", "Fixed", "Security"]
+        positions = [content.index(f"**{kind}**") for kind in ordered_types]
+        assert positions == sorted(positions)
+        for instruction in ("keep its history unchanged", "optionally adapt",
+                            "save the", "--adopt-collisions", "without `--to`",
+                            "tracked under another source", "manual resolution"):
+            assert instruction in content
+        manifest = scaffold.install_manifest(modules=None)
+        assert ("core/CHANGELOG.md", "CHANGELOG.md", False) in manifest
+
+    def test_normal_install_preserves_existing_changelog_bytes(self, tmp_path: Path) -> None:
+        cairn_root = Path(__file__).resolve().parent.parent.parent
+        history = b"# Project history\r\n\r\nLocal bytes stay as written.\r\n"
+        changelog = tmp_path / "CHANGELOG.md"
+        changelog.write_bytes(history)
+        cfg = tmp_path / "profile.yml"
+        cfg.write_text("project_name: SkipTest\ntest_command: pytest\nmodules: []\n")
+        from bootstrap.scaffold import main
+
+        assert main(["--config", str(cfg), "--target", str(tmp_path),
+                     "--cairn-root", str(cairn_root)]) == 0
+        assert changelog.read_bytes() == history
+        assert main(["--config", str(cfg), "--target", str(tmp_path),
+                     "--cairn-root", str(cairn_root), "--force"]) == 0
+        assert "# Changelog — SkipTest" in changelog.read_text(encoding="utf-8")
+
     def test_token_substitution_in_dev_readme(self, tmp_path: Path) -> None:
         """dev/README.md has {{project_name}} substituted."""
         cairn_root = Path(__file__).resolve().parent.parent.parent
