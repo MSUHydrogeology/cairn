@@ -1,7 +1,7 @@
 # Plan: Remove the pending certification marker
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-certification-label.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Remove the per-change pending marker while keeping checks and one record of each actual tree-certification run.
@@ -47,10 +47,12 @@ bisect rule. Tests exercise those retained obligations and the actual refusal, a
 reject a restored mandatory marker. Shipped rules remain appropriate to adopters. Each
 actual run has one shared record: use the existing release or re-anchor evidence record
 for those runs; for a required push or Maintainer-requested run outside those
-ceremonies, use the commit message recording the run, headed `Tree certification --
-<tested SHA>`. It records tested SHA, commands, results and existing required evidence,
-including failures; `git log --all --grep='Tree certification --'` finds it. Readers are
-told where to find each kind; no per-plan backfill or new ledger. Absence of a marker
+ceremonies, record it in a commit message in shared project history, under `Tree
+certification -- <tested SHA>`. An otherwise useful commit may carry the record; no
+standalone commit is required. Include tested SHA, commands, results and existing
+required evidence, including failures. Readers find it by searching shared history after
+fetching the relevant refs; `git log --all --grep='Tree certification --'` searches local
+refs only. Readers are told where to find each kind; no per-plan backfill or new ledger. Absence of a marker
 does not prove that a run passed. Security preflight S2/S3: C1 tests the changed
 obligations and real guard through the existing tests and scoped checks.
 
@@ -109,3 +111,13 @@ After independent code and Security Reviews, Boundary B is **wide** for governin
 The ordinary review's accessibility recommendation applies: lookup must reach shared history, including failed results. Existing evidence requirements suffice; no additional ledger, review stage or approval is needed.
 
 **Coverage:** Read the committed plan, accepted proposal/Decision, plan template, governing certification/bisect rules, actual guard, rule-test source, release evidence guidance and re-anchor runbook. Did not run tests, enumerate every reader/pin, demonstrate lookup or review implementation bytes.
+
+## Response to plan reviews -- Codex GPT-6.1 -- 2026-11-01
+
+**Elapsed**: approximately 2 minutes
+**Tokens**: unknown
+
+- Internal: accepted the advice; the criteria now allow the record in an otherwise
+  useful commit and distinguish shared history from locally fetched refs. Verification
+  retains the representative lookup check.
+- Internal Security Review: accepted; the same guidance covers failed results.
