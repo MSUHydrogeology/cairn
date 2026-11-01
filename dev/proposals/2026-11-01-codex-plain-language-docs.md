@@ -1,7 +1,7 @@
 # Make Cairn's documentation easier to use
 
 **Author**: Codex GPT-6 (Implementation)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -10,17 +10,22 @@
 
 ## Decision summary
 
-Review the README, documentation, shipped templates and module documents, and the board against Cairn Plain Language 1.0. Improve passages that make readers work unnecessarily, while preserving instructions and technical meaning. Put the requested Plain Language line under the title of shipped templates only. Reading the full set will take sustained effort across many documents, but protects readers who rely on less-visible guidance; staging makes the work manageable without dropping any of the set.
+Review the README, documentation, existing public methodology in `doctrine/`, shipped templates and module documents, and the board against Cairn Plain Language 1.0. Improve passages that make readers work unnecessarily, while preserving instructions and technical meaning. Put the requested Plain Language line under the title of shipped templates only. Reading the full set will take sustained effort across many documents, but protects readers who rely on less-visible guidance; staging makes the work manageable without dropping any of the set.
 
 ## Context
 
-The board requests this audit and specifies the template-only marker (`dev/PLANNING.md`, audit row). The 17 rules in `dev/agent_collaboration.md` call for conclusion-first writing, defined terms, useful steps and honest evidence; they require reading, not a readability score. The changelog pass at `ca6cc14d` is an example. The proposal-summary plan is already changing authoring guidance, and the board and changelog have active work; coordinate with their owners and review their final committed text instead of overwriting it.
+The board requests this audit and specifies the template-only marker (`dev/PLANNING.md`, audit row). The 17 rules in `dev/agent_collaboration.md` call for conclusion-first writing, defined terms, useful steps and honest evidence; they require reading, not a readability score. The changelog pass at `ca6cc14d` is an example. The archived governing-text plan records the Maintainer’s choice of `docs/methodology/` for public methodology and installed homes for complete operating duties; it explicitly made no relocation or deletion (`dev/plans/archive/2026-10-28-governing-text-single-source.md`, C2 routing choice). That destination does not yet exist. The Maintainer now confirms the intent to remove the `doctrine/` folder entirely. The proposal-summary plan is already changing authoring guidance, and the board and changelog have active work; coordinate with their owners and review their final committed text instead of overwriting it.
 
 ## Proposal
 
-Inventory the requested prose from the committed tree, including `README.md`, `docs/`, shipped templates and module documents, and the board. Identify installed templates through the actual install and module mappings, not the directory name alone. Read all applicable prose against the 17 rules, prioritizing entry points and frequently followed instructions first, then the remaining materials. Make changes in manageable groups. A document that already communicates clearly needs no edit. Keep commands, examples, conditions, warnings, links, claims, and permissions accurate; resolve uncertain meaning from its source before changing it. Do not introduce new process requirements or change policy under the guise of editing prose. Preserve the versioned Plain Language rules themselves unless separately authorized to change them. Record unresolved failures by group and keep them open until resolved; do not create a per-file ledger.
+Inventory the requested prose from the committed tree, including `README.md`, `docs/`, current `doctrine/` material, shipped templates and module documents, and the board. Identify installed templates through the actual install and module mappings, not the directory name alone. Read all applicable prose against the 17 rules, prioritizing entry points and frequently followed instructions first, then the remaining materials. Make changes in manageable groups. A document that already communicates clearly needs no edit. Keep commands, examples, conditions, warnings, links, claims, and permissions accurate; resolve uncertain meaning from its source before changing it. Do not introduce new process requirements or change policy under the guise of editing prose. Preserve the versioned Plain Language rules themselves unless separately authorized to change them. Record unresolved failures by group and keep them open until resolved; do not create a per-file ledger.
+
+The physical relocation of the entire `doctrine/` folder is separate work requiring its own scoped proposal and review. That work must preserve public methodology in the chosen home and complete operating duties in usable installed homes, reconcile cross-repository references and path-based checks and pins, and remove the old folder only when its contents and dependencies are accounted for. The routing choice alone did not authorize or complete these changes. Coordinate timing with that work: review the current material if relocation is not ready; if it is moved first, review the final committed destination. Carry forward any completed prose improvements so the same pages are not polished twice. Do not defer the methodology review indefinitely or claim it complete merely because a move is planned. No content or obligation is silently dropped.
 
 Place `Written in Cairn Plain Language 1.0` directly below each shipped template's title. Identify how to handle templates without a conventional title in the plan without changing their usable format. Do not add the marker to other documents. Preserve existing non-template markers unless separately authorized to change them. Coordinate overlapping work, including the board, changelog and proposal-summary plan. Read their final committed results as part of this audit without repeating their implementation or assuming it covers the broader audit.
+
+Proposed paths:
+- `docs/methodology/`
 
 ## Rationale
 
@@ -32,11 +37,11 @@ Review only the most visible pages: faster, but leaves the requested templates a
 
 ## Documentation / doctrine surface
 
-This changes descriptive prose in `README.md` and `docs/`, deliberation on the board, and adopter-facing template and module guidance in `templates/`. Governing instructions remain in their existing governing homes; no new doctrine or changed obligation is proposed. Authoring templates are protected lifecycle surfaces, so their edits retain their existing Security Review and high-assurance obligations.
+This changes descriptive prose in `README.md` and `docs/`, public methodology currently in `doctrine/`, deliberation on the board, and adopter-facing template and module guidance in `templates/`. Governing instructions remain in their existing governing homes; no new doctrine or changed obligation is proposed. Doctrine and authoring templates are protected surfaces, so their edits retain their existing Security Review and high-assurance obligations.
 
 ## Evidence / verification plan
 
-The plan will define the actual inventory, group boundaries, ownership coordination, applicable readers and byte pins before editing, and tests selected by `python tools/test_tiers.py for` the changed paths. Preserve any affected install, fidelity, snippet and template contracts. For each group, inspect the committed changes for meaning and run the applicable claim, link, snippet and neutrality gates and tests that read changed files. A changed command, missing condition, broken link, altered obligation or unsupported marker placement falsifies the result. Use the existing review process, not extra review stages or per-file evidence requirements.
+The plan will define the actual inventory, group boundaries, relocation coordination and timing, applicable readers and byte pins before editing, and tests selected by `python tools/test_tiers.py for` the changed paths. Preserve any affected install, fidelity, snippet and template contracts. For each group, inspect the committed changes for meaning and run the applicable claim, link, snippet and neutrality gates and tests that read changed files. A changed command, missing condition, broken link, altered obligation or unsupported marker placement falsifies the result. Use the existing review process, not extra review stages or per-file evidence requirements.
 
 ### Tests required
 
@@ -120,3 +125,9 @@ The proposal-summary plan already records final verification. Read that committe
 ### Withdrawn / superseded commitments
 
 None.
+
+## Scope expansion -- Codex GPT-6 (author) -- 2026-11-01
+
+The Maintainer confirmed the intent to remove `doctrine/` and identified its omission from this audit. The proposal now includes the existing material and coordinates its review with a separately scoped relocation. The prior routing decision chose a destination; it did not move or delete the folder. No earlier scope is withdrawn. The widened scope returns for review.
+
+**Elapsed**: approximately 3 minutes; **Tokens**: unknown.
