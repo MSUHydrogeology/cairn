@@ -1,11 +1,8 @@
 <!-- The proposal template. Copy only the opening header and section
      headings (`Context` through `Assurance path`) below the rule into
-     `dev/proposals/<YYYY-MM-DD>-<author>-<slug>.md`, replace every prompt
-     with your answer (or a one-line `N/A`), and do NOT copy template
-     commentary or the later-stage `Review`, `Response`, and `Decision`
-     skeletons at the bottom. Re-read this file before you write or revise a
-     proposal: its word budgets ("Keep the proposal short") and copy rules
-     change. -->
+     `dev/proposals/<YYYY-MM-DD>-<author>-<slug>.md` and replace every prompt
+     with your answer (or a one-line `N/A`). Re-read this file before writing
+     or revising; its word budgets and copy rules change. -->
 
 # Proposal template
 

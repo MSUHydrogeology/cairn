@@ -2,11 +2,9 @@
 <!-- cairn-internal-ref-allow: doctrine/lifecycle.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- The plan template. Copy only the opening header and operative section
      headings (`Source proposal` through `Verification`) below the rule into
-     `dev/plans/<YYYY-MM-DD>-<slug>.md`, replace every prompt with your answer (or `N/A`),
-     and do NOT copy template commentary or the later-stage `Dispositions`,
-     `Plan review`, and `Code review` sections at the bottom. Re-read this file
-     before you write or revise a plan: its word budgets ("Keep the plan
-     short") and copy rules change. -->
+     `dev/plans/<YYYY-MM-DD>-<slug>.md`, replace every prompt with your answer
+     (or `N/A`), and re-read this file before writing or revising; its word
+     budgets and copy rules change. -->
 
 # Plan template
 
@@ -32,15 +30,10 @@ default; shared tests, scripts, and assets stay in their canonical homes.
 cells — Scope, Sequence, Acceptance criteria, Verification — revise in place
 until implementation begins.**
 
-**A plan answers plan review in its cells, not in a contract revision.** This
-is the one place the plan's rule is the *opposite* of the proposal's, so it is
-stated rather than left to be inferred: a proposal Response appends a complete
-current contract carrying a withdrawal ledger; a plan does not. Before
-implementation, fold plan-review corrections straight into the mutable
-operative cells and let the appended `## Response to plan review` be a
-disposition table that *points at* them — a second copy of a cell is
-immediately a second answer to the same question.
-Once execution of a chunk begins, changes append instead.
+**Revise plan cells in place.** Unlike a proposal Response, which appends a
+current contract and withdrawal ledger, a plan response disposes of findings
+and points to the corrected operative cells. Do not copy a cell into the
+response. After a chunk begins, changes append instead.
 
 **Deviating from an accepted plan takes the Maintainer's word** — new scope, a
 contract review never saw, an acceptance criterion you cannot meet, **or
@@ -349,12 +342,9 @@ gates here. If none applies, record `N/A` with a reason rather than omitting the
 surface silently.
 <!-- cairn:end verification-commands -->
 
-**Boundary B (integration).** Once after code review, against a clean,
-unchanged final commit under the configured interpreter/runtime. Record
-`**Boundary B mode**: bounded | wide`. Use `wide` when the reviewed mapping
-cannot bound affected behavior confidently. Record the checked consumers and
-public paths; preserve every prescribed contract and ceremony check. A known
-missing check keeps the change open, regardless of mode.
+**Boundary B (integration).** Run after code review as specified above; the
+dated record below names the mode, checked consumers and public paths. A
+known missing check keeps the change open.
 
 Append the evidence as `## Implementation verification -- <agent> -- YYYY-MM-DD`:
 tested SHA, interpreter, clean pre/post state, commands, outcomes, elapsed time,
