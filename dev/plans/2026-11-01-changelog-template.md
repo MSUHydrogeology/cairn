@@ -155,3 +155,38 @@ Reviewed fix `89e39034` and evidence `7a6897f8`; Tier: Internal; verdict: **find
 Both guides now direct the adopter to re-stage after editing, review the new copies, and use the new command. The new entry-point test verifies that the old authorization refuses edited bytes and that the new one adopts the reviewed bytes. I ran that test on a separate copy of `89e39034`: Python 3.12.9, **1 passed in 1.28 seconds**.
 
 **Coverage:** Checked the ordinary review finding and its correction, including the test and implementation evidence. Did not repeat the broader review, mutation checks or Security Review; final wide integration remains owed.
+
+## Security code review -- Codex GPT-6 Security Review -- 2026-11-01
+
+Reviewed implementation: `89e39034`; evidence: `7a6897f8`; ordinary re-look: `7cf2c51d`.
+Tier: Internal Security Review; Obligation: Internal Security Review;
+verdict: **PROCEED**; findings: none.
+Elapsed: approximately 15 minutes including serialization waits; tokens: unknown.
+
+**Foundations**
+
+1. **Should this ship as framed?** Yes. The sole production-code change adds
+   `core/CHANGELOG.md` to `_CORE_MAPPINGS`. Existing `_install_one` skip/force
+   behavior and upgrade provenance, containment and authorization guards remain
+   intact. Corrected guidance requires fresh staging after edits and excludes
+   other-source ownership, links and folders from collision adoption.
+2. **Best alternative.** Reuse those guards, as implemented. A separate example
+   loses the accepted ready-to-use root file; another adoption mechanism adds
+   maintenance without improving preservation. The staged command binds both
+   observed history and upstream bytes; adoption writes cache/lock records,
+   never the history destination.
+3. **What would show it wrong?** Silent collision application, stale-byte
+   authorization succeeding, altered history or incorrect merge ancestry.
+   An independent entry-point probe on a separate `89e39034` archive refused
+   collision apply, preserved history, refused changed-byte authorization with
+   an unchanged lockfile, then adopted restored bytes with the exact upstream
+   `base_hash` and cache bytes. Python 3.12.9; 1.18 seconds. The implementation
+   record reports seven passing focused cases and killed install-replacement
+   and collision-bypass mutants; these were read, not rerun.
+
+**Coverage:** Read committed changes, accepted criteria, install write guard,
+new-core classification, adoption preflight/commit and corrected guidance;
+independently probed preservation, authorization and base integrity. No new
+machinery or trust boundary found. Did not establish race resistance, exhaust
+all filesystem types, rerun implementation checks or run a suite. Final wide
+Boundary B under Python 3.13.x remains owed before closure.
