@@ -1,7 +1,7 @@
 # Plan: Make proposals easier to decide
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-proposal-decision-summary.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Bring the problem, change and tradeoffs together at the start of proposals so the Maintainer can understand the choice.
@@ -151,3 +151,15 @@ reader comprehension and every downstream reader; no tests or suite run.
   flexibility and excludes a mandatory checklist, and Verification defines its
   terms in place.
 - Security Review: No findings.
+
+## Implementation verification -- Codex GPT-6 -- 2026-11-01
+
+**Elapsed**: approximately 15 minutes; **Tokens**: unknown
+
+Boundary A covered the two proposal templates at commit `dc83fbc55ee3be850274fb8a50911ef620d67dbd`. The working copy was clean before and after testing in a detached clone. Python was 3.12.9; Python 3.13 was unavailable, so this is iteration evidence only. `python tools/test_tiers.py for dev/proposals/_template.md templates/core/dev/proposals/_template.md` selected 16 files. The exact list ran with `python -m pytest` and passed: 1,018 tests in 11.92 seconds. No per-file duration report was collected.
+
+Prose gates on both changed paths passed: `python scripts/check_cairn.py` (claims and links, 2 files), `python scripts/link_check.py` (2 files), and `python scripts/sync_doc_snippets.py --check` (2 files, no drift). `python scripts/quality_gate.py --sub neutrality` reported 0 failures and 43 informational exceptions. No machine check changed; no check-trigger mutation was applicable. Reader search found the existing install and template coverage in the selected test set; no exact-byte pin or proposal-summary parser was found.
+
+Qualitative comparison: the short archived template-burden proposal is already concise enough to use a summary and rationale without filler. The technical metered-cost proposal's opening lets the new summary name the noticed problem, proposed meter/report/limit change, and privacy/authoring costs, while detailed token-counting, boundaries, and evidence remain below. These examples show the prompt fits both forms; they do not measure reader comprehension. Board field, lifecycle records, security preflight, and scientific preflight remain in place.
+
+Boundary B remains required after independent review: wide integration selection on the clean, unchanged final commit under Python 3.13.x, including the mapped iteration and integration/workflow tests. No full-tree certification or re-anchor was run.
