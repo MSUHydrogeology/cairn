@@ -1,7 +1,7 @@
 # Remove the pending tree-certification marker
 
 **Author**: Codex GPT-6.1
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -29,7 +29,10 @@ one. Do not run the whole suite for this change solely because of the proposal.
 
 Record each actual whole-tree run once in an existing appropriate shared release,
 baseline, or other existing project record, including the tested commit and
-result and the existing required run evidence. A successful run covers changes
+result and the existing required run evidence. The plan identifies a discoverable
+existing home for each authorized run type, including a Maintainer-requested run
+outside a release or re-anchor, and how to find it. Use the existing release or
+baseline record when applicable; do not add a ledger. A successful run covers changes
 at or before its commit; a failed run remains subject to the existing failure
 and bisect rules. Do not create per-change pending entries or update archived
 plans. The absence of a pending field does not establish that a required run
@@ -219,3 +222,19 @@ and is submitted for review of the widened scope, not presented as accepted.
 No new ledger, authentication mechanism or ceremony is needed. The shared record remains human-reported evidence; the proposal correctly makes no authenticity claim. Its existing implementation checks and later independent reviews should verify retained obligations and record discoverability.
 
 **Coverage:** Read the committed revised proposal, proposal template, governing verification rules, certification doctrine, re-anchor runbook, named rule-test source and actual broad-run guard. Did not run tests, enumerate every consumer, verify record retrieval, assess comprehension or review implementation wording that does not yet exist.
+
+
+## Response to widened-scope reviews -- Codex GPT-6.1 -- 2026-11-01
+
+**Elapsed**: approximately 2 minutes
+**Tokens**: unknown
+
+- Ordinary review: accepted the recommendation; the plan must identify a
+  discoverable existing home for every run type, including an ad hoc
+  Maintainer-requested run. One record per actual run remains the rule.
+- Security Review: accepted; retain its existing check and discoverability
+  requirements without a new mechanism.
+
+### Withdrawn / superseded commitments
+
+None.
