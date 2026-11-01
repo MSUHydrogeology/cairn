@@ -203,3 +203,13 @@ On a separate committed export under Python 3.12.9, `python -m pytest bootstrap/
 **Bounding:** ACCEPTED for the missing S1 behavior. The prior review otherwise stands. Final wide Boundary B and disposition of the pre-existing 10/9 installed-checker findings remain due; this disposition does not clear either.
 
 **Coverage:** Reviewed only the S1 test addition and response, and ran its targeted installed-output check. Did not audit every installed duty, repeat other checks, run integration or certification.
+
+## Supplemental targeted verification -- Codex (Implementation, GPT-6) -- 2026-11-01
+
+Elapsed: approximately 4 minutes; tokens: unknown.
+
+This is a focused post-review check, **not Boundary B**. It ran on a clean export of `7cc9c489337ac4beae6ca5dacc8df6961bd62aa7` under the canonical `/Users/kendal30/conda_envs/lhm/bin/python` (Python 3.13.13). The 15-test selection passed in 0.44 seconds: all eight `test_loop_fidelity_gate.py` tests; the installed-duty deletion/inversion, forkable decision-procedure and self-hosted meaning nodes in `test_documentation_plan_module.py`; the canonical scope-reduction placement node; the coordination-duty guard; the doc-governance pointer node; and the session-start parity node.
+
+Six shipped/self-hosted pairs compared byte-identically: session reader, claim checker, link checker, evolution helper, session-start skill and session-end skill. Real `solo-greenfield` and `high-rigor-legacy` installs succeeded with 72 and 104 target files, including generated lock/cache files. Installed `check_cairn.py --no-content-scan` returned its expected baseline non-pass: small profile 10 findings (one optional `dev/.cairn/model-selection-mapping.yml` path and nine illustrative documentation-tier paths); fuller profile nine illustrative documentation-tier paths. Neither profile reported a `docs/methodology/` or `doctrine/` path. `quality_gate.py --sub neutrality` reported fail=0, info=43. No new failure appeared.
+
+The mapped selection was derived from this migration's implementation, reference-migration, deletion, review-fix and review commits, not the continuous branch interval. It selected 93 test files and reported 28 additional AGENTS readers omitted above its guard. Separate changelog-template plan/review/verification commits interleaved in the branch were excluded from the migration path set. The 93-file selection and 28 omitted readers remain unrun; no broad suite, certification or re-anchor was run. This evidence does not pass wide Boundary B, resolve the pre-existing installed-checker findings, or authorize archive. Maintainer disposition of those remaining obligations is still required.
