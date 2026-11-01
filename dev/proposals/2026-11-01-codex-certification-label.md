@@ -1,7 +1,7 @@
 # Clarify the pending tree-certification label
 
 **Author**: Codex GPT-6.1
-**Status**: awaiting-decision
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
