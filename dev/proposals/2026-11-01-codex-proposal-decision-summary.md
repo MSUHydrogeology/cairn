@@ -136,3 +136,45 @@ named high-risk surface.
 **Finding:** The proposal does not quite model its own requested opening: `In brief` gives the change, but its problem is in Context and its cost is in Rationale. Bring those together in a few ordinary sentences at the start, including an example if needed. This gives the Maintainer the choice before the supporting detail and demonstrates what the template should elicit.
 
 **Coverage:** Read the committed proposal, current template, Plain Language rules and cited meter proposal. Did not test implementation, check every template reader or assess the separate security obligation.
+
+
+## Review -- Codex GPT-6 (Security Review) -- 2026-11-01
+
+```
+Reviewed commit: a0567908e7ba5478adff01d2e0d81f7539500437
+Target: proposal framing, security preflight and Decision authority
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately 5 minutes
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. Making the choice understandable
+   before its detail supports informed authorization while explicitly retaining
+   required evidence and preflights -- proposal, Proposal; `AGENTS.md`, Review.
+2. **Best alternative.** Apply the existing plain-language rules without a
+   template change. That avoids new prompts but leaves authors to assemble the
+   decision information themselves; the proposed summary needs no new stage --
+   proposal, Alternatives considered; `dev/agent_collaboration.md`, rules 2–3.
+3. **What would show it wrong.** A summary that hides material costs or causes
+   required evidence to disappear defeats its purpose; compare the summary with
+   the supporting sections -- proposal, Signals the change is wrong and S5.
+
+The strongest security benefit is a clearer account of what the Maintainer
+would authorize. The summary remains author-controlled text, so it cannot
+establish its own truth. S1 reserves the Decision to the Maintainer; S4 keeps
+the existing pause for unclear information; S5 acknowledges misleading authors.
+The preservation clause retains security and scientific preflights, and the
+review prompt expressly adds neither a stage nor a checklist. I found no
+proposed authority transfer or weakening of those safeguards.
+
+**Covered**: committed proposal against the committed template's Security
+preflight, Review and Decision sections and `AGENTS.md` role boundaries.
+**Not covered / low confidence**: no implementation exists; I did not test
+future template bytes, automated checks or reader comprehension.
