@@ -228,14 +228,14 @@ The [accepted proposal](../proposals/archive/2026-10-30-codex-plan-evidence.md)
 and [plan](../plans/archive/2026-10-30-plan-evidence.md) record the
 single-plan default and evidence rules.
 
-### 22. VER-5 discovery behavior checks — awaiting Decision
+### 22. VER-5 discovery behavior checks — delivered
 
-The [reviewed proposal](../proposals/2026-10-30-codex-ver-5-coverage.md)
+The [accepted proposal](../proposals/archive/2026-10-30-codex-ver-5-coverage.md)
 uses independently listed expected files for seven existing multi-script modules
 to compare fresh installation, lock records, selected-module upgrade additions
-and scan targets. It does not establish every future file or upgrade state, or
-deliver the original single traversal. **Decide** whether to accept these checks
-and whether their outcome suffices for VER-5.
+and scan targets. The Maintainer accepted these checks as the v0.6 response;
+they do not establish every future file or upgrade state, and no new traversal
+was added. Review and focused verification passed.
 
 ### 23. Reduce template burden — delivered
 
