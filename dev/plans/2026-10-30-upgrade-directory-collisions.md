@@ -263,3 +263,17 @@ requires moving the directory aside and restoring a regular file before
 restaging. Permanently leaving that tracked file absent is excluded. No new
 lockfile machinery is authorized. Existing absence handling for retired records
 is unchanged.
+
+## Ordinary code review follow-up -- Codex GPT-6.1 Terra -- 2026-11-01
+
+**Reviewed commit**: cb2ecb88; correction to recovery guidance and test only.
+**Tier**: Internal. **Findings**: none in this follow-up. **Bounding**: ACCEPTED for this correction only; final Boundary B remains required.
+**Elapsed**: about 2 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Does it do what it claims?** Yes, for the tested mergeable path: the guidance requires saving the directory and restoring a regular file, and the public stage/apply regression verifies both restored bytes and saved data (`bootstrap/UPGRADE.md:242`, `bootstrap/tests/test_upgrade.py:2810`). This matches the Maintainer's scope decision at 7cf293b8.
+2. **Best alternative.** Reuse the existing recovery path and require a regular file; adding lockfile machinery would exceed the decision. The correction does so without changing the engine.
+3. **What would show it wrong?** After moving the directory aside and restoring the file, fresh stage or apply fails, changes the restored bytes, or loses saved data. In a separate archive of cb2ecb88, Python 3.13.13 ran `python -m pytest -q bootstrap/tests/test_upgrade.py::TestTrackedDirectoryCollisions::test_restage_after_directory_collision_restores_regular_file --tb=short`: 1 passed.
+
+**Coverage**: Read the decision, correction, recovery guidance, regression and earlier ordinary findings. This follow-up does not independently clear the earlier wrapper or incomplete-stage findings, check other destinations or absence states, or perform Security Review. Required mapped failures and final clean-commit Boundary B remain open; plan stays implementing. An initial identical test was inadvertently run in the shared tree; the result above is from the separate committed copy.
