@@ -14,7 +14,7 @@ The Maintainer accepted a heavy review of the README, documentation, existing pu
 
 Read all requested prose, including unchanged material, in groups: reader entry points and frequently followed guidance first; remaining `docs/` and board; methodology and its installed operating homes; then remaining shipped templates and module documents. Identify shipped templates through actual install and module mappings, including `bootstrap/_scaffold/config.py`, rather than assuming every file in `templates/` is installed. Read the final committed board, changelog and proposal-summary work; coordinate owners before editing overlaps. A clear document needs no edit. Record group coverage and unresolved failures concisely in the plan; no per-file ledger, evidence folder or extra review stage.
 
-Coordinate with `dev/plans/2026-11-01-retire-doctrine.md`. While its move is not ready, work on other groups and review current methodology if waiting would otherwise indefinitely delay the audit. Carry finished improvements into the move. If it moves first, account for and read all relocated content at its final public and installed homes, including split duties. Avoid polishing the same content twice; do not treat the move itself as the reading review.
+Coordinate with `dev/plans/2026-11-01-retire-doctrine.md`. The methodology has moved to its final public home; review all of it there and account for its installed homes, including split duties. Carry any remaining improvements into the final homes. Avoid polishing the same content twice; do not treat the move itself as the reading review.
 
 Preserve versioned Plain Language rules themselves unless separately authorized. Preserve commands, examples, conditions, warnings, permissions, claims, links and existing non-template markers. Resolve uncertain meaning against its source before editing; leave ambiguous text unchanged and its failure open until resolved. Do not introduce new requirements or policy.
 
@@ -22,7 +22,7 @@ Preserve versioned Plain Language rules themselves unless separately authorized.
 
 ### Documentation / doctrine surface
 
-Descriptive prose stays in `docs/`, cross-cutting prescription in governing and installed homes, and board deliberation in `dev/`. Public methodology currently in `doctrine/` and its final public and installed homes are in scope; relocation remains the separate plan's work. Shipped authoring templates and doctrine are protected surfaces.
+Descriptive prose stays in `docs/`, cross-cutting prescription in governing and installed homes, and board deliberation in `dev/`. Public methodology at `docs/methodology/` and its installed homes are in scope, including duties split across those homes. Shipped authoring templates and methodology are protected surfaces.
 
 ## Sequence
 
