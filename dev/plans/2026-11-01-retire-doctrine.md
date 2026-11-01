@@ -77,3 +77,19 @@ Verdict: No blocking findings. Elapsed time: approximately 3 minutes; tokens: un
 **Advice:** Keep the C1 mapping as concise as the move permits; the plan already calls for a concise implementation record and no new general-purpose tool. Coordinate the overlapping Plain Language work as Scope specifies so its completed improvements survive and its full reading review remains with that work.
 
 **Coverage:** Compared the committed plan with the accepted proposal and archived C2 choice, the install mappings and the named verification approach. Did not perform installs, run tests, audit every doctrine section or review future changes; the separate Security Review remains due.
+
+## Plan review -- Codex (Security Review, gpt-6.1-sol) -- 2026-11-01
+
+Reviewed commit: `adc83d02`  
+Obligation: Internal Security Review  
+Verdict: No blocking findings. Elapsed time: approximately 4 minutes; tokens: unknown.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. C1 requires complete installed homes before moving duties, preserving the archived plan's C2 routing choice and the accepted proposal's unresolved-pointer stop. Public methodology may move without becoming the adopter's mandatory local rule home.
+2. **Best alternative.** Move explanation and update consumers directly using existing checks, retaining only a concise mapping for uncertain duties. This plan already takes that approach: Scope rejects new machinery, C1 refreshes existing evidence, and Verification separates integration from the deferred cut ceremony.
+3. **What would show it wrong?** A replacement public path escapes the non-installed dependency check, an installed duty disappears while its citation survives, or a semantic guard stays green after deletion/inversion. The committed `scripts/check_cairn.py` internal-prefix detector and `bootstrap/tests/test_scope_reduction_trap.py` demonstrate these risks; C1–C2 and Verification require their actual consumers and controls to move together.
+
+No additional gate is needed. C1 includes pins and installation mappings; C2 preserves distinct semantics and identical session helpers. The named source-only and installed-output checks are correctly distinguished. Historical-reference treatment must preserve the existing live-dependency detection, as C2 explicitly requires. Boundary B remains wide on the final reviewed commit; the plan authorizes neither certification nor re-anchor.
+
+**Coverage:** Compared the committed plan, accepted proposal and archived routing choice with the internal-prefix detector, doctrine-path test readers, installer mappings and model assignment. No installs, mutations or implementation checks were run; future content equivalence, the complete current consumer map and security-pin updates remain implementation evidence, not claims established by this plan review.
