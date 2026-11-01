@@ -1,10 +1,10 @@
 # Reduce incidental test-selector matches
 
 **Author**: Codex GPT-6.1
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
-**Plan review**: required(Internal + Internal Security Review)
+**Plan review**: not required(no plan: light tier)
 **Opened**: 2026-11-01
 **In brief**: Make the test selector distinguish file references from incidental words so scoped verification runs fewer unrelated tests.
 
@@ -162,3 +162,13 @@ Target: consumer preservation. Prior findings: none. Assurance path: high-assura
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Maintainer -- 2026-11-01
+
+Elapsed: unknown; tokens: unknown.
+
+**Tier**: light
+
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim:
+
+> "Accept light and implement"
