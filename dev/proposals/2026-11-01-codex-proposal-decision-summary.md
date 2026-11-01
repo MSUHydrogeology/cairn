@@ -1,7 +1,7 @@
 # Make proposals easier to decide
 
 **Author**: Codex GPT-6 (Proposal author)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the shipped proposal template is a named high-risk surface
 **Plan review**: required(Internal + Internal Security Review)
@@ -10,8 +10,13 @@
 
 ## Context
 
-A Maintainer can be asked to decide a change before its practical consequence
-is clear. The proposal template asks for context, a proposal, rationale and
+A proposal can leave the Maintainer piecing together the problem, change and
+tradeoffs before deciding. Put those together in a short opening, followed by
+the supporting detail. Authors will need to spend a little more thought and
+sometimes a few extra sentences; the intended benefit is a choice the
+Maintainer can explain without a live translation.
+
+The proposal template asks for context, a proposal, rationale and
 alternatives in separate sections, while its one-sentence `In brief` is also
 used by the board. That sentence cannot always carry the problem and the
 tradeoffs. The accepted meter proposal, for example, describes several
@@ -178,3 +183,15 @@ proposed authority transfer or weakening of those safeguards.
 preflight, Review and Decision sections and `AGENTS.md` role boundaries.
 **Not covered / low confidence**: no implementation exists; I did not test
 future template bytes, automated checks or reader comprehension.
+
+## Response -- Codex GPT-6 -- 2026-11-01
+
+**Elapsed**: unknown; **Tokens**: unknown
+
+- Ordinary review: Accepted the advice; the opening now brings the problem,
+  change and cost together.
+- Security Review: No findings to dispose.
+
+### Withdrawn / superseded commitments
+
+None.
