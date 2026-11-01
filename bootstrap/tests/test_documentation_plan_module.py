@@ -66,6 +66,16 @@ def _scaffold(target: Path, modules: list[str] | None) -> int:
     )
 
 
+_INSTALLED_MAINTAINER_DUTY = (
+    "The Human Maintainer alone sets direction and makes Decisions."
+)
+
+
+def _assert_installed_maintainer_duty(text: str) -> None:
+    normalized = " ".join(text.split())
+    assert _INSTALLED_MAINTAINER_DUTY in normalized
+
+
 # ---------------------------------------------------------------------------
 # Registration
 # ---------------------------------------------------------------------------
@@ -115,6 +125,33 @@ class TestInstallPath:
         assert _scaffold(tmp_path, ["reflections"]) == 0
         assert not (tmp_path / MODULE_DOC_DST).exists()
         assert not (tmp_path / FORKABLE_DST).exists()
+
+    def test_scaffolded_duty_guard_rejects_deletion_and_inversion(
+        self, tmp_path: Path,
+    ) -> None:
+        """The real install must carry an operative duty, and its guard
+        must fail if that installed sentence is deleted or inverted."""
+        assert _scaffold(tmp_path, None) == 0
+        installed = tmp_path / "AGENTS.md"
+        intact = installed.read_text(encoding="utf-8")
+        _assert_installed_maintainer_duty(intact)
+
+        normalized = " ".join(intact.split())
+        assert normalized.count(_INSTALLED_MAINTAINER_DUTY) == 1
+        mutants = (
+            normalized.replace(_INSTALLED_MAINTAINER_DUTY, "", 1),
+            normalized.replace(
+                _INSTALLED_MAINTAINER_DUTY,
+                "The Human Maintainer does not set direction or make Decisions.",
+                1,
+            ),
+        )
+        for mutant in mutants:
+            installed.write_text(mutant, encoding="utf-8")
+            with pytest.raises(AssertionError):
+                _assert_installed_maintainer_duty(
+                    installed.read_text(encoding="utf-8"),
+                )
 
 
 # ---------------------------------------------------------------------------
