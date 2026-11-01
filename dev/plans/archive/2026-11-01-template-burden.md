@@ -1,7 +1,7 @@
 # Plan: Reduce template burden
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-template-burden.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Shorten the proposal and plan templates while retaining the instructions and safeguards authors need.
@@ -213,4 +213,4 @@ Dispositions: none. Accepted outcomes, review findings and required checks are c
 **Evidence shipped**: the four templates and 12 deletion controls landed in `6965d3ba`, `bf60c2ab` and `965d11eb`; the final wide selection passed 1,037 tests and all required prose gates at `f33d95db` (recorded above).
 **Evidence deferred**: none. Full-tree certification and re-anchor were outside the accepted plan.
 **Deferred evidence home**: N/A.
-**Fidelity sign-off**: `6965d3ba` and `bf60c2ab` match the accepted `## Proposal` section of `dev/proposals/archive/2026-10-30-codex-template-burden.md`, as revised in place (there is no separately titled `## Revised` section); accepted at `2c24fec4`.
+**Fidelity sign-off**: At archive, `6965d3ba` and `bf60c2ab` are confirmed to match the accepted `## Proposal` section of `dev/proposals/archive/2026-10-30-codex-template-burden.md`, revised in place (there is no separately titled `## Revised` section); accepted at `2c24fec4`.

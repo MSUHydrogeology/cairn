@@ -38,6 +38,8 @@ and a new empty `Unreleased` is started above.
 
 ## Unreleased
 
+- Proposal and plan authoring templates now reduce repeated copy while retaining lifecycle, security and verification obligations. ([plan](dev/plans/archive/2026-11-01-template-burden.md), [proposal](dev/proposals/archive/2026-10-30-codex-template-burden.md))
+
 - The installed local API dispatcher now passes only present credentials derived from its validated local policy to the configured check, after binding the policy engine and refusing cached or substituted code. ([plan](dev/plans/archive/2026-10-30-api-dispatch-credentials.md))
 
 - Plans need no evidence folder by default; separate evidence is limited to necessary implementation or existing ceremony work, and reviewers accept concise summaries. ([plan](dev/plans/archive/2026-10-30-plan-evidence.md), [doctrine](doctrine/plans.md))
