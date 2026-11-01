@@ -432,9 +432,7 @@ def _plant_stage(world: World) -> Path:
         },
         "new_version": "9.9.9", "new_commit": "0" * 40, "staged_files": ["docs/notes.md"],
         "kinds": {"docs/notes.md": "new-core"}, "ours_hashes": {},
-        "directory_observed": sorted(
-            rec["dst"] for rec in lock["files"]
-            if rec["src"] != "core/VENDOR.md"),
+        "directory_observed": sorted(rec["dst"] for rec in lock["files"]),
         "expected_absent": ["docs/notes.md"],
         "review_only": [], "module_blocked": [], "verbatim_rehash": [],
         "new_profile": None, "ancestor_evidence": {}, "recovery_bases": {},
