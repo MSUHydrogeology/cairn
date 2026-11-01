@@ -1,7 +1,7 @@
 # Proposal: compare multi-script module discovery paths
 
 **Author**: Codex (gpt-6.1-terra), Strategy
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
