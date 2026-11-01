@@ -60,10 +60,10 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Major changes
 
+- **Added** — Cairn Plain Language 1.0, a 17-rule writing standard for everything agents write for people: every install carries it in `dev/agent_collaboration.md`, and `docs/plain-language.md` is a full adoption page with the copyable rules, an evidence table and a 30-source bibliography. ([proposal](dev/proposals/archive/2026-10-27-antigravity-plain-language-adoption-docs.md), [rationale](doctrine/rationale.md))
 - **Added** — `scripts/repin.py` gives the routine gate re-pins three commands, `status`, `package` and `ceremony`, which stop before the Maintainer types the signing passphrase and never read it. ([plan](dev/plans/archive/repin-build.md))
 - **Added** — `upgrade --remove-retired` removes a project's untouched copies of files Cairn stopped shipping, and keeps and names any copy that differs, is untracked or sits behind a link. ([plan](dev/plans/archive/upgrade-removes-retired-files.md))
 - **Added** — Drain mode: `/session-start --drain [board | issues | <item>]` sorts open items by lifecycle lane, fixes trivial ones with a failing test, has a fresh session review each fix, and commits locally without posting to GitHub. ([plan](dev/plans/archive/drain-mode.md))
-- **Added** — Every install carries Cairn Plain Language 1.0, a 17-rule writing standard for what agents write for people, in `dev/agent_collaboration.md`. ([rationale](doctrine/rationale.md), anchor 16)
 - **Changed** — The re-anchor ceremony needs no outside reviewer: your part is comparing digests, running a few checks, reading a plain report and saying yes, and the old hand path (`drive()`, `--run`, the digest-correcting script) is gone. ([plan](dev/plans/archive/ceremony-without-external-review.md))
 - **Changed** — The next-session handoff is a local, untracked note at `dev/reflections/next-session.md` instead of a shipped `dev/NEXT_SESSION.md`; it is read as a hint, never instructions, and counts as absent after 14 days. ([plan](dev/plans/archive/next-session-local-note.md))
 - **Changed** — The install report lists slots that only an uninstalled module fills apart from the main list, and `upgrade --plan` and `--stage` print a `[new slot]` line for slots a new template adds. ([plan](dev/plans/archive/engine-batch-f8-slots.md))
@@ -79,7 +79,6 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Minor changes
 
-- **Changed** — `docs/plain-language.md` is now a full adoption page with a copyable 17-rule block, an evidence table and a 30-source bibliography. ([proposal](dev/proposals/archive/2026-10-27-antigravity-plain-language-adoption-docs.md))
 - **Changed** — The plan and proposal templates add "Keep the plan short" and "Keep the proposal short" sections saying what stays out of the file. ([issue #31](https://github.com/MSUHydrogeology/cairn/issues/31))
 - **Fixed** — `upgrade --finalize` on a kept, edited fold-back ledger from an old install now leaves a tree that `verify_integrity` accepts.
 - **Fixed** — `link_check.py`, `sync_doc_snippets.py` and `check_cairn.py` skip a tracked Markdown file deleted from disk but not yet committed, instead of crashing. ([proposal](dev/proposals/archive/2026-10-26-claude-check-cairn-deleted-files.md))
