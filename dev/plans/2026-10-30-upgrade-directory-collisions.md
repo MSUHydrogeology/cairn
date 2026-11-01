@@ -361,3 +361,16 @@ is unchanged.
 **Ledger**: separate clone and baseline worktree, Python 3.13.13, scratch nodes discarded. Untampered wrapper controls refused. Linked parent and dangling link: stage exit 2, containment refusal, bytes kept.
 
 **Coverage**: Not examined: concurrent changes after a check (stated limit), hard links, case aliases, f8f96cdb, non-collision commits, plan wording for linked parents. Mapped runs taken from the 2026-11-01 record (3,130 passed). Not cleared; plan stays implementing.
+
+## Ordinary code review -- Codex GPT-6 -- 2026-11-01
+
+**Reviewed commit**: a5859a7d. **Verdict**: The reported P2–P4 corrections and P1 canonical and lock-recorded wrapper cases are addressed; the dynamic custom-wrapper tampered-stage case remains open. **Bounding**: WIDER RUN REQUIRED for that open case. **Elapsed**: about 3 minutes; **tokens**: unknown.
+
+**Foundations**:
+1. **Should it happen as framed?** Yes, subject to the open case: `upgrade.py` excludes retired plans, validates lock records, requires an occupied recorded wrapper destination, and asks for a regular file. The added public-command tests exercise those changes.
+2. **Best alternative:** Reject incomplete observations at apply, as implemented for destinations independently identifiable from the lock. Relying only on editable stage metadata cannot cover the open dynamic custom name.
+3. **What would show it wrong?** A no-op renamed wrapper or retired record failing normal apply, or an omitted required observation allowing apply to advance metadata. The implementation record reports 11 targeted passing tests for the corrected cases.
+
+**Open finding (blocking, C1):** A dynamically discovered custom wrapper absent from the lock can still be omitted from tampered stage observations. The correction explicitly leaves that case open; a public-command regression and a fix, or Maintainer disposition of the scope, would close it.
+
+**Evidence and coverage:** In a separate copy of a5859a7d, Python 3.12.9: `test_custom_wrapper_file_precedes_known_wrapper_directory` and `test_renamed_wrapper_apply_advances_to_resolved_dst` passed; in a Git-backed copy `test_stage_and_apply_leave_retired_files_and_records_alone` passed. An initial archived-copy retired test failed because it lacked Git history, then passed in the Git-backed copy. Reviewed the correction diff and prior Security findings; did not rerun implementation tests or assess all collision and containment paths. This ordinary review does not clear Security Review.
