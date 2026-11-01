@@ -126,3 +126,13 @@ Elapsed: approximately 2 minutes; tokens: unknown.
 Accepted the recommendation: the guidance now names the target Cairn tree and excludes `--to`, matching the upgrade action guard.
 
 Elapsed: approximately 2 minutes; tokens: unknown.
+
+## Decision -- Maintainer -- 2026-11-01
+
+**Elapsed**: unknown; **Tokens**: unknown.
+
+**Tier**: heavy
+
+**ACCEPTED.** The Maintainer's authorization:
+
+> "Accept and implement"
