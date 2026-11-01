@@ -20,9 +20,6 @@ Move useful current methodology, preserve installed duties and their usable poin
 
 Public methodology lands in `docs/methodology/`, cross-cutting prescription in governing and installed files, Cairn-specific rules in `dev/rules/`, and deliberation remains in `dev/`. A published explanation is not an installed duty. The documentation plan and its forkable template must agree on their structural routing while retaining their intended differences.
 
-Proposed paths:
-- `docs/methodology/`
-
 ## Sequence
 
 | # | Chunk | Gate | Ships |

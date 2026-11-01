@@ -3,6 +3,8 @@
      this tree — so they are exempted from claim_check path resolution (they
      never resolve in Cairn's own tree; this keeps `check_cairn` clean). -->
 
+<!-- cairn-internal-ref-allow: docs/methodology/ reason=published-method location examples; the installed plan still requires complete operative duties in local guidance -->
+
 # Documentation Plan
 
 **Status**: living document.
