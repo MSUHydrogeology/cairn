@@ -1092,6 +1092,31 @@ def test_stage_and_apply_leave_retired_files_and_records_alone(
     assert {d: (project / d).read_bytes() for d in (SCRIPT, SCRIPT_2)} == files_before
 
 
+def test_directory_at_retired_destination_does_not_block_other_apply(
+    project: Path, capsys: pytest.CaptureFixture[str],
+) -> None:
+    _add_script(project, SCRIPT)
+    _add_script(project, SCRIPT_2, write=False)
+    retired_dir = project / SCRIPT_2
+    retired_dir.mkdir()
+    (retired_dir / "adopter-data").write_bytes(b"preserve retired directory")
+    _commit_all(project)
+    lock_before = _read_lock(project)
+    data_before = (retired_dir / "adopter-data").read_bytes()
+
+    for flag in ("--stage", "--apply"):
+        code, out, err = _upgrade(capsys, project, flag)
+        assert code == 0, (flag, out, err)
+        assert "Traceback" not in err
+
+    assert (retired_dir / "adopter-data").read_bytes() == data_before
+    retired_before = {r["dst"]: r for r in lock_before["files"]
+                      if r["dst"] == SCRIPT_2}
+    retired_after = {r["dst"]: r for r in _read_lock(project)["files"]
+                     if r["dst"] == SCRIPT_2}
+    assert retired_after == retired_before
+
+
 def test_an_uncommitted_or_ignored_copy_is_kept(
     project: Path, capsys: pytest.CaptureFixture[str],
 ) -> None:

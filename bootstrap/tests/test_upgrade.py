@@ -2751,26 +2751,33 @@ class TestTrackedDirectoryCollisions:
         assert cache_path.read_bytes() == cache_before
         assert stage.exists()
 
-    def test_renamed_wrapper_observation_cannot_be_omitted(
+    @pytest.mark.parametrize("wrapper_name", ["VENDOR.md", "CUSTOM.md"])
+    def test_wrapper_observation_cannot_be_omitted(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+        wrapper_name: str,
     ) -> None:
-        """Apply independently resolves a known renamed wrapper destination.
-
-        A stage whose editable observation list drops CLAUDE.md must still
-        refuse when that no-op tracked wrapper becomes a directory.
-        """
+        """Apply requires the canonical or custom recorded wrapper destination."""
         assert _install(tmp_path) == 0
-        (tmp_path / "VENDOR.md").rename(tmp_path / "CLAUDE.md")
+        if wrapper_name != "VENDOR.md":
+            (tmp_path / "VENDOR.md").rename(tmp_path / wrapper_name)
+            lock_path = tmp_path / "dev/.cairn/cairn-lock.yml"
+            lock = s.read_lockfile(tmp_path)
+            wrapper = next(r for r in lock["files"]
+                           if r["src"] == "core/VENDOR.md")
+            wrapper["dst"] = wrapper_name
+            wrapper["hash"] = "sha256:" + s._sha256_hex(
+                (tmp_path / wrapper_name).read_bytes())
+            lock_path.write_text(s._emit_lock_yaml(lock), encoding="utf-8")
         TestUpgradeModes()._diverge_base(tmp_path)
         assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
                        "--cairn-root", str(CAIRN_ROOT)]) == 0
         stage = tmp_path / "dev/.cairn-upgrade"
         meta = json.loads((stage / s._STAGE_META).read_text())
-        assert "CLAUDE.md" in meta["directory_observed"]
-        meta["directory_observed"].remove("CLAUDE.md")
+        assert wrapper_name in meta["directory_observed"]
+        meta["directory_observed"].remove(wrapper_name)
         (stage / s._STAGE_META).write_text(json.dumps(meta))
 
-        dst = tmp_path / "CLAUDE.md"
+        dst = tmp_path / wrapper_name
         dst.unlink()
         dst.mkdir()
         content = dst / "adopter-data"
@@ -2793,6 +2800,30 @@ class TestTrackedDirectoryCollisions:
         assert lock_path.read_bytes() == lock_before
         assert cache_path.read_bytes() == cache_before
         assert stage.exists()
+
+    def test_lock_record_without_src_refuses_apply_cleanly(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        assert _install(tmp_path) == 0
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        lock_path = tmp_path / "dev/.cairn/cairn-lock.yml"
+        lock = s.read_lockfile(tmp_path)
+        lock["files"][0].pop("src")
+        lock_path.write_text(s._emit_lock_yaml(lock), encoding="utf-8")
+        malformed_lock = lock_path.read_bytes()
+        cache_path = tmp_path / "dev/.cairn/base/AGENTS.md"
+        cache_before = cache_path.read_bytes()
+
+        rc = s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                     "--force", "--ack-review-only",
+                     "--cairn-root", str(CAIRN_ROOT)])
+        err = capsys.readouterr().err
+        assert rc == 1
+        assert "malformed file record" in err
+        assert "Traceback" not in err
+        assert lock_path.read_bytes() == malformed_lock
+        assert cache_path.read_bytes() == cache_before
 
     def test_custom_wrapper_file_precedes_known_wrapper_directory(
         self, tmp_path: Path,
@@ -2879,6 +2910,8 @@ class TestTrackedDirectoryCollisions:
                      "--cairn-root", str(CAIRN_ROOT)])
         err = capsys.readouterr().err
         assert rc == 1 and "directories" in err and "upgrade --stage" in err
+        assert "restore the tracked path as a regular file" in err
+        assert "choose its absence" not in err
         assert dst.read_bytes() == original_file
         assert saved_nested.read_bytes() == b"keep these bytes\x00\n"
         assert saved_nested.stat().st_mode == before_stat.st_mode

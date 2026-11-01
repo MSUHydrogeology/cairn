@@ -1308,6 +1308,11 @@ def _write_stage(
         fp.dst for fp in plans if fp.kind == "directory-blocked"
     }
     for fp in plans:
+        # Retired records keep their existing handling. A directory at a
+        # retired destination is adopter data, not an active tracked-file
+        # collision that should block every upgrade.
+        if fp.kind.startswith("retired-"):
+            continue
         dst_abs = target / fp.dst
         _assert_safe_write(dst_abs, target)
         if dst_abs.is_dir():
@@ -3331,21 +3336,36 @@ def _apply_upgrade(
     # project too, including a directory now occupying its resolved name.
     retired = {(src, dst) for src, dst, _verbatim, _digests in _RETIRED_INSTALLS
                if not (templates_root / src).exists()}
+    lock_files = lock.get("files", [])
+    if (not isinstance(lock_files, list)
+            or any(not isinstance(rec, dict)
+                   or not isinstance(rec.get("src"), str)
+                   or not isinstance(rec.get("dst"), str)
+                   for rec in lock_files)):
+        print("error: lockfile has a malformed file record; "
+              "restore a valid lockfile, then re-run.", file=sys.stderr)
+        return 1
     required_observations = {
-        rec["dst"] for rec in lock.get("files", [])
+        rec["dst"] for rec in lock_files
         if (rec["src"], rec["dst"]) not in retired
         and rec["src"] != "core/VENDOR.md"
     }
-    wrapper_rec = next((rec for rec in lock.get("files", [])
+    wrapper_rec = next((rec for rec in lock_files
                         if rec["src"] == "core/VENDOR.md"), None)
-    if (wrapper_rec is not None
-            and not (target / wrapper_rec["dst"]).exists()):
-        resolved_wrapper = _resolve_vendor_wrapper(
-            target, {rec["dst"] for rec in lock.get("files", [])},
-            include_directories=True,
-        )
-        if resolved_wrapper is not None:
-            required_observations.add(resolved_wrapper)
+    if wrapper_rec is not None:
+        # A wrapper at its recorded destination is required even when that
+        # canonical path now holds a directory. Otherwise preserve the
+        # renamed-wrapper path used by stage, including recorded custom names.
+        wrapper_dst = wrapper_rec["dst"]
+        if (target / wrapper_dst).exists():
+            required_observations.add(wrapper_dst)
+        else:
+            resolved_wrapper = _resolve_vendor_wrapper(
+                target, {rec["dst"] for rec in lock_files},
+                include_directories=True,
+            )
+            if resolved_wrapper is not None:
+                required_observations.add(resolved_wrapper)
     if not required_observations.issubset(meta["directory_observed"]):
         print("error: staged upgrade has incomplete directory observations; "
               "run `upgrade --stage` again before applying.", file=sys.stderr)
@@ -3568,8 +3588,8 @@ def _apply_upgrade(
               f"{len(directory_blocked)} tracked file path(s) are directories "
               "and their contents must be preserved:\n  "
               + "\n  ".join(directory_blocked)
-              + "\n  move the contents aside, restore the tracked file or "
-              "choose its absence, then run upgrade --stage again.",
+              + "\n  move the contents aside, restore the tracked path as a "
+              "regular file, then run upgrade --stage again.",
               file=sys.stderr)
         return 1
     # A tracked file can become a directory after --stage. Detect every such
