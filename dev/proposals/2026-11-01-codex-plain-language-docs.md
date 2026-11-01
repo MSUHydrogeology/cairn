@@ -131,3 +131,21 @@ None.
 The Maintainer confirmed the intent to remove `doctrine/` and identified its omission from this audit. The proposal now includes the existing material and coordinates its review with a separately scoped relocation. The prior routing decision chose a destination; it did not move or delete the folder. No earlier scope is withdrawn. The widened scope returns for review.
 
 **Elapsed**: approximately 3 minutes; **Tokens**: unknown.
+
+## Focused proposal review -- Codex GPT-6 (ordinary reviewer) -- 2026-11-01
+
+**Tier**: Internal  
+**Reviewed**: `585a93e2`  
+**Elapsed**: unknown; **Tokens**: unknown
+
+**Foundations**
+
+- **Should it happen as framed?** Yes. The expanded inventory includes current `doctrine/` material as well as the original set; the Proposal keeps relocation separate and retains protected-surface review and existing obligations.
+- **Best alternative:** Wait for relocation before reviewing methodology. That avoids touching a page before it moves, but could leave the requested review waiting indefinitely; the proposed timing permits review now and carries improvements forward (Proposal).
+- **What would show it wrong?** A move that loses an operating duty, or an audit that declares methodology complete while leaving its content unread, would defeat the routing choice and expanded scope (archived governing-text plan, C2; Proposal).
+
+**Verdict:** Proceed with one non-blocking clarification.
+
+**Finding:** If relocation happens first, “review the final committed destination” could be read as only `docs/methodology/`, although the C2 choice also puts complete operating duties in installed homes. Say the plan will account for and review all relocated material at its final homes, including any split between public and installed guidance. This preserves the full requested reading without requiring a per-file ledger or polishing a page twice.
+
+**Coverage:** Compared the expanded proposal with the committed doctrine file list and the archived C2 routing choice, including the separate installed homes. Did not audit individual doctrine contents, relocation dependencies, or security controls; the separate Security Review remains owed.
