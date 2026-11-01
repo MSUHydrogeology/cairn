@@ -35,7 +35,10 @@ Guidance describes the block and recovery and agrees with the command tests. Exe
 
 ## Scope delta
 
-**Scope delta**: preserved.
+**Scope delta**: Maintainer authorized the recovery concession below on
+2026-11-01. A mergeable tracked file occupying a directory must be restored as
+a regular file before restaging; permanently leaving it absent is excluded.
+No new lockfile machinery is in scope.
 
 ## Verification
 
@@ -248,3 +251,14 @@ record of what was known and done at the time.
 **Falsification ledger**: At 4a76dc54 in an isolated clone, collision, absence recovery and repaired plain-name controls passed (6 passed, Python 3.13.13). A scratch edit to `TestUpgradeModes::test_renamed_wrapper_apply_advances_to_resolved_dst` omitted `CLAUDE.md`, changed the no-op wrapper to a directory, and expected refusal. Public apply returned 0 and reported lockfile/base-cache advancement (1 failed). The restored wrapper control passed (1 passed); the scratch edit was discarded.
 
 **Covered**: claims, public path, edge and refusal (#1-4), ledger; reuse and drift (#5-6), `upgrade.py:691-704`, `bootstrap/UPGRADE.md:242-252`; lifecycle, scope and satisfier (#7-9), C1 and P1. **Not covered**: other wrapper names, all absence states, symlinks, full mapping, Security Review. Plan remains implementing.
+
+## Maintainer scope decision -- 2026-11-01
+
+**Maintainer's words**: “Require a regular file (less machinery)” — chat,
+2026-11-01.
+
+**Scope delta**: recovery for a directory occupying a mergeable tracked file
+requires moving the directory aside and restoring a regular file before
+restaging. Permanently leaving that tracked file absent is excluded. No new
+lockfile machinery is authorized. Existing absence handling for retired records
+is unchanged.
