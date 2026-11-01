@@ -1,7 +1,7 @@
 # Plan: Retire the doctrine folder
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-governing-text-single-source.md
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Move public methodology to its chosen home and remove the old folder while preserving installed duties and working checks.
@@ -152,3 +152,24 @@ Verdict: No blocking findings in this pass. Elapsed: approximately 4 minutes; to
 On a clean export of `3ddcc7bc`, `python -m pytest bootstrap/tests/test_loop_fidelity_gate.py -q` passed 8 tests under Python 3.12.9. The six stated source/shipped pairs compared byte-identically. Inspected the path-detector change, relocated semantic guard targets and representative installed guidance changes. The 497-item iteration selection was not repeated after its two individual fixes, and the earlier broader run was interrupted; the record accurately leaves wide Boundary B due. The baseline installed-checker findings also remain open for disposition.
 
 **Coverage:** Reviewed the committed diff and implementation record, with the targeted detector check and pair comparisons above. Did not independently repeat installs, mutate all installed duties, verify every historical record or run a suite; the separate Security Review and final wide integration remain due.
+
+## Code review -- Codex (Security Review, GPT-6) -- 2026-11-01
+
+Reviewed commit: `3ddcc7bc`  
+Target: retirement implementation through its verification record  
+Obligation: Internal Security Review  
+Verdict: One blocking evidence gap. Elapsed: approximately 8 minutes; tokens: unknown.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes, subject to C2 assurance. Fifteen methodology files replace the retired folder; classifier prefixes retain both spellings. The implementation record correctly leaves the 10/9 pre-existing installed-check findings unresolved.
+2. **Best alternative.** Preserve existing consumers and their distinct guards while relocating paths, as implemented. No new checker or permanent mapping is needed; missing assurance needs narrow installed-output evidence.
+3. **What would show it wrong?** An unmarked non-installed dependency escaping detection or an installed obligation disappearing while its guard passes. On the committed export, real `check_tree` probes flagged both current/retired paths and unlisted paths beside exact exemptions; the eight loop-fidelity tests passed under Python 3.12.9.
+
+**S1 — blocking:** C2 requires guards to pass intact real installs and fail after operative-clause deletion/inversion. The implementation record supplies actual install path checks, source checks and individual test fixes, but no installed semantic mutation evidence. Existing scope-reduction guards preserve their distinct patterns and move canonical targets; this does not establish the accepted installed-output criterion. Close with focused intact/deleted/inverted checks through the applicable guard on real installed duties, naming surfaces, outcomes and omissions.
+
+Six reported source/shipped pairs compare identically. Installer changes are comments; session executable behavior and link-check network guards are unchanged. History exemptions remain exact-document entries. Existing blanket internal-prefix exemptions in governing/review templates still permit an unlisted methodology dependency; exact external-reference declarations do not strengthen those inherited exemptions. This is advice, not a newly introduced defect.
+
+**Bounding:** WIDER RUN REQUIRED — supply S1's missing behavior evidence before final wide Boundary B.
+
+**Coverage:** Inspected committed security-sensitive changes, parity and targeted classifier behavior. Did not repeat installs, mutate installed clauses, audit every historical citation, run integration or certification; baseline findings and final integration remain open.
