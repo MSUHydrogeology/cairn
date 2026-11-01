@@ -193,3 +193,22 @@ The author's four Python 3.12 Bandit skips do not establish scanner success. The
 The author reports the real guard refusal, passing mutation controls and representative lookups with their gaps in 0914d80c. These close the missing-evidence finding; wide Boundary B remains due. **Bounding**: WIDER RUN REQUIRED for the planned final integration, not a new review check.
 
 **Coverage:** Read the correction diffs and author response against both findings. Did not rerun implementation checks, perform Security Review, or assess the remaining Boundary B results.
+
+## Security review disposition -- Codex GPT-6.1 -- 2026-11-01
+
+**Obligation**: Internal Security Review  
+**Reviewed commits**: 6772ff55, 79418af6; evidence response 0914d80c  
+**Verdict**: ACCEPT; prior blockers closed, no new security finding  
+**Bounding**: ACCEPTED for the planned wide Boundary B selection  
+**Elapsed**: approximately 2 minutes  
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should it happen as corrected?** Yes. Both shipped surfaces now require one actual-run record, identify ceremony evidence and shared-history fallback, include failures, and explain fetched-ref search limits and the absent-record caveat. These changes close the discoverability gap without changing the runtime guard or authorization triggers.
+2. **Best alternative.** The corrected reuse of existing records delivers the accepted scope with no ledger, backfill, extra approval or standalone record commit. Keeping instructions only in local doctrine would leave adopters without them.
+3. **What would show it wrong?** A bypass of the retained checks or evidence falsely presented as certification. The author reports the real refusal and mutation controls under Python 3.13.13, and labels incomplete historical examples as gaps rather than passed runs. The corrected guidance test covers both shipped surfaces; its normalization fix changes the control, not the rule.
+
+Read the correction diffs and committed response; corroborated the release evidence pointer and explicit historical re-anchor waiver. The response supplies the previously missing named-check evidence. Historical gaps are disclosed as the plan permits. Complete canonical wide Boundary B, including disposition of the previously skipped real-Bandit checks; this acceptance does not substitute for that run.
+
+**Coverage:** Targeted look at the correction and prior findings only. Did not rerun implementation checks, run broad tests, verify every historical record, or perform certification/re-anchor. No additional security pass is owed for these closed findings.
