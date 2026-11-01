@@ -245,3 +245,11 @@ On a clean export of `449d903f0770df40cf3ec76dfca86332e090cfab`, under canonical
 These selected-file checks and the tracked-Markdown `check_cairn` runs do not establish that every installed file is clean. A previous author reported 9/18 findings from directly running the shipped generic claim checker across all installed Markdown files (excluding upgrade cache); that broader result was not repeated or independently verified here. The earlier 10/9 check_cairn findings were superseded for the corrected paths by the exact installed checks and tracked scans above; no `docs/methodology/` or `doctrine/` path issue appeared in this run. The migration-derived mapped selection remains 93 test files with 28 AGENTS readers omitted above its guard; neither that selection nor those omitted readers were run. No broad suite, certification or re-anchor ran. This focused evidence does not pass full Boundary B or authorize archive; Maintainer disposition remains required.
 
 **Coverage:** Ran the named focused test selection, six pair comparisons, two real installs, exact installed claim checks, tracked-Markdown `check_cairn` scans and neutrality gate. Did not repeat the broader direct claim scan, run the 93-file mapped selection or its 28 omitted readers, run the full suite, certify, or re-anchor.
+
+## Maintainer disposition -- 2026-11-01
+
+**Source:** Maintainer chat, 2026-11-01.
+
+> Accept focused results
+
+The Maintainer accepts the focused results and authorizes completing this plan on that basis. The 93-file mapped selection and 28 omitted AGENTS readers remain unrun and are left for release; they are not treated as passed here. The prior generic direct-scan report of 9/18 findings remains unverified, and this disposition does not assert that every installed document is clean. No full Boundary B pass, certification or re-anchor is claimed.
