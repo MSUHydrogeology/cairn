@@ -121,3 +121,25 @@ Reviewed commit: 2b29553b. **Verdict: no blocking findings.**
 **Foundations.** Should this happen as framed? Yes: the explicit pairs match the seven current module definitions, and the tests compare installed bytes and lock records, run real upgrade stage and apply with selected modules retained, and check scan inclusion. Best alternative: retain these focused comparisons; deriving expectations from the manifest would miss a shared omission, while a production traversal would broaden the accepted test-only scope. What would show this wrong? A representative omission or wrong record surviving these assertions, or an upgrade fixture that does not reach the selected-module addition path. The fixture removes both destinations and lock rows, matching the upgrade's new-module-internal-files selection.
 
 **Coverage:** Read the committed test, all seven module definitions, selected-module upgrade selection, scanner union and accepted proposal. The author's iteration evidence reports 105 passing tests under Python 3.12.9. Did not rerun tests, independently mutate paths, inspect every upgrade state or run the scanner; representative falsifications and final integration remain with the author. Elapsed: approximately 4 minutes; tokens: unknown.
+
+## Implementation verification -- Codex GPT-6.1 Luna -- 2026-11-01
+
+Elapsed: about 4 minutes; tokens: unknown.
+
+**Boundary B mode**: bounded. **Certified by**: pending.
+**Tested SHA**: `5a4074fe3fcc40892d75255517a584d6fe44256b`.
+**Reviewed range**: `ba2681e1d693403ac088fb5544b331fd14fceb7c..5a4074fe3fcc40892d75255517a584d6fe44256b` (implementation `2b29553b` and its review).
+**Interpreter**: Python 3.13.13 at `/Users/kendal30/conda_envs/lhm/bin/python`.
+**Tree**: separate checkout of the tested commit; clean before and after.
+
+**Surfaces**: the independent pairs, install bytes and lock records, selected-module upgrade additions, and scan-target inclusion. Mapped tests: `test_claim_check_module.py` and `test_reference_scripts.py`; the latter supplies the integration selection.
+
+**Commands and outcomes**:
+
+- `python tools/test_tiers.py for bootstrap/tests/test_reference_scripts.py dev/proposals/2026-10-30-codex-ver-5-coverage.md` -- 2 files selected.
+- `python -m pytest bootstrap/tests/test_claim_check_module.py bootstrap/tests/test_reference_scripts.py` -- 105 passed in 3.98 seconds; one post-review selection, including the integration test.
+- `python scripts/claim_check.py dev/proposals/2026-10-30-codex-ver-5-coverage.md` -- passed.
+- `python scripts/link_check.py dev/proposals/2026-10-30-codex-ver-5-coverage.md` -- 1 Markdown file, no issues.
+- Representative falsifications in separate copies: an install mapping omission, missing lock record, skipped upgrade addition, and disabling both scan input routes each made the corresponding assertion fail as expected.
+
+The falsifications were representative single-member omissions, not all-member mutations. Wrong-destination and changed-byte mutations were not separately measured. No non-pass disposition. Full-tree certification and checks outside this bounded selection were not run. The original shared-traversal objective remains for the Maintainer's disposition.
