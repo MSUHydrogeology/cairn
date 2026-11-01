@@ -124,3 +124,23 @@ provides separate Security Review. No new trust boundary is intended.
 **Finding, advisory -- tier**: The heavy rationale cites potential omission of security checks, but `tools/test_tiers.py` is not among the named high-risk surfaces in `AGENTS.md`, and the proposal says no new trust boundary is intended. Potential error alone does not establish a named high-risk surface or widened boundary. Recommend light, the default, with the same targeted consumer checks; identify a concrete trigger if one exists. The Maintainer sets the tier.
 
 **Coverage**: Read the committed proposal, selector, governing verification and high-risk rules, selector test and representative upgrade import and public-command test references, and the collision plan's mapping and run record. Did not inspect every selected consumer, run tests, or perform Security Review. Elapsed: approximately 5 minutes; tokens: unknown.
+
+## Security Review -- Codex GPT-6.1 -- 2026-11-01
+
+Reviewed commit: 4fd95510b07d193f0616705b82643d4504964d41.
+Target: consumer preservation. Prior findings: none. Assurance path: high-assurance.
+
+**Tier**: Security Review
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The current selector adds bare Python stems and uses substring membership (`tools/test_tiers.py`, `tests_for_paths`); the proposal explicitly retains ambiguous consumers and requires reassessment when reliable exclusion fails.
+2. **Best alternative.** Keep current matching until inspected examples support a smaller rule. Import/path-only matching is insufficient: `bootstrap/tests/test_upgrade.py` exercises the public `s.main` command, and `bootstrap/_scaffold/cli.py` dispatches the upgrade command to `cmd_upgrade`. This is a real indirect dependency, not incidental prose.
+3. **What would show it wrong?** A known indirect command consumer disappears from real-entry-point selection, or import/path regressions fail. The proposed regressions and committed comparisons address this; counts alone cannot establish safety.
+
+**Verdict**: ACCEPT; no blocking security finding.
+
+**Finding S1, advisory -- tier rationale**: Potentially omitting checks is a credible failure mode, but alone does not demonstrate a mandatory heavy trigger. `AGENTS.md` names protected control machinery without expressly naming this selector; the proposed change adds no trust boundary or governing-rule change. Recommend light with the same consumer safeguards unless the Maintainer identifies a concrete protected-surface classification. This removes later review stages, preserving functional outcomes and checks. Close by explaining the classification or recording the Maintainer's tier choice; the author's heavy tier stands until Decision.
+
+**Elapsed**: approximately 5 minutes. **Tokens**: unknown.
+
+**Coverage**: Committed proposal, selector, governing tier rules, selector regressions and representative public-command dispatch. **Not covered**: exhaustive consumer inventory, implementation behavior or mutations; no tests run.
