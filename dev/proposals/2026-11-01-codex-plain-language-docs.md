@@ -160,3 +160,13 @@ The Maintainer confirmed the intent to remove `doctrine/` and identified its omi
 ### Withdrawn / superseded commitments
 
 - Replaced the asserted need for a separate relocation proposal with coordination against the existing accepted record and follow-up plan; the preservation and review outcomes remain.
+
+## Decision -- Maintainer -- 2026-11-01
+
+**Elapsed**: unknown; **Tokens**: unknown.
+
+**Tier**: heavy
+
+**ACCEPTED.** The Maintainer's authorization:
+
+> "Accept and prepare"
