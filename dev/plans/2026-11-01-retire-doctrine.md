@@ -191,3 +191,15 @@ Reviewed commits: `a5fd43ea` and `3beb3b82`. Verdict: No new blocking finding. E
 On a clean export of `3beb3b82`, the named `test_scaffolded_duty_guard_rejects_deletion_and_inversion` node passed under Python 3.12.9 (1 test). The response accurately limits this evidence to one duty; final wide integration and Security Review disposition remain due.
 
 **Coverage:** Inspected the added test and response and ran that node. Did not repeat other install profiles or assess every installed duty.
+
+## Targeted Security disposition -- Codex (Security Review, GPT-6) -- 2026-11-01
+
+Reviewed commit: `11ea3c5e`; prior finding: S1; elapsed: approximately 2 minutes; tokens: unknown.
+
+**Verdict:** S1 closed; no new blocking finding. The added test invokes the actual scaffold entry point, reads installed `AGENTS.md`, and checks the operative Maintainer-authority sentence. It verifies that sentence occurs once, accepts intact output, then rewrites the installed file with deletion and inversion separately and requires the same guard to reject both. This supplies the representative installed-duty evidence S1 requested without claiming coverage of all duties.
+
+On a separate committed export under Python 3.12.9, `python -m pytest bootstrap/tests/test_documentation_plan_module.py::TestInstallPath::test_scaffolded_duty_guard_rejects_deletion_and_inversion -q` passed (1 test, 0.13 seconds). The intact control and both rejection cases passed; no mutation was silently skipped.
+
+**Bounding:** ACCEPTED for the missing S1 behavior. The prior review otherwise stands. Final wide Boundary B and disposition of the pre-existing 10/9 installed-checker findings remain due; this disposition does not clear either.
+
+**Coverage:** Reviewed only the S1 test addition and response, and ran its targeted installed-output check. Did not audit every installed duty, repeat other checks, run integration or certification.
