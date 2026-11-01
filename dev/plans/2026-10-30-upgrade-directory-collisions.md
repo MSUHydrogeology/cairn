@@ -277,3 +277,15 @@ is unchanged.
 3. **What would show it wrong?** After moving the directory aside and restoring the file, fresh stage or apply fails, changes the restored bytes, or loses saved data. In a separate archive of cb2ecb88, Python 3.13.13 ran `python -m pytest -q bootstrap/tests/test_upgrade.py::TestTrackedDirectoryCollisions::test_restage_after_directory_collision_restores_regular_file --tb=short`: 1 passed.
 
 **Coverage**: Read the decision, correction, recovery guidance, regression and earlier ordinary findings. This follow-up does not independently clear the earlier wrapper or incomplete-stage findings, check other destinations or absence states, or perform Security Review. Required mapped failures and final clean-commit Boundary B remain open; plan stays implementing. An initial identical test was inadvertently run in the shared tree; the result above is from the separate committed copy.
+
+## Ordinary code review follow-up -- Codex GPT-6.1 Terra -- 2026-11-01
+
+**Reviewed commit**: cb2ecb88, specifically corrections a5940f31 and 3796e277 to the renamed-wrapper omission finding. **Tier**: Internal. **Finding**: closed for the reported case. **Bounding**: ACCEPTED for this finding only. **Elapsed**: about 1 minute. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Does it do what it claims?** Yes for the reported `CLAUDE.md` case: apply independently resolves a known wrapper directory and requires its observation, so omitting it refuses before advancement (`bootstrap/_scaffold/upgrade.py:3336`; public regression at `bootstrap/tests/test_upgrade.py:2754`).
+2. **Best alternative.** Reuse wrapper resolution and the existing incomplete-observation refusal; keeping real custom wrapper files ahead of directory candidates preserves the prior precedence (`upgrade.py:1557-1583`).
+3. **What would show it wrong?** The reported omission and post-stage directory transition would apply or lose data; alternatively the existing wrapper control or custom-file precedence would regress. In a separate archive of cb2ecb88, Python 3.13.13 ran the renamed-wrapper omission, custom-wrapper precedence and renamed-wrapper apply control nodes: 3 passed.
+
+**Coverage**: The reported ordinary finding, its two corrections and these focused checks. Other wrapper names, custom wrapper directories, other stage-metadata cases, full mapped verification and Security Review were not assessed. This does not close other findings or final Boundary B.
