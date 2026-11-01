@@ -242,9 +242,10 @@ python bootstrap/verify_integrity.py --target <repo>            # 4. verify
   **A folder where a tracked file belongs.** If `--plan` or `--stage` reports
   a directory at a tracked file path, Cairn preserves it and blocks the whole
   apply. This includes folders with nested adopter files; the folder is not a
-  missing file, an addition to adopt, or a review-only file. Move its contents
-  to a safe location, restore the tracked file or choose its absence, then run
-  `--stage` again. Apply also checks for a folder that appeared after staging;
+  missing file, an addition to adopt, or a review-only file. Move the directory
+  to a safe location, restore the tracked regular file, then run `--stage`
+  again. Permanently leaving a mergeable tracked file absent is not a recovery
+  choice. Apply also checks for a folder that appeared after staging;
   `--force` and `--ack-review-only` do not bypass either block. A stage that
   recorded a directory stays blocked even if the live path is later repaired:
   resolve it and make a fresh stage. Symlink and containment refusals remain in

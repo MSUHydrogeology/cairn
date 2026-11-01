@@ -2807,23 +2807,28 @@ class TestTrackedDirectoryCollisions:
             tmp_path, mapped, include_directories=True,
         ) == "CUSTOM.md"
 
-    def test_restage_after_removing_directory_allows_absent_path(
+    def test_restage_after_directory_collision_restores_regular_file(
         self, tmp_path: Path,
     ) -> None:
         assert _install(tmp_path) == 0
         dst = tmp_path / ".agents/skills/_data/vendor_targets.yml"
+        original_file = dst.read_bytes()
         dst.unlink()
         dst.mkdir()
         (dst / "data").write_text("preserve")
         assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
                        "--cairn-root", str(CAIRN_ROOT)]) == 0
-        dst.rename(tmp_path / "saved-directory")
+        saved_dir = tmp_path / "saved-directory"
+        dst.rename(saved_dir)
+        dst.write_bytes(original_file)
         assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
                        "--cairn-root", str(CAIRN_ROOT)]) == 0
         assert s.main(["upgrade", "--target", str(tmp_path), "--apply",
                        "--ack-review-only", "--force",
                        "--cairn-root", str(CAIRN_ROOT)]) == 0
-        assert (tmp_path / "saved-directory/data").read_text() == "preserve"
+        assert dst.is_file()
+        assert dst.read_bytes() == original_file
+        assert (saved_dir / "data").read_text() == "preserve"
 
     def test_plan_stage_and_recovery_preserve_mergeable_directory(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
