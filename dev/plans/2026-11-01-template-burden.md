@@ -1,7 +1,7 @@
 # Plan: Reduce template burden
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-template-burden.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Shorten the proposal and plan templates while retaining the instructions and safeguards authors need.
@@ -13,6 +13,8 @@ The Maintainer accepted the heavy proposal: correct the contradictory plan pream
 ## Scope
 
 Edit `dev/proposals/_template.md`, `dev/plans/_template.md` and their counterparts under `templates/core/dev/`; update existing affected consumers only if needed. No new documents, tools or line quota. Reuse: N/A, no code added. Doctrine surface: the four authoring templates, with governing and shipped guidance checked for consistency. Candidate repetitions include External-read rules and review skeletons, plan Boundary B instructions, copy guidance, and scope-delta instructions; the contradictory proposal-response text in both plan preambles must change. Retain useful local prompts even where duplication serves the reader.
+
+Concrete candidates at baseline `2c24fec4`: self-hosted proposal External-read instructions at lines 91–121 and review skeleton at 435; installed proposal equivalents at 73–103 and 382. Self-hosted plan External-read instructions at 96–126 and skeleton at 418; installed plan equivalents at 98–128 and 414. Both plan templates repeat Boundary B at 305–325 and 356–366 (self-hosted), and 299–320 and 352–362 (installed). Copy instructions recur at each template's opening and its “Never copy” bullet: proposal lines 1 and 139 (self-hosted), 1 and 121 (installed); plan lines 1 and 146 (self-hosted), 3 and 148 (installed). Assess each for consolidation without losing its point-of-use prompt or any obligation.
 
 ## Sequence
 
@@ -83,3 +85,10 @@ Assurance path: high-assurance
 No blocking security finding. Ordinary review's scope-delivery finding remains independent; this pass grants no implementation authority while it is unresolved.
 
 Coverage: read the committed plan, accepted proposal and Decision, current plan-review template, and named consumer-control sources. Did not inventory every consumer, execute mutations or tests, measure burden, or verify future implementation; those remain implementation evidence and independent code review.
+
+## Response to plan review -- Codex (gpt-6.1) -- 2026-11-01
+
+**Elapsed**: 2 minutes (estimated)
+**Tokens**: unknown
+
+R1: Accepted; Scope now names concrete repeated passages in all four templates at the baseline. Security Review: no findings.
