@@ -1,7 +1,7 @@
 # Plan: Reduce template burden
 
 **Source proposal**: dev/proposals/archive/2026-10-30-codex-template-burden.md
-**Status**: ready-to-implement
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Shorten the proposal and plan templates while retaining the instructions and safeguards authors need.
@@ -203,3 +203,14 @@ Coverage: read committed diffs, governing and shipped guidance, C1 evidence, and
 **Plan-specific acceptance commands**: the 12 S2/S3 deletion controls and four-template obligation comparison are recorded above; they were not repeated. Independent scientific check: N/A, no scientific assumption or result changed. Integration tests exercised `bootstrap/scaffold.py` through the scaffold, install-report and documentation-module test paths.
 
 **Known omissions**: link gates do not probe external URLs (88 external links reported by `check_cairn.py`, 89 by `link_check.py`). No full-tree certification or re-anchor was run, as excluded by the plan.
+
+## Dispositions
+
+Dispositions: none. Accepted outcomes, review findings and required checks are closed; no follow-up remains solely in this plan.
+
+## Lasting-truth migration -- Codex (gpt-6.1-sol) -- 2026-11-01
+
+**Evidence shipped**: the four templates and 12 deletion controls landed in `6965d3ba`, `bf60c2ab` and `965d11eb`; the final wide selection passed 1,037 tests and all required prose gates at `f33d95db` (recorded above).
+**Evidence deferred**: none. Full-tree certification and re-anchor were outside the accepted plan.
+**Deferred evidence home**: N/A.
+**Fidelity sign-off**: `6965d3ba` and `bf60c2ab` match the accepted `## Proposal` section of `dev/proposals/archive/2026-10-30-codex-template-burden.md`, as revised in place (there is no separately titled `## Revised` section); accepted at `2c24fec4`.
