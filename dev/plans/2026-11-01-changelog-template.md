@@ -1,7 +1,7 @@
 # Plan: Ship a changelog template
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-changelog-template.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Give adopters a usable changelog while preserving their existing history during installation and upgrades.
@@ -73,3 +73,9 @@ Elapsed: approximately 3 minutes; tokens: unknown.
 3. **What would show it wrong?** Actual entry-point tests permitting silent replacement, adoption of another source's destination, unsafe writes, incorrect ancestry or unusable staged commands. C1 and Boundary A require these behaviors, independent history bytes and collision-bypass/replacement mutations; C2 retains separate implementation Security Review. Wide mapped integration covers the install contract while explicitly excluding certification and re-anchor.
 
 **Coverage:** Read the committed plan and accepted proposal, current install skip/force interface, new-core collision classification, adoption authorization/preflight, named preservation and ownership tests, and protected-surface guidance. No new process or ledger is proposed. Did not run tests or mutations, inspect every apply branch, or establish race resistance; implementation evidence and separate code Security Review remain owed.
+
+## Author response -- Codex GPT-6 -- 2026-11-01
+
+Both the ordinary plan review and Security Review recommend proceeding with no findings. The accepted scope and verification remain unchanged.
+
+Elapsed: approximately 1 minute; tokens: unknown.
