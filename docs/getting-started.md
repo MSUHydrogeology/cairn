@@ -1,10 +1,8 @@
 # Getting started — a change moving through Cairn
 
-The [on-ramp](../on-ramp/README.md) describes *how much* of Cairn to
-adopt (read the doctrine, or install it with a profile). This page is
-the complement: a narrated trace of **one change moving
-through the lifecycle**, so you see the apparatus *in motion* rather
-than only described.
+The [on-ramp](../on-ramp/README.md) helps you choose how much of Cairn to
+adopt: read the guidance, or install it with a profile. This page follows
+**one change through the lifecycle** so you can see what each step produces.
 
 If you want to read the artifacts of a real (tiny) instance alongside
 this narrative, open [`examples/minimal/`](../examples/minimal/) —
@@ -16,12 +14,12 @@ invariant — if you want a domain-flavored example.)
 Cairn supports Windows natively; the [quickstart](quickstart.md) includes
 PowerShell steps.
 
-> **Honest framing.** The five steps below add friction *before*
+> **What to expect.** The five steps below add work *before*
 > code: you write the decision down first, review it, accept it,
-> *then* implement. That is the design. The payback is fewer
-> forgotten assumptions, fewer collisions, less rework — but only
-> on changes big enough to warrant a proposal. Smaller changes take
-> a lighter lane (see the figure below).
+> *then* implement. That is intentional. On changes large enough to
+> warrant a proposal, this sequence can keep assumptions visible and
+> reduce collisions and rework. Smaller changes take a lighter lane
+> (see the figure below).
 
 ## The five steps
 
@@ -32,8 +30,8 @@ first, and the steps below are the deliberate lane, the heaviest one:
 
 A substantive change moves through
 [propose → review → decide → implement → record](../doctrine/lifecycle.md).
-Walk a concrete one: *add an optional name argument to a `greet` CLI.*
-That adds a capability, so it belongs in the deliberate lane.
+Here is one example: add an optional name argument to a `greet` command-line
+program. Because this adds a capability, it belongs in the deliberate lane.
 
 ### 1. Propose
 
@@ -51,18 +49,17 @@ edited. The file and its history are the audit trail.
 
 A reviewer who did not write it — a fresh session of an agent counts, and the
 file names who they were (see [Dual-Review](../doctrine/dual-review.md)) —
-appends a `## Review` section. They check the reasoning, not just the
-code-to-be: should this exist as framed, is the change backward-compatible,
-is anything under-specified? One fresh reviewer is enough. If the
+appends a `## Review` section. They check the reasoning, not just the proposed
+code: should this happen as framed, what is the best alternative, and what
+evidence would show the idea is wrong? One fresh reviewer is enough. If the
 Maintainer wants more distance on a particular change, they can ask for
 another model or a person.
 
 ### 3. Decide
 
 The **Maintainer** appends the `## Decision` section: accept, reject,
-or supersede. This is the human authority gate — agents propose and
-review, but the Maintainer (or their explicit instruction) records the
-decision. An accepted proposal stays in `dev/proposals/` until the work
+or supersede. Agents can propose and review, but only the Maintainer decides
+whether the change goes ahead. An accepted proposal stays in `dev/proposals/` until the work
 starts: it moves to `dev/proposals/archive/` in the commit that opens its plan,
 or, for a small change, in the commit that implements it.
 
@@ -75,21 +72,19 @@ A larger one opens a **plan** under `dev/plans/` first, which sequences
 the implementation and gets its own review before the work archives.
 The `greet` change is small enough for the one-commit path.
 
-### 4. Implement — absorbing tests, docs, examples
+### 4. Implement — include tests, docs and examples
 
-The change lands *with* its test and any doc or example update in the
-same commit. A change absorbs its tests; they are not an afterthought.
+Commit the change with its test and any needed doc or example update.
+The test is part of the change, not an afterthought.
 Cairn does not run those tests. Your test runner does (see
 [`workflow-role.md`](workflow-role.md) for the boundary). Cairn's job
 is to make sure the test is required and that it gets reviewed.
 
 ### 5. Record
 
-The decision and its rationale already live in the archived proposal
-(and plan, if any). A one-line `CHANGELOG` entry records the
-user-visible change. Together the git history + the archived
-deliberation are the durable record: a future reader can reconstruct
-*what* changed and *why* it was agreed.
+The archived proposal (and plan, if there is one) records the decision and
+its reason. A one-line `CHANGELOG` entry records what users will notice.
+Together, these files and the commit history show what changed and why.
 
 ## What to do next
 
