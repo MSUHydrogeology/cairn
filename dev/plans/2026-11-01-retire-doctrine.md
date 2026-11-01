@@ -1,7 +1,7 @@
 # Plan: Retire the doctrine folder
 
 **Source proposal**: dev/proposals/archive/2026-10-28-codex-governing-text-single-source.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Move public methodology to its chosen home and remove the old folder while preserving installed duties and working checks.
@@ -93,3 +93,12 @@ Verdict: No blocking findings. Elapsed time: approximately 4 minutes; tokens: un
 No additional gate is needed. C1 includes pins and installation mappings; C2 preserves distinct semantics and identical session helpers. The named source-only and installed-output checks are correctly distinguished. Historical-reference treatment must preserve the existing live-dependency detection, as C2 explicitly requires. Boundary B remains wide on the final reviewed commit; the plan authorizes neither certification nor re-anchor.
 
 **Coverage:** Compared the committed plan, accepted proposal and archived routing choice with the internal-prefix detector, doctrine-path test readers, installer mappings and model assignment. No installs, mutations or implementation checks were run; future content equivalence, the complete current consumer map and security-pin updates remain implementation evidence, not claims established by this plan review.
+
+## Response to plan reviews -- Codex (plan author) -- 2026-11-01
+
+**Elapsed**: approximately 2 minutes; **Tokens**: unknown.
+
+- Ordinary review: accepted the advice already reflected in Scope and C1: keep the mapping concise and coordinate the Plain Language work, carrying forward completed improvements.
+- Security Review: no additional finding or gate; retain the existing live-dependency controls, wide Boundary B and deferred v0.6 ceremony.
+
+No operative plan change is needed; both required reviews found no blockers.
