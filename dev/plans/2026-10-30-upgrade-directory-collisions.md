@@ -388,3 +388,14 @@ is unchanged.
 **Open finding (blocking, C1):** A dynamically discovered custom wrapper absent from the lock can still be omitted from tampered stage observations. The correction explicitly leaves that case open; a public-command regression and a fix, or Maintainer disposition of the scope, would close it.
 
 **Evidence and coverage:** In a separate copy of a5859a7d, Python 3.12.9: `test_custom_wrapper_file_precedes_known_wrapper_directory` and `test_renamed_wrapper_apply_advances_to_resolved_dst` passed; in a Git-backed copy `test_stage_and_apply_leave_retired_files_and_records_alone` passed. An initial archived-copy retired test failed because it lacked Git history, then passed in the Git-backed copy. Reviewed the correction diff and prior Security findings; did not rerun implementation tests or assess all collision and containment paths. This ordinary review does not clear Security Review.
+
+## Ordinary code re-review -- Codex GPT-6 -- 2026-11-01
+
+**Reviewed commits**: ebe3c84e and a8106567. **Verdict**: The prior dynamic custom-wrapper finding is closed for the Maintainer-approved registration workflow; no new ordinary finding. **Bounding**: targeted checks adequate for this re-look; the final integration selection remains due. **Elapsed**: about 2 minutes; **tokens**: unknown.
+
+**Foundations**:
+1. **Should it happen as framed?** Yes. The stage gate refuses an unrecorded content-discovered custom wrapper and tells the operator to review its full contents before scoped finalization. Once recorded, apply derives the occupied destination from the lock independently of editable stage observations.
+2. **Best alternative:** The approved scoped registration reuses the existing lock and makes the acceptance of current contents explicit; silent registration would attest bytes without that review.
+3. **What would show it wrong?** A registered custom wrapper omitted from stage observations applying successfully, or registration changing unrelated lock records. The public regression checks both and exercises refusal, finalization and restaging.
+
+**Evidence and coverage:** At a8106567 in a separate Git-backed copy, Python 3.12.9: the two parametrized wrapper-observation cases, renamed-wrapper apply and existing retired-record apply passed (4 passed). Read the gate, apply's required-observation derivation and the guide. Did not inspect arbitrary pre-existing stages, concurrent filesystem changes, or all containment and security paths. This ordinary re-review does not clear Security Review.
