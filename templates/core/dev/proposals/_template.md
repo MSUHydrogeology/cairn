@@ -1,5 +1,5 @@
 <!-- The proposal template. Copy only the opening header and section
-     headings (`Context` through `Assurance path`) below the rule into
+     headings (`Decision summary` through `Assurance path`) below the rule into
      `dev/proposals/<YYYY-MM-DD>-<author>-<slug>.md` and replace every prompt
      with your answer (or a one-line `N/A`). Re-read this file before writing
      or revising; its word budgets and copy rules change. -->
@@ -30,7 +30,10 @@ awaiting-review <-> revising -> awaiting-decision
 Each status names **who holds it next**. A review moves a proposal to
 `revising`; the author's response carries it to `awaiting-decision`. One usual
 proposal review and response suffice. A second pass applies only to widened
-scope; Security Review is separately capped at two passes. At the cap, only
+scope; Security Review is separately capped at two passes. In the usual
+proposal review, consider whether the Maintainer could explain the choice
+without a live translation. This is a reading judgment, not a checklist or
+score. At the cap, only
 unresolved blockers or unmet accepted criteria/checks go to the Maintainer by
 name. Clean work advances without a clearing review.
 `accepted` is terminal — archiving is a file move, not a status.
@@ -116,7 +119,8 @@ The proposal stays one file: reviews, responses and decisions are appended to it
   or response to **≤ 300 words (~2 KB)**. Wrap prose normally; putting a
   paragraph on one 400-character line to lower `wc -l` saves zero tokens.
 * **Never copy template boilerplate or later-stage sections.** Copy only the
-  opening headings (`## Context` through `## Assurance path`) below the rule;
+  opening headings (`## Decision summary` through `## Assurance path`) below
+  the rule;
   replace prompts and gated blocks (`Security preflight`, `Independent
   scientific check`) with your answer or a one-line `N/A: ...`, and never copy
   template instructions, slot comments, or the `## Review`, `## Response`, and
@@ -155,6 +159,15 @@ placeholder in a finished artifact, because the board prints whatever the line h
 **Plan review**: {{required(Internal) | required(Internal + Internal Security Review)}} — for light, use `not required(no plan: light tier)` even for multi-area or wide work; standard/heavy use plan triage and may use `not required(no plan: <how each plan-skip condition holds>)`
 **Opened**: {{YYYY-MM-DD}}
 **In brief**: {{one plain sentence: what changes and why it matters}}
+
+## Decision summary
+
+In a few ordinary-language sentences, say what issue people notice, what change
+is proposed, and its meaningful cost or tradeoff. Define technical terms where
+they first matter and use a concrete example when it would make an abstract
+point clearer. Put supporting evidence and technical detail in the sections
+below. Keep this short; a short proposal may do most of its work here and in
+Rationale, without repeating the same points to fill sections.
 
 ## Context
 
