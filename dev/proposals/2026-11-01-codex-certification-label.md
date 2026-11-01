@@ -238,3 +238,20 @@ No new ledger, authentication mechanism or ceremony is needed. The shared record
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Maintainer -- 2026-11-01
+
+**Elapsed**: approximately 2 minutes
+**Tokens**: unknown
+
+**Tier**: heavy
+
+**ACCEPTED.** The Maintainer's authorization:
+
+> "Remove the pending marker. By keeping the "whole-tree certification record" what do you mean?"
+
+The accepted scope removes the mandatory per-change pending marker while
+retaining whole-tree certification, its existing checks and triggers, and one
+discoverable shared record for each actual run. No archived plans are updated.
+The plan review remains `required(Internal + Internal Security Review)` as
+stated above.
