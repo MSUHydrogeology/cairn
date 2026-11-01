@@ -38,3 +38,21 @@ Baseline is the decision commit `2c24fec4`. Before editing, search all tracked r
 For S2/S3, list the four files and each relevant obligation/consumer set from the committed tree. In separate copies of the commit remove a required slot marker, a required review/security instruction, and a verification or scope obligation from each applicable member; run the actual mapped consumer entry point or comparison against each mutant. Report the selector, input set, outcomes and omissions; where automated tests do not detect a loss, the explicit baseline-to-final obligation comparison is the human check, exercised against a known deletion. Do not claim all-member coverage without mutating each member. Installed paths are checked through the scaffold/install entry point as well as their source text; retain parser markers unless changed consumers are verified together.
 
 After both code reviews and any targeted re-review, run Boundary B once in `wide` mode on the clean final commit with canonical Python 3.13.x: the reviewed-range iteration selection, mapped integration/workflow tests, owning families, installed public paths and standing gates. Record the full SHA/range, clean pre/post state, interpreter, commands, counts, timing, non-pass dispositions, omissions and `Certified by: pending` in the implementation record. No full-tree certification or re-anchor is authorized here.
+
+## Plan review -- Codex (GPT-6) -- 2026-11-01
+
+**Reviewed commit**: 68b362c1
+**Obligation**: Internal
+**Verdict**: Revise; one blocking finding.
+**Elapsed**: 2 minutes (estimated)
+**Tokens**: unknown
+
+**Foundations**:
+
+1. **Should this happen as framed?** Yes. The accepted proposal preserves installed guidance and machine contracts while correcting the contradictory preambles; the plan carries both into C1 and requires wide verification.
+2. **Best alternative.** Correct only the contradiction if meaningful safe cuts cannot be made. This reduces risk but leaves the duplicated instructions; the proposal requires explaining that result rather than presuming it.
+3. **What would show it wrong?** A lost obligation, broken consumer, or increased cross-reading would defeat the proposal's purpose; C1 explicitly checks each.
+
+**R1 -- Blocking:** The accepted proposal's Evidence / verification plan requires the plan to identify concrete repeated passages. Its Scope names topics but no passages or locations. For example, the committed self-hosted plan template describes External reads at lines 98–115 and supplies an External review skeleton at line 417; Boundary B appears at lines 305–325 and 356–366. Identify concrete candidates across the affected templates so the author can assess meaningful consolidation while retaining useful prompts. The accepted requirement is not yet met.
+
+Coverage: compared the plan with the accepted proposal and its apparatus predecessor and sampled the committed plan template. Did not inventory every template obligation or consumer, run implementation checks, or assess security controls independently.
