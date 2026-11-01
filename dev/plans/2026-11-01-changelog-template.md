@@ -92,6 +92,13 @@ the complete mapped selection is deferred to final Boundary B on Python 3.13.x.
 **Earlier targeted disposition:** the first six-node run had four passes and
 two assertion failures in the new tests. The test wording and conflict selection
 were corrected in `d45ea20e`; the six-node rerun above passed. Tokens: unknown.
+**Mutation checks:** separate clean copies of `d45ea20e` were mutated and
+tested through the real entry points. Making `_install_one` bypass the existing-
+file skip made `test_normal_install_preserves_existing_changelog_bytes` fail as
+expected (0.58 seconds). Removing the unlocked-destination clause from the
+new-core classifier made `test_new_core_changelog_collision_can_be_kept_as_a_fork`
+fail as expected (0.70 seconds). Both controls passed on unmutated bytes in the
+six-node run; both mutants were killed. Tokens: unknown.
 This is iteration evidence only; ordinary code review and Security Review remain
 owed before Boundary B.
 
