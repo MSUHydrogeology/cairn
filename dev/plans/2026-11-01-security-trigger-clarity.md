@@ -140,3 +140,13 @@ not allow bounded verification for non-widening edits to named high-risk
 surfaces, and retains the `adds or widens` trigger. After code review and final
 wide Boundary B, keep these three residual requests visible for separate
 Maintainer disposition; do not close the issue as fully delivered.
+
+## Code review -- Codex GPT-6.1 Sol -- 2026-11-01
+
+**Verdict**: Accept; no findings remain. Reviewed `d7434ba6`, corrections through `da48cfd9`, and iteration evidence at `e8c11a43`.
+
+**Foundations**: Should this happen as framed? Yes: both module copies condition reuse on unchanged sources, inputs, validation, authority and recipients, and preserve independent high-risk triggers and Maintainer authority. Best alternative: retain the former movement rule; it avoids edits but leaves guarded reuse ambiguous (proposal Context and Alternatives). What would show it wrong? A familiar interface excusing a new source or bypass, or an accepted review being waived without authority, would violate C1. The recorded five cases and two prose mutations address those examples, without establishing runtime security.
+
+**Evidence**: Compared the copies, accepted proposal and C1. My earlier finding that the modules omitted the required wide-mode explanation is closed by `da48cfd9`, which states it in both copies and adds a focused assertion. The implementation record reports the mapped four-file checks, the separately resolved Bandit skip, both mutations and five cases.
+
+**Coverage**: Read committed implementation and corrections, proposal, plan, test assertions and iteration evidence; independently compared the five cases against the text. Did not rerun tests, inspect installed output, audit runtime guards or perform separate Security Review. Final wide verification remains outstanding. No suite run. Elapsed: approximately 6 minutes; tokens: unknown.
