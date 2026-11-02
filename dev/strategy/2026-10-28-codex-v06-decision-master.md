@@ -7,6 +7,20 @@
 **Type**: living-reference
 **Surfaces this would feed**: Maintainer decisions and actions on v0.6 plans and the roadmap.
 
+## Morning decisions and actions — 2026-11-02
+
+**Issue [#37](https://github.com/MSUHydrogeology/cairn/issues/37): three choices remain.** The accepted safeguard-reuse trigger clarification is delivered; it did not decide the following ([archived plan](../plans/archive/2026-11-01-security-trigger-clarity.md)). Choose each separately:
+
+- Keep the current review process, or add a Security Review necessity line and author-strike mechanism. The addition makes reasons explicit but adds a recurring step and changes review authority; keeping the process loses that explicit mechanism.
+- Keep wide verification for named high-risk surfaces, or allow bounded verification for non-widening edits. Bounded checks can reduce work but reduce the breadth of independent evidence; current rules retain the wider safeguard.
+- Keep the trigger for an added **or** widened trust boundary, or trigger only for widening. The latter may reduce reviews but removes the explicit trigger for a newly added boundary.
+
+**Recommendation:** retain the existing safeguards for now; pursue a narrower proposal only where evidence shows recurring burden worth the lost coverage. Costs and savings are not measured. The issue remains open; no choice is made here.
+
+**Forward baseline:** at the eventual release ceremony, the Maintainer must decide and perform any required signing and any AST direct correction after checking the final candidate against the current runbooks. The [forward-baseline procedure](../../bootstrap/REANCHOR_RUNBOOK.md) and [AST runbook](../../bootstrap/AST_BASELINE_RUNBOOK.md) govern; the latter reserves non-self-service corrections for a Maintainer-run, dry-run-verified process. Whether a correction is needed depends on the final tree and has not been checked here. Signing, re-anchor and push are not authorized by this note.
+
+The sections below retain earlier context and may describe historical states; use this dated section and the linked current plans for present decisions.
+
 ## Purpose and authority
 
 This packet coordinates v0.6 decisions. The [roadmap](../PLANNING.md) owns
