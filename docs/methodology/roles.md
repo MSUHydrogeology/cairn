@@ -7,17 +7,15 @@ different times; what matters is that the role is *named* before
 substantive work, because different roles produce different
 artifacts and a silently-wrong role wastes a turn.
 
-## Roles as cognitive adapters
+## Roles guide the work
 
-Naming the role is not bookkeeping — it is a **cognitive adapter**.
-An AI agent reasons differently depending on the stance it holds:
-a reviewer's stance and an implementer's stance produce
-genuinely different readings of the same change. Stating the role explicitly *anchors* the agent in
-one definite stance for the turn; leaving it implicit lets the
-reasoning drift between stances mid-task, blurring whether a given
-output is help, critique, or implementation. The explicit role is
-what makes the frame reliable — it adapts the model into the mode
-the work needs, and holds it there.
+Naming a role does more than record who is working: it tells the
+contributor which stance to take and what kind of output to produce.
+An AI agent reading as a Reviewer should examine a change differently
+than it would while Implementing that change. Naming the role keeps
+that stance clear for the turn. Without it, an agent may drift between
+helping, critiquing, and implementing, making its output hard to
+interpret.
 
 ## The Human Maintainer
 

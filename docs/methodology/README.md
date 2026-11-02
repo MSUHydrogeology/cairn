@@ -1,9 +1,10 @@
 # Cairn methodology
 
-This directory publishes Cairn’s vendor-neutral methodology: the practices
-every adoption keeps, the reasons for them, and the contracts that make them
-usable. It is descriptive public guidance; adopter duties live in the
-installed `AGENTS.md` and `dev/` files. See the top-level `README.md`.
+This directory publishes Cairn’s vendor-neutral methodology: the shared
+practices, why they exist, and the agreements that make them usable. It
+explains the method; adopters' instructions live in their installed
+`AGENTS.md` and `dev/` files. For an introduction to Cairn, see the top-level
+`README.md`.
 
 The published methodology is separate from the forkable templates.
 `docs/methodology/` explains the reasoning; `templates/` carries the
@@ -37,11 +38,10 @@ The invariant core is small by design. A project running Cairn
 
 ## The four-layer documentation model
 
-A Cairn project's own documentation answers four fundamentally
-different questions, and *which question an artifact answers*
-determines where it lives. This model generalizes to any adopting
-repository; it is the routing rule that keeps governing methodology,
-deliberation, and description from silting together.
+A Cairn project's documentation answers four different questions.
+The question a document answers determines where it belongs. Any
+adopting repository can use this model to keep rules, decision records,
+and descriptions of current software distinct.
 
 ### 1. Entry layer — "What is this, and how do I enter?"
 

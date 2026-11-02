@@ -1,9 +1,12 @@
 # Consolidation review -- the manual half of the redundancy gate
 
-`scripts/quality_gate.py`'s redundancy sub-gate ships **R1** (n-gram
-overlap detection) and **R6** (stdlib AST unreferenced-def detection)
-automatically.  Two pieces of the original Sweep-G consolidation
-review stay **manual** because no static tool can do them honestly:
+The redundancy check in `scripts/quality_gate.py` automatically runs
+**R1**, which finds similar passages by comparing short sequences of
+words, and **R6**, which finds Python function definitions that the
+scanned code does not reference, using Python's built-in syntax-tree
+reader. Two parts of the original
+Sweep-G consolidation review remain **manual** because a static tool
+cannot make these judgments reliably:
 
 * **R7 -- capability necessity.** Per dimension, are all the listed
   capabilities still warranted, or has the surface accumulated noise
@@ -11,22 +14,21 @@ review stay **manual** because no static tool can do them honestly:
   what each capability is *for*; the R6 detector finds dead defs,
   not dead capabilities.
 
-* **R1's layer-contract filter.** R1 surfaces n-gram overlap
-  candidates; the layer contract (L1 = doctrine prescription, L2 =
-  condensed instantiations of L1) means some overlap is **expected
-  by design**.  A condensed instantiation legitimately re-uses
-  doctrine phrasing.  R1's tunable threshold reduces noise, but the
-  "is this overlap legitimate?" call is per-candidate human judgment.
+* **R1's layer-contract filter.** R1 lists passages that may overlap.
+  Some overlap is **expected**: L1 is the governing rule, and L2 is a
+  shorter version of that rule for a particular module or use. L2 may
+  repeat L1's wording. R1's adjustable threshold reduces noise, but a
+  person must decide whether each listed overlap is appropriate.
 
-This doc carries the **manual disposition checklists** + the
-**dogfood disposition log** (a dated table of findings + dispositions
-the gate has surfaced over time, so audit trails outlive the
-commit-body summary).
+This document contains the **manual review checklists** and a dated
+log of how reviewers resolved findings from Cairn's own runs of the
+gate. The log keeps each reason after the shorter commit summary is no
+longer easy to find.
 
 ## R7 -- capability necessity (per-dimension checklist)
 
-Run pre-cut, ahead of the dogfood pass below.  For each dimension
-file under `dimensions/`:
+Run this review before a major-version cut and before the gate review
+below. For each dimension file under `dimensions/`:
 
 1. **List the capabilities** the dimension currently advertises.
 2. For each capability, answer:
@@ -39,18 +41,18 @@ file under `dimensions/`:
      capability is a Layer 5 candidate, not a Layer 3 promise.
 3. **Decide**: keep / shrink / remove / promote / demote.
 
-R7 outputs feed the next major-version cut, not the 0.2.x
-point-release window.
+Use R7 results to plan the next major-version cut. Do not use them to
+change a 0.2.x point release.
 
 ## R1 layer-contract filter (per-candidate checklist)
 
-For each R1 candidate (an n-gram-overlap pair the tool surfaces),
+For each pair of passages R1 lists as a possible overlap,
 ask:
 
 1. **Are both passages prescriptive doctrine (both L1)?**  If yes,
    one is redundant -- consolidate.
 2. **Is one L1 and the other an L2 condensed instantiation?**  If
-   yes, the overlap is the layer contract working -- expected;
+   yes, the overlap follows the layer contract and is expected;
    leave it.  Note the candidate in the dogfood disposition log
    below with status `accepted-layer-contract`.
 3. **Are both L2?**  Two condensed instantiations of the same L1
