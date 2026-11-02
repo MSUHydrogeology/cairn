@@ -302,3 +302,40 @@ must include”. The Maintainer authorized this separate home; the wording
 is recorded in `dev/PLANNING.md` > “What the v0.6 baseline must include”:
 “They can each build the machinery, the new baseline does not need to be part of their plans. It can be a work board item for v0.6.” No pin refresh or re-anchor was run
 for this plan; both remain with the Maintainer's v0.6 baseline ceremony.
+
+## Archive verification -- Codex gpt-6.1-sol -- 2026-11-02
+
+Checked the archive commit `dcf78dad39541dca3058791ee3ecf2c5b93a4625` in a
+clean detached clone. Pre-run and post-run worktrees were clean; `HEAD` stayed
+at the tested commit. Interpreter: `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+(Python 3.13.13). Elapsed: approximately 5 minutes, including the mapped test
+selection. Tokens: unknown.
+
+`tools/test_tiers.py for dev/PLANNING.md CHANGELOG.md dev/plans/archive/2026-11-02-quickstart-lifecycle-alignment.md`
+selected 22 files. The selection was:
+`test_board_json_contract.py`, `test_core_dev_folders.py`,
+`test_finalize_retired_living_state.py`, `test_hardening.py`,
+`test_install_time_onboarding.py`, `test_intents_tool.py`,
+`test_module_merge_lockfile.py`, `test_next_session_local_note.py`,
+`test_onboarding_seed_roster.py`, `test_onboarding_slot_substitution.py`,
+`test_quickstart_sequence.py`, `test_replacement_tools.py`,
+`test_scaffold.py`, `test_scope_reduction_trap.py`,
+`test_skills_onboarding.py`, `test_upgrade.py`,
+`test_upgrade_edit_check_runs_no_project_programs.py`,
+`test_upgrade_lockfile_path_containment.py`,
+`test_upgrade_module_additions.py`, `test_verify_integrity.py`,
+`test_verify_ref.py` and `test_verify_stems.py`.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python3.13 -m pytest <the 22 mapped files above> -q` | 0 | 1,167 passed | 154.39 s | unknown |
+| `python3.13 scripts/check_cairn.py dev/PLANNING.md CHANGELOG.md dev/plans/archive/2026-11-02-quickstart-lifecycle-alignment.md` | 0 | 3 Markdown files; 0 issues; 8 external links not probed | <1 s | unknown |
+| `python3.13 scripts/sync_doc_snippets.py --check dev/PLANNING.md CHANGELOG.md dev/plans/archive/2026-11-02-quickstart-lifecycle-alignment.md` | 0 | 3 documents; no drift | <1 s | unknown |
+| `python3.13 scripts/quality_gate.py --sub neutrality` | 0 | fail=0, info=43 | 0.82 s | unknown |
+| `python3.13 scripts/claim_check.py --include-archives dev/plans/archive/2026-11-02-quickstart-lifecycle-alignment.md` | 0 | no claim-check flags | <1 s | unknown |
+
+**Non-pass disposition**: none. Per-file timings were not captured, so no
+individual file can be named as exceeding the 10-second diagnostic target.
+No full suite or tree certification was run. The 8 external links were not
+probed. The stale frozen-file hash remains assigned to the v0.6 baseline;
+no pin refresh or re-anchor occurred here.
