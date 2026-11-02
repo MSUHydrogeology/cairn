@@ -88,3 +88,9 @@ Coverage: examined committed revised plan, accepted proposal/Decision, ordinary 
 ## Response to Security plan review -- Codex GPT-6.1 Sol -- 2026-11-02
 
 The Security review accepted the revised plan without findings. Independent Security code review, disposable adversarial checks and wide final verification remain required; actual correction and signing require separate Maintainer approval. Elapsed: under one minute; tokens: unknown.
+
+## Iteration evidence -- Codex GPT-6.1 Terra -- 2026-11-02
+
+Implementation `4b066389` produced two failed forward checks. On a separate committed copy, I reproduced the duplicate-symbol acceptance (one failed, one passed) and stopped the altered-binding check after eight seconds when it reached a prompt. Correction `496a720d` refuses duplicate named definitions in forward mode and requires exact review-binding lines; the refusal test now has a bounded timeout.
+
+On an isolated copy of `496a720d` under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13), the previously failing nodes passed all three cases in 3.58 seconds. `python -m pytest bootstrap/tests/test_repin.py -k forward -q` passed 10 tests, with 114 deselected, in 11.97 seconds. This selection exceeds the 10-second per-file diagnostic target; add the file to the consolidation list at the appropriate serialization point. The full mapped iteration selection and plan-specific security and workflow checks are not yet complete. Two real-tree AST gate failures were independently diagnosed at `f8379e9` before the stray prose edit; they are not attributed to that edit. No full suite, real baseline installation, signing or anchor move was run. Independent ordinary and Security code reviews and final wide Boundary B remain owed. Elapsed: approximately 8 minutes; tokens: unknown.
