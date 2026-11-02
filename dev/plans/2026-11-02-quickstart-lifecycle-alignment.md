@@ -1,7 +1,7 @@
 # Plan: Align the quickstart lifecycle
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-quickstart-lifecycle-alignment.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Correct the quickstart and its sequence test so the example records its final check before archive.
