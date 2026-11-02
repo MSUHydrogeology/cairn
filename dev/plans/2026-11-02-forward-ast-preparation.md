@@ -1,7 +1,7 @@
 # Plan: Prepare a forward AST correction
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-forward-ast-preparation.md
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Prepare and review current code fingerprints for a Maintainer-approved forward baseline without reconstructing prior history.
@@ -224,3 +224,7 @@ The Maintainer's quoted direction in Scope delta removes the four named baseline
 The wide run at `44ab91e3` was not green: 1,492 passed, nine failed and four were deselected. Its same-commit nine-node rerun passed under a process-only `master` default. The independently reviewed release-test correction `abea6d02` makes the disposable repository's branch explicit; its nine affected nodes passed under both `main` and `master` defaults, and removing the fix reproduced all nine failures under `main`. The later release-test wide selection at `68df1f21` recorded 801 passes, two socket-permission setup failures subsequently passed separately on the same commit, and two real-anchor omissions. See `dev/plans/2026-11-02-release-test-corrections.md` for its precise scope and results. These results resolve the observed branch-default failures; they do not turn the original run green or establish results for the four omitted nodes.
 
 The ordinary and Security reviews found no remaining code blocker after targeted fixes. The latter was its second and final pass. With the Maintainer's explicit scope direction, the recorded wide selection, focused diagnosis, subsequent reviewed correction and applicable prose gates provide the plan's machinery verification; the four named omissions remain visible and outside this plan. No additional clearing review is required. Actual baseline approval, installation and signing remain separate Maintainer-controlled work. Elapsed: approximately 4 minutes; tokens: unknown.
+
+## Lifecycle disposition -- Codex GPT-6 -- 2026-11-02
+
+The existing ordinary and Security reviews and the verification reconciliation above close the machinery work under the Maintainer-directed scope. The four excluded baseline/real-anchor nodes remain unpassed and belong to the v0.6 baseline work. The plan is ready to archive; baseline approval and signing remain separate. Elapsed: under one minute; tokens: unknown.
