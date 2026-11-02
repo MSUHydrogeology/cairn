@@ -146,3 +146,7 @@ Prior findings: none
 No fenced chunk or deviation request is present in the reviewed plan history, so no Waiting line became due. Luna's implementation fits the accepted-plan execution floor.
 
 Coverage: read accepted scope, committed diff, iteration evidence, ordinary review and installer mapping; performed the targeted byte assertions. Did not rerun implementation checks, run a suite or mutation, inspect a fresh installation, or certify the tree. Final canonical-Python wide Boundary B remains outstanding.
+
+## Completion follow-up
+
+Close GitHub issue #42 once the acceptance criteria and final required verification are complete.
