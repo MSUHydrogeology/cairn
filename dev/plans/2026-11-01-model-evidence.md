@@ -166,31 +166,4 @@ archival. Elapsed: under one minute; tokens: unknown.
 
 ## Implementation verification -- Codex GPT-6 -- 2026-11-01
 
-- **Boundary B mode**: wide, including governing and shipped counterparts,
-  plan templates, scientific-check readers and installed public paths.
-- **Tested commit**: `bfdaacd833685caf599d7c959e759fbda78c0510`
-- **Reviewed range**: `b210f9b4d2e938e33905e8c99faabd7ab7e91148..bfdaacd833685caf599d7c959e759fbda78c0510` (shared v0.6 selection)
-- **Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13; Bandit on `PATH`
-- **Pre-run state**: clean isolated clone at tested SHA. **Post-run state**: clean, same `HEAD`.
-
-The shared 36-file test union, gates, counts and local-socket disposition are
-recorded in `dev/plans/2026-11-01-decision-options.md`; the scientific-check
-guidance test and all mapped lifecycle/integration families are included.
-Compared self-hosted and fresh-installed cases: (1) a model run outside the
-configured suite and all other requirements belongs with the work/release that
-needs it and is not added to routine certification; (2) a configured suite
-member also serving a safety or work-specific need remains required at every
-required point. Subject and duration waive neither requirement. The relevant
-final guidance is unchanged since the authorized examples at `d7434ba6`.
-
-**Plan-specific acceptance commands**: human comparison of both installed and
-self-hosted cases above; both outcomes match C1.
-
-**Non-pass disposition**: see the common run record; the 14 local-socket nodes
-passed on the targeted rerun.
-
-**Known omissions**: 46 unpinned governing-file readers were omitted by the
-selector guard; external links were not probed; per-file durations were not
-collected. No full-tree certification was run. **Elapsed**: shared automated
-checks 190.28 seconds; plan-specific comparison included in session; tokens:
-unknown. Issue #33 remains open as already recorded.
+**Boundary B: wide.** Frozen SHA/range, canonical Python 3.13.13, Bandit on `PATH`, clean isolated pre/post state, common 36-file selector union, 1,955 unique passes and 14 local-socket failures resolved by targeted rerun are recorded in the shared Boundary B record in `dev/plans/2026-11-01-decision-options.md`. The union includes scientific-check guidance, mapped lifecycle and integration/workflow families. Rechecked the installed and self-hosted examples: outside-suite evidence stays with its requiring work/release; configured suite members remain required at each required point, including when they serve safety needs. Both match C1. No full-tree certification was run. Omitted: external links unprobed, 46 unpinned governing-file readers, per-file durations. **Elapsed**: shared automated tests 190.28 s; comparison unmeasured. **Tokens**: unknown. Issue #33 remains open as recorded.
