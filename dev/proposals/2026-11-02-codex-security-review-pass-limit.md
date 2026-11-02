@@ -1,7 +1,7 @@
 # Permit a justified Security Review beyond two passes
 
 **Author**: Codex GPT-6 (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — this changes the security review contract in protected methodology and templates
 **Plan review**: required(Internal + Internal Security Review)
@@ -10,11 +10,11 @@
 
 ## Decision summary
 
-Keep the normal limit of two Security Review passes. If a further pass would resolve a specific remaining security uncertainty, the Maintainer may authorize it after seeing the reason and its expected value. This adds a decision only when an exception is sought; it can delay closure and consume another review.
+Keep the normal limit of two Security Review passes. If a further pass would resolve a specific remaining security uncertainty, the Maintainer may authorize it after seeing the reason and its expected value. The Maintainer approval is this proposal's suggested tradeoff, not a requirement stated in the user's direction. It adds a decision only when an exception is sought and can delay closure and consume another review.
 
 ## Context
 
-The current cap sends unresolved blocking findings or unmet accepted criteria or checks to the Maintainer by name; it does not clear them automatically ([dual-review](../../docs/methodology/dual-review.md#caps-and-closure)). The Maintainer asked for the reason for more than two rounds, while retaining the Security Review trigger and Cairn's broader checks (chat, 2026-11-02). The current contract supplies no exception for an additional Security Review pass.
+The current cap sends unresolved blocking findings or unmet accepted criteria or checks to the Maintainer by name; it does not clear them automatically ([dual-review](../../docs/methodology/dual-review.md#the-blocking-test-and-who-ends-a-loop)). The Maintainer asked for the reason for more than two rounds, while retaining the Security Review trigger and Cairn's broader checks (chat, 2026-11-02). The current contract supplies no exception for an additional Security Review pass.
 
 ## Proposal
 
@@ -103,3 +103,13 @@ Coverage: read committed proposal, current proposal template, governing cap/clos
 3. **What would show it wrong?** Boilerplate reasons, recurring extra passes without useful answers, or an extra pass treated as automatically clearing a finding. The proposed named question, separate authorization and negative examples address those risks but cannot guarantee good judgment.
 
 Coverage: read the committed proposal, existing Security Review and current cap; did not map every rule reader or test future implementation. No suites run.
+
+## Response -- Codex GPT-6 -- 2026-11-02
+
+Both reviews found no blocking findings. Clarified that Maintainer approval is a proposed tradeoff, not a requirement in the Maintainer’s direction, and corrected the context link.
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+None.
