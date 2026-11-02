@@ -1,7 +1,7 @@
 # Plan: Clarify security triggers for guarded reuse
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-security-trigger-clarity.md
-**Status**: revising-plan
+**Status**: awaiting-plan-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Explain when reuse of a reviewed guard changes a security boundary and when it does not.
