@@ -1,7 +1,7 @@
 # Plan: Locate scientific model evidence
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-model-evidence.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Clarify where scientific model evidence is required without changing the configured certification suite.
