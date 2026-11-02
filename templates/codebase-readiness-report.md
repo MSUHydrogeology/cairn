@@ -5,8 +5,8 @@
 Written in Cairn Plain Language 1.0
 
 > **Use this template before choosing a Cairn profile.**  Fill it for
-> your existing scientific codebase -- with your AI agent's help if
-> you have one -- and the answers will tell you (a) how much of Cairn
+> your existing scientific codebase -- with your AI agent's help -- 
+> and the answers will tell you (a) how much of Cairn
 > to install now: the profile your axes give, the smallest one that
 > fits, or nothing yet (read the doctrine first while you fix specific
 > gaps), and (b) which Cairn modules your dimensional profile most
