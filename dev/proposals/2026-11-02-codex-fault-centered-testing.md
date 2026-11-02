@@ -1,7 +1,7 @@
 # Make scientific tests and acceptance criteria catch meaningful faults
 
 **Author**: Codex (runtime model identifier unavailable; Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- governing verification guidance and authoring templates
 **Plan review**: required(Internal + Internal Security Review)
@@ -149,3 +149,52 @@ are one coordinated outcome.
 
 **Assurance path**: high-assurance -- governing verification guidance.
 
+## Review -- Codex (fresh-context usual reviewer) -- 2026-11-02
+
+**Model**: inherited Codex runtime; exact identifier unavailable; no downshift.
+**Reviewed commit**: `9d5a69e524a2ab3a749b386dd67efe2861f2ecf0`
+**Tier**: usual
+**Target**: opening proposal. **Prior findings**: none.
+**Assurance path**: high-assurance.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: teach discriminating evidence and
+   observable criteria together. Existing guidance covers properties and
+   budgets, but not expectation laundering --
+   `templates/modules/team-gated/testing-discipline.md`; `dev/plans/_template.md`,
+   Acceptance criteria.
+2. **Best alternative.** Module-only worked examples avoid editing the shared
+   plan contract and reduce maintenance, but lose the board's optional
+   acceptance prompts; existing falsifiability prose does not supply them --
+   `dev/PLANNING.md`, testing/acceptance rows; `dev/plans/_template.md`.
+3. **What would show it wrong?** Candidate-derived expectations pass as
+   independent, characterization freezes an error, or optional tools become
+   obligations -- Proposal 1-4; `examples/scientific-minimal/test_water_budget.py`,
+   `TestMassBalanceInvariant`.
+
+**Verdict**: ACCEPT. **Findings**: one non-blocking improvement; no blockers.
+
+1. **FT-1 -- Replace the existing overclaim explicitly.** The testing module
+   says passing conservation/convergence shows equations are solved correctly;
+   passing selected checks cannot establish that general conclusion.
+   The scientific example deliberately uses balanced synthetic inputs
+   (`examples/scientific-minimal/water_budget.py`). Close by replacing that
+   categorical sentence and making one worked example show a balanced but
+   wrong input or compensating error, plus an independently grounded check
+   that detects it. This sharpens promised examples, not a new validation
+   framework.
+
+Testing, optional property/mutation guidance, test-first and acceptance
+outcomes remain represented. The outside-practices strategy cannot retire
+until architecture outcomes also have dispositions; release closeout owns
+the grouped assignment.
+
+**Elapsed**: approximately 7 minutes, including shared source inspection.
+**Tokens**: unknown.
+
+**Covered**: module/template promises, installation/preservation assertions,
+verification guards, scientific example, board scope and retirement links.
+**Not covered / low confidence**: no example execution, mutation or
+implementation reruns; outside literature was not independently validated.
+This pass does not discharge Security Review.
