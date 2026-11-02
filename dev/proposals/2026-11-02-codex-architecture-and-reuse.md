@@ -1,7 +1,7 @@
 # Make existing code and system shape cheap to inspect
 
 **Author**: Codex (runtime model identifier unavailable; Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- repository inspection and selected-module install contract
 **Plan review**: required(Internal + Internal Security Review)
@@ -285,3 +285,15 @@ unmeasured. **Tokens**: unknown.
 
 None. Restricting reuse to suitable safe helpers specifies the original
 qualification; it does not drop collection, pilot or retirement outcomes.
+
+## Decision -- Maintainer -- 2026-11-02
+
+**Elapsed**: unknown; **Tokens**: unknown.
+
+**Tier**: heavy
+
+**ACCEPTED.** Asked "Architecture and reuse: accept as heavy?", the Maintainer's authorization, quoted verbatim:
+
+> "Accept as heavy. This should also be not just for Cairn, but architecture for adopter projects to use, right?"
+
+Scribe's note (not part of the quote): the question in the last sentence is answered by the proposal itself. The code map, neighbors and rubric ship to adopter projects through the optional architecture-review module (Proposals 1 and 4; Documentation / doctrine surface), and the rubric covers legacy, new and mixed systems. The module is selected, not installed by default.
