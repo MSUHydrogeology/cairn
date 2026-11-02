@@ -100,6 +100,53 @@ These commands prepare inputs; the `ceremony --transition` command above carries
 
 ## Preparing the forward baseline
 
+When the AST fixtures themselves need a reviewed correction before the new
+baseline can be prepared, use the forward-only AST path below. It reads one
+committed candidate and never reads or compares `refs/cairn/gate-anchor`.
+This establishes current fingerprints and does not certify historical AST
+review. Ordinary `package`, `apply-reviewed-pin` and `commit-reviewed-pin`
+remain anchored to their existing historical ceremony.
+
+Prepare evidence outside the checkout under the Python minor version recorded
+in the candidate manifest:
+
+```sh
+python scripts/repin.py forward-prepare --candidate <candidate-commit> \
+  --evidence-dir <new-external-evidence-folder>
+```
+
+The command writes a human-readable packet, exact transaction and changed
+symbol bodies/locations to that new folder. It does not write repository files
+or move refs. Have a fresh ordinary reviewer and a separate Security Reviewer
+read the candidate and packet, then bind each review to those exact bytes:
+
+```sh
+python scripts/repin.py forward-review --evidence-dir <evidence-folder> \
+  --role ordinary --reviewer <name> --model <model> --elapsed <time> --tokens <count-or-unknown> \
+  --verdict ACCEPT --findings <none-or-summary> --should-happen <answer> \
+  --best-alternative <answer> --what-would-show-wrong <answer> --coverage <answer>
+python scripts/repin.py forward-review --evidence-dir <evidence-folder> \
+  --role security --reviewer <different-name> --model <model> --elapsed <time> --tokens <count-or-unknown> \
+  --verdict ACCEPT --findings <none-or-summary> --should-happen <answer> \
+  --best-alternative <answer> --what-would-show-wrong <answer> --coverage <answer>
+```
+
+The Maintainer resumes the single guided approval flow only after both records
+exist and both verdicts are `ACCEPT`. A `REVISE` verdict stops the flow; after
+the issue is addressed in a new committed candidate, prepare a fresh evidence
+folder and obtain both fresh reviews again.
+
+```sh
+python scripts/repin.py forward-guide --evidence-dir <evidence-folder>
+```
+
+It rechecks the candidate and transaction, asks separately before applying and
+committing the exact fixture paths, and then directs the Maintainer to prepare
+fresh baseline reader inputs and continue the separate baseline approval and
+signing steps below. The correction is AST-only; lockfile debt, missing symbols
+and duplicate symbols refuse. Do not run this flow to correct a real baseline
+until a separate Maintainer Decision authorizes those exact candidate bytes.
+
 The explicit baseline path prepares a new signed trust root when there is no
 authenticated signed predecessor. It is independent of `ceremony --first-run`:
 failure to authenticate an ordinary prior anchor never selects this path, and

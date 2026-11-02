@@ -202,6 +202,181 @@ def test_baseline_preparation_refuses_substituted_external_roster_before_collect
     assert not output.exists()
 
 
+def test_forward_guided_ast_correction_needs_no_anchor_and_commits_only_reviewed_fixtures(bed, tmp_path):
+    """The maintained forward flow is resumable, AST-only, and never touches a ref during prep."""
+    bed.write(ENGINE, "def f():\n    return 2\n")
+    candidate = bed.commit("engine change for forward correction")
+    bed.git("update-ref", "-d", "refs/cairn/gate-anchor")
+    evidence = tmp_path / "forward-evidence"
+    refs_before = bed.git("for-each-ref", "--format=%(refname) %(objectname)").stdout
+    ordinary = bed.run("package")
+    assert ordinary.returncode == 2 and "refs/cairn/gate-anchor" in ordinary.stderr
+    prepared = bed.run("forward-prepare", "--candidate", candidate,
+                       "--evidence-dir", str(evidence))
+    assert prepared.returncode == 0, prepared.stdout + prepared.stderr
+    packet = json.loads((evidence / "forward-packet.json").read_text())
+    txn = json.loads((evidence / "forward-transaction.json").read_text())
+    assert packet["history_certified"] is False
+    assert packet["candidate"] == candidate == txn["head"]
+    assert len(packet["changed_symbols"]) == 1
+    assert packet["changed_symbols"][0]["current_body"] == "def f():\n    return 2"
+    assert set(txn["outputs"]) == {BASELINE}
+    assert bed.git("for-each-ref", "--format=%(refname) %(objectname)").stdout == refs_before
+    assert bed.git("status", "--porcelain").stdout == ""
+
+    for role, reviewer in (("ordinary", "fresh reviewer"), ("security", "security reviewer")):
+        result = bed.run("forward-review", "--evidence-dir", str(evidence), "--role", role,
+                         "--model", "test-model", "--elapsed", "unknown", "--tokens", "unknown",
+                         "--verdict", "ACCEPT", "--findings", "none",
+                         "--reviewer", reviewer, "--should-happen", "yes, current state is reviewable",
+                         "--best-alternative", "do nothing and leave the release blocked",
+                         "--what-would-show-wrong", "a changed candidate reaches application",
+                         "--coverage", "read candidate and packet; did not assess signing keys")
+        assert result.returncode == 0, result.stdout + result.stderr
+    bed.git("config", "user.name", "scratch")
+    bed.git("config", "user.email", "scratch@example.invalid")
+    code, out = run_pty([PY, str(bed.repo / "scripts/repin.py"), "forward-guide",
+                         "--evidence-dir", str(evidence)],
+                        [("Apply this reviewed correction?", "yes"),
+                         ("Commit exactly these reviewed paths?", "yes")],
+                        env=bed.env, cwd=bed.repo)
+    assert code == 0, out
+    assert "historical AST certification is not provided" in out
+    assert "existing Maintainer-only baseline approval and signing" in out
+    changed = bed.git("diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD").stdout.splitlines()
+    assert changed == [BASELINE]
+    base = json.loads(bed.read(BASELINE))
+    merged, _ = A._merge_current(sorted((bed.repo / "bootstrap/_scaffold").glob("*.py")))
+    _problems, changed_symbols, missing, duplicates, _new = A._classify(base, merged)
+    assert not changed_symbols and not missing and not duplicates
+
+
+@pytest.mark.parametrize(("engine", "reason"), [
+    ("def other():\n    return 2\n", "a baselined symbol is missing or defined twice"),
+    ("def f():\n    return 2\n\ndef f():\n    return 3\n", "a baselined symbol is missing or defined twice"),
+])
+def test_forward_preparation_refuses_missing_or_duplicate_baseline_symbols(bed, tmp_path, engine, reason):
+    bed.write(ENGINE, engine)
+    candidate = bed.commit("invalid forward AST candidate")
+    bed.git("update-ref", "-d", "refs/cairn/gate-anchor")
+    evidence = tmp_path / "forward-evidence"
+    result = bed.run("forward-prepare", "--candidate", candidate, "--evidence-dir", str(evidence))
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert reason in result.stderr
+    assert not evidence.exists()
+    assert bed.git("status", "--porcelain").stdout == ""
+
+
+def test_forward_preparation_refuses_lockfile_debt(bed, tmp_path):
+    lock_bed(bed)
+    bed.git("update-ref", "-d", "refs/cairn/gate-anchor")
+    evidence = tmp_path / "forward-evidence"
+    result = bed.run("forward-prepare", "--evidence-dir", str(evidence))
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert "lockfile correction" in result.stderr
+    assert not evidence.exists()
+
+
+@pytest.mark.parametrize("mutated", ["packet", "transaction"])
+def test_forward_review_refuses_mutated_review_inputs(bed, tmp_path, mutated):
+    bed.write(ENGINE, "def f():\n    return 2\n")
+    candidate = bed.commit("engine change for mutation check")
+    evidence = tmp_path / "forward-evidence"
+    prepared = bed.run("forward-prepare", "--candidate", candidate,
+                       "--evidence-dir", str(evidence))
+    assert prepared.returncode == 0, prepared.stdout + prepared.stderr
+    path = evidence / ("forward-packet.json" if mutated == "packet" else "forward-transaction.json")
+    path.write_bytes(path.read_bytes() + b" ")
+    result = bed.run("forward-review", "--evidence-dir", str(evidence), "--role", "ordinary",
+                     "--model", "test-model", "--elapsed", "unknown", "--tokens", "unknown",
+                     "--verdict", "ACCEPT", "--findings", "none",
+                     "--reviewer", "fresh reviewer", "--should-happen", "yes",
+                     "--best-alternative", "do nothing", "--what-would-show-wrong", "mutation passes",
+                     "--coverage", "checked only the prepared artifacts")
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert not (evidence / "ordinary-review.txt").exists()
+    assert bed.git("status", "--porcelain").stdout == ""
+
+
+def test_forward_review_refuses_candidate_change_after_preparation(bed, tmp_path):
+    bed.write(ENGINE, "def f():\n    return 2\n")
+    candidate = bed.commit("engine change for stale review")
+    evidence = tmp_path / "forward-evidence"
+    assert bed.run("forward-prepare", "--candidate", candidate,
+                   "--evidence-dir", str(evidence)).returncode == 0
+    bed.write(ENGINE, "def f():\n    return 3\n")
+    bed.commit("second engine change")
+    result = bed.run("forward-review", "--evidence-dir", str(evidence), "--role", "ordinary",
+                     "--model", "test-model", "--elapsed", "unknown", "--tokens", "unknown",
+                     "--verdict", "ACCEPT", "--findings", "none",
+                     "--reviewer", "fresh reviewer", "--should-happen", "yes",
+                     "--best-alternative", "do nothing", "--what-would-show-wrong", "stale candidate passes",
+                     "--coverage", "checked only the candidate and packet")
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert "candidate changed" in result.stderr
+    assert not (evidence / "ordinary-review.txt").exists()
+
+
+def test_forward_guide_refuses_unreviewed_packet_without_writing(bed, tmp_path):
+    bed.write(ENGINE, "def f():\n    return 2\n")
+    candidate = bed.commit("engine change for missing reviews")
+    evidence = tmp_path / "forward-evidence"
+    assert bed.run("forward-prepare", "--candidate", candidate,
+                   "--evidence-dir", str(evidence)).returncode == 0
+    result = bed.run("forward-guide", "--evidence-dir", str(evidence))
+    assert result.returncode == 2
+    assert bed.git("status", "--porcelain").stdout == ""
+    assert bed.git("rev-parse", "HEAD").stdout.strip() == candidate
+
+
+def test_forward_guide_refuses_a_nonaccepting_review(bed, tmp_path):
+    bed.write(ENGINE, "def f():\n    return 2\n")
+    candidate = bed.commit("engine change for nonaccepting review")
+    evidence = tmp_path / "forward-evidence"
+    assert bed.run("forward-prepare", "--candidate", candidate,
+                   "--evidence-dir", str(evidence)).returncode == 0
+    for role, reviewer, verdict in (("ordinary", "fresh reviewer", "ACCEPT"),
+                                    ("security", "security reviewer", "REVISE")):
+        assert bed.run("forward-review", "--evidence-dir", str(evidence), "--role", role,
+                       "--model", "test-model", "--elapsed", "unknown", "--tokens", "unknown",
+                       "--verdict", verdict, "--findings", "needs a blocking change",
+                       "--reviewer", reviewer, "--should-happen", "yes",
+                       "--best-alternative", "do nothing", "--what-would-show-wrong", "revised packet passes",
+                       "--coverage", "read packet and candidate").returncode == 0
+    result = bed.run("forward-guide", "--evidence-dir", str(evidence))
+    assert result.returncode == 2 and "did not accept" in result.stderr
+    assert bed.git("status", "--porcelain").stdout == ""
+
+
+def test_forward_guide_refuses_review_binding_and_fixture_mutation(bed, tmp_path):
+    bed.write(ENGINE, "def f():\n    return 2\n")
+    candidate = bed.commit("engine change for review mutation")
+    evidence = tmp_path / "forward-evidence"
+    assert bed.run("forward-prepare", "--candidate", candidate,
+                   "--evidence-dir", str(evidence)).returncode == 0
+    for role, reviewer in (("ordinary", "fresh reviewer"), ("security", "security reviewer")):
+        assert bed.run("forward-review", "--evidence-dir", str(evidence), "--role", role,
+                       "--model", "test-model", "--elapsed", "unknown", "--tokens", "unknown",
+                       "--verdict", "ACCEPT", "--findings", "none",
+                       "--reviewer", reviewer, "--should-happen", "yes",
+                       "--best-alternative", "do nothing", "--what-would-show-wrong", "mutation passes",
+                       "--coverage", "read packet, not host signing key").returncode == 0
+    review_path = evidence / "ordinary-review.txt"
+    review_path.write_text(review_path.read_text().replace("packet-sha256:", "changed-packet-sha256:"))
+    code, out = run_pty([PY, str(bed.repo / "scripts/repin.py"), "forward-guide",
+                         "--evidence-dir", str(evidence)], env=bed.env, cwd=bed.repo)
+    assert code == 2 and "review is missing or bound" in out
+    assert bed.git("status", "--porcelain").stdout == ""
+
+    review_path.write_text(review_path.read_text().replace("changed-packet-sha256:", "packet-sha256:"))
+    bed.write(BASELINE, "{}\n")
+    code, out = run_pty([PY, str(bed.repo / "scripts/repin.py"), "forward-guide",
+                         "--evidence-dir", str(evidence)], env=bed.env, cwd=bed.repo)
+    assert code == 2 and "neither the reviewed preimage nor reviewed output" in out
+    assert bed.read(BASELINE) == "{}\n"
+    assert bed.git("rev-parse", "HEAD").stdout.strip() == candidate
+
+
 def test_baseline_preparation_requires_independent_inputs(bed, tmp_path):
     """Missing reader authority cannot fall through to ordinary first-run behavior."""
     roster = tmp_path / "approved-roster.json"

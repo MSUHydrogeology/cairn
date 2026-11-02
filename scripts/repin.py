@@ -1026,6 +1026,259 @@ def build_transaction(ctx, *, reviewed_deletions=(), baseline=False):
             "summary": [ln for rel, raw in new.items() for ln in render_changes(rel, old[rel], raw, reviewed_deletions=deletions if rel == BASELINE_REL else ())]}
 
 
+def forward_context(repo, candidate):
+    """Build the AST transaction inputs from one committed tree, without an anchor."""
+    repo = Path(repo).resolve()
+    candidate = git_text(repo, "rev-parse", "--verify", candidate + "^{commit}")
+    tmp = Path(tempfile.mkdtemp(prefix="repin-forward-"))
+    try:
+        ext = tmp / "candidate"
+        ents = extract(repo, candidate, ext)
+        engine = sorted(p for _m, _o, p in ents
+                        if re.fullmatch(r"bootstrap/_scaffold/[^/]+\.py", p))
+        if not engine:
+            raise Refuse("candidate tracks no bootstrap/_scaffold/*.py files.")
+        session_oid = git_text(repo, "rev-parse", f"{candidate}:tools/session.py")
+    except BaseException:
+        shutil.rmtree(tmp, ignore_errors=True)
+        raise
+    return {"repo": repo, "head": candidate, "anchor": "forward-only-no-history",
+            "ext": ext, "tmp": tmp, "engine": engine, "ents": ents,
+            "closure_changed": [], "baseline_mode": True,
+            "session_oid": session_oid}
+
+
+def build_forward_packet(ctx, txn, txn_raw):
+    """Derive every reviewer-visible claim from committed candidate bytes."""
+    view = ast_view(ctx)
+    symbol_changes = []
+    for key, (old, new, rel) in sorted(view["changed"].items()):
+        span = view["spans"][key]
+        lines = (ctx["ext"] / rel).read_text("utf-8").splitlines()
+        symbol_changes.append({"symbol": key, "file": rel, "location": span,
+                               "old_digest": old, "proposed_digest": new,
+                               "current_body": "\n".join(lines[span[0] - 1:span[1]])})
+    fixture_hashes = {p: sha((ctx["ext"] / p).read_bytes())
+                      for p in (BASELINE_REL, KNOWN_NEW_REL)}
+    old_known = _unique_json((ctx["ext"] / KNOWN_NEW_REL).read_bytes(), "known-new fixture")
+    proposed_known = _unique_json(txn["outputs"].get(KNOWN_NEW_REL, {}).get(
+        "new_text", (ctx["ext"] / KNOWN_NEW_REL).read_text("utf-8")).encode(), "proposed known-new fixture")
+    known_new_delta = {key: {"before": old_known.get(key), "after": proposed_known.get(key)}
+                       for key in sorted(set(old_known) | set(proposed_known))
+                       if old_known.get(key) != proposed_known.get(key)}
+    tools = [REPIN_REL, "bootstrap/tests/_ast_attest.py", *ctx["engine"]]
+    tool_hashes = {p: sha((ctx["ext"] / p).read_bytes()) for p in tools}
+    return {"schema": "cairn-forward-ast/v1", "candidate": ctx["head"],
+            "candidate_tree_sha256": _candidate_tree_digest(ctx["repo"], ctx["head"]),
+            "history_certified": False, "interpreter": sys.version,
+            "python": os.path.realpath(sys.executable),
+            "python_sha256": sha(Path(os.path.realpath(sys.executable)).read_bytes()),
+            "transaction_sha256": sha(txn_raw), "fixture_hashes": fixture_hashes,
+            "tool_hashes": tool_hashes, "changed_symbols": symbol_changes,
+            "proposed_fixture_changes": txn["summary"],
+            "known_new_delta": known_new_delta,
+            "outputs": sorted(txn["outputs"])}
+
+
+def prepare_forward_pin(repo, candidate, evidence_dir):
+    """Write a review packet and transaction outside the repository; read no anchor."""
+    ctx = forward_context(repo, candidate)
+    try:
+        if git(repo, "cat-file", "blob", f"{ctx['head']}:{REPIN_REL}") != Path(__file__).read_bytes():
+            raise Refuse("running scripts/repin.py differs from the committed candidate; commit and review it first.")
+        manifest = _unique_json((ctx["ext"] / MANIFEST_REL).read_bytes(), "candidate gate manifest")
+        if not isinstance(manifest, dict) or not isinstance(manifest.get("interpreter"), dict):
+            raise Refuse("candidate gate manifest has no usable interpreter record.")
+        pinned = manifest["interpreter"].get("version_info", [])
+        if pinned[:2] != list(sys.version_info[:2]):
+            raise Refuse("run under the candidate manifest's canonical Python minor version before preparing fingerprints.")
+        output = _plain_absolute_path(evidence_dir)
+        if output.exists() or output.is_symlink() or output.parent.is_symlink() or not output.parent.is_dir():
+            raise Refuse("forward evidence path must be new, with an existing plain parent.")
+        if output == ctx["repo"] or ctx["repo"] in output.parents:
+            raise Refuse("forward evidence must be written outside the candidate checkout.")
+        txn = build_transaction(ctx, baseline=True)
+        if txn is None:
+            raise Refuse("candidate has no AST or lockfile correction to prepare.")
+        if LOCKFILE_REL in txn["outputs"]:
+            raise Refuse("candidate owes lockfile correction; handle it separately before AST preparation.")
+        txn_raw = encode_txn(txn)
+        packet = build_forward_packet(ctx, txn, txn_raw)
+        packet_raw = dump(packet)
+        output.mkdir()
+        try:
+            write_new(output / "forward-transaction.json", txn_raw)
+            write_new(output / "forward-packet.json", packet_raw)
+            write_new(output / "README.txt", (
+                "Forward AST correction evidence\n"
+                f"Candidate: {ctx['head']}\nTransaction SHA-256: {sha(txn_raw)}\n"
+                "Historical AST certification: not provided.\n"
+                "Have fresh ordinary and Security reviewers read this packet and record their pass;\n"
+                "record each review with `repin forward-review` before running\n"
+                "`repin forward-guide` to resume the Maintainer approval flow.\n").encode())
+        except BaseException:
+            shutil.rmtree(output, ignore_errors=True)
+            raise
+        say(f"prepared forward AST evidence for {ctx['head']}; no repository file or ref changed")
+        say(f"transaction {sha(txn_raw)}; packet {sha(packet_raw)}; history is not certified")
+        return packet
+    finally:
+        shutil.rmtree(ctx["tmp"], ignore_errors=True)
+
+
+def forward_review(evidence_dir, role, reviewer, model, elapsed, tokens, verdict, findings,
+                   should, alternative, falsifier, coverage):
+    """Create a plain review binding; reviewer records remain human-authored evidence."""
+    cdir = plain_folder(evidence_dir)
+    answers = (reviewer, model, elapsed, tokens, verdict, findings, should, alternative, falsifier, coverage)
+    if (role not in ("ordinary", "security") or verdict not in ("ACCEPT", "REVISE")
+            or any(not value.strip() for value in answers)
+            or any("\n" in value or "\r" in value for value in answers)):
+        raise Refuse("review role, author/model, verdict, findings, three Foundations answers, elapsed, tokens and coverage are required.")
+    packet_raw = read_safe(cdir / "forward-packet.json")
+    txn_raw = read_safe(cdir / "forward-transaction.json")
+    packet = _unique_json(packet_raw, "forward packet")
+    if (not isinstance(packet, dict) or not isinstance(packet.get("candidate"), str)
+            or packet.get("schema") != "cairn-forward-ast/v1"
+            or packet.get("transaction_sha256") != sha(txn_raw)):
+        raise Refuse("forward packet and transaction do not match.")
+    repo = Path(__file__).resolve().parent.parent
+    if git_text(repo, "rev-parse", "--verify", "HEAD^{commit}") != packet.get("candidate"):
+        raise Refuse("the candidate changed after preparation; prepare fresh evidence.")
+    ctx = forward_context(repo, packet["candidate"])
+    try:
+        expected = build_transaction(ctx, baseline=True)
+        if (expected is None or LOCKFILE_REL in expected["outputs"]
+                or encode_txn(expected) != txn_raw):
+            raise Refuse("transaction no longer matches the committed candidate.")
+        if dump(build_forward_packet(ctx, expected, txn_raw)) != packet_raw:
+            raise Refuse("packet claims do not match the committed candidate and transaction.")
+    finally:
+        shutil.rmtree(ctx["tmp"], ignore_errors=True)
+    path = cdir / f"{role}-review.txt"
+    body = (f"role: {role}\nreviewer: {reviewer.strip()}\n"
+            f"model: {model.strip()}\nelapsed: {elapsed.strip()}\ntokens: {tokens.strip()}\n"
+            f"verdict: {verdict}\nfindings: {findings.strip()}\n"
+            f"candidate: {packet['candidate']}\npacket-sha256: {sha(packet_raw)}\n"
+            f"transaction-sha256: {sha(txn_raw)}\n"
+            f"should-happen: {should.strip()}\n"
+            f"best-alternative: {alternative.strip()}\n"
+            f"what-would-show-wrong: {falsifier.strip()}\n"
+            f"coverage: {coverage.strip()}\n").encode()
+    write_new(path, body)
+    say(f"bound {role} review to candidate {packet['candidate']} and transaction {sha(txn_raw)}")
+
+
+def forward_guide(repo, evidence_dir):
+    """Resume the Maintainer's explicit approve, apply, exact-path commit flow."""
+    cdir = plain_folder(evidence_dir)
+    packet_raw, txn_raw = read_safe(cdir / "forward-packet.json"), read_safe(cdir / "forward-transaction.json")
+    packet, txn = _unique_json(packet_raw, "forward packet"), _unique_json(txn_raw, "forward transaction")
+    if (not isinstance(packet, dict) or not isinstance(txn, dict)
+            or not isinstance(packet.get("candidate"), str) or not isinstance(txn.get("outputs"), dict)
+            or packet.get("schema") != "cairn-forward-ast/v1" or packet.get("history_certified") is not False
+            or packet.get("transaction_sha256") != sha(txn_raw) or txn.get("head") != packet.get("candidate")
+            or not txn.get("outputs") or LOCKFILE_REL in txn["outputs"]
+            or set(txn["outputs"]) - {BASELINE_REL, KNOWN_NEW_REL}):
+        raise Refuse("forward evidence is malformed or does not bind this exact AST-only transaction.")
+    reviews = []
+    for role in ("ordinary", "security"):
+        review = read_safe(cdir / f"{role}-review.txt")
+        text = review.decode("utf-8")
+        if (f"role: {role}\n" not in text or f"candidate: {packet['candidate']}\n" not in text
+                or f"packet-sha256: {sha(packet_raw)}\n" not in text
+                or f"transaction-sha256: {sha(txn_raw)}\n" not in text
+                or any(not re.search(rf"^{field}: .+", text, re.M) for field in
+                       ("model", "elapsed", "tokens", "verdict", "findings", "should-happen",
+                        "best-alternative", "what-would-show-wrong", "coverage"))):
+            raise Refuse(f"{role} review is missing or bound to different evidence; nothing was written.")
+        if not re.search(r"^verdict: ACCEPT$", text, re.M):
+            raise Refuse(f"{role} review did not accept this exact correction; do not apply it.")
+        match = re.search(r"^reviewer: ([^\r\n]+)$", text, re.M)
+        if not match:
+            raise Refuse(f"{role} review has no single reviewer name.")
+        reviews.append(match.group(1))
+    if reviews[0] == reviews[1]:
+        raise Refuse("ordinary and Security reviews must name different reviewers.")
+    repo = Path(repo).resolve()
+    head = git_text(repo, "rev-parse", "--verify", "HEAD^{commit}")
+    if head != packet["candidate"]:
+        raise Refuse("candidate changed after preparation; prepare fresh evidence.")
+    if not (sys.stdin.isatty() and sys.stdout.isatty()):
+        raise Refuse("a terminal is required for Maintainer approval and exact-path commit confirmation.")
+    # Recompute from committed inputs before showing and applying any bytes.
+    ctx = forward_context(repo, head)
+    try:
+        check_head(ctx)
+        if git(repo, "diff-index", "--cached", "--raw", "-z", "--no-renames", head):
+            raise Refuse("candidate index is not clean.")
+        expected = build_transaction(ctx, baseline=True)
+        if (expected is None or LOCKFILE_REL in expected["outputs"]
+                or encode_txn(expected) != txn_raw):
+            raise Refuse("candidate inputs changed; the reviewed transaction no longer matches.")
+        if dump(build_forward_packet(ctx, expected, txn_raw)) != packet_raw:
+            raise Refuse("review packet claims no longer match the committed candidate.")
+        paths = sorted(txn["outputs"])
+        dirty = worktree_diff(ctx)
+        if set(dirty) - set(paths):
+            raise Refuse("unreviewed worktree files changed: " + ", ".join(sorted(set(dirty) - set(paths))))
+        current_bytes = {rel: read_safe(repo / rel) for rel in paths}
+        applied = all(current_bytes[rel] == output["new_text"].encode()
+                      for rel, output in txn["outputs"].items())
+        if not applied:
+            for rel, output in txn["outputs"].items():
+                target = repo / rel
+                if target.resolve() != target or not stat.S_ISREG(os.lstat(target).st_mode):
+                    raise Refuse(f"{rel} is not a regular fixture without links.")
+                current = current_bytes[rel]
+                if sha(current) not in (output["preimage_sha256"], output["new_sha256"]):
+                    raise Refuse(f"{rel} is neither the reviewed preimage nor reviewed output.")
+        say("Reviewed forward correction changes: " + ", ".join(paths))
+        say("This establishes current fingerprints only; historical AST certification is not provided.")
+        if not applied:
+            if not ask_yes("Apply this reviewed correction?"):
+                raise Refuse("no `yes` was typed. Nothing was written.")
+            for rel, output in txn["outputs"].items():
+                target = repo / rel
+                current = read_safe(target)
+                if sha(current) == output["new_sha256"]:
+                    continue
+                if sha(current) != output["preimage_sha256"]:
+                    raise Refuse(f"{rel} changed after review; no fixture was written.")
+                fd, tmpfile = tempfile.mkstemp(dir=target.parent, prefix=target.name + ".", suffix=".tmp")
+                with os.fdopen(fd, "wb") as stream:
+                    stream.write(output["new_text"].encode())
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                os.chmod(tmpfile, stat.S_IMODE(os.lstat(target).st_mode))
+                os.replace(tmpfile, target)
+            say("Written paths: " + ", ".join(paths))
+        else:
+            say("The reviewed fixture bytes are already written; resuming at exact-path commit confirmation.")
+        if not ask_yes("Commit exactly these reviewed paths?"):
+            raise Refuse("correction is written but not committed; rerun this command to resume the exact-path commit step.")
+        check_head(ctx)
+        if git(repo, "diff-index", "--cached", "--raw", "-z", "--no-renames", head):
+            raise Refuse("the index changed after approval; no commit was made.")
+        if set(worktree_diff(ctx)) != set(paths):
+            raise Refuse("the worktree changed after approval; no commit was made.")
+        for rel, output in txn["outputs"].items():
+            if sha(read_safe(repo / rel)) != output["new_sha256"]:
+                raise Refuse(f"{rel} changed after approval; no commit was made.")
+        commit_env = git_env()
+        commit_env.pop("GIT_CONFIG_GLOBAL", None)
+        commit_env.pop("GIT_CONFIG_NOSYSTEM", None)
+        result = subprocess.run([GIT, "-C", str(repo), "commit", "-m",
+                                 f"Forward AST baseline correction\n\nTransaction: {sha(txn_raw)}",
+                                 "--", *paths], env=commit_env, capture_output=True, text=True, check=False)
+        if result.returncode:
+            raise Refuse("exact-path commit failed: " + result.stderr.strip())
+        say(result.stdout.strip())
+        say("Next: obtain fresh baseline reader inputs and continue the existing Maintainer-only baseline approval and signing ceremony.")
+    finally:
+        shutil.rmtree(ctx["tmp"], ignore_errors=True)
+
+
 def encode_txn(txn):
     return json.dumps(txn, sort_keys=True, separators=(",", ":")).encode()
 
@@ -2398,7 +2651,49 @@ def main(argv=None, *, launchctl=launchctl_socket):
     bi.add_argument("--signing-key", required=True, metavar="PUBLIC-KEY")
     bi.add_argument("--expected-fingerprint", required=True, metavar="SHA256:...")
     bi.add_argument("--confirm-package-sha256", required=True, metavar="SHA256")
+    fp = sub.add_parser("forward-prepare", help="prepare an AST-only correction packet without reading an anchor")
+    fp.add_argument("--candidate", default="HEAD", metavar="SHA|REF")
+    fp.add_argument("--evidence-dir", required=True, metavar="DIR")
+    fr = sub.add_parser("forward-review", help="bind an independent ordinary or Security review")
+    fr.add_argument("--evidence-dir", required=True, metavar="DIR")
+    fr.add_argument("--role", required=True, choices=("ordinary", "security"))
+    fr.add_argument("--reviewer", required=True)
+    fr.add_argument("--model", required=True)
+    fr.add_argument("--elapsed", required=True)
+    fr.add_argument("--tokens", required=True)
+    fr.add_argument("--verdict", required=True, choices=("ACCEPT", "REVISE"))
+    fr.add_argument("--findings", required=True)
+    fr.add_argument("--should-happen", required=True)
+    fr.add_argument("--best-alternative", required=True)
+    fr.add_argument("--what-would-show-wrong", required=True)
+    fr.add_argument("--coverage", required=True)
+    fg = sub.add_parser("forward-guide", help="resume Maintainer approval, exact-path commit and baseline handoff")
+    fg.add_argument("--evidence-dir", required=True, metavar="DIR")
     args = ap.parse_args(argv)
+    if args.verb == "forward-prepare":
+        try:
+            return (prepare_forward_pin(Path(__file__).resolve().parent.parent,
+                                        args.candidate, args.evidence_dir) and 0)
+        except (Refuse, OSError, ValueError, KeyError) as exc:
+            print(f"\nrepin stopped; no repository authority changed.\n  {exc}", file=sys.stderr)
+            return 2
+    if args.verb == "forward-review":
+        try:
+            forward_review(args.evidence_dir, args.role, args.reviewer, args.model, args.elapsed,
+                           args.tokens, args.verdict, args.findings, args.should_happen,
+                           args.best_alternative, args.what_would_show_wrong, args.coverage)
+            return 0
+        except (Refuse, OSError, ValueError, KeyError) as exc:
+            print(f"\nrepin stopped; no repository authority changed.\n  {exc}", file=sys.stderr)
+            return 2
+    if args.verb == "forward-guide":
+        try:
+            forward_guide(Path(__file__).resolve().parent.parent, args.evidence_dir)
+            return 0
+        except (Refuse, OSError, ValueError, KeyError, RuntimeError) as exc:
+            print(f"\nrepin stopped; no ref moved unless the exact-path commit completed.\n  {exc}",
+                  file=sys.stderr)
+            return 2
     if args.verb in ("baseline-prepare", "baseline-reader-inputs"):
         saved_env = dict(os.environ)
         safe_home = tempfile.mkdtemp(prefix="repin-baseline-home-")

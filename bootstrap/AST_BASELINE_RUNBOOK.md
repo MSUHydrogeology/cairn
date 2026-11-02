@@ -29,6 +29,13 @@ Per `AGENTS.md` > *Operational pitfalls*:
 * **Anything else** is a **Maintainer-run, dry-run-verified direct correction
   that an implementing agent does not perform** (precedent `c3d5bd9`).
 
+For a separately authorized forward baseline, the Maintainer may use the
+scripted path in `bootstrap/REANCHOR_RUNBOOK.md` > *Preparing the forward
+baseline*. That path preserves the baseline membership, reviews current symbol
+bodies and proposed fingerprints, and records that historical AST review is
+not certified. It does not widen this runbook's self-service allowlist or
+change the ordinary historical correction path.
+
 An agent that reaches step 3 and finds the preconditions unmet stops and reports;
 it does not widen the allowlist, regenerate the whole baseline, or declare
 symbols it did not author.
