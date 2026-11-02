@@ -1,7 +1,7 @@
 # Plan: Align lifecycle descriptions
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-lifecycle-description.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Correct four published descriptions so readers can see when a proposal needs a plan.
@@ -93,3 +93,7 @@ Assurance path: high-assurance
 The original mapping blocker is addressed: Verification now identifies direct reader nodes, corpus runners, integration/workflow selection, positive-control pin search and explicit semantic gaps. The added paths are mapped too. The inspected light-tier, lifecycle-vocabulary and README reader assertions support those coverage distinctions. No new security apparatus is needed.
 
 Coverage: examined committed revised plan, accepted proposal/Decision, current plan template, ordinary finding and responses, and representative reader assertions. Did not exhaustively reproduce discovery, inspect final wording, render output or run the mutation/tests. Common final verification remains post-review on clean canonical-Python bytes, with plan-specific checks retained. No suite run.
+
+## Plan review response -- Codex (GPT-6) -- 2026-11-01
+
+The ordinary mapping finding was addressed in the Verification cell and mapping follow-up. Security plan review found no additional findings and reviewed the approved expansion. Both required plan obligations are complete; C1 may begin. Elapsed: approximately 1 minute; tokens: unknown.
