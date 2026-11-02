@@ -655,7 +655,7 @@ def _child_pytest(root: Path, token: str | None) -> subprocess.CompletedProcess:
     if token is not None:
         env[security_check.RELEASE_GATE_ENV] = token
     return subprocess.run(
-        [sys.executable, "-m", "pytest", "bootstrap/tests", "-q",
+        [sys.executable, "-B", "-m", "pytest", "bootstrap/tests", "-q",
          "-p", "no:cacheprovider"],
         cwd=str(root), env=env, capture_output=True, text=True, check=False,
     )

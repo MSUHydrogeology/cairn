@@ -45,7 +45,7 @@ def _run(*args: str, cwd: Path, env: dict | None = None):
 def _repo(tmp_path: Path) -> Path:
     r = tmp_path / "repo"
     r.mkdir()
-    _run("git", "init", "-q", ".", cwd=r)
+    _run("git", "init", "-q", "-b", "master", ".", cwd=r)
     _run("git", "config", "user.email", "m@example", cwd=r)
     _run("git", "config", "user.name", "M", cwd=r)
     return r
