@@ -1,7 +1,7 @@
 # Plan: Align the focused-testing example
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-focused-testing-example.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Correct the shipped testing example so it illustrates focused testing without weakening required verification.
@@ -162,3 +162,14 @@ Both ordinary and Security code reviews accepted the implementation without find
 **Boundary B: wide.** Frozen SHA/range, canonical Python 3.13.13, Bandit on `PATH`, clean isolated pre/post state, common 36-file selector union, 1,955 unique passes and 14 local-socket failures resolved by targeted rerun are recorded in the shared Boundary B record in `dev/plans/2026-11-01-decision-options.md`. The union includes the mapped reader, `test_documentation_plan_module.py`, install/upgrade and workflow families. Fresh default install inspection confirmed the replacement example at `docs/DOCUMENTATION_PLAN.md`, including required integration/security wording.
 
 Common gates and timings are in the shared record. This plan's changed-template selector selected `test_review_stance_in_shipped_files.py`; the reader search found the installer mapping and mapped test. No full-tree certification was run. Omitted: external links unprobed, 46 unpinned governing-file readers, per-file durations; no per-file timing data. **Elapsed**: shared automated tests 190.28 s; manual/install checks unmeasured. **Tokens**: unknown.
+
+
+## Dispositions -- archive preparation -- 2026-11-01
+
+**Dispositions**: none. Issue #42 is closed after the acceptance criteria and final Boundary B passed; no deferred follow-up remains. Whole-tree certification is a separate release ceremony, not a required check for this plan.
+
+## Lasting-truth migration -- 2026-11-01
+
+**Evidence shipped**: `a39171cc048101f12847e080b47ef786c5b75387` updates the shipped documentation-plan example. The mapped reader and install/workflow coverage, fresh default install inspection, prose gates and final wide Boundary B are recorded above. **Evidence deferred**: none. **Deferred evidence home**: N/A. Whole-tree certification remains a separate authorized ceremony.
+
+**Fidelity sign-off**: implementation commit `a39171cc048101f12847e080b47ef786c5b75387` matches the accepted `## Proposal` in `dev/proposals/archive/2026-11-01-codex-focused-testing-example.md`, accepted at its `## Decision`: it corrects the example while retaining required integration and security checks and the paired rationale.
