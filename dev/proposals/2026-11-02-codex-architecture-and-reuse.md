@@ -39,6 +39,8 @@ symbol analysis explicit. Include source revision, locations, omissions and
 parse errors. Reuse existing collection/classification in `tools/gauge.py`
 and `scripts/measurements.py` where suitable; do not create competing
 history extractors or force Cairn's categories onto adopters.
+Ship `templates/modules/team-gated/code_map.py` with its byte-identical
+self-hosted copy at `tools/code_map.py`.
 
 **2. Show neighbors.** Compare added/changed functions with existing functions
 by normalized structure and names; provide a whole-tree release mode.
@@ -73,7 +75,8 @@ one-time v0.7 strategy closeout assignment, recorded as one grouped board
 row owned by the release-closeout agent before this plan archives.
 Retire the delivery-sequence note at the v0.7 cut, or when superseded or
 cancelled, after every item has a delivered outcome or explicit live home.
-For other source notes, use the sequence note's retirement table: archive
+For other source notes, use
+`dev/strategy/2026-11-02-codex-v07-delivery-sequence.md`'s retirement table: archive
 only after their whole scope is delivered or explicitly dispositioned,
 move lasting guidance to its proper home, and repair live links.
 Unfinished scope cannot disappear into an archive. Broad living registers
@@ -110,7 +113,8 @@ Proposed paths:
 
 Exercise real command and installed copy; check minimal, mixed-language,
 malformed-source, link/escape and control-character cases. Never import or run
-candidate code. Use existing `test_reference_scripts.py`,
+candidate code. Place focused checks in `bootstrap/tests/test_code_map.py`.
+Use existing `test_reference_scripts.py`,
 `test_manifest.py`, `test_scaffold.py` and `test_module_merge.py`
 under `bootstrap/tests/` for affected contracts.
 
