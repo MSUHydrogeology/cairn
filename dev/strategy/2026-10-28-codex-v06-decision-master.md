@@ -268,6 +268,13 @@ new general rule or review stage is proposed. The Maintainer accepted it at
 `c25427ce`; the [completed plan](../plans/archive/2026-11-01-proposal-decision-summary.md)
 updated both proposal templates and passed review and focused verification.
 
+### 27. Give the shipped board a clearer layout — accepted
+
+The [proposal](../proposals/archive/2026-11-01-codex-shipped-board-layout.md)
+was accepted at `01acbdb8`. Its [plan](../plans/2026-11-01-shipped-board-layout.md)
+awaits ordinary and Security plan reviews; it coordinates one template rewrite
+with the documentation audit and preserves existing project boards.
+
 ## Issue triage, staffing and close-out
 
 Issue #33 asks that certification mean scoped checks. The accepted proposal
