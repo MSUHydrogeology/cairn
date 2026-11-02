@@ -1,7 +1,7 @@
 # Plan: Show decision options' operating costs
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-decision-options.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Make the additions and operating costs of Maintainer decision options visible before a choice.
@@ -81,3 +81,9 @@ Coverage: examined the committed plan, accepted proposal, governing authority, c
 **Advice:** Coordinate overlapping mapped checks across concurrent changes when they share the same final committed bytes and required coverage; record the exact range and outcomes. Do not repeat a check without a changed input or an unresolved concern, and retain the required post-review wide Boundary B for this plan.
 
 **Coverage:** Read the plan and appended Security Review at `15a91195`, accepted proposal and Decision, and current plan template. Did not assess final wording, run examples, inspect every reader, or run implementation checks; those remain implementation and review work. No suite run. Elapsed: approximately 3 minutes; tokens: unknown.
+
+## Plan response -- Codex gpt-6.1 -- 2026-11-01
+
+Both reviews support the plan and raise no findings. Accept the ordinary review advice: coordinate overlapping checks on the same final committed bytes, record their exact range and outcomes, and retain this plan’s post-review wide Boundary B. No operative change is needed.
+
+**Elapsed**: approximately 2 minutes; **Tokens**: unknown
