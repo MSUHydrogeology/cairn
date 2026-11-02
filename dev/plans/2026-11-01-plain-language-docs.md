@@ -255,3 +255,26 @@ records passing claim, link and neutrality checks. This reports that board
 reading and correction only; it does not establish completion of other reading
 groups or the full board/changelog/template scope. Elapsed: approximately 2
 minutes; tokens: unknown. No tests run for this record.
+
+## Documentation group coverage -- Codex (Implementation) -- 2026-11-01
+
+All 15 final `docs/methodology/` files were read against Cairn Plain Language
+1.0. `2643e096` clarified the methodology README, consolidation review and
+roles; the other 12 were read without a high-value edit. The core-template
+review separately covered the installed operative homes and 15 mapped core
+prose files; `f89c0908` records its clarity change. The board reading and its
+change are recorded separately above.
+
+The first-use reading covered `docs/README.md`, `docs/getting-started.md`, the
+project site, all three onboarding presets, optional `CONTRIBUTING.md`, and
+both shipped lifecycle skills. `00908eb2` aligns the site's three-lane graphic
+and accessible description with the ordinary-uncertainty rule, and defines two
+fit measures at first use. Its SVG XML parse and changed-file diff check passed;
+the neutrality gate passed with fail=0. `test_tiers` selected zero direct
+reader test files for the HTML and SVG. An initial `check_cairn` run found one
+broken strategy-record link; `008a5378` repaired it and a later run passed.
+
+This reading record does not establish C1's complete inventory of readers,
+pins and checks, or cover every remaining shipped template and document. The
+independent ordinary and Security Reviews and final wide Boundary B remain
+open. Elapsed: approximately 10 minutes; tokens: unknown.
