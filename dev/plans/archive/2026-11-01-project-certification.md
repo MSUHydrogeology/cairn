@@ -1,7 +1,7 @@
 # Plan: Supply practical scoped-certification defaults
 
 **Source proposal**: dev/proposals/archive/2026-11-01-sol-project-certification.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Give agents practical testing defaults so they can certify affected behavior without scientists designing routine test selection.
@@ -217,3 +217,14 @@ The final selector's other mapped files were `test_certifying_run_rule.py`, `tes
 **Non-pass disposition**: tests had no failures or skips. Initial scaffold attempts refused because temporary target directories did not exist; after creating them, both fresh installs succeeded. `git diff --check` flagged Markdown hard-break trailing spaces in the plan's appended review records only (lines 129–133 and 176–180); these append-only review records were left intact. Link check left 1 external link and `check_cairn.py` left 94 external links unprobed.
 
 **Known omissions**: per-file durations were not captured; no individual test file can be named for the 10-second consolidation list. The 44 unpinned AGENTS readers remain selector omissions. Full-tree certification was not run; this plan explicitly keeps Cairn's separate authorized ceremony unchanged. **Elapsed**: test commands 71.61 seconds real; prose gates 5.1 seconds; install/example inspections unmeasured. **Tokens**: unknown.
+
+
+## Dispositions -- archive preparation -- 2026-11-02
+
+**Dispositions**: none. Issue #33 is closed after the accepted testing architecture, installed examples and final wide Boundary B were completed. No deferred follow-up remains in this plan. Cairn's full-tree certification remains a separate authorized ceremony.
+
+## Lasting-truth migration -- 2026-11-02
+
+**Evidence shipped**: implementation and correction commits `1bac4fb1` through `dd24ce0a` update governing guidance, methodology, templates, module examples and existing assertions. The clean canonical-Python Boundary B record above covers the unique mapped union, standing gates, core-only and team installs, and accepted examples. **Evidence deferred**: none. **Deferred evidence home**: N/A. The separate full-tree ceremony remains governed by existing requirements.
+
+**Fidelity sign-off**: implementation commits `1bac4fb1` through `dd24ce0a` match the accepted `## Proposal` in `dev/proposals/archive/2026-11-01-sol-project-certification.md`, accepted at its `## Decision`: agents map affected behavior and widen for shared boundaries, while preserving required checks and Cairn's local full-tree ceremony. Issue #33 is closed; the plan adds no new policy mechanism or outstanding follow-up.
