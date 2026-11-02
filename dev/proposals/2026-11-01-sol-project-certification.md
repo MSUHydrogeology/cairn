@@ -1,157 +1,160 @@
-# Let projects choose what certification covers
+# Supply testing architecture that makes scoped certification dependable
 
 **Author**: Codex Sol (Strategy)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: usual + Security Review
-**Proposed tier**: heavy — changes protected methodology and shipped verification guidance.
+**Proposed tier**: heavy — protected methodology and shipped verification guidance.
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
-**In brief**: Let each project certify the affected software without making a whole-project test run a universal requirement.
+**In brief**: Give agents practical testing defaults so small changes earn scoped certification without making scientists design the testing process.
 
 ## Decision summary
 
-Let a project's Maintainer choose what certification covers and when broader
-checks run. A small change can then earn certification from its affected
-checks, without rerunning unrelated components. Preserve every applicable
-accepted, safety, security and release requirement. This adds a short project
-policy in existing guidance, not a new tool or review stage.
+Cairn supplies testing architecture; agents apply coverage defaults. Scientists
+need not design certification or approve coverage per proposal.
+Default to certifying affected behavior, with broader checks for shared
+boundaries and project operations. This requires better integrated guidance,
+not custom testing infrastructure. Existing required checks remain owed.
 
 ## Context
 
 [Issue #33](https://github.com/MSUHydrogeology/cairn/issues/33) reports roughly
-an hour each for unit and runtime-engine suites, plus longer model-evidence
-runs. These are reported, not measured here. Its local remedy
-makes certification scoped and whole-suite checking a separate obligation.
-The accepted scoped-change proposal separates change verification from full
-tree certification; the accepted model-evidence proposal clarifies evidence
-ownership but explicitly preserves the configured full-suite contract.
-Neither delivers the broader adopter choice now requested.
+an hour each for unit and engine suites, plus long model runs. These are
+reported timings, not measured here. Accepted scoped-verification and
+model-evidence proposals retain universal full-suite tree certification.
+The Maintainer rejected delegated design in chat, 2026-11-01:
 
-`templates/core/AGENTS.md`, Verification, still defines certification as the
-configured full suite and static gates, including before release cuts.
-`docs/methodology/plans.md`, Tree certification, says a green commit certifies
-every preceding change. That inference is too broad for scoped evidence.
-Cairn's own release and re-anchor requirements need not prescribe adopters' releases.
+> "Instead, shouldn't this be dictated by good testing architecture provided by Cairn?"
+
+Testing-discipline supplies tiers, contracts, budgets and simulation timescales. Architecture-review examines accumulated structure. Neither supplies a
+complete scoped-certification default.
+Cairn's own `tools/test_tiers.py` is repository-specific; it is not an adopter
+coverage oracle.
 
 ## Proposal
 
-Make certification a recorded claim about specified software at a tested
-commit. Require each project's Maintainer to choose its meaning, scope and
-triggers in the existing Verification section before using that claim. Offer
-a short adaptable example: affected checks certify a change; separately,
-project-chosen integration or release checks assess the combined software.
-Projects can retain whole-project certification. Require no policy menu.
+Supply the following practical default in core verification guidance, with
+examples expanding existing testing-discipline guidance. Use existing runners, directories and dependency information. Reuse existing guides; do not require a new manifest, selector,
+service, ledger or architecture-review program.
 
-A scoped claim names affected components, consumers and integration paths,
-checks, results and omissions in existing records. Unrelated components and
-untested combined behavior remain unclaimed until
-the project's broader checks run; it does not certify every ancestor. Missing
-known required coverage keeps that claim open; uncertainty widens coverage to
-the relevant owning families and integration paths. Existing independent
-review challenges coverage where the lifecycle requires it. A trivial change
-keeps its existing author-owned evidence path. No new review is added.
+**Organize around promises and boundaries.** Explain component ownership;
+unit checks for local behavior; contract checks for public interfaces and data
+formats; integration checks for connected components; and small workflow
+checks through real entry points. Use existing directory/tier arrangements.
+For simulations, retain real equations on small domains, analytical or
+convergence benchmarks when relevant, and work-specific long-run evidence.
+Runtime does not establish coverage.
 
-The project policy states when broader checks run and what a failure blocks.
-It may choose component releases, scheduled integration, pre-push checks,
-whole-suite release checks or other justified boundaries. Dependencies and risks determine coverage; duration cannot exempt a check. A failure contradicting an earlier scoped claim
-reopens that claim; an unrelated failure does not invalidate passing evidence
-for unaffected software. Applicable requirements still block their named
-operation until satisfied.
+**Select by effects.** The implementing agent searches changed behavior,
+callers, imports, configuration/data readers and public entry points, then
+maps existing checks to affected components and consumers in the current
+implementation record. Run applicable standing gates too. Add or extend a
+test only for a plausible uncovered fault. A local change defaults to these
+checks, not the entire codebase. Independent review challenges the selection
+within the existing lifecycle; trivial work retains author-owned evidence.
+No extra approval.
 
-A policy change cannot silently remove an existing required test, accepted
-criterion, scientific control, safety/security obligation or release check.
-Identify affected existing obligations and obtain the Maintainer's explicit
-change through the applicable lifecycle before replacing or rescheduling
-them. Until then they remain owed. Required checks cannot disappear because
-a suite was renamed or divided. Retain work-specific scientific evidence and
-its controls. Preserve historical records and existing plan contracts unless
-explicitly revised; no archive backfill.
+**Widen for shared effects.** A changed contract, common infrastructure,
+cross-language seam, solver/physics behavior or uncertain dependency requires
+owning test families and relevant consumer/integration paths. State uncertainty. Missing known required evidence keeps the work open. If tangled
+architecture prevents defensible selection, agents explain the missing seam
+and propose the smallest useful remedy; the existing optional architecture
+review is available, not imposed for each change or adoption. Do not hide gaps or automatically demand all tests.
 
-Cairn itself retains its configured whole-tree certification pair, triggers,
-release and re-anchor ceremonies, guard and security checks. Change only its
-wording that presents those local choices as requirements for all adopters.
-Do not change executable selection, installer behavior or trust machinery.
+**Certify a stated scope.** Existing records name tested commit, components,
+checks, results and omissions. Scoped certification covers those behaviors;
+unrelated components and untested combined behavior remain unclaimed. It does
+not certify every preceding change. A later discovered failure that
+contradicts the claim reopens it.
+
+**Separate project operations.** Cairn's starting guidance recommends affected
+checks for routine changes and a representative cross-component workflow at
+integration/release boundaries. Agents adapt this once to existing project
+commands and dependencies, identifying required security, safety, scientific
+and release checks. The Maintainer sets high-level operational needs and
+material exceptions, using an agent's concrete recommendation and costs.
+Whole-suite runs are optional unless an applicable project requirement makes
+them mandatory. No universal full-suite trigger. Failures block applicable claims or operations.
+
+Existing accepted criteria, required suite checks, scientific controls and
+release/security ceremonies remain owed until explicitly changed through the
+applicable lifecycle. Splitting or renaming a suite does not waive them.
+Preserve historical records and unrevised plans. Cairn itself retains its
+full-tree certification pair, triggers, release/re-anchor and security checks.
 
 ## Rationale
 
-A hydrology component fix may require its tests, downstream consumers and a
-shared-data integration check while leaving an independent engine untouched.
-No savings measured.
+For LHM-like software, a local input-reader fix can check malformed inputs,
+the data contract and a small consuming workflow without an unrelated engine
+suite. A shared solver change needs relevant numerical benchmarks and
+connected workflows. Illustrative; LHM dependencies uninspected.
+Cairn supplies the reasoning pattern; agents establish the actual mapping.
 
 ## Alternatives considered
 
-Keep current rules: no work, but adopters inherit full-suite certification.
+Keep current rules: free, but universally full-suite. Let each Maintainer design policy: less Cairn
+guidance, but transfers testing expertise and maintenance to scientists.
+Automated impact analysis: potentially useful where already available, but
+building it here adds infrastructure and cannot establish all dynamic effects.
 
-Rename scoped verification to certification universally: modest prose work,
-but removes the choice for projects that value whole-project certification;
-still needs clear broader-check obligations.
-
-Project-chosen certification: align guidance and maintain a short local policy. It avoids mandatory
-whole-suite costs while retaining explicit coverage and requirement ownership.
-
-Recommendation: project-chosen certification; adopter scale and risk vary. No new machinery or recurring review.
+Recommendation: practical defaults applied by agents using existing tools.
+Cost is aligning guidance and examples, plus ordinary coverage reasoning;
+Maintainers handle meaningful project choices, not routine test selection.
 
 ## Documentation / doctrine surface
 
-Prescription: `templates/core/AGENTS.md` and aligned self-hosted `AGENTS.md`.
-Align both plan and proposal templates, `docs/methodology/plans.md`,
-`docs/methodology/dual-review.md`, and lifecycle guidance where it assumes
-universal full-tree certification. Search other readers, shipped modules and
-examples before editing. Deliberation stays here. Keep Cairn's release and
-re-anchor runbooks' concrete commands unchanged.
+Align core and self-hosted `AGENTS.md`, plan/proposal templates and
+`docs/methodology/plans.md`, `docs/methodology/dual-review.md` and lifecycle
+wording. Align testing-discipline and its self-hosted copy; reference
+architecture-review without changing its optional selection. Search consumers
+and examples. Core must remain usable without optional modules. Leave engine,
+installer and ceremony commands unchanged. Prescription ships; deliberation
+stays here.
 
 ## Evidence / verification plan
 
 ### Tests required
 
-Map final changed paths using `tools/test_tiers.py` and search direct readers
-and byte pins, including `bootstrap/tests/test_certifying_run_rule.py`,
-`bootstrap/tests/test_verification_boundaries.py` and
-`bootstrap/tests/test_review_and_verification_rules_ship.py`. Adjust tests of
-universal wording while preserving tests of Cairn's local requirements.
+Map changed files with `tools/test_tiers.py`; search direct readers/pins,
+including certifying-rule, verification-boundary and shipped-rule tests in
+`bootstrap/tests/`. Preserve Cairn-specific ceremony assertions. No automatic coverage guarantee.
 
 ### Examples / smoke checks
 
-Run applicable claim, link, snippet and neutrality gates. Exercise three
-illustrative policies through installed guidance: a component change with an
-unaffected slow engine; a shared contract requiring wider consumer checks;
-and a release with an existing whole-suite obligation. Record reviewer
-judgments: no unrelated run forced in the first, no missing consumer accepted
-in the second, no existing obligation waived in the third. Include the
-whole-project policy alternative. These are procedural examples, not machine
-proof of coverage. Final implementation records wide Boundary B; no suite is
-requested for this proposal.
+Exercise installed guidance for local reader, shared solver, uncertain
+cross-component dependency, and existing mandatory release-check cases.
+A reviewer must find sufficient coverage without scientist-designed policy,
+no unrelated suite forced, no missing known consumer accepted and no existing
+requirement waived. Also exercise core without optional modules. Run applicable
+claim, link, snippet and neutrality gates; final implementation gets wide
+Boundary B. No proposal suite.
 
 #### Security preflight — five questions, answered in writing
 
-S1: Maintainers choose policy; authors supply evidence. S2: Omission
-examples challenge waiver and scope; not yet exercised. S3: Existing authors
-and reviewers apply requirements at their existing stages. S4: Known missing
-required evidence keeps the affected claim or operation open. S5: A plausible
-incomplete mapping can miss a dependency; no automatic coverage guarantee is
-claimed.
+S1: Agents supply mappings; Maintainers own direction. S2: Omission examples
+challenge gaps; not run yet. S3: Existing authors/reviewers apply coverage at
+existing stages. S4: Missing required evidence keeps work open. S5: Plausible
+incomplete mappings can miss dependencies; no automatic guarantee.
 
 ### Independent scientific check
 
-N/A: changes evidence governance, not a scientific result.
+N/A: no scientific result changes.
 
 ## Signals the change is wrong
 
-An adopter still must run unrelated suites solely to certify a small change;
-a scoped run claims the whole tree; or an existing required check disappears
-without explicit authorized replacement.
+Scientists must design routine coverage; tiny changes force unrelated suites;
+a scoped claim implies whole-tree assurance; or required checks disappear.
 
 ## Scope delta
 
-Opening scope. This would replace the universal full-suite definition retained
-by the two accepted proposals; it does not revise their historical records.
+Widened: replace self-designed policy with supplied architecture and defaults.
+Fresh usual and Security reviews required. Earlier reviews remain historical.
 
 ## Assurance path
 
 **Assurance path**: high-assurance
 
-Authoring: approximately 10 minutes; tokens unknown. Issue #33 read directly.
-No suite or adopter software run.
+Revision: approximately 8 minutes; tokens unknown. No suites run.
 
 ## Review -- Codex Sol (Reviewer) -- 2026-11-01
 
@@ -209,3 +212,14 @@ remain project choices; no project-wide suite is assumed or added.
 No scope widened or requirement waived. Both independent reviews support the
 proposal with no blocking findings. Claim check passed; no suites or adopter
 software run. **Waiting on**: Maintainer Decision.
+
+
+## Revision -- Codex Sol (Strategy) -- 2026-11-01
+
+**Elapsed**: approximately 8 minutes. **Tokens**: unknown.
+
+Accepted the Maintainer direction: Cairn supplies architecture and defaults;
+agents map effects and recommend checks. Maintainers handle high-level project
+needs and meaningful exceptions, not coverage design per proposal. Added
+module integration and core-only examples; no new infrastructure or Decision.
+Scope widened, so fresh usual and Security reviews read this revision.
