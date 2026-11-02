@@ -170,3 +170,22 @@ Prior findings: B1
 Cairn's own full-tree pair and triggers remain in root `AGENTS.md`; the revised test distinguishes that local contract from adopter scope. Agents still select routine coverage without per-change Maintainer approval. -- Root and shipped Verification; changed certifying-rule test.
 
 Coverage: read committed correction, affected assertions and implementation response. No suite, mutation or independent installation run; the author reports 62 targeted passes and installed guidance exercises. Final wide Boundary B and separate Security review remain owed.
+
+## Targeted Security code review -- Codex gpt-6.1-sol -- 2026-11-02
+
+Reviewed commit: 4358247d5e52e1639a4a7b28e63f9618120bf22b  
+Target: S1 correction `3d168701` and `4358247d`; evidence `5e21d5e7`, ordinary follow-up `61563ff4`  
+Prior findings: S1  
+**Tier**: Security Review — second and final pass  
+**Verdict**: S1 closed; no new finding.  
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Shipped core now names commit, components, checks, results and omissions, excludes unrelated/untested/earlier behavior and reopens contradicted claims. It requires project checks and ceremonies without imposing an unrelated whole suite. -- Corrected `templates/core/AGENTS.md`, Verification.
+2. **Best alternative.** The correction replaces existing contradictory paragraphs and splits existing assertions between adopter scope and Cairn's local contract. This supplies C2 without a form, selector or routine Maintainer approval. -- Corrected methodology, shipped templates and certifying-rule tests.
+3. **What would show it wrong?** A scoped claim waiving a mandatory security/release check or still certifying unrelated ancestors. The core clause and corrected shipped plan template explicitly prevent both; methodology separately preserves Cairn's green whole-tree claim. The author records corrected installed local/shared/uncertain/mandatory examples. -- Correction diffs; response at `5e21d5e7`.
+
+**Bounding**: ACCEPTED — challenged the original universal-rule conflict and local/required-check distinction. Root `AGENTS.md` and executable ceremony commands are unchanged by these corrections. Revised tests check scope/reopening and retain Cairn's pair/triggers. Author evidence reports 62 targeted passes under Python 3.13.13, corrected installs and prose gates; no implementation checks rerun here.
+
+Coverage: read committed corrections, changed assertions, implementation response and ordinary follow-up. Did not independently install, audit adopter dependencies, run mutation or suite, or certify the tree. This clears the Security Review obligation, not final integration: wide Boundary B remains owed on clean unchanged canonical-Python bytes.
