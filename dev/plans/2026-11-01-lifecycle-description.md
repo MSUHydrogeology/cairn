@@ -131,3 +131,22 @@ The shared run records describe committed inputs, but do not preserve pre/post `
 **Evidence**: Compared the changes, diagram paths and accessible descriptions with the accepted proposal and plan. My findings on the SVG's unconditional plan and plan review are closed by `a6927476` and `212cba7a`; `7f03a402` aligns the source comment and `69e0bb5a` corrects Quickstart's review condition. The implementation record reports the mapped selection, prose gates, rendered inspection and a detected false-light-plan mutation. It discloses unrecorded clean-state evidence and final edits after the mapped runs; those remain limits for final verification.
 
 **Coverage**: Read the committed six-surface changes, proposal, plan and iteration evidence. Inspected the SVG paths and accessibility text, relying on the author's rendered inspection. Did not rerun tests or the mutation, inspect installed output, or perform the separate Security Review. Wide final verification remains outstanding. No suite run. Elapsed: approximately 7 minutes; tokens: unknown.
+
+## Security code review -- Codex gpt-6.1-sol -- 2026-11-01
+
+Reviewed commits: 55d0034b, a6927476, 212cba7a, 7f03a402 and 69e0bb5a  
+Target: six descriptive surfaces; evidence `364c26c2`, ordinary review `214b49a7`  
+Prior finding: Quickstart's unconditional reviewed-plan wording  
+**Tier**: Security Review  
+**Verdict**: ACCEPT; prior finding closed, no new findings.  
+**Elapsed**: approximately 7 minutes across preparation and final review. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The descriptions retain light's no-plan rule, separate outer lanes from proposal tiers and preserve named high-risk and added/widened-boundary heavy triggers. The approved HTML/Quickstart additions remain descriptive. No governing instructions or enforcement changed. -- Six-surface diff, accepted scope and C1.
+2. **Best alternative.** Keep the existing diagram with a conditional route and short explanation, as implemented. Removing it loses useful process guidance; adding another classification mechanism is unnecessary. -- SVG paths and labels; accepted proposal, Alternatives.
+3. **What would show it wrong?** The diagram sending light through a plan, or Quickstart requiring every plan review. My render of committed `7f03a402` shows the light bypass and conditional review label; metadata and both alternatives agree. `69e0bb5a` closes the Quickstart finding. The author separately records detection of the deliberately false light-needs-plan example. -- Rendered committed SVG, correction diff and completion evidence.
+
+**Bounding**: ACCEPTED — challenged visual routing and conditional-review semantics. Evidence reports the shared 667 and remainder 942 passes under Python 3.12.9 and targeted later checks. Missing pre/post clean-state records, an unretained remainder command and later edits limit that evidence; this review does not certify it as final clean-tree verification.
+
+Coverage: examined accepted scope, committed changes, rendered branch, accessible text, implementation evidence and ordinary review. Did not rerun suites or mutation, test browser themes or certify the tree. The scope allowance is recorded; no further reached fence/deviation appears. Final wide Boundary B on clean canonical-Python bytes remains owed.
