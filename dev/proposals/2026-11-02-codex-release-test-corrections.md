@@ -1,18 +1,18 @@
-# Correct two release-test defects
+# Correct release-test portability defects
 
 **Author**: Codex GPT-6
-**Status**: revising
+**Status**: awaiting-review
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
-**In brief**: Correct two test expectations that reject valid release behavior.
+**In brief**: Correct three test setup and expectation defects that obstruct release verification.
 
 ## Decision summary
 
 Suppress Python bytecode in the existing child-test helper and update the
-install-manifest count to include the accepted changelog mapping. Both edits
-are small, but both test files are hash-pinned, so normal heavy review applies.
+install-manifest count to include the accepted changelog mapping. Also make the scratch Git repository use the branch name its tests expect.
+All three test files are protected, so normal heavy review applies.
 The cost is a short plan and independent reviews; there is no new functionality
 or recurring operation.
 
@@ -32,6 +32,8 @@ mapping; `bootstrap/_scaffold/config.py` contains it and
 `TestInstallCore.test_installs_changelog_and_publishes_its_mapping` checks it
 (`dev/plans/archive/2026-11-01-changelog-template.md`, C1).
 
+Nine additional `test_gate_preflight.py` failures in `/private/tmp/cairn-forward-finalb-44ab91e3.log` use the shared `_repo` helper, directly or through its ceremony, anchored or publication helpers. It runs plain `git init`; the scratch HEAD was `main`, while these tests expect `master`. The log shows missing `master` refs and the resulting incorrect history. This diagnosis has not yet been confirmed by running the proposed correction.
+
 ## Proposal
 
 Add Python's `-B` option to the existing `_child_pytest` invocation in
@@ -43,7 +45,9 @@ Change the fixed count from 87 to 88 in
 `bootstrap/tests/test_notice_install.py` and mention the accepted changelog
 addition in its diagnostic. Retain a fixed independent expected count.
 
-Implementation changes only those two existing test files. No production
+Initialize `_repo` explicitly with `git init -b master` in `bootstrap/tests/test_gate_preflight.py`, matching its existing ref assertions independent of host defaults. Preserve all nine tests and their security assertions.
+
+Implementation changes only those three existing test files. No production
 verifier, mapping, trust machinery, baseline or manifest changes belong here.
 The separately authorized forward-baseline work retains its own scope and
 gates; this proposal adds no comparison to an old anchor.
@@ -52,20 +56,20 @@ gates; this proposal adds no comparison to an old anchor.
 
 Correcting the tests preserves their promises: children leave the committed
 checkout unchanged, and the manifest count detects unexplained install-set
-changes. Neither failure establishes a production defect. Hash-pinned bytes
+changes. The reported failures do not establish a production defect. Hash-pinned bytes
 exclude the cheap-defect exception despite the small edits.
 
 ## Alternatives considered
 
-Doing nothing costs no implementation effort but leaves both known failures
+Doing nothing costs no implementation effort but leaves the known failures
 open and prevents complete release evidence. Running under an externally set
 bytecode environment variable could hide the helper's dependence on its
 caller and leaves the stale count unresolved. Weakening the verifier or
 computing the expected count from the manifest would lose independent
 protection and add maintenance risk.
 
-**Recommendation:** make the two explicit test corrections; this is the least
-involved option that resolves both causes while preserving the safeguards.
+**Recommendation:** make the three explicit test corrections; this is the least
+involved option that addresses the reported causes while preserving the safeguards.
 
 ## Documentation / doctrine surface
 
@@ -77,15 +81,15 @@ plan supplies evidence for the count; its archived records remain intact.
 
 ### Tests required
 
-Use `python tools/test_tiers.py for` for the two changed paths and trace the
+Use `python tools/test_tiers.py for` for the three changed paths and trace the
 existing helper's callers. Run the resulting affected selection under canonical
 Python 3.13.x. Explicitly exercise the detached-checkout ignored-plugin test,
 all existing callers of `_child_pytest`, the manifest-count test and the existing
-changelog mapping/install test through their normal entry points.
+changelog mapping/install test through their normal entry points. Run all nine reported Git tests and relevant `_repo` consumers under an adversarial host default of `main`; confirm the scratch HEAD is `master` and all original assertions still run. Also check the helper with a `master` default. These are disposable repositories only.
 
 In separate copies, removing `-B` with `PYTHONDONTWRITEBYTECODE` absent must
 reproduce the detached-checkout failure; restoring 87 must fail the count test.
-The supplied failure log is prior evidence, not a new mutation run. Preserve
+In a separate copy remove the explicit branch while the host default is `main` and show the affected test fails; the supplied failure logs are prior evidence, not new mutation runs. Preserve
 skip refusal and extra-file rejection checks. A passing count alone does not
 establish install behavior.
 
@@ -104,18 +108,18 @@ applicable. No example behavior changes.
 
 **S1 — Who supplied it?** Tests use fixture Git repositories, copied committed
 release-hook code and explicit child arguments. The expected count is the
-fixed value 88 justified by the accepted mapping, not computed from the output.
+fixed value 88 justified by the accepted mapping, not computed from the output. The scratch branch name is test setup, fixed to match existing ref assertions rather than inherited from user configuration.
 
 **S2 — Can it fail?** Removing `-B` or restoring 87 are the proposed mutations.
-They have not been run in this proposal step; implementation must record them.
+A `main` default with the explicit branch removed is the third proposed mutation. None has been run in this proposal step; implementation must record them.
 
-**S3 — What fires it, over what?** Targeted pytest selections exercise the two
-changed files and helper callers; the existing release command remains
+**S3 — What fires it, over what?** Targeted pytest selections exercise the three
+changed files and helper callers, including the nine scratch-branch failures; the existing release command remains
 `python bootstrap/security_check.py`. No adopter-facing sentence changes.
 
 **S4 — Which way does it break?** Bytecode suppression prevents execution
 byproducts without admitting extra inputs. Existing exact-byte and release-skip
-refusals stay fail-closed. The count remains a fixed equality check.
+refusals stay fail-closed. The count remains a fixed equality check. A failed scratch initialization must not be mistaken for a meaningful passing ref test.
 
 **S5 — Who still wins?** An attacker able to modify executing test code can
 still falsify a local result. This correction does not claim to close that
@@ -130,12 +134,12 @@ no scientific claim or numerical model.
 
 The ignored override reaches the detached child; a skipped child returns
 success; an extra checkout file is accepted; the corrected helper still writes
-bytecode; or the 88th mapping is anything other than the accepted changelog.
+bytecode; the 88th mapping is anything other than the accepted changelog; or the scratch tests still depend on the host branch default.
 Any such result keeps implementation open.
 
 ## Scope delta
 
-**Scope delta**: preserved.
+**Scope delta**: widened to include deterministic scratch-branch setup in the existing protected gate-preflight test. The original two corrections remain intact; fresh ordinary and Security proposal reviews are required for this addition.
 
 ## Assurance path
 
@@ -200,3 +204,10 @@ required checks remain subject to a Maintainer Decision; none is recorded here.
 None.
 
 Elapsed: approximately 1 minute; tokens: unknown.
+
+
+## Revision -- Codex (GPT-6), Strategy -- 2026-11-02
+
+Added the scratch-branch portability correction and its controls after nine failures in the final verification log. Earlier reviews and response remain unchanged; this widened scope returns for independent ordinary and Security proposal review before any Maintainer Decision. No production or baseline change is proposed.
+
+**Elapsed**: approximately 5 minutes. **Tokens**: unknown.
