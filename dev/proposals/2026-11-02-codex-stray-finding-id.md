@@ -81,3 +81,25 @@ The inventory is under the named high-risk `bootstrap/_scaffold/` surface. Usual
 **Foundations.** (1) Yes: `dev/PLANNING.md` records the Maintainer's direction, identifies this marker and retains `SR-1`; commit `e9adb1f9` subsequently edited the inventory, while line 70 at `a7a87d96` still carries `(R5)`. The proposed deletion addresses the recorded case without changing its safeguard description. (2) Leaving it costs no work but loses that correction; a broader cleanup adds work outside the recorded case. The named high-risk `bootstrap/_scaffold/` surface in `AGENTS.md` supports the heavy path even for this prose edit; the documented cheap-defect exception does not remove the proposal's stated assurance obligations. (3) A reader or byte-pinned consumer needing this exact marker, or a diff changing the safeguard description, would show the change wrong. The proposed reader and pin search and exact diff comparison can expose those cases.
 
 **Coverage:** Read the proposal and committed inventory, planning trigger, relevant high-risk rule and subsequent inventory edit. Did not independently enumerate consumers or run implementation checks; those remain prospective. Elapsed: approximately 3 minutes. Tokens: unknown.
+
+## Security Review -- Codex gpt-6.1-sol -- 2026-11-02
+
+Reviewed commit: 10fc47b6594820b51ccfe4ef3f825dfe5df2daca  
+Target: exact marker deletion, retained safeguard and declared assurance  
+Prior findings: none  
+Assurance path: high-assurance
+
+**Tier**: Security Review  
+**Findings**: none  
+**Verdict**: ACCEPT as framed; recommendation, not a Maintainer Decision.  
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Removing only the space and `(R5)` leaves the occupied-destination hard block, lock-source conflict, no-silent-overwrite promise and historical cause intact. The retained `SR-1` is outside this exact edit. -- Committed SECURITY_MUTATIONS, new-core-blocked bullet; Proposal; planning direction.
+2. **Best alternative.** Leave the marker: no editing cost, but the obsolete reference remains after its recorded trigger. An identifier scanner, broader cleanup or new security check adds no value for this one deletion. -- Proposal, Alternatives and Scope; planning's separately deferred warning-scan proposal.
+3. **What would show it wrong?** A consumer requiring the exact identifier or another byte changing, especially the refusal semantics. The proposed reader/pin search and parent-byte comparison address these possibilities without rerunning runtime security behavior. -- Proposal, verification plan and S2/S3; committed inventory bullet.
+
+The current governing rule names `bootstrap/_scaffold/` as high-risk, and the author's heavy declaration stands unless the Maintainer changes it; this supports the present Security obligation. That directory rule does not make the deletion intrinsically complex. The proposal separately declares required plan review: do not silently waive that declaration, but do not add machinery or extra checks beyond its mapped existing obligations. Any plan should remain proportional to the exact deletion.
+
+Coverage: read committed proposal, ordinary review, target bullet, planning context, governing high-risk/tier rules and current proposal template. Did not enumerate all readers/pins, execute the prospective byte control or run suites. No security behavior, authority or safeguard deletion is proposed.
