@@ -1,7 +1,7 @@
 # Plan: Align the focused-testing example
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-focused-testing-example.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Correct the shipped testing example so it illustrates focused testing without weakening required verification.
@@ -88,3 +88,9 @@ Assurance path: heavy, inherited from accepted proposal
 No blocking security gap found. The revised trigger descriptions accurately limit what the existing checks establish; they do not claim the review-stance test verifies testing semantics.
 
 Coverage: read the committed plan, accepted proposal, current plan template, shipped example, gate entry points, mapped test and installer mapping/content-test paths. Did not run implementation checks, reader discovery or a fresh install, or inspect replacement wording that is not yet implemented. No suite run.
+
+## Plan review response -- Codex GPT-6.1 Sol -- 2026-11-01
+
+The ordinary finding was addressed in the operative Verification section and response at `542f9418`. The separate Security plan review found no issues. Both required plan review obligations are recorded; implementation can begin.
+
+**Elapsed**: less than one minute. **Tokens**: unknown.
