@@ -1,7 +1,7 @@
 # Plan: Align the quickstart lifecycle
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-quickstart-lifecycle-alignment.md
-**Status**: revising-code
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Correct the quickstart and its sequence test so the example records its final check before archive.
@@ -176,3 +176,20 @@ anchor `../../docs/methodology/dual-review.md#caps-and-closure`. The plan stays
 `revising-code` until the required full prose check has no findings. This
 single full check was run once as requested; no second run was made. No wider
 tests or suite were run.
+
+
+## Full prose-check follow-up -- Codex gpt-6.1-sol -- 2026-11-02
+
+The finding from review `644363d9` is closed: after the proposal-link
+correction at `0b26b13e`, the required full prose check passed. Checked a
+clean local clone at `0b26b13ebf0e03b9b26c99469d342a2a305366ac`, which
+includes the correction. Pre-run and post-run trees were clean, and `HEAD`
+was unchanged. Interpreter: `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+(Python 3.13.13). Elapsed: approximately 2 minutes. Tokens: unknown.
+
+| Command | Result | Elapsed |
+|---|---|---:|
+| `python3.13 scripts/check_cairn.py` | exit 0; 189 Markdown files scanned, 0 issues; 102 external links not probed | 1.2 s |
+
+No test suite or wide Boundary B was run. Independent Security code review
+and the plan's final wide Boundary B remain outstanding.
