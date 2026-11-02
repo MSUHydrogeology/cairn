@@ -292,8 +292,9 @@ duplication.
 
 ## The `AGENTS.md` ↔ doctrine paired-update rule
 
-An operational reminder in `AGENTS.md` (e.g., "Run the test
-suite after any substantive change") often pairs with deeper
+An operational reminder in `AGENTS.md` (e.g., "Run focused tests
+for changed files; complete required integration and security
+checks") often pairs with deeper
 *why* in `dev/agent_collaboration.md` (e.g., the
 testing-discipline rationale).  When new operational content
 surfaces, follow this rule:
