@@ -39,8 +39,7 @@ service, ledger or architecture-review program.
 **Organize around promises and boundaries.** Explain component ownership;
 unit checks for local behavior; contract checks for public interfaces and data
 formats; integration checks for connected components; and small workflow
-checks through real entry points. Use existing directory/tier arrangements.
-For simulations, retain real equations on small domains, analytical or
+checks through real entry points. For simulations, retain real equations on small domains, analytical or
 convergence benchmarks when relevant, and work-specific long-run evidence.
 Runtime cannot prove coverage.
 
