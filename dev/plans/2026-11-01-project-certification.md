@@ -1,7 +1,7 @@
 # Plan: Supply practical scoped-certification defaults
 
 **Source proposal**: dev/proposals/archive/2026-11-01-sol-project-certification.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Give agents practical testing defaults so they can certify affected behavior without scientists designing routine test selection.
@@ -97,3 +97,11 @@ Coverage: examined committed plan, ordinary review, accepted proposal/Decision, 
 ## Response to plan reviews -- Codex GPT-6.1 Sol -- 2026-11-01
 
 Both reviews accepted the plan without findings. Final-path mapping, installed examples, preservation of existing requirements, separate Security code review and wide final verification remain implementation obligations. Elapsed: under one minute; tokens: unknown.
+
+## Iteration evidence -- Codex GPT-6 -- 2026-11-02
+
+Committed implementation: `1bac4fb1` through `9c110c14`; reviewed range begins at `6b8e8924`. The non-AGENTS changed-surface map selected 23 test files. The first union run on `1bac4fb1`, Python 3.13.13, collected 1,322 tests: 1,321 passed and one new wording guard failed because root AGENTS differed from the shipped copy. Commits `510b8531` and `9c110c14` aligned both copies. The affected node `test_verification_boundaries.py::test_scoped_defaults_reach_core_templates_and_optional_module` then passed on `9c110c14` (1 passed, 0.04 s). The union was not rerun; its prior passing results do not certify the corrected final bytes. The `AGENTS.md` selector for the reviewed range selects that same test file and omits 46 other readers under its >40 passage-pin rule. Wide Boundary B after code review must run the deduplicated mapped iteration plus integration/workflow selection.
+
+Installed examples: the `solo-greenfield` scaffold installed core AGENTS and plan/proposal templates without `testing-discipline`; the `collaborative-team` scaffold installed the optional module, byte-identical to `dev/modules/testing-discipline.md`. Applying the installed guidance: a local reader maps to its unit/contract checks and a real entry path; a shared solver widens to its owner family, numerical benchmark and consumers; uncertainty is recorded and keeps known missing evidence open; an existing release check remains required. These are guidance exercises, not runs against an adopter's code or scientific model.
+
+Checks: claim_check passed on all 12 changed documents; link_check passed on 11, excluding the self-hosted module whose existing optional sibling link does not resolve in Cairn's source home; snippets passed on 12; neutrality passed (0 failures, 43 informational findings); `check_cairn.py` passed (185 Markdown files, no issues, 93 external links not probed); `git diff --check` passed. No full-tree certification ran. Elapsed: approximately 20 minutes; tokens: unknown.
