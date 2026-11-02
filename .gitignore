@@ -10,6 +10,10 @@ dev/reflections/*
 !dev/reflections/README.md
 dev/.cairn/.foldback-draft-*.md
 dev/intents.jsonl
+# Written by the work-intent hook on each prevented collision; local evidence.
+dev/measurement/collision_log.md
+# Harness-local files: settings, preview config and the self-healed skills link.
+.claude/
 
 # Measurement OUTPUTS are regenerated, never authored: tracking them dirties the
 # tree on every run, which breaks the clean pre/post state a Boundary B record
