@@ -23,6 +23,7 @@ import sys
 import tarfile
 import time
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -688,7 +689,7 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
         return made
 
     monkeypatch.setattr(RP, "load_listed", load_with_anchor_race)
-    with pytest.raises(RP.Refuse, match="atomic branch and anchor update refused"):
+    with patch.dict(sys.modules), pytest.raises(RP.Refuse, match="atomic branch and anchor update refused"):
         RP.baseline_install(repo, candidate, output, roster, reader,
                             str(key.with_suffix(".pub")), fingerprint, package_digest)
     assert subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
@@ -716,7 +717,7 @@ def test_baseline_preparation_builds_exact_package_after_reader_binding(tmp_path
         return made
 
     monkeypatch.setattr(RP, "load_listed", load_with_branch_race)
-    with pytest.raises(RP.Refuse, match="atomic branch and anchor update refused"):
+    with patch.dict(sys.modules), pytest.raises(RP.Refuse, match="atomic branch and anchor update refused"):
         RP.baseline_install(repo, candidate, output, roster, reader,
                             str(key.with_suffix(".pub")), fingerprint, package_digest)
     assert subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
