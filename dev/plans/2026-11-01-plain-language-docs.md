@@ -313,3 +313,40 @@ Reviewed implementation at `58544046`, including `14f94b1e`, `37c07e0d`, `af8d12
 **Evidence:** Targeted committed-byte falsification under Python 3.12.9 confirmed the protected extractor captures the final reviewer obligation and detects changes to both the governance-boundary refusal and that final clause. Removing only the added heading/marker from each of eight issue forms recovered its exact prior content. An initial mutation missed wrapped text; corrected mutations asserted target presence. No suite ran. Existing clause-presence controls remain intact in `14f94b1e`.
 
 **Coverage:** Compared accepted preservation requirements, committed plan evidence, operative model-tier guidance, module changes, core markers, issue forms and site/SVG. Relied on reported installer and prose checks. Did not read every unchanged document, independently exercise hosted issue interfaces, or run final integration; ordinary review findings remain separately owed.
+
+## Implementation response -- Codex (Implementation) -- 2026-11-01
+
+The phase-0/readiness group is now covered. `templates/phase-0/README.md` is
+guidance, not a fillable template. The greenfield profile, legacy profile, team
+profile and Codebase Readiness Report are fillable templates; `6f887f4c` puts
+the marker below each title. Bootstrap instructions and adopter guidance point
+to them. The profile files are not copied automatically by the installer; I
+found no parser that reads their marker line. Claim and link checks, snippet
+check, neutrality and the directly mapped legacy-profile test passed. No broad
+selection ran.
+
+For C1, the ordinary-review report gives a group-level mapping: `config.py`
+lines 534, 913, 948 and 1020 cover core prose, skills, optional content and
+modules; `install.py` lines 1562–1609 cover onboarding, and lines 1784–1821
+cover forge copying. It names direct readers and maps the applicable gate
+triggers to their runners and input sets. Its negative search found no direct
+reader for `docs/index.html` or `docs/assets/three-lanes-of-change.svg`; the
+known-positive controls for `docs/quickstart.md` and `docs/methodology/roles.md`
+found their expected readers. No evidence ledger was added.
+
+For `2643e096`, I built a clean committed snapshot and ran only the four nodes
+that read `docs/methodology/roles.md`: `test_model_tier_rule_ships.py::test_proposal_authoring_and_ordinary_review_are_medium`, two
+`test_review_stance_in_shipped_files.py::test_doctrine_carries_the_statement`
+cases (cost rule and cleanup), and its retired-privilege case. All four passed
+under Python 3.12.9. Python 3.13 was unavailable. Those assertions check the
+model-tier and cost clauses, not the changed introductory passage. No test
+reads the changed passages in the methodology README or consolidation review,
+and the roles path classification test does not read its text. These checks do
+not establish semantic equivalence for all 17 rules. No suite or broad
+selection ran.
+
+The reviewer's C1 mapping is recorded at group level; it does not establish a
+per-file inventory or resolve every remaining shipped document/template
+group. Independent ordinary and Security Review findings, and final wide
+Boundary B, remain open. Claim check passed on this plan. Elapsed: approximately
+12 minutes; tokens: unknown.
