@@ -70,6 +70,11 @@ Metering owns usage ingestion; `tools/gauge.py` remains the pulse/report home.
 The visual pilot consumes shared history/diff data, not another collector.
 Local-notes discovery must reconcile with session tooling, not edit it blindly.
 
+Git-backed map/pilot inspection depends on B6's shared sterile Git boundary;
+without it the affected view is incomplete, not approved for unsafe fallback.
+Filesystem-only mapping and rubric work can proceed independently. The pilot
+remains an owed outcome, not an indefinite deferral behind that dependency.
+
 Use `tools/test_tiers.py for <paths>` and map promises to owning/consumer tests.
 Keep mutable repositories and environments fresh; share only immutable setup.
 Add tests for plausible uncovered faults, not every sentence.

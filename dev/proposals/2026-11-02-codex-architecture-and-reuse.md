@@ -12,7 +12,7 @@
 
 Help scientists understand agent-built systems without reading every patch.
 Extend the optional architecture module, not the core approval process.
-Costs: one shared collector, maintained examples and a short release structure
+Costs: one shared read-only collector, maintained examples and a short release structure
 assessment for selected-module projects; no new service or approval meeting.
 
 ## Context
@@ -57,7 +57,7 @@ wrappers/copies; no general prohibition on functions, classes or abstraction.
 lenses; add accretion/reuse and contrasting examples, including justified
 action and adequate existing practice. This work owns rubric examples that
 separate functional test scope from execution cost; fault-centered testing
-owns matching testing-module guidance. Do not duplicate instruction.
+owns matching testing-module guidance; link it rather than duplicate instruction.
 At selected-module releases, record map, neighbors, growth and ranked
 consolidation candidates with preserving tests in the same record.
 Judge useful simplification, not a deletion quota.
@@ -65,7 +65,7 @@ Judge useful simplification, not a deletion quota.
 **5. Pilot visual review.** Compare manual practice, an existing product and
 a small offline report reusing LHM's scope-map interaction/shared collection.
 Cover workstreams, shape, capabilities and growth; semantic views require
-cited workflows/declarations, not inferred capability from symbols.
+cited workflows/declarations. Symbols prove neither capability nor unused code.
 Use independently prepared duplication, drift, capability overclaims and
 justified growth as known-answer tasks. Measure accuracy/time, annotation
 effort, false alarms and misses; reject graphics improving neither
@@ -111,13 +111,14 @@ Proposed paths:
 ### Tests required
 
 In `bootstrap/tests/test_code_map.py`, exercise real CLI/installed copy,
-mixed/unsupported languages, malformed source, links, control characters,
+minimal trees, mixed/unsupported languages, malformed source, links, control characters,
 hostile HTML, target imports and Git configuration attempting execution.
 Require finite file-count, byte, parser/elapsed-work and comparison budgets;
 choose measured limits in the plan. Oversized/deep/pathological inputs
 must stop affected processing and visibly report incomplete evidence.
-Use existing scaffold, manifest, reference-script and module-merge tests
-under `bootstrap/tests/` for affected contracts.
+Use existing `test_scaffold.py`, `test_manifest.py`,
+`test_reference_scripts.py` and `test_module_merge.py` under
+`bootstrap/tests/` for affected contracts.
 Exercise legacy/new/mixed rubric examples, not only tooling.
 
 ### Examples / smoke checks
