@@ -189,3 +189,46 @@ runtime evidence open until delivered or explicitly dispositioned.
 prior audit and retirement ownership. **Not covered / low confidence**: no
 tests, mutations, timings or implementation reruns; historical measurements
 were read only. This pass does not discharge Security Review.
+
+## Review -- Codex (independent Security Reviewer) -- 2026-11-02
+
+**Model**: inherited Codex runtime; exact identifier unavailable; no downshift.
+**Reviewed commit**: `9d5a69e524a2ab3a749b386dd67efe2861f2ecf0`
+**Target**: opening proposal. **Prior findings**: none.
+**Assurance path**: high-assurance. **Tier**: Security Review.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: retain refusal behavior while
+   reducing setup, with fresh mutable repositories and separately authorized
+   protection changes -- Proposal 2-4;
+   `bootstrap/tests/test_gate_preflight.py:45-83`.
+2. **Best alternative.** Consolidate existing family fixtures first, without
+   another runner --
+   `dev/plans/archive/2026-10-30-certification-cost-audit.md`, Acceptance criteria.
+3. **What would show it wrong?** A retained check misses an old fault, shared
+   state changes outcomes, or protection changes silently -- Evidence;
+   `bootstrap/tests/test_gate_manifest.py:158-242`.
+
+**Verdict**: ACCEPT. **Findings**: one non-blocking improvement; no blockers.
+
+1. **SC-S1 -- Make collection-time execution explicit.** The collection-only
+   comparison uses machinery that imports candidate code
+   (`bootstrap/tests/_gate_manifest.py:513-526`).
+   `bootstrap/REANCHOR_RUNBOOK.md:20` explicitly denies containment; fresh paths
+   are not host isolation. Close by carrying that residual into the prescribed
+   collection procedure and retaining existing key-away/ceremony requirements.
+   No new isolation framework is requested.
+
+S1's independent protection source agrees with `_trusted_roster_from_anchor`;
+ordinary deletions remain notes, not equivalent-detection evidence. Six
+selected roster/tier checks passed within the combined eight-check scratch
+run: Python 3.13.13, 0.26 seconds total. S2's future refusal mutations are
+honestly unmeasured, not an unmet current prototype demonstration.
+
+**Elapsed**: shared approximately six-minute review window; per-file split
+unmeasured; recording approximately two minutes. **Tokens**: unknown.
+
+**Covered**: S1-S5, fixture isolation, protection authority, collection and
+detection preservation. **Not covered / low confidence**: future consolidation,
+per-fault equivalence, ordering trials, performance or certification.
