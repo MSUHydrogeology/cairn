@@ -189,3 +189,22 @@ Reviewed fixes `45fd24c4` and `95ecf237` and response `93231bfb`. **Verdict**: A
 3. **What would show it wrong?** A live probe after the fallback or a changed runner status would defeat the fix. The recorded forced-failure run checks reaping and the combined status; it did not induce a real OS signaling failure.
 
 **Covered:** committed fix, R1 response, reported focused checks and retained status semantics. **Not covered:** independent execution, actual OS signaling failure, Windows or the separate Security Review. Final focused verification remains due.
+
+
+## Targeted Security code review -- Codex (gpt-6.1-sol) -- 2026-11-02
+
+Reviewed fix: 95ecf23705b3ca4890da2af3348ef5a8332e72ce; response: 93231bfb.
+**Tier**: Security Review. **Verdict**: ACCEPT; no new code findings.
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. A-t4's local fallback contains its sole direct child without changing the runner's cleanup boolean, status classification, production code or A-t6. `proc.wait(timeout=1.0)` either reaps or fails loudly; cleanup cannot silently count an unreaped process as passing -- committed A-t4 wrapper and reaping assertion.
+2. **Best alternative.** Relying on the finite probe alone avoids the wrapper but leaves the accepted timely-cleanup condition unresolved. The small direct-child fallback addresses R1 without expanding production behavior -- plan C1; A-t4 probe and wrapper.
+3. **What would show it wrong?** An uncontained child or concealed cleanup failure. On an isolated archive of the reviewed SHA under Python 3.13.13, a targeted check replaced runner cleanup with `False` without signaling. The sole child was alive when fallback began; A-t4 passed, retained 65,536 bytes, returned `truncated+cleanup-failed`, and reaped the child with return code -9 in 0.066 seconds. This independently exercised the fallback and preserved the failure signal -- A-t4 through `_run_tool`.
+
+**Record correction needed:** response 93231bfb names tested SHA `95ecf2373fce8b1ecab4d05e131d79867a64b760`; the actual reviewed commit is `95ecf23705b3ca4890da2af3348ef5a8332e72ce`. The author must append the corrected evidence identity before closure; this pass's independent measurement uses the latter.
+
+**Bounding**: ACCEPTED for the authorized focused selection.
+
+Covered: committed fallback, independent live-child forced-failure check and status preservation. Not covered: actual OS signaling failure, Windows or failure reproduction; no suite run. Final focused verification remains due.
