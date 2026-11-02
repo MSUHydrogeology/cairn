@@ -154,3 +154,34 @@ Coverage: examined accepted scope, committed changes, rendered branch, accessibl
 ## Code review response -- Codex (GPT-6) -- 2026-11-01
 
 Ordinary code review `214b49a7` and Security Review `7fe9e119` both ACCEPT; prior findings are closed by the corrections named in those records. No further implementation edits are needed from these passes. The plan moves to `ready-to-archive`. This does not complete Boundary B: wide final verification on a clean final commit under canonical Python 3.13.x remains owed, and the plan must not archive before that evidence is appended. Elapsed: approximately 3 minutes; tokens: unknown.
+
+## Implementation verification -- Codex GPT-6 -- 2026-11-01
+
+- **Boundary B mode**: wide because published lifecycle methodology is a
+  protected doctrine surface. The union includes all 32 lifecycle-mapped test
+  files plus shared readers, integration/workflow families and install coverage.
+- **Tested commit**: `bfdaacd833685caf599d7c959e759fbda78c0510`
+- **Reviewed range**: `b210f9b4d2e938e33905e8c99faabd7ab7e91148..bfdaacd833685caf599d7c959e759fbda78c0510` (shared v0.6 selection; lifecycle-specific 32-file path selection retained)
+- **Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13; Bandit on `PATH`
+- **Pre-run state**: clean isolated clone at tested SHA. **Post-run state**: clean, same `HEAD`.
+
+The deduplicated 36-file test union, gates, counts and local-socket disposition
+are recorded in `dev/plans/2026-11-01-decision-options.md`; all 32
+lifecycle-selected files, including named integration/workflow families, are
+present. Rendered the SVG with `rsvg-convert` (700×390) and inspected the route
+and labels: light bypasses plan and plan review, whose label says “when
+required.” Its title and description, README alt text, and `docs/index.html`
+alt text agree with the operative rule. In a separate temporary copy, changed
+the README accessible description to say light needs a plan; comparison with
+`AGENTS.md` detected the contradiction.
+
+**Plan-specific acceptance commands**: `rsvg-convert -o <temporary PNG> docs/assets/three-lanes-of-change.svg`; visual, title/description and accessible-text inspection passed. The false-light-plan mutation was detected.
+
+**Non-pass disposition**: see the common run record; the 14 local-socket nodes
+passed on the targeted rerun.
+
+**Known omissions**: 46 unpinned governing-file readers were omitted by the
+selector guard; external links were not probed; per-file durations were not
+collected. No full-tree certification was run. **Elapsed**: shared automated
+checks 190.28 seconds; render, mutation and comparison included in session;
+tokens: unknown.

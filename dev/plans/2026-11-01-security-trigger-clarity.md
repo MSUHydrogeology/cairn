@@ -177,3 +177,35 @@ findings. No code revision is needed. Preserve the three open issue #37
 requests in Completion follow-ups for separate Maintainer disposition. Final
 wide Boundary B remains required before archival. Elapsed: under one minute;
 tokens: unknown.
+
+## Implementation verification -- Codex GPT-6 -- 2026-11-01
+
+- **Boundary B mode**: wide because this clarifies security-review
+  obligations for a high-risk surface and its installed consumers.
+- **Tested commit**: `bfdaacd833685caf599d7c959e759fbda78c0510`
+- **Reviewed range**: `b210f9b4d2e938e33905e8c99faabd7ab7e91148..bfdaacd833685caf599d7c959e759fbda78c0510` (shared v0.6 selection)
+- **Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13; Bandit on `PATH`
+- **Pre-run state**: clean isolated clone at tested SHA. **Post-run state**: clean, same `HEAD`.
+
+The shared 36-file union, gates, outcomes and 14-node local-socket disposition
+are recorded in `dev/plans/2026-11-01-decision-options.md`; all four mapped
+security files are included. Checked both committed module copies against the
+five cases: unchanged guarded reuse alone does not trigger; a new untrusted
+source, validation bypass, non-widening named high-risk control edit, and newly
+public output destination do trigger. The test
+`test_security_module_trigger_mutations_are_caught` passed for both copies and
+both variants: removing the reviewed-limits condition and adding a bypass
+exemption each make the predicate fail. These checks cover prose classification,
+not runtime guard behavior. A fresh selected-module install produced and
+matched the adopter `dev/modules/security-review.md` guidance.
+
+**Plan-specific acceptance commands**: `test_security_module_trigger_mutations_are_caught` (four parameter combinations, pass); selected-module scaffold install and inspection of its installed security-review file.
+
+**Non-pass disposition**: see the common run record; the 14 local-socket nodes
+passed on the targeted rerun.
+
+**Known omissions**: 46 unpinned governing-file readers were omitted by the
+selector guard; external links were not probed; per-file durations were not
+collected. No full-tree certification was run. **Elapsed**: shared automated
+checks 190.28 seconds; case comparison included in session; tokens: unknown.
+Preserve the issue #37 follow-ups recorded above.

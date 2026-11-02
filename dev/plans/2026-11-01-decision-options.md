@@ -178,3 +178,111 @@ findings. No code revision is needed. Preserve the issue #40 closure check in
 Completion follow-ups; final wide Boundary B and confirmation of all three
 requested outcomes remain before archival. Elapsed: under one minute; tokens:
 unknown.
+
+## Implementation verification -- Codex GPT-6 -- 2026-11-01
+
+**Boundary B mode**: wide. The shared selection covers governing text, the
+protected lifecycle description, the shipped testing example, security-review
+guidance, mapped consumers, installation paths and workflow tests; narrower
+bounds would miss these cross-cutting and public surfaces.
+
+- **Tested commit**: `bfdaacd833685caf599d7c959e759fbda78c0510`
+- **Reviewed range**: `b210f9b4d2e938e33905e8c99faabd7ab7e91148..bfdaacd833685caf599d7c959e759fbda78c0510` (shared v0.6 selection)
+- **Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13; Bandit on `PATH`
+- **Pre-run state**: clean isolated clone at tested SHA. **Post-run state**: clean, same `HEAD`.
+
+The common mapped union deduplicates the 18-file governing-text selection, the
+32-file lifecycle selection, four security-trigger files, the focused
+template's mapped reader, and the required install-family test. It contains 36
+files listed in the command below. The range selector reported 46 unpinned
+`AGENTS.md` readers omitted by its passage-pin guard; the lifecycle path
+selection and plan-specific mappings remain included.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python3.13 -m pytest -q` on the 36 files listed below | 1 initially | 1,941 passed; 14 failed before assertions because the sandbox denied an ephemeral `127.0.0.1` canary bind; no skips | 181.56 s real (179.97 s pytest) | unknown |
+| Rerun only the 14 initially failing nodes in `test_portable_security_sweeps.py`, with loopback available | 0 | 14 passed; combined unique result: 1,955 passed, no skips | 8.72 s real (8.10 s pytest) | unknown |
+| `claim_check.py` on 15 changed Markdown files | 0 | 15 OK | 0.66 s | unknown |
+| `python scripts/check_cairn.py` | 0 | 189 Markdown files; no issues; 95 external links not probed | 1.22 s | unknown |
+| `python scripts/link_check.py` | 0 | 189 Markdown files; no issues; 96 external links not probed | 0.19 s | unknown |
+| `python scripts/sync_doc_snippets.py --check` | 0 | 513 documents; no drift | 0.21 s | unknown |
+| `python scripts/quality_gate.py --sub neutrality` | 0 | 0 failures; 43 informational findings | 0.93 s | unknown |
+
+The one union invocation was:
+
+```sh
+PATH="/Users/kendal30/conda_envs/lhm/bin:$PATH" /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q \
+bootstrap/tests/test_board_json_contract.py \
+bootstrap/tests/test_ceremony_review_report.py \
+bootstrap/tests/test_check_cairn_content.py \
+bootstrap/tests/test_check_release_publication.py \
+bootstrap/tests/test_claim_check_module.py \
+bootstrap/tests/test_core_dev_folders.py \
+bootstrap/tests/test_default_security_stance.py \
+bootstrap/tests/test_doc_governance.py \
+bootstrap/tests/test_documentation_plan_module.py \
+bootstrap/tests/test_finalize_retired_living_state.py \
+bootstrap/tests/test_hardening.py \
+bootstrap/tests/test_link_check_exclusions.py \
+bootstrap/tests/test_loop_fidelity_gate.py \
+bootstrap/tests/test_module_roster.py \
+bootstrap/tests/test_next_session_local_note.py \
+bootstrap/tests/test_onboarding_seed_roster.py \
+bootstrap/tests/test_oracle_activation.py \
+bootstrap/tests/test_portable_security_sweeps.py \
+bootstrap/tests/test_presets.py \
+bootstrap/tests/test_prune_tools.py \
+bootstrap/tests/test_quickstart_sequence.py \
+bootstrap/tests/test_replacement_tools.py \
+bootstrap/tests/test_review_and_verification_rules_ship.py \
+bootstrap/tests/test_review_stance_in_shipped_files.py \
+bootstrap/tests/test_scaffold.py \
+bootstrap/tests/test_scientific_check_guidance_ships.py \
+bootstrap/tests/test_scope_reduction_trap.py \
+bootstrap/tests/test_security_stack.py \
+bootstrap/tests/test_session_routines.py \
+bootstrap/tests/test_session_start_drain_rules.py \
+bootstrap/tests/test_status_vocabulary_advisory.py \
+bootstrap/tests/test_stewardship_rules_ship.py \
+bootstrap/tests/test_upgrade.py \
+bootstrap/tests/test_upgrade_added_slots.py \
+bootstrap/tests/test_upgrade_lockfile_path_containment.py \
+bootstrap/tests/test_upgrade_module_additions.py
+```
+
+
+**Non-pass disposition**: all 14 initial failures shared the sandbox's
+`PermissionError` binding `_Canary` to `127.0.0.1`; the loopback-enabled
+rerun passed those exact nodes: `test_the_admission_matrix_argv_is_accepted_by_the_flag_table`,
+`test_an_invalid_argv_refuses_with_the_argv_reason_not_a_missing_report`,
+`test_verify_version_support_emits_a_complete_record`,
+`test_the_evidence_record_keeps_the_raw_version_banner`,
+`test_the_evidence_record_carries_a_measured_exit_row_per_subcommand`,
+`test_the_adapters_real_redaction_shape_fails_validation`,
+`test_a_matrix_without_a_planted_finding_row_refuses_to_admit`,
+`test_verify_version_support_refuses_a_candidate_that_invokes_an_unaccounted_git_subcommand`,
+`test_verify_version_support_refuses_a_candidate_that_drops_a_required_option`,
+`test_verify_version_support_refuses_a_candidate_that_contacts_a_remote`,
+`test_verify_version_support_refuses_a_candidate_with_an_output_schema_drift`,
+`test_verify_version_support_cannot_mutate_the_source_version_set`,
+`test_the_emitted_record_states_that_an_unadmitted_binary_was_executed`,
+and `test_the_human_report_opens_with_the_unadmitted_execution_statement`.
+The test run exceeded the 30-second iteration
+and three-minute integration diagnostics. Per-file durations were not
+collected, so no individual file over ten seconds can be named.
+
+**Plan-specific acceptance commands**: fresh default install and inspection
+confirmed `docs/DOCUMENTATION_PLAN.md` contains the focused-test reminder and
+required integration/security checks. A second selected-module install
+produced the adopter security-review file. Rechecked the authorized weekly
+check/manual-review example: it discloses cost and lost safeguard, omission of
+the recurring check fails, and a routine Decision with no new recurring
+addition needs no inventory. The relevant decision/model surfaces are
+unchanged since the authorized examples at `d7434ba6`.
+
+
+**Known omissions**: 46 unpinned governing-file readers remain omitted by the
+selector guard; external links were not probed; per-file durations are
+unknown. Full-tree certification and its folder sweepers remain separate and
+were not run. **Elapsed**: automated checks 190.28 seconds; setup/manual time
+not measured; tokens: unknown.
