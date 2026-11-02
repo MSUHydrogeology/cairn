@@ -1,7 +1,7 @@
 # Plan: Align the quickstart lifecycle
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-quickstart-lifecycle-alignment.md
-**Status**: revising-code
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Correct the quickstart and its sequence test so the example records its final check before archive.
@@ -216,3 +216,28 @@ Prior findings: ordinary prose-check finding closed by recorded passing check
 **Elapsed**: approximately 4 minutes. **Tokens**: unknown.
 
 Coverage: committed edits, criteria, shipped guidance, iteration/mutation evidence and prose-check follow-up; targeted disposable Git workflow. Did not run suites, verify adopter-agent execution or record truthfulness, compare historical anchors or alter baselines. No reached fence or deviation request in this implementation range.
+
+
+## Security finding fix evidence -- Codex gpt-6.1-sol -- 2026-11-02
+
+Closed the fixture/content mismatch from Security Review `68df1f21` in
+`67bc241555da42bb469fc274eb7a4fbd0ea92aa1`. The surrogate Decision now
+states the light tier, permits a separate implementation check and record,
+and directs archive in a later commit. The existing Step 5 test asserts that
+full operative quotation in the archived proposal. No new checker or
+executable behavior was added. Elapsed: approximately 2 minutes. Tokens:
+unknown.
+
+Checked a clean local clone at
+`67bc241555da42bb469fc274eb7a4fbd0ea92aa1`; it includes link correction
+`0b26b13e`. Pre-run and post-run trees were clean; `HEAD` was unchanged.
+Interpreter: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python
+3.13.13).
+
+| Command | Result | Elapsed |
+|---|---|---:|
+| `python3.13 -m pytest bootstrap/tests/test_quickstart_sequence.py::TestLayerBLifecycleShapeOnly::test_step5_decision_then_implement_and_archive bootstrap/tests/test_quickstart_sequence.py::TestLayerBLifecycleShapeOnly::test_step6_git_log_has_lifecycle_boundaries -q` | 2 passed | 1.15 s |
+
+No broad tests or wide Boundary B were run. The plan is back at
+`awaiting-code-review` for the targeted Security follow-up and final wide
+Boundary B.
