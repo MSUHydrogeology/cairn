@@ -236,6 +236,12 @@ quoted allowance. Saying that the result now rests on the implementation does
 not settle it. When the check fails for real during implementation, one line
 records whether anything else would have shown the error.
 
+Record scientific evidence with the work or release that requires it. A run is
+not part of routine tree certification merely because it is scientific, but a
+configured suite member and every other applicable requirement remain required
+at each required point. Subject or duration does not authorize a waiver or
+rescheduling.
+
 
   <!-- cairn:slot acceptance-doc-tooling -->
   Cairn's doc surface is mostly hand-authored Markdown read on GitHub;

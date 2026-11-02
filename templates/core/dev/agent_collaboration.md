@@ -303,6 +303,15 @@ question in plain language, give the option you would take and why, and say
 what it costs to be wrong. A menu of five options with no recommendation moves
 the work to the Maintainer rather than unblocking it.
 
+When presenting a choice, show what each material option adds or changes and
+its meaningful costs to build, run, understand and maintain. Use estimates or
+state uncertainty where needed. Include the least involved credible option,
+including doing nothing when it could meet the goal, and say what it loses,
+including any safeguard. Keep the recommendation and reason separate from the
+options. This comparison cannot waive required checks, accepted scope or model
+floors. The existing Decision briefly names material new recurring additions;
+a routine Decision with no such addition needs no extra sentence or inventory.
+
 **After a review stalls, the author decides and defends.** Two passes that
 disagree do not escalate by themselves; the author resolves them in the record
 and the Maintainer reads the resolution.

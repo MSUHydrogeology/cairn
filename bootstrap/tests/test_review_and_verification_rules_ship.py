@@ -386,3 +386,61 @@ def test_security_module_movement_alone_does_not_trigger_review(rel: str) -> Non
     assert "Movement alone is not a trigger" in text
     assert "adds, moves, or widens" not in text
     assert "adds or moves a trust boundary" not in text
+
+
+_GUARDED_REUSE_LIMITS = (
+    "when the reviewed limits stay the same: who supplies the data, what inputs "
+    "are accepted, what validation runs before every protected operation, "
+    "what the operation can do, and who can receive its output"
+)
+_WIDENING_TRIGGERS = (
+    "A new untrusted source, bypassed guard, broader accepted input, changed "
+    "command construction or newly exposed secret can trigger review even "
+    "through an existing API."
+)
+
+
+def _has_guarded_reuse_contract(text: str) -> bool:
+    text = _collapse(text)
+    return _GUARDED_REUSE_LIMITS in text and _WIDENING_TRIGGERS in text
+
+
+@pytest.mark.parametrize("rel", [
+    "dev/modules/security-review.md",
+    "templates/modules/team-gated/security-review.md",
+])
+def test_security_module_states_guarded_reuse_limits(rel: str) -> None:
+    """Reuse is safe only while each reviewed limit stays the same."""
+    assert _has_guarded_reuse_contract(_text(rel))
+
+
+@pytest.mark.parametrize("rel", [
+    "dev/modules/security-review.md",
+    "templates/modules/team-gated/security-review.md",
+])
+@pytest.mark.parametrize("old, new", [
+    (
+        " when the reviewed limits stay the same: who supplies the data, "
+        "what inputs are accepted, what validation runs before every "
+        "protected operation, what the operation can do, and who can "
+        "receive its output",
+        "",
+    ),
+    (
+        "A new untrusted source, bypassed guard, broader accepted input, "
+        "changed command construction or newly exposed secret can trigger "
+        "review even through an existing API.",
+        "A new untrusted source, broader accepted input, changed command "
+        "construction or newly exposed secret can trigger review even "
+        "through an existing API.",
+    ),
+])
+def test_security_module_trigger_mutations_are_caught(
+    rel: str, old: str, new: str
+) -> None:
+    """Removing the unchanged-limits rule or bypass trigger fails the check."""
+    original = _collapse(_text(rel))
+    assert _has_guarded_reuse_contract(original)
+    assert old in original
+    mutated_copy = original.replace(old, new, 1)
+    assert not _has_guarded_reuse_contract(mutated_copy)

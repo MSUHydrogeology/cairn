@@ -53,7 +53,16 @@ boundary, not specific libraries:
 A change that adds or widens any of these boundaries is a
 trigger for a Security Review pass regardless of cadence.
 Movement alone is not a trigger; a move that adds or widens a boundary still
-triggers the pass.
+triggers the pass. Adding another input or output handled by an existing
+reviewed reader or writer, moving guarded code, or adding a call through an
+existing guard does not itself add or widen a boundary when the reviewed limits
+stay the same: who supplies the data, what inputs are accepted, what validation
+runs before every protected operation, what the operation can do, and who can
+receive its output. A different format is not required for widening. A new
+untrusted source, bypassed guard, broader accepted input, changed command
+construction or newly exposed secret can trigger review even through an
+existing API. A move that changes path resolution or guard ordering is not
+exempt because the code looks familiar.
 The proposal's `heavy` tier adds this pass to the usual review. Security
 Review has at most two passes; an unresolved obligation or blocking finding at
 the cap goes to the Maintainer by name and never clears automatically.

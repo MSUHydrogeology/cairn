@@ -109,6 +109,16 @@ trigger heavy. A newly discovered boundary stops the work for reassessment.
 Ordinary uncertainty takes the lighter lane with its reason. The trivial lane
 is unchanged. See Cairn's published lifecycle method for lane details.
 
+When asking the Maintainer to choose, describe what each material option adds
+or changes and its meaningful costs to build, run, understand and maintain; use
+estimates or name uncertainty where useful. Include the least involved credible
+option, including doing nothing when it could meet the goal, and state what it
+would lose, including any safeguard. Give the recommendation and its reason
+separately from the option descriptions. This comparison cannot waive required
+checks, accepted scope or model floors. In the existing Decision, briefly name
+material new recurring additions. A Decision with no such addition needs no
+extra sentence or inventory.
+
 ## Roles
 
 Roles are frames, not people: Human Maintainer, Strategy, Implementation,
@@ -205,6 +215,14 @@ configured full suite and static gates on a clean committed tree under the
 configured interpreter/runtime only before a push when required, before
 re-anchor, before a release cut, or when the Maintainer asks. It certifies every
 change at or before that commit for bisect. The reviewer never runs the full suite.
+
+Scientific model evidence belongs with the work or release that requires it;
+scientific subject alone does not add a run to routine tree certification. A
+configured suite member remains required at every required point, including a
+scientific or slow run. Accepted criteria, safety and security checks, and
+release requirements remain required too. Subject and duration do not waive a
+run or authorize rescheduling it; that needs separate authority. Keep the
+configured suite, its commands and its triggers unchanged.
 
 Record each actual tree-certification run once: use the existing release or
 re-anchor evidence for those ceremonies. For another authorized run, put a

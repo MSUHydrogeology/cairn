@@ -48,7 +48,10 @@ sufficiently capable agent can fill:
   the decision space for the Maintainer — the trade-offs, what each
   option changes on disk, and a defensible recommendation — **without
   steering** the Decision. It supports the Maintainer's call; it does
-  not pre-empt it, and the Decision authority stays the Maintainer's.
+  not pre-empt it, and the Decision authority stays the Maintainer's. A useful
+  briefing also makes meaningful build, run, understanding and maintenance
+  costs visible, includes a credible less involved option and its losses, and
+  keeps the recommendation separate from the options.
 * **User Agent** — works from the user's seat: runs the software,
   exercises the workflows, captures friction as issues, and **debugs
   from the user's seat** — reproduces and diagnoses failures from real

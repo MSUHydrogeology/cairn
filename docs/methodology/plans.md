@@ -332,6 +332,14 @@ existing evidence home. A certifying run that fails is
 bisected from the last certified commit, and the change that broke it returns
 to its owner. Nothing is pushed when a required certifying run has not passed.
 
+Scientific model evidence is recorded with the work or release that requires
+it. A model run is not added to routine tree certification merely because it
+produces scientific evidence. A configured suite member remains required at
+each required point, as do all applicable acceptance, safety, security and
+release checks. Subject or duration does not waive or reschedule a requirement;
+that needs separate authority. This distinction leaves the configured suite,
+its commands and its certification triggers unchanged.
+
 Work confined to ordinary prose or deliberation records runs the applicable
 claim, link, snippet, schema, and neutrality gates rather than an unrelated
 engine suite, on any surface, a high-risk one included. When a search finds no
