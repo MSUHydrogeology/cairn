@@ -90,3 +90,13 @@ The parent-derived byte comparison confirmed the file equals its parent after ex
 The inventory claim, link and snippet checks passed. Neutrality reported zero failures and 43 informational results. `check_cairn.py` reported three existing broken proposal links in `dev/PLANNING.md` and `dev/strategy/2026-10-28-codex-v06-decision-master.md`; this inventory edit introduces none. An initial selector command used the wrong `scripts/` path and ran no tests; the corrected `tools/test_tiers.py` command selected the three files above.
 
 **Not yet covered:** independent ordinary and Security code reviews, final wide Boundary B, canonical Python 3.13, and clean committed-tree evidence remain due after review. No full certification run was made. **Elapsed:** approximately 5 minutes; **tokens:** unknown.
+
+## Code review -- Codex (GPT-6), Reviewer -- 2026-11-02
+
+**Reviewed:** `34fdba18`. **Verdict:** no findings; proceed to separate Security Review and final verification. **Bounding:** no wider run required beyond the already planned wide Boundary B.
+
+**Foundations.** (1) Yes: a direct comparison of committed parent and candidate bytes confirms that the only inventory change is removal of the one space and `(R5)` from the named bullet; the safeguard description remains intact. (2) Leaving it would avoid the edit but retain the obsolete reference identified in the accepted proposal; the single deletion meets the agreed scope without new machinery. (3) Another changed byte or a consumer needing the marker would disprove the change. The byte comparison passed; the implementation record reports a known-positive consumer search and a negative comparison control. It also records 118 mapped tests passing on Python 3.12.9 and the outstanding canonical-Python final run.
+
+The implementation snapshot's three broken proposal links were reported, not passed; `1f51b479` subsequently updates the relevant planning and strategy links. Their final gate result remains owed at Boundary B.
+
+**Coverage:** Inspected the committed diff, plan and implementation evidence, independently compared inventory bytes, and inspected the subsequent link correction. Did not rerun implementation tests, enumerate all consumers or assess runtime security behavior; separate Security Review and wide Boundary B remain due. Elapsed: approximately 2 minutes; tokens: unknown.
