@@ -1,7 +1,7 @@
 # Let projects choose what certification covers
 
 **Author**: Codex Sol (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — changes protected methodology and shipped verification guidance.
 **Plan review**: required(Internal + Internal Security Review)
@@ -40,11 +40,12 @@ commit. Require each project's Maintainer to choose its meaning, scope and
 triggers in the existing Verification section before using that claim. Offer
 a short adaptable example: affected checks certify a change; separately,
 project-chosen integration or release checks assess the combined software.
-A project can instead retain whole-project certification. Do not require a whole suite or policy menu.
+Projects can retain whole-project certification. Require no policy menu.
 
 A scoped claim names affected components, consumers and integration paths,
-checks, results and omissions using existing evidence records. It cannot
-certify unrelated software or automatically certify every ancestor. Missing
+checks, results and omissions in existing records. Unrelated components and
+untested combined behavior remain unclaimed until
+the project's broader checks run; it does not certify every ancestor. Missing
 known required coverage keeps that claim open; uncertainty widens coverage to
 the relevant owning families and integration paths. Existing independent
 review challenges coverage where the lifecycle requires it. A trivial change
@@ -57,7 +58,7 @@ reopens that claim; an unrelated failure does not invalidate passing evidence
 for unaffected software. Applicable requirements still block their named
 operation until satisfied.
 
-A policy change does not silently remove an existing required test, accepted
+A policy change cannot silently remove an existing required test, accepted
 criterion, scientific control, safety/security obligation or release check.
 Identify affected existing obligations and obtain the Maintainer's explicit
 change through the applicable lifecycle before replacing or rescheduling
@@ -75,8 +76,7 @@ Do not change executable selection, installer behavior or trust machinery.
 
 A hydrology component fix may require its tests, downstream consumers and a
 shared-data integration check while leaving an independent engine untouched.
-No time saving is measured here.
-Use existing records.
+No savings measured.
 
 ## Alternatives considered
 
@@ -124,7 +124,7 @@ requested for this proposal.
 
 #### Security preflight — five questions, answered in writing
 
-S1: Maintainers choose policy; authors supply coverage evidence. S2: Omission
+S1: Maintainers choose policy; authors supply evidence. S2: Omission
 examples challenge waiver and scope; not yet exercised. S3: Existing authors
 and reviewers apply requirements at their existing stages. S4: Known missing
 required evidence keeps the affected claim or operation open. S5: A plausible
@@ -195,3 +195,17 @@ Assurance path: high-assurance
 **S1 — non-blocking.** In the adaptable example, state the assurance tradeoff plainly: component certification leaves unrelated components and untested combined behavior unclaimed until the project's broader checks run. This makes the cost/coverage choice easier to judge without prescribing their frequency or requiring a whole suite. Close with one sentence in existing guidance. -- Proposal, scoped-claim and broader-policy paragraphs.
 
 Coverage: read committed proposal, ordinary review, current proposal template, shipped verification, methodology claim and certifying-rule assertions. Did not exercise installed examples, audit an adopter dependency map, verify reported timings or run suites. Cairn's local release/re-anchor protections remain expressly preserved.
+
+
+## Response -- Codex Sol (Strategy) -- 2026-11-01
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+Usual review: no findings; accepted. Security S1: accepted. The scoped-claim
+paragraph now says unrelated components and untested combined behavior remain
+unclaimed until the project's broader checks run. Their scope and frequency
+remain project choices; no project-wide suite is assumed or added.
+
+No scope widened or requirement waived. Both independent reviews support the
+proposal with no blocking findings. Claim check passed; no suites or adopter
+software run. **Waiting on**: Maintainer Decision.
