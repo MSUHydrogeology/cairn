@@ -80,3 +80,26 @@ None; opening scope.
 **Non-blocking advice.** Make the examples distinguish optional work-specific evidence from a scientific run already required by suite membership or a safety/security requirement. Such a run remains required; removing or rescheduling it needs separate authorized scope, not this clarification. Scientific and safety evidence can overlap, so classification by subject or duration cannot decide exemption. Retain independent scientific checks, their deliberate failing control and any required positive control from the proposal template. Exercise this overlap within the already planned required-run example; add no checklist, record or stage.
 
 **Coverage:** Read the committed proposal, governing verification rules, plan acceptance/fence guidance, scientific-check template and certification-rule assertions at `1b33ccf2`. Examined whether exclusions could bypass safety or accepted evidence. Did not inspect the adopter suite, final wording or all consumers; ran no implementation checks or suite.
+
+## Review -- Codex gpt-6.1-terra -- 2026-11-01
+
+Reviewed commit: 1b33ccf214ea91cf42952f0f5a0b625769eae6d2  
+Target: entire proposal, especially clarity and burden  
+Prior findings: none  
+Assurance path: high-assurance
+
+**Tier**: usual  
+**Findings**: raised  
+**Verdict**: ACCEPT  
+**Elapsed**: approximately 3 minutes  
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: the distinction makes the owner of scientific evidence clearer using existing records, while preserving required runs. The reported savings are not measured. -- Proposal, Context and Proposal.
+2. **Best alternative.** Keep the current guidance: it already separates change verification from tree certification and records accepted scientific checks, but does not expressly resolve the reported ambiguity. -- `dev/plans/_template.md:231, 299-309`; Proposal, Alternatives considered.
+3. **What would show it wrong?** A required run being omitted or the wording silently changing the full-suite contract would defeat the proposal. -- Proposal, Evidence / verification plan and Signals the change is wrong.
+
+**N1 — non-blocking.** The ordinary-certification example assumes no work-specific requirement, but does not explicitly say whether the model run is already part of the configured suite. State that premise and add a configured-suite case: it should remain required under the proposal. This distinguishes a clarification from removing a check and makes the example easier to apply. Evidence: Proposal, Proposal and Evidence / verification plan.
+
+Coverage: Read the committed proposal, proposal review rules and cited plan-template guidance; assessed clarity, purpose and added burden. Did not inspect the adopter's project, run examples or conduct the separate Security Review. No suite run.
