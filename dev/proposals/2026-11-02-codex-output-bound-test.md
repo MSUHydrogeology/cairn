@@ -79,3 +79,24 @@ None; this is the opening scope.
 3. **What would show it wrong?** A non-truncation status or excess output passing, combined status classified CLEAN, or an uncontrolled child surviving the probe. The proposed mutations and safe-cleanup condition address these questions, but their outcomes remain to be established.
 
 Coverage: read the proposal and committed A-t1, A-t4, A-t6 and runner status and cleanup code. Did not reproduce the reported failure, test every classification caller, assess implementation, or run tests or suites; Security Review remains separate.
+
+## Review -- Codex (gpt-6.1-sol) -- 2026-11-02
+
+Reviewed commit: def5e6890fccc229443fb8efb394eb2ccab6ff8a
+Target: proposal and committed A-t1/A-t4/A-t6 and runner boundary
+Prior findings: none
+Assurance path: high-assurance
+
+**Tier**: Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately 4 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The strongest case is separating retained-output safety from successful process cleanup while keeping incomplete evidence fail-closed. `_run_tool` appends `+cleanup-failed`; `run_bandit` rejects every status other than `ran`. The exact two-status assertion plus A-t1's explicit DEGRADED case preserves that distinction (`run_security_audit.py`, `test_security_stack.py::test_a_t4_output_is_bounded`).
+2. **Best alternative.** Retain A-t4's exact assertion and diagnose cleanup first. This preserves overflow-specific cleanup-failure detection, which accepting the combined status loses. Its investigation cost is unknown. A-t6 cannot replace that detection: it drives the timeout branch and observes a descendant sentinel. Both branches call the same `_kill_tree`, but that does not establish overflow cleanup success (`_run_tool`, A-t6). Given the stated bounded-output goal, the proposed change is the smallest adequate repair; a dedicated overflow survivor test would add a separate assurance outcome.
+3. **What would show it wrong?** A non-truncation status passing, excessive retained bytes passing, combined status becoming CLEAN, or an uncontrolled probe survivor. The proposed focused mutations target the first three. The finite A-t4 probe writes 4096 KiB and spawns no descendants; removing its grace override changes waiting, not the attempted TERM/KILL sequence. Finite output alone does not prove timely exit; the proposal correctly requires inspection and bounded cleanup if needed (A-t4, `_kill_tree`, proposal S4).
+
+**Covered:** committed control flow, exact assertion tradeoff, fail-closed classification and finite probe. **Not covered:** failure reproduction, implementation checks, survivor measurements or Windows behavior; no tests or suite run.
