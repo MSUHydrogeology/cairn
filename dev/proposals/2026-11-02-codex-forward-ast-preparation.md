@@ -1,7 +1,7 @@
 # Prepare the AST record for a new forward baseline
 
 **Author**: Codex (Sol), Strategy
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -208,3 +208,20 @@ authorized by these recommendations.
 None.
 
 **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+## Decision -- Maintainer -- 2026-11-02
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Tier**: heavy
+
+**Plan review**: required(Internal + Internal Security Review)
+
+**ACCEPTED.** The Maintainer's authorization, quoted **verbatim and visually
+isolated** (chat, 2026-11-02; scribed by Codex (GPT-6)):
+
+> "I accept both proposals. Go forward with implementation as desired"
+
+The proposal is accepted as framed, including its explicit loss of historical
+AST certification. Its heavy tier and required plan review remain in force;
+implementation may proceed within the accepted scope.
