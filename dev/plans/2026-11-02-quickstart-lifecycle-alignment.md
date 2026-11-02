@@ -152,3 +152,27 @@ Prior findings: none
 **Verdict**: Changes need the required prose check to pass before completion. **Elapsed**: approximately 4 minutes. **Tokens**: unknown.
 
 Coverage: reviewed committed diff, accepted plan and iteration evidence, recipe and history assertions; ran only the two targeted nodes. Did not independently rerun the mutation, exercise an adopter's agent, compare a historical anchor, or run a suite. The surrogate cannot establish the truth of a verification record.
+
+## Code-review fix evidence -- Codex gpt-6.1-sol -- 2026-11-02
+
+Corrected only the Step 5 and Step 6 test docstrings in
+`bootstrap/tests/test_quickstart_sequence.py` at `07c10c3d`. No assertions
+or executable behavior changed. Elapsed: approximately 3 minutes. Tokens:
+unknown.
+
+Checked a clean local clone at `07c10c3dc872485d9635505168fe7d7f35b2b408`;
+`3d5d2af9` is an ancestor. The clone's pre-run and post-run worktrees were
+clean.
+
+| Command | Result | Elapsed |
+|---|---|---:|
+| `python3.13 -m pytest bootstrap/tests/test_quickstart_sequence.py::TestLayerBLifecycleShapeOnly::test_step5_decision_then_implement_and_archive bootstrap/tests/test_quickstart_sequence.py::TestLayerBLifecycleShapeOnly::test_step6_git_log_has_lifecycle_boundaries -q` | 2 passed | 1.31 s |
+| `python3.13 scripts/check_cairn.py` | exit 1; one unresolved link, detailed below | 1.4 s |
+
+The repaired decision-master links no longer appear. The one remaining finding
+is in concurrent, out-of-scope proposal
+`dev/proposals/2026-11-02-codex-security-review-pass-limit.md:17`: unresolved
+anchor `../../docs/methodology/dual-review.md#caps-and-closure`. The plan stays
+`revising-code` until the required full prose check has no findings. This
+single full check was run once as requested; no second run was made. No wider
+tests or suite were run.
