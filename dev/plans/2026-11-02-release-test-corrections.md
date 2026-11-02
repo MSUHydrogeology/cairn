@@ -1,7 +1,7 @@
 # Plan: Correct release-test portability defects
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-release-test-corrections.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Correct three protected tests so release checks work consistently while retaining their safeguards.
