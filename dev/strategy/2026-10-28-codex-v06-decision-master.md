@@ -17,7 +17,7 @@
 
 **Recommendation:** retain the existing safeguards for now; pursue a narrower proposal only where evidence shows recurring burden worth the lost coverage. Costs and savings are not measured. The issue remains open; no choice is made here.
 
-**Stray reference:** You accepted the one-line correction. Its [plan](../plans/2026-11-02-stray-finding-id.md) is being implemented and reviewed; no further decision is needed unless a blocker arises.
+**Stray reference:** Your accepted one-line correction is complete, verified and [archived](../plans/archive/2026-11-02-stray-finding-id.md). No further decision is needed.
 
 **Forward baseline:** The preparation command refused the candidate because its code fingerprint needed updating. You accepted a [plan](../plans/2026-11-02-forward-ast-preparation.md) to build a guided script for a new, independently reviewed current baseline without manual JSON editing or reconstructing old history. The script is being implemented; approving and signing the resulting baseline remain yours. The new baseline does not establish that earlier history was reviewed.
 
