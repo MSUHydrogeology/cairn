@@ -41,13 +41,23 @@ def test_every_verification_surface_says_the_full_suite_is_a_certifying_run(path
     assert "Certified by: pending" not in text, path
 
 
-@pytest.mark.parametrize("path", GOVERNING, ids=lambda p: str(p.relative_to(ROOT)))
-def test_the_governing_rule_names_its_integration_points_and_its_failure_path(path):
-    text = _flat(path)
+def test_cairn_governing_rule_names_integration_points_and_ancestor_claim():
+    text = _flat(SURFACES[0])
     for phrase in ("before a push", "before a release cut",
                    "when the Maintainer asks", "certifies every change at or before",
                    "bisect"):
+        assert phrase in text, phrase
+
+
+@pytest.mark.parametrize("path", SURFACES[1:3], ids=lambda p: str(p.relative_to(ROOT)))
+def test_adopter_certification_limits_claim_and_reopens_contradictions(path):
+    text = _flat(path)
+    for phrase in ("tested commit", "components", "checks", "results", "omissions",
+                   "unrelated", "untested combined", "earlier changes",
+                   "later failure contradicts"):
         assert phrase in text, (path, phrase)
+    assert "before a release cut" not in text
+    assert "Required project checks and ceremonies remain owed" in text
 
 
 @pytest.mark.parametrize("path", SURFACES[:2], ids=lambda p: str(p.relative_to(ROOT)))

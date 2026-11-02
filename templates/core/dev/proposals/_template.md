@@ -226,7 +226,7 @@ affected behavior and consumers; `wide` covers owning test families, known
 integration and public paths, and standing gates when effects cannot be
 confidently bounded. Unknown dependencies are not claimed as covered: name the
 uncertainty and keep work open if a known required check or criterion remains
-unmet. Full tree certification is a separate authorized integration run.
+unmet. Broader certification is separate and does not replace a missing check.
 Routine selection belongs to agents applying this mapping and reviewers
 challenge it at the existing stages; Maintainers set high-level needs and
 material exceptions. Fill from the project's test plan, or replace with

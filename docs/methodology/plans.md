@@ -307,8 +307,8 @@ archived proposals).
 ## Implementation verification boundaries
 
 A plan maps verification to three boundaries. Change verification covers the
-known behavior and acceptance criteria of the change; tree certification
-covers the committed project at an authorized integration point. Repeating
+known behavior and acceptance criteria of the change; certification states
+the scope supported by its evidence. Repeating
 one broad command is not independent review.
 
 ### Boundary A — Iteration (scoped)
@@ -353,14 +353,14 @@ applicable safety, security, scientific, and release checks in the project's
 existing commands. A whole suite remains optional unless a project requirement
 makes it mandatory; preserve every already-required check.
 
-**Tree certification is separate.** The full suite and standing gates are run
-on a clean committed tree only before a push when required (pushing may require
-a certifying run; ask the Maintainer), before a ceremony that re-pins the
-gates, before a release cut, or when the Maintainer asks. A green run at commit
-`T` certifies every change at or before `T`. Record each actual run once in its
-existing evidence home. A certifying run that fails is
-bisected from the last certified commit, and the change that broke it returns
-to its owner. Nothing is pushed when a required certifying run has not passed.
+**Certify a stated scope.** Existing work records name the tested commit,
+components, checks, results and omissions. A scoped certification covers only
+those behaviors: unrelated components, untested combined behavior and earlier
+changes remain unclaimed. Reopen a claim when a later failure contradicts it.
+Required project checks and ceremonies remain owed, including any required
+full suite. Cairn itself retains its full-tree certification pair and triggers
+in `AGENTS.md`; its green run certifies every change at or before that commit
+for bisect. Nothing is pushed when a required certifying run has not passed.
 
 Scientific model evidence is recorded with the work or release that requires
 it. A model run is not added to routine tree certification merely because it

@@ -324,11 +324,12 @@ and public paths; a trust ceremony retains every prescribed security and
 ceremony check. `bounded` covers mapped affected behavior and consumers;
 `wide` covers owning test families, known integration and public paths, and
 standing gates when effects cannot be confidently bounded. The change record
-is separate from tree-certification evidence. A certifying run uses the
-project's configured full suite
-and standing gates only at the integration points in `AGENTS.md` > Verification
-boundaries; it is not a per-change command and does not replace missing change
-evidence.
+is separate from tree-certification evidence. A scoped certification names its
+tested commit, components, checks, results and omissions in the existing record. It claims no unrelated or untested combined
+behavior or earlier changes, and reopens if a later failure contradicts it.
+Required project checks and ceremonies remain owed; a full suite runs when an
+applicable requirement calls for it. Broader certification does not replace
+missing change evidence.
 
 Record each actual tree-certification run once: use the existing release or
 re-anchor evidence for those ceremonies. For another authorized run, put a

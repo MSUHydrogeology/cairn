@@ -94,7 +94,8 @@ def test_installed_operational_rule_is_project_general() -> None:
         "Cairn's ordinary pair",
     )
     assert not [token for token in cairn_only if token in text]
-    assert "configured full suite" in text
+    assert "Required project checks and ceremonies remain owed" in text
+    assert "a whole suite runs when an applicable requirement calls for it" in text
     assert "configured interpreter/runtime" in text
 
 

@@ -210,11 +210,12 @@ lines excluding verbatim Decision quotations.
 
 ## Verification
 
-Ordinary implementation skips tree certification. Run the
-configured full suite and static gates on a clean committed tree under the
-configured interpreter/runtime only before a push when required, before
-re-anchor, before a release cut, or when the Maintainer asks. It certifies every
-change at or before that commit for bisect. The reviewer never runs the full suite.
+A scoped certification names the tested commit, components, checks, results
+and omissions in the existing work record. It covers only those behaviors;
+unrelated components, untested combined behavior and earlier changes are not
+certified by that claim. Reopen the claim if a later failure contradicts it.
+Required project checks and ceremonies remain owed; a whole suite runs when
+an applicable requirement calls for it. The reviewer never runs the full suite.
 
 Scientific model evidence belongs with the work or release that requires it;
 scientific subject alone does not add a run to routine tree certification. A

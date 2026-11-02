@@ -348,10 +348,10 @@ entry point passes under mutation. Any unmeasured equivalence remains
 unresolved. Outside that trigger, mutation stays the reviewer's choice.
 
 
-**The reviewer never runs the full suite.** The full suite runs only as a
-certifying run at the authorized integration points (`docs/methodology/plans.md`). A
-change-verification record remains separate from the evidence for any actual
-tree-certification run. That run does not supply a missing change check.
+**The reviewer never runs the full suite.** An applicable project requirement
+may call for a full run at an integration point. A change-verification record
+remains separate from evidence for any tree certification; that run does not
+supply a missing change check (`docs/methodology/plans.md`).
 
 After challenging a named surface, mapped test, or stated omission, the
 reviewer records `**Bounding**: ACCEPTED | WIDER RUN REQUIRED`. The second
