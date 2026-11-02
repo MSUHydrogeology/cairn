@@ -1,7 +1,7 @@
 # Plan: Make Cairn's documentation easier to use
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-plain-language-docs.md
-**Status**: implementing
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Review Cairn's documentation for clear language while preserving its instructions and technical meaning.
@@ -407,3 +407,15 @@ final check remains open pending Maintainer disposition; these results do not
 claim a fully passing Boundary B. Per-file timings for the 33-file run were
 not captured, so its slow-file list is unknown. No full suite ran. Elapsed:
 unknown; tokens: unknown.
+
+## Implementation response -- Codex (Implementation) -- 2026-11-01
+
+The Maintainer explicitly accepted the focused Boundary B results in chat:
+"Accept focused results" (2026-11-01), in response to the request to finish
+without repeating the full 33-file selection after the citation correction.
+This disposes of that remaining check as accepted focused results. The record
+continues to distinguish the measured 1,803-pass initial selection, the
+focused citation test, and the 14 socket-blocked nodes that later passed; it
+does not claim the 33-file selection was rerun or fully passed. The ordinary
+and Security Reviews report no findings on the correction. No broad selection,
+certification, repin or re-anchor was run. Elapsed: unknown; tokens: unknown.
