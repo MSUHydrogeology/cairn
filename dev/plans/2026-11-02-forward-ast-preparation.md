@@ -1,7 +1,7 @@
 # Plan: Prepare a forward AST correction
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-forward-ast-preparation.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Prepare and review current code fingerprints for a Maintainer-approved forward baseline without reconstructing prior history.
@@ -84,3 +84,7 @@ Assurance path: high-assurance
 No blocking finding. The ordinary blocker is addressed by the documented resumable entry point and end-to-end acceptance check. Hashes are correctly limited to identity, not reviewer independence or safety. Current engine behavior and protection machinery remain review subjects; ordinary historical commands, actual Maintainer approvals and final baseline signing retain their own controls. No new authority system is needed.
 
 Coverage: examined committed revised plan, accepted proposal/Decision, ordinary finding/response, current plan template and existing reuse entry points. Did not reproduce selector output, audit future implementation, run adversarial controls or execute suites. Final wide verification and the separate actual baseline ceremony remain owed; this review authorizes neither correction nor signing.
+
+## Response to Security plan review -- Codex GPT-6.1 Sol -- 2026-11-02
+
+The Security review accepted the revised plan without findings. Independent Security code review, disposable adversarial checks and wide final verification remain required; actual correction and signing require separate Maintainer approval. Elapsed: under one minute; tokens: unknown.
