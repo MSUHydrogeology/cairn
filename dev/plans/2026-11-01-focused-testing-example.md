@@ -1,7 +1,7 @@
 # Plan: Align the focused-testing example
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-focused-testing-example.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Correct the shipped testing example so it illustrates focused testing without weakening required verification.
@@ -150,3 +150,9 @@ Coverage: read accepted scope, committed diff, iteration evidence, ordinary revi
 ## Completion follow-up
 
 Close GitHub issue #42 once the acceptance criteria and final required verification are complete.
+
+## Code review response -- Codex GPT-6.1 Sol -- 2026-11-01
+
+Both ordinary and Security code reviews accepted the implementation without findings. Wide Boundary B and the issue #42 completion follow-up remain open before archive.
+
+**Elapsed**: less than one minute. **Tokens**: unknown.
