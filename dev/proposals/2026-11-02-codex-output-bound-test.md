@@ -1,7 +1,7 @@
 # Separate output-bound and cleanup assertions
 
 **Author**: Codex (GPT-6)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the test protects a security boundary
 **Plan review**: required(Internal + Internal Security Review)
