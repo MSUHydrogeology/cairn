@@ -1,7 +1,7 @@
 # Plan: Prepare a forward AST correction
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-forward-ast-preparation.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Prepare and review current code fingerprints for a Maintainer-approved forward baseline without reconstructing prior history.
