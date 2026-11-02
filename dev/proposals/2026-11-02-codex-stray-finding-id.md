@@ -73,3 +73,11 @@ The identifier proves necessary to interpret a live safeguard or a consumer reli
 **Assurance path**: high-assurance
 
 The inventory is under the named high-risk `bootstrap/_scaffold/` surface. Usual and Security Reviews apply; the Decision and any plan fences remain the Maintainer's authority.
+
+## Proposal review -- Codex (GPT-6) -- 2026-11-02
+
+**Verdict:** Proceed as framed; no blocking findings.
+
+**Foundations.** (1) Yes: `dev/PLANNING.md` records the Maintainer's direction, identifies this marker and retains `SR-1`; commit `e9adb1f9` subsequently edited the inventory, while line 70 at `a7a87d96` still carries `(R5)`. The proposed deletion addresses the recorded case without changing its safeguard description. (2) Leaving it costs no work but loses that correction; a broader cleanup adds work outside the recorded case. The named high-risk `bootstrap/_scaffold/` surface in `AGENTS.md` supports the heavy path even for this prose edit; the documented cheap-defect exception does not remove the proposal's stated assurance obligations. (3) A reader or byte-pinned consumer needing this exact marker, or a diff changing the safeguard description, would show the change wrong. The proposed reader and pin search and exact diff comparison can expose those cases.
+
+**Coverage:** Read the proposal and committed inventory, planning trigger, relevant high-risk rule and subsequent inventory edit. Did not independently enumerate consumers or run implementation checks; those remain prospective. Elapsed: approximately 3 minutes. Tokens: unknown.
