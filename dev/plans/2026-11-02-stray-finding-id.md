@@ -1,7 +1,7 @@
 # Plan: Remove the obsolete finding marker
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-stray-finding-id.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Remove one closed-review marker while preserving the documented scaffold safeguard.
