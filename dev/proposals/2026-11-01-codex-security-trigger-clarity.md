@@ -1,7 +1,7 @@
 # Distinguish another input from a wider trust boundary
 
 **Author**: Codex Sol (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — changes a shipped security-review rule.
 **Plan review**: required(Internal + Internal Security Review)
@@ -129,3 +129,11 @@ S1 accepted: added the confidential-output-to-public-destination case to the exi
 Scope is preserved; the changes clarify the existing condition and exercise exposure already in it. Both passes found no blockers. Awaiting Maintainer Decision; none is recorded here.
 
 **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+## Decision -- Maintainer -- 2026-11-01
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated** (chat, 2026-11-01; scribed by Antigravity):
+
+> "Accept both as revised under Option 1"
+
+**Tier**: heavy. Accepted as revised under Option 1 with high assurance and required Internal + Internal Security Review plan review. Recurring additions: none.
