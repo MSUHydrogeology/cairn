@@ -141,3 +141,13 @@ visible option additions and costs, a separate recommendation, and brief
 Decision disclosure of material new recurring machinery. Close the issue only
 after final verification confirms these outcomes; otherwise keep it open and
 name the remaining request.
+
+## Code review -- Codex GPT-6.1 Sol -- 2026-11-01
+
+**Verdict**: Accept; no findings. Reviewed `d7434ba6` and implementation evidence at `e8c11a43`.
+
+**Foundations**: Should this happen as framed? Yes: both governing copies require material additions and costs, a credible least involved option with losses, and a separate recommendation, while preserving checks, scope and model floors. Best alternative: retain existing guidance; it avoids added wording but leaves recurring operating costs implicit (proposal Context and Alternatives). What would show it wrong? A briefing that hides a recurring check or makes routine Decisions accumulate inventory would defeat C1; the recorded examples reject the omission and do not require routine inventory.
+
+**Evidence**: Compared the governing and supporting changes with C1 and the accepted proposal. The implementation record reports 667 mapped tests passing, prose gates and the independent examples, and names omitted unpinned readers. The examples are reasoned comparisons, not proof future authors disclose every cost.
+
+**Coverage**: Read committed implementation, proposal, plan and iteration evidence. Did not rerun tests, inspect an installed copy or perform the separate Security Review; wide final verification remains outstanding. No suite run. Elapsed: approximately 5 minutes; tokens: unknown.
