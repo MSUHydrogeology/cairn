@@ -79,3 +79,25 @@ None; opening scope.
 **Assurance path**: high-assurance
 
 **Authoring elapsed**: approximately 5 minutes. **Tokens**: unknown.
+
+## Security Review -- Codex gpt-6.1-sol -- 2026-11-02
+
+Reviewed commit: d647c2a4d5d4bd248d2abcf38c1ccf740c3fbdce  
+Target: light teaching route, verification-before-archive ordering and protected sequence test  
+Prior findings: none  
+Assurance path: high-assurance
+
+**Tier**: Security Review  
+**Findings**: none  
+**Verdict**: ACCEPT as framed; recommendation, not a Maintainer Decision.  
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The current heavy-labelled exercise omits heavy's separate Security Review, and its Step 5/6 tests combine implementation with archive. A light teaching example plus verification on the committed implementation matches existing governing and archive rules. The protected-test correction retains heavy assurance. -- Quickstart opening; sequence tests Step 5/6; shipped Boundary B; lifecycle archive rule; protected roster.
+2. **Best alternative.** Keep the teaching example heavy, but that adds a Security Review unrelated to the tagline's risk and further lengthens onboarding. Making it trivial would remove the proposal/review/Decision lesson. Light retains that lesson with the least applicable ceremony, while prose-only correction leaves the test endorsing wrong ordering. -- Proposal, Alternatives and Rationale; accepted cut-the-apparatus, cut 2.
+3. **What would show it wrong?** Archive still preceding final verification, a fabricated count-only history check, or the example demanding a full suite. The planned real disposable sequence and omitted/misplaced-record mutation address order; cold reading against installed guidance checks the recipe without claiming adopters actually executed it. -- Proposal, Tests required, S2–S5 and Signals.
+
+No blocking finding. Preserve the ordinary-trivial explanation and the existing content, Decision and clean-history assertions. Updating the two existing files is proportionate; no new lifecycle rule, checker, review ceremony or trust mechanism is necessary. S5 correctly limits structural assurance.
+
+Coverage: read committed proposal, target quickstart passages, sequence assertions, protected roster, current proposal template, governing verification and archive rules, and accepted cut 2. Did not map every reader/pin, run the proposed mutation, exercise the recipe or execute suites. No anchor comparison.
