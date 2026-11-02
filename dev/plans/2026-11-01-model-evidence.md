@@ -57,3 +57,27 @@ Boundary C: independent reviewers read the committed implementation and iteratio
 **Advice:** The plan already combines overlapping final checks on a common reviewed commit while retaining each plan's coverage and evidence. Coordinate that run with the other plans and avoid repeats unless changed inputs, failed checks or unresolved concerns require them.
 
 **Coverage:** Read the committed plan at `d44605ff`, accepted proposal and Decision, and current plan template. Did not inspect every reader or final wording, run the examples, or assess the separate Security Review; implementation and Security Review remain outstanding. No suite run. Elapsed: approximately 2 minutes; tokens: unknown.
+
+## Plan review -- Codex gpt-6.1-sol -- 2026-11-01
+
+Reviewed commit: 18787e52bbbbeda67ec129380072a04605b9f6be  
+Target: entire plan against accepted proposal and scientific-check obligations  
+Prior findings: none  
+Assurance path: high-assurance, inherited from accepted proposal
+
+**Obligation**: Internal Security Review  
+**Tier**: Internal Security Review  
+**Findings**: none  
+**Verdict**: ACCEPT  
+**Elapsed**: approximately 2 minutes  
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1 preserves every configured suite member at every required point, other applicable checks, independent scientific checks and their failing and required positive controls. Scope preserves certification commands and triggers. Evidence ownership therefore grants no waiver. -- Plan, Scope and C1; accepted proposal, Proposal; proposal template, Independent scientific check.
+2. **Best alternative.** Align only conflicting existing guidance and reuse its evidence records; no new classification mechanism is needed. The common final reviewed commit can share overlapping checks while retaining each plan's required coverage and recorded range. -- Plan, Scope and Verification; accepted proposal, no-new-form constraint.
+3. **What would show it wrong?** A scientific suite member disappearing at certification, or a safety/work-specific run being rescheduled merely because its evidence has another home. C1 requires a configured-suite example overlapping another obligation and rejects a waiver; the optional example excludes both suite membership and other requirements. -- Plan, C1; accepted proposal, Evidence / verification plan and S2/S3.
+
+No blocking security finding. Shared verification is conditional on the plans reaching the same reviewed final commit; it does not replace plan-specific examples, required checks or omission records. Full-tree certification remains a separate ceremony.
+
+Coverage: examined the committed plan, accepted proposal, governing verification contract, current plan template and scientific-check/control requirements in the proposal template. Did not run examples, discover final readers, inspect implementation wording or execute tests. No suite run; implementation and separate Security code review remain owed.
