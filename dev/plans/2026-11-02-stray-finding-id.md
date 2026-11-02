@@ -100,3 +100,22 @@ The inventory claim, link and snippet checks passed. Neutrality reported zero fa
 The implementation snapshot's three broken proposal links were reported, not passed; `1f51b479` subsequently updates the relevant planning and strategy links. Their final gate result remains owed at Boundary B.
 
 **Coverage:** Inspected the committed diff, plan and implementation evidence, independently compared inventory bytes, and inspected the subsequent link correction. Did not rerun implementation tests, enumerate all consumers or assess runtime security behavior; separate Security Review and wide Boundary B remain due. Elapsed: approximately 2 minutes; tokens: unknown.
+
+## Security code review -- Codex gpt-6.1-sol -- 2026-11-02
+
+Reviewed commit: 34fdba186a1b8e972e617d554625fab075de457d  
+Target: inventory deletion and C1 evidence; ordinary review `d1660b3b`  
+Prior findings: none  
+**Tier**: Security Review  
+**Verdict**: ACCEPT; no findings.  
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Direct comparison of committed parent and candidate proves the inventory changes only by removing the specified space and `(R5)` once. All safeguard descriptions, guard names and other identifiers remain byte-identical. -- Targeted byte comparison; implementation diff; C1.
+2. **Best alternative.** Leave the marker, avoiding an edit but retaining the obsolete reference. The exact deletion meets the accepted correction without a scanner, new test infrastructure or changed security behavior. -- Accepted proposal, Alternatives; inventory diff.
+3. **What would show it wrong?** Another changed byte or a consumer requiring the marker. My parent-derived comparison passed, and an extra-byte candidate failed its equality control. Author evidence reports a known-positive reader search and no marker consumer; the live reader checks guard names. -- Targeted assertions; iteration record and named path-containment reader.
+
+**Bounding**: ACCEPTED — challenged the exact-byte boundary directly; no security information was lost. Author evidence records 118 mapped passes under Python 3.12.9, inventory prose checks and neutrality. Its three unrelated broken links were explicitly reported; ordinary review identifies subsequent correction `1f51b479`, whose final gate result remains required rather than assumed passed.
+
+Coverage: read accepted scope, committed inventory and plan evidence, ordinary review and reader contract; independently executed the exact-deletion/extra-byte controls on committed bytes. Did not rerun implementation tests, enumerate every consumer or audit runtime guards. No suite run. No reached approval fence or scope deviation in the edit. Clean canonical-Python wide Boundary B, including final standing-gate results, remains owed before closure.
