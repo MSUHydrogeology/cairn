@@ -1,7 +1,7 @@
 # Show the operating cost of decision options
 
 **Author**: Codex gpt-6.1-terra
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — shipped authoring guidance and governing doctrine are protected surfaces.
 **Plan review**: required(Internal + Internal Security Review)
