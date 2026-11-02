@@ -80,13 +80,15 @@ ceremony must account for:
   `test_security_finding_confidentiality.py`, `test_repin.py` and
   `test_repin_ceremony.py` from the
   [certification test repairs](plans/archive/2026-10-30-certification-test-repairs.md);
-  and `test_review_and_verification_rules_ship.py` and
+  `test_review_and_verification_rules_ship.py` and
   `test_verification_boundaries.py` from the
-  [test-once proposal](proposals/archive/2026-10-30-claude-test-once-per-change.md); and
+  [test-once proposal](proposals/archive/2026-10-30-claude-test-once-per-change.md);
   `test_quickstart_sequence.py` from the
-  [quickstart lifecycle plan](plans/archive/2026-11-02-quickstart-lifecycle-alignment.md); and
+  [quickstart lifecycle plan](plans/archive/2026-11-02-quickstart-lifecycle-alignment.md);
   `test_gate_preflight.py` and `test_security_check.py` from the
-  [release-test corrections plan](plans/archive/2026-11-02-release-test-corrections.md).
+  [release-test corrections plan](plans/archive/2026-11-02-release-test-corrections.md);
+  and `test_security_stack.py` from the
+  [output-bound test plan](plans/archive/2026-11-02-output-bound-test.md).
 
 Those plans did not repin or re-anchor themselves, and comparing against the
 old anchor is unnecessary. Maintainer: *"They can each build the machinery,

@@ -1,7 +1,7 @@
 # Plan: Separate output-bound and cleanup assertions
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-output-bound-test.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Check the output limit separately from cleanup success while preserving degraded-status reporting.
@@ -240,3 +240,29 @@ neutrality reported 0 failures and 43 informational findings. No snippets change
 **Known omissions**: no real OS signaling failure was induced; Windows and the
 reported original failure were not investigated. No full suite or broad selection
 ran.
+
+
+## Archive disposition and fidelity
+
+**Dispositions**: The stale protected-file digest for
+`bootstrap/tests/test_security_stack.py` -> defer (baseline work is in motion)
+-> `dev/PLANNING.md` > “What the v0.6 baseline must include”. The Maintainer
+authorized this board home: “They can each build the machinery, the new
+baseline does not need to be part of their plans. It can be a work board item
+for v0.6.” No roster hash, gate manifest or anchor was changed here.
+
+**Fidelity sign-off**: Commits
+`092712a69ccf8b9d6a58f8f286f90d66bb7d2001`,
+`45fd24c48987922a8a6cde7f47e0ab107334b5ec`, and
+`95ecf23705b3ca4890da2af3348ef5a8332e72ce` implement the accepted proposal's
+`## Proposal`, as constrained by plan `Acceptance criteria C1`. They retain the
+64 KiB cap, exact truncation statuses, explicit DEGRADED classification and
+bounded direct-child cleanup while leaving production behavior and A-t6
+unchanged. The proposal Decision records the accepted loss of overflow-specific
+cleanup detection.
+
+**Maintainer instructions carried forward** (chat, 2026-11-02): “Go ahead, I am
+okay with it. I want to move forward to repinning and release”. The focused
+verification instruction was: “I think fixing the problem and testing it with
+a narrowly scoped run is sufficient. Then we move forward. We can't have stupid
+long testing ceremonies repeating for simple failures”.
