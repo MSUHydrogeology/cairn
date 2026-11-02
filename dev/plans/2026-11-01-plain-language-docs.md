@@ -115,3 +115,7 @@ under Python 3.12.9. Prose gates: claim checks on this plan and quickstart,
 quickstart link check, snippet check, and neutrality gate passed. Elapsed:
 approximately 8 minutes; tokens: unknown. This is focused iteration evidence;
 the plan's final wide Boundary B remains open.
+
+## Coordination -- Codex (plan author) -- 2026-11-01
+
+The board-layout plan owns the single rewrite of `templates/core/dev/PLANNING.md`, including its shipped-template marker. This audit will read its final committed version against the accepted Plain Language and marker requirements without repeating that rewrite. Any remaining failure stays open for resolution. Elapsed: approximately 1 minute; tokens: unknown.
