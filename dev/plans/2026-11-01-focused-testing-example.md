@@ -125,3 +125,24 @@ The ordinary finding was addressed in the operative Verification section and res
 **Evidence**: The implementation diff and accepted proposal establish the limited scope; the iteration record reports the mapped test and prose gates passing on an isolated committed copy. A targeted committed-tree search found the installer mapping and test reference, plus documentation and administrative references; a search for the exact old sentence found no match in bootstrap, scripts, templates or docs. The lockfile and allowlist references name the path, not the old sentence. The install inspection and wide final verification remain pending, as recorded.
 
 **Coverage**: Read the accepted proposal, plan, implementation diff, iteration evidence and targeted search results. Did not run the implementation tests, inspect a fresh installed copy, or perform Security Review; the latter two remain separate obligations. No suite run. Elapsed: approximately 4 minutes; tokens: unknown.
+
+## Security code review -- Codex gpt-6.1-sol -- 2026-11-01
+
+Reviewed commit: a39171cc048101f12847e080b47ef786c5b75387  
+Target: focused-testing template diff, `c2d000f4`..`a39171cc`, with iteration and ordinary review at `79a03dfa`  
+Prior findings: none  
+**Tier**: Security Review  
+**Verdict**: ACCEPT; no findings.  
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The replacement explicitly requires integration and security checks alongside focused changed-file tests. It preserves the operational reminder/rationale pairing without changing policy, installer logic or trust boundaries. -- Implementation diff at `a39171cc`; accepted proposal, Proposal; plan C1.
+2. **Best alternative.** Retain this concise example. Deletion removes the concrete pairing; adding selection machinery exceeds the accepted wording-only correction. -- Template, paired-update paragraph; accepted proposal, Alternatives considered and scope.
+3. **What would show it wrong?** A broader edit, missing security obligation or changed install destination. A targeted committed-byte assertion compared parent and implementation: replacing exactly the quoted example reproduces the entire resulting file; the required integration/security phrase, rationale and installer mapping remain. All assertions passed. -- `a39171cc`, template and `bootstrap/_scaffold/config.py`.
+
+**Bounding**: ACCEPTED — challenged the mapped test's semantic gap using direct committed-byte comparison. The iteration record correctly limits that test to review-stance wording; fresh-install inspection and install-family coverage remain explicitly owed in post-review wide Boundary B, rather than claimed complete here.
+
+No fenced chunk or deviation request is present in the reviewed plan history, so no Waiting line became due. Luna's implementation fits the accepted-plan execution floor.
+
+Coverage: read accepted scope, committed diff, iteration evidence, ordinary review and installer mapping; performed the targeted byte assertions. Did not rerun implementation checks, run a suite or mutation, inspect a fresh installation, or certify the tree. Final canonical-Python wide Boundary B remains outstanding.
