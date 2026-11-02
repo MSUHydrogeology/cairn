@@ -297,3 +297,19 @@ Reviewed commit: `f4b7d393`. **Verdict: Blocking findings.** Elapsed: approximat
 The site/SVG correction aligns ordinary uncertainty and new-boundary wording with the governing rule; the reported issue-form installer check supports the selected hidden marker placement. The focused quickstart review finding was closed by its re-look. Final wide Boundary B follows both reviews and remains due.
 
 **Coverage:** Read the accepted proposal, committed plan and implementation reports, issue-form and site changes, and changed-surface inventory. Relied on reported implementation checks; did not independently read every changed document, rerun a suite, verify every marker or conduct Security Review.
+
+## Code Security Review -- Codex (Security Review, gpt-6.1-sol) -- 2026-11-01
+
+Reviewed implementation at `58544046`, including `14f94b1e`, `37c07e0d`, `af8d1263`, `9184eb50`, `f89c0908` and `00908eb2`.
+**Obligation:** Internal Security Review
+**Verdict:** No security blocking findings in the inspected changes. **Elapsed:** approximately 8 minutes; **Tokens:** unknown.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. The accepted proposal preserves permissions and technical meaning. The inspected module edits retain domain ownership and review independence; core markers add no authority; the site now retains the explicit stop at a newly discovered trust boundary.
+2. **Best alternative.** Keep format-safe headings and hidden markers for issue forms, preserving their metadata and prompts. This meets the marker request without changing default issue titles.
+3. **What would show it wrong?** A lost refusal, drift hidden by the narrowed parity extractor, or changed issue metadata would defeat preservation. Source comparison found no such change in the inspected edits.
+
+**Evidence:** Targeted committed-byte falsification under Python 3.12.9 confirmed the protected extractor captures the final reviewer obligation and detects changes to both the governance-boundary refusal and that final clause. Removing only the added heading/marker from each of eight issue forms recovered its exact prior content. An initial mutation missed wrapped text; corrected mutations asserted target presence. No suite ran. Existing clause-presence controls remain intact in `14f94b1e`.
+
+**Coverage:** Compared accepted preservation requirements, committed plan evidence, operative model-tier guidance, module changes, core markers, issue forms and site/SVG. Relied on reported installer and prose checks. Did not read every unchanged document, independently exercise hosted issue interfaces, or run final integration; ordinary review findings remain separately owed.
