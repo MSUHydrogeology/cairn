@@ -59,3 +59,26 @@ Reviewed commit: d2153fec. **Obligation**: Internal. **Tier**: Internal.
 3. **What would show it wrong?** A non-truncation status or excess output passing, a combined status classifying CLEAN, or an uncontrolled probe survivor. C1 requires focused mutations for the first three and inspection with bounded cleanup if needed for the last; outcomes remain to be measured.
 
 **Covered:** accepted scope, sequence, focused checks and stated coverage loss against the committed proposal, plan and test nodes. **Not covered:** executing tests, establishing the reported failure's cause, implementation results or the separate Internal Security Review.
+
+
+## Plan review -- Codex (gpt-6.1-sol) -- 2026-11-02
+
+Reviewed commit: d2153fece47f5f84060a41accd31750c055732c4
+Target: operative plan against accepted proposal and runner/test boundary
+Prior findings: none
+Assurance path: high-assurance
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately 3 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1 preserves the accepted safety controls: exact truncation statuses, a fixed output cap, explicit DEGRADED classification and bounded probe cleanup. It explicitly rejects finite output as proof of timely exit. The runner still appends cleanup failure and reports incomplete evidence; no production change is planned -- plan C1; accepted proposal Decision; `templates/modules/team-gated/run_security_audit.py::_run_tool`.
+2. **Best alternative.** Keep the existing A-t4 harness and change only its assertions. That is smaller, but retains a 60-second grace and cannot deliver the accepted removal or bounded-cleanup inspection. Reusing the existing finite probe with a bounded cleanup arrangement, only if needed, delivers the same outcomes with less continuing burden than a separate harness -- plan Scope and C1; `bootstrap/tests/test_security_stack.py::test_a_t4_output_is_bounded`.
+3. **What would show it wrong.** A non-truncation result or excess output passing A-t4, combined status classified CLEAN, or an uncontrolled survivor would defeat the plan. The required focused mutations target assertion failures; cleanup inspection remains required because A-t6 exercises timeout, not overflow. Recording any observed combined status prevents silently claiming cleanup success -- plan Acceptance criteria and Verification; A-t1/A-t4/A-t6; runner `_kill_tree`.
+
+Covered: committed plan, accepted loss and focused-check authorization, test controls and production cleanup/status paths. Not covered: implementation, failure reproduction, measured survivor behavior or Windows; no tests or suites run.
