@@ -46,6 +46,7 @@ release assignment authorizes no Decision, scope change, push or publication.
 |---|---|---|
 | **Retire the v0.6 decision master.** The note briefs v0.6's open decisions and holds; once v0.6 ships, its job is done. | At the v0.6 cut, confirm each of its items is done or on this board, change its role from living, then archive it. | [Strategy](strategy/2026-10-28-codex-v06-decision-master.md) |
 | **Clarify when Security Review is needed** ([#37](https://github.com/MSUHydrogeology/cairn/issues/37)). Guidance on safeguard reuse is complete; the issue's proposed necessity line, widened-boundary-only trigger and narrower high-risk verification remain unadopted. | Keep the remaining choices visible for Maintainer disposition. | [Archived plan](plans/archive/2026-11-01-security-trigger-clarity.md); [Issue #37](https://github.com/MSUHydrogeology/cairn/issues/37) |
+| **Remove one obsolete review reference.** The trigger to correct the stray reference in the security inventory has occurred. | Decision on the reviewed one-line correction. | [Proposal](proposals/2026-11-02-codex-stray-finding-id.md) |
 
 ### What the v0.6 baseline must include
 
@@ -205,7 +206,6 @@ evidence stays in the named record and in this file's history.
 | **Revisions that silently drop sections.** | A third instance may justify carrying a section inventory forward. | Observations, 2026-08-19 |
 | **Dispositions go stale between commits.** | An independent repeat may justify recording the measured commit with each disposition. | Observations, 2026-08-19 |
 | **Edit-check test gaps and one fail-open case.** (1) A `git` that answers some calls and then stops reads as "no guard", so `--apply` overwrote an edited file in a test; a project cannot cause it. (2) No test pins the `.git`-file case (a linked work tree or submodule). (3) No test pins a hang at `git --version` alone. | At the next edit to the edit check in `bootstrap/_scaffold/upgrade.py`, or when a project loses an edit. | Maintainer, 2026-10-26: *"On those other issues, Queue them if it's not simple to fix them now. No need to generate more work for us later."* |
-| **One stray finding id.** `(R5)` in `bootstrap/_scaffold/SECURITY_MUTATIONS.md` line 70 points into an ended review. `SR-1` stays on purpose: the frozen script `templates/modules/team-gated/run_security_audit.py` defines it. | When that file is next edited. | Maintainer, 2026-10-27: *"Please correct those cases you've found"* |
 | **Evaluate Cairn Plain Language 1.0 after three months.** Adopted 2026-10-26. | Late January 2027: the Maintainer checks whether it worked, then decides on a standalone page with its own DOI. | [Strategy](strategy/2026-05-14-claude-human-ai-team-development-framework.md#candidate-future-moves-not-queued) |
 | **Stage re-pins in a clean temporary worktree.** | If the dirty-tree refusal blocks the Maintainer twice. | `repin-build` proposal, "What is not carried" |
 | **Warn at session start when a pin is stale.** Needs a threshold with evidence behind it; Cairn's tools warn, they do not block. | If a stale gate manifest or AST baseline goes unnoticed again. | `repin-build` proposal, item E |
