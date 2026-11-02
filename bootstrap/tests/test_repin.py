@@ -364,14 +364,14 @@ def test_forward_guide_refuses_review_binding_and_fixture_mutation(bed, tmp_path
     review_path = evidence / "ordinary-review.txt"
     review_path.write_text(review_path.read_text().replace("packet-sha256:", "changed-packet-sha256:"))
     code, out = run_pty([PY, str(bed.repo / "scripts/repin.py"), "forward-guide",
-                         "--evidence-dir", str(evidence)], env=bed.env, cwd=bed.repo)
+                         "--evidence-dir", str(evidence)], env=bed.env, cwd=bed.repo, timeout=8)
     assert code == 2 and "review is missing or bound" in out
     assert bed.git("status", "--porcelain").stdout == ""
 
     review_path.write_text(review_path.read_text().replace("changed-packet-sha256:", "packet-sha256:"))
     bed.write(BASELINE, "{}\n")
     code, out = run_pty([PY, str(bed.repo / "scripts/repin.py"), "forward-guide",
-                         "--evidence-dir", str(evidence)], env=bed.env, cwd=bed.repo)
+                         "--evidence-dir", str(evidence)], env=bed.env, cwd=bed.repo, timeout=8)
     assert code == 2 and "neither the reviewed preimage nor reviewed output" in out
     assert bed.read(BASELINE) == "{}\n"
     assert bed.git("rev-parse", "HEAD").stdout.strip() == candidate

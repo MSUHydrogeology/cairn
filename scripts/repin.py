@@ -756,7 +756,7 @@ def check_head(ctx):
 # ---------------------------------------------------------------------------
 
 _AST_CHILD = r'''
-import json, os, sys
+import json, os, re, sys
 root, fx, mods = sys.argv[1], sys.argv[2] + "/", sys.argv[3:]
 sys.path.append(root + "/bootstrap/tests")
 import _ast_attest as A
@@ -771,6 +771,7 @@ print(json.dumps({
     "changed": {k: [v[0], v[1], rel(v[2])] for k, v in changed.items()},
     "spans": {k: A.digest_module(v[2])[k]["span"] for k, v in changed.items()},
     "missing": missing, "dup": dup,
+    "duplicate_named": sorted(k for k in merged if re.match(r"^(FunctionDef|AsyncFunctionDef|ClassDef):.+#(?:[2-9]|[1-9][0-9]+)$", k)),
     "new_known": {k: sorted(x for x, _ in merged[k]) for k in fresh},
     "new_files": {k: rel(merged[k][0][1]) for k in fresh}}))
 '''
@@ -986,7 +987,7 @@ def build_transaction(ctx, *, reviewed_deletions=(), baseline=False):
                      + ". That is a transition ceremony, not an AST pin.")
     view = ast_view(ctx)
     deletions = sorted(reviewed_deletions)
-    if view["dup"] or sorted(view["missing"]) != deletions:
+    if view["dup"] or (baseline and view["duplicate_named"]) or sorted(view["missing"]) != deletions:
         raise Refuse("a baselined symbol is missing or defined twice. Name every reviewed deletion "
                      "exactly; duplicates cannot be pinned. Run `status` and read the symbols named.")
     ext, new, files = ctx["ext"], {}, set()
@@ -1185,9 +1186,10 @@ def forward_guide(repo, evidence_dir):
     for role in ("ordinary", "security"):
         review = read_safe(cdir / f"{role}-review.txt")
         text = review.decode("utf-8")
-        if (f"role: {role}\n" not in text or f"candidate: {packet['candidate']}\n" not in text
-                or f"packet-sha256: {sha(packet_raw)}\n" not in text
-                or f"transaction-sha256: {sha(txn_raw)}\n" not in text
+        lines = text.splitlines()
+        if (lines.count(f"role: {role}") != 1 or lines.count(f"candidate: {packet['candidate']}") != 1
+                or lines.count(f"packet-sha256: {sha(packet_raw)}") != 1
+                or lines.count(f"transaction-sha256: {sha(txn_raw)}") != 1
                 or any(not re.search(rf"^{field}: .+", text, re.M) for field in
                        ("model", "elapsed", "tokens", "verdict", "findings", "should-happen",
                         "best-alternative", "what-would-show-wrong", "coverage"))):
