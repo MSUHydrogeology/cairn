@@ -1212,7 +1212,8 @@ def test_a_t1_boundary_failure_status_is_degraded_never_clean(orchb, tmp_path,
     # deadline mechanism A-t2 owns.
     pkg = tmp_path / "pkg"
     pkg.mkdir()
-    for status in ("timeout", "truncated", "undecodable", "timeout+cleanup-failed"):
+    for status in ("timeout", "truncated", "undecodable", "timeout+cleanup-failed",
+                   "truncated+cleanup-failed"):
         monkeypatch.setattr(orchb, "_run_tool",
                             lambda *a, _s=status, **k: orchb.ToolRun(0, _s, "", ""))
         monkeypatch.setattr(orchb.shutil, "which", lambda _n: "/usr/bin/bandit")
@@ -1252,17 +1253,16 @@ def test_a_t4_output_is_bounded(orchb, monkeypatch):
     # the cap DOWN configures the *subject*; the oracle is the returned status
     # and the measured buffer length, neither of which the subject supplies.
     monkeypatch.setattr(orchb, "_TOOL_OUTPUT_CAP_BYTES", 64 * 1024)
-    # Killing the flooder is cleanup, which A-t6 owns. On a loaded machine the
-    # 5 s default grace ran out and the status read "truncated+cleanup-failed",
-    # failing this test for a property it does not test.
-    monkeypatch.setattr(orchb, "_TOOL_KILL_GRACE_S", 60.0)
+    # Cleanup stays bounded by the runner's finite kill-grace phases. A-t4
+    # accepts cleanup failure because A-t6 owns survivor cleanup; the accepted
+    # scope gives up overflow-specific cleanup-status detection.
     run = orchb._run_tool(
         _probe("import sys\n"
                "for _ in range(4096):\n"
                "    sys.stdout.write('x' * 1024)\n"
                "sys.stdout.flush()\n"),
         label="flooder")
-    assert run.status == "truncated", run.status
+    assert run.status in ("truncated", "truncated+cleanup-failed"), run.status
     assert len(run.stdout.encode("utf-8")) <= 64 * 1024
 
 
