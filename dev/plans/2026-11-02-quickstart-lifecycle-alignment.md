@@ -1,7 +1,7 @@
 # Plan: Align the quickstart lifecycle
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-quickstart-lifecycle-alignment.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Correct the quickstart and its sequence test so the example records its final check before archive.
@@ -85,3 +85,9 @@ Assurance path: high-assurance
 3. **What would show it wrong?** A recipe that archives before verification or a constructed-history assertion that accepts an omitted or misplaced record would defeat the lesson. The plan requires a mutation and cold comparison with installed guidance. -- Plan C1 and Verification; proposal S2–S5.
 
 Coverage: read the committed plan, accepted proposal, Security plan review, template, and relevant quickstart and sequence-test passages. Did not map all readers or pins, run the mutation or tests, or exercise the recipe; those checks remain implementation obligations.
+
+## Response to plan reviews -- Codex GPT-6 -- 2026-11-02
+
+Both reviews accept the plan without blocking findings. The Security review’s advice is accepted: reject malformed evidence through the existing content and history assertions. Reader and pin mapping, mutations, independent code reviews and wide final verification remain implementation obligations.
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
