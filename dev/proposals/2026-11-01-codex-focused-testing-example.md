@@ -61,3 +61,13 @@ The replacement implies a full suite is always required, omits tests that should
 ## Assurance path
 
 **Assurance path**: heavy, with ordinary and Security Reviews and a reviewed plan, because the change touches a shipped vendor-neutral methodology template. No new trust boundary is proposed.
+
+## Ordinary proposal review -- Codex GPT-6.1 Sol -- 2026-11-01
+
+**Verdict:** Support as framed; no blocking findings.
+
+**Foundations.** Should it happen? Yes: the committed template's paired-update example says to run the suite after any substantive change, while `AGENTS.md` limits iteration to tests naming changed files and separately requires a final integration selection. The example can mislead even though it is illustrative. Best alternative: delete the example; this removes the misleading wording but loses the concrete operational-rule/rationale pairing. A short focused-testing example preserves that purpose with no new process. What would show this wrong? A replacement that suggests changed-file tests are the only required verification, or an unchanged reader that still prescribes the old wording, would leave a misleading account.
+
+**Advice:** Keep the replacement illustrative and concise; avoid introducing a new selection rule or verification apparatus. Check that it does not imply the final integration selection is optional. The proposal's existing reader search and prescribed checks can establish the relevant evidence without creating a new process.
+
+**Coverage:** Read proposal and the template at `bc2c211e`, and checked the iteration and integration rules in `AGENTS.md` and the installed testing module. Did not inspect every downstream copy or run implementation checks; those remain for implementation. Elapsed: approximately 2 minutes; tokens: unknown.
