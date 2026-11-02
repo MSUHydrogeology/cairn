@@ -1,7 +1,7 @@
 # Plan: Align the quickstart lifecycle
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-quickstart-lifecycle-alignment.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Correct the quickstart and its sequence test so the example records its final check before archive.
@@ -91,3 +91,46 @@ Coverage: read the committed plan, accepted proposal, Security plan review, temp
 Both reviews accept the plan without blocking findings. The Security review’s advice is accepted: reject malformed evidence through the existing content and history assertions. Reader and pin mapping, mutations, independent code reviews and wide final verification remain implementation obligations.
 
 **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+## Implementation iteration -- Codex gpt-6.1-sol -- 2026-11-02
+
+Implemented C1 in `39b2c9bd400bd24acfd9c30efc7322331e54eb51`, after the
+plan transition `69be5fdd`. Interpreter: `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+(Python 3.13.13). The tested source was the working tree at those bytes;
+unrelated files were concurrently changing, so no clean-tree claim is made.
+Elapsed: approximately 7 minutes. Tokens: unknown.
+
+**Reader and pin map.** `test_quickstart_sequence.py` reads the quickstart
+and exercises the lifecycle; `test_review_stance_in_shipped_files.py` reads
+it for stance wording. `scripts/measurements.py`, the solo-greenfield profile
+comment and the installer point readers to the quickstart. `test_tiers.py`
+selected the two tests above. The changed test is listed in
+`bootstrap/tests/fixtures/gate_manifest.json::frozen_files`: expected SHA
+`24902eae743e6a486f8160c72158a73151cf6231a89eab152159759734119e05`, current
+SHA `f3a5cdb307f6de3029dd83411c9795cfdf81c8e59ec94a8500dbc738f800a2f4`.
+This mismatch is recorded as separate baseline/re-anchor work; no pin or gate
+was changed, and no re-anchor was run.
+
+| Command | Result | Elapsed |
+|---|---|---:|
+| `python tools/test_tiers.py for docs/quickstart.md bootstrap/tests/test_quickstart_sequence.py` | selected the two tests listed below | <1 s |
+| `python3.13 -m pytest bootstrap/tests/test_quickstart_sequence.py bootstrap/tests/test_review_stance_in_shipped_files.py -q` | 490 passed | 3.41 s |
+| `python3.13 scripts/check_cairn.py docs/quickstart.md` | pass | <1 s |
+| `python3.13 scripts/sync_doc_snippets.py --check docs/quickstart.md` | pass | <1 s |
+| `python3.13 scripts/quality_gate.py --sub neutrality` | fail=0, info=43 | <1 s |
+| `python3.13 scripts/claim_check.py dev/plans/2026-11-02-quickstart-lifecycle-alignment.md` | pass | <1 s |
+| `python3.13 scripts/check_cairn.py` | 2 unrelated broken links; quickstart-scoped run passed | 1.2 s |
+
+A separate disposable-repository mutation removed the verification section
+while retaining its empty commit; `_assert_verification_order` rejected the
+history because the record was absent. `claim_check.py` accepted the plan
+before this appended record. The full-tree prose failure is in unchanged
+`dev/strategy/2026-10-28-codex-v06-decision-master.md:26` and `:28`, whose
+links target `../proposals/2026-11-02-codex-release-test-corrections.md`
+and `../proposals/2026-11-02-codex-quickstart-lifecycle-alignment.md`, now
+under the archive. The same source and missing targets were present at `HEAD`.
+
+No full suite or wide Boundary B run was performed. Boundary B remains after
+independent ordinary and Security code review. The full-tree prose failure
+and stale frozen-file hash remain explicit non-pass/omission dispositions for
+that review and the Maintainer's separate baseline work.
