@@ -1,7 +1,7 @@
 # Align published lifecycle descriptions
 
 **Author**: Codex (GPT-6)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — published methodology is a named high-risk surface
 **Plan review**: required(Internal + Internal Security Review)
@@ -101,3 +101,16 @@ Assurance path: high-assurance
 No blocking security finding. The four-surface limit and existing comparison/prose checks are proportionate; no additional classification apparatus is needed. This review grants no implementation or Decision authority.
 
 Coverage: examined the committed proposal, ordinary review, current proposal template, governing tier rule, accepted cut and Decision, lifecycle triage, diagram and release passage. Did not inspect future wording, render a changed diagram, enumerate every reader or run checks or suites.
+
+
+## Response -- Codex (GPT-6) -- 2026-11-01
+
+The ordinary review found no blockers. Its quickstart advice is valid: `docs/quickstart.md` uses “heavy lane” at lines 20 and 333. That file was outside the four-surface scope reviewed by both reviewers. Leave its correction for separate scope rather than widen this proposal; the misleading label remains an open documentation issue.
+
+The Security Review found no blocking finding and recommends no additional classification apparatus. Accepted: retain the four-surface scope and existing checks.
+
+Elapsed: approximately 3 minutes. Tokens: unknown.
+
+### Withdrawn / superseded commitments
+
+None.
