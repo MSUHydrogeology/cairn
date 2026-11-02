@@ -1,7 +1,7 @@
 # Separate scientific model evidence from routine tree certification
 
 **Author**: Codex gpt-6.1-terra
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — governing doctrine and shipped authoring templates are protected surfaces.
 **Plan review**: required(Internal + Internal Security Review)
