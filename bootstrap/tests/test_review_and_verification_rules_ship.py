@@ -427,6 +427,21 @@ def test_security_module_states_guarded_reuse_limits(rel: str) -> None:
     "dev/modules/security-review.md",
     "templates/modules/team-gated/security-review.md",
 ])
+def test_security_module_defines_wide_as_mapped_change_verification(
+    rel: str,
+) -> None:
+    text = _collapse(_text(rel))
+    assert (
+        "Wide means the mapped change-verification mode for contract and "
+        "trust-ceremony changes; it does not mean run the full suite."
+        in text
+    )
+
+
+@pytest.mark.parametrize("rel", [
+    "dev/modules/security-review.md",
+    "templates/modules/team-gated/security-review.md",
+])
 @pytest.mark.parametrize("old, new", [
     (
         " when the reviewed limits stay the same: who supplies the data, "

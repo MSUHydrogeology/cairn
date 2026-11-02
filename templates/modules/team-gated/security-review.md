@@ -63,6 +63,8 @@ untrusted source, bypassed guard, broader accepted input, changed command
 construction or newly exposed secret can trigger review even through an
 existing API. A move that changes path resolution or guard ordering is not
 exempt because the code looks familiar.
+Wide means the mapped change-verification mode for contract and trust-ceremony
+changes; it does not mean run the full suite.
 Existing Foundations may question an unsupported declaration before Decision.
 After acceptance, changing a required review follows Maintainer authority and
 plan fences; a reviewer cannot waive it.
