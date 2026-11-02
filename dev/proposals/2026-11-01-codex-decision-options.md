@@ -1,7 +1,7 @@
 # Show the operating cost of decision options
 
 **Author**: Codex gpt-6.1-terra
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — shipped authoring guidance and governing doctrine are protected surfaces.
 **Plan review**: required(Internal + Internal Security Review)
@@ -18,7 +18,7 @@ When asking the Maintainer to choose, describe what each material option adds an
 
 ## Proposal
 
-Add concise guidance for decisions presented to the Maintainer, including chat and written artifacts: state what each material option adds or changes and its meaningful costs to build, run, understand and maintain, using estimates or uncertainty where needed. Include the least involved credible option, including doing nothing when viable, and say what it loses. Give the agent's recommendation and reason separately from the option labels. Where a Decision accepts new recurring machinery, name that addition in the Decision record so it can be read back. Do not require a fixed number of options, a table, or a new review or checklist.
+Add concise guidance for decisions presented to the Maintainer, including chat and written artifacts: state what each material option adds or changes and its meaningful costs to build, run, understand and maintain, using estimates or uncertainty where needed. Include the least involved credible option, including doing nothing when viable, and say what it loses, including any safeguard. A comparison cannot waive required checks, accepted scope or the model capability floor. Give the agent's recommendation and reason separately from the option labels. Briefly name material new recurring additions in the existing Decision itself; a Decision without one needs no extra sentence or inventory. Do not require a fixed number of options, a table, or a new review or checklist.
 
 ## Rationale
 
@@ -34,7 +34,7 @@ Place the operative cross-cutting instruction in `AGENTS.md` and its shipped cou
 
 ## Evidence / verification plan
 
-Inspect current guidance and its shipped counterparts, direct readers and byte pins before editing. Check a concrete decision with a recurring check and a credible simpler option: both additions, operating costs, losses and the recommendation should be clear without a new form. A decision that obscures those facts or requires invented alternatives falsifies the change. Run claim, link, snippet and neutrality gates and the tests that read changed files; map exact nodes before implementation. After review, run wide Boundary B on a clean final commit under canonical Python 3.13, recording its range, checks and omissions.
+Inspect current guidance and its shipped counterparts, direct readers and byte pins before editing. Check a concrete decision with a recurring check and a credible simpler option: both additions, operating costs, losses and the recommendation should be clear without a new form. Also check a routine Decision with no material new recurring addition needs no extra sentence or inventory. A decision that obscures those facts or requires invented alternatives falsifies the change. Run claim, link, snippet and neutrality gates and the tests that read changed files; map exact nodes before implementation. After review, run wide Boundary B on a clean final commit under canonical Python 3.13, recording its range, checks and omissions.
 
 ### Tests required
 
@@ -103,3 +103,16 @@ Coverage: Read the committed proposal, review template and cited collaboration g
 **Non-blocking advice.** Concur with N1: name material new recurring commitments briefly in the existing Decision, without itemized accounting or a “none” declaration. A routine decision with no recurring addition should need no extra sentence. An option comparison must disclose a lost safeguard; it cannot waive required checks, accepted scope or the model capability floor. Keep the no-checklist constraint; compare recurring-addition and routine cases in the planned human comparison.
 
 **Coverage:** Read the proposal and ordinary review at `aa1784b7`, plus committed governing authority, model-tier rules and collaboration/role guidance. Examined authorization, concealed safeguards and recurring-record burden. Did not verify the adopter report, final wording, every shipped consumer or runtime security; ran no implementation checks.
+
+
+## Response -- Codex gpt-6.1-terra -- 2026-11-01
+
+**Elapsed**: approximately 3 minutes  
+**Tokens**: unknown
+
+- N1: Accepted. The existing Decision names material new recurring additions briefly; a routine Decision needs no extra sentence or inventory, and the comparison now exercises that case.
+- Security advice: Accepted. Options disclose lost safeguards and cannot waive required checks, accepted scope or the model capability floor; the planned comparison covers both cases.
+
+### Withdrawn / superseded commitments
+
+None.
