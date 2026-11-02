@@ -1,7 +1,7 @@
 # Plan: Align lifecycle descriptions
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-lifecycle-description.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Correct four published descriptions so readers can see when a proposal needs a plan.
@@ -112,9 +112,9 @@ Also pending: the deliberate mutation, `check_cairn.py`, link checks, snippet sy
 
 Changed surfaces remain the six named in the prior record. The completed edits include the light bypass route, the plan-review-when-required label and accessibility text, and the Quickstart correction. No operative rule or review obligation changed.
 
-Boundary A is `wide` because the published lifecycle method is a protected doctrine surface. The prior record names the plan's 32-file mapped selection. `implement_shared` confirmed that all 32 filenames were covered by its 18-file common selection plus the 16-file lifecycle-only remainder, with none omitted. The common selection command was `python tools/test_tiers.py for --range b210f9b4d2e938e33905e8c99faabd7ab7e91148..d7434ba616289d8f1c1927d23784ab1a6b33b876`; it selected 18 files and passed 667 tests in 61.04 seconds under Python 3.12.9 on `d7434ba6`. The selector reported 46 unpinned `AGENTS.md` readers omitted. The 16-file lifecycle-only mapped remainder passed 942 tests in 72.16 seconds under Python 3.12.9 on `a6927476`; the exact test-run shell command was not retained. An earlier attempt at that remainder was interrupted after 669 passes in 9.35 seconds and is not counted as a completed run. No non-pass was reported for the completed runs. The companion decision-options plan records the common selection's filenames; the prior record here retains the 32-file plan selection.
+Boundary A is `wide` because the published lifecycle method is a protected doctrine surface. The prior record names the plan's 32-file mapped selection. `implement_shared` confirmed that all 32 filenames were covered by its 18-file common selection plus the 16-file lifecycle-only remainder, with none omitted. The common selection command was `python tools/test_tiers.py for --range b210f9b4d2e938e33905e8c99faabd7ab7e91148..d7434ba616289d8f1c1927d23784ab1a6b33b876`; it selected 18 files and passed 667 tests in 61.04 seconds under Python 3.12.9 on `d7434ba6`. The selector reported 46 unpinned `AGENTS.md` readers omitted. The 16-file lifecycle-only mapped remainder passed 942 tests in 72.16 seconds under Python 3.12.9 on `a69274760a97e8f040ad244fbfc38ee2600c4748`; the exact test-run shell command was not retained. An earlier attempt at that remainder was interrupted after 669 passes in 9.35 seconds and is not counted as a completed run. No non-pass was reported for the completed runs. The companion decision-options plan records the common selection's filenames; the prior record here retains the 32-file plan selection.
 
-After the conditional SVG-route edit, five corpus-search nodes in `test_review_stance_in_shipped_files.py` passed in 0.44 seconds under Python 3.12.9 on `212cba7a`: `test_every_file_with_a_phrasing_hit_is_exempt_for_a_reason`, `test_no_exemption_is_stale`, `test_removing_an_exemption_is_reported`, `test_a_phrase_inserted_into_a_scanned_copy_is_reported`, and `test_the_walk_reaches_the_roots_it_claims`. These nodes check corpus exemptions and scanning; the diagram itself was checked by render and accessible-text inspection. The SVG comment-only correction (`7f03a402`) and final Quickstart wording correction (`69e0bb5a`) postdate that run and are not claimed as covered by those nodes.
+After the conditional SVG-route edit, five corpus-search nodes in `test_review_stance_in_shipped_files.py` passed in 0.44 seconds under Python 3.12.9 on `212cba7ab62f05e54323180978d4625cd83e7a90`: `test_every_file_with_a_phrasing_hit_is_exempt_for_a_reason`, `test_no_exemption_is_stale`, `test_removing_an_exemption_is_reported`, `test_a_phrase_inserted_into_a_scanned_copy_is_reported`, and `test_the_walk_reaches_the_roots_it_claims`. These nodes check corpus exemptions and scanning; the diagram itself was checked by render and accessible-text inspection. The SVG comment-only correction (`7f03a4026c87dd742c083437e0b607b67b0c9a0b`) and final Quickstart wording correction (`69e0bb5a`) postdate that run and are not claimed as covered by those nodes.
 
 The prose gates passed on the shared corpus: `check_cairn.py` checked 189 Markdown files (95 external links not probed); `link_check.py` checked 189 files (96 external links not probed); neutrality reported zero failures and 43 informational findings. No synced snippet changed, so snippet sync was not applicable. Current `claim_check.py` checks passed for `README.md`, `docs/release-process.md`, `docs/methodology/lifecycle.md`, and `docs/quickstart.md` under Python 3.12.9; `docs/index.html` also passed. `git diff --check` passed for the committed fixes. The SVG was rendered with `rsvg-convert` and visually inspected after its route and conditional-review changes.
 
@@ -124,17 +124,17 @@ The shared run records describe committed inputs, but do not preserve pre/post `
 
 ## Code review -- Codex GPT-6.1 Sol -- 2026-11-01
 
-**Verdict**: Accept; no findings remain. Reviewed `55d0034b`, corrections through `69e0bb5a`, and iteration evidence at `364c26c2`.
+**Verdict**: Accept; no findings remain. Reviewed `55d0034b6fe4ce26579bb3c4430c37bb391392e1`, corrections through `69e0bb5a`, and iteration evidence at `364c26c2`.
 
 **Foundations**: Should this happen as framed? Yes: the six descriptions now distinguish the outer lanes from proposal tiers, preserve light's no-plan rule and the heavy triggers, and retain existing obligations. Best alternative: correct only the README and diagram; that leaves release guidance and the published method inconsistent (proposal Alternatives). What would show it wrong? A light proposal routed through a plan, an unconditional plan review, or a weakened heavy trigger would contradict C1 and the operative rules.
 
-**Evidence**: Compared the changes, diagram paths and accessible descriptions with the accepted proposal and plan. My findings on the SVG's unconditional plan and plan review are closed by `a6927476` and `212cba7a`; `7f03a402` aligns the source comment and `69e0bb5a` corrects Quickstart's review condition. The implementation record reports the mapped selection, prose gates, rendered inspection and a detected false-light-plan mutation. It discloses unrecorded clean-state evidence and final edits after the mapped runs; those remain limits for final verification.
+**Evidence**: Compared the changes, diagram paths and accessible descriptions with the accepted proposal and plan. My findings on the SVG's unconditional plan and plan review are closed by `a69274760a97e8f040ad244fbfc38ee2600c4748` and `212cba7ab62f05e54323180978d4625cd83e7a90`; `7f03a4026c87dd742c083437e0b607b67b0c9a0b` aligns the source comment and `69e0bb5a` corrects Quickstart's review condition. The implementation record reports the mapped selection, prose gates, rendered inspection and a detected false-light-plan mutation. It discloses unrecorded clean-state evidence and final edits after the mapped runs; those remain limits for final verification.
 
 **Coverage**: Read the committed six-surface changes, proposal, plan and iteration evidence. Inspected the SVG paths and accessibility text, relying on the author's rendered inspection. Did not rerun tests or the mutation, inspect installed output, or perform the separate Security Review. Wide final verification remains outstanding. No suite run. Elapsed: approximately 7 minutes; tokens: unknown.
 
 ## Security code review -- Codex gpt-6.1-sol -- 2026-11-01
 
-Reviewed commits: 55d0034b, a6927476, 212cba7a, 7f03a402 and 69e0bb5a  
+Reviewed commits: 55d0034b6fe4ce26579bb3c4430c37bb391392e1, a69274760a97e8f040ad244fbfc38ee2600c4748, 212cba7ab62f05e54323180978d4625cd83e7a90, 7f03a4026c87dd742c083437e0b607b67b0c9a0b and 69e0bb5a  
 Target: six descriptive surfaces; evidence `364c26c2`, ordinary review `214b49a7`  
 Prior finding: Quickstart's unconditional reviewed-plan wording  
 **Tier**: Security Review  
@@ -145,7 +145,7 @@ Prior finding: Quickstart's unconditional reviewed-plan wording
 
 1. **Should this happen as framed?** Yes. The descriptions retain light's no-plan rule, separate outer lanes from proposal tiers and preserve named high-risk and added/widened-boundary heavy triggers. The approved HTML/Quickstart additions remain descriptive. No governing instructions or enforcement changed. -- Six-surface diff, accepted scope and C1.
 2. **Best alternative.** Keep the existing diagram with a conditional route and short explanation, as implemented. Removing it loses useful process guidance; adding another classification mechanism is unnecessary. -- SVG paths and labels; accepted proposal, Alternatives.
-3. **What would show it wrong?** The diagram sending light through a plan, or Quickstart requiring every plan review. My render of committed `7f03a402` shows the light bypass and conditional review label; metadata and both alternatives agree. `69e0bb5a` closes the Quickstart finding. The author separately records detection of the deliberately false light-needs-plan example. -- Rendered committed SVG, correction diff and completion evidence.
+3. **What would show it wrong?** The diagram sending light through a plan, or Quickstart requiring every plan review. My render of committed `7f03a4026c87dd742c083437e0b607b67b0c9a0b` shows the light bypass and conditional review label; metadata and both alternatives agree. `69e0bb5a` closes the Quickstart finding. The author separately records detection of the deliberately false light-needs-plan example. -- Rendered committed SVG, correction diff and completion evidence.
 
 **Bounding**: ACCEPTED — challenged visual routing and conditional-review semantics. Evidence reports the shared 667 and remainder 942 passes under Python 3.12.9 and targeted later checks. Missing pre/post clean-state records, an unretained remainder command and later edits limit that evidence; this review does not certify it as final clean-tree verification.
 
@@ -158,3 +158,14 @@ Ordinary code review `214b49a7` and Security Review `7fe9e119` both ACCEPT; prio
 ## Implementation verification -- Codex GPT-6 -- 2026-11-01
 
 **Boundary B: wide.** Frozen SHA/range, canonical Python 3.13.13, Bandit on `PATH`, clean isolated pre/post state, common 36-file selector union, 1,955 unique passes and 14 local-socket failures resolved by targeted rerun are recorded in the shared Boundary B record in `dev/plans/2026-11-01-decision-options.md`. The union includes all 32 lifecycle-mapped files and named integration/workflow families. Rendered the SVG (700×390); route, labels, title/description and README/HTML alt text matched the rule. A false light-needs-plan accessible-text mutation was detected. No full-tree certification was run. Omitted: external links unprobed, 46 unpinned governing-file readers, per-file durations. **Elapsed**: shared automated tests 190.28 s; render/mutation inspection unmeasured. **Tokens**: unknown.
+
+
+## Dispositions -- archive preparation -- 2026-11-01
+
+**Dispositions**: none. No issue or deferred follow-up remains. Whole-tree certification is a separate authorized ceremony, not a required check for this plan.
+
+## Lasting-truth migration -- 2026-11-01
+
+**Evidence shipped**: implementation commits `55d0034b6fe4ce26579bb3c4430c37bb391392e1` (core descriptions and SVG), `a69274760a97e8f040ad244fbfc38ee2600c4748` and `212cba7ab62f05e54323180978d4625cd83e7a90` (conditional route/labels), and `7f03a4026c87dd742c083437e0b607b67b0c9a0b` (source description) align the reader-facing surfaces. The final render, accessibility comparison, mapped lifecycle/integration tests and wide Boundary B are recorded above. **Evidence deferred**: none. **Deferred evidence home**: N/A. Whole-tree certification is separate.
+
+**Fidelity sign-off**: implementation commits `55d0034b6fe4ce26579bb3c4430c37bb391392e1`, `a69274760a97e8f040ad244fbfc38ee2600c4748`, `212cba7ab62f05e54323180978d4625cd83e7a90` and `7f03a4026c87dd742c083437e0b607b67b0c9a0b` match the accepted `## Proposal` in `dev/proposals/archive/2026-11-01-codex-lifecycle-description.md`, accepted at its `## Decision`: outer lanes remain, light proposals have no plan, and the public diagram, README, Quickstart, release guidance and published method describe the same tier rules.
