@@ -1,7 +1,7 @@
 # Supply testing architecture that makes scoped certification dependable
 
 **Author**: Codex Sol (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — protected methodology and shipped verification guidance.
 **Plan review**: required(Internal + Internal Security Review)
@@ -279,3 +279,13 @@ Cairn's local ceremonies remain owed; no infrastructure is added.
 
 Claim check passed. No suites or adopter software run. **Waiting on**:
 Maintainer Decision.
+
+## Decision -- Maintainer -- 2026-11-01
+
+Elapsed time: unknown. Tokens: unknown.
+
+**Tier**: heavy
+
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim and visually isolated (no paraphrase):
+
+> "Okay, once you've revised it. I accept it after you get reviews in from an agent. Please continue with your development arc."
