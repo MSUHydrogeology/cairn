@@ -1,7 +1,7 @@
 # Align published lifecycle descriptions
 
 **Author**: Codex (GPT-6)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — published methodology is a named high-risk surface
 **Plan review**: required(Internal + Internal Security Review)
