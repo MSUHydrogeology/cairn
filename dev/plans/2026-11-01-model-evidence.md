@@ -42,3 +42,18 @@ Cross-cutting prescription belongs in both governing files; plan templates carry
 Before edits, search direct readers and byte pins, inspect their assertions and map changed paths using `python tools/test_tiers.py for <paths>`; use the complete reviewed range for governing text. Run mapped iteration checks, applicable claim, link, snippet and neutrality gates, and `python scripts/check_cairn.py`. Compare installed and self-hosted guidance with the two examples and record the person and outcomes. Security preflight S2/S3 uses the required-run human example; no automated proof is claimed.
 
 Boundary C: independent reviewers read the committed implementation and iteration evidence and run targeted falsification checks. After review and fixes, run wide Boundary B on a clean unchanged final commit under canonical Python 3.13, covering mapped iteration and integration/workflow tests, owning families, known consumers and public paths, prose gates and both examples. When the other accepted v0.6 plans reach the same point, combine overlapping checks on one common reviewed final commit; retain every plan's required coverage and record its own evidence, range, SHA, interpreter, clean pre/post state, commands, counts, elapsed time, tokens, non-pass dispositions and omissions. Do not run the full certifying suite for this work.
+
+## Ordinary plan review -- Codex GPT-6.1 Sol -- 2026-11-01
+
+**Obligation:** Internal
+**Verdict:** Support; no blocking findings.
+
+**Foundations**
+
+- **Should it happen as framed?** Yes. The plan assigns evidence to its requiring work while preserving configured suite members, other requirements and scientific controls. Evidence: plan C1 and Scope; accepted proposal Proposal and Decision.
+- **Best alternative:** Retain existing guidance; it avoids edits but leaves the reported ambiguity about model evidence unresolved. Conditional alignment of existing guidance achieves the accepted clarification without new machinery. Evidence: accepted proposal Alternatives and plan Scope.
+- **What would show it wrong?** Either example failing, especially a required suite member being waived for being scientific or slow, would falsify the clarification. Evidence: plan C1 and accepted proposal Evidence / verification plan.
+
+**Advice:** The plan already combines overlapping final checks on a common reviewed commit while retaining each plan's coverage and evidence. Coordinate that run with the other plans and avoid repeats unless changed inputs, failed checks or unresolved concerns require them.
+
+**Coverage:** Read the committed plan at `d44605ff`, accepted proposal and Decision, and current plan template. Did not inspect every reader or final wording, run the examples, or assess the separate Security Review; implementation and Security Review remain outstanding. No suite run. Elapsed: approximately 2 minutes; tokens: unknown.
