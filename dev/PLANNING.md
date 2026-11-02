@@ -34,9 +34,6 @@ together with any proposal awaiting your Decision.
   release cut. It re-approves the test files Cairn's gate protects, after this
   release's changes to them; only you can run it. See **What the v0.6 baseline
   must include**, below. [Plan](plans/archive/2026-10-29-forward-trust-baseline.md)
-- **Waiting on Maintainer**: check the 0.5.0 release from scratch: install from
-  the pushed tag on a machine and model roster this repository did not supply.
-  [Guide](../docs/release-process.md)
 
 ## v0.6 — fix what Cairn already ships
 
@@ -117,6 +114,7 @@ authorizes no outreach or published testimonial.
 | **Move allow comments into configuration.** The `link-check-allow` and `cairn-internal-ref-allow` comments at the top of Markdown files move to a config file. | Tooling change. | [Strategy](strategy/2026-08-21-claude-nimbleness-recovery.md#5-finish-the-two-remaining-cleanup-items-from-the-august-sweep) |
 | **No live finding ids in shipped prose.** Extend the rule against short-lived ids (such as `R5`) to shipped module docs, docs and release notes, with a warning-only scan in `scripts/check_cairn.py`. | Write a proposal; doctrine changes take the rate-limit gate. | Maintainer: *"Defer the new rule on coordinates for later bringing back up in PLANNING"* |
 | **Outside adopter interview and testimonial (Stid).** Refine the drafted questions and survey to find friction points and capture a testimonial. | After v0.6. | [Strategy](strategy/2026-10-27-antigravity-adopter-survey-instrument.md#recommendation); Maintainer, 2026-10-27: *"I do have an outside adopter (Stid). Let's go ahead and get an interview set of questions for him, and he can give us a testimonial"* |
+| **Independent adopter feedback.** Learn whether someone outside Cairn can install and use a published release without relying on the team's setup or knowledge. The v0.5 signed bootstrap passed in the team's Windows VM; that is not an outside adoption trial. | When a willing outside adopter is available, invite feedback on their experience. | Maintainer chat, 2026-11-01; **Outside correctness trial**, below |
 | **Generate the hosted work tracker from `board.py --json`.** Build its rows from the board, `git` and `gh` instead of keeping 60 rows by hand. | Write the generator; optionally add a `passes` field to `cairn-board/1`. | [Strategy](strategy/2026-10-26-claude-work-tracker-and-the-board.md#recommendation) |
 | **Drain an adopter's current-release roadmap** ([#34](https://github.com/MSUHydrogeology/cairn/issues/34)). Show candidates and a short plan, then move eligible items one at a time under their existing gates. A candidate, not authorization. | Write a proposal. | [Issue #34](https://github.com/MSUHydrogeology/cairn/issues/34) |
 
