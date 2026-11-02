@@ -1,7 +1,7 @@
 # Explain what a clean upgrade merge does not establish
 
 **Author**: Codex GPT-6.1 Sol (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -81,3 +81,11 @@ Accepted the non-blocking recommendation: the context now acknowledges the exist
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Maintainer -- 2026-11-01
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated** (chat, 2026-11-01; scribed by Antigravity):
+
+> "Accept as revised"
+
+**Tier**: light. Accepted as revised with the recorded scope loss on issue #35 (guidance rather than programmatic enforcement). Light tier has no plan; implementation will land directly with Boundary B verification recorded in this proposal.
