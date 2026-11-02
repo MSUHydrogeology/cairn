@@ -1,7 +1,7 @@
 # Plan: Align the quickstart lifecycle
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-quickstart-lifecycle-alignment.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Correct the quickstart and its sequence test so the example records its final check before archive.
@@ -253,3 +253,42 @@ Reviewed fix: `67bc241555da42bb469fc274eb7a4fbd0ea92aa1`; evidence: `c67e3952a57
 **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
 
 Coverage: fix diff, committed evidence and targeted regression mutation. Did not rerun iteration, suites, broader recipe behavior or historical-anchor checks; the prior Security review's other limits remain.
+
+## Implementation verification -- Codex gpt-6.1-sol -- 2026-11-02
+
+**Boundary B mode**: wide. The quickstart is the front door and its
+sequence test owns the disposable end-to-end workflow; C2 requires a cold
+read against installed guidance and a wide final check. Ordinary review
+`644363d9` and Security review/follow-up `68df1f21` / `9febad81` are closed.
+The cold read compared Step 5 and its accepted Decision with installed
+`AGENTS.md` lifecycle and Boundary B rules. The helper and Step 6 assertions
+match the recipe's separate implementation, verification-record and archive
+commits.
+
+- **Tested commit**: `9febad81bdbf2ff810044da3479b166e6cb31c41`
+- **Reviewed range**: `69be5fdd3079680d1bb741b58a8e0175364b188e` .. `9febad81bdbf2ff810044da3479b166e6cb31c41`
+- **Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` — Python 3.13.13
+- **Pre-run state**: clean detached local clone at the tested commit.
+- **Post-run state**: clean; `HEAD` unchanged at the tested commit.
+- **Elapsed**: approximately 4 minutes for clone, checks and cold read. **Tokens**: unknown.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python3.13 tools/test_tiers.py for docs/quickstart.md bootstrap/tests/test_quickstart_sequence.py` | 0 | Selected `test_quickstart_sequence.py` and `test_review_stance_in_shipped_files.py` | <1 s | unknown |
+| `python3.13 -m pytest bootstrap/tests/test_quickstart_sequence.py bootstrap/tests/test_review_stance_in_shipped_files.py -q` | 0 | 490 passed | 3.70 s | unknown |
+| `python3.13 scripts/check_cairn.py` | 0 | 189 Markdown files; 0 issues; includes claim and link checks | 1.4 s | unknown |
+| `python3.13 scripts/sync_doc_snippets.py --check docs/quickstart.md` | 0 | 1 document; no drift | <1 s | unknown |
+| `python3.13 scripts/quality_gate.py --sub neutrality` | 0 | fail=0, info=43 | 1.03 s | unknown |
+
+**Non-pass disposition**: none. The 102 external links reported by
+`check_cairn.py` were not probed. No full suite or tree certification was
+run; both remain separate from this change's Boundary B. No tests from the
+release-test-corrections plan were run. The test's stale frozen-file hash
+remains separately assigned to the Maintainer's v0.6 baseline work; no
+re-anchor or pin edit occurred here.
+
+**Plan-specific acceptance checks**: Step 5/6 history and Decision-content
+assertions passed in the mapped selection; missing-record mutation and stale
+Decision mutation were each rejected as recorded above. No adopter agent was
+simulated, and the evidence cannot prove a real agent ran or truthfully
+reported its check.
