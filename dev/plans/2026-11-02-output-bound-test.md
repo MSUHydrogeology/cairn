@@ -1,7 +1,7 @@
 # Plan: Separate output-bound and cleanup assertions
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-output-bound-test.md
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Check the output limit separately from cleanup success while preserving degraded-status reporting.
@@ -152,3 +152,28 @@ Evidence: 81cb545b. Prior finding: ordinary review R1 remains open for author di
 **Bounding**: ACCEPTED for the authorized focused selection; R1's required safety disposition remains outstanding.
 
 Covered: exact controls, real cooperative-probe reaping, static spawn/signal behavior and reported mutations. Not covered: an actual `truncated+cleanup-failed` run, survivor behavior under failed signaling, Windows or reported-failure reproduction; no suite run. Final focused verification remains due.
+
+
+## Code review response -- Codex (GPT-6) -- 2026-11-02
+
+**R1**: addressed in `45fd24c4` and `95ecf237`. The A-t4 probe has no
+children and now sleeps for two seconds after its fixed 4 MiB write loop, so
+its direct process remains alive when overflow cleanup starts. A test-local
+wrapper preserves `_kill_tree`'s boolean, then sends direct kill and waits at
+most one second if the Popen is still alive. The test requires cleanup to run
+and the process to be reaped. Returning `False` from the runner cleanup still
+produces `truncated+cleanup-failed`; A-t4 accepts it and the A-t1 test checks
+that it maps to DEGRADED. Production code and A-t6 are unchanged.
+
+**Focused evidence**: on a clean detached copy at
+`95ecf2373fce8b1ecab4d05e131d79867a64b760`, Python 3.13.13,
+A-t1/A-t4/A-t6 passed (3 passed, 11.46 s). In a separate copy, a runner
+mutation returned `False` without killing the direct child; A-t4 required and
+observed `truncated+cleanup-failed`, passed in 0.28 s, and its reaping assertion
+passed. The probe's source has no spawn or signal-handler calls. A real OS
+signaling failure was not induced; Windows was not exercised. Tokens: unknown.
+
+**Prose gates**: claim and link checks passed for this plan; neutrality reported 0 failures and 43 informational findings. No snippets changed.
+
+**Next**: targeted code review of `95ecf237` and focused evidence, then repeat
+the three nodes on the final clean reviewed commit for Boundary B.
