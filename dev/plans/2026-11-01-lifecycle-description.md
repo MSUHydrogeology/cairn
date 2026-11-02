@@ -70,3 +70,26 @@ The Verification cell now identifies corpus readers, commands, digest search and
 ## Scope expansion -- Codex (GPT-6) -- 2026-11-01
 
 The Maintainer allowed the two additional files as quoted in Scope delta. The operative cells and mapped checks now include them. Review the widened scope before implementation; Security plan review remains owed. Coordinate the final selection with concurrent work. Elapsed: approximately 3 minutes; tokens: unknown.
+
+## Plan review -- Codex gpt-6.1-sol -- 2026-11-01
+
+Reviewed commit: 84a81f8779a6daf45f830d37f91eea7550b2e076  
+Target: revised plan, including approved HTML and quickstart additions  
+Prior findings: ordinary mapping blocker read  
+Assurance path: high-assurance
+
+**Obligation**: Internal Security Review  
+**Tier**: Internal Security Review  
+**Findings**: none  
+**Verdict**: ACCEPT  
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1 preserves named high-risk and added/widened-boundary triggers, outer lanes and required reviews/checks. Scope leaves governing instructions, shipped templates and enforcement unchanged. The two additional surfaces have the Maintainer's explicit allowance quoted in Scope delta, and retain the accepted descriptive outcome. -- Plan, Scope, C1 and Scope delta; accepted proposal, Proposal and Decision.
+2. **Best alternative.** Correct the existing descriptions and reuse their mapped checks plus direct comparison/rendering. A new semantic checker or classification form adds maintenance without being necessary for the accepted human comparison. -- Plan, Verification and C1; accepted proposal, no-new-process constraint.
+3. **What would show it wrong?** Light work still acquiring a plan, deliberate work being equated with heavy, or a high-risk trigger disappearing. C1 compares all six surfaces with the governing rules, includes accessible text and requires a deliberately wrong light-plan example to be detected. -- Plan, C1 and Verification; accepted cut-the-apparatus, cut 2.
+
+The original mapping blocker is addressed: Verification now identifies direct reader nodes, corpus runners, integration/workflow selection, positive-control pin search and explicit semantic gaps. The added paths are mapped too. The inspected light-tier, lifecycle-vocabulary and README reader assertions support those coverage distinctions. No new security apparatus is needed.
+
+Coverage: examined committed revised plan, accepted proposal/Decision, current plan template, ordinary finding and responses, and representative reader assertions. Did not exhaustively reproduce discovery, inspect final wording, render output or run the mutation/tests. Common final verification remains post-review on clean canonical-Python bytes, with plan-specific checks retained. No suite run.
