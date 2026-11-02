@@ -1,7 +1,7 @@
 # Remove the stray finding ID
 
 **Author**: Codex (GPT-6)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -113,3 +113,19 @@ Both reviews accept the framed correction and raise no findings. The plan will r
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Maintainer -- 2026-11-02
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Tier**: heavy
+
+**Plan review**: required(Internal + Internal Security Review)
+
+**ACCEPTED.** The Maintainer's authorization, quoted **verbatim and visually
+isolated** (chat, 2026-11-02; scribed by Codex (GPT-6)):
+
+> "I accept both proposals. Go forward with implementation as desired"
+
+The proposal is accepted as framed, with its heavy tier and required plan
+review intact. The implementation may proceed within the accepted scope.
