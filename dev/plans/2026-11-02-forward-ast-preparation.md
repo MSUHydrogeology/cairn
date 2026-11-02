@@ -172,3 +172,22 @@ On isolated `dfe081d6` under Python 3.13.13, the ordered pair `test_repin.py::te
 The full mapped selection was not repeated. Four baseline/anchor-dependent exclusions remain unpassed and final wide Boundary B remains owed; no actual historical anchor comparison is implied or requested. The earlier verification blocker is not cleared.
 
 **Coverage:** Read the correction, original test assertions and committed isolation evidence. Did not rerun tests, compare an old anchor, or assess all possible order interactions. Separate Security follow-up remains owed. Elapsed: approximately 2 minutes. Tokens: unknown.
+
+## Targeted Security code review -- Codex gpt-6.1-sol -- 2026-11-02
+
+Reviewed commit: dfe081d64473a942b13eea276d61cb1db1603b24  
+Target: test-only order correction; evidence `c309a8ae`, ordinary follow-up `91097a2b`  
+Prior findings: V1 required verification gap; module-identity failure diagnosed afterward  
+**Tier**: Security Review — second and final pass  
+**Verdict**: order defect addressed; no new code blocker. V1 remains open.  
+**Elapsed**: approximately 4 minutes, excluding prior diagnosis. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Only the two existing in-process baseline-install race calls gain module-registry restoration. Refusal, ref-state and identity assertions remain unchanged; production is untouched. This repairs test isolation within the accepted test scope. -- Exact `dfe081d6` diff; plan Scope.
+2. **Best alternative.** Restore imports locally with the standard-library context manager. Moving probes into another process is more work; weakening identity assertions or changing production trust behavior would conceal the cause. -- Existing loader/cleanup and test call sites; correction diff.
+3. **What would show it wrong?** Original module/package identities remaining replaced after the probes. My no-anchor committed-source control under Python 3.13.13 exercised the real loader and reverse cleanup inside the context; all prior identities and package attributes returned and the original authority reader succeeded. Both calls retain refusal contexts. -- Independent targeted control; author ordered-pair evidence.
+
+**Bounding**: WIDER RUN REQUIRED. The author records two ordered tests passing under Python 3.13.13 in disposable repositories with generated keys and a synthetic anchor. That closes the reproduced functional interaction, not every order. Four baseline/anchor-dependent omissions remain unpassed, the full mapped selection was not repeated, and final clean canonical-Python wide Boundary B remains owed. V1 is not waived or cleared; unresolved required checks need named disposition under the existing cap rule, not another clearing review.
+
+Coverage: inspected committed correction, unchanged assertions, evidence and ordinary follow-up; independently probed registry restoration. No suite, real historical-anchor comparison, signing or baseline operation. Did not assess every test order or independently repeat the ordered pair.
