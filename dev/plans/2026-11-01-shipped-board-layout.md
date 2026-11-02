@@ -140,3 +140,23 @@ Elapsed: approximately 7 minutes; tokens: unknown.
 **Elapsed:** approximately 3 minutes; **Tokens:** unknown.
 
 **Coverage:** Read committed proposal, plan, implementation diff and full rewritten board, including onboarding, marker guidance and removal duties; inspected the author's recorded checks. No tests or upgrade were rerun. Did not independently establish seed behavior, inspect rendered installs, or test malformed inputs. Security Review and final Boundary B remain separate.
+
+## Code Security Review -- Codex (gpt-6.1-sol) -- 2026-11-01
+
+Reviewed commit: `bae1d93076f7833b4628fcb4975f9869b0ea3d47`.
+Target: shipped board rewrite. Prior findings: none.
+**Obligation:** Internal Security Review
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. The layout retains authority: the complete Archive preconditions block is byte-identical to the parent, and the three removal prerequisites remain (`templates/core/dev/PLANNING.md`, committed comparison).
+2. **Best alternative.** The single-template rewrite using existing installer and reader is the smallest adequate build. Both slot blocks compare byte-for-byte with the parent; no onboarding contract change is needed (same comparison; `bootstrap/_scaffold/install.py`, slot substitution).
+3. **What would show it wrong?** A lost duty, false or hidden wait, or overwritten customization. In a separate snapshot of the reviewed commit, the actual `python tools/board.py --maintainer` returned zero waits for the shipped sample, then exactly one standalone bullet while ignoring a table-cell marker. These targeted probes passed under Python 3.12.9; the apply path remains unmeasured.
+
+**Verdict:** No security defect found; the ordinary review's blocking upgrade check remains open. I concur with its evidence and satisfier: staged conflict preservation cannot establish preservation after applying an upgrade. This is the same finding, not an additional obligation.
+
+**Bounding:** WIDER RUN REQUIRED for the named customized-board upgrade apply path. Final Boundary B remains due.
+
+**Elapsed:** approximately 6 minutes; **Tokens:** unknown.
+
+**Coverage:** Read committed proposal, plan, original and rewritten guardrails, slots and reader; compared slot and archive-block bytes and exercised the actual board CLI in an isolated copy. Did not execute installs or upgrades, inspect rendered installed boards, exercise every fallback or malformed input, or run final wide integration.
