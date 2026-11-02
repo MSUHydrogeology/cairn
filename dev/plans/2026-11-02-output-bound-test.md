@@ -177,3 +177,15 @@ signaling failure was not induced; Windows was not exercised. Tokens: unknown.
 
 **Next**: targeted code review of `95ecf237` and focused evidence, then repeat
 the three nodes on the final clean reviewed commit for Boundary B.
+
+## Targeted code review -- Codex (GPT-6), independent reviewer -- 2026-11-02
+
+Reviewed fixes `45fd24c4` and `95ecf237` and response `93231bfb`. **Verdict**: ACCEPT; R1 closed. **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. The test-local wrapper preserves the runner's cleanup boolean, and if the direct probe remains alive it kills and waits for it with a one-second bound. The test requires cleanup and a reaped process; production and A-t6 remain unchanged. The author reports a forced runner-cleanup failure that exercised the fallback and retained `truncated+cleanup-failed`.
+2. **Best alternative:** Rely on the finite probe and existing runner alone. That adds no wrapper but does not establish timely exit on a failed cleanup; C1 requires the risk to be resolved. The test-local fallback addresses the direct child without adding production behavior.
+3. **What would show it wrong?** A live probe after the fallback or a changed runner status would defeat the fix. The recorded forced-failure run checks reaping and the combined status; it did not induce a real OS signaling failure.
+
+**Covered:** committed fix, R1 response, reported focused checks and retained status semantics. **Not covered:** independent execution, actual OS signaling failure, Windows or the separate Security Review. Final focused verification remains due.
