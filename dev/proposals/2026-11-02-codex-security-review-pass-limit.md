@@ -1,7 +1,7 @@
 # Permit a justified Security Review beyond two passes
 
 **Author**: Codex GPT-6 (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — this changes the security review contract in protected methodology and templates
 **Plan review**: required(Internal + Internal Security Review)
