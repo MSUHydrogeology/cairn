@@ -164,3 +164,25 @@ None; opening scope. No historical certification is promised.
 **Advice:** In the plan, prefer existing record and command mechanisms when they satisfy both independent reviews; identify any new fields and checks needed so the Maintainer sees only the promised approvals. This is nonblocking design advice, not a request for another ceremony.
 
 **Coverage:** Read the committed proposal and the named transaction, forward-reader, and apply/commit entry points. Did not execute checks, validate the author's measured counts independently, or assess the complete hostile-input and signing threat model; the separate Security Review covers that boundary. Elapsed: approximately 3 minutes. Tokens: unknown.
+
+## Security Review -- Codex gpt-6.1-sol -- 2026-11-02
+
+Reviewed commit: 811c199e7b6c112ad1fb7c2c43ce8d975748de3a  
+Target: explicit forward preparation, approval boundary and assurance loss  
+Prior findings: none  
+Assurance path: high-assurance
+
+**Tier**: Security Review  
+**Findings**: none  
+**Verdict**: ACCEPT as framed; recommendation, not correction authority.  
+**Elapsed**: approximately 5 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The existing forward reader refuses an owed transaction; baseline-aware classification already exists. An explicit preparation path can reuse it without an old anchor while leaving application, exact-path commit and signing with the Maintainer. The proposal explicitly relinquishes historical certification and requires current-state independent review and automated checks. -- `scripts/repin.py`, baseline_reader_inputs and build_transaction; Proposal and assurance limit.
+2. **Best alternative.** Add explicit forward mode to existing transaction/apply/commit mechanisms, retaining their formats where possible, rather than a parallel correction system. Their binding, revalidation and terminal confirmation avoid manual fixture editing. -- apply_reviewed_pin and commit_reviewed_pin; Proposal, reuse constraint and Alternatives.
+3. **What would show it wrong?** Preparation consulting an anchor or writing repository fixtures, a candidate-supplied approval authorizing itself, or changed transaction/review/fixture bytes reaching apply. The planned public-command negative controls and disposable end-to-end workflow address each; hashes identify reviewed bytes rather than establish safety or reviewer independence. -- Tests required and S1–S5; existing apply binding/rederivation.
+
+No blocking finding. Preserve the proposal's candidate-wide current-state review of affected engine behavior and protection machinery; approving new digests alone is insufficient. Keep the maintained script as the complete approval guide, with no manual JSON or historical-lineage reconstruction. Missing/duplicate symbols and lockfile debt remain refusals, not automatic expansion of authority.
+
+Coverage: read committed proposal, ordinary review, current proposal template, baseline reader/transaction and reviewed apply/commit paths, AST runbook authority and governing ceremony restriction. Did not reproduce delta counts, audit every hostile-input/signing path, execute commands or run suites. Historical-assurance loss needs explicit Maintainer acceptance. No installation permission granted.
