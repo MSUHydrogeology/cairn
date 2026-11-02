@@ -291,6 +291,22 @@ not the accepted proposal.
 **Boundary A (iteration, scoped).** The tests naming each changed file, plus
 standing prose gates for prose.
 
+Select coverage from the promises and boundaries affected. Start with component
+ownership and the project's test homes: unit checks for local behavior,
+contract checks for public interfaces and data formats, integration checks for
+connected components, and a small workflow through the real entry point. For
+simulations, use real equations on small domains and analytical or convergence
+benchmarks when relevant; retain work-specific long runs where the scientific
+question requires them. Trace changed behavior through callers, imports,
+configuration and data readers, and public paths; map existing checks to
+affected components and consumers. Add or extend a test only for a plausible
+uncovered fault. Local effects default to affected checks. Shared contracts,
+common infrastructure, language seams, solver or physics behavior, and
+uncertain dependencies widen to owning families and relevant consumers. Name
+uncertainty and the smallest useful remedy when dependencies cannot be bounded.
+Routine mapping belongs to the implementation and is challenged by review;
+Maintainers set high-level project needs and material exceptions.
+
 <!-- cairn:slot verification-commands -->
 Before implementation, run `python tools/test_tiers.py for <paths>` to list
 tests that import or cite each changed file by path or file name. This list is

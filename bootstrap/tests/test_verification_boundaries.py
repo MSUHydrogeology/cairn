@@ -27,6 +27,10 @@ SELF_PROPOSAL_TEMPLATE = ROOT / "dev" / "proposals" / "_template.md"
 ADOPTER_PROPOSAL_TEMPLATE = (
     ROOT / "templates" / "core" / "dev" / "proposals" / "_template.md"
 )
+TESTING_MODULES = (
+    ROOT / "dev" / "modules" / "testing-discipline.md",
+    ROOT / "templates" / "modules" / "team-gated" / "testing-discipline.md",
+)
 
 REPLACEMENT_RECORD_TRIGGERS = (
     "no valid Boundary B record exists",
@@ -92,6 +96,38 @@ def test_installed_operational_rule_is_project_general() -> None:
     assert not [token for token in cairn_only if token in text]
     assert "configured full suite" in text
     assert "configured interpreter/runtime" in text
+
+
+def test_scoped_defaults_reach_core_templates_and_optional_module() -> None:
+    surfaces = (
+        SELF_AGENTS, ADOPTER_AGENTS, PLANS_DOCTRINE, REVIEW_DOCTRINE,
+        SELF_PLAN_TEMPLATE, ADOPTER_PLAN_TEMPLATE, SELF_PROPOSAL_TEMPLATE,
+        ADOPTER_PROPOSAL_TEMPLATE, *TESTING_MODULES,
+    )
+    for path in surfaces:
+        text = " ".join(_read(path).split()).lower()
+        for phrase in (
+            "callers", "configuration", "public", "local",
+            "shared", "uncertain", "review",
+        ):
+            assert phrase in text, (path, phrase)
+
+    for path in (SELF_AGENTS, ADOPTER_AGENTS, PLANS_DOCTRINE,
+                 SELF_PLAN_TEMPLATE, ADOPTER_PLAN_TEMPLATE):
+        text = " ".join(_read(path).split()).lower()
+        assert "unit checks" in text, path
+        assert "contract checks" in text, path
+        assert "integration checks" in text, path
+        assert "small workflow" in text, path
+
+    for path in (SELF_AGENTS, ADOPTER_AGENTS, PLANS_DOCTRINE):
+        text = " ".join(_read(path).split()).lower()
+        assert "routine project operations use affected checks" in text, path
+        assert "representative cross-component workflow" in text, path
+
+
+def test_optional_testing_module_copies_are_identical() -> None:
+    assert _read(TESTING_MODULES[0]) == _read(TESTING_MODULES[1])
 
 
 def test_static_quality_composition_does_not_dispatch_pytest(monkeypatch) -> None:

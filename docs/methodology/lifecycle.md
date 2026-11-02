@@ -114,6 +114,12 @@ reviewed *before* any code is written — Stage 1. The **plan** and
 its code review then check the implementation, and the evidence it
 produced, against that locked plan — Stage 2.
 
+The proposal names the outcomes and applicable requirements to verify. During
+implementation, the agent maps affected behavior to existing checks and
+consumers using the project's test architecture; independent review challenges
+that mapping. Maintainers set high-level needs and material exceptions rather
+than designing routine test selections for each change.
+
 What this buys is a defense against *metric p-hacking*. When the
 verification plan is committed before the implementation exists,
 the evidence is judged against a prior commitment — not chosen

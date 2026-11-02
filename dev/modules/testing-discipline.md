@@ -91,6 +91,21 @@ Merged into the project's `tests/` guide:
 > API when practical. Reuse immutable descriptions or builders, and create
 > fresh paths and mutable repositories for each case.
 >
+> **Choose change checks from affected behavior.** Start with the component
+> owner and the project's existing test homes. Trace changed behavior through
+> callers, imports, configuration and data readers, and public entry points;
+> map existing checks to affected components and consumers. Unit checks cover
+> local behavior, contract checks cover public interfaces and data formats,
+> integration checks cover connected components, and a small workflow exercises
+> the real entry point. Local changes default to affected checks. Shared
+> contracts, common infrastructure, language seams, solver or physics behavior,
+> and uncertain dependencies widen to owning families and relevant consumers.
+> Add or extend a test only for a plausible uncovered fault. If dependencies
+> cannot be bounded, state the uncertainty and smallest useful remedy; optional
+> architecture review is available, not required for every change. Agents map
+> routine coverage and reviewers challenge it; project leads set high-level
+> needs and material exceptions.
+>
 > **Simulation models verify at three timescales.** Where one model run
 > takes minutes or hours:
 > 1. **Fast checks** shrink the domain rather than mocking the physics: a

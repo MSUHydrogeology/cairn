@@ -234,25 +234,32 @@ Cairn's behavioral **test homes** are:
 * **`bootstrap/tests/`** — the engine suite (the scaffold, the module
   merge, the upgrade path, the security stack, the gates). Fast,
   offline, `pytest` + standard library only (`vermin` is the one
-  dev-only floor-check dep). Run the whole suite with
-  `python -m pytest bootstrap/tests`; route by file
-  (`test_<surface>.py`) and by node when scoping a change.
+  dev-only floor-check dep). Route affected changes by file
+  (`test_<surface>.py`) and node; the full suite is a separate tree-certification
+  run at the authorized points, not the default for each change.
 * **The example self-tests** — `examples/minimal/test_greet.py` and
   `examples/scientific-minimal/test_water_budget.py`, which prove the
   shipped runnable examples still run.
 
 For the proposed change, name the affected test homes, exact behavioral nodes,
-and public paths that must be exercised through their real entry points. Record
-any speed or environment tiers that exist, but **speed alone does not establish
-affected coverage**. The eventual plan owns a reviewed change-specific mapping,
-not a permanent fast set. `bounded` covers mapped affected behavior and
-consumers; `wide` covers owning test families, known integration and public
-paths, and standing gates when effects cannot be confidently bounded. Unknown
-dependencies are not claimed as covered: search for readers and callers, and
-keep the work open if a known required check or criterion remains unmet. Full
-tree certification is a separate authorized integration run. Prose-integrity
-and quality gates (below) are not pytest tests; name them under *Examples / smoke
-checks* and the plan's verification commands.
+and public paths that must be exercised through their real entry points. Begin
+with the changed behavior and trace callers, imports, configuration and data
+readers, and public paths to existing checks. Local effects default to affected
+checks; shared contracts, common infrastructure, language seams, solver or
+physics behavior, and uncertain dependencies widen to owning families and
+relevant consumers. Add or extend tests only for plausible uncovered faults.
+Record speed or environment tiers, but **speed alone does not establish
+affected coverage**. The plan owns the reviewed change-specific mapping, not a
+permanent fast set. `bounded` covers mapped affected behavior and consumers;
+`wide` covers owning test families, known integration and public paths, and
+standing gates when effects cannot be confidently bounded. Unknown dependencies
+are not claimed as covered: name the uncertainty and keep work open if known
+required evidence remains unmet. Full tree certification is a separate
+authorized integration run. Prose-integrity and quality gates (below) are not
+pytest tests; name them under *Examples / smoke checks* and the plan's
+verification commands. Maintainers set high-level needs and material
+exceptions; routine test selection is the agent's mapped work, reviewed at the
+existing stages.
 <!-- cairn:end tests-tier-home -->
 
 ### Examples / smoke checks

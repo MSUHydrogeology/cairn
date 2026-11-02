@@ -323,6 +323,36 @@ covered by the release run. Unknown dependencies are not claimed as covered.
 A known required path, check, or acceptance criterion that remains unmet keeps
 the change open.
 
+#### Choose checks from affected promises
+
+Begin with component ownership and the project's existing test homes. Unit
+checks cover local behavior; contract checks cover public interfaces and data
+formats; integration checks cover connected components; a small workflow
+checks the real entry point. For simulations, use real equations on small
+domains and analytical or convergence benchmarks when relevant. Keep
+work-specific long runs where the scientific question requires them; runtime
+alone does not establish coverage.
+
+The implementing agent traces changed behavior through callers, imports,
+configuration and data readers, and public paths, then maps existing checks to
+affected components and consumers in the implementation record. Local effects
+default to affected checks. Shared contracts, common infrastructure,
+cross-language seams, solver or physics behavior, and uncertain dependencies
+widen to owning test families and relevant consumer or integration paths. Add
+or extend tests only for a plausible uncovered fault. If dependencies are too
+tangled to bound, name the missing seam and the smallest useful remedy; optional
+architecture review remains available but is not required for each change.
+Agents make this routine mapping; independent review challenges the selection
+within the existing lifecycle. Maintainers set high-level project needs and
+material exceptions, not per-change coverage. An unresolved known check keeps
+the work open.
+
+Routine project operations use affected checks. At integration or release
+boundaries, recommend a representative cross-component workflow and name
+applicable safety, security, scientific, and release checks in the project's
+existing commands. A whole suite remains optional unless a project requirement
+makes it mandatory; preserve every already-required check.
+
 **Tree certification is separate.** The full suite and standing gates are run
 on a clean committed tree only before a push when required (pushing may require
 a certifying run; ask the Maintainer), before a ceremony that re-pins the

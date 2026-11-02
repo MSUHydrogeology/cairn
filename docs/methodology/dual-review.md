@@ -328,6 +328,15 @@ test when coverage is absent, and have the author add it before the final
 integration run. A fix after a failed integration run that changes more than
 the failing test returns to the same reviewer for a targeted look.
 
+For scoped testing, challenge whether the implementation traced changed
+behavior through callers, imports, configuration and data readers, and public
+paths; whether existing checks cover affected components and consumers; and
+whether shared or uncertain effects widened to owning families and relevant
+workflows. Name a plausible uncovered fault and its missing check. Routine
+selection remains with the agent applying these defaults, while Maintainers set
+high-level needs and material exceptions. Existing project requirements remain
+in force.
+
 **When a finding or claim says a value must reach every member of a set**
 (every call site, every rendering path), list the set from the tree, not the
 diff, and mutate each member in a separate copy; reading the diff does not

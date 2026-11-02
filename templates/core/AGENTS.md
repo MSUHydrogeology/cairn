@@ -240,6 +240,31 @@ lists that scope; run that list while iterating and do not widen it by judgment.
 For governing text like AGENTS.md, if the broad list exceeds the runner's
 limit, the selector returns only tests pinning changed passages and reports the
 rest as omitted. Folder sweepers are covered by the release run.
+
+Choose checks from the promises and boundaries the change affects. Use the
+project's existing component owners and test homes: unit checks for local
+behavior, contract checks for public interfaces and data formats, integration
+checks for connected components, and a small workflow through the real entry
+point. For simulations, keep real equations on small domains and use analytical
+or convergence benchmarks when relevant; retain work-specific long runs where
+the scientific question requires them. Runtime alone does not establish
+coverage. Search changed behavior, callers, imports, configuration and data
+readers, and public paths; map existing checks to affected components and
+consumers in the implementation record. Add or extend a test only for a
+plausible uncovered fault, and explain any uncertainty. Local effects default
+to affected checks. Shared contracts, common infrastructure, language seams,
+solver or physics behavior, and uncertain dependencies widen to owning test
+families and relevant consumer or integration paths. If tangled dependencies
+prevent a defensible selection, name the missing seam and the smallest useful
+remedy; optional architecture review remains optional. Agents make this routine
+mapping and reviewers challenge it; the Maintainer sets high-level project
+needs and material exceptions, not per-change test selections.
+For routine project operations, use affected checks. At integration or release
+boundaries, identify a representative cross-component workflow and applicable
+safety, security, scientific, and release checks through existing project
+commands. A whole suite is optional unless a project requirement makes it
+mandatory.
+
 Pinned prose is a substantive surface; unpinned prose uses prose gates.
 Boundary B applies to every implementation, trivial changes included: run one
 integration selection after code review when required, or after the final

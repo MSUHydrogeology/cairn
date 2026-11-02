@@ -80,6 +80,15 @@ def test_the_broad_run_refusal_no_longer_offers_the_override():
     assert "Record each actual run" in message
 
 
+def test_cairn_keeps_its_own_certification_pair_and_triggers():
+    text = _flat(ROOT / "AGENTS.md")
+    assert "CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests" in text
+    assert "python scripts/quality_gate.py --sub neutrality --sub redundancy" in text
+    for trigger in ("before a push when required", "before re-anchor",
+                    "before a release cut", "when the Maintainer asks"):
+        assert trigger in text, trigger
+
+
 def _push_certification_is_conditional(message: str) -> bool:
     return ("before a push, when required" in message
             and "pushing may require certification; ask the maintainer" in message)
