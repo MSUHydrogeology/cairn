@@ -67,7 +67,7 @@ destination before any `mkdir` / `write_*` / `shutil` write:
 These do not write; they **refuse before a write** to close a data-loss
 surface, and are listed so the inventory stays complete:
 
-- **`new-core-blocked` / `new-core-lockconflict`** (R5): the new-core enumeration
+- **`new-core-blocked` / `new-core-lockconflict`**: the new-core enumeration
   now mirrors the new-module occupied-destination split — a genuinely-new
   core/skills add over an **occupied unlocked** destination (or one **owned by
   another lockfile source**) is a hard block, never a silent overwrite. This
