@@ -1,7 +1,7 @@
 # Plan: Shipped board layout
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-shipped-board-layout.md
-**Status**: ready-to-implement
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Give new projects a clearer board while preserving their existing duties and installation behavior.
