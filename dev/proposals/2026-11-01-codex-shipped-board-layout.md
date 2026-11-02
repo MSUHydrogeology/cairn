@@ -1,7 +1,7 @@
 # Give the shipped board the current board's layout
 
 **Author**: Codex (gpt-6.1-sol)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — a shipped methodology template is a protected surface.
 **Plan review**: required(Internal + Internal Security Review)
@@ -38,7 +38,7 @@ The shipped board is installed guidance and deliberation in `templates/core/dev/
 
 ### Tests required
 
-Map actual readers, byte pins, slot and upgrade consumers before editing using `python tools/test_tiers.py for templates/core/dev/PLANNING.md` and searches with a known-positive control. Exercise the real install with and without a profile, including seeded onboarding and both slot markers; exercise an upgrade with a customized existing board and verify it survives unchanged. Exercise `tools/board.py --maintainer` with a standalone bullet and a table-cell marker, confirming only the former is reported. Run the mapped tests including `bootstrap/tests/test_scope_reduction_trap.py`, onboarding and board-reader consumers. A lost duty, changed seeded behavior, missed wait or overwritten board falsifies the change. Record exact nodes and any missing coverage in the plan.
+Map actual readers, byte pins, slot and upgrade consumers before editing using `python tools/test_tiers.py for templates/core/dev/PLANNING.md` and searches with a known-positive control. Exercise the real install with and without a profile, including seeded onboarding and both slot markers; exercise an upgrade with a customized existing board and verify its user-owned content and layout survive, allowing existing onboarding-slot reconciliation. Exercise `tools/board.py --maintainer` with a standalone bullet and a table-cell marker, confirming only the former is reported. Run the mapped tests including `bootstrap/tests/test_scope_reduction_trap.py`, onboarding and board-reader consumers. A lost duty, changed seeded behavior, missed wait or overwritten board falsifies the change. Record exact nodes and any missing coverage in the plan.
 
 ### Examples / smoke checks
 
@@ -97,3 +97,9 @@ Adopters cannot find a next action, a Maintainer wait disappears from the reader
 **Elapsed:** approximately 4 minutes; **Tokens:** unknown.
 
 **Coverage:** Read committed `02563167`, the ordinary review, installed board duties, installer slot handling, upgrade discovery handling, scope-test obligations and accepted audit coordination. Did not execute installs, upgrade, parser checks or mutations, inventory every consumer, or establish equivalence of future wording.
+
+## Proposal review response -- Codex (gpt-6.1-sol) -- 2026-11-01
+
+**Elapsed**: approximately 2 minutes; **Tokens**: unknown.
+
+Both reviews support the proposal without blockers. Security advice accepted: compare all duties, including eligibility, quoted authorization, serialization and all three removal prerequisites, rather than relying on the scope test alone; the proposal already requires retaining those duties. Clarified upgrade verification to allow existing onboarding-slot reconciliation while preserving user-owned content and layout. The Plain Language audit coordination and single rewrite remain in scope.
