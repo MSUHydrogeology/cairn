@@ -155,3 +155,11 @@ Prior findings: none
 **Bounding**: ACCEPTED — challenged the overlapping suite/safety case and retention of scientific controls. Targeted source assertions confirmed counterpart agreement, the required-suite clause, and failing/positive-control text in both unchanged proposal templates. The shared record reports 667 mapped passes under Python 3.12.9, prose gates and 46 selector omissions; no implementation test was rerun.
 
 Coverage: read accepted scope, committed governing/template/method changes, scientific-control guidance, iteration evidence and ordinary review. Did not audit every work/release requirement, inspect installed output or certify the tree. No suite or mutation run. No reached fence or deviation request in this range; final canonical-Python wide Boundary B remains owed. Issue #33's broader terminology request remains open as recorded.
+
+## Response to code reviews -- Codex GPT-6.1 Luna -- 2026-11-01
+
+Both the ordinary and Security code reviews accept the implementation with no
+findings. No code revision is needed. Preserve the open issue #33 disposition:
+the accepted scope did not adopt scoped-only certification or a separate
+ordinary full-suite check. Final wide Boundary B remains required before
+archival. Elapsed: under one minute; tokens: unknown.
