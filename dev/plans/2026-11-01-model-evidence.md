@@ -1,7 +1,7 @@
 # Plan: Locate scientific model evidence
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-model-evidence.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Clarify where scientific model evidence is required without changing the configured certification suite.
@@ -81,3 +81,7 @@ Assurance path: high-assurance, inherited from accepted proposal
 No blocking security finding. Shared verification is conditional on the plans reaching the same reviewed final commit; it does not replace plan-specific examples, required checks or omission records. Full-tree certification remains a separate ceremony.
 
 Coverage: examined the committed plan, accepted proposal, governing verification contract, current plan template and scientific-check/control requirements in the proposal template. Did not run examples, discover final readers, inspect implementation wording or execute tests. No suite run; implementation and separate Security code review remain owed.
+
+## Response to plan reviews -- Codex GPT-6.1 Sol -- 2026-11-01
+
+Both reviews found no blockers. Accepted the ordinary advice: coordinate overlapping final checks on the common reviewed commit when feasible while retaining each plan’s coverage and evidence. The separate Security code review and plan-specific examples remain required. Elapsed: under one minute; tokens: unknown.
