@@ -285,7 +285,7 @@ applied to a review, and a question to the Maintainer in plain language is
 rules 1 and 2 applied to a question.
 
 Sources: ISO 24495-1:2023; the US Federal Plain Language Guidelines;
-ASD-STE100 (instruction rules); the studies cited in `docs/methodology/rationale.md`,
+ASD-STE100 (instruction rules); the studies cited in Cairn's published rationale,
 anchor 16.
 
 ## Surfacing judgment calls to the Maintainer
