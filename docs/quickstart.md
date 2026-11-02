@@ -79,7 +79,7 @@ workspace).  Then paste:
 <!-- cairn-accept: suspicious-url reason="Literal Cairn clone URL the adopter needs to copy" reviewer="Claude" date=2026-05-28 -->
 > In this folder, clone https://github.com/MSUHydrogeology/cairn.git
 > into a subfolder named `cairn`.  Then make a second subfolder named
-> `quickstart`, turn it into a git repository, and add two files: a
+> `quickstart`, turn it into a git repository, and add one file: a
 > `README.md` containing `# quickstart`.  Commit it in `quickstart`
 > with the message `init`.  Tell me what you did.
 
