@@ -71,3 +71,13 @@ The replacement implies a full suite is always required, omits tests that should
 **Advice:** Keep the replacement illustrative and concise; avoid introducing a new selection rule or verification apparatus. Check that it does not imply the final integration selection is optional. The proposal's existing reader search and prescribed checks can establish the relevant evidence without creating a new process.
 
 **Coverage:** Read proposal and the template at `bc2c211e`, and checked the iteration and integration rules in `AGENTS.md` and the installed testing module. Did not inspect every downstream copy or run implementation checks; those remain for implementation. Elapsed: approximately 2 minutes; tokens: unknown.
+
+## Security proposal review -- Codex GPT-6.1 Sol -- 2026-11-01
+
+**Verdict:** Support as framed; no blocking findings.
+
+**Foundations.** Should it happen? Yes. At `7dd331a0`, the shipped documentation-plan template's paired-update example says “Run the test suite after any substantive change”; `AGENTS.md` Verification instead separates changed-file iteration, final integration and named certification occasions. Correcting this example removes a competing instruction without changing executable checks or admission decisions. Best alternative: remove the testing example. That avoids prescribing test selection but loses the concrete reminder/rationale pairing; a short focused-testing example preserves that teaching purpose. What would show this wrong? Wording that permits skipping required integration or security checks, or implementation that changes the surrounding paired-update rule, would defeat the proposal's explicit policy-preservation boundary.
+
+**Advice:** Keep the example subordinate to the project's required verification. “Focused tests” must not imply that changed-file tests exhaust assurance. No additional mechanism is needed: the proposal already retains heavy review, reader/pin discovery and wide final integration verification.
+
+**Coverage:** Read the proposal, the shipped paired-update paragraph, `AGENTS.md` Verification and `templates/modules/team-gated/testing-discipline.md` at `7dd331a0`; examined whether the scope could weaken required checks or introduce a trust boundary. Did not evaluate replacement bytes, downstream installation behavior or implementation checks, because no implementation exists yet; ran no suite. Elapsed: approximately 3 minutes; tokens: unknown.
