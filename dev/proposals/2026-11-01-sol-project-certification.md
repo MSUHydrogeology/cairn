@@ -221,3 +221,25 @@ agents map effects and recommend checks. Maintainers handle high-level project
 needs and meaningful exceptions, not coverage design per proposal. Added
 module integration and core-only examples; no new infrastructure or Decision.
 Scope widened, so fresh usual and Security reviews read this revision.
+
+## Review -- Codex Sol (Reviewer) -- 2026-11-01
+
+Reviewed commit: 55637307b6284f6bef3eff6c0958139f7bd2299f
+Target: widened architecture and scoped-certification default
+Prior findings: none
+Assurance path: high-assurance
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Agents map effects and apply a concrete local/widened default; scientists decide high-level needs and material exceptions, not routine selections. Existing requirements remain owed. -- Proposal, Select by effects and Separate project operations.
+2. **Best alternative.** Keep the current full-suite rule: simpler to explain, but it forces unrelated suites at named operations. Automated impact analysis adds machinery without resolving all dynamic dependencies. -- `templates/core/AGENTS.md`, Verification; proposal Alternatives.
+3. **What would show it wrong?** Core-only installed guidance requiring scientists to design routine coverage, missing a known consumer, or forcing an unrelated suite would defeat the default. The proposed installed examples challenge those outcomes. -- Proposal, Examples / smoke checks and Signals.
+
+Existing testing-discipline guidance supplies tiers, contracts, budgets and simulation timescales; the architecture-review module exists. The proposal reuses these and avoids a new selector or review program. -- `templates/modules/team-gated/testing-discipline.md`; `templates/modules/team-gated/architecture-review.md`; Proposal.
+
+Coverage: read the committed revision, shipped core verification and named module guidance. Did not exercise installed examples, inspect LHM dependencies, measure timings or perform Security Review.
