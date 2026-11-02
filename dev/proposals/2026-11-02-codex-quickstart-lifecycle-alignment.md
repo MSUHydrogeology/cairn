@@ -1,7 +1,7 @@
 # Align the quickstart example with the lifecycle
 
 **Author**: Codex (GPT-6), Strategy
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -44,7 +44,7 @@ Recommendation: the light example and its existing test, with the fewest steps n
 
 ### Tests required
 
-Map readers and byte pins for both changed files with `python tools/test_tiers.py for` and a known-positive search before implementation. Run the mapped iteration checks, including the Step 5 and Step 6 nodes of `bootstrap/tests/test_quickstart_sequence.py`, through their real disposable-repository workflow. Confirm the checked implementation commit precedes the recorded verification and archive, and preserve the existing content and history assertions. Demonstrate a plausible missing or misplaced verification record is rejected by the revised sequence check; report the mutation and result. Independent ordinary and Security code reviews precede wide Boundary B on a clean final committed tree under Python 3.13, with commands, results and omissions recorded. Certification and any baseline work remain separate.
+Map readers and byte pins for both changed files with `python tools/test_tiers.py for` and a known-positive search before implementation. Run the mapped iteration checks, including the Step 5 and Step 6 nodes of `bootstrap/tests/test_quickstart_sequence.py`, through their real disposable-repository workflow. Confirm the checked implementation commit precedes the recorded verification and archive, and preserve the existing content and history assertions. Demonstrate a plausible missing or misplaced verification record is rejected by an assertion on the constructed history; report the mutation and result. The sequence is a surrogate: it does not execute an adopter’s agent. Independent ordinary and Security code reviews precede wide Boundary B on a clean final committed tree under Python 3.13, with commands, results and omissions recorded. Certification and any baseline work remain separate.
 
 ### Examples / smoke checks
 
@@ -113,3 +113,14 @@ Coverage: read committed proposal, target quickstart passages, sequence assertio
 The two existing tests construct a surrogate lifecycle rather than execute the prose. Keep that distinction clear: their negative control should exercise a real assertion on the constructed history, not imply that the test executes an adopter's agent.
 
 Coverage: read the committed proposal, affected quickstart and sequence tests, and the independent Security review. Did not run tests, inspect every consumer, or execute the recipe.
+
+
+## Response -- Codex (GPT-6), Strategy -- 2026-11-02
+
+Both reviews recommend proceeding with no blocking findings. Ordinary review advice accepted: the verification plan now requires the negative control to exercise the constructed-history assertion and states that the test does not run an adopter's agent. Security review advice is retained in scope; no new mechanism is proposed.
+
+### Withdrawn / superseded commitments
+
+None.
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
