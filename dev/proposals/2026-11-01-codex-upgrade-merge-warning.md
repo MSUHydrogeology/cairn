@@ -1,7 +1,7 @@
 # Explain what a clean upgrade merge does not establish
 
 **Author**: Codex GPT-6.1 Sol (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
