@@ -61,3 +61,13 @@ The warning suggests a clean merge proves policy agreement, implies the tool enf
 ## Assurance path
 
 **Assurance path**: standard — descriptive guide only; no executable, install contract, or governing surface changes.
+
+## Proposal review -- Codex GPT-6.1 Sol -- 2026-11-01
+
+**Verdict:** Support the light proposal; the Maintainer must decide whether guidance alone is enough for #35. No blocking findings.
+
+**Foundations.** (1) **Should this happen as framed?** Yes. The prior proposal's `merge_file` example records incompatible policy in a clean result, while the guide's general `--stage` step asks readers to resolve markers without explaining that gap. The warning makes that existing review more useful without adding a gate. The scope delta and Decision summary plainly say that neither adoption nor a decision is enforced. (2) **Best alternative:** Keep the existing guide and add no process: the guide already warns of this problem for the review-system transition, but its general workflow leaves other policy changes implicit. A terminal warning reaches more operators, at the cost of engine changes and assurance; the proposal acknowledges that tradeoff. (3) **What would show it wrong?** A staged workflow that does not give an operator a usable way to compare the upstream change and local policy, or evidence that the wording is misunderstood as a guarantee, would undermine the proposal. No improvement in operator behavior is measured.
+
+**Recommendation (non-blocking):** Correct the context's broad claim that the guide does not explain the issue: its “Moving to one review at every stage” section already gives a specific clean-merge example. Also consider the introduction's claim that the merge “surfaces genuine” policy conflicts: read literally, it can undercut the new warning. Clarify it within the proposed guide edit.
+
+**Coverage:** Read proposal and guide at `58544046`, the rejected proposal's reproduction, reviews and Decision, and upgrade classification and stage/apply descriptions. Did not reproduce the example, test operator comprehension, or review every upgrade path. Elapsed: approximately 4 minutes; tokens: unknown.
