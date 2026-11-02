@@ -25,6 +25,8 @@
 
 **Test corrections:** The [reviewed proposal](../proposals/2026-11-02-codex-release-test-corrections.md) awaits your Decision. It adds `-B` to the test child and changes the fixed expected count from 87 to 88; production and security controls stay unchanged. Accepting permits the corrections and their checks; leaving them costs no work now but leaves the two failures unresolved.
 
+**Quickstart correction:** The [reviewed proposal](../proposals/2026-11-02-codex-quickstart-lifecycle-alignment.md) awaits your Decision. The quickstart calls its example heavy but shows only one review, and archives before the required final verification record. It proposes making the example light and correcting the existing sequence test. Accepting permits this correction; declining leaves the misleading example in place. Both reviewers recommend accepting.
+
 The sections below retain earlier context and may describe historical states; use this dated section and the linked current plans for present decisions.
 
 ## Purpose and authority
