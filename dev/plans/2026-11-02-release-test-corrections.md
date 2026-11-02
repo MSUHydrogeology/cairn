@@ -62,3 +62,26 @@ Assurance path: high-assurance
 3. **What would show it wrong?** A child still producing bytecode or bypassing refusal checks, a count unrelated to the changelog mapping, or a scratch test still depending on the host branch default would defeat the plan. The specified existing tests and three separate-copy mutations challenge these outcomes. -- Plan C1 and Verification; committed helper and count assertion.
 
 Coverage: read the committed plan, accepted proposal and review record, template, and representative committed helpers and assertions. Did not run tests or mutations, enumerate all consumers, or perform Security Review; implementation must trace consumers and record the required checks.
+
+## Plan review -- Codex gpt-6.1-sol -- 2026-11-02
+
+Reviewed commit: 4dee65075b5c440af1c668223a52a436dc7aaa54  
+Target: three protected-test corrections and retained security controls  
+Prior findings: none  
+Assurance path: high-assurance
+
+**Obligation**: Internal Security Review  
+**Tier**: Internal Security Review  
+**Findings**: none
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The plan implements the three accepted corrections without weakening production verification, manifest independence or synthetic trust assertions. The count is justified by the accepted changelog mapping and its existing install test. -- Accepted proposal, Decision and S1–S5; plan Scope/C1; config changelog entry; scaffold changelog install test.
+2. **Best alternative.** Correct the existing helpers and literal count. Caller environment settings retain bytecode dependence; host Git configuration retains branch dependence; deriving the count from output removes its independent check. The proposed edits need no new mechanism. -- Existing `_child_pytest`, top-level `_repo` and fixed manifest-row assertion; proposal Alternatives.
+3. **What would show it wrong?** An ignored plugin or skip bypassing release refusal, extra files admitted, count 88 masking another mapping, or tests failing under a main default. Retained behavioral assertions, three separate-copy mutations and explicit main/master controls can falsify these outcomes; prior logs alone cannot. -- Plan C1/Verification; detached-plugin and incomplete-evidence tests; branch-dependent atomic-publication/ref assertions.
+
+**Verdict**: Accept as framed; no blocking findings. Independent reviews before final wide Boundary B preserve assurance for these protected bytes. The plan retains release requirements without introducing a full-suite implementation gate or authorizing baseline changes.
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+Coverage: read committed plan and ordinary review, accepted proposal, current template and governing rules, helpers, manifest count/mapping, install test and representative security assertions. Did not enumerate every helper consumer, reproduce logs, run mutations or suites, or compare an anchor; those implementation checks remain owed.
