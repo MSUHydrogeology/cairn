@@ -271,7 +271,7 @@ python "$CAIRN\bootstrap\scaffold.py" --config profile.yml --target .
 Then commit the install; the commands are the same in both terminals:
 
 ```text
-git add AGENTS.md VENDOR.md NOTICE.md .gitignore dev/ tools/ scripts/ .agents/ docs/
+git add AGENTS.md VENDOR.md NOTICE.md .gitignore dev/ tools/ scripts/ .agents/ docs/ CHANGELOG.md
 git commit -q -m "Install Cairn kernel + default-on modules"
 ```
 

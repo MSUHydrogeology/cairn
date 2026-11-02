@@ -40,6 +40,7 @@ Run from the cairn repo root::
 from __future__ import annotations
 
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -244,6 +245,28 @@ class TestLayerAStepsOneThroughThree:
             f"docs/quickstart.md says '{prose_slots.group(1)} unfilled block slots' "
             f"but the live install reports {live_slots.group(1)} -- refresh the "
             f"quickstart prose to match the scaffold."
+        )
+
+        # Execute the literal terminal install-commit commands from the
+        # quickstart and verify the generated changelog is in that commit.
+        commit_commands = re.search(
+            r"Then commit the install;.*?```text\n"
+            r"(?P<add>git add [^\n]+)\n(?P<commit>git commit [^\n]+)\n```",
+            quickstart,
+            re.DOTALL,
+        )
+        assert commit_commands, "quickstart must show terminal install-commit commands"
+        _run_git(*shlex.split(commit_commands.group("add"))[1:], cwd=repo)
+        _run_git(*shlex.split(commit_commands.group("commit"))[1:], cwd=repo)
+        committed_paths = subprocess.run(
+            ["git", "ls-tree", "-r", "--name-only", "HEAD"],
+            cwd=repo,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.splitlines()
+        assert "CHANGELOG.md" in committed_paths, (
+            "quickstart's documented install commit must include CHANGELOG.md"
         )
 
 

@@ -136,3 +136,14 @@ Verdict: **Blocking finding.** Elapsed: approximately 4 minutes; tokens: unknown
 **Evidence:** The model-tier extractor captures the entire current paragraph in both committed copies; separate clause checks retain task floors, authorization and review obligations. Targeted clean Git-backed copy checks under Python 3.12.9: fresh-install node and parity node, 2 passed in 0.27 s. An initial mistyped node selected no tests; corrected above.
 
 **Coverage:** Reviewed the two corrections, relevant lock/migration implementation and committed plan evidence. Did not review the remaining documentation groups, run a suite, or perform Security Review; final wide Boundary B remains open.
+
+## Focused correction -- Codex (Implementation) -- 2026-11-01
+
+Addressed the blocking finding from review commit `6281285f`: the documented
+terminal `git add` now includes `CHANGELOG.md`. The quickstart test extracts
+and runs the documented `git add` and `git commit` commands, then checks the
+resulting commit tree includes the changelog. In a clean Git-backed copy under
+Python 3.12.9, the two selected files passed: 490 tests in 3.52 seconds.
+Elapsed: approximately 5 minutes; tokens: unknown. This focused correction
+returns to the same reviewer for targeted re-look; final wide Boundary B
+remains open.
