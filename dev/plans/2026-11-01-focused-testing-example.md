@@ -64,3 +64,27 @@ Boundary C: independent code reviewers use targeted falsification, including a s
 Accepted the blocking finding. Verification now names each gate's runner, input and coverage limits, and distinguishes the mapped test's review-stance check from human inspection of the example and installed output. Security plan review remains outstanding.
 
 **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+## Plan review -- Codex gpt-6.1-sol -- 2026-11-01
+
+Reviewed commit: 542f94185934ed590f3f7224bcd92d2f3655f72e  
+Target: entire revised plan against the accepted proposal  
+Prior findings: none in this separate Security pass  
+Assurance path: heavy, inherited from accepted proposal
+
+**Obligation**: Internal Security Review  
+**Tier**: Internal Security Review  
+**Findings**: none  
+**Verdict**: ACCEPT  
+**Elapsed**: approximately 2 minutes  
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The plan confines the edit to the misleading quoted example and expressly preserves integration and security obligations, surrounding rationale and installer behavior. The separate Security code review precedes final wide verification. -- Plan, Scope, C1 and Verification; accepted proposal, Proposal and Decision.
+2. **Best alternative.** A concise replacement plus paragraph comparison and installed-copy inspection delivers the outcome without a new test-selection mechanism. Deleting the example loses the pairing illustration; the planned existing checks and human inspection retain it. -- Plan, C1 and Verification; template, paired-update paragraph; accepted proposal, Alternatives considered.
+3. **What would show it wrong?** Replacement wording suggesting changed-file tests exhaust required assurance, a hidden old-wording reader, or an installed copy retaining the old example. The plan assigns reader searches a known-positive mapping control and explicitly distinguishes gate coverage from human semantic and installation checks. -- Plan, C1 and Verification; installer mapping in `bootstrap/_scaffold/config.py`; `bootstrap/tests/test_documentation_plan_module.py`, TestForkableContent.
+
+No blocking security gap found. The revised trigger descriptions accurately limit what the existing checks establish; they do not claim the review-stance test verifies testing semantics.
+
+Coverage: read the committed plan, accepted proposal, current plan template, shipped example, gate entry points, mapped test and installer mapping/content-test paths. Did not run implementation checks, reader discovery or a fresh install, or inspect replacement wording that is not yet implemented. No suite run.
