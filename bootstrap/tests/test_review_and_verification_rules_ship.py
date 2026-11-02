@@ -398,11 +398,20 @@ _WIDENING_TRIGGERS = (
     "command construction or newly exposed secret can trigger review even "
     "through an existing API."
 )
+_BYPASS_EXEMPTION = re.compile(
+    r"\b(?:bypassed guard|guard bypass)\b[^.]{0,60}"
+    r"\b(?:is exempt|exempt from|does not trigger|is not a trigger)\b",
+    re.IGNORECASE,
+)
 
 
 def _has_guarded_reuse_contract(text: str) -> bool:
     text = _collapse(text)
-    return _GUARDED_REUSE_LIMITS in text and _WIDENING_TRIGGERS in text
+    return (
+        _GUARDED_REUSE_LIMITS in text
+        and _WIDENING_TRIGGERS in text
+        and _BYPASS_EXEMPTION.search(text) is None
+    )
 
 
 @pytest.mark.parametrize("rel", [
@@ -427,18 +436,14 @@ def test_security_module_states_guarded_reuse_limits(rel: str) -> None:
         "",
     ),
     (
-        "A new untrusted source, bypassed guard, broader accepted input, "
-        "changed command construction or newly exposed secret can trigger "
-        "review even through an existing API.",
-        "A new untrusted source, broader accepted input, changed command "
-        "construction or newly exposed secret can trigger review even "
-        "through an existing API.",
+        "",
+        " A bypassed guard is exempt from Security Review.",
     ),
 ])
 def test_security_module_trigger_mutations_are_caught(
     rel: str, old: str, new: str
 ) -> None:
-    """Removing the unchanged-limits rule or bypass trigger fails the check."""
+    """Removing the limits rule or exempting a bypass fails the check."""
     original = _collapse(_text(rel))
     assert _has_guarded_reuse_contract(original)
     assert old in original

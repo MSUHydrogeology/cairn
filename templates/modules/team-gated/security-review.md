@@ -63,6 +63,9 @@ untrusted source, bypassed guard, broader accepted input, changed command
 construction or newly exposed secret can trigger review even through an
 existing API. A move that changes path resolution or guard ordering is not
 exempt because the code looks familiar.
+Existing Foundations may question an unsupported declaration before Decision.
+After acceptance, changing a required review follows Maintainer authority and
+plan fences; a reviewer cannot waive it.
 The proposal's `heavy` tier adds this pass to the usual review. Security
 Review has at most two passes; an unresolved obligation or blocking finding at
 the cap goes to the Maintainer by name and never clears automatically.
