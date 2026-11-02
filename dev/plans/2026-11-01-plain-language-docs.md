@@ -278,3 +278,22 @@ This reading record does not establish C1's complete inventory of readers,
 pins and checks, or cover every remaining shipped template and document. The
 independent ordinary and Security Reviews and final wide Boundary B remain
 open. Elapsed: approximately 10 minutes; tokens: unknown.
+
+## Code review -- Codex (Internal Reviewer, gpt-6.1-sol) -- 2026-11-01
+
+Reviewed commit: `f4b7d393`. **Verdict: Blocking findings.** Elapsed: approximately 4 minutes; tokens: unknown.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. The accepted proposal covers the full requested reading and preserves conditions and template consumers; the plan's C1–C3 make those outcomes explicit.
+2. **Best alternative.** Prioritize entry points while completing the remaining groups. Reviewing only those pages would lose the accepted coverage of less-visible guidance and templates.
+3. **What would show it wrong?** An unread shipped instruction, a lost condition or a marker that breaks a consumer would defeat the outcome. The plan requires mapped consumers and source comparison; the issue-form report records a real installer and front-matter check.
+
+**Findings**
+
+- **Blocking — incomplete reading:** The documentation coverage record explicitly does not cover every remaining shipped template and document. C2–C3 require every inventoried group to be read and unresolved failures closed. Complete and record the remaining group dispositions, including final proposal-summary work, before claiming completion.
+- **Blocking — incomplete mapping and checks:** The same record says C1's complete inventory of readers, pins and checks is not established; the supplemental report also identifies missing known-positive negative-search evidence. C1 and Boundary A require these checks, not merely an administrative summary. Complete the mapping, follow checks to their runners and inputs, test negative searches against a known positive, and run any outstanding required checks or record their results.
+
+The site/SVG correction aligns ordinary uncertainty and new-boundary wording with the governing rule; the reported issue-form installer check supports the selected hidden marker placement. The focused quickstart review finding was closed by its re-look. Final wide Boundary B follows both reviews and remains due.
+
+**Coverage:** Read the accepted proposal, committed plan and implementation reports, issue-form and site changes, and changed-surface inventory. Relied on reported implementation checks; did not independently read every changed document, rerun a suite, verify every marker or conduct Security Review.
