@@ -350,3 +350,13 @@ per-file inventory or resolve every remaining shipped document/template
 group. Independent ordinary and Security Review findings, and final wide
 Boundary B, remain open. Claim check passed on this plan. Elapsed: approximately
 12 minutes; tokens: unknown.
+
+## Targeted review re-look -- Codex (Internal Reviewer, gpt-6.1-sol) -- 2026-11-01
+
+Reviewed `af413952` and `6f887f4c` against the findings at `3c5dd98c`. **Verdict:** Both findings are closed on the reported group coverage and mapping. Elapsed: approximately 2 minutes; tokens: unknown.
+
+The phase-0/readiness report now covers the identified missing group; the four fillable files carry the marker immediately under their titles, while the guidance README remains unmarked. The board report includes the final proposal and plan templates. Together with the earlier group reports, I have not identified a specific unread requested group. My earlier finding relied too broadly on the record's qualification rather than a named omission; an exhaustive written file ledger is not required.
+
+The response identifies install and module mapping entry points, reader searches, gate triggers and known-positive controls, and reports the previously deferred methodology reader tests. This closes the mapping finding without requiring a per-file ledger. The reported checks do not prove prose equivalence; source comparison remains the basis for meaning. Final wide Boundary B and any independent Security Review disposition of the new changes remain due.
+
+**Coverage:** Inspected the response and four marker diffs and relied on the implementing agents' group and check reports. Did not reread every document, independently repeat their checks, or run a suite.
