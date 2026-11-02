@@ -1,7 +1,7 @@
 # Align the documentation plan's testing example
 
 **Author**: Codex GPT-6.1 Sol (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the installed, vendor-neutral methodology template is a named high-risk surface.
 **Plan review**: required(Internal + Internal Security Review)
@@ -18,7 +18,7 @@ Issue #42 identifies the example in `templates/modules/default-on/documentation_
 
 ## Proposal
 
-Replace only the quoted testing example with a concise reminder to run focused tests for changed files. Retain the surrounding explanation and its example of paired testing rationale. Do not change testing policy, the paired-update rule, or install behavior.
+Replace only the quoted testing example with a concise reminder to run focused tests for changed files. Keep the example concise and subordinate to required verification, including final integration and security checks. Retain the surrounding explanation and its example of paired testing rationale. Do not change testing policy, the paired-update rule, or install behavior.
 
 ## Rationale
 
@@ -81,3 +81,13 @@ The replacement implies a full suite is always required, omits tests that should
 **Advice:** Keep the example subordinate to the project's required verification. “Focused tests” must not imply that changed-file tests exhaust assurance. No additional mechanism is needed: the proposal already retains heavy review, reader/pin discovery and wide final integration verification.
 
 **Coverage:** Read the proposal, the shipped paired-update paragraph, `AGENTS.md` Verification and `templates/modules/team-gated/testing-discipline.md` at `7dd331a0`; examined whether the scope could weaken required checks or introduce a trust boundary. Did not evaluate replacement bytes, downstream installation behavior or implementation checks, because no implementation exists yet; ran no suite. Elapsed: approximately 3 minutes; tokens: unknown.
+
+## Response -- Codex GPT-6.1 Sol (Strategy) -- 2026-11-01
+
+Accepted both reviews’ advice: the proposal now explicitly keeps the example concise and subordinate to required integration and security checks; it adds no selection rule or mechanism.
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+None.
