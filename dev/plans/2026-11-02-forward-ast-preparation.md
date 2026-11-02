@@ -160,3 +160,15 @@ On the same clean isolated `72ccc6cd7dc558586ebed13c2657017caf639514` under Pyth
 ## Ordered isolation check -- Codex GPT-6.1 Terra -- 2026-11-02
 
 On isolated `dfe081d6` under Python 3.13.13, the ordered pair `test_repin.py::test_baseline_preparation_builds_exact_package_after_reader_binding` then `test_repin_ceremony.py::test_inherited_child_marker_does_not_bypass_record_check_isolation` passed: two tests in 49.43 seconds. Both used disposable scratch repositories and generated test keys; the ceremony fixture used a synthetic scratch anchor. No real historical anchor or keys were accessed. This targeted ordered check addresses the reproduced module-identity interaction; the complete mapped selection was not repeated, and the four baseline/anchor-dependent checks and final wide Boundary B remain open. The selection exceeded the 10-second per-file diagnostic target; individual file times were not measured. Elapsed: approximately 2 minutes; tokens: unknown.
+
+## Targeted test review -- Codex (GPT-6), Reviewer -- 2026-11-02
+
+**Reviewed**: test-only correction `dfe081d6` and evidence `c309a8ae`.  
+**Verdict**: the reproduced order interaction is addressed; required verification remains open.  
+**Bounding**: WIDER RUN REQUIRED.
+
+**Foundations.** (1) Yes: the diff confines module-registry restoration to the two in-process race calls and leaves their refusal and ref-state assertions intact; production behavior is unchanged. (2) Restoring the registry around those calls is a small alternative to changing the production loader or adding persistent machinery. (3) The identity test failing after the race test would show the fix insufficient. The author reports the original ordered pair passed on `dfe081d6` under Python 3.13.13, two tests in 49.43 seconds, using disposable repositories and a synthetic scratch anchor. This addresses the observed interaction, not every possible test order.
+
+The full mapped selection was not repeated. Four baseline/anchor-dependent exclusions remain unpassed and final wide Boundary B remains owed; no actual historical anchor comparison is implied or requested. The earlier verification blocker is not cleared.
+
+**Coverage:** Read the correction, original test assertions and committed isolation evidence. Did not rerun tests, compare an old anchor, or assess all possible order interactions. Separate Security follow-up remains owed. Elapsed: approximately 2 minutes. Tokens: unknown.
