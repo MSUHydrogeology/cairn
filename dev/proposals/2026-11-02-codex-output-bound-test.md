@@ -111,3 +111,31 @@ Assurance path: high-assurance
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Maintainer -- 2026-11-02
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Tier**: heavy
+
+**ACCEPTED.** The Maintainer's authorization, quoted **verbatim and visually
+isolated** (chat, 2026-11-02; scribed by Codex, GPT-6):
+
+> "Go ahead, I am okay with it. I want to move forward to repinning and release"
+
+For this correction, the Maintainer authorizes focused verification in lieu of
+repeating broad suites. The proposal's named focused checks and accepted
+criteria remain required; no broad certification run is added by this Decision.
+The proposal's plan review obligation remains `required(Internal + Internal
+Security Review)`. The proposal-level Security Review is recorded above.
+
+The scope loss is explicit and accepted: A-t4 will no longer assert successful
+cleanup during overflow. The separate A-t6 timeout cleanup check does not cover
+that overflow-specific case, and accepting a combined truncation/cleanup-failed
+status may therefore stop A-t4 from surfacing an overflow cleanup failure. The
+Maintainer accepts this loss for the bounded-output correction; any observed
+cleanup failure remains visible in the degraded status.
+
+The Maintainer's testing-scope instruction, also verbatim:
+
+> "I think fixing the problem and testing it with a narrowly scoped run is sufficient. Then we move forward. We can't have stupid long testing ceremonies repeating for simple failures"
