@@ -243,3 +243,25 @@ Assurance path: high-assurance
 Existing testing-discipline guidance supplies tiers, contracts, budgets and simulation timescales; the architecture-review module exists. The proposal reuses these and avoids a new selector or review program. -- `templates/modules/team-gated/testing-discipline.md`; `templates/modules/team-gated/architecture-review.md`; Proposal.
 
 Coverage: read the committed revision, shipped core verification and named module guidance. Did not exercise installed examples, inspect LHM dependencies, measure timings or perform Security Review.
+
+## Security Review -- Codex gpt-6.1-sol -- 2026-11-01 (widened scope)
+
+Reviewed commit: d3398d2262d3b6aaf724b98df4fb60e195eb9731  
+Target: supplied testing architecture, agent defaults and core-only use  
+Prior findings: earlier S1 assurance disclosure retained; fresh pass for widened scope  
+Assurance path: high-assurance
+
+**Tier**: Security Review  
+**Findings**: none  
+**Verdict**: ACCEPT as framed; recommendation, not a Maintainer Decision.  
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Cairn supplies the local/widened defaults; agents search actual effects, consumers and entry points and record selection with implementation. Scientists set high-level needs and material exceptions, not routine coverage. Known required checks remain owed; named trust-boundary/heavy rules are not replaced. -- Proposal, Select by effects, Widen for shared effects and Separate project operations; governing Review rule.
+2. **Best alternative.** Keep universal whole-suite certification: easier selection but unnecessary work for independent components. Automated impact machinery cannot prove dynamic dependencies and would add infrastructure. Existing test organization and optional architecture guidance support the supplied default without making modules or a review program prerequisites. -- Proposal, Alternatives and core-only requirement; testing-discipline and architecture-review module selection/composition text.
+3. **What would show it wrong?** Core-only guidance asking scientists to invent coverage, a familiar local interface hiding changed trust or a shared consumer, or duration excusing a required security check. Effect mapping, widening under uncertainty, unchanged obligations and installed local/shared/uncertain/mandatory examples challenge those outcomes; no automatic coverage guarantee is claimed. -- Proposal, Examples, S4/S5 and requirement-preservation paragraph.
+
+No new finding. The revision preserves S1's scoped assurance limit, keeps concrete Cairn release/re-anchor requirements, and distinguishes architecture guidance from building infrastructure. Widening covers owning families and connected paths.
+
+Coverage: examined committed widened proposal, ordinary review, current proposal template, governing heavy triggers and named module content. Did not validate LHM architecture, exercise installed examples, measure savings or run suites. Final dependency mapping remains unverified.
