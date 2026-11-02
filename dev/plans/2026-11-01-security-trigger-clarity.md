@@ -150,3 +150,22 @@ Maintainer disposition; do not close the issue as fully delivered.
 **Evidence**: Compared the copies, accepted proposal and C1. My earlier finding that the modules omitted the required wide-mode explanation is closed by `da48cfd9`, which states it in both copies and adds a focused assertion. The implementation record reports the mapped four-file checks, the separately resolved Bandit skip, both mutations and five cases.
 
 **Coverage**: Read committed implementation and corrections, proposal, plan, test assertions and iteration evidence; independently compared the five cases against the text. Did not rerun tests, inspect installed output, audit runtime guards or perform separate Security Review. Final wide verification remains outstanding. No suite run. Elapsed: approximately 6 minutes; tokens: unknown.
+
+## Security code review -- Codex gpt-6.1-sol -- 2026-11-01
+
+Reviewed commits: d7434ba6, 8a7bdebf and da48cfd9  
+Target: security-trigger module/test changes; evidence `e8c11a43`, ordinary review `fb5e37ed`  
+Prior findings: omitted Foundations/authority clarification; bypass-exemption mutation gap  
+**Tier**: Security Review  
+**Verdict**: ACCEPT; prior findings closed, no new findings.  
+**Elapsed**: approximately 8 minutes across preparation and correction review. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Both copies retain added/widened triggers and condition reuse on unchanged sources, inputs, validation, authority and recipients. Corrections restore Foundations' pre-Decision challenge, Maintainer authority after acceptance and mapped-wide meaning without a reviewer waiver. -- Module diffs; C1; accepted proposal.
+2. **Best alternative.** Extend the existing prose check and use the five accepted cases. New runtime or classification apparatus would exceed this wording clarification; relying only on unchanged trigger phrases missed an explicit exemption. -- Test diff and preliminary adversarial probe; accepted S2/S3.
+3. **What would show it wrong?** An exemption for bypassed validation passing the rule check. Initially my appended exemption survived both copies. At `8a7bdebf`, targeted source-only execution rejected that original mutant, a guard-bypass variant and condition removal; genuine text and a safeguard control passed. The predicate is unchanged by the subsequent wide-mode assertion. -- Recorded targeted probe and correction diffs.
+
+**Bounding**: ACCEPTED — meaningful targeted mutants now fail, without claiming general prose or runtime validation. Author evidence records 793 passed/one Bandit skip under Python 3.12.9, the skipped node passing under Python 3.13.13, two later wide assertions passing, both required mutations and five cases. No mapped list was rerun.
+
+Coverage: read accepted scope, committed modules/tests, corrections, iteration evidence and ordinary review; probed the named adversarial exemption. Did not inspect installed output or audit runtime guards. No suite run. No reached fence/deviation in this implementation range; final canonical-Python wide verification and recorded issue residuals remain owed.
