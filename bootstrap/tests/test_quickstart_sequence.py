@@ -470,11 +470,10 @@ class TestLayerBLifecycleShapeOnly:
     def test_step5_decision_then_implement_and_archive(
         self, disposable_repo: Path
     ) -> None:
-        """Step 5 (surrogate): a fresh session appends the Review and
-        commits it; the Maintainer appends a quoted Decision and sets
-        the status to accepted; then the change is implemented, the
-        proposal moved to archive and the CHANGELOG line added, in a
-        single implementing-and-archiving commit."""
+        """Step 5 surrogate: commit the fresh-session Review and the
+        Maintainer's quoted Decision separately; commit the implementation,
+        record its final check in the accepted proposal, then archive that
+        proposal in a later commit."""
         repo = disposable_repo
         self._install_cairn(repo)
         # --- Steps 4-5a: open, review, decide ---
@@ -507,11 +506,11 @@ class TestLayerBLifecycleShapeOnly:
     def test_step6_git_log_has_lifecycle_boundaries(
         self, disposable_repo: Path
     ) -> None:
-        """Step 6 says ``git log --oneline`` shows six commits
-        with clear lifecycle boundaries: init, install,
-        proposal-open, review, decision, implement-and-archive.  This
-        test reaches the same end-state and pins the commit
-        count + boundary subjects."""
+        """Step 6 says ``git log --oneline`` shows eight commits
+        with clear lifecycle boundaries: init, install, proposal-open,
+        review, decision, implementation, verification record and archive.
+        This test reaches the same end-state and pins the commit count
+        and boundary subjects."""
         repo = disposable_repo
         # Re-use Step 5's setup end-to-end.
         self._install_cairn(repo)
