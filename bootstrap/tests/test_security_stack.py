@@ -1253,9 +1253,22 @@ def test_a_t4_output_is_bounded(orchb, monkeypatch):
     # the cap DOWN configures the *subject*; the oracle is the returned status
     # and the measured buffer length, neither of which the subject supplies.
     monkeypatch.setattr(orchb, "_TOOL_OUTPUT_CAP_BYTES", 64 * 1024)
-    # Cleanup stays bounded by the runner's finite kill-grace phases. A-t4
-    # accepts cleanup failure because A-t6 owns survivor cleanup; the accepted
-    # scope gives up overflow-specific cleanup-status detection.
+    # The runner's terminate/kill waits are finite, but it can return cleanup
+    # failure. This probe launches no descendants; the fixed write loop below
+    # leaves only one Popen to contain. Preserve the runner's cleanup result,
+    # then directly kill and reap that process within one extra second if needed.
+    cleanup_results = []
+    runner_kill_tree = orchb._kill_tree
+
+    def bounded_probe_cleanup(proc, process_group=None):
+        cleanup_ok = runner_kill_tree(proc, process_group)
+        if proc.poll() is None:
+            proc.kill()
+            proc.wait(timeout=1.0)
+        cleanup_results.append((cleanup_ok, proc.returncode))
+        return cleanup_ok
+
+    monkeypatch.setattr(orchb, "_kill_tree", bounded_probe_cleanup)
     run = orchb._run_tool(
         _probe("import sys\n"
                "for _ in range(4096):\n"
@@ -1264,6 +1277,9 @@ def test_a_t4_output_is_bounded(orchb, monkeypatch):
         label="flooder")
     assert run.status in ("truncated", "truncated+cleanup-failed"), run.status
     assert len(run.stdout.encode("utf-8")) <= 64 * 1024
+    assert cleanup_results, "overflow path did not exercise cleanup"
+    assert all(returncode is not None for _, returncode in cleanup_results), \
+        "bounded test cleanup did not reap the flooder"
 
 
 def test_a_t5_control_characters_cannot_forge_a_report_line(orchb, capsys):
