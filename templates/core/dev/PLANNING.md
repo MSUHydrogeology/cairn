@@ -1,24 +1,27 @@
 <!-- cairn-internal-ref-allow: docs/methodology/coordination.md docs/methodology/lifecycle.md docs/methodology/session-routines.md reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 External-repo paths: `docs/methodology/coordination.md`, `docs/methodology/lifecycle.md`, `docs/methodology/session-routines.md`
 # {{project_name}} — development roadmap
+Written in Cairn Plain Language 1.0
 
-`PLANNING.md` is the **roadmap board**: a current-state index of
-what is queued and in flight. It is **not** a historical log —
-completed items are *removed* from the board, not crossed off or
-struck through, once their lasting truth has migrated to the
-durable record (archived proposals and plans, implementing
-commits, the changelog). See Cairn's published lifecycle method > "The
-roadmap is a current-state index, not a historical log" for the
-load-bearing reasoning.
+## Waiting on you
 
-`PLANNING.md` is a **shared communication file**: edited only at
-defined serialization points — a lifecycle archive, the goodnight
-routine, or explicit maintainer instruction — and referring to
-proposals and plans by **filename stem**, not path link, so an
-archive-move needs no edit here. The required-signal-read
-discipline on shared communication files applies
-(`Cairn's published coordination method` > "Required signal+read for
-coordination-surface files").
+List decisions, approvals and other next steps only the Maintainer can take.
+Use one bullet for each wait. Keep the marker at the start of that bullet so
+`python tools/board.py --maintainer` can find it. Remove the bullet when the
+Maintainer responds.
+
+When a wait belongs to work in a release table, put its marker on a separate
+bullet outside the table. For example, a row might read `| Prepare release |
+Run release checks | release plan |`; the sample wait below belongs to that
+work:
+
+> - **Waiting on Maintainer**: approve release
+
+The quoted sample is guidance, not a live wait. On this board, write the bullet
+without the quote marker. Do not put the marker in a table cell; the board
+reader does not find it there.
+
+*(Empty at adoption.)*
 
 ## Where the project stands
 
@@ -31,72 +34,73 @@ refreshed at the goodnight scrub.)
 
 ## Onboarding
 
-The day-one tasks for your profile live here. The install fills
-this section once, from the chosen profile preset (`solo-greenfield`,
-`collaborative-team`, or `high-rigor-legacy`), with the preset's
-day-one seed tasks plus a preset-metadata comment that names the
-preset. The list does not grow later: nothing adds a task after the
-install.
+The install fills this section once from the selected profile preset
+(`solo-greenfield`, `collaborative-team`, or `high-rigor-legacy`). It adds the
+preset's day-one tasks and a comment naming the preset. Later installs do not
+add more tasks here.
 
 <!-- cairn:slot onboarding-tasks -->
 (Empty at adoption unless the bootstrap fills it from a profile
 preset.)
 <!-- cairn:end onboarding-tasks -->
 
-## Queued
+## Current release
 
-The forward-looking board: substantive work that is accepted or
-anticipated but not yet in flight. When a queued standard/heavy item grows
-into multi-step work, open a plan under `plans/` and replace the entry with
-the plan's filename stem. Light keeps its no-plan route for multi-step work.
+Put accepted work for the release in this table. Each row names the work, its
+next step and the record with its evidence or history. Link a proposal or plan
+by its filename stem so archiving it does not require a board edit.
 
-*(Empty at adoption — the first accepted proposals populate it.)*
+| Work | Next step | Record |
+|---|---|---|
+| *(Empty at adoption.)* |  |  |
 
-## Active
+## Later releases
 
-Substantive work currently in flight: open plans, executing
-sub-tracks, in-progress proposals between Decision and
-plan-open. When an entry completes, it is **removed** from this
-section at the next goodnight scrub — the truth migrates to the
-archived plan / proposal, the implementing commits, and the
-changelog. There is no "completed recently" section on this
-board by design.
+Keep accepted or anticipated work for a later release in a separate table.
+When it starts, move it to the current release and update its next step.
 
-*(Empty at adoption.)*
+| Work | Next step | Record |
+|---|---|---|
+| *(Empty at adoption.)* |  |  |
 
----
+## Terms
 
-## Status taxonomy
+- **Queued** — accepted or anticipated work that has not started.
+- **Active** — work in flight, such as an open plan or executing sub-track.
+- **Blocked** — work waiting on an outside dependency or a Decision. Name the
+  blocker so someone can act on it.
+- **Deferred** — work deliberately parked, with conditions for bringing it
+  back to the current release.
+- **Completed** — a short-lived state between finishing work and the next
+  goodnight scrub. Then remove the item from the board.
 
-A board item carries one status. These are the inline reference
-for any agent editing the board (the full *why* is in
-Cairn's published lifecycle method):
+Mark each item, or its release section, with `(Mon YYYY)` for when it was added
+or last reaffirmed, such as `(May 2026)`. Refresh the date when reaffirming it
+at a goodnight scrub. This makes the staleness check possible by reading the
+board.
 
-* `queued` — accepted or anticipated, not yet in flight.
-* `active` — in flight: an open plan, an executing sub-track.
-* `blocked` — in flight but waiting on an external dependency or a
-  Decision; name the blocker so it is actionable cold.
-* `deferred` — consciously parked, **with revival conditions** (what
-  must become true for it to return to `queued`).
-* `completed` — **transient**: held only between finishing the work
-  and the next goodnight scrub, then *removed*. The board keeps no
-  completion history — a finished item's permanent home is the
-  archived proposal / plan, the implementing commits, and the
-  changelog.
+## Working rules (for agents)
 
-**Date-marker convention.** Each item — or its parent section —
-carries a `(Mon YYYY)` marker recording when it was added or last
-reaffirmed (e.g. `(May 2026)`). The marker makes the staleness sweep
-(below) performable by **reading the file**, not by `git blame` or
-memory. Refresh the marker whenever the item is reaffirmed at a
-goodnight scrub.
-
-**Marking a row the Maintainer must move.** When a row's next move is the
-Maintainer's alone (a ceremony only they run, a question only they answer, a
-go-ahead only they give), add a line inside the row of the form
-`**Waiting on Maintainer**: <what>`, under 48 characters, after any leading
-spaces and at most one `* ` or `- `. `python tools/board.py --maintainer`
-then lists the row. Delete the line when they answer.
+- Treat this board as a current view of queued and active work, not a history.
+  Remove completed items after their lasting truth has moved to durable records
+  such as archived proposals and plans, commits and the changelog.
+- Edit this shared file only at a defined serialization point: lifecycle
+  archive, goodnight routine, or explicit Maintainer instruction. Use filename
+  stems for proposals and plans, not links to paths that move when archived.
+  Follow the required-signal-read discipline for shared communication files
+  (Cairn's published coordination method, "Required signal+read").
+- When multi-step standard or heavy work starts, open a plan under `plans/` and
+  replace the queued entry with the plan's filename stem. Light work keeps its
+  no-plan route, even when it has multiple steps.
+- Give each item one status: `queued`, `active`, `blocked`, `deferred`, or
+  `completed`. A deferred item needs revival conditions. Remove completed work
+  at the next goodnight scrub; the board keeps no completion history.
+- If the next step belongs to the Maintainer alone, add a separate bullet
+  outside any table. Begin it with `**Waiting on Maintainer**: `, followed by
+  a description under 48 characters. The reader accepts one optional `* ` or
+  `- ` before the marker. Delete the bullet when the Maintainer responds.
+- Before deleting a completed item, confirm all three removal preconditions
+  below. If any is unmet, finish the migration first.
 
 ## Archive preconditions (proposals and plans)
 
@@ -164,8 +168,8 @@ opening the artifact at archive-preparation is the enforcer.
 
 ## Removal preconditions
 
-A `completed` item is **removed**, not crossed off — but removal has
-gates. Before deleting a board entry, confirm all three:
+A `completed` item is **removed**, not crossed off — but removal has gates.
+Before deleting a board entry, confirm all three:
 
 1. the accepted proposal / plan is archived;
 2. its lasting truth has migrated to durable homes (doctrine, topic
@@ -173,5 +177,6 @@ gates. Before deleting a board entry, confirm all three:
 3. the cold-start "what was tried, and why?" is answerable from the
    archives + commit log **without** this board entry.
 
-If a gate is unmet, finish that migration first, then delete. See
-Cairn's published lifecycle method > "Removal preconditions for a roadmap item".
+If a gate is unmet, finish that migration first, then delete. See Cairn's
+published lifecycle method > "Removal preconditions for a roadmap item".
+<!-- cairn-internal-ref-allow: docs/methodology/coordination.md docs/methodology/lifecycle.md reason=published methodology citations -->

@@ -83,3 +83,44 @@ Assurance path: high-assurance, inherited from the accepted proposal.
 **Elapsed:** approximately 1 minute; **Tokens:** unknown.
 
 Both required reviews support the plan without findings. The documentation audit owner confirmed the single rewrite and final-board reading in `260231cd`; the existing scope and checks remain in force.
+
+## Implementation verification -- Codex (Implementation, gpt-6.1-sol) -- 2026-11-01
+
+Changed only the shipped board template. It now opens with Waiting on you,
+has current and later release tables with Work, Next step and Record, a short
+terms list, and agent working rules. The shared-file signal-read rule,
+serialization points, date convention, dispositions and all removal gates
+remain. Both install slots and their placeholder bytes match the original;
+the template marker is directly below the title.
+
+Before editing, `python tools/test_tiers.py for templates/core/dev/PLANNING.md`
+selected 20 files. Searches found install substitution in
+`bootstrap/_scaffold/install.py`, upgrade discovery reconciliation in
+`bootstrap/_scaffold/upgrade.py`, board waits in `tools/board.py`, and the
+scope wording guard in `bootstrap/tests/test_scope_reduction_trap.py`. The
+known-positive searches included the existing slot markers, onboarding tests,
+and the parser's marker constant. `README.md` describes the installed tools;
+the shipped dev README describes PLANNING as queued and active work.
+
+Under Python 3.12.9, the mapped 20-file selection passed: 1,024 tests in
+139.54 seconds. This exceeded the 30-second iteration target; the run did not
+report per-file durations. Five focused scope, install, seed, slot and reader
+files passed 229 tests in 9.40 seconds; `test_upgrade_module_additions.py`
+passed 60 in 28.60 seconds. Claim, link, snippet and neutrality gates passed.
+The first install-test attempt after editing found changed slot-placeholder
+bytes; I restored both original placeholders, then the focused and mapped runs
+passed. No installer, parser or malformed-input behavior was changed.
+
+Real-entry checks: the CLI ignored the quoted sample and a table-cell marker,
+then reported a standalone bullet. Separate-copy mutations removing the
+onboarding slot and inverting the test-pinned scope-cut rule each failed their
+mapped install or scope test. An old-template install with a customized board
+was staged for upgrade against the new template; the stage exposed a conflict,
+kept the custom row and section in the staged file, and left the live board
+bytes unchanged. The non-conflicting resolved apply was not exercised.
+
+No tests or implementation files changed. Checks not run: a completed apply
+after resolving the customized-board conflict, installer/parser fallback and
+malformed-input mutations, and independent code or Security Review. Boundary B
+is still due after review on a clean commit under canonical Python 3.13.x.
+Elapsed: approximately 7 minutes; tokens: unknown.
