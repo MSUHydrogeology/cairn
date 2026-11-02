@@ -1,7 +1,7 @@
 # Plan: Align the quickstart lifecycle
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-quickstart-lifecycle-alignment.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Correct the quickstart and its sequence test so the example records its final check before archive.
@@ -292,3 +292,13 @@ assertions passed in the mapped selection; missing-record mutation and stale
 Decision mutation were each rejected as recorded above. No adopter agent was
 simulated, and the evidence cannot prove a real agent ran or truthfully
 reported its check.
+
+## Dispositions
+
+**Dispositions**: The stale frozen-file SHA for
+`bootstrap/tests/test_quickstart_sequence.py` — defer to the v0.6 baseline
+list in `dev/PLANNING.md` > “Waiting on you” / “What the v0.6 baseline
+must include”. The Maintainer authorized this separate home; the wording
+is recorded in `dev/PLANNING.md` > “What the v0.6 baseline must include”:
+“They can each build the machinery, the new baseline does not need to be part of their plans. It can be a work board item for v0.6.” No pin refresh or re-anchor was run
+for this plan; both remain with the Maintainer's v0.6 baseline ceremony.

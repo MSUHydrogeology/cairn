@@ -81,7 +81,9 @@ ceremony must account for:
   [certification test repairs](plans/archive/2026-10-30-certification-test-repairs.md);
   and `test_review_and_verification_rules_ship.py` and
   `test_verification_boundaries.py` from the
-  [test-once proposal](proposals/archive/2026-10-30-claude-test-once-per-change.md).
+  [test-once proposal](proposals/archive/2026-10-30-claude-test-once-per-change.md); and
+  `test_quickstart_sequence.py` from the
+  [quickstart lifecycle plan](plans/archive/2026-11-02-quickstart-lifecycle-alignment.md).
 
 Those plans did not repin or re-anchor themselves, and comparing against the
 old anchor is unnecessary. Maintainer: *"They can each build the machinery,

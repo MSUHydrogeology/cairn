@@ -36,6 +36,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Major changes
 
+- **Changed: Quickstart lifecycle.** The quickstart now shows its deliberate tagline example as light and records the final check before a separate archive commit. ([plan](dev/plans/archive/2026-11-02-quickstart-lifecycle-alignment.md))
 - **Added: Changelog template.** Every new Cairn install includes a root changelog with Major and Minor sections, ordered entry types, titled major entries, and guidance for keeping, optionally adapting, or saving existing history before starting fresh. Normal install preserves an existing file; upgrades stage new changelog collisions for review. ([plan](dev/plans/archive/2026-11-01-changelog-template.md))
 - **Added: Module list and first-use tasks.** Each install now lists the modules you chose, with optional first-use tasks for each. You can adopt a module later, and install keeps your existing work when it conflicts. ([plan](dev/plans/archive/2026-10-29-module-discovery-activation.md))
 - **Changed: Scoped certification defaults.** Guidance helps teams choose checks for affected work and record its scope and omissions, while required checks and Cairn's full-tree certification remain in force. ([plan](dev/plans/archive/2026-11-01-project-certification.md))
