@@ -71,3 +71,25 @@ Exceptions recur without materially resolving the named question, reasons become
 ## Assurance path
 
 **Assurance path**: high-assurance — protected vendor-neutral methodology and templates govern a security review obligation.
+
+## Security Review -- Codex gpt-6.1-sol -- 2026-11-02
+
+Reviewed commit: 9246429b25fdd4904ec701e5713ffc745eb7ab2b  
+Target: two-pass limit, scoped exception authority and retained checks  
+Prior findings: none  
+Assurance path: high-assurance
+
+**Tier**: Security Review  
+**Findings**: none
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The proposal keeps the ordinary stopping point while giving the Maintainer a targeted option when a named security question remains. It expressly avoids routine explanations for required Security Review and leaves triggers and verification selections intact. -- Proposal, Proposal and Decision summary; current AGENTS.md cap; dual-review, Caps and closure.
+2. **Best alternative.** Retain the absolute cap: no new procedure, but a useful additional Security pass cannot resolve uncertainty before disposition. Letting authors or reviewers authorize further passes weakens the stopping point; removing the cap invites recurring review cost. Named Maintainer authorization is proportionate. -- Proposal, Alternatives and Rationale; existing named-disposition rule.
+3. **What would show it wrong?** Automatic further passes, reusable authorization, reasons becoming boilerplate, or an exception treated as clearance. The required reason, artifact/scope authorization for each pass, no-waiver clause and negative worked examples target those failures. Human judgment remains a limitation. -- Proposal, Proposal, S2–S5 and Signals.
+
+**Verdict**: Accept as framed; no blocking findings. The exception spends attention only when requested. Closed work still advances; unresolved checks still need their existing disposition. No routine checklist, additional standing review or automated authorization mechanism is warranted.
+
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+Coverage: read committed proposal, current proposal template, governing cap/closure and plan-review obligations, and shipped/self-hosted Security Review modules. Did not map every cap reader or byte pin, run worked examples or suites, or validate future implementation.
