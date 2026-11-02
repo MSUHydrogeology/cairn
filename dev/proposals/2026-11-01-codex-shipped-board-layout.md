@@ -1,7 +1,7 @@
 # Give the shipped board the current board's layout
 
 **Author**: Codex (gpt-6.1-sol)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — a shipped methodology template is a protected surface.
 **Plan review**: required(Internal + Internal Security Review)
@@ -103,3 +103,22 @@ Adopters cannot find a next action, a Maintainer wait disappears from the reader
 **Elapsed**: approximately 2 minutes; **Tokens**: unknown.
 
 Both reviews support the proposal without blockers. Security advice accepted: compare all duties, including eligibility, quoted authorization, serialization and all three removal prerequisites, rather than relying on the scope test alone; the proposal already requires retaining those duties. Clarified upgrade verification to allow existing onboarding-slot reconciliation while preserving user-owned content and layout. The Plain Language audit coordination and single rewrite remain in scope.
+
+
+## Decision -- Maintainer -- 2026-11-01
+
+**Elapsed**: unknown. **Tokens**: unknown.
+
+**Tier**: heavy
+
+The proposal's heavy tier stands. The required plan review remains
+`required(Internal + Internal Security Review)`; this Decision does not clear
+that obligation.
+
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim and visually
+isolated (chat, 2026-11-01; scribed by Codex):
+
+> Accept and prepare
+
+The accepted text is the operative proposal at this commit. “Prepare” authorizes
+preparation to implement within that text and its stated review obligations.
