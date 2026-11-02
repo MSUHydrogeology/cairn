@@ -1,7 +1,7 @@
 # Separate scientific model evidence from routine tree certification
 
 **Author**: Codex gpt-6.1-terra
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — governing doctrine and shipped authoring templates are protected surfaces.
 **Plan review**: required(Internal + Internal Security Review)
@@ -116,3 +116,11 @@ Coverage: Read the committed proposal, proposal review rules and cited plan-temp
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Maintainer -- 2026-11-01
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated** (chat, 2026-11-01; scribed by Antigravity):
+
+> "Accept both as revised under Option 1"
+
+**Tier**: heavy. Accepted as revised under Option 1 with high assurance and required Internal + Internal Security Review plan review. Recurring additions: none.
