@@ -1,7 +1,7 @@
 # Plan: Separate output-bound and cleanup assertions
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-output-bound-test.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Check the output limit separately from cleanup success while preserving degraded-status reporting.
@@ -88,3 +88,35 @@ Covered: committed plan, accepted loss and focused-check authorization, test con
 **Elapsed**: approximately 1 minute. **Tokens**: unknown.
 
 Both the Internal and Internal Security Review accepted the plan without findings. No operative changes are needed. Proceed with C1 and its focused verification.
+
+
+## Implementation verification -- Codex (GPT-6) -- 2026-11-02
+
+**Stage**: C1 focused iteration; Boundary B remains due after review.
+**Boundary B mode**: bounded. Touched only A-t1 and A-t4 in
+`bootstrap/tests/test_security_stack.py`; A-t6 exercised as the existing
+cleanup consumer. No production code changed. The three focused nodes cover the
+status mapping, output cap/status and timeout descendant cleanup.
+**Tested commit**: `092712a69ccf8b9d6a58f8f286f90d66bb7d2001`.
+**Reviewed range**: `4c482332`..`092712a6`.
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13.
+**Pre-run state**: clean detached copy at the tested commit.
+**Post-run state**: clean detached copy; `HEAD` remained the tested commit.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_security_stack.py::test_a_t1_boundary_failure_status_is_degraded_never_clean bootstrap/tests/test_security_stack.py::test_a_t4_output_is_bounded bootstrap/tests/test_security_stack.py::test_a_t6_descendants_do_not_outlive_the_timeout` | 0 | 3 passed; 0 failed/skipped/xfail/xpass | 6.38 s | unknown |
+| Separate A-t4 status mutation (`overflowed` never classifies as truncated) | 1 | Expected failure: status `ran` rejected | 0.14 s | unknown |
+| Separate A-t4 cap mutation (read entire output file) | 1 | Expected failure: 4,194,304 bytes exceeded 65,536 | 0.42 s | unknown |
+| Separate A-t1 tier mutation (combined status classified CLEAN) | 1 | Expected failure: `truncated+cleanup-failed` mapped to CLEAN | 0.12 s | unknown |
+| Instrumented A-t4 observation on a separate clean copy | 0 | 1 passed; observed status `truncated` | 0.22 s | unknown |
+
+**Non-pass disposition**: The three mutation failures are expected and show the
+assertions reject those faults. The clean focused run had no non-passes.
+**Plan-specific acceptance commands**: A-t1, A-t4 and A-t6 nodes above; all three
+required mutations were detected.
+**Prose gates**: `python scripts/claim_check.py dev/plans/2026-11-02-output-bound-test.md` and `python scripts/link_check.py dev/plans/2026-11-02-output-bound-test.md` passed. `python scripts/quality_gate.py --sub neutrality` passed with 0 failures and 43 informational findings; no snippet block was added.
+**Known omissions**: The process-level run observed `truncated`; the
+`truncated+cleanup-failed` status was exercised synthetically by A-t1 and allowed
+by A-t4, but was not observed from a real overflow run. Boundary B must repeat
+the focused nodes after review. No full suite or broad selection ran.
