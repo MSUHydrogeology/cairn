@@ -1,7 +1,7 @@
 # Plan: Supply practical scoped-certification defaults
 
 **Source proposal**: dev/proposals/archive/2026-11-01-sol-project-certification.md
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Give agents practical testing defaults so they can certify affected behavior without scientists designing routine test selection.
@@ -189,3 +189,7 @@ Prior findings: S1
 **Bounding**: ACCEPTED — challenged the original universal-rule conflict and local/required-check distinction. Root `AGENTS.md` and executable ceremony commands are unchanged by these corrections. Revised tests check scope/reopening and retain Cairn's pair/triggers. Author evidence reports 62 targeted passes under Python 3.13.13, corrected installs and prose gates; no implementation checks rerun here.
 
 Coverage: read committed corrections, changed assertions, implementation response and ordinary follow-up. Did not independently install, audit adopter dependencies, run mutation or suite, or certify the tree. This clears the Security Review obligation, not final integration: wide Boundary B remains owed on clean unchanged canonical-Python bytes.
+
+## Response to targeted reviews -- Codex GPT-6.1 Terra -- 2026-11-02
+
+B1 and S1 are closed with no new findings; the Security reviewer accepted the bounds. Final wide Boundary B and issue #33 closure remain owed before archive. Elapsed: under one minute; tokens: unknown.
