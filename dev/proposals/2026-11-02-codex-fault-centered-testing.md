@@ -198,3 +198,49 @@ verification guards, scientific example, board scope and retirement links.
 **Not covered / low confidence**: no example execution, mutation or
 implementation reruns; outside literature was not independently validated.
 This pass does not discharge Security Review.
+
+## Review -- Codex (independent Security Reviewer) -- 2026-11-02
+
+**Model**: inherited Codex runtime; exact identifier unavailable; no downshift.
+**Reviewed commit**: `9d5a69e524a2ab3a749b386dd67efe2861f2ecf0`
+**Target**: opening proposal. **Prior findings**: none.
+**Assurance path**: high-assurance. **Tier**: Security Review.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: strengthen evidence without another
+   framework; current snapshot/property guidance lacks the explicit
+   candidate-expectation warning --
+   `templates/modules/team-gated/testing-discipline.md:53-63`; Proposal 1-6.
+2. **Best alternative.** Extend existing module guidance and acceptance cells,
+   keeping tools optional -- Proposal 5;
+   `dev/plans/_template.md:222-243`.
+3. **What would show it wrong?** Candidate-derived expectations count as
+   independent evidence, or expectation changes bypass accepted scope --
+   Examples / smoke checks; `dev/plans/_template.md:231-243`.
+
+**Verdict**: ACCEPT. **Findings**: none; no numbered findings require closure.
+
+The proposal distinguishes established behavior from physical validity,
+requires an independent basis for changed expectations, and treats surviving
+mutations as investigation leads. Author-supplied criteria and reviewer
+agreement grant no waiver authority. Optional criterion syntax does not make
+required checks optional.
+
+S3 has existing author/reviewer and selected-module installation owners
+(`bootstrap/tests/test_practice_modules.py:92-117`). Rejection exercises remain
+future implementation evidence, not executed safeguards. S4 preserves unknown
+evidence; S5 correctly leaves shared mistaken assumptions unresolved.
+
+Two existing negative guards passed: removal of the wide-surface fence and
+reviewed-range requirement (`bootstrap/tests/test_verification_boundaries.py`).
+Python 3.13.13; combined eight-check scratch run: 0.26 seconds. These do not
+validate the proposed examples. Retirement retains the outside-practices
+strategy's architecture outcome (Documentation / doctrine surface).
+
+**Elapsed**: shared approximately six-minute review window; per-file split
+unmeasured; recording approximately two minutes. **Tokens**: unknown.
+
+**Covered**: S1-S5, expectation provenance, waiver boundaries, installation
+owners and retirement scope. **Not covered / low confidence**: future examples,
+scientific correctness, prompt trials or external literature validation.
