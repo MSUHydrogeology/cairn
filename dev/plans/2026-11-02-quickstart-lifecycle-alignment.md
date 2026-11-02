@@ -134,3 +134,21 @@ No full suite or wide Boundary B run was performed. Boundary B remains after
 independent ordinary and Security code review. The full-tree prose failure
 and stale frozen-file hash remain explicit non-pass/omission dispositions for
 that review and the Maintainer's separate baseline work.
+
+## Code review -- Codex GPT-6 (Reviewer) -- 2026-11-02
+
+Reviewed commit: 39b2c9bd400bd24acfd9c30efc7322331e54eb51
+Target: quickstart and sequence-test changes in 69be5fdd..39b2c9bd; iteration evidence at 1aec801b1418909d149863026df9963c5c41c257
+Prior findings: none
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The recipe now commits implementation, records the bounded check and archives later; the test inspects proposal contents at both implementation and verification commits. -- `docs/quickstart.md` Step 5; `_assert_verification_order`.
+2. **Best alternative.** Reusing the existing disposable lifecycle avoids a separate checker; prose alone would leave its old ordering unchallenged. -- Step 5/6 tests; accepted proposal Alternatives.
+3. **What would show it wrong?** Missing or early evidence passing the history assertion, or instructions conflicting with the test, would defeat the lesson. The author's missing-record mutation was rejected; both Step 5/6 nodes passed on a separate copy of the reviewed commit under Python 3.13.13 (2 passed, 1.36 s). -- Implementation iteration; `_assert_verification_order`.
+
+**Bounding**: ACCEPTED for the mapped behavior; final wide Boundary B remains required.
+**Findings**: The required full `scripts/check_cairn.py` failed on two stale proposal links, as recorded in iteration evidence. This unmet check keeps work open until corrected and rerun. Nonblocking: Step 5 and Step 6 test docstrings still describe a combined implementation/archive commit and six commits, contradicting the revised test; update those descriptions in the existing test file.
+**Verdict**: Changes need the required prose check to pass before completion. **Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+Coverage: reviewed committed diff, accepted plan and iteration evidence, recipe and history assertions; ran only the two targeted nodes. Did not independently rerun the mutation, exercise an adopter's agent, compare a historical anchor, or run a suite. The surrogate cannot establish the truth of a verification record.
