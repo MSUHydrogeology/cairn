@@ -184,3 +184,19 @@ Python 3.12.9. Elapsed: approximately 4 minutes; tokens: unknown. This closes
 the customized-board apply check only. No broad suite, fallback or malformed-
 input checks, or final Boundary B integration run were performed; Boundary B
 remains due under canonical Python 3.13.x.
+
+## Targeted code review -- Codex (gpt-6.1-sol) -- 2026-11-01
+
+**Reviewed:** `510c2085`; **Verdict:** prior upgrade-check finding closed.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. The follow-up reports a completed real upgrade from the old board, including conflict resolution and apply; the custom row, note and onboarding entries remained.
+2. **Best alternative.** Rely on the earlier staged conflict alone; it did not show the applied result, so it could not meet C1's upgrade check.
+3. **What would show it wrong?** A post-apply loss of custom content or onboarding data would contradict the reported result. The record specifies the source revisions, customizations and observed post-apply state.
+
+**Disposition:** The reported focused check closes my finding at `cc784445`. I relied on the implementer's record and did not rerun the upgrade or a suite. This disposition does not close the separately owed Boundary B checks.
+
+**Elapsed:** approximately 1 minute; **Tokens:** unknown.
+
+**Coverage:** Read the committed follow-up and prior finding. Did not inspect the isolated adopter or test other upgrade cases, fallback behavior or malformed input.
