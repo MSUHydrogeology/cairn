@@ -92,3 +92,27 @@ Assurance path: heavy
 **N2 — non-blocking.** “Those are explicit Maintainer choices” could suggest decisions have already been made, although the proposal says the remaining issue requests are not delivered. Say they are choices for the Maintainer to make, and preserve the stated loss. Evidence: Proposal, Scope delta and Alternatives considered.
 
 Coverage: Read the committed proposal, template review rules, and current module trigger; assessed clarity, burden and the stated limits. Did not validate the adopter's reported experience, test the wording with adopters, or perform the separate security judgment.
+
+
+## Security Review -- Codex Sol -- 2026-11-01
+
+Reviewed commit: 328691ab  
+Target: proposal security trigger and retained authority  
+Prior findings: ordinary review N1–N2 read; not repeated  
+Assurance path: heavy
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Distinguishing another input from a changed trust relationship fits the module's existing trusted-input/user-controlled distinction while retaining independent high-risk review. Evidence: `dev/modules/security-review.md`, “Trusted-input vs user-controlled”; proposal, Proposal.
+2. **Best alternative.** Keep the current trigger and explain reuse with one example. That spends fewer words but leaves output exposure and guard bypass easier to overlook; the conditional rule covers both without another required record. Evidence: module, boundary checklist; proposal, Proposal and Alternatives considered.
+3. **What would show it wrong?** A newly untrusted source or changed guard being excused, or a required review cancelled without Maintainer authority. The proposed four cases test those distinctions and the independent high-risk trigger. Evidence: proposal, Tests required and Signals the change is wrong; `AGENTS.md`, Review.
+
+**Tier**: Security Review  
+**Findings**: none blocking; one recommendation  
+**Verdict**: ACCEPT  
+**Elapsed**: approximately 5 minutes  
+**Tokens**: unknown
+
+**S1 — non-blocking.** Add one output example to the planned case checks: the same writer sending confidential results to a newly public destination widens exposure. The rule already covers writers and information exposure, but the four named cases exercise inputs, movement and protected controls only. Close by including that case in the existing checks; no new process or record is needed. Evidence: proposal, Proposal and Tests required.
+
+Coverage: Read committed proposal, ordinary review, module copies, governing trigger, proposal template and candidate test assertions. Preserved cadence, high-risk controls, accepted obligations and wide verification. Did not run tests, validate reported review savings, audit runtime readers, or assess future implementation wording.
