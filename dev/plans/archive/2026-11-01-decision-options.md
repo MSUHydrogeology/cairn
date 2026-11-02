@@ -1,7 +1,7 @@
 # Plan: Show decision options' operating costs
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-decision-options.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Make the additions and operating costs of Maintainer decision options visible before a choice.
@@ -190,3 +190,14 @@ Common gates passed: `claim_check.py` (15 changed Markdown files); `check_cairn.
 Plan-specific checks: fresh default install contained the focused-test reminder and required integration/security wording; selected-module install contained adopter security guidance. The authorized weekly-check/manual-review comparison disclosed costs and lost safeguard, rejected omitting the recurring check, and confirmed no inventory is needed when a routine Decision adds no recurring burden. Model-evidence examples were rechecked, including no-inventory and configured-suite-plus-safety cases. Five security cases and two predicate mutations were covered by `test_security_module_trigger_mutations_are_caught` against both module copies. Lifecycle SVG was rendered at 700×390; route, labels and accessible text matched, and a false light-needs-plan mutation was detected.
 
 Omissions: external links were not probed; per-file durations are unknown; 46 unpinned governing-file readers were omitted by the selector; full-tree certification and folder sweepers remain separate. **Elapsed**: automated test runs 190.28 s total; prose gates and manual/install/render checks took additional unmeasured time. **Tokens**: unknown.
+
+
+## Dispositions -- archive preparation -- 2026-11-01
+
+**Dispositions**: none. Issue #40 is closed after all three requested outcomes and final Boundary B were verified. No deferred follow-up remains. Whole-tree certification is separate from this plan's required checks.
+
+## Lasting-truth migration -- 2026-11-01
+
+**Evidence shipped**: `d7434ba616289d8f1c1927d23784ab1a6b33b876` implements the accepted decision guidance and supporting template alignment. The authorized option comparison, installed-copy inspections, mapped test union, gates and wide Boundary B are recorded above. **Evidence deferred**: none. **Deferred evidence home**: N/A. Whole-tree certification remains a separate authorized ceremony.
+
+**Fidelity sign-off**: implementation commit `d7434ba616289d8f1c1927d23784ab1a6b33b876` matches the accepted `## Proposal` in `dev/proposals/archive/2026-11-01-codex-decision-options.md`, accepted at its `## Decision`: choices disclose meaningful cost and loss, the recommendation is separate, no-waiver authority remains, and material recurring additions are named without requiring an inventory for routine decisions.

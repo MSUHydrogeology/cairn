@@ -36,6 +36,8 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Major changes
 
+- **Changed: Decision options.** Guidance asks agents to show meaningful costs and losses for material choices, name a credible simpler option, and separate the recommendation. ([plan](dev/plans/archive/2026-11-01-decision-options.md))
+
 - **Changed: Focused testing example.** The shipped plan example points to tests for changed files and retains required integration and security checks. ([plan](dev/plans/archive/2026-11-01-focused-testing-example.md))
 
 - **Added: Changelog template.** Every new Cairn install includes a root changelog with Major and Minor sections, ordered entry types, titled major entries, and guidance for keeping, optionally adapting, or saving existing history before starting fresh. Normal install preserves an existing file; upgrades stage new changelog collisions for review. ([plan](dev/plans/archive/2026-11-01-changelog-template.md))
