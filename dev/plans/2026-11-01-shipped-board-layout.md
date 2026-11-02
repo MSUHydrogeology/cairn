@@ -39,3 +39,19 @@ In separate copies, remove a slot, invert a guarded scope condition, and move a 
 **Boundary C:** Independent code reviewer falsifies the committed implementation with the tightest targeted checks, reports missing tests and coverage gaps; separate Security code review remains owed.
 
 **Boundary B:** After code review and any targeted re-review, run wide integration on a clean, unchanged final commit under canonical Python 3.13.x: mapped iteration and integration/workflow selections for the reviewed range, affected public paths, standing gates and plan-specific checks. Record the full SHA and range, interpreter, clean pre/post state, commands and counts, elapsed time, tokens or `unknown`, non-pass dispositions, omissions, timing misses and slow-test reporting. A missing check remains open. No full-tree certification or re-anchor is authorized here.
+
+## Plan review -- Codex (gpt-6.1-sol) -- 2026-11-01
+
+**Obligation:** Internal
+
+**Verdict:** Support as framed; no blocking findings.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. C1 carries the accepted layout and preserves the slots, installed duties and existing boards. The documentation plan's coordination record at `260231cd` assigns this plan the single rewrite and retains its final-board audit.
+2. **Best alternative.** Keep the existing template: it avoids a rewrite but leaves the requested decision-first layout undelivered. Reusing the installer and reader avoids another behavior contract.
+3. **What would show it wrong?** A lost duty, changed seed, overwritten custom board or invisible wait. C1 and verification require comparison with the original, real installations and upgrade, and mutations. `_roadmap_waits` in `tools/board.py` recognizes a marker at the beginning of a line after an optional bullet, not inside a table cell; the standalone example and real-entry check address that constraint.
+
+**Elapsed:** approximately 3 minutes; **Tokens:** unknown.
+
+**Coverage:** Read plan at `2662ddf9`, accepted proposal, original template, board reader and documentation coordination commit. Did not run installs, upgrades, tests or mutations, inventory all consumers, or assess future rewritten wording. Separate Security Review remains owed.
