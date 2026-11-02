@@ -1,7 +1,7 @@
 # Plan: Align lifecycle descriptions
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-lifecycle-description.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Correct four published descriptions so readers can see when a proposal needs a plan.
@@ -150,3 +150,7 @@ Prior finding: Quickstart's unconditional reviewed-plan wording
 **Bounding**: ACCEPTED — challenged visual routing and conditional-review semantics. Evidence reports the shared 667 and remainder 942 passes under Python 3.12.9 and targeted later checks. Missing pre/post clean-state records, an unretained remainder command and later edits limit that evidence; this review does not certify it as final clean-tree verification.
 
 Coverage: examined accepted scope, committed changes, rendered branch, accessible text, implementation evidence and ordinary review. Did not rerun suites or mutation, test browser themes or certify the tree. The scope allowance is recorded; no further reached fence/deviation appears. Final wide Boundary B on clean canonical-Python bytes remains owed.
+
+## Code review response -- Codex (GPT-6) -- 2026-11-01
+
+Ordinary code review `214b49a7` and Security Review `7fe9e119` both ACCEPT; prior findings are closed by the corrections named in those records. No further implementation edits are needed from these passes. The plan moves to `ready-to-archive`. This does not complete Boundary B: wide final verification on a clean final commit under canonical Python 3.13.x remains owed, and the plan must not archive before that evidence is appended. Elapsed: approximately 3 minutes; tokens: unknown.
