@@ -65,3 +65,17 @@ The revised descriptions disagree with the operative rules, obscure an existing 
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Proposal review -- Codex (GPT-6) -- 2026-11-01
+
+**Verdict**: Accept as framed; no blocking findings.
+
+**Foundations**:
+
+1. **Should it happen?** Yes. The README and release process describe a plan for the deliberate lane, while `AGENTS.md` says light proposals have no plan; the published lifecycle itself distinguishes light at its tier rules. The accepted cut-the-apparatus Decision makes light the default and leaves the outer trivial lane untouched (cut 2 and Decision, 2026-10-30).
+2. **Best alternative.** Correct only the README and diagram: less work, but the release procedure and lifecycle explanation would retain conflicting descriptions. Four existing surfaces address the identified cause without new machinery.
+3. **What would show it wrong?** A revised description requiring a plan for light, weakening the high-risk or new-boundary trigger, or confusing the outer lanes with proposal tiers; compare the text and diagram with the accepted cut 2 and `AGENTS.md`.
+
+**Advice**: The quickstart introduction calls its illustrated deliberate process the “heavy lane” (`docs/quickstart.md`, note on the example), which can also blur lane and tier. Consider a separately scoped correction; this proposal's four-surface scope does not cover it.
+
+**Coverage**: Read the proposal at `f8260cdb`, its cited accepted cut and Decision, committed lifecycle, README, release procedure and shipped rules; did not inspect implementation, run an install or tests, or perform Security Review. Elapsed time and token use: unknown.
