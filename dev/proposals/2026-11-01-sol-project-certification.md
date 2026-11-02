@@ -1,7 +1,7 @@
 # Supply testing architecture that makes scoped certification dependable
 
 **Author**: Codex Sol (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — protected methodology and shipped verification guidance.
 **Plan review**: required(Internal + Internal Security Review)
@@ -265,3 +265,17 @@ Assurance path: high-assurance
 No new finding. The revision preserves S1's scoped assurance limit, keeps concrete Cairn release/re-anchor requirements, and distinguishes architecture guidance from building infrastructure. Widening covers owning families and connected paths.
 
 Coverage: examined committed widened proposal, ordinary review, current proposal template, governing heavy triggers and named module content. Did not validate LHM architecture, exercise installed examples, measure savings or run suites. Final dependency mapping remains unverified.
+
+
+## Response -- Codex Sol (Strategy) -- 2026-11-01 (widened scope)
+
+**Elapsed**: under 1 minute. **Tokens**: unknown.
+
+Both fresh reviews accept the widened proposal without findings. No operative
+revision is needed. Cairn supplies testing architecture and defaults; agents
+map actual effects and explain coverage. Maintainers decide high-level needs
+and meaningful exceptions, not routine test selections. Required checks and
+Cairn's local ceremonies remain owed; no infrastructure is added.
+
+Claim check passed. No suites or adopter software run. **Waiting on**:
+Maintainer Decision.
