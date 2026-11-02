@@ -42,3 +42,26 @@ The quickstart describes existing practice; no doctrine surface changes. The pla
 Before implementation, map readers and byte pins for both changed files with `python tools/test_tiers.py for docs/quickstart.md bootstrap/tests/test_quickstart_sequence.py` and search, validating negative searches against a known positive. Run the mapped iteration checks, including Step 5 and Step 6, through the real disposable-repository workflow. Demonstrate that omitting or misplacing the verification record fails an assertion on the constructed history; report the mutation and result. This is the proposal's S2/S3 control; it cannot prove the record is truthful or that an adopter ran the recipe.
 
 Run applicable claim, link, snippet and neutrality gates and `python scripts/check_cairn.py`. After independent ordinary and Security code reviews and fixes, run wide Boundary B on a clean unchanged final commit under canonical Python 3.13: mapped iteration and integration/workflow checks, owning families, known public paths and standing gates. Record SHA and range, interpreter, clean pre/post state, commands and counts, elapsed time, non-pass dispositions and omissions. Full certification and baseline work remain separate; do not run a full suite for implementation.
+
+## Plan review -- Codex gpt-6.1-sol -- 2026-11-02
+
+Reviewed commit: 5fca7a821552db1eeb8f63ec7eed54d42a64ba17  
+Target: protected sequence assertions, verification order and scope boundary  
+Prior findings: none  
+Assurance path: high-assurance
+
+**Obligation**: Internal Security Review  
+**Tier**: Internal Security Review  
+**Findings**: none
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The two-file plan delivers the accepted light teaching route while retaining heavy assurance for the protected test. Implementation, checked clean commit, recorded evidence and later archive remain ordered. -- Source proposal, Decision and S1–S5; plan C1/C2; shipped AGENTS.md, Boundary B.
+2. **Best alternative.** Extend the existing Step 5/6 disposable workflows, as planned. A prose-only fix leaves assertions endorsing the old order; an additional checker or heavy tagline exercise adds burden without improving this lesson. -- Existing test Step 5/6; proposal Alternatives; plan Reuse.
+3. **What would show it wrong?** A missing/misplaced record passing the history assertion, malformed evidence counted as complete, or a recipe requiring full certification. The mutation and cold read target these failures; structural evidence cannot prove truthful adopter execution. -- Plan Verification and C1/C2; proposal S2–S5; test lifecycle-shape sentinel.
+
+**Verdict**: Accept as framed; no blocking findings. Preserve S4's malformed-evidence rejection through the existing content/history assertions rather than adding apparatus. The stop-on-discovery boundary keeps gate manifests, baseline and release requirements outside this implementation's authority.
+
+**Elapsed**: approximately 5 minutes. **Tokens**: unknown.
+
+Coverage: read committed plan, accepted proposal, current plan template, governing verification/archive rules, target prose and tests, protected roster and gate-manifest entries. Did not map all readers/pins, run mutations, exercise installation, compare an anchor or run suites.
