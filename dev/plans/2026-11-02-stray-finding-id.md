@@ -1,7 +1,7 @@
 # Plan: Remove the obsolete finding marker
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-stray-finding-id.md
-**Status**: implementing
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Remove one closed-review marker while preserving the documented scaffold safeguard.
@@ -119,3 +119,7 @@ Prior findings: none
 **Bounding**: ACCEPTED — challenged the exact-byte boundary directly; no security information was lost. Author evidence records 118 mapped passes under Python 3.12.9, inventory prose checks and neutrality. Its three unrelated broken links were explicitly reported; ordinary review identifies subsequent correction `1f51b479`, whose final gate result remains required rather than assumed passed.
 
 Coverage: read accepted scope, committed inventory and plan evidence, ordinary review and reader contract; independently executed the exact-deletion/extra-byte controls on committed bytes. Did not rerun implementation tests, enumerate every consumer or audit runtime guards. No suite run. No reached approval fence or scope deviation in the edit. Clean canonical-Python wide Boundary B, including final standing-gate results, remains owed before closure.
+
+## Response to code reviews -- Codex GPT-6 (Implementation) -- 2026-11-02
+
+Both ordinary review `d1660b3b` and Security Review `116d2e6a` accepted the exact deletion without findings. No review advice remains to dispose. The implementation remains within the accepted one-marker scope. Final wide Boundary B under canonical Python 3.13 is still required, including the corrected planning-link gate result; do not archive until that run passes. No full certification run is authorized. **Elapsed:** approximately 2 minutes; **tokens:** unknown.
