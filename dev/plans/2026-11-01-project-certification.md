@@ -105,3 +105,21 @@ Committed implementation: `1bac4fb1` through `9c110c14`; reviewed range begins a
 Installed examples: the `solo-greenfield` scaffold installed core AGENTS and plan/proposal templates without `testing-discipline`; the `collaborative-team` scaffold installed the optional module, byte-identical to `dev/modules/testing-discipline.md`. Applying the installed guidance: a local reader maps to its unit/contract checks and a real entry path; a shared solver widens to its owner family, numerical benchmark and consumers; uncertainty is recorded and keeps known missing evidence open; an existing release check remains required. These are guidance exercises, not runs against an adopter's code or scientific model.
 
 Checks: claim_check passed on all 12 changed documents; link_check passed on 11, excluding the self-hosted module whose existing optional sibling link does not resolve in Cairn's source home; snippets passed on 12; neutrality passed (0 failures, 43 informational findings); `check_cairn.py` passed (185 Markdown files, no issues, 93 external links not probed); `git diff --check` passed. No full-tree certification ran. Elapsed: approximately 20 minutes; tokens: unknown.
+
+## Code review -- Codex Sol (Reviewer) -- 2026-11-02
+
+Reviewed commit: 9c110c14
+Target: 6b8e8924..9c110c14 and iteration evidence at d0e537c4
+Prior findings: none
+**Verdict**: REVISE. **Bounding**: WIDER RUN REQUIRED after fixes.
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Not yet: new affected-check guidance is useful, but installed core still mandates full-suite release certification and its claim covers all ancestors. -- `templates/core/AGENTS.md`, Verification; plan C2.
+2. **Best alternative.** Revise the existing certification paragraphs and their existing tests to distinguish adopter scoped claims from Cairn's retained local ceremony, rather than add another mechanism. -- Plan Scope and C2; `bootstrap/tests/test_certifying_run_rule.py`.
+3. **What would show it wrong?** An installed core-only project can certify a local change without unrelated suites, while its claim names tested scope and omissions and an existing mandatory release check remains owed. -- Plan C2 and Verification.
+
+**B1 — blocking, accepted C2 unmet.** `templates/core/AGENTS.md` still directs the configured full suite before a release cut and says it certifies every preceding change; `docs/methodology/plans.md` repeats both. The new optional-whole-suite paragraph contradicts those rules. No scoped-certification claim rule was found in core, methodology plans or shipped plan/proposal templates (`git grep` for scoped certification and claim omissions at 9c110c14); thus C2's commit, scope, results, omissions and reopening semantics are not delivered. Existing `test_certifying_run_rule.py::test_the_governing_rule_names_its_integration_points_and_its_failure_path` still requires the universal ancestor claim on adopter core and methodology. Close by delivering C2 in shipped guidance, preserving Cairn's local full-tree requirements and existing obligations, and updating existing assertions to distinguish them. Exercise the accepted installed examples against the corrected bytes.
+
+Coverage: compared committed core, methodology, module, changed tests and iteration record to C1/C2. Read-only targeted searches only; no suite, mutation, installed example or Security Review. Iteration union predates final bytes; final wide Boundary B remains owed.
