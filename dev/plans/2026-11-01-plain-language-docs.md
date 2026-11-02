@@ -360,3 +360,50 @@ The phase-0/readiness report now covers the identified missing group; the four f
 The response identifies install and module mapping entry points, reader searches, gate triggers and known-positive controls, and reports the previously deferred methodology reader tests. This closes the mapping finding without requiring a per-file ledger. The reported checks do not prove prose equivalence; source comparison remains the basis for meaning. Final wide Boundary B and any independent Security Review disposition of the new changes remain due.
 
 **Coverage:** Inspected the response and four marker diffs and relied on the implementing agents' group and check reports. Did not reread every document, independently repeat their checks, or run a suite.
+
+## Implementation verification -- Codex (Implementation) -- 2026-11-01
+
+The wide mapped selection ran once on a clean clone at `8362b863` under
+canonical Python 3.13.13. `test_tiers.py for` selected 33 test files from the
+reviewed range `7e12719f..8362b863`; its changed-passage guard omitted 37
+additional `AGENTS.md` readers. Pytest ran once with the 33 selected files,
+collected 1,818 nodes, and reported 1,803 passed and 15 failed in 106.25
+seconds. The clone was clean before and after the run.
+The 33 files were `test_ceremony_review_report.py`,
+`test_certifying_run_rule.py`, `test_check_release_publication.py`,
+`test_default_security_stance.py`, `test_doc_governance.py`,
+`test_finalize_retired_living_state.py`, `test_incident_trackers_module.py`,
+`test_intents_tool.py`, `test_loop_fidelity_gate.py`,
+`test_model_selection_stub.py`, `test_module_roster.py`,
+`test_onboarding_seed_roster.py`, `test_onboarding_slot_substitution.py`,
+`test_oracle_activation.py`, `test_portable_security_sweeps.py`,
+`test_presets.py`, `test_prune_tools.py`, `test_quickstart_sequence.py`,
+`test_replacement_tools.py`, `test_review_stance_in_shipped_files.py`,
+`test_review_sweep_ships.py`, `test_scaffold.py`,
+`test_scientific_check_guidance_ships.py`, `test_scope_reduction_trap.py`,
+`test_session_routines.py`, `test_skill_contract.py`,
+`test_skills_onboarding.py`, `test_status_vocabulary_advisory.py`,
+`test_upgrade_added_slots.py`, `test_upgrade_module_additions.py`,
+`test_verification_boundaries.py`, `test_verify_stems.py`, and
+`test_writing_rules_ship.py`.
+Fourteen `test_portable_security_sweeps.py` nodes failed because the environment
+refused `_Canary`'s loopback socket bind. The remaining failure,
+`test_writing_rules_ship.py::test_cairns_own_copy_says_what_it_ships`, exposed
+the source-citation mismatch corrected in `5fec62c4`.
+
+On the same clone, `check_cairn` passed (187 Markdown files; 91 external links
+not probed), the plan claim check passed, `link_check` passed (187 Markdown
+files; 92 external links not probed), the snippet check passed (503 documents;
+no drift), and neutrality passed (fail=0, info=43).
+
+After `5fec62c4`, the implementing agent reports that the focused citation
+equality test passed. On a clean clone of that commit under Python 3.13.13,
+the 14 previously socket-blocked nodes passed with loopback available (14
+passed in 7.17 seconds). Ordinary and Security Reviewers report no findings on
+the citation correction.
+
+The full 33-file selection has not been repeated after the correction. Its
+final check remains open pending Maintainer disposition; these results do not
+claim a fully passing Boundary B. Per-file timings for the 33-file run were
+not captured, so its slow-file list is unknown. No full suite ran. Elapsed:
+unknown; tokens: unknown.
