@@ -67,11 +67,11 @@ SHALL behavior" as an aid, not a required grammar or parser. A bug example
 states current, expected and unchanged behavior. Extend the existing
 acceptance cells; do not add another specification file.
 
-**6. Demonstrate the distinction.** Include concise scientific and ordinary
-software examples showing a useful oracle, a vacuous check and a deliberately
-broken case. Examples must distinguish established behavior from physical
-validity. Reuse the existing scientific-minimal example where suitable;
-do not build another demonstration project.
+**6. Demonstrate test-first.** Show scientific and ordinary software examples:
+a useful oracle, vacuous check and deliberate fault. Observe the intended
+failure before implementing new behavior. Distinguish established behavior
+from physical validity. Reuse the scientific-minimal example where suitable;
+do not build another project.
 
 ## Rationale
 

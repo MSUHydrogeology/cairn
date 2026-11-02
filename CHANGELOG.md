@@ -63,6 +63,8 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Minor changes
 
+- **Added** -- The v0.7 delivery sequence links the first proposals for suite consolidation, fault-centered testing and architecture/reuse, with a grouped closeout for completed strategy notes. These are proposed work, not shipped capabilities. ([sequence](dev/strategy/2026-11-02-codex-v07-delivery-sequence.md))
+
 - **Added** — Cairn can prepare a forward AST correction with a guided, independently reviewed workflow without reconstructing old history. ([plan](dev/plans/archive/2026-11-02-forward-ast-preparation.md))
 
 - **Added** — Release publication has a read-only check for the published Release and the signed tag's remote commit, and the guide now separates pushing the signed tag from publishing its Release. ([plan](dev/plans/archive/2026-10-30-tag-release-distinction.md))

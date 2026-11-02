@@ -39,6 +39,7 @@ symbol analysis explicit. Include source revision, locations, omissions and
 parse errors. Reuse existing collection/classification in `tools/gauge.py`
 and `scripts/measurements.py` where suitable; do not create competing
 history extractors or force Cairn's categories onto adopters.
+Write diagnostics as the action to fix, with incomplete evidence explicit.
 Ship `templates/modules/team-gated/code_map.py` with its byte-identical
 self-hosted copy at `tools/code_map.py`.
 
@@ -69,6 +70,8 @@ and growth; keep all four questions visible. Static symbols cannot prove
 capability or unused code: semantic views need cited workflows/declarations,
 with missing evidence shown. Record annotation effort, understanding,
 false alarms and misses. A finished four-view interface is not promised.
+Compare bottom-up folder summaries with map-first discovery; do not presume
+a new maintained README in every folder is worthwhile.
 
 **6. Retire completed strategies.** This implementation plan owns the
 one-time v0.7 strategy closeout assignment, recorded as one grouped board
@@ -105,7 +108,6 @@ Proposed paths:
 - `templates/modules/team-gated/code_map.py`
 - `tools/code_map.py`
 - `bootstrap/tests/test_code_map.py`
-- `dev/strategy/2026-11-02-codex-v07-delivery-sequence.md`
 
 ## Evidence / verification plan
 
