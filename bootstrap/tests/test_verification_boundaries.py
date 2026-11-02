@@ -463,11 +463,14 @@ def test_both_proposal_templates_reject_speed_as_coverage() -> None:
         required = (
             "speed alone does not establish affected coverage",
             "Unknown dependencies are not claimed as covered",
-            "Full tree certification is a separate authorized integration run",
             "test homes",
             "public paths",
         )
         assert not [token for token in required if token not in normalized], path
+        if path == ADOPTER_PROPOSAL_TEMPLATE:
+            assert "Broader certification is separate and does not replace a missing check" in normalized
+        else:
+            assert "Full tree certification is a separate authorized integration run" in normalized
 
     assert "There is no separate slow / networked tier" not in _read(
         SELF_PROPOSAL_TEMPLATE
