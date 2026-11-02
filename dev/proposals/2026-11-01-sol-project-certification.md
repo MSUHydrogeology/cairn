@@ -13,8 +13,7 @@
 Cairn supplies testing architecture; agents apply coverage defaults. Scientists
 need not design certification or approve coverage per proposal.
 Default to certifying affected behavior, with broader checks for shared
-boundaries and project operations. This requires better integrated guidance,
-not custom testing infrastructure. Existing required checks remain owed.
+boundaries and project operations. Improve guidance; add no infrastructure. Required checks remain owed.
 
 ## Context
 
@@ -43,7 +42,7 @@ formats; integration checks for connected components; and small workflow
 checks through real entry points. Use existing directory/tier arrangements.
 For simulations, retain real equations on small domains, analytical or
 convergence benchmarks when relevant, and work-specific long-run evidence.
-Runtime does not establish coverage.
+Runtime cannot prove coverage.
 
 **Select by effects.** The implementing agent searches changed behavior,
 callers, imports, configuration/data readers and public entry points, then
