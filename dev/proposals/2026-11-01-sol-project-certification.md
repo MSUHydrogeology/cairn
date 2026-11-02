@@ -1,7 +1,7 @@
 # Supply testing architecture that makes scoped certification dependable
 
 **Author**: Codex Sol (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — protected methodology and shipped verification guidance.
 **Plan review**: required(Internal + Internal Security Review)
