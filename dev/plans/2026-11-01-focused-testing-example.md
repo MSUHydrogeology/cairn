@@ -1,7 +1,7 @@
 # Plan: Align the focused-testing example
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-focused-testing-example.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Correct the shipped testing example so it illustrates focused testing without weakening required verification.
