@@ -152,3 +152,21 @@ B1 and S1 accepted: `3d168701` replaces the adopter-wide release-suite and ances
 On a separate copy of `4358247d`, canonical `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13) ran `test_certifying_run_rule.py` and `test_verification_boundaries.py`: 62 passed in 0.15 seconds. The earlier run on `3d168701` had 61 passed and one failed stale assertion; the latter commit fixes it. Link and snippet checks passed for five documents, neutrality reported zero failures (43 informational), and `check_cairn.py` passed on 185 files after initializing Git in the copy (94 external links not probed). Claim checks and diff checks passed on the changed documents before commit. No full suite ran.
 
 The corrected `solo-greenfield` and `collaborative-team` installs succeeded. Core works without testing-discipline; the team module matches its source. Applying installed guidance, a local reader maps its own tests and entry workflow without an unrelated suite; a shared solver widens to benchmarks and consumers; an uncertain dependency leaves known missing evidence open; and a mandatory release check remains required. These are guidance exercises, not executions of adopter software. The new claim names commit, components, checks, results and omissions and reopens upon contradictory failure. Targeted review by the same ordinary and Security reviewers and final wide Boundary B remain owed. Elapsed: approximately 9 minutes; tokens: unknown.
+
+## Targeted code review -- Codex Sol (Reviewer) -- 2026-11-02
+
+Reviewed commit: 4358247d5e52e1639a4a7b28e63f9618120bf22b
+Target: B1 correction `3d168701..4358247d` and response `5e21d5e7`
+Prior findings: B1
+**Verdict**: B1 closed; final wide Boundary B remains owed.
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Shipped core now names the tested commit, scope, results and omissions, excludes unrelated and earlier work, reopens contradicted claims and preserves required checks. -- `templates/core/AGENTS.md`, Verification.
+2. **Best alternative.** The correction revises existing guidance and assertions, without a new decision or mechanism; retaining the prior universal rule would leave C2 unmet. -- `docs/methodology/plans.md`; `bootstrap/tests/test_certifying_run_rule.py`.
+3. **What would show it wrong?** A corrected core-only example forcing an unrelated suite or waiving a required release check would contradict the correction. The implementation response records both examples applied to corrected installs. -- Response to code reviews at `5e21d5e7`.
+
+Cairn's own full-tree pair and triggers remain in root `AGENTS.md`; the revised test distinguishes that local contract from adopter scope. Agents still select routine coverage without per-change Maintainer approval. -- Root and shipped Verification; changed certifying-rule test.
+
+Coverage: read committed correction, affected assertions and implementation response. No suite, mutation or independent installation run; the author reports 62 targeted passes and installed guidance exercises. Final wide Boundary B and separate Security review remain owed.
