@@ -4,6 +4,7 @@
      never resolve in Cairn's own tree; this keeps `check_cairn` clean). -->
 
 # Documentation Plan
+Written in Cairn Plain Language 1.0
 
 **Status**: living document.
 

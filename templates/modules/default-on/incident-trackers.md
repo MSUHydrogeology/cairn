@@ -12,15 +12,13 @@ nightly migration step; the payoff is that the rate-limit gate's
 location like `dev/measurement/incident_log.md`), plus a goodnight **incident-
 tracker migration** step in the session-routines / goodnight doctrine.
 
-The incident-trackers module is the **deployment-side measurement
-substrate** the rate-limit gate doctrine (`docs/methodology/rationale.md` >
-"Adaptive-doctrine rate-limit gate") evaluates against. Cairn's
-doctrine names the structural commitment ("no doctrine change from a
-single incident; recurrence ≥2 in a rolling window triggers
-adjustment"); this module ships the substrate that makes the
-commitment enforceable. Without it, the rate-limit gate is normative
-but unreachable — adopters know the doctrine but can't observe their
-own rate against it.
+The incident-trackers module gives adopters a way to measure the recurrence
+that the rate-limit gate doctrine (`docs/methodology/rationale.md` >
+"Adaptive-doctrine rate-limit gate") uses. The doctrine says not to change
+doctrine after one incident; two or more incidents with the same shape in a
+rolling window trigger an adjustment. This module supplies the tracker and
+migration step needed to count those incidents. Without them, adopters could
+not measure whether the trigger had been met.
 
 ## What this module is
 

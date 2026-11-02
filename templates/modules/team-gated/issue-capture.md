@@ -48,9 +48,8 @@ tracker they run:
   User Agent's most common output; cheap to file, valuable in
   aggregate.
 
-Labels are the project's classification axes (area, severity, kind)
-— **labels-as-axes**, mapped to the tracker's label system by the
-adopter.
+The adopter maps project categories such as area, severity, and kind to the
+issue tracker's labels.
 
 ### Capture vs. fix inline
 

@@ -1,4 +1,5 @@
 # Architecture Review Frame — {{project_name}}
+Written in Cairn Plain Language 1.0
 
 This document is the **rubric** for top-down architecture review — the
 lenses an architecture reviewer applies, plus the starting biases the

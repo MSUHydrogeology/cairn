@@ -13,13 +13,12 @@ it.
 **Adds to:** a new `dev/architecture_review.md` (a forkable rubric
 frame, installed alongside this doctrine).
 
-This module is a **triggered remediation / on-ramp tool**, not a
-standing routine. The invariant kernel reviews *changes* (code review)
-and, where the `security-review` module is installed, *trust boundaries*;
-the long-range north star is the vision. Nothing in the kernel examines
-**whole-system architecture coherence and extensibility** — the altitude
-*between* a per-change review and the vision. This module fills that gap
-*when an adopter needs it*.
+This module provides a review when an adopter needs one; it does not add a
+standing routine. Cairn's core process reviews individual changes. When the
+`security-review` module is installed, it also reviews trust boundaries. The
+project vision sets the long-term direction. Those parts do not examine how
+well the whole system's architecture fits together or can grow. This module
+provides that system-wide review when an adopter needs it.
 
 ## What it ships
 
@@ -33,9 +32,8 @@ the long-range north star is the vision. Nothing in the kernel examines
 ## How it composes
 
 * With **`codebase-readiness-report`** (the diagnostic companion): the
-  readiness report tells you *whether* you carry architectural debt;
-  this frame is *how* you examine it. Fill the report first to decide
-  whether you need the frame.
+  readiness report helps identify architectural debt; this frame helps
+  examine it. Fill out the report first to decide whether to use the frame.
 * The frame is a **rubric**, not a verdict. It is cited by proposals and
   plans; a *review program* (a proposal + an optional plan) applies the
   lenses to produce assessment artifacts carrying evidence markers

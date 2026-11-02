@@ -28,19 +28,18 @@ domain**, so each domain's roadmap board stays legible. The
 proposal / plan lifecycle itself is unchanged — only the ownership
 and the review-independence mechanism specialize.
 
-### Code-bearing cross-domain changes: the Cross-Domain Proposal
+### Changes that touch multiple domains: the Cross-Domain Proposal
 
-A roster that separates a Strategy role (which authors no code-edit
-proposals) from per-domain implementers has a structural hole: a
-code-bearing change that crosses domains belongs to no single
-Domain Agent, and Strategy cannot author the code edit. Such
-changes get orphaned — or land without an owner accountable for the
-code.
+If the Strategy role does not author code-edit proposals and each Domain
+Agent works in one domain, a code change that touches several domains has no
+clear owner. Strategy cannot author it, and no single Domain Agent owns all
+the affected work. The change can be orphaned or land without anyone
+accountable for it.
 
-The fix: a **Cross-Domain Proposal** names a **lead Domain Agent** —
-the owner of the most-affected domain — plus **co-author Domain
-Agents** for the other domains it touches. The lead drives the
-proposal → plan → implement arc; the co-authors contribute and
+Use a **Cross-Domain Proposal** to assign ownership. It names a
+**lead Domain Agent** — the owner of the most-affected domain — plus
+**co-author Domain Agents** for the other domains it touches. The lead
+drives the proposal → plan → implement arc; the co-authors contribute and
 review the parts in their domains. The Strategy role may author the
 *non-code* architecture / process framing, but a code-bearing
 proposal always has a Domain-Agent owner. Review independence still

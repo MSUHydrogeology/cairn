@@ -37,15 +37,13 @@ Merged into the project's examples guide:
 > a snippet, and belongs in the docs under the drift gate, not the
 > gallery.
 >
-> **Smallest-scale-first.** The gallery includes at least one *minimal*
-> example -- the whole loop at the smallest scale -- so a newcomer sees
-> the shape before the full-apparatus cases.
+> **Start with the smallest example.** Include at least one *minimal*
+> example that shows the whole workflow at its smallest scale. This lets a
+> newcomer see the basic shape before reading larger examples.
 >
-> **Disassemble / reassemble to learn.** A worked example doubles as a
-> teaching surface: a learner takes a complete example apart and rebuilds
-> it (or adapts it to a near neighbor) to internalize the apparatus,
-> rather than reading it passively. The example is the substrate; the
-> take-apart/rebuild is the exercise.
+> **Learn by taking an example apart, then rebuilding it.** Have a learner
+> study a complete example and rebuild it or adapt it to a similar case.
+> This makes the example an exercise, not just something to read.
 
 ## Learn it deeply
 
