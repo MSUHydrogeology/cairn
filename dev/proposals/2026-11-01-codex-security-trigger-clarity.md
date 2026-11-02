@@ -1,7 +1,7 @@
 # Distinguish another input from a wider trust boundary
 
 **Author**: Codex Sol (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — changes a shipped security-review rule.
 **Plan review**: required(Internal + Internal Security Review)
