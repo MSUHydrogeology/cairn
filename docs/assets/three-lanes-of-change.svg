@@ -9,7 +9,8 @@
   test, and a code review); and the deliberate lane (a new feature, a
   contract change or a high-risk surface: a proposal, its review, the
   Maintainer's decision, then branches: light skips the plan and plan review;
-  a non-trivial standard/heavy proposal passes through both before the change.
+  a non-trivial standard/heavy proposal uses a plan and, when required, a
+  plan review before the change.
   Named high-risk surfaces and added or widened
   trust boundaries trigger heavy. The change then has its test and a code
   review. Footer: the deliberate test is checked first, ordinary ceremony
