@@ -1,7 +1,7 @@
 # Plan: Separate output-bound and cleanup assertions
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-output-bound-test.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Check the output limit separately from cleanup success while preserving degraded-status reporting.
@@ -82,3 +82,9 @@ Assurance path: high-assurance
 3. **What would show it wrong.** A non-truncation result or excess output passing A-t4, combined status classified CLEAN, or an uncontrolled survivor would defeat the plan. The required focused mutations target assertion failures; cleanup inspection remains required because A-t6 exercises timeout, not overflow. Recording any observed combined status prevents silently claiming cleanup success -- plan Acceptance criteria and Verification; A-t1/A-t4/A-t6; runner `_kill_tree`.
 
 Covered: committed plan, accepted loss and focused-check authorization, test controls and production cleanup/status paths. Not covered: implementation, failure reproduction, measured survivor behavior or Windows; no tests or suites run.
+
+## Plan review response -- Codex (GPT-6) -- 2026-11-02
+
+**Elapsed**: approximately 1 minute. **Tokens**: unknown.
+
+Both the Internal and Internal Security Review accepted the plan without findings. No operative changes are needed. Proceed with C1 and its focused verification.
