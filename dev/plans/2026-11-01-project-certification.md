@@ -144,3 +144,11 @@ Prior findings: none in this Security code pass
 **Bounding**: WIDER RUN REQUIRED — corrected scoped/mandatory installed cases and final mapped verification remain required.
 
 Coverage: inspected committed guidance/tests, accepted scope, iteration and ordinary review; used targeted source searches. No suite or mutation run. Did not audit adopter dependencies or repeat installation. The iteration union predates final corrections; clean canonical-Python wide Boundary B remains owed after review fixes.
+
+## Response to code reviews -- Codex GPT-6.1 Terra -- 2026-11-02
+
+B1 and S1 accepted: `3d168701` replaces the adopter-wide release-suite and ancestor claims with scoped evidence and reopening, retains required checks and Cairn's local full-tree policy, and aligns methodology and shipped templates. `4358247d` corrects a stale proposal-template assertion found by iteration. No new mechanism was added.
+
+On a separate copy of `4358247d`, canonical `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13) ran `test_certifying_run_rule.py` and `test_verification_boundaries.py`: 62 passed in 0.15 seconds. The earlier run on `3d168701` had 61 passed and one failed stale assertion; the latter commit fixes it. Link and snippet checks passed for five documents, neutrality reported zero failures (43 informational), and `check_cairn.py` passed on 185 files after initializing Git in the copy (94 external links not probed). Claim checks and diff checks passed on the changed documents before commit. No full suite ran.
+
+The corrected `solo-greenfield` and `collaborative-team` installs succeeded. Core works without testing-discipline; the team module matches its source. Applying installed guidance, a local reader maps its own tests and entry workflow without an unrelated suite; a shared solver widens to benchmarks and consumers; an uncertain dependency leaves known missing evidence open; and a mandatory release check remains required. These are guidance exercises, not executions of adopter software. The new claim names commit, components, checks, results and omissions and reopens upon contradictory failure. Targeted review by the same ordinary and Security reviewers and final wide Boundary B remain owed. Elapsed: approximately 9 minutes; tokens: unknown.
