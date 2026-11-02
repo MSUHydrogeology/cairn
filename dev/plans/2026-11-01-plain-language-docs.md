@@ -119,3 +119,20 @@ the plan's final wide Boundary B remains open.
 ## Coordination -- Codex (plan author) -- 2026-11-01
 
 The board-layout plan owns the single rewrite of `templates/core/dev/PLANNING.md`, including its shipped-template marker. This audit will read its final committed version against the accepted Plain Language and marker requirements without repeating that rewrite. Any remaining failure stays open for resolution. Elapsed: approximately 1 minute; tokens: unknown.
+
+## Focused code review -- Codex (Internal Reviewer, gpt-6.1-sol) -- 2026-11-01
+
+Reviewed commits: `4871b8db`, `14f94b1e` on committed tree `260231cd`  
+Verdict: **Blocking finding.** Elapsed: approximately 4 minutes; tokens: unknown.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. The clean-install lock writer refuses a differing tracked file, and migration records mergeable files without a recoverable base (`bootstrap/_scaffold/install.py`, `upgrade.py`). The quickstart correctly describes that tradeoff for existing history.
+2. **Best alternative.** Keep the README-only starting repository and use the shipped changelog; preserving the old fixture would prevent a clean baseline. Include the changelog in both install-commit instructions.
+3. **What would show it wrong?** A real terminal walkthrough that leaves the generated changelog uncommitted defeats the stated outcome; a parity comparison that stops before an operative model-tier obligation would leave drift untested.
+
+**Finding (blocking):** The terminal `git add` command in `docs/quickstart.md` omits `CHANGELOG.md`, although the adjacent agent instruction includes it and the implementation record promises the install commit includes it. A terminal user leaves the new file untracked. Add it to the command and check the actual documented command's resulting commit. The fixture stages the changelog itself, so it does not falsify this omission.
+
+**Evidence:** The model-tier extractor captures the entire current paragraph in both committed copies; separate clause checks retain task floors, authorization and review obligations. Targeted clean Git-backed copy checks under Python 3.12.9: fresh-install node and parity node, 2 passed in 0.27 s. An initial mistyped node selected no tests; corrected above.
+
+**Coverage:** Reviewed the two corrections, relevant lock/migration implementation and committed plan evidence. Did not review the remaining documentation groups, run a suite, or perform Security Review; final wide Boundary B remains open.
