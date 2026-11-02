@@ -27,6 +27,8 @@
 
 **Quickstart correction:** The [reviewed proposal](../proposals/2026-11-02-codex-quickstart-lifecycle-alignment.md) awaits your Decision. The quickstart calls its example heavy but shows only one review, and archives before the required final verification record. It proposes making the example light and correcting the existing sequence test. Accepting permits this correction; declining leaves the misleading example in place. Both reviewers recommend accepting.
 
+**Release review, 2026-11-02:** Focused independent reviews of commits `44ab91e3` through `f65a6dfc` found the quickstart issue above and a citation/Zenodo title mismatch; the latter was corrected in `4d808f31`. The sampled security and supply-chain review found no new code blocker; sampled neutrality and redundancy checks found no confirmed issue. Prior plans record fresh installs and an upgrade, but no current whole-release adopter or real-prior-version upgrade review was found. These are bounded reviews, not complete release clearance: the full test run failed, the forward-plan verification is underway, and final-candidate security, retired-template comparison, release mechanics and publication checks remain. No old anchor was compared.
+
 The sections below retain earlier context and may describe historical states; use this dated section and the linked current plans for present decisions.
 
 ## Purpose and authority
