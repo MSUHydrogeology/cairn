@@ -193,3 +193,26 @@ was unchanged. Interpreter: `/Users/kendal30/conda_envs/lhm/bin/python3.13`
 
 No test suite or wide Boundary B was run. Independent Security code review
 and the plan's final wide Boundary B remain outstanding.
+
+## Code review -- Codex gpt-6.1-sol, Security Review -- 2026-11-02
+
+Reviewed commits: 39b2c9bd400bd24acfd9c30efc7322331e54eb51 and 07c10c3dc872485d9635505168fe7d7f35b2b408  
+Target: quickstart implementation and docstring follow-up; evidence through 3a8488bc  
+Prior findings: ordinary prose-check finding closed by recorded passing check
+
+**Tier**: Security Review  
+**Findings**: raised
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes, but the surrogate Decision still contradicts its revised execution. The recipe correctly selects light and separates implementation, verification and archive; content-at-commit assertions strengthen ordering. -- Quickstart Step 5; `_implement_verify_archive`; `_assert_verification_order`; `_DECISION_TEXT`.
+2. **Best alternative.** Align the existing fixture and assertions; no new checker is needed. Preserve the surrogate limitation and lifecycle assertions. -- Accepted C1/C2; test lifecycle-shape sentinel.
+3. **What would show it wrong?** A test accepting authority inconsistent with its constructed history. In a clean clone at `07c10c3d`, both Step 5/6 nodes passed under Python 3.13.13 (2 passed, 1.14 seconds) while `_DECISION_TEXT` still ordered implementation/archive in one commit. The clone remained clean. -- Those two nodes and fixture literal.
+
+**S1 — Blocking, accepted C2 consistency.** The fixture quotes “Add the tagline and archive the proposal in one commit,” but the helper creates separate implementation, evidence and archive commits. C2 requires the recipe's commands/history to match the exercised sequence. Align the fixture Decision with the revised light-example authorization and assert its operative content in the existing workflow; rerun the two nodes. This closes the mismatch without widening scope.
+
+**Verdict**: Revise the named inconsistency. **Bounding**: WIDER RUN REQUIRED — existing nodes miss the Decision-content disagreement; extend their assertion before final wide Boundary B. Author-reported missing-record mutation failed as intended; not independently repeated.
+
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+Coverage: committed edits, criteria, shipped guidance, iteration/mutation evidence and prose-check follow-up; targeted disposable Git workflow. Did not run suites, verify adopter-agent execution or record truthfulness, compare historical anchors or alter baselines. No reached fence or deviation request in this implementation range.
