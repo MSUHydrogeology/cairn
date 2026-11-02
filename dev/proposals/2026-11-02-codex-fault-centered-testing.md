@@ -1,7 +1,7 @@
 # Make scientific tests and acceptance criteria catch meaningful faults
 
 **Author**: Codex (runtime model identifier unavailable; Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- governing verification guidance and authoring templates
 **Plan review**: required(Internal + Internal Security Review)
@@ -18,15 +18,13 @@ and preserving the distinction between scientific evidence and a green suite.
 
 ## Context
 
-At `4d29b2ef`, `templates/modules/team-gated/testing-discipline.md` already
-covers regimes, invariants, public entry points, consolidation and simulation
-benchmarks. It does not explicitly develop characterization of trusted
-scientific behavior or address agents changing expectations to obtain a pass.
-The plan template already has acceptance and verification sections.
+`templates/modules/team-gated/testing-discipline.md` covers regimes,
+invariants, entry points, consolidation and benchmarks, but lacks explicit
+expectation-laundering guidance. The plan template already has acceptance cells.
 
 The [outside-practices study](../strategy/2026-11-02-claude-outside-practices-for-better-software.md)
 proposes these additions. Its literature summaries are leads, not independent
-validation by this author. 
+validation by this author.
 
 ## Proposal
 
@@ -42,7 +40,10 @@ Unvalidated behavior stays explicitly uncertain.
 tests that explore invariants across inputs, alongside analytical limits and
 manufactured or convergence benchmarks where applicable. A conservation
 check can pass with the wrong source term; pair checks with the plausible
-faults they can actually detect. No optional library becomes an installed
+faults they can actually detect. Replace the module's categorical claim
+that conservation/convergence proves correct equation-solving: passing checks
+support only their stated properties, not general correctness.
+No optional library becomes an installed
 Cairn dependency. No universal coverage percentage or test-per-function quota.
 
 **3. Use targeted mutation carefully.** A mutation deliberately introduces a
@@ -65,19 +66,18 @@ condition, observable behavior, unchanged behavior, and the check that
 demonstrates them. Offer the EARS-style sentence "WHEN condition THE SYSTEM
 SHALL behavior" as an aid, not a required grammar or parser. A bug example
 states current, expected and unchanged behavior. Extend the existing
-acceptance cells; do not add another specification file.
+acceptance cells; do not add another specification file or make checks optional.
 
-**6. Demonstrate test-first.** Show scientific and ordinary software examples:
-a useful oracle, vacuous check and deliberate fault. Observe the intended
-failure before implementing new behavior. Distinguish established behavior
-from physical validity. Reuse the scientific-minimal example where suitable;
-do not build another project.
+**6. Demonstrate test-first.** Show useful, vacuous and broken checks for
+scientific and ordinary changes. Include a balanced but wrong input or
+compensating error, caught by an independently grounded check. Observe the
+intended failure before implementation; distinguish established behavior
+from physical validity. Reuse scientific-minimal; no new project.
 
 ## Rationale
 
-The benefit is more informative evidence and less redundant testing. The
-recurring cost is example upkeep and human judgment on genuine scientific
-questions. Reuse existing records, readers and modules.
+Benefit: informative evidence with less redundant testing. Cost: example
+upkeep and scientific judgment. Reuse existing records and modules.
 
 ## Alternatives considered
 
@@ -92,8 +92,9 @@ them here.
 Update the shipped and self-hosted testing-discipline module, both plan
 templates, their first-use guidance where needed, and the corresponding
 published explanation in `docs/methodology/plans.md`. Replace overlapping
-advice rather than append a second checklist. Keep scientific, security and
-release checks and their existing triggers unchanged.
+advice rather than append a checklist. Testing guidance owns functional scope
+versus runtime/cost; architecture/reuse owns corresponding rubric examples.
+Keep scientific, security and release checks and triggers unchanged.
 
 The implementation's closeout also assesses the outside-practices strategy:
 archive it only after testing, acceptance and architecture recommendations
@@ -244,3 +245,31 @@ unmeasured; recording approximately two minutes. **Tokens**: unknown.
 **Covered**: S1-S5, expectation provenance, waiver boundaries, installation
 owners and retirement scope. **Not covered / low confidence**: future examples,
 scientific correctness, prompt trials or external literature validation.
+
+## Response -- Codex (author) -- 2026-11-02
+
+**Model**: Codex (runtime model identifier unavailable).
+
+- **FT-1 accepted:** The operative contract now replaces the module's
+  categorical equation-solving claim with evidence limited to the properties
+  checked. The worked examples must include a balanced-but-wrong input or
+  compensating error and an independently grounded check that detects it.
+- **Security Review:** Accepted with no findings. The candidate-derived
+  expectation prohibition, no-waiver boundary, honest uncertainty and
+  source-strategy retirement conditions remain unchanged.
+
+Testing guidance owns the functional-scope versus runtime/cost distinction;
+architecture/reuse owns its contrasting rubric examples. This specifies
+existing coordinated scope, not another testing framework or review stage.
+
+The proposal is ready for the Maintainer's Decision. Worked-example
+experiments remain implementation obligations; no scientific result is
+claimed from these prose changes.
+
+**Elapsed**: approximately 7 minutes shared revision design; per-file split
+unmeasured. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+None. The scope is preserved; the existing overclaim is expressly targeted
+for replacement, not silently retained.
