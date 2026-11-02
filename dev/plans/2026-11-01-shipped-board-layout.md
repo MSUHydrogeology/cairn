@@ -55,3 +55,25 @@ In separate copies, remove a slot, invert a guarded scope condition, and move a 
 **Elapsed:** approximately 3 minutes; **Tokens:** unknown.
 
 **Coverage:** Read plan at `2662ddf9`, accepted proposal, original template, board reader and documentation coordination commit. Did not run installs, upgrades, tests or mutations, inventory all consumers, or assess future rewritten wording. Separate Security Review remains owed.
+
+## Plan review -- Codex (gpt-6.1-sol), Security Review -- 2026-11-01
+
+Reviewed commit: `2662ddf9` (operative plan); ordinary review: `90e2ac3c`.
+Target: C1, safeguards and verification. Prior findings: none.
+Assurance path: high-assurance, inherited from the accepted proposal.
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: none
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. C1 preserves authority as well as layout: disposition eligibility, quoted authorization, serialization and all three removal prerequisites remain explicit. Comparing with the original prevents a rewritten test from silently redefining those duties (`templates/core/dev/PLANNING.md`, Archive and Removal preconditions; plan C1).
+2. **Best alternative.** A single template rewrite using existing entry points is the smallest path delivering the Decision. Changing the parser or installer adds a contract without improving the accepted outcome. C1 and Scope retain the existing slots, onboarding metadata and seeds, user-owned content and documentation-owner coordination (`bootstrap/_scaffold/install.py`, `_substitute_slot`; `bootstrap/_scaffold/upgrade.py`, `_prepare_module_discovery`).
+3. **What would show it wrong?** A hidden wait, weakened duty, changed seed or overwritten customization. Boundary A requires real installs and upgrade, standalone-versus-table marker checks and separate mutations; `_roadmap_waits` accepts only the marker at a line's beginning after an optional bullet (`tools/board.py`). Independent Security code review and wide final integration remain owed (Boundaries C and B).
+
+**Verdict:** Support as framed; no blocking findings. The existing comparison and real-entry checks are necessary evidence, not reasons to add another process or artifact.
+
+**Elapsed:** approximately 5 minutes; **Tokens:** unknown.
+
+**Coverage:** Read committed plan, accepted proposal, original board duties, reader and slot/upgrade handling, and ordinary review. Did not execute installs, upgrades, tests or mutations, inventory every consumer, or establish equivalence of future wording.
