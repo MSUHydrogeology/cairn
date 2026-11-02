@@ -1,7 +1,7 @@
 # Make scientific tests and acceptance criteria catch meaningful faults
 
 **Author**: Codex (runtime model identifier unavailable; Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- governing verification guidance and authoring templates
 **Plan review**: required(Internal + Internal Security Review)
@@ -273,3 +273,13 @@ unmeasured. **Tokens**: unknown.
 
 None. The scope is preserved; the existing overclaim is expressly targeted
 for replacement, not silently retained.
+
+## Decision -- Maintainer -- 2026-11-02
+
+**Elapsed**: unknown; **Tokens**: unknown.
+
+**Tier**: standard
+
+**ACCEPTED.** Asked "Fault-centered testing: accept, and at which tier?", the Maintainer's authorization, quoted verbatim:
+
+> "Accept as standard (Recommended)"
