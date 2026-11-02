@@ -5,8 +5,9 @@ frozen at the version they installed — unless they can pull new doctrine
 forward **without losing their local customizations**. This is that path:
 a **token- and slot-aware 3-way merge** that folds upstream changes into
 your tree, preserves your filled `cairn:slot` bodies and tunings, and
-surfaces genuine "local optimization vs. new doctrine" conflicts for
-review instead of silently clobbering or skipping them.
+surfaces some text conflicts for review instead of silently clobbering or
+skipping them. A clean text merge does not establish that local and upstream
+rules agree in meaning; review the staged result before applying it.
 
 The upgrade is **never an auto-overwrite**. It stages a review surface;
 you (or your agent) review, resolve any conflicts, and apply — and the
@@ -212,6 +213,12 @@ python bootstrap/verify_integrity.py --target <repo>            # 4. verify
   `.gitignore`) along with stage metadata. Originals are untouched.
   Open the staged files, resolve any `<<<<<<< ours … >>>>>>> theirs`
   conflict markers by hand.
+
+  A merge without conflict markers only means the text was placed cleanly; it
+  does not show that the local and upstream rules agree. Compare each staged
+  result with its upstream change and the relevant local policy. Resolve any
+  disagreement before `--apply`. This is a manual review: upgrade does not
+  detect or enforce agreement in meaning.
 
   **What's in the staging directory** — review and edit only the first:
   * `files/` — **the merged result** (your customizations + the upstream
