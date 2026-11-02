@@ -76,7 +76,7 @@ def _run_git(*args: str, cwd: Path) -> None:
 @pytest.fixture
 def disposable_repo(tmp_path: Path) -> Path:
     """A fresh disposable repo mirroring Step 1 of the quickstart:
-    git init + README.md + CHANGELOG.md stub + initial commit."""
+    git init + README.md + initial commit."""
     repo = tmp_path / "cairn-quickstart-sim"
     repo.mkdir()
     _run_git("init", "-q", cwd=repo)
@@ -85,8 +85,7 @@ def disposable_repo(tmp_path: Path) -> Path:
     _run_git("config", "user.email", "test@example.invalid", cwd=repo)
     _run_git("config", "user.name", "Test User", cwd=repo)
     (repo / "README.md").write_text("# quickstart\n")
-    (repo / "CHANGELOG.md").write_text("# Changelog\n\n## Unreleased\n")
-    _run_git("add", "README.md", "CHANGELOG.md", cwd=repo)
+    _run_git("add", "README.md", cwd=repo)
     _run_git("commit", "-q", "-m", "init", cwd=repo)
     return repo
 
@@ -101,22 +100,19 @@ class TestLayerAStepsOneThroughThree:
     the post-step file tree.  This layer faithfully mirrors what
     an adopter sees when they copy-paste."""
 
-    def test_step1_init_produces_readme_and_changelog(
+    def test_step1_init_produces_readme_only(
         self, disposable_repo: Path
     ) -> None:
-        """Step 1 leaves the target with README.md + CHANGELOG.md
-        + one git commit and nothing else."""
+        """Step 1 leaves the target with README.md and one git commit."""
         repo = disposable_repo
         # Tracked files after init.
         result = subprocess.run(
             ["git", "ls-files"], cwd=repo, capture_output=True, text=True, check=True
         )
         tracked = set(result.stdout.split())
-        assert tracked == {"README.md", "CHANGELOG.md"}, (
-            f"after Step 1, tracked files should be README + CHANGELOG; got {tracked}"
+        assert tracked == {"README.md"}, (
+            f"after Step 1, tracked files should be README only; got {tracked}"
         )
-        # CHANGELOG carries the Unreleased anchor the quickstart uses.
-        assert "## Unreleased" in (repo / "CHANGELOG.md").read_text()
 
     def test_step2_profile_yml_is_the_solo_greenfield_preset(
         self, disposable_repo: Path
@@ -201,11 +197,13 @@ class TestLayerAStepsOneThroughThree:
             "dev/modules/claim-check.md",
             "scripts/claim_check.py",
             "dev/.cairn/cairn-lock.yml",
+            "CHANGELOG.md",
         ]
         for relative in expected_paths:
             assert (repo / relative).exists(), (
                 f"quickstart Step 3 should install {relative}; not present after run"
             )
+        assert "## Unreleased" in (repo / "CHANGELOG.md").read_text()
         assert not (repo / "dev" / "collaboration_agreement.md").exists()
         # Drift-gate -- close the prose<->runtime loop (the 2026-06-12
         # adopter-friction audit). NO hardcoded count lives here: the
@@ -329,7 +327,7 @@ class TestLayerBLifecycleShapeOnly:
         # Commit the install per Step 3's "Commit the install" instruction.
         _run_git(
             "add", "AGENTS.md", "VENDOR.md", "dev", "tools", "scripts",
-            cwd=repo,
+            "CHANGELOG.md", cwd=repo,
         )
         _run_git("commit", "-q", "-m", "Install Cairn kernel", cwd=repo)
 

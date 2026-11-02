@@ -102,3 +102,16 @@ Titleless templates remain open unless format-safe placement preserves their con
 **Elapsed**: approximately 1 minute; **Tokens**: unknown.
 
 Both reviews found no blocking findings or changes to dispose. Coordinate the methodology reading with the doctrine move and read the final committed board work as Scope already specifies. The plan is ready to implement.
+
+## Implementation verification -- Codex (Implementation) -- 2026-11-01
+
+Closed the quickstart changelog install guidance and fixture: the throwaway
+starts with only `README.md`, install supplies the template changelog and a
+lockfile, and the install commit includes `CHANGELOG.md`. Added the existing-
+history limitation and linked the migration guidance. No installer behavior
+changed. Iteration: `python -m pytest bootstrap/tests/test_quickstart_sequence.py
+bootstrap/tests/test_review_stance_in_shipped_files.py` — 490 passed in 2.89 s
+under Python 3.12.9. Prose gates: claim checks on this plan and quickstart,
+quickstart link check, snippet check, and neutrality gate passed. Elapsed:
+approximately 8 minutes; tokens: unknown. This is focused iteration evidence;
+the plan's final wide Boundary B remains open.

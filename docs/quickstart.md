@@ -80,9 +80,8 @@ workspace).  Then paste:
 > In this folder, clone https://github.com/MSUHydrogeology/cairn.git
 > into a subfolder named `cairn`.  Then make a second subfolder named
 > `quickstart`, turn it into a git repository, and add two files: a
-> `README.md` containing `# quickstart`, and a `CHANGELOG.md` containing
-> `# Changelog`, a blank line, and `## Unreleased`.  Commit both files
-> in `quickstart` with the message `init`.  Tell me what you did.
+> `README.md` containing `# quickstart`.  Commit it in `quickstart`
+> with the message `init`.  Tell me what you did.
 
 <details>
 <summary>Or do it yourself in a terminal</summary>
@@ -103,8 +102,7 @@ mkdir quickstart
 cd quickstart
 git init -q
 echo "# quickstart" > README.md
-printf "# Changelog\n\n## Unreleased\n" > CHANGELOG.md
-git add README.md CHANGELOG.md
+git add README.md
 git commit -q -m "init"
 ```
 
@@ -120,8 +118,7 @@ New-Item -ItemType Directory quickstart | Out-Null
 Set-Location quickstart
 git init -q
 Set-Content README.md "# quickstart"
-Set-Content CHANGELOG.md "# Changelog`n`n## Unreleased"
-git add README.md CHANGELOG.md
+git add README.md
 git commit -q -m "init"
 ```
 
@@ -136,9 +133,15 @@ remaining steps in the same window.
 </details>
 <!-- cairn-accept-end: suspicious-url -->
 
-`quickstart` gets a stub `CHANGELOG.md` because Cairn's lifecycle writes
-to a changelog and the installer does not create one: a real project
-usually has its own.
+The install creates `CHANGELOG.md` from Cairn's template, so the example
+starts without one. On a real project, Cairn preserves an existing
+`CHANGELOG.md` byte-for-byte. Because that file differs from the clean
+template, the install cannot create an upgrade baseline; use the profile
+and migration steps in [`UPGRADE.md`](../bootstrap/UPGRADE.md#the-workflow)
+if you want Cairn to manage future upgrades. `upgrade --init-lock` needs a
+complete profile, and files with customized text, including an existing
+changelog, are marked for manual review on later upgrades rather than
+automatically merged.
 
 > **The commands below run code from this copy.** Before you install Cairn
 > into anything you care about, verify the
@@ -236,7 +239,7 @@ The `--summary` flag only previews: nothing is written.  For the
 > Run the same command without `--summary` to install, and show me the
 > report it prints.  Then commit what it installed (`AGENTS.md`,
 > `VENDOR.md`, `NOTICE.md`, `.gitignore`, `dev/`, `tools/`, `scripts/`,
-> `.agents/` and `docs/`) with the message
+> `.agents/`, `docs/` and `CHANGELOG.md`) with the message
 > `Install Cairn kernel + default-on modules`.  Leave `profile.yml`
 > uncommitted.
 
