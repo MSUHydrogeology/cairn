@@ -319,3 +319,22 @@ explicitly; the installer requires `--config` and does not auto-discover it.
 No tests were run and no browser screenshot was captured.
 
 **Elapsed:** approximately 2 minutes; **Tokens:** unknown.
+
+## Implementation verification -- Codex (Implementation) -- 2026-11-01 (wait mutation)
+
+In an isolated archive of `eb19291d`, moved the real `dev/PLANNING.md:33`
+standalone trust-baseline wait into a table cell and ran the actual
+`python tools/board.py --maintainer` before and after. Before: two roadmap
+waits, including the moved one. After: one roadmap wait; the moved wait
+vanished. The actual-reader visibility check therefore fails under this
+mutation, as intended by the standalone-marker rule. The shipped board's
+quoted sample was not used as the mutation subject.
+
+The prior mapped run of 1,024 tests included functional checks for unchanged
+slot/seed and malformed-board behavior: missing slot in
+`test_onboarding_slot_substitution.py`, ambiguous seed and upgrade markers in
+`test_onboarding_seed_roster.py` and `test_upgrade_module_additions.py`, and
+invalid UTF-8 plus missing-board output in `test_board_json_contract.py`.
+This cites existing test coverage only; no fallback or malformed-input
+mutation was run here. Python 3.13.18 was used for the prior mapped run.
+Elapsed: approximately 2 minutes; tokens: unknown.
