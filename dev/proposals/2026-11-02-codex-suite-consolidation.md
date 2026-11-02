@@ -1,7 +1,7 @@
 # Consolidate the suite without losing fault detection
 
 **Author**: Codex (runtime model identifier unavailable; Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- protected tests and collection contracts
 **Plan review**: required(Internal + Internal Security Review)
@@ -144,3 +144,48 @@ and shared growth reporting remain outcomes.
 ## Assurance path
 
 **Assurance path**: high-assurance -- protected tests and collection behavior.
+
+## Review -- Codex (fresh-context usual reviewer) -- 2026-11-02
+
+**Model**: inherited Codex runtime; exact identifier unavailable; no downshift.
+**Reviewed commit**: `9d5a69e524a2ab3a749b386dd67efe2861f2ecf0`
+**Tier**: usual
+**Target**: opening proposal. **Prior findings**: none.
+**Assurance path**: high-assurance.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: reduce preparation while retaining
+   detecting checks. The repeated mutable repository builders substantiate
+   the opportunity, not a measured speedup --
+   `bootstrap/tests/test_gate_preflight.py`, `_repo` and `_closure_repo`.
+2. **Best alternative.** Optimize existing family fixtures without moving
+   files: less collection/import maintenance, but loses the board's legible
+   tier-folder outcome and needs Maintainer scope disposition --
+   `dev/PLANNING.md`, v0.7 suite row; `tools/test_tiers.py`, `find_test_files`.
+3. **What would show it wrong?** A retained check misses a removed fault,
+   sharing introduces order dependence, or savings come from deselection --
+   Proposal 2-5; `bootstrap/tests/test_gate_manifest.py`,
+   `test_verify_holds_on_dropped_node`.
+
+**Verdict**: SHIP. **Findings**: one non-blocking improvement; no blockers.
+
+1. **SC-1 -- Make order isolation an explicit experiment.** Tests required
+   names membership and fault controls, but no alternate-order control for
+   shared preparation. The prior audit found fixture lifetime mattered under
+   interleaving (`dev/plans/archive/2026-10-30-certification-cost-audit.md`).
+   Close by requiring fixed/alternate shuffle seeds on each affected sharing
+   batch, with independent mutable paths and unchanged detection; use the
+   existing `bootstrap/tests/conftest.py` shuffle option, not another suite run.
+
+The folder moves, runtime target, detection accounting and shared pulse
+reporting remain promised. The delivery-sequence retirement table keeps
+runtime evidence open until delivered or explicitly dispositioned.
+
+**Elapsed**: approximately 5 minutes, including shared source inspection.
+**Tokens**: unknown.
+
+**Covered**: board/source outcomes, builders, tier discovery, gate assertions,
+prior audit and retirement ownership. **Not covered / low confidence**: no
+tests, mutations, timings or implementation reruns; historical measurements
+were read only. This pass does not discharge Security Review.
