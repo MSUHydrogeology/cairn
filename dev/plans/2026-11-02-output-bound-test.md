@@ -1,7 +1,7 @@
 # Plan: Separate output-bound and cleanup assertions
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-output-bound-test.md
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Check the output limit separately from cleanup success while preserving degraded-status reporting.
@@ -215,3 +215,28 @@ Correction to the full SHA in the response above: the implementation commit
 referred to as `95ecf237` is
 `95ecf23705b3ca4890da2af3348ef5a8332e72ce`. The earlier full SHA there was
 incorrect. The commit identity was verified with `git rev-parse 95ecf237`.
+
+
+## Implementation verification -- Codex (GPT-6) -- 2026-11-02 (Boundary B)
+
+**Boundary B mode**: bounded. The only behavior surface is
+`bootstrap/tests/test_security_stack.py` (A-t1/A-t4); A-t6 is the cleanup
+consumer. The final clean commit contains the reviewed bounded fallback and its
+reaping assertion; no production code changed.
+**Tested commit**: `b664724a7388cffd91846e203471c08b94fea361`.
+**Reviewed range**: `4c482332`..`b664724a` (implementation `95ecf23705b3ca4890da2af3348ef5a8332e72ce`; ordinary and Security Reviews accepted).
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13.
+**Pre-run state**: clean detached copy at the tested commit.
+**Post-run state**: clean detached copy; `HEAD` remained the tested commit.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest -q bootstrap/tests/test_security_stack.py::test_a_t1_boundary_failure_status_is_degraded_never_clean bootstrap/tests/test_security_stack.py::test_a_t4_output_is_bounded bootstrap/tests/test_security_stack.py::test_a_t6_descendants_do_not_outlive_the_timeout` | 0 | 3 passed; 0 failed/skipped/xfail/xpass | 11.44 s | unknown |
+
+**Non-pass disposition**: none. **Plan-specific acceptance commands**: the three
+focused nodes above; R1's forced cleanup-failure mutation is recorded in the
+response above. **Prose gates**: claim and link checks passed for this plan;
+neutrality reported 0 failures and 43 informational findings. No snippets changed.
+**Known omissions**: no real OS signaling failure was induced; Windows and the
+reported original failure were not investigated. No full suite or broad selection
+ran.
