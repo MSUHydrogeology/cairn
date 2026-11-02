@@ -1,4 +1,5 @@
 # `dev/strategy/` — the Stage-0 "explore before you commit" space
+Written in [Cairn Plain Language 1.0](../agent_collaboration.md).
 
 This directory holds **strategy notes**: comparative research, tool analysis,
 product strategy, and long-horizon design context that is **not yet a

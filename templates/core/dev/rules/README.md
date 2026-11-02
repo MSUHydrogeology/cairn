@@ -1,4 +1,5 @@
 # `dev/rules/` — project-owned agent-discipline detail
+Written in [Cairn Plain Language 1.0](../agent_collaboration.md).
 
 **This folder ships from Cairn, but its rule files are entirely the
 adopter's own — Cairn never templates them.** The folder and this README

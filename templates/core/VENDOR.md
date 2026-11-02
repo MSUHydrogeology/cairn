@@ -1,4 +1,5 @@
 # Vendor wrapper — {{project_name}}
+Written in [Cairn Plain Language 1.0](dev/agent_collaboration.md).
 
 > **This is the thin vendor-wrapper template.** Cairn ships it as
 > `VENDOR.md`; **rename it to your AI tool's own file** — `CLAUDE.md`,

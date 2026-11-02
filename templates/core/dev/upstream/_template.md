@@ -3,6 +3,7 @@
      a real upstream report. Move to archive/ once filed/resolved/abandoned. -->
 
 # {{short-slug}} — upstream issue draft
+Written in [Cairn Plain Language 1.0](../agent_collaboration.md).
 
 **Library / tool**: {{name and version of the upstream dep}}
 **Date first observed**: {{YYYY-MM-DD}}

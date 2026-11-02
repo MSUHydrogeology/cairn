@@ -1,4 +1,5 @@
 # `dev/upstream/` — things that flow out of this repo
+Written in [Cairn Plain Language 1.0](../agent_collaboration.md).
 
 This directory holds work destined for repositories **upstream** of
 {{project_name}}: **bug reports, capability gaps, and evidence bundles to

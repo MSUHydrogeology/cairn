@@ -1,5 +1,6 @@
 <!-- cairn-internal-ref-allow: docs/methodology/ reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 # AGENTS.md — {{project_name}}
+Written in [Cairn Plain Language 1.0](dev/agent_collaboration.md).
 
 > **The operational reference for AI agents working on this repository.**
 > Read it before work. The deeper

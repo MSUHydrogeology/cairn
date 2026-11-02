@@ -5,6 +5,7 @@
      or revising; its word budgets and copy rules change. -->
 
 # Proposal template
+Written in [Cairn Plain Language 1.0](../agent_collaboration.md).
 
 A substantive change — a new abstraction, a cross-cutting refactor, a contract
 change, anything worth a second opinion — goes through a proposal. Everything

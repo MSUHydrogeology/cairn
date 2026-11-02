@@ -1,4 +1,5 @@
 # `dev/measurement/` — project self-instrumentation
+Written in [Cairn Plain Language 1.0](../agent_collaboration.md).
 
 This folder holds the records a project keeps to **measure its own process
 health** — aggregate lifecycle metrics and the operational ledgers that feed

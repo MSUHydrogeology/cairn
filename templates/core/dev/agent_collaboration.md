@@ -1,6 +1,7 @@
 <!-- cairn-internal-ref-allow: docs/methodology/ reason=docs/methodology/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where docs/methodology/ references resolve") -->
 External-repo paths: `docs/methodology/dual-review.md`, `docs/methodology/rationale.md`
 # Agent collaboration — {{project_name}}
+Written in [Cairn Plain Language 1.0](agent_collaboration.md).
 
 > **The deliberation and decision process.** `AGENTS.md` carries the
 > operational rules — how to make a correct change and operate safely. This

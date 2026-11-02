@@ -8,6 +8,7 @@ External-repo paths: `docs/methodology/plans.md`, `docs/methodology/lifecycle.md
      budgets and copy rules change. -->
 
 # Plan template
+Written in [Cairn Plain Language 1.0](../agent_collaboration.md).
 
 A non-trivial accepted standard/heavy proposal opens a plan. Light has no plan,
 even for multi-area or wide work; its accepted proposal holds Boundary B

@@ -6,6 +6,7 @@
      budget and copy rules change. -->
 
 # Strategy-note template
+Written in [Cairn Plain Language 1.0](../agent_collaboration.md).
 
 > **This is the `dev/strategy/` template.** To open a strategy note, copy only
 > the header and section headings below the rule into
