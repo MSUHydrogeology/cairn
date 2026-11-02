@@ -115,3 +115,24 @@ The mapped run on isolated `fdec837b` reproduced the two previously diagnosed AS
 ## Mapped iteration -- Codex GPT-6.1 Terra -- 2026-11-02
 
 On clean isolated commit `72ccc6cd7dc558586ebed13c2657017caf639514` under Python 3.13.13, the six approval-time mutation cases passed separately. The ten-file mapped selection excluded those six already-passed cases, the two known AST baseline-debt nodes and the missing-anchor live-repository check described above. An initial segment passed 32 nodes; its exact unrun tail was selected from collection. That tail stopped at `test_gate_preflight.py::TestAuthorizationPackage::test_the_executable_only_list_is_closed`: 318 passed and one failed in 420.82 seconds because this clone has no `refs/cairn/gate-anchor`. This is a distinct unfulfilled check, not a pass. Remaining nodes were not run. The selection exceeded the 30-second iteration diagnostic target; per-file timing was not measured. No old anchor was fetched or compared. The three excluded checks, this failure, remaining mapped checks and final wide Boundary B remain open; no full suite ran. Elapsed: approximately 8 minutes; tokens: unknown.
+
+## Security code review -- Codex gpt-6.1-sol -- 2026-11-02
+
+Reviewed commits: 4b066389, 496a720d and 72ccc6cd  
+Target: forward-only workflow; evidence `a699ba47`; ordinary review `fdec837b`  
+Prior issue: stale candidate could write during Apply confirmation  
+**Tier**: Security Review  
+**Verdict**: REVISE for unmet required verification; no remaining code blocker found.  
+**Elapsed**: approximately 15 minutes across inspection and targeted probes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The explicit forward path derives committed current-state transactions, binds distinct review records, limits fixture outputs and separates Apply/commit confirmations from later baseline signing. It neither reads an anchor nor grants historical certification. -- Forward context, packet, review and guide implementations; C1.
+2. **Best alternative.** Keep the guided path and shared transaction machinery. Shared validation avoids extra machinery; manual JSON or historical reconstruction loses the accepted outcome. -- Plan Reuse; current correction and guide.
+3. **What would show it wrong?** A changed candidate reaching fixture replacement. My scratch-only real-command/PTY probe reproduced that defect at `496a720d`; repeated under Python 3.13.13 at `72ccc6cd`, it refused before writing and left fixtures unchanged. It also rechecks index, worktree, evidence and targets. -- Targeted no-anchor probes; six author-recorded mutation passes.
+
+**V1 — blocking verification gap, C2 unmet.** Evidence explicitly leaves two AST baseline-debt checks and the missing-anchor live-CLI check excluded, a distinct executable-list check failed, and the remaining mapped tail unrun. The partial 32-pass segment and 318-pass/one-failure tail under Python 3.13.13 do not complete the selection. Close with required mapped outcomes and named authorized dispositions for unresolved checks, then clean final wide Boundary B. No anchor comparison requested or check waived.
+
+**Bounding**: WIDER RUN REQUIRED — mapped remainder and required-check dispositions remain open.
+
+Coverage: examined committed code, tests, runbooks, prior findings and evidence; independently challenged prompt-time candidate mutation. No suite, signing, real refs, installation or anchor comparison. Did not audit all consumers or authenticate reviewer independence.
