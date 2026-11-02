@@ -1,7 +1,7 @@
 # Plan: Supply practical scoped-certification defaults
 
 **Source proposal**: dev/proposals/archive/2026-11-01-sol-project-certification.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Give agents practical testing defaults so they can certify affected behavior without scientists designing routine test selection.
@@ -93,3 +93,7 @@ Assurance path: high-assurance
 No blocking security finding. The named rule tests genuinely read governing/template/method surfaces and currently pin the universal contract; their changes must distinguish adopter defaults from Cairn's retained local protections. Verification assigns final-path mapping, reader/pin discovery and remapping before edits, with known-positive control and explicit coverage limits. The installer mapping confirms testing-discipline is optional.
 
 Coverage: examined committed plan, ordinary review, accepted proposal/Decision, current plan template, installer mapping and representative certifying/boundary assertions. Did not reproduce the 23-file selection, inspect final test edits, exercise installed cases or run suites. Actual mapping, requirement-preservation evidence and clean canonical-Python wide Boundary B remain implementation obligations.
+
+## Response to plan reviews -- Codex GPT-6.1 Sol -- 2026-11-01
+
+Both reviews accepted the plan without findings. Final-path mapping, installed examples, preservation of existing requirements, separate Security code review and wide final verification remain implementation obligations. Elapsed: under one minute; tokens: unknown.
