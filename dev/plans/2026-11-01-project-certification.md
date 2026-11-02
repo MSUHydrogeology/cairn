@@ -193,3 +193,27 @@ Coverage: read committed corrections, changed assertions, implementation respons
 ## Response to targeted reviews -- Codex GPT-6.1 Terra -- 2026-11-02
 
 B1 and S1 are closed with no new findings; the Security reviewer accepted the bounds. Final wide Boundary B and issue #33 closure remain owed before archive. Elapsed: under one minute; tokens: unknown.
+
+## Implementation verification -- Codex GPT-6 -- 2026-11-02
+
+**Boundary B mode**: wide. The change revises a cross-cutting certification contract, shipped core and team module, templates and published method; the selection includes owning contract families, install workflows, and public paths.
+
+- **Tested commit**: `dd24ce0acc544c613c8d463153d8cd6d52390f2d`
+- **Reviewed range**: `6b8e89242d54f6ecae78b5f0f86a68777e0b7d29..dd24ce0acc544c613c8d463153d8cd6d52390f2d`
+- **Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13
+- **Pre-run / post-run**: detached isolated clone was clean at the tested SHA before and after; generated JUnit reports were removed. `HEAD` remained the tested SHA.
+
+The original non-AGENTS selector from the plan's iteration record yielded 23 files. The final reviewed-range selector yielded 11 files and reported 44 unpinned AGENTS readers omitted by its passage-pin guard. The deduplicated union ran each of those 23 original files plus final-selector-only `test_upgrade.py`; it also included relevant install workflow `test_install_time_onboarding.py`. No test file was repeated. The union was run as two non-overlapping commands because the original 23-file list was recovered after the initial batch.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python3.13 -m pytest -q --durations=10` on 14 unique files (final selector plus named/install checks) | 0 | 600 passed; no failures or skips | 61.17 s real (59.97 s pytest) | unknown |
+| Same pytest command on the 11 original-selector files not in the first batch | 0 | 924 passed; no failures or skips | 10.44 s real (9.72 s pytest) | unknown |
+| Combined unique selection | 0 | 1,524 passed across 25 files; no failures or skips | 71.61 s real total | unknown |
+| Claim, link, snippet, neutrality and content gates | 0 | 13 claim-checked Markdown files OK; 11 link-checked files no issues; 515 docs no snippet drift; neutrality 0 failures/43 informational; 185 Markdown files no content issues | 5.1 s combined | unknown |
+
+The final selector's other mapped files were `test_certifying_run_rule.py`, `test_onboarding_seed_roster.py`, `test_practice_modules.py`, `test_presets.py`, `test_replacement_tools.py`, `test_scientific_check_guidance_ships.py`, `test_session_routines.py`, `test_session_start_drain_rules.py`, `test_status_vocabulary_advisory.py`, and `test_verification_boundaries.py`; the plan's explicit `test_review_and_verification_rules_ship.py` and workflow `test_scaffold.py` were also included in the 23-file selection. Fresh `solo-greenfield` installation contained core AGENTS and plan/proposal templates without `testing-discipline`; fresh `collaborative-team` installation included it. Source, shipped and installed module bytes were identical. Applied the installed guidance examples: local reader -> affected checks and real entry workflow; shared solver -> owner family, numerical benchmark and consumers; uncertain dependency -> state uncertainty and keep known missing evidence open; mandatory release check -> retain the requirement. All four outcomes matched C1/C2. These were guidance exercises, not runs against an adopter's software or scientific model.
+
+**Non-pass disposition**: tests had no failures or skips. Initial scaffold attempts refused because temporary target directories did not exist; after creating them, both fresh installs succeeded. `git diff --check` flagged Markdown hard-break trailing spaces in the plan's appended review records only (lines 129–133 and 176–180); these append-only review records were left intact. Link check left 1 external link and `check_cairn.py` left 94 external links unprobed.
+
+**Known omissions**: per-file durations were not captured; no individual test file can be named for the 10-second consolidation list. The 44 unpinned AGENTS readers remain selector omissions. Full-tree certification was not run; this plan explicitly keeps Cairn's separate authorized ceremony unchanged. **Elapsed**: test commands 71.61 seconds real; prose gates 5.1 seconds; install/example inspections unmeasured. **Tokens**: unknown.
