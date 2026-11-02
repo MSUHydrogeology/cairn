@@ -1,7 +1,7 @@
 # Align the quickstart example with the lifecycle
 
 **Author**: Codex (GPT-6), Strategy
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -124,3 +124,13 @@ Both reviews recommend proceeding with no blocking findings. Ordinary review adv
 None.
 
 **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+## Decision -- Maintainer -- 2026-11-02
+
+**Elapsed**: unknown; **Tokens**: unknown.
+
+**Tier**: heavy
+
+**ACCEPTED.** The Maintainer's authorization, quoted verbatim:
+
+> Accept both proposals with your recommendations.
