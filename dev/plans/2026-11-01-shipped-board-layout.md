@@ -200,3 +200,82 @@ remains due under canonical Python 3.13.x.
 **Elapsed:** approximately 1 minute; **Tokens:** unknown.
 
 **Coverage:** Read the committed follow-up and prior finding. Did not inspect the isolated adopter or test other upgrade cases, fallback behavior or malformed input.
+
+## Implementation verification -- Codex (Implementation, gpt-6.1-sol) -- 2026-11-01
+
+**Boundary B mode:** wide. The changed surface is shipped board guidance. Its
+consumers include install and upgrade slot handling, onboarding seeds and the
+public board reader. The mapped selection includes all named integration and
+workflow consumers; a narrower run would leave those consumers uncovered.
+
+**Reviewed range:** `af8d1263e07ea64a64b77ebbecf6086a1a0b4f99` to
+`bae1d93076f7833b4628fcb4975f9869b0ea3d47` (the one-file board rewrite);
+final tested endpoint: `c575881d808c837308385bbf1c2ea387877441dc`. The code
+review was recorded at `cc7844457f176bb506b32f30fcc78c10bd847f17`, Security
+Review at `4be6b1ee17cda9264b6e6fc0a93ac5dcea69770c`, the completed upgrade
+evidence at `510c20850399c15b08cb9c53b6cb92f449c6a2cf`, and its targeted review
+disposition at the tested endpoint.
+
+**Interpreter/runtime:** `/private/tmp/flopy312-trial/python313/bin/python`,
+Python 3.13.18. No per-worktree interpreter binding was present; this is the
+Python 3.13 runtime used for the required final run.
+
+**Pre-run state:** clean clone at the tested endpoint above.
+**Post-run state:** clean clone at the same endpoint; no tracked or untracked
+changes. The command `python tools/test_tiers.py for
+templates/core/dev/PLANNING.md` selected 20 test files. The plan file itself
+selected zero files. The selected set included six integration files and five
+workflow files; all 20 were run.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python tools/test_tiers.py for templates/core/dev/PLANNING.md` | 0 | 20 files selected; 6 integration and 5 workflow files | about 0.3 s | unknown |
+| `python -m pytest -q` on the 20 mapped files listed by that command | 0 | 1,024 passed; no failures, skips, xfails or xpasses reported | 120.51 s | unknown |
+| `python scripts/claim_check.py` on the plan and board | 0 | Both files clean on the tested snapshot | under 0.1 s | unknown |
+| `python scripts/link_check.py` on the plan and board | 0 | 2 files scanned; no issues on the tested snapshot | under 0.1 s | unknown |
+| `python scripts/claim_check.py dev/plans/2026-11-01-shipped-board-layout.md` after appending this record | 0 | Final plan bytes clean | under 0.1 s | unknown |
+| `python scripts/link_check.py dev/plans/2026-11-01-shipped-board-layout.md` after appending this record | 0 | Final plan bytes clean | under 0.1 s | unknown |
+| `python scripts/sync_doc_snippets.py --check` | 0 | 502 documents scanned; no drift | 0.065 s | unknown |
+| `python scripts/quality_gate.py --sub neutrality` | 0 | 0 failures; 43 informational findings | 0.636 s | unknown |
+
+The integration and workflow files selected were `test_intents_tool.py`,
+`test_onboarding_seed_roster.py`, `test_onboarding_slot_substitution.py`,
+`test_replacement_tools.py`, `test_skills_onboarding.py`,
+`test_verify_stems.py`, `test_finalize_retired_living_state.py`,
+`test_install_time_onboarding.py`, `test_quickstart_sequence.py`,
+`test_upgrade.py`, and `test_upgrade_module_additions.py`. The other nine
+selected files were `test_board_json_contract.py`, `test_core_dev_folders.py`,
+`test_hardening.py`, `test_scope_reduction_trap.py`,
+`test_next_session_local_note.py`, `test_module_merge_lockfile.py`,
+`test_verify_integrity.py`,
+`test_upgrade_edit_check_runs_no_project_programs.py`, and
+`test_upgrade_lockfile_path_containment.py`.
+
+**Plan-specific acceptance commands:** The real customized-board upgrade
+`--plan`, `--stage` and `--apply` check is recorded above under the follow-up
+verification: apply succeeded for 17 files and preserved the custom row, local
+section, profile and onboarding entries. The standalone-versus-table wait
+reader check is recorded in the Security Review above. Those checks were not
+repeated during this mapped run; the tested board bytes are unchanged from
+those checks. The selected install tests inspect generated slot and seed
+content and run the reader, but do not establish a full inspection of fresh
+rendered boards with and without a profile. No separate full-board inspection
+is recorded; that plan-specific check remains open.
+
+**Non-pass disposition:** None. The neutrality gate's 43 informational results
+were not failures.
+
+**Known omissions:** No test was omitted from the mapped 20-file selection.
+The final pytest run did not emit per-file durations. The earlier mapped run
+recorded `test_upgrade_module_additions.py` at 28.60 seconds under Python
+3.12.9; retain it on the test-consolidation list. The earlier 1,024-test run
+took 139.54 seconds and exceeded the 30-second iteration target; this final
+wide run took 120.51 seconds, within the three-minute integration target.
+Installer/parser fallback and malformed-input mutations were not run. The
+full-board inspection described above is not recorded. Full-tree certification
+and re-anchor were not authorized by this plan.
+
+The plan remains open until the fresh rendered-board inspection is recorded.
+
+**Elapsed:** approximately 2 minutes for the mapped test run, plus under 1
+second for the standing gates; **Tokens:** unknown.
