@@ -101,3 +101,15 @@ Assurance path: high-assurance
 No blocking finding. Preserve the ordinary-trivial explanation and the existing content, Decision and clean-history assertions. Updating the two existing files is proportionate; no new lifecycle rule, checker, review ceremony or trust mechanism is necessary. S5 correctly limits structural assurance.
 
 Coverage: read committed proposal, target quickstart passages, sequence assertions, protected roster, current proposal template, governing verification and archive rules, and accepted cut 2. Did not map every reader/pin, run the proposed mutation, exercise the recipe or execute suites. No anchor comparison.
+
+## Proposal review -- Codex GPT-6 -- 2026-11-02
+
+**Verdict:** Accept as framed; no blocking findings. **Elapsed:** approximately 5 minutes. **Tokens:** unknown.
+
+1. **Should it happen?** Yes. The quickstart calls its example heavy but shows one review, then combines implementation and archive. Its existing sequence tests explicitly reproduce that order. The proposed light example and verification record align the lesson with the shipped rules while preserving the real tagline's trivial lane.
+2. **Best alternative:** Correcting the prose alone is smaller, but leaves the existing tests teaching the old sequence. Keeping a heavy example adds a Security Review to a simple lesson. Updating the two existing files retains the lesson without adding a checker.
+3. **What would show it wrong?** A recipe that archives before verification, requires a full suite, or a sequence check that cannot detect an absent or misplaced verification record. The proposed disposable-repository check and negative control address those cases; an agent should also read the resulting instructions as a newcomer.
+
+The two existing tests construct a surrogate lifecycle rather than execute the prose. Keep that distinction clear: their negative control should exercise a real assertion on the constructed history, not imply that the test executes an adopter's agent.
+
+Coverage: read the committed proposal, affected quickstart and sequence tests, and the independent Security review. Did not run tests, inspect every consumer, or execute the recipe.
