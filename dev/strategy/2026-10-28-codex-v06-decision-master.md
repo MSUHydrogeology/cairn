@@ -17,7 +17,9 @@
 
 **Recommendation:** retain the existing safeguards for now; pursue a narrower proposal only where evidence shows recurring burden worth the lost coverage. Costs and savings are not measured. The issue remains open; no choice is made here.
 
-**Forward baseline:** at the eventual release ceremony, the Maintainer must decide and perform any required signing and any AST direct correction after checking the final candidate against the current runbooks. The [forward-baseline procedure](../../bootstrap/REANCHOR_RUNBOOK.md) and [AST runbook](../../bootstrap/AST_BASELINE_RUNBOOK.md) govern; the latter reserves non-self-service corrections for a Maintainer-run, dry-run-verified process. Whether a correction is needed depends on the final tree and has not been checked here. Signing, re-anchor and push are not authorized by this note.
+**Stray reference:** You previously directed the one-line `(R5)` correction. The [reviewed proposal](../proposals/2026-11-02-codex-stray-finding-id.md) awaits your Decision because the file is in the high-risk scaffold directory. Accept the correction or leave it for later; leaving it costs no work but retains the obsolete reference.
+
+**Forward baseline:** A pre-certification AST check failed: multiple baselined symbols changed and known-new entries mismatched. The engine has not changed since that check; it is not a full certification result. At the eventual ceremony, the Maintainer checks the final candidate and performs any required signing and dry-run-verified direct correction under the [forward-baseline procedure](../../bootstrap/REANCHOR_RUNBOOK.md) and [AST runbook](../../bootstrap/AST_BASELINE_RUNBOOK.md). Signing, re-anchor and push are not authorized by this note.
 
 The sections below retain earlier context and may describe historical states; use this dated section and the linked current plans for present decisions.
 
