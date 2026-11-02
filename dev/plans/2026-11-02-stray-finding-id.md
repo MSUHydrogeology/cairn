@@ -65,3 +65,14 @@ Assurance path: high-assurance
 No blocking finding. The named path-containment test actually reads the inventory and checks guard names; the install and leaf references document their Class A sets rather than test this marker. The plan correctly avoids claiming runtime security proof and retains mapped checks, independent reviews and clean canonical-Python wide verification. No new machinery is necessary.
 
 Coverage: read committed plan, accepted proposal/Decision, current plan template, inventory entry and three named test references including the live inventory assertion. Did not reproduce mapping, enumerate all pins/readers, run the byte control or execute suites. Those implementation checks remain owed; this pass clears only the Security plan obligation.
+
+## Plan review -- Codex (GPT-6), Reviewer -- 2026-11-02
+
+**Obligation**: Internal  
+**Verdict**: proceed as framed; no findings.
+
+**Foundations.** (1) Yes: C1 limits the edit to the space and `(R5)` in the named bullet. The committed inventory's following lines describe the occupied-destination split, which the byte-equality criterion preserves. A live consumer or pin requiring the marker stops the edit. (2) The least involved credible alternative is to leave the marker; that saves the edit and its checks but leaves the obsolete reference. For removal, the existing byte comparison and mapped checks are sufficient without adding a scanner. (3) Another changed byte, a consumer requiring the marker, or a comparison that accepts an extra changed byte would show the plan wrong. C1 and the known-positive reader search explicitly test those cases.
+
+The stated heavy review and wide final verification follow the accepted Decision and existing obligations; they do not change the one-line implementation scope or claim a new runtime security proof.
+
+**Coverage:** Read the committed plan, accepted proposal and Decision, and the named inventory entry at `e8ce3e37`. Did not run checks, enumerate consumers or independently prove runtime safeguard behavior; implementation and separate Security Review cover their respective obligations. Elapsed: approximately 2 minutes. Tokens: unknown.
