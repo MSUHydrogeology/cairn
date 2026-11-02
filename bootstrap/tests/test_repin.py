@@ -377,6 +377,48 @@ def test_forward_guide_refuses_review_binding_and_fixture_mutation(bed, tmp_path
     assert bed.git("rev-parse", "HEAD").stdout.strip() == candidate
 
 
+@pytest.mark.parametrize("changed", ["head", "index", "worktree", "packet", "review", "fixture"])
+def test_forward_guide_refuses_changes_during_approval(bed, tmp_path, changed):
+    bed.write(ENGINE, "def f():\n    return 2\n")
+    candidate = bed.commit("candidate for approval revalidation")
+    evidence = tmp_path / "forward-evidence"
+    assert bed.run("forward-prepare", "--candidate", candidate,
+                   "--evidence-dir", str(evidence)).returncode == 0
+    for role, reviewer in (("ordinary", "fresh reviewer"), ("security", "security reviewer")):
+        result = bed.run("forward-review", "--evidence-dir", str(evidence), "--role", role,
+                         "--model", "test-model", "--elapsed", "unknown", "--tokens", "unknown",
+                         "--verdict", "ACCEPT", "--findings", "none", "--reviewer", reviewer,
+                         "--should-happen", "yes", "--best-alternative", "do nothing",
+                         "--what-would-show-wrong", "changed inputs accepted", "--coverage", "read packet")
+        assert result.returncode == 0, result.stderr
+    before = bed.read(BASELINE)
+
+    def change_and_approve():
+        if changed == "head":
+            bed.git("commit", "--allow-empty", "-m", "move candidate")
+        elif changed == "index":
+            bed.write(ENGINE, "def f():\n    return 3\n")
+            bed.git("add", ENGINE)
+        elif changed == "worktree":
+            bed.write(ENGINE, "def f():\n    return 3\n")
+        elif changed == "packet":
+            path = evidence / "forward-packet.json"
+            path.write_bytes(path.read_bytes() + b" ")
+        elif changed == "review":
+            path = evidence / "ordinary-review.txt"
+            path.write_bytes(path.read_bytes() + b" ")
+        else:
+            bed.write(BASELINE, "{}\n")
+        return "yes"
+
+    code, out = run_pty([PY, str(bed.repo / "scripts/repin.py"), "forward-guide",
+                         "--evidence-dir", str(evidence)],
+                        [("Apply this reviewed correction?", change_and_approve)],
+                        env=bed.env, cwd=bed.repo, timeout=8)
+    assert code == 2, out
+    assert bed.read(BASELINE) == ("{}\n" if changed == "fixture" else before)
+
+
 def test_baseline_preparation_requires_independent_inputs(bed, tmp_path):
     """Missing reader authority cannot fall through to ordinary first-run behavior."""
     roster = tmp_path / "approved-roster.json"

@@ -1182,9 +1182,10 @@ def forward_guide(repo, evidence_dir):
             or not txn.get("outputs") or LOCKFILE_REL in txn["outputs"]
             or set(txn["outputs"]) - {BASELINE_REL, KNOWN_NEW_REL}):
         raise Refuse("forward evidence is malformed or does not bind this exact AST-only transaction.")
-    reviews = []
+    reviews, review_bytes = [], {}
     for role in ("ordinary", "security"):
         review = read_safe(cdir / f"{role}-review.txt")
+        review_bytes[role] = review
         text = review.decode("utf-8")
         lines = text.splitlines()
         if (lines.count(f"role: {role}") != 1 or lines.count(f"candidate: {packet['candidate']}") != 1
@@ -1240,6 +1241,21 @@ def forward_guide(repo, evidence_dir):
         if not applied:
             if not ask_yes("Apply this reviewed correction?"):
                 raise Refuse("no `yes` was typed. Nothing was written.")
+            check_head(ctx)
+            if git(repo, "diff-index", "--cached", "--raw", "-z", "--no-renames", head):
+                raise Refuse("the index changed after approval; nothing was written.")
+            if (read_safe(cdir / "forward-packet.json") != packet_raw
+                    or read_safe(cdir / "forward-transaction.json") != txn_raw
+                    or any(read_safe(cdir / f"{role}-review.txt") != raw
+                           for role, raw in review_bytes.items())):
+                raise Refuse("review evidence changed after approval; nothing was written.")
+            if set(worktree_diff(ctx)) - set(paths):
+                raise Refuse("the worktree changed after approval; nothing was written.")
+            for rel in paths:
+                target = repo / rel
+                if (target.resolve() != target or not stat.S_ISREG(os.lstat(target).st_mode)
+                        or read_safe(target) != current_bytes[rel]):
+                    raise Refuse(f"{rel} changed after approval; nothing was written.")
             for rel, output in txn["outputs"].items():
                 target = repo / rel
                 current = read_safe(target)
