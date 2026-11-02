@@ -1,7 +1,7 @@
 # Show the operating cost of decision options
 
 **Author**: Codex gpt-6.1-terra
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — shipped authoring guidance and governing doctrine are protected surfaces.
 **Plan review**: required(Internal + Internal Security Review)
@@ -116,3 +116,11 @@ Coverage: Read the committed proposal, review template and cited collaboration g
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Maintainer -- 2026-11-01
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated** (chat, 2026-11-01; scribed by Antigravity):
+
+> "I accept the proposal using Option 1."
+
+**Tier**: heavy. Accepted as revised under Option 1 (governing instruction in `AGENTS.md` and shipped core counterpart, with collaboration alignment) with high assurance and required Internal + Internal Security Review plan review. Recurring additions: none.
