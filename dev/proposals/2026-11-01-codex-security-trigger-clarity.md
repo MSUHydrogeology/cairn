@@ -67,3 +67,28 @@ A same-format source expansion or guard bypass is excused, an accepted review is
 ## Assurance path
 
 **Assurance path**: heavy, with usual and Security Review and a reviewed plan, because this changes shipped security prescription. No new trust boundary is introduced. Elapsed: approximately 8 minutes; tokens: unknown.
+
+## Review -- Codex gpt-6.1-terra -- 2026-11-01
+
+Reviewed commit: ff5c5b0bcd6461717353cf5d7af70460c1ec2979  
+Target: entire proposal, especially clarity, burden and scope  
+Prior findings: none  
+Assurance path: heavy
+
+**Tier**: usual  
+**Findings**: raised  
+**Verdict**: ACCEPT  
+**Elapsed**: approximately 3 minutes  
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: explaining reuse at the existing trigger addresses the reported ambiguity without another field; the actual security boundary needs the separate Security Review. -- Proposal, Context and Proposal.
+2. **Best alternative.** Leave the current wording in place; it avoids editing but says only that movement alone does not trigger, not how to assess guarded reuse. -- `templates/modules/team-gated/security-review.md:53-57`; Proposal, Alternatives considered.
+3. **What would show it wrong?** Evidence that readers already understand guarded reuse unambiguously, or that the change creates another required record, would undermine the case. -- Proposal, Signals the change is wrong.
+
+**N1 — non-blocking.** The conditional sentence packs six specialist terms into one rule, including “trust class” and “guard reachability,” without defining them. Add brief plain explanations or examples at first use so an adopter can apply the conditions; the HDF5 example in Rationale is a useful start. Evidence: Proposal, Proposal and Rationale.
+
+**N2 — non-blocking.** “Those are explicit Maintainer choices” could suggest decisions have already been made, although the proposal says the remaining issue requests are not delivered. Say they are choices for the Maintainer to make, and preserve the stated loss. Evidence: Proposal, Scope delta and Alternatives considered.
+
+Coverage: Read the committed proposal, template review rules, and current module trigger; assessed clarity, burden and the stated limits. Did not validate the adopter's reported experience, test the wording with adopters, or perform the separate security judgment.
