@@ -165,7 +165,7 @@
   new feature, a contract change or a high-risk surface gets the full path: a
   proposal, a review, a decision by the human Maintainer, and a plan.</p>
   <figure>
-    <img src="assets/three-lanes-of-change.svg" alt="Three lanes: most changes take a light path. A typo or one-line fix is the change with its test and needs no review. A change whose shape is settled gets a short change note and a review first. Only a new feature, a contract change or a high-risk surface gets a proposal, a review, the Maintainer's decision and a plan. When unsure, take the heavier lane; every step is a commit.">
+    <img src="assets/three-lanes-of-change.svg" alt="Three lanes: most changes take a light path. A typo or one-line fix is the change with its test and needs no review. A change whose shape is settled gets a short change note and a review first. Only a new feature, a contract change or a high-risk surface gets a proposal, a review, the Maintainer's decision and a plan. For ordinary uncertainty, take the lighter lane with a reason; stop if you discover a new trust boundary. Every step is a commit.">
   </figure>
 
   <h3>One review at every stage</h3>
@@ -196,8 +196,10 @@
       Writes one short file. <strong>Why:</strong> validation is done by hand in a
       notebook today, so it is rarely rerun after the model changes.
       <strong>The change:</strong> read daily discharge records for each gauge,
-      match each gauge to its model stream reach, and report the fit
-      (Nash–Sutcliffe efficiency and percent bias) for each one.
+      match each gauge to its model stream reach, and report two fit measures:
+      Nash–Sutcliffe efficiency (how the predictions compare with using the
+      observed average) and percent bias (overall over- or underprediction as
+      a percentage).
       <strong>The assumptions, stated:</strong> gauges report cubic feet per second
       and the model cubic metres per second; missing days are skipped, never treated
       as zero. <strong>Rejected:</strong> keeping the notebook, because its results
