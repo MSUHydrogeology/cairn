@@ -1,7 +1,7 @@
 # Separate output-bound and cleanup assertions
 
 **Author**: Codex (GPT-6)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the test protects a security boundary
 **Plan review**: required(Internal + Internal Security Review)
@@ -36,7 +36,7 @@ No doctrine or adopter-facing documentation change is proposed; this deliberatio
 
 ### Tests required
 
-Run the focused A-t1, A-t4 and A-t6 nodes using the project Python; record interpreter, outcomes and elapsed time. A-t4 must reject statuses without truncation and output above the cap; A-t1 must reject a clean classification of the combined status. Check these with focused mutations in separate copies and record outcomes. A-t6 exercises descendant cleanup through the real runner. The Maintainer directed: “I think fixing the problem and testing it with a narrowly scoped run is sufficient. Then we move forward. We can't have stupid long testing ceremonies repeating for simple failures”. This proposes focused change verification, not another full-tree certification. The plan must resolve the applicable final integration selection against the existing Boundary B rules; this proposal does not waive a required check.
+Run the focused A-t1, A-t4 and A-t6 nodes using the project Python; record interpreter, outcomes and elapsed time, including any observed `truncated+cleanup-failed` status. A-t4 must reject statuses without truncation and output above the cap; A-t1 must reject a clean classification of the combined status. Check these with focused mutations in separate copies and record outcomes. A-t6 exercises descendant cleanup through the real runner. The Maintainer directed: “I think fixing the problem and testing it with a narrowly scoped run is sufficient. Then we move forward. We can't have stupid long testing ceremonies repeating for simple failures”. This proposes focused change verification, not another full-tree certification. The plan must resolve the applicable final integration selection against the existing Boundary B rules; this proposal does not waive a required check.
 
 ### Examples / smoke checks
 
@@ -100,3 +100,14 @@ Assurance path: high-assurance
 3. **What would show it wrong?** A non-truncation status passing, excessive retained bytes passing, combined status becoming CLEAN, or an uncontrolled probe survivor. The proposed focused mutations target the first three. The finite A-t4 probe writes 4096 KiB and spawns no descendants; removing its grace override changes waiting, not the attempted TERM/KILL sequence. Finite output alone does not prove timely exit; the proposal correctly requires inspection and bounded cleanup if needed (A-t4, `_kill_tree`, proposal S4).
 
 **Covered:** committed control flow, exact assertion tradeoff, fail-closed classification and finite probe. **Not covered:** failure reproduction, implementation checks, survivor measurements or Windows behavior; no tests or suite run.
+
+## Response -- Codex (GPT-6) -- 2026-11-02
+
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+- Usual review: accept the recommendation to record any observed combined status during verification, so a passing output-bound assertion does not hide that evidence. The Decision summary and rationale retain the explicit loss of overflow-specific cleanup-failure detection; A-t6 covers a timeout case, not that loss.
+- Security Review: no findings. Preserve the safe bounded-cleanup condition; finite output alone does not establish timely child exit.
+
+### Withdrawn / superseded commitments
+
+None.
