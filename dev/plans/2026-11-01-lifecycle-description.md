@@ -1,7 +1,7 @@
 # Plan: Align lifecycle descriptions
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-lifecycle-description.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Correct four published descriptions so readers can see when a proposal needs a plan.
