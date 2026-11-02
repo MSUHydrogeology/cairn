@@ -1,7 +1,7 @@
 # Let projects choose what certification covers
 
 **Author**: Codex Sol (Strategy)
-**Status**: awaiting-decision
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — changes protected methodology and shipped verification guidance.
 **Plan review**: required(Internal + Internal Security Review)
