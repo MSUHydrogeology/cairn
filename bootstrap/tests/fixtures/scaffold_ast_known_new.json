@@ -35,6 +35,12 @@
   "Assign:_IF_RE": [
     "36d695ac37c412f9"
   ],
+  "Assign:_INVENTORY_DST": [
+    "99ad34555b313430"
+  ],
+  "Assign:_INVENTORY_SRC": [
+    "f3316539c10db25f"
+  ],
   "Assign:_LEGACY_SEED_MODULES": [
     "acf24bbee166b7a2"
   ],
@@ -67,6 +73,9 @@
   ],
   "Assign:_RETIRED_INSTALLS": [
     "b165d0d7f9993eff"
+  ],
+  "Assign:_SHA256_RECORD": [
+    "391af3ac8415b706"
   ],
   "Assign:_STRUCTURAL_PROFILE_KEYS": [
     "e9ec1e45e8df01a7"
@@ -107,6 +116,9 @@
   "FunctionDef:_ask_git": [
     "134d343fd3d9b5f7"
   ],
+  "FunctionDef:_assert_git_binding_path": [
+    "3377a65bed1ad493"
+  ],
   "FunctionDef:_assert_mapping_ownership": [
     "dc6088c182620df4"
   ],
@@ -120,7 +132,7 @@
     "1e0191ace71a2024"
   ],
   "FunctionDef:_check_lockfile_paths": [
-    "5d54511004a31085"
+    "feba32076c2182e5"
   ],
   "FunctionDef:_classify_retired_records": [
     "9b8e9d762a0350d7"
@@ -138,13 +150,16 @@
     "fa54d5f244a0c46e"
   ],
   "FunctionDef:_contained_lockfile_path": [
-    "2fcd619421ab7e48"
+    "158c2f2485ca0df0"
   ],
   "FunctionDef:_count_adoptable_collisions": [
     "3715cff91aa4f798"
   ],
   "FunctionDef:_disk_dst": [
     "9ec980d865523e90"
+  ],
+  "FunctionDef:_display_name": [
+    "0ca64d081a9d50c1"
   ],
   "FunctionDef:_edit_check_prelude": [
     "676443b63d659029"
@@ -164,11 +179,20 @@
   "FunctionDef:_git_in_project": [
     "9c91eee46e5b1bd8"
   ],
+  "FunctionDef:_has_forbidden_path_character": [
+    "15d08d37c11ddb62"
+  ],
+  "FunctionDef:_is_link_or_reparse": [
+    "a3055b3ba07754ad"
+  ],
   "FunctionDef:_legacy_module_seed_ids": [
     "e232e44863919e59"
   ],
   "FunctionDef:_linked_vendor_wrapper_names": [
     "3d52bc49a7ca3e1d"
+  ],
+  "FunctionDef:_lock_record_identity": [
+    "da7702148b6aa48e"
   ],
   "FunctionDef:_lockfile_refusal": [
     "4a85a5705e89d2a5"
@@ -188,11 +212,14 @@
   "FunctionDef:_print_adopt_command": [
     "0359d3ca4d4c8a79"
   ],
+  "FunctionDef:_read_git_pointer": [
+    "af7038dd7d037d51"
+  ],
   "FunctionDef:_read_regular_bytes": [
     "fea7c9399cf2c67f"
   ],
   "FunctionDef:_reconcile_generated_blocks": [
-    "8d7f4b765c82c3d8"
+    "a79f2adb8b91c6f0"
   ],
   "FunctionDef:_record_discovery_outputs": [
     "4fa88c228c4335d2"
@@ -200,8 +227,11 @@
   "FunctionDef:_record_fork_entry": [
     "88df7af466835cdb"
   ],
+  "FunctionDef:_recovered_base_cache_path": [
+    "1ff579f5ef53a67f"
+  ],
   "FunctionDef:_refuse_if_linked": [
-    "fe1689c6b722799f"
+    "d4dd03a24ea2157c"
   ],
   "FunctionDef:_reject_polluted_children": [
     "9242114fae01b4ce"
@@ -214,6 +244,9 @@
   ],
   "FunctionDef:_render_module_task_overlay": [
     "c86d79b3dfcf3916"
+  ],
+  "FunctionDef:_render_review_inventory": [
+    "390cef2b04dcaa73"
   ],
   "FunctionDef:_rendered_onboarding_overlay": [
     "b8ef5f39cadbf79d"
@@ -229,6 +262,9 @@
   ],
   "FunctionDef:_substitute_module_inventory": [
     "60c7172b94b5ec55"
+  ],
+  "FunctionDef:_well_formed_sha256": [
+    "5b36245110f35037"
   ],
   "FunctionDef:_working_file_differs": [
     "e91f267fbcf9b659"

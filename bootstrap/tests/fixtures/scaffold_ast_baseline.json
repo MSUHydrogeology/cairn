@@ -64,10 +64,10 @@
     "type": "Assign"
   },
   "Assign:_CORE_MAPPINGS": {
-    "digest": "c534a74591faa24d",
+    "digest": "56c1326b087ce1cb",
     "span": [
       534,
-      572
+      573
     ],
     "type": "AnnAssign"
   },
@@ -144,10 +144,10 @@
     "type": "AnnAssign"
   },
   "Assign:_KIND_DISPLAY_LABEL": {
-    "digest": "3257e6b4904ee202",
+    "digest": "98c4a795f5e8a3de",
     "span": [
-      364,
-      376
+      464,
+      477
     ],
     "type": "Assign"
   },
@@ -400,10 +400,10 @@
     "type": "ClassDef"
   },
   "ClassDef:FilePlan": {
-    "digest": "ecfdd94640c33f0e",
+    "digest": "f6813c46b08601d1",
     "span": [
-      3169,
-      3177
+      480,
+      489
     ],
     "type": "ClassDef"
   },
@@ -488,10 +488,10 @@
     "type": "Expr"
   },
   "FunctionDef:_apply_upgrade": {
-    "digest": "b530c703cdd6597a",
+    "digest": "f9edd849a0827cf7",
     "span": [
-      2984,
-      3310
+      3250,
+      3849
     ],
     "type": "FunctionDef"
   },
@@ -584,10 +584,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_adopt_module": {
-    "digest": "37b05ffc167f5fe1",
+    "digest": "94b1b9618e9e9bc0",
     "span": [
-      1845,
-      2067
+      2110,
+      2333
     ],
     "type": "FunctionDef"
   },
@@ -600,18 +600,18 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_init_lock": {
-    "digest": "22588b85cd4a9db6",
+    "digest": "b9b852df33fd0d60",
     "span": [
-      1475,
-      1602
+      1744,
+      1877
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:_compute_upgrade": {
-    "digest": "35c892fe124d97d1",
+    "digest": "f9a279743521d39f",
     "span": [
-      620,
-      933
+      752,
+      1107
     ],
     "type": "FunctionDef"
   },
@@ -648,10 +648,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_extract_seed_tasks": {
-    "digest": "8dc7f968cb9eaa16",
+    "digest": "084b8501cb2ff019",
     "span": [
-      1909,
-      1948
+      1227,
+      1266
     ],
     "type": "FunctionDef"
   },
@@ -688,10 +688,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_install_one": {
-    "digest": "9e02d4f558dffd23",
+    "digest": "92a6c6043cccdb6c",
     "span": [
-      1443,
-      1509
+      307,
+      377
     ],
     "type": "FunctionDef"
   },
@@ -728,10 +728,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_print_upgrade_report": {
-    "digest": "6728a2137b80fd5a",
+    "digest": "809ce05afccda029",
     "span": [
-      953,
-      1021
+      1127,
+      1200
     ],
     "type": "FunctionDef"
   },
@@ -760,10 +760,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_resolve_vendor_wrapper": {
-    "digest": "b9f776b513d56519",
+    "digest": "4bbf93f2024ad2f6",
     "span": [
-      1282,
-      1319
+      1542,
+      1588
     ],
     "type": "FunctionDef"
   },
@@ -896,10 +896,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_write_stage": {
-    "digest": "cd268a8ac2e861ea",
+    "digest": "0e0082b49450539b",
     "span": [
-      1069,
-      1289
+      1246,
+      1539
     ],
     "type": "FunctionDef"
   },
@@ -960,10 +960,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:cmd_upgrade": {
-    "digest": "9362561c3ba3fc0d",
+    "digest": "a34abda6989dbc14",
     "span": [
-      3263,
-      3637
+      3926,
+      4341
     ],
     "type": "FunctionDef"
   },
@@ -1080,18 +1080,18 @@
     "type": "FunctionDef"
   },
   "FunctionDef:install_modules": {
-    "digest": "1e885a75234c7e37",
+    "digest": "82e914b581fa7f29",
     "span": [
-      2216,
-      2258
+      1735,
+      1777
     ],
     "type": "FunctionDef"
   },
   "FunctionDef:install_onboarding": {
-    "digest": "534a0d310b8d42c3",
+    "digest": "23c6e246ab3a2572",
     "span": [
-      1357,
-      1524
+      1562,
+      1732
     ],
     "type": "FunctionDef"
   },
@@ -1128,10 +1128,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:main": {
-    "digest": "87efbd5b7d0dce5c",
+    "digest": "9d09abee8dc5c707",
     "span": [
-      190,
-      789
+      191,
+      801
     ],
     "type": "FunctionDef"
   },
@@ -1168,10 +1168,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:print_report": {
-    "digest": "f1b12c1404935cf6",
+    "digest": "107a0bae35953223",
     "span": [
-      1395,
-      1526
+      1832,
+      1963
     ],
     "type": "FunctionDef"
   },
@@ -1264,10 +1264,10 @@
     "type": "FunctionDef"
   },
   "FunctionDef:write_local_env": {
-    "digest": "acc8fdd5edf96cb0",
+    "digest": "f2dbaf002922dbed",
     "span": [
-      1569,
-      1601
+      441,
+      528
     ],
     "type": "FunctionDef"
   },
