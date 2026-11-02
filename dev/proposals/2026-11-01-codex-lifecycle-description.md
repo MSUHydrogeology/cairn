@@ -79,3 +79,25 @@ The revised descriptions disagree with the operative rules, obscure an existing 
 **Advice**: The quickstart introduction calls its illustrated deliberate process the “heavy lane” (`docs/quickstart.md`, note on the example), which can also blur lane and tier. Consider a separately scoped correction; this proposal's four-surface scope does not cover it.
 
 **Coverage**: Read the proposal at `f8260cdb`, its cited accepted cut and Decision, committed lifecycle, README, release procedure and shipped rules; did not inspect implementation, run an install or tests, or perform Security Review. Elapsed time and token use: unknown.
+
+## Security Review -- Codex gpt-6.1-sol -- 2026-11-01
+
+Reviewed commit: 61b43cf984cefc8ad6c2a65d9ac9811888b5ea84  
+Target: proposed four-surface description alignment and retained security authority  
+Prior findings: none in this separate Security pass  
+Assurance path: high-assurance
+
+**Tier**: Security Review  
+**Findings**: none  
+**Verdict**: ACCEPT as framed; recommendation only, not a Maintainer Decision.  
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The diagram and release procedure currently prescribe a plan throughout the deliberate lane, while the accepted cut 2 and governing Review rule exempt light proposals. Aligning descriptions removes that false obligation without weakening named high-risk or added/widened-boundary triggers, which the Proposal explicitly retains. -- Committed SVG title/description; release process, Method; accepted cut-the-apparatus, cut 2 and Decision; `AGENTS.md`, Review.
+2. **Best alternative.** Correct the README and diagram alone. That costs fewer edits but leaves the same contradiction in release guidance and the published method; four existing surfaces address it without another artifact type or rule. -- Proposal, Context, Alternatives considered and Scope; lifecycle method, Three lanes.
+3. **What would show it wrong?** Describing every deliberate change as heavy, allowing light to bypass an independent high-risk trigger, or treating proposal tiers as replacements for trivial and standard-note lanes. The proposed comparison against governing text and accepted cut 2 directly addresses those errors; diagram visible and accessible text must agree. -- Proposal, Proposal and Evidence / verification plan; accepted cut 2.
+
+No blocking security finding. The four-surface limit and existing comparison/prose checks are proportionate; no additional classification apparatus is needed. This review grants no implementation or Decision authority.
+
+Coverage: examined the committed proposal, ordinary review, current proposal template, governing tier rule, accepted cut and Decision, lifecycle triage, diagram and release passage. Did not inspect future wording, render a changed diagram, enumerate every reader or run checks or suites.
