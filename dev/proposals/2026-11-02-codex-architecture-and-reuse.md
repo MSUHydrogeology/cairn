@@ -1,7 +1,7 @@
 # Make existing code and system shape cheap to inspect
 
 **Author**: Codex (runtime model identifier unavailable; Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- repository inspection and selected-module install contract
 **Plan review**: required(Internal + Internal Security Review)
@@ -153,3 +153,50 @@ or collection, checklists and strategy notes multiply.
 
 **Assurance path**: high-assurance -- untrusted repository inputs and install contract.
 
+## Review -- Codex (fresh-context usual reviewer) -- 2026-11-02
+
+**Model**: inherited Codex runtime; exact identifier unavailable; no downshift.
+**Reviewed commit**: `9d5a69e524a2ab3a749b386dd67efe2861f2ecf0`
+**Tier**: usual
+**Target**: opening proposal. **Prior findings**: none.
+**Assurance path**: high-assurance.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: make investigation cheaper without
+   automated refactoring. Architecture support ships questions; the gauge
+   collects editing history, not endpoint growth --
+   `templates/modules/team-gated/architecture-review.md`; `tools/gauge.py`, `_numstat`.
+2. **Best alternative.** An existing visualization plus a thin map/neighbor
+   command could reduce interface upkeep; setup/privacy costs remain
+   unmeasured --
+   `dev/strategy/2026-10-28-codex-review-at-agent-scale.md`, Options.
+3. **What would show it wrong?** Mostly justified neighbors, unsupported
+   capability claims, or no understanding gain against manual practice --
+   Proposal 2/5; source visual strategy, Open questions and falsification.
+
+**Verdict**: REVISE. **Findings**: two non-blocking improvements; no blockers.
+
+1. **AR-1 -- Give the pilot known answers.** Proposal 5 records understanding,
+   false alarms and misses, but names no independent cases. The visual
+   strategy specifies prepared duplication, drift and capability overclaims.
+   Close by carrying those cases, comparator tasks, attribution/endpoint
+   counting rules and a rejection criterion into the planned pilot evidence.
+   Repeated edits must not masquerade as net growth.
+2. **AR-2 -- Evaluate the rubric, not only the collector.** Tests required
+   exercises tooling; `dev/strategy/2026-10-27-codex-adopter-engineering-practices.md` calls for
+   contrasting adopter assessments and separates functional scope from
+   execution cost. Close with small legacy/new/mixed examples yielding a
+   justified action or adequate-practice result, and explicit ownership of
+   that testing distinction between this work and fault-centered testing.
+
+The grouped release-closeout row survives child-plan archive and retains
+source retirement ownership. No board outcome is proposed for removal.
+
+**Elapsed**: approximately 8 minutes, including shared source inspection.
+**Tokens**: unknown.
+
+**Covered**: source strategies, board outcomes, module/rubric, collector
+boundaries and retirement ownership. **Not covered / low confidence**: no
+implementation experiments, tool trials, duplication remeasurement or Security
+Review; benefit/annotation cost remains unmeasured.
