@@ -124,3 +124,19 @@ after resolving the customized-board conflict, installer/parser fallback and
 malformed-input mutations, and independent code or Security Review. Boundary B
 is still due after review on a clean commit under canonical Python 3.13.x.
 Elapsed: approximately 7 minutes; tokens: unknown.
+
+## Code review -- Codex (gpt-6.1-sol) -- 2026-11-01
+
+**Reviewed:** `bae1d930`; **Verdict:** blocking check remains open.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. The template puts waits first, retains both slot placeholders and the archive and removal preconditions, and gives each release table the accepted three columns (`templates/core/dev/PLANNING.md`; implementation diff).
+2. **Best alternative.** Retain the old board; that avoids rewriting but leaves the requested decision-first layout undelivered. The existing reader already supports the standalone marker, so a parser change adds no necessary capability (`tools/board.py`, `_roadmap_waits`).
+3. **What would show it wrong?** A missed wait, changed seed or loss of a customized board. The implementation record reports reader checks and slot mutation, but the upgrade check below remains incomplete.
+
+**Blocking finding:** C1 requires a real upgrade preserving a customized board's content and layout. The implementation record says the upgrade was staged with a conflict and the resolved apply was not exercised. Staging and unchanged live bytes do not establish the outcome after applying the upgrade. Close by completing the real upgrade, resolving the conflict as needed, and recording the resulting content and layout against the original, including permitted onboarding reconciliation.
+
+**Elapsed:** approximately 3 minutes; **Tokens:** unknown.
+
+**Coverage:** Read committed proposal, plan, implementation diff and full rewritten board, including onboarding, marker guidance and removal duties; inspected the author's recorded checks. No tests or upgrade were rerun. Did not independently establish seed behavior, inspect rendered installs, or test malformed inputs. Security Review and final Boundary B remain separate.
