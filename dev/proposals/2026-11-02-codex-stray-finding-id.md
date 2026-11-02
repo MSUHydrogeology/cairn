@@ -1,7 +1,7 @@
 # Remove the stray finding ID
 
 **Author**: Codex (GPT-6)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
