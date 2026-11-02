@@ -11,8 +11,8 @@
 [![Documentation: GitHub Pages](https://img.shields.io/badge/Documentation-GitHub_Pages-blue.svg)](https://msuhydrogeology.github.io/cairn/)
 
 Cairn is a working method for scientists developing software with AI coding
-agents. It brings together project rules, written proposals, review, testing,
-and a record of decisions kept alongside the code.
+agents. It gives a team project rules, a way to propose and review changes,
+and a record of decisions kept beside the code.
 
 Research software often outlives the conversation that produced it. Someone
 still needs to know why an assumption was made, what a change was checked
@@ -62,8 +62,8 @@ For a substantial change, the deliberate lane:
 5. Keep the proposal, reviews, responses, and decision in git with the code.
 
 Security-sensitive work has additional requirements. The
-[lifecycle](docs/methodology/lifecycle.md) describes how a change is sorted and where
-those boundaries sit.
+[lifecycle](docs/methodology/lifecycle.md) explains how Cairn sorts changes
+and where those boundaries apply.
 
 Review is by a fresh reviewer who did not write the work. A fresh session of
 the same AI tool is sufficient. The Maintainer can request another model or a

@@ -1,4 +1,4 @@
-# Try Cairn in one short sitting, with one AI agent
+# Try Cairn through one small change, with one AI agent
 
 This page is a recipe, not a tour.  You will take one small change
 through Cairn's lifecycle on a throwaway project, working the way most
@@ -7,17 +7,17 @@ in your editor.  The agent runs the commands; you make the decisions.
 
 Every step also shows the commands, if you would rather type them
 yourself in a terminal, with macOS / Linux and Windows side by side.
-This page will not teach you the method in one sitting;
-[`getting-started.md`](getting-started.md) and
-[`docs/methodology/`](methodology/) do that.
+This recipe shows one change from proposal to archive. For fuller explanations,
+read [`getting-started.md`](getting-started.md) and
+[`docs/methodology/`](methodology/).
 
-> **A note on the example.**  The change here is a one-line README
-> tagline.  In real work that is a *trivial* change: you would make it
-> and commit it with its test, with no code review.  Cairn sorts changes
-> into three lanes, and only the heaviest (a new feature, a contract change, a
-> high-risk surface) needs a proposal.  This recipe sends the tagline
-> down the full proposal path **on purpose**, so that you can see each
-> record the heavy lane leaves behind.
+> **A note on the example.** The change here is a one-line README
+> tagline. In real work, that is a *trivial* change: you would make it
+> and commit it with its test, with no code review. Cairn sorts changes
+> into three lanes. Only the heaviest lane needs a proposal: a new feature,
+> a contract change, or a high-risk surface. This recipe takes the tagline
+> through that full process **on purpose**, so you can see each record the
+> heavy lane leaves behind.
 
 > **How long it takes is not stated.**  It depends on how your agent is
 > set up and how closely you read.  Cairn has not measured it, and a
@@ -39,8 +39,8 @@ shape.
   in its place.
 * **A way to watch files appear**: your editor's file view, or your
   agent app's.
-* One uninterrupted sitting.  The steps are short, but do not start
-  this one in the gaps between other things.
+* Enough time to finish in one sitting. The recipe does not estimate a
+  duration; it depends on your agent and how closely you read.
 
 ## What you will end up with
 
@@ -140,8 +140,8 @@ remaining steps in the same window.
 to a changelog and the installer does not create one: a real project
 usually has its own.
 
-> **This copy is the trust decision.** Everything below runs code from
-> it.  Before you install Cairn into anything you care about, verify the
+> **The commands below run code from this copy.** Before you install Cairn
+> into anything you care about, verify the
 > release tag against a signing-key fingerprint you compared on two
 > independent channels; the procedure is in `bootstrap/PROVENANCE.md` >
 > "Verifying a release".  For this throwaway you can skip it; for a real
@@ -222,12 +222,12 @@ The `--summary` flag only previews: nothing is written.  For the
 `incident-trackers`, `documentation-plan`, `content-security`,
 `security-verification`.
 
-> **What the six axes are.** Cairn sizes the apparatus to your
-> project along six axes: **age** (greenfield or legacy), **size**
+> **What the six axes are.** Cairn chooses installed modules based on six
+> parts of your project: **age** (greenfield or legacy), **size**
 > (small to large), **complexity** (simple to complex), **language**
 > (one or several), **human_team** (solo to large team), and
 > **agent_team** (one agent to several). `solo-greenfield` takes the
-> smallest value on every axis, so it installs the least. Larger
+> smallest setting on every axis, so it installs the fewest modules. Larger
 > projects take larger values and get more modules; see
 > [`dimensions/README.md`](../dimensions/README.md).
 
