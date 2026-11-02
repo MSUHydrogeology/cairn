@@ -290,7 +290,7 @@ _REVIEW_TEXT = (
 _DECISION_TEXT = (
     "\n## Decision -- Maintainer -- 2026-05-28\n\n"
     "**ACCEPTED.** The Maintainer's authorization, quoted verbatim:\n\n"
-    '> "Accepted.  Add the tagline and archive the proposal in one commit."\n'
+    '> "Accepted as a light example.  Implement the tagline, run the applicable final check, record its results and omissions in the proposal, then archive it in a later commit."\n'
 )
 
 
@@ -498,6 +498,11 @@ class TestLayerBLifecycleShapeOnly:
         assert "## Decision -- Maintainer -- 2026-05-28" in archived_text
         assert "**Status**: accepted" in archived_text
         assert "## Implementation verification -- Agent -- 2026-05-28" in archived_text
+        assert (
+            '> "Accepted as a light example.  Implement the tagline, run the '
+            'applicable final check, record its results and omissions in the '
+            'proposal, then archive it in a later commit."'
+        ) in archived_text
         # The CHANGELOG carries the new line.
         assert "README tagline" in changelog.read_text()
         # The README carries the tagline.
