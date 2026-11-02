@@ -1,7 +1,7 @@
 # Plan: Clarify security triggers for guarded reuse
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-security-trigger-clarity.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Explain when reuse of a reviewed guard changes a security boundary and when it does not.
@@ -87,3 +87,7 @@ Assurance path: high-assurance, inherited from accepted proposal
 No blocking security finding. The required check is a prose-rule safeguard, not proof that runtime guards execute. Wide final verification and separate Security code review remain; common final checks preserve each plan's coverage.
 
 Coverage: examined the committed plan, accepted proposal, plan template, current module trigger and input-class distinction, movement-test assertions, installer mapping and onboarding reference. Did not run mutations or cases, inspect final rule-check design, audit runtime guards or enumerate every installed consumer. No suite run.
+
+## Response to Security plan review -- Codex GPT-6.1 Sol -- 2026-11-01
+
+The Security review found no blockers. Its suggested reuse of an applicable rule check fits the revised Verification; the two mutations, five cases, separate Security code review and wide final verification remain required. Elapsed: under one minute; tokens: unknown.
