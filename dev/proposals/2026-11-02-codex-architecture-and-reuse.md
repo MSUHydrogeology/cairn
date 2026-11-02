@@ -200,3 +200,50 @@ source retirement ownership. No board outcome is proposed for removal.
 boundaries and retirement ownership. **Not covered / low confidence**: no
 implementation experiments, tool trials, duplication remeasurement or Security
 Review; benefit/annotation cost remains unmeasured.
+
+## Review -- Codex (independent Security Reviewer) -- 2026-11-02
+
+**Model**: inherited Codex runtime; exact identifier unavailable; no downshift.
+**Reviewed commit**: `9d5a69e524a2ab3a749b386dd67efe2861f2ecf0`
+**Target**: opening proposal. **Prior findings**: none.
+**Assurance path**: high-assurance. **Tier**: Security Review.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: an advisory static map and bounded
+   pilot can improve discovery without authorizing deletion -- Proposal 1-5.
+2. **Best alternative.** Retain rubric/manual search as the pilot comparator;
+   share only suitable collection logic --
+   `templates/modules/team-gated/architecture-review.md`; Proposal 1/5.
+3. **What would show it wrong?** Inspection executes target code, escapes its
+   root, renders active content or silently truncates evidence -- Tests
+   required; Security preflight.
+
+**Verdict**: ACCEPT. **Findings**: two non-blocking improvements; no blockers.
+
+1. **AR-S1 -- Specify executable trust.** Reuse candidates cross executable
+   boundaries: `scripts/measurements.py:160-179` imports `_scaffold` from its
+   supplied root; `tools/gauge.py:102-108` invokes PATH-resolved Git with
+   inherited environment. Neither guarantees safe untrusted-repository reading.
+   Close by distinguishing trusted collector/runtime from inspected inputs,
+   identifying suitable static reuse, and assigning target-import and
+   Git-environment probes in the plan. This is not a demonstrated defect in
+   the unbuilt collector.
+2. **AR-S2 -- Bound processing too.** "Bounded traversal" leaves file bytes,
+   parser work and whole-tree comparison work unspecified;
+   `scripts/measurements.py:127-139` reads the entire file before parsing.
+   Close with finite processing budgets and visibly incomplete results when
+   limits are reached. Exact limits and measurements belong in the plan.
+
+The parent retirement table requires whole-scope outcomes and reserves scope
+changes to the Maintainer --
+`dev/strategy/2026-11-02-codex-v07-delivery-sequence.md`, Retirement ownership.
+Archiving cannot erase unfinished work. S2's future demonstrations are honestly
+unmeasured, not missing current collector experiments.
+
+**Elapsed**: shared approximately six-minute review window; per-file split
+unmeasured; recording approximately two minutes. **Tokens**: unknown.
+
+**Covered**: S1-S5, helper trust assumptions and retirement ownership.
+**Not covered / low confidence**: future filesystem-race, terminal/HTML,
+no-execution, resource-limit, installed-copy or pilot demonstrations.
