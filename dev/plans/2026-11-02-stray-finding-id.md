@@ -42,3 +42,26 @@ The existing security inventory is descriptive prose under the high-risk scaffol
 `python tools/test_tiers.py for bootstrap/_scaffold/SECURITY_MUTATIONS.md` selects `bootstrap/tests/test_install_module.py`, `bootstrap/tests/test_security_leaf.py` and `bootstrap/tests/test_upgrade_lockfile_path_containment.py`. The first two cite the Class A inventory; the third reads it in its path-containment assertion. Search direct readers and byte pins with a known-positive control before editing; remap if paths change. Compare parent and edited bytes with only the one deletion permitted, and demonstrate rejection of an extra byte in a separate copy. Run the mapped iteration tests and `python scripts/claim_check.py`, `python scripts/link_check.py`, `python scripts/sync_doc_snippets.py --check` on the inventory, plus `python scripts/quality_gate.py --sub neutrality` and `python scripts/check_cairn.py`. The comparison and negative control are S2/S3; no runtime security proof is claimed.
 
 Boundary C is independent targeted falsification, including separate Security Review. After review and fixes, run wide Boundary B on a clean unchanged final commit under canonical Python 3.13: mapped iteration and integration/workflow tests, owning families, known consumers, standing gates and byte control. Record SHA/range, interpreter, clean pre/post state, commands, counts, timing, tokens, non-pass dispositions and omissions. Combine overlapping final checks with other ready plans only on the same reviewed commit and without dropping coverage. No full certification run is authorized here.
+
+## Plan review -- Codex gpt-6.1-sol -- 2026-11-02
+
+Reviewed commit: 9b3eb574bcb5b3ea38a2ec6b272097c948acf99b  
+Target: complete exact-deletion plan against accepted scope  
+Prior findings: none  
+Assurance path: high-assurance
+
+**Obligation**: Internal Security Review  
+**Tier**: Internal Security Review  
+**Findings**: none  
+**Verdict**: ACCEPT  
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1 permits only the space and `(R5)` deletion once and preserves every safeguard byte and other identifier. A consumer requiring that marker stops implementation for reassessment. This retains the occupied-destination hard block and no-silent-overwrite explanation. -- Plan, Scope and C1; committed inventory bullet; accepted Decision.
+2. **Best alternative.** Use the planned parent-byte comparison and existing prose/readers rather than add a scanner or test infrastructure. Leaving the marker retains the obsolete reference; broader identifier cleanup is outside the accepted correction. -- Plan, Reuse and Verification; accepted proposal, Alternatives.
+3. **What would show it wrong?** Another byte changing or the comparison accepting an altered safeguard. C1 requires the exact comparison and an extra-byte negative control in a separate copy; the known-positive reader search protects against an assumed absence of consumers. -- Plan, C1 and Verification; proposal S2/S3.
+
+No blocking finding. The named path-containment test actually reads the inventory and checks guard names; the install and leaf references document their Class A sets rather than test this marker. The plan correctly avoids claiming runtime security proof and retains mapped checks, independent reviews and clean canonical-Python wide verification. No new machinery is necessary.
+
+Coverage: read committed plan, accepted proposal/Decision, current plan template, inventory entry and three named test references including the live inventory assertion. Did not reproduce mapping, enumerate all pins/readers, run the byte control or execute suites. Those implementation checks remain owed; this pass clears only the Security plan obligation.
