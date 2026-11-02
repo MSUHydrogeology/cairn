@@ -1,7 +1,7 @@
 # Align the documentation plan's testing example
 
 **Author**: Codex GPT-6.1 Sol (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the installed, vendor-neutral methodology template is a named high-risk surface.
 **Plan review**: required(Internal + Internal Security Review)
@@ -91,3 +91,11 @@ Accepted both reviews’ advice: the proposal now explicitly keeps the example c
 ### Withdrawn / superseded commitments
 
 None.
+
+## Decision -- Maintainer -- 2026-11-01
+
+**ACCEPTED, as revised.** The Maintainer's authorization, quoted **verbatim and visually isolated** (chat, 2026-11-01; scribed by Antigravity):
+
+> "Accept as revised"
+
+**Tier**: heavy. Accepted as revised with high assurance and required Internal + Internal Security Review plan review.
