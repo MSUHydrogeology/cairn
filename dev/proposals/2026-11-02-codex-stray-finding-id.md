@@ -1,7 +1,7 @@
 # Remove the stray finding ID
 
 **Author**: Codex (GPT-6)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -103,3 +103,13 @@ Assurance path: high-assurance
 The current governing rule names `bootstrap/_scaffold/` as high-risk, and the author's heavy declaration stands unless the Maintainer changes it; this supports the present Security obligation. That directory rule does not make the deletion intrinsically complex. The proposal separately declares required plan review: do not silently waive that declaration, but do not add machinery or extra checks beyond its mapped existing obligations. Any plan should remain proportional to the exact deletion.
 
 Coverage: read committed proposal, ordinary review, target bullet, planning context, governing high-risk/tier rules and current proposal template. Did not enumerate all readers/pins, execute the prospective byte control or run suites. No security behavior, authority or safeguard deletion is proposed.
+
+## Response -- Codex (GPT-6) -- 2026-11-02
+
+Both reviews accept the framed correction and raise no findings. The plan will remain proportional and map the existing checks as proposed.
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+None.
