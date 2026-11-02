@@ -1,7 +1,7 @@
 # Plan: Block tracked upgrade directory collisions
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-upgrade-directory-collisions.md
-**Status**: implementing
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Report folders occupying tracked upgrade files and protect their contents until the operator resolves them.
@@ -418,3 +418,103 @@ is unchanged.
 - `files: null` or non-list: refused before the gate, no traceback. The "no lockfile" wording there predates this work.
 
 **Coverage**: Not examined: a stage built by hand that never passed the gate, with an unrecorded wrapper later made a folder (no lock record names that path); concurrent changes after a check (stated limit); hard links; case aliases. Security Review obligation cleared; Boundary B and the Maintainer AST ceremony remain.
+
+## Implementation response -- Codex GPT-6 (Implementation) -- 2026-11-01
+
+The ordinary and Security Review findings are closed in the recorded corrections
+and follow-ups. The second and final Internal Security Review pass at `b46d416e`
+clears P1-P4; the final mapped wide Boundary B below passes on that committed
+tree. No accepted scope was removed. The Maintainer-run AST baseline ceremony
+remains separately listed in `dev/PLANNING.md` and is outside this plan's
+implementation verification.
+
+## Implementation verification -- Codex GPT-6 (Implementation) -- 2026-11-01 (post-review)
+
+**Boundary B mode**: wide. The final reviewed tree includes the wrapper registration correction and retired-folder fixture correction. The current tier map selected 41 files for the engine, public tests and upgrade guide; the plan separately requires `test_security_lint.py`, giving 42 unique files. The 41-file selection was split 20 + 21 under the runner limit; the executed union matches the selector with no overlaps or omissions.
+
+**Certified by**: pending (tree certification is separate).
+
+**Tested commit**: `b46d416e718dca955c78693b5dd0d97f0b89ad5e`.
+
+**Reviewed range**: `c805d268..9a021c33`, followed by reviewed corrections `a5859a7d`, `ebe3c84e`, `a8106567`, fixture correction `4fdf5a38`, and guidance correction `76a3a64e`; final Security Review follow-up is recorded at `b46d416e`.
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python`, Python 3.13.13.
+
+**Pre-run state**: clean Git clone at the tested commit; no staged or unstaged changes. The clone excluded unrelated untracked files in the shared tree.
+
+**Post-run state**: clean Git clone at the same tested commit; no staged or unstaged changes.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| Selection 1 below | 0 | 989 passed, 0 failed, 0 skipped | 167.05 s | unknown |
+| Selection 2 below | 0 | 1,852 passed, 0 failed, 0 skipped | 215.03 s | unknown |
+| `python -m pytest -q bootstrap/tests/test_security_lint.py` | 0 | 11 passed, 0 failed, 0 skipped | 1.94 s | unknown |
+| `python scripts/claim_check.py bootstrap/UPGRADE.md` | 0 | No claim-check flags | <1 s | unknown |
+| `python scripts/check_cairn.py` | 0 | 186 Markdown files; no issues; 91 external links not probed | 1.07 s | unknown |
+| `python scripts/link_check.py` | 0 | 186 Markdown files; no issues; 92 external links not probed | 0.12 s | unknown |
+| `python scripts/quality_gate.py --sub neutrality` | 0 | fail=0, info=43 | 0.82 s | unknown |
+
+Selection 1 exact command:
+
+```sh
+python -m pytest -q \
+  bootstrap/tests/test_agreement_retired.py \
+  bootstrap/tests/test_cli_module.py \
+  bootstrap/tests/test_core_dev_folders.py \
+  bootstrap/tests/test_default_security_stance.py \
+  bootstrap/tests/test_drift_surfacing.py \
+  bootstrap/tests/test_engine_copy_fallback_contained.py \
+  bootstrap/tests/test_finalize_retired_living_state.py \
+  bootstrap/tests/test_fork_advisory.py \
+  bootstrap/tests/test_gate_reanchor.py \
+  bootstrap/tests/test_install_time_onboarding.py \
+  bootstrap/tests/test_intents_tool.py \
+  bootstrap/tests/test_lockfile_provenance.py \
+  bootstrap/tests/test_model_selection_stub.py \
+  bootstrap/tests/test_next_session_local_note.py \
+  bootstrap/tests/test_oracle.py \
+  bootstrap/tests/test_oracle_activation.py \
+  bootstrap/tests/test_portable_security_sweeps.py \
+  bootstrap/tests/test_profile_grammar.py \
+  bootstrap/tests/test_reanchor.py \
+  bootstrap/tests/test_reference_scripts.py \
+  --tb=short
+```
+
+Selection 2 exact command:
+
+```sh
+python -m pytest -q \
+  bootstrap/tests/test_replacement_tools.py \
+  bootstrap/tests/test_review_stance_in_shipped_files.py \
+  bootstrap/tests/test_scaffold.py \
+  bootstrap/tests/test_scaffold_substrate.py \
+  bootstrap/tests/test_security_capability_install.py \
+  bootstrap/tests/test_security_leaf.py \
+  bootstrap/tests/test_security_stack.py \
+  bootstrap/tests/test_security_verification.py \
+  bootstrap/tests/test_skills_upgrade.py \
+  bootstrap/tests/test_test_tiers.py \
+  bootstrap/tests/test_upgrade.py \
+  bootstrap/tests/test_upgrade_added_slots.py \
+  bootstrap/tests/test_upgrade_edit_check_runs_no_project_programs.py \
+  bootstrap/tests/test_upgrade_lockfile_path_containment.py \
+  bootstrap/tests/test_upgrade_module.py \
+  bootstrap/tests/test_upgrade_module_additions.py \
+  bootstrap/tests/test_upgrade_refuses_hostile_project_data.py \
+  bootstrap/tests/test_upgrade_removes_retired_files.py \
+  bootstrap/tests/test_upgrade_side_door_parity.py \
+  bootstrap/tests/test_verify_integrity.py \
+  bootstrap/tests/test_web_hosting_security.py \
+  --tb=short
+```
+
+**Mutation evidence**: The recorded C2 controls and the final Security Review follow-up provide the two required separate-copy mutations and their controls; both the stage registration-gate and occupied-destination mutants were killed. No additional source mutation was run during this final integration selection.
+
+**Test-consolidation list**: The preceding Boundary B record measured `test_gate_reanchor.py` at 13.46 s and `test_reanchor.py` at 12.33 s; per-file durations were not collected in these final split invocations.
+
+**Non-pass disposition**: None in these commands. The mapped groups total 2,841 passed; with the standalone security lint, 2,852 passed.
+
+**Plan-specific acceptance**: The mapped public-command tests exercise plan, stage, apply, preservation, overrides and recovery through a fresh stage. No synced snippet changed, so `sync_doc_snippets.py` was not run.
+
+**Known omissions**: No full suite or tree certification was run. The Maintainer AST baseline ceremony remains separately tracked in `dev/PLANNING.md`; no re-anchor or repin was performed. Arbitrary concurrent changes after a check, hard links and case aliases remain outside the reviewed coverage.
