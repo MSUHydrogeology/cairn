@@ -12,7 +12,7 @@ The Maintainer accepted the heavy proposal at `2867a8e6`: describe the existing 
 
 ## Scope
 
-Correct `README.md`, `docs/assets/three-lanes-of-change.svg`, `docs/release-process.md`, and `docs/methodology/lifecycle.md`. The published method is a protected doctrine surface; the other three describe the workflow. The operative prescription in `AGENTS.md`, shipped templates, and enforcement stay unchanged. Coordinate the lifecycle method with its existing claim holder before editing.
+Correct `README.md`, `docs/assets/three-lanes-of-change.svg`, `docs/release-process.md`, `docs/methodology/lifecycle.md`, the diagram alternative text in `docs/index.html`, and the two lifecycle references in `docs/quickstart.md`. The published method is a protected doctrine surface; the other three describe the workflow. The operative prescription in `AGENTS.md`, shipped templates, and enforcement stay unchanged. Coordinate the lifecycle method with its existing claim holder before editing.
 
 **Reuse.** N/A: no code added. Reuse the existing diagram and lanes.
 
@@ -20,15 +20,15 @@ Correct `README.md`, `docs/assets/three-lanes-of-change.svg`, `docs/release-proc
 
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
-| C1 | Align four descriptions and accessible diagram text | Plan review, including Security Review | Four corrected existing surfaces |
+| C1 | Align descriptions and accessible diagram text | Plan review, including Security Review | Six corrected existing surfaces |
 
 ## Acceptance criteria
 
-C1: All four surfaces agree with `AGENTS.md` and the accepted cut-the-apparatus Decision: light is the default and has no plan, including wide or multi-area work; non-trivial standard and heavy work uses plan triage; named high-risk surfaces and added or widened trust boundaries trigger heavy. Preserve the outer lanes and all other review and check obligations. The diagram's visible labels, title, description and README alternative text agree. No new process, prescription or enforcement is introduced. Inspect the rendered diagram and accessibility text. A deliberate mutation asserting that light needs a plan must be detected by comparison with governing text; record the result.
+C1: All six surfaces agree with `AGENTS.md` and the accepted cut-the-apparatus Decision: light is the default and has no plan, including wide or multi-area work; non-trivial standard and heavy work uses plan triage; named high-risk surfaces and added or widened trust boundaries trigger heavy. Preserve the outer lanes and all other review and check obligations. The diagram's visible labels, title, description and README alternative text agree. No new process, prescription or enforcement is introduced. Inspect the rendered diagram and accessibility text. A deliberate mutation asserting that light needs a plan must be detected by comparison with governing text; record the result.
 
 ## Scope delta
 
-**Scope delta**: preserved.
+**Scope delta**: expanded. The Maintainer approved adding the website's image description and two quickstart passages to the accepted four surfaces. Asked: “The accepted lifecycle correction names four files. I found the same outdated wording in the website’s image description and two quickstart passages. May I include those small corrections in the same work so the published explanations agree?” Answer: “Yes, include both”. This adds no process or safeguards; the accepted scope remains intact.
 
 ## Verification
 
@@ -36,7 +36,9 @@ Boundary A: Run all files selected by `python tools/test_tiers.py for README.md 
 
 Direct readers: `test_review_and_verification_rules_ship.py::test_light_tier_can_ship_wide_work_without_a_plan` pins two lifecycle statements; `test_status_vocabulary_advisory.py::TestTheVocabularyMatchesTheDoctrineDiagrams::test_lifecycle_diagrams_draw_exactly_the_words_in_the_table` and `test_board_json_contract.py::TestGuideLookupMatchesLifecycle` check lifecycle status diagrams and their consumers. `test_stewardship_rules_ship.py::test_small_fix_rule_and_capture_pointer_reach_install`, `test_scope_reduction_trap.py::test_scope_reduction_obligation_present`, and `test_review_stance_in_shipped_files.py::test_doctrine_carries_the_statement` / `test_doctrine_omits_the_retired_privilege` pin other lifecycle obligations. `test_review_stance_in_shipped_files.py::test_readme_explains_the_review_contract` and `test_descriptive_page_omits_the_old_wording` read the root README. Run whole selected files, including their parameterized cases. Path citations in `test_loop_fidelity_gate.py`, `test_claim_check_module.py` and `test_session_start_drain_rules.py` are fixture text or references, not reads of the changed lifecycle. No selected direct reader tests the SVG or release-process semantics; compare them and README accessible text against the operative rules and perform the specified mutation and visual checks.
 
-Public-path gap: `docs/index.html` embeds the same SVG but has separate obsolete alternative text. It is outside the accepted four-surface scope and remains a known contradiction; the Maintainer must decide its separate disposition before archive. Indirect readers and pins: path and basename searches across scripts, tools, bootstrap and manifests found the direct readers above; `check_cairn.py`, `link_check.py` and `sync_doc_snippets.py` also discover tracked Markdown, while `quality_gate.py` walks docs for neutrality and `test_review_stance_in_shipped_files.py` scans live docs. Run `python scripts/check_cairn.py`, `python scripts/link_check.py README.md docs/release-process.md docs/methodology/lifecycle.md`, `python scripts/sync_doc_snippets.py --check README.md docs/release-process.md docs/methodology/lifecycle.md`, individual `python scripts/claim_check.py <file>` for those three, and `python scripts/quality_gate.py --sub neutrality`. The SVG is covered by render and accessible-text inspection, not Markdown gates. A repository search for the four current SHA-256 digests found no byte pin; the same search found the known digest of `bootstrap/tests/fixtures/skills/README.md` in `protected_test_roster.json` and `gate_manifest.json`. This does not rule out a differently expressed or stale pin.
+Indirect readers and pins: path and basename searches across scripts, tools, bootstrap and manifests found the direct readers above; `check_cairn.py`, `link_check.py` and `sync_doc_snippets.py` also discover tracked Markdown, while `quality_gate.py` walks docs for neutrality and `test_review_stance_in_shipped_files.py` scans live docs. Run `python scripts/check_cairn.py`, `python scripts/link_check.py README.md docs/release-process.md docs/methodology/lifecycle.md`, `python scripts/sync_doc_snippets.py --check README.md docs/release-process.md docs/methodology/lifecycle.md`, individual `python scripts/claim_check.py <file>` for those three, and `python scripts/quality_gate.py --sub neutrality`. The SVG and HTML image description are covered by render and accessible-text inspection, not Markdown gates. Include `docs/quickstart.md` in the Markdown gate commands. A repository search for the four current SHA-256 digests found no byte pin; the same search found the known digest of `bootstrap/tests/fixtures/skills/README.md` in `protected_test_roster.json` and `gate_manifest.json`. This does not rule out a differently expressed or stale pin.
+
+For the added paths, `python tools/test_tiers.py for docs/index.html docs/quickstart.md` selects `test_quickstart_sequence.py` and `test_review_stance_in_shipped_files.py`, already in the 32-file selection. `TestLayerAStepsOneThroughThree::test_step3_install_writes_expected_kernel_and_modules` reads quickstart counts and install commands; `test_descriptive_page_omits_the_old_wording[docs-quickstart-md]` scans retired wording. Neither tests the two changed lifecycle passages or HTML alternative text; compare those directly with the operative rules. The Markdown corpus readers above include quickstart; inspect the HTML image description alongside the rendered SVG. Searches in scripts, tools, bootstrap and manifests found no direct HTML test or current SHA-256 pins for either added file; the same digest search found the known fixture hash in the protected roster and gate manifest. Stale or differently expressed pins remain possible.
 
 Boundary C: ordinary code review and separate Security Review examine the committed implementation and iteration evidence, and run targeted falsification checks rather than a suite.
 
@@ -64,3 +66,7 @@ The review correctly identifies a mapping gap. The Verification cell now identif
 ## Mapping follow-up -- Codex (GPT-6) -- 2026-11-01
 
 The Verification cell now identifies corpus readers, commands, digest search and its positive control. The mapping finding is addressed; separate Security plan review remains. Elapsed: approximately 3 minutes; tokens: unknown.
+
+## Scope expansion -- Codex (GPT-6) -- 2026-11-01
+
+The Maintainer allowed the two additional files as quoted in Scope delta. The operative cells and mapped checks now include them. Review the widened scope before implementation; Security plan review remains owed. Coordinate the final selection with concurrent work. Elapsed: approximately 3 minutes; tokens: unknown.
