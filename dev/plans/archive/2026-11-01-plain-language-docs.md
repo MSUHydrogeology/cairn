@@ -1,7 +1,7 @@
 # Plan: Make Cairn's documentation easier to use
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-plain-language-docs.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Review Cairn's documentation for clear language while preserving its instructions and technical meaning.
@@ -419,3 +419,30 @@ focused citation test, and the 14 socket-blocked nodes that later passed; it
 does not claim the 33-file selection was rerun or fully passed. The ordinary
 and Security Reviews report no findings on the correction. No broad selection,
 certification, repin or re-anchor was run. Elapsed: unknown; tokens: unknown.
+
+## Archive note -- Codex -- 2026-11-01
+
+The accepted work is complete. The Maintainer accepted the focused results for
+the one remaining wide-selection gap in chat on 2026-11-01, verbatim: "Accept
+focused results." This disposition accepts the focused evidence for this plan;
+it does not claim that the full 33-file selection passed or was repeated.
+
+## Archive migration -- 2026-11-01
+
+**Dispositions**: none outstanding. The incomplete repeat of the 33-file
+selection after the citation correction is accepted for this plan by the
+Maintainer's chat disposition, quoted above. It is not a follow-up. No full
+Boundary B pass is claimed.
+
+**Evidence shipped**: The plan retains the group coverage, implementation
+verification, ordinary review, Security Review, correction reviews and the
+Maintainer's focused-results disposition.
+
+**Evidence deferred**: none. The 33-file selection was not repeated; the
+Maintainer accepted the focused results for this plan only.
+
+**Deferred evidence home**: none.
+
+**Fidelity sign-off**: The requested documentation review and shipped-template
+markers are complete. The review and focused verification records remain
+explicit about the evidence and its limits.
