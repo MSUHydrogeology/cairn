@@ -399,3 +399,22 @@ is unchanged.
 3. **What would show it wrong?** A registered custom wrapper omitted from stage observations applying successfully, or registration changing unrelated lock records. The public regression checks both and exercises refusal, finalization and restaging.
 
 **Evidence and coverage:** At a8106567 in a separate Git-backed copy, Python 3.12.9: the two parametrized wrapper-observation cases, renamed-wrapper apply and existing retired-record apply passed (4 passed). Read the gate, apply's required-observation derivation and the guide. Did not inspect arbitrary pre-existing stages, concurrent filesystem changes, or all containment and security paths. This ordinary re-review does not clear Security Review.
+
+## Code Security Review follow-up -- Claude Opus 5.5 -- 2026-11-01
+
+**Reviewed commit**: bca35cb7 (engine bytes identical to a8106567). **Reviewed range**: a5859a7d, a8106567, 7197c207. **Obligation**: Internal Security Review (second and final pass). **Findings**: P1-P4 closed; no new finding. **Bounding**: ACCEPTED; final Boundary B remains due. **Elapsed**: about 20 minutes. **Tokens**: unknown.
+
+**Foundations**:
+
+1. **Does it do what it claims?** Yes. Apply now requires any occupied recorded wrapper destination (`upgrade.py:3360`). Stage refuses an unrecorded custom wrapper before writing (`:4256-4279`). Retired records skip the block (`:1314`), malformed records refuse (`:3339-3347`), and the text says "regular file" (`:3591`).
+2. **Best alternative.** The approved registration: the wrapper's name comes from the reviewed lock, not editable stage data. Scoped finalize leaves other records alone (test asserts it).
+3. **What would show it wrong?** A dropped observation that still advances the lock, or a registration gate that pre-empts link refusals. Probes below.
+
+**Ledger** (clean clone of bca35cb7, Python 3.13.13, scratch probes discarded):
+- Focused collision, wrapper and retired tests: 15 + 31 passed.
+- Mutants: removing the stage gate fails `[CUSTOM.md]`; removing the occupied-destination requirement fails `[VENDOR.md]` and `[CUSTOM.md]`. Restored tree clean.
+- Registered `TOOL.md` made a folder after an untampered stage: apply exit 1, lock and data unchanged.
+- Dangling `VENDOR.md` link plus custom wrapper: containment refusal (exit 2) comes first.
+- `files: null` or non-list: refused before the gate, no traceback. The "no lockfile" wording there predates this work.
+
+**Coverage**: Not examined: a stage built by hand that never passed the gate, with an unrecorded wrapper later made a folder (no lock record names that path); concurrent changes after a check (stated limit); hard links; case aliases. Security Review obligation cleared; Boundary B and the Maintainer AST ceremony remain.
