@@ -1,3 +1,5 @@
+# Bug report
+<!-- Written in Cairn Plain Language 1.0 -->
 <!-- Apply labels: bug, needs-triage -->
 
 ### What happened

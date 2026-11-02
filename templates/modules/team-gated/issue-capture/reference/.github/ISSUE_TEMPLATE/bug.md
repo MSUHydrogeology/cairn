@@ -4,6 +4,9 @@ about: Something is broken.
 labels: ["bug", "needs-triage"]
 ---
 
+# Bug report
+<!-- Written in Cairn Plain Language 1.0 -->
+
 ### What happened
 
 <Describe the unexpected behavior.>

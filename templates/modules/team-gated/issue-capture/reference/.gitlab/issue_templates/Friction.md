@@ -1,3 +1,5 @@
+# Friction
+<!-- Written in Cairn Plain Language 1.0 -->
 <!-- Apply labels: enhancement, enhancement::friction, needs-triage -->
 
 ### What I was doing

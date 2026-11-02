@@ -4,6 +4,9 @@ about: A capability the workflow needed is missing.
 labels: ["enhancement", "enhancement::gap", "needs-triage"]
 ---
 
+# Gap
+<!-- Written in Cairn Plain Language 1.0 -->
+
 ### What I needed
 
 <The capability or behavior the workflow needed.>

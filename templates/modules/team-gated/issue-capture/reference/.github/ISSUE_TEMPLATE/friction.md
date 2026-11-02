@@ -4,6 +4,9 @@ about: A workflow rough edge / UX issue.
 labels: ["enhancement", "enhancement::friction", "needs-triage"]
 ---
 
+# Friction
+<!-- Written in Cairn Plain Language 1.0 -->
+
 ### What I was doing
 
 <The workflow step in plain language.>
