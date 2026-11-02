@@ -30,10 +30,9 @@ Cairn end to end; that trial was waived for 0.4 and 0.5 and is still open
 Lines marked **Waiting on Maintainer** are what `board.py --maintainer` lists,
 together with any proposal awaiting your Decision.
 
-- **Waiting on Maintainer**: run the v0.6 trust-baseline ceremony at the
-  release cut. It re-approves the test files Cairn's gate protects, after this
-  release's changes to them; only you can run it. See **What the v0.6 baseline
-  must include**, below. [Plan](plans/archive/2026-10-29-forward-trust-baseline.md)
+- The v0.6 trust baseline was installed and signed by the Maintainer at
+  `67cdb805704425132de3122dacf384830734f5fa`. See **v0.6 baseline and release
+  checks**, below. [Plan](plans/archive/2026-10-29-forward-trust-baseline.md)
 
 ## v0.6 — fix what Cairn already ships
 
@@ -47,53 +46,22 @@ release assignment authorizes no Decision, scope change, push or publication.
 | **Retire the v0.6 decision master.** The note briefs v0.6's open decisions and holds; once v0.6 ships, its job is done. | At the v0.6 cut, confirm each of its items is done or on this board, change its role from living, then archive it. | [Strategy](strategy/2026-10-28-codex-v06-decision-master.md) |
 | **Explain additional Security Review rounds.** Keep the ordinary two-round limit and require a specific reason for a proposed exception. | Review the proposal and present it for a decision. | [Proposal](proposals/2026-11-02-codex-security-review-pass-limit.md) |
 
-### What the v0.6 baseline must include
+### v0.6 baseline and release checks
 
-The baseline ceremony installs the reviewed machinery in one step. Before
-installing, certify the clean candidate tree. Before release, run
-`python bootstrap/security_check.py` on the clean release commit with every
-required tool, and no skips, expected failures or unexpected passes. The
-ceremony must account for:
+The Maintainer installed signed forward baseline `67cdb805704425132de3122dacf384830734f5fa`
+from reviewed candidate `8349824ca50a5683ba038078c1b3cfc28e5bf71f` on
+2026-11-02. Its signature and installed manifest were verified, and repin
+status reported no AST or frozen-file drift. This does not certify earlier
+history. The [forward preparation plan](plans/archive/2026-11-02-forward-ast-preparation.md)
+records the four baseline/old-anchor-dependent checks that were not run.
 
-- the protected-file packet, reader record and the Maintainer-only verifier,
-  pinning and signing steps deferred by the
-  [release-evidence plan](plans/archive/2026-10-29-release-evidence-environment.md);
-- the first install of the signed list of protected tests, from the
-  [test-trust plan](plans/archive/2026-10-28-test-trust-boundary.md), which
-  narrows freezing to security and trust tests;
-- the deferred baseline install from the
-  [ceremony-commands plan](plans/archive/2026-10-29-ceremony-commands.md);
-- the guided forward AST preparation and Maintainer approval and signing steps from the
-  [forward preparation plan](plans/archive/2026-11-02-forward-ast-preparation.md); its four baseline/real-anchor checks remain unpassed;
-- the engine's abstract syntax tree (AST) baseline, owed since this
-  release's engine changes:
-  `bootstrap/tests/test_ast_attest.py` fails 2 of 30 tests at `657c7aea`
-  ([upgrade growth](strategy/2026-10-30-claude-upgrade-growth.md#recommendation));
-- the operator guidance in `bootstrap/REANCHOR_RUNBOOK.md` and
-  `bootstrap/reanchor.sh` changed since the last pin;
-- protected test files changed since the last pin: four from the
-  [model-floor plan](plans/archive/2026-10-28-model-floor-alignment.md)
-  (`test_model_tier_rule_ships.py`, `test_model_selection_stub.py`,
-  `test_onboarding_seed_roster.py`, `test_review_stance_in_shipped_files.py`);
-  `test_review_sweep_ships.py` from the
-  [certification cost audit](plans/archive/2026-10-30-certification-cost-audit.md);
-  `test_security_finding_confidentiality.py`, `test_repin.py` and
-  `test_repin_ceremony.py` from the
-  [certification test repairs](plans/archive/2026-10-30-certification-test-repairs.md);
-  `test_review_and_verification_rules_ship.py` and
-  `test_verification_boundaries.py` from the
-  [test-once proposal](proposals/archive/2026-10-30-claude-test-once-per-change.md);
-  `test_quickstart_sequence.py` from the
-  [quickstart lifecycle plan](plans/archive/2026-11-02-quickstart-lifecycle-alignment.md);
-  `test_gate_preflight.py` and `test_security_check.py` from the
-  [release-test corrections plan](plans/archive/2026-11-02-release-test-corrections.md);
-  and `test_security_stack.py` from the
-  [output-bound test plan](plans/archive/2026-11-02-output-bound-test.md).
-
-Those plans did not repin or re-anchor themselves, and comparing against the
-old anchor is unnecessary. Maintainer: *"They can each build the machinery,
-the new baseline does not need to be part of their plans. It can be a work
-board item for v0.6."*
+The earlier full test run was not clean. The Maintainer directed a focused
+correction and no repeated broad suite; the
+[output-bound plan](plans/archive/2026-11-02-output-bound-test.md) records that
+decision and its passing focused checks. The final candidate's focused security
+scan and prose, neutrality and redundancy checks passed. The separate release
+security command has not run: it repeats the suite and refuses platform skips.
+Do not report a clean full certification or a passing release security command.
 
 ## v0.7 — better software engineering with lower cost
 
