@@ -2,8 +2,8 @@
 # Cairn — development board
 
 This board lists the work left and its next step. The Maintainer reads the
-first four sections. Agents also read **Working rules** and the sections after
-it. Evidence, quotes and history live in the document named in each row's
+status, waits and release sections. Agents also read **Working rules** and the
+sections after it. Evidence, quotes and history live in each row's
 **Record** column: an issue, strategy note, proposal, plan or guide, or the
 Maintainer chat the item came from. Finished work leaves the board.
 
@@ -90,34 +90,77 @@ old anchor is unnecessary. Maintainer: *"They can each build the machinery,
 the new baseline does not need to be part of their plans. It can be a work
 board item for v0.6."*
 
-## v0.7 — new capabilities and adopter feedback
+## v0.7 — better software engineering with lower cost
 
-Built on the corrected v0.6 baseline. Each item keeps its proposal, review and
-Maintainer gates. The adopter interview happens after v0.6, and this board
-authorizes no outreach or published testimonial.
+Built on the corrected v0.6 baseline. The release must improve the software
+scientists build, not just make Cairn's own process faster:
+
+- **Engineering quality:** clearer architecture and interfaces, readable and
+  reusable code, tests that catch meaningful scientific and software faults,
+  and acceptance criteria connected to evidence.
+- **Suite consolidation:** reduce repeated setup and redundant tests while
+  preserving fault coverage and required scientific, security and release
+  checks. Meet the existing runtime targets without treating fewer tests as
+  success by itself.
+- **Cost measurement:** gather actual usage per work item when reliable,
+  otherwise daily, refreshed at handoff; expose missing attribution rather
+  than guess. Use one collection and reporting design.
+
+Coordinate the existing rows: suite consolidation with testing guidance and
+acceptance criteria; code discovery with architecture guidance and visual
+exploration; metered cost with lightweight team measurement. These are shared
+workstreams, not additional processes or permission to remove outcomes.
+
+Maintainer direction (chat, 2026-11-02):
+
+> "I really want to make sure we get better software engineering into v0.7. I need those"
+
+> "but let's get the suite consolidation and cost measurement in v0.7 too. Please write up this, and make a v0.8 cut with the deferred items."
+
+Existing proposal, review, Security Review and Maintainer requirements remain
+where applicable. Release scheduling alone neither changes an accepted
+contract nor authorizes implementation, a push or publication.
 
 | Work | Next step | Record |
 |---|---|---|
-| **A smaller, faster test suite** (priority; costing time and money, Maintainer, 2026-10-30). The full run takes 24 min 55 s against a 10-minute target. The tier map (`tools/test_tiers.py`) landed in `8f514e05`. | Write the consolidation proposal: each removed test's fault mapped to a kept check. Then move ordinary tests into tier folders at the v0.6 baseline, bring the full run under 10 minutes (a parallel runner only after consolidation), and add test-growth figures to `tools/gauge.py --pulse`. | [Strategy](strategy/2026-10-27-antigravity-judicious-testing-and-simulation-verification.md#recommendation) |
+| **A smaller, faster test suite** (priority; costing time and money, Maintainer, 2026-10-30). The board's last reported full run was 24 min 55 s against a 10-minute target. The tier map (`tools/test_tiers.py`) landed in `8f514e05`. | Write the consolidation proposal: each removed test's fault mapped to a kept check. Then move ordinary tests into tier folders at the v0.6 baseline, bring the full run under 10 minutes (a parallel runner only after consolidation), and add test-growth figures to `tools/gauge.py --pulse`. | [Strategy](strategy/2026-10-27-antigravity-judicious-testing-and-simulation-verification.md#recommendation) |
 | **Local development environment notes.** Give adopters a simple, discoverable place to record machine-specific setup for people and agents, such as access to a test VM. Keep the notes out of committed history and keep credentials out of the notes. | Write a proposal for a lightweight local note and a way for agents to find it when needed. | Maintainer chat, 2026-11-01 |
 | **Make reading old code cheaper than writing new.** Agents copy code because finding it costs more: 15 groups of identical functions (676 lines) and 47 names defined in more than one file, measured 2026-10-30. | Write a proposal: a capability map, a neighbors report in plans and reviews, one home per critical capability, and a structure pass at each release. Consider, as prior art, the bottom-up README generation in Google's Elephant–Goldfish Model (`/egm-bootstrap`): a README for each folder, summarized upward to the root, for people to review. Also write each check's message as the fix to make, as OpenAI's harness-engineering report does. | [Strategy](strategy/2026-10-30-claude-architecture-growth.md#recommendation-for-v07); [outside practices](strategy/2026-11-02-claude-outside-practices-for-better-software.md#mechanical-enforcement-and-cleanup); [EGM](https://github.com/google/elephant-goldfish-model) (Apache 2.0; ideas only, Maintainer chat 2026-11-02) |
-| **Tests that catch real faults** (adopter guidance). Characterization tests for each function that carries a scientific claim, optional property tests for invariants, mutation checks on the lines a change touched, test-first, and a warning that agents weaken or fake tests to pass. Hypothesis and mutation tools stay optional recommendations. | Write a proposal for the shipped `testing-discipline` module; keep a human judging every reported fault. | [Strategy](strategy/2026-11-02-claude-outside-practices-for-better-software.md#tests-that-catch-real-faults) |
-| **Testable acceptance criteria.** Optional prompts in the plan template: criteria written as "WHEN *condition* THE SYSTEM SHALL *behavior*" (EARS), and bug records stating current, expected and unchanged behavior. | Write a proposal; it changes a shipped template. | [Strategy](strategy/2026-11-02-claude-outside-practices-for-better-software.md#testable-acceptance-criteria) |
-| **Architecture review for legacy and new systems.** Help each kind of system set suitable engineering practices, building on the existing rubric and the testing module. | Write a proposal. | [Strategy](strategy/2026-10-27-codex-adopter-engineering-practices.md#recommendation) |
-| **Visual review of a growing codebase.** Four linked views (workstreams, system shape, capabilities, growth) to help people review what agents build. Exploration only. | Explore, reusing LHM's scope map; compose with the architecture review. | [Strategy](strategy/2026-10-28-codex-review-at-agent-scale.md#recommendation) |
-| **Measure what agents cost from their tools' own logs.** Count real token and time use from the logs agent tools already keep, show it to the Maintainer, and stop unattended runs at a spending limit the Maintainer sets. Agents report nothing themselves. | Open the plan. The proposal is heavy tier, so the plan review includes a Security Review. Coordinate with lightweight team measurement, below, so tokens are counted once. | [Proposal](proposals/2026-10-30-claude-metered-cost.md) |
+| **Tests that catch real faults** (adopter guidance). Characterization tests for each function that carries a scientific claim, optional property tests for invariants, mutation checks on the lines a change touched, test-first, and a warning that agents weaken or fake tests to pass. Hypothesis and mutation tools stay optional recommendations. | Write a proposal for the shipped `testing-discipline` module, coordinated with suite consolidation and acceptance criteria; keep a human judging every reported fault. | [Strategy](strategy/2026-11-02-claude-outside-practices-for-better-software.md#tests-that-catch-real-faults) |
+| **Testable acceptance criteria.** Optional prompts in the plan template: criteria written as "WHEN *condition* THE SYSTEM SHALL *behavior*" (EARS), and bug records stating current, expected and unchanged behavior. | Propose the optional template prompts with the testing guidance, so criteria connect to the checks that demonstrate them without adding a new review stage. | [Strategy](strategy/2026-11-02-claude-outside-practices-for-better-software.md#testable-acceptance-criteria) |
+| **Architecture review for legacy and new systems.** Help each kind of system set suitable engineering practices, building on the existing rubric and the testing module. | Write a coordinated proposal with code discovery and reuse, extending the existing rubric and testing module rather than creating another engineering checklist. | [Strategy](strategy/2026-10-27-codex-adopter-engineering-practices.md#recommendation) |
+| **Visual review of a growing codebase.** Four linked views (workstreams, system shape, capabilities, growth) to help people review what agents build. Exploration only. | Explore or pilot LHM's scope-map approach with the architecture work and shared collection. A finished four-view interface is not a v0.7 release promise; the four outcomes remain in the strategy. | [Strategy](strategy/2026-10-28-codex-review-at-agent-scale.md#recommendation) |
+| **Measure what agents cost from their tools' own logs.** Count real token and time use from the logs agent tools already keep, show it to the Maintainer, and stop unattended runs at a spending limit the Maintainer sets. Agents report nothing themselves. | Open the accepted heavy-tier plan, including its Security Review. Coordinate with lightweight team measurement so collection, attribution and pulse reporting are implemented once. | [Proposal](proposals/2026-10-30-claude-metered-cost.md) |
 | **One sterile `git` helper for untrusted repositories.** Upgrade code turns off risky `git` settings (file-system monitor, filters, hooks) one call at a time; one shared helper would make every call safe the same way. | Write a proposal; it changes a high-risk surface and needs a Security Review. | [Strategy](strategy/2026-08-05-codex-security-strategy.md#1-one-shared-sterile-git-runner-for-untrusted-repositories-bnd-3--tru-6) |
-| **Tighten Cairn Plain Language rules 2, 13 and 17.** Three small wording gaps found when an agent writes scientific prose: promotional vocabulary (rule 2), simulated versus measured results (rule 13), and honesty about which citations were checked (rules 14 and 17). | Write a proposal for version 1.1, considered with the January 2027 evaluation below. | [Strategy](strategy/2026-10-27-antigravity-plain-language-and-scientific-writing.md#part-3-the-specific-gaps-to-close-for-direct-use-in-assai) |
-| **Keep the upgrade engine from growing.** Two steps: each new upgrade refusal names the attack it stops under `bootstrap/SAFETY.md`'s threat model, or becomes a one-line accepted risk; and a one-session trial of upgrading through Git (install 0.5.0, customize it, upgrade to the current tree both ways, compare). | Propose the refusal rule, since it changes review guidance, and run the trial. If the trial holds, write a heavy-tier proposal. | [Strategy](strategy/2026-10-30-claude-upgrade-growth.md#recommendation) |
-| **Lightweight team measurement.** Report words, tokens, review passes and model-tier mix; count review side-files toward their proposal or plan; count `bootstrap/_scaffold/` as product in `tools/gauge.py`, which now files it under other machinery; ship an `archive/` folder in `dev/measurement/`. | Write a proposal. | [Strategy](strategy/2026-10-27-antigravity-lightweight-team-measurement.md) |
-| **One file for routine multi-step work.** A standard change with two or three chunks carries its chunk and test plan in the proposal: one file, one review, one Decision. | Write a proposal; it changes lifecycle doctrine. | [Strategy](strategy/2026-08-21-claude-nimbleness-recovery.md#2-merge-proposal--plan-into-a-single-compact-artifact-for-standard-multi-step-work) |
-| **Did the ceremony pay off?** At Decision, list the Maintainer steps and follow-ups a change creates; at archive, say in one sentence whether the result repaid its review cost. | Write a proposal; it changes lifecycle doctrine. | [Strategy](strategy/2026-08-21-claude-nimbleness-recovery.md#4-add-lightweight-return-on-attention-accounting-to-proposals) |
+| **Keep the upgrade engine from growing.** Two steps: each new upgrade refusal names the attack it stops under `bootstrap/SAFETY.md`'s threat model, or becomes a one-line accepted risk; and a one-session trial of upgrading through Git (install 0.5.0, customize it, upgrade to the current tree both ways, compare). | Propose the refusal rule and run the one-session trial. An engine replacement is not promised for v0.7; if the trial supports one, bring a heavy-tier proposal for v0.8. | [Strategy](strategy/2026-10-30-claude-upgrade-growth.md#recommendation) |
+| **Lightweight team measurement.** Report words, tokens, review passes and model-tier mix; count review side-files toward their proposal or plan; count `bootstrap/_scaffold/` as product in `tools/gauge.py`, which now files it under other machinery; ship an `archive/` folder in `dev/measurement/`. | Reconcile this row with the accepted meter plan: retain size/pass/model reports, side-file attribution, product bucketing and the archive-folder outcome. Propose only uncovered work; do not add a second meter or pulse report. | [Strategy](strategy/2026-10-27-antigravity-lightweight-team-measurement.md) |
+
+## v0.8 — adopter feedback, workflow expansion and deferred cleanup
+
+Retain the following work, sequenced after v0.7 rather than discarded.
+Organized interviews, testimonials and the independent adoption trial belong
+here; incoming defect reports still receive normal triage. The cost of waiting
+is later evidence about outside usability. No outside trial is counted as
+completed, and no required release or correctness check is waived by this
+schedule. The board authorizes no outreach or testimonial publication.
+
+Visual-review exploration remains in v0.7 because it may improve architectural
+understanding; a full interface is not required for that release. Any
+upgrade-engine replacement comes here only if the bounded v0.7 trial supports
+it and its own proposal is accepted. Keep the January Plain Language evaluation
+on its existing date even if release timing changes.
+
+| Work | Next step | Record |
+|---|---|---|
+| **Tighten Cairn Plain Language rules 2, 13 and 17.** Three small wording gaps found when an agent writes scientific prose: promotional vocabulary (rule 2), simulated versus measured results (rule 13), and honesty about which citations were checked (rules 14 and 17). | Consider version 1.1 with the late-January 2027 evaluation; propose the gaps still present then, rather than making this a v0.7 release task. | [Strategy](strategy/2026-10-27-antigravity-plain-language-and-scientific-writing.md#part-3-the-specific-gaps-to-close-for-direct-use-in-assai) |
+| **One file for routine multi-step work.** A standard change with two or three chunks carries its chunk and test plan in the proposal: one file, one review, one Decision. | First compare the outcome with the existing light-tier path, which already allows multi-area work without a plan. Propose only the remaining standard-lane gap, preserving the single-artifact outcome rather than adding duplicate lifecycle machinery. | [Strategy](strategy/2026-08-21-claude-nimbleness-recovery.md#2-merge-proposal--plan-into-a-single-compact-artifact-for-standard-multi-step-work) |
+| **Did the ceremony pay off?** At Decision, list the Maintainer steps and follow-ups a change creates; at archive, say in one sentence whether the result repaid its review cost. | First reconcile with the current Decision-options cost comparison. Identify the remaining Decision and archive outcomes before proposing extra fields or another assessment routine. | [Strategy](strategy/2026-08-21-claude-nimbleness-recovery.md#4-add-lightweight-return-on-attention-accounting-to-proposals) |
 | **Move allow comments into configuration.** The `link-check-allow` and `cairn-internal-ref-allow` comments at the top of Markdown files move to a config file. | Tooling change. | [Strategy](strategy/2026-08-21-claude-nimbleness-recovery.md#5-finish-the-two-remaining-cleanup-items-from-the-august-sweep) |
 | **No live finding ids in shipped prose.** Extend the rule against short-lived ids (such as `R5`) to shipped module docs, docs and release notes, with a warning-only scan in `scripts/check_cairn.py`. | Write a proposal; doctrine changes take the rate-limit gate. | Maintainer: *"Defer the new rule on coordinates for later bringing back up in PLANNING"* |
-| **Outside adopter interview and testimonial (Stid).** Refine the drafted questions and survey to find friction points and capture a testimonial. | After v0.6. | [Strategy](strategy/2026-10-27-antigravity-adopter-survey-instrument.md#recommendation); Maintainer, 2026-10-27: *"I do have an outside adopter (Stid). Let's go ahead and get an interview set of questions for him, and he can give us a testimonial"* |
-| **Independent adopter feedback.** Learn whether someone outside Cairn can install and use a published release without relying on the team's setup or knowledge. The v0.5 signed bootstrap passed in the team's Windows VM; that is not an outside adoption trial. | When a willing outside adopter is available, invite feedback on their experience. | Maintainer chat, 2026-11-01; **Outside correctness trial**, below |
-| **Generate the hosted work tracker from `board.py --json`.** Build its rows from the board, `git` and `gh` instead of keeping 60 rows by hand. | Write the generator; optionally add a `passes` field to `cairn-board/1`. | [Strategy](strategy/2026-10-26-claude-work-tracker-and-the-board.md#recommendation) |
-| **Drain an adopter's current-release roadmap** ([#34](https://github.com/MSUHydrogeology/cairn/issues/34)). Show candidates and a short plan, then move eligible items one at a time under their existing gates. A candidate, not authorization. | Write a proposal. | [Issue #34](https://github.com/MSUHydrogeology/cairn/issues/34) |
+| **Outside adopter interview and testimonial (Stid).** Refine the drafted questions and survey to find friction points and capture a testimonial. | In v0.8, after v0.7 ships, use the staged instrument with a consenting adopter; publication of any quote or testimonial still requires explicit consent. | [Strategy](strategy/2026-10-27-antigravity-adopter-survey-instrument.md#recommendation); Maintainer, 2026-10-27: *"I do have an outside adopter (Stid). Let's go ahead and get an interview set of questions for him, and he can give us a testimonial"* |
+| **Independent adopter feedback.** Learn whether someone outside Cairn can install and use a published release without relying on the team's setup or knowledge. The v0.5 signed bootstrap passed in the team's Windows VM; that is not an outside adoption trial. | In v0.8, when a willing outside adopter is available, invite feedback on a published release. The outside correctness trial remains open until actually performed. | Maintainer chat, 2026-11-01; **Outside correctness trial**, below |
+| **Generate the hosted work tracker from `board.py --json`.** Build its rows from the board, `git` and `gh` instead of keeping 60 rows by hand. | In v0.8, generate from the existing board, git and issue data; consider a `passes` field only if the derived view demonstrates the need. | [Strategy](strategy/2026-10-26-claude-work-tracker-and-the-board.md#recommendation) |
+| **Drain an adopter's current-release roadmap** ([#34](https://github.com/MSUHydrogeology/cairn/issues/34)). Show candidates and a short plan, then move eligible items one at a time under their existing gates. A candidate, not authorization. | Write the v0.8 proposal, retaining existing lifecycle and Maintainer gates; this scheduling is not authorization for broader autonomous execution. | [Issue #34](https://github.com/MSUHydrogeology/cairn/issues/34) |
 
 ## Terms used here
 
