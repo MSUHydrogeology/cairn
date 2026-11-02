@@ -45,18 +45,21 @@ PowerShell steps.
 ## How the work moves
 
 Not every change needs the same process. Before anything is written, a change
-is sorted into one of three lanes, and only the heaviest one carries a proposal
-and a plan:
+is sorted into one of three lanes. The deliberate lane starts with a proposal;
+the proposal's tier determines whether accepted work needs a plan. Light is the
+default and has no plan, even for wide or multi-area work. Non-trivial standard
+and heavy work uses plan triage:
 
-![Three lanes: most changes take a light path. A typo or one-line fix is the change with its test and needs no review. A change whose shape is settled gets a short change note and a review first. Only a new feature, a contract change or a high-risk surface gets a proposal, a review, the Maintainer's decision and a plan. Ordinary ceremony uncertainty takes the lighter lane with a reason; stop on a newly discovered trust boundary. Every lifecycle step is a commit.](docs/assets/three-lanes-of-change.svg)
+![Three lanes: most changes take a light path. A typo or one-line fix is the change with its test and needs no review. A change whose shape is settled gets a short change note and a review first. A new feature, a contract change or a high-risk surface starts the deliberate lane with a proposal and the Maintainer's decision. Light is the default and has no plan, even for wide or multi-area work; non-trivial standard and heavy proposals use plan triage. Named high-risk surfaces and added or widened trust boundaries trigger heavy. Ordinary ceremony uncertainty takes the lighter lane with a reason; stop on a newly discovered trust boundary. Every lifecycle step is a commit.](docs/assets/three-lanes-of-change.svg)
 
 For a substantial change, the deliberate lane:
 
 1. Write a proposal explaining the problem, the proposed change, alternatives,
    and what would show it wrong.
 2. Have it reviewed while the design can still change.
-3. The human Maintainer decides whether to proceed. Non-trivial work gets a
-   plan with acceptance criteria.
+3. The human Maintainer decides whether to proceed. A non-trivial accepted
+   standard or heavy proposal gets a plan with acceptance criteria; light work
+   has no plan, even when it spans multiple areas or needs wide verification.
 4. Implement the change and record the checks actually run, including failures
    and omissions. Review the code before closing the work.
 5. Keep the proposal, reviews, responses, and decision in git with the code.

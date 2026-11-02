@@ -13,9 +13,9 @@ opens — trivial (just commit), standard (a change note), or
 deliberate (today's two-stage) — by the closed procedure in "Three
 lanes, chosen by a closed triage procedure" below. The deliberate lane
 carries two artifacts: a **proposal** (the deliberation — what to do,
-and why) and, for non-trivial standard/heavy work, a **plan** (the execution — how it
-was carried out, and that it was verified). They have separate
-lifecycles; the standard lane's change note reuses the plan's
+and why) and, for a non-trivial accepted standard/heavy proposal, a **plan**
+(the execution — how it was carried out, and that it was verified). They have
+separate lifecycles; the standard lane's change note reuses the plan's
 lifecycle below without a parent proposal.
 
 ## Why a recorded lifecycle

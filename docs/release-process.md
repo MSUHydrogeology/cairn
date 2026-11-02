@@ -59,8 +59,11 @@ a sweep slots into the matching row or proposes a new lens.
   change and its test, with no code review. A fix whose shape is settled takes the
   standard lane: a short change note, reviewed, then the change and a code
   review. A new feature, a contract change or a high-risk surface takes the
-  deliberate lane: proposal, review, the Maintainer's decision, plan. Deferred
-  work goes to a durable home with a revival condition — never to an untracked
+  deliberate lane: proposal, review, and the Maintainer's decision. A
+  non-trivial accepted standard or heavy proposal gets plan triage; light is
+  the default and has no plan, including for wide or multi-area work. Named
+  high-risk surfaces and added or widened trust boundaries trigger heavy.
+  Deferred work goes to a durable home with a revival condition — never to an untracked
   note.
 * **An empty sweep is a successful sweep.** A sweep that finds nothing records
   an explicit "clean as of `<date>`". Silence is not a result.

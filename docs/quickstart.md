@@ -14,10 +14,12 @@ read [`getting-started.md`](getting-started.md) and
 > **A note on the example.** The change here is a one-line README
 > tagline. In real work, that is a *trivial* change: you would make it
 > and commit it with its test, with no code review. Cairn sorts changes
-> into three lanes. Only the heaviest lane needs a proposal: a new feature,
-> a contract change, or a high-risk surface. This recipe takes the tagline
-> through that full process **on purpose**, so you can see each record the
-> heavy lane leaves behind.
+> into three lanes. A new feature, a contract change, or a high-risk surface
+> starts the deliberate lane with a proposal. The proposal's tier determines
+> whether accepted work needs a plan: light is the default and has none, while
+> non-trivial standard and heavy work uses plan triage. This recipe takes the
+> tagline through the deliberate lane with a heavy tier **on purpose**, so you
+> can see each record that path leaves behind.
 
 > **How long it takes is not stated.**  It depends on how your agent is
 > set up and how closely you read.  Cairn has not measured it, and a
@@ -330,8 +332,9 @@ rules):
 > proposal, with the message `Open proposal: README tagline`.
 
 Watch the file appear in `dev/proposals/`.  The agent should read
-`AGENTS.md`, write the proposal, commit it and stop.  In the heavy lane
-the proposal comes before the code.
+`AGENTS.md`, write the proposal, commit it and stop.  In every tier of the
+deliberate lane, the proposal comes before the code.  A non-trivial accepted
+standard or heavy proposal also gets a reviewed plan; light has no plan.
 
 <details>
 <summary>Or commit it yourself in a terminal</summary>

@@ -1,17 +1,19 @@
 <!--
   three-lanes-of-change.svg - Conceptual diagram: Cairn triages each change
-  into one of three lanes, and only the deliberate lane carries a proposal,
-  a Maintainer decision and a plan.
+  into one of three lanes. The deliberate lane starts with a proposal; its
+  tier determines whether accepted work needs a plan.
 
   Shown: the trivial lane (a typo or a one-line fix: the change with its
   test, and no code review); the standard lane (a change whose shape is
   already settled: a short change note, its review, the change with its
   test, and a code review); and the deliberate lane (a new feature, a
   contract change or a high-risk surface: a proposal, its review, the
-  Maintainer's decision, a plan, the plan's review, the change with its
-  test, and a code review). Footer: the deliberate test is checked first,
-  ordinary ceremony uncertainty resolves to the lighter lane with a reason,
-  and every step is a commit. Stop on a newly discovered trust boundary. Checkable
+  Maintainer's decision, then plan triage for a non-trivial standard/heavy
+  proposal; light has no plan. Named high-risk surfaces and added or widened
+  trust boundaries trigger heavy. The change then has its test and a code
+  review. Footer: the deliberate test is checked first, ordinary ceremony
+  uncertainty resolves to the lighter lane with a reason, and every step is a
+  commit. Stop on a newly discovered trust boundary. Checkable
   against docs/methodology/lifecycle.md > "Three lanes, chosen by a closed triage
   procedure".
 
@@ -28,8 +30,8 @@
 -->
 <svg viewBox="0 0 700 390" xmlns="http://www.w3.org/2000/svg"
      role="img" aria-labelledby="fig-title fig-desc">
-  <title id="fig-title">Three lanes: most changes take a light path, and only a new feature, a contract change or a high-risk surface gets a proposal, a Maintainer decision and a plan.</title>
-  <desc id="fig-desc">Trivial lane, for a typo or a one-line fix: the change with its test, and no code review. Standard lane, for a change whose shape is already settled: a short change note, its review, the change with its test, then a code review. Deliberate lane, for a new feature, a contract change or a high-risk surface: a proposal, its review, the Maintainer decides, a plan, the plan's review, the change with its test, then a code review. The deliberate test is checked first; ordinary ceremony uncertainty takes the lighter lane with a reason. Stop on a newly discovered trust boundary. Every step is a commit.</desc>
+  <title id="fig-title">Three lanes: light is the default and has no plan; non-trivial standard and heavy proposals use plan triage.</title>
+  <desc id="fig-desc">Trivial lane, for a typo or a one-line fix: the change with its test, and no code review. Standard lane, for a change whose shape is already settled: a short change note, its review, the change with its test, then a code review. Deliberate lane, for a new feature, a contract change or a high-risk surface: a proposal, its review and the Maintainer's decision. Light is the default and has no plan, even for wide or multi-area work. A non-trivial accepted standard or heavy proposal gets plan triage. Named high-risk surfaces and added or widened trust boundaries trigger heavy. Then the change has its test and a code review. The deliberate test is checked first; ordinary ceremony uncertainty takes the lighter lane with a reason. Stop on a newly discovered trust boundary. Every step is a commit.</desc>
   <style>
     svg { --ink: #1f2328; }
     .lane   { fill: #f6f8fa; stroke: #d0d7de; stroke-width: 1; }
@@ -117,6 +119,6 @@
   <rect x="570" y="279" width="104" height="36" rx="6" class="review"/>
   <text x="622" y="302" text-anchor="middle" class="t chip">code review</text>
 
-  <text x="350" y="358" text-anchor="middle" class="t note">Ordinary uncertainty: lighter lane with reason; stop at new trust boundaries.</text>
-  <text x="350" y="377" text-anchor="middle" class="t note">Every step is a commit, so the record replays from git.</text>
+  <text x="350" y="358" text-anchor="middle" class="t note">Light is default; no plan. Non-trivial standard/heavy proposals use plan triage.</text>
+  <text x="350" y="377" text-anchor="middle" class="t note">Named high-risk surfaces and new/widened boundaries trigger heavy; every step is a commit.</text>
 </svg>
