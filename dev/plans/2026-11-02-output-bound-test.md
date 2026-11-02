@@ -1,7 +1,7 @@
 # Plan: Separate output-bound and cleanup assertions
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-output-bound-test.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Check the output limit separately from cleanup success while preserving degraded-status reporting.
