@@ -334,7 +334,8 @@ rules):
 Watch the file appear in `dev/proposals/`.  The agent should read
 `AGENTS.md`, write the proposal, commit it and stop.  In every tier of the
 deliberate lane, the proposal comes before the code.  A non-trivial accepted
-standard or heavy proposal also gets a reviewed plan; light has no plan.
+standard or heavy proposal also gets a plan, reviewed when required; light has
+no plan.
 
 <details>
 <summary>Or commit it yourself in a terminal</summary>
