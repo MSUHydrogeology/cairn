@@ -96,9 +96,10 @@ Certification and baseline remain separate.
 ### 7. Directories occupying tracked upgrade paths — accepted
 
 The [proposal](../proposals/archive/2026-10-29-codex-upgrade-directory-collisions.md)
-and [plan](../plans/2026-10-30-upgrade-directory-collisions.md) remain in
-implementation. Fixes `a5940f31` and `3796e277` address the wrapper finding
-and preserve precedence; final reviews and verification remain open.
+and [plan](../plans/archive/2026-10-30-upgrade-directory-collisions.md) hold the
+accepted contract and implementation record. The ordinary and Security Reviews
+are closed, and final wide verification passed; the Maintainer AST baseline
+ceremony remains separately tracked for the v0.6 release.
 
 **Recovery choice:** accepted text permits absence after moving a folder, but
 `verify_integrity` rejects a missing tracked file. Should upgrade-only recovery

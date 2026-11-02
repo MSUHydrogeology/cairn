@@ -1,7 +1,7 @@
 # Plan: Block tracked upgrade directory collisions
 
 **Source proposal**: dev/proposals/archive/2026-10-29-codex-upgrade-directory-collisions.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-10-30
 **In brief**: Report folders occupying tracked upgrade files and protect their contents until the operator resolves them.
@@ -518,3 +518,29 @@ python -m pytest -q \
 **Plan-specific acceptance**: The mapped public-command tests exercise plan, stage, apply, preservation, overrides and recovery through a fresh stage. No synced snippet changed, so `sync_doc_snippets.py` was not run.
 
 **Known omissions**: No full suite or tree certification was run. The Maintainer AST baseline ceremony remains separately tracked in `dev/PLANNING.md`; no re-anchor or repin was performed. Arbitrary concurrent changes after a check, hard links and case aliases remain outside the reviewed coverage.
+
+## Archive migration -- Codex GPT-6 (Implementation) -- 2026-11-01
+
+**Dispositions**: none outstanding. The ordinary and Security Review findings
+are closed, and the post-review mapped Boundary B passed. The Maintainer-run
+AST baseline ceremony remains separate release work in `dev/PLANNING.md` >
+"What the v0.6 baseline must include"; it was not transferred to this plan.
+
+**Evidence shipped**: tracked-directory blocking and recovery in
+`b925187e`, follow-up engine corrections through `a8106567`, the retired-folder
+fixture correction `4fdf5a38`, and upgrade guidance `76a3a64e`; mapped public
+tests, Security Review mutations and controls, 2,852 passing mapped/security
+tests, and clean claim, link, Cairn and neutrality checks.
+
+**Evidence deferred**: none from this plan. Full-tree certification and the
+Maintainer AST baseline ceremony remain separate release procedures, not
+unmet Boundary B checks.
+
+**Deferred evidence home**: none. The separate AST baseline ceremony remains
+listed at `dev/PLANNING.md` > "What the v0.6 baseline must include".
+
+**Fidelity sign-off**: `b925187e` and its reviewed implementation corrections
+through `a8106567`, plus `4fdf5a38` and `76a3a64e`, deliver the accepted
+proposal's `## Response -- Codex GPT-6` > `### Current contract`, ratified by
+the Decision recorded in `32fda3e7`. The recorded recovery and custom-wrapper
+registration scope deltas are preserved; no accepted outcome was removed.

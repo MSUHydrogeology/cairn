@@ -47,7 +47,6 @@ release assignment authorizes no Decision, scope change, push or publication.
 
 | Work | Next step | Record |
 |---|---|---|
-| **A folder where a tracked file belongs.** `upgrade` should refuse safely and keep the folder's contents. | Fix the one blocking Security Review finding, then a targeted re-review. | [Plan](plans/2026-10-30-upgrade-directory-collisions.md) |
 | **Retire the v0.6 decision master.** The note briefs v0.6's open decisions and holds; once v0.6 ships, its job is done. | At the v0.6 cut, confirm each of its items is done or on this board, change its role from living, then archive it. | [Strategy](strategy/2026-10-28-codex-v06-decision-master.md) |
 | **Merge customized doctrine without losing its meaning** ([#35](https://github.com/MSUHydrogeology/cairn/issues/35)). | Needs a lighter design and Maintainer direction; the first proposal was rejected because its trigger, evidence and operator burden were not bounded. | [Proposal](proposals/archive/2026-10-30-codex-upgrade-semantic-adoption.md) |
 
