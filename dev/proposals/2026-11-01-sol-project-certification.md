@@ -152,3 +152,24 @@ by the two accepted proposals; it does not revise their historical records.
 
 Authoring: approximately 10 minutes; tokens unknown. Issue #33 read directly.
 No suite or adopter software run.
+
+## Review -- Codex Sol (Reviewer) -- 2026-11-01
+
+Reviewed commit: 8bfeb9f6
+Target: proposal and verification guidance
+Prior findings: none
+Assurance path: high-assurance
+
+**Tier**: usual
+**Findings**: none
+**Verdict**: ACCEPT
+**Elapsed**: approximately 3 minutes
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Project-chosen scope addresses the reported slow independent suites while keeping existing obligations and consumers in scope; the current shipped guidance requires the full suite at release and other triggers. Evidence: proposal Context and Proposal; `templates/core/AGENTS.md`, Verification.
+2. **Best alternative.** Retain whole-project certification: it avoids policy change and offers a single tree-wide claim, but preserves unrelated run costs. The proposal explicitly keeps that choice available. Evidence: proposal Alternatives and Proposal.
+3. **What would show it wrong?** An installed policy that forces an unrelated suite for a small change, misses a shared consumer, or silently waives an existing release check would contradict the intended scope and safeguards. Evidence: proposal Examples / smoke checks and Signals.
+
+Coverage: reviewed the committed proposal, review template, shipped verification text and methodology tree-certification claim. Did not independently measure issue timings, exercise installed examples, or perform Security Review.
