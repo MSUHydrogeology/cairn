@@ -63,7 +63,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Minor changes
 
-- **Added** -- The v0.7 delivery sequence links proposals for suite consolidation, fault-centered testing and architecture/reuse, with grouped strategy closeout. Their ordinary and Security Reviews and author responses are recorded; the proposals await Maintainer Decisions, not implementation. ([sequence](dev/strategy/2026-11-02-codex-v07-delivery-sequence.md))
+- **Added** -- The v0.7 delivery sequence links accepted proposals for suite consolidation, fault-centered testing and architecture/reuse, with grouped strategy closeout. Reviews and author responses are recorded; implementation planning is next. ([sequence](dev/strategy/2026-11-02-codex-v07-delivery-sequence.md))
 
 - **Added** — Cairn can prepare a forward AST correction with a guided, independently reviewed workflow without reconstructing old history. ([plan](dev/plans/archive/2026-11-02-forward-ast-preparation.md))
 
