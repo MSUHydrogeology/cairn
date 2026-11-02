@@ -131,3 +131,19 @@ No extra Maintainer choices are needed merely to order independent drafting.
 Carry operational instructions into their proper modules and records. Archive
 this map at its stated trigger, not as a perpetual release-management document.
 
+## Authoring checks
+
+On an archived copy of `f85a4210`, Python 3.13.13: scoped `check_cairn`
+passed for the six changed documents; neutrality and redundancy reported
+zero failures. Board-scope taxonomy checks passed: 10 passed, 79 deselected
+in 0.06 seconds. `tools/board.py --json` parsed the three proposals as
+awaiting-review. All sixteen original feature work cells/source records
+were retained; the v0.8 section was unchanged. Both working checkouts were
+clean after checking.
+
+The tier selector also named installer/upgrade families that mention these
+filenames; those fixtures do not read the changed roadmap/changelog contents
+and were not run. No shipped template or code changed. No full suite or
+implementation experiment ran; eight external links were not probed.
+Check window: approximately 2 minutes including inspection; tokens unknown.
+
