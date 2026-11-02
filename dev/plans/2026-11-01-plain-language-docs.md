@@ -147,3 +147,9 @@ Python 3.12.9, the two selected files passed: 490 tests in 3.52 seconds.
 Elapsed: approximately 5 minutes; tokens: unknown. This focused correction
 returns to the same reviewer for targeted re-look; final wide Boundary B
 remains open.
+
+## Focused review re-look -- Codex (Internal Reviewer, gpt-6.1-sol) -- 2026-11-01
+
+Reviewed commit: `9da627e7`. **Verdict:** The blocking finding is closed. The terminal command now stages `CHANGELOG.md`; the test extracts and executes both documented commands and checks the resulting commit. The targeted install node passed in a clean Git-backed copy under Python 3.12.9 (1 passed, 0.33 s). Elapsed: approximately 1 minute; tokens: unknown.
+
+**Coverage:** Rechecked the correction and its behavior test only. Did not review other documentation groups or perform Security Review; final wide Boundary B remains open.
