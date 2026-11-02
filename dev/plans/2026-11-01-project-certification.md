@@ -70,3 +70,26 @@ Assurance path: high-assurance
 The three named existing tests check certification wording, verification boundaries and shipped wide-mode rules; the plan directs the implementer to inspect their assertions, preserve Cairn-specific protections and remap changed paths rather than add duplicate tests by default. -- `bootstrap/tests/test_certifying_run_rule.py`, `test_verification_boundaries.py`, `test_review_and_verification_rules_ship.py`; Plan Verification.
 
 Coverage: read committed plan, accepted proposal, plan review template, install mapping and named test assertions. Did not run the selector or tests, exercise installed cases, or perform Security Review.
+
+## Plan review -- Codex gpt-6.1-sol -- 2026-11-01
+
+Reviewed commit: a666b9f049c61801e66d91c46393d7eb6a8f251b  
+Target: complete plan against accepted supplied-default architecture  
+Prior findings: none  
+Assurance path: high-assurance
+
+**Obligation**: Internal Security Review  
+**Tier**: Internal Security Review  
+**Findings**: none  
+**Verdict**: ACCEPT  
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1 supplies practical component/contract/integration/workflow defaults, agent-owned effect mapping and relevant widening. C2 reserves high-level needs and material exceptions for Maintainers, preserves existing obligations and limits claims to tested scope. Core-only use prevents optional modules becoming hidden prerequisites. -- Plan, C1/C2, Scope and installed examples; accepted proposal, Proposal.
+2. **Best alternative.** Change only core guidance. That is fewer edits but leaves templates and methodology's whole-ancestor claims contradictory; aligning existing homes and reusing tests avoids a selector, manifest or extra review program. -- Plan, Scope and Reuse; certifying-rule test surfaces and governing failure-path assertions.
+3. **What would show it wrong?** A core-only reader needing scientist-designed coverage, a shared solver missing a known consumer, or an existing security/release requirement being waived under a renamed scoped suite. The installed local/shared/uncertain/mandatory cases and omission checks address those failures; final wide verification follows independent reviews. -- Plan, C2 and Verification; accepted requirement-preservation paragraph.
+
+No blocking security finding. The named rule tests genuinely read governing/template/method surfaces and currently pin the universal contract; their changes must distinguish adopter defaults from Cairn's retained local protections. Verification assigns final-path mapping, reader/pin discovery and remapping before edits, with known-positive control and explicit coverage limits. The installer mapping confirms testing-discipline is optional.
+
+Coverage: examined committed plan, ordinary review, accepted proposal/Decision, current plan template, installer mapping and representative certifying/boundary assertions. Did not reproduce the 23-file selection, inspect final test edits, exercise installed cases or run suites. Actual mapping, requirement-preservation evidence and clean canonical-Python wide Boundary B remain implementation obligations.
