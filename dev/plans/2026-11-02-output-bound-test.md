@@ -46,3 +46,16 @@ No doctrine surface.
 ## Verification
 
 The Maintainer directed: “I think fixing the problem and testing it with a narrowly scoped run is sufficient. Then we move forward. We can't have stupid long testing ceremonies repeating for simple failures”. Run A-t1, A-t4 and A-t6 with the project Python and the focused mutations above, recording interpreter, outcomes, elapsed time and observed combined status. After review, repeat the focused nodes on a clean final implementation commit, recording pre/post state, tested SHA, reviewed range, command counts, non-passes and omissions. This is the authorized narrow selection, with no repeated full or wide suite for this correction. Reviewers run only targeted falsification checks. Applicable prose checks cover the plan and proposal.
+
+## Plan review -- Codex (GPT-6), fresh reviewer -- 2026-11-02
+
+Reviewed commit: d2153fec. **Obligation**: Internal. **Tier**: Internal.
+**Verdict**: ACCEPT. **Findings**: none. **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. C1 carries the accepted exact statuses, output cap, explicit DEGRADED classification and bounded-cleanup condition; C2 preserves both independent reviews. The Maintainer's Decision accepts the narrower verification and the overflow-specific coverage loss (proposal Decision; plan C1–C2 and Verification).
+2. **Best alternative:** Keep the exact status and diagnose cleanup first. That preserves detection of overflow cleanup failure, but investigation cost is unknown and the Maintainer accepted its loss for this correction. A-t6 checks timeout descendants, not overflow (proposal Context and Decision; committed A-t4 and A-t6).
+3. **What would show it wrong?** A non-truncation status or excess output passing, a combined status classifying CLEAN, or an uncontrolled probe survivor. C1 requires focused mutations for the first three and inspection with bounded cleanup if needed for the last; outcomes remain to be measured.
+
+**Covered:** accepted scope, sequence, focused checks and stated coverage loss against the committed proposal, plan and test nodes. **Not covered:** executing tests, establishing the reported failure's cause, implementation results or the separate Internal Security Review.
