@@ -321,6 +321,92 @@ def _open_review_decide(repo: Path) -> Path:
     return proposal_path
 
 
+def _implement_verify_archive(repo: Path, proposal_path: Path, tagline: str) -> Path:
+    """Implement, record the final check, then archive in later commits."""
+    readme = repo / "README.md"
+    readme.write_text(readme.read_text() + f"\n> {tagline}\n")
+    changelog = repo / "CHANGELOG.md"
+    changelog.write_text(
+        changelog.read_text().replace(
+            "## Unreleased\n",
+            "## Unreleased\n\n### Added\n\n- README tagline.\n",
+        )
+    )
+    _run_git(
+        "commit", "-m", "Implement README tagline",
+        str(readme.relative_to(repo)), str(changelog.relative_to(repo)), cwd=repo,
+    )
+
+    verification = (
+        "\n## Implementation verification -- Agent -- 2026-05-28\n\n"
+        "**Mode**: bounded\n"
+        "**Command**: applicable final integration selection\n"
+        "**Result**: pass (simulated lifecycle record)\n"
+        "**Omissions**: none in this small example\n"
+    )
+    with proposal_path.open("a") as fh:
+        fh.write(verification)
+    rel_proposal = str(proposal_path.relative_to(repo))
+    _run_git(
+        "commit", "-m", "Record final verification", rel_proposal, cwd=repo,
+    )
+
+    archive_path = proposal_path.parent / "archive" / proposal_path.name
+    archive_path.parent.mkdir(parents=True, exist_ok=True)
+    _run_git(
+        "mv", rel_proposal, str(archive_path.relative_to(repo)), cwd=repo,
+    )
+    _run_git(
+        "commit", "-m", "Archive README tagline proposal",
+        str(archive_path.relative_to(repo)), rel_proposal, cwd=repo,
+    )
+    return archive_path
+
+
+def _assert_verification_order(repo: Path, proposal_path: Path) -> None:
+    """Reject absent or premature verification evidence in constructed history."""
+    result = subprocess.run(
+        ["git", "log", "--format=%H%x09%s"], cwd=repo,
+        capture_output=True, text=True, check=True,
+    )
+    entries = [line.split("\t", 1) for line in result.stdout.splitlines()]
+    subjects = [subject for _, subject in entries]
+    expected = [
+        "Archive README tagline proposal",
+        "Record final verification",
+        "Implement README tagline",
+        "Decision: accept README tagline",
+        "Review: README tagline",
+        "Open proposal: README tagline",
+        "Install Cairn kernel",
+        "init",
+    ]
+    assert subjects == expected, (
+        "quickstart must record verification after implementation and before "
+        f"archive; got commit subjects: {subjects}"
+    )
+    verification_sha = entries[1][0]
+    rel_proposal = str(proposal_path.relative_to(repo))
+    recorded = subprocess.run(
+        ["git", "show", f"{verification_sha}:{rel_proposal}"], cwd=repo,
+        capture_output=True, text=True, check=True,
+    ).stdout
+    assert "## Implementation verification -- Agent -- 2026-05-28" in recorded
+    assert "**Mode**: bounded" in recorded
+    for field in ("Command", "Result", "Omissions"):
+        assert re.search(rf"^\*\*{field}\*\*: \S.*$", recorded, re.MULTILINE), (
+            f"verification record needs a non-empty {field} field"
+        )
+    implementation_sha = entries[2][0]
+    before_verification = subprocess.run(
+        ["git", "show", f"{implementation_sha}:{rel_proposal}"], cwd=repo,
+        capture_output=True, text=True, check=True,
+    ).stdout
+    assert "## Implementation verification" not in before_verification, (
+        "verification must be committed after the implementation check"
+    )
+
+
 class TestLayerBLifecycleShapeOnly:
     """Layer B uses a scripted surrogate to perform the file
     operations the agent + maintainer would do in Steps 4-6.
@@ -395,52 +481,24 @@ class TestLayerBLifecycleShapeOnly:
         proposals_dir = repo / "dev" / "proposals"
         proposal_path = _open_review_decide(repo)
 
-        # --- Step 5b: implement + archive + CHANGELOG, single commit ---
-        # Edit README.md (the tagline).
+        # --- Step 5b: implement, check, record, then archive ---
+        archive_path = _implement_verify_archive(
+            repo, proposal_path, "The disposable quickstart repo."
+        )
+        _assert_verification_order(repo, proposal_path)
         readme = repo / "README.md"
-        readme.write_text(readme.read_text() + "\n> The disposable quickstart repo.\n")
-        # git mv proposal -> archive.
-        archive_dir = proposals_dir / "archive"
-        archive_dir.mkdir(parents=True, exist_ok=True)
-        archived_path = archive_dir / proposal_path.name
-        _run_git(
-            "mv",
-            str(proposal_path.relative_to(repo)),
-            str(archived_path.relative_to(repo)),
-            cwd=repo,
-        )
-        # Update CHANGELOG > Unreleased.
         changelog = repo / "CHANGELOG.md"
-        text = changelog.read_text()
-        new_text = text.replace(
-            "## Unreleased\n",
-            "## Unreleased\n\n### Added\n\n- README tagline.\n",
-        )
-        changelog.write_text(new_text)
-        # Single path-scoped commit for all three.
-        _run_git(
-            "commit",
-            "-m",
-            "Implement README tagline (archived)",
-            str(readme.relative_to(repo)),
-            str(archived_path.relative_to(repo)),
-            # Naming BOTH sides of the git mv -- per AGENTS.md > "The
-            # staged git index is a shared surface" / "A git mv rename
-            # needs BOTH sides named in a path-scoped commit".
-            str(proposal_path.relative_to(repo)),
-            str(changelog.relative_to(repo)),
-            cwd=repo,
-        )
 
         # --- Assertions: lifecycle shape on disk ---
         # The proposal moved to archive/.
-        assert archived_path.exists()
+        assert archive_path.exists()
         assert not proposal_path.exists()
         # The Decision section is in the archived proposal.
-        archived_text = archived_path.read_text()
+        archived_text = archive_path.read_text()
         assert "## Review -- Reviewer -- 2026-05-28" in archived_text
         assert "## Decision -- Maintainer -- 2026-05-28" in archived_text
         assert "**Status**: accepted" in archived_text
+        assert "## Implementation verification -- Agent -- 2026-05-28" in archived_text
         # The CHANGELOG carries the new line.
         assert "README tagline" in changelog.read_text()
         # The README carries the tagline.
@@ -459,32 +517,11 @@ class TestLayerBLifecycleShapeOnly:
         self._install_cairn(repo)
         proposals_dir = repo / "dev" / "proposals"
         proposal_path = _open_review_decide(repo)
-        readme = repo / "README.md"
-        readme.write_text(readme.read_text() + "\n> Tagline.\n")
-        archive_dir = proposals_dir / "archive"
-        archive_dir.mkdir(parents=True, exist_ok=True)
-        archived_path = archive_dir / proposal_path.name
-        _run_git(
-            "mv",
-            str(proposal_path.relative_to(repo)),
-            str(archived_path.relative_to(repo)),
-            cwd=repo,
+        archived_path = _implement_verify_archive(
+            repo, proposal_path, "Tagline."
         )
+        _assert_verification_order(repo, proposal_path)
         changelog = repo / "CHANGELOG.md"
-        changelog.write_text(
-            changelog.read_text().replace(
-                "## Unreleased\n",
-                "## Unreleased\n\n### Added\n\n- README tagline.\n",
-            )
-        )
-        _run_git(
-            "commit", "-m", "Implement README tagline",
-            str(readme.relative_to(repo)),
-            str(archived_path.relative_to(repo)),
-            str(proposal_path.relative_to(repo)),
-            str(changelog.relative_to(repo)),
-            cwd=repo,
-        )
 
         # --- Step 6 assertions ---
         result = subprocess.run(
@@ -492,19 +529,24 @@ class TestLayerBLifecycleShapeOnly:
             cwd=repo, capture_output=True, text=True, check=True,
         )
         lines = result.stdout.strip().splitlines()
-        # Six lifecycle commits per Step 6's published count.
-        assert len(lines) == 6, (
-            f"quickstart Step 6 documents six commits; got {len(lines)}:\n{result.stdout}"
+        # Eight commits preserve each lifecycle boundary, including the
+        # implementation check record and the later archive transition.
+        assert len(lines) == 8, (
+            f"quickstart Step 6 documents eight commits; got {len(lines)}:\n{result.stdout}"
         )
         subjects = [line.split(" ", 1)[1] for line in lines]
-        # Boundaries are present and ordered (newest first via git log).
-        assert subjects[0].startswith("Implement README tagline")
-        assert subjects[1].startswith("Decision: accept")
-        assert subjects[2].startswith("Review:")
-        assert subjects[3].startswith("Open proposal:")
-        assert subjects[4].startswith("Install Cairn")
-        assert subjects[5] == "init"
+        assert subjects == [
+            "Archive README tagline proposal",
+            "Record final verification",
+            "Implement README tagline",
+            "Decision: accept README tagline",
+            "Review: README tagline",
+            "Open proposal: README tagline",
+            "Install Cairn kernel",
+            "init",
+        ]
         # The proposal is in archive/ (listed in Python, so the check
         # also runs where no `ls` exists).
         archive_names = {p.name for p in (proposals_dir / "archive").iterdir()}
         assert f"{_PROPOSAL_STEM}.md" in archive_names
+        assert archived_path.exists()

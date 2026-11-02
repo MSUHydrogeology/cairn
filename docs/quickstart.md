@@ -18,8 +18,9 @@ read [`getting-started.md`](getting-started.md) and
 > starts the deliberate lane with a proposal. The proposal's tier determines
 > whether accepted work needs a plan: light is the default and has none, while
 > non-trivial standard and heavy work uses plan triage. This recipe takes the
-> tagline through the deliberate lane with a heavy tier **on purpose**, so you
-> can see each record that path leaves behind.
+> tagline through the deliberate lane as a light example **on purpose**, so you
+> can see its review, decision, implementation check and archive without adding
+> a plan. Normally, a one-line tagline takes the trivial lane above.
 
 > **How long it takes is not stated.**  It depends on how your agent is
 > set up and how closely you read.  Cairn has not measured it, and a
@@ -51,8 +52,8 @@ practice project with:
 
 * a `dev/` tree containing one proposal, with its review and decision,
   archived;
-* one commit per lifecycle step (open, review, decision,
-  implement-and-archive), plus the two setup commits (init, install);
+* one commit per lifecycle step (open, review, decision, implementation,
+  verification record, archive), plus the two setup commits (init, install);
 * a `CHANGELOG.md > Unreleased` line for the change.
 
 At the end you delete the folder.  You are *not* installing Cairn into a
@@ -325,7 +326,9 @@ rules):
 
 > Work in the `quickstart` folder.  Read `AGENTS.md` to learn how
 > proposals work.  Then propose a one-line addition to `README.md`: a
-> brief project tagline.  Open the proposal as
+> brief project tagline.  This is a light deliberate example; state that
+> tier in the proposal and explain that the real one-line change would
+> normally use the trivial lane.  Open the proposal as
 > `dev/proposals/2026-XX-XX-<your-name>-readme-tagline.md`, copying
 > the shape of `dev/proposals/_template.md`, with Status
 > `awaiting-review`.  Do not implement anything yet.  Commit only the
@@ -349,7 +352,7 @@ git commit -q -m "Open proposal: README tagline"
 
 </details>
 
-## Step 5 -- review, decide, implement, archive
+## Step 5 -- review, decide, implement, check, archive
 
 **Review, in a new chat.**  Start a **new chat** with your agent, in the
 same `cairn-try` folder, so the reviewer is not the session that wrote
@@ -377,7 +380,7 @@ words, set apart as a quote, and change the header to
 
 **ACCEPTED.** The Maintainer's authorization, quoted verbatim:
 
-> "Accepted.  Add the tagline and archive the proposal in one commit."
+> "Accepted as a light example.  Implement the tagline, run the applicable final check, record its results and omissions in the proposal, then archive it in a later commit."
 ```
 
 Then go back to the **first** chat, the one that wrote the proposal, and
@@ -385,19 +388,21 @@ paste:
 
 > I have accepted the proposal; my decision is in the file.  Commit my
 > decision on its own, with the message `Decision: accept README tagline`.
-> Then implement the tagline, move the proposal to
-> `dev/proposals/archive/`, add a one-line entry to
-> `CHANGELOG.md > Unreleased`, and commit those three together as one
-> implementing-and-archiving commit.
+> Then implement the tagline and add a one-line entry to
+> `CHANGELOG.md > Unreleased`; commit those two files as
+> `Implement README tagline`.  On that clean commit, run the applicable
+> bounded final integration check required by `AGENTS.md`.  Append the
+> command, result and any omissions to the accepted proposal as an
+> implementation verification record, and commit that record on its own.
+> Finally move the proposal to `dev/proposals/archive/` in a later commit.
 
-A small accepted proposal can be implemented and archived in one commit
-with no plan.  You should see the agent:
+A light accepted proposal has no plan.  You should see the agent:
 
 * commit your decision;
-* edit `README.md` to add the tagline;
-* move the proposal into `dev/proposals/archive/`;
-* add the CHANGELOG line;
-* commit those three together, naming each file.
+* edit `README.md` and add the CHANGELOG line, then commit both;
+* run the bounded final check on that clean implementation commit;
+* record its command, result and omissions in the proposal and commit it;
+* archive the proposal in a later, separate commit.
 
 <details>
 <summary>Or commit your decision yourself in a terminal</summary>
@@ -449,11 +454,12 @@ Get-Content CHANGELOG.md
 
 </details>
 
-You should see:
+You should see eight commits with clear lifecycle boundaries (init,
+install, proposal-open, review, decision, implementation, verification
+record and archive):
 
-* six commits with clear lifecycle boundaries (init, install,
-  proposal-open, review, decision, implement-and-archive);
-* the proposal in `archive/`, frozen, with its review and decision;
+* the proposal in `archive/`, frozen, with its review, decision and
+  implementation verification record;
 * a CHANGELOG line that records what changed.
 
 That is the lifecycle.  A larger change adds a plan, with its own
@@ -495,8 +501,8 @@ Remove-Item -Recurse -Force cairn-try
 
 * **Proposal before code.**  The first commit after setup was a
   proposal, not a feature.
-* **Each transition is its own commit.**  Open, review, decision and
-  implement-and-archive each landed separately.
+* **Each transition is its own commit.**  Open, review, decision,
+  implementation, verification record and archive each landed separately.
 * **A fresh reviewer.**  A new chat that did not write the proposal
   questioned it in writing before you decided.
 * **The proposal is the record.**  After archiving, you can read the
