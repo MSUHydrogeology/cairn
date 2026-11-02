@@ -136,3 +136,22 @@ do not close it as completed by this narrower clarification.
 **Evidence**: Compared both governing copies and plan guidance with the accepted proposal and C1. The iteration record reports 667 mapped tests passing, prose gates and independent comparisons; it identifies 46 omitted unpinned governing-file readers. Certification commands and triggers are unchanged in the diff.
 
 **Coverage**: Read the committed change, proposal, plan and iteration evidence. Did not rerun tests, inspect installed output, independently audit all scientific controls, or perform the separate Security Review. Final wide verification remains outstanding. No suite run. Elapsed: approximately 5 minutes; tokens: unknown.
+
+## Security code review -- Codex gpt-6.1-sol -- 2026-11-01
+
+Reviewed commit: d7434ba616289d8f1c1927d23784ab1a6b33b876  
+Target: model-evidence changes in `d7434ba6^..d7434ba6`; evidence `e8c11a43`, ordinary review `ed934a93`  
+Prior findings: none  
+**Tier**: Security Review  
+**Verdict**: ACCEPT; no findings.  
+**Elapsed**: approximately 4 minutes across preparation and final review. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Both governing copies and plan guidance retain configured suite membership and other applicable obligations at every required point. Scientific subject or duration grants neither waiver nor rescheduling authority; certification commands and triggers are unchanged. -- Implementation diff; accepted proposal and C1.
+2. **Best alternative.** Keep the short ownership clarification in existing evidence records. A new classification system adds burden; removing configured runs would violate the accepted scope. -- Proposal, Proposal and Alternatives; changed plan guidance.
+3. **What would show it wrong?** Treating a long scientific safety test as optional after assigning its evidence to a plan. The retained every-required-point clause defeats that inference, and the authorized independent example preserves the configured safety-required run while excluding a genuinely unrequired run. -- Governing paragraphs; iteration evidence, examples.
+
+**Bounding**: ACCEPTED — challenged the overlapping suite/safety case and retention of scientific controls. Targeted source assertions confirmed counterpart agreement, the required-suite clause, and failing/positive-control text in both unchanged proposal templates. The shared record reports 667 mapped passes under Python 3.12.9, prose gates and 46 selector omissions; no implementation test was rerun.
+
+Coverage: read accepted scope, committed governing/template/method changes, scientific-control guidance, iteration evidence and ordinary review. Did not audit every work/release requirement, inspect installed output or certify the tree. No suite or mutation run. No reached fence or deviation request in this range; final canonical-Python wide Boundary B remains owed. Issue #33's broader terminology request remains open as recorded.
