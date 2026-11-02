@@ -17,9 +17,9 @@
 
 **Recommendation:** retain the existing safeguards for now; pursue a narrower proposal only where evidence shows recurring burden worth the lost coverage. Costs and savings are not measured. The issue remains open; no choice is made here.
 
-**Stray reference:** You previously directed the one-line `(R5)` correction. The [reviewed proposal](../proposals/2026-11-02-codex-stray-finding-id.md) awaits your Decision because the file is in the high-risk scaffold directory. Accept the correction or leave it for later; leaving it costs no work but retains the obsolete reference.
+**Stray reference:** You accepted the one-line correction. Its [plan](../plans/2026-11-02-stray-finding-id.md) is being implemented and reviewed; no further decision is needed unless a blocker arises.
 
-**Forward baseline:** The current preparation command refused the candidate because its code fingerprint or lockfile needed preparation. A separate Python 3.13 diagnosis found fingerprint changes but no lockfile changes needed; it did not compare the old trust anchor. The [reviewed proposal](../proposals/2026-11-02-codex-forward-ast-preparation.md) awaits your Decision: it would build a script to prepare a new, independently reviewed current baseline without manual JSON editing or reconstructing old history. Accepting permits building the script; approving and signing the resulting baseline remain yours. The tradeoff is that the new baseline does not establish that earlier history was reviewed. Doing nothing adds no work but leaves preparation unresolved.
+**Forward baseline:** The preparation command refused the candidate because its code fingerprint needed updating. You accepted a [plan](../plans/2026-11-02-forward-ast-preparation.md) to build a guided script for a new, independently reviewed current baseline without manual JSON editing or reconstructing old history. The script is being implemented; approving and signing the resulting baseline remain yours. The new baseline does not establish that earlier history was reviewed.
 
 The sections below retain earlier context and may describe historical states; use this dated section and the linked current plans for present decisions.
 

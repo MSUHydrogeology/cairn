@@ -46,7 +46,8 @@ release assignment authorizes no Decision, scope change, push or publication.
 |---|---|---|
 | **Retire the v0.6 decision master.** The note briefs v0.6's open decisions and holds; once v0.6 ships, its job is done. | At the v0.6 cut, confirm each of its items is done or on this board, change its role from living, then archive it. | [Strategy](strategy/2026-10-28-codex-v06-decision-master.md) |
 | **Clarify when Security Review is needed** ([#37](https://github.com/MSUHydrogeology/cairn/issues/37)). Guidance on safeguard reuse is complete; the issue's proposed necessity line, widened-boundary-only trigger and narrower high-risk verification remain unadopted. | Keep the remaining choices visible for Maintainer disposition. | [Archived plan](plans/archive/2026-11-01-security-trigger-clarity.md); [Issue #37](https://github.com/MSUHydrogeology/cairn/issues/37) |
-| **Remove one obsolete review reference.** The trigger to correct the stray reference in the security inventory has occurred. | Decision on the reviewed one-line correction. | [Proposal](proposals/2026-11-02-codex-stray-finding-id.md) |
+| **Remove one obsolete review reference.** The one-line correction is accepted. | Complete its implementation and reviews. | [Plan](plans/2026-11-02-stray-finding-id.md) |
+| **Prepare the forward baseline without old history.** Build the accepted guided script for the fingerprint preparation that blocks the new baseline. | Implement and review the script; then prepare the concrete Maintainer approval and signing steps. | [Plan](plans/2026-11-02-forward-ast-preparation.md) |
 
 ### What the v0.6 baseline must include
 
