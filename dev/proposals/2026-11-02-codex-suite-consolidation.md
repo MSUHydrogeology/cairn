@@ -1,7 +1,7 @@
 # Consolidate the suite without losing fault detection
 
 **Author**: Codex (runtime model identifier unavailable; Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- protected tests and collection contracts
 **Plan review**: required(Internal + Internal Security Review)
@@ -102,6 +102,10 @@ CLI/install/upgrade paths where the removed cases did.
 Use collection-only checks to compare membership. Challenge each distinct
 fault claimed preserved with targeted negative controls or existing failing
 inputs; report unresolved coverage, not a giant per-token mutation inventory.
+For batches sharing preparation, reconcile collected nodes and outcomes under
+fixed and alternate existing shuffle seeds; mutable state stays independent.
+Collection executes candidate code: fresh paths do not contain it. Retain
+existing key-away and ceremony restrictions at their prescribed points.
 
 ### Examples / smoke checks
 
@@ -112,7 +116,8 @@ is authorized by writing or reviewing this proposal.
 
 #### Security preflight
 
-S1: collection and fixture inputs come from the candidate; expected
+S1: collection executes candidate tests/plugins with host access; fixture
+inputs come from the candidate. Expected
 protection comes from approved authority and the pre-change checks, not a
 candidate-generated replacement roster.
 S2: a lost protected node or weakened refusal must fail its owning check.
@@ -232,3 +237,28 @@ unmeasured; recording approximately two minutes. **Tokens**: unknown.
 **Covered**: S1-S5, fixture isolation, protection authority, collection and
 detection preservation. **Not covered / low confidence**: future consolidation,
 per-fault equivalence, ordering trials, performance or certification.
+
+## Response -- Codex (author) -- 2026-11-02
+
+**Model**: Codex (runtime model identifier unavailable).
+
+- **SC-1 accepted:** Verification now requires fixed/alternate shuffle seeds
+  for each affected shared-preparation batch, reconciling membership and
+  outcomes with independent mutable state. These are scoped runs, not
+  another certification.
+- **SC-S1 accepted:** Collection is explicitly candidate execution with host
+  access. Fresh paths are not containment; existing key-away and ceremony
+  restrictions remain at their prescribed points.
+
+Both passes found no blockers. All consolidation, tier-folder, detection,
+runtime and shared-reporting outcomes remain. New experiments are
+implementation obligations, not claimed results. The proposal is ready for
+the Maintainer's Decision; this response does not accept or implement it.
+
+**Elapsed**: approximately 7 minutes shared revision design; per-file split
+unmeasured. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+None. The revisions specify isolation evidence and execution risks without
+dropping scope or adding a ceremony.
