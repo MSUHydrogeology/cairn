@@ -61,3 +61,26 @@ Boundary C is independent ordinary and Security code review, examining affected 
 ## Response to ordinary plan review -- Codex GPT-6.1 Sol -- 2026-11-02
 
 Blocking finding accepted: C1 now requires one documented resumable entry point and its disposable end-to-end test, including the existing signing handoff. Independent review and Maintainer approvals remain unchanged; no new ceremony is added. Separate Security plan review remains outstanding. Elapsed: approximately 2 minutes; tokens: unknown.
+
+## Plan review -- Codex gpt-6.1-sol -- 2026-11-02
+
+Reviewed commit: ffa0c2f966d88d75a20cde18315cf604907ca0ff  
+Target: revised forward preparation, guided flow and approval boundaries  
+Prior findings: ordinary guided-entry blocker read  
+Assurance path: high-assurance
+
+**Obligation**: Internal Security Review  
+**Tier**: Internal Security Review  
+**Findings**: none  
+**Verdict**: ACCEPT  
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1 binds one committed candidate, interpreter, tools, fixtures, symbol deltas, transaction and both current-state reviews before Maintainer application. Preparation writes only external evidence, never installs or signs, and refuses missing/duplicate symbols or lockfile debt. Historical comparison is explicitly excluded rather than silently bypassed. -- Plan, C1, Scope and Verification; accepted proposal/Decision.
+2. **Best alternative.** Reuse classification and exact-path transaction/apply/commit mechanisms behind the single resumable guide. This avoids manual JSON, a parallel trust store and historical reconstruction while preserving separate approval and commit confirmation. -- Plan, Reuse and revised C1; existing repin entry points; ordinary response.
+3. **What would show it wrong?** A resumed flow accepting mutated or unreviewed inputs, preparation changing fixtures, or a guide requiring undocumented commands or old-anchor setup. The real-command matrix separately mutates candidate, transaction/packet, review binding and fixtures, and the disposable pause/resume workflow exercises the complete guide and signing handoff. -- Plan, Verification and C1; proposal S1–S4.
+
+No blocking finding. The ordinary blocker is addressed by the documented resumable entry point and end-to-end acceptance check. Hashes are correctly limited to identity, not reviewer independence or safety. Current engine behavior and protection machinery remain review subjects; ordinary historical commands, actual Maintainer approvals and final baseline signing retain their own controls. No new authority system is needed.
+
+Coverage: examined committed revised plan, accepted proposal/Decision, ordinary finding/response, current plan template and existing reuse entry points. Did not reproduce selector output, audit future implementation, run adversarial controls or execute suites. Final wide verification and the separate actual baseline ceremony remain owed; this review authorizes neither correction nor signing.
