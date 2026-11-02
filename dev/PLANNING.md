@@ -69,7 +69,8 @@ ceremony must account for:
   narrows freezing to security and trust tests;
 - the deferred baseline install from the
   [ceremony-commands plan](plans/archive/2026-10-29-ceremony-commands.md);
-- the engine's AST baseline, owed since this release's engine changes:
+- the engine's abstract syntax tree (AST) baseline, owed since this
+  release's engine changes:
   `bootstrap/tests/test_ast_attest.py` fails 2 of 30 tests at `657c7aea`
   ([upgrade growth](strategy/2026-10-30-claude-upgrade-growth.md#recommendation));
 - the operator guidance in `bootstrap/REANCHOR_RUNBOOK.md` and
