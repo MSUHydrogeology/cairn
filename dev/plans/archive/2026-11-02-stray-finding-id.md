@@ -1,7 +1,7 @@
 # Plan: Remove the obsolete finding marker
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-stray-finding-id.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Remove one closed-review marker while preserving the documented scaffold safeguard.
@@ -140,3 +140,14 @@ Both ordinary review `d1660b3b` and Security Review `116d2e6a` accepted the exac
 | Parent-derived byte control and appended-byte negative control | 0 | Exact deletion matched; extra-byte mutant rejected | under 1 s | unknown |
 
 `tools/test_tiers.py for bootstrap/_scaffold/SECURITY_MUTATIONS.md` selected exactly the three test files above. `test_install_module.py` covers the install/core-install workflow; the other two preserve Class-A guard references and exercise the live inventory reader. The target remains repository security documentation; no separate adopter copy or runtime security proof is claimed. The canonical gate invocation passed; an initial invocation without the interpreter's absolute path ran no gate because `python3.13` was not on the clone's `PATH`. **Known omissions**: no full-tree certification; external links were not probed; check timing beyond the listed commands and token use are unknown.
+
+
+## Dispositions -- archive preparation -- 2026-11-02
+
+**Dispositions**: none. Both code reviews accepted the exact deletion; final wide Boundary B passed. No deferred follow-up or open finding remains. The separate full-tree certification is not required by this plan.
+
+## Lasting-truth migration -- 2026-11-02
+
+**Evidence shipped**: `34fdba18` removes only the obsolete `(R5)` marker; final verification at `1a9b0366` confirms the parent-derived byte comparison, extra-byte rejection, three mapped tests and standing gates. **Evidence deferred**: none. **Deferred evidence home**: N/A. This prose correction claims no runtime security proof.
+
+**Fidelity sign-off**: implementation commit `34fdba18` matches the accepted `## Proposal` in `dev/proposals/archive/2026-11-02-codex-stray-finding-id.md`, accepted at its `## Decision`: remove only the space and `(R5)` from the named inventory entry, preserving safeguard description and other identifiers. No adopter-facing behavior changed.
