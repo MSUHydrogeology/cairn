@@ -151,3 +151,22 @@ name the remaining request.
 **Evidence**: Compared the governing and supporting changes with C1 and the accepted proposal. The implementation record reports 667 mapped tests passing, prose gates and the independent examples, and names omitted unpinned readers. The examples are reasoned comparisons, not proof future authors disclose every cost.
 
 **Coverage**: Read committed implementation, proposal, plan and iteration evidence. Did not rerun tests, inspect an installed copy or perform the separate Security Review; wide final verification remains outstanding. No suite run. Elapsed: approximately 5 minutes; tokens: unknown.
+
+## Security code review -- Codex gpt-6.1-sol -- 2026-11-01
+
+Reviewed commit: d7434ba616289d8f1c1927d23784ab1a6b33b876  
+Target: decision-options changes in `d7434ba6^..d7434ba6`; evidence `e8c11a43`, ordinary review `3fae9a3b`  
+Prior findings: none  
+**Tier**: Security Review  
+**Verdict**: ACCEPT; no findings.  
+**Elapsed**: approximately 4 minutes across preparation and final review. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Both governing copies require visible additions, meaningful costs and lost safeguards, explicitly prohibit waiving checks, accepted scope or model floors, and retain Maintainer authority. Supporting guidance agrees. -- Committed governing paragraphs, collaboration additions and roles diff; C1.
+2. **Best alternative.** Reuse concise guidance in existing records. Removing the rule leaves costs implicit; adding fields creates unnecessary continuing work. The implementation adds no form, gate or review round. -- Accepted proposal, Alternatives; implementation diff.
+3. **What would show it wrong?** Calling an omitted recurring security check the simpler choice, or requiring an inventory for an ordinary Decision. The recorded independent examples reject the omitted check and preserve the no-inventory routine case; the governing no-waiver sentence prevents cost comparison from authorizing removal. -- Iteration evidence, authorized examples; governing instruction.
+
+**Bounding**: ACCEPTED — challenged counterpart agreement and the possibility that cost disclosure grants waiver authority. Targeted source assertions confirmed identical new governing paragraphs and retained no-waiver text. The shared record reports 667 mapped passes under Python 3.12.9, prose gates and 46 selector omissions; these are author evidence, not rerun here.
+
+Coverage: examined accepted scope, committed implementation, supporting guidance, iteration and ordinary review; performed source assertions. Did not inspect installed output, repeat tests or certify the tree. No suite or mutation run. No reached Maintainer fence or deviation request in this range; final canonical-Python wide Boundary B remains owed before closure.
