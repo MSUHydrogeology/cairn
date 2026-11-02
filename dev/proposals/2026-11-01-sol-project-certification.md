@@ -173,3 +173,25 @@ Assurance path: high-assurance
 3. **What would show it wrong?** An installed policy that forces an unrelated suite for a small change, misses a shared consumer, or silently waives an existing release check would contradict the intended scope and safeguards. Evidence: proposal Examples / smoke checks and Signals.
 
 Coverage: reviewed the committed proposal, review template, shipped verification text and methodology tree-certification claim. Did not independently measure issue timings, exercise installed examples, or perform Security Review.
+
+## Security Review -- Codex gpt-6.1-sol -- 2026-11-01
+
+Reviewed commit: a8b0aa63953dff418e05ec9a09c56a98bd1e2afd  
+Target: project-chosen certification scope and retained obligations  
+Prior findings: none  
+Assurance path: high-assurance
+
+**Tier**: Security Review  
+**Findings**: one non-blocking recommendation  
+**Verdict**: ACCEPT as framed; recommendation, not a Maintainer Decision.  
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. Maintainers can choose affected-component certification and separate broader-check boundaries; unrelated suites are not inherently required. Claims name consumers, integration paths and omissions, cannot attest unrelated software or every ancestor, and missing applicable requirements still block their named operation. -- Proposal, Proposal; shipped Verification and methodology Tree certification show the universal contract being replaced.
+2. **Best alternative.** Retain whole-project certification, which gives one combined claim at greater run cost. The proposal keeps that choice while allowing component boundaries; existing records and review stages suffice without a policy menu or new mechanism. -- Proposal, Alternatives considered and Proposal.
+3. **What would show it wrong?** A renamed suite dropping an existing release/security check, a component claim missing a shared consumer, or adopters still forced to run an independent engine. The three planned examples challenge each; policy changes explicitly require identifying obligations and obtaining lifecycle authority before replacement or rescheduling. -- Proposal, Examples, no-silent-removal paragraph and S4.
+
+**S1 — non-blocking.** In the adaptable example, state the assurance tradeoff plainly: component certification leaves unrelated components and untested combined behavior unclaimed until the project's broader checks run. This makes the cost/coverage choice easier to judge without prescribing their frequency or requiring a whole suite. Close with one sentence in existing guidance. -- Proposal, scoped-claim and broader-policy paragraphs.
+
+Coverage: read committed proposal, ordinary review, current proposal template, shipped verification, methodology claim and certifying-rule assertions. Did not exercise installed examples, audit an adopter dependency map, verify reported timings or run suites. Cairn's local release/re-anchor protections remain expressly preserved.
