@@ -1,7 +1,7 @@
 # Plan: Shipped board layout
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-shipped-board-layout.md
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Give new projects a clearer board while preserving their existing duties and installation behavior.
@@ -77,3 +77,9 @@ Assurance path: high-assurance, inherited from the accepted proposal.
 **Elapsed:** approximately 5 minutes; **Tokens:** unknown.
 
 **Coverage:** Read committed plan, accepted proposal, original board duties, reader and slot/upgrade handling, and ordinary review. Did not execute installs, upgrades, tests or mutations, inventory every consumer, or establish equivalence of future wording.
+
+## Plan review response -- Codex (plan author) -- 2026-11-01
+
+**Elapsed:** approximately 1 minute; **Tokens:** unknown.
+
+Both required reviews support the plan without findings. The documentation audit owner confirmed the single rewrite and final-board reading in `260231cd`; the existing scope and checks remain in force.
