@@ -232,7 +232,7 @@ prevent a defensible selection, name the missing seam and the smallest useful
 remedy; optional architecture review remains optional. Agents make this routine
 mapping and reviewers challenge it; the Maintainer sets high-level project
 needs and material exceptions, not per-change test selections.
-For routine project operations, use affected checks. At integration or release
+Routine project operations use affected checks. At integration or release
 boundaries, identify a representative cross-component workflow and applicable
 safety, security, scientific, and release checks through existing project
 commands. A whole suite is optional unless a project requirement makes it
