@@ -147,8 +147,8 @@ integrity checking and upgrades read.
 **Fold-back** — suggesting an improvement back to Cairn itself, by filing an
 issue on Cairn's issue tracker using the fold-back template.
 
-**Work-intent** — a claim on files you are about to edit, so concurrent agents
-do not collide. Advisory, and it fires.
+**Work-intent** — a record of the files an agent plans to edit, so concurrent
+agents can see overlaps before they edit. A claim is a signal, not a lock.
 
 **Twin** — a file Cairn both ships to you and uses on itself. The two copies
 must stay exactly identical, and a test checks that they do.

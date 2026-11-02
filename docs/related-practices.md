@@ -18,9 +18,10 @@ architectural decision and its context — popularised by Michael Nygard around
 version control beside the code they concern.
 
 **The difference.** A decision record is usually written *after* the decision,
-to explain it. A Cairn proposal is written *before* the work, and something has
-to happen to it — an independent read, a reply, a decision — before anyone
-starts building. A decision record documents. A proposal has to be got past.
+to explain it. A Cairn proposal is written *before* the work and must pass
+through an independent read, a reply, and a decision before anyone starts
+building. A decision record documents a decision; a proposal is considered
+before work begins.
 
 If your team keeps ADRs and is happy, you already have most of the value Cairn's
 record provides. The part you do not have is the independent review.

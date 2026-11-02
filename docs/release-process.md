@@ -16,10 +16,10 @@ run a release; read that to see how the first one went.
 Three structural forces make a whole-tree pass worth running before *any*
 release, not just a large one.
 
-* **Fold-back only adds.** Cairn's improvement loop appends proven doctrine
-  inward; nothing in the lifecycle pushes back toward consolidation. Duplication,
-  stale doctrine, overlapping modules, and dead code accumulate *by construction*
-  between cuts.
+* **The improvement loop adds but does not consolidate.** Cairn adds proven
+  guidance, but the lifecycle has no regular step to remove or combine it.
+  Duplication, outdated guidance, overlapping modules, and unused code can
+  therefore accumulate between releases.
 * **Many agents, many sessions.** A release batch is landed by several agents.
   Each change is reviewed in isolation, but no per-change review is scoped to
   whole-tree coherence, currency, or cold-start safety.
@@ -29,9 +29,8 @@ release, not just a large one.
 
 ## The sweep roster
 
-Seven orthogonal lenses. They are independent and can run in parallel under
-different owners; they converge on one findings surface the Maintainer triages
-before the cut.
+Seven independent review areas. Different owners can run them in parallel and
+report to one findings list for the Maintainer to triage before the release.
 
 | # | Sweep | The question it owns |
 |---|---|---|

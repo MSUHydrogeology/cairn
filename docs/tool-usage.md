@@ -3,10 +3,10 @@
 Cairn ships a small set of scripts that use only Python's standard library.
 Orientation and coordination tools (`tools/session.py`, `tools/board.py`,
 `tools/intent.py`) report repository state without blocking your work.
-Verification and security scripts (`scripts/claim_check.py`,
-`scripts/link_check.py`, `scripts/run_portable_security_sweeps.py`) exit
-non-zero when they find a broken path, a broken link, or a security finding.
-This page shows how to run each tool and how to read its output.
+Verification and security scripts return a non-zero exit code when their own
+check fails: `claim_check.py` for broken paths, `link_check.py` for broken
+links, and `run_portable_security_sweeps.py` for security findings. This page
+shows how to run each tool and read its output.
 
 Install paths below are the defaults; substitute your own if your profile
 placed them elsewhere. Tools marked *(team-gated)* install only when their
@@ -94,9 +94,9 @@ python tools/board.py --json
 ```
 
 **What to do.** Run it instead of maintaining a hand-written "currently active"
-list. A derived view cannot go stale the way a table does; the failure mode it
-replaces is a board still describing archived work as in flight. If a row looks
-wrong, fix the artifact's header block — not this output.
+list. It builds the list from proposal and plan files each time, so archived
+work does not stay listed as active. If a row looks wrong, fix the artifact's
+header block — not this output.
 
 ## scripts/link_check.py — check cross-references resolve *(team-gated: doc-drift-prevention)*
 
