@@ -123,3 +123,24 @@ Prior findings: none
 **B1 — blocking, accepted C2 unmet.** `templates/core/AGENTS.md` still directs the configured full suite before a release cut and says it certifies every preceding change; `docs/methodology/plans.md` repeats both. The new optional-whole-suite paragraph contradicts those rules. No scoped-certification claim rule was found in core, methodology plans or shipped plan/proposal templates (`git grep` for scoped certification and claim omissions at 9c110c14); thus C2's commit, scope, results, omissions and reopening semantics are not delivered. Existing `test_certifying_run_rule.py::test_the_governing_rule_names_its_integration_points_and_its_failure_path` still requires the universal ancestor claim on adopter core and methodology. Close by delivering C2 in shipped guidance, preserving Cairn's local full-tree requirements and existing obligations, and updating existing assertions to distinguish them. Exercise the accepted installed examples against the corrected bytes.
 
 Coverage: compared committed core, methodology, module, changed tests and iteration record to C1/C2. Read-only targeted searches only; no suite, mutation, installed example or Security Review. Iteration union predates final bytes; final wide Boundary B remains owed.
+
+## Security code review -- Codex gpt-6.1-sol -- 2026-11-02
+
+Reviewed commit: 9c110c14  
+Target: `6b8e8924..9c110c14`; iteration `d0e537c4`, ordinary review `33ae2695`  
+Prior findings: none in this Security code pass  
+**Tier**: Security Review  
+**Verdict**: REVISE; one blocking finding.  
+**Elapsed**: approximately 5 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** The architecture guidance fits the accepted intent: agents map effects without routine scientist approval. Delivery is incomplete because the old certification contract still governs adopters. -- Core diff; plan C1/C2; accepted proposal.
+2. **Best alternative.** Replace contradictory certification paragraphs and revise existing assertions, preserving Cairn's local ceremony. No additional policy form, selector or review process is necessary. -- Plan Scope; existing certifying-rule tests and governing verification sections.
+3. **What would show it wrong?** Installed core forcing a full suite solely to certify a local component, or scoped evidence claiming unrelated ancestors. Both outcomes remain prescribed by the current core paragraph despite the new optional-suite guidance. -- Committed `templates/core/AGENTS.md`, Verification; `docs/methodology/plans.md`, Tree certification.
+
+**S1 — blocking, accepted C2 unmet.** Independently confirm ordinary B1: shipped core still requires the configured full suite before release and says it certifies every earlier change; methodology repeats that universal rule. Scope-limited certification and reopening contradicted claims are absent. The existing `test_certifying_run_rule.py::test_the_governing_rule_names_its_integration_points_and_its_failure_path` still requires the ancestor claim on adopter guidance. Close by delivering C2's scoped claim and reopening semantics, qualifying universal wording while retaining Cairn-specific requirements and existing project obligations, and correcting those assertions. Apply installed examples to corrected bytes; preserve required release/security checks.
+
+**Bounding**: WIDER RUN REQUIRED — corrected scoped/mandatory installed cases and final mapped verification remain required.
+
+Coverage: inspected committed guidance/tests, accepted scope, iteration and ordinary review; used targeted source searches. No suite or mutation run. Did not audit adopter dependencies or repeat installation. The iteration union predates final corrections; clean canonical-Python wide Boundary B remains owed after review fixes.
