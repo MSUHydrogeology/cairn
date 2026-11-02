@@ -1,7 +1,7 @@
 # Plan: Correct release-test portability defects
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-release-test-corrections.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Correct three protected tests so release checks work consistently while retaining their safeguards.
@@ -91,3 +91,13 @@ Coverage: read committed plan and ordinary review, accepted proposal, current te
 Both the Internal and Internal Security Review accept the plan without findings. No operative changes are needed; the required consumer tracing, negative controls and final verification remain open for implementation.
 
 **Elapsed**: approximately 1 minute. **Tokens**: unknown.
+
+## Iteration evidence -- Codex GPT-6.1 -- 2026-11-02
+
+Commit `abea6d02` changes only the three accepted test files. The mapped selector for those paths returned eight files: `test_broad_run_guard.py`, `test_gate_preflight.py`, `test_notice_install.py`, `test_reanchor.py`, `test_scaffold.py`, `test_security_check.py`, `test_security_lint.py` and `test_security_marker.py`. On the exact changed working-tree bytes at plan-transition HEAD `df3f6833`, Python 3.13.13 ran that list: 805 passed, three deprecation warnings, 427.81 seconds. The 30-second iteration target was exceeded; per-file timings were not captured. This was not a clean committed-copy run, so the separate post-commit focused result below is the committed-copy evidence currently available; final wide Boundary B remains owed.
+
+On a clean clone at `abea6d026a0a777d08963ddeb2c97321189c2b30` under Python 3.13.13, the complete `test_security_check.py`, `test_notice_install.py`, the changelog install/mapping workflow in `test_scaffold.py`, and all nine logged branch-dependent `test_gate_preflight.py` nodes passed: 133 passed, three deprecation warnings, 29.40 seconds. The nine nodes also passed separately under process-only `init.defaultBranch=main` (2.58 seconds) and `master` (3.01 seconds); the explicit fixture branch kept its expected `master` ref on either host default.
+
+Three disposable-copy negative controls reproduced the defects: removing `-B` made `test_detached_checkout_excludes_an_ignored_pytest_override` fail on generated `.pyc`; restoring the count to 87 made the fixed-count test fail with 88 rows; removing `-b master` under process-only `main` made all nine branch-dependent tests fail. The clone-based branch mutant initially had a malformed node selection and ran no tests; it was corrected and the nine failures above are the valid control. Existing ignored-plugin exclusion, skip refusal and fixed-count assertion remain in the mapped checks. No production code, historical anchor, baseline, or real signing key was touched.
+
+The mapped eight-file results and focused post-commit run have no test failures or skips. No prose gates apply to these test-only edits. Tokens: unknown. Final wide Boundary B after both independent code reviews, including the complete reviewed-range iteration list and per-file timing diagnostics, remains outstanding. No full suite ran.
