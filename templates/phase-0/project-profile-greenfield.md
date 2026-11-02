@@ -1,4 +1,5 @@
 # Project Profile — greenfield design checklist
+Written in Cairn Plain Language 1.0
 
 > Fill this for a **greenfield** codebase — one built with the
 > methodology from the start. This is the *light* v1 checklist;

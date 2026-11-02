@@ -1,4 +1,5 @@
 # Project Profile — legacy code-state assessment
+Written in Cairn Plain Language 1.0
 
 > Fill this for a **legacy** codebase — one that predates the
 > methodology. A bootstrapping agent completes it by inspecting

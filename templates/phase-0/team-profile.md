@@ -1,4 +1,5 @@
 # Team Profile
+Written in Cairn Plain Language 1.0
 
 > Fill this for **every** adoption — greenfield or legacy. It
 > positions the team on the team axes and records the

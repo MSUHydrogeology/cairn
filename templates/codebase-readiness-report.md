@@ -2,6 +2,7 @@
 <!-- ^ Illustrative output paths of the readiness assessment, created on first use; the cite travels with this template to adopters. -->
 
 # Codebase Readiness Report
+Written in Cairn Plain Language 1.0
 
 > **Use this template before choosing a Cairn profile.**  Fill it for
 > your existing scientific codebase -- with your AI agent's help if
