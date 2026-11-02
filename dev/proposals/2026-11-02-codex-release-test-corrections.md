@@ -233,3 +233,13 @@ Assurance path: high-assurance
 No blocking finding. The log records nine failures, 1,492 passes and four deselections; the correction remains untested. The proposed one-helper edit preserves synthetic trust-boundary tests without accessing real historical anchors. No production verifier, mapping or trust-store change is needed; the previous bytecode/count security conclusions stand.
 
 Coverage: read committed widened proposal, original reviews/response, helper and representative security assertions, and actual failed-run traces. Did not reproduce failures, run new controls or suites, or verify future correction bytes. Implementation must demonstrate the three controls and retained checks.
+
+## Proposal review -- Codex GPT-6 -- 2026-11-02 (widened scope)
+
+**Verdict:** Accept as framed; no blocking findings. **Elapsed:** approximately 4 minutes. **Tokens:** unknown.
+
+1. **Should it happen?** Yes. The nine failures in the recorded wide run use a helper that inherits Git's initial branch, although the tests expect `master`. A focused repeat with a process-only `master` default passed all nine; the proposed explicit branch fixes the setup rather than relying on that workaround.
+2. **Best alternative:** Configuring the user's Git globally would leave the tests dependent on each machine and change the user's environment. Explicit initialization in the existing disposable-repository helper preserves the assertions and changes no production behavior.
+3. **What would show it wrong?** A default of `main` still breaking the tests, a missing explicit branch not causing a meaningful failure, or a changed security assertion. The proposed two-default exercise, negative control and original tests address these cases; their results are not yet available for the proposed correction.
+
+Coverage: read the widened proposal, shared helper, recorded failure traces and focused-repeat result, and independent Security review. Did not run tests or inspect every helper consumer; the proposed mapping must do that before implementation.
