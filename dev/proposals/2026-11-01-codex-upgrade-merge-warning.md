@@ -1,7 +1,7 @@
 # Explain what a clean upgrade merge does not establish
 
 **Author**: Codex GPT-6.1 Sol (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual
 **Proposed tier**: light
 **Plan review**: not required(no plan: light tier)
@@ -14,11 +14,11 @@ Add a short warning to the staged-file review instructions in the upgrade guide:
 
 ## Context
 
-The previous proposal records a reproduction in which `merge_file` returned a clean result containing incompatible local and upstream policy statements, and was rejected because the proposed per-file hold and decision state were too costly and underspecified. The Maintainer retained issue #35 for a smaller redesign ([previous proposal](archive/2026-10-30-codex-upgrade-semantic-adoption.md)). The current [upgrade guide](../../bootstrap/UPGRADE.md) tells operators to review staged files and resolve conflict markers, but does not explain that a merge without markers can still disagree in meaning. The report's `locally-modified (merged clean)` label identifies a difference from the saved base, not necessarily an upstream change; stock assembled files can also receive it, as the prior review records.
+The previous proposal records a reproduction in which `merge_file` returned a clean result containing incompatible local and upstream policy statements, and was rejected because the proposed per-file hold and decision state were too costly and underspecified. The Maintainer retained issue #35 for a smaller redesign ([previous proposal](archive/2026-10-30-codex-upgrade-semantic-adoption.md)). The current [upgrade guide](../../bootstrap/UPGRADE.md) tells operators to review staged files and resolve conflict markers, but its general workflow does not explain that a merge without markers can still disagree in meaning. Its section on moving to one review at every stage already illustrates that risk for a specific policy transition. The report's `locally-modified (merged clean)` label identifies a difference from the saved base, not necessarily an upstream change; stock assembled files can also receive it, as the prior review records.
 
 ## Proposal
 
-In the guide's `--stage` review instructions, explain the distinction between clean text placement and compatible rules. Tell the operator to compare the staged result with the upstream change and their local policy, and resolve any disagreement before `--apply`. Do not claim that the label detects two-sided changes or limit the advice to that label. Change no upgrade code, output, state, gate, or disposition workflow.
+In the guide's `--stage` review instructions, explain the distinction between clean text placement and compatible rules. Tell the operator to compare the staged result with the upstream change and their local policy, and resolve any disagreement before `--apply`. Do not claim that the label detects two-sided changes or limit the advice to that label. Clarify the guide introduction so it does not imply that the merge surfaces every substantive policy conflict. Change no upgrade code, output, state, gate, or disposition workflow.
 
 ## Rationale
 
@@ -26,7 +26,7 @@ The warning appears at the existing review step and adds no new command or per-f
 
 ## Alternatives considered
 
-Leave the guide as it is: this costs nothing, but leaves the difference between textual and policy agreement implicit. A per-file hold and recorded decision could force attention, but the rejected proposal established substantial binding, partial-upgrade and operator costs. A terminal warning would reach operators who do not open the guide, but would change the protected upgrade engine and require additional assurance; this proposal does not claim to reach them.
+Leave the guide as it is: this costs nothing, but leaves the difference between textual and policy agreement implicit in the general workflow. A per-file hold and recorded decision could force attention, but the rejected proposal established substantial binding, partial-upgrade and operator costs. A terminal warning would reach operators who do not open the guide, but would change the protected upgrade engine and require additional assurance; this proposal does not claim to reach them.
 
 ## Documentation / doctrine surface
 
@@ -71,3 +71,13 @@ The warning suggests a clean merge proves policy agreement, implies the tool enf
 **Recommendation (non-blocking):** Correct the context's broad claim that the guide does not explain the issue: its “Moving to one review at every stage” section already gives a specific clean-merge example. Also consider the introduction's claim that the merge “surfaces genuine” policy conflicts: read literally, it can undercut the new warning. Clarify it within the proposed guide edit.
 
 **Coverage:** Read proposal and guide at `58544046`, the rejected proposal's reproduction, reviews and Decision, and upgrade classification and stage/apply descriptions. Did not reproduce the example, test operator comprehension, or review every upgrade path. Elapsed: approximately 4 minutes; tokens: unknown.
+
+## Response -- Codex GPT-6.1 Sol (Strategy) -- 2026-11-01
+
+Accepted the non-blocking recommendation: the context now acknowledges the existing specific example, and the proposal includes correcting the introduction’s broad conflict claim. The general staged-review warning remains the intended outcome.
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
+
+### Withdrawn / superseded commitments
+
+None.
