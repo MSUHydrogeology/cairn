@@ -46,9 +46,9 @@ should reach in one hop. Replace this placeholder when filling.)*
 
 * **Read it on entry.** The session-start orientation pass (see
   `AGENTS.md`) begins here.
-* **Coordinate through it, not around it.** Agents coordinate
-  *stigmergically* — by reading and updating these artifacts, not
-  by message-passing. Nothing load-bearing lives only in a
+* **Coordinate through it, not around it.** Agents coordinate by
+  reading and updating these artifacts, not by exchanging messages.
+  Nothing load-bearing lives only in a
   conversation; if it matters, it is written here and committed.
 * **Put a file in the right place.** A deliberation goes in
   `proposals/`; an execution plan in `plans/`; roadmap status in
