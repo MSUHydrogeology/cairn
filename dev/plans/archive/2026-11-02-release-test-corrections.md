@@ -1,7 +1,7 @@
 # Plan: Correct release-test portability defects
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-release-test-corrections.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Correct three protected tests so release checks work consistently while retaining their safeguards.
@@ -167,3 +167,9 @@ Coverage: read the committed diff, plan, iteration evidence and Security review;
 **Known omissions**: `test_gate_preflight.py::TestPublicCli::test_check_runs_against_the_live_repo_and_reports` and `test_gate_preflight.py::TestAuthorizationPackage::test_the_executable_only_list_is_closed` were deselected. The prior forward-preparation record states the Maintainer's direction was “to separate new-baseline installation and avoid historical-anchor comparison” (`dev/plans/2026-11-02-forward-ast-preparation.md`, Implementation verification). They remain unpassed and are not claimed as passes; no real historical anchor or baseline operation was performed. The current release-task instruction also excludes real-anchor work.
 
 `sync_doc_snippets.py --check` is not applicable because this plan record contains no synced code examples. The branch later advanced at `dcf78dad` for quickstart-plan archival only; it changed no release-range test file. The 3-minute wide-run target was exceeded. Pytest-reported call time by file over 10 seconds, slowest first: `test_gate_preflight.py` 227.24 s; `test_reanchor.py` 56.38 s; `test_security_marker.py` 29.79 s; `test_security_check.py` 21.89 s; `test_broad_run_guard.py` 20.15 s. Add these to the test-consolidation list at its defined serialization point. Tokens: unknown.
+
+## Archive disposition and fidelity
+
+**Dispositions**: none. The accepted implementation and required wide verification are complete. The two live-repository checks named above remain with the separate v0.6 baseline work in `dev/PLANNING.md`; they are not being claimed as passes or as new plan scope.
+
+**Fidelity sign-off**: Commit `abea6d026a0a777d08963ddeb2c97321189c2b30` implements the accepted proposal's `## Proposal` and Maintainer `## Decision`, specifically plan `Acceptance criteria C1`: the existing child helper, fixed count and scratch-repository setup are corrected while production, trust machinery and baseline files remain unchanged.

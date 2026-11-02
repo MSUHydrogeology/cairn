@@ -78,6 +78,7 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 - **Changed** — The board's JSON tests share one helper for capturing archive output, and the shipped module and Cairn's copy gain matching test-maintenance guidance. ([plan](dev/plans/archive/2026-10-28-ordinary-test-maintenance.md))
 - **Changed** — A survey of governing text chose where public explanations of the methodology live, and the accepted-scope part of the plan template drops repeated reasoning. ([plan](dev/plans/archive/2026-10-28-governing-text-single-source.md))
 - **Fixed** — Cairn's certification tests were repaired: the dispatcher fixtures and archived baseline path are fixed, and the real ceremony start-up runs isolated while the adversarial checks stay. ([plan](dev/plans/archive/2026-10-30-certification-test-repairs.md))
+- **Fixed** — Cairn's own release tests suppress child bytecode, keep the manifest row count aligned with the accepted changelog mapping, and set the scratch Git branch explicitly. ([plan](dev/plans/archive/2026-11-02-release-test-corrections.md))
 
 ## 0.5.0 — 2026-10-28
 
