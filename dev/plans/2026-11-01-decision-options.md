@@ -42,3 +42,27 @@ Cross-cutting prescription belongs in both governing files; collaboration guidan
 Before editing, inspect direct readers and byte pins and map changed paths with `python tools/test_tiers.py for <paths>`; for governing text use the complete reviewed range. Run mapped iteration tests and applicable claim, link, snippet and neutrality gates, plus `python scripts/check_cairn.py`. Compare shipped and self-hosted guidance and perform the two human examples above; record reviewer, outcomes and omissions. Security preflight S2 and S3 remain the proposal's human comparison in C1, not an automated claim.
 
 Boundary C: independent reviewers read the committed implementation and iteration evidence, run only targeted falsification checks, and name missing coverage. After review and fixes, run wide Boundary B on a clean, unchanged final commit under canonical Python 3.13: mapped iteration and integration/workflow tests, owning families, known consumers and public paths, standing gates and plan-specific examples. Record SHA and range, interpreter, clean pre/post state, commands, counts, elapsed time, tokens, non-pass dispositions and omissions. Tree certification and trust-baseline changes are separate release work; do not run the full certifying suite here.
+
+## Plan review -- Codex gpt-6.1-sol -- 2026-11-01
+
+Reviewed commit: 02ffdb26524aa56f6d49b7760fd47fd3f8830c32  
+Target: entire plan against the accepted proposal  
+Prior findings: none  
+Assurance path: high-assurance, inherited from accepted proposal
+
+**Obligation**: Internal Security Review  
+**Tier**: Internal Security Review  
+**Findings**: none  
+**Verdict**: ACCEPT  
+**Elapsed**: approximately 4 minutes  
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1 carries the accepted cost disclosure into both governing copies, prohibits comparisons from waiving checks, scope or model floors, and requires disclosure of losses and safeguards. C2 retains separate Security Review before final verification. -- Plan, Scope, Sequence and C1/C2; accepted proposal, Proposal and Decision.
+2. **Best alternative.** Use concise governing prose and align supporting text only where it contradicts that rule; avoid adding template fields. This is already the plan's conditional approach and preserves the accepted outcome without a new form. -- Plan, Scope; accepted proposal, Alternatives considered and Decision.
+3. **What would show it wrong?** A sample hiding a recurring security check, treating the simpler option as permission to skip a safeguard, or demanding an inventory for a routine Decision. C1 explicitly rejects the omitted-check sample and exercises the routine case; final wide verification includes those examples after review fixes. -- Plan, C1 and Verification; accepted proposal, security preflight S2/S3.
+
+No new trust boundary or security machinery is planned. Cost comparison remains advice to the Maintainer, not authority to remove accepted obligations.
+
+Coverage: examined the committed plan, accepted proposal, governing authority, current plan template, collaboration review guidance and descriptive roles guidance. Did not assess implementation wording, execute the human examples, inspect every shipped consumer or run implementation tests; those remain C1/C2 work.
