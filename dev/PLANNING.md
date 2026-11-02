@@ -13,10 +13,11 @@ Maintainer chat the item came from. Finished work leaves the board.
 ## Where Cairn stands
 
 <!-- cairn:slot project-status -->
-Cairn 0.5.0 is released (tagged 2026-10-28). Its release gate failure was
-waived at the cut; the [later correction](plans/archive/2026-10-29-release-evidence-environment.md)
-is recorded. Cairn builds itself with Cairn and is used in LHM and
-modflow_tools. Work toward 0.6 happens on the branch `0.6-dev`.
+Cairn 0.6.0 is the version described by this tree. Cairn 0.5.0 was tagged on
+2026-10-28; its release-gate failure and the
+[later correction](plans/archive/2026-10-29-release-evidence-environment.md)
+are recorded. Cairn builds itself with Cairn and is used in LHM and
+modflow_tools. New v0.7 work proceeds on `0.7-dev`.
 
 Standing direction from the Maintainer (2026-07-22): science projects come
 first, and Cairn fixes what it already ships before building anything new. A
@@ -44,7 +45,6 @@ release assignment authorizes no Decision, scope change, push or publication.
 | Work | Next step | Record |
 |---|---|---|
 | **Retire the v0.6 decision master.** The note briefs v0.6's open decisions and holds; once v0.6 ships, its job is done. | At the v0.6 cut, confirm each of its items is done or on this board, change its role from living, then archive it. | [Strategy](strategy/2026-10-28-codex-v06-decision-master.md) |
-| **Explain additional Security Review rounds.** Keep the ordinary two-round limit and require a specific reason for a proposed exception. | Review the proposal and present it for a decision. | [Proposal](proposals/2026-11-02-codex-security-review-pass-limit.md) |
 
 ### v0.6 baseline and release checks
 
@@ -98,6 +98,7 @@ contract nor authorizes implementation, a push or publication.
 
 | Work | Next step | Record |
 |---|---|---|
+| **Explain additional Security Review rounds.** Keep the ordinary two-round limit and require a specific reason for a proposed exception. | Review the proposal and present it for a decision. | [Proposal](proposals/2026-11-02-codex-security-review-pass-limit.md); Maintainer moved this item from v0.6 to v0.7 on 2026-11-02. |
 | **A smaller, faster test suite** (priority; costing time and money, Maintainer, 2026-10-30). The board's last reported full run was 24 min 55 s against a 10-minute target. The tier map (`tools/test_tiers.py`) landed in `8f514e05`. Mapped per-file call times over 10 s, slowest first across 2026-11-02 runs: `test_gate_preflight.py` 227.24 s; `test_upgrade.py` 72.40 s; `test_reanchor.py` 56.38 s; `test_upgrade_module_additions.py` 47.06 s; `test_upgrade_edit_check_runs_no_project_programs.py` 41.50 s; `test_security_marker.py` 29.79 s; `test_intents_tool.py` 24.47 s; `test_security_check.py` 21.89 s; `test_broad_run_guard.py` 20.15 s; `test_upgrade_lockfile_path_containment.py` 13.57 s. | Write the consolidation proposal: each removed test's fault mapped to a kept check. Then move ordinary tests into tier folders at the v0.6 baseline, bring the full run under 10 minutes (a parallel runner only after consolidation), and add test-growth figures to `tools/gauge.py --pulse`. | [Strategy](strategy/2026-10-27-antigravity-judicious-testing-and-simulation-verification.md#recommendation) |
 | **Local development environment notes.** Give adopters a simple, discoverable place to record machine-specific setup for people and agents, such as access to a test VM. Keep the notes out of committed history and keep credentials out of the notes. | Write a proposal for a lightweight local note and a way for agents to find it when needed. | Maintainer chat, 2026-11-01 |
 | **Make reading old code cheaper than writing new.** Agents copy code because finding it costs more: 15 groups of identical functions (676 lines) and 47 names defined in more than one file, measured 2026-10-30. | Write a proposal: a capability map, a neighbors report in plans and reviews, one home per critical capability, and a structure pass at each release. Consider, as prior art, the bottom-up README generation in Google's Elephant–Goldfish Model (`/egm-bootstrap`): a README for each folder, summarized upward to the root, for people to review. Also write each check's message as the fix to make, as OpenAI's harness-engineering report does. | [Strategy](strategy/2026-10-30-claude-architecture-growth.md#recommendation-for-v07); [outside practices](strategy/2026-11-02-claude-outside-practices-for-better-software.md#mechanical-enforcement-and-cleanup); [EGM](https://github.com/google/elephant-goldfish-model) (Apache 2.0; ideas only, Maintainer chat 2026-11-02) |
