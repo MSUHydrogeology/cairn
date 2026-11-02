@@ -13,10 +13,11 @@ Maintainer chat the item came from. Finished work leaves the board.
 ## Where Cairn stands
 
 <!-- cairn:slot project-status -->
-Cairn 0.5.0 is released (tagged 2026-10-28). Its release gate failure was
-waived at the cut; the [later correction](plans/archive/2026-10-29-release-evidence-environment.md)
-is recorded. Cairn builds itself with Cairn and is used in LHM and
-modflow_tools. Work toward 0.6 happens on the branch `0.6-dev`.
+Cairn 0.6.0 is the version described by this tree. Cairn 0.5.0 was tagged on
+2026-10-28; its release-gate failure and the
+[later correction](plans/archive/2026-10-29-release-evidence-environment.md)
+are recorded. Cairn builds itself with Cairn and is used in LHM and
+modflow_tools. New v0.7 work proceeds on `0.7-dev`.
 
 Standing direction from the Maintainer (2026-07-22): science projects come
 first, and Cairn fixes what it already ships before building anything new. A
@@ -30,10 +31,9 @@ Cairn end to end; that trial was waived for 0.4 and 0.5 and is still open
 Lines marked **Waiting on Maintainer** are what `board.py --maintainer` lists,
 together with any proposal awaiting your Decision.
 
-- **Waiting on Maintainer**: run the v0.6 trust-baseline ceremony at the
-  release cut. It re-approves the test files Cairn's gate protects, after this
-  release's changes to them; only you can run it. See **What the v0.6 baseline
-  must include**, below. [Plan](plans/archive/2026-10-29-forward-trust-baseline.md)
+- The v0.6 trust baseline was installed and signed by the Maintainer at
+  `67cdb805704425132de3122dacf384830734f5fa`. See **v0.6 baseline and release
+  checks**, below. [Plan](plans/archive/2026-10-29-forward-trust-baseline.md)
 
 ## v0.6 — fix what Cairn already ships
 
@@ -45,53 +45,23 @@ release assignment authorizes no Decision, scope change, push or publication.
 | Work | Next step | Record |
 |---|---|---|
 | **Retire the v0.6 decision master.** The note briefs v0.6's open decisions and holds; once v0.6 ships, its job is done. | At the v0.6 cut, confirm each of its items is done or on this board, change its role from living, then archive it. | [Strategy](strategy/2026-10-28-codex-v06-decision-master.md) |
-| **Explain additional Security Review rounds.** Keep the ordinary two-round limit and require a specific reason for a proposed exception. | Review the proposal and present it for a decision. | [Proposal](proposals/2026-11-02-codex-security-review-pass-limit.md) |
 
-### What the v0.6 baseline must include
+### v0.6 baseline and release checks
 
-The baseline ceremony installs the reviewed machinery in one step. Before
-installing, certify the clean candidate tree. Before release, run
-`python bootstrap/security_check.py` on the clean release commit with every
-required tool, and no skips, expected failures or unexpected passes. The
-ceremony must account for:
+The Maintainer installed signed forward baseline `67cdb805704425132de3122dacf384830734f5fa`
+from reviewed candidate `8349824ca50a5683ba038078c1b3cfc28e5bf71f` on
+2026-11-02. Its signature and installed manifest were verified, and repin
+status reported no AST or frozen-file drift. This does not certify earlier
+history. The [forward preparation plan](plans/archive/2026-11-02-forward-ast-preparation.md)
+records the four baseline/old-anchor-dependent checks that were not run.
 
-- the protected-file packet, reader record and the Maintainer-only verifier,
-  pinning and signing steps deferred by the
-  [release-evidence plan](plans/archive/2026-10-29-release-evidence-environment.md);
-- the first install of the signed list of protected tests, from the
-  [test-trust plan](plans/archive/2026-10-28-test-trust-boundary.md), which
-  narrows freezing to security and trust tests;
-- the deferred baseline install from the
-  [ceremony-commands plan](plans/archive/2026-10-29-ceremony-commands.md);
-- the guided forward AST preparation and Maintainer approval and signing steps from the
-  [forward preparation plan](plans/archive/2026-11-02-forward-ast-preparation.md); its four baseline/real-anchor checks remain unpassed;
-- the engine's abstract syntax tree (AST) baseline, owed since this
-  release's engine changes:
-  `bootstrap/tests/test_ast_attest.py` fails 2 of 30 tests at `657c7aea`
-  ([upgrade growth](strategy/2026-10-30-claude-upgrade-growth.md#recommendation));
-- the operator guidance in `bootstrap/REANCHOR_RUNBOOK.md` and
-  `bootstrap/reanchor.sh` changed since the last pin;
-- protected test files changed since the last pin: four from the
-  [model-floor plan](plans/archive/2026-10-28-model-floor-alignment.md)
-  (`test_model_tier_rule_ships.py`, `test_model_selection_stub.py`,
-  `test_onboarding_seed_roster.py`, `test_review_stance_in_shipped_files.py`);
-  `test_review_sweep_ships.py` from the
-  [certification cost audit](plans/archive/2026-10-30-certification-cost-audit.md);
-  `test_security_finding_confidentiality.py`, `test_repin.py` and
-  `test_repin_ceremony.py` from the
-  [certification test repairs](plans/archive/2026-10-30-certification-test-repairs.md);
-  and `test_review_and_verification_rules_ship.py` and
-  `test_verification_boundaries.py` from the
-  [test-once proposal](proposals/archive/2026-10-30-claude-test-once-per-change.md); and
-  `test_quickstart_sequence.py` from the
-  [quickstart lifecycle plan](plans/archive/2026-11-02-quickstart-lifecycle-alignment.md); and
-  `test_gate_preflight.py` and `test_security_check.py` from the
-  [release-test corrections plan](plans/archive/2026-11-02-release-test-corrections.md).
-
-Those plans did not repin or re-anchor themselves, and comparing against the
-old anchor is unnecessary. Maintainer: *"They can each build the machinery,
-the new baseline does not need to be part of their plans. It can be a work
-board item for v0.6."*
+The earlier full test run was not clean. The Maintainer directed a focused
+correction and no repeated broad suite; the
+[output-bound plan](plans/archive/2026-11-02-output-bound-test.md) records that
+decision and its passing focused checks. The final candidate's focused security
+scan and prose, neutrality and redundancy checks passed. The separate release
+security command has not run: it repeats the suite and refuses platform skips.
+Do not report a clean full certification or a passing release security command.
 
 ## v0.7 — better software engineering with lower cost
 
@@ -137,6 +107,7 @@ The rows below follow that order.
 
 | Work | Next step | Record |
 |---|---|---|
+| **Explain additional Security Review rounds.** Keep the ordinary two-round limit and require a specific reason for a proposed exception. | Review the proposal and present it for a decision. | [Proposal](proposals/2026-11-02-codex-security-review-pass-limit.md); Maintainer moved this item from v0.6 to v0.7 on 2026-11-02. |
 | **A smaller, faster test suite** (priority; costing time and money, Maintainer, 2026-10-30). The board's last reported full run was 24 min 55 s against a 10-minute target. The tier map (`tools/test_tiers.py`) landed in `8f514e05`. Mapped per-file call times over 10 s, slowest first across 2026-11-02 runs: `test_gate_preflight.py` 227.24 s; `test_upgrade.py` 72.40 s; `test_reanchor.py` 56.38 s; `test_upgrade_module_additions.py` 47.06 s; `test_upgrade_edit_check_runs_no_project_programs.py` 41.50 s; `test_security_marker.py` 29.79 s; `test_intents_tool.py` 24.47 s; `test_security_check.py` 21.89 s; `test_broad_run_guard.py` 20.15 s; `test_upgrade_lockfile_path_containment.py` 13.57 s. | Open the accepted heavy-tier implementation plan, retaining declared reviews and detection, tier-folder, runtime and shared-reporting outcomes. Folder moves wait for the installed v0.6 baseline. | [Proposal](proposals/2026-11-02-codex-suite-consolidation.md); [Strategy](strategy/2026-10-27-antigravity-judicious-testing-and-simulation-verification.md#recommendation) |
 | **Complete the deferred release security run.** Release preparation `ecce3465` records the strict command as unrun; the earlier full suite had one later-corrected failure and eight Windows-only skips. | Propose a usable release path that reconciles duplicate whole-suite invocations and platform-specific skips while preserving required coverage and strict security outcomes. Coordinate with suite consolidation, then run at an authorized clean-commit release point. Do not default to repeated full suites, waive missing checks automatically or call incomplete evidence passed. Keep focused Windows evidence distinct from full-tree certification. | Maintainer chat, 2026-11-02, relayed by the release session: *"Put that security run in our v0.7 PLANNING list"*; release preparation `ecce3465`; [strict runner](../bootstrap/security_check.py); [focused Windows record](#accepted-limits-and-standing-decisions) |
 | **Measure what agents cost from their tools' own logs.** Count real token and time use from the logs agent tools already keep, show it to the Maintainer, and stop unattended runs at a spending limit the Maintainer sets. Agents report nothing themselves. | Open the accepted heavy-tier plan, including its Security Review. Coordinate with lightweight team measurement so collection, attribution and pulse reporting are implemented once. | [Proposal](proposals/2026-10-30-claude-metered-cost.md) |
@@ -187,7 +158,7 @@ it and its own proposal is accepted.
 - **Re-anchor** — the Maintainer's signed approval of the exact test files that
   guard Cairn's security checks. A **repin** is the routine version of it.
 - **Trust baseline** — the set of approved files a re-anchor installs. The
-  **v0.6 baseline** is the next one.
+  **v0.6 baseline** was installed at `67cdb805`.
 - **Certification** — one full test run on a clean commit, before a release or
   a re-anchor. Ordinary changes run only the tests that name the files they
   touch.
@@ -196,8 +167,8 @@ it and its own proposal is accepted.
 
 ## Working rules (for agents)
 
-- **One branch.** Work on `0.6-dev` in the one shared checkout, with no topic
-  branches and no worktrees for writing. `master` holds the released 0.5.0 and
+- **One branch.** Work on `0.7-dev` in the one shared checkout, with no topic
+  branches and no worktrees for writing. `master` holds the released 0.6.0 and
   takes no development commits. A reviewer who must change code to test it
   works in a throwaway detached worktree of the reviewed commit and removes it
   afterwards. Maintainer, 2026-10-26: *"I actually would prefer that all work

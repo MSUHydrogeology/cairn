@@ -36,9 +36,19 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Major changes
 
-- **Changed: Quickstart lifecycle.** The quickstart now shows its deliberate tagline example as light and records the final check before a separate archive commit. ([plan](dev/plans/archive/2026-11-02-quickstart-lifecycle-alignment.md))
+### Minor changes
+
+- **Added** -- The v0.7 delivery sequence links accepted proposals for suite consolidation, fault-centered testing and architecture/reuse, with grouped strategy closeout. Reviews and author responses are recorded; implementation planning is next. ([sequence](dev/strategy/2026-11-02-codex-v07-delivery-sequence.md))
+- **Added** -- The v0.7 board carries the deferred strict release security run, including duplicate whole-suite invocations and platform-specific skip handling. The historical incomplete run remains distinct from focused Windows evidence. ([board](dev/PLANNING.md))
+- **Changed** -- Development now includes the released v0.6.0 baseline and DOI, while accepted v0.7 work and the deferred security run remain on the development board. ([board](dev/PLANNING.md))
+
+## 0.6.0 — 2026-11-02
+
+### Major changes
+
 - **Added: Changelog template.** Every new Cairn install includes a root changelog with Major and Minor sections, ordered entry types, titled major entries, and guidance for keeping, optionally adapting, or saving existing history before starting fresh. Normal install preserves an existing file; upgrades stage new changelog collisions for review. ([plan](dev/plans/archive/2026-11-01-changelog-template.md))
 - **Added: Module list and first-use tasks.** Each install now lists the modules you chose, with optional first-use tasks for each. You can adopt a module later, and install keeps your existing work when it conflicts. ([plan](dev/plans/archive/2026-10-29-module-discovery-activation.md))
+- **Changed: Quickstart lifecycle.** The quickstart now shows its deliberate tagline example as light and records the final check before a separate archive commit. ([plan](dev/plans/archive/2026-11-02-quickstart-lifecycle-alignment.md))
 - **Changed: Scoped certification defaults.** Guidance helps teams choose checks for affected work and record its scope and omissions, while required checks and Cairn's full-tree certification remain in force. ([plan](dev/plans/archive/2026-11-01-project-certification.md))
 - **Changed: Security Review triggers.** Guidance explains when reuse through unchanged safeguards does not add a trust boundary and preserves review for new sources, bypasses, wider inputs and exposed outputs. ([plan](dev/plans/archive/2026-11-01-security-trigger-clarity.md))
 - **Changed: Scientific model evidence.** Guidance places model runs with the work or release that requires them while retaining configured suite members and all other required checks. ([plan](dev/plans/archive/2026-11-01-model-evidence.md))
@@ -63,14 +73,12 @@ At a release, rename `Unreleased` to the version and date, and open a new empty
 
 ### Minor changes
 
-- **Added** -- The v0.7 delivery sequence links accepted proposals for suite consolidation, fault-centered testing and architecture/reuse, with grouped strategy closeout. Reviews and author responses are recorded; implementation planning is next. ([sequence](dev/strategy/2026-11-02-codex-v07-delivery-sequence.md))
-- **Added** -- The v0.7 board carries the deferred strict release security run, including duplicate whole-suite invocations and platform-specific skip handling. The historical incomplete run remains distinct from focused Windows evidence. ([board](dev/PLANNING.md))
-
 - **Added** — Cairn can prepare a forward AST correction with a guided, independently reviewed workflow without reconstructing old history. ([plan](dev/plans/archive/2026-11-02-forward-ast-preparation.md))
 
 - **Added** — Release publication has a read-only check for the published Release and the signed tag's remote commit, and the guide now separates pushing the signed tag from publishing its Release. ([plan](dev/plans/archive/2026-10-30-tag-release-distinction.md))
 - **Added** — Cairn's re-anchor and repin ceremonies, which re-approve the files its test gate protects, have reusable preparation, verification and supervised-run commands. Preparing the new trust baseline uses independently reviewed inputs. ([commands plan](dev/plans/archive/2026-10-29-ceremony-commands.md), [baseline plan](dev/plans/archive/2026-10-29-forward-trust-baseline.md))
 - **Added** — Cairn now separates its protected security and trust tests from ordinary tests. A signed list names the protected ones, and changes to them are checked in two stages. ([plan](dev/plans/archive/2026-10-28-test-trust-boundary.md))
+- **Changed** — Cairn’s output-bound security test checks the byte cap separately from cleanup success and reaps its probe if cleanup fails; the security runner is unchanged. ([plan](dev/plans/archive/2026-11-02-output-bound-test.md))
 - **Changed** — The roadmap keeps engineering improvements, suite consolidation, cost measurement and the selected cleanup in v0.7, with organized adopter feedback and workflow expansion assigned to v0.8. All candidate work and its source records remain on the [board](dev/PLANNING.md).
 - **Changed** — The scaffold security inventory no longer carries the obsolete `(R5)` review marker on its core destination safeguard. ([plan](dev/plans/archive/2026-11-02-stray-finding-id.md))
 - **Changed** — The upgrade guide now asks you to compare a clean staged merge with the upstream change and your local policy. A clean text merge alone does not show that their rules agree. ([proposal](dev/proposals/archive/2026-11-01-codex-upgrade-merge-warning.md))

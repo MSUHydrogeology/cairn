@@ -13,8 +13,8 @@ authors:
     given-names: Anthony
     affiliation: "Department of Earth and Environmental Sciences, Michigan State University"
     orcid: "https://orcid.org/0000-0003-3914-9964"
-version: "0.5.0"
-date-released: "2026-10-28"
+version: "0.6.0"
+date-released: "2026-11-02"
 doi: "10.5281/zenodo.23500751"
 repository-code: "https://github.com/MSUHydrogeology/cairn"
 license:
@@ -30,3 +30,4 @@ keywords:
 # Concept DOI (all versions): 10.5281/zenodo.23500751
 # Version DOI (v0.4.0):       10.5281/zenodo.23500752
 # Version DOI (v0.5.0):       10.5281/zenodo.23731834
+# Version DOI (v0.6.0):       10.5281/zenodo.23888278
