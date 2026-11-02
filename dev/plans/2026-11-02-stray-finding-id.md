@@ -123,3 +123,20 @@ Coverage: read accepted scope, committed inventory and plan evidence, ordinary r
 ## Response to code reviews -- Codex GPT-6 (Implementation) -- 2026-11-02
 
 Both ordinary review `d1660b3b` and Security Review `116d2e6a` accepted the exact deletion without findings. No review advice remains to dispose. The implementation remains within the accepted one-marker scope. Final wide Boundary B under canonical Python 3.13 is still required, including the corrected planning-link gate result; do not archive until that run passes. No full certification run is authorized. **Elapsed:** approximately 2 minutes; **tokens:** unknown.
+
+## Implementation verification -- Codex GPT-6 -- 2026-11-02
+
+**Boundary B mode**: wide for the protected security inventory; mapped consumers and the core-install workflow were included, with the exact-byte control and standing gates.
+
+- **Tested commit**: `1a9b0366b56f50df25b583d789d00841082f6e24`
+- **Reviewed range**: `34fdba186a1b8e972e617d554625fab075de457d^..1a9b0366b56f50df25b583d789d00841082f6e24`; the inventory has not changed since reviewed commit `34fdba18`.
+- **Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13.
+- **Pre-run / post-run**: disposable detached checkout clean at the tested SHA before and after; `HEAD` unchanged.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python -m pytest -q --durations=10` on `test_install_module.py`, `test_security_leaf.py`, `test_upgrade_lockfile_path_containment.py` | 0 | 118 passed; no failures or skips | 15.26 s pytest | unknown |
+| `claim_check.py`, `link_check.py`, `sync_doc_snippets.py --check`, `quality_gate.py --sub neutrality`, `check_cairn.py` | 0 | claim/link clean; 521 docs no snippet drift; neutrality 0 failures/43 informational; 188 Markdown files clean, 104 external links unprobed | 2.1 s combined | unknown |
+| Parent-derived byte control and appended-byte negative control | 0 | Exact deletion matched; extra-byte mutant rejected | under 1 s | unknown |
+
+`tools/test_tiers.py for bootstrap/_scaffold/SECURITY_MUTATIONS.md` selected exactly the three test files above. `test_install_module.py` covers the install/core-install workflow; the other two preserve Class-A guard references and exercise the live inventory reader. The target remains repository security documentation; no separate adopter copy or runtime security proof is claimed. The canonical gate invocation passed; an initial invocation without the interpreter's absolute path ran no gate because `python3.13` was not on the clone's `PATH`. **Known omissions**: no full-tree certification; external links were not probed; check timing beyond the listed commands and token use are unknown.
