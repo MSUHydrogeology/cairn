@@ -69,3 +69,13 @@ None; this is the opening scope.
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Proposal review -- Codex GPT-6 -- 2026-11-02
+
+**Verdict:** Accept as framed, subject to Maintainer Decision and the separate Security Review; no blocking findings. **Elapsed:** approximately 4 minutes. **Tokens:** unknown.
+
+1. **Should it happen?** Yes, as a correction to the output-bound assertion, not a demonstrated repair of cleanup. A-t4 currently requires exactly `truncated` and caps retained output; `_run_tool` appends `+cleanup-failed` when cleanup fails. Both proposed accepted statuses still require truncation, while A-t1 would explicitly require the combined status to be DEGRADED. The proposal correctly leaves the underlying failure unexplained.
+2. **Best alternative:** Keep the exact assertion and investigate cleanup first. It retains detection of cleanup failure during overflow, but costs an unknown investigation and can fail the output-bound check for a separate property. A-t6 checks a descendant after timeout, not overflow, so the proposed change loses that overflow-specific detection. Production still reports the combined status; a passing A-t4 would no longer flag it. Record any observed combined status during verification so that evidence is not silently lost.
+3. **What would show it wrong?** A non-truncation status or excess output passing, combined status classified CLEAN, or an uncontrolled child surviving the probe. The proposed mutations and safe-cleanup condition address these questions, but their outcomes remain to be established.
+
+Coverage: read the proposal and committed A-t1, A-t4, A-t6 and runner status and cleanup code. Did not reproduce the reported failure, test every classification caller, assess implementation, or run tests or suites; Security Review remains separate.
