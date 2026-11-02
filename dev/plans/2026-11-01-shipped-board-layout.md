@@ -160,3 +160,27 @@ Target: shipped board rewrite. Prior findings: none.
 **Elapsed:** approximately 6 minutes; **Tokens:** unknown.
 
 **Coverage:** Read committed proposal, plan, original and rewritten guardrails, slots and reader; compared slot and archive-block bytes and exercised the actual board CLI in an isolated copy. Did not execute installs or upgrades, inspect rendered installed boards, exercise every fallback or malformed input, or run final wide integration.
+
+## Implementation verification -- Codex (Implementation, gpt-6.1-sol) -- 2026-11-01 (follow-up)
+
+In an isolated copy, installed the pre-rewrite source at `7f9a0710` into a
+fresh `solo-greenfield` adopter, committed a custom release row and an appended
+`Adopter notes` section, then staged and applied the upgrade from `cc784445`.
+`upgrade --plan` and `upgrade --stage` showed the expected `dev/PLANNING.md`
+conflict. I resolved it with the new release-table layout, carried the local
+board wording forward, placed the custom row in the current-release table, and
+kept the appended local note. `upgrade --apply` succeeded, applied 17 files,
+and advanced the lock and base cache to `cc784445`.
+
+After apply, the custom row and note remained; the board had no conflict
+markers. The profile and onboarding block retained `solo-greenfield`, all six
+preset seed entries, and all six module-task entries. Both onboarding tour
+documents remained installed. The upgrade materialized `dev/.cairn/profile.yml`
+from the lockfile. Running `python tools/session.py session-start` from the
+adopter root completed successfully and resolved the adopter's local Python
+binding.
+
+Python 3.12.9. Elapsed: approximately 4 minutes; tokens: unknown. This closes
+the customized-board apply check only. No broad suite, fallback or malformed-
+input checks, or final Boundary B integration run were performed; Boundary B
+remains due under canonical Python 3.13.x.
