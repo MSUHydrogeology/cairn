@@ -91,3 +91,52 @@ Coverage: examined the committed plan, accepted proposal, plan template, current
 ## Response to Security plan review -- Codex GPT-6.1 Sol -- 2026-11-01
 
 The Security review found no blockers. Its suggested reuse of an applicable rule check fits the revised Verification; the two mutations, five cases, separate Security code review and wide final verification remain required. Elapsed: under one minute; tokens: unknown.
+
+## Implementation verification -- Codex GPT-6.1 Luna -- 2026-11-01
+
+Changed surfaces: `dev/modules/security-review.md`,
+`templates/modules/team-gated/security-review.md`, and
+`bootstrap/tests/test_review_and_verification_rules_ship.py`. Both module
+copies now explain guarded reuse, the five widening cases, Foundations'
+pre-Decision challenge, Maintainer authority after acceptance, and that wide
+means mapped change verification rather than a whole-suite instruction.
+
+The applicable test-tier mapping selected four files:
+`test_review_and_verification_rules_ship.py`,
+`test_review_stance_in_shipped_files.py`, `test_scaffold.py`, and
+`test_security_stack.py`. After the guarded-reuse, authority and mutation
+fixes, all four passed: 793 passed and one Bandit-dependent node skipped in
+20.95 seconds under Python 3.12.9. The skipped node,
+`test_security_stack.py::TestOrchestrator::test_subprocess_runs_isolated_not_repo_shadow`,
+then passed alone under canonical Python 3.13.13 with Bandit available (1
+passed in 0.38 seconds). The added wide-mode assertion passed for both copies
+on `da48cfd9` (2 passed in 0.04 seconds under Python 3.12.9). The four-file
+selection did not exceed the 30-second overall target; per-file durations were
+not collected. The separate shared 18-file selection exceeded that target,
+as recorded in the decision-options plan. No runtime security behavior is
+claimed.
+
+The prose gates passed: `check_cairn.py` (189 Markdown files; 95 external
+links not probed), `link_check.py` (189 files; 96 external links not probed),
+and neutrality (zero failures, 43 informational findings). The rule test
+mutates each module copy separately: removing the reviewed-limits condition
+and appending an explicit bypass exemption both fail the predicate. No
+snippet-synced block changed. Elapsed: approximately 32 minutes; tokens:
+unknown.
+
+Codex GPT-6.1 Luna applied the five accepted cases to both module copies:
+(1) unchanged guarded reuse has no boundary-change trigger; (2) same-format
+input from a new untrusted source triggers review; (3) moving code to bypass
+validation triggers review; (4) a non-widening edit to a named high-risk
+control still triggers under the independent high-risk rule; (5) sending
+confidential output to a newly public destination changes recipients and
+triggers review. The prose checks do not prove runtime guard behavior.
+
+## Completion follow-ups
+
+**Issue #37 remains open.** The accepted proposal does not add the requested
+necessity line and author-strike mechanism for proposal and plan review, does
+not allow bounded verification for non-widening edits to named high-risk
+surfaces, and retains the `adds or widens` trigger. After code review and final
+wide Boundary B, keep these three residual requests visible for separate
+Maintainer disposition; do not close the issue as fully delivered.

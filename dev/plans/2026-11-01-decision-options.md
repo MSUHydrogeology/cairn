@@ -87,3 +87,57 @@ Coverage: examined the committed plan, accepted proposal, governing authority, c
 Both reviews support the plan and raise no findings. Accept the ordinary review advice: coordinate overlapping checks on the same final committed bytes, record their exact range and outcomes, and retain this plan’s post-review wide Boundary B. No operative change is needed.
 
 **Elapsed**: approximately 2 minutes; **Tokens**: unknown
+
+## Implementation verification -- Codex GPT-6.1 Luna -- 2026-11-01
+
+Changed surfaces: `AGENTS.md`, `templates/core/AGENTS.md`,
+`dev/agent_collaboration.md`, `templates/core/dev/agent_collaboration.md`, and
+`docs/methodology/roles.md`. The proposal template already asks for meaningful
+costs and an alternative; no field or template block was added. Local and
+shipped guidance agree in substance.
+
+The shared mapped iteration selection covered the three v0.6 plans and the
+lifecycle-description plan. `python tools/test_tiers.py for --range
+b210f9b4d2e938e33905e8c99faabd7ab7e91148..d7434ba616289d8f1c1927d23784ab1a6b33b876`
+selected 18 files: `test_ceremony_review_report.py`,
+`test_check_release_publication.py`, `test_default_security_stance.py`,
+`test_doc_governance.py`, `test_finalize_retired_living_state.py`,
+`test_module_roster.py`, `test_onboarding_seed_roster.py`,
+`test_oracle_activation.py`, `test_portable_security_sweeps.py`,
+`test_presets.py`, `test_prune_tools.py`, `test_replacement_tools.py`,
+`test_review_and_verification_rules_ship.py`,
+`test_scientific_check_guidance_ships.py`, `test_session_routines.py`,
+`test_session_start_drain_rules.py`, `test_status_vocabulary_advisory.py`,
+and `test_upgrade_added_slots.py`. The governing-text selector reported 46
+unpinned `AGENTS.md` readers omitted; folder sweepers remain for release
+verification.
+
+The 18-file selection passed: 667 passed in 61.04 seconds under Python 3.12.9.
+This exceeded the 30-second iteration target; per-file durations were not
+collected. Later shared corrections were checked with targeted tests recorded
+in the related plans. No full suite or install comparison was run here.
+
+`python scripts/check_cairn.py` passed (189 Markdown files; 95 external links
+not probed). `python scripts/link_check.py` passed (189 files; 96 external
+links not probed). `python scripts/quality_gate.py --sub neutrality` reported
+zero failures and 43 informational findings. Snippet sync was not applicable:
+no synced snippet changed.
+
+**Maintainer authorization** (chat, 2026-11-01): "Yes, use agent reviews" to
+substitute independent agent reviewers for the two plan examples that called
+for a person to compare them by hand. No automated or security check was
+waived. Independent reviewer Codex GPT-6.1 applied the prepared examples at
+`d7434ba6`: the recurring weekly check versus manual review disclosed the
+cost and lost safeguard, omitting the check failed, and a routine Decision
+with no new recurring addition needed no inventory. This is a reasoning
+example, not proof that future authors will identify every obligation.
+Elapsed: approximately 32 minutes; tokens: unknown.
+
+## Completion follow-ups
+
+**Issue #40 closure** remains a finish step after code review and final wide
+Boundary B. The accepted guidance addresses the issue's three requests:
+visible option additions and costs, a separate recommendation, and brief
+Decision disclosure of material new recurring machinery. Close the issue only
+after final verification confirms these outcomes; otherwise keep it open and
+name the remaining request.

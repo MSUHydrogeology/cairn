@@ -85,3 +85,44 @@ Coverage: examined the committed plan, accepted proposal, governing verification
 ## Response to plan reviews -- Codex GPT-6.1 Sol -- 2026-11-01
 
 Both reviews found no blockers. Accepted the ordinary advice: coordinate overlapping final checks on the common reviewed commit when feasible while retaining each plan’s coverage and evidence. The separate Security code review and plan-specific examples remain required. Elapsed: under one minute; tokens: unknown.
+
+## Implementation verification -- Codex GPT-6.1 Luna -- 2026-11-01
+
+Changed surfaces: `AGENTS.md`, `templates/core/AGENTS.md`,
+`dev/plans/_template.md`, `templates/core/dev/plans/_template.md`, and
+`docs/methodology/plans.md`. Proposal-template inspection found no conflicting
+scientific-check rule. The self-hosted and adopter-facing guidance leave the
+configured suite, commands and triggers unchanged.
+
+The shared mapped selection recorded in the decision-options plan selected 18
+files; it included `test_scientific_check_guidance_ships.py`,
+`test_review_and_verification_rules_ship.py`, and the other shared readers.
+All 18 passed on committed `d7434ba6`: 667 passed in 61.04 seconds under
+Python 3.12.9. The selector also reported 46 unpinned `AGENTS.md` readers
+omitted by its passage-pin guard. The run exceeded the 30-second iteration
+target; per-file durations were not collected. The lifecycle plan's remaining
+mapped tests and their outcomes are recorded there.
+
+`python scripts/check_cairn.py` passed (189 Markdown files; 95 external links
+not probed). `python scripts/link_check.py` passed (189 files; 96 external
+links not probed). `python scripts/quality_gate.py --sub neutrality` reported
+zero failures and 43 informational findings. Snippet sync was not applicable:
+no synced snippet changed.
+
+**Maintainer authorization** (chat, 2026-11-01): "Yes, use agent reviews" to
+substitute independent agent reviewers for the two plan examples that called
+for a person to compare them by hand. No automated or security check was
+waived. Independent reviewer Codex GPT-6.1 applied the prepared examples at
+`d7434ba6`: a model run that was neither a suite member nor otherwise required
+was not added to routine certification; a configured, safety-required model
+run remained required at every required point. This checks the distinction in
+the examples, not whether future authors will find every applicable
+requirement. Elapsed: approximately 32 minutes; tokens: unknown.
+
+## Completion follow-ups
+
+**Issue #33 remains open.** The accepted proposal deliberately did not adopt
+the issue's alternative definition that would make certification scoped-only
+and move the full suite to a separate ordinary check. After code review and
+final wide Boundary B, retain the issue for a separate Maintainer decision;
+do not close it as completed by this narrower clarification.
