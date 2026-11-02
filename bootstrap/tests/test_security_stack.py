@@ -1263,17 +1263,21 @@ def test_a_t4_output_is_bounded(orchb, monkeypatch):
     def bounded_probe_cleanup(proc, process_group=None):
         cleanup_ok = runner_kill_tree(proc, process_group)
         if proc.poll() is None:
-            proc.kill()
+            try:
+                proc.kill()
+            except ProcessLookupError:
+                pass
             proc.wait(timeout=1.0)
         cleanup_results.append((cleanup_ok, proc.returncode))
         return cleanup_ok
 
     monkeypatch.setattr(orchb, "_kill_tree", bounded_probe_cleanup)
     run = orchb._run_tool(
-        _probe("import sys\n"
+        _probe("import sys, time\n"
                "for _ in range(4096):\n"
                "    sys.stdout.write('x' * 1024)\n"
-               "sys.stdout.flush()\n"),
+               "sys.stdout.flush()\n"
+               "time.sleep(2)\n"),
         label="flooder")
     assert run.status in ("truncated", "truncated+cleanup-failed"), run.status
     assert len(run.stdout.encode("utf-8")) <= 64 * 1024
