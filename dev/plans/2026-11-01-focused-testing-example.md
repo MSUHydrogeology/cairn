@@ -94,3 +94,24 @@ Coverage: read the committed plan, accepted proposal, current plan template, shi
 The ordinary finding was addressed in the operative Verification section and response at `542f9418`. The separate Security plan review found no issues. Both required plan review obligations are recorded; implementation can begin.
 
 **Elapsed**: less than one minute. **Tokens**: unknown.
+
+## Implementation verification -- Luna -- 2026-11-01
+
+**Boundary B mode**: wide, pending the required post-review integration run. The shipped template is a named high-risk surface; the final run must include mapped install and workflow coverage plus standing gates.
+
+**Tested commit**: `a39171cc048101f12847e080b47ef786c5b75387`  
+**Iteration range**: `c2d000f4`..`a39171cc048101f12847e080b47ef786c5b75387`  
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/miniforge3/bin/python`, Python 3.12.9  
+**Pre-run state**: clean isolated copy at the tested commit. **Post-run state**: clean, same `HEAD`.
+
+| Command | Exit | Outcome | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python -m pytest bootstrap/tests/test_review_stance_in_shipped_files.py` | 0 | 482 passed | 1.652 s | unknown |
+| `python scripts/claim_check.py templates/modules/default-on/documentation_plan_template.md` | 0 | OK | 0.041 s | unknown |
+| `python scripts/link_check.py templates/modules/default-on/documentation_plan_template.md` | 0 | 1 Markdown file; no issues | 0.084 s | unknown |
+| `python scripts/sync_doc_snippets.py --check templates/modules/default-on/documentation_plan_template.md` | 0 | 1 document; no drift | 0.041 s | unknown |
+| `python scripts/quality_gate.py --sub neutrality` | 0 | 0 failures; 43 informational findings | 0.888 s | unknown |
+
+**Plan-specific acceptance commands**: `python tools/test_tiers.py for templates/modules/default-on/documentation_plan_template.md` selected only `bootstrap/tests/test_review_stance_in_shipped_files.py`. Reader search found the positive installer mapping at `bootstrap/_scaffold/config.py:1094` and the mapped test reference at `bootstrap/tests/test_review_stance_in_shipped_files.py:1556`; the old wording is absent from the shipped template. The replacement keeps the paired rationale and says required integration and security checks still apply.
+
+**Non-pass disposition**: none. **Known omissions**: the fresh installed output, `bootstrap/tests/test_documentation_plan_module.py`, and wide integration/workflow coverage remain for the post-review Boundary B run. No full-tree suite was run. **Elapsed for the recorded checks**: about 3 seconds total. **Token use**: unknown.
