@@ -153,3 +153,55 @@ remains open.
 Reviewed commit: `9da627e7`. **Verdict:** The blocking finding is closed. The terminal command now stages `CHANGELOG.md`; the test extracts and executes both documented commands and checks the resulting commit. The targeted install node passed in a clean Git-backed copy under Python 3.12.9 (1 passed, 0.33 s). Elapsed: approximately 1 minute; tokens: unknown.
 
 **Coverage:** Rechecked the correction and its behavior test only. Did not review other documentation groups or perform Security Review; final wide Boundary B remains open.
+
+## Implementation group status -- Codex (Implementation) -- 2026-11-01
+
+Committed work covers parts of C2 and C3; it does not establish that either
+full reading group is complete. Elapsed: approximately 10 minutes; tokens:
+unknown.
+
+**C2 — entry points and frequently followed guidance.** `1f2d1f69` records
+README, quickstart and project-site edits, with claim, link, snippet, Cairn
+content and neutrality checks. Its mapped selection reported 1,443 passed and
+one quickstart install failure (`dev/.cairn/cairn-lock.yml` expected). Later
+quickstart work records 490 passed across the install-sequence and shipped
+review-stance tests, and the review re-look records the install test passing;
+the original selection was not rerun as a whole. `c58effb3` records the
+getting-started edit and its named test and prose checks passing (481 tests).
+These commits do not document a full entry-point reading review.
+
+**C2 — remaining general docs.** `cf84805f` edits four guidance documents;
+the commit records claim checks only and says targeted readers and prose gates
+will be reported later. Those results are absent here. README and index material
+were left to the entry-point work. The rest of `docs/`, the board, changelog,
+and proposal-summary work have no recorded Plain Language read or disposition.
+
+**C3 — public methodology.** `2643e096` records three revised methodology
+documents and twelve read without a high-value edit. It defers targeted tests
+to a separate copy without recording their outcome. It does not account for
+the complete final public methodology or its split installed homes after the
+doctrine move.
+
+**C3 — core and module templates.** `37c07e0d` records markers on thirteen
+core templates and passing prose gates; the selected test run was refused and
+no tests ran. Its coordinating `PLANNING.md` rewrite still needs this audit's
+read against the marker and language criteria. `af8d1263` records edits to
+nine module guidance files and claim checks, but defers reader tests and prose
+gates. Other shipped templates and module documents are not accounted for.
+
+**C3 — titleless issue forms.** `9184eb50` adds an H1 and an HTML-comment
+marker to four GitHub and four GitLab forms. This is the chosen format-safe
+placement, but the acceptance condition is not yet evidenced: the commit
+explicitly leaves the real scaffold copy path and GitHub `name`, `about`, and
+`labels` values for a follow-up check. Keep this group open until those checks
+are recorded and show the consumers retain their behavior.
+
+**Still open.** C1's complete mapping of installed files, readers, pins and
+checks, including the known-positive negative-search check, is not recorded.
+No entry above closes the full groups it touches. Before archive, record the
+missing targeted selections and standing prose gates for `cf84805f`,
+`2643e096`, `37c07e0d` and `af8d1263`; complete the issue-form scaffold/YAML
+check; read and disposition the remaining docs, final board/changelog and
+proposal-summary work, all final methodology homes, and remaining shipped
+templates. Then complete independent ordinary and Security Reviews and wide
+Boundary B on the reviewed range. No tests were run for this status record.
