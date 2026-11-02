@@ -50,7 +50,7 @@ the proposal's tier determines whether accepted work needs a plan. Light is the
 default and has no plan, even for wide or multi-area work. Non-trivial standard
 and heavy work uses plan triage:
 
-![Three lanes: most changes take a light path. A typo or one-line fix is the change with its test and needs no review. A change whose shape is settled gets a short change note and a review first. A new feature, a contract change or a high-risk surface starts the deliberate lane with a proposal and the Maintainer's decision. Light is the default and has no plan, even for wide or multi-area work; non-trivial standard and heavy proposals use plan triage. Named high-risk surfaces and added or widened trust boundaries trigger heavy. Ordinary ceremony uncertainty takes the lighter lane with a reason; stop on a newly discovered trust boundary. Every lifecycle step is a commit.](docs/assets/three-lanes-of-change.svg)
+![Three lanes: most changes take a light path. A typo or one-line fix is the change with its test and needs no review. A change whose shape is settled gets a short change note and a review first. A new feature, a contract change or a high-risk surface starts the deliberate lane with a proposal and the Maintainer's decision. After the decision, light goes straight to change and test, skipping plan and plan review; non-trivial standard and heavy proposals pass through both. Light is the default and has no plan, even for wide or multi-area work. Named high-risk surfaces and added or widened trust boundaries trigger heavy. Ordinary ceremony uncertainty takes the lighter lane with a reason; stop on a newly discovered trust boundary. Every lifecycle step is a commit.](docs/assets/three-lanes-of-change.svg)
 
 For a substantial change, the deliberate lane:
 

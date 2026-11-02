@@ -8,8 +8,9 @@
   already settled: a short change note, its review, the change with its
   test, and a code review); and the deliberate lane (a new feature, a
   contract change or a high-risk surface: a proposal, its review, the
-  Maintainer's decision, then plan triage for a non-trivial standard/heavy
-  proposal; light has no plan. Named high-risk surfaces and added or widened
+  Maintainer's decision, then branches: light skips the plan and plan review;
+  a non-trivial standard/heavy proposal passes through both before the change.
+  Named high-risk surfaces and added or widened
   trust boundaries trigger heavy. The change then has its test and a code
   review. Footer: the deliberate test is checked first, ordinary ceremony
   uncertainty resolves to the lighter lane with a reason, and every step is a
@@ -30,8 +31,8 @@
 -->
 <svg viewBox="0 0 700 390" xmlns="http://www.w3.org/2000/svg"
      role="img" aria-labelledby="fig-title fig-desc">
-  <title id="fig-title">Three lanes: light is the default and has no plan; non-trivial standard and heavy proposals use plan triage.</title>
-  <desc id="fig-desc">Trivial lane, for a typo or a one-line fix: the change with its test, and no code review. Standard lane, for a change whose shape is already settled: a short change note, its review, the change with its test, then a code review. Deliberate lane, for a new feature, a contract change or a high-risk surface: a proposal, its review and the Maintainer's decision. Light is the default and has no plan, even for wide or multi-area work. A non-trivial accepted standard or heavy proposal gets plan triage. Named high-risk surfaces and added or widened trust boundaries trigger heavy. Then the change has its test and a code review. The deliberate test is checked first; ordinary ceremony uncertainty takes the lighter lane with a reason. Stop on a newly discovered trust boundary. Every step is a commit.</desc>
+  <title id="fig-title">Three lanes: after the Maintainer's decision, light skips plan review while non-trivial standard and heavy proposals use it.</title>
+  <desc id="fig-desc">Trivial lane, for a typo or a one-line fix: the change with its test, and no code review. Standard lane, for a change whose shape is already settled: a short change note, its review, the change with its test, then a code review. Deliberate lane, for a new feature, a contract change or a high-risk surface: a proposal, its review and the Maintainer's decision. After that decision, light goes straight to the change and test, skipping the plan and plan review. A non-trivial accepted standard or heavy proposal goes through the plan and plan review before the change and test. Light is the default and has no plan, even for wide or multi-area work. Named high-risk surfaces and added or widened trust boundaries trigger heavy. The deliberate test is checked first; ordinary ceremony uncertainty takes the lighter lane with a reason. Stop on a newly discovered trust boundary. Every step is a commit.</desc>
   <style>
     svg { --ink: #1f2328; }
     .lane   { fill: #f6f8fa; stroke: #d0d7de; stroke-width: 1; }
@@ -45,7 +46,7 @@
     .lwhen { font-size: 12px; opacity: 0.75; }
     .chip  { font-size: 13px; font-weight: 600; }
     .note  { font-size: 12.5px; font-style: italic; opacity: 0.75; }
-    .arrow { stroke: var(--ink); stroke-opacity: 0.45; stroke-width: 1.5;
+    .arrow { stroke: #1f2328; stroke: var(--ink); stroke-opacity: 0.45; stroke-width: 1.5;
              fill: none; marker-end: url(#a); }
     .head-mark { fill: var(--ink); opacity: 0.45; }
     @media (prefers-color-scheme: dark) {
@@ -104,8 +105,9 @@
   <rect x="434" y="219" width="166" height="36" rx="6" class="human"/>
   <text x="517" y="242" text-anchor="middle" class="t chip">Maintainer decides</text>
 
-  <!-- wrap to the second row -->
-  <path d="M600,237 L650,237 L650,266 L232,266 L232,276" class="arrow"/>
+  <!-- Standard/heavy route to plan; light route bypasses plan and review. -->
+  <path d="M517,255 L517,266 L232,266 L232,276" class="arrow"/>
+  <path d="M517,255 L517,260 L678,260 L678,327 L490,327 L490,316" class="arrow"/>
 
   <rect x="186" y="279" width="92" height="36" rx="6" class="work"/>
   <text x="232" y="302" text-anchor="middle" class="t chip">plan</text>
@@ -118,6 +120,10 @@
   <path d="M547,297 L567,297" class="arrow"/>
   <rect x="570" y="279" width="104" height="36" rx="6" class="review"/>
   <text x="622" y="302" text-anchor="middle" class="t chip">code review</text>
+
+  <text x="30" y="303" class="t lwhen">Light skips plan and</text>
+  <text x="30" y="316" class="t lwhen">plan review, then goes to</text>
+  <text x="30" y="329" class="t lwhen">change + test</text>
 
   <text x="350" y="358" text-anchor="middle" class="t note">Light is default; no plan. Non-trivial standard/heavy proposals use plan triage.</text>
   <text x="350" y="377" text-anchor="middle" class="t note">Named high-risk surfaces and new/widened boundaries trigger heavy; every step is a commit.</text>
