@@ -1,7 +1,7 @@
 # Plan: Correct release-test portability defects
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-release-test-corrections.md
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Correct three protected tests so release checks work consistently while retaining their safeguards.
@@ -140,3 +140,30 @@ Prior findings: none
 **Verdict**: ACCEPT; no findings. **Elapsed**: approximately 4 minutes. **Tokens**: unknown.
 
 Coverage: read the committed diff, plan, iteration evidence and Security review; ran two targeted nodes. Did not rerun the three mutations, enumerate every helper consumer, run the eight-file selection or compare a historical anchor. The Security review separately exercised extra-file and incomplete-evidence refusal and a branch consumer.
+
+## Implementation verification -- Codex GPT-6.1 -- 2026-11-02
+
+**Boundary B mode**: wide — the changed test surfaces include the gate-preflight trust ceremony and release verification. The mapped owner/consumer selection covers the release-child hook, install manifest, scratch Git branch, preflight/re-anchor, scaffold workflow and security families. It includes the nine reported branch-dependent consumers and the changelog install/mapping workflow.
+
+**Tested commit**: `68df1f21770f5b5ca950bc0c6400337c913be8a1`
+**Reviewed range**: `b81ac97ba56be2a56472dd045e0a2a148221ca56..abea6d026a0a777d08963ddeb2c97321189c2b30` (the three changed release-test files)
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`, Python 3.13.13.
+**Pre-run state**: clean isolated clone at the tested commit. **Post-run state**: clean, same HEAD.
+
+| Command | Exit | Outcomes | Elapsed | Tokens |
+|---|---:|---|---:|---|
+| `python tools/test_tiers.py for bootstrap/tests/test_security_check.py bootstrap/tests/test_notice_install.py bootstrap/tests/test_gate_preflight.py` | 0 | Selected 8 files: `test_broad_run_guard.py`, `test_gate_preflight.py`, `test_notice_install.py`, `test_reanchor.py`, `test_scaffold.py`, `test_security_check.py`, `test_security_lint.py`, `test_security_marker.py` | 2.5 s | unknown |
+| `python -m pytest bootstrap/tests/test_broad_run_guard.py bootstrap/tests/test_gate_preflight.py bootstrap/tests/test_notice_install.py bootstrap/tests/test_reanchor.py bootstrap/tests/test_scaffold.py bootstrap/tests/test_security_check.py bootstrap/tests/test_security_lint.py bootstrap/tests/test_security_marker.py -q --durations=0 --deselect=bootstrap/tests/test_gate_preflight.py::TestPublicCli::test_check_runs_against_the_live_repo_and_reports --deselect=bootstrap/tests/test_gate_preflight.py::TestAuthorizationPackage::test_the_executable_only_list_is_closed` with process-only `init.defaultBranch=main` | 1 | 801 passed, 2 setup failures, 2 deselected, 3 warnings | 381.26 s | unknown |
+| The two failed `TestCandidateCodeCannotSignFromStageOne` nodes, rerun alone with permission for their disposable local agent socket and process-only `init.defaultBranch=main` | 0 | 2 passed; the tests generated, used and stopped their own agents and disposable keys | 0.45 s | unknown |
+| `python scripts/claim_check.py dev/plans/2026-11-02-release-test-corrections.md` | 0 | No claim-check flags | unknown | unknown |
+| `python scripts/link_check.py dev/plans/2026-11-02-release-test-corrections.md` | 0 | One Markdown file scanned; no issues | unknown | unknown |
+| `python scripts/check_cairn.py dev/plans/2026-11-02-release-test-corrections.md` | 0 | One Markdown file scanned; no issues | unknown | unknown |
+| `python scripts/quality_gate.py --sub neutrality` | 0 | No failures; 43 informational findings | unknown | unknown |
+
+**Non-pass disposition**: The full mapped command's two failures occurred before the signing assertions: the sandbox denied `ssh-agent` permission to bind its temporary Unix socket. Both exact nodes passed on the same clean clone and commit with permission to create the test-owned socket. This resolved the environment-only failure; no operator agent, real key, baseline or anchor was used. The ordinary and Security reviews found no code changes required. The three separate-copy negative controls and the nine branch tests under both `main` and `master` defaults are recorded in the preceding Iteration evidence; they were not repeated because the implementation bytes did not change after those checks.
+
+**Plan-specific acceptance commands**: The mapped run exercised the ignored-plugin checkout, skip/incomplete-evidence and extra-file refusal checks, fixed 88-row count, changelog install mapping, all nine branch-dependent cases under `main`, and the `_repo` consumers. The two branch-default controls under `master` and all three negative controls passed earlier on the same implementation bytes. No full suite or certification pair ran.
+
+**Known omissions**: `test_gate_preflight.py::TestPublicCli::test_check_runs_against_the_live_repo_and_reports` and `test_gate_preflight.py::TestAuthorizationPackage::test_the_executable_only_list_is_closed` were deselected. The prior forward-preparation record states the Maintainer's direction was “to separate new-baseline installation and avoid historical-anchor comparison” (`dev/plans/2026-11-02-forward-ast-preparation.md`, Implementation verification). They remain unpassed and are not claimed as passes; no real historical anchor or baseline operation was performed. The current release-task instruction also excludes real-anchor work.
+
+`sync_doc_snippets.py --check` is not applicable because this plan record contains no synced code examples. The branch later advanced at `dcf78dad` for quickstart-plan archival only; it changed no release-range test file. The 3-minute wide-run target was exceeded. Pytest-reported call time by file over 10 seconds, slowest first: `test_gate_preflight.py` 227.24 s; `test_reanchor.py` 56.38 s; `test_security_marker.py` 29.79 s; `test_security_check.py` 21.89 s; `test_broad_run_guard.py` 20.15 s. Add these to the test-consolidation list at its defined serialization point. Tokens: unknown.
