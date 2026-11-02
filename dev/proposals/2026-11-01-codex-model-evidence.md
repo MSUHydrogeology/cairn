@@ -1,7 +1,7 @@
 # Separate scientific model evidence from routine tree certification
 
 **Author**: Codex gpt-6.1-terra
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy — governing doctrine and shipped authoring templates are protected surfaces.
 **Plan review**: required(Internal + Internal Security Review)
@@ -18,7 +18,7 @@ Clarify that a long scientific model run used as evidence belongs to the proposa
 
 ## Proposal
 
-Clarify in governing and shipped guidance that scientific model runs used to establish evidence are specified and recorded with the work or release that requires them. Do not include such a run in routine tree certification merely because it is scientific evidence. When an applicable accepted criterion, explicitly configured required check, or release requirement calls for it, run and record it as required; this clarification does not waive that obligation. Preserve the current tree-certification definition, commands, triggers, and distinction from change verification. Use existing evidence records and introduce no new form, gate, label or review round.
+Clarify in governing and shipped guidance that scientific model runs used to establish evidence are specified and recorded with the work or release that requires them. Do not include such a run in routine tree certification merely because it is scientific evidence. Every member of the configured required suite remains required, including a scientific or slow run; accepted criteria, safety and security checks, and release requirements remain required too. Removing or rescheduling any such check needs separate authorization. Subject and duration do not exempt a run. Retain independent scientific checks and their required failing and positive controls. Preserve the current tree-certification definition, commands, triggers, and distinction from change verification. Use existing evidence records and introduce no new form, gate, label or review round.
 
 ## Rationale
 
@@ -34,7 +34,7 @@ Put cross-cutting prescription in `AGENTS.md` and `templates/core/AGENTS.md`, an
 
 ## Evidence / verification plan
 
-Read the current shipped and self-hosted verification and scientific-check guidance, search for direct readers and pins, and map affected tests before editing. Check two examples: an ordinary tree certification with no work-specific model-run requirement, and a release or accepted change that explicitly requires one. The former must not acquire the model run solely from the new wording; the latter must retain it. Wording that waives a required run or silently changes the full-suite definition falsifies the proposal. Run applicable claim, link, snippet and neutrality gates and mapped direct-reader tests; after review record wide Boundary B on a clean final commit under canonical Python 3.13.
+Read the current shipped and self-hosted verification and scientific-check guidance, search for direct readers and pins, and map affected tests before editing. Check two examples: an ordinary tree certification where the model run is neither a configured suite member nor otherwise required, and a required-run case where a scientific run is already a configured suite member and also serves a safety or work-specific requirement. The former must not acquire the model run solely from the new wording; the latter must retain it at every required point. Wording that waives a required run or silently changes the full-suite definition falsifies the proposal. Run applicable claim, link, snippet and neutrality gates and mapped direct-reader tests; after review record wide Boundary B on a clean final commit under canonical Python 3.13.
 
 ### Tests required
 
@@ -103,3 +103,16 @@ Assurance path: high-assurance
 **N1 — non-blocking.** The ordinary-certification example assumes no work-specific requirement, but does not explicitly say whether the model run is already part of the configured suite. State that premise and add a configured-suite case: it should remain required under the proposal. This distinguishes a clarification from removing a check and makes the example easier to apply. Evidence: Proposal, Proposal and Evidence / verification plan.
 
 Coverage: Read the committed proposal, proposal review rules and cited plan-template guidance; assessed clarity, purpose and added burden. Did not inspect the adopter's project, run examples or conduct the separate Security Review. No suite run.
+
+
+## Response -- Codex gpt-6.1-terra -- 2026-11-01
+
+**Elapsed**: approximately 3 minutes  
+**Tokens**: unknown
+
+- N1: Accepted. The examples now distinguish a run outside the suite and other requirements from a configured suite member, which remains required.
+- Security advice: Accepted. Required suite, safety and scientific checks and their controls remain in place; the required-run example covers overlapping purposes without a new record or stage.
+
+### Withdrawn / superseded commitments
+
+None.
