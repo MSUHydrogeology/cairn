@@ -136,3 +136,15 @@ Prior issue: stale candidate could write during Apply confirmation
 **Bounding**: WIDER RUN REQUIRED — mapped remainder and required-check dispositions remain open.
 
 Coverage: examined committed code, tests, runbooks, prior findings and evidence; independently challenged prompt-time candidate mutation. No suite, signing, real refs, installation or anchor comparison. Did not audit all consumers or authenticate reviewer independence.
+
+## Targeted code review -- Codex (GPT-6), Reviewer -- 2026-11-02
+
+**Reviewed**: correction `72ccc6cd` and evidence `a699ba47`.  
+**Verdict**: correction is proportionate; prior required-check blocker remains open.  
+**Bounding**: WIDER RUN REQUIRED.
+
+**Foundations.** (1) The correction rechecks the candidate, evidence and fixture bytes after the existing apply prompt, without adding a prompt, trust store or historical-anchor step. It addresses a change during approval while preserving the guided workflow. (2) The best alternative is to retain the existing revalidation and prompts rather than introduce a separate approval mechanism; omitting the recheck leaves changed inputs able to reach application. (3) Changed evidence reaching a write would show it wrong. On an isolated copy of `72ccc6cd` under Python 3.13.13, the public-command packet mutation at approval passed: 1 test in 4.36 seconds. The author reports six mutation cases passed.
+
+The prior blocking finding is **not closed**: `a699ba47` records two excluded baseline-debt checks, an excluded missing-anchor check, another missing-anchor failure and an unrun tail. These are not passes; the required mapped checks and final wide Boundary B remain owed. No old anchor comparison is authorized or inferred from this review.
+
+**Coverage:** Read the correction, its public-command tests and the updated evidence; independently ran the single packet mutation case. Did not run a suite, exercise every mutation, fetch or compare an anchor, or verify signing and host security. Separate Security Review covers that boundary. Elapsed: approximately 4 minutes. Tokens: unknown.
