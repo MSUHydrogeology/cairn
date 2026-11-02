@@ -9,9 +9,12 @@ and date, then open a fresh **Unreleased** section.
 Group a change under **Major changes** if users would notice it or need to act.
 Put a security fix or removal there too. Put other changes under **Minor
 changes**. Start each entry with one type, in this order: **Added**,
-**Changed**, **Deprecated**, **Removed**, **Fixed** or **Security**, followed
-by ` — ` and a short description. Use plain language and link to useful detail
-when it helps.
+**Changed**, **Deprecated**, **Removed**, **Fixed** or **Security**. Give a
+major change a short title of two to five plain words after its type, in one
+bold run, then the description: `**Added: Export to CSV.** Results can now be
+saved as a spreadsheet.` A minor change has no title: its type, then ` — ` and
+a short description. Use plain language and link to useful detail when it
+helps.
 
 If this project already has a changelog, you can keep its history unchanged.
 You may optionally adapt it to this format if you choose. To start fresh,
