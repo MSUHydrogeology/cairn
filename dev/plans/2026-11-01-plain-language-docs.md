@@ -1,7 +1,7 @@
 # Plan: Make Cairn's documentation easier to use
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-plain-language-docs.md
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Review Cairn's documentation for clear language while preserving its instructions and technical meaning.
