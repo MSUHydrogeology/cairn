@@ -279,3 +279,29 @@ The plan remains open until the fresh rendered-board inspection is recorded.
 
 **Elapsed:** approximately 2 minutes for the mapped test run, plus under 1
 second for the standing gates; **Tokens:** unknown.
+
+
+## Rendered fresh-install inspection -- Codex (Implementation) -- 2026-11-01
+
+Rendered three fresh targets from the isolated shipped source with Pandoc to
+HTML and plain text: `solo-greenfield`; no preset with the explicit default-on
+module list; and a minimal config with only `project_name` and `test_command`,
+which the installer resolved to the default-on set. All targets started empty,
+without an adopter-side profile file. A config file is required, so a literal
+config-less install is unsupported and was not exercised.
+
+All three renders contain two release tables with Work, Next step and Record.
+The sample wait renders as a separate indented bullet outside the tables; the
+installed board reader reports zero waits. Both slot markers remain in the
+Markdown comments, and project-name substitution is visible. The preset case
+renders six `[seed; id: ...]` tasks plus six module tasks. Both no-preset cases
+render six module tasks and no preset seed IDs.
+
+The rendered boards visibly show the external-path annotation above the title
+and preset seed IDs as task text. Both were already present before the rewrite
+(`bae1d930^`). The no-preset board says onboarding comes from a selected preset
+although it receives module tasks; the same preset-only description was also
+in the pre-rewrite board. Pandoc output was inspected; no browser screenshot
+was captured because the browser blocked local `file:` URLs. No tests were run.
+
+**Elapsed:** approximately 4 minutes; **Tokens:** unknown.
