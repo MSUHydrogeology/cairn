@@ -154,3 +154,13 @@ None; opening scope. No historical certification is promised.
 
 **Authoring elapsed**: approximately 12 minutes, including diagnosis.
 **Tokens**: unknown.
+
+## Proposal review -- Codex (GPT-6), Reviewer -- 2026-11-02
+
+**Verdict: proceed as framed.** The forward record makes a current-state claim and explicitly gives up historical certification; the Maintainer must accept that loss in the Decision. The proposed tests cover the main functional refusal and write boundaries. This is a recommendation, not a Decision.
+
+**Foundations.** (1) Should it happen? Yes: `baseline_reader_inputs` refuses an owed transaction, and `build_transaction` already constructs the record and checks membership (`scripts/repin.py`, lines 422–429 and 978–1018 at `0c4d925e`). The proposal supplies the missing forward path while keeping independent review and signing. (2) Best alternative: extend the existing transaction and apply commands with an explicit forward mode, reusing their existing record format where feasible. The proposal permits that; it avoids a second authority system. Doing nothing costs less but leaves the measured 18 changed baseline symbols, four changed known-new symbols and 12 additions unresolved and the forward path blocked. (3) What would show this wrong? A disposable-repository run that needs an old anchor, writes before approval, accepts a changed packet or unreviewed record, or fails to produce a usable next baseline would falsify the approach. The proposed negative controls and end-to-end exercise address these cases.
+
+**Advice:** In the plan, prefer existing record and command mechanisms when they satisfy both independent reviews; identify any new fields and checks needed so the Maintainer sees only the promised approvals. This is nonblocking design advice, not a request for another ceremony.
+
+**Coverage:** Read the committed proposal and the named transaction, forward-reader, and apply/commit entry points. Did not execute checks, validate the author's measured counts independently, or assess the complete hostile-input and signing threat model; the separate Security Review covers that boundary. Elapsed: approximately 3 minutes. Tokens: unknown.
