@@ -305,3 +305,17 @@ in the pre-rewrite board. Pandoc output was inspected; no browser screenshot
 was captured because the browser blocked local `file:` URLs. No tests were run.
 
 **Elapsed:** approximately 4 minutes; **Tokens:** unknown.
+
+
+## Existing-profile install check -- Codex (Implementation) -- 2026-11-01
+
+A fourth fresh target began with `dev/.cairn/profile.yml` already present,
+containing the `solo-greenfield` preset and project name. Passing that path to
+`scaffold.py --config` succeeded and retained the file. Pandoc rendered the
+substituted project name, preset metadata, six preset seeds and six module
+tasks; both release tables remained, and the installed board reader reported
+zero waits. This confirms an existing profile file is supported when selected
+explicitly; the installer requires `--config` and does not auto-discover it.
+No tests were run and no browser screenshot was captured.
+
+**Elapsed:** approximately 2 minutes; **Tokens:** unknown.
