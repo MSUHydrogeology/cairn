@@ -1,7 +1,7 @@
 # Plan: Show decision options' operating costs
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-decision-options.md
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Make the additions and operating costs of Maintainer decision options visible before a choice.
