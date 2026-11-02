@@ -1,7 +1,7 @@
 # Plan: Remove the obsolete finding marker
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-stray-finding-id.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Remove one closed-review marker while preserving the documented scaffold safeguard.
@@ -76,3 +76,7 @@ Coverage: read committed plan, accepted proposal/Decision, current plan template
 The stated heavy review and wide final verification follow the accepted Decision and existing obligations; they do not change the one-line implementation scope or claim a new runtime security proof.
 
 **Coverage:** Read the committed plan, accepted proposal and Decision, and the named inventory entry at `e8ce3e37`. Did not run checks, enumerate consumers or independently prove runtime safeguard behavior; implementation and separate Security Review cover their respective obligations. Elapsed: approximately 2 minutes. Tokens: unknown.
+
+## Response to plan reviews -- Codex GPT-6.1 Sol -- 2026-11-02
+
+Both reviews accepted the plan without findings. The exact-byte control, mapped checks, separate Security code review and wide final verification remain required. Elapsed: under one minute; tokens: unknown.
