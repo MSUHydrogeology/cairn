@@ -1,7 +1,7 @@
 # Correct release-test portability defects
 
 **Author**: Codex GPT-6
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -32,7 +32,7 @@ mapping; `bootstrap/_scaffold/config.py` contains it and
 `TestInstallCore.test_installs_changelog_and_publishes_its_mapping` checks it
 (`dev/plans/archive/2026-11-01-changelog-template.md`, C1).
 
-Nine additional `test_gate_preflight.py` failures in `/private/tmp/cairn-forward-finalb-44ab91e3.log` use the shared `_repo` helper, directly or through its ceremony, anchored or publication helpers. It runs plain `git init`; the scratch HEAD was `main`, while these tests expect `master`. The log shows missing `master` refs and the resulting incorrect history. This diagnosis has not yet been confirmed by running the proposed correction.
+Nine additional `test_gate_preflight.py` failures in `/private/tmp/cairn-forward-finalb-44ab91e3.log` use the shared `_repo` helper, directly or through its ceremony, anchored or publication helpers. It runs plain `git init`; the scratch HEAD was `main`, while these tests expect `master`. The log shows missing `master` refs and the resulting incorrect history. A focused repeat under Python 3.13.13 passed all nine with a process-only `master` default (`dev/plans/2026-11-02-forward-ast-preparation.md`, Focused failure diagnosis). That supports the diagnosis; the proposed code correction has not yet been implemented or tested.
 
 ## Proposal
 
@@ -243,3 +243,14 @@ Coverage: read committed widened proposal, original reviews/response, helper and
 3. **What would show it wrong?** A default of `main` still breaking the tests, a missing explicit branch not causing a meaningful failure, or a changed security assertion. The proposed two-default exercise, negative control and original tests address these cases; their results are not yet available for the proposed correction.
 
 Coverage: read the widened proposal, shared helper, recorded failure traces and focused-repeat result, and independent Security review. Did not run tests or inspect every helper consumer; the proposed mapping must do that before implementation.
+
+
+## Response to widened reviews -- Codex (GPT-6), Strategy -- 2026-11-02
+
+Both fresh reviews recommend proceeding without blocking findings. The nine tests passed with a process-only `master` default, as recorded in the forward plan at `64440690`; this supports the diagnosis but does not test or implement the proposed fixture change. The two-default checks, mutation and original assertions remain required. The proposal is ready for the Maintainer's Decision.
+
+### Withdrawn / superseded commitments
+
+None.
+
+**Elapsed**: approximately 2 minutes. **Tokens**: unknown.
