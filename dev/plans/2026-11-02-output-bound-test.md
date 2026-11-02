@@ -120,3 +120,17 @@ required mutations were detected.
 `truncated+cleanup-failed` status was exercised synthetically by A-t1 and allowed
 by A-t4, but was not observed from a real overflow run. Boundary B must repeat
 the focused nodes after review. No full suite or broad selection ran.
+
+## Code review -- Codex (GPT-6), independent reviewer -- 2026-11-02
+
+Reviewed implementation `092712a6` and evidence `81cb545b`. **Verdict**: REVISE. **Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes, subject to C1's survivor-risk condition. A-t4 retains the cap and accepts exactly the two accepted statuses; A-t1 explicitly checks DEGRADED, and A-t6 and production are unchanged. Focused mutations reported in the implementation record reject the three named faults.
+2. **Best alternative:** Retain the exact cleanup-status assertion and diagnose cleanup first; it detects overflow cleanup failure but costs an unknown investigation. The Maintainer accepted losing that detection, and A-t6 covers timeout rather than overflow (proposal Decision; A-t6).
+3. **What would show it wrong?** A non-truncation status or excess output passing, combined status mapping CLEAN, or an uncontrolled probe survivor. The recorded mutations address the first three, while survivor safety remains unresolved below.
+
+**R1 -- blocking: record and resolve survivor risk.** C1 requires inspection of the effect of removing the grace override and a safe bounded cleanup arrangement if needed; finite output alone does not establish timely exit. `_kill_tree` has bounded waits but can return false, and the focused run observed only `truncated`. The implementation record does not explain whether the probe can survive uncontrolled in that case or how it is bounded if so. Inspect the failure paths and record evidence supporting the safety conclusion; provide bounded cleanup if needed. This finding does not request a broad suite.
+
+**Covered:** committed test diff, accepted criteria, runner cleanup path and implementation evidence. **Not covered:** independent test execution, Windows behavior, failure reproduction or separate Security Review. Final focused verification remains due after review.
