@@ -86,3 +86,20 @@ Assurance path: high-assurance
 **N1 — non-blocking.** The Decision-record sentence requires naming accepted recurring machinery but leaves its boundary and burden implicit. A routine record could accumulate machinery inventories, defeating the stated aim. Clarify that the record names material new recurring additions in the Decision itself, and exercise a routine case with no such addition to show no extra record is needed. Evidence: Proposal, Proposal and Signals the change is wrong. The heavy tier and plan review follow the named protected doctrine/template surfaces (`AGENTS.md`, Project conventions); that assurance is not a new process invented by this proposal.
 
 Coverage: Read the committed proposal, review template and cited collaboration guidance; assessed burden and the stated assurance path. Did not independently verify the adopter's report, inspect every shipped counterpart or conduct the separate Security Review.
+
+## Security Review -- Codex Sol -- 2026-11-01
+
+**Tier**: Security Review  
+**Reviewed commit**: aa1784b7  
+**Verdict**: Support; no blocking security findings.  
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: exposing a material recurring check or human step before acceptance supports informed Maintainer authority without changing who decides. Evidence: committed Proposal and Security preflight; `AGENTS.md`, Roles.
+2. **Best alternative?** Apply the existing simpler-alternative guidance without a new cross-cutting rule. That avoids additional prose but leaves recurring operating cost implicit; a brief material-cost instruction addresses that gap. Evidence: `dev/agent_collaboration.md`, Review loop and Maintainer-call guidance, at the reviewed commit.
+3. **What would show it wrong?** A routine decision requiring a machinery inventory, or a simpler option omitting a required security check, would defeat the intended improvement. Evidence: Proposal, Signals the change is wrong; `AGENTS.md`, model-tier and high-risk obligations.
+
+**Non-blocking advice.** Concur with N1: name material new recurring commitments briefly in the existing Decision, without itemized accounting or a “none” declaration. A routine decision with no recurring addition should need no extra sentence. An option comparison must disclose a lost safeguard; it cannot waive required checks, accepted scope or the model capability floor. Keep the no-checklist constraint; compare recurring-addition and routine cases in the planned human comparison.
+
+**Coverage:** Read the proposal and ordinary review at `aa1784b7`, plus committed governing authority, model-tier rules and collaboration/role guidance. Examined authorization, concealed safeguards and recurring-record burden. Did not verify the adopter report, final wording, every shipped consumer or runtime security; ran no implementation checks.
