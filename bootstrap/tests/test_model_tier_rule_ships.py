@@ -93,6 +93,16 @@ def _roles_section(text: str) -> str:
     return text[heading.start():] if end == -1 else text[heading.start():end]
 
 
+def _model_tier_rule(text: str) -> str:
+    """Return only the complete Model tier paragraph under `## Roles`."""
+    roles = _roles_section(text)
+    match = re.search(
+        r"(?ms)^\*\*Model tier\.\*\*.*?(?=\n[ \t]*\n|\Z)", roles
+    )
+    assert match, "no Model tier paragraph under '## Roles'"
+    return _flat(match.group())
+
+
 #: What the fan-out paragraph of `docs/methodology/roles.md` must say about the check.
 _FAN_OUT_CLAUSES = (
     "a stronger model from the same maker counts",
@@ -154,9 +164,7 @@ def test_task_floors_reject_lane_based_assignment_and_unreviewed_low_authority()
 def test_the_rule_reads_the_same_in_both_copies() -> None:
     """Cairn is bound by the rule it ships, so the two copies must not drift."""
     def rule(rel: str) -> str:
-        flat = _flat(_roles_section(_read(rel)))
-        start = flat.index("**Model tier.**")
-        return flat[start:]
+        return _model_tier_rule(_read(rel))
     assert rule(OWN_AGENTS) == rule(SHIPPED_AGENTS)
 
 
