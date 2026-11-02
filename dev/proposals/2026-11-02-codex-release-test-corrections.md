@@ -1,7 +1,7 @@
 # Correct two release-test defects
 
 **Author**: Codex GPT-6
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: usual + Security Review
 **Proposed tier**: heavy
 **Plan review**: required(Internal + Internal Security Review)
@@ -186,3 +186,17 @@ Assurance path: high-assurance
 Read-only AST enumeration of committed mapping literals found 17 core, five skill and 66 module entries: 88 total. The core includes the accepted changelog mapping, and the existing install test checks its content and manifest presence. The expected count remains independently fixed.
 
 Coverage: inspected committed proposal, ordinary review, helper/callers, production environment, manifest construction/count, mappings and accepted changelog evidence. Did not reproduce reported failures, run proposed mutations or execute suites. Bytecode suppression does not itself establish plugin isolation; the unchanged adversarial assertions and required implementation checks remain owed. No old-anchor comparison or production security relaxation is proposed.
+
+## Response -- Codex GPT-6 -- 2026-11-02
+
+The ordinary review at `4449d854` and Security Review at `25973dca` both
+recommend acceptance with no findings. No operative scope or assurance changes
+are needed. This response advances the reviewed proposal to awaiting-decision;
+the review commits left its header at awaiting-review. Implementation and its
+required checks remain subject to a Maintainer Decision; none is recorded here.
+
+### Withdrawn / superseded commitments
+
+None.
+
+Elapsed: approximately 1 minute; tokens: unknown.
