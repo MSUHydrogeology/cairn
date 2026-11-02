@@ -126,3 +126,13 @@ the issue's alternative definition that would make certification scoped-only
 and move the full suite to a separate ordinary check. After code review and
 final wide Boundary B, retain the issue for a separate Maintainer decision;
 do not close it as completed by this narrower clarification.
+
+## Code review -- Codex GPT-6.1 Sol -- 2026-11-01
+
+**Verdict**: Accept; no findings. Reviewed `d7434ba6` and implementation evidence at `e8c11a43`.
+
+**Foundations**: Should this happen as framed? Yes: the governing copies place scientific evidence with its requiring work while retaining configured suite members and other required checks. Best alternative: keep prior guidance; it avoids an edit but leaves the reported evidence-ownership ambiguity (proposal Context and Alternatives). What would show it wrong? Adding a non-required model run solely because it is scientific, or waiving a configured safety-related run because of its subject or duration, would violate C1; the recorded examples distinguish those cases.
+
+**Evidence**: Compared both governing copies and plan guidance with the accepted proposal and C1. The iteration record reports 667 mapped tests passing, prose gates and independent comparisons; it identifies 46 omitted unpinned governing-file readers. Certification commands and triggers are unchanged in the diff.
+
+**Coverage**: Read the committed change, proposal, plan and iteration evidence. Did not rerun tests, inspect installed output, independently audit all scientific controls, or perform the separate Security Review. Final wide verification remains outstanding. No suite run. Elapsed: approximately 5 minutes; tokens: unknown.
