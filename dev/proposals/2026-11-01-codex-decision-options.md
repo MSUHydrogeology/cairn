@@ -63,3 +63,26 @@ None; opening scope.
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Review -- Codex gpt-6.1-terra -- 2026-11-01
+
+Reviewed commit: 2d8c0bf03a6a36db7960745654771a25a4cf3f35  
+Target: entire proposal  
+Prior findings: none  
+Assurance path: high-assurance
+
+**Tier**: usual  
+**Findings**: raised  
+**Verdict**: ACCEPT  
+**Elapsed**: approximately 4 minutes  
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: visible additions and costs help the Maintainer assess a recommendation; the no-form constraint limits overhead. -- Proposal, Decision summary and Proposal.
+2. **Best alternative.** Keep current guidance and rely on judgment; it already asks for a cheaper alternative and the cost of being wrong, but does not expressly ask for the additions and operating costs of each material option. -- `dev/agent_collaboration.md:89, 309-311`; Proposal, Context.
+3. **What would show it wrong?** A realistic briefing that becomes boilerplate without exposing a material cost, or that invents an implausible option, would undermine the change. -- Proposal, Signals the change is wrong and Evidence / verification plan.
+
+**N1 — non-blocking.** The Decision-record sentence requires naming accepted recurring machinery but leaves its boundary and burden implicit. A routine record could accumulate machinery inventories, defeating the stated aim. Clarify that the record names material new recurring additions in the Decision itself, and exercise a routine case with no such addition to show no extra record is needed. Evidence: Proposal, Proposal and Signals the change is wrong. The heavy tier and plan review follow the named protected doctrine/template surfaces (`AGENTS.md`, Project conventions); that assurance is not a new process invented by this proposal.
+
+Coverage: Read the committed proposal, review template and cited collaboration guidance; assessed burden and the stated assurance path. Did not independently verify the adopter's report, inspect every shipped counterpart or conduct the separate Security Review.
