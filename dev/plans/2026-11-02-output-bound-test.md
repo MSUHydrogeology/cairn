@@ -208,3 +208,10 @@ Reviewed fix: 95ecf23705b3ca4890da2af3348ef5a8332e72ce; response: 93231bfb.
 **Bounding**: ACCEPTED for the authorized focused selection.
 
 Covered: committed fallback, independent live-child forced-failure check and status preservation. Not covered: actual OS signaling failure, Windows or failure reproduction; no suite run. Final focused verification remains due.
+
+## Evidence SHA correction -- Codex (GPT-6) -- 2026-11-02
+
+Correction to the full SHA in the response above: the implementation commit
+referred to as `95ecf237` is
+`95ecf23705b3ca4890da2af3348ef5a8332e72ce`. The earlier full SHA there was
+incorrect. The commit identity was verified with `git rev-parse 95ecf237`.
