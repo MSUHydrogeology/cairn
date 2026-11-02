@@ -1,7 +1,7 @@
 # Plan: Clarify security triggers for guarded reuse
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-security-trigger-clarity.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Explain when reuse of a reviewed guard changes a security boundary and when it does not.
@@ -181,3 +181,17 @@ tokens: unknown.
 ## Implementation verification -- Codex GPT-6 -- 2026-11-01
 
 **Boundary B: wide.** Frozen SHA/range, canonical Python 3.13.13, Bandit on `PATH`, clean isolated pre/post state, common 36-file selector union, 1,955 unique passes and 14 local-socket failures resolved by targeted rerun are recorded in the shared Boundary B record in `dev/plans/2026-11-01-decision-options.md`. All four mapped security files and install/workflow families are included. For both module copies, checked five cases (unchanged guarded reuse does not trigger; new untrusted source, validation bypass, named high-risk control edit and newly public output do trigger). `test_security_module_trigger_mutations_are_caught` covered both predicate mutations in both copies. Selected-module install matched adopter security guidance. These classify prose triggers, not runtime guard behavior. No full-tree certification was run. Omitted: external links unprobed, 46 unpinned governing-file readers, per-file durations. **Elapsed**: shared automated tests 190.28 s; comparison/install inspection unmeasured. **Tokens**: unknown. Preserve issue #37 follow-ups.
+
+
+## Dispositions -- archive preparation -- 2026-11-01
+
+**Dispositions**:
+- Issue #37 request for a Security Review necessity line and author-strike mechanism -> `defer` (separate Maintainer disposition; the accepted plan retains existing review and authority rules) -> [GitHub issue #37](https://github.com/MSUHydrogeology/cairn/issues/37). Maintainer authorization (chat, 2026-11-01): "security-trigger-clarity (#37 remains open for disposition)".
+- Issue #37 request to allow bounded verification for non-widening edits to named high-risk surfaces -> `defer` (separate Maintainer disposition; the accepted plan retains wide verification for these surfaces) -> [GitHub issue #37](https://github.com/MSUHydrogeology/cairn/issues/37). Same Maintainer authorization.
+- Issue #37 request to change the `adds or widens` trigger -> `defer` (separate Maintainer disposition; the accepted plan preserves the trigger) -> [GitHub issue #37](https://github.com/MSUHydrogeology/cairn/issues/37). Same Maintainer authorization.
+
+## Lasting-truth migration -- 2026-11-01
+
+**Evidence shipped**: implementation commits `d7434ba616289d8f1c1927d23784ab1a6b33b876`, `8a7bdebf92d91f9c2b03db1a5994ce13f0e00c72` and `da48cfd9cf5198dd45963a8aa098d57353e38230` update both security-review copies and their mapped prose assertions. The five cases, two predicate mutations, selected-module installation, mapped wide union and gates are recorded above. **Evidence deferred**: none; runtime guard behavior was outside the accepted prose-trigger scope, and the record does not claim it was verified. **Deferred evidence home**: N/A for plan evidence; the three issue requests remain in issue #37.
+
+**Fidelity sign-off**: implementation commits `d7434ba616289d8f1c1927d23784ab1a6b33b876`, `8a7bdebf92d91f9c2b03db1a5994ce13f0e00c72` and `da48cfd9cf5198dd45963a8aa098d57353e38230` match the accepted `## Proposal` in `dev/proposals/archive/2026-11-01-codex-security-trigger-clarity.md`, accepted at its `## Decision`: unchanged guarded reuse alone does not trigger; a new or widened boundary, bypass, or changed exposure can trigger, while named high-risk triggers and wide verification remain.
