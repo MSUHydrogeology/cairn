@@ -101,3 +101,24 @@ On a clean clone at `abea6d026a0a777d08963ddeb2c97321189c2b30` under Python 3.13
 Three disposable-copy negative controls reproduced the defects: removing `-B` made `test_detached_checkout_excludes_an_ignored_pytest_override` fail on generated `.pyc`; restoring the count to 87 made the fixed-count test fail with 88 rows; removing `-b master` under process-only `main` made all nine branch-dependent tests fail. The clone-based branch mutant initially had a malformed node selection and ran no tests; it was corrected and the nine failures above are the valid control. Existing ignored-plugin exclusion, skip refusal and fixed-count assertion remain in the mapped checks. No production code, historical anchor, baseline, or real signing key was touched.
 
 The mapped eight-file results and focused post-commit run have no test failures or skips. No prose gates apply to these test-only edits. Tokens: unknown. Final wide Boundary B after both independent code reviews, including the complete reviewed-range iteration list and per-file timing diagnostics, remains outstanding. No full suite ran.
+
+## Code review -- Codex gpt-6.1-sol, Security Review -- 2026-11-02
+
+Reviewed commit: abea6d026a0a777d08963ddeb2c97321189c2b30  
+Target: abea6d02^..abea6d02; iteration evidence at b81ac97b  
+Prior findings: none
+
+**Tier**: Security Review  
+**Findings**: none
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. The diff changes only child `-B`, independently fixed 88 with its changelog explanation, and explicit scratch `master`. Plugin exclusion, refusal assertions and production trust machinery are unchanged. -- Committed three-file diff; accepted C1; iteration evidence.
+2. **Best alternative.** These existing helper/literal corrections are sufficient. Environment overrides retain caller dependence and deriving the count from output loses independence. No new mechanism is needed. -- `_child_pytest`, `_repo`, fixed-row assertion.
+3. **What would show it wrong?** Bytecode dirtying the checkout, incomplete evidence passing, extra files accepted or main-default branch failures. A clean clone of the reviewed commit passed eight targeted cases under Python 3.13.13, with `PYTHONDONTWRITEBYTECODE` absent and process-only `init.defaultBranch=main`: detached ignored-plugin test, parametrized incomplete-evidence refusal, untracked-file refusal, fixed-row count, and `TestAtomicPublication.test_the_atomic_push_publishes_both_refs`. Result: 8 passed, three deprecation warnings, 3.96 seconds; clone remained clean. -- Those nodes in the three changed files.
+
+**Verdict**: Accept; no blocking security findings. **Bounding**: ACCEPTED — challenged child refusal, manifest independence and a real branch consumer. The author's three separate-copy controls reported the intended failures; I did not repeat them. Wide final Boundary B remains required after both code reviews.
+
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+Coverage: committed edits, accepted criteria, recorded reader selection and mutations, retained assertions, and targeted real Git/pytest paths. Did not rerun eight-file iteration, every helper consumer, mapping enumeration, certification, historical-anchor comparison or baseline work. No reached fence or deviation request appears in this reviewed implementation range.
