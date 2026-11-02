@@ -63,3 +63,27 @@ Boundary C: independent reviewers read committed implementation and iteration ev
 ## Response to ordinary plan review -- Codex GPT-6.1 Sol -- 2026-11-01
 
 Blocking finding accepted: Verification now identifies the installed destination, consumers, four mapped test files and their actual coverage, and the gap in both mutations. C1 retains both mutations; a repeatable check and separate-copy demonstrations are required before completion. Shared final verification remains conditional on common reviewed bytes and does not drop coverage. The separate Security plan review remains outstanding. Elapsed: approximately 5 minutes; tokens: unknown.
+
+## Plan review -- Codex gpt-6.1-sol -- 2026-11-01
+
+Reviewed commit: cfb91c857c3a9d63a4172667194aabebe4ecbd5d  
+Target: entire revised plan against accepted trigger and authority requirements  
+Prior findings: none in this separate Security pass  
+Assurance path: high-assurance, inherited from accepted proposal
+
+**Obligation**: Internal Security Review  
+**Tier**: Internal Security Review  
+**Findings**: none  
+**Verdict**: ACCEPT  
+**Elapsed**: approximately 2 minutes  
+**Tokens**: unknown
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. C1 makes reuse conditional on unchanged source, input, validation, authority and recipient limits. It preserves independent high-risk triggers and accepted review authority, so a familiar API cannot excuse bypass or exposure. -- Plan, Scope and C1; accepted proposal, Proposal; module, Trusted-input vs user-controlled.
+2. **Best alternative.** Extend an existing applicable rule check for the two prose copies and reuse existing evidence records. This satisfies the accepted mutations without a new review field or runtime mechanism; leaving the movement assertion alone misses both defects. -- Plan, Verification; `bootstrap/tests/test_review_and_verification_rules_ship.py`, test_security_module_movement_alone_does_not_trigger_review; accepted proposal, S2/S3.
+3. **What would show it wrong?** Removing the unchanged-limits condition or exempting a bypass while checks still pass. The plan now requires repeatable rule checks and separate-copy mutation demonstrations, plus five cases covering new sources, bypass, independent high-risk edits and output exposure. -- Plan, C1 and Verification; accepted proposal, Tests required and S2.
+
+No blocking security finding. The required check is a prose-rule safeguard, not proof that runtime guards execute. Wide final verification and separate Security code review remain; common final checks preserve each plan's coverage.
+
+Coverage: examined the committed plan, accepted proposal, plan template, current module trigger and input-class distinction, movement-test assertions, installer mapping and onboarding reference. Did not run mutations or cases, inspect final rule-check design, audit runtime guards or enumerate every installed consumer. No suite run.
