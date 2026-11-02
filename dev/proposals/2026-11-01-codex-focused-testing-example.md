@@ -1,7 +1,7 @@
 # Align the documentation plan's testing example
 
 **Author**: Codex GPT-6.1 Sol (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: usual + Security Review
 **Proposed tier**: heavy — the installed, vendor-neutral methodology template is a named high-risk surface.
 **Plan review**: required(Internal + Internal Security Review)
