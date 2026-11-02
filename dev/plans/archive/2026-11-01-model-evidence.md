@@ -1,7 +1,7 @@
 # Plan: Locate scientific model evidence
 
 **Source proposal**: dev/proposals/archive/2026-11-01-codex-model-evidence.md
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-01
 **In brief**: Clarify where scientific model evidence is required without changing the configured certification suite.
@@ -167,3 +167,14 @@ archival. Elapsed: under one minute; tokens: unknown.
 ## Implementation verification -- Codex GPT-6 -- 2026-11-01
 
 **Boundary B: wide.** Frozen SHA/range, canonical Python 3.13.13, Bandit on `PATH`, clean isolated pre/post state, common 36-file selector union, 1,955 unique passes and 14 local-socket failures resolved by targeted rerun are recorded in the shared Boundary B record in `dev/plans/2026-11-01-decision-options.md`. The union includes scientific-check guidance, mapped lifecycle and integration/workflow families. Rechecked the installed and self-hosted examples: outside-suite evidence stays with its requiring work/release; configured suite members remain required at each required point, including when they serve safety needs. Both match C1. No full-tree certification was run. Omitted: external links unprobed, 46 unpinned governing-file readers, per-file durations. **Elapsed**: shared automated tests 190.28 s; comparison unmeasured. **Tokens**: unknown. Issue #33 remains open as recorded.
+
+
+## Dispositions -- archive preparation -- 2026-11-01
+
+**Dispositions**: Issue #33's unaccepted alternative certification terminology -> `defer` (needs a separate Maintainer decision; this plan retains the configured full-suite contract) -> [GitHub issue #33](https://github.com/MSUHydrogeology/cairn/issues/33). Maintainer authorization (chat, 2026-11-01): "model-evidence (#33 remains open for broader accepted follow-on)". The live issue remains its home; no other follow-up remains.
+
+## Lasting-truth migration -- 2026-11-01
+
+**Evidence shipped**: `d7434ba616289d8f1c1927d23784ab1a6b33b876` updates governing and shipped guidance and the plan template. Independent installed/self-hosted examples, mapped tests, gates and final wide Boundary B are recorded above. **Evidence deferred**: none; the separate whole-tree certification was not a plan-specific check and remains governed by its authorized ceremony. **Deferred evidence home**: N/A for plan evidence.
+
+**Fidelity sign-off**: implementation commit `d7434ba616289d8f1c1927d23784ab1a6b33b876` matches the accepted `## Proposal` in `dev/proposals/archive/2026-11-01-codex-model-evidence.md`, accepted at its `## Decision`: evidence belongs with work or release that requires it, while configured suite members and all other accepted requirements remain due.
