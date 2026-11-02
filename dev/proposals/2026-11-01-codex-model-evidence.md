@@ -63,3 +63,20 @@ None; opening scope.
 ## Assurance path
 
 **Assurance path**: high-assurance
+
+## Security Review -- Codex Sol -- 2026-11-01
+
+**Tier**: Security Review  
+**Reviewed commit**: 1b33ccf2  
+**Verdict**: Support; no blocking security findings.  
+**Elapsed**: approximately 3 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes: locating work-specific scientific evidence with its requirement does not waive safety checks. The operative proposal expressly retains accepted criteria, configured required checks, release requirements and the full-suite commands. Evidence: Proposal; committed `AGENTS.md`, Verification.
+2. **Best alternative?** Keep existing guidance: it already distinguishes change evidence from certification, but does not expressly address long scientific runs. A short clarification adds no apparatus and avoids redefining certification. Evidence: Proposal, Context and Alternatives; committed plan template, verification boundaries.
+3. **What would show it wrong?** Excluding an existing required suite test because it is slow or scientific, or treating evidence ownership as permission to skip a required rerun, would contradict the preserved contract. Evidence: Proposal, Proposal and Signals; `AGENTS.md`, known-unmet-check rule.
+
+**Non-blocking advice.** Make the examples distinguish optional work-specific evidence from a scientific run already required by suite membership or a safety/security requirement. Such a run remains required; removing or rescheduling it needs separate authorized scope, not this clarification. Scientific and safety evidence can overlap, so classification by subject or duration cannot decide exemption. Retain independent scientific checks, their deliberate failing control and any required positive control from the proposal template. Exercise this overlap within the already planned required-run example; add no checklist, record or stage.
+
+**Coverage:** Read the committed proposal, governing verification rules, plan acceptance/fence guidance, scientific-check template and certification-rule assertions at `1b33ccf2`. Examined whether exclusions could bypass safety or accepted evidence. Did not inspect the adopter suite, final wording or all consumers; ran no implementation checks or suite.
