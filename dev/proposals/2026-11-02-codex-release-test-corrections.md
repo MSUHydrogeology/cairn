@@ -211,3 +211,25 @@ Elapsed: approximately 1 minute; tokens: unknown.
 Added the scratch-branch portability correction and its controls after nine failures in the final verification log. Earlier reviews and response remain unchanged; this widened scope returns for independent ordinary and Security proposal review before any Maintainer Decision. No production or baseline change is proposed.
 
 **Elapsed**: approximately 5 minutes. **Tokens**: unknown.
+
+## Security Review -- Codex gpt-6.1-sol -- 2026-11-02 (widened scope)
+
+Reviewed commit: a65b795c9fea3ab4b9f838f62c66a9b0d8e31a0c  
+Target: added deterministic scratch-branch setup; original two corrections retained  
+Prior findings: none; fresh pass for widened scope  
+Assurance path: high-assurance
+
+**Tier**: Security Review  
+**Findings**: none  
+**Verdict**: ACCEPT as framed; recommendation, not a Maintainer Decision.  
+**Elapsed**: approximately 4 minutes. **Tokens**: unknown.
+
+**Foundations**
+
+1. **Should this happen as framed?** Yes. `_repo` currently inherits Git's branch default while downstream tests name `refs/heads/master`. The failed-run log shows absent master refs and resulting wrong topology/publication outcomes, supporting explicit scratch initialization. This changes test setup rather than production authorization or ref-handling policy. -- Committed helper and nine failing nodes; supplied final-B log.
+2. **Best alternative.** Set the expected branch in the existing helper. Setting host/global defaults leaves the tests environment-dependent; changing all expected refs or weakening assertions costs more and obscures the same setup assumption. The original `-B` and fixed 88 corrections remain appropriately limited. -- Proposal, Proposal and Alternatives; helper consumers; earlier Security review.
+3. **What would show it wrong?** Tests still depending on host defaults or losing their symbolic-ref, hook, atomicity and recovery assertions. The proposed main/master-default controls, nine original cases and separate explicit-branch-removal mutant test that distinction. Their results remain prospective, not proven by the failure log. -- Proposal, Tests required and S2/S4; existing original assertions.
+
+No blocking finding. The log records nine failures, 1,492 passes and four deselections; the correction remains untested. The proposed one-helper edit preserves synthetic trust-boundary tests without accessing real historical anchors. No production verifier, mapping or trust-store change is needed; the previous bytecode/count security conclusions stand.
+
+Coverage: read committed widened proposal, original reviews/response, helper and representative security assertions, and actual failed-run traces. Did not reproduce failures, run new controls or suites, or verify future correction bytes. Implementation must demonstrate the three controls and retained checks.
