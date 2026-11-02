@@ -81,3 +81,19 @@ Adopters cannot find a next action, a Maintainer wait disappears from the reader
 **Coverage:** Read the proposal at 75b4bb0b against the v0.6 board item, shipped board, board reader and accepted Plain Language plan. Did not run installs, tests or mutations, inventory all readers, or assess future wording. Separate Security Review remains due.
 
 **Elapsed:** approximately 2 minutes; **Tokens:** unknown.
+
+## Proposal Security Review -- Codex (gpt-6.1-sol) -- 2026-11-01
+
+**Tier**: Security Review
+
+**Foundations**
+
+1. **Should it happen as framed?** Yes. Presentation can change without transferring authority: the proposal preserves archive, disposition, scope, coordination and removal duties, whose existing installed wording distinguishes the governing source and reserves scope concessions to the Maintainer (`templates/core/dev/PLANNING.md`, Archive preconditions and Removal preconditions).
+2. **Best alternative.** Keep the current template. This avoids semantic drift but retains the usability problem. Standalone waits and existing slots achieve the requested layout without expanding parser behavior or introducing another mechanism (`tools/board.py`, `_roadmap_waits`; `bootstrap/_scaffold/install.py`, `install_onboarding`).
+3. **What would show it wrong?** Lost authority conditions, invisible waits, changed seeds or overwritten customized content. The proposal requires independent comparison, real installs, an upgrade and separate mutations; these target the relevant failure paths rather than treating a template-derived expectation as proof (Evidence / verification plan; Security preflight).
+
+**Verdict:** Support as framed; no blocking findings. Preserve the complete duties, including disposition eligibility, quoted authorization, serialization points and all three removal prerequisites; passing the scope wording test alone cannot establish that preservation. The proposal already requires this broader comparison. Module adoption can reconcile generated onboarding blocks, so preserve existing slot behavior while preventing automatic board restructuring (`bootstrap/_scaffold/upgrade.py`, `_prepare_module_discovery_updates`).
+
+**Elapsed:** approximately 4 minutes; **Tokens:** unknown.
+
+**Coverage:** Read committed `02563167`, the ordinary review, installed board duties, installer slot handling, upgrade discovery handling, scope-test obligations and accepted audit coordination. Did not execute installs, upgrade, parser checks or mutations, inventory every consumer, or establish equivalence of future wording.
