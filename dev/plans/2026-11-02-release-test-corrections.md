@@ -1,7 +1,7 @@
 # Plan: Correct release-test portability defects
 
 **Source proposal**: dev/proposals/archive/2026-11-02-codex-release-test-corrections.md
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal + Internal Security Review)
 **Opened**: 2026-11-02
 **In brief**: Correct three protected tests so release checks work consistently while retaining their safeguards.
@@ -85,3 +85,9 @@ Assurance path: high-assurance
 **Elapsed**: approximately 2 minutes. **Tokens**: unknown.
 
 Coverage: read committed plan and ordinary review, accepted proposal, current template and governing rules, helpers, manifest count/mapping, install test and representative security assertions. Did not enumerate every helper consumer, reproduce logs, run mutations or suites, or compare an anchor; those implementation checks remain owed.
+
+## Response to plan reviews -- Codex GPT-6 -- 2026-11-02
+
+Both the Internal and Internal Security Review accept the plan without findings. No operative changes are needed; the required consumer tracing, negative controls and final verification remain open for implementation.
+
+**Elapsed**: approximately 1 minute. **Tokens**: unknown.
