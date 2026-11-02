@@ -14,7 +14,7 @@ Add a short warning to the staged-file review instructions in the upgrade guide:
 
 ## Context
 
-The previous proposal records a reproduction in which `merge_file` returned a clean result containing incompatible local and upstream policy statements, and was rejected because the proposed per-file hold and decision state were too costly and underspecified. The Maintainer retained issue #35 for a smaller redesign ([previous proposal](archive/2026-10-30-codex-upgrade-semantic-adoption.md)). The current [upgrade guide](../../bootstrap/UPGRADE.md) tells operators to review staged files and resolve conflict markers, but its general workflow does not explain that a merge without markers can still disagree in meaning. Its section on moving to one review at every stage already illustrates that risk for a specific policy transition. The report's `locally-modified (merged clean)` label identifies a difference from the saved base, not necessarily an upstream change; stock assembled files can also receive it, as the prior review records.
+The previous proposal records a reproduction in which `merge_file` returned a clean result containing incompatible local and upstream policy statements, and was rejected because the proposed per-file hold and decision state were too costly and underspecified. The Maintainer retained issue #35 for a smaller redesign ([previous proposal](2026-10-30-codex-upgrade-semantic-adoption.md)). The current [upgrade guide](../../../bootstrap/UPGRADE.md) tells operators to review staged files and resolve conflict markers, but its general workflow does not explain that a merge without markers can still disagree in meaning. Its section on moving to one review at every stage already illustrates that risk for a specific policy transition. The report's `locally-modified (merged clean)` label identifies a difference from the saved base, not necessarily an upstream change; stock assembled files can also receive it, as the prior review records.
 
 ## Proposal
 
@@ -89,3 +89,28 @@ None.
 > "Accept as revised"
 
 **Tier**: light. Accepted as revised with the recorded scope loss on issue #35 (guidance rather than programmatic enforcement). Light tier has no plan; implementation will land directly with Boundary B verification recorded in this proposal.
+
+## Implementation verification -- Codex GPT-6.1 Sol (Implementation) -- 2026-11-01
+
+**Boundary B mode**: bounded. The only changed product surface is the ordinary prose guide `bootstrap/UPGRADE.md`; no contract or trust surface changed.
+
+**Tested commit**: `c8542891aefa823888d5aff70b99e4b01b740fa4`.
+**Reviewed range**: `34be76348127f85942698d85a03ba74c2a420112..c8542891aefa823888d5aff70b99e4b01b740fa4` (implementation commit).
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/general/bin/python3.13` — Python 3.13.5.
+**Pre-run state**: clean Git clone at the tested commit; `git status --porcelain` empty.
+**Post-run state**: clean; `git status --porcelain` empty, `git diff --check` passed, and HEAD unchanged.
+
+| Command | Result | Elapsed |
+|---|---|---:|
+| `python -m pytest bootstrap/tests/test_finalize_retired_living_state.py bootstrap/tests/test_install_time_onboarding.py bootstrap/tests/test_next_session_local_note.py bootstrap/tests/test_review_stance_in_shipped_files.py bootstrap/tests/test_upgrade_removes_retired_files.py bootstrap/tests/test_verify_integrity.py -q` | 835 passed, 0 failed | 42.68s wall (pytest 42.10s) |
+| `python scripts/claim_check.py bootstrap/UPGRADE.md` | passed, no flags | 0.04s |
+| `python scripts/link_check.py bootstrap/UPGRADE.md` | passed, no issues | 0.07s |
+| `python scripts/sync_doc_snippets.py bootstrap/UPGRADE.md --check` | passed, no drift | 0.04s |
+| `python scripts/quality_gate.py --sub neutrality` | fail=0, info=43 | 0.93s |
+| `git diff --check` | passed | — |
+
+**Non-pass disposition**: none. The mapped test selection exceeded the 30-second timing target; timing is diagnostic. Per-file durations were not recorded, so no individual file over 10 seconds can be named from this run.
+**Known omissions**: no mapped test file omitted. No full-tree certification suite ran; it was not required. No other test selection was run.
+**Elapsed**: approximately 44 seconds for Boundary B checks. **Tokens**: unknown.
+
+Dispositions: none. The Decision explicitly accepted guidance rather than programmatic enforcement; no explicitly-deferred follow-up remains open.
