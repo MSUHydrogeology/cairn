@@ -1,7 +1,7 @@
 # Consolidate the suite without losing fault detection
 
 **Author**: Codex (runtime model identifier unavailable; Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: usual + Security Review
 **Proposed tier**: heavy -- protected tests and collection contracts
 **Plan review**: required(Internal + Internal Security Review)
@@ -262,3 +262,13 @@ unmeasured. **Tokens**: unknown.
 
 None. The revisions specify isolation evidence and execution risks without
 dropping scope or adding a ceremony.
+
+## Decision -- Maintainer -- 2026-11-02
+
+**Elapsed**: unknown; **Tokens**: unknown.
+
+**Tier**: heavy
+
+**ACCEPTED.** Asked "Suite consolidation: accept as heavy?", the Maintainer's authorization, quoted verbatim:
+
+> "Accept as heavy (Recommended)"
